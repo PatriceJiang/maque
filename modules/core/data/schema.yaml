@@ -41,13 +41,13 @@
       fields:
         - name: m
           type: float[9]
-          default: {0.0F}
+          default: "{0.0F}"
     - class: Mat4
       size: 64
       fields:
         - name: m
           type: float[16]
-          default: {0.0F}
+          default: "{0.0F}"
     - class: Transform
       size: 48
       fields:
@@ -80,7 +80,7 @@
         - name: data
           type: uint8_t[]
     - class: Mesh
-      size: 16
+      # size: 16
       fields:
         - name: vertices
           type: Vec3[]
