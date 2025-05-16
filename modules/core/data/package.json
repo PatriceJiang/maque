@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@types/yaml": "^1.9.6",
+    "yaml": "^2.8.0"
+  }
+}

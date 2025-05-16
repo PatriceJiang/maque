@@ -1,0 +1,92 @@
+- namespace: math
+  class_list:
+    - class: Vec2
+      size: 8 
+      fields:
+        - name: x
+          type: float
+          default: 0.0F
+        - name: y
+          type: float
+          default: 0.0F
+    - class: Vec3
+      size: 12
+      fields:
+        - name: x
+          type: float
+          default: 0.0F
+        - name: y
+          type: float
+          default: 0.0F
+        - name: z
+          type: float
+          default: 0.0F
+    - class: Vec4
+      size: 16
+      fields:
+        - name: x
+          type: float
+          default: 0.0F
+        - name: y
+          type: float
+          default: 0.0F
+        - name: z
+          type: float
+          default: 0.0F
+        - name: w
+          type: float
+          default: 0.0F
+    - class: Mat3
+      size: 36
+      fields:
+        - name: m
+          type: float[9]
+          default: {0.0F}
+    - class: Mat4
+      size: 64
+      fields:
+        - name: m
+          type: float[16]
+          default: {0.0F}
+    - class: Transform
+      size: 48
+      fields:
+        - name: position
+          type: Vec3
+        - name: rotation
+          type: Vec3
+        - name: scale
+          type: Vec3
+
+
+- namespace: asset
+  class_list:
+    - enum: FileFormat
+      values:
+        - name: PNG
+          value: 0
+        - name: JPG
+          value: 1
+        - name: GIF
+          value: 2
+    - class: Texture
+      fields:
+        - name: width
+          type: uint32_t
+        - name: height
+          type: uint32_t
+        - name: file_format
+          type: FileFormat
+        - name: data
+          type: uint8_t[]
+    - class: Mesh
+      size: 16
+      fields:
+        - name: vertices
+          type: Vec3[]
+        - name: indices
+          type: uint32_t[]
+        - name: normals
+          type: Vec3[]
+        - name: uvs
+          type: Vec2[]

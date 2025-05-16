@@ -1,0 +1,27 @@
+---
+# Reference: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+BasedOnStyle: LLVM
+UseTab: Never
+IndentWidth: 4
+TabWidth: 4
+BreakBeforeBraces: Allman
+AllowShortIfStatementsOnASingleLine: false
+IndentCaseLabels: true
+IndentPPDirectives: None
+ColumnLimit: 0
+AccessModifierOffset: -4
+SortIncludes: false
+IncludeBlocks: Regroup
+ObjCBlockIndentWidth: 4
+PointerAlignment: Left
+BreakConstructorInitializers: BeforeComma
+AlignAfterOpenBracket: Align
+AlignEscapedNewlines: Left
+AlignConsecutiveAssignments: false
+AllowShortFunctionsOnASingleLine: Inline
+CommentPragmas:  '^ IWYU pragma:'
+MacroBlockBegin: '(AMAZING_RTTI_CLASS_BEGIN|AMAZING_RTTI_LOCAL_CLASS_BEGIN|AMAZING_RTTI_EXTERNAL_CLASS_BEGIN|AMAZING_RTTI_INTERFACE_BEGIN_NAME|AMAZING_RTTI_INTERFACE_BEGIN|AMAZING_RTTI_LOCAL_INTERFACE_BEGIN|AMAZING_RTTI_ENUM_BEGIN_NAME|AMAZING_RTTI_ENUM_BEGIN)'
+MacroBlockEnd: '(AMAZING_RTTI_CLASS_END|AMAZING_RTTI_INTERFACE_END|AMAZING_RTTI_ENUM_END)'
+# > llvm v6.0.0
+BreakInheritanceList: BeforeComma
+AlwaysBreakTemplateDeclarations: Yes
