@@ -13,7 +13,8 @@
 #include "core/image/mq_image.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
-#include "render/renderer/mq_renderer.h"
+#include "maque_ifaces.h"                 // 生成：mq_renderer_v1（插件接口 ABI）
+#include "core/module/mq_module.h"          // mq_host（dlopen 加载插件）
 #include "maque_types.h"
 
 #include <print>
@@ -22,6 +23,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <filesystem>
+#include <cstdlib>
 
 namespace {
 
@@ -36,7 +38,9 @@ struct Engine;
 struct Scene;
 
 struct Engine {
-    maque::render::Renderer* renderer = nullptr;
+    mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
+    const mq_renderer_v1* rapi = nullptr;                 // 渲染器插件接口
+    void*               rself = nullptr;                  // 渲染器实例
     mq_vfs*             vfs = nullptr;
     mq_script_vm*       vm = nullptr;
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
@@ -48,7 +52,7 @@ struct Engine {
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
     int W = 0, H = 0, nviews = 1, TW = 0;
-    std::vector<maque::render::View> views;
+    std::vector<mq_renderer_view> views;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);
@@ -72,7 +76,7 @@ struct Scene {
     void remove(int index);
     int  count() const { return (int)ents.size(); }
     void compute_world(Engine& eng);
-    void extract(Engine& eng, std::vector<maque::render::DrawItem>& out);
+    void extract(Engine& eng, std::vector<mq_renderer_item>& out);
 };
 
 /* ---- 反射读取辅助（不依赖具体类型，仅按字段名） ---- */
@@ -111,7 +115,7 @@ int Engine::load_texture(const std::string& path) {
     int rc = mq_image_decode(data, n, &rgba, &w, &h);
     mq_vfs_free(data);
     if (rc != 0) { std::print("runtime: decode failed '{}': {}\n", path, mq_image_last_error()); return -1; }
-    int id = renderer->create_texture(rgba, (int)w, (int)h);
+    int id = rapi->create_texture(rself, rgba, (int)w, (int)h);
     mq_image_free(rgba);
     tex_cache[path] = id;
     return id;
@@ -121,8 +125,8 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     if (!frames_dir.empty()) std::filesystem::create_directories(frames_dir);
     const float dt = 1.0F / 60.0F;
     const int   cap = 60 * 60;
-    std::vector<uint8_t> pixels;
-    std::vector<maque::render::DrawItem> draws;
+    std::vector<uint8_t> pixels((size_t)TW * H * 4);
+    std::vector<mq_renderer_item> draws;
     int frame = 0;
     for (; frame < cap && !quit; ++frame) {
         draws.clear();
@@ -132,7 +136,9 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
             scene->compute_world(*this);
             scene->extract(*this, draws);
         }
-        renderer->render_views(TW, H, views.data(), views.size(), draws.data(), draws.size(), bg, pixels);
+        rapi->render_views(rself, TW, H, views.data(), (uint32_t)views.size(),
+                           draws.data(), (uint32_t)draws.size(), bg, pixels.data(), (uint32_t)pixels.size());
+        if (pixels.empty()) pixels.resize((size_t)TW * H * 4);
         if (!frames_dir.empty()) {
             char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", frame);
             write_ppm(frames_dir + fn, TW, H, pixels);
@@ -222,7 +228,7 @@ void Scene::compute_world(Engine& eng) {
     }
 }
 
-void Scene::extract(Engine& eng, std::vector<maque::render::DrawItem>& out) {
+void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
     for (auto& [idx, e] : ents) {
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
@@ -235,7 +241,7 @@ void Scene::extract(Engine& eng, std::vector<maque::render::DrawItem>& out) {
             int tex = -1;
             if (const std::string* tp = read_str(d, blob.data(), "texture"))
                 if (!tp->empty()) tex = eng.load_texture("/" + *tp);
-            out.push_back(maque::render::DrawItem{ e.x, (float)eng.H - e.y, radius, r, g, b, 1.0F, tex });
+            out.push_back(mq_renderer_item{ e.x, (float)eng.H - e.y, radius, r, g, b, 1.0F, tex });
         }
     }
 }
@@ -322,10 +328,22 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     eng.scene_type = mq_reflect_type_by_name(eng.reflect, "scn.Scene");
     if (!eng.scene_type) { std::print("runtime: no scn.Scene type\n"); return 1; }
 
-    std::string backend;
-    eng.renderer = maque::render::create_renderer(&backend);
-    if (!eng.renderer) { std::print("runtime: no WebGPU device\n"); mq_vfs_destroy(eng.vfs); return 2; }
-    std::print("runtime: WebGPU backend '{}'\n", backend);
+    const char* plugin = std::getenv("MAQUE_RENDERER");
+#ifdef MQ_RENDERER_DEFAULT
+    if (!plugin) plugin = MQ_RENDERER_DEFAULT;
+#endif
+    if (!plugin) plugin = "libmaque_gfx.so";
+    eng.host = mq_host_create();
+    mq_loaded_module* rmod = nullptr;
+    if (mq_host_load(eng.host, plugin, &rmod) != 0 ||
+        !(eng.rapi = (const mq_renderer_v1*)mq_host_query(eng.host, MQ_RENDERER_API_NAME, 1))) {
+        std::print("runtime: cannot load renderer plugin '{}'\n", plugin);
+        mq_host_destroy(eng.host); mq_vfs_destroy(eng.vfs); return 2;
+    }
+    const char* backend = nullptr;
+    eng.rself = eng.rapi->create(&backend);
+    if (!eng.rself) { std::print("runtime: renderer create failed\n"); return 2; }
+    std::print("runtime: renderer plugin '{}' backend='{}'\n", plugin, backend ? backend : "?");
 
     Scene scene;
     eng.scene = &scene;
@@ -339,8 +357,8 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     eng.TW = eng.W * eng.nviews;
     eng.views.resize(eng.nviews);
     for (int i = 0; i < eng.nviews; ++i)
-        eng.views[i] = maque::render::View{ (float)(i * eng.W), 0, (float)eng.W, (float)eng.H,
-                                            (float)(i * eng.W), (i - (eng.nviews - 1) * 0.5F) * scene.desc.eye_sep };
+        eng.views[i] = mq_renderer_view{ (float)(i * eng.W), 0, (float)eng.W, (float)eng.H,
+                                         (float)(i * eng.W), (i - (eng.nviews - 1) * 0.5F) * scene.desc.eye_sep };
     eng.rng = scene.desc.seed * 2654435761u + 12345u;
     std::print("runtime: scene '{}' title='{}' script='{}' {}x{} views={}\n",
                scn_path, scene.desc.title, scene.desc.script, eng.W, eng.H, eng.nviews);
@@ -361,7 +379,8 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
 
     mq_script_vm_destroy(eng.vm);
     mq_reflect_destroy(eng.reflect);
-    delete eng.renderer;
+    if (eng.rapi && eng.rself) eng.rapi->destroy(eng.rself);
+    mq_host_destroy(eng.host);
     mq_vfs_destroy(eng.vfs);
     return eng.quit ? 0 : 1;
 }

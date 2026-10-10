@@ -1893,3 +1893,41 @@
     - { fn: entity_y,      ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: entity_count,  ctx: true, returns: float }
     - { fn: entity_destroy,ctx: true, args: [ { name: id, type: float } ] }
+
+# 插件接口 ABI（由 DSL 生成 C vtable；docs/02/21）。opaque self = void*。
+- interface: renderer
+  version: 1
+  records:
+    - record: view
+      fields:
+        - { name: vx,  type: float }
+        - { name: vy,  type: float }
+        - { name: vw,  type: float }
+        - { name: vh,  type: float }
+        - { name: pan, type: float }
+        - { name: eye, type: float }
+    - record: item
+      fields:
+        - { name: x,       type: float }
+        - { name: y,       type: float }
+        - { name: size,    type: float }
+        - { name: r,       type: float }
+        - { name: g,       type: float }
+        - { name: b,       type: float }
+        - { name: a,       type: float }
+        - { name: texture, type: int32_t }
+  methods:
+    - fn: create
+      returns: self
+      args: [ { name: out_backend, type: "const char**" } ]
+    - fn: destroy
+      args: [ { name: self, type: self } ]
+    - fn: create_texture
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: rgba, type: "const uint8_t*" }, { name: w, type: int32_t }, { name: h, type: int32_t } ]
+    - fn: has_texture
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: id, type: int32_t } ]
+    - fn: render_views
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: tw, type: int32_t }, { name: th, type: int32_t }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: uint32_t }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: uint32_t }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]

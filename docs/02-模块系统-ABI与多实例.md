@@ -54,6 +54,9 @@ void* mq_module_query(const char* interface_name, uint32_t min_version);
 - **`abi_version` 主版本不兼容即拒绝加载**，给出可读错误（服务 A2）。
 - **接口名用稳定字符串 ID**（如 `"maque.renderer.v1"`），而非 C++ 名字。
 
+> **落地注记**：渲染器已按本设计落地为真 `.so` 插件（`maque_gfx.so`，`mq_module_query` + DSL 生成的
+> `mq_renderer_v1`），运行时经 `maque::module`(dlopen) 加载。其余模块仍为静态链接，逐步 `.so` 化。
+>
 > **平台注记**：以上为原生（`.so` + `dlopen`）形态。WASM/嵌入式无法任意 `dlopen`，
 > 物理加载改为静态链接或独立 `.wasm` 实例化；但**逻辑边界（C ABI vtable + registry）不变**。
 > 详见文档 05 §3。

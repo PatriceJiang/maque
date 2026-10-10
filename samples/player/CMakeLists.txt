@@ -2,7 +2,7 @@
 add_executable(maque_player main.cpp)
 target_link_libraries(maque_player PRIVATE maque::runtime)
 
-if(MAQUE_BUILD_TESTS AND TARGET maque::gfx)
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME player_run
         COMMAND maque_player "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
                              "${CMAKE_CURRENT_BINARY_DIR}/frames")

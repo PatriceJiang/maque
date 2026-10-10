@@ -18,7 +18,8 @@ set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/maque_desc.cpp"
     "${MAQUE_GEN_DIR}/maque_schema.json"
     "${MAQUE_GEN_DIR}/maque_api.h"
-    "${MAQUE_GEN_DIR}/maque_bindings.cpp")
+    "${MAQUE_GEN_DIR}/maque_bindings.cpp"
+    "${MAQUE_GEN_DIR}/maque_ifaces.h")
 
 if(NODE_EXECUTABLE)
     add_custom_command(
