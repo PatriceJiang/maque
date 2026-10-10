@@ -11,14 +11,14 @@
       "name": "ball",
       "components": [
         { "type": "scn.Transform2D", "x": 160, "y": 200 },
-        { "type": "scn.Sprite", "radius": 16, "r": 1.0, "g": 1.0, "b": 1.0, "texture": "ball.png" }
+        { "type": "scn.Sprite", "radius": 16, "material": "materials/ball.mat.json" }
       ],
       "children": [
         {
           "name": "dot",
           "components": [
-            { "type": "scn.Transform2D", "x": 0, "y": 0 },
-            { "type": "scn.Sprite", "radius": 6, "r": 1.0, "g": 0.6, "b": 0.2 }
+            { "type": "scn.Transform2D", "x": -44, "y": 0 },
+            { "type": "scn.Sprite", "radius": 6, "material": "builtin:/materials/checker" }
           ]
         }
       ]

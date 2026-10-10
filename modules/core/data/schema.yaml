@@ -1858,11 +1858,17 @@
     - struct: Sprite
       roles: [sprite]
       fields:
-        - { name: radius,  type: float,  default: 8.0F }
-        - { name: r,       type: float,  default: 0.4F }
-        - { name: g,       type: float,  default: 0.8F }
-        - { name: b,       type: float,  default: 1.0F }
-        - { name: texture, type: string, default: "" }         # 贴图资源（相对场景目录）
+        - { name: radius,   type: float,  default: 8.0F }
+        - { name: r,        type: float,  default: 0.4F }
+        - { name: g,        type: float,  default: 0.8F }
+        - { name: b,        type: float,  default: 1.0F }
+        - { name: texture,  type: string, default: "" }        # 贴图资源引用
+        - { name: material, type: string, default: "" }        # 材质资源引用(builtin:/或assets)
+    # 材质资源（轻量；docs/assets/01）：着色基色 + 贴图引用
+    - struct: SpriteMaterial
+      fields:
+        - { name: base_color, type: math.Vec4, default: "{1.0F,1.0F,1.0F,1.0F}" }
+        - { name: texture,    type: string,    default: "" }
     - struct: Scene
       fields:
         - { name: title,    type: string,  default: "maque scene" }

@@ -75,6 +75,16 @@ material:
 | 控制平面（docs/11） | AI 可 dump/改材质参数、截帧验证 |
 | 确定性（docs/10） | 材质仅影响渲染，**不回写模拟**，不参与 checksum |
 
+## 6.1 实现切片：builtin 资源 vs assets 资源 + 轻量材质
+
+- **资源 scheme 区分**（VFS）：
+  - `builtin:...` → **内建资源**（引擎提供；本切片程序化生成棋盘/白色贴图与默认材质）。
+  - 其余（如 `ball.png`、`materials/ball.mat.json`）→ **assets**（场景目录，经 VFS + Wuffs 解码）。
+- **轻量材质类型** `scn.SpriteMaterial { base_color: Vec4; texture: string }`：
+  材质是一种**资源**（assets 的 `.mat.json` 或 `builtin:`），`Sprite.material` 引用它；
+  渲染时材质覆盖 Sprite 的颜色/贴图。完整 `asset.Material`(effect+params) 后续对齐。
+- 实测：球用 **assets 材质**（→`ball.png`），子节点用 **builtin 材质**（程序化棋盘）——两者同帧渲染。
+
 ## 7. 风险
 
 | 风险 | 处理 |

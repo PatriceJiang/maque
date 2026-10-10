@@ -19,7 +19,11 @@ int mq_vfs_mount(mq_vfs* vfs, const char* mountpoint, const char* source);
 
 int mq_vfs_exists(mq_vfs* vfs, const char* path);
 
-/* 读整个文件到新分配的缓冲；*out 用 mq_vfs_free 释放。成功 0。 */
+/* 注册 builtin 资源（引擎内建，区分于 assets；scheme "builtin:"）。 */
+void mq_vfs_register_builtin(mq_vfs* vfs, const char* logical, const void* data, size_t size);
+
+/* 读整个文件到新分配的缓冲；*out 用 mq_vfs_free 释放。成功 0。
+ * path 可为 "builtin:..."（内建）或挂载路径（assets）。 */
 int mq_vfs_read(mq_vfs* vfs, const char* path, void** out, size_t* out_size);
 void mq_vfs_free(void* p);
 

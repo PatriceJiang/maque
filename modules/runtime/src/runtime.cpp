@@ -62,7 +62,9 @@ struct Engine {
     std::vector<mq_renderer_view> views;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
-    int load_texture(const std::string& path);
+    int load_texture(const std::string& path);                 // assets（VFS 编码文件）
+    int load_texture_ref(const std::string& ref);              // builtin: 或 assets
+    bool load_material(const std::string& ref, scn::SpriteMaterial& out);
     void main_loop(const std::string& frames_dir, const std::string& name);
 };
 
@@ -127,6 +129,48 @@ int Engine::load_texture(const std::string& path) {
     mq_image_free(rgba);
     tex_cache[path] = id;
     return id;
+}
+
+/* builtin:/ → 引擎内建（此处程序化生成）；否则 assets（VFS）。 */
+int Engine::load_texture_ref(const std::string& ref) {
+    if (ref.rfind("builtin:", 0) == 0) {
+        auto it = tex_cache.find(ref);
+        if (it != tex_cache.end()) return it->second;
+        int w = 1, h = 1;
+        std::vector<uint8_t> px;
+        if (ref == "builtin:/textures/checker") {
+            w = h = 16; px.resize((size_t)w * h * 4);
+            for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
+                bool alt = (((x / 4) + (y / 4)) & 1) != 0;
+                uint8_t* c = &px[((size_t)y * w + x) * 4];
+                c[0] = alt ? 255 : 230; c[1] = alt ? 255 : 140; c[2] = alt ? 255 : 60; c[3] = 255;
+            }
+        } else { px = { 255, 255, 255, 255 }; }
+        int id = rapi->create_texture(rself, px.data(), w, h);
+        tex_cache[ref] = id;
+        return id;
+    }
+    return load_texture(ref);   // assets
+}
+
+/* 材质资源：builtin:/ 或 assets（JSON，反射反序列化 scn.SpriteMaterial）。 */
+bool Engine::load_material(const std::string& ref, scn::SpriteMaterial& out) {
+    if (ref.rfind("builtin:", 0) == 0) {
+        out.base_color = math::Vec4{ 1, 1, 1, 1 };
+        out.texture = (ref == "builtin:/materials/checker") ? "builtin:/textures/checker"
+                                                            : "builtin:/textures/white";
+        return true;
+    }
+    void* d = nullptr; size_t n = 0;
+    std::string path = "/" + ref;
+    if (mq_vfs_read(vfs, path.c_str(), &d, &n) != 0) { std::print("runtime: material not found '{}'\n", ref); return false; }
+    mq_json* dom = mq_json_parse((const char*)d, n);
+    mq_vfs_free(d);
+    if (!dom) return false;
+    const mq_type_desc* mt = mq_reflect_type_by_name(reflect, "scn.SpriteMaterial");
+    int rc = mt ? mq_persist_apply_json(reflect, mt, dom, &out) : 1;
+    mq_json_free(dom);
+    return rc == 0;
 }
 
 void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
@@ -291,9 +335,19 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
             read_f32(d, blob.data(), "r", &r);
             read_f32(d, blob.data(), "g", &g);
             read_f32(d, blob.data(), "b", &b);
+            std::string texref;
+            if (const std::string* tp = read_str(d, blob.data(), "texture")) texref = *tp;
+            // 材质资源覆盖颜色/贴图（builtin:/ 或 assets）
+            if (const std::string* mp = read_str(d, blob.data(), "material"))
+                if (!mp->empty()) {
+                    scn::SpriteMaterial m{};
+                    if (eng.load_material(*mp, m)) {
+                        r = m.base_color.x; g = m.base_color.y; b = m.base_color.z;
+                        if (!m.texture.empty()) texref = m.texture;
+                    }
+                }
             int tex = -1;
-            if (const std::string* tp = read_str(d, blob.data(), "texture"))
-                if (!tp->empty()) tex = eng.load_texture("/" + *tp);
+            if (!texref.empty()) tex = eng.load_texture_ref(texref);
             out.push_back(mq_renderer_item{ e.x, (float)eng.H - e.y, radius, r, g, b, 1.0F, tex });
         }
     }

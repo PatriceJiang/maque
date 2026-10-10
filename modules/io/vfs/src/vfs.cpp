@@ -6,6 +6,7 @@
 #include <cstring>
 #include <fstream>
 #include <filesystem>
+#include <unordered_map>
 
 #ifdef MQ_HAVE_CURL
 #include <curl/curl.h>
@@ -22,6 +23,7 @@ struct Mount {
 
 struct Vfs {
     std::vector<Mount> mounts;   // 后挂载优先（最长前缀为第一关键字）
+    std::unordered_map<std::string, std::vector<uint8_t>> builtins;   // builtin: 资源（内建）
 };
 
 std::string normalize_mount(const std::string& m) {
@@ -97,6 +99,13 @@ int mq_vfs_mount(mq_vfs* vfs, const char* mountpoint, const char* source) {
     return 0;
 }
 
+void mq_vfs_register_builtin(mq_vfs* vfs, const char* logical, const void* data, size_t size) {
+    if (!vfs || !logical) return;
+    auto* v = reinterpret_cast<Vfs*>(vfs);
+    auto& b = v->builtins[logical];
+    b.assign((const uint8_t*)data, (const uint8_t*)data + size);
+}
+
 int mq_vfs_exists(mq_vfs* vfs, const char* path) {
     void* data = nullptr; size_t size = 0;
     if (mq_vfs_read(vfs, path, &data, &size) != 0) return 0;
@@ -108,6 +117,23 @@ int mq_vfs_read(mq_vfs* vfs, const char* path, void** out, size_t* out_size) {
     if (out) *out = nullptr;
     if (out_size) *out_size = 0;
     if (!vfs || !path) return 1;
+    // builtin: 内建资源（引擎提供，区分于 assets）
+    {
+        const char* pfx = "builtin:";
+        if (std::strncmp(path, pfx, 8) == 0) {
+            auto* v = reinterpret_cast<Vfs*>(vfs);
+            auto it = v->builtins.find(path + 8);
+            if (it == v->builtins.end()) return 5;
+            size_t n = it->second.size();
+            char* buf = (char*)std::malloc(n + 1);
+            if (!buf) return 4;
+            if (n) std::memcpy(buf, it->second.data(), n);
+            buf[n] = '\0';
+            if (out) *out = buf; else std::free(buf);
+            if (out_size) *out_size = n;
+            return 0;
+        }
+    }
 #ifdef MQ_HAVE_CURL
     // 直接 URL（http/https/file）→ 经 libcurl 抓取（浏览器式，docs/04/16）
     if (std::strstr(path, "://")) return curl_fetch(path, out, out_size);
