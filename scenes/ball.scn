@@ -3,5 +3,8 @@
   "script": "ball.js",
   "width": 320,
   "height": 240,
-  "seed": 12345
+  "seed": 12345,
+  "entities": [
+    { "x": 160, "y": 200, "radius": 8, "r": 0.4, "g": 0.8, "b": 1.0 }
+  ]
 }

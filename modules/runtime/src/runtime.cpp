@@ -47,6 +47,15 @@ struct Runtime {
         if (id < 0) return nullptr;
         return entity(mq_handle_table_handle_at(entities, (uint32_t)id));
     }
+    mq_handle spawn(float x, float y, float radius, float r, float g, float b) {
+        void* p = nullptr;
+        mq_handle h = mq_handle_table_alloc(entities, &p);
+        if (h.index == MQ_HANDLE_INDEX_NONE) return h;
+        auto* e = (Entity*)p;
+        e->has_sprite = true;
+        e->x = x; e->y = y; e->radius = radius; e->r = r; e->g = g; e->b = b;
+        return h;
+    }
 };
 
 std::string read_file(const std::string& path) {
@@ -99,15 +108,15 @@ int fn_draw(void* u, int argc, const double* a, double*) {
 /* ---- 实体/组件 API（引擎世界） ---- */
 int fn_entity_spawn(void* u, int argc, const double* a, double* ret) {
     auto* rt = (Runtime*)u;
-    void* p = nullptr;
-    mq_handle h = mq_handle_table_alloc(rt->entities, &p);
-    if (h.index == MQ_HANDLE_INDEX_NONE) { *ret = -1; return 0; }
-    auto* e = (Entity*)p;
-    e->has_sprite = true;
-    if (argc >= 2) { e->x = (float)a[0]; e->y = (float)a[1]; }
-    if (argc >= 3) e->radius = (float)a[2];
-    if (argc >= 6) { e->r = (float)a[3]; e->g = (float)a[4]; e->b = (float)a[5]; }
-    *ret = (double)h.index; return 0;
+    float x = argc >= 1 ? (float)a[0] : 0.0f;
+    float y = argc >= 2 ? (float)a[1] : 0.0f;
+    float radius = argc >= 3 ? (float)a[2] : 8.0f;
+    float r = argc >= 6 ? (float)a[3] : 0.4f;
+    float g = argc >= 6 ? (float)a[4] : 0.8f;
+    float b = argc >= 6 ? (float)a[5] : 1.0f;
+    mq_handle h = rt->spawn(x, y, radius, r, g, b);
+    *ret = (h.index == MQ_HANDLE_INDEX_NONE) ? -1.0 : (double)h.index;
+    return 0;
 }
 int fn_entity_set_pos(void* u, int argc, const double* a, double*) {
     auto* rt = (Runtime*)u; if (argc < 3) return 0;
@@ -176,6 +185,26 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (!rt.dev) { std::printf("runtime: no WebGPU device\n"); return 2; }
     std::printf("runtime: WebGPU backend '%s'\n", backend.c_str());
     rt.entities = mq_handle_table_create(sizeof(Entity), alignof(Entity));
+
+    // 从场景资源加载实体树（游戏即资源；docs/20）
+    {
+        mq_json* doc = mq_json_parse(text.c_str(), text.size());
+        if (doc) {
+            const mq_json* ents = mq_json_get(doc, "entities");
+            uint32_t n = mq_json_len(ents);
+            for (uint32_t i = 0; i < n; ++i) {
+                const mq_json* e = mq_json_at(ents, i);
+                rt.spawn((float)mq_json_num(mq_json_get(e, "x"), 0.0),
+                         (float)mq_json_num(mq_json_get(e, "y"), 0.0),
+                         (float)mq_json_num(mq_json_get(e, "radius"), 8.0),
+                         (float)mq_json_num(mq_json_get(e, "r"), 0.4),
+                         (float)mq_json_num(mq_json_get(e, "g"), 0.8),
+                         (float)mq_json_num(mq_json_get(e, "b"), 1.0));
+            }
+            mq_json_free(doc);
+            if (n) std::printf("runtime: loaded %u entities from scene\n", n);
+        }
+    }
 
     mq_script_vm* vm = mq_script_vm_create();
     mq_script_register_str(vm, "log", fn_log, &rt);

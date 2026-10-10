@@ -201,3 +201,43 @@ extern "C" int mq_persist_load_json(const mq_type_desc* type, const char* json, 
     apply_struct(type, out, root);
     return 0;
 }
+
+/* ---- 通用 JSON DOM ---- */
+extern "C" mq_json* mq_json_parse(const char* text, size_t len) {
+    if (!text) return nullptr;
+    Parser parser{ text, text + len };
+    auto* root = new JVal(parser.parse());
+    if (!parser.ok) { delete root; return nullptr; }
+    return reinterpret_cast<mq_json*>(root);
+}
+extern "C" void mq_json_free(mq_json* doc) { delete reinterpret_cast<JVal*>(doc); }
+extern "C" const mq_json* mq_json_get(const mq_json* obj, const char* key) {
+    if (!obj || !key) return nullptr;
+    const auto* v = reinterpret_cast<const JVal*>(obj);
+    if (v->kind != JVal::Obj) return nullptr;
+    for (auto& kv : v->obj) if (kv.first == key) return reinterpret_cast<const mq_json*>(&kv.second);
+    return nullptr;
+}
+extern "C" uint32_t mq_json_len(const mq_json* arr) {
+    if (!arr) return 0;
+    const auto* v = reinterpret_cast<const JVal*>(arr);
+    return v->kind == JVal::Arr ? (uint32_t)v->arr.size() : 0u;
+}
+extern "C" const mq_json* mq_json_at(const mq_json* arr, uint32_t i) {
+    if (!arr) return nullptr;
+    const auto* v = reinterpret_cast<const JVal*>(arr);
+    if (v->kind != JVal::Arr || i >= v->arr.size()) return nullptr;
+    return reinterpret_cast<const mq_json*>(&v->arr[i]);
+}
+extern "C" double mq_json_num(const mq_json* v, double def) {
+    if (!v) return def;
+    const auto* j = reinterpret_cast<const JVal*>(v);
+    if (j->kind == JVal::Num) return j->num;
+    if (j->kind == JVal::Bool) return j->b ? 1.0 : 0.0;
+    return def;
+}
+extern "C" const char* mq_json_str(const mq_json* v, const char* def) {
+    if (!v) return def;
+    const auto* j = reinterpret_cast<const JVal*>(v);
+    return j->kind == JVal::Str ? j->str.c_str() : def;
+}

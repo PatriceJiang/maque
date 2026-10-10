@@ -12,9 +12,17 @@ let x = 0.0, y = 200.0, vy = 0.0;
 let resting = false, restTime = 0.0, done = false;
 
 function on_start() {
-    x = screen_w() * 0.5;
-    id = entity_spawn(x, y, radius, 0.4, 0.8, 1.0);   // 带 sprite 组件的实体
-    log("ball: spawn entity id=" + id);
+    // 实体由场景资源(.scn)提供；脚本只驱动它（游戏即资源）
+    if (entity_count() > 0) {
+        id = 0;
+        x = entity_x(id);
+        y = entity_y(id);
+        log("ball: use scene entity id=" + id + " at (" + x + "," + y + ")");
+    } else {
+        x = screen_w() * 0.5;
+        id = entity_spawn(x, y, radius, 0.4, 0.8, 1.0);
+        log("ball: spawn entity id=" + id);
+    }
 }
 
 function update(dt) {
