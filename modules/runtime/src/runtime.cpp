@@ -9,6 +9,7 @@
 #include "core/script/mq_script.h"
 #include "core/handle/mq_handle.h"
 #include "core/vfs/mq_vfs.h"
+#include "core/image/mq_image.h"
 #include "core/api/mq_api.h"
 #include "render/gfx/mq_gfx.h"
 #include "maque_types.h"
@@ -25,10 +26,13 @@ namespace {
 
 /* 实体/组件（引擎世界模型，docs/12/17）。渲染层从组件提取，不回写。 */
 struct Entity {
-    float x = 0, y = 0;
+    float lx = 0, ly = 0;        // 局部（相对父）
+    float x = 0, y = 0;          // 世界（每帧由父子计算）
     float radius = 8;
     float r = 0.4f, g = 0.8f, b = 1.0f;
     bool  has_sprite = false;
+    int   parent = -1;           // 父实体 index（-1 = 根）
+    int   tex = -1;              // 纹理 id（-1 = 无）
 };
 
 struct Runtime {
@@ -42,6 +46,9 @@ struct Runtime {
     float bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
 
     mq_handle_table* entities = nullptr;          // 实体：{transform + sprite 组件}
+    mq_vfs* vfs = nullptr;                        // 资源加载
+    std::vector<maque::gfx::Texture*> textures;   // 已加载纹理
+    std::vector<std::string> tex_paths;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
 
@@ -56,10 +63,52 @@ struct Runtime {
         if (h.index == MQ_HANDLE_INDEX_NONE) return h;
         auto* e = (Entity*)p;
         e->has_sprite = true;
-        e->x = x; e->y = y; e->radius = radius; e->r = r; e->g = g; e->b = b;
+        e->lx = x; e->ly = y; e->x = x; e->y = y;
+        e->radius = radius; e->r = r; e->g = g; e->b = b;
         return h;
     }
 };
+
+/* 经 VFS 加载图片 → Wuffs 解码 → WebGPU 纹理；返回纹理 id（缓存）。 */
+static int load_texture(Runtime* rt, const char* path) {
+    for (size_t i = 0; i < rt->tex_paths.size(); ++i)
+        if (rt->tex_paths[i] == path) return (int)i;
+    void* data = nullptr; size_t n = 0;
+    if (mq_vfs_read(rt->vfs, path, &data, &n) != 0) { std::print("runtime: texture not found '{}'\n", path); return -1; }
+    uint8_t* rgba = nullptr; uint32_t w = 0, h = 0;
+    int rc = mq_image_decode(data, n, &rgba, &w, &h);
+    mq_vfs_free(data);
+    if (rc != 0) { std::print("runtime: decode failed '{}': {}\n", path, mq_image_last_error()); return -1; }
+    maque::gfx::Texture* t = maque::gfx::create_texture(rt->dev, (int)w, (int)h, rgba);
+    mq_image_free(rgba);
+    if (!t) return -1;
+    rt->textures.push_back(t);
+    rt->tex_paths.emplace_back(path);
+    return (int)rt->textures.size() - 1;
+}
+
+/* 递归加载实体（含嵌套 children）；返回实体 index。 */
+static int load_entity(Runtime* rt, const mq_json* e, int parent) {
+    float lx = (float)mq_json_num(mq_json_get(e, "x"), 0.0);
+    float ly = (float)mq_json_num(mq_json_get(e, "y"), 0.0);
+    float radius = (float)mq_json_num(mq_json_get(e, "radius"), 8.0);
+    float r = (float)mq_json_num(mq_json_get(e, "r"), 0.4);
+    float g = (float)mq_json_num(mq_json_get(e, "g"), 0.8);
+    float b = (float)mq_json_num(mq_json_get(e, "b"), 1.0);
+    const char* texpath = mq_json_str(mq_json_get(e, "texture"), nullptr);
+    int tex = texpath ? load_texture(rt, ("/" + std::string(texpath)).c_str()) : -1;
+
+    mq_handle h = rt->spawn(lx, ly, radius, r, g, b);
+    if (h.index == MQ_HANDLE_INDEX_NONE) return -1;
+    Entity* ent = rt->entity(h);
+    ent->parent = parent;
+    ent->tex = tex;
+
+    const mq_json* ch = mq_json_get(e, "children");
+    uint32_t cn = mq_json_len(ch);
+    for (uint32_t i = 0; i < cn; ++i) load_entity(rt, mq_json_at(ch, i), (int)h.index);
+    return (int)h.index;
+}
 
 std::string read_file(const std::string& path) {
     std::ifstream f(path, std::ios::binary);
@@ -142,6 +191,12 @@ int fn_entity_destroy(void* u, int argc, const double* a, double*) {
     if (argc >= 1) mq_handle_table_free(rt->entities, mq_handle_table_handle_at(rt->entities, (uint32_t)a[0]));
     return 0;
 }
+int fn_load_texture(void* u, const char* path, double* ret) {
+    auto* rt = (Runtime*)u;
+    std::string p = (path && path[0] == '/') ? std::string(path) : ("/" + std::string(path ? path : ""));
+    *ret = (double)load_texture(rt, p.c_str());
+    return 0;
+}
 
 bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba) {
     std::FILE* f = std::fopen(path.c_str(), "wb");
@@ -196,23 +251,16 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     std::print("runtime: WebGPU backend '{}'\n", backend);
     rt.entities = mq_handle_table_create(sizeof(Entity), alignof(Entity));
 
-    // 从场景资源加载实体树（游戏即资源；docs/20）
+    // 从场景资源加载实体树（含嵌套 children + 纹理；游戏即资源；docs/20）
+    rt.vfs = vfs;
     {
         mq_json* doc = mq_json_parse(text.c_str(), text.size());
         if (doc) {
             const mq_json* ents = mq_json_get(doc, "entities");
             uint32_t n = mq_json_len(ents);
-            for (uint32_t i = 0; i < n; ++i) {
-                const mq_json* e = mq_json_at(ents, i);
-                rt.spawn((float)mq_json_num(mq_json_get(e, "x"), 0.0),
-                         (float)mq_json_num(mq_json_get(e, "y"), 0.0),
-                         (float)mq_json_num(mq_json_get(e, "radius"), 8.0),
-                         (float)mq_json_num(mq_json_get(e, "r"), 0.4),
-                         (float)mq_json_num(mq_json_get(e, "g"), 0.8),
-                         (float)mq_json_num(mq_json_get(e, "b"), 1.0));
-            }
+            for (uint32_t i = 0; i < n; ++i) load_entity(&rt, mq_json_at(ents, i), -1);
             mq_json_free(doc);
-            if (n) std::print("runtime: loaded {} entities from scene\n", n);
+            if (n) std::print("runtime: loaded {} root entities from scene\n", n);
         }
     }
 
@@ -232,6 +280,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_script_register_num(vm, "entity_y", fn_entity_y, &rt);
     mq_script_register_num(vm, "entity_count", fn_entity_count, &rt);
     mq_script_register_num(vm, "entity_destroy", fn_entity_destroy, &rt);
+    mq_script_register_str(vm, "load_texture", fn_load_texture, &rt);
 
     if (!script_path.empty()) {
         std::string js;
@@ -252,12 +301,27 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
         rt.draws.clear();
         if (mq_script_has(vm, "update")) mq_script_call1(vm, "update", dt, nullptr);
         mq_script_gc(vm);                          // 帧边界 GC
+        // 父子世界变换（docs/12）
+        for (uint32_t i = 0; i < mq_handle_table_capacity(rt.entities); ++i) {
+            mq_handle h = mq_handle_table_handle_at(rt.entities, i);
+            auto* e = (Entity*)mq_handle_table_get(rt.entities, h);
+            if (!e) continue;
+            if (e->parent >= 0) {
+                mq_handle ph = mq_handle_table_handle_at(rt.entities, (uint32_t)e->parent);
+                auto* pe = (Entity*)mq_handle_table_get(rt.entities, ph);
+                if (pe) { e->x = pe->x + e->lx; e->y = pe->y + e->ly; continue; }
+            }
+            e->x = e->lx; e->y = e->ly;
+        }
         // 渲染层从组件提取（只读，不回写；docs/12）
         for (uint32_t i = 0; i < mq_handle_table_capacity(rt.entities); ++i) {
             mq_handle h = mq_handle_table_handle_at(rt.entities, i);
             auto* e = (Entity*)mq_handle_table_get(rt.entities, h);
-            if (e && e->has_sprite)
-                rt.draws.push_back({ e->x, (float)rt.H - e->y, e->radius, e->r, e->g, e->b, 1.0F });
+            if (e && e->has_sprite) {
+                maque::gfx::SpriteDraw sd{ e->x, (float)rt.H - e->y, e->radius, e->r, e->g, e->b, 1.0F };
+                sd.tex = (e->tex >= 0 && e->tex < (int)rt.textures.size()) ? rt.textures[e->tex] : nullptr;
+                rt.draws.push_back(sd);
+            }
         }
         maque::gfx::render_offscreen(rt.dev, rt.W, rt.H, rt.draws.data(), rt.draws.size(),
                                      rt.bg, pixels);
@@ -269,6 +333,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
 
     // 4) 退出
     std::print("runtime: exited after {} frames (quit={})\n", frame, rt.quit ? 1 : 0);
+    for (auto* t : rt.textures) maque::gfx::destroy_texture(t);
     if (rt.entities) mq_handle_table_destroy(rt.entities);
     mq_script_vm_destroy(vm);
     maque::gfx::destroy_device(rt.dev);
