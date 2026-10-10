@@ -1,0 +1,10 @@
+# maque::observability —— 结构化事件 + 指标（per-instance）
+add_library(maque_observability STATIC src/obs.cpp)
+add_library(maque::observability ALIAS maque_observability)
+target_include_directories(maque_observability PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set_target_properties(maque_observability PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+if(MAQUE_BUILD_TESTS)
+    add_executable(maque_obs_test tests/obs_test.cpp)
+    target_link_libraries(maque_obs_test PRIVATE maque::observability)
+    add_test(NAME obs COMMAND maque_obs_test)
+endif()

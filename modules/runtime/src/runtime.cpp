@@ -11,6 +11,7 @@
 #include "core/handle/mq_handle.h"
 #include "core/vfs/mq_vfs.h"
 #include "core/image/mq_image.h"
+#include "core/observability/mq_obs.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
 #include "maque_ifaces.h"                 // 生成：mq_renderer_v1（插件接口 ABI）
@@ -23,6 +24,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <filesystem>
+#include <algorithm>
 #include <cstdlib>
 
 namespace {
@@ -44,6 +46,7 @@ struct Engine {
     mq_vfs*             vfs = nullptr;
     mq_script_vm*       vm = nullptr;
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
+    mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
     const mq_type_desc* scene_type = nullptr;
     Scene*              scene = nullptr;
 
@@ -76,6 +79,7 @@ struct Scene {
     void remove(int index);
     int  count() const { return (int)ents.size(); }
     void compute_world(Engine& eng);
+    uint64_t checksum(Engine& eng);     // 世界状态校验和（确定性；反射驱动）
     void extract(Engine& eng, std::vector<mq_renderer_item>& out);
 };
 
@@ -127,6 +131,8 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     const int   cap = 60 * 60;
     std::vector<uint8_t> pixels((size_t)TW * H * 4);
     std::vector<mq_renderer_item> draws;
+    uint64_t trail = 1469598103934665603ull;
+    mq_obs_event(obs, "runtime", 1, "loop_start");
     int frame = 0;
     for (; frame < cap && !quit; ++frame) {
         draws.clear();
@@ -138,13 +144,15 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
         }
         rapi->render_views(rself, TW, H, views.data(), (uint32_t)views.size(),
                            draws.data(), (uint32_t)draws.size(), bg, pixels.data(), (uint32_t)pixels.size());
-        if (pixels.empty()) pixels.resize((size_t)TW * H * 4);
         if (!frames_dir.empty()) {
             char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", frame);
             write_ppm(frames_dir + fn, TW, H, pixels);
         }
     }
-    std::print("runtime: '{}' exited after {} frames (quit={})\n", name, frame, quit ? 1 : 0);
+    mq_obs_gauge_set(obs, "frames_total", (double)frame);
+    mq_obs_event(obs, "runtime", 1, quit ? "quit" : "timeout");
+    std::print("runtime: '{}' exited after {} frames (quit={}) world_trail=0x{:016x}\n",
+               name, frame, quit ? 1 : 0, trail);
 }
 
 /* ---- Scene ---- */
@@ -208,6 +216,46 @@ void Scene::instantiate(Engine& eng) {
     for (uint32_t i = 0; i < n; ++i) load_entity(eng, *this, mq_json_at(ents_json, i), -1);
     mq_json_free(dom);
     std::print("runtime: instantiated {} root entities\n", n);
+}
+
+/* 世界校验和：按 id/type 排序，哈希各组件的标量字段（不确定性来源如字符串/动态容器跳过）。
+ * 反射驱动，与具体组件无关。用于确定性验证（docs/10）。 */
+uint64_t Scene::checksum(Engine& eng) {
+    uint64_t h = 1469598103934665603ull;
+    auto mix = [&](const void* p, size_t n) {
+        const uint8_t* b = (const uint8_t*)p;
+        for (size_t i = 0; i < n; ++i) { h ^= b[i]; h *= 1099511628211ull; }
+    };
+    std::vector<int> idx;
+    for (auto& [k, v] : ents) idx.push_back(k);
+    std::sort(idx.begin(), idx.end());
+    for (int k : idx) {
+        Entity& e = ents[k];
+        mix(&k, sizeof k); mix(&e.parent, sizeof e.parent); mix(&e.x, sizeof e.x); mix(&e.y, sizeof e.y);
+        std::vector<uint32_t> tids;
+        for (auto& [t, b] : e.comps) tids.push_back(t);
+        std::sort(tids.begin(), tids.end());
+        for (uint32_t t : tids) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, t);
+            auto& blob = e.comps[t];
+            mix(&t, sizeof t);
+            if (!d) continue;
+            for (uint32_t fi = 0; fi < d->field_count; ++fi) {
+                const mq_field_desc* f = &d->fields[fi];
+                switch (f->kind) {
+                    case MQ_TK_BOOL: case MQ_TK_I8: case MQ_TK_U8:
+                    case MQ_TK_I16: case MQ_TK_U16: case MQ_TK_I32: case MQ_TK_U32:
+                    case MQ_TK_I64: case MQ_TK_U64: case MQ_TK_F32: case MQ_TK_F64:
+                        mix(blob.data() + f->offset, f->kind == MQ_TK_F32 ? 4 :
+                            (f->kind == MQ_TK_F64 || f->kind == MQ_TK_I64 || f->kind == MQ_TK_U64) ? 8 :
+                            (f->kind == MQ_TK_I16 || f->kind == MQ_TK_U16) ? 2 : 1);
+                        break;
+                    default: break;   // 字符串/容器/引用：跳过（非确定性来源）
+                }
+            }
+        }
+    }
+    return h;
 }
 
 /* 组件语义由 roles 决定：transform2d / sprite —— 引擎不认具体组件类型。 */
@@ -363,6 +411,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     std::print("runtime: scene '{}' title='{}' script='{}' {}x{} views={}\n",
                scn_path, scene.desc.title, scene.desc.script, eng.W, eng.H, eng.nviews);
 
+    eng.obs = mq_obs_create();
     eng.vm = mq_script_vm_create();
     mq_bind_generated(eng.vm, &eng);               // 生成绑定（math.* / host.*），注入引擎 ctx
     const std::string& script_path = scene.desc.script;
@@ -378,6 +427,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     eng.main_loop(frames_dir ? frames_dir : "", scnp.filename().string());
 
     mq_script_vm_destroy(eng.vm);
+    mq_obs_destroy(eng.obs);
     mq_reflect_destroy(eng.reflect);
     if (eng.rapi && eng.rself) eng.rapi->destroy(eng.rself);
     mq_host_destroy(eng.host);
