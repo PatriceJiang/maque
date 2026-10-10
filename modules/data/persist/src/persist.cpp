@@ -126,9 +126,9 @@ size_t kind_width(mq_type_kind k) {
     }
 }
 
-void write_scalar(void* p, mq_type_kind kind, uint32_t type_id, double num) {
+void write_scalar(mq_reflect_ctx* ctx, void* p, mq_type_kind kind, uint32_t type_id, double num) {
     size_t w = kind_width(kind);
-    if (kind == MQ_TK_ENUM) { const mq_type_desc* e = mq_reflect_type_by_id(type_id); w = e ? e->size : 4; }
+    if (kind == MQ_TK_ENUM) { const mq_type_desc* e = mq_reflect_type_by_id(ctx, type_id); w = e ? e->size : 4; }
     if (w == 0) return;
     switch (kind) {
         case MQ_TK_F32: *(float*)p = (float)num; return;
@@ -146,30 +146,30 @@ void write_scalar(void* p, mq_type_kind kind, uint32_t type_id, double num) {
     }
 }
 
-void apply_field(const mq_field_desc* f, void* field_ptr, const JVal& v);
+void apply_field(mq_reflect_ctx* ctx, const mq_field_desc* f, void* field_ptr, const JVal& v);
 
-void apply_struct(const mq_type_desc* type, void* obj, const JVal& v) {
+void apply_struct(mq_reflect_ctx* ctx, const mq_type_desc* type, void* obj, const JVal& v) {
     if (type->flags & MQ_TYPE_ENUM) {
-        if (v.kind == JVal::Num) write_scalar(obj, MQ_TK_ENUM, type->type_id, v.num);
+        if (v.kind == JVal::Num) write_scalar(ctx, obj, MQ_TK_ENUM, type->type_id, v.num);
         return;
     }
     if (v.kind != JVal::Obj) return;
     for (auto& kv : v.obj) {
         const mq_field_desc* f = mq_reflect_field(type, kv.first.c_str());
         if (!f) continue;                       /* 忽略未知键 */
-        apply_field(f, (uint8_t*)obj + f->offset, kv.second);
+        apply_field(ctx, f, (uint8_t*)obj + f->offset, kv.second);
     }
 }
 
-void apply_field(const mq_field_desc* f, void* fp, const JVal& v) {
+void apply_field(mq_reflect_ctx* ctx, const mq_field_desc* f, void* fp, const JVal& v) {
     switch (f->kind) {
         case MQ_TK_STRUCT: {
-            const mq_type_desc* ft = mq_reflect_type_by_id(f->type_id);
-            if (ft) apply_struct(ft, fp, v);
+            const mq_type_desc* ft = mq_reflect_type_by_id(ctx, f->type_id);
+            if (ft) apply_struct(ctx, ft, fp, v);
             return;
         }
         case MQ_TK_ENUM:
-            if (v.kind == JVal::Num) write_scalar(fp, MQ_TK_ENUM, f->type_id, v.num);
+            if (v.kind == JVal::Num) write_scalar(ctx, fp, MQ_TK_ENUM, f->type_id, v.num);
             return;
         case MQ_TK_STRING:
             if (v.kind == JVal::Str) *reinterpret_cast<std::string*>(fp) = v.str;
@@ -177,38 +177,37 @@ void apply_field(const mq_field_desc* f, void* fp, const JVal& v) {
         case MQ_TK_ARRAY_FIXED: {
             /* 仅处理"具名 struct 元素"的定长数组（元素类型由 type_id 提供）。 */
             if (v.kind != JVal::Arr) return;
-            const mq_type_desc* et = mq_reflect_type_by_id(f->type_id);
+            const mq_type_desc* et = mq_reflect_type_by_id(ctx, f->type_id);
             if (!et) return;
             for (uint32_t i = 0; i < f->count && i < v.arr.size(); ++i)
-                apply_struct(et, (uint8_t*)fp + (size_t)i * et->size, v.arr[i]);
+                apply_struct(ctx, et, (uint8_t*)fp + (size_t)i * et->size, v.arr[i]);
             return;
         }
         case MQ_TK_ARRAY_DYN: {
             /* 动态数组：经容器算子（codegen 生成）类型化地 resize + 逐元素反序列化。 */
             if (v.kind != JVal::Arr || !f->container_resize || !f->container_elem) return;
-            const mq_type_desc* et = mq_reflect_type_by_id(f->elem_type_id);
+            const mq_type_desc* et = mq_reflect_type_by_id(ctx, f->elem_type_id);
             if (!et) return;
             f->container_resize(fp, (uint32_t)v.arr.size());
             for (uint32_t i = 0; i < (uint32_t)v.arr.size(); ++i)
-                apply_struct(et, f->container_elem(fp, i), v.arr[i]);
+                apply_struct(ctx, et, f->container_elem(fp, i), v.arr[i]);
             return;
         }
         default:
-            if (v.kind == JVal::Num)       write_scalar(fp, f->kind, f->type_id, v.num);
-            else if (v.kind == JVal::Bool) write_scalar(fp, f->kind, f->type_id, v.b ? 1.0 : 0.0);
+            if (v.kind == JVal::Num)       write_scalar(ctx, fp, f->kind, f->type_id, v.num);
+            else if (v.kind == JVal::Bool) write_scalar(ctx, fp, f->kind, f->type_id, v.b ? 1.0 : 0.0);
             return;
     }
 }
 
 } // namespace
 
-extern "C" int mq_persist_load_json(const mq_type_desc* type, const char* json, size_t len, void* out) {
-    if (!type || !json || !out) return 1;
-    mq_reflect_init();
+extern "C" int mq_persist_load_json(mq_reflect_ctx* ctx, const mq_type_desc* type, const char* json, size_t len, void* out) {
+    if (!ctx || !type || !json || !out) return 1;
     Parser parser{ json, json + len };
     JVal root = parser.parse();
     if (!parser.ok || root.kind != JVal::Obj) return 2;
-    apply_struct(type, out, root);
+    apply_struct(ctx, type, out, root);
     return 0;
 }
 
@@ -252,9 +251,8 @@ extern "C" const char* mq_json_str(const mq_json* v, const char* def) {
     return j->kind == JVal::Str ? j->str.c_str() : def;
 }
 
-extern "C" int mq_persist_apply_json(const mq_type_desc* type, const mq_json* node, void* out) {
-    if (!type || !node || !out) return 1;
-    mq_reflect_init();
-    apply_struct(type, out, *reinterpret_cast<const JVal*>(node));
+extern "C" int mq_persist_apply_json(mq_reflect_ctx* ctx, const mq_type_desc* type, const mq_json* node, void* out) {
+    if (!ctx || !type || !node || !out) return 1;
+    apply_struct(ctx, type, out, *reinterpret_cast<const JVal*>(node));
     return 0;
 }

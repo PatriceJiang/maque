@@ -41,6 +41,7 @@ struct Engine {
     maque::render::Renderer* renderer = nullptr;
     mq_vfs*             vfs = nullptr;
     mq_script_vm*       vm = nullptr;
+    mq_reflect_ctx*     reflect = nullptr;         // per-instance 反射注册表
     const mq_type_desc* scene_type = nullptr;
     uint32_t            tid_transform = 0, tid_sprite = 0;   // 组件类型 id
     Scene*              scene = nullptr;
@@ -106,11 +107,11 @@ double cfg_field(Engine* eng, const char* path) {
         if (*dot == '\0') { parent = obj; break; }
         if (f->kind != MQ_TK_STRUCT) return 0.0;
         obj = (uint8_t*)obj + f->offset;
-        t = mq_reflect_type_by_id(f->type_id);
+        t = mq_reflect_type_by_id(eng->reflect, f->type_id);
         if (!t) return 0.0;
         seg = dot + 1;
     }
-    double v = 0.0; mq_reflect_get_f64(parent, f, &v); return v;
+    double v = 0.0; mq_reflect_get_f64(eng->reflect, parent, f, &v); return v;
 }
 
 /* ---------------- Engine 实现 ---------------- */
@@ -176,7 +177,7 @@ bool Scene::deserialize(Engine& eng, const std::string& text) {
     text_ = text;
     mq_json* dom = mq_json_parse(text.c_str(), text.size());
     if (!dom) return false;
-    int rc = mq_persist_apply_json(eng.scene_type, dom, &desc);   // 类型化 Scene 字段
+    int rc = mq_persist_apply_json(eng.reflect, eng.scene_type, dom, &desc);   // 类型化 Scene 字段
     mq_json_free(dom);
     return rc == 0;
 }
@@ -196,11 +197,11 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent) {
         const mq_json* c = mq_json_at(comps, i);
         const char* tname = mq_json_str(mq_json_get(c, "type"), nullptr);
         if (!tname) continue;
-        const mq_type_desc* d = mq_reflect_type_by_name(tname);   // ← 按 type 判别组件
+        const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, tname);   // ← 按 type 判别组件
         if (!d) { std::print("runtime: unknown component type '{}'\n", tname); continue; }
         std::vector<uint8_t>& blob = ent->comps[d->type_id];
         blob.resize(d->size);
-        mq_persist_apply_json(d, c, blob.data());
+        mq_persist_apply_json(eng.reflect, d, c, blob.data());
         if (d->type_id == eng.tid_transform) {
             auto* tr = reinterpret_cast<scn::Transform2D*>(blob.data());
             ent->lx = tr->x; ent->ly = tr->y;
@@ -316,10 +317,11 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     { void* d = nullptr; size_t n = 0;
       if (mq_vfs_read(eng.vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == 0) { text.assign((char*)d, n); mq_vfs_free(d); } }
     if (text.empty()) { std::print("runtime: cannot read scene '{}'\n", scn_path); mq_vfs_destroy(eng.vfs); return 1; }
-    mq_reflect_init();
-    eng.scene_type = mq_reflect_type_by_name("scn.Scene");
-    const mq_type_desc* tt = mq_reflect_type_by_name("scn.Transform2D");
-    const mq_type_desc* st = mq_reflect_type_by_name("scn.Sprite");
+    eng.reflect = mq_reflect_create();
+    mq_reflect_load_schema(eng.reflect);
+    eng.scene_type = mq_reflect_type_by_name(eng.reflect, "scn.Scene");
+    const mq_type_desc* tt = mq_reflect_type_by_name(eng.reflect, "scn.Transform2D");
+    const mq_type_desc* st = mq_reflect_type_by_name(eng.reflect, "scn.Sprite");
     eng.tid_transform = tt ? tt->type_id : 0;
     eng.tid_sprite = st ? st->type_id : 0;
 
@@ -361,6 +363,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     eng.main_loop(frames_dir ? frames_dir : "", scnp.filename().string());
 
     mq_script_vm_destroy(eng.vm);
+    mq_reflect_destroy(eng.reflect);
     delete eng.renderer;
     mq_vfs_destroy(eng.vfs);
     return eng.quit ? 0 : 1;
