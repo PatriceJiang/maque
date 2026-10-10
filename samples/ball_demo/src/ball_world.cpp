@@ -37,7 +37,7 @@ void BallWorld::step(float dt) {
 
         if (b->resting) {
             b->rest_time += dt;
-            if (b->rest_time >= cfg_.remove_delay) to_remove.push_back(h);
+            if (cfg_.auto_remove && b->rest_time >= cfg_.remove_delay) to_remove.push_back(h);
             continue;
         }
 
@@ -76,6 +76,14 @@ std::vector<Sprite> BallWorld::sprites() const {
         out.push_back(Sprite{ b->x, b->y, cfg_.radius, 0x66CCFFu });
     }
     return out;
+}
+
+mq_handle BallWorld::handle_at(uint32_t index) const {
+    return table_ ? mq_handle_table_handle_at(table_, index) : MQ_HANDLE_INVALID;
+}
+
+void BallWorld::remove(mq_handle h) {
+    if (table_) mq_handle_table_free(table_, h);
 }
 
 bool BallWorld::get_ball(mq_handle h, BallView& out) const {

@@ -18,6 +18,7 @@ struct Config {
     float ground_y       = 0.0F;     // 地面高度（球心最低 = ground_y + radius）
     float rest_speed_eps = 20.0F;    // 触地后 |vy| 小于此值视为静止
     float remove_delay   = 5.0F;     // 静止后延迟移除（秒）
+    bool  auto_remove    = true;     // 关掉后由外部(脚本)决定移除
 };
 
 struct Sprite {
@@ -44,6 +45,8 @@ public:
     int                  ball_count() const;
     std::vector<Sprite>  sprites() const;            // 渲染数据（只读）
     bool                 get_ball(mq_handle h, BallView& out) const;
+    mq_handle            handle_at(uint32_t index) const;   // 供脚本按 id 映射
+    void                 remove(mq_handle h);                // 外部(脚本)移除
 
     const Config& config() const { return cfg_; }
 

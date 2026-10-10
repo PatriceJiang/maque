@@ -13,6 +13,7 @@ target_link_libraries(ball_demo_run PRIVATE ball_demo)
 if(TARGET maque::gfx)
     target_link_libraries(ball_demo_run PRIVATE maque::gfx)
     target_link_libraries(ball_demo_run PRIVATE maque::persist)
+    target_link_libraries(ball_demo_run PRIVATE maque::script)
 else()
     message(WARNING "ball_demo_run: 无 maque::gfx（WebGPU 不可用）")
 endif()
@@ -26,6 +27,7 @@ if(MAQUE_BUILD_TESTS)
     if(TARGET maque::gfx)
         add_test(NAME ball_demo_run
             COMMAND ball_demo_run "${CMAKE_SOURCE_DIR}/scenes/ball_demo.scn"
+                                  "${CMAKE_SOURCE_DIR}/scenes/ball_demo.js"
                                   "${CMAKE_CURRENT_BINARY_DIR}/run_frames")
     endif()
 endif()
