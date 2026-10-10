@@ -1,0 +1,7 @@
+{
+  "title": "ball",
+  "script": "ball.js",
+  "width": 320,
+  "height": 240,
+  "seed": 12345
+}

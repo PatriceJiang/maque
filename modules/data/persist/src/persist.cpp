@@ -171,6 +171,9 @@ void apply_field(const mq_field_desc* f, void* fp, const JVal& v) {
         case MQ_TK_ENUM:
             if (v.kind == JVal::Num) write_scalar(fp, MQ_TK_ENUM, f->type_id, v.num);
             return;
+        case MQ_TK_STRING:
+            if (v.kind == JVal::Str) *reinterpret_cast<std::string*>(fp) = v.str;
+            return;
         case MQ_TK_ARRAY_FIXED: {
             /* 仅处理"具名 struct 元素"的定长数组（元素类型由 type_id 提供）。 */
             if (v.kind != JVal::Arr) return;

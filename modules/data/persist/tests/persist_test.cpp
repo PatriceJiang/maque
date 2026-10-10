@@ -13,36 +13,33 @@ static int g_failures = 0;
 
 int main() {
     mq_reflect_init();
-    const mq_type_desc* t = mq_reflect_type_by_name("scn.BallScene");
+    const mq_type_desc* t = mq_reflect_type_by_name("scn.Scene");
     CHECK(t != nullptr);
     if (!t) return 1;
 
     const char* json = R"({
-      "width": 400, "height": 300,
-      "gravity": 1000.5, "restitution": 0.4, "radius": 10,
-      "remove_delay": 3,
-      "click": { "x": 123, "y": 45 }
+      "title": "demo", "script": "ball.js",
+      "width": 400, "height": 300, "seed": 7
     })";
-    scn::BallScene s{};
+    scn::Scene s{};
     CHECK(mq_persist_load_json(t, json, std::strlen(json), &s) == 0);
     CHECK(s.width == 400 && s.height == 300);
-    CHECK(std::fabs(s.gravity - 1000.5F) < 1e-3F);
-    CHECK(std::fabs(s.restitution - 0.4F) < 1e-4F);
-    CHECK(std::fabs(s.radius - 10.0F) < 1e-4F);
-    CHECK(std::fabs(s.remove_delay - 3.0F) < 1e-4F);
-    CHECK(std::fabs(s.click.x - 123.0F) < 1e-4F && std::fabs(s.click.y - 45.0F) < 1e-4F);
+    CHECK(s.script == "ball.js");
+    CHECK(s.title == "demo");
+    CHECK(s.seed == 7u);
 
     // 缺失键保留默认；未知键忽略
-    const char* json2 = R"({ "gravity": 5, "nonsense": 42 })";
-    scn::BallScene s2{};
+    const char* json2 = R"({ "width": 500, "nonsense": 42 })";
+    scn::Scene s2{};
     CHECK(mq_persist_load_json(t, json2, std::strlen(json2), &s2) == 0);
-    CHECK(std::fabs(s2.gravity - 5.0F) < 1e-4F);
-    CHECK(std::fabs(s2.restitution - 0.6F) < 1e-4F);   // schema 默认
-    CHECK(s2.width == 320);                            // schema 默认
+    CHECK(s2.width == 500);
+    CHECK(s2.height == 240);                     // schema 默认
+    CHECK(s2.title == "maque scene");            // schema 默认
+    CHECK(s2.script.empty());
 
     // 非法 JSON
     const char* bad = "{ width: 1 ";
-    scn::BallScene s3{};
+    scn::Scene s3{};
     CHECK(mq_persist_load_json(t, bad, std::strlen(bad), &s3) != 0);
 
     if (g_failures == 0) { std::printf("persist_test: all checks passed\n"); return 0; }

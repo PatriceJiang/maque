@@ -388,7 +388,7 @@
         - { name: stable_id, type: uint64_t, default: 0, attrs: { readonly: true, tooltip: "稳定节点 ID" } }
         - { name: entries, type: "map<string, string>", attrs: { ref: interned_string } }
         - { name: comment, type: "char[256]", default: '""' }
-        - { name: source_scene, type: "asset_ref<Scene>", default: "null", attrs: { ref: Scene } }
+        - { name: source_scene, type: "asset_ref<asset.Scene>", default: "null", attrs: { ref: asset.Scene } }
         - { name: source_prefab, type: "asset_ref<Prefab>", default: "null", attrs: { ref: Prefab } }
     - struct: PrefabOverride
       fields:
@@ -1144,7 +1144,7 @@
         - { name: content_size, type: math.Vec2, attrs: { unit: px, transient: true } }
     - struct: ListView
       fields:
-        - { name: item_template, type: "asset_ref<Scene>", attrs: { ref: Scene } }
+        - { name: item_template, type: "asset_ref<asset.Scene>", attrs: { ref: asset.Scene } }
         - { name: data_source, type: entity_ref, attrs: { ref: Script } }
         - { name: item_count, type: int32_t, default: 0, attrs: { range: [0, 1000000] } }
         - { name: item_extent, type: float, default: 40.0F, attrs: { unit: px, range: [0, 8192] } }
@@ -1836,12 +1836,10 @@
 - namespace: scn
   version: 1
   class_list:
-    - struct: BallScene
+    - struct: Scene
       fields:
-        - { name: width,        type: int32_t, default: 320 }
-        - { name: height,       type: int32_t, default: 240 }
-        - { name: gravity,      type: float,   default: 980.0F, attrs: { unit: px_per_s2 } }
-        - { name: restitution,  type: float,   default: 0.6F, attrs: { range: [0.0, 1.0] } }
-        - { name: radius,       type: float,   default: 8.0F }
-        - { name: remove_delay, type: float,   default: 5.0F }
-        - { name: click,        type: math.Vec2 }
+        - { name: title,    type: string,  default: "maque scene" }
+        - { name: script,   type: string,  default: "" }      # 关联脚本资源（相对场景目录）
+        - { name: width,    type: int32_t, default: 320 }
+        - { name: height,   type: int32_t, default: 240 }
+        - { name: seed,     type: uint32_t, default: 0 }      # 引擎 RNG 种子（确定性）

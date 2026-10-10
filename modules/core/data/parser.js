@@ -944,10 +944,14 @@ function genTypesHeader(namespaces) {
         lines.push(`struct ${t.name} {`)
         for (const f of t.fields) {
           const decl = cppFieldDecl(f.typeNode, f.name)
-          if (f.default !== null) {
-            lines.push(`    ${decl} = ${normalizeDefaultValue(f.default, namespacesByName)};`)
+          const isString = cppTypeName(f.typeNode) === 'std::string'
+          if (f.default !== null && f.default !== undefined) {
+            const dv = isString
+              ? JSON.stringify(String(f.default))          // 正确的 C++ 字符串字面量
+              : normalizeDefaultValue(f.default, namespacesByName)
+            lines.push(`    ${decl} = ${dv};`)
           } else {
-            lines.push(`    ${decl};`)
+            lines.push(`    ${decl};`)                     // std::string 默认即空串
           }
         }
         lines.push('};')
