@@ -340,6 +340,8 @@ function parseApiDef(nsName, def) {
     name: String(def.fn),
     args,
     returns: def.returns === undefined ? 'void' : String(def.returns),
+    // MANUAL：实现的头文件（生成器只 include，不重复声明；docs/21）
+    manual: def.manual === undefined || def.manual === null ? null : String(def.manual),
   }
 }
 
@@ -1300,15 +1302,24 @@ function genApiHeader(namespaces) {
   lines.push('')
   lines.push('#pragma once')
   lines.push('')
+  // MANUAL：收集需要在头文件中内联实现的外部头
+  const manualIncludes = new Set()
+  for (const ns of namespaces)
+    for (const fn of ns.apis || []) if (fn.manual) manualIncludes.add(fn.manual)
+  for (const inc of manualIncludes) lines.push(`#include "${inc}"`)
+  if (manualIncludes.size) lines.push('')
   for (const ns of namespaces) {
     if (!ns.apis || ns.apis.length === 0) continue
-    lines.push(`namespace ${ns.name} {`)
-    for (const fn of ns.apis) {
+    const declared = ns.apis.filter((fn) => {
+      if (fn.manual) return false                     // 由 manual 头提供声明+实现
       const rt = apiCppType(fn.returns)
-      const support = rt !== null && fn.args.every((a) => apiCppType(a.type) !== null)
-      if (!support) continue
+      return rt !== null && fn.args.every((a) => apiCppType(a.type) !== null)
+    })
+    if (declared.length === 0) continue
+    lines.push(`namespace ${ns.name} {`)
+    for (const fn of declared) {
       const params = fn.args.map((a) => `${apiCppType(a.type)} ${a.name}`).join(', ')
-      lines.push(`  ${rt} ${fn.name}(${params});`)
+      lines.push(`  ${apiCppType(fn.returns)} ${fn.name}(${params});`)
     }
     lines.push('}')
     lines.push('')

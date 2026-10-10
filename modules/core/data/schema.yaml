@@ -90,6 +90,10 @@
     - fn: lerp
       args: [ { name: a, type: float }, { name: b, type: float }, { name: t, type: float } ]
       returns: float
+    - fn: saturate                 # MANUAL：实现内联在 math.custom.h
+      args: [ { name: x, type: float } ]
+      returns: float
+      manual: "math.custom.h"
 
 - namespace: asset
   version: 1

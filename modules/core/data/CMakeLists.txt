@@ -41,14 +41,8 @@ if(NODE_EXECUTABLE)
     # 便捷：`ninja maque_codegen` 强制重生成
     add_custom_target(maque_codegen DEPENDS ${MAQUE_GEN_FILES})
 
-    # 生成的脚本绑定 TU（调用引擎 API；链接 script，符号在最终可执行文件解析）
-    if(TARGET maque::script)
-        add_library(maque_genbind STATIC "${MAQUE_GEN_DIR}/maque_bindings.cpp")
-        add_library(maque::genbind ALIAS maque_genbind)
-        target_include_directories(maque_genbind PUBLIC "${MAQUE_GEN_DIR}")
-        target_link_libraries(maque_genbind PUBLIC maque::script)
-        set_target_properties(maque_genbind PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
-    endif()
+    # 供下游（如 api 模块）引用生成目录与文件
+    set_property(GLOBAL PROPERTY MAQUE_GEN_DIR "${MAQUE_GEN_DIR}")
 
     # 兼容旧的 INTERFACE 目标名（暴露生成目录）
     add_library(maque_data INTERFACE)
