@@ -1,41 +1,36 @@
-// gfx 冒烟测试：真实 WebGPU 离屏渲染 + readback 校验
-#include "render/gfx/mq_gfx.h"
-#include <print>
+// gfx 冒烟测试：经后端无关的 Renderer 接口离屏渲染 + readback 校验
+#include "render/renderer/mq_renderer.h"
 
-#include <cstdio>
+#include <print>
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
     std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
 int main() {
-    using namespace maque::gfx;
+    using namespace maque::render;
     std::string backend;
-    Device* dev = create_device(&backend);
-    if (!dev) { std::print("gfx_test: SKIP (no WebGPU device)\n"); return 0; }
+    Renderer* r = create_renderer(&backend);
+    if (!r) { std::print("gfx_test: SKIP (no WebGPU device)\n"); return 0; }
     std::print("gfx_test: backend='{}'\n", backend);
 
-    SpriteDraw sprites[2] = {
-        { 160.0F, 120.0F, 40.0F, 1.0F, 0.4F, 0.2F, 1.0F },   // 橙，居中
-        {  60.0F,  60.0F, 20.0F, 0.2F, 1.0F, 0.4F, 1.0F },   // 绿，左上
+    DrawItem items[2] = {
+        { 160.0F, 120.0F, 40.0F, 1.0F, 0.4F, 0.2F, 1.0F, -1 },   // 橙，居中
+        {  60.0F,  60.0F, 20.0F, 0.2F, 1.0F, 0.4F, 1.0F, -1 },   // 绿，左上
     };
     const float bg[4] = { 0.06F, 0.06F, 0.09F, 1.0F };
     std::vector<uint8_t> px;
-    render_offscreen(dev, 320, 240, sprites, 2, bg, px);
+    View v{ 0, 0, 320, 240, 0, 0 };
+    r->render_views(320, 240, &v, 1, items, 2, bg, px);
 
     CHECK(px.size() == 320u * 240u * 4u);
     auto at = [&](int x, int y, int c) { return (int)px[((size_t)y * 320 + x) * 4 + c]; };
-    // 中心是橙色球
     CHECK(at(160, 120, 0) > 200 && at(160, 120, 1) < 150 && at(160, 120, 2) < 120);
-    // 左上绿球
     CHECK(at(60, 60, 1) > 200 && at(60, 60, 0) < 120);
-    // 角落是背景
     CHECK(at(2, 2, 0) < 40 && at(2, 2, 2) < 60);
-    // 球外（中心正上方 120-40-5=75 处）是背景
     CHECK(at(160, 70, 0) < 40);
 
-    destroy_device(dev);
-
+    delete r;
     if (g_failures == 0) { std::print("gfx_test: all checks passed\n"); return 0; }
     std::print("gfx_test: {} failure(s)\n", g_failures);
     return 1;

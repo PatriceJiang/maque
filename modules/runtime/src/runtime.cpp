@@ -12,7 +12,7 @@
 #include "core/vfs/mq_vfs.h"
 #include "core/image/mq_image.h"
 #include "core/api/mq_api.h"
-#include "render/gfx/mq_gfx.h"
+#include "render/renderer/mq_renderer.h"
 #include "maque_types.h"
 
 #include <print>
@@ -39,21 +39,20 @@ struct Scene;
 
 /* ---------------- Engine：通用运行时（"浏览器"） ---------------- */
 struct Engine {
-    maque::gfx::Device* dev = nullptr;
+    maque::render::Renderer* renderer = nullptr;  // 后端无关渲染器（docs/13）
     mq_vfs*             vfs = nullptr;
     mq_script_vm*       vm = nullptr;
     const mq_type_desc* scene_type = nullptr;
     Scene*              scene = nullptr;          // 当前场景
 
-    std::vector<maque::gfx::Texture*> textures;   // 已加载纹理（跨帧缓存）
-    std::vector<std::string>          tex_paths;
+    std::vector<std::string> tex_paths;           // 路径→纹理 id 缓存（纹理归 renderer）
     uint32_t rng = 0;
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
 
     // 视图（VR/多屏）
     int W = 0, H = 0, nviews = 1, TW = 0;
-    std::vector<maque::gfx::View> views;
+    std::vector<maque::render::View> views;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const char* path);
@@ -76,7 +75,7 @@ struct Scene {
     Entity* at(int index);
 
     void compute_world();                          // 父子世界变换
-    void extract(Engine& eng, std::vector<maque::gfx::SpriteDraw>& out);  // 渲染层从组件提取（只读）
+    void extract(Engine& eng, std::vector<maque::render::DrawItem>& out);  // 渲染层从组件提取（只读）
 };
 
 /* ---------------- 小工具 ---------------- */
@@ -123,12 +122,11 @@ int Engine::load_texture(const char* path) {
     int rc = mq_image_decode(data, n, &rgba, &w, &h);
     mq_vfs_free(data);
     if (rc != 0) { std::print("runtime: decode failed '{}': {}\n", path, mq_image_last_error()); return -1; }
-    maque::gfx::Texture* t = maque::gfx::create_texture(dev, (int)w, (int)h, rgba);
+    int id = renderer->create_texture(rgba, (int)w, (int)h);
     mq_image_free(rgba);
-    if (!t) return -1;
-    textures.push_back(t);
+    if (id < 0) return -1;
     tex_paths.emplace_back(path);
-    return (int)textures.size() - 1;
+    return id;
 }
 
 void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
@@ -136,7 +134,7 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     const float dt = 1.0F / 60.0F;
     const int   cap = 60 * 60;
     std::vector<uint8_t> pixels;
-    std::vector<maque::gfx::SpriteDraw> draws;
+    std::vector<maque::render::DrawItem> draws;
     int frame = 0;
     for (; frame < cap && !quit; ++frame) {
         draws.clear();
@@ -146,8 +144,8 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
             scene->compute_world();
             scene->extract(*this, draws);
         }
-        maque::gfx::render_views(dev, TW, H, views.data(), views.size(),
-                                 draws.data(), draws.size(), bg, pixels);
+        renderer->render_views(TW, H, views.data(), views.size(),
+                               draws.data(), draws.size(), bg, pixels);
         if (!frames_dir.empty()) {
             char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", frame);
             write_ppm(frames_dir + fn, TW, H, pixels);
@@ -224,14 +222,13 @@ void Scene::compute_world() {
     }
 }
 
-void Scene::extract(Engine& eng, std::vector<maque::gfx::SpriteDraw>& out) {
+void Scene::extract(Engine& eng, std::vector<maque::render::DrawItem>& out) {
     uint32_t cap = mq_handle_table_capacity(entities);
     for (uint32_t i = 0; i < cap; ++i) {
         auto* e = (Entity*)mq_handle_table_get(entities, mq_handle_table_handle_at(entities, i));
         if (!e || !e->has_sprite) continue;
-        maque::gfx::SpriteDraw sd{ e->x, (float)eng.H - e->y, e->radius, e->r, e->g, e->b, 1.0F };
-        sd.tex = (e->tex >= 0 && e->tex < (int)eng.textures.size()) ? eng.textures[e->tex] : nullptr;
-        out.push_back(sd);
+        maque::render::DrawItem d{ e->x, (float)eng.H - e->y, e->radius, e->r, e->g, e->b, 1.0F, e->tex };
+        out.push_back(d);
     }
 }
 
@@ -326,8 +323,8 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
 
     // 2) 设备 + 脚本
     std::string backend;
-    eng.dev = maque::gfx::create_device(&backend);
-    if (!eng.dev) { std::print("runtime: no WebGPU device\n"); mq_vfs_destroy(eng.vfs); return 2; }
+    eng.renderer = maque::render::create_renderer(&backend);
+    if (!eng.renderer) { std::print("runtime: no WebGPU device\n"); mq_vfs_destroy(eng.vfs); return 2; }
     std::print("runtime: WebGPU backend '{}'\n", backend);
 
     Scene scene;
@@ -340,7 +337,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     eng.TW = eng.W * eng.nviews;
     eng.views.resize(eng.nviews);
     for (int i = 0; i < eng.nviews; ++i)
-        eng.views[i] = maque::gfx::View{ (float)(i * eng.W), 0, (float)eng.W, (float)eng.H,
+        eng.views[i] = maque::render::View{ (float)(i * eng.W), 0, (float)eng.W, (float)eng.H,
                                          (float)(i * eng.W), (i - (eng.nviews - 1) * 0.5F) * scene.desc.eye_sep };
     eng.rng = scene.desc.seed * 2654435761u + 12345u;
     std::print("runtime: scene '{}' title='{}' script='{}' {}x{} views={}\n",
@@ -362,9 +359,8 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     eng.main_loop(frames_dir ? frames_dir : "", scnp.filename().string());
 
     // 4) 析构
-    for (auto* t : eng.textures) maque::gfx::destroy_texture(t);
     mq_script_vm_destroy(eng.vm);
-    maque::gfx::destroy_device(eng.dev);
+    delete eng.renderer;
     mq_vfs_destroy(eng.vfs);
     return eng.quit ? 0 : 1;
 }

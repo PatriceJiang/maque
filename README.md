@@ -55,9 +55,10 @@ modules/
   platform        平台层 (SDL2 窗口/输入)
   data/persist    持久化/反序列化 + JSON DOM
   image           图像解码 (Wuffs)
-  render/gfx      WebGPU 渲染器
+  render/renderer 渲染器接口 (后端无关 Renderer/DrawItem)
+  render/gfx      WebGPU 后端 (实现 Renderer)
   api             引擎 API 实现 + 生成绑定
-  runtime         引擎运行时 ("浏览器")：mq_run_scene
+  runtime         引擎运行时 ("浏览器")：Engine + Scene + main_loop
   script          脚本 (quickjs)
 samples/player    宿主（仅一行 mq_run_scene）
 scenes/           游戏资源 (.scn + .js)

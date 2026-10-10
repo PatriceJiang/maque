@@ -6,8 +6,10 @@
 ## 1. 定位
 
 - **唯一后端 = WebGPU**（ADR-0006）。原生经 wgpu/Dawn，浏览器为原生 WebGPU。
-- `renderer/gfx` 模块把**引擎概念**映射到 WebGPU 资源与管线。
-- **不依赖** scene 的内部存储；只消费**可序列化的绘制描述**（文档 01 §3、12 §4）。
+- **后端无关接口**：`maque::render::Renderer`（`modules/render/renderer`），世界/场景只产出中立的
+  **`DrawItem`**（位置/尺寸/颜色/纹理 id），**不依赖**任何图形 API 类型。
+- `modules/render/gfx` 是 WebGPU **后端实现**（`create_renderer()`）；世界层与 GPU 之间只隔 `Renderer` 这一层。
+- **不依赖** scene 的内部存储；只消费**渲染器无关的绘制描述**（文档 01 §3、12 §4）。
 
 ## 2. 数据流
 

@@ -1,4 +1,6 @@
-#include "render/gfx/mq_gfx.h"
+/* WebGPU 渲染后端：实现 maque::render::Renderer（后端无关接口）。
+ * 内部保留 Device/管线等 WebGPU 细节；对外只暴露 create_renderer()。 */
+#include "render/renderer/mq_renderer.h"
 
 #include <webgpu/webgpu.h>
 
@@ -13,7 +15,6 @@ namespace maque::gfx {
 
 #define SV(x) WGPUStringView { (x), WGPU_STRLEN }
 
-/* 实心圆：颜色 * 圆内 */
 static const char* kSolidWGSL = R"(
 struct Globals { size: vec2f, pan: f32, eye: f32 };
 @group(0) @binding(0) var<uniform> g: Globals;
@@ -37,7 +38,6 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
 }
 )";
 
-/* 纹理精灵：采样纹理 * 颜色 */
 static const char* kTexWGSL = R"(
 struct Globals { size: vec2f, pan: f32, eye: f32 };
 @group(0) @binding(0) var<uniform> g: Globals;
@@ -51,7 +51,7 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
                          vec2f(-1.,1.), vec2f(1.,-1.), vec2f(1.,1.));
   let corner = c[vi];
   let inst = insts[ii];
-  let px = inst.pos + corner * inst.radius;      /* radius = 半尺寸 */
+  let px = inst.pos + corner * inst.radius;
   let sx = px.x + g.pan + g.eye;
   let x = sx / g.size.x * 2.0 - 1.0;
   let y = 1.0 - px.y / g.size.y * 2.0;
@@ -64,27 +64,18 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
 }
 )";
 
-struct Texture {
-    WGPUTexture     tex = nullptr;
-    WGPUTextureView view = nullptr;
-};
+struct Texture { WGPUTexture tex = nullptr; WGPUTextureView view = nullptr; };
 
 struct Device {
-    WGPUInstance      instance = nullptr;
-    WGPUAdapter       adapter  = nullptr;
-    WGPUDevice        device   = nullptr;
-    WGPUQueue         queue    = nullptr;
-    // 实心
+    WGPUInstance instance = nullptr;
+    WGPUAdapter  adapter = nullptr;
+    WGPUDevice   device = nullptr;
+    WGPUQueue    queue = nullptr;
     WGPURenderPipeline solidPipeline = nullptr;
-    WGPUBindGroupLayout solidBgl = nullptr;
-    WGPUPipelineLayout  solidPl  = nullptr;
-    WGPUShaderModule    solidShader = nullptr;
-    // 纹理
+    WGPUBindGroupLayout solidBgl = nullptr; WGPUPipelineLayout solidPl = nullptr; WGPUShaderModule solidShader = nullptr;
     WGPURenderPipeline texPipeline = nullptr;
-    WGPUBindGroupLayout texBgl = nullptr;
-    WGPUPipelineLayout  texPl  = nullptr;
-    WGPUShaderModule    texShader = nullptr;
-    WGPUSampler         sampler = nullptr;
+    WGPUBindGroupLayout texBgl = nullptr; WGPUPipelineLayout texPl = nullptr; WGPUShaderModule texShader = nullptr;
+    WGPUSampler sampler = nullptr;
 };
 
 template <class P>
@@ -93,13 +84,11 @@ static bool poll(WGPUInstance inst, P ready, int timeout_ms = 20000) {
     while (!ready()) {
         wgpuInstanceProcessEvents(inst);
         if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - start).count() > timeout_ms)
-            return false;
+                std::chrono::steady_clock::now() - start).count() > timeout_ms) return false;
         std::this_thread::sleep_for(std::chrono::microseconds(200));
     }
     return true;
 }
-
 static void on_uncaptured(WGPUDevice const*, WGPUErrorType type, WGPUStringView msg, void*, void*) {
     std::print(stderr, "[wgpu] error {}: {:.{}}\n", (int)type, msg.data ? msg.data : "", (int)msg.length);
 }
@@ -109,9 +98,7 @@ static void req_adapter_cb(WGPURequestAdapterStatus s, WGPUAdapter a, WGPUString
 static void req_device_cb(WGPURequestDeviceStatus s, WGPUDevice d, WGPUStringView, void* u1, void*) {
     if (s == WGPURequestDeviceStatus_Success) *(WGPUDevice*)u1 = d;
 }
-static void map_cb(WGPUMapAsyncStatus s, WGPUStringView, void* u1, void*) {
-    *(WGPUMapAsyncStatus*)u1 = s;
-}
+static void map_cb(WGPUMapAsyncStatus s, WGPUStringView, void* u1, void*) { *(WGPUMapAsyncStatus*)u1 = s; }
 
 static WGPUShaderModule make_shader(WGPUDevice dev, const char* wgsl) {
     WGPUShaderSourceWGSL src = WGPU_SHADER_SOURCE_WGSL_INIT;
@@ -121,18 +108,15 @@ static WGPUShaderModule make_shader(WGPUDevice dev, const char* wgsl) {
     return wgpuDeviceCreateShaderModule(dev, &smd);
 }
 
-Device* create_device(std::string* out_backend) {
+static Device* create_device(std::string* out_backend) {
     Device* dv = new Device();
-
     WGPUInstanceDescriptor idesc = WGPU_INSTANCE_DESCRIPTOR_INIT;
     dv->instance = wgpuCreateInstance(&idesc);
     if (!dv->instance) { delete dv; return nullptr; }
 
     WGPURequestAdapterOptions aopts = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
     WGPURequestAdapterCallbackInfo aci = WGPU_REQUEST_ADAPTER_CALLBACK_INFO_INIT;
-    aci.mode = WGPUCallbackMode_AllowProcessEvents;
-    aci.callback = req_adapter_cb;
-    aci.userdata1 = &dv->adapter;
+    aci.mode = WGPUCallbackMode_AllowProcessEvents; aci.callback = req_adapter_cb; aci.userdata1 = &dv->adapter;
     wgpuInstanceRequestAdapter(dv->instance, &aopts, aci);
     if (!poll(dv->instance, [&]{ return dv->adapter != nullptr; })) { delete dv; return nullptr; }
 
@@ -146,19 +130,14 @@ Device* create_device(std::string* out_backend) {
     WGPUDeviceDescriptor ddesc = WGPU_DEVICE_DESCRIPTOR_INIT;
     ddesc.uncapturedErrorCallbackInfo.callback = on_uncaptured;
     WGPURequestDeviceCallbackInfo dci = WGPU_REQUEST_DEVICE_CALLBACK_INFO_INIT;
-    dci.mode = WGPUCallbackMode_AllowProcessEvents;
-    dci.callback = req_device_cb;
-    dci.userdata1 = &dv->device;
+    dci.mode = WGPUCallbackMode_AllowProcessEvents; dci.callback = req_device_cb; dci.userdata1 = &dv->device;
     wgpuAdapterRequestDevice(dv->adapter, &ddesc, dci);
     if (!poll(dv->instance, [&]{ return dv->device != nullptr; })) { delete dv; return nullptr; }
 
     dv->queue = wgpuDeviceGetQueue(dv->device);
-
     WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
-    target.format = WGPUTextureFormat_RGBA8Unorm;
-    target.writeMask = WGPUColorWriteMask_All;
+    target.format = WGPUTextureFormat_RGBA8Unorm; target.writeMask = WGPUColorWriteMask_All;
 
-    // 实心管线
     dv->solidShader = make_shader(dv->device, kSolidWGSL);
     {
         WGPUBindGroupLayoutEntry e[2] = {};
@@ -171,12 +150,9 @@ Device* create_device(std::string* out_backend) {
         WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT; frag.module = dv->solidShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
         WGPUVertexState vert = WGPU_VERTEX_STATE_INIT; vert.module = dv->solidShader; vert.entryPoint = SV("vs");
         WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-        rp.layout = dv->solidPl; rp.vertex = vert; rp.fragment = &frag;
-        rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        rp.layout = dv->solidPl; rp.vertex = vert; rp.fragment = &frag; rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
         dv->solidPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
     }
-
-    // 纹理管线
     dv->texShader = make_shader(dv->device, kTexWGSL);
     {
         WGPUBindGroupLayoutEntry e[4] = {};
@@ -191,19 +167,17 @@ Device* create_device(std::string* out_backend) {
         WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT; frag.module = dv->texShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
         WGPUVertexState vert = WGPU_VERTEX_STATE_INIT; vert.module = dv->texShader; vert.entryPoint = SV("vs");
         WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-        rp.layout = dv->texPl; rp.vertex = vert; rp.fragment = &frag;
-        rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        rp.layout = dv->texPl; rp.vertex = vert; rp.fragment = &frag; rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
         dv->texPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
         WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
         sd.magFilter = WGPUFilterMode_Linear; sd.minFilter = WGPUFilterMode_Linear; sd.mipmapFilter = WGPUMipmapFilterMode_Linear;
         sd.addressModeU = WGPUAddressMode_ClampToEdge; sd.addressModeV = WGPUAddressMode_ClampToEdge; sd.addressModeW = WGPUAddressMode_ClampToEdge;
         dv->sampler = wgpuDeviceCreateSampler(dv->device, &sd);
     }
-
     return dv;
 }
 
-void destroy_device(Device* dv) {
+static void destroy_device(Device* dv) {
     if (!dv) return;
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
     if (dv->solidPipeline) wgpuRenderPipelineRelease(dv->solidPipeline);
@@ -221,34 +195,6 @@ void destroy_device(Device* dv) {
     delete dv;
 }
 
-Texture* create_texture(Device* dv, int w, int h, const uint8_t* rgba8) {
-    if (!dv || w <= 0 || h <= 0 || !rgba8) return nullptr;
-    auto* t = new Texture();
-    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
-    td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
-    td.dimension = WGPUTextureDimension_2D;
-    td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
-    td.format = WGPUTextureFormat_RGBA8Unorm;
-    td.mipLevelCount = 1; td.sampleCount = 1;
-    t->tex = wgpuDeviceCreateTexture(dv->device, &td);
-    t->view = wgpuTextureCreateView(t->tex, nullptr);
-
-    WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
-    dst.texture = t->tex; dst.aspect = WGPUTextureAspect_All;
-    WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
-    layout.bytesPerRow = (uint32_t)w * 4; layout.rowsPerImage = (uint32_t)h;
-    WGPUExtent3D sz = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
-    wgpuQueueWriteTexture(dv->queue, &dst, rgba8, (size_t)w * h * 4, &layout, &sz);
-    return t;
-}
-
-void destroy_texture(Texture* t) {
-    if (!t) return;
-    if (t->view) wgpuTextureViewRelease(t->view);
-    if (t->tex) wgpuTextureRelease(t->tex);
-    delete t;
-}
-
 struct GpuInst { float pos[2]; float radius; float pad; float color[4]; }; // 32B
 
 static WGPUBuffer make_ibuf(Device* dv, const std::vector<GpuInst>& v) {
@@ -259,9 +205,7 @@ static WGPUBuffer make_ibuf(Device* dv, const std::vector<GpuInst>& v) {
     if (!v.empty()) wgpuQueueWriteBuffer(dv->queue, b, 0, v.data(), v.size() * sizeof(GpuInst));
     return b;
 }
-
-static void begin_pass(WGPUCommandEncoder enc, WGPUTextureView view, WGPULoadOp load, const float bg[4],
-                       WGPURenderPassEncoder* out) {
+static void begin_pass(WGPUCommandEncoder enc, WGPUTextureView view, WGPULoadOp load, const float bg[4], WGPURenderPassEncoder* out) {
     WGPURenderPassColorAttachment ca = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
     ca.view = view; ca.loadOp = load; ca.storeOp = WGPUStoreOp_Store;
     ca.clearValue = WGPUColor{ bg[0], bg[1], bg[2], bg[3] };
@@ -270,149 +214,163 @@ static void begin_pass(WGPUCommandEncoder enc, WGPUTextureView view, WGPULoadOp 
     *out = wgpuCommandEncoderBeginRenderPass(enc, &rp);
 }
 
-/* 多视图渲染（VR/多屏）：同一场景按 views 渲染到目标的不同视口，一次读回。 */
-void render_views(Device* dv, int TW, int TH, const View* views, size_t nviews,
-                  const SpriteDraw* sprites, size_t count,
-                  const float bg[4], std::vector<uint8_t>& out_rgba) {
-    if (!dv || !dv->device) return;
-    static const View kDefault{ 0, 0, 0, 0, 0, 0 };
-    if (nviews == 0 || !views) {
-        static View def;
-        def = View{ 0, 0, (float)TW, (float)TH, 0, 0 };
-        views = &def; nviews = 1;
-    }
-    (void)kDefault;
-
-    std::vector<GpuInst> solid;
-    std::unordered_map<const Texture*, std::vector<GpuInst>> groups;
-    for (size_t i = 0; i < count; ++i) {
-        const SpriteDraw& s = sprites[i];
-        GpuInst g{ { s.x, s.y }, s.radius, 0.f, { s.r, s.g, s.b, s.a } };
-        if (s.tex && s.tex->view) groups[s.tex].push_back(g);
-        else solid.push_back(g);
-    }
-
-    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
-    td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
-    td.dimension = WGPUTextureDimension_2D;
-    td.size = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
-    td.format = WGPUTextureFormat_RGBA8Unorm;
-    td.mipLevelCount = 1; td.sampleCount = 1;
-    WGPUTexture tex = wgpuDeviceCreateTexture(dv->device, &td);
-    WGPUTextureView view = wgpuTextureCreateView(tex, nullptr);
-
-    WGPUBufferDescriptor ubd = WGPU_BUFFER_DESCRIPTOR_INIT;
-    ubd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
-    ubd.size = 16;
-
-    WGPUBuffer solidBuf = solid.empty() ? nullptr : make_ibuf(dv, solid);
-    std::unordered_map<const Texture*, WGPUBuffer> groupBufs;
-    for (auto& kv : groups) groupBufs[kv.first] = make_ibuf(dv, kv.second);
-
-    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
-
-    // 清屏（整目标一次）
-    {
-        WGPURenderPassEncoder pass = nullptr;
-        begin_pass(enc, view, WGPULoadOp_Clear, bg, &pass);
-        wgpuRenderPassEncoderEnd(pass);
-        wgpuRenderPassEncoderRelease(pass);
-    }
-
-    for (size_t vi = 0; vi < nviews; ++vi) {
-        const View& v = views[vi];
-        float uni[4] = { (float)TW, (float)TH, v.pan, v.eye };
-        WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
-        wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, 16);
-
-        // 实心
-        if (solidBuf) {
-            WGPUBindGroupEntry be[2] = {};
-            be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
-            be[1].binding = 1; be[1].buffer = solidBuf; be[1].size = (uint64_t)solid.size() * sizeof(GpuInst);
-            WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
-            WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
-            WGPURenderPassEncoder pass = nullptr;
-            begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
-            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
-            wgpuRenderPassEncoderSetPipeline(pass, dv->solidPipeline);
-            wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
-            wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)solid.size(), 0, 0);
-            wgpuRenderPassEncoderEnd(pass);
-            wgpuRenderPassEncoderRelease(pass);
-            wgpuBindGroupRelease(bgroup);
-        }
-
-        // 纹理组
-        for (auto& kv : groups) {
-            const Texture* texh = kv.first;
-            WGPUBuffer gb = groupBufs[texh];
-            WGPUBindGroupEntry be[4] = {};
-            be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
-            be[1].binding = 1; be[1].buffer = gb; be[1].size = (uint64_t)kv.second.size() * sizeof(GpuInst);
-            be[2].binding = 2; be[2].textureView = texh->view;
-            be[3].binding = 3; be[3].sampler = dv->sampler;
-            WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
-            WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
-            WGPURenderPassEncoder pass = nullptr;
-            begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
-            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
-            wgpuRenderPassEncoderSetPipeline(pass, dv->texPipeline);
-            wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
-            wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)kv.second.size(), 0, 0);
-            wgpuRenderPassEncoderEnd(pass);
-            wgpuRenderPassEncoderRelease(pass);
-            wgpuBindGroupRelease(bgroup);
-        }
-        wgpuBufferRelease(ubuf);
-    }
-
-    // readback（TW x TH）
-    const uint32_t bytes_per_row = TW * 4;
-    const uint32_t padded = (bytes_per_row + 255u) & ~255u;
-    WGPUBufferDescriptor rbd = WGPU_BUFFER_DESCRIPTOR_INIT;
-    rbd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
-    rbd.size = (uint64_t)padded * TH;
-    WGPUBuffer rbuf = wgpuDeviceCreateBuffer(dv->device, &rbd);
-
-    WGPUTexelCopyTextureInfo src = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
-    src.texture = tex; src.aspect = WGPUTextureAspect_All;
-    WGPUTexelCopyBufferInfo dst = WGPU_TEXEL_COPY_BUFFER_INFO_INIT;
-    dst.buffer = rbuf; dst.layout.offset = 0; dst.layout.bytesPerRow = padded; dst.layout.rowsPerImage = TH;
-    WGPUExtent3D extent = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
-    wgpuCommandEncoderCopyTextureToBuffer(enc, &src, &dst, &extent);
-
-    WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
-    wgpuQueueSubmit(dv->queue, 1, &cmd);
-    wgpuCommandBufferRelease(cmd);
-    wgpuCommandEncoderRelease(enc);
-
-    WGPUMapAsyncStatus st = (WGPUMapAsyncStatus)0;
-    WGPUBufferMapCallbackInfo mci = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
-    mci.mode = WGPUCallbackMode_AllowProcessEvents; mci.callback = map_cb; mci.userdata1 = &st;
-    wgpuBufferMapAsync(rbuf, WGPUMapMode_Read, 0, rbd.size, mci);
-    poll(dv->instance, [&]{ return (uint32_t)st != 0; });
-
-    out_rgba.assign((size_t)TW * TH * 4, 0);
-    if (st == WGPUMapAsyncStatus_Success) {
-        const uint8_t* mapped = (const uint8_t*)wgpuBufferGetConstMappedRange(rbuf, 0, rbd.size);
-        for (int y = 0; y < TH; ++y)
-            std::memcpy(&out_rgba[(size_t)y * TW * 4], mapped + (size_t)y * padded, bytes_per_row);
-        wgpuBufferUnmap(rbuf);
-    }
-
-    wgpuBufferRelease(rbuf);
-    if (solidBuf) wgpuBufferRelease(solidBuf);
-    for (auto& kv : groupBufs) wgpuBufferRelease(kv.second);
-    wgpuTextureViewRelease(view);
-    wgpuTextureRelease(tex);
-}
-
-void render_offscreen(Device* dv, int w, int h,
-                      const SpriteDraw* sprites, size_t count,
-                      const float bg[4], std::vector<uint8_t>& out_rgba) {
-    View v{ 0, 0, (float)w, (float)h, 0, 0 };
-    render_views(dv, w, h, &v, 1, sprites, count, bg, out_rgba);
-}
-
 } // namespace maque::gfx
+
+namespace maque::render {
+
+/* WebGPU 后端实现 Renderer。 */
+class WebGPURenderer : public Renderer {
+public:
+    WebGPURenderer() { dv_ = gfx::create_device(&backend_); }
+    ~WebGPURenderer() override {
+        for (auto* t : textures_) { if (t->view) wgpuTextureViewRelease(t->view); if (t->tex) wgpuTextureRelease(t->tex); delete t; }
+        gfx::destroy_device(dv_);
+    }
+    bool valid() const { return dv_ != nullptr; }
+    const std::string& backend() const { return backend_; }
+
+    int create_texture(const uint8_t* rgba8, int w, int h) override {
+        if (!dv_ || w <= 0 || h <= 0 || !rgba8) return -1;
+        auto* t = new gfx::Texture();
+        WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+        td.dimension = WGPUTextureDimension_2D;
+        td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+        td.format = WGPUTextureFormat_RGBA8Unorm;
+        td.mipLevelCount = 1; td.sampleCount = 1;
+        t->tex = wgpuDeviceCreateTexture(dv_->device, &td);
+        t->view = wgpuTextureCreateView(t->tex, nullptr);
+        WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+        dst.texture = t->tex; dst.aspect = WGPUTextureAspect_All;
+        WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
+        layout.bytesPerRow = (uint32_t)w * 4; layout.rowsPerImage = (uint32_t)h;
+        WGPUExtent3D sz = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+        wgpuQueueWriteTexture(dv_->queue, &dst, rgba8, (size_t)w * h * 4, &layout, &sz);
+        textures_.push_back(t);
+        return (int)textures_.size() - 1;
+    }
+    bool has_texture(int id) const override { return id >= 0 && id < (int)textures_.size(); }
+
+    void render_views(int TW, int TH, const View* views, size_t nviews,
+                      const DrawItem* items, size_t count, const float bg[4],
+                      std::vector<uint8_t>& out_rgba) override {
+        if (!dv_ || !dv_->device) return;
+        static View defv;
+        if (nviews == 0 || !views) { defv = View{ 0, 0, (float)TW, (float)TH, 0, 0 }; views = &defv; nviews = 1; }
+
+        std::vector<gfx::GpuInst> solid;
+        std::unordered_map<const gfx::Texture*, std::vector<gfx::GpuInst>> groups;
+        for (size_t i = 0; i < count; ++i) {
+            const DrawItem& s = items[i];
+            gfx::GpuInst g{ { s.x, s.y }, s.size, 0.f, { s.r, s.g, s.b, s.a } };
+            const gfx::Texture* t = has_texture(s.texture) ? textures_[s.texture] : nullptr;
+            if (t && t->view) groups[t].push_back(g); else solid.push_back(g);
+        }
+
+        WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+        td.dimension = WGPUTextureDimension_2D;
+        td.size = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
+        td.format = WGPUTextureFormat_RGBA8Unorm;
+        td.mipLevelCount = 1; td.sampleCount = 1;
+        WGPUTexture tex = wgpuDeviceCreateTexture(dv_->device, &td);
+        WGPUTextureView view = wgpuTextureCreateView(tex, nullptr);
+
+        WGPUBufferDescriptor ubd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        ubd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+        ubd.size = 16;
+        WGPUBuffer solidBuf = solid.empty() ? nullptr : gfx::make_ibuf(dv_, solid);
+        std::unordered_map<const gfx::Texture*, WGPUBuffer> groupBufs;
+        for (auto& kv : groups) groupBufs[kv.first] = gfx::make_ibuf(dv_, kv.second);
+
+        WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv_->device, nullptr);
+        { WGPURenderPassEncoder pass = nullptr; gfx::begin_pass(enc, view, WGPULoadOp_Clear, bg, &pass);
+          wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass); }
+
+        for (size_t vi = 0; vi < nviews; ++vi) {
+            const View& v = views[vi];
+            float uni[4] = { (float)TW, (float)TH, v.pan, v.eye };
+            WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv_->device, &ubd);
+            wgpuQueueWriteBuffer(dv_->queue, ubuf, 0, uni, 16);
+            if (solidBuf) {
+                WGPUBindGroupEntry be[2] = {};
+                be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
+                be[1].binding = 1; be[1].buffer = solidBuf; be[1].size = (uint64_t)solid.size() * sizeof(gfx::GpuInst);
+                WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv_->solidBgl; bgd.entryCount = 2; bgd.entries = be;
+                WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv_->device, &bgd);
+                WGPURenderPassEncoder pass = nullptr; gfx::begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
+                wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
+                wgpuRenderPassEncoderSetPipeline(pass, dv_->solidPipeline);
+                wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
+                wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)solid.size(), 0, 0);
+                wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
+                wgpuBindGroupRelease(bgroup);
+            }
+            for (auto& kv : groups) {
+                const gfx::Texture* texh = kv.first;
+                WGPUBuffer gb = groupBufs[texh];
+                WGPUBindGroupEntry be[4] = {};
+                be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
+                be[1].binding = 1; be[1].buffer = gb; be[1].size = (uint64_t)kv.second.size() * sizeof(gfx::GpuInst);
+                be[2].binding = 2; be[2].textureView = texh->view;
+                be[3].binding = 3; be[3].sampler = dv_->sampler;
+                WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv_->texBgl; bgd.entryCount = 4; bgd.entries = be;
+                WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv_->device, &bgd);
+                WGPURenderPassEncoder pass = nullptr; gfx::begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
+                wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
+                wgpuRenderPassEncoderSetPipeline(pass, dv_->texPipeline);
+                wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
+                wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)kv.second.size(), 0, 0);
+                wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
+                wgpuBindGroupRelease(bgroup);
+            }
+            wgpuBufferRelease(ubuf);
+        }
+
+        const uint32_t bytes_per_row = TW * 4;
+        const uint32_t padded = (bytes_per_row + 255u) & ~255u;
+        WGPUBufferDescriptor rbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        rbd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
+        rbd.size = (uint64_t)padded * TH;
+        WGPUBuffer rbuf = wgpuDeviceCreateBuffer(dv_->device, &rbd);
+        WGPUTexelCopyTextureInfo src = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT; src.texture = tex; src.aspect = WGPUTextureAspect_All;
+        WGPUTexelCopyBufferInfo dst = WGPU_TEXEL_COPY_BUFFER_INFO_INIT; dst.buffer = rbuf; dst.layout.bytesPerRow = padded; dst.layout.rowsPerImage = TH;
+        WGPUExtent3D extent = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
+        wgpuCommandEncoderCopyTextureToBuffer(enc, &src, &dst, &extent);
+        WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
+        wgpuQueueSubmit(dv_->queue, 1, &cmd);
+        wgpuCommandBufferRelease(cmd); wgpuCommandEncoderRelease(enc);
+
+        WGPUMapAsyncStatus st = (WGPUMapAsyncStatus)0;
+        WGPUBufferMapCallbackInfo mci = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
+        mci.mode = WGPUCallbackMode_AllowProcessEvents; mci.callback = gfx::map_cb; mci.userdata1 = &st;
+        wgpuBufferMapAsync(rbuf, WGPUMapMode_Read, 0, rbd.size, mci);
+        gfx::poll(dv_->instance, [&]{ return (uint32_t)st != 0; });
+
+        out_rgba.assign((size_t)TW * TH * 4, 0);
+        if (st == WGPUMapAsyncStatus_Success) {
+            const uint8_t* mapped = (const uint8_t*)wgpuBufferGetConstMappedRange(rbuf, 0, rbd.size);
+            for (int y = 0; y < TH; ++y)
+                std::memcpy(&out_rgba[(size_t)y * TW * 4], mapped + (size_t)y * padded, bytes_per_row);
+            wgpuBufferUnmap(rbuf);
+        }
+        wgpuBufferRelease(rbuf);
+        if (solidBuf) wgpuBufferRelease(solidBuf);
+        for (auto& kv : groupBufs) wgpuBufferRelease(kv.second);
+        wgpuTextureViewRelease(view); wgpuTextureRelease(tex);
+    }
+
+private:
+    gfx::Device* dv_ = nullptr;
+    std::string backend_;
+    std::vector<gfx::Texture*> textures_;
+};
+
+Renderer* create_renderer(std::string* out_backend) {
+    auto* r = new WebGPURenderer();
+    if (!r->valid()) { delete r; return nullptr; }
+    if (out_backend) *out_backend = r->backend();
+    return r;
+}
+
+} // namespace maque::render
