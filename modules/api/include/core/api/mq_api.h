@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-void mq_bind_generated(mq_script_vm* vm);
+void mq_bind_generated(mq_script_vm* vm, void* ctx);
 
 #ifdef __cplusplus
 }

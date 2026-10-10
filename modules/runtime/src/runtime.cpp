@@ -1,7 +1,8 @@
-/* maque 运行时：
- *   Engine（"浏览器"）：设备(Via Renderer 接口) / VFS / 脚本 VM / 纹理 / 视图。
- *   Scene （游戏）    ：deserialize(反射) + instantiate(实体/组件) + dispatch/extract。
- *   实体 = name + 若干带 type 的组件；组件由反射按类型名反序列化（docs/12/17）。 */
+/* maque 运行时（DSL 驱动）：
+ *   Engine：设备(Renderer) / VFS / 脚本 / 反射 ctx / 视图。
+ *   Scene ：deserialize(反射) + instantiate(实体/组件) + dispatch/extract。
+ *   实体 = name + 组件；组件语义由 schema 的 roles 声明，引擎**不硬编码任何组件类型**。
+ *   宿主 API 由 schema 的 api_list(ctx:true) 生成（绑定/声明），引擎只实现语义。 */
 #include "runtime/mq_runtime.h"
 
 #include "core/persist/mq_persist.h"
@@ -11,6 +12,7 @@
 #include "core/vfs/mq_vfs.h"
 #include "core/image/mq_image.h"
 #include "core/api/mq_api.h"
+#include "maque_api.h"                 // 生成：host:: 声明（api_list）
 #include "render/renderer/mq_renderer.h"
 #include "maque_types.h"
 
@@ -23,30 +25,25 @@
 
 namespace {
 
-/* ---------------- 实体 = name + 组件映射(type_id → blob) ---------------- */
 struct Entity {
     std::string name;
-    int   parent = -1;
-    int   tex = -1;                              // 解析自 Sprite 组件
-    float lx = 0, ly = 0;                        // 局部变换（Transform2D 组件）
-    float x = 0, y = 0;                          // 世界（每帧计算）
-    std::unordered_map<uint32_t, std::vector<uint8_t>> comps;
+    int parent = -1;
+    float x = 0, y = 0;                                    // 世界（每帧计算）
+    std::unordered_map<uint32_t, std::vector<uint8_t>> comps;   // type_id → blob
 };
 
 struct Engine;
 struct Scene;
 
-/* ---------------- Engine：通用运行时 ---------------- */
 struct Engine {
     maque::render::Renderer* renderer = nullptr;
     mq_vfs*             vfs = nullptr;
     mq_script_vm*       vm = nullptr;
-    mq_reflect_ctx*     reflect = nullptr;         // per-instance 反射注册表
+    mq_reflect_ctx*     reflect = nullptr;                 // per-instance
     const mq_type_desc* scene_type = nullptr;
-    uint32_t            tid_transform = 0, tid_sprite = 0;   // 组件类型 id
     Scene*              scene = nullptr;
 
-    std::vector<std::string> tex_paths;
+    std::unordered_map<std::string, int> tex_cache;
     uint32_t rng = 0;
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
@@ -54,12 +51,10 @@ struct Engine {
     std::vector<maque::render::View> views;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
-    int  load_texture(const char* path);
-    void bind();
+    int load_texture(const std::string& path);
     void main_loop(const std::string& frames_dir, const std::string& name);
 };
 
-/* ---------------- Scene：实体/组件世界 ---------------- */
 struct Scene {
     scn::Scene desc;
     std::string text_;
@@ -72,16 +67,27 @@ struct Scene {
 
     bool deserialize(Engine& eng, const std::string& text);
     void instantiate(Engine& eng);
-
-    int   spawn();
+    int  spawn();
     Entity* at(int index);
-    void  remove(int index);
-    int   count() const { return (int)ents.size(); }
-    void  compute_world();
-    void  extract(Engine& eng, std::vector<maque::render::DrawItem>& out);
+    void remove(int index);
+    int  count() const { return (int)ents.size(); }
+    void compute_world(Engine& eng);
+    void extract(Engine& eng, std::vector<maque::render::DrawItem>& out);
 };
 
-/* ---------------- 工具 ---------------- */
+/* ---- 反射读取辅助（不依赖具体类型，仅按字段名） ---- */
+bool read_f32(const mq_type_desc* d, const void* blob, const char* name, float* out) {
+    const mq_field_desc* f = mq_reflect_field(d, name);
+    if (!f || f->kind != MQ_TK_F32) return false;
+    *out = *(const float*)((const uint8_t*)blob + f->offset);
+    return true;
+}
+const std::string* read_str(const mq_type_desc* d, const void* blob, const char* name) {
+    const mq_field_desc* f = mq_reflect_field(d, name);
+    if (!f || f->kind != MQ_TK_STRING) return nullptr;
+    return (const std::string*)((const uint8_t*)blob + f->offset);
+}
+
 bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba) {
     std::FILE* f = std::fopen(path.c_str(), "wb");
     if (!f) return false;
@@ -94,40 +100,20 @@ bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>
     std::fclose(f);
     return true;
 }
-double cfg_field(Engine* eng, const char* path) {
-    const mq_type_desc* t = eng->scene_type;
-    void* obj = &eng->scene->desc;
-    const char* seg = path;
-    const mq_field_desc* f = nullptr; void* parent = obj;
-    while (*seg) {
-        const char* dot = seg; while (*dot && *dot != '.') ++dot;
-        std::string name(seg, (size_t)(dot - seg));
-        f = mq_reflect_field(t, name.c_str());
-        if (!f) return 0.0;
-        if (*dot == '\0') { parent = obj; break; }
-        if (f->kind != MQ_TK_STRUCT) return 0.0;
-        obj = (uint8_t*)obj + f->offset;
-        t = mq_reflect_type_by_id(eng->reflect, f->type_id);
-        if (!t) return 0.0;
-        seg = dot + 1;
-    }
-    double v = 0.0; mq_reflect_get_f64(eng->reflect, parent, f, &v); return v;
-}
 
-/* ---------------- Engine 实现 ---------------- */
-int Engine::load_texture(const char* path) {
-    for (size_t i = 0; i < tex_paths.size(); ++i)
-        if (tex_paths[i] == path) return (int)i;
+/* ---- Engine ---- */
+int Engine::load_texture(const std::string& path) {
+    auto it = tex_cache.find(path);
+    if (it != tex_cache.end()) return it->second;
     void* data = nullptr; size_t n = 0;
-    if (mq_vfs_read(vfs, path, &data, &n) != 0) { std::print("runtime: texture not found '{}'\n", path); return -1; }
+    if (mq_vfs_read(vfs, path.c_str(), &data, &n) != 0) { std::print("runtime: texture not found '{}'\n", path); return -1; }
     uint8_t* rgba = nullptr; uint32_t w = 0, h = 0;
     int rc = mq_image_decode(data, n, &rgba, &w, &h);
     mq_vfs_free(data);
     if (rc != 0) { std::print("runtime: decode failed '{}': {}\n", path, mq_image_last_error()); return -1; }
     int id = renderer->create_texture(rgba, (int)w, (int)h);
     mq_image_free(rgba);
-    if (id < 0) return -1;
-    tex_paths.emplace_back(path);
+    tex_cache[path] = id;
     return id;
 }
 
@@ -141,9 +127,9 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     for (; frame < cap && !quit; ++frame) {
         draws.clear();
         if (scene) {
-            if (mq_script_has(vm, "update")) mq_script_call1(vm, "update", dt, nullptr);  // dispatch
+            if (mq_script_has(vm, "update")) mq_script_call1(vm, "update", dt, nullptr);
             mq_script_gc(vm);
-            scene->compute_world();
+            scene->compute_world(*this);
             scene->extract(*this, draws);
         }
         renderer->render_views(TW, H, views.data(), views.size(), draws.data(), draws.size(), bg, pixels);
@@ -155,7 +141,7 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     std::print("runtime: '{}' exited after {} frames (quit={})\n", name, frame, quit ? 1 : 0);
 }
 
-/* ---------------- Scene 实现 ---------------- */
+/* ---- Scene ---- */
 int Scene::spawn() {
     void* p = nullptr;
     mq_handle h = mq_handle_table_alloc(table, &p);
@@ -177,12 +163,11 @@ bool Scene::deserialize(Engine& eng, const std::string& text) {
     text_ = text;
     mq_json* dom = mq_json_parse(text.c_str(), text.size());
     if (!dom) return false;
-    int rc = mq_persist_apply_json(eng.reflect, eng.scene_type, dom, &desc);   // 类型化 Scene 字段
+    int rc = mq_persist_apply_json(eng.reflect, eng.scene_type, dom, &desc);
     mq_json_free(dom);
     return rc == 0;
 }
 
-/* 实例化：遍历通用节点（name/children/components），组件按 type 反射反序列化。 */
 static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent) {
     int idx = sc.spawn();
     if (idx < 0) return -1;
@@ -197,18 +182,11 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent) {
         const mq_json* c = mq_json_at(comps, i);
         const char* tname = mq_json_str(mq_json_get(c, "type"), nullptr);
         if (!tname) continue;
-        const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, tname);   // ← 按 type 判别组件
-        if (!d) { std::print("runtime: unknown component type '{}'\n", tname); continue; }
+        const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, tname);
+        if (!d) { std::print("runtime: unknown component '{}'\n", tname); continue; }
         std::vector<uint8_t>& blob = ent->comps[d->type_id];
         blob.resize(d->size);
         mq_persist_apply_json(eng.reflect, d, c, blob.data());
-        if (d->type_id == eng.tid_transform) {
-            auto* tr = reinterpret_cast<scn::Transform2D*>(blob.data());
-            ent->lx = tr->x; ent->ly = tr->y;
-        } else if (d->type_id == eng.tid_sprite) {
-            auto* sp = reinterpret_cast<scn::Sprite*>(blob.data());
-            if (!sp->texture.empty()) ent->tex = eng.load_texture(("/" + sp->texture).c_str());
-        }
     }
     const mq_json* ch = mq_json_get(e, "children");
     uint32_t kn = mq_json_len(ch);
@@ -226,84 +204,104 @@ void Scene::instantiate(Engine& eng) {
     std::print("runtime: instantiated {} root entities\n", n);
 }
 
-void Scene::compute_world() {
+/* 组件语义由 roles 决定：transform2d / sprite —— 引擎不认具体组件类型。 */
+void Scene::compute_world(Engine& eng) {
     for (auto& [idx, e] : ents) {
-        if (e.parent >= 0) {
-            if (Entity* pe = at(e.parent)) { e.x = pe->x + e.lx; e.y = pe->y + e.ly; continue; }
+        float lx = 0, ly = 0;
+        for (auto& [tid, blob] : e.comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            if (d && (d->role & MQ_ROLE_TRANSFORM2D)) {
+                read_f32(d, blob.data(), "x", &lx);
+                read_f32(d, blob.data(), "y", &ly);
+            }
         }
-        e.x = e.lx; e.y = e.ly;
+        if (e.parent >= 0) {
+            if (Entity* pe = at(e.parent)) { e.x = pe->x + lx; e.y = pe->y + ly; continue; }
+        }
+        e.x = lx; e.y = ly;
     }
 }
 
 void Scene::extract(Engine& eng, std::vector<maque::render::DrawItem>& out) {
     for (auto& [idx, e] : ents) {
-        auto it = e.comps.find(eng.tid_sprite);
-        if (it == e.comps.end()) continue;          // 无 Sprite 组件 → 不渲染
-        auto* sp = reinterpret_cast<scn::Sprite*>(it->second.data());
-        maque::render::DrawItem d{ e.x, (float)eng.H - e.y, sp->radius,
-                                   sp->r, sp->g, sp->b, 1.0F, e.tex };
-        out.push_back(d);
+        for (auto& [tid, blob] : e.comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            if (!d || !(d->role & MQ_ROLE_SPRITE)) continue;
+            float radius = 8, r = 1, g = 1, b = 1;
+            read_f32(d, blob.data(), "radius", &radius);
+            read_f32(d, blob.data(), "r", &r);
+            read_f32(d, blob.data(), "g", &g);
+            read_f32(d, blob.data(), "b", &b);
+            int tex = -1;
+            if (const std::string* tp = read_str(d, blob.data(), "texture"))
+                if (!tp->empty()) tex = eng.load_texture("/" + *tp);
+            out.push_back(maque::render::DrawItem{ e.x, (float)eng.H - e.y, radius, r, g, b, 1.0F, tex });
+        }
     }
 }
 
-/* ---------------- 宿主 API ---------------- */
-int fn_log(void*, const char* s, double*) { std::print("[game] {}\n", s); return 0; }
-int fn_cfg(void* u, const char* path, double* ret) { *ret = cfg_field((Engine*)u, path); return 0; }
-int fn_screen_w(void* u, int, const double*, double* ret) { *ret = (double)((Engine*)u)->W; return 0; }
-int fn_screen_h(void* u, int, const double*, double* ret) { *ret = (double)((Engine*)u)->H; return 0; }
-int fn_rng(void* u, int, const double*, double* ret) { *ret = (double)((Engine*)u)->next_rng() / 4294967296.0; return 0; }
-int fn_quit(void* u, int, const double*, double*) { ((Engine*)u)->quit = true; return 0; }
-int fn_clear(void* u, int argc, const double* a, double*) {
-    auto* e = (Engine*)u;
-    if (argc >= 3) { e->bg[0] = (float)a[0]; e->bg[1] = (float)a[1]; e->bg[2] = (float)a[2]; }
-    return 0;
-}
-int fn_draw(void*, int, const double*, double*) { return 0; }
-int fn_entity_spawn(void* u, int, const double*, double* ret) { *ret = (double)((Engine*)u)->scene->spawn(); return 0; }
-int fn_entity_set_pos(void* u, int argc, const double* a, double*) {
-    auto* e = (Engine*)u; if (argc < 3 || !e->scene) return 0;
-    if (Entity* ent = e->scene->at((int)a[0])) { ent->lx = (float)a[1]; ent->ly = (float)a[2]; }
-    return 0;
-}
-int fn_entity_x(void* u, int argc, const double* a, double* ret) {
-    Entity* ent = (argc >= 1 && ((Engine*)u)->scene) ? ((Engine*)u)->scene->at((int)a[0]) : nullptr;
-    *ret = ent ? ent->x : 0.0; return 0;
-}
-int fn_entity_y(void* u, int argc, const double* a, double* ret) {
-    Entity* ent = (argc >= 1 && ((Engine*)u)->scene) ? ((Engine*)u)->scene->at((int)a[0]) : nullptr;
-    *ret = ent ? ent->y : 0.0; return 0;
-}
-int fn_entity_count(void* u, int, const double*, double* ret) { *ret = (double)((Engine*)u)->scene->count(); return 0; }
-int fn_entity_destroy(void* u, int argc, const double* a, double*) {
-    auto* e = (Engine*)u; if (argc >= 1) e->scene->remove((int)a[0]); return 0;
-}
-int fn_load_texture(void* u, const char* path, double* ret) {
-    std::string p = (path && path[0] == '/') ? std::string(path) : ("/" + std::string(path ? path : ""));
-    *ret = (double)((Engine*)u)->load_texture(p.c_str()); return 0;
-}
-
-void Engine::bind() {
-    mq_bind_generated(vm);
-    mq_script_register_str(vm, "log", fn_log, this);
-    mq_script_register_str(vm, "cfg", fn_cfg, this);
-    mq_script_register_str(vm, "load_texture", fn_load_texture, this);
-    mq_script_register_num(vm, "screen_w", fn_screen_w, this);
-    mq_script_register_num(vm, "screen_h", fn_screen_h, this);
-    mq_script_register_num(vm, "rng", fn_rng, this);
-    mq_script_register_num(vm, "quit", fn_quit, this);
-    mq_script_register_num(vm, "clear", fn_clear, this);
-    mq_script_register_num(vm, "draw_sprite", fn_draw, this);
-    mq_script_register_num(vm, "entity_spawn", fn_entity_spawn, this);
-    mq_script_register_num(vm, "entity_set_pos", fn_entity_set_pos, this);
-    mq_script_register_num(vm, "entity_x", fn_entity_x, this);
-    mq_script_register_num(vm, "entity_y", fn_entity_y, this);
-    mq_script_register_num(vm, "entity_count", fn_entity_count, this);
-    mq_script_register_num(vm, "entity_destroy", fn_entity_destroy, this);
+/* cfg：反射读 scn.Scene 标量字段。 */
+double cfg_field(Engine* eng, const char* path) {
+    const mq_type_desc* t = eng->scene_type;
+    void* obj = &eng->scene->desc;
+    const char* seg = path;
+    const mq_field_desc* f = nullptr; void* parent = obj;
+    while (*seg) {
+        const char* dot = seg; while (*dot && *dot != '.') ++dot;
+        std::string name(seg, (size_t)(dot - seg));
+        f = mq_reflect_field(t, name.c_str());
+        if (!f) return 0.0;
+        if (*dot == '\0') { parent = obj; break; }
+        if (f->kind != MQ_TK_STRUCT) return 0.0;
+        obj = (uint8_t*)obj + f->offset;
+        t = mq_reflect_type_by_id(eng->reflect, f->type_id);
+        if (!t) return 0.0;
+        seg = dot + 1;
+    }
+    double v = 0.0; mq_reflect_get_f64(eng->reflect, parent, f, &v); return v;
 }
 
 } // namespace
 
-/* ---------------- C ABI 入口 ---------------- */
+/* ---------------- 宿主 API 实现（声明来自生成的 maque_api.h） ---------------- */
+namespace host {
+
+float screen_w(void* ctx) { return (float)((Engine*)ctx)->W; }
+float screen_h(void* ctx) { return (float)((Engine*)ctx)->H; }
+float rng(void* ctx) { return (float)((Engine*)ctx)->next_rng() / 4294967296.0f; }
+void  quit(void* ctx) { ((Engine*)ctx)->quit = true; }
+void  clear(void* ctx, float r, float g, float b) {
+    auto* e = (Engine*)ctx; e->bg[0] = r; e->bg[1] = g; e->bg[2] = b;
+}
+void  log(void*, const char* msg) { std::print("[game] {}\n", msg ? msg : ""); }
+float cfg(void* ctx, const char* path) { return (float)cfg_field((Engine*)ctx, path); }
+float load_texture(void* ctx, const char* path) {
+    auto* e = (Engine*)ctx;
+    std::string p = (path && path[0] == '/') ? path : ("/" + std::string(path ? path : ""));
+    return (float)e->load_texture(p);
+}
+float entity_spawn(void* ctx) { return (float)((Engine*)ctx)->scene->spawn(); }
+void  entity_set_pos(void* ctx, float id, float x, float y) {
+    auto* e = (Engine*)ctx;
+    if (Entity* ent = e->scene->at((int)id)) {
+        // 写回 transform2d 组件（按角色）
+        for (auto& [tid, blob] : ent->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
+            if (d && (d->role & MQ_ROLE_TRANSFORM2D)) {
+                if (const mq_field_desc* fx = mq_reflect_field(d, "x")) *(float*)(blob.data() + fx->offset) = x;
+                if (const mq_field_desc* fy = mq_reflect_field(d, "y")) *(float*)(blob.data() + fy->offset) = y;
+            }
+        }
+        ent->x = x; ent->y = y;
+    }
+}
+float entity_x(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->x : 0.0f; }
+float entity_y(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->y : 0.0f; }
+float entity_count(void* ctx) { return (float)((Engine*)ctx)->scene->count(); }
+void  entity_destroy(void* ctx, float id) { ((Engine*)ctx)->scene->remove((int)id); }
+
+} // namespace host
+
 extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (!scn_path) return 1;
     std::filesystem::path scnp(scn_path);
@@ -317,13 +315,12 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     { void* d = nullptr; size_t n = 0;
       if (mq_vfs_read(eng.vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == 0) { text.assign((char*)d, n); mq_vfs_free(d); } }
     if (text.empty()) { std::print("runtime: cannot read scene '{}'\n", scn_path); mq_vfs_destroy(eng.vfs); return 1; }
+
+    // 反射 ctx（per-instance）：载入 schema
     eng.reflect = mq_reflect_create();
     mq_reflect_load_schema(eng.reflect);
     eng.scene_type = mq_reflect_type_by_name(eng.reflect, "scn.Scene");
-    const mq_type_desc* tt = mq_reflect_type_by_name(eng.reflect, "scn.Transform2D");
-    const mq_type_desc* st = mq_reflect_type_by_name(eng.reflect, "scn.Sprite");
-    eng.tid_transform = tt ? tt->type_id : 0;
-    eng.tid_sprite = st ? st->type_id : 0;
+    if (!eng.scene_type) { std::print("runtime: no scn.Scene type\n"); return 1; }
 
     std::string backend;
     eng.renderer = maque::render::create_renderer(&backend);
@@ -334,7 +331,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     eng.scene = &scene;
     if (!scene.deserialize(eng, text)) { std::print("runtime: failed to deserialize scene\n"); return 1; }
     scene.instantiate(eng);
-    scene.compute_world();                          // 先算世界变换，脚本才能读到正确位置
+    scene.compute_world(eng);
 
     eng.W = scene.desc.width > 0 ? scene.desc.width : 320;
     eng.H = scene.desc.height > 0 ? scene.desc.height : 240;
@@ -349,7 +346,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
                scn_path, scene.desc.title, scene.desc.script, eng.W, eng.H, eng.nviews);
 
     eng.vm = mq_script_vm_create();
-    eng.bind();
+    mq_bind_generated(eng.vm, &eng);               // 生成绑定（math.* / host.*），注入引擎 ctx
     const std::string& script_path = scene.desc.script;
     if (!script_path.empty()) {
         std::string js;

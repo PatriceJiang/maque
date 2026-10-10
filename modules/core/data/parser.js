@@ -322,6 +322,7 @@ function parseSchemaDocument(root) {
       version: nsEntry.version === undefined ? 1 : Number(nsEntry.version),
       types,
       apis,
+      global: !!nsEntry.global,     // api 绑定到脚本全局（无命名空间前缀）
     })
   }
   return namespaces
@@ -342,6 +343,8 @@ function parseApiDef(nsName, def) {
     returns: def.returns === undefined ? 'void' : String(def.returns),
     // MANUAL：实现的头文件（生成器只 include，不重复声明；docs/21）
     manual: def.manual === undefined || def.manual === null ? null : String(def.manual),
+    // ctx：函数首参为实例上下文 void* ctx（宿主 API；绑定注册时注入）
+    ctx: !!def.ctx,
   }
 }
 
@@ -361,6 +364,7 @@ function parseTypeDef(nsName, def) {
       size: def.size === undefined ? null : Number(def.size),
       align: def.align === undefined ? null : Number(def.align),
       fields: fields.map((f) => parseField(nsName, name, f)),
+      roles: Array.isArray(def.roles) ? def.roles.map(String) : [],
       values: null,
       underlying: null,
       aliasNode: null,
@@ -1089,6 +1093,10 @@ typedef struct mq_field_desc {
     void*      (*container_elem)(void* field, uint32_t i);
 } mq_field_desc;
 
+/* 组件语义角色（由 schema 的 roles 声明；引擎据此通用处理，不硬编码类型）。 */
+#define MQ_ROLE_TRANSFORM2D (1u << 0)
+#define MQ_ROLE_SPRITE      (1u << 1)
+
 typedef struct mq_type_desc {
     const char*          name;   /* fully qualified ns.Name */
     uint32_t             type_id;
@@ -1097,6 +1105,7 @@ typedef struct mq_type_desc {
     uint32_t             field_count;
     const mq_field_desc* fields;
     uint32_t             flags;  /* bit0 is_enum, bit1 is_pod, bit2 has_dynamic */
+    uint32_t             role;   /* MQ_ROLE_* 位标志 */
 } mq_type_desc;
 
 /* registry (lookup by type_id / name) */
@@ -1107,6 +1116,12 @@ extern const uint32_t            mq_schema_type_count;
 }
 #endif
 `
+}
+
+const ROLE_BIT = { transform2d: 'MQ_ROLE_TRANSFORM2D', sprite: 'MQ_ROLE_SPRITE' }
+function roleBits(t) {
+  const parts = (t.roles || []).map((r) => ROLE_BIT[r]).filter(Boolean)
+  return parts.length ? parts.join(' | ') : '0u'
 }
 
 function genDescSource(types) {
@@ -1185,6 +1200,7 @@ function genDescSource(types) {
     lines.push(`    ${t.kind === 'struct' ? t.fields.length : 0}u,`)
     lines.push(`    ${fieldsSym},`)
     lines.push(`    ${typeFlags(t)}u,`)
+    lines.push(`    ${roleBits(t)},`)
     lines.push('};')
     lines.push('')
   }
@@ -1251,6 +1267,7 @@ function genJson(namespaces) {
       pod: typePod(t),
       has_dynamic: typeHasDynamic(t),
     }
+    if (t.roles && t.roles.length) entry.roles = t.roles
     if (t.kind === 'enum') {
       entry.underlying = t.underlying
       entry.values = t.values.map((v) => ({ name: v.name, value: v.value }))
@@ -1337,14 +1354,17 @@ function genApiHeader(namespaces) {
     if (!ns.apis || ns.apis.length === 0) continue
     const declared = ns.apis.filter((fn) => {
       if (fn.manual) return false                     // 由 manual 头提供声明+实现
-      const rt = apiCppType(fn.returns)
+      const rt = fn.returns === 'void' ? 'void' : apiCppType(fn.returns)
       return rt !== null && fn.args.every((a) => apiCppType(a.type) !== null)
     })
     if (declared.length === 0) continue
     lines.push(`namespace ${ns.name} {`)
     for (const fn of declared) {
-      const params = fn.args.map((a) => `${apiCppType(a.type)} ${a.name}`).join(', ')
-      lines.push(`  ${apiCppType(fn.returns)} ${fn.name}(${params});`)
+      const ps = []
+      if (fn.ctx) ps.push('void* ctx')
+      for (const a of fn.args) ps.push(`${apiCppType(a.type)} ${a.name}`)
+      const ret = fn.returns === 'void' ? 'void' : apiCppType(fn.returns)
+      lines.push(`  ${ret} ${fn.name}(${ps.join(', ')});`)
     }
     lines.push('}')
     lines.push('')
@@ -1361,27 +1381,47 @@ function genBindingsSource(namespaces) {
   lines.push('#include <cstdint>')
   lines.push('')
   lines.push('namespace {')
+
+  // 分类：str 绑定（单个 string 参数）；num 绑定（全标量）
+  const fns = []
   for (const ns of namespaces) {
     for (const fn of ns.apis || []) {
-      const numeric = apiNumeric(fn.returns) && fn.args.every((a) => API_SCALARS.has(a.type))
-      if (!numeric) continue
-      const sym = `b_${ns.name}_${fn.name}`
-      const callArgs = fn.args.map((a, i) => apiCast(a.type, `a[${i}]`)).join(', ')
-      lines.push(`int ${sym}(void*, int, const double* a, double* ret) {`)
-      if (fn.returns === 'void') lines.push(`  ${ns.name}::${fn.name}(${callArgs}); return 0;`)
-      else lines.push(`  *ret = (double)${ns.name}::${fn.name}(${callArgs}); return 0;`)
+      const args = fn.args || []
+      const strBinding = args.length === 1 && args[0].type === 'string'
+      const numBinding = args.every((a) => API_SCALARS.has(a.type))
+      if (!strBinding && !numBinding) continue
+      fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding })
+    }
+  }
+  for (const { ns, fn, strBinding } of fns) {
+    const sym = `b_${ns}_${fn.name}`
+    if (strBinding) {
+      lines.push(`int ${sym}(void* user, const char* s, double* ret) {`)
+      const args = fn.ctx ? 'user, s' : 's'
+      const call = `${ns}::${fn.name}(${args})`
+      if (fn.returns === 'void') lines.push(`  ${call}; return 0;`)
+      else lines.push(`  *ret = (double)${call}; return 0;`)
+      lines.push('}')
+    } else {
+      const parts = []
+      if (fn.ctx) parts.push('user')
+      fn.args.forEach((a, i) => parts.push(apiCast(a.type, `a[${i}]`)))
+      lines.push(`int ${sym}(void* user, int, const double* a, double* ret) {`)
+      const call = `${ns}::${fn.name}(${parts.join(', ')})`
+      if (fn.returns === 'void') lines.push(`  ${call}; return 0;`)
+      else lines.push(`  *ret = (double)${call}; return 0;`)
       lines.push('}')
     }
   }
   lines.push('} // namespace')
   lines.push('')
-  lines.push('extern "C" void mq_bind_generated(mq_script_vm* vm) {')
-  for (const ns of namespaces) {
-    for (const fn of ns.apis || []) {
-      const numeric = apiNumeric(fn.returns) && fn.args.every((a) => API_SCALARS.has(a.type))
-      if (!numeric) continue
-      lines.push(`  mq_script_register_num(vm, "${ns.name}.${fn.name}", b_${ns.name}_${fn.name}, nullptr);`)
-    }
+  lines.push('extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {')
+  for (const { ns, global, fn, strBinding } of fns) {
+    const sym = `b_${ns}_${fn.name}`
+    const user = fn.ctx ? 'ctx' : 'nullptr'
+    const reg = strBinding ? 'mq_script_register_str' : 'mq_script_register_num'
+    const jsName = global ? fn.name : `${ns}.${fn.name}`
+    lines.push(`  ${reg}(vm, "${jsName}", ${sym}, ${user});`)
   }
   lines.push('}')
   lines.push('')

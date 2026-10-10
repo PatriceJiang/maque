@@ -1849,11 +1849,14 @@
   version: 1
   class_list:
     # 组件类型（docs/17）：entity 由带 type 的若干组件组合而成。
+    # roles 声明组件语义角色（引擎据此通用处理，不硬编码类型）。
     - struct: Transform2D
+      roles: [transform2d]
       fields:
         - { name: x, type: float, default: 0.0F }
         - { name: y, type: float, default: 0.0F }
     - struct: Sprite
+      roles: [sprite]
       fields:
         - { name: radius,  type: float,  default: 8.0F }
         - { name: r,       type: float,  default: 0.4F }
@@ -1870,3 +1873,23 @@
         - { name: views,    type: int32_t, default: 1 }         # 同屏视图数（VR: 2）
         - { name: eye_sep,  type: float,   default: 0.0F }      # 眼距/视差（像素）
         # entities 不在此：节点树通用（name/children/components），组件按 type 反射反序列化      # 引擎 RNG 种子（确定性）
+
+# 宿主 API（引擎能力）：ctx:true → 生成 C 声明 + JS 绑定（docs/21）
+- namespace: host
+  version: 1
+  global: true          # host.* 绑定到脚本全局（log(...)）
+  api_list:
+    - { fn: screen_w,      returns: float,  ctx: true }
+    - { fn: screen_h,      returns: float,  ctx: true }
+    - { fn: rng,           returns: float,  ctx: true }
+    - { fn: quit,          returns: void,   ctx: true }
+    - { fn: clear,         ctx: true, args: [ { name: r, type: float }, { name: g, type: float }, { name: b, type: float } ] }
+    - { fn: log,           ctx: true, args: [ { name: msg,  type: string } ] }
+    - { fn: cfg,           ctx: true, args: [ { name: path, type: string } ], returns: float }
+    - { fn: load_texture,  ctx: true, args: [ { name: path, type: string } ], returns: float }
+    - { fn: entity_spawn,  ctx: true, returns: float }
+    - { fn: entity_set_pos,ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { fn: entity_x,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_y,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_count,  ctx: true, returns: float }
+    - { fn: entity_destroy,ctx: true, args: [ { name: id, type: float } ] }
