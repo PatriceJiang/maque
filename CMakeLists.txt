@@ -12,3 +12,4 @@ enable_testing()
 
 add_subdirectory(modules/core/data)
 add_subdirectory(modules/core/reflect)
+add_subdirectory(modules/math)
