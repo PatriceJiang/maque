@@ -51,6 +51,7 @@ modules/
   core/module     模块宿主 (.so / registry)
   math            数学库
   observability   可观测性（结构化事件 + 指标, per-instance）
+  control         控制平面（JSON-RPC，方法注册；AI/CI 可驱动）
   io/vfs          虚拟文件系统 (file/URL)
   net             网络 (libwebsockets)
   platform        平台层 (SDL2 窗口/输入)

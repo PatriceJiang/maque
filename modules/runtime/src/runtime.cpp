@@ -12,6 +12,7 @@
 #include "core/vfs/mq_vfs.h"
 #include "core/image/mq_image.h"
 #include "core/observability/mq_obs.h"
+#include "core/control/mq_control.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
 #include "maque_ifaces.h"                 // 生成：mq_renderer_v1（插件接口 ABI）
@@ -26,6 +27,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 
 namespace {
 
@@ -47,6 +49,8 @@ struct Engine {
     mq_script_vm*       vm = nullptr;
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
     mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
+    mq_control*         control = nullptr;                 // 控制平面（JSON-RPC）
+    uint64_t            last_checksum = 0;
     const mq_type_desc* scene_type = nullptr;
     Scene*              scene = nullptr;
 
@@ -149,6 +153,7 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
             write_ppm(frames_dir + fn, TW, H, pixels);
         }
     }
+    last_checksum = trail;
     mq_obs_gauge_set(obs, "frames_total", (double)frame);
     mq_obs_event(obs, "runtime", 1, quit ? "quit" : "timeout");
     std::print("runtime: '{}' exited after {} frames (quit={}) world_trail=0x{:016x}\n",
@@ -356,6 +361,22 @@ void  entity_destroy(void* ctx, float id) { ((Engine*)ctx)->scene->remove((int)i
 
 } // namespace host
 
+/* ---- 控制平面方法（引擎能力，docs/11） ---- */
+static int h_perf(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    std::snprintf(out, cap, "%s", mq_obs_dump_json(((Engine*)u)->obs));
+    return 0;
+}
+static int h_scene(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    auto& d = ((Engine*)u)->scene->desc;
+    std::snprintf(out, cap, "{\"title\":\"%s\",\"script\":\"%s\",\"width\":%d,\"height\":%d,\"views\":%d}",
+                  d.title.c_str(), d.script.c_str(), d.width, d.height, d.views);
+    return 0;
+}
+static int h_checksum(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    std::snprintf(out, cap, "{\"trail\":\"%llu\"}", (unsigned long long)((Engine*)u)->last_checksum);
+    return 0;
+}
+
 extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (!scn_path) return 1;
     std::filesystem::path scnp(scn_path);
@@ -424,8 +445,27 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     }
     if (mq_script_has(eng.vm, "on_start")) mq_script_call0(eng.vm, "on_start", nullptr);
 
+    // 控制平面：注册方法；若无显示/AI 驱动，可 headless 服务请求
+    eng.control = mq_control_create();
+    mq_control_register(eng.control, "Perf.get", h_perf, &eng);
+    mq_control_register(eng.control, "Scene.info", h_scene, &eng);
+    mq_control_register(eng.control, "World.checksum", h_checksum, &eng);
+    if (const char* req = std::getenv("MAQUE_CONTROL")) {
+        auto serve = [&](const char* r) { std::print("{}\n", mq_control_dispatch(eng.control, r)); };
+        if (std::strcmp(req, "-") == 0) {
+            char line[4096];
+            while (std::fgets(line, sizeof line, stdin)) { line[std::strcspn(line, "\n")] = 0; if (*line) serve(line); }
+        } else serve(req);
+        mq_control_destroy(eng.control);
+        mq_script_vm_destroy(eng.vm); mq_obs_destroy(eng.obs); mq_reflect_destroy(eng.reflect);
+        if (eng.rapi && eng.rself) eng.rapi->destroy(eng.rself);
+        mq_host_destroy(eng.host); mq_vfs_destroy(eng.vfs);
+        return 0;
+    }
+
     eng.main_loop(frames_dir ? frames_dir : "", scnp.filename().string());
 
+    mq_control_destroy(eng.control);
     mq_script_vm_destroy(eng.vm);
     mq_obs_destroy(eng.obs);
     mq_reflect_destroy(eng.reflect);

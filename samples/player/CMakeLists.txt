@@ -16,3 +16,9 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
        B=$($<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -oE 'world_trail=0x[0-9a-f]+'); \
        test -n \"$A\" && test \"$A\" = \"$B\"")
 endif()
+
+# 控制平面（headless 驱动）：AI 可查询指标/场景/校验和
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME control_plane COMMAND bash -c
+      "MAQUE_CONTROL='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"Perf.get\"}' $<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -q '\"metrics\"'")
+endif()
