@@ -183,6 +183,16 @@ void apply_field(const mq_field_desc* f, void* fp, const JVal& v) {
                 apply_struct(et, (uint8_t*)fp + (size_t)i * et->size, v.arr[i]);
             return;
         }
+        case MQ_TK_ARRAY_DYN: {
+            /* 动态数组：经容器算子（codegen 生成）类型化地 resize + 逐元素反序列化。 */
+            if (v.kind != JVal::Arr || !f->container_resize || !f->container_elem) return;
+            const mq_type_desc* et = mq_reflect_type_by_id(f->elem_type_id);
+            if (!et) return;
+            f->container_resize(fp, (uint32_t)v.arr.size());
+            for (uint32_t i = 0; i < (uint32_t)v.arr.size(); ++i)
+                apply_struct(et, f->container_elem(fp, i), v.arr[i]);
+            return;
+        }
         default:
             if (v.kind == JVal::Num)       write_scalar(fp, f->kind, f->type_id, v.num);
             else if (v.kind == JVal::Bool) write_scalar(fp, f->kind, f->type_id, v.b ? 1.0 : 0.0);

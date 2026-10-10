@@ -1083,6 +1083,10 @@ typedef struct mq_field_desc {
     uint32_t     type_id;      /* named/element type id; 0 if not named */
     uint32_t     count;        /* fixed array length; 0 otherwise */
     uint32_t     attrs_flags;  /* bit0 transient, bit1 readonly, bit2 deprecated */
+    /* 动态数组（T[]）的容器算子（其余字段为 0）——使反射可类型化地增删/取元素 */
+    uint32_t     elem_type_id;                    /* 具名元素类型 id；0 否则 */
+    void       (*container_resize)(void* field, uint32_t n);
+    void*      (*container_elem)(void* field, uint32_t i);
 } mq_field_desc;
 
 typedef struct mq_type_desc {
@@ -1129,18 +1133,39 @@ function genDescSource(types) {
   lines.push('#endif')
   lines.push('')
 
+  // 动态数组（T[]，具名 struct 元素）的容器算子
+  const dynElem = (node) =>
+    (node && node.cat === 'array_dyn' && node.elem && node.elem.cat === 'named' && node.elem.resolved)
+      ? node.elem.resolved : null
+
   for (const t of types) {
     if (t.kind !== 'struct' || t.fields.length === 0) continue
     const sym = `mq_fields_${mangle(t.fqName)}`
+    for (const f of t.fields) {
+      const de = dynElem(f.typeNode)
+      if (!de) continue
+      const base = `mq_dyn_${mangle(t.fqName)}_${mangle(f.name)}`
+      const elemCpp = de.fqName.replace(/\./g, '::')
+      lines.push(`static void ${base}_resize(void* f, uint32_t n) { static_cast<std::vector<${elemCpp}>*>(f)->resize(n); }`)
+      lines.push(`static void* ${base}_elem(void* f, uint32_t i) { return &static_cast<std::vector<${elemCpp}>*>(f)->at(i); }`)
+    }
     lines.push(`static const mq_field_desc ${sym}[] = {`)
     for (const f of t.fields) {
       const kind = fieldKind(f.typeNode)
       const typeId = fieldTypeId(f.typeNode)
       const count = fieldCount(f.typeNode)
       const attrs = attrsFlags(f.attrs)
+      const de = dynElem(f.typeNode)
+      let extra
+      if (de) {
+        const base = `mq_dyn_${mangle(t.fqName)}_${mangle(f.name)}`
+        extra = `${de.typeId}u, ${base}_resize, ${base}_elem`
+      } else {
+        extra = `0u, 0, 0`
+      }
       lines.push(
         `    { "${f.name}", (uint32_t)offsetof(${t.fqName.replace(/\./g, '::')}, ${f.name}), ` +
-        `MQ_TK_${kind}, ${typeId}u, ${count}u, ${attrs}u },`
+        `MQ_TK_${kind}, ${typeId}u, ${count}u, ${attrs}u, ${extra} },`
       )
     }
     lines.push('};')

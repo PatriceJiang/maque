@@ -70,7 +70,8 @@ struct Scene {
     Scene(const Scene&) = delete;
     Scene& operator=(const Scene&) = delete;
 
-    bool deserialize(Engine& eng, const std::string& json_text);   // 解析场景 + 实体树
+    bool deserialize(Engine& eng, const std::string& json_text);   // 反射反序列化（生成/通用）
+    void instantiate(Engine& eng);                                 // 类型化场景 → 运行时实体
     int  spawn(float x, float y, float radius, float r, float g, float b);
     Entity* at(int index);
 
@@ -171,42 +172,28 @@ Entity* Scene::at(int index) {
     return (Entity*)mq_handle_table_get(entities, mq_handle_table_handle_at(entities, (uint32_t)index));
 }
 
-/* 递归：从 JSON 节点建实体（含嵌套 children + 纹理）。 */
-static int load_node(Engine& eng, Scene& sc, const mq_json* e, int parent) {
-    float lx = (float)mq_json_num(mq_json_get(e, "x"), 0.0);
-    float ly = (float)mq_json_num(mq_json_get(e, "y"), 0.0);
-    float radius = (float)mq_json_num(mq_json_get(e, "radius"), 8.0);
-    float r = (float)mq_json_num(mq_json_get(e, "r"), 0.4);
-    float g = (float)mq_json_num(mq_json_get(e, "g"), 0.8);
-    float b = (float)mq_json_num(mq_json_get(e, "b"), 1.0);
-    const char* texpath = mq_json_str(mq_json_get(e, "texture"), nullptr);
-    int tex = texpath ? eng.load_texture(("/" + std::string(texpath)).c_str()) : -1;
-
-    int idx = sc.spawn(lx, ly, radius, r, g, b);
-    if (idx < 0) return -1;
-    Entity* ent = sc.at(idx);
-    ent->parent = parent;
-    ent->tex = tex;
-    const mq_json* ch = mq_json_get(e, "children");
-    uint32_t cn = mq_json_len(ch);
-    for (uint32_t i = 0; i < cn; ++i) load_node(eng, sc, mq_json_at(ch, i), idx);
-    return idx;
+/* 反序列化：文本 → 类型化 scn::Scene（全字段由反射/生成完成，含 entities 动态数组）。 */
+bool Scene::deserialize(Engine& eng, const std::string& text) {
+    return mq_persist_load_json(eng.scene_type, text.c_str(), text.size(), &desc) == 0;
 }
 
-bool Scene::deserialize(Engine& eng, const std::string& text) {
-    mq_json* doc = mq_json_parse(text.c_str(), text.size());
-    if (!doc) return false;
-    // 1) 类型化字段（title/script/width/height/seed/views/eye_sep）
-    if (mq_persist_load_json(eng.scene_type, text.c_str(), text.size(), &desc) != 0) {
-        mq_json_free(doc); return false;
-    }
-    // 2) 实体树（通用 JSON 结构）
-    const mq_json* ents = mq_json_get(doc, "entities");
-    uint32_t n = mq_json_len(ents);
-    for (uint32_t i = 0; i < n; ++i) load_node(eng, *this, mq_json_at(ents, i), -1);
-    mq_json_free(doc);
-    if (n) std::print("runtime: loaded {} root entities\n", n);
-    return true;
+/* 实例化：类型化场景 → 运行时实体（docs/12）——游戏数据落为世界。 */
+void Scene::instantiate(Engine& eng) {
+    struct Rec {
+        static void run(Engine& eng, Scene& sc, const std::vector<scn::Entity>& list, int parent) {
+            for (const auto& e : list) {
+                int tex = e.texture.empty() ? -1 : eng.load_texture(("/" + e.texture).c_str());
+                int idx = sc.spawn(e.x, e.y, e.radius, e.r, e.g, e.b);
+                if (idx < 0) continue;
+                Entity* ent = sc.at(idx);
+                ent->parent = parent;
+                ent->tex = tex;
+                run(eng, sc, e.children, idx);
+            }
+        }
+    };
+    Rec::run(eng, *this, desc.entities, -1);
+    std::print("runtime: instantiated {} root entities\n", desc.entities.size());
 }
 
 void Scene::compute_world() {
@@ -330,6 +317,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     Scene scene;
     eng.scene = &scene;
     if (!scene.deserialize(eng, text)) { std::print("runtime: failed to deserialize scene\n"); return 1; }
+    scene.instantiate(eng);
 
     eng.W = scene.desc.width > 0 ? scene.desc.width : 320;
     eng.H = scene.desc.height > 0 ? scene.desc.height : 240;

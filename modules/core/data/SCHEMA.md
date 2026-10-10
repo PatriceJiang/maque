@@ -118,6 +118,10 @@ typedef struct mq_field_desc {
   uint32_t    type_id;       /* 具名/元素类型；非具名为 0 */
   uint32_t    count;         /* 定长数组长度；否则 0 */
   uint32_t    attrs_flags;   /* bit0 transient, bit1 readonly, bit2 deprecated */
+  /* 动态数组 T[] 的容器算子（其余字段为 0）：使反射能类型化地 resize/取元素 */
+  uint32_t    elem_type_id;                    /* 具名元素类型 id；0 否则 */
+  void      (*container_resize)(void* field, uint32_t n);
+  void*     (*container_elem)(void* field, uint32_t i);
 } mq_field_desc;
 
 typedef struct mq_type_desc {
