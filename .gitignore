@@ -1,3 +1,7 @@
 # build output
 /build/
 compile_commands.json
+
+# wgpu-native binary SDK (headers are committed; binaries are not)
+third_party/wgpu-native/lib/*.so
+third_party/wgpu-native/lib/*.a

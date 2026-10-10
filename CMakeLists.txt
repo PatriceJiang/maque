@@ -12,4 +12,8 @@ enable_testing()
 
 add_subdirectory(modules/core/data)
 add_subdirectory(modules/core/reflect)
+add_subdirectory(modules/core/handle)
+add_subdirectory(modules/core/module)
 add_subdirectory(modules/math)
+add_subdirectory(modules/render/gfx)
+add_subdirectory(samples/ball_demo)
