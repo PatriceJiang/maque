@@ -29,10 +29,24 @@ void    destroy_device(Device* dev);
 Texture* create_texture(Device* dev, int w, int h, const uint8_t* rgba8);
 void     destroy_texture(Texture* tex);
 
+/* 视图（多屏/VR）：目标视口 + 平移(pan) + 眼距(eye) 偏移。 */
+struct View {
+    float vx, vy, vw, vh;   // 目标内视口（像素）
+    float pan;              // 内容平移（把该视图内容移到自己的视口）
+    float eye;              // 眼距/视差偏移（VR 立体）
+};
+
 /* 离屏渲染 N 个 sprite，readback 到 out_rgba（w*h*4，RGBA8）。 */
 void render_offscreen(Device* dev, int w, int h,
                       const SpriteDraw* sprites, size_t count,
                       const float bg[4],
                       std::vector<uint8_t>& out_rgba);
+
+/* 多视图渲染（VR/多屏）：同一场景到多视口，一次读回（target_w*target_h）。 */
+void render_views(Device* dev, int target_w, int target_h,
+                  const View* views, size_t nviews,
+                  const SpriteDraw* sprites, size_t count,
+                  const float bg[4],
+                  std::vector<uint8_t>& out_rgba);
 
 } // namespace maque::gfx

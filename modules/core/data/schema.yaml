@@ -1854,4 +1854,6 @@
         - { name: script,   type: string,  default: "" }      # 关联脚本资源（相对场景目录）
         - { name: width,    type: int32_t, default: 320 }
         - { name: height,   type: int32_t, default: 240 }
-        - { name: seed,     type: uint32_t, default: 0 }      # 引擎 RNG 种子（确定性）
+        - { name: seed,     type: uint32_t, default: 0 }
+        - { name: views,    type: int32_t, default: 1 }         # 同屏视图数（VR: 2）
+        - { name: eye_sep,  type: float,   default: 0.0F }      # 眼距/视差（像素）      # 引擎 RNG 种子（确定性）

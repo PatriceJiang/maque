@@ -4,6 +4,8 @@
   "width": 320,
   "height": 240,
   "seed": 12345,
+  "views": 2,
+  "eye_sep": 10.0,
   "entities": [
     {
       "x": 160, "y": 200, "radius": 16, "r": 1.0, "g": 1.0, "b": 1.0,

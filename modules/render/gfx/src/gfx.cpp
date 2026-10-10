@@ -15,7 +15,7 @@ namespace maque::gfx {
 
 /* 实心圆：颜色 * 圆内 */
 static const char* kSolidWGSL = R"(
-struct Globals { size: vec2f };
+struct Globals { size: vec2f, pan: f32, eye: f32 };
 @group(0) @binding(0) var<uniform> g: Globals;
 struct Inst { pos: vec2f, radius: f32, _pad: f32, color: vec4f };
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
@@ -26,7 +26,8 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   let corner = c[vi];
   let inst = insts[ii];
   let px = inst.pos + corner * inst.radius;
-  let x = px.x / g.size.x * 2.0 - 1.0;
+  let sx = px.x + g.pan + g.eye;
+  let x = sx / g.size.x * 2.0 - 1.0;
   let y = 1.0 - px.y / g.size.y * 2.0;
   var o: VOut; o.p = vec4f(x, y, 0., 1.); o.uv = corner; o.col = inst.color; return o;
 }
@@ -38,7 +39,7 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
 
 /* 纹理精灵：采样纹理 * 颜色 */
 static const char* kTexWGSL = R"(
-struct Globals { size: vec2f };
+struct Globals { size: vec2f, pan: f32, eye: f32 };
 @group(0) @binding(0) var<uniform> g: Globals;
 struct Inst { pos: vec2f, radius: f32, _pad: f32, color: vec4f };
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
@@ -51,7 +52,8 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   let corner = c[vi];
   let inst = insts[ii];
   let px = inst.pos + corner * inst.radius;      /* radius = 半尺寸 */
-  let x = px.x / g.size.x * 2.0 - 1.0;
+  let sx = px.x + g.pan + g.eye;
+  let x = sx / g.size.x * 2.0 - 1.0;
   let y = 1.0 - px.y / g.size.y * 2.0;
   var o: VOut; o.p = vec4f(x, y, 0., 1.); o.uv = corner * 0.5 + 0.5; o.col = inst.color; return o;
 }
@@ -268,10 +270,18 @@ static void begin_pass(WGPUCommandEncoder enc, WGPUTextureView view, WGPULoadOp 
     *out = wgpuCommandEncoderBeginRenderPass(enc, &rp);
 }
 
-void render_offscreen(Device* dv, int w, int h,
-                      const SpriteDraw* sprites, size_t count,
-                      const float bg[4], std::vector<uint8_t>& out_rgba) {
+/* 多视图渲染（VR/多屏）：同一场景按 views 渲染到目标的不同视口，一次读回。 */
+void render_views(Device* dv, int TW, int TH, const View* views, size_t nviews,
+                  const SpriteDraw* sprites, size_t count,
+                  const float bg[4], std::vector<uint8_t>& out_rgba) {
     if (!dv || !dv->device) return;
+    static const View kDefault{ 0, 0, 0, 0, 0, 0 };
+    if (nviews == 0 || !views) {
+        static View def;
+        def = View{ 0, 0, (float)TW, (float)TH, 0, 0 };
+        views = &def; nviews = 1;
+    }
+    (void)kDefault;
 
     std::vector<GpuInst> solid;
     std::unordered_map<const Texture*, std::vector<GpuInst>> groups;
@@ -285,79 +295,91 @@ void render_offscreen(Device* dv, int w, int h,
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
     td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
     td.dimension = WGPUTextureDimension_2D;
-    td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    td.size = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
     td.format = WGPUTextureFormat_RGBA8Unorm;
     td.mipLevelCount = 1; td.sampleCount = 1;
     WGPUTexture tex = wgpuDeviceCreateTexture(dv->device, &td);
     WGPUTextureView view = wgpuTextureCreateView(tex, nullptr);
 
-    float uni[4] = { (float)w, (float)h, 0.f, 0.f };
     WGPUBufferDescriptor ubd = WGPU_BUFFER_DESCRIPTOR_INIT;
     ubd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     ubd.size = 16;
-    WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
-    wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, 16);
+
+    WGPUBuffer solidBuf = solid.empty() ? nullptr : make_ibuf(dv, solid);
+    std::unordered_map<const Texture*, WGPUBuffer> groupBufs;
+    for (auto& kv : groups) groupBufs[kv.first] = make_ibuf(dv, kv.second);
 
     WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
 
-    // 实心 pass（清屏）
+    // 清屏（整目标一次）
     {
         WGPURenderPassEncoder pass = nullptr;
         begin_pass(enc, view, WGPULoadOp_Clear, bg, &pass);
-        if (!solid.empty()) {
-            WGPUBuffer ibuf = make_ibuf(dv, solid);
+        wgpuRenderPassEncoderEnd(pass);
+        wgpuRenderPassEncoderRelease(pass);
+    }
+
+    for (size_t vi = 0; vi < nviews; ++vi) {
+        const View& v = views[vi];
+        float uni[4] = { (float)TW, (float)TH, v.pan, v.eye };
+        WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
+        wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, 16);
+
+        // 实心
+        if (solidBuf) {
             WGPUBindGroupEntry be[2] = {};
             be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
-            be[1].binding = 1; be[1].buffer = ibuf; be[1].size = (uint64_t)solid.size() * sizeof(GpuInst);
+            be[1].binding = 1; be[1].buffer = solidBuf; be[1].size = (uint64_t)solid.size() * sizeof(GpuInst);
             WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
             WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+            WGPURenderPassEncoder pass = nullptr;
+            begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
+            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
             wgpuRenderPassEncoderSetPipeline(pass, dv->solidPipeline);
             wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
             wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)solid.size(), 0, 0);
+            wgpuRenderPassEncoderEnd(pass);
+            wgpuRenderPassEncoderRelease(pass);
             wgpuBindGroupRelease(bgroup);
-            wgpuBufferRelease(ibuf);
         }
-        wgpuRenderPassEncoderEnd(pass);
-        wgpuRenderPassEncoderRelease(pass);
+
+        // 纹理组
+        for (auto& kv : groups) {
+            const Texture* texh = kv.first;
+            WGPUBuffer gb = groupBufs[texh];
+            WGPUBindGroupEntry be[4] = {};
+            be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
+            be[1].binding = 1; be[1].buffer = gb; be[1].size = (uint64_t)kv.second.size() * sizeof(GpuInst);
+            be[2].binding = 2; be[2].textureView = texh->view;
+            be[3].binding = 3; be[3].sampler = dv->sampler;
+            WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
+            WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+            WGPURenderPassEncoder pass = nullptr;
+            begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
+            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
+            wgpuRenderPassEncoderSetPipeline(pass, dv->texPipeline);
+            wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
+            wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)kv.second.size(), 0, 0);
+            wgpuRenderPassEncoderEnd(pass);
+            wgpuRenderPassEncoderRelease(pass);
+            wgpuBindGroupRelease(bgroup);
+        }
+        wgpuBufferRelease(ubuf);
     }
 
-    // 纹理 pass（每纹理一组，load）
-    for (auto& kv : groups) {
-        const Texture* texh = kv.first;
-        const std::vector<GpuInst>& v = kv.second;
-        WGPUBuffer ibuf = make_ibuf(dv, v);
-        WGPUBindGroupEntry be[4] = {};
-        be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
-        be[1].binding = 1; be[1].buffer = ibuf; be[1].size = (uint64_t)v.size() * sizeof(GpuInst);
-        be[2].binding = 2; be[2].textureView = texh->view;
-        be[3].binding = 3; be[3].sampler = dv->sampler;
-        WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
-        WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
-
-        WGPURenderPassEncoder pass = nullptr;
-        begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
-        wgpuRenderPassEncoderSetPipeline(pass, dv->texPipeline);
-        wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
-        wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)v.size(), 0, 0);
-        wgpuRenderPassEncoderEnd(pass);
-        wgpuRenderPassEncoderRelease(pass);
-        wgpuBindGroupRelease(bgroup);
-        wgpuBufferRelease(ibuf);
-    }
-
-    // readback
-    const uint32_t bytes_per_row = w * 4;
+    // readback（TW x TH）
+    const uint32_t bytes_per_row = TW * 4;
     const uint32_t padded = (bytes_per_row + 255u) & ~255u;
     WGPUBufferDescriptor rbd = WGPU_BUFFER_DESCRIPTOR_INIT;
     rbd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
-    rbd.size = (uint64_t)padded * h;
+    rbd.size = (uint64_t)padded * TH;
     WGPUBuffer rbuf = wgpuDeviceCreateBuffer(dv->device, &rbd);
 
     WGPUTexelCopyTextureInfo src = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
     src.texture = tex; src.aspect = WGPUTextureAspect_All;
     WGPUTexelCopyBufferInfo dst = WGPU_TEXEL_COPY_BUFFER_INFO_INIT;
-    dst.buffer = rbuf; dst.layout.offset = 0; dst.layout.bytesPerRow = padded; dst.layout.rowsPerImage = h;
-    WGPUExtent3D extent = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    dst.buffer = rbuf; dst.layout.offset = 0; dst.layout.bytesPerRow = padded; dst.layout.rowsPerImage = TH;
+    WGPUExtent3D extent = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
     wgpuCommandEncoderCopyTextureToBuffer(enc, &src, &dst, &extent);
 
     WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
@@ -371,18 +393,26 @@ void render_offscreen(Device* dv, int w, int h,
     wgpuBufferMapAsync(rbuf, WGPUMapMode_Read, 0, rbd.size, mci);
     poll(dv->instance, [&]{ return (uint32_t)st != 0; });
 
-    out_rgba.assign((size_t)w * h * 4, 0);
+    out_rgba.assign((size_t)TW * TH * 4, 0);
     if (st == WGPUMapAsyncStatus_Success) {
         const uint8_t* mapped = (const uint8_t*)wgpuBufferGetConstMappedRange(rbuf, 0, rbd.size);
-        for (int y = 0; y < h; ++y)
-            std::memcpy(&out_rgba[(size_t)y * w * 4], mapped + (size_t)y * padded, bytes_per_row);
+        for (int y = 0; y < TH; ++y)
+            std::memcpy(&out_rgba[(size_t)y * TW * 4], mapped + (size_t)y * padded, bytes_per_row);
         wgpuBufferUnmap(rbuf);
     }
 
     wgpuBufferRelease(rbuf);
-    wgpuBufferRelease(ubuf);
+    if (solidBuf) wgpuBufferRelease(solidBuf);
+    for (auto& kv : groupBufs) wgpuBufferRelease(kv.second);
     wgpuTextureViewRelease(view);
     wgpuTextureRelease(tex);
+}
+
+void render_offscreen(Device* dv, int w, int h,
+                      const SpriteDraw* sprites, size_t count,
+                      const float bg[4], std::vector<uint8_t>& out_rgba) {
+    View v{ 0, 0, (float)w, (float)h, 0, 0 };
+    render_views(dv, w, h, &v, 1, sprites, count, bg, out_rgba);
 }
 
 } // namespace maque::gfx
