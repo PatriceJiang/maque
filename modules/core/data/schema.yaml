@@ -82,6 +82,14 @@
       fields:
         - { name: normal, type: Vec3, default: "{0.0F, 1.0F, 0.0F}" }
         - { name: distance, type: float, default: 0.0F }
+  # 函数接口声明（→ 生成 C++ 头 + JS 绑定，docs/21）
+  api_list:
+    - fn: clamp
+      args: [ { name: value, type: float }, { name: lo, type: float }, { name: hi, type: float } ]
+      returns: float
+    - fn: lerp
+      args: [ { name: a, type: float }, { name: b, type: float }, { name: t, type: float } ]
+      returns: float
 
 - namespace: asset
   version: 1

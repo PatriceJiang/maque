@@ -10,10 +10,13 @@
 
 namespace maque::gfx {
 
+struct Texture;          // 不透明纹理句柄
+
 struct SpriteDraw {
     float x, y;          // 屏幕坐标（像素，y 向下）
     float radius;        // 像素
     float r, g, b, a;    // 0..1
+    const Texture* tex = nullptr;   // null = 实心圆；否则为纹理四边形
 };
 
 struct Device;           // 不透明句柄
@@ -21,6 +24,10 @@ struct Device;           // 不透明句柄
 /* 创建 WebGPU 设备（instance→adapter→device），out_backend 可选返回后端/设备名。 */
 Device* create_device(std::string* out_backend = nullptr);
 void    destroy_device(Device* dev);
+
+/* 创建 RGBA8 纹理（用于 sprite 采样）。 */
+Texture* create_texture(Device* dev, int w, int h, const uint8_t* rgba8);
+void     destroy_texture(Texture* tex);
 
 /* 离屏渲染 N 个 sprite，readback 到 out_rgba（w*h*4，RGBA8）。 */
 void render_offscreen(Device* dev, int w, int h,

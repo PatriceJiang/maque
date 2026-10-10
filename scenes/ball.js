@@ -12,6 +12,8 @@ let x = 0.0, y = 200.0, vy = 0.0;
 let resting = false, restTime = 0.0, done = false;
 
 function on_start() {
+    // 引擎接口经"声明 + 生成"的绑定调用（docs/21）：math.clamp / math.lerp
+    log("math.clamp(5,0,3)=" + math.clamp(5, 0, 3) + " math.lerp(0,10,0.25)=" + math.lerp(0, 10, 0.25));
     // 实体由场景资源(.scn)提供；脚本只驱动它（游戏即资源）
     if (entity_count() > 0) {
         id = 0;

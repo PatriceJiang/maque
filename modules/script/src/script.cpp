@@ -70,11 +70,27 @@ void mq_script_vm_destroy(mq_script_vm* vm) {
     delete vm;
 }
 
+/* 支持 "ns.fn" 形式：在全局上创建/复用命名空间对象后挂函数。 */
 static int register_common(mq_script_vm* vm, const char* name, int magic) {
     JSValue fn = JS_NewCFunctionMagic(vm->ctx, host_trampoline, name, 4,
                                       JS_CFUNC_generic_magic, magic);
     JSValue global = JS_GetGlobalObject(vm->ctx);
-    JS_SetPropertyStr(vm->ctx, global, name, fn);
+    std::string n(name);
+    auto dot = n.rfind('.');
+    if (dot == std::string::npos) {
+        JS_SetPropertyStr(vm->ctx, global, name, fn);
+    } else {
+        std::string ns = n.substr(0, dot);
+        std::string fnm = n.substr(dot + 1);
+        JSValue obj = JS_GetPropertyStr(vm->ctx, global, ns.c_str());
+        if (!JS_IsObject(obj)) {
+            JS_FreeValue(vm->ctx, obj);
+            obj = JS_NewObject(vm->ctx);
+            JS_SetPropertyStr(vm->ctx, global, ns.c_str(), JS_DupValue(vm->ctx, obj));
+        }
+        JS_SetPropertyStr(vm->ctx, obj, fnm.c_str(), fn);
+        JS_FreeValue(vm->ctx, obj);
+    }
     JS_FreeValue(vm->ctx, global);
     return 0;
 }

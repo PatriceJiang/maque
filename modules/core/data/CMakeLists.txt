@@ -16,7 +16,9 @@ set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/maque_types.h"
     "${MAQUE_GEN_DIR}/maque_desc.h"
     "${MAQUE_GEN_DIR}/maque_desc.cpp"
-    "${MAQUE_GEN_DIR}/maque_schema.json")
+    "${MAQUE_GEN_DIR}/maque_schema.json"
+    "${MAQUE_GEN_DIR}/maque_api.h"
+    "${MAQUE_GEN_DIR}/maque_bindings.cpp")
 
 if(NODE_EXECUTABLE)
     add_custom_command(
@@ -38,6 +40,15 @@ if(NODE_EXECUTABLE)
 
     # 便捷：`ninja maque_codegen` 强制重生成
     add_custom_target(maque_codegen DEPENDS ${MAQUE_GEN_FILES})
+
+    # 生成的脚本绑定 TU（调用引擎 API；链接 script，符号在最终可执行文件解析）
+    if(TARGET maque::script)
+        add_library(maque_genbind STATIC "${MAQUE_GEN_DIR}/maque_bindings.cpp")
+        add_library(maque::genbind ALIAS maque_genbind)
+        target_include_directories(maque_genbind PUBLIC "${MAQUE_GEN_DIR}")
+        target_link_libraries(maque_genbind PUBLIC maque::script)
+        set_target_properties(maque_genbind PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+    endif()
 
     # 兼容旧的 INTERFACE 目标名（暴露生成目录）
     add_library(maque_data INTERFACE)

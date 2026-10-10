@@ -29,6 +29,7 @@
 | [18](18-与CocosCreator节点对照.md) | 与 Cocos Creator 节点对照（完备性差距） |
 | [19](19-输入与事件分发系统.md) | 输入与事件分发系统（指针/触摸/焦点/命中/传播） |
 | [20](20-运行时与资源模型.md) | 运行时与资源模型（引擎即浏览器，游戏即资源） |
+| [21](21-接口声明与绑定生成.md) | 接口声明与绑定生成（声明一次，生成 C++/脚本绑定） |
 | [assets/00](assets/00-index.md) | 资产系列索引（Effect/Material/Mesh/Texture/Font/AnimationClip/Skeleton/Spine） |
 | [assets/01](assets/01-material.md) | 资产详设：材质（Material / Effect / MaterialInstance） |
 

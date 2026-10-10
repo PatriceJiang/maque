@@ -10,6 +10,8 @@ option(MAQUE_BUILD_TESTS "Build maque unit tests" ON)
 
 enable_testing()
 
+# script 需先于 data（data 生成绑定 TU 依赖 script）
+add_subdirectory(modules/script)
 add_subdirectory(modules/core/data)
 add_subdirectory(modules/core/reflect)
 add_subdirectory(modules/core/handle)
@@ -17,7 +19,7 @@ add_subdirectory(modules/core/module)
 add_subdirectory(modules/math)
 add_subdirectory(modules/io/vfs)
 add_subdirectory(modules/data/persist)
-add_subdirectory(modules/script)
 add_subdirectory(modules/render/gfx)
+add_subdirectory(modules/api)
 add_subdirectory(modules/runtime)
 add_subdirectory(samples/player)

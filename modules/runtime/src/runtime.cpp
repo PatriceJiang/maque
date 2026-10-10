@@ -8,6 +8,7 @@
 #include "core/script/mq_script.h"
 #include "core/handle/mq_handle.h"
 #include "core/vfs/mq_vfs.h"
+#include "core/api/mq_api.h"
 #include "render/gfx/mq_gfx.h"
 #include "maque_types.h"
 
@@ -215,6 +216,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     }
 
     mq_script_vm* vm = mq_script_vm_create();
+    mq_bind_generated(vm);                        // 声明式引擎 API（math.* 等）
     mq_script_register_str(vm, "log", fn_log, &rt);
     mq_script_register_str(vm, "cfg", fn_cfg, &rt);
     mq_script_register_num(vm, "screen_w", fn_screen_w, &rt);
