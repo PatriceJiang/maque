@@ -40,14 +40,20 @@ WASM 一等平台（0016）、反射中枢（0001/0011）、开发期文本优�
 快照回放（0023）、CDP 式控制平面（0024）、WebGPU+T1 pass 层（0025）、反射生成绑定+帧边界 GC（0026）、
 世界层 ECS 权威（0027）。
 
-## 未决开放问题（Open Decisions）
+## 开放问题（Open Decisions）
 
-| ID | 问题 | 影响 |
+**目前已全部收敛。** 结论：
+
+| ID | 结论 | 决策 |
 |----|------|------|
-| OD-3 | 嵌入式是否需要 WebGPU 降级路径（如 GLES）？ | 文档 13 |
-| OD-9 | 远程游戏/资产的信任模型（签名 / 哈希 / 沙箱边界）？ | 文档 04、14 |
-| OD-10 | 物理实现选型：自研确定性求解器 vs Jolt/Rapier/Bullet？ | 文档 15 |
-| OD-11 | 是否/何时上完整 frame graph（T2）？ | 文档 13 |
-
-> 已解决：OD-1（控制平面，ADR-0024）· OD-2（双视图，ADR-0003）· OD-4（ABI，ADR-0013）·
-> OD-5（GC 时机，ADR-0026）· OD-6（序列化中枢，ADR-0011）· OD-7（C++23，ADR-0012）· OD-8（WASM，ADR-0016）。
+| OD-1 | 控制平面 = JSON-RPC 对齐 CDP + MCP 包装 | ADR-0024 |
+| OD-2 | 双视图（节点树 → bake → ECS） | ADR-0003 |
+| OD-3 | 嵌入式**不降级**，限定有 Vulkan/Metal/D3D12 的目标 | ADR-0029 |
+| OD-4 | 跨 `.so` 仅 C ABI + 句柄 + 分配者释放 | ADR-0013 |
+| OD-5 | quickjs 主 + refcount；cycle GC 仅帧边界 | ADR-0026 |
+| OD-6 | persistence = 序列化中枢 | ADR-0011 |
+| OD-7 | C++23 | ADR-0012 |
+| OD-8 | WASM/浏览器为一等目标平台 | ADR-0016 |
+| OD-9 | 远程资产 = 内容哈希校验 + 能力沙箱（暂不签名） | ADR-0030 |
+| OD-10 | 物理集成 Rapier（Rust，C ABI FFI） | ADR-0028 |
+| OD-11 | 维持 T1 pass 层，T2 按硬指标再评估 | 见文档 13 |

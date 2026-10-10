@@ -9,7 +9,7 @@
 | 平台 | 模块加载 | 线程 | IO | GPU |
 |------|----------|------|----|----|
 | 原生 (Linux/macOS/Win) | `.so` + `dlopen` | 真线程 | VFS / OS | WebGPU |
-| 嵌入式 | 静态链接 + 编译期模块集 | 单线程或多核（视芯片） | VFS / `res://` | WebGPU（驱动见 OD-3） |
+| 嵌入式 | 静态链接 + 编译期模块集 | 单线程或多核（视芯片） | VFS / `res://` | WebGPU（**须有 Vulkan/Metal/D3D12**，ADR-0029） |
 | **Web (WASM)** | 见 §3 | 默认单线程协作式 | **仅 VFS**（fetch/OPFS/内存） | **WebGPU（浏览器原生）** |
 
 **公共下限**：WebGPU 渲染 · quickjs 脚本 · VFS IO · coroutine 异步。
