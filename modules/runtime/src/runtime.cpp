@@ -7,6 +7,7 @@
 #include "core/reflect/mq_reflect.h"
 #include "core/script/mq_script.h"
 #include "core/handle/mq_handle.h"
+#include "core/vfs/mq_vfs.h"
 #include "render/gfx/mq_gfx.h"
 #include "maque_types.h"
 
@@ -158,8 +159,18 @@ bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>
 extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (!scn_path) return 1;
 
+    // 资源经 VFS 加载（docs/04）：把场景所在目录挂载为根。
+    std::filesystem::path scnp(scn_path);
+    std::string scn_dir = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
+    mq_vfs* vfs = mq_vfs_create();
+    mq_vfs_mount(vfs, "/", ("file://" + scn_dir).c_str());
+
     // 1) 加载场景资源 + 反序列化
-    std::string text = read_file(scn_path);
+    std::string text;
+    { void* d = nullptr; size_t n = 0;
+      if (mq_vfs_read(vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == 0) {
+          text.assign((char*)d, n); mq_vfs_free(d);
+      } }
     if (text.empty()) { std::printf("runtime: cannot read scene '%s'\n", scn_path); return 1; }
     mq_reflect_init();
     Runtime rt;
@@ -173,11 +184,8 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     std::printf("runtime: scene '%s' title='%s' script='%s' %dx%d seed=%u\n",
                 scn_path, rt.scene.title.c_str(), rt.scene.script.c_str(), rt.W, rt.H, rt.scene.seed);
 
-    // 脚本路径：相对场景目录
-    std::filesystem::path scnp(scn_path);
+    // 脚本路径：相对场景目录（经 VFS 以 '/' 为根）
     std::string script_path = rt.scene.script;
-    if (!script_path.empty() && std::filesystem::path(script_path).is_relative())
-        script_path = (scnp.parent_path() / script_path).string();
 
     // 2) 设备 + 脚本
     std::string backend;
@@ -223,7 +231,9 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_script_register_num(vm, "entity_destroy", fn_entity_destroy, &rt);
 
     if (!script_path.empty()) {
-        std::string js = read_file(script_path);
+        std::string js;
+        { void* d = nullptr; size_t n = 0;
+          if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) == 0) { js.assign((char*)d, n); mq_vfs_free(d); } }
         if (js.empty()) { std::printf("runtime: cannot read script '%s'\n", script_path.c_str()); return 1; }
         if (mq_script_eval(vm, js.c_str(), script_path.c_str()) != 0) { std::printf("runtime: script error\n"); return 1; }
     }
@@ -259,6 +269,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (rt.entities) mq_handle_table_destroy(rt.entities);
     mq_script_vm_destroy(vm);
     maque::gfx::destroy_device(rt.dev);
+    if (vfs) mq_vfs_destroy(vfs);
     return rt.quit ? 0 : 1;
 }
 
