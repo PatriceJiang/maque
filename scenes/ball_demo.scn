@@ -1,0 +1,9 @@
+{
+  "width": 320,
+  "height": 240,
+  "gravity": 980.0,
+  "restitution": 0.6,
+  "radius": 8.0,
+  "remove_delay": 5.0,
+  "click": { "x": 160.0, "y": 200.0 }
+}

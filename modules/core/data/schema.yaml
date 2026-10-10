@@ -1832,3 +1832,16 @@
         - { name: pick_layer, type: uint32_t, default: 1 }
         - { name: drag_enabled, type: bool, default: false }
         - { name: hover_cursor, type: CursorShape, default: "CursorShape::Arrow" }
+
+- namespace: scn
+  version: 1
+  class_list:
+    - struct: BallScene
+      fields:
+        - { name: width,        type: int32_t, default: 320 }
+        - { name: height,       type: int32_t, default: 240 }
+        - { name: gravity,      type: float,   default: 980.0F, attrs: { unit: px_per_s2 } }
+        - { name: restitution,  type: float,   default: 0.6F, attrs: { range: [0.0, 1.0] } }
+        - { name: radius,       type: float,   default: 8.0F }
+        - { name: remove_delay, type: float,   default: 5.0F }
+        - { name: click,        type: math.Vec2 }
