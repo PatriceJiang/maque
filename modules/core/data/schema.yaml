@@ -1848,17 +1848,18 @@
 - namespace: scn
   version: 1
   class_list:
-    - struct: Entity
+    # 组件类型（docs/17）：entity 由带 type 的若干组件组合而成。
+    - struct: Transform2D
       fields:
-        - { name: name,     type: string,  default: "" }
-        - { name: x,        type: float,   default: 0.0F }
-        - { name: y,        type: float,   default: 0.0F }
-        - { name: radius,   type: float,   default: 8.0F }
-        - { name: r,        type: float,   default: 0.4F }
-        - { name: g,        type: float,   default: 0.8F }
-        - { name: b,        type: float,   default: 1.0F }
-        - { name: texture,  type: string,  default: "" }       # 贴图资源（相对场景目录）
-        - { name: children, type: "Entity[]" }                 # 嵌套（动态数组，反射可反序列化）
+        - { name: x, type: float, default: 0.0F }
+        - { name: y, type: float, default: 0.0F }
+    - struct: Sprite
+      fields:
+        - { name: radius,  type: float,  default: 8.0F }
+        - { name: r,       type: float,  default: 0.4F }
+        - { name: g,       type: float,  default: 0.8F }
+        - { name: b,       type: float,  default: 1.0F }
+        - { name: texture, type: string, default: "" }         # 贴图资源（相对场景目录）
     - struct: Scene
       fields:
         - { name: title,    type: string,  default: "maque scene" }
@@ -1868,4 +1869,4 @@
         - { name: seed,     type: uint32_t, default: 0 }
         - { name: views,    type: int32_t, default: 1 }         # 同屏视图数（VR: 2）
         - { name: eye_sep,  type: float,   default: 0.0F }      # 眼距/视差（像素）
-        - { name: entities, type: "Entity[]" }                 # 实体树（类型化，反射反序列化）      # 引擎 RNG 种子（确定性）
+        # entities 不在此：节点树通用（name/children/components），组件按 type 反射反序列化      # 引擎 RNG 种子（确定性）

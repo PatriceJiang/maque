@@ -25,6 +25,9 @@ const mq_json* mq_json_at(const mq_json* arr, uint32_t i);       /* 数组元素
 double         mq_json_num(const mq_json* v, double def);
 const char*    mq_json_str(const mq_json* v, const char* def);
 
+/* 把一个已解析的 JSON 对象节点按反射写入 out（用于异构组件：type → 描述符）。 */
+int mq_persist_apply_json(const mq_type_desc* type, const mq_json* node, void* out);
+
 #ifdef __cplusplus
 }
 #endif

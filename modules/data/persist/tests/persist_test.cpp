@@ -38,27 +38,22 @@ int main() {
     CHECK(s2.title == "maque scene");            // schema 默认
     CHECK(s2.script.empty());
 
-    // 动态数组 + 嵌套（实体树，反射驱动）
+    // 组件：按 type 反射反序列化（异构组件走 apply_json）
     {
-        const char* scene_json = R"({
-          "title":"t","width":320,"height":240,
-          "entities":[
-            { "x":10,"y":20,"radius":16,"r":1,"g":1,"b":1,"texture":"ball.png",
-              "children":[ { "x":0,"y":0,"radius":6,"texture":"dot.png" } ] },
-            { "x":50,"y":60 }
-          ]
-        })";
-        scn::Scene sc{};
-        CHECK(mq_persist_load_json(t, scene_json, std::strlen(scene_json), &sc) == 0);
-        CHECK(sc.entities.size() == 2);
-        if (sc.entities.size() == 2) {
-            CHECK(sc.entities[0].texture == "ball.png");
-            CHECK(std::fabs(sc.entities[0].radius - 16.0F) < 1e-4F);
-            CHECK(sc.entities[0].children.size() == 1);                 // 嵌套
-            CHECK(sc.entities[0].children[0].texture == "dot.png");
-            CHECK(std::fabs(sc.entities[1].x - 50.0F) < 1e-4F);
-            CHECK(sc.entities[1].children.empty());
-        }
+        const mq_type_desc* st = mq_reflect_type_by_name("scn.Sprite");
+        CHECK(st != nullptr);
+        const char* j = R"({"radius":16,"r":1,"g":0.6,"b":0.2,"texture":"ball.png"})";
+        scn::Sprite sp{};
+        CHECK(mq_persist_load_json(st, j, std::strlen(j), &sp) == 0);
+        CHECK(std::fabs(sp.radius - 16.0F) < 1e-4F);
+        CHECK(sp.texture == "ball.png");
+
+        mq_json* dom = mq_json_parse(j, std::strlen(j));
+        CHECK(dom != nullptr);
+        scn::Sprite sp2{};
+        CHECK(mq_persist_apply_json(st, dom, &sp2) == 0);
+        CHECK(std::fabs(sp2.g - 0.6F) < 1e-4F);
+        mq_json_free(dom);
     }
 
     // 非法 JSON

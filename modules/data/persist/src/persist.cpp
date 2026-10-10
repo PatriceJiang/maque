@@ -251,3 +251,10 @@ extern "C" const char* mq_json_str(const mq_json* v, const char* def) {
     const auto* j = reinterpret_cast<const JVal*>(v);
     return j->kind == JVal::Str ? j->str.c_str() : def;
 }
+
+extern "C" int mq_persist_apply_json(const mq_type_desc* type, const mq_json* node, void* out) {
+    if (!type || !node || !out) return 1;
+    mq_reflect_init();
+    apply_struct(type, out, *reinterpret_cast<const JVal*>(node));
+    return 0;
+}
