@@ -1,35 +1,43 @@
-// ball.js —— 一个下落弹跳球。全部游戏逻辑都在这里；引擎只提供通用能力
-// (screen_w/screen_h/cfg/draw_sprite/rng/quit)。世界坐标 y 向上。
+// ball.js —— 下落弹跳球。游戏逻辑全在脚本；引擎提供"实体/组件"世界与渲染。
+// 脚本只操作实体组件(entity_spawn/entity_set_pos/entity_destroy)，
+// 渲染由引擎从 sprite 组件提取（世界坐标 y 向上，引擎渲染时翻转）。
 const gravity     = 980.0;   // px/s^2
 const restitution = 0.6;     // 恢复系数
 const radius      = 8.0;
+const ground      = radius;
 const removeDelay = 5.0;     // 静止后移除延迟（秒）
 
-let x = 0.0, y = 200.0, vx = 0.0, vy = 0.0;
+let id = -1;
+let x = 0.0, y = 200.0, vy = 0.0;
 let resting = false, restTime = 0.0, done = false;
 
 function on_start() {
     x = screen_w() * 0.5;
-    log("ball: spawn at (" + x + "," + y + ")");
+    id = entity_spawn(x, y, radius, 0.4, 0.8, 1.0);   // 带 sprite 组件的实体
+    log("ball: spawn entity id=" + id);
 }
 
 function update(dt) {
     if (done) return;
 
     if (!resting) {
-        vy -= gravity * dt;          // 自由落体
+        vy -= gravity * dt;       // 自由落体
         y  += vy * dt;
-        x  += vx * dt;
-        if (y <= radius) {           // 触地 → 弹跳
-            y = radius;
+        if (y <= ground) {        // 触地 → 弹跳
+            y = ground;
             vy = -vy * restitution;
             if (Math.abs(vy) < 20.0) { vy = 0.0; resting = true; }   // 高度→0，静止
         }
     } else {
         restTime += dt;
-        if (restTime >= removeDelay) { done = true; log("ball: removed"); quit(); return; }
+        if (restTime >= removeDelay) {
+            entity_destroy(id);   // 静止 5s 后销毁实体
+            log("ball: destroy entity id=" + id);
+            done = true;
+            quit();
+            return;
+        }
     }
 
-    // 屏幕坐标 y 向下 → 翻转
-    draw_sprite(x, screen_h() - y, radius, 0.4, 0.8, 1.0);
+    entity_set_pos(id, x, y);     // 更新 transform 组件
 }

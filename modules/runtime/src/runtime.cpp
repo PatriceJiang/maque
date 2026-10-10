@@ -6,6 +6,7 @@
 #include "core/persist/mq_persist.h"
 #include "core/reflect/mq_reflect.h"
 #include "core/script/mq_script.h"
+#include "core/handle/mq_handle.h"
 #include "render/gfx/mq_gfx.h"
 #include "maque_types.h"
 
@@ -19,9 +20,17 @@
 
 namespace {
 
+/* 实体/组件（引擎世界模型，docs/12/17）。渲染层从组件提取，不回写。 */
+struct Entity {
+    float x = 0, y = 0;
+    float radius = 8;
+    float r = 0.4f, g = 0.8f, b = 1.0f;
+    bool  has_sprite = false;
+};
+
 struct Runtime {
     maque::gfx::Device* dev = nullptr;
-    std::vector<maque::gfx::SpriteDraw> draws;
+    std::vector<maque::gfx::SpriteDraw> draws;   // 脚本直接提交的绘制
     const mq_type_desc* scene_type = nullptr;
     scn::Scene scene{};
     uint32_t rng = 0;
@@ -29,7 +38,15 @@ struct Runtime {
     int W = 0, H = 0;
     float bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
 
+    mq_handle_table* entities = nullptr;          // 实体：{transform + sprite 组件}
+
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
+
+    Entity* entity(mq_handle h) { return (Entity*)mq_handle_table_get(entities, h); }
+    Entity* entity_by_index(double id) {
+        if (id < 0) return nullptr;
+        return entity(mq_handle_table_handle_at(entities, (uint32_t)id));
+    }
 };
 
 std::string read_file(const std::string& path) {
@@ -79,6 +96,41 @@ int fn_draw(void* u, int argc, const double* a, double*) {
     return 0;
 }
 
+/* ---- 实体/组件 API（引擎世界） ---- */
+int fn_entity_spawn(void* u, int argc, const double* a, double* ret) {
+    auto* rt = (Runtime*)u;
+    void* p = nullptr;
+    mq_handle h = mq_handle_table_alloc(rt->entities, &p);
+    if (h.index == MQ_HANDLE_INDEX_NONE) { *ret = -1; return 0; }
+    auto* e = (Entity*)p;
+    e->has_sprite = true;
+    if (argc >= 2) { e->x = (float)a[0]; e->y = (float)a[1]; }
+    if (argc >= 3) e->radius = (float)a[2];
+    if (argc >= 6) { e->r = (float)a[3]; e->g = (float)a[4]; e->b = (float)a[5]; }
+    *ret = (double)h.index; return 0;
+}
+int fn_entity_set_pos(void* u, int argc, const double* a, double*) {
+    auto* rt = (Runtime*)u; if (argc < 3) return 0;
+    if (Entity* e = rt->entity_by_index(a[0])) { e->x = (float)a[1]; e->y = (float)a[2]; }
+    return 0;
+}
+int fn_entity_x(void* u, int argc, const double* a, double* ret) {
+    auto* rt = (Runtime*)u; Entity* e = argc >= 1 ? rt->entity_by_index(a[0]) : nullptr;
+    *ret = e ? e->x : 0.0; return 0;
+}
+int fn_entity_y(void* u, int argc, const double* a, double* ret) {
+    auto* rt = (Runtime*)u; Entity* e = argc >= 1 ? rt->entity_by_index(a[0]) : nullptr;
+    *ret = e ? e->y : 0.0; return 0;
+}
+int fn_entity_count(void* u, int, const double*, double* ret) {
+    *ret = (double)mq_handle_table_count(((Runtime*)u)->entities); return 0;
+}
+int fn_entity_destroy(void* u, int argc, const double* a, double*) {
+    auto* rt = (Runtime*)u;
+    if (argc >= 1) mq_handle_table_free(rt->entities, mq_handle_table_handle_at(rt->entities, (uint32_t)a[0]));
+    return 0;
+}
+
 bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba) {
     std::FILE* f = std::fopen(path.c_str(), "wb");
     if (!f) return false;
@@ -123,6 +175,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     rt.dev = maque::gfx::create_device(&backend);
     if (!rt.dev) { std::printf("runtime: no WebGPU device\n"); return 2; }
     std::printf("runtime: WebGPU backend '%s'\n", backend.c_str());
+    rt.entities = mq_handle_table_create(sizeof(Entity), alignof(Entity));
 
     mq_script_vm* vm = mq_script_vm_create();
     mq_script_register_str(vm, "log", fn_log, &rt);
@@ -133,6 +186,12 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_script_register_num(vm, "quit", fn_quit, &rt);
     mq_script_register_num(vm, "clear", fn_clear, &rt);
     mq_script_register_num(vm, "draw_sprite", fn_draw, &rt);
+    mq_script_register_num(vm, "entity_spawn", fn_entity_spawn, &rt);
+    mq_script_register_num(vm, "entity_set_pos", fn_entity_set_pos, &rt);
+    mq_script_register_num(vm, "entity_x", fn_entity_x, &rt);
+    mq_script_register_num(vm, "entity_y", fn_entity_y, &rt);
+    mq_script_register_num(vm, "entity_count", fn_entity_count, &rt);
+    mq_script_register_num(vm, "entity_destroy", fn_entity_destroy, &rt);
 
     if (!script_path.empty()) {
         std::string js = read_file(script_path);
@@ -151,6 +210,13 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
         rt.draws.clear();
         if (mq_script_has(vm, "update")) mq_script_call1(vm, "update", dt, nullptr);
         mq_script_gc(vm);                          // 帧边界 GC
+        // 渲染层从组件提取（只读，不回写；docs/12）
+        for (uint32_t i = 0; i < mq_handle_table_capacity(rt.entities); ++i) {
+            mq_handle h = mq_handle_table_handle_at(rt.entities, i);
+            auto* e = (Entity*)mq_handle_table_get(rt.entities, h);
+            if (e && e->has_sprite)
+                rt.draws.push_back({ e->x, (float)rt.H - e->y, e->radius, e->r, e->g, e->b, 1.0F });
+        }
         maque::gfx::render_offscreen(rt.dev, rt.W, rt.H, rt.draws.data(), rt.draws.size(),
                                      rt.bg, pixels);
         if (frames_dir) {
@@ -161,6 +227,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
 
     // 4) 退出
     std::printf("runtime: exited after %d frames (quit=%d)\n", frame, rt.quit ? 1 : 0);
+    if (rt.entities) mq_handle_table_destroy(rt.entities);
     mq_script_vm_destroy(vm);
     maque::gfx::destroy_device(rt.dev);
     return rt.quit ? 0 : 1;
