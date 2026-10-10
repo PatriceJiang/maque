@@ -1,5 +1,6 @@
 // maque 模块宿主单元测试（独立：仅依赖 maque::module + 一个测试 .so）
 #include "core/module/mq_module.h"
+#include <print>
 #include "test_iface.h"
 
 #include <cstdio>
@@ -7,10 +8,10 @@
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
-    std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
+    std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
 int main(int argc, char** argv) {
-    if (argc < 2) { std::printf("usage: %s <module.so>\n", argv[0]); return 2; }
+    if (argc < 2) { std::print("usage: {} <module.so>\n", argv[0]); return 2; }
 
     mq_host* host = mq_host_create();
     CHECK(host != nullptr);
@@ -42,7 +43,7 @@ int main(int argc, char** argv) {
 
     mq_host_destroy(host);
 
-    if (g_failures == 0) { std::printf("host_test: all checks passed\n"); return 0; }
-    std::printf("host_test: %d failure(s)\n", g_failures);
+    if (g_failures == 0) { std::print("host_test: all checks passed\n"); return 0; }
+    std::print("host_test: {} failure(s)\n", g_failures);
     return 1;
 }

@@ -1,11 +1,12 @@
 // platform(SDL2) 单元测试（headless：dummy 视频驱动）
 #include "core/platform/mq_platform.h"
+#include <print>
 
 #include <cstdio>
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
-    std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
+    std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
 int main() {
     mq_platform* p = mq_platform_create("maque-test", 320, 240);
@@ -19,7 +20,7 @@ int main() {
 
     mq_platform_destroy(p);
 
-    if (g_failures == 0) { std::printf("platform_test: all checks passed\n"); return 0; }
-    std::printf("platform_test: %d failure(s)\n", g_failures);
+    if (g_failures == 0) { std::print("platform_test: all checks passed\n"); return 0; }
+    std::print("platform_test: {} failure(s)\n", g_failures);
     return 1;
 }

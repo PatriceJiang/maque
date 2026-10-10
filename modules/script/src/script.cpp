@@ -1,4 +1,5 @@
 #include "core/script/mq_script.h"
+#include <print>
 
 #include "quickjs.h"
 
@@ -46,7 +47,7 @@ static JSValue host_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueCo
 static void throw_and_print(JSContext* ctx) {
     JSValue e = JS_GetException(ctx);
     const char* s = JS_ToCString(ctx, e);
-    std::fprintf(stderr, "[script] exception: %s\n", s ? s : "(unknown)");
+    std::print(stderr, "[script] exception: {}\n", s ? s : "(unknown)");
     if (s) JS_FreeCString(ctx, s);
     JS_FreeValue(ctx, e);
 }

@@ -1,4 +1,5 @@
 #include "render/gfx/mq_gfx.h"
+#include <print>
 
 #include <webgpu/webgpu.h>
 
@@ -59,7 +60,7 @@ static bool poll(WGPUInstance inst, P ready, int timeout_ms = 20000) {
 }
 
 static void on_uncaptured(WGPUDevice const*, WGPUErrorType type, WGPUStringView msg, void*, void*) {
-    std::fprintf(stderr, "[wgpu] error %d: %.*s\n", (int)type, (int)msg.length, msg.data ? msg.data : "");
+    std::print(stderr, "[wgpu] error {}: {:.{}}\n", (int)type, msg.data ? msg.data : "", (int)msg.length);
 }
 
 static void req_adapter_cb(WGPURequestAdapterStatus s, WGPUAdapter a, WGPUStringView, void* u1, void*) {

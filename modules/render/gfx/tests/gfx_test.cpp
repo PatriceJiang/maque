@@ -1,18 +1,19 @@
 // gfx 冒烟测试：真实 WebGPU 离屏渲染 + readback 校验
 #include "render/gfx/mq_gfx.h"
+#include <print>
 
 #include <cstdio>
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
-    std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
+    std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
 int main() {
     using namespace maque::gfx;
     std::string backend;
     Device* dev = create_device(&backend);
-    if (!dev) { std::printf("gfx_test: SKIP (no WebGPU device)\n"); return 0; }
-    std::printf("gfx_test: backend='%s'\n", backend.c_str());
+    if (!dev) { std::print("gfx_test: SKIP (no WebGPU device)\n"); return 0; }
+    std::print("gfx_test: backend='{}'\n", backend);
 
     SpriteDraw sprites[2] = {
         { 160.0F, 120.0F, 40.0F, 1.0F, 0.4F, 0.2F, 1.0F },   // 橙，居中
@@ -35,7 +36,7 @@ int main() {
 
     destroy_device(dev);
 
-    if (g_failures == 0) { std::printf("gfx_test: all checks passed\n"); return 0; }
-    std::printf("gfx_test: %d failure(s)\n", g_failures);
+    if (g_failures == 0) { std::print("gfx_test: all checks passed\n"); return 0; }
+    std::print("gfx_test: {} failure(s)\n", g_failures);
     return 1;
 }

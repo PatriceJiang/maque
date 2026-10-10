@@ -1,12 +1,13 @@
 // maque 数学库单元测试（独立：仅依赖 maque::math + 生成的类型）
 #include "math/mq_math.h"
+#include <print>
 
 #include <cstdio>
 #include <cmath>
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
-    std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
+    std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 static bool near(float a, float b, float eps = 1e-4F) { return std::fabs(a - b) < eps; }
 static bool vnear(const math::Vec3& a, const math::Vec3& b, float eps = 1e-4F) {
     return near(a.x, b.x, eps) && near(a.y, b.y, eps) && near(a.z, b.z, eps);
@@ -56,7 +57,7 @@ int main() {
     // 确定性：同输入同输出
     CHECK(vnear(transform_point(m, {1, 0, 0}), transform_point(m, {1, 0, 0})));
 
-    if (g_failures == 0) { std::printf("math_test: all checks passed\n"); return 0; }
-    std::printf("math_test: %d failure(s)\n", g_failures);
+    if (g_failures == 0) { std::print("math_test: all checks passed\n"); return 0; }
+    std::print("math_test: {} failure(s)\n", g_failures);
     return 1;
 }

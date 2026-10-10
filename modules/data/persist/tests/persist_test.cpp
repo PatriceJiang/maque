@@ -1,5 +1,6 @@
 // 持久化(JSON→反射)单元测试
 #include "core/persist/mq_persist.h"
+#include <print>
 #include "core/reflect/mq_reflect.h"
 #include "maque_types.h"
 
@@ -9,7 +10,7 @@
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
-    std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
+    std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
 int main() {
     mq_reflect_init();
@@ -42,7 +43,7 @@ int main() {
     scn::Scene s3{};
     CHECK(mq_persist_load_json(t, bad, std::strlen(bad), &s3) != 0);
 
-    if (g_failures == 0) { std::printf("persist_test: all checks passed\n"); return 0; }
-    std::printf("persist_test: %d failure(s)\n", g_failures);
+    if (g_failures == 0) { std::print("persist_test: all checks passed\n"); return 0; }
+    std::print("persist_test: {} failure(s)\n", g_failures);
     return 1;
 }

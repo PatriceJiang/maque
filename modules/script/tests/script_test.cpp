@@ -1,12 +1,13 @@
 // 脚本模块（quickjs）单元测试
 #include "core/script/mq_script.h"
+#include <print>
 
 #include <cstdio>
 #include <cstring>
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
-    std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
+    std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
 static int host_add(void*, int argc, const double* a, double* ret) {
     if (argc != 2) return 1; *ret = a[0] + a[1]; return 0;
@@ -46,7 +47,7 @@ int main() {
     mq_script_gc(vm);
     mq_script_vm_destroy(vm);
 
-    if (g_failures == 0) { std::printf("script_test: all checks passed\n"); return 0; }
-    std::printf("script_test: %d failure(s)\n", g_failures);
+    if (g_failures == 0) { std::print("script_test: all checks passed\n"); return 0; }
+    std::print("script_test: {} failure(s)\n", g_failures);
     return 1;
 }

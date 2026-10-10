@@ -1,5 +1,6 @@
 // maque 反射运行时单元测试（独立：仅依赖 maque::reflect + 生成的类型/描述符）
 #include "core/reflect/mq_reflect.h"
+#include <print>
 #include "maque_types.h"
 
 #include <cstdio>
@@ -8,7 +9,7 @@
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
-    std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
+    std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
 static int count_enter = 0, count_exit = 0, count_field = 0;
 static int on_enter(void*, const mq_type_desc*, void*) { ++count_enter; return 0; }
@@ -88,7 +89,7 @@ int main() {
     CHECK(mq_reflect_type_by_name("game.Health") == &my_type);
     CHECK(mq_reflect_register(&my_type) == 0);  // 幂等
 
-    if (g_failures == 0) { std::printf("reflect_test: all checks passed\n"); return 0; }
-    std::printf("reflect_test: %d failure(s)\n", g_failures);
+    if (g_failures == 0) { std::print("reflect_test: all checks passed\n"); return 0; }
+    std::print("reflect_test: {} failure(s)\n", g_failures);
     return 1;
 }

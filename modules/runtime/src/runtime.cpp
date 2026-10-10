@@ -2,6 +2,7 @@
  * 通用宿主 API（引擎能力）：log/cfg/clear/draw_sprite/rng/screen_w/screen_h/quit。
  * 游戏逻辑不在引擎里——全部在脚本资源中。 */
 #include "runtime/mq_runtime.h"
+#include <print>
 
 #include "core/persist/mq_persist.h"
 #include "core/reflect/mq_reflect.h"
@@ -87,7 +88,7 @@ double cfg_field(Runtime* rt, const char* path) {
 }
 
 /* ---- 宿主 API（通用引擎能力） ---- */
-int fn_log(void*, const char* s, double*) { std::printf("[game] %s\n", s); return 0; }
+int fn_log(void*, const char* s, double*) { std::print("[game] {}\n", s); return 0; }
 int fn_cfg(void* u, const char* path, double* ret) { *ret = cfg_field((Runtime*)u, path); return 0; }
 int fn_screen_w(void* u, int, const double*, double* ret) { *ret = (double)((Runtime*)u)->W; return 0; }
 int fn_screen_h(void* u, int, const double*, double* ret) { *ret = (double)((Runtime*)u)->H; return 0; }
@@ -145,7 +146,7 @@ int fn_entity_destroy(void* u, int argc, const double* a, double*) {
 bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba) {
     std::FILE* f = std::fopen(path.c_str(), "wb");
     if (!f) return false;
-    std::fprintf(f, "P6\n%d %d\n255\n", w, h);
+    std::print(f, "P6\n{} {}\n255\n", w, h);
     std::vector<uint8_t> rgb((size_t)w * h * 3);
     for (size_t i = 0, n = (size_t)w * h; i < n; ++i) {
         rgb[i * 3] = rgba[i * 4]; rgb[i * 3 + 1] = rgba[i * 4 + 1]; rgb[i * 3 + 2] = rgba[i * 4 + 2];
@@ -172,18 +173,18 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
       if (mq_vfs_read(vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == 0) {
           text.assign((char*)d, n); mq_vfs_free(d);
       } }
-    if (text.empty()) { std::printf("runtime: cannot read scene '%s'\n", scn_path); return 1; }
+    if (text.empty()) { std::print("runtime: cannot read scene '{}'\n", scn_path); return 1; }
     mq_reflect_init();
     Runtime rt;
     rt.scene_type = mq_reflect_type_by_name("scn.Scene");
     if (!rt.scene_type || mq_persist_load_json(rt.scene_type, text.c_str(), text.size(), &rt.scene) != 0) {
-        std::printf("runtime: failed to deserialize scene\n"); return 1;
+        std::print("runtime: failed to deserialize scene\n"); return 1;
     }
     rt.W = rt.scene.width > 0 ? rt.scene.width : 320;
     rt.H = rt.scene.height > 0 ? rt.scene.height : 240;
     rt.rng = rt.scene.seed * 2654435761u + 12345u;
-    std::printf("runtime: scene '%s' title='%s' script='%s' %dx%d seed=%u\n",
-                scn_path, rt.scene.title.c_str(), rt.scene.script.c_str(), rt.W, rt.H, rt.scene.seed);
+    std::print("runtime: scene '{}' title='{}' script='{}' {}x{} seed={}\n",
+                scn_path, rt.scene.title, rt.scene.script, rt.W, rt.H, rt.scene.seed);
 
     // 脚本路径：相对场景目录（经 VFS 以 '/' 为根）
     std::string script_path = rt.scene.script;
@@ -191,8 +192,8 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     // 2) 设备 + 脚本
     std::string backend;
     rt.dev = maque::gfx::create_device(&backend);
-    if (!rt.dev) { std::printf("runtime: no WebGPU device\n"); return 2; }
-    std::printf("runtime: WebGPU backend '%s'\n", backend.c_str());
+    if (!rt.dev) { std::print("runtime: no WebGPU device\n"); return 2; }
+    std::print("runtime: WebGPU backend '{}'\n", backend);
     rt.entities = mq_handle_table_create(sizeof(Entity), alignof(Entity));
 
     // 从场景资源加载实体树（游戏即资源；docs/20）
@@ -211,7 +212,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
                          (float)mq_json_num(mq_json_get(e, "b"), 1.0));
             }
             mq_json_free(doc);
-            if (n) std::printf("runtime: loaded %u entities from scene\n", n);
+            if (n) std::print("runtime: loaded {} entities from scene\n", n);
         }
     }
 
@@ -236,8 +237,8 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
         std::string js;
         { void* d = nullptr; size_t n = 0;
           if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) == 0) { js.assign((char*)d, n); mq_vfs_free(d); } }
-        if (js.empty()) { std::printf("runtime: cannot read script '%s'\n", script_path.c_str()); return 1; }
-        if (mq_script_eval(vm, js.c_str(), script_path.c_str()) != 0) { std::printf("runtime: script error\n"); return 1; }
+        if (js.empty()) { std::print("runtime: cannot read script '{}'\n", script_path); return 1; }
+        if (mq_script_eval(vm, js.c_str(), script_path.c_str()) != 0) { std::print("runtime: script error\n"); return 1; }
     }
     if (mq_script_has(vm, "on_start")) mq_script_call0(vm, "on_start", nullptr);
 
@@ -267,7 +268,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     }
 
     // 4) 退出
-    std::printf("runtime: exited after %d frames (quit=%d)\n", frame, rt.quit ? 1 : 0);
+    std::print("runtime: exited after {} frames (quit={})\n", frame, rt.quit ? 1 : 0);
     if (rt.entities) mq_handle_table_destroy(rt.entities);
     mq_script_vm_destroy(vm);
     maque::gfx::destroy_device(rt.dev);

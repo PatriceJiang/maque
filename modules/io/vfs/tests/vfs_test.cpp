@@ -1,5 +1,6 @@
 // VFS 单元测试（file:// 后端 + 最长前缀挂载）
 #include "core/vfs/mq_vfs.h"
+#include <print>
 
 #include <cstdio>
 #include <cstring>
@@ -10,7 +11,7 @@
 namespace fs = std::filesystem;
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
-    std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
+    std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
 static void put(const fs::path& p, const std::string& s) {
     fs::create_directories(p.parent_path());
@@ -55,7 +56,7 @@ int main() {
     mq_vfs_destroy(vfs);
     fs::remove_all(root);
 
-    if (g_failures == 0) { std::printf("vfs_test: all checks passed\n"); return 0; }
-    std::printf("vfs_test: %d failure(s)\n", g_failures);
+    if (g_failures == 0) { std::print("vfs_test: all checks passed\n"); return 0; }
+    std::print("vfs_test: {} failure(s)\n", g_failures);
     return 1;
 }
