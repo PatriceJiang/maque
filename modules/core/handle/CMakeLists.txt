@@ -1,0 +1,11 @@
+# maque::handle —— 世代槽表（句柄 {index,generation}）
+add_library(maque_handle STATIC src/handle.cpp)
+add_library(maque::handle ALIAS maque_handle)
+target_include_directories(maque_handle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set_target_properties(maque_handle PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+
+if(MAQUE_BUILD_TESTS)
+    add_executable(maque_handle_test tests/handle_test.cpp)
+    target_link_libraries(maque_handle_test PRIVATE maque::handle)
+    add_test(NAME handle COMMAND maque_handle_test)
+endif()
