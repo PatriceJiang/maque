@@ -7,6 +7,10 @@
 #include <fstream>
 #include <filesystem>
 
+#ifdef MQ_HAVE_CURL
+#include <curl/curl.h>
+#endif
+
 namespace fs = std::filesystem;
 
 namespace {
@@ -51,6 +55,33 @@ const Mount* resolve(Vfs* v, const std::string& path, std::string& rel_out) {
     return best;
 }
 
+#ifdef MQ_HAVE_CURL
+size_t curl_write(char* ptr, size_t sz, size_t nm, void* ud) {
+    ((std::string*)ud)->append(ptr, sz * nm);
+    return sz * nm;
+}
+/* 经 libcurl 抓取 URL（http/https/file…）。*/
+int curl_fetch(const std::string& url, void** out, size_t* out_size) {
+    CURL* c = curl_easy_init();
+    if (!c) return 10;
+    std::string body;
+    curl_easy_setopt(c, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_write);
+    curl_easy_setopt(c, CURLOPT_WRITEDATA, &body);
+    curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
+    CURLcode rc = curl_easy_perform(c);
+    curl_easy_cleanup(c);
+    if (rc != CURLE_OK) return 11;
+    char* buf = (char*)std::malloc(body.size() + 1);
+    if (!buf) return 12;
+    if (!body.empty()) std::memcpy(buf, body.data(), body.size());
+    buf[body.size()] = '\0';
+    if (out) *out = buf; else std::free(buf);
+    if (out_size) *out_size = body.size();
+    return 0;
+}
+#endif
+
 } // namespace
 
 extern "C" {
@@ -77,6 +108,10 @@ int mq_vfs_read(mq_vfs* vfs, const char* path, void** out, size_t* out_size) {
     if (out) *out = nullptr;
     if (out_size) *out_size = 0;
     if (!vfs || !path) return 1;
+#ifdef MQ_HAVE_CURL
+    // 直接 URL（http/https/file）→ 经 libcurl 抓取（浏览器式，docs/04/16）
+    if (std::strstr(path, "://")) return curl_fetch(path, out, out_size);
+#endif
     auto* v = reinterpret_cast<Vfs*>(vfs);
     std::string rel;
     const Mount* m = resolve(v, path, rel);

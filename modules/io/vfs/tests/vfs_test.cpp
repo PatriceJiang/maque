@@ -42,6 +42,16 @@ int main() {
     void* d = nullptr; size_t n = 0;
     CHECK(mq_vfs_read(vfs, "/missing", &d, &n) != 0);
 
+#ifdef MQ_HAVE_CURL
+    // 直接 URL（经 libcurl）：file:// 本地抓取
+    {
+        std::string url = "file://" + (root / "base" / "a.txt").string();
+        void* u = nullptr; size_t un = 0;
+        CHECK(mq_vfs_read(vfs, url.c_str(), &u, &un) == 0);
+        if (u) { std::string s((char*)u, un); mq_vfs_free(u); CHECK(s == "hello"); }
+    }
+#endif
+
     mq_vfs_destroy(vfs);
     fs::remove_all(root);
 
