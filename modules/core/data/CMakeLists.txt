@@ -20,6 +20,7 @@ set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/maque_api.h"
     "${MAQUE_GEN_DIR}/maque_bindings.cpp"
     "${MAQUE_GEN_DIR}/maque_ifaces.h"
+    "${MAQUE_GEN_DIR}/maque_bind.h"
     "${MAQUE_GEN_DIR}/maque_control.h"
     "${MAQUE_GEN_DIR}/maque_control_gen.cpp"
     "${MAQUE_GEN_DIR}/maque_events.h"
@@ -42,7 +43,8 @@ set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/abi/net.h"
     "${MAQUE_GEN_DIR}/abi/control.h"
     "${MAQUE_GEN_DIR}/abi/host_scene.h"
-    "${MAQUE_GEN_DIR}/abi/runtime.h")
+    "${MAQUE_GEN_DIR}/abi/runtime.h"
+    "${MAQUE_GEN_DIR}/abi/math.h")
 
 if(NODE_EXECUTABLE)
     add_custom_command(

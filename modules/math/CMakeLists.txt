@@ -1,7 +1,8 @@
 # maque::math —— 纯函数数学库（header-only，操作 codegen 生成的 POD 类型）
 add_library(maque_math INTERFACE)
 add_library(maque::math ALIAS maque_math)
-target_include_directories(maque_math INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(maque_math INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # abi/math.h（DSL 生成，docs/21）
 target_link_libraries(maque_math INTERFACE maque::schema)
 target_compile_features(maque_math INTERFACE cxx_std_23)
 

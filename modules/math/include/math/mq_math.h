@@ -1,14 +1,15 @@
 /* maque 数学库 —— 对 codegen 生成的 POD 类型 (maque_types.h) 的确定性操作。
  * 纯函数、无状态、可内联；布局即 ABI（docs/06/07）。
- * 约定：Mat4 列主序 m[col*4+row]；欧拉角 XYZ 弧度。 */
+ * 约定：Mat4 列主序 m[col*4+row]；欧拉角 XYZ 弧度。
+ *
+ * ⚠️ **函数声明由 DSL 生成**（docs/21 §1）：单一真相 = schema.yaml 的 `module_abi`
+ *   （math 段，language: cxx）；生成物 = build/modules/core/data/generated/abi/math.h。
+ *   本文件只保留**运算符与 inline 实现**。 */
 #pragma once
 
-#include <cmath>
-#include "maque_types.h"
+#include "abi/math.h"     /* namespace math 的声明 + kPi 常量（生成） */
 
 namespace math {
-
-constexpr float kPi = 3.14159265358979323846F;
 
 /* ---------------- Vec2 ---------------- */
 inline Vec2 operator+(const Vec2& a, const Vec2& b) { return {a.x + b.x, a.y + b.y}; }

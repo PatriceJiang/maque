@@ -94,6 +94,44 @@
       args: [ { name: x, type: float } ]
       returns: float
       manual: "math.custom.h"
+  module_abi:
+    module: math
+    abi_name: "maque.math"
+    language: cxx
+    namespace: math
+    summary: "数学库：对生成 POD 类型的确定性操作（布局即 ABI，docs/06/07）"
+    includes: [ '"maque_types.h"', "<cmath>" ]
+    consts:
+      - { name: kPi, type: float, value: "3.14159265358979323846F" }
+    fns:
+      - { fn: dot, returns: "float", args: [ { name: a, type: "const Vec2&" }, { name: b, type: "const Vec2&" } ] }
+      - { fn: length_sq, returns: "float", args: [ { name: a, type: "const Vec2&" } ] }
+      - { fn: length, returns: "float", args: [ { name: a, type: "const Vec2&" } ] }
+      - { fn: lerp, returns: "Vec2", args: [ { name: a, type: "const Vec2&" }, { name: b, type: "const Vec2&" }, { name: t, type: "float" } ] }
+      - { fn: normalize, returns: "Vec2", args: [ { name: a, type: "const Vec2&" } ] }
+      - { fn: dot, returns: "float", args: [ { name: a, type: "const Vec3&" }, { name: b, type: "const Vec3&" } ] }
+      - { fn: cross, returns: "Vec3", args: [ { name: a, type: "const Vec3&" }, { name: b, type: "const Vec3&" } ] }
+      - { fn: length_sq, returns: "float", args: [ { name: a, type: "const Vec3&" } ] }
+      - { fn: length, returns: "float", args: [ { name: a, type: "const Vec3&" } ] }
+      - { fn: distance, returns: "float", args: [ { name: a, type: "const Vec3&" }, { name: b, type: "const Vec3&" } ] }
+      - { fn: lerp, returns: "Vec3", args: [ { name: a, type: "const Vec3&" }, { name: b, type: "const Vec3&" }, { name: t, type: "float" } ] }
+      - { fn: normalize, returns: "Vec3", args: [ { name: a, type: "const Vec3&" } ] }
+      - { fn: dot, returns: "float", args: [ { name: a, type: "const Vec4&" }, { name: b, type: "const Vec4&" } ] }
+      - { fn: lerp, returns: "Vec4", args: [ { name: a, type: "const Vec4&" }, { name: b, type: "const Vec4&" }, { name: t, type: "float" } ] }
+      - { fn: quat_identity, returns: "Quat", args: [  ] }
+      - { fn: quat_conjugate, returns: "Quat", args: [ { name: q, type: "const Quat&" } ] }
+      - { fn: quat_normalize, returns: "Quat", args: [ { name: q, type: "const Quat&" } ] }
+      - { fn: quat_from_axis_angle, returns: "Quat", args: [ { name: axis, type: "const Vec3&" }, { name: radians, type: "float" } ] }
+      - { fn: quat_rotate, returns: "Vec3", args: [ { name: q, type: "const Quat&" }, { name: v, type: "const Vec3&" } ] }
+      - { fn: quat_slerp, returns: "Quat", args: [ { name: a, type: "Quat" }, { name: b, type: "Quat" }, { name: t, type: "float" } ] }
+      - { fn: mat4_identity, returns: "Mat4", args: [  ] }
+      - { fn: transform_point, returns: "Vec3", args: [ { name: a, type: "const Mat4&" }, { name: p, type: "const Vec3&" } ] }
+      - { fn: transform_vector, returns: "Vec3", args: [ { name: a, type: "const Mat4&" }, { name: v, type: "const Vec3&" } ] }
+      - { fn: mat4_translation, returns: "Mat4", args: [ { name: t, type: "const Vec3&" } ] }
+      - { fn: mat4_scale, returns: "Mat4", args: [ { name: s, type: "const Vec3&" } ] }
+      - { fn: mat4_from_quat, returns: "Mat4", args: [ { name: q, type: "const Quat&" } ] }
+      - { fn: mat4_from_transform, returns: "Mat4", args: [ { name: t, type: "const Transform3D&" } ] }
+      - { fn: to_euler_xyz, returns: "Vec3", args: [ { name: q, type: "const Quat&" } ] }
 
 - namespace: asset
   version: 1
@@ -2603,6 +2641,11 @@
       - { name: MQ_HANDLE_INDEX_NONE, value: "0xFFFFFFFFu", doc: "空槽哨兵（index 全 1）" }
       - { name: MQ_HANDLE_INVALID, value: "((mq_handle){ MQ_HANDLE_INDEX_NONE, 0u })",
           value_cxx: "mq_handle{ MQ_HANDLE_INDEX_NONE, 0u }", doc: "无效句柄（C 复合字面量 / C++ 列表初始化）" }
+    code: |
+      /* 句柄相等（用于比较，勿直接 memcmp 结构体填充）。 */
+      static inline int mq_handle_equal(mq_handle a, mq_handle b) {
+          return a.index == b.index && a.generation == b.generation;
+      }
     structs:
       - name: mq_handle
         fields:
@@ -2841,3 +2884,4 @@
     fns:
       - { fn: mq_run_scene, returns: "int", args: [ { name: scn_path, type: "const char*" } ] }
       - { fn: mq_run_scene_ex, returns: "int", args: [ { name: scn_path, type: "const char*" }, { name: frames_dir, type: "const char*" } ] }
+
