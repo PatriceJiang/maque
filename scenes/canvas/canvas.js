@@ -8,6 +8,7 @@
   globalThis.on_start = function () {
     S.canvas = entity_find('Canvas');
     S.info = entity_find('Info');
+    S.probe = entity_find('MetricsProbe');
     S.btn = entity_find('HitButton');
     S.hits = 0;
     log('canvas.js ready design=' + screen_w() + 'x' + screen_h());
@@ -37,6 +38,8 @@
       off_x: canvas_offset_x(), off_y: canvas_offset_y(),
       win_w: window_w(), win_h: window_h(), design_w: screen_w(), design_h: screen_h(),
       device_scale: canvas_device_scale(), hits: S.hits || 0,
+      // 文本度量必须与窗口缩放无关（设备像素只用于栅格化，度量换算回设计像素）
+      probe_w: ui_text_width(S.probe), probe_h: ui_text_height(S.probe),
       last_target: S.last_target === undefined ? -1 : S.last_target,
       last_x: S.last_x === undefined ? -1 : S.last_x, last_y: S.last_y === undefined ? -1 : S.last_y
     }));

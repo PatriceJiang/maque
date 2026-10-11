@@ -2057,21 +2057,22 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
                    n ? glyphs[0].x : 0.0F, n ? glyphs[0].y : 0.0F,
                    n ? glyphs[0].w : 0.0F, n ? glyphs[0].h : 0.0F);
     if (lrc != MQ_TEXT_OK) return;
-    /* transient 度量写回 */
+    /* 度量写回：换算回**设计像素**（与节点坐标同一坐标系；设备像素只用于栅格化） */
+    const float inv = st.device_scale > 0.0F ? 1.0F / st.device_scale : 1.0F;
     if (const mq_field_desc* fw = mq_reflect_field(d, "text_w"))
-        *(float*)(e.comps[d->type_id].data() + fw->offset) = m.width;
+        *(float*)(e.comps[d->type_id].data() + fw->offset) = m.width * inv;
     if (const mq_field_desc* fh = mq_reflect_field(d, "text_h"))
-        *(float*)(e.comps[d->type_id].data() + fh->offset) = m.height;
+        *(float*)(e.comps[d->type_id].data() + fh->offset) = m.height * inv;
     if (const mq_field_desc* flc = mq_reflect_field(d, "line_count"))
         *(int32_t*)(e.comps[d->type_id].data() + flc->offset) = (int32_t)m.line_count;
     if (const mq_field_desc* fts = mq_reflect_field(d, "text_size")) {
         float* v = (float*)(e.comps[d->type_id].data() + fts->offset);
-        v[0] = m.width; v[1] = m.height;
+        v[0] = m.width * inv; v[1] = m.height * inv;
     }
     /* render.RichText 用 content_size 承载实测尺寸 */
     if (const mq_field_desc* fcs = mq_reflect_field(d, "content_size")) {
         float* v = (float*)(e.comps[d->type_id].data() + fcs->offset);
-        v[0] = m.width; v[1] = m.height;
+        v[0] = m.width * inv; v[1] = m.height * inv;
     }
 
     /* 锚点：scn.Label 的 x/y 为左上角偏移；ui.* 以节点位置为左上角 */
@@ -2084,10 +2085,12 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
         mq_renderer_item it{};
         /* 位图矩形（设备像素，排版侧已按 bearing 定位并像素对齐）；无位图跳过 */
         if (gl.w <= 0.0F || gl.h <= 0.0F) continue;
-        const float half_w = gl.w * 0.5F, half_h = gl.h * 0.5F;
+        /* 位图尺寸/位置都是**设备像素**（按设备字号栅格化的结果）→ 换算回设计像素再落位，
+         * 否则窗口放大 N 倍时文字会随之变成 N 倍大（曾导致标签重叠溢出）。 */
+        const float half_w = gl.w * 0.5F * inv, half_h = gl.h * 0.5F * inv;
         /* 锚点 = 位图左上角 (x0,y0)；排版 y 向下、屏幕 y 向下 → 基准翻转后相加 */
-        it.x = e.x + ox + gl.x0 + half_w;
-        it.y = (float)eng.H - (e.y + oy) + gl.y0 + half_h;
+        it.x = e.x + ox + gl.x0 * inv + half_w;
+        it.y = (float)eng.H - (e.y + oy) + gl.y0 * inv + half_h;
         it.half_w = half_w; it.half_h = half_h;   /* 非方形矩形（方形会拉伸字形） */
         it.filter = 1;                            /* nearest：1 纹素 = 1 像素 */
         it.snap = 1;                              /* 左上角吸附整数像素（pixel-perfect） */
@@ -3150,9 +3153,13 @@ float ui_text_height(void* ctx, float id) {
     const mq_type_desc* d = nullptr;
     auto* blob = text_comp(*eng, (int)id, &d);
     if (!blob || !d) return 0.0F;
-    for (const char* fn : { "text_h", "text_size", "content_size" })
+    /* text_h 是**标量** float；text_size / content_size 是 Vec2（y 在第二个分量）。
+     * 此前一律按 +sizeof(float) 读 → 标量路径读到下一个字段（line_count 的 int 位型）。 */
+    if (const mq_field_desc* f = mq_reflect_field(d, "text_h"))
+        return *(const float*)(blob->data() + f->offset);
+    for (const char* fn : { "text_size", "content_size" })
         if (const mq_field_desc* f = mq_reflect_field(d, fn))
-            return *(const float*)(blob->data() + f->offset + sizeof(float));
+            return *((const float*)(blob->data() + f->offset) + 1);
     return 0.0F;
 }
 

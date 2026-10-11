@@ -69,7 +69,28 @@ S=$(run "$WORK/e.log" 800x600 MAQUE_SAFE_AREA="40,20,40,20")
 check "$S" 'm["scale"] < 800/480'                            "安全区内缩后缩放变小"
 check "$S" 'm["off_x"] >= 40 and m["off_y"] >= 20'           "偏移不小于安全区"
 
-# ---- ⑥ fit 模式切换（控制面改组件字段 → 立即生效）----
+# ---- ⑥ 文本度量与窗口缩放无关（回归：曾把设备像素当设计像素 → 窗口 3x 时文字 3 倍大）----
+# 同一条定宽文本在 1x（设计尺寸窗口）与 3x 下的**设计单位**宽度/高度必须一致。
+S1=$(run "$WORK/t1.log" 480x270)
+S3=$(run "$WORK/t3.log" 1440x810)
+python3 - "$S1" "$S3" <<'EOT' || exit 1
+import json, sys
+a, b = json.loads(sys.argv[1]), json.loads(sys.argv[2])
+if abs(a["scale"] - 1.0) > 1e-3 or abs(b["scale"] - 3.0) > 1e-3:
+    print(f'canvas_e2e: FAIL 前置缩放不符（{a["scale"]:.3f} / {b["scale"]:.3f}）', file=sys.stderr)
+    sys.exit(1)
+# 容差 5%：字形按**设备像素**取整（hinting），换算回设计单位会有零点几像素的差；
+# 若回归（设备像素当设计像素）则 3x 会是 1x 的约 3 倍，远超容差。
+rel_w = abs(a["probe_w"] - b["probe_w"]) / max(1.0, abs(a["probe_w"]))
+rel_h = abs(a["probe_h"] - b["probe_h"]) / max(1.0, abs(a["probe_h"]))
+if rel_w > 0.05 or rel_h > 0.05:
+    print(f'canvas_e2e: FAIL 文本度量随窗口缩放变化（1x={a["probe_w"]}x{a["probe_h"]} '
+          f'3x={b["probe_w"]}x{b["probe_h"]}）', file=sys.stderr)
+    sys.exit(1)
+print(f' 文本度量与缩放无关：1x/3x 均为 {a["probe_w"]:.0f}x{a["probe_h"]:.0f}（设计单位）')
+EOT
+
+# ---- ⑦ fit 模式切换（控制面改组件字段 → 立即生效）----
 cat > "$WORK/req.txt" <<'EOF'
 {"jsonrpc":"2.0","id":1,"method":"Scene.set","params":{"id":0,"path":"fit_mode","value":1}}
 {"jsonrpc":"2.0","id":2,"method":"Runtime.step","params":{"frames":2}}

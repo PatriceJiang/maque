@@ -12,7 +12,7 @@
         { "type": "scn.Label", "x": 8.0, "y": 206.0, "text": "", "font_size": 11.0,
           "r": 0.75, "g": 0.85, "b": 1.0, "a": 1.0 } ] },
     { "name": "Hint", "components": [
-        { "type": "scn.Label", "x": 8.0, "y": 8.0, "text": "WASD / Arrows: move    R: restart    Z: undo    N: next level", "font_size": 11.0,
+        { "type": "scn.Label", "x": 8.0, "y": 20.0, "text": "WASD / Arrows: move    R: restart    Z: undo    N: next level", "font_size": 11.0,
           "r": 0.6, "g": 0.62, "b": 0.7, "a": 1.0 } ] }
   ]
 }
