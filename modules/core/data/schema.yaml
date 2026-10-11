@@ -2053,6 +2053,18 @@
       - { fn: mq_script_register_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_str_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_register_ret_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_ret_str_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_register_mixed, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_mixed_fn" }, { name: user, type: "void*" } ] }
+  # 脚本事件回调（docs/14 §4、docs/19 §8）：引擎按声明调用，名字与参数统一来自 DSL
+  callbacks:
+    - { name: on_start,        args: [] }
+    - { name: update,          args: [ { name: dt, type: float } ] }
+    - { name: on_pointer_down, on: pointer_down, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_pointer_up,   on: pointer_up, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_pointer_move, on: pointer_move, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_wheel,        on: pointer_wheel, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_click,        on: click, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_key_down,     on: key_down, args: [ { name: target, type: float }, { name: key, type: float } ] }
+    - { name: on_key_up,       on: key_up, args: [ { name: target, type: float }, { name: key, type: float } ] }
+    - { name: on_text,         on: text, args: [ { name: target, type: float }, { name: text, type: string } ] }
 
 - namespace: input
   version: 1
@@ -2434,21 +2446,29 @@
     # ---- MCP 包装（docs/11 §2）----
     - { method: Control.mcp, args: [ { name: method, type: string }, { name: request, type: string },
                                      { name: name, type: string }, { name: arguments, type: json } ] }
-  # 脚本事件回调（docs/14 §4、docs/19 §8）：引擎按声明调用，名字与参数统一来自 DSL
-  callbacks:
-    - { name: on_start,        args: [] }
-    - { name: update,          args: [ { name: dt, type: float } ] }
-    - { name: on_pointer_down, on: pointer_down, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
-    - { name: on_pointer_up,   on: pointer_up, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
-    - { name: on_pointer_move, on: pointer_move, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
-    - { name: on_wheel,        on: pointer_wheel, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
-    - { name: on_click,        on: click, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
-    - { name: on_key_down,     on: key_down, args: [ { name: target, type: float }, { name: key, type: float } ] }
-    - { name: on_key_up,       on: key_up, args: [ { name: target, type: float }, { name: key, type: float } ] }
-    - { name: on_text,         on: text, args: [ { name: target, type: float }, { name: text, type: string } ] }
+
 
 # 模块 C ABI（docs/02「跨模块只暴露 C ABI + 版本化」、docs/21「声明一次」）：
 # 生成的 abi/<module>.h 与原手写头**逐条等价**；原头改为 #include shim，消费者路径不变。
+  module_abi:
+    module: control
+    abi_name: "maque.control"
+    includes: [ "\"core/persist/mq_persist.h\"", "<stddef.h>" ]
+    opaque: [ mq_control ]
+    typedefs:
+      - { name: mq_control_handler, type: "int (*)(void* user, const char* method,
+                                  const mq_json* params, char* out, size_t out_cap)" }
+      - { name: mq_control_tools_json_fn, type: "const char* (*)(void* user)" }
+    fns:
+      - { fn: mq_control_create, returns: "mq_control*", args: [  ] }
+      - { fn: mq_control_destroy, returns: "void", args: [ { name: c, type: "mq_control*" } ] }
+      - { fn: mq_control_register, returns: "void", args: [ { name: c, type: "mq_control*" }, { name: method, type: "const char*" }, { name: fn, type: "mq_control_handler" }, { name: user, type: "void*" } ] }
+      - { fn: mq_control_dispatch, returns: "const char*", args: [ { name: c, type: "mq_control*" }, { name: request, type: "const char*" } ] }
+      - { fn: mq_control_method_count, returns: "uint32_t", args: [ { name: c, type: "mq_control*" } ] }
+      - { fn: mq_control_method_at, returns: "const char*", args: [ { name: c, type: "mq_control*" }, { name: index, type: "uint32_t" } ] }
+      - { fn: mq_control_set_tools_handler, returns: "void", args: [ { name: c, type: "mq_control*" }, { name: fn, type: "mq_control_handler" }, { name: user, type: "void*" } ] }
+      - { fn: mq_control_set_tools_json, returns: "void", args: [ { name: c, type: "mq_control*" }, { name: fn, type: "mq_control_tools_json_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_control_dispatch_mcp, returns: "const char*", args: [ { name: c, type: "mq_control*" }, { name: request, type: "const char*" } ] }
 
 - namespace: vfs
   version: 1
@@ -2778,3 +2798,46 @@
     fns:
       - { fn: mq_net_create, returns: "mq_net*", args: [  ] }
       - { fn: mq_net_destroy, returns: "void", args: [ { name: net, type: "mq_net*" } ] }
+
+- namespace: host_scene
+  version: 1
+  module_abi:
+    module: host_scene
+    abi_name: "maque.host_scene"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_host_scene ]
+    enums:
+      - values:
+          - { name: MQ_HOST_POINTER_DOWN, value: 0 }
+          - { name: MQ_HOST_POINTER_UP, value: 1 }
+          - { name: MQ_HOST_POINTER_MOVE, value: 2 }
+          - { name: MQ_HOST_POINTER_WHEEL, value: 3 }
+          - { name: MQ_HOST_POINTER_CANCEL, value: 4 }
+    structs:
+      - name: mq_host_desc
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: width, type: "int32_t" }
+          - { name: height, type: "int32_t" }
+          - { name: renderer, type: "const char*" }
+          - { name: flags, type: "uint32_t" }
+    fns:
+      - { fn: mq_host_scene_create, returns: "mq_host_scene*", args: [ { name: scn_path, type: "const char*" }, { name: desc, type: "const mq_host_desc*" } ] }
+      - { fn: mq_host_scene_destroy, returns: "void", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_tick, returns: "int", args: [ { name: s, type: "mq_host_scene*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: "size_t" } ] }
+      - { fn: mq_host_size, returns: "void", args: [ { name: s, type: "mq_host_scene*" }, { name: w, type: "int*" }, { name: h, type: "int*" } ] }
+      - { fn: mq_host_push_pointer, returns: "void", args: [ { name: s, type: "mq_host_scene*" }, { name: type, type: "int" }, { name: button, type: "int" }, { name: x, type: "float" }, { name: y, type: "float" } ] }
+      - { fn: mq_host_push_key, returns: "void", args: [ { name: s, type: "mq_host_scene*" }, { name: key, type: "int" }, { name: down, type: "int" }, { name: text, type: "const char*" } ] }
+      - { fn: mq_host_frame, returns: "uint64_t", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_checksum, returns: "uint64_t", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_should_quit, returns: "int", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_control, returns: "const char*", args: [ { name: s, type: "mq_host_scene*" }, { name: request, type: "const char*" } ] }
+
+- namespace: runtime
+  version: 1
+  module_abi:
+    module: runtime
+    abi_name: "maque.runtime"
+    fns:
+      - { fn: mq_run_scene, returns: "int", args: [ { name: scn_path, type: "const char*" } ] }
+      - { fn: mq_run_scene_ex, returns: "int", args: [ { name: scn_path, type: "const char*" }, { name: frames_dir, type: "const char*" } ] }

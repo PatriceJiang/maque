@@ -61,7 +61,8 @@ if(TARGET maque_codegen)
     if(_maque_gen)
         foreach(_t maque_script maque_platform maque_input maque_vfs maque_asset maque_physics maque_nav
               maque_handle maque_module maque_reflect maque_observability
-              maque_persist maque_watcher maque_image maque_net)
+              maque_persist maque_watcher maque_image maque_net
+              maque_control maque_runtime)
             if(TARGET ${_t})
                 target_include_directories(${_t} PUBLIC "${_maque_gen}")
                 add_dependencies(${_t} maque_codegen)

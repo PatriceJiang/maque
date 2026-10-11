@@ -39,7 +39,10 @@ set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/abi/persist_binary.h"
     "${MAQUE_GEN_DIR}/abi/watcher.h"
     "${MAQUE_GEN_DIR}/abi/image.h"
-    "${MAQUE_GEN_DIR}/abi/net.h")
+    "${MAQUE_GEN_DIR}/abi/net.h"
+    "${MAQUE_GEN_DIR}/abi/control.h"
+    "${MAQUE_GEN_DIR}/abi/host_scene.h"
+    "${MAQUE_GEN_DIR}/abi/runtime.h")
 
 if(NODE_EXECUTABLE)
     add_custom_command(
