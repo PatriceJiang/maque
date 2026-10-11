@@ -178,9 +178,11 @@ void draw_ui(App& a) {
                     ImGui::TableSetupColumn("字段", ImGuiTableColumnFlags_WidthFixed, 150.0F);
                     ImGui::TableSetupColumn("值");
                     ImGui::TableHeadersRow();
-                    /* 极简展开：按 "字段":"值" 对扫描（M0 够用；完整树留待 M1 用 schema 驱动） */
+                    /* 极简展开：只扫描 "components" 之后的内容（跳过 JSON-RPC 外壳键），
+                     * 完整 schema 驱动的字段树留待 M1 */
                     const std::string& j = a.props_raw;
-                    size_t p = 0;
+                    size_t p = j.find("\"components\"");
+                    p = (p == std::string::npos) ? 0 : p;
                     while ((p = j.find('"', p)) != std::string::npos) {
                         const size_t q = j.find('"', p + 1);
                         if (q == std::string::npos) break;
@@ -213,7 +215,8 @@ void draw_ui(App& a) {
                             p = e == std::string::npos ? j.size() : e;
                         }
                         if (key == "ok" || key == "id" || key == "name" || key == "components" ||
-                            val == "{" || val == "[" ) continue;
+                            key == "jsonrpc" || key == "result" || key == "fields" ||
+                            key == "type" || val == "{" || val == "[" || val.empty()) continue;
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
                         ImGui::TextUnformatted(key.c_str());
@@ -288,15 +291,24 @@ int main(int argc, char** argv) {
     App app;
     std::vector<std::string> queue;
     bool is_headless = false;
+    /* 界面可读性：字号与整体缩放（默认 21px；HiDPI 会再自动乘上像素比） */
+    float font_size = 21.0F, ui_scale = 1.0F;
+    if (const char* e = std::getenv("MAQUE_INSPECTOR_FONT_SIZE")) font_size = (float)std::atof(e);
+    if (const char* e = std::getenv("MAQUE_INSPECTOR_UI_SCALE")) ui_scale = (float)std::atof(e);
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--connect" && i + 1 < argc) app.connect_spec = argv[++i];
+        else if (arg == "--font-size" && i + 1 < argc) font_size = (float)std::atof(argv[++i]);
+        else if (arg == "--ui-scale" && i + 1 < argc) ui_scale = (float)std::atof(argv[++i]);
         else if (arg == "--headless") is_headless = true;
         else if (arg == "--help") {
-            std::print("用法: maque_inspector [--connect <tcp:端口|uds:路径>] [--headless <方法…>]\n");
+            std::print("用法: maque_inspector [--connect <tcp:端口|uds:路径>] [--font-size 像素] "
+                       "[--ui-scale 倍数] [--headless <方法…>]\n");
             return 0;
         } else queue.push_back(arg);
     }
+    if (font_size < 8.0F) font_size = 8.0F;
+    if (ui_scale <= 0.0F) ui_scale = 1.0F;
     std::snprintf(app.connect_input, sizeof app.connect_input, "%s", app.connect_spec.c_str());
     if (is_headless) return headless(app, queue);
 
@@ -304,18 +316,33 @@ int main(int argc, char** argv) {
         std::print(stderr, "inspector: SDL_Init 失败: {}\n", SDL_GetError());
         return 1;
     }
+    const int win_w = (int)(1440 * ui_scale), win_h = (int)(900 * ui_scale);
     SDL_Window* win = SDL_CreateWindow("Maque Inspector", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                       1280, 800, SDL_WINDOW_RESIZABLE);
+                                       win_w, win_h, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!win) { std::print(stderr, "inspector: 窗口创建失败: {}\n", SDL_GetError()); SDL_Quit(); return 1; }
     SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_PRESENTVSYNC);
     if (!ren) { std::print(stderr, "inspector: 渲染器创建失败: {}\n", SDL_GetError()); SDL_DestroyWindow(win); SDL_Quit(); return 1; }
 
     IMGUI_CHECKVERSION();
+    /* 界面缩放 = 用户倍数 × 显示器像素比（HiDPI 下逻辑尺寸 < 物理像素 → 字体才不会偏小） */
+    float hidpi = 1.0F;
+#if SDL_VERSION_ATLEAST(2, 26, 0)
+    {
+        int lw = 0, lh = 0, pw = 0, ph = 0;
+        SDL_GetWindowSize(win, &lw, &lh);
+        SDL_GetWindowSizeInPixels(win, &pw, &ph);
+        if (lw > 0 && pw > 0) hidpi = (float)pw / (float)lw;
+    }
+#endif
+    const float scale = ui_scale * (hidpi > 0.0F ? hidpi : 1.0F);
+
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     ImGui::StyleColorsDark();
-    /* 中文界面：ImGui 默认字体只有 ASCII → 加载项目字体（含 CJK），字形范围取常用简体 */
+    ImGui::GetStyle().ScaleAllSizes(scale);        /* 行高/内边距/滚动条一起放大 */
+    /* 中文界面：ImGui 默认字体只有 ASCII → 加载项目字体（含 CJK），字形范围取常用简体
+     * 字号 = --font-size（默认 21px）× 显示器像素比；太小/太大用 --font-size / --ui-scale 调 */
     {
         const char* env = std::getenv("MAQUE_FONT");
         const char* cands[] = {
@@ -329,7 +356,7 @@ int main(int argc, char** argv) {
             if (!c || !*c) continue;
             if (FILE* f = std::fopen(c, "rb")) {
                 std::fclose(f);
-                if (io.Fonts->AddFontFromFileTTF(c, 18.0F, nullptr,
+                if (io.Fonts->AddFontFromFileTTF(c, font_size * scale, nullptr,
                                                  io.Fonts->GetGlyphRangesChineseSimplifiedCommon()))
                     break;
             }
