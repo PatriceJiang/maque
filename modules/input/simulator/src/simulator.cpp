@@ -132,8 +132,9 @@ extern "C" int mq_sim_load_json(mq_sim* sim, const char* json, size_t len,
         bool ok = false;
         const uint32_t v = space_of(sp, &ok);
         if (!ok) {
+            const std::string msg = std::string("unknown space: ") + sp;
             mq_json_free(root);
-            set_err(err, err_cap, std::string("unknown space: ") + sp);
+            set_err(err, err_cap, msg);
             return 3;
         }
         default_space = v;
@@ -152,11 +153,12 @@ extern "C" int mq_sim_load_json(mq_sim* sim, const char* json, size_t len,
     for (uint32_t i = 0; i < n; ++i) {
         const mq_json* e = mq_json_at(events, i);
         const char* ts = mq_json_str(mq_json_get(e, "type"), nullptr);
-        if (!ts) { mq_json_free(root); set_err(err, err_cap, "event missing type"); return 5; }
+        if (!ts) { set_err(err, err_cap, "event missing type"); mq_json_free(root); return 5; }
         Type type{};
         if (!type_of(ts, &type)) {
+            const std::string msg = std::string("unknown type: ") + ts;   // ts 指向 JSON 树 → 先拷贝
             mq_json_free(root);
-            set_err(err, err_cap, std::string("unknown type: ") + ts);
+            set_err(err, err_cap, msg);
             return 6;
         }
 
@@ -170,8 +172,9 @@ extern "C" int mq_sim_load_json(mq_sim* sim, const char* json, size_t len,
             bool sok = false;
             const uint32_t v = space_of(sp, &sok);
             if (!sok) {
+                const std::string msg = std::string("unknown space: ") + sp;
                 mq_json_free(root);
-                set_err(err, err_cap, std::string("unknown space: ") + sp);
+                set_err(err, err_cap, msg);
                 return 3;
             }
             space = v;
@@ -199,16 +202,19 @@ extern "C" int mq_sim_load_json(mq_sim* sim, const char* json, size_t len,
             fill(MQ_SIM_POINTER_DOWN, frame);      /* click = down + up（同帧、有序） */
             fill(MQ_SIM_POINTER_UP, frame);
         } else {
-            const uint32_t kind = kind_of(type);
-            fill(kind, frame);
-            if (kind == MQ_SIM_TEXT) parsed.back().e.text = parsed.back().text.c_str();
+            fill(kind_of(type), frame);
         }
+        /* 注意：text 指针**必须等容器定稿后再解析** —— 解析期间 push_back 会使
+         * 指向 vector 元素内部 string 的指针悬空（ASan 抓到过 heap-use-after-free）。 */
         prev_frame = frame;
     }
 
     /* 按帧**稳定**排序（同帧保持声明顺序 → 确定） */
     std::stable_sort(parsed.begin(), parsed.end(),
                      [](const Ev& a, const Ev& b) { return a.e.frame < b.e.frame; });
+    /* 定稿后再绑定 text 指针（此后不再增删元素 → 指针稳定） */
+    for (Ev& ev : parsed)
+        if (ev.e.kind == MQ_SIM_TEXT) ev.e.text = ev.text.c_str();
 
     sim->events = std::move(parsed);
     sim->cursor = 0;
