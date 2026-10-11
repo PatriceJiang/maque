@@ -73,5 +73,19 @@ N4=$(COUNT "$(RESP "$WORK/out4.txt" 1)")
 grep -q "prefab 'star.prefab.json' instantiated" "$WORK/out4.txt" && fail "baked scene must not re-expand prefab"
 [ "$N4" -eq "$N" ] || fail "baked entity count changed: $N4 != $N"
 
-echo "prefab_e2e: ok (entities=$N, baked-count=$N4, dry-run/幂等 verified)"
+# ---- ⑤ 循环引用防护（docs/12 §7）：自引用 prefab 必须报错而非崩溃 ----
+mkdir -p "$WORK/cyc"
+cat > "$WORK/cyc/self.prefab.json" <<'JSON'
+{ "name": "Self", "entities": [ { "name": "S", "components": [ { "type": "scn.PrefabInstance", "source": "self.prefab.json" } ] } ] }
+JSON
+cat > "$WORK/cyc/c.scn" <<'JSON'
+{ "title": "cyc", "script": "", "width": 64, "height": 64, "entities": [ { "name": "R", "components": [ { "type": "scn.PrefabInstance", "source": "self.prefab.json" } ] } ] }
+JSON
+timeout 20 env MAQUE_HEADLESS=1 MAQUE_MAX_FRAMES=2 "$PLAYER" "$WORK/cyc/c.scn" > "$WORK/cyc/out.txt" 2>&1
+CYC_RC=$?
+# 无脚本 quit 时正常退出码为 1；崩溃会是 139（SIGSEGV=128+11）→ 只拒绝信号退出
+[ "$CYC_RC" -lt 128 ] || fail "cyclic prefab crashed with signal (exit=$CYC_RC)"
+grep -q "cyclic prefab reference" "$WORK/cyc/out.txt" || fail "cyclic prefab was not reported"
+
+echo "prefab_e2e: ok (entities=$N, baked-count=$N4, cycle-guard=ok)"
 exit 0

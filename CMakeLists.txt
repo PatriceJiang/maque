@@ -8,6 +8,16 @@ project(Maque CXX C ASM)
 
 option(MAQUE_BUILD_TESTS "Build maque unit tests" ON)
 
+# 确定性 D8（docs/10 §2）：关闭 FMA 收缩 —— 浮点结果不随编译器/优化级别变化。
+# 符号可见性 R8（docs/02）：默认 hidden，跨模块导出只经 MQ_MODULE_EXPORT / extern "C"。
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-ffp-contract=off)
+endif()
+if(NOT MSVC)
+    add_compile_options(-fvisibility=hidden)
+    add_link_options(-fvisibility=hidden)
+endif()
+
 # WASM/浏览器目标（P3，docs/plan-wasm.md）：由 cmake/toolchain-emscripten.cmake 置位。
 # WASM 下渲染插件（wgpu-native .so）与原生网络后端不可用，由宿主 JS 侧承担（docs/05 §3）。
 if(EMSCRIPTEN)

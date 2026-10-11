@@ -42,6 +42,8 @@ run_case() {
 {"jsonrpc":"2.0","id":34,"method":"Runtime.step","params":{"frames":2}}
 {"jsonrpc":"2.0","id":35,"method":"Scene.entities"}
 {"jsonrpc":"2.0","id":36,"method":"World.trail"}
+{"jsonrpc":"2.0","id":37,"method":"Scene.spawn","params":{"name":"ReuseProbe"}}
+{"jsonrpc":"2.0","id":38,"method":"Scene.entities"}
 EOF
 }
 
@@ -87,5 +89,10 @@ printf '%s' "$OUT_B" | grep -q 'replay matches recorded trail' || fail "replay d
 echo "$SNAP" | grep -qE '"bytes":[1-9][0-9]*' || fail "snapshot is empty: $SNAP"
 echo "$LOG_A" | grep -q '"version":1' || fail "Replay.log returned no log"
 
-echo "ui_e2e: ok (balls=$BALLS_A trail=$TRAIL_A replay=$TRAIL_B)"
+# 实体 id 单调分配：清空后再新建，id 不得复用（陈旧 id 永不指向新实体）
+NEWID=$(RESP "$OUT_A" 37 | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+[ -n "$NEWID" ] || fail "Scene.spawn returned no id"
+awk -v a="$NEWID" 'BEGIN { exit !(a > 4) }' || fail "entity id was reused after destroy (got $a)"
+
+echo "ui_e2e: ok (balls=$BALLS_A trail=$TRAIL_A replay=$TRAIL_B new-id=$NEWID)"
 exit 0

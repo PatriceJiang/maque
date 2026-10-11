@@ -122,6 +122,9 @@ size_t kind_width(mq_type_kind k) {
         case MQ_TK_I16:  case MQ_TK_U16:                return 2;
         case MQ_TK_I32:  case MQ_TK_U32: case MQ_TK_F32: return 4;
         case MQ_TK_I64:  case MQ_TK_U64: case MQ_TK_F64: return 8;
+        /* 引用：固定布局 POD（EntityRef{u32,u32} / AssetRef{u64}）→ 8 字节（docs/06 §3） */
+        case MQ_TK_ENTITY_REF:
+        case MQ_TK_ASSET_REF: return 8;
         default: return 0;
     }
 }
@@ -161,8 +164,14 @@ void apply_struct(mq_reflect_ctx* ctx, const mq_type_desc* type, void* obj, cons
     }
 }
 
+void apply_ref(mq_reflect_ctx* ctx, const mq_field_desc* f, void* fp, const JVal& v);
+
 void apply_field(mq_reflect_ctx* ctx, const mq_field_desc* f, void* fp, const JVal& v) {
     switch (f->kind) {
+        case MQ_TK_ASSET_REF:
+        case MQ_TK_ENTITY_REF:
+            apply_ref(ctx, f, fp, v);
+            return;
         case MQ_TK_STRUCT: {
             const mq_type_desc* ft = mq_reflect_type_by_id(ctx, f->type_id);
             if (ft) apply_struct(ctx, ft, fp, v);
@@ -226,6 +235,17 @@ void write_json_scalar(std::string& out, const void* p, mq_type_kind kind) {
         case MQ_TK_U32: out += std::to_string(*(const uint32_t*)p); return;
         case MQ_TK_I64: out += std::to_string(*(const int64_t*)p); return;
         case MQ_TK_U64: out += std::to_string(*(const uint64_t*)p); return;
+        /* 引用（{u32,u32} / {u64}）：输出 **十六进制字符串** —— 64 位内容哈希超出 double 精度
+         * （2^53），走数值会在文本往返时丢位（docs/06 §3 稳定 ID）。 */
+        case MQ_TK_ENTITY_REF:
+        case MQ_TK_ASSET_REF: {
+            uint64_t v = 0;
+            std::memcpy(&v, p, 8);
+            char hex[32];
+            std::snprintf(hex, sizeof hex, "\"0x%016llx\"", (unsigned long long)v);
+            out += hex;
+            return;
+        }
         default: out += "0"; return;
     }
 }
@@ -310,6 +330,22 @@ void write_json_value(mq_reflect_ctx* ctx, const mq_type_desc* t, const void* ob
         write_json_field(ctx, f, (const uint8_t*)obj + f->offset, out);
     }
     out += '}';
+}
+
+/* 引用赋值：字符串 "0x…" 优先（保真），数值回退兼容（≤2^53 的旧文本）。 */
+void apply_ref(mq_reflect_ctx* ctx, const mq_field_desc* f, void* fp, const JVal& v) {
+    (void)ctx; (void)f;
+    uint64_t out = 0;
+    if (v.kind == JVal::Str) {
+        const char* q = v.str.c_str();
+        if (q[0] == '0' && (q[1] == 'x' || q[1] == 'X')) q += 2;
+        out = std::strtoull(q, nullptr, 16);
+    } else if (v.kind == JVal::Num) {
+        out = (uint64_t)v.num;
+    } else {
+        return;
+    }
+    std::memcpy(fp, &out, 8);
 }
 
 } // namespace

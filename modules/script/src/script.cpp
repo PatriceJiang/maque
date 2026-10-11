@@ -21,7 +21,18 @@ struct mq_script_vm {
     JSRuntime*  rt = nullptr;
     JSContext*  ctx = nullptr;
     std::vector<HostFn> fns;
+    mq_script_rng_fn rng = nullptr;      /* 引擎 RNG（docs/10 D2） */
+    void*            rng_user = nullptr;
+    std::string      last_error;         /* 最近错误（per-instance，ADR-0014） */
 };
+
+/* Math.random 的替代实现：走注入的引擎 RNG（未注入则退回 quickjs 默认种子路径）。 */
+static JSValue js_math_random(JSContext* ctx, JSValueConst, int, JSValueConst*, int) {
+    auto* vm = static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx));
+    if (!vm || !vm->rng) return JS_UNDEFINED;          // 由调用方决定行为
+    const uint32_t v = vm->rng(vm->rng_user);
+    return JS_NewFloat64(ctx, (double)v / 4294967296.0);
+}
 
 /* 统一 trampoline：用 magic 作为 HostFn 下标。 */
 static JSValue host_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
@@ -69,13 +80,13 @@ static JSValue host_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueCo
     return JS_NewFloat64(ctx, ret);
 }
 
-static thread_local std::string g_last_error;
-
 static void throw_and_print(JSContext* ctx) {
+    auto* vm = static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx));
     JSValue e = JS_GetException(ctx);
     const char* s = JS_ToCString(ctx, e);
-    g_last_error = s ? s : "(unknown)";
-    std::print(stderr, "[script] exception: {}\n", g_last_error);
+    const std::string msg = s ? s : "(unknown)";
+    if (vm) vm->last_error = msg;                       // per-instance（ADR-0014）
+    std::print(stderr, "[script] exception: {}\n", msg);
     if (s) JS_FreeCString(ctx, s);
     JS_FreeValue(ctx, e);
 }
@@ -198,11 +209,28 @@ int mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, double
     return call_impl(vm, fn, 3, args, ret);
 }
 
+void mq_script_set_rng(mq_script_vm* vm, mq_script_rng_fn fn, void* user) {
+    if (!vm || !vm->ctx) return;
+    vm->rng = fn;
+    vm->rng_user = user;
+    if (!fn) return;
+    /* 覆盖 Math.random：确定性要求脚本随机与引擎同源（docs/10 D2、断点回放） */
+    JSValue global = JS_GetGlobalObject(vm->ctx);
+    JSValue math = JS_GetPropertyStr(vm->ctx, global, "Math");
+    if (JS_IsObject(math)) {
+        JSValue f = JS_NewCFunctionMagic(vm->ctx, js_math_random, "random", 0,
+                                         JS_CFUNC_generic_magic, 0);
+        JS_SetPropertyStr(vm->ctx, math, "random", f);
+    }
+    JS_FreeValue(vm->ctx, math);
+    JS_FreeValue(vm->ctx, global);
+}
+
 int mq_script_last_error(mq_script_vm* vm, char* out, int cap) {
-    (void)vm;
     if (!out || cap <= 0) return 1;
-    if (g_last_error.empty()) { out[0] = '\0'; return 1; }
-    std::snprintf(out, (size_t)cap, "%s", g_last_error.c_str());
+    const std::string msg = vm ? vm->last_error : std::string();
+    if (msg.empty()) { out[0] = '\0'; return 1; }
+    std::snprintf(out, (size_t)cap, "%s", msg.c_str());
     return 0;
 }
 

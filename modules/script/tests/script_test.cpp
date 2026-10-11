@@ -15,6 +15,8 @@ static int host_add(void*, int argc, const double* a, double* ret) {
 static int host_len(void*, const char* s, double* ret) {
     *ret = (double)std::strlen(s); return 0;
 }
+static uint32_t s_rng_state = 1u;
+static uint32_t host_rng(void*) { s_rng_state = s_rng_state * 1664525u + 1013904223u; return s_rng_state; }
 
 int main() {
     mq_script_vm* vm = mq_script_vm_create();
@@ -74,6 +76,33 @@ int main() {
     char err[256] = { 0 };
     CHECK(mq_script_last_error(vm, err, (int)sizeof err) == 0 && err[0] != '\0');
     CHECK(mq_script_call0(vm, "bump", &b) == 0 && b == 22.0);    // 旧脚本仍可调用
+
+    // ---- 引擎 RNG 注入（docs/10 D2）：Math.random 必须可复现，不再走墙钟熵 ----
+    {
+        mq_script_vm* a = mq_script_vm_create();
+        mq_script_vm* b = mq_script_vm_create();
+        mq_script_set_rng(a, host_rng, nullptr);
+        mq_script_set_rng(b, host_rng, nullptr);
+        CHECK(mq_script_eval(a, "function r(){return Math.random();}", "r.js") == 0);
+        CHECK(mq_script_eval(b, "function r(){return Math.random();}", "r.js") == 0);
+        double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+        CHECK(mq_script_call0(a, "r", &x1) == 0);
+        CHECK(mq_script_call0(a, "r", &x2) == 0);
+        CHECK(x1 != x2);                                  // 序列在推进
+        s_rng_state = 1u;                                 // 复位同一状态
+        CHECK(mq_script_call0(b, "r", &y1) == 0);
+        CHECK(mq_script_call0(b, "r", &y2) == 0);
+        CHECK(x1 == y1 && x2 == y2);                      // 同种子 → 同序列（可回放）
+        CHECK(x1 >= 0.0 && x1 < 1.0);
+        // per-instance 错误：A 的异常不得覆盖 B
+        CHECK(mq_script_eval(a, "throw new Error('boom-A')", "bad.js") != 0);
+        char ea[128] = { 0 }, eb[128] = { 0 };
+        CHECK(mq_script_last_error(a, ea, (int)sizeof ea) == 0);
+        CHECK(std::strstr(ea, "boom-A") != nullptr);
+        CHECK(mq_script_last_error(b, eb, (int)sizeof eb) != 0);   // B 无错
+        mq_script_vm_destroy(a);
+        mq_script_vm_destroy(b);
+    }
 
     mq_script_gc(vm);
     mq_script_vm_destroy(vm);

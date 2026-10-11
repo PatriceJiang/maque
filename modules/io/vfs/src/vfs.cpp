@@ -110,9 +110,10 @@ int parse_zip(const std::string& path, Zip& out) {
         if (!name.empty() && name.back() != '/' && method == 0 && csize == usize) {
             /* 读取本地头以获得数据起点（本地 extra 长度可能与中央目录不同） */
             f.seekg(local_off);
-            unsigned char lh[30];
-            f.read((char*)lh, 30);
-            if (lh[0] == 0x50 && lh[1] == 0x4b && lh[2] == 0x03 && lh[3] == 0x04) {
+            unsigned char lh[30] = { 0 };                 // 零初始化：读取失败时不得使用未初始化字节
+            f.read((char*)lh, sizeof lh);
+            if (f.gcount() == (std::streamsize)sizeof lh &&
+                lh[0] == 0x50 && lh[1] == 0x4b && lh[2] == 0x03 && lh[3] == 0x04) {
                 const uint32_t ln = (uint32_t)lh[26] | ((uint32_t)lh[27] << 8);
                 const uint32_t le = (uint32_t)lh[28] | ((uint32_t)lh[29] << 8);
                 out.entries[name] = ZipEntry{ name, (size_t)local_off + 30 + ln + le, usize };

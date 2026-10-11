@@ -4,6 +4,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +27,11 @@ int  mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, doubl
 
 /* 最近一次求值/调用失败的错误文本（热重载诊断用）。成功写入返回 0；无错误返回 1。 */
 int mq_script_last_error(mq_script_vm* vm, char* out, int cap);
+
+/* 注入引擎 RNG（docs/10 D2）：覆盖 quickjs 的 Math.random（其默认种子 = 墙钟时间，
+ * 会破坏回放）。宿主应在创建 VM 后立即设置；未设置时 Math.random 保持 quickjs 默认。 */
+typedef uint32_t (*mq_script_rng_fn)(void* user);
+void mq_script_set_rng(mq_script_vm* vm, mq_script_rng_fn fn, void* user);
 
 /* 帧边界 GC（确定性：模拟帧内不隐式回收）。返回本次回收对象数估计。 */
 void mq_script_gc(mq_script_vm* vm);

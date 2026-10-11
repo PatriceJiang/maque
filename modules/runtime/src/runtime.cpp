@@ -40,6 +40,8 @@
 #include <utility>
 #include <functional>
 #include <csignal>
+#include <unistd.h>
+#include <fcntl.h>
 
 namespace {
 
@@ -63,26 +65,27 @@ void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob);
 struct Scene {
     scn::Scene desc;
     std::string text_;
-    mq_handle_table* table = nullptr;
+    /* 实体 id 采用**单调递增**（不复用槽位）：docs/02 R4/docs/07 §3 要求陈旧句柄不得
+     * 静默指向新对象；不复用即从根上消除"销毁后 id 指到别人"的风险。
+     * （世代号在等价意义上内化于 id：同一个 id 永恒指向同一个实体或不存在。） */
+    int next_id = 0;
     Engine* eng = nullptr;                  // 组件析构需要反射 ctx（remove/重建时）
     std::unordered_map<int, Entity> ents;
 
-    Scene() { table = mq_handle_table_create(sizeof(uint8_t), 1); }
-    ~Scene() { destroy_all(); if (table) mq_handle_table_destroy(table); }
+    Scene() = default;
+    ~Scene() { destroy_all(); }
     Scene(const Scene&) = delete; Scene& operator=(const Scene&) = delete;
     Scene(Scene&& o) noexcept
-        : desc(std::move(o.desc)), text_(std::move(o.text_)), table(o.table), eng(o.eng),
+        : desc(std::move(o.desc)), text_(std::move(o.text_)), next_id(o.next_id), eng(o.eng),
           ents(std::move(o.ents)) {
-        o.table = nullptr;           // 所有权转移：源对象不得再释放/析构已移交的资源
-        o.eng = nullptr;
+        o.eng = nullptr;             // 所有权转移：源对象不得再析构已移交的资源
     }
     Scene& operator=(Scene&& o) noexcept {
         if (this == &o) return *this;
         destroy_all();
-        if (table) mq_handle_table_destroy(table);
         desc = std::move(o.desc);
         text_ = std::move(o.text_);
-        table = o.table; o.table = nullptr;
+        next_id = o.next_id;
         eng = o.eng; o.eng = nullptr;
         ents = std::move(o.ents);
         return *this;
@@ -209,6 +212,7 @@ struct Engine {
     uint32_t poll_watcher();                                // 帧边界检查资源变化
     void checkpoint_push();                                 // 记录一个检查点（周期性）
     void write_crash_context(const char* why);              // 崩溃/异常上下文（docs/09 §5、docs/10 §7）
+    void refresh_crash_buffer();                            // 帧边界预渲染（信号安全落盘）
     void export_final_snapshot();                           // 导出世界快照（MAQUE_SNAPSHOT）
     void finalize_run();                                    // 导出快照 + 录制日志（含 frames/trail 元数据）
     bool world_snapshot(mq_snapshot* snap);                 // 世界 → 快照（反射驱动，docs/10 §4）
@@ -283,10 +287,20 @@ void attach_component(Engine& eng, int idx, const char* type_name) {
 /* ---- 终止信号（docs/09 §5）：处理器只置位并恢复默认行为，写盘在帧边界 ---- */
 volatile sig_atomic_t g_signal_hit = 0;
 const char* g_signal_name = nullptr;
+/* 信号安全崩溃落盘（docs/09 §5）：处理器内不得分配/加锁/调用 iostream。
+ * 因此引擎在每个帧边界把"崩溃上下文"预渲染进 g_crash_buf，并预打开报告 fd；
+ * 处理器只做 write(fd, buf, len) 后恢复默认行为再 raise。 */
+int  g_crash_fd = -1;
+char g_crash_buf[16384];
+volatile sig_atomic_t g_crash_len = 0;
 inline void on_fatal_signal(int sig) {
     g_signal_hit = sig;
     g_signal_name = sig == SIGSEGV ? "SIGSEGV" : sig == SIGABRT ? "SIGABRT"
                   : sig == SIGFPE ? "SIGFPE" : sig == SIGINT ? "SIGINT" : "signal";
+    if (g_crash_fd >= 0 && g_crash_len > 0) {
+        const ssize_t ignored = write(g_crash_fd, g_crash_buf, (size_t)g_crash_len);
+        (void)ignored;
+    }
     signal(sig, SIG_DFL);
     raise(sig);
 }
@@ -540,6 +554,7 @@ void Engine::step_frame() {
         trail.emplace_back(frame, last_checksum);
         if (snaps && (frame % 60 == 0)) { snap_last = mq_snapshot_pool_acquire(snaps); world_snapshot(snap_last); }
         if (cp_active && (frame % cp_interval == 0)) checkpoint_push();
+        if (frame % 30 == 0) refresh_crash_buffer();         // 预渲染崩溃上下文（docs/09 §5）
     }
     mq_obs_counter_add(obs, "frames", 1.0);
     mq_obs_gauge_set(obs, "entities", scene ? (double)scene->count() : 0.0);
@@ -955,6 +970,34 @@ void Engine::checkpoint_push() {
 /* 崩溃/异常上下文（docs/09 §5）：把"精确重放所需的一切"落盘为 JSON —— 
  * seed、场景、帧号、最近检查点、输入日志（若在录制）、世界校验和、指标。
  * 触发点：① 脚本异常（可重放定位）；② 信号（abort/段错误，见 install_crash_handler）。 */
+/* 把崩溃上下文预渲染进信号安全缓冲并确保报告 fd 已打开（每帧边界调用）。 */
+void Engine::refresh_crash_buffer() {
+    if (g_crash_fd < 0) {
+        const char* out = std::getenv("MAQUE_CRASH_REPORT");
+        if (!out || !*out) return;
+        g_crash_fd = ::open(out, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (g_crash_fd < 0) return;
+    }
+    uint64_t cp_frame = 0, cp_sum = 0;
+    for (auto* s : checkpoints)
+        if (s && mq_snapshot_frame(s) > cp_frame) { cp_frame = mq_snapshot_frame(s); cp_sum = mq_snapshot_checksum(s); }
+    const int n = std::snprintf(g_crash_buf, sizeof g_crash_buf,
+        "{\"reason\":\"fatal signal\",\"scene\":\"%s\",\"frame\":%llu,\"seed\":%u,"
+        "\"world_trail\":\"%llu\",\"checkpoint\":{\"frame\":%llu,\"checksum\":\"%llu\"},\n"
+        " \"replay\":{\"command\":\"MAQUE_REPLAY=<log> %s\"},\n \"metrics\":%s}\n",
+        (scn_full_path.empty() ? scn_vfs_path : scn_full_path).c_str(),
+        (unsigned long long)frame, scene ? scene->desc.seed : 0u,
+        (unsigned long long)world_trail(),
+        (unsigned long long)cp_frame, (unsigned long long)cp_sum,
+        (scn_full_path.empty() ? scn_vfs_path : scn_full_path).c_str(),
+        mq_obs_dump_json(obs));
+    g_crash_len = n > 0 ? (n < (int)sizeof g_crash_buf ? n : (int)sizeof g_crash_buf - 1) : 0;
+    if (g_crash_fd >= 0 && g_crash_len > 0) {          // 同步落盘（保证即使不崩也有当前快照）
+        const ssize_t ig = pwrite(g_crash_fd, g_crash_buf, (size_t)g_crash_len, 0);
+        (void)ig;
+    }
+}
+
 void Engine::write_crash_context(const char* why) {
     const char* out = std::getenv("MAQUE_CRASH_REPORT");
     if (!out || !*out) return;
@@ -1072,11 +1115,9 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
 
 /* ---- Scene ---- */
 int Scene::spawn() {
-    void* p = nullptr;
-    mq_handle h = mq_handle_table_alloc(table, &p);
-    if (h.index == MQ_HANDLE_INDEX_NONE) return -1;
-    ents.emplace((int)h.index, Entity{});
-    return (int)h.index;
+    const int idx = next_id++;                   // 单调：永不复用（陈旧 id 不会别名新实体）
+    ents.emplace(idx, Entity{});
+    return idx;
 }
 Entity* Scene::at(int index) {
     if (index < 0) return nullptr;
@@ -1085,10 +1126,11 @@ Entity* Scene::at(int index) {
 }
 void Scene::remove(int index) {
     auto it = ents.find(index);
-    if (it != ents.end())
+    if (it != ents.end()) {
         for (auto& [t, b] : it->second.comps) if (eng) destroy_blob(*eng, t, b);
-    ents.erase(index);
-    mq_handle_table_free(table, mq_handle_table_handle_at(table, (uint32_t)index));
+        ents.erase(it);
+    }
+    /* 不回收 id（单调分配）→ 之后 entity_valid(旧 id) 恒为 false */
 }
 
 bool Scene::deserialize(Engine& eng, const std::string& text) {
@@ -1100,7 +1142,15 @@ bool Scene::deserialize(Engine& eng, const std::string& text) {
     return rc == 0;
 }
 
-static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent) {
+/* 加载实体树；prefab 就地展开。
+ * docs/12 §7：**禁止循环实例化** —— 用 chain（当前展开链上的 prefab 路径）+ 深度上限检测，
+ * 命中则报结构化错误并跳过该实例（绝不递归到栈溢出）。 */
+static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
+                       std::vector<std::string>* chain = nullptr, int depth = 0) {
+    if (depth > 64) {
+        std::print(stderr, "runtime: prefab nesting too deep (>64), aborted at depth {}\n", depth);
+        return -1;
+    }
     int idx = sc.spawn();
     if (idx < 0) return -1;
     Entity* ent = sc.at(idx);
@@ -1131,6 +1181,15 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent) {
         bool detached = false;
         if (const mq_field_desc* fd = mq_reflect_field(d, "detached")) detached = *(const bool*)(blob.data() + fd->offset);
         if (detached) continue;
+        if (chain) {
+            bool cycle = false;
+            for (const auto& c : *chain) if (c == *src) { cycle = true; break; }
+            if (cycle) {
+                std::print(stderr, "runtime: cyclic prefab reference '{}' (entity {}) — skipped\n", *src, idx);
+                mq_obs_event(eng.obs, "runtime", 3, "prefab_cycle");
+                continue;
+            }
+        }
         void* pd = nullptr; size_t pn = 0;
         const std::string ppath = "/" + *src;
         if (mq_vfs_read(eng.vfs, ppath.c_str(), &pd, &pn) != MQ_VFS_OK) {
@@ -1141,16 +1200,19 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent) {
         mq_vfs_free(pd);
         mq_json* pdom = mq_json_parse(ptext.c_str(), ptext.size());
         if (pdom) {
+            std::vector<std::string> child_chain = chain ? *chain : std::vector<std::string>{};
+            child_chain.push_back(*src);
             const mq_json* pents = mq_json_get(pdom, "entities");
             const uint32_t pcount = mq_json_len(pents);
-            for (uint32_t i = 0; i < pcount; ++i) load_entity(eng, sc, mq_json_at(pents, i), idx);
+            for (uint32_t i = 0; i < pcount; ++i)
+                load_entity(eng, sc, mq_json_at(pents, i), idx, &child_chain, depth + 1);
             mq_json_free(pdom);
             std::print("runtime: prefab '{}' instantiated under entity {}\n", *src, idx);
         }
     }
     const mq_json* ch = mq_json_get(e, "children");
     uint32_t kn = mq_json_len(ch);
-    for (uint32_t i = 0; i < kn; ++i) load_entity(eng, sc, mq_json_at(ch, i), idx);
+    for (uint32_t i = 0; i < kn; ++i) load_entity(eng, sc, mq_json_at(ch, i), idx, chain, depth);
     return idx;
 }
 
@@ -1207,10 +1269,8 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
     };
     uint32_t count = 0;
     if (!take(&count, 4) || count > (1u << 20)) return 0;
-    for (auto& [k, ent] : ents) {
+    for (auto& [k, ent] : ents)
         for (auto& [t, b] : ent.comps) destroy_blob(eng, t, b);
-        mq_handle_table_free(table, mq_handle_table_handle_at(table, (uint32_t)k));
-    }
     ents.clear();
     for (uint32_t i = 0; i < count; ++i) {
         int32_t k = 0, parent = -1;
@@ -1241,6 +1301,7 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
             pos += len;
         }
         ents[k] = std::move(e);
+        if (k + 1 > next_id) next_id = k + 1;
     }
     return pos;
 }
@@ -1754,6 +1815,11 @@ void ball_clear(void* ctx) {
 float ui_hit_at(void* ctx, float x, float y) {
     auto* eng = (Engine*)ctx;
     return (float)ui_hit_entity(*eng, x, y, nullptr);
+}
+
+float entity_valid(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    return eng->scene->at((int)id) ? 1.0F : 0.0F;
 }
 
 float entity_z(void* ctx, float id) {
@@ -2301,6 +2367,13 @@ static int h_replay_log(void* u, const char*, const mq_json*, char* out, size_t 
 /* 装配引擎：VFS → 反射 → 渲染插件 → 场景 → 平台/输入 → 脚本 → 控制面。
  * 两条入口（命令行 / 嵌入宿主）共用，保证行为一致。 */
 bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
+    if (const char* cr = std::getenv("MAQUE_CRASH_REPORT"); cr && *cr) {   // 两条入口共用
+        signal(SIGSEGV, on_fatal_signal);
+        signal(SIGABRT, on_fatal_signal);
+        signal(SIGFPE, on_fatal_signal);
+        signal(SIGINT, on_fatal_signal);
+        if (g_crash_fd < 0) g_crash_fd = ::open(cr, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    }
     std::filesystem::path scnp(scn_path);
     const std::string scn_dir2 = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
 
@@ -2396,6 +2469,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     snaps = mq_snapshot_pool_create(8, 1 << 16);
     { const char* cp = std::getenv("MAQUE_CHECKPOINTS"); if (cp && *cp && *cp != '0') cp_active = true; }
     vm = mq_script_vm_create();
+    mq_script_set_rng(vm, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
     mq_bind_generated(vm, this);
 
     script_path = scene->desc.script;
@@ -2484,11 +2558,6 @@ void Engine::teardown() {
 
 extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (!scn_path) return 1;
-    if (std::getenv("MAQUE_CRASH_REPORT")) {
-        signal(SIGSEGV, on_fatal_signal);
-        signal(SIGABRT, on_fatal_signal);
-        signal(SIGFPE, on_fatal_signal);
-    }
     auto* eng = new Engine();
     if (!eng->setup(scn_path, nullptr)) { eng->teardown(); delete eng; return 2; }
 

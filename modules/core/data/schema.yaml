@@ -1983,6 +1983,8 @@
     - { fn: entity_destroy,ctx: true, args: [ { name: id, type: float } ] }
     - { fn: entity_name,   ctx: true, args: [ { name: id, type: float } ], returns: string }
     - { fn: entity_find,   ctx: true, args: [ { name: name, type: string } ], returns: float }
+    # 实体 id 单调分配（永不复用）→ 陈旧 id 可判定：valid=0 表示已销毁/从未存在
+    - { fn: entity_valid,  ctx: true, args: [ { name: id, type: float } ], returns: float }
     # 输入（docs/19）：脚本读"事件发生时"的状态，不读设备（确定性/回放友好）
     - { fn: input_x,       ctx: true, returns: float }
     - { fn: input_y,       ctx: true, returns: float }
