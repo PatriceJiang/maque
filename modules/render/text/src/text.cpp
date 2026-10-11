@@ -205,7 +205,8 @@ const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size) {
     if (bw > 0 && bh > 0) {
         if (px + (uint32_t)bw + kAtlasPad > a.w && px > kAtlasPad) {      /* 换行 */
             px = kAtlasPad;
-            py += a.row_h + kAtlasPad;
+            py = a.cur_y + a.row_h + kAtlasPad;      /* 从**当前行底**起新行（cur_y 必须随之推进） */
+            a.cur_y = py;
             a.row_h = 0;
         }
         if (py + (uint32_t)bh + kAtlasPad > kAtlasMaxH) { a.full = true; return nullptr; }

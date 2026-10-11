@@ -2,7 +2,12 @@
 #include "text/mq_text.h"
 
 #include <print>
+#include <array>
 #include <vector>
+#if defined(MAQUE_HAVE_FREETYPE)
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#endif
 #include <cstring>
 #include <string>
 
@@ -153,7 +158,8 @@ int main() {
             "../../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
         };
         mq_font* cjk = nullptr;
-        for (const char* p : paths) { cjk = mq_font_load_file(p); if (cjk) break; }
+        const char* cjk_path = nullptr;
+        for (const char* p : paths) { cjk = mq_font_load_file(p); if (cjk) { cjk_path = p; break; } }
         if (!cjk) {
             std::print("text_test: 项目字体不可用，跳过 CJK 用例\n");
         } else {
@@ -198,6 +204,76 @@ int main() {
                 many += (char)(0x80 | ((cp >> 6) & 0x3F));
                 many += (char)(0x80 | (cp & 0x3F));
             }
+            /* ⑨a 字形矩形**两两不重叠**且在图集范围内：
+             *     曾因换行未推进打包游标 cur_y，导致后续行覆盖写到前面的行上（字形互相覆盖 →
+             *     文字乱码；ASCII 单行时看不出，加入 CJK 后才暴露）。
+             *     注意：像素级测试比对的是"渲染 vs 图集"，图集本身错了它抓不到 —— 必须在这里查。 */
+            {
+                uint32_t aw = 0, ahh = 0;
+                mq_font_atlas(cjk, 16.0F, nullptr, 0, &aw, &ahh);
+                mq_text_style st3 = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+                const char* sample = "ABCabc0123推箱子中文渲染测试，。！";
+                mq_text_metrics mm{};
+                mq_text_measure(cjk, &st3, sample, &mm);
+                std::vector<mq_text_glyph> gg(mm.glyph_count ? mm.glyph_count : 1);
+                uint32_t nn = 0;
+                mq_text_layout(cjk, &st3, sample, gg.data(), (uint32_t)gg.size(), &nn, &mm);
+                std::vector<std::array<int, 4>> rects;      // x, y, w, h
+                for (uint32_t i = 0; i < nn; ++i) {
+                    if (gg[i].w <= 0.0F || gg[i].h <= 0.0F) continue;
+                    CHECK(gg[i].ax >= 0 && gg[i].ay >= 0);
+                    CHECK((uint32_t)(gg[i].ax + (int)gg[i].w) <= aw);          // 不越界
+                    CHECK((uint32_t)(gg[i].ay + (int)gg[i].h) <= ahh);
+                    rects.push_back({ gg[i].ax, gg[i].ay, (int)gg[i].w, (int)gg[i].h });
+                }
+                CHECK(rects.size() >= 20);
+                int overlap = 0;
+                for (size_t i = 0; i < rects.size(); ++i)
+                    for (size_t j = i + 1; j < rects.size(); ++j) {
+                        const bool sep = rects[i][0] + rects[i][2] <= rects[j][0] ||
+                                         rects[j][0] + rects[j][2] <= rects[i][0] ||
+                                         rects[i][1] + rects[i][3] <= rects[j][1] ||
+                                         rects[j][1] + rects[j][3] <= rects[i][1];
+                        if (!sep) ++overlap;
+                    }
+                CHECK(overlap == 0);
+                std::vector<uint8_t> at((size_t)aw * ahh * 4);
+                CHECK(mq_font_atlas(cjk, 16.0F, at.data(), at.size(), &aw, &ahh) == MQ_TEXT_OK);
+                /* ⑨b 图集内容 == FreeType 直接栅格化的位图（**逐字节**）：
+                 *      能抓住"写错位置 / 被后续字形覆盖"这类图集损坏（渲染 vs 图集的像素测试抓不到）。 */
+#if defined(MAQUE_HAVE_FREETYPE)
+                FT_Library lib = nullptr;
+                FT_Face face = nullptr;
+                int ft_ok = (cjk_path && FT_Init_FreeType(&lib) == 0 &&
+                             FT_New_Face(lib, cjk_path, 0, &face) == 0) ? 1 : 0;
+                int checked = 0, mismatch = 0;
+                if (ft_ok) {
+                    for (uint32_t i = 0; i < nn && checked < 6; ++i) {
+                        const mq_text_glyph& q = gg[i];
+                        if (q.w <= 0.0F || q.h <= 0.0F) continue;
+                        if (FT_Set_Pixel_Sizes(face, 0, 16) != 0) continue;
+                        if (FT_Load_Char(face, q.codepoint, FT_LOAD_RENDER) != 0) continue;
+                        const FT_Bitmap& bm = face->glyph->bitmap;
+                        if ((int)bm.width != (int)q.w || (int)bm.rows != (int)q.h) { ++mismatch; break; }
+                        ++checked;
+                        for (int y = 0; y < (int)q.h && !mismatch; ++y) {
+                            const uint8_t* row = bm.buffer + (size_t)y * bm.pitch;
+                            for (int x = 0; x < (int)q.w; ++x) {
+                                const uint8_t a = at[(((size_t)(q.ay + y) * aw) + (uint32_t)(q.ax + x)) * 4 + 3];
+                                if (a != row[x]) { ++mismatch; break; }
+                            }
+                        }
+                    }
+                }
+                CHECK(ft_ok == 1);
+                CHECK(checked >= 6);
+                CHECK(mismatch == 0);          // 图集里该字形的像素必须与字体引擎输出完全一致
+                if (face) FT_Done_Face(face);
+                if (lib) FT_Done_FreeType(lib);
+#endif
+
+            }
+
             mq_text_style st2 = style(24.0F, MQ_TEXT_WRAP_CHAR, MQ_TEXT_ALIGN_BEGIN, 200.0F);
             mq_text_metrics m2{};
             CHECK(mq_text_measure(cjk, &st2, many.c_str(), &m2) == MQ_TEXT_OK);

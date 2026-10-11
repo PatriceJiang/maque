@@ -2206,7 +2206,7 @@ void Engine::text_flush(std::vector<mq_renderer_item>& out) {
     int traced = 0;
     if (std::getenv("MAQUE_TRACE_TEXT")) {
       for (const PendingQuad& tq : pending_quads) {
-        if (tq.tw <= 0 || traced >= 6) continue;
+        if (tq.tw <= 0 || traced >= 80) continue;
         ++traced;
         uint32_t tw_ = 1, th_ = 1;
         for (const auto& fa : font_atlases)
