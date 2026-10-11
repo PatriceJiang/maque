@@ -1914,6 +1914,9 @@
         - { name: seed,     type: uint32_t, default: 0 }
         - { name: views,    type: int32_t, default: 1 }         # 同屏视图数（VR: 2）
         - { name: eye_sep,  type: float,   default: 0.0F }      # 眼距/视差（像素）
+        # 物理（docs/15 §3）：求解器由引擎侧确定性模块提供，场景只声明参数
+        - { name: gravity_y,   type: float, default: 900.0F }   # 重力（像素/秒²，y 向下）
+        - { name: restitution, type: float, default: 0.86F }    # 弹性（0..1）
         # entities 不在此：节点树通用（name/children/components），组件按 type 反射反序列化      # 引擎 RNG 种子（确定性）
 
 # 宿主 API（引擎能力）：ctx:true → 生成 C 声明 + JS 绑定（docs/21）
@@ -1955,7 +1958,8 @@
     - { fn: spawn_ball,    ctx: true, args: [ { name: x, type: float }, { name: y, type: float },
                                              { name: vx, type: float }, { name: vy, type: float },
                                              { name: radius, type: float } ], returns: float }
-    - { fn: bounce_step,   ctx: true, args: [ { name: dt, type: float } ] }
+    - { fn: bounce_step,   ctx: true, args: [ { name: dt, type: float } ] }   # 兼容旧脚本（自 M6 起为 no-op）
+    - { fn: physics_step,  ctx: true }                                       # 固定步长物理推进（docs/15 §3）
     - { fn: ball_clear,    ctx: true }
     # 组件字段（脚本改文本等；引擎按 role 定位组件，不认具体类型名）
     - { fn: set_label,     ctx: true, args: [ { name: id, type: float }, { name: text, type: string } ] }

@@ -93,7 +93,18 @@ int mq_physics_interpolate(mq_physics_world* w, mq_physics_body b, float alpha, 
 /* ---------- 静态平面墙（世界边界；参与 DYNAMIC 体碰撞与接触报告） ---------- */
 int mq_physics_set_bounds(mq_physics_world* w, float min_x, float min_y, float max_x, float max_y);
 
-/* ---------- 推进（固定 dt 取自 cfg；确定；按 body.index 升序） ---------- */
+/* ---------- 推进（固定 dt 取自 cfg；确定；按 body.index 升序） ----------
+ * v1 求解语义（冻结；语义变更需 bump ABI 主版本）：
+ *   - 半隐式 Euler：先 v += g*dt 再 p += v*dt；仅 DYNAMIC 受重力（除非置
+ *     MQ_PHYSICS_BF_DISABLE_GRAVITY）。KINEMATIC 按自身速度平移、不受重力/冲量；STATIC 恒不动。
+ *   - 碰撞：球-球 / 球-AABB 盒 / AABB 盒-盒；每步先按穿透量沿法线完全分离，
+ *     再以恒定 solver_iterations 次迭代求解速度（迭代次数不随负载变化）。
+ *   - 合并材质：restitution = max(ea, eb)；friction = max(fa, fb)，
+ *     切向按相对切向速度的指数阻尼 (1 - friction) 衰减（只衰减、不反向、不加能）；
+ *     接近速度小于 1 像素/秒时不产生弹跳（仅抵消法向速度）。
+ *   - 静息钳制：接触面上法向速度小于 (0.5 + 1.5*|g|*dt) 像素/秒时清零 ——
+ *     确定性、与负载无关，保证静止体不持续抖动。
+ *   - 世界边界为静态平面，按体自身 restitution/friction 碰撞，并把 DYNAMIC 体约束在界内。 */
 int mq_physics_step(mq_physics_world* w);
 uint32_t mq_physics_step_count(mq_physics_world* w);
 

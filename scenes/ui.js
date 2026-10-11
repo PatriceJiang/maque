@@ -37,7 +37,7 @@
   };
 
   globalThis.update = function (dt) {
-    bounce_step(dt);
+    physics_step();                                 // 固定步长物理（docs/15 §3）
     if (input_key(1) > 0) quit();                   // Esc 退出（归一化键码：Esc = 1）
   };
 

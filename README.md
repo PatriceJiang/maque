@@ -11,12 +11,17 @@
 - **多实例 / 零全局可变状态 / 插件化**（模块即 `.so`，跨边界 C ABI）。
 - **反射中枢**：`schema.yaml` 一处声明 → 生成 C++ 类型 / C ABI 描述符 / JSON / **脚本绑定**。
 - **声明式接口绑定**：`api_list` 一次声明，生成 C++ 头 + JS 绑定（支持 MANUAL 头内联实现）。
-- **脚本优先**：quickjs(JS) 作为游戏逻辑层；帧边界 GC，确定性友好。
-- **真实 WebGPU 渲染**（wgpu-native）：离屏渲染 + readback。
-- **VFS**：`file://` / 直接 URL（libcurl http/https/file）挂载式资源加载。
-- **图像解码**：Wuffs（PNG/JPEG/GIF/BMP）。
-- **平台层**：SDL2 窗口/输入；网络底座 libwebsockets。
-- 确定性：固定步长、引擎 RNG、输入即数据、可回放（设计目标）。
+- **脚本优先**：quickjs(JS) 作为游戏逻辑层；帧边界 GC；**帧边界热重载**（IIFE + globalThis 状态迁移）。
+- **真实 WebGPU 渲染**（wgpu-native）：离屏渲染 + readback；相机（中心/缩放/旋转）、
+  分层与 z 稳定排序、按"管线 × 贴图"分批、直通 alpha 合成。
+- **输入即数据**（docs/19）：SDL2 归一化指针/键盘/文本 → 确定性事件流 → 捕获/目标/冒泡分发 →
+  **可录制、可回放、可注入**；UI 控件按 role 命中（引擎不认具体组件）。
+- **确定性物理**：自研 2D 求解器（固定步长/固定迭代/按 body.index 稳定排序；C ABI vtable，可换后端）。
+- **快照 / 回滚 / 失步定位**：反射驱动二进制 codec + 快照池；逐帧世界校验和轨迹。
+- **VFS**：`file/mem/zip/builtin/res` + 直接 URL（libcurl）+ 内容哈希校验；**图像解码** Wuffs。
+- **资产管线**：导入 / 依赖图 / 拓扑序 / 校验 / 烘焙 / 打包 / dump JSON（内容寻址 ID）。
+- **控制平面**：JSON-RPC domain.method + **MCP 包装**（tools/list、tools/call）→ AI/CI 可加载、
+  逐帧驱动、注入输入、截帧、取校验和、热重载。
 
 ## 快速开始
 
@@ -77,5 +82,13 @@ plans/            各模块开发计划
 
 ## 状态
 
-里程碑 M0–M4a 基本完成（地基 → 首切片 → 脚本 → 实体/组件 → 场景资源 → VFS → 接口绑定机制）；
-SD2/libcurl/libwebsockets/Wuffs 已集成。详见 `docs/milestones/`。
+M0–M5、M7、M8 与 P1 已完成；M4/M6/M9 见下（细节 `docs/milestones/README.md`）：
+
+- **M4** ✅ VFS 多后端（file/mem/zip/builtin/URL）+ 内容哈希 + Wuffs 解码 + 材质。
+- **M6** 🟡 确定性 2D 物理求解器（`modules/world/physics`，C ABI vtable + 世代句柄）；
+  本机无 Rust 工具链，Rapier 后端按 ADR-0028 走"退化自研求解器"路径，接口不变。
+- **M9** 🟡 帧边界热重载（脚本/场景，`Reload.*` + `dry_run`）；编辑器壳待做。
+- **P3** ⬜ WASM 目标需 Emscripten 工具链。
+
+回归：`ctest --test-dir build`（23 项，含 5 个端到端：`player_run`、`determinism`、
+`control_plane`、`ui_e2e`、`hot_reload_e2e`）。

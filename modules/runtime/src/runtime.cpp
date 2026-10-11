@@ -16,6 +16,7 @@
 #include "core/platform/mq_platform.h"
 #include "core/input/mq_input.h"
 #include "core/watcher/mq_watcher.h"
+#include "physics/mq_physics.h"
 #include "core/control/mq_control.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
@@ -76,8 +77,9 @@ struct Engine {
     int                 capture = -1;                       // 指针捕获（拖拽中）
     float               mouse_x = 0, mouse_y = 0;
     const mq_input_event* ev = nullptr;                     // 正在分发的语义事件（脚本可读）
-    struct Ball { int id; float vx, vy, radius; };
-    std::vector<Ball> balls;                                // bounce_step 的确定性模拟集合（按 id 升序）
+    struct Ball { int id; float vx, vy, radius; mq_physics_body body{}; };
+    std::vector<Ball> balls;                                // 与物理世界对应的实体集合（按 id 升序）
+    mq_physics_world* physics = nullptr;                    // 确定性 2D 求解器（docs/15 §3）
     uint64_t stop_frame = 0;                                // >0 时到该帧停止（CI 固定长度跑）
     std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
     std::string name;
@@ -232,6 +234,15 @@ bool Engine::world_snapshot(mq_snapshot* snap) {
     SnapshotWriter w;
     w.buf.reserve(1 << 16);
     scene->encode(*this, w);                            // 先前置容量（快照池缓冲复用，避免抖动）
+    /* 物理状态（docs/10 §4）：物理是回放最易漂移环节 → 必须进快照 */
+    const size_t phys_size = physics ? mq_physics_state_size(physics) : 0;
+    w.pod((uint32_t)phys_size);
+    w.pod((uint32_t)0);
+    if (phys_size) {
+        std::vector<uint8_t> pstate(phys_size);
+        const size_t n = mq_physics_save_state(physics, pstate.data(), pstate.size());
+        w.bytes(pstate.data(), n);
+    }
     void* out = mq_snapshot_begin(snap, w.buf.size() ? w.buf.size() : 1);
     if (!out) return false;
     if (!w.buf.empty()) std::memcpy(out, w.buf.data(), w.buf.size());
@@ -245,7 +256,13 @@ void Engine::world_restore(const mq_snapshot* snap) {
     size_t n = 0;
     const void* bytes = mq_snapshot_bytes(const_cast<mq_snapshot*>(snap), &n);
     if (!bytes || !n) return;
-    scene->decode(*this, (const uint8_t*)bytes, n);
+    const size_t used = scene->decode(*this, (const uint8_t*)bytes, n);
+    if (used && used + 8 <= n) {
+        uint32_t phys_size = 0;
+        std::memcpy(&phys_size, (const uint8_t*)bytes + used, 4);
+        const uint8_t* ps = (const uint8_t*)bytes + used + 8;
+        if (physics && phys_size && used + 8 + phys_size <= n) mq_physics_load_state(physics, ps, phys_size);
+    }
     scene->compute_world(*this);
 }
 
@@ -289,6 +306,7 @@ void Engine::step_frame() {
     // ④ 世界校验和 + 周期快照（确定性验证 + 回滚点，docs/10 §4/§5）
     if (scene) {
         last_checksum = scene->checksum(*this);
+        if (physics) last_checksum ^= mq_physics_checksum(physics) * 1099511628211ull;   // 物理在回放最易漂移
         trail.emplace_back(frame, last_checksum);
         if (snaps && (frame % 60 == 0)) { snap_last = mq_snapshot_pool_acquire(snaps); world_snapshot(snap_last); }
     }
@@ -978,24 +996,23 @@ float entity_find(void* ctx, const char* name) {
         if (e.name == name && (best < 0 || k < best)) best = k;
     return (float)best;
 }
-/* 确定性反弹模拟（ball_demo 的玩法语义移入引擎侧组合 API；走引擎 RNG 与固定步长，docs/10） */
-void bounce_step(void* ctx, float dt) {
+/* 物理步进（docs/15 §3）：无参数——固定步长由求解器配置决定（禁止脚本改变 dt）。
+ * 求解器内部按 body.index 稳定排序、固定迭代 → 确定性；结果只读回写到组件。 */
+void bounce_step(void*, float) {
+}
+
+void physics_step(void* ctx) {
     auto* eng = (Engine*)ctx;
+    if (!eng->physics) return;
+    mq_physics_step(eng->physics);
     std::sort(eng->balls.begin(), eng->balls.end(),
               [](const Engine::Ball& a, const Engine::Ball& b) { return a.id < b.id; });
-    const float W = (float)eng->W, H = (float)eng->H;
-    for (auto& b : eng->balls) {
-        Entity* e = eng->scene->at(b.id);
-        if (!e) continue;
-        b.vy += 900.0F * dt;                        // 重力（像素/秒²）
-        float nx = e->x + b.vx * dt;
-        float ny = e->y + b.vy * dt;
-        if (nx < b.radius) { nx = b.radius; b.vx = -b.vx * 0.86F; }
-        if (nx > W - b.radius) { nx = W - b.radius; b.vx = -b.vx * 0.86F; }
-        if (ny > H - b.radius) { ny = H - b.radius; b.vy = -b.vy * 0.86F; }
-        if (ny < b.radius) { ny = b.radius; b.vy = -b.vy * 0.86F; }
-        host::entity_set_pos(eng, (float)b.id, nx, ny);
-        e->x = nx; e->y = ny;
+    for (auto& b : eng->balls) {                       // 稳定序回写（渲染只读）
+        float x = 0, y = 0;
+        if (mq_physics_get_transform(eng->physics, b.body, &x, &y) != MQ_PHYSICS_OK) continue;
+        b.vx = 0; b.vy = 0;
+        mq_physics_get_velocity(eng->physics, b.body, &b.vx, &b.vy);
+        host::entity_set_pos(eng, (float)b.id, x, y);
     }
 }
 
@@ -1029,7 +1046,21 @@ float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius) 
         }
     }
     host::entity_set_pos(eng, id, x, y);
-    eng->balls.push_back(Engine::Ball{ (int)id, vx, vy, radius > 0 ? radius : 8.0F });
+    Engine::Ball ball{ (int)id, vx, vy, radius > 0 ? radius : 8.0F, mq_physics_body{} };
+    if (eng->physics) {
+        mq_physics_body_desc bd{};
+        bd.struct_size = (uint32_t)sizeof bd;
+        bd.type = MQ_PHYSICS_BODY_DYNAMIC;
+        bd.shape = MQ_PHYSICS_SHAPE_BALL;
+        bd.x = x; bd.y = y; bd.vx = vx; bd.vy = vy;
+        bd.radius = ball.radius;
+        bd.mass = 1.0F;
+        bd.restitution = eng->scene->desc.restitution;
+        bd.friction = 0.2F;
+        if (mq_physics_add_body(eng->physics, &bd, &ball.body) != MQ_PHYSICS_OK)
+            ball.body = mq_physics_body{};
+    }
+    eng->balls.push_back(ball);
     return id;
 }
 
@@ -1048,7 +1079,10 @@ void set_label(void* ctx, float id, const char* text) {
 
 void ball_clear(void* ctx) {
     auto* eng = (Engine*)ctx;
-    for (auto& b : eng->balls) host::entity_destroy(eng, (float)b.id);
+    for (auto& b : eng->balls) {
+        if (eng->physics && b.body.index) mq_physics_remove_body(eng->physics, b.body);
+        host::entity_destroy(eng, (float)b.id);
+    }
     eng->balls.clear();
 }
 
@@ -1432,6 +1466,21 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
         }
     }
     eng.rng = scene.desc.seed * 2654435761u + 12345u;
+    /* 物理世界（docs/15 §3）：固定步长/固定迭代/按 body.index 稳定排序；种子来自场景（D2） */
+    {
+        mq_physics_config pcfg{};
+        pcfg.struct_size = (uint32_t)sizeof pcfg;
+        pcfg.gravity_x = 0.0F;
+        pcfg.gravity_y = scene.desc.gravity_y;
+        pcfg.fixed_dt = 1.0F / 60.0F;
+        pcfg.solver_iterations = 4;
+        pcfg.max_bodies = 1024;
+        pcfg.seed = scene.desc.seed;
+        eng.physics = mq_physics_create(&pcfg);
+        mq_physics_set_bounds(eng.physics, 0.0F, 0.0F, (float)eng.W, (float)eng.H);
+        std::print("runtime: physics on (gravity_y={:.0f}, restitution={:.2f})\n",
+                   (double)scene.desc.gravity_y, (double)scene.desc.restitution);
+    }
     std::print("runtime: scene '{}' title='{}' script='{}' {}x{} views={}\n",
                scn_path, scene.desc.title, scene.desc.script, eng.W, eng.H, eng.nviews);
 
@@ -1530,6 +1579,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_script_vm_destroy(eng.vm);
     mq_obs_destroy(eng.obs);
     mq_reflect_destroy(eng.reflect);
+    mq_physics_destroy(eng.physics);
     mq_watcher_destroy(eng.watcher);
     mq_snapshot_pool_destroy(eng.snaps);
     mq_input_destroy(eng.input);

@@ -68,23 +68,29 @@
 
 ## 5. 状态
 
-> 计划文档已全部生成（16 篇）。后续每模块按 TDD 推进，逐列打勾。
+> 计划文档 16 篇已全部生成。状态按**当前代码与 CTest 实际覆盖**更新（`ctest --test-dir build`）。
 
-| 模块 | 计划 | 接口冻结 | 单测通过 | 实现完成 |
-|------|------|----------|----------|----------|
-| 01 math | ✅ | ⬜ | ⬜ | ⬜ |
-| 02 core（反射/句柄） | ✅ | ⬜ | ⬜ | ⬜ |
-| 03 module host | ✅ | ⬜ | ⬜ | ⬜ |
-| 04 platform | ✅ | ⬜ | ⬜ | ⬜ |
-| 05 executor | ✅ | ⬜ | ⬜ | ⬜ |
-| 06 VFS | ✅ | ⬜ | ⬜ | ⬜ |
-| 07 persistence | ✅ | ⬜ | ⬜ | ⬜ |
-| 08 asset pipeline | ✅ | ⬜ | ⬜ | ⬜ |
-| 09 observability | ✅ | ⬜ | ⬜ | ⬜ |
-| 10 control plane | ✅ | ⬜ | ⬜ | ⬜ |
-| 11 scene | ✅ | ⬜ | ⬜ | ⬜ |
-| 12 animation | ✅ | ⬜ | ⬜ | ⬜ |
-| 13 physics | ✅ | ⬜ | ⬜ | ⬜ |
-| 14 particle | ✅ | ⬜ | ⬜ | ⬜ |
-| 15 renderer | ✅ | ⬜ | ⬜ | ⬜ |
-| 16 script | ✅ | ⬜ | ⬜ | ⬜ |
+| # | 模块 | 计划 | 接口冻结 | 单测通过 | 实现完成 | 对应目标/测试 |
+|---|------|------|----------|----------|----------|----------------|
+| 01 | math | ✅ | ✅ | ✅ | ✅ | `math`（Vec/Quat/Mat4/Transform + 纯函数） |
+| 02 | core（data/句柄/反射） | ✅ | ✅ | ✅ | ✅ | `reflect` `handle` `snapshot` + codegen 235 类型 |
+| 03 | module host | ✅ | ✅ | ✅ | ✅ | `module`（dlopen/registry/版本校验）+ gfx 为真 `.so` |
+| 04 | platform | ✅ | ✅ | ✅ | ✅ | `platform`（SDL2 归一化指针/键盘/文本 + 注入） |
+| 05 | executor（任务/reactor） | ✅ | ⬜ | ⬜ | ⬜ | 未开始（帧内无异步约束下优先级低） |
+| 06 | VFS | ✅ | ✅ | ✅ | ✅ | `vfs`（file/mem/zip/builtin/URL + 内容哈希） |
+| 07 | persistence | ✅ | ✅ | ✅ | ✅ | `persist`（JSON + 二进制 codec）+ 快照池 |
+| 08 | asset pipeline（ai） | ✅ | ✅ | ✅ | ✅ | `asset`（导入/依赖/拓扑/烘焙/打包/dump） |
+| 09 | observability | ✅ | ✅ | ✅ | ✅ | `obs`（结构化事件 + 指标 + dump_json） |
+| 10 | control plane | ✅ | ✅ | ✅ | ✅ | `control`（JSON-RPC + MCP 包装 + 方法枚举） |
+| 11 | scene | ✅ | ✅ | ✅ | ✅ | runtime 实体/组件 + UI 命中 + 世界快照 |
+| 12 | animation | ✅ | ✅ | ⬜ | ⬜ | 类型已入 schema；求值器未实现 |
+| 13 | physics | ✅ | ✅ | 🟡 | 🟡 | 自研确定性 2D 求解器（Rapier 需 Rust 工具链，见 ADR-0028 降级） |
+| 14 | particle | ✅ | ✅ | ⬜ | ⬜ | 类型已入 schema；发射器未实现 |
+| 15 | renderer（WebGPU/pass 层） | ✅ | ✅ | ✅ | 🟡 | 相机/分层/批处理/alpha 合成已落地；pass 图待做 |
+| 16 | script（quickjs） | ✅ | ✅ | ✅ | 🟡 | 绑定生成 + 事件回调 + 热重载；capability 沙箱待做 |
+
+**附加模块（超出 16 篇计划，随里程碑新增）**：`input`（确定性输入流，docs/19）、
+`watcher`（帧边界热重载，docs/08/14）、`image`（Wuffs 解码）、`net`（libwebsockets）、
+`api`（DSL 生成的宿主 API/绑定）、`runtime`（引擎"浏览器"）。
+
+**e2e 回归**（`samples/player`）：`player_run`、`determinism`、`control_plane`、`ui_e2e`、`hot_reload_e2e`。
