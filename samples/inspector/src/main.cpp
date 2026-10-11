@@ -558,7 +558,17 @@ int main(int argc, char** argv) {
     SDL_Window* win = SDL_CreateWindow("Maque Inspector", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                        win_w, win_h, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!win) { std::print(stderr, "inspector: 窗口创建失败: {}\n", SDL_GetError()); SDL_Quit(); return 1; }
-    if (pos_x != INT32_MIN && pos_y != INT32_MIN) SDL_SetWindowPosition(win, pos_x, pos_y);
+    if (pos_x != INT32_MIN && pos_y != INT32_MIN) {
+        /* 位置也做钳制：保证窗口完整落在可用区内（--pos 常用于把工具放到游戏旁边） */
+        SDL_Rect usable{ 0, 0, 1280, 800 };
+        if (SDL_GetDisplayUsableBounds(0, &usable) == 0) {
+            if (pos_x + win_w > usable.x + usable.w) pos_x = usable.x + usable.w - win_w;
+            if (pos_y + win_h > usable.y + usable.h) pos_y = usable.y + usable.h - win_h;
+            if (pos_x < usable.x) pos_x = usable.x;
+            if (pos_y < usable.y) pos_y = usable.y;
+        }
+        SDL_SetWindowPosition(win, pos_x, pos_y);
+    }
     if (on_top) SDL_SetWindowAlwaysOnTop(win, SDL_TRUE);     // 工具窗口置顶，避免被游戏窗口遮挡
     SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_PRESENTVSYNC);
     if (!ren) { std::print(stderr, "inspector: 渲染器创建失败: {}\n", SDL_GetError()); SDL_DestroyWindow(win); SDL_Quit(); return 1; }
