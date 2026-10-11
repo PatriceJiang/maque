@@ -38,4 +38,11 @@
 | 导航 | `nav_setup/nav_block/nav_goto/nav_tick` + `scn.NavAgent`（`nav_e2e`） |
 | 崩溃复现 | `MAQUE_CRASH_REPORT`（报告含 seed/帧号/检查点/重放指引；`crash_context_e2e`） |
 
-一键回归：`ctest --test-dir build`（含 `ui_e2e`、`hot_reload_e2e`、`determinism`、`control_plane`）。
+### 质量门
+
+| 门 | 命令 | 当前 |
+|----|------|------|
+| 全量回归 | `ctest --test-dir build` | **32/32 通过**（10 个端到端 + 22 个模块单测） |
+| 内存/UB | `cmake -B build-asan -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -g"` → `ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build-asan` | **32/32 通过**（`detect_leaks=0` 仅用于排除 wgpu/SDL/Mesa 的全局单例噪音；自研模块单独跑 LeakSanitizer 无泄漏） |
+| codegen 校验 | `cd modules/core/data && node parser.js --check` | 240 类型 / 13 命名空间 |
+| 确定性 | `determinism`、`ui_e2e`（录制回放逐帧一致）、`anim_e2e`（回滚保真）、`nav_e2e` | 全部通过 |
