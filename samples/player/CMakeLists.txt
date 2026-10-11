@@ -94,3 +94,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/cocos/cocos.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/cocos_e2e")
 endif()
+
+# 文本端到端（docs/17/18）：Label/TextLabel/RichText 排版 + 富文本 run + 像素级验证
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME text_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/text_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/text/text.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/text_e2e")
+endif()
