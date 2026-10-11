@@ -1094,6 +1094,7 @@ typedef struct mq_field_desc {
     uint32_t     attrs_flags;  /* bit0 transient, bit1 readonly, bit2 deprecated */
     /* 动态数组（T[]）的容器算子（其余字段为 0）——使反射可类型化地增删/取元素 */
     uint32_t     elem_type_id;                    /* 具名元素类型 id；0 否则 */
+    void       (*container_clear)(void* field);      /* 置空（不释放容量）：构造/析构用 */
     uint32_t   (*container_size)(const void* field);
     void       (*container_resize)(void* field, uint32_t n);
     void*      (*container_elem)(void* field, uint32_t i);
@@ -1182,6 +1183,7 @@ function genDescSource(types) {
       if (!de) continue
       const base = `mq_dyn_${mangle(t.fqName)}_${mangle(f.name)}`
       const elemCpp = de.fqName.replace(/\./g, '::')
+      lines.push(`static void ${base}_clear(void* f) { static_cast<std::vector<${elemCpp}>*>(f)->clear(); }`)
       lines.push(`static uint32_t ${base}_size(const void* f) { return (uint32_t)static_cast<const std::vector<${elemCpp}>*>(f)->size(); }`)
       lines.push(`static void ${base}_resize(void* f, uint32_t n) { static_cast<std::vector<${elemCpp}>*>(f)->resize(n); }`)
       lines.push(`static void* ${base}_elem(void* f, uint32_t i) { return &static_cast<std::vector<${elemCpp}>*>(f)->at(i); }`)
@@ -1196,9 +1198,9 @@ function genDescSource(types) {
       let extra
       if (de) {
         const base = `mq_dyn_${mangle(t.fqName)}_${mangle(f.name)}`
-        extra = `${de.typeId}u, ${base}_size, ${base}_resize, ${base}_elem`
+        extra = `${de.typeId}u, ${base}_clear, ${base}_size, ${base}_resize, ${base}_elem`
       } else {
-        extra = `0u, 0, 0, 0`
+        extra = `0u, 0, 0, 0, 0`
       }
       lines.push(
         `    { "${f.name}", (uint32_t)offsetof(${t.fqName.replace(/\./g, '::')}, ${f.name}), ` +

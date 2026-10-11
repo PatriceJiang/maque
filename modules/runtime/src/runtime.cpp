@@ -70,7 +70,12 @@ struct Scene {
     Scene() { table = mq_handle_table_create(sizeof(uint8_t), 1); }
     ~Scene() { destroy_all(); if (table) mq_handle_table_destroy(table); }
     Scene(const Scene&) = delete; Scene& operator=(const Scene&) = delete;
-    Scene(Scene&& o) noexcept { *this = std::move(o); }
+    Scene(Scene&& o) noexcept
+        : desc(std::move(o.desc)), text_(std::move(o.text_)), table(o.table), eng(o.eng),
+          ents(std::move(o.ents)) {
+        o.table = nullptr;           // 所有权转移：源对象不得再释放/析构已移交的资源
+        o.eng = nullptr;
+    }
     Scene& operator=(Scene&& o) noexcept {
         if (this == &o) return *this;
         destroy_all();
@@ -78,7 +83,7 @@ struct Scene {
         desc = std::move(o.desc);
         text_ = std::move(o.text_);
         table = o.table; o.table = nullptr;
-        eng = o.eng;
+        eng = o.eng; o.eng = nullptr;
         ents = std::move(o.ents);
         return *this;
     }
@@ -232,10 +237,15 @@ void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob) {
     const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, type_id);
     if (!d || blob.size() < d->size) { blob.clear(); return; }
     if (d->flags & MQ_TYPE_DYNAMIC) {
+        /* 动态成员按字段类型逐个析构：string 显式析构；vector 通过容器算子清空（不释放容量，
+         * 缓冲随即被释放 → 内存由 vector 自身管理）。 */
         for (uint32_t i = 0; i < d->field_count; ++i) {
             const mq_field_desc* f = &d->fields[i];
-            if (f->kind == MQ_TK_STRING) reinterpret_cast<std::string*>(blob.data() + f->offset)->~basic_string();
-            else if (f->kind == MQ_TK_ARRAY_DYN && f->container_resize) f->container_resize(blob.data() + f->offset, 0);
+            if (f->kind == MQ_TK_STRING) {
+                reinterpret_cast<std::string*>(blob.data() + f->offset)->~basic_string();
+            } else if (f->kind == MQ_TK_ARRAY_DYN && f->container_clear) {
+                f->container_clear(blob.data() + f->offset);
+            }
         }
     }
     blob.clear();
@@ -245,9 +255,13 @@ void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob) {
 void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& blob) {
     blob.assign(d->size, 0);
     if (d->flags & MQ_TYPE_DYNAMIC) {
+        /* 关键：vector 成员在零填充缓冲里**不是合法对象**；必须先置为空向量
+         * （container_clear 是类型化算子，等价于 placement-new 空 vector 的效果），
+         * 之后才能 resize/反序列化。 */
         for (uint32_t i = 0; i < d->field_count; ++i) {
             const mq_field_desc* f = &d->fields[i];
             if (f->kind == MQ_TK_STRING) new (blob.data() + f->offset) std::string();
+            else if (f->kind == MQ_TK_ARRAY_DYN && f->container_clear) f->container_clear(blob.data() + f->offset);
         }
     }
     mq_json* empty = mq_json_parse("{}", 2);
@@ -259,11 +273,9 @@ void attach_component(Engine& eng, int idx, const char* type_name) {
     Entity* e = eng.scene->at(idx);
     const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, type_name);
     if (!e || !d) return;
-    e->comps[d->type_id].assign(d->size, 0);
-    /* 默认值：用描述符字段默认（反射无默认值 API）→ 走"空 JSON"反序列化保持与场景一致 */
-    mq_json* dom = mq_json_parse("{}", 2);
-    if (dom) { mq_persist_apply_json(eng.reflect, d, dom, e->comps[d->type_id].data()); mq_json_free(dom); }
-    else e->comps[d->type_id].assign(d->size, 0);
+    auto& blob = e->comps[d->type_id];
+    if (!blob.empty()) destroy_blob(eng, d->type_id, blob);
+    construct_blob(eng, d, blob);        // 含动态成员（string/vector）的合法构造 + schema 默认值
 }
 
 /* ---- 终止信号（docs/09 §5）：处理器只置位并恢复默认行为，写盘在帧边界 ---- */
@@ -585,7 +597,7 @@ bool Engine::load_clip(const std::string& ref) {
     if (text.empty()) return false;
     mq_json* dom = mq_json_parse(text.c_str(), text.size());
     if (!dom) return false;
-    clip.blob.assign(ct->size, 0);
+    construct_blob(*this, ct, clip.blob);
     const int rc = mq_persist_apply_json(reflect, ct, dom, clip.blob.data());
     mq_json_free(dom);
     if (rc != 0) return false;
@@ -2408,15 +2420,24 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
 }
 
 void Engine::teardown() {
+    /* 释放顺序：先释放"依赖 reflect 的资源"（clips 的字符串成员要经反射析构），再销毁 reflect。 */
     if (control) { mq_control_destroy(control); control = nullptr; }
     if (vm) { mq_script_vm_destroy(vm); vm = nullptr; }
     if (obs) { mq_obs_destroy(obs); obs = nullptr; }
-    if (reflect) { mq_reflect_destroy(reflect); reflect = nullptr; }
+    if (reflect) {
+        const mq_type_desc* ct = mq_reflect_type_by_name(reflect, "asset.AnimationClip");
+        if (ct) for (auto& c : clips) destroy_blob(*this, ct->type_id, c.blob);
+        clips.clear();
+    } else {
+        clips.clear();
+    }
+    agent_paths.clear();
     for (auto* s : checkpoints) mq_snapshot_destroy(s);
     checkpoints.clear();
     mq_snapshot_destroy(snap_manual); snap_manual = nullptr;
     mq_snapshot_pool_destroy(snaps); snaps = nullptr;
     mq_watcher_destroy(watcher); watcher = nullptr;
+    if (reflect) { mq_reflect_destroy(reflect); reflect = nullptr; }
     mq_nav_destroy(nav); nav = nullptr;
     mq_physics_destroy(physics); physics = nullptr;
     mq_input_destroy(input); input = nullptr;

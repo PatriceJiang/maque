@@ -70,7 +70,8 @@ const char* mq_control_dispatch_mcp(mq_control* c, const char* request) {
       if (sid) idtxt = quote(sid);
       else if (idj) idtxt = std::to_string((long long)mq_json_num(idj, 0)); }
 
-    const char* method = mq_json_str(mq_json_get(dom, "method"), "");
+    const std::string method_s = mq_json_str(mq_json_get(dom, "method"), "");
+    const char* method = method_s.c_str();       // 复制：dom 随即可能被释放（悬垂指针防护）
     const mq_json* params = mq_json_get(dom, "params");
     std::string result = "null";
 
