@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema.yaml`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **107** 个 · 控制面方法 **27** 个 · 事件回调 **10** 个 · 模块 C ABI **21** 个 · 插件接口 **1** 个。
+统计：脚本 API **107** 个 · 控制面方法 **31** 个 · 事件回调 **10** 个 · 模块 C ABI **22** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -164,6 +164,10 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Replay.log` | — | — |
 | `Replay.checkpoints` | — | — |
 | `Replay.seek` | frame: float | number |
+| `Input.sim_load` | path: string, json: string, loop: bool, reset: bool | string, string, boolean, boolean |
+| `Input.sim_status` | — | — |
+| `Input.sim_events` | — | — |
+| `Input.sim_stop` | — | — |
 | `Input.inject` | type: float, x: float, y: float, button: float, key: float | number, number, number, number, number |
 | `Perf.get` | — | — |
 | `Reload.script` | dry_run: bool | boolean |
@@ -727,3 +731,33 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_text_layout` | int | font: mq_font*, style: const mq_text_style*, text: const char*, out: mq_text_glyph*, cap: uint32_t, out_count: uint32_t*, out_metrics: mq_text_metrics* |
 | `mq_text_strip_markup` | int | text: const char*, out: char*, cap: uint32_t |
 | `mq_font_atlas` | int | font: mq_font*, size: float, out_rgba: uint8_t*, cap: size_t, out_w: uint32_t*, out_h: uint32_t* |
+
+### sim — `maque.sim` v1
+
+头文件：`build/modules/core/data/generated/abi/sim.h` · 宏：`MQ_SIM_ABI_VERSION` / `_IFACE_NAME`
+
+输入模拟器：把 .sim.json 场景回放为确定性输入事件流（开发/自动化/演示）
+
+枚举：
+
+- (匿名)：MQ_SIM_POINTER_MOVE=0, MQ_SIM_POINTER_DOWN=1, MQ_SIM_POINTER_UP=2, MQ_SIM_POINTER_WHEEL=3, MQ_SIM_KEY_DOWN=4, MQ_SIM_KEY_UP=5, MQ_SIM_TEXT=6
+- (匿名)：MQ_SIM_SPACE_WINDOW=0, MQ_SIM_SPACE_WORLD=1
+
+结构体：
+
+- `mq_sim_event`：frame: uint64_t, kind: uint32_t, space: uint32_t, x: float, y: float, dx: float, dy: float, button: uint32_t, key: uint32_t, text: const char*
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_sim_create` | mq_sim* | — |
+| `mq_sim_destroy` | void | sim: mq_sim* |
+| `mq_sim_load_json` | int | sim: mq_sim*, json: const char*, len: size_t, err: char*, err_cap: size_t |
+| `mq_sim_count` | uint32_t | sim: mq_sim* |
+| `mq_sim_event_at` | int | sim: mq_sim*, index: uint32_t, out: mq_sim_event* |
+| `mq_sim_due` | int | sim: mq_sim*, frame: uint64_t, out: mq_sim_event*, cap: uint32_t, out_count: uint32_t* |
+| `mq_sim_cursor` | uint32_t | sim: mq_sim* |
+| `mq_sim_finished` | int | sim: mq_sim* |
+| `mq_sim_reset` | void | sim: mq_sim* |
+| `mq_sim_set_loop` | void | sim: mq_sim*, loop: int |
+| `mq_sim_loaded` | int | sim: mq_sim* |
+| `mq_sim_last_frame` | uint64_t | sim: mq_sim* |

@@ -1,0 +1,14 @@
+{
+  "name": "ball_clicks",
+  "space": "window",
+  "events": [
+    { "frame": 10, "type": "pointer_down", "x": 100, "y": 150, "button": 0 },
+    { "frame": 12, "type": "pointer_move", "x": 120, "y": 160 },
+    { "frame": 14, "type": "pointer_up",   "x": 120, "y": 160 },
+    { "delay": 10, "type": "click",        "x": 600, "y": 450 },
+    { "delay": 10, "type": "wheel",        "x": 600, "y": 450, "dy": -1.0 },
+    { "delay": 10, "type": "key_down",     "key": 32 },
+    { "delay": 2,  "type": "text",         "text": "hi" },
+    { "delay": 2,  "type": "key_up",       "key": 32 }
+  ]
+}

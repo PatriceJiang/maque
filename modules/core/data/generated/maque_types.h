@@ -245,6 +245,10 @@ namespace runtime {
 
 } // namespace runtime
 
+namespace sim {
+
+} // namespace sim
+
 namespace text {
 
 } // namespace text

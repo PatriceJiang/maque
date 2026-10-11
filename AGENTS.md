@@ -36,6 +36,13 @@ cd modules/core/data && node parser.js --check
   手动/脚本点击真实窗口：`python3 tools/xclick.py <窗口类名|标题> <窗口内 x> <窗口内 y>`
   （⚠️ 本机 Wayland 会话下 **XTest 注入无效**：指针不动，故 CI 用 `MAQUE_SIM_CLICK`）。
   演示时窗口易被其它窗口遮挡 → `MAQUE_ALWAYS_ON_TOP=1`、`MAQUE_WINDOW_POS=x,y`。
+- **输入模拟器（一等机制，docs/19）**：`modules/input/simulator`（接口 DSL 声明 → `abi/sim.h`）。
+  场景文件 `.sim.json`（帧索引事件：pointer_move/down/up、click、wheel、key_down/up、text；
+  `frame` 绝对或 `delay` 相对；`space` window/world；`loop` 循环），样例见
+  `tests/data/sim/ball_clicks.sim.json`。驱动方式：启动期 `MAQUE_SIM=<file>`、简写
+  `MAQUE_SIM_CLICK="frame:x:y[;...]"`、控制面 `Input.sim_load/sim_status/sim_events/sim_stop`。
+  语义：`mq_sim_due` 取"到期或已过期"事件（按块步进不漏）；模拟事件与设备事件**同一条路径**
+  并被录制覆盖 → 录制/回放等价；引擎内部一律世界坐标（设备事件在平台边界转换）。
 - **输入帧缓冲必须预分配**：`mq_input_frame.pointers/pointer_cap`（step_frame 内静态缓冲）——
   容量为 0 时平台会静默丢弃**全部**设备事件（曾导致"真实鼠标点击永远到不了脚本"）。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。

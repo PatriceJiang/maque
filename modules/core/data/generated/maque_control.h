@@ -54,6 +54,14 @@ int mq_control_Replay_log(void* user, const mq_json* params, char* out, size_t o
 int mq_control_Replay_checkpoints(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Replay.seek(frame: float) */
 int mq_control_Replay_seek(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Input.sim_load(path: string, json: string, loop: bool, reset: bool) */
+int mq_control_Input_sim_load(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Input.sim_status() */
+int mq_control_Input_sim_status(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Input.sim_events() */
+int mq_control_Input_sim_events(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Input.sim_stop() */
+int mq_control_Input_sim_stop(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Input.inject(type: float, x: float, y: float, button: float, key: float) */
 int mq_control_Input_inject(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Perf.get() */

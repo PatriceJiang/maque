@@ -20,6 +20,9 @@
 #include "physics/mq_physics.h"
 #include "nav/mq_nav.h"
 #include "text/mq_text.h"
+#include "sim/mq_sim.h"
+
+#include <fstream>
 #include "core/control/mq_control.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
@@ -211,8 +214,12 @@ struct Engine {
     std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
     std::string pending_scene;                     // director.loadScene()：帧边界切场景
     std::vector<std::pair<int, mq_physics_body>> physics_role_bodies;   // (entity, 世代句柄)
-    struct SimClick { uint64_t frame; float x, y; };
-    std::vector<SimClick> sim_clicks;       // MAQUE_SIM_CLICK 注入的点击数（帧 → 坐标）
+    /* 输入模拟器（docs/19）：.sim.json 场景 → 帧索引输入事件流（确定性；与录制/回放一致） */
+    mq_sim* sim = nullptr;
+    bool sim_active = false;
+    std::string sim_path;                   // MAQUE_SIM 载入的场景文件（自省用）
+    void sim_setup();                       // 装配期：MAQUE_SIM / MAQUE_SIM_CLICK → 载入场景
+    void sim_feed(uint64_t frame);           // 每帧：把到期事件注入输入流（窗口坐标→世界）
     /* 文本渲染（docs/13/17）：字体实例 + 按字号生成的图集纹理 id（每字号一张） */
     mq_font* font = nullptr;
     std::string font_path;
@@ -583,21 +590,16 @@ void Engine::step_frame() {
     // ① 采样（设备事件随时入队，固定处理点统一消费，docs/19 §3）
     if (platform) {
         mq_platform_pump(platform);
-        /* 注入点击：先移动再按下（同真实鼠标），下一帧抬起 */
-        for (const auto& sc : sim_clicks) {
-            if (sc.frame != frame) continue;
-            if (platform) {
-                mq_platform_simulate_pointer(platform, 0, sc.x, sc.y, 1);
-                mq_platform_simulate_pointer(platform, 1, sc.x, sc.y, 1);
-                mq_platform_simulate_pointer(platform, 2, sc.x, sc.y, 1);
-            }
-            std::print("runtime: sim click at frame {} pos=({:.0f},{:.0f})\n", frame, sc.x, sc.y);
-        }
         if (window) mq_platform_poll(platform, &iframe);
+        /* 设备事件：窗口像素 → 世界坐标（只在此处转换一次；引擎内部一律世界坐标） */
+        for (uint32_t i = 0; i < iframe.pointer_count; ++i)
+            window_to_target(*this, &iframe.pointers[i].x, &iframe.pointers[i].y);
         if (std::getenv("MAQUE_TRACE_INPUT") && (iframe.pointer_count || iframe.key_count))
             std::print("runtime: polled pointers={} keys={} (frame {})\n",
                        iframe.pointer_count, iframe.key_count, frame);
     }
+    // ①b 输入模拟器：把该帧到期的事件注入输入流（与设备事件同一条路径；回放时跳过）
+    sim_feed(frame);
     // ② 输入帧：状态/事件（回放时忽略设备输入，只喂记录）
     if (input) {
         if (!mq_input_replaying(input) && window) mq_input_begin_frame(input, &iframe, frame);
@@ -1180,8 +1182,12 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     std::string replay_trail;
     if (prepare_replay()) {
         if (const char* mt = input ? mq_input_log_get_meta(input, "trail") : nullptr) replay_trail = mt;
-        if (const char* mf = input ? mq_input_log_get_meta(input, "frames") : nullptr)
-            cap = (uint64_t)std::strtoull(mf, nullptr, 10) + 1;
+        /* 日志元数据 frames = **已执行帧数**（finalize_run 写入 loop 计数）→ 回放跑同样多帧；
+         * 曾经 +1（误当"末帧索引"）导致回放多跑一帧、末尾校验和必然不等（docs/10 §5）。 */
+        if (const char* mf = input ? mq_input_log_get_meta(input, "frames") : nullptr) {
+            const uint64_t n = std::strtoull(mf, nullptr, 10);
+            if (n > 0) cap = n;
+        }
     }
     if (input && std::getenv("MAQUE_RECORD")) mq_input_record_begin(input);
 
@@ -1720,11 +1726,8 @@ void window_to_target(const Engine& eng, float* x, float* y) {
 
 int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target* target) {
     auto* eng = (Engine*)user;
-    /* 入口统一把窗口像素映射为**世界坐标**：命中测试、组件语义、脚本回调三者一致
-     * （窗口可缩放显示世界，docs/05）。 */
-    mq_input_event mapped = *ev;
-    window_to_target(*eng, &mapped.x, &mapped.y);
-    ev = &mapped;
+    /* 引擎内部一律**世界坐标**：设备事件在平台边界转换（见 step_frame），
+     * 注入/模拟事件（mq_input_inject）按世界坐标给出 —— 命中测试、组件语义、脚本回调一致。 */
     eng->ev = ev;
     if (ev->type == MQ_INPUT_POINTER_MOVE || ev->type == MQ_INPUT_POINTER_DOWN ||
         ev->type == MQ_INPUT_POINTER_UP || ev->type == MQ_INPUT_CLICK) {
@@ -2055,6 +2058,111 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
                        i, it.x, it.y, it.size, it.r, it.g, it.b, it.a, it.texture, it.uv0, it.uv1, it.uv2, it.uv3);
         out.push_back(it);
     }
+}
+
+
+/* 读模拟器场景：先 VFS（资产路径，'/' 前缀兼容），失败再按宿主文件路径读（开发/CI 便利）。
+ * 场景文件是**开发工具输入**而非游戏资产，因此允许宿主路径（docs/19）。 */
+static bool read_sim_scenario(mq_vfs* vfs, const char* path, std::string& out) {
+    if (!path || !*path) return false;
+    void* data = nullptr; size_t n = 0;
+    std::string vp = path;
+    if (vp[0] != '/') vp = "/" + vp;
+    if (vfs && mq_vfs_read(vfs, vp.c_str(), &data, &n) == MQ_VFS_OK) {
+        out.assign((const char*)data, n);
+        mq_vfs_free(data);
+        return true;
+    }
+    std::ifstream f(path, std::ios::binary);
+    if (!f) return false;
+    out.assign((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    return !out.empty();
+}
+
+/* ---- 输入模拟器（docs/19）----
+ * MAQUE_SIM=<file.sim.json> 或控制面 Input.sim_load 载入场景；每帧把**到期**事件注入输入流
+ * （与设备事件同一条路径：mq_input_inject → 输入模块 → 命中测试 → 脚本回调），
+ * 因此同样被录制/回放覆盖（docs/10 D3：输入即数据）。 */
+void Engine::sim_setup() {
+    if (!sim) sim = mq_sim_create();
+    const char* path = std::getenv("MAQUE_SIM");
+    const char* clicks = std::getenv("MAQUE_SIM_CLICK");
+    std::string json;
+    if (path && *path) {
+        if (!read_sim_scenario(vfs, path, json))
+            std::print(stderr, "runtime: sim scenario not found: {}\n", path);
+        sim_path = path;
+    } else if (clicks && *clicks) {
+        /* 简写：MAQUE_SIM_CLICK="frame:x:y[;frame:x:y]" → 内联场景 */
+        json = "{\"name\":\"inline MAQUE_SIM_CLICK\",\"space\":\"window\",\"events\":[";
+        const char* q = clicks; bool first = true;
+        while (*q) {
+            long f = 0; int cx = 0, cy = 0;
+            if (std::sscanf(q, "%ld:%d:%d", &f, &cx, &cy) == 3) {
+                if (!first) json += ",";
+                json += "{\"frame\":" + std::to_string(f) + ",\"type\":\"click\",\"x\":" +
+                        std::to_string(cx) + ",\"y\":" + std::to_string(cy) + "}";
+                first = false;
+            }
+            const char* semi = std::strchr(q, ';');
+            if (!semi) break;
+            q = semi + 1;
+        }
+        json += "]}";
+        sim_path = "(inline MAQUE_SIM_CLICK)";
+    }
+    if (json.empty()) return;
+    char err[256] = { 0 };
+    const int rc = mq_sim_load_json(sim, json.c_str(), json.size(), err, sizeof err);
+    if (rc != 0) {
+        std::print(stderr, "runtime: sim load failed ({}): {}\n", rc, err);
+        return;
+    }
+    sim_active = true;
+    std::print("runtime: sim '{}' loaded: {} event(s), last frame {}, loop={}\n",
+               sim_path, mq_sim_count(sim), mq_sim_last_frame(sim), 0);
+}
+
+void Engine::sim_feed(uint64_t frame) {
+    if (!sim_active || !sim || !input) return;
+    if (mq_input_replaying(input)) return;          // 回放只吃记录（设备/模拟输入都被忽略）
+    mq_sim_event batch[16];
+    uint32_t n = 0;
+    uint32_t guard = 0;
+    do {
+        n = 0;
+        if (mq_sim_due(sim, frame, batch, 16, &n) != 0 && n == 0) break;
+        for (uint32_t i = 0; i < n; ++i) {
+            const mq_sim_event& se = batch[i];
+            mq_input_event ev{};
+            ev.pointer_id = 0;
+            ev.pointer_type = 0;                     // 鼠标
+            ev.button = se.button;
+            ev.key = se.key;
+            ev.x = se.x; ev.y = se.y;
+            ev.dx = se.dx; ev.dy = se.dy;
+            ev.scroll_x = se.dx; ev.scroll_y = se.dy;
+            if (se.kind == MQ_SIM_TEXT) {
+                ev.type = MQ_INPUT_TEXT;
+                /* 输入事件的 text 是定长内联缓冲（16B，见 abi/input.h）→ 截断拷贝 */
+                std::snprintf(ev.text, sizeof ev.text, "%s", se.text ? se.text : "");
+            } else {
+                ev.type = se.kind == MQ_SIM_POINTER_MOVE ? MQ_INPUT_POINTER_MOVE
+                         : se.kind == MQ_SIM_POINTER_DOWN ? MQ_INPUT_POINTER_DOWN
+                         : se.kind == MQ_SIM_POINTER_UP   ? MQ_INPUT_POINTER_UP
+                         : se.kind == MQ_SIM_POINTER_WHEEL ? MQ_INPUT_POINTER_WHEEL
+                         : se.kind == MQ_SIM_KEY_DOWN     ? MQ_INPUT_KEY_DOWN
+                         : MQ_INPUT_KEY_UP;
+            }
+            /* 坐标空间：window（窗口像素）→ 世界坐标；world 直接用 */
+            if (se.space == MQ_SIM_SPACE_WINDOW) window_to_target(*this, &ev.x, &ev.y);
+            if (trace_hits)
+                std::print("[sim] frame={} kind={} -> input type={} pos=({:.1f},{:.1f})\n",
+                           frame, se.kind, (int)ev.type, ev.x, ev.y);
+            mq_input_inject(input, &ev);
+        }
+        ++guard;
+    } while (n == 16 && guard < 16);
 }
 
 /* UI 组件语义（role 驱动；引擎不认具体类型名，docs/17）：
@@ -3455,6 +3563,94 @@ extern "C" int mq_control_Input_inject(void* u, const mq_json* params, char* out
     return 0;
 }
 
+
+/* ---- 输入模拟器控制面（docs/19）：场景加载 / 状态 / 事件列表 / 停止 ----
+ * 场景来源：path（VFS 路径）或 json（内联字符串）；载入后可 reset 重放、loop 循环。 */
+extern "C" int mq_control_Input_sim_load(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::string json;
+    std::string src = "inline";
+    if (const char* p = mq_json_str(mq_json_get(params, "path"), nullptr); p && *p) {
+        if (!read_sim_scenario(e->vfs, p, json)) {
+            std::snprintf(out, cap, "{\"ok\":false,\"error\":\"scenario not found: %s\"}", p);
+            return 0;
+        }
+        src = p;
+    } else if (const char* j = mq_json_str(mq_json_get(params, "json"), nullptr); j && *j) {
+        json = j;
+    } else {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"need path or json\"}");
+        return 0;
+    }
+    if (!e->sim) e->sim = mq_sim_create();
+    char err[256] = { 0 };
+    const int rc = mq_sim_load_json(e->sim, json.c_str(), json.size(), err, sizeof err);
+    if (rc != 0) {
+        std::snprintf(out, cap, "{\"ok\":false,\"rc\":%d,\"error\":\"%s\"}", rc, err);
+        return 0;
+    }
+    if (mq_json_num(mq_json_get(params, "loop"), 0.0) != 0.0) mq_sim_set_loop(e->sim, 1);
+    if (mq_json_num(mq_json_get(params, "reset"), 1.0) != 0.0) mq_sim_reset(e->sim);
+    e->sim_active = true;
+    e->sim_path = src;
+    std::snprintf(out, cap,
+                  "{\"ok\":true,\"source\":\"%s\",\"events\":%u,\"last_frame\":%llu,\"loop\":%s}",
+                  src.c_str(), mq_sim_count(e->sim), (unsigned long long)mq_sim_last_frame(e->sim),
+                  mq_json_num(mq_json_get(params, "loop"), 0.0) != 0.0 ? "true" : "false");
+    return 0;
+}
+
+extern "C" int mq_control_Input_sim_status(void* u, const mq_json* params, char* out, size_t cap) {
+    (void)params;
+    auto* e = (Engine*)u;
+    if (!e->sim || !mq_sim_loaded(e->sim)) {
+        std::snprintf(out, cap, "{\"active\":false,\"loaded\":false}");
+        return 0;
+    }
+    std::snprintf(out, cap,
+                  "{\"active\":%s,\"loaded\":true,\"source\":\"%s\",\"cursor\":%u,\"total\":%u,"
+                  "\"finished\":%s,\"last_frame\":%llu,\"frame\":%llu}",
+                  e->sim_active ? "true" : "false", e->sim_path.c_str(), mq_sim_cursor(e->sim),
+                  mq_sim_count(e->sim), mq_sim_finished(e->sim) ? "true" : "false",
+                  (unsigned long long)mq_sim_last_frame(e->sim), (unsigned long long)e->frame);
+    return 0;
+}
+
+extern "C" int mq_control_Input_sim_events(void* u, const mq_json* params, char* out, size_t cap) {
+    (void)params;
+    auto* e = (Engine*)u;
+    if (!e->sim || !mq_sim_loaded(e->sim)) {
+        std::snprintf(out, cap, "{\"events\":[]}");
+        return 0;
+    }
+    std::string s = "{\"events\":[";
+    const uint32_t n = mq_sim_count(e->sim);
+    for (uint32_t i = 0; i < n; ++i) {
+        mq_sim_event ev{};
+        if (mq_sim_event_at(e->sim, i, &ev) != 0) continue;
+        if (i) s += ",";
+        char buf[256];
+        std::snprintf(buf, sizeof buf,
+                      "{\"frame\":%llu,\"kind\":%u,\"space\":%u,\"x\":%.1f,\"y\":%.1f,"
+                      "\"dx\":%.1f,\"dy\":%.1f,\"button\":%u,\"key\":%u,\"text\":\"%s\"}",
+                      (unsigned long long)ev.frame, ev.kind, ev.space, ev.x, ev.y, ev.dx, ev.dy,
+                      ev.button, ev.key, ev.text ? ev.text : "");
+        s += buf;
+    }
+    s += "]}";
+    std::snprintf(out, cap, "%s", s.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Input_sim_stop(void* u, const mq_json* params, char* out, size_t cap) {
+    (void)params;
+    auto* e = (Engine*)u;
+    const bool was = e->sim_active;
+    e->sim_active = false;
+    std::snprintf(out, cap, "{\"ok\":true,\"was_active\":%s}", was ? "true" : "false");
+    return 0;
+}
+
 /* Control.mcp：MCP 语义（initialize/tools/list/tools/call）经控制平面进出。
  * 请求体放 params.request（字符串）；也可直接传 params.method/params.name。 */
 /* Reload.script / Reload.scene：手动触发帧边界重载；dry_run=1 只报告不执行（docs/11 §4）。 */
@@ -3767,20 +3963,6 @@ bool Engine::load_scene_into(const std::string& scn_path) {
                        std::min((float)win_w / (float)W, (float)win_h / (float)H));
         }
     }
-    /* 测试/CI：在指定帧注入指针点击（形式 "frame:x:y[;frame:x:y]"）——
-     * 走 SDL 事件队列 → 平台翻译 → 输入模块 → 命中测试 → 脚本回调（docs/19） */
-    sim_clicks.clear();
-    if (const char* sc = std::getenv("MAQUE_SIM_CLICK")) {
-        const char* q = sc;
-        while (*q) {
-            long f = 0; int cx = 0, cy = 0;
-            if (std::sscanf(q, "%ld:%d:%d", &f, &cx, &cy) == 3)
-                sim_clicks.push_back({ (uint64_t)f, (float)cx, (float)cy });
-            const char* semi = std::strchr(q, ';');
-            if (!semi) break;
-            q = semi + 1;
-        }
-    }
     if (const char* vs = std::getenv("MAQUE_VIEWS")) {
         const int v = std::atoi(vs);
         if (v >= 1 && v <= 4) nviews = v;
@@ -3858,6 +4040,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     }
     preload_scene_assets();
     text_setup();                               // 字体（MAQUE_FONT → 系统字体 → 内置 5x7）
+    sim_setup();                                // 输入模拟器（MAQUE_SIM / MAQUE_SIM_CLICK）
     physics_components_setup();
     if (mq_event_dispatch(vm, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
         char ebuf[512] = { 0 };
@@ -3886,6 +4069,7 @@ void Engine::teardown() {
     mq_snapshot_pool_destroy(snaps); snaps = nullptr;
     mq_watcher_destroy(watcher); watcher = nullptr;
     if (reflect) { mq_reflect_destroy(reflect); reflect = nullptr; }
+    if (sim) { mq_sim_destroy(sim); sim = nullptr; }
     if (font) { mq_font_destroy(font); font = nullptr; }
     font_atlases.clear();
     mq_nav_destroy(nav); nav = nullptr;

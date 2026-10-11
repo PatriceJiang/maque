@@ -120,3 +120,12 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/input_click_e2e")
     set_tests_properties(input_click_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
+
+# 输入模拟器端到端（docs/19）：场景文件回放 + 确定性 + 录制/回放等价 + 控制面 Input.sim_*
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME sim_input_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/sim_input_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/sim_input_e2e")
+    set_tests_properties(sim_input_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()

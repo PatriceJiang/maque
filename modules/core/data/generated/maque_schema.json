@@ -3,9 +3,9 @@
   "generated_by": "parser.js",
   "type_count": 240,
   "api_count": 107,
-  "control_count": 27,
+  "control_count": 31,
   "callback_count": 10,
-  "module_count": 21,
+  "module_count": 22,
   "types": [
     {
       "name": "anim.AnimatedSprite",
@@ -16342,6 +16342,43 @@
       ]
     },
     {
+      "method": "Input.sim_load",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "json",
+          "type": "string"
+        },
+        {
+          "name": "loop",
+          "type": "bool"
+        },
+        {
+          "name": "reset",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "method": "Input.sim_status",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Input.sim_events",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Input.sim_stop",
+      "namespace": "control",
+      "args": []
+    },
+    {
       "method": "Input.inject",
       "namespace": "control",
       "args": [
@@ -22829,6 +22866,310 @@
               "name": "MQ_TEXT_WRAP_CHAR",
               "value": 2,
               "doc": "按字符换行"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "module": "sim",
+      "abi_name": "maque.sim",
+      "version": 1,
+      "language": "c",
+      "header": "abi/sim.h",
+      "fns": [
+        {
+          "name": "mq_sim_create",
+          "returns": "mq_sim*",
+          "args": []
+        },
+        {
+          "name": "mq_sim_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_load_json",
+          "returns": "int",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            },
+            {
+              "name": "json",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "len",
+              "type": "size_t",
+              "doc": null
+            },
+            {
+              "name": "err",
+              "type": "char*",
+              "doc": null
+            },
+            {
+              "name": "err_cap",
+              "type": "size_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_count",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_event_at",
+          "returns": "int",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_sim_event*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_due",
+          "returns": "int",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            },
+            {
+              "name": "frame",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_sim_event*",
+              "doc": null
+            },
+            {
+              "name": "cap",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "out_count",
+              "type": "uint32_t*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_cursor",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_finished",
+          "returns": "int",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_reset",
+          "returns": "void",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_set_loop",
+          "returns": "void",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            },
+            {
+              "name": "loop",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_loaded",
+          "returns": "int",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_last_frame",
+          "returns": "uint64_t",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "structs": [
+        {
+          "name": "mq_sim_event",
+          "fields": [
+            {
+              "name": "frame",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "kind",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "space",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dx",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dy",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "button",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "key",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "text",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_SIM_POINTER_MOVE",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_SIM_POINTER_DOWN",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_SIM_POINTER_UP",
+              "value": 2,
+              "doc": null
+            },
+            {
+              "name": "MQ_SIM_POINTER_WHEEL",
+              "value": 3,
+              "doc": null
+            },
+            {
+              "name": "MQ_SIM_KEY_DOWN",
+              "value": 4,
+              "doc": null
+            },
+            {
+              "name": "MQ_SIM_KEY_UP",
+              "value": 5,
+              "doc": null
+            },
+            {
+              "name": "MQ_SIM_TEXT",
+              "value": 6,
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_SIM_SPACE_WINDOW",
+              "value": 0,
+              "doc": "窗口像素（宿主负责映射为世界坐标）"
+            },
+            {
+              "name": "MQ_SIM_SPACE_WORLD",
+              "value": 1,
+              "doc": "世界坐标（直接使用）"
             }
           ]
         }
