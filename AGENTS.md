@@ -47,7 +47,7 @@ cd modules/core/data && node parser.js --check
   容量为 0 时平台会静默丢弃**全部**设备事件（曾导致"真实鼠标点击永远到不了脚本"）。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
 - 系统依赖：SDL2 / libcurl / libwebsockets（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev`）。
-- 已 vendored：`third_party/quickjs-ng`、`third_party/wuffs`。
+- 已 vendored：`third_party/quickjs-ng`（JS 后端）、`third_party/lua`（Lua 5.4 后端）、`third_party/wuffs`。
 
 ## 硬约定（改代码前先读）
 
@@ -107,6 +107,11 @@ cd modules/core/data && node parser.js --check
 - **动作/定时**：`tween_start(id, "scn.Sprite.radius", to, duration, easing)`、`tween_stop/count/progress`、
   `schedule_once/schedule/unschedule/schedule_count`
 
+**脚本后端（`.js` / `.lua`）**：语言按脚本扩展名选择（`"script": "game.lua"` → Lua 后端，
+docs/14）。两后端**同一套 API 面与回调**（DSL 生成绑定；`math.clamp` 等在 Lua 侧合并进 `math` 标准库）。
+Lua 为沙箱运行（无 `io/os/package/debug/require/collectgarbage`），`math.random` 由引擎 RNG 接管，
+GC 仅在帧边界推进（`mq_script_frame_boundary`）。加后端见 docs/14「脚本后端」一节。
+
 **文本**：`ui_set_text/ui_get_text/ui_text_width/ui_text_height/ui_text_lines`（对 `scn.Label` /
 `ui.TextLabel` / `render.RichText` 通用，按 role 定位）。排版字段：`font_size` / `align`（或 `align_h`）/
 `wrap`（或 `wrap_mode`）/ `max_width` / `line_spacing`；实测结果写回 transient 字段
@@ -114,8 +119,9 @@ cd modules/core/data && node parser.js --check
 富文本标记：`<color=#RRGGBB>`、`<size=NN>`、`<b>`、`<br/>`；`parse_tags=false` 时按纯文本渲染。
 字体内置回退：`MAQUE_FONT=<ttf>` 指定字体 → 常见系统字体 → 内置 5x7 位图字体（`tools/font_gen.py` 生成）。
 
-**坐标约定**：节点位置为世界坐标（y 向上）；输入事件为屏幕坐标（y 向下）→ `y_screen = H - y_world`。
-UI 控件（`ui.Control`）以**中心**为锚点，命中矩形 = 尺寸的一半展开。
+**坐标约定**：节点位置、**输入事件、脚本可见坐标统一为世界坐标（y 向上）**；
+设备事件在平台边界做一次"窗口 → 世界"转换（等比缩放 + 居中留边 + y 翻转），注入/模拟事件按世界坐标给出。
+渲染时再翻到屏幕坐标（`y_screen = H - y_world`）。UI 控件（`ui.Control`）以**中心**为锚点。
 文本排版坐标 y 向下，屏幕映射为 `y_screen = H - (node_y + label_y) + glyph_y`。
 
 ## 常见改动怎么做

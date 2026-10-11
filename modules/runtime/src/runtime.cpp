@@ -635,7 +635,7 @@ void Engine::step_frame() {
             mq_obs_event(obs, "script", 3, "update_failed");
             write_crash_context(ebuf[0] ? ebuf : "script update failed");      // 可精确重放（docs/09 §5）
         }
-        mq_script_gc(vm);
+        mq_script_frame_boundary(vm);               // 帧边界：GC 只在此处（docs/10 D7）
         anim_step(dt);                                   // 动画采样写回（docs/15 §2）
         particles_step(dt);                              // 粒子推进（docs/15 §4）
         nav_step();                                      // 导航代理推进（A* + 追踪）
@@ -977,13 +977,13 @@ bool Engine::reload_script(std::string* err) {
         if (err) *err = "script not readable";
         return false;
     }
-    std::string js((char*)d, n);
+    std::string src((char*)d, n);
     mq_vfs_free(d);
-    const uint64_t h = mq_vfs_hash(js.data(), js.size());
+    const uint64_t h = mq_vfs_hash(src.data(), src.size());
     if (h == script_hash) return false;
     /* 脚本以 IIFE 形态定义全局回调（推荐写法，见 scenes/ui.js）：每次重载得到**全新的词法作用域**，
      * 回调被替换、`let/const` 不冲突；状态迁移由脚本显式经 globalThis 载体完成（docs/14 §6）。 */
-    if (mq_script_eval(vm, js.c_str(), script_path.c_str()) != 0) {
+    if (mq_script_eval(vm, src.c_str(), script_path.c_str()) != 0) {
         char ebuf[512] = { 0 };
         std::string e = mq_script_last_error(vm, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "eval failed";
         if (err) *err = e;
@@ -993,7 +993,7 @@ bool Engine::reload_script(std::string* err) {
     script_hash = h;
     ++reloads;
     mq_obs_event(obs, "runtime", 1, "script_reloaded");
-    std::print("runtime: hot reload script '{}' ({} bytes)\n", script_path, js.size());
+    std::print("runtime: hot reload script '{}' ({} bytes)\n", script_path, src.size());
     return true;
 }
 
@@ -4025,19 +4025,27 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     scn_vfs_path = "/" + scnp.filename().string();
     scn_full_path = scn_path;
     scn_dir = dir;
-    /* ---- 脚本 VM：切场景重建（docs/14：脚本不跨场景共享全局态）---- */
+    /* ---- 脚本 VM：按脚本语言选后端（docs/14「统一后端 ABI」：js / lua）----
+     * 语言由文件扩展名决定（mq_script_lang_for_path），未编入的后端会明确报错而不是静默降级。 */
     if (!vm) {
-        vm = mq_script_vm_create();
+        const char* want = mq_script_lang_for_path(script_path.c_str());
+        vm = mq_script_vm_create_lang(want);
+        if (!vm) {
+            std::print(stderr, "runtime: script backend '{}' unavailable for '{}' (backends: {})\n",
+                       want, script_path, [] { char b[64] = { 0 }; mq_script_backends(b, sizeof b); return std::string(b); }());
+            return false;
+        }
+        std::print("runtime: script backend '{}' for '{}'\n", mq_script_lang(vm), script_path);
         mq_script_set_rng(vm, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
         mq_bind_generated(vm, this);
     }
     if (!script_path.empty()) {
-        std::string js;
+        std::string src;
         { void* d = nullptr; size_t n = 0;
-          if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) == MQ_VFS_OK) { js.assign((char*)d, n); mq_vfs_free(d); } }
-        if (js.empty()) { std::print("runtime: cannot read script '{}'\n", script_path); return false; }
-        script_hash = mq_vfs_hash(js.data(), js.size());
-        if (mq_script_eval(vm, js.c_str(), script_path.c_str()) != 0) { std::print("runtime: script error\n"); return false; }
+          if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) == MQ_VFS_OK) { src.assign((char*)d, n); mq_vfs_free(d); } }
+        if (src.empty()) { std::print("runtime: cannot read script '{}'\n", script_path); return false; }
+        script_hash = mq_vfs_hash(src.data(), src.size());
+        if (mq_script_eval(vm, src.c_str(), script_path.c_str()) != 0) { std::print("runtime: script error\n"); return false; }
     }
     if (watcher) { mq_watcher_destroy(watcher); watcher = nullptr; }
     const char* watch = std::getenv("MAQUE_WATCH");

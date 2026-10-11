@@ -2090,7 +2090,16 @@
           doc: "通用编组：任意数值/字符串组合（docs/21 §6.1）" }
       - { name: mq_script_multi_ret_str_fn, type: "int (*)(void* user, int nnum, const double* nums, int nstr, const char** strs, char* ret, int ret_cap)" }
     fns:
-      - { fn: mq_script_vm_create, returns: "mq_script_vm*", args: [  ] }
+      - { fn: mq_script_vm_create, returns: "mq_script_vm*", args: [  ],
+          doc: "按默认后端创建 VM（等价 mq_script_vm_create_lang(NULL)）" }
+      - { fn: mq_script_vm_create_lang, returns: "mq_script_vm*", args: [ { name: lang, type: "const char*" } ],
+          doc: "按语言创建 VM：js（默认）/ lua；未编入的后端返回 NULL" }
+      - { fn: mq_script_lang_for_path, returns: "const char*", args: [ { name: path, type: "const char*" } ],
+          doc: "按脚本文件扩展名选择语言 id（.lua → lua，其余 → js）" }
+      - { fn: mq_script_backends, returns: "int", args: [ { name: out, type: "char*" }, { name: cap, type: "int" } ],
+          doc: "已编入的后端列表（逗号分隔）" }
+      - { fn: mq_script_lang, returns: "const char*", args: [ { name: vm, type: "mq_script_vm*" } ],
+          doc: "该 VM 的后端语言 id" }
       - { fn: mq_script_vm_destroy, returns: "void", args: [ { name: vm, type: "mq_script_vm*" } ] }
       - { fn: mq_script_eval, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: src, type: "const char*" }, { name: filename, type: "const char*" } ] }
       - { fn: mq_script_has, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" } ] }
@@ -2104,6 +2113,8 @@
       - { fn: mq_script_last_error, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: out, type: "char*" }, { name: cap, type: "int" } ] }
       - { fn: mq_script_set_rng, returns: "void", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "mq_script_rng_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_gc, returns: "void", args: [ { name: vm, type: "mq_script_vm*" } ] }
+      - { fn: mq_script_frame_boundary, returns: "void", args: [ { name: vm, type: "mq_script_vm*" } ],
+          doc: "帧边界钩子：GC 等只在此处发生（docs/10 D7）—— 各后端语义一致" }
       - { fn: mq_script_register_num, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_num_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_register_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_str_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_register_ret_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_ret_str_fn" }, { name: user, type: "void*" } ] }

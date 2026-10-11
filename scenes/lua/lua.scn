@@ -1,0 +1,27 @@
+{
+  "title": "lua",
+  "script": "ball.lua",
+  "width": 320,
+  "height": 240,
+  "seed": 12345,
+  "views": 2,
+  "eye_sep": 10.0,
+  "entities": [
+    {
+      "name": "ball",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 200 },
+        { "type": "scn.Sprite", "radius": 16, "material": "materials/ball.mat.json" }
+      ],
+      "children": [
+        {
+          "name": "dot",
+          "components": [
+            { "type": "scn.Transform2D", "x": -44, "y": 0 },
+            { "type": "scn.Sprite", "radius": 6, "material": "builtin:/materials/checker" }
+          ]
+        }
+      ]
+    }
+  ]
+}

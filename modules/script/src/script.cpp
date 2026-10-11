@@ -1,334 +1,167 @@
-#include "core/script/mq_script.h"
-#include <print>
+/* 脚本后端派发层（docs/14「统一后端 ABI」）：
+ * 公共 ABI（abi/script.h）只在此实现一次，按 VM 的语言 id 转发到具体后端：
+ *   · js  → modules/script/src/js_backend.cpp（quickjs-ng）
+ *   · lua → modules/script/src/lua_backend.cpp（官方 Lua 5.4，沙箱 + 确定性 GC）
+ * 语言由脚本文件扩展名决定（mq_script_lang_for_path），也可显式指定（mq_script_vm_create_lang）。 */
+#include "vm_base.h"
 
-#include "quickjs.h"
-
-#include <cstdio>
+#include <cstring>
 #include <string>
-#include <vector>
 
-struct HostFn {
-    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr } kind = Num;
-    bool is_str = false;                       /* Str：单字符串参数 */
-    mq_script_num_fn    num = nullptr;
-    mq_script_str_fn    str = nullptr;
-    mq_script_ret_str_fn ret_str = nullptr;    /* 返回 JS string（宿主写入缓冲，不转移所有权） */
-    mq_script_mixed_fn   mixed = nullptr;      /* 数值参数 + 尾部字符串 */
-    mq_script_multi_fn   multi = nullptr;      /* 通用：任意数值/字符串组合 */
-    mq_script_multi_ret_str_fn multi_ret_str = nullptr;
-    const char* kinds = "";                    /* 逐参数 'n' / 's' */
-    void* user = nullptr;
-};
+namespace {
 
-struct mq_script_vm {
-    JSRuntime*  rt = nullptr;
-    JSContext*  ctx = nullptr;
-    std::vector<HostFn> fns;
-    mq_script_rng_fn rng = nullptr;      /* 引擎 RNG（docs/10 D2） */
-    void*            rng_user = nullptr;
-    std::string      last_error;         /* 最近错误（per-instance，ADR-0014） */
-    std::vector<std::string*> kinds_store;   /* kinds 字符串存储（VM 释放时一并回收） */
-};
+/* 后端注册表（编译期确定；未编入的后端 create 返回 nullptr → 此处不列出）。 */
+} // namespace
 
-/* Math.random 的替代实现：走注入的引擎 RNG（未注入则退回 quickjs 默认种子路径）。 */
-static JSValue js_math_random(JSContext* ctx, JSValueConst, int, JSValueConst*, int) {
-    auto* vm = static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx));
-    if (!vm || !vm->rng) return JS_UNDEFINED;          // 由调用方决定行为
-    const uint32_t v = vm->rng(vm->rng_user);
-    return JS_NewFloat64(ctx, (double)v / 4294967296.0);
-}
-
-/* 统一 trampoline：用 magic 作为 HostFn 下标。 */
-/* 通用编组：按 kinds 拆分 JS 实参为数值/字符串数组后调用宿主（docs/21 §6.1）。 */
-static JSValue multi_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
-    auto* vm = static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx));
-    if (!vm) return JS_UNDEFINED;
-    HostFn& h = vm->fns[(size_t)magic];
-    double nums[16] = { 0 };
-    const char* strs[16] = { nullptr };
-    int nnum = 0, nstr = 0;
-    for (int i = 0; i < argc && i < 16; ++i) {
-        const char kind = h.kinds[i] ? h.kinds[i] : 'n';
-        if (kind == 's') {
-            const char* cs = JS_ToCString(ctx, argv[i]);
-            strs[nstr++] = cs ? cs : "";
-        } else {
-            double d = 0;
-            JS_ToFloat64(ctx, &d, argv[i]);
-            nums[nnum++] = d;
-        }
-    }
-    double ret = 0;
-    int rc = 0;
-    char sbuf[1024] = { 0 };
-    if (h.kind == HostFn::MultiRetStr) rc = h.multi_ret_str(h.user, nnum, nums, nstr, strs, sbuf, (int)sizeof sbuf);
-    else rc = h.multi(h.user, nnum, nums, nstr, strs, &ret);
-    for (int i = 0; i < nstr; ++i) if (strs[i]) JS_FreeCString(ctx, strs[i]);
-    if (rc != 0) return JS_EXCEPTION;
-    if (h.kind == HostFn::MultiRetStr) return JS_NewString(ctx, sbuf);
-    return JS_NewFloat64(ctx, ret);
-}
-
-static JSValue host_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
-    auto* vm = static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx));
-    if (!vm || magic < 0 || magic >= (int)vm->fns.size()) return JS_UNDEFINED;
-    HostFn& h = vm->fns[magic];
-    double ret = 0.0;
-    int rc = 0;
-    if (h.kind == HostFn::RetStr) {
-        std::vector<double> args(argc);
-        for (int i = 0; i < argc; ++i) {
-            double d = 0.0;
-            if (JS_ToFloat64(ctx, &d, argv[i])) { JS_ThrowTypeError(ctx, "numeric arg required"); return JS_EXCEPTION; }
-            args[i] = d;
-        }
-        char buf[1024];
-        buf[0] = '\0';
-        rc = h.ret_str ? h.ret_str(h.user, argc, args.data(), buf, (int)sizeof buf) : 0;
-        if (rc) return JS_EXCEPTION;
-        return JS_NewString(ctx, buf);
-    } else if (h.kind == HostFn::Mixed) {
-        std::vector<double> args(argc > 0 ? argc - 1 : 0);
-        for (int i = 0; i + 1 < argc; ++i) {
-            double d = 0.0;
-            if (JS_ToFloat64(ctx, &d, argv[i])) { JS_ThrowTypeError(ctx, "numeric arg required"); return JS_EXCEPTION; }
-            args[i] = d;
-        }
-        const char* s = JS_ToCString(ctx, argc > 0 ? argv[argc - 1] : JS_UNDEFINED);
-        rc = h.mixed ? h.mixed(h.user, (int)args.size(), args.data(), s ? s : "", &ret) : 0;
-        if (s) JS_FreeCString(ctx, s);
-    } else if (h.is_str) {
-        const char* s = JS_ToCString(ctx, argc > 0 ? argv[0] : JS_UNDEFINED);
-        rc = h.str ? h.str(h.user, s ? s : "", &ret) : 0;
-        if (s) JS_FreeCString(ctx, s);
-    } else {
-        std::vector<double> args(argc);
-        for (int i = 0; i < argc; ++i) {
-            double d = 0.0;
-            if (JS_ToFloat64(ctx, &d, argv[i])) { JS_ThrowTypeError(ctx, "numeric arg required"); return JS_EXCEPTION; }
-            args[i] = d;
-        }
-        rc = h.num ? h.num(h.user, argc, args.data(), &ret) : 0;
-    }
-    if (rc) return JS_EXCEPTION;
-    return JS_NewFloat64(ctx, ret);
-}
-
-static void throw_and_print(JSContext* ctx) {
-    auto* vm = static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx));
-    JSValue e = JS_GetException(ctx);
-    const char* s = JS_ToCString(ctx, e);
-    const std::string msg = s ? s : "(unknown)";
-    if (vm) vm->last_error = msg;                       // per-instance（ADR-0014）
-    std::print(stderr, "[script] exception: {}\n", msg);
-    if (s) JS_FreeCString(ctx, s);
-    JS_FreeValue(ctx, e);
-}
+namespace {
+bool is_lua(const mq_script_vm* vm) { return vm && vm->lang && std::strcmp(vm->lang, "lua") == 0; }
+} // namespace
 
 extern "C" {
 
-mq_script_vm* mq_script_vm_create(void) {
-    auto* vm = new mq_script_vm();
-    vm->rt = JS_NewRuntime();
-    if (!vm->rt) { delete vm; return nullptr; }
-    vm->ctx = JS_NewContext(vm->rt);
-    if (!vm->ctx) { JS_FreeRuntime(vm->rt); delete vm; return nullptr; }
-    JS_SetContextOpaque(vm->ctx, vm);
-    return vm;
+mq_script_vm* mq_script_vm_create(void) { return mq_script_vm_create_lang(nullptr); }
+
+mq_script_vm* mq_script_vm_create_lang(const char* lang) {
+    if (!lang || !*lang) return maque::script::js::vm_create();          /* 默认后端：js */
+    if (std::strcmp(lang, "js") == 0 || std::strcmp(lang, "javascript") == 0 ||
+        std::strcmp(lang, "quickjs") == 0)
+        return maque::script::js::vm_create();
+    if (std::strcmp(lang, "lua") == 0) {
+        mq_script_vm* vm = maque::script::lua::vm_create();
+        if (!vm) return nullptr;                                          /* 未编入 Lua */
+        return vm;
+    }
+    return nullptr;
 }
+
+const char* mq_script_lang_for_path(const char* path) {
+    if (!path) return "js";
+    const char* dot = std::strrchr(path, '.');
+    if (dot && (std::strcmp(dot, ".lua") == 0)) return "lua";
+    return "js";
+}
+
+int mq_script_backends(char* out, int cap) {
+    if (!out || cap <= 0) return 0;
+    std::string list = "js";
+    if (maque::script::lua::vm_create) {
+        /* 探测 Lua 是否编入：创建/销毁一次（无副作用） */
+        if (mq_script_vm* probe = maque::script::lua::vm_create()) {
+            maque::script::lua::vm_destroy(probe);
+            list += ",lua";
+        }
+    }
+    std::snprintf(out, (size_t)cap, "%s", list.c_str());
+    return 0;
+}
+
+const char* mq_script_lang(mq_script_vm* vm) { return vm ? (vm->lang ? vm->lang : "js") : ""; }
 
 void mq_script_vm_destroy(mq_script_vm* vm) {
-    for (auto* p : vm->kinds_store) delete p;
-    vm->kinds_store.clear();
     if (!vm) return;
-    if (vm->ctx) JS_FreeContext(vm->ctx);
-    if (vm->rt) JS_FreeRuntime(vm->rt);
-    delete vm;
+    if (vm->lang && std::strcmp(vm->lang, "lua") == 0) maque::script::lua::vm_destroy(vm);
+    else maque::script::js::vm_destroy(vm);
 }
 
-/* 支持 "ns.fn" 形式：在全局上创建/复用命名空间对象后挂函数。 */
-static int register_common(mq_script_vm* vm, const char* name, int magic, bool multi = false) {
-    JSValue fn = JS_NewCFunctionMagic(vm->ctx, multi ? multi_trampoline : host_trampoline, name,
-                                      multi ? 8 : 4, JS_CFUNC_generic_magic, magic);
-    JSValue global = JS_GetGlobalObject(vm->ctx);
-    std::string n(name);
-    auto dot = n.rfind('.');
-    if (dot == std::string::npos) {
-        JS_SetPropertyStr(vm->ctx, global, name, fn);
-    } else {
-        std::string ns = n.substr(0, dot);
-        std::string fnm = n.substr(dot + 1);
-        JSValue obj = JS_GetPropertyStr(vm->ctx, global, ns.c_str());
-        if (!JS_IsObject(obj)) {
-            JS_FreeValue(vm->ctx, obj);
-            obj = JS_NewObject(vm->ctx);
-            JS_SetPropertyStr(vm->ctx, global, ns.c_str(), JS_DupValue(vm->ctx, obj));
-        }
-        JS_SetPropertyStr(vm->ctx, obj, fnm.c_str(), fn);
-        JS_FreeValue(vm->ctx, obj);
-    }
-    JS_FreeValue(vm->ctx, global);
-    return 0;
+int mq_script_eval(mq_script_vm* vm, const char* src, const char* filename) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::eval(vm, src, filename)
+                      : maque::script::js::eval(vm, src, filename);
+}
+
+int mq_script_has(mq_script_vm* vm, const char* fn) {
+    if (!vm) return 0;
+    return is_lua(vm) ? maque::script::lua::has(vm, fn) : maque::script::js::has(vm, fn);
+}
+
+int mq_script_call0(mq_script_vm* vm, const char* fn, double* ret) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::call0(vm, fn, ret) : maque::script::js::call0(vm, fn, ret);
+}
+int mq_script_call1(mq_script_vm* vm, const char* fn, double a, double* ret) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::call1(vm, fn, a, ret) : maque::script::js::call1(vm, fn, a, ret);
+}
+int mq_script_call2(mq_script_vm* vm, const char* fn, double a, double b, double* ret) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::call2(vm, fn, a, b, ret) : maque::script::js::call2(vm, fn, a, b, ret);
+}
+int mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, double c, double* ret) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::call3(vm, fn, a, b, c, ret)
+                      : maque::script::js::call3(vm, fn, a, b, c, ret);
+}
+int mq_script_call0s(mq_script_vm* vm, const char* fn, const char* s, double* ret) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::call0s(vm, fn, s, ret) : maque::script::js::call0s(vm, fn, s, ret);
+}
+int mq_script_call1s(mq_script_vm* vm, const char* fn, double a, const char* s, double* ret) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::call1s(vm, fn, a, s, ret)
+                      : maque::script::js::call1s(vm, fn, a, s, ret);
+}
+int mq_script_call2s(mq_script_vm* vm, const char* fn, double a, double b, const char* s, double* ret) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::call2s(vm, fn, a, b, s, ret)
+                      : maque::script::js::call2s(vm, fn, a, b, s, ret);
+}
+
+int mq_script_last_error(mq_script_vm* vm, char* out, int cap) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::last_error(vm, out, cap)
+                      : maque::script::js::last_error(vm, out, cap);
+}
+
+void mq_script_set_rng(mq_script_vm* vm, mq_script_rng_fn fn, void* user) {
+    if (!vm) return;
+    if (is_lua(vm)) maque::script::lua::set_rng(vm, fn, user);
+    else maque::script::js::set_rng(vm, fn, user);
+}
+
+void mq_script_gc(mq_script_vm* vm) {
+    if (!vm) return;
+    if (is_lua(vm)) maque::script::lua::gc(vm);
+    else maque::script::js::gc(vm);
+}
+
+/* 帧边界钩子（docs/10 D7）：GC 等只在此处发生 —— 两个后端语义一致 */
+void mq_script_frame_boundary(mq_script_vm* vm) {
+    if (!vm) return;
+    if (is_lua(vm)) maque::script::lua::frame_boundary(vm);
+    else { maque::script::js::frame_boundary(vm); maque::script::js::gc(vm); }
 }
 
 int mq_script_register_num(mq_script_vm* vm, const char* name, mq_script_num_fn fn, void* user) {
     if (!vm) return 1;
-    HostFn h; h.kind = HostFn::Num; h.is_str = false; h.num = fn; h.user = user;
-    vm->fns.push_back(h);
-    return register_common(vm, name, (int)vm->fns.size() - 1);
+    return is_lua(vm) ? maque::script::lua::register_num(vm, name, fn, user)
+                      : maque::script::js::register_num(vm, name, fn, user);
 }
-
 int mq_script_register_str(mq_script_vm* vm, const char* name, mq_script_str_fn fn, void* user) {
     if (!vm) return 1;
-    HostFn h; h.kind = HostFn::Str; h.is_str = true; h.str = fn; h.user = user;
-    vm->fns.push_back(h);
-    return register_common(vm, name, (int)vm->fns.size() - 1);
+    return is_lua(vm) ? maque::script::lua::register_str(vm, name, fn, user)
+                      : maque::script::js::register_str(vm, name, fn, user);
 }
-
-/* 数值 + 尾部字符串（如 set_label(id, text)）。 */
-/* kinds 字符串需存活：存进 VM 的 arena（per-instance）。 */
-static const char* intern_kinds(mq_script_vm* vm, const char* kinds) {
-    auto* copy = new std::string(kinds ? kinds : "");
-    vm->kinds_store.push_back(copy);
-    return copy->c_str();
+int mq_script_register_ret_str(mq_script_vm* vm, const char* name, mq_script_ret_str_fn fn, void* user) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::register_ret_str(vm, name, fn, user)
+                      : maque::script::js::register_ret_str(vm, name, fn, user);
 }
-
+int mq_script_register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, void* user) {
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::register_mixed(vm, name, fn, user)
+                      : maque::script::js::register_mixed(vm, name, fn, user);
+}
 int mq_script_register_multi(mq_script_vm* vm, const char* name, const char* kinds,
                              mq_script_multi_fn fn, void* user) {
     if (!vm) return 1;
-    HostFn h; h.kind = HostFn::Multi; h.multi = fn; h.user = user; h.kinds = intern_kinds(vm, kinds);
-    vm->fns.push_back(h);
-    return register_common(vm, name, (int)vm->fns.size() - 1, true);
+    return is_lua(vm) ? maque::script::lua::register_multi(vm, name, kinds, fn, user)
+                      : maque::script::js::register_multi(vm, name, kinds, fn, user);
 }
-
 int mq_script_register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds,
                                      mq_script_multi_ret_str_fn fn, void* user) {
     if (!vm) return 1;
-    HostFn h; h.kind = HostFn::MultiRetStr; h.multi_ret_str = fn; h.user = user; h.kinds = intern_kinds(vm, kinds);
-    vm->fns.push_back(h);
-    return register_common(vm, name, (int)vm->fns.size() - 1, true);
-}
-
-int mq_script_register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, void* user) {
-    if (!vm) return 1;
-    HostFn h; h.kind = HostFn::Mixed; h.mixed = fn; h.user = user;
-    vm->fns.push_back(h);
-    return register_common(vm, name, (int)vm->fns.size() - 1);
-}
-
-/* 返回 JS string 的原生函数（如 entity_name）：结果写入宿主缓冲，VM 复制。 */
-int mq_script_register_ret_str(mq_script_vm* vm, const char* name, mq_script_ret_str_fn fn, void* user) {
-    if (!vm) return 1;
-    HostFn h; h.kind = HostFn::RetStr; h.ret_str = fn; h.user = user;
-    vm->fns.push_back(h);
-    return register_common(vm, name, (int)vm->fns.size() - 1);
-}
-
-int mq_script_eval(mq_script_vm* vm, const char* src, const char* filename) {
-    if (!vm || !src) return 1;
-    JSValue v = JS_Eval(vm->ctx, src, __builtin_strlen(src), filename ? filename : "<script>",
-                        JS_EVAL_TYPE_GLOBAL);
-    if (JS_IsException(v)) { throw_and_print(vm->ctx); return 2; }
-    JS_FreeValue(vm->ctx, v);
-    return 0;
-}
-
-int mq_script_has(mq_script_vm* vm, const char* fn) {
-    if (!vm || !fn) return 0;
-    JSValue global = JS_GetGlobalObject(vm->ctx);
-    JSValue f = JS_GetPropertyStr(vm->ctx, global, fn);
-    int ok = JS_IsFunction(vm->ctx, f);
-    JS_FreeValue(vm->ctx, f);
-    JS_FreeValue(vm->ctx, global);
-    return ok;
-}
-
-static int call_impl(mq_script_vm* vm, const char* fn, int argc, double* argv, double* ret) {
-    if (ret) *ret = 0.0;
-    JSValue global = JS_GetGlobalObject(vm->ctx);
-    JSValue f = JS_GetPropertyStr(vm->ctx, global, fn);
-    JS_FreeValue(vm->ctx, global);
-    if (!JS_IsFunction(vm->ctx, f)) { JS_FreeValue(vm->ctx, f); return 1; }
-    JSValue args[3];
-    if (argc > 3) argc = 3;
-    for (int i = 0; i < argc; ++i) args[i] = JS_NewFloat64(vm->ctx, argv[i]);
-    JSValue r = JS_Call(vm->ctx, f, JS_UNDEFINED, argc, argc ? args : nullptr);
-    for (int i = 0; i < argc; ++i) JS_FreeValue(vm->ctx, args[i]);
-    JS_FreeValue(vm->ctx, f);
-    if (JS_IsException(r)) { throw_and_print(vm->ctx); return 2; }
-    if (ret) { double d = 0; JS_ToFloat64(vm->ctx, &d, r); *ret = d; }
-    JS_FreeValue(vm->ctx, r);
-    return 0;
-}
-
-int mq_script_call0(mq_script_vm* vm, const char* fn, double* ret) { return call_impl(vm, fn, 0, nullptr, ret); }
-int mq_script_call1(mq_script_vm* vm, const char* fn, double arg, double* ret) { return call_impl(vm, fn, 1, &arg, ret); }
-int mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, double c, double* ret) {
-    double args[3] = { a, b, c };
-    return call_impl(vm, fn, 3, args, ret);
-}
-int mq_script_call2(mq_script_vm* vm, const char* fn, double a, double b, double* ret) {
-    double args[2] = { a, b };
-    return call_impl(vm, fn, 2, args, ret);
-}
-/* 数值参数 + 末尾字符串：统一实现（n 为数值个数，0..2）。 */
-static int call_with_str(mq_script_vm* vm, const char* fn, int n, const double* nums,
-                         const char* s, double* ret) {
-    if (ret) *ret = 0.0;
-    JSValue global = JS_GetGlobalObject(vm->ctx);
-    JSValue f = JS_GetPropertyStr(vm->ctx, global, fn);
-    JS_FreeValue(vm->ctx, global);
-    if (!JS_IsFunction(vm->ctx, f)) { JS_FreeValue(vm->ctx, f); return 1; }
-    JSValue args[3];
-    for (int i = 0; i < n; ++i) args[i] = JS_NewFloat64(vm->ctx, nums[i]);
-    args[n] = JS_NewString(vm->ctx, s ? s : "");
-    JSValue r = JS_Call(vm->ctx, f, JS_UNDEFINED, n + 1, args);
-    for (int i = 0; i <= n; ++i) JS_FreeValue(vm->ctx, args[i]);
-    JS_FreeValue(vm->ctx, f);
-    if (JS_IsException(r)) { throw_and_print(vm->ctx); return 2; }
-    if (ret) { double d = 0; JS_ToFloat64(vm->ctx, &d, r); *ret = d; }
-    JS_FreeValue(vm->ctx, r);
-    return 0;
-}
-int mq_script_call1s(mq_script_vm* vm, const char* fn, double a, const char* s, double* ret) {
-    const double n[1] = { a };
-    return call_with_str(vm, fn, 1, n, s, ret);
-}
-int mq_script_call2s(mq_script_vm* vm, const char* fn, double a, double b, const char* s, double* ret) {
-    const double n[2] = { a, b };
-    return call_with_str(vm, fn, 2, n, s, ret);
-}
-int mq_script_call0s(mq_script_vm* vm, const char* fn, const char* s, double* ret) {
-    return call_with_str(vm, fn, 0, nullptr, s, ret);
-}
-
-void mq_script_set_rng(mq_script_vm* vm, mq_script_rng_fn fn, void* user) {
-    if (!vm || !vm->ctx) return;
-    vm->rng = fn;
-    vm->rng_user = user;
-    if (!fn) return;
-    /* 覆盖 Math.random：确定性要求脚本随机与引擎同源（docs/10 D2、断点回放） */
-    JSValue global = JS_GetGlobalObject(vm->ctx);
-    JSValue math = JS_GetPropertyStr(vm->ctx, global, "Math");
-    if (JS_IsObject(math)) {
-        JSValue f = JS_NewCFunctionMagic(vm->ctx, js_math_random, "random", 0,
-                                         JS_CFUNC_generic_magic, 0);
-        JS_SetPropertyStr(vm->ctx, math, "random", f);
-    }
-    JS_FreeValue(vm->ctx, math);
-    JS_FreeValue(vm->ctx, global);
-}
-
-int mq_script_last_error(mq_script_vm* vm, char* out, int cap) {
-    if (!out || cap <= 0) return 1;
-    const std::string msg = vm ? vm->last_error : std::string();
-    if (msg.empty()) { out[0] = '\0'; return 1; }
-    std::snprintf(out, (size_t)cap, "%s", msg.c_str());
-    return 0;
-}
-
-void mq_script_gc(mq_script_vm* vm) {
-    if (vm && vm->rt) JS_RunGC(vm->rt);
+    return is_lua(vm) ? maque::script::lua::register_multi_ret_str(vm, name, kinds, fn, user)
+                      : maque::script::js::register_multi_ret_str(vm, name, kinds, fn, user);
 }
 
 } // extern "C"

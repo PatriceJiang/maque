@@ -18592,6 +18592,55 @@
           "args": []
         },
         {
+          "name": "mq_script_vm_create_lang",
+          "returns": "mq_script_vm*",
+          "args": [
+            {
+              "name": "lang",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_lang_for_path",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "path",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_backends",
+          "returns": "int",
+          "args": [
+            {
+              "name": "out",
+              "type": "char*",
+              "doc": null
+            },
+            {
+              "name": "cap",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_lang",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_script_vm_destroy",
           "returns": "void",
           "args": [
@@ -18890,6 +18939,17 @@
         },
         {
           "name": "mq_script_gc",
+          "returns": "void",
+          "args": [
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_frame_boundary",
           "returns": "void",
           "args": [
             {

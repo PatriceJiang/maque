@@ -23,7 +23,16 @@ typedef int (*mq_script_mixed_fn)(void* user, int argc, const double* argv, cons
 typedef int (*mq_script_multi_fn)(void* user, int nnum, const double* nums, int nstr, const char** strs, double* ret);
 typedef int (*mq_script_multi_ret_str_fn)(void* user, int nnum, const double* nums, int nstr, const char** strs, char* ret, int ret_cap);
 
+/* 按默认后端创建 VM（等价 mq_script_vm_create_lang(NULL)） */
 mq_script_vm* mq_script_vm_create(void);
+/* 按语言创建 VM：js（默认）/ lua；未编入的后端返回 NULL */
+mq_script_vm* mq_script_vm_create_lang(const char* lang);
+/* 按脚本文件扩展名选择语言 id（.lua → lua，其余 → js） */
+const char* mq_script_lang_for_path(const char* path);
+/* 已编入的后端列表（逗号分隔） */
+int mq_script_backends(char* out, int cap);
+/* 该 VM 的后端语言 id */
+const char* mq_script_lang(mq_script_vm* vm);
 void mq_script_vm_destroy(mq_script_vm* vm);
 int mq_script_eval(mq_script_vm* vm, const char* src, const char* filename);
 int mq_script_has(mq_script_vm* vm, const char* fn);
@@ -37,6 +46,8 @@ int mq_script_call0s(mq_script_vm* vm, const char* fn, const char* s, double* re
 int mq_script_last_error(mq_script_vm* vm, char* out, int cap);
 void mq_script_set_rng(mq_script_vm* vm, mq_script_rng_fn fn, void* user);
 void mq_script_gc(mq_script_vm* vm);
+/* 帧边界钩子：GC 等只在此处发生（docs/10 D7）—— 各后端语义一致 */
+void mq_script_frame_boundary(mq_script_vm* vm);
 int mq_script_register_num(mq_script_vm* vm, const char* name, mq_script_num_fn fn, void* user);
 int mq_script_register_str(mq_script_vm* vm, const char* name, mq_script_str_fn fn, void* user);
 int mq_script_register_ret_str(mq_script_vm* vm, const char* name, mq_script_ret_str_fn fn, void* user);

@@ -369,6 +369,10 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | 函数 | 返回 | 参数 |
 |------|------|------|
 | `mq_script_vm_create` | mq_script_vm* | — |
+| `mq_script_vm_create_lang` | mq_script_vm* | lang: const char* |
+| `mq_script_lang_for_path` | const char* | path: const char* |
+| `mq_script_backends` | int | out: char*, cap: int |
+| `mq_script_lang` | const char* | vm: mq_script_vm* |
 | `mq_script_vm_destroy` | void | vm: mq_script_vm* |
 | `mq_script_eval` | int | vm: mq_script_vm*, src: const char*, filename: const char* |
 | `mq_script_has` | int | vm: mq_script_vm*, fn: const char* |
@@ -382,6 +386,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_script_last_error` | int | vm: mq_script_vm*, out: char*, cap: int |
 | `mq_script_set_rng` | void | vm: mq_script_vm*, fn: mq_script_rng_fn, user: void* |
 | `mq_script_gc` | void | vm: mq_script_vm* |
+| `mq_script_frame_boundary` | void | vm: mq_script_vm* |
 | `mq_script_register_num` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_num_fn, user: void* |
 | `mq_script_register_str` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_str_fn, user: void* |
 | `mq_script_register_ret_str` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_ret_str_fn, user: void* |
