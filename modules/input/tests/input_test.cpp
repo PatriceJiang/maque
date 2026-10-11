@@ -124,6 +124,51 @@ int main() {
     CHECK(mq_input_key_down(in, MQ_KEY_SPACE) == 0);
     mq_input_end_frame(in, 6);
 
+    // ---------- 2b) consume 语义 + CANCEL 释放捕获（docs/19 §5/§6）----------
+    {
+        mq_input* c = mq_input_create();
+        mq_input_set_hit_test(c, hit_one, nullptr);
+        mq_input_set_parent_fn(c, fake_parent, nullptr);
+        static int consumed_calls = 0;
+        mq_input_add_handler(c, [](void* u, const mq_input_event*, mq_input_target* t) {
+            ++*(int*)u;
+            t->consumed = 1;                 // 显式消费
+            return 0;
+        }, &consumed_calls);
+        mq_input_begin_frame(c, nullptr, 0);
+        mq_input_event mv = ev(MQ_INPUT_POINTER_MOVE, 10, 10);
+        mq_input_inject(c, &mv);
+        mq_input_dispatch(c);
+        CHECK(consumed_calls > 0);
+        CHECK(mq_input_last_consumed(c) == 1);            // consume() 语义不再空转
+        mq_input_end_frame(c, 0);
+        mq_input_destroy(c);
+    }
+    {
+        mq_input* c = mq_input_create();
+        mq_input_set_hit_test(c, hit_one, nullptr);
+        mq_input_begin_frame(c, nullptr, 0);
+        mq_input_event dn = ev(MQ_INPUT_POINTER_DOWN, 10, 10);
+        mq_input_inject(c, &dn);
+        mq_input_dispatch(c);
+        CHECK(mq_input_get_capture(c, 0) == 1);
+        mq_input_end_frame(c, 0);
+        // CANCEL：必须释放捕获（不合成 click）
+        mq_input_begin_frame(c, nullptr, 1);
+        mq_platform_pointer_event cancel{};
+        cancel.type = MQ_PLATFORM_POINTER_CANCEL; cancel.pointer_id = 0;
+        // 平台级 CANCEL 经 mq_input_begin_frame 的 device 路径进入
+        mq_platform_pointer_event ptrs[1] = { cancel };
+        mq_input_frame fr{};
+        fr.pointers = ptrs; fr.pointer_cap = 1; fr.pointer_count = 1;
+        mq_input_begin_frame(c, &fr, 1);
+        mq_input_dispatch(c);
+        CHECK(mq_input_get_capture(c, 0) == -1);          // 捕获已释放
+        CHECK(mq_input_pointer_down(c, 0) == 0);
+        mq_input_end_frame(c, 1);
+        mq_input_destroy(c);
+    }
+
     mq_input_destroy(in);
 
     // ---------- 3) 录制 → 回放：同一输入产生同一事件序列（docs/10 §3） ----------

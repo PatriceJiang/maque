@@ -85,6 +85,31 @@ int main() {
         CHECK(poses->container_size(&b.poses) == 0u);      // 瞬态：不恢复
     }
 
+    // ---- 2c) 引用字段（asset_ref / entity_ref）必须序列化（docs/08/10；曾因 kind_width=0 丢失）----
+    {
+        const mq_type_desc* t = mq_reflect_type_by_name(C, "anim.AnimatedSprite");
+        CHECK(t != nullptr);
+        anim::AnimatedSprite a{};
+        a.frames.id = 0xDEADBEEFCAFEull;
+        a.material.id = 0x1122334455667788ull;
+        std::vector<uint8_t> buf(4096);
+        const size_t n = mq_persist_encode(C, t, &a, buf.data(), buf.size());
+        anim::AnimatedSprite b{};
+        CHECK(mq_persist_decode(C, t, buf.data(), n, &b) == (long)n);
+        CHECK(b.frames.id == a.frames.id);
+        CHECK(b.material.id == a.material.id);
+
+        const mq_type_desc* at = mq_reflect_type_by_name(C, "anim.Animator");
+        CHECK(at != nullptr);
+        anim::Animator ea{};
+        ea.target.id = 42; ea.target.generation = 7;
+        std::vector<uint8_t> ebuf(4096);
+        const size_t en = mq_persist_encode(C, at, &ea, ebuf.data(), ebuf.size());
+        anim::Animator eb{};
+        CHECK(mq_persist_decode(C, at, ebuf.data(), en, &eb) == (long)en);
+        CHECK(eb.target.id == 42u && eb.target.generation == 7u);
+    }
+
     // ---- 3) 快照池：循环复用 / 帧号 / 描述 / 校验和 ----
     {
         mq_snapshot_pool* pool = mq_snapshot_pool_create(2, 1024);

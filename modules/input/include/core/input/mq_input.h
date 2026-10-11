@@ -44,7 +44,8 @@ typedef enum mq_input_event_type {
     MQ_INPUT_DOUBLE_CLICK = 7,
     MQ_INPUT_KEY_DOWN     = 8,
     MQ_INPUT_KEY_UP       = 9,
-    MQ_INPUT_TEXT         = 10
+    MQ_INPUT_TEXT         = 10,
+    MQ_INPUT_POINTER_CANCEL = 11   /* 指针取消（docs/19 §2）：释放捕获/拖拽，不产生 click */
 } mq_input_event_type;
 
 /* 命中的节点信息（UI 场景下由引擎命中测试填充）。 */
@@ -132,6 +133,9 @@ int  mq_input_replaying(mq_input* in);
 
 /* 注入一条事件（AI/CI；进入同一事件流，记录在录制中）。 */
 void mq_input_inject(mq_input* in, const mq_input_event* ev);
+
+/* 最近一次分发的目标是否被"消费"（阻止默认行为，docs/19 §5）。 */
+int mq_input_last_consumed(mq_input* in);
 
 /* 取出录制/回放共用的日志（归 in 所有）。 */
 const void* mq_input_log_bytes(mq_input* in, size_t* out_size);

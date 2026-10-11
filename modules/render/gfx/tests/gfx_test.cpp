@@ -115,6 +115,19 @@ int main() {
         CHECK(r > 120 && r < 150);                                // 0.5*255 + 0.5*15 ≈ 135
     }
 
+    // ---- 4c) 相机旋转 90°：偏离中心的图元绕相机中心旋转到新位置 ----
+    {
+        mq_renderer_item items[1] = { sprite(160.0F + 60.0F, 120.0F, 12.0F, 1.0F, 1.0F, 1.0F) };
+        mq_renderer_view v{};
+        v.vw = 320; v.vh = 240; v.cx = 160; v.cy = 120; v.zoom = 1.0F;
+        v.rot = 1.5707963F;                                   // 90°
+        cv.clear();
+        api->render_views(self, 320, 240, &v, 1, items, 1, bg, cv.px.data(), (uint32_t)cv.px.size());
+        // 逆旋转 90°：世界 (+60, 0) 的相对位置 → 屏幕 (0, -60) 方向 → (160, 60)
+        CHECK(cv.at(160, 60, 0) > 200);
+        CHECK(cv.at(220, 120, 0) < 40);
+    }
+
     // ---- 5) 旋转：把方形贴图旋转 90° 仍是同一图元（位置不变），仅检查不崩溃且中心着色 ----
     {
         mq_renderer_item items[1] = { sprite(160.0F, 120.0F, 25.0F, 0.3F, 0.9F, 0.9F, 0, 0, 1.5707963F) };

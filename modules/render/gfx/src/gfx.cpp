@@ -35,7 +35,9 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   var corner = c[vi] * inst.radius;
   let cs = cos(inst.rot); let sn = sin(inst.rot);
   corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
-  let q = (inst.pos + corner - u.cam) * u.zoom;
+  var q = (inst.pos + corner - u.cam) * u.zoom;
+  let cr = cos(-u.rot); let sr = sin(-u.rot);        // 相机旋转（docs/13 §4）：逆旋转到相机空间
+  q = vec2f(q.x * cr - q.y * sr, q.x * sr + q.y * cr);
   let px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
   var o: VOut;
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
@@ -65,7 +67,9 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   var corner = c[vi] * inst.radius;
   let cs = cos(inst.rot); let sn = sin(inst.rot);
   corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
-  let q = (inst.pos + corner - u.cam) * u.zoom;
+  var q = (inst.pos + corner - u.cam) * u.zoom;
+  let cr = cos(-u.rot); let sr = sin(-u.rot);        // 相机旋转（docs/13 §4）：逆旋转到相机空间
+  q = vec2f(q.x * cr - q.y * sr, q.x * sr + q.y * cr);
   let px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
   var o: VOut;
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);

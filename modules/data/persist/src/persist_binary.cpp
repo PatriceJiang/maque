@@ -63,6 +63,14 @@ size_t kind_width(mq_type_kind k) {
         case MQ_TK_I16:  case MQ_TK_U16:                 return 2;
         case MQ_TK_I32:  case MQ_TK_U32: case MQ_TK_F32: return 4;
         case MQ_TK_I64:  case MQ_TK_U64: case MQ_TK_F64: return 8;
+        /* 引用：固定布局 POD（maque::EntityRef = {u32,u32}，maque::AssetRef = {u64}）→ 8 字节。
+         * 必须序列化，否则实体/资产引用在快照/回滚中丢失（docs/08 §序列化、docs/10 §4）。 */
+        case MQ_TK_ENTITY_REF:
+        case MQ_TK_ASSET_REF: return 8;
+        /* map/optional：元素大小未在描述符中给出（无容器算子）→ 不参与二进制序列化，
+         * 由调用方改用 JSON 或为其补容器算子（见 docs/23 已知缺口）。 */
+        case MQ_TK_MAP:
+        case MQ_TK_OPTIONAL:
         default: return 0;
     }
 }
@@ -103,8 +111,7 @@ void enc_field(mq_reflect_ctx* ctx, const mq_field_desc* f, const void* fp, Writ
         }
         case MQ_TK_MAP:
         case MQ_TK_OPTIONAL:
-        case MQ_TK_ASSET_REF:
-        case MQ_TK_ENTITY_REF:
+            return;                                  // 未支持：跳过（不写垃圾字节，往返不会错位）
         default:
             w.raw(fp, kind_width(f->kind));
             return;
@@ -155,8 +162,7 @@ void dec_field(mq_reflect_ctx* ctx, const mq_field_desc* f, void* fp, Reader& r)
         }
         case MQ_TK_MAP:
         case MQ_TK_OPTIONAL:
-        case MQ_TK_ASSET_REF:
-        case MQ_TK_ENTITY_REF:
+            return;                                  // 与编码一致：跳过
         default:
             r.raw(fp, kind_width(f->kind));
             return;

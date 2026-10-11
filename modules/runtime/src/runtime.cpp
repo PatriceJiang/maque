@@ -181,7 +181,8 @@ struct Engine {
     std::unique_ptr<Scene> scene_owned;                     // 宿主模式：堆上场景
     Scene*              scene = &scene_store;
 
-    std::unordered_map<std::string, int> tex_cache;
+    std::unordered_map<std::string, int> tex_cache;              // 装配期填充；提取期只读
+    std::unordered_map<std::string, scn::SpriteMaterial> material_cache;
     uint32_t rng = 0;
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
@@ -202,6 +203,7 @@ struct Engine {
     void teardown();                                        // 释放全部实例资源（幂等）
     void step_frame();                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
     bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
+    void preload_scene_assets();                            // 装配期预解析纹理/材质（extract 只读，docs/13 §8）
     bool reload_script(std::string* err = nullptr);          // 重载脚本（帧边界调用，docs/14）
     bool reload_scene();                                    // 重载场景（重建世界，docs/08）
     uint32_t poll_watcher();                                // 帧边界检查资源变化
@@ -818,6 +820,34 @@ void Engine::nav_step() {
     }
 }
 
+/* 装配期预解析（docs/13 §8：渲染/提取只读）：把所有实体的纹理与材质引用解析进缓存。
+ * 引擎在装配阶段做 IO（合法：不在模拟帧内，docs/10 D7）。 */
+void Engine::preload_scene_assets() {
+    if (!scene) return;
+    std::vector<int> ids;
+    for (auto& [idx, e] : scene->ents) ids.push_back(idx);
+    std::sort(ids.begin(), ids.end());
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        for (auto& [tid, blob] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            if (!d) continue;
+            if (d->role & MQ_ROLE_SPRITE) {
+                if (const std::string* tp = read_str(d, blob.data(), "texture"); tp && !tp->empty())
+                    load_texture_ref(*tp);
+                if (const std::string* mp = read_str(d, blob.data(), "material"); mp && !mp->empty()) {
+                    scn::SpriteMaterial m{};
+                    if (load_material(*mp, m)) {
+                        material_cache[*mp] = m;
+                        if (!m.texture.empty()) load_texture_ref(m.texture);
+                    }
+                }
+            }
+        }
+    }
+}
+
 /* ---- 热重载（docs/08 §热重载、docs/14）：只在帧边界执行 ---- */
 
 bool Engine::reload_script(std::string* err) {
@@ -1361,19 +1391,23 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
             read_f32(d, blob.data(), "r", &r);
             read_f32(d, blob.data(), "g", &g);
             read_f32(d, blob.data(), "b", &b);
+            /* 只读提取（docs/13 §8 / docs/15 §1）：纹理与材质已在装配期预解析并缓存，
+             * 此处仅查表，**不得**触发加载或改写任何引擎状态。 */
             std::string texref;
             if (const std::string* tp = read_str(d, blob.data(), "texture")) texref = *tp;
-            // 材质资源覆盖颜色/贴图（builtin:/ 或 assets）
             if (const std::string* mp = read_str(d, blob.data(), "material"))
                 if (!mp->empty()) {
-                    scn::SpriteMaterial m{};
-                    if (eng.load_material(*mp, m)) {
-                        r = m.base_color.x; g = m.base_color.y; b = m.base_color.z;
-                        if (!m.texture.empty()) texref = m.texture;
+                    auto mi = eng.material_cache.find(*mp);
+                    if (mi != eng.material_cache.end()) {
+                        r = mi->second.base_color.x; g = mi->second.base_color.y; b = mi->second.base_color.z;
+                        if (!mi->second.texture.empty()) texref = mi->second.texture;
                     }
                 }
             int tex = -1;
-            if (!texref.empty()) tex = eng.load_texture_ref(texref);
+            if (!texref.empty()) {
+                auto ti = eng.tex_cache.find(texref);
+                tex = ti == eng.tex_cache.end() ? -1 : ti->second;
+            }
             mq_renderer_item it{};
             it.x = e.x; it.y = (float)eng.H - e.y; it.size = radius;
             it.r = r; it.g = g; it.b = b; it.a = 1.0F;
@@ -2384,6 +2418,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
             mq_watcher_add(watcher, (std::filesystem::path(scn_dir) / script_path).string().c_str());
         std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
     }
+    preload_scene_assets();                     // 资源 IO 在装配期完成（帧内零加载）
     if (mq_script_has(vm, "on_start") && mq_script_call0(vm, "on_start", nullptr) != 0) {
         char ebuf[512] = { 0 };
         mq_script_last_error(vm, ebuf, (int)sizeof ebuf);

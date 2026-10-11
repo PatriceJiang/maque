@@ -53,6 +53,7 @@ struct mq_input {
     int  focus = -1;
     int  quit = 0;
     int  hover = -1;
+    int  last_consumed = 0;
 
     /* 回调 */
     mq_input_hit_test  hit = nullptr;      void* hit_user = nullptr;
@@ -95,7 +96,17 @@ bool from_platform(mq_input* in, const mq_platform_pointer_event& pe) {
         case MQ_PLATFORM_POINTER_UP:     ev.type = MQ_INPUT_POINTER_UP; break;
         case MQ_PLATFORM_POINTER_MOVE:   ev.type = MQ_INPUT_POINTER_MOVE; break;
         case MQ_PLATFORM_POINTER_WHEEL:  ev.type = MQ_INPUT_POINTER_WHEEL; break;
-        default: return false;   // CANCEL：释放捕获但不分发
+        case MQ_PLATFORM_POINTER_CANCEL: {
+            /* 取消（docs/19 §6）：释放该指针的捕获与按下态，清掉待合成的 click，
+             * 并把它作为事件分发出去（脚本/组件可据此复位拖拽状态）。 */
+            in->pointers_down.erase(pe.pointer_id);
+            in->capture.erase(pe.pointer_id);
+            in->pending_click.erase(pe.pointer_id);
+            ev.type = MQ_INPUT_POINTER_CANCEL;
+            push_event(in, ev);
+            return true;
+        }
+        default: return false;
     }
     push_event(in, ev);
     return true;
@@ -141,7 +152,7 @@ mq_input_event from_log(const LogEntry& e) {
 const char* ev_type_name(uint32_t t) {
     static const char* names[] = { "pointer_down", "pointer_up", "pointer_move", "pointer_wheel",
                                    "pointer_enter", "pointer_leave", "click", "double_click",
-                                   "key_down", "key_up", "text" };
+                                   "key_down", "key_up", "text", "pointer_cancel" };
     return t < sizeof(names) / sizeof(names[0]) ? names[t] : "unknown";
 }
 
@@ -202,7 +213,8 @@ static void dispatch_one(mq_input* in, mq_input_event ev) {
     auto cit = in->capture.find(ev.pointer_id);
     if (cit != in->capture.end()) captured = cit->second;
     const bool pointerish = ev.type == MQ_INPUT_POINTER_DOWN || ev.type == MQ_INPUT_POINTER_UP ||
-                            ev.type == MQ_INPUT_POINTER_MOVE || ev.type == MQ_INPUT_POINTER_WHEEL;
+                            ev.type == MQ_INPUT_POINTER_MOVE || ev.type == MQ_INPUT_POINTER_WHEEL ||
+                            ev.type == MQ_INPUT_POINTER_CANCEL;
     if (pointerish && captured >= 0 &&
         (ev.type == MQ_INPUT_POINTER_MOVE || ev.type == MQ_INPUT_POINTER_UP)) {
         t.entity = captured;                     // 指针捕获：始终发给捕获者（docs/19 §6）
@@ -213,19 +225,24 @@ static void dispatch_one(mq_input* in, mq_input_event ev) {
     }
     ev.target = t.entity;
 
+    /* 语义（docs/19 §5）：
+     *   · 处理器返回非 0 或置 target->consumed → **已消费**（阻止默认行为）；
+     *   · 置 target->stopped → **停止传播**；
+     *   · 返回 1（本引擎约定：trampoline 只返回 0/1）视为"已处理"→ 消费但**不**阻断，
+     *     以免破坏既有按三阶段继续冒泡的行为；显式阻断需置 stopped。 */
     auto invoke = [&](uint32_t phase, int entity, const mq_input_event* src) -> bool {
         mq_input_target lt{};
         lt.entity = entity;
         lt.handle = entity >= 0 ? (uint32_t)entity : (uint32_t)-1;
         mq_input_event local = src ? *src : ev;   // 合成事件（如 click）走同一路径
         local.phase = phase;
-        bool stop = false;
         for (const auto& h : in->handlers) {
-            if (h.fn(h.user, &local, &lt) != 0) stop = true;
-            if (lt.stopped) stop = true;
+            if (h.fn(h.user, &local, &lt) != 0) lt.consumed = 1;
+            if (lt.stopped) { lt.consumed = 1; break; }
         }
         if (entity == t.entity) { t.consumed = lt.consumed; t.stopped = lt.stopped; }
-        return stop;
+        in->last_consumed = t.consumed;
+        return lt.stopped != 0;                   // 仅"显式停止"才阻断传播
     };
     const mq_input_event* self = nullptr;
 
@@ -303,6 +320,8 @@ void mq_input_end_frame(mq_input* in, uint64_t frame_index) {
 }
 
 int  mq_input_quit(mq_input* in) { return in ? in->quit : 1; }
+
+int mq_input_last_consumed(mq_input* in) { return in ? in->last_consumed : 0; }
 
 void mq_input_pointer_pos(mq_input* in, uint32_t pointer_id, float* x, float* y) {
     if (x) *x = 0; if (y) *y = 0;
@@ -427,7 +446,7 @@ int mq_input_log_load_json(mq_input* in, const char* json) {
         e.pressure = (float)mq_json_num(mq_json_get(j, "pr"), 0);
         const char* tn = mq_json_str(mq_json_get(j, "t"), "");
         e.type = MQ_INPUT_POINTER_DOWN;
-        for (uint32_t k = 0; k <= MQ_INPUT_TEXT; ++k)
+        for (uint32_t k = 0; k <= MQ_INPUT_POINTER_CANCEL; ++k)
             if (std::strcmp(tn, ev_type_name(k)) == 0) { e.type = k; break; }
         in->replay_src.push_back(e);
     }
