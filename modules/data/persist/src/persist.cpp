@@ -178,7 +178,21 @@ void apply_field(mq_reflect_ctx* ctx, const mq_field_desc* f, void* fp, const JV
             return;
         }
         case MQ_TK_ENUM:
-            if (v.kind == JVal::Num) write_scalar(ctx, fp, MQ_TK_ENUM, f->type_id, v.num);
+            if (v.kind == JVal::Num) { write_scalar(ctx, fp, MQ_TK_ENUM, f->type_id, v.num); return; }
+            if (v.kind == JVal::Str) {
+                /* 枚举名字面量（如 "Vertical" 或 "ContainerMode::Vertical"）→ 数值（docs/06） */
+                const mq_type_desc* et = mq_reflect_type_by_id(ctx, f->type_id);
+                if (!et || !et->values) return;
+                const std::string& raw = v.str;
+                const size_t sep = raw.rfind("::");
+                const std::string want = sep == std::string::npos ? raw : raw.substr(sep + 2);
+                for (uint32_t i = 0; i < et->value_count; ++i) {
+                    if (want == et->values[i].name) {
+                        write_scalar(ctx, fp, MQ_TK_ENUM, f->type_id, (double)et->values[i].value);
+                        return;
+                    }
+                }
+            }
             return;
         case MQ_TK_STRING:
             if (v.kind == JVal::Str) *reinterpret_cast<std::string*>(fp) = v.str;
@@ -235,6 +249,10 @@ void write_json_scalar(std::string& out, const void* p, mq_type_kind kind) {
         case MQ_TK_U32: out += std::to_string(*(const uint32_t*)p); return;
         case MQ_TK_I64: out += std::to_string(*(const int64_t*)p); return;
         case MQ_TK_U64: out += std::to_string(*(const uint64_t*)p); return;
+        case MQ_TK_ENUM: {
+            out += std::to_string((long long)(*(const int32_t*)p));
+            return;
+        }
         /* 引用（{u32,u32} / {u64}）：输出 **十六进制字符串** —— 64 位内容哈希超出 double 精度
          * （2^53），走数值会在文本往返时丢位（docs/06 §3 稳定 ID）。 */
         case MQ_TK_ENTITY_REF:

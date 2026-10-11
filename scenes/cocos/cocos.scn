@@ -1,0 +1,43 @@
+{
+  "title": "Cocos 风格 API",
+  "script": "cocos.js",
+  "width": 320,
+  "height": 240,
+  "seed": 7,
+  "gravity_y": 900.0,
+  "entities": [
+    { "name": "Canvas", "components": [
+        { "type": "ui.Control", "offset_max": { "x": 320.0, "y": 240.0 }, "mouse_filter": "MouseFilter::Ignore" } ] },
+
+    { "name": "Panel", "components": [
+        { "type": "ui.Control", "offset_max": { "x": 200.0, "y": 120.0 } },
+        { "type": "ui.Container", "mode": "ContainerMode::VBox", "padding": { "x": 8.0, "y": 8.0, "z": 8.0, "w": 8.0 }, "spacing": 6.0 } ] },
+
+    { "name": "Bar", "components": [
+        { "type": "ui.Control", "offset_max": { "x": 120.0, "y": 16.0 } },
+        { "type": "ui.ProgressBar", "value": 0.25 } ] },
+
+    { "name": "BarFill", "components": [
+        { "type": "ui.Control", "offset_max": { "x": 120.0, "y": 16.0 } },
+        { "type": "scn.Sprite", "radius": 8.0, "r": 0.4, "g": 0.9, "b": 0.4 } ] },
+
+    { "name": "Volume", "components": [
+        { "type": "ui.Control", "offset_max": { "x": 160.0, "y": 20.0 } },
+        { "type": "ui.Slider", "min_value": 0.0, "max_value": 10.0, "value": 5.0 } ] },
+
+    { "name": "Mute", "components": [
+        { "type": "ui.Control", "offset_max": { "x": 24.0, "y": 24.0 } },
+        { "type": "ui.CheckBox", "checked": false } ] },
+
+    { "name": "Hint", "components": [
+        { "type": "scn.Label", "x": 8.0, "y": 210.0, "text": "cocos api" } ] },
+
+    { "name": "Fall", "components": [
+        { "type": "scn.Transform2D", "x": 60.0, "y": 20.0 },
+        { "type": "scn.Sprite", "radius": 6.0, "r": 1.0, "g": 0.8, "b": 0.2 },
+        { "type": "physics.RigidBody", "body_type": "BodyType::Dynamic" },
+        { "type": "physics.Collider", "shape_type": "ShapeType::Circle", "radius": 6.0 } ] },
+
+    { "name": "Spawned", "components": [] }
+  ]
+}

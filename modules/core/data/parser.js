@@ -1210,6 +1210,22 @@ typedef struct mq_field_desc {
 #define MQ_ROLE_ANIM_PLAYER (1u << 5)
 #define MQ_ROLE_PARTICLE    (1u << 6)
 #define MQ_ROLE_NAV_AGENT   (1u << 7)
+#define MQ_ROLE_UI_CONTROL  (1u << 8)    /* 2D 盒模型/节点属性（visible/opacity/scale/angle/z_index） */
+#define MQ_ROLE_UI_LAYOUT   (1u << 9)    /* 自动布局（H/V/GRID，Cocos Layout 等价） */
+#define MQ_ROLE_UI_PROGRESS (1u << 10)   /* 进度条（填充子节点宽度/缩放） */
+#define MQ_ROLE_UI_SLIDER   (1u << 11)   /* 滑块（拖拽改值 + changed 事件） */
+#define MQ_ROLE_UI_CHECK    (1u << 12)   /* 复选框（点击切换 + toggled 事件） */
+#define MQ_ROLE_UI_OPACITY  (1u << 13)   /* 子树透明度 */
+#define MQ_ROLE_UI_SAFEAREA (1u << 14)   /* 安全区（内缩 + 目标尺寸） */
+#define MQ_ROLE_UI_SCROLL   (1u << 15)   /* 滚动视图（内容偏移 + 裁剪范围） */
+#define MQ_ROLE_PHYSICS_BODY (1u << 16)  /* 2D 刚体：装配期入物理世界，帧内回写变换 */
+#define MQ_ROLE_PHYSICS_COLLIDER (1u << 17) /* 2D 碰撞体：形状来自 Collider 组件 */
+
+/* 枚举字面量（供 JSON 文本按名字读写、AI 自省；docs/06） */
+typedef struct mq_enum_value {
+    const char* name;    /* 短名（如 "Vertical"；写入也接受 "Type::Vertical"） */
+    int64_t     value;
+} mq_enum_value;
 
 typedef struct mq_type_desc {
     const char*          name;   /* fully qualified ns.Name */
@@ -1220,6 +1236,8 @@ typedef struct mq_type_desc {
     const mq_field_desc* fields;
     uint32_t             flags;  /* bit0 is_enum, bit1 is_pod, bit2 has_dynamic */
     uint32_t             role;   /* MQ_ROLE_* 位标志 */
+    const mq_enum_value* values;      /* 枚举值表（仅 is_enum） */
+    uint32_t             value_count; /* 枚举值个数 */
 } mq_type_desc;
 
 /* registry (lookup by type_id / name) */
@@ -1241,6 +1259,16 @@ const ROLE_BIT = {
   anim_player: 'MQ_ROLE_ANIM_PLAYER',
   particle_emitter: 'MQ_ROLE_PARTICLE',
   nav_agent: 'MQ_ROLE_NAV_AGENT',
+  ui_control: 'MQ_ROLE_UI_CONTROL',
+  ui_layout: 'MQ_ROLE_UI_LAYOUT',
+  ui_progress: 'MQ_ROLE_UI_PROGRESS',
+  ui_slider: 'MQ_ROLE_UI_SLIDER',
+  ui_check: 'MQ_ROLE_UI_CHECK',
+  ui_opacity: 'MQ_ROLE_UI_OPACITY',
+  ui_safe_area: 'MQ_ROLE_UI_SAFEAREA',
+  ui_scroll: 'MQ_ROLE_UI_SCROLL',
+  physics_body: 'MQ_ROLE_PHYSICS_BODY',
+  physics_collider: 'MQ_ROLE_PHYSICS_COLLIDER',
 }
 function roleBits(t) {
   const parts = (t.roles || []).map((r) => ROLE_BIT[r]).filter(Boolean)
@@ -1312,11 +1340,22 @@ function genDescSource(types) {
     lines.push('')
   }
 
+  /* 枚举值表：JSON 文本可按名字读写枚举（"Vertical" 或 "ContainerMode::Vertical"） */
+  for (const t of types) {
+    if (t.kind !== 'enum') continue
+    lines.push(`static const mq_enum_value mq_values_${mangle(t.fqName)}[] = {`)
+    for (const v of t.values) lines.push(`    { "${v.name}", (int64_t)${v.value} },`)
+    lines.push('};')
+    lines.push('')
+  }
+
   for (const t of types) {
     const cpp = t.fqName.replace(/\./g, '::')
     const fieldsSym = t.kind === 'struct' && t.fields.length > 0
       ? `mq_fields_${mangle(t.fqName)}`
       : '0'
+    const valuesSym = t.kind === 'enum' ? `mq_values_${mangle(t.fqName)}` : '0'
+    const valueCount = t.kind === 'enum' ? t.values.length : 0
     lines.push(`extern const mq_type_desc mq_type_${mangle(t.fqName)} = {`)
     lines.push(`    "${t.fqName}",`)
     lines.push(`    ${t.typeId}u,`)
@@ -1326,6 +1365,8 @@ function genDescSource(types) {
     lines.push(`    ${fieldsSym},`)
     lines.push(`    ${typeFlags(t)}u,`)
     lines.push(`    ${roleBits(t)},`)
+    lines.push(`    ${valuesSym},`)
+    lines.push(`    ${valueCount}u,`)
     lines.push('};')
     lines.push('')
   }
@@ -1615,12 +1656,16 @@ function genBindingsSource(namespaces) {
                            args.every((a) => a.type === 'string' || API_SCALARS.has(a.type))
       const numBinding = args.every((a) => API_SCALARS.has(a.type))
       const retStr = fn.returns === 'string'
+      /* multi：任意数量/位置的 string（如 node_set_number(id, comp, field, value)）。
+       * 生成 'n'/'s' 类型串 → mq_script_register_multi 通用编组（docs/21 §6.1）。 */
+      const general = args.every((a) => a.type === 'string' || API_SCALARS.has(a.type))
+      const multiBinding = general && !numBinding && strArg.length > 1
       if (retStr && !numBinding) continue
-      if (!strBinding && !numBinding && !mixedBinding) continue
-      fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding, mixedBinding, retStr })
+      if (!strBinding && !numBinding && !mixedBinding && !multiBinding) continue
+      fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding, mixedBinding, multiBinding, retStr })
     }
   }
-  for (const { ns, fn, strBinding, mixedBinding } of fns) {
+  for (const { ns, fn, strBinding, mixedBinding, multiBinding } of fns) {
     const sym = `b_${ns}_${fn.name}`
     if (strBinding) {
       lines.push(`int ${sym}(void* user, const char* s, double* ret) {`)
@@ -1639,6 +1684,25 @@ function genBindingsSource(namespaces) {
       if (fn.returns === 'void') lines.push(`  ${call}; return 0;`)
       else lines.push(`  *ret = (double)${call}; return 0;`)
       lines.push('}')
+    } else if (multiBinding) {
+      const kinds = fn.args.map((a) => (a.type === 'string' ? 's' : 'n')).join('')
+      const parts = []
+      if (fn.ctx) parts.push('user')
+      let ni = 0, si = 0
+      for (const a of fn.args) {
+        parts.push(a.type === 'string' ? `s[${si++}]` : apiCast(a.type, `a[${ni++}]`))
+      }
+      const call = `${ns}::${fn.name}(${parts.join(', ')})`
+      const retStrMulti = fn.returns === 'string'
+      if (retStrMulti) {
+        lines.push(`int ${sym}(void* user, int, const double* a, int, const char** s, char* ret, int cap) {`)
+        lines.push(`  std::snprintf(ret, (size_t)cap, "%s", ${call}); return 0;`)
+      } else {
+        lines.push(`int ${sym}(void* user, int, const double* a, int, const char** s, double* ret) {`)
+        if (fn.returns === 'void') lines.push(`  ${call}; return 0;`)
+        else lines.push(`  *ret = (double)${call}; return 0;`)
+      }
+      lines.push(`}  /* kinds=${kinds} */`)
     } else if (fn.returns === 'string') {
       const parts = []
       if (fn.ctx) parts.push('user')
@@ -1660,14 +1724,18 @@ function genBindingsSource(namespaces) {
   lines.push('} // namespace')
   lines.push('')
   lines.push('extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {')
-  for (const { ns, global, fn, strBinding, mixedBinding } of fns) {
+  for (const { ns, global, fn, strBinding, mixedBinding, multiBinding } of fns) {
     const sym = `b_${ns}_${fn.name}`
     const user = fn.ctx ? 'ctx' : 'nullptr'
+    const kinds = multiBinding ? fn.args.map((a) => (a.type === 'string' ? 's' : 'n')).join('') : null
     const reg = strBinding ? 'mq_script_register_str'
               : mixedBinding ? 'mq_script_register_mixed'
+              : multiBinding ? (fn.returns === 'string' ? 'mq_script_register_multi_ret_str'
+                                                        : 'mq_script_register_multi')
               : (fn.returns === 'string' ? 'mq_script_register_ret_str' : 'mq_script_register_num')
     const jsName = global ? fn.name : `${ns}.${fn.name}`
-    lines.push(`  ${reg}(vm, "${jsName}", ${sym}, ${user});`)
+    lines.push(kinds ? `  ${reg}(vm, "${jsName}", "${kinds}", ${sym}, ${user});`
+                     : `  ${reg}(vm, "${jsName}", ${sym}, ${user});`)
   }
   lines.push('}')
   lines.push('')

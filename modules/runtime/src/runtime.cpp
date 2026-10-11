@@ -42,6 +42,7 @@
 #include <utility>
 #include <functional>
 #include <csignal>
+#include <algorithm>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -50,7 +51,14 @@ namespace {
 struct Entity {
     std::string name;
     int parent = -1;
-    float x = 0, y = 0;                                    // 世界（每帧计算）
+    float x = 0, y = 0;                                    // 局部坐标（父空间）
+    /* Cocos Node 属性（对照 Cocos Creator 3.x Node）：active/scale/angle/opacity 影响
+     * 自身与子树；z_index 参与 UI/绘制稳定排序。全部进快照与校验和（docs/10）。 */
+    bool  active = true;
+    float scale = 1.0F;
+    float angle = 0.0F;                                    // 角度（度）
+    float opacity = 1.0F;                                  // 0..1
+    int   z_index = 0;
     std::unordered_map<uint32_t, std::vector<uint8_t>> comps;   // type_id → blob
 };
 
@@ -60,6 +68,13 @@ struct SnapshotWriter;
 
 /* 引擎内辅助（定义见 Engine 之后；Scene 与 Engine 互相引用）。 */
 void write_json_string_pub(std::string& out, const std::string& s);
+/* Cocos 组件语义辅助（定义见 host API 之前）：供输入回调使用。 */
+std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role);
+std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name, const mq_type_desc** out_desc);
+float read_num(const mq_type_desc* d, const void* base, const char* field, float def);
+bool  write_num(const mq_type_desc* d, void* base, const char* field, double v);
+void  slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px);
+/* node_emit_number / node_width 由生成的 maque_api.h 在 ::host 中声明（api_list）。 */
 void attach_component(Engine& eng, int idx, const char* type_name);
 void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& blob);
 void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob);
@@ -178,6 +193,13 @@ struct Engine {
     /* 每个 NavAgent 的路径缓存（按实体 id；path 为 [x,y] 交错世界坐标） */
     struct AgentPath { std::vector<float> path; uint32_t index = 0; };
     std::unordered_map<int, AgentPath> agent_paths;
+    /* Cocos 风格节点事件表（entity → [(event, handler)]；注册序即派发序，确定性） */
+    struct NodeHandler { std::string event; std::string handler; };
+    std::unordered_map<int, std::vector<NodeHandler>> node_events;
+    bool director_paused = false;                  // director.pause()：跳过模拟，仅保留采样/渲染
+    uint64_t script_frames = 0;                    // 脚本 update 实际执行次数（对照暂停）
+    std::string pending_scene;                     // director.loadScene()：帧边界切场景
+    std::vector<std::pair<int, mq_physics_body>> physics_role_bodies;   // (entity, 世代句柄)
     uint64_t stop_frame = 0;                                // >0 时到该帧停止（CI 固定长度跑）
     std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
     std::string name;
@@ -202,6 +224,9 @@ struct Engine {
     bool prepare_replay();                                  // 载入回放日志并设定期望校验和（docs/10 §3）
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）
+    void ui_step();                                         // UI 组件语义（layout/progress/slider/check/safearea/scroll）
+    void physics_components_setup();                        // 装配期：按 role 建物理体（Cocos RigidBody2D/Collider2D）
+    void physics_components_step(float dt);                 // 帧内：步进并回写变换
     void anim_step(float dt);                               // 关键帧采样 → 写回字段（docs/15 §2）
     void particles_step(float dt);                          // 确定性粒子推进（docs/15 §4）
     bool setup(const std::string& scn_path, const char* renderer_override);   // 加载并装配引擎
@@ -211,6 +236,7 @@ struct Engine {
     void preload_scene_assets();                            // 装配期预解析纹理/材质（extract 只读，docs/13 §8）
     bool reload_script(std::string* err = nullptr);          // 重载脚本（帧边界调用，docs/14）
     bool reload_scene();                                    // 重载场景（重建世界，docs/08）
+    bool load_scene_into(const std::string& scn_path);       // 场景装配（setup / director.loadScene 共用）
     uint32_t poll_watcher();                                // 帧边界检查资源变化
     void checkpoint_push();                                 // 记录一个检查点（周期性）
     void write_crash_context(const char* why);              // 崩溃/异常上下文（docs/09 §5、docs/10 §7）
@@ -534,10 +560,23 @@ void Engine::step_frame() {
     }
     // ②b 帧边界热重载：资源变化只在此处生效（docs/08/14）
     if (watcher && (frame % 6 == 0)) poll_watcher();
+    // ②c 帧边界切场景（director.loadScene：帧内不加载资源，docs/10 D7）
+    if (scene && !pending_scene.empty()) {
+        const std::string path = pending_scene;
+        pending_scene.clear();
+        if (!load_scene_into(path)) {
+            std::print(stderr, "runtime: director.loadScene('{}') failed\n", path);
+            mq_obs_event(obs, "runtime", 3, "scene_load_failed");
+        }
+    }
     // ③ 脚本：update(dt) → 帧边界 GC（确定性，docs/14）
     std::vector<mq_renderer_item> draws;
     const float dt = 1.0F / 60.0F;
-    if (scene) {
+    if (scene && director_paused) {
+        /* director.pause()：跳过模拟（脚本/动画/粒子/导航/物理/UI 布局），仅保留采样与渲染
+         * （Cocos director.pause 语义；输入仍被采样，便于 resume 后继续）。 */
+    } else if (scene) {
+        ++script_frames;
         if (mq_event_dispatch(vm, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr) != 0) {
             char ebuf[512] = { 0 };
             mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
@@ -548,6 +587,8 @@ void Engine::step_frame() {
         anim_step(dt);                                   // 动画采样写回（docs/15 §2）
         particles_step(dt);                              // 粒子推进（docs/15 §4）
         nav_step();                                      // 导航代理推进（A* + 追踪）
+        physics_components_step(dt);                     // 组件驱动物理（Cocos RigidBody2D）
+        ui_step();                                       // UI 组件语义（layout/progress/slider/check/safearea/scroll）
         scene->compute_world(*this);
         scene->extract(*this, draws);
     }
@@ -1243,6 +1284,11 @@ void Scene::encode(Engine& eng, SnapshotWriter& w) {
         Entity& e = ents[k];
         w.pod((int32_t)k);
         w.pod((int32_t)e.parent);
+        w.pod((uint8_t)(e.active ? 1 : 0));
+        w.pod(e.scale);
+        w.pod(e.angle);
+        w.pod(e.opacity);
+        w.pod((int32_t)e.z_index);
         w.pod((uint32_t)e.name.size());
         w.bytes(e.name.data(), e.name.size());
         std::vector<uint32_t> tids;
@@ -1278,7 +1324,12 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
     for (uint32_t i = 0; i < count; ++i) {
         int32_t k = 0, parent = -1;
         uint32_t name_len = 0;
-        if (!take(&k, 4) || !take(&parent, 4) || !take(&name_len, 4)) return 0;
+        uint8_t active = 1;
+        float scale = 1.0F, angle = 0.0F, opacity = 1.0F;
+        int32_t z_index = 0;
+        if (!take(&k, 4) || !take(&parent, 4) || !take(&active, 1)
+            || !take(&scale, 4) || !take(&angle, 4) || !take(&opacity, 4) || !take(&z_index, 4)
+            || !take(&name_len, 4)) return 0;
         if (name_len > 4096 || pos + name_len > n) return 0;
         std::string nm((const char*)in + pos, name_len);
         pos += name_len;
@@ -1287,6 +1338,11 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
         Entity e;
         e.name = std::move(nm);
         e.parent = parent;
+        e.active = active != 0;
+        e.scale = scale;
+        e.angle = angle;
+        e.opacity = opacity;
+        e.z_index = (int)z_index;
         if (k < 0) return 0;              // 实体索引按快照重建（脚本 id 稳定，docs/10 D4）
         for (uint32_t c = 0; c < comps; ++c) {
             uint32_t tid = 0, len = 0;
@@ -1323,6 +1379,8 @@ uint64_t Scene::checksum(Engine& eng) {
     for (int k : idx) {
         Entity& e = ents[k];
         mix(&k, sizeof k); mix(&e.parent, sizeof e.parent); mix(&e.x, sizeof e.x); mix(&e.y, sizeof e.y);
+        mix(&e.active, sizeof e.active); mix(&e.scale, sizeof e.scale); mix(&e.angle, sizeof e.angle);
+        mix(&e.opacity, sizeof e.opacity); mix(&e.z_index, sizeof e.z_index);
         std::vector<uint32_t> tids;
         for (auto& [t, b] : e.comps) tids.push_back(t);
         std::sort(tids.begin(), tids.end());
@@ -1353,11 +1411,12 @@ uint64_t Scene::checksum(Engine& eng) {
 /* 组件局部位置：按 role 读；兼容两种声明形态（扁平 x/y 或 math.Transform2D.local.position）。
  * 引擎不认具体组件类型 —— 只看 role 与标准字段路径（docs/12/17）。 */
 static void read_local_pos(Engine& eng, const Entity& e, float* lx, float* ly) {
-    *lx = 0; *ly = 0;
+    *lx = e.x; *ly = e.y;                      /* 默认：实体自身（无 Transform2D 的纯 UI 节点） */
     for (auto& [tid, blob] : e.comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
         if (!d || !(d->role & MQ_ROLE_TRANSFORM2D)) continue;
-        if (read_f32(d, blob.data(), "x", lx) && read_f32(d, blob.data(), "y", ly)) return;
+        { float tx = 0, ty = 0;
+          if (read_f32(d, blob.data(), "x", &tx) && read_f32(d, blob.data(), "y", &ty)) { *lx = tx; *ly = ty; return; } }
         if (const mq_field_desc* fl = mq_reflect_field(d, "local")) {
             const mq_type_desc* lt = mq_reflect_type_by_id(eng.reflect, fl->type_id);
             if (lt) {
@@ -1491,9 +1550,43 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
     if (!e) return;
     /* 有效 z = 自身 z + 祖先 z（层级叠加，稳定） */
     int zsum = 0;
+    /* Cocos 风格：ui.Control 提供盒模型（anchor/offset/size），交互性由 role 决定 */
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
         if (!d) continue;
+        if (d->role & MQ_ROLE_UI_CONTROL) {
+            float w = 0, h = 0;
+            if (const mq_field_desc* f = mq_reflect_field(d, "offset_max")) {
+                const float* v = (const float*)(blob.data() + f->offset);
+                w = v[0]; h = v[1];
+            }
+            if (const mq_field_desc* f = mq_reflect_field(d, "offset_min")) {
+                const float* v = (const float*)(blob.data() + f->offset);
+                w -= v[0]; h -= v[1];
+            }
+            if (const mq_field_desc* fz = mq_reflect_field(d, "z_index"))
+                zsum += *(const int32_t*)(blob.data() + fz->offset);
+            bool interactive = false;
+            for (auto& [t2, b2] : e->comps) {
+                const mq_type_desc* d2 = mq_reflect_type_by_id(eng.reflect, t2);
+                if (d2 && (d2->role & (MQ_ROLE_UI_BUTTON | MQ_ROLE_UI_SLIDER | MQ_ROLE_UI_CHECK)))
+                    interactive = true;
+            }
+            if (interactive && w > 0 && h > 0) {
+                /* 节点位置 = 控件中心（与精灵居中绘制一致）；屏幕 y 向下 = H - 世界 y */
+                const float cx = e->x, cy = (float)eng.H - e->y;
+                const float bx = cx - w * 0.5F, by = cy - h * 0.5F;
+                if (px >= bx && px <= bx + w && py >= by && py <= by + h) {
+                    if (zsum > best.z || (zsum == best.z && depth > best.depth)) {
+                        best.entity = idx; best.z = zsum; best.depth = depth;
+                        best.lx = px - bx; best.ly = py - by;
+                    }
+                }
+            } else if (e->active) {
+                zsum += 0;                                            // 非交互：仅参与 z 叠加
+            }
+            continue;
+        }
         bool ui = (d->role & (MQ_ROLE_UI_BUTTON | MQ_ROLE_UI_LABEL)) != 0;
         if (!ui) continue;
         float x = 0, y = 0, w = 0, h = 0;
@@ -1586,6 +1679,34 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
                 if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
                     *(bool*)(blob.data() + fp->offset) = false;
             }
+        /* Slider：按下进入拖拽，拖动中按水平比例改值（Cocos Slider 语义） */
+        if (e) {
+            for (auto& [tid, blob] : e->comps) {
+                const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+                if (!d || !(d->role & MQ_ROLE_UI_SLIDER)) continue;
+                if (ev->type == MQ_INPUT_POINTER_DOWN) {
+                    write_num(d, blob.data(), "dragging", 1.0);
+                    slider_apply_pointer(*eng, target->entity, d, blob.data(), ev->x);
+                } else if (ev->type == MQ_INPUT_POINTER_UP) {
+                    write_num(d, blob.data(), "dragging", 0.0);
+                    slider_apply_pointer(*eng, target->entity, d, blob.data(), ev->x);
+                } else if (ev->type == MQ_INPUT_POINTER_MOVE) {
+                    if (read_num(d, blob.data(), "dragging", 0.0F) != 0.0F)
+                        slider_apply_pointer(*eng, target->entity, d, blob.data(), ev->x);
+                }
+            }
+            /* CheckBox：点击切换 + toggled 事件（Cocos Toggle 语义） */
+            if (ev->type == MQ_INPUT_CLICK) {
+                for (auto& [tid, blob] : e->comps) {
+                    const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+                    if (!d || !(d->role & MQ_ROLE_UI_CHECK)) continue;
+                    if (read_num(d, blob.data(), "disabled", 0.0F) != 0.0F) continue;
+                    const bool now = read_num(d, blob.data(), "checked", 0.0F) == 0.0F;
+                    write_num(d, blob.data(), "checked", now ? 1.0 : 0.0);
+                    host::node_emit_number(eng, target->entity, "toggled", now ? 1.0F : 0.0F);
+                }
+            }
+        }
     }
     call_script_event(*eng, ev);          // 分发表由生成代码提供
     if (eng->trace_hits)
@@ -1615,9 +1736,310 @@ double cfg_field(Engine* eng, const char* path) {
     double v = 0.0; mq_reflect_get_f64(eng->reflect, parent, f, &v); return v;
 }
 
+std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role) {
+    Entity* e = eng.scene->at(id);
+    if (!e) return nullptr;
+    for (auto& [tid, blob] : e->comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+        if (d && (d->role & role)) return &blob;
+    }
+    return nullptr;
+}
+
+/* 直接按类型名找组件（Cocos getComponent("Type") 语义；支持短名与 fq 名）。 */
+std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
+                                   const mq_type_desc** out_desc) {
+    Entity* e = eng.scene->at(id);
+    if (!e || !type_name) return nullptr;
+    const mq_type_desc* want = mq_reflect_type_by_name(eng.reflect, type_name);
+    if (!want) {                                   // 允许短名（"Sprite" → "scn.Sprite"）
+        char fq[128];
+        std::snprintf(fq, sizeof fq, "scn.%s", type_name);
+        want = mq_reflect_type_by_name(eng.reflect, fq);
+        if (!want) { std::snprintf(fq, sizeof fq, "ui.%s", type_name);
+                     want = mq_reflect_type_by_name(eng.reflect, fq); }
+        if (!want) { std::snprintf(fq, sizeof fq, "physics.%s", type_name);
+                     want = mq_reflect_type_by_name(eng.reflect, fq); }
+    }
+    if (!want) return nullptr;
+    auto it = e->comps.find(want->type_id);
+    if (it == e->comps.end()) return nullptr;
+    if (out_desc) *out_desc = want;
+    return &it->second;
+}
+
+float read_num(const mq_type_desc* d, const void* base, const char* field, float def) {
+    const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
+    if (!f) return def;
+    switch (f->kind) {
+        case MQ_TK_F32:  return *(const float*)((const uint8_t*)base + f->offset);
+        case MQ_TK_F64:  return (float)*(const double*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I8:   return (float)*(const int8_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_U8:   return (float)*(const uint8_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I16:  return (float)*(const int16_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_U16:  return (float)*(const uint16_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I32:  return (float)*(const int32_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_U32:  return (float)*(const uint32_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I64:  return (float)*(const int64_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_U64:  return (float)*(const uint64_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_BOOL: return *(const bool*)((const uint8_t*)base + f->offset) ? 1.0F : 0.0F;
+        case MQ_TK_ENUM: {
+            /* 枚举：按底层整型宽度读（BodyType::Dynamic 等，docs/06） */
+            const uint8_t* p = (const uint8_t*)base + f->offset;
+            if (f->count == 1) return (float)*(const int8_t*)p;
+            if (f->count == 2) return (float)*(const int16_t*)p;
+            return (float)*(const int32_t*)p;
+        }
+        default: return def;
+    }
+}
+
+bool write_num(const mq_type_desc* d, void* base, const char* field, double v) {
+    const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
+    if (!f) return false;
+    uint8_t* p = (uint8_t*)base + f->offset;
+    switch (f->kind) {
+        case MQ_TK_ENUM: {
+            if (f->count == 1) { *(int8_t*)p = (int8_t)v; return true; }
+            if (f->count == 2) { *(int16_t*)p = (int16_t)v; return true; }
+            *(int32_t*)p = (int32_t)v; return true;
+        }
+        case MQ_TK_F32:  *(float*)p = (float)v; return true;
+        case MQ_TK_F64:  *(double*)p = v; return true;
+        case MQ_TK_I8:   *(int8_t*)p = (int8_t)v; return true;
+        case MQ_TK_U8:   *(uint8_t*)p = (uint8_t)v; return true;
+        case MQ_TK_I16:  *(int16_t*)p = (int16_t)v; return true;
+        case MQ_TK_U16:  *(uint16_t*)p = (uint16_t)v; return true;
+        case MQ_TK_I32:  *(int32_t*)p = (int32_t)v; return true;
+        case MQ_TK_U32:  *(uint32_t*)p = (uint32_t)v; return true;
+        case MQ_TK_I64:  *(int64_t*)p = (int64_t)v; return true;
+        case MQ_TK_U64:  *(uint64_t*)p = (uint64_t)v; return true;
+        case MQ_TK_BOOL: *(bool*)p = v != 0.0; return true;
+        default: return false;
+    }
+}
+
+/* Slider：把指针 x 映射为值（Cocos Slider 的 progress 语义）。 */
+void slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px) {
+    Entity* e = eng.scene->at(id);
+    if (!e) return;
+    float w = 100.0F;
+    if (auto* ctrl = comp_by_role(eng, id, MQ_ROLE_UI_CONTROL)) {
+        const mq_type_desc* cd = mq_reflect_type_by_name(eng.reflect, "ui.Control");
+        if (cd) w = read_num(cd, ctrl->data(), "offset_max", 100.0F);
+    }
+    if (w <= 0.0F) w = 1.0F;
+    float t = (px - (e->x - w * 0.5F)) / w;
+    t = t < 0.0F ? 0.0F : (t > 1.0F ? 1.0F : t);
+    if (read_num(d, base, "invert", 0.0F) != 0.0F) t = 1.0F - t;
+    const float lo = read_num(d, base, "min_value", 0.0F);
+    const float hi = read_num(d, base, "max_value", 1.0F);
+    float v = lo + (hi - lo) * t;
+    const float step = read_num(d, base, "step", 0.0F);
+    if (step > 0.0F) v = lo + std::round((v - lo) / step) * step;
+    write_num(d, base, "value", v);
+    write_num(d, base, "ratio", t);
+    host::node_emit_number(&eng, id, "changed", v);
+}
+
+/* UI 组件语义（role 驱动；引擎不认具体类型名，docs/17）：
+ *   · ui_layout：H/V/GRID 自动布局（Cocos Layout）
+ *   · ui_progress：按 value 调整填充子节点宽度（Cocos ProgressBar）
+ *   · ui_safe_area：按内缩重排目标节点（Cocos SafeArea/Widget）
+ *   · ui_scroll：内容偏移（Cocos ScrollView 的 scrollOffset） */
+void Engine::ui_step() {
+    if (!scene) return;
+    std::vector<int> ids;
+    for (auto& [k, e] : scene->ents) ids.push_back(k);
+    std::sort(ids.begin(), ids.end());
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        for (auto& [tid, blob] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            if (!d) continue;
+
+            if (d->role & MQ_ROLE_UI_LAYOUT) {
+                const float mode = read_num(d, blob.data(), "mode", 0.0F);
+                if (std::getenv("MAQUE_TRACE_UI")) std::print("[ui] layout entity={} mode={}\n", id, (int)mode);
+                const float spacing = read_num(d, blob.data(), "spacing", 0.0F);
+                const int columns = (int)read_num(d, blob.data(), "columns", 1.0F);
+                float pad_l = 0, pad_t = 0;
+                if (const mq_field_desc* f = mq_reflect_field(d, "padding")) {
+                    const float* v = (const float*)(blob.data() + f->offset);
+                    pad_l = v[0]; pad_t = v[1];
+                }
+                std::vector<int> kids;
+                for (auto& [k, ke] : scene->ents) if (ke.parent == id) kids.push_back(k);
+                std::sort(kids.begin(), kids.end());          // 稳定：创建序
+                float cursor = 0.0F;
+                int col = 0;
+                for (int k : kids) {
+                    Entity* ke = scene->at(k);
+                    if (!ke) continue;
+                    float kw = 32.0F, kh = 32.0F;
+                    if (auto* ctrl = comp_by_role(*this, k, MQ_ROLE_UI_CONTROL)) {
+                        const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
+                        if (const mq_field_desc* f = mq_reflect_field(cd, "offset_max")) {
+                            const float* v = (const float*)(ctrl->data() + f->offset);
+                            kw = v[0]; kh = v[1];        // Vec2：offset_max 即内容尺寸（Cocos contentSize）
+                        }
+                    }
+                    /* mode: 0=Free 1=Horizontal 2=Vertical 3=Grid */
+                    /* 位置经 entity_set_pos 写回 Transform2D 组件（否则被 compute_world 覆盖） */
+                    if ((int)mode == 1) {
+                        host::entity_set_pos(this, (float)k, e->x + pad_l + cursor + kw * 0.5F,
+                                             e->y + pad_t + kh * 0.5F);
+                        cursor += kw + spacing;
+                    } else if ((int)mode == 2) {
+                        host::entity_set_pos(this, (float)k, e->x + pad_l + kw * 0.5F,
+                                             e->y + pad_t + cursor + kh * 0.5F);
+                        cursor += kh + spacing;
+                    } else if ((int)mode == 3) {
+                        const int c = columns > 0 ? columns : 1;
+                        const int row = col / c, column = col % c;
+                        host::entity_set_pos(this, (float)k,
+                                             e->x + pad_l + (float)column * (kw + spacing) + kw * 0.5F,
+                                             e->y + pad_t + (float)row * (kh + spacing) + kh * 0.5F);
+                        ++col;
+                    }
+                    (void)ke;
+                }
+            }
+
+            if (d->role & MQ_ROLE_UI_PROGRESS) {
+                float v = read_num(d, blob.data(), "value", 0.0F);
+                v = v < 0.0F ? 0.0F : (v > 1.0F ? 1.0F : v);
+                write_num(d, blob.data(), "phase", (double)v);
+                /* 填充子节点：第一个带 sprite/control 的子节点，宽度 = 父宽 × value */
+                std::vector<int> kids;
+                for (auto& [k, ke] : scene->ents) if (ke.parent == id) kids.push_back(k);
+                std::sort(kids.begin(), kids.end());
+                for (int k : kids) {
+                    if (auto* ctrl = comp_by_role(*this, k, MQ_ROLE_UI_CONTROL)) {
+                        const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
+                        float full = host::node_width(this, (float)id);
+                        if (full <= 0.0F) full = read_num(cd, ctrl->data(), "offset_max", 100.0F);
+                        if (const mq_field_desc* f = mq_reflect_field(cd, "offset_max"))
+                            *(float*)(ctrl->data() + f->offset) = full * v;
+                        break;
+                    }
+                }
+            }
+
+            if (d->role & MQ_ROLE_UI_SAFEAREA) {
+                const float il = read_num(d, blob.data(), "inset_left", 0.0F);
+                const float it = read_num(d, blob.data(), "inset_top", 0.0F);
+                const float ir = read_num(d, blob.data(), "inset_right", 0.0F);
+                const float ib = read_num(d, blob.data(), "inset_bottom", 0.0F);
+                if (const mq_field_desc* f = mq_reflect_field(d, "resolved_inset")) {
+                    float* v = (float*)(blob.data() + f->offset);
+                    v[0] = il; v[1] = it; v[2] = ir; v[3] = ib;
+                }
+                /* 目标（或首个 Control 子节点）按内缩重排 */
+                int target = -1;
+                for (auto& [k, ke] : scene->ents) if (ke.parent == id) { target = k; break; }
+                if (target >= 0) {
+                    host::entity_set_pos(this, (float)target, e->x + il, e->y + it);
+                    if (auto* ctrl = comp_by_role(*this, target, MQ_ROLE_UI_CONTROL)) {
+                        const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
+                        if (const mq_field_desc* f = mq_reflect_field(cd, "offset_max")) {
+                            float* v = (float*)(ctrl->data() + f->offset);
+                            v[0] = (float)W - il - ir;
+                            v[1] = (float)H - it - ib;
+                        }
+                    }
+                }
+            }
+
+            if (d->role & MQ_ROLE_UI_SCROLL) {
+                const float sv = read_num(d, blob.data(), "scroll_v", 0.0F);
+                if (const mq_field_desc* f = mq_reflect_field(d, "scroll_offset")) {
+                    float* v = (float*)(blob.data() + f->offset);
+                    v[1] = sv;
+                }
+                for (auto& [k, ke] : scene->ents)
+                    if (ke.parent == id) {
+                        const float kx = ke.x;
+                        host::entity_set_pos(this, (float)k, kx, e->y - sv);
+                        break;
+                    }
+            }
+        }
+    }
+}
+
+/* 物理组件（Cocos RigidBody2D/Collider2D 等价）：装配期建体，帧内步进并回写变换。
+ * 只在场景里存在 physics_body role 时启用（不影响脚本显式驱动 physics_step 的场景）。 */
+void Engine::physics_components_setup() {
+    if (!scene || !physics) return;
+    std::vector<int> ids;
+    for (auto& [k, e] : scene->ents) ids.push_back(k);
+    std::sort(ids.begin(), ids.end());
+    physics_role_bodies.clear();
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        auto* body_blob = comp_by_role(*this, id, MQ_ROLE_PHYSICS_BODY);
+        if (!body_blob) continue;
+        const mq_type_desc* bd = nullptr;
+        for (auto& [tid, b] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            if (d && (d->role & MQ_ROLE_PHYSICS_BODY)) { bd = d; break; }
+        }
+        if (!bd) continue;
+        /* BodyType: Static=0 / Kinematic=1 / Dynamic=2（Kinematic 暂按 static 处理并记录） */
+        const double body_type = read_num(bd, body_blob->data(), "body_type", 0.0F);
+        const double is_static = body_type == 0.0 ? 1.0 : 0.0;
+        double radius = 0.0, hw = 0.0, hh = 0.0;
+        if (auto* col = comp_by_role(*this, id, MQ_ROLE_PHYSICS_COLLIDER)) {
+            const mq_type_desc* cd = nullptr;
+            for (auto& [tid, b] : e->comps) {
+                const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+                if (d && (d->role & MQ_ROLE_PHYSICS_COLLIDER)) { cd = d; break; }
+            }
+            if (cd) {
+                radius = read_num(cd, col->data(), "radius", 8.0F);
+                hw = read_num(cd, col->data(), "half_w", 8.0F);
+                hh = read_num(cd, col->data(), "half_h", 8.0F);
+            }
+        }
+        if (radius <= 0.0 && hw <= 0.0 && hh <= 0.0) radius = 8.0;   // 默认圆
+        mq_physics_body_desc desc{};
+        desc.struct_size = (uint32_t)sizeof desc;
+        desc.type = is_static != 0.0 ? MQ_PHYSICS_BODY_STATIC : MQ_PHYSICS_BODY_DYNAMIC;
+        desc.shape = radius > 0.0 ? MQ_PHYSICS_SHAPE_BALL : MQ_PHYSICS_SHAPE_CUBOID;
+        desc.x = e->x; desc.y = e->y;
+        desc.radius = (float)radius;
+        desc.half_w = (float)hw; desc.half_h = (float)hh;
+        desc.mass = 1.0F; desc.restitution = 0.5F; desc.friction = 0.2F;
+        mq_physics_body out_body{};
+        if (mq_physics_add_body(physics, &desc, &out_body) == MQ_PHYSICS_OK)
+            physics_role_bodies.push_back({ id, out_body });
+    }
+}
+
+void Engine::physics_components_step(float) {
+    static bool reported = false;
+    if (!reported && !physics_role_bodies.empty()) {
+        std::print("runtime: {} physics body(ies) from components\n", physics_role_bodies.size());
+        reported = true;
+    }
+    if (!physics || physics_role_bodies.empty()) return;
+    mq_physics_step(physics);                       // 固定步长在世界配置里（docs/10 D1）
+    for (auto& [id, body] : physics_role_bodies) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        float x = e->x, y = e->y;
+        if (mq_physics_get_transform(physics, body, &x, &y) == MQ_PHYSICS_OK) {
+            e->x = x; e->y = y;
+            host::entity_set_pos(this, (float)id, x, y);   // 写回 Transform2D（否则被 compute_world 覆盖）
+        }
+    }
+}
+
 } // namespace
 
-/* ---------------- 宿主 API 实现（声明来自生成的 maque_api.h） ---------------- */
 namespace host {
 
 float screen_w(void* ctx) { return (float)((Engine*)ctx)->W; }
@@ -1638,6 +2060,13 @@ float entity_spawn(void* ctx) { return (float)((Engine*)ctx)->scene->spawn(); }
 void  entity_set_pos(void* ctx, float id, float x, float y) {
     auto* e = (Engine*)ctx;
     if (Entity* ent = e->scene->at((int)id)) {
+        /* 无 Transform2D 组件的节点（如纯 UI 节点）：位置存在实体自身（父空间局部坐标） */
+        bool has_tf = false;
+        for (auto& [tid, blob] : ent->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
+            if (d && (d->role & MQ_ROLE_TRANSFORM2D)) { has_tf = true; break; }
+        }
+        if (!has_tf) { ent->x = x; ent->y = y; return; }
         // 写回 transform2d 组件（按 role；兼容扁平 x/y 与 math.Transform2D.local.position）
         for (auto& [tid, blob] : ent->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
@@ -1751,6 +2180,396 @@ void set_label(void* ctx, float id, const char* text) {
             *(std::string*)(blob.data() + f->offset) = text;
     }
 }
+
+
+/* ============================================================================
+ * Cocos 风格节点/组件 API（对照 Cocos Creator 3.x：Node / Component / Director）
+ * 全部经反射按 role 处理，不硬编码组件类型名（docs/06/17/18）。
+ * ==========================================================================*/
+
+/* 按 role 找组件 blob（找不到返回 nullptr）。 */
+
+
+/* ---------------- 宿主 API 实现（声明来自生成的 maque_api.h） ---------------- */
+/* ---- Cocos 语义辅助（全局：host 函数与引擎内部共用）---- */
+
+/* ---- 层级 ---- */
+float node_set_parent(void* ctx, float id, float parent) {
+    auto* eng = (Engine*)ctx;
+    Entity* e = eng->scene->at((int)id);
+    if (!e) return 0.0F;
+    const int p = (int)parent;
+    if (p == (int)id) return 0.0F;                       // 禁止自环
+    for (int a = p; a >= 0; ) {                          // 禁止成环（沿祖先链上溯）
+        if (a == (int)id) return 0.0F;
+        Entity* pe = eng->scene->at(a);
+        a = pe ? pe->parent : -1;
+    }
+    e->parent = p;
+    return 1.0F;
+}
+
+float node_parent(void* ctx, float id) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    return e ? (float)e->parent : -1.0F;
+}
+
+float node_child_count(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    int n = 0;
+    for (auto& [k, e] : eng->scene->ents) if (e.parent == (int)id) ++n;
+    return (float)n;
+}
+
+float node_child_at(void* ctx, float id, float index) {
+    auto* eng = (Engine*)ctx;
+    std::vector<int> kids;
+    for (auto& [k, e] : eng->scene->ents) if (e.parent == (int)id) kids.push_back(k);
+    std::sort(kids.begin(), kids.end());                 // 稳定：按实体 id（创建序）
+    const int i = (int)index;
+    return (i >= 0 && i < (int)kids.size()) ? (float)kids[(size_t)i] : -1.0F;
+}
+
+float node_find_child(void* ctx, float id, const char* name) {
+    auto* eng = (Engine*)ctx;
+    std::vector<int> kids;
+    for (auto& [k, e] : eng->scene->ents) if (e.parent == (int)id) kids.push_back(k);
+    std::sort(kids.begin(), kids.end());
+    for (int k : kids) {
+        Entity* e = eng->scene->at(k);
+        if (e && e->name == (name ? name : "")) return (float)k;
+    }
+    return -1.0F;
+}
+
+void node_set_name(void* ctx, float id, const char* name) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    if (e && name) e->name = name;
+}
+
+/* ---- 节点属性 ---- */
+void node_set_active(void* ctx, float id, float on) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    if (e) e->active = on != 0.0F;
+}
+float node_active(void* ctx, float id) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    return e ? (e->active ? 1.0F : 0.0F) : 0.0F;
+}
+void node_set_scale(void* ctx, float id, float v) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    if (e) e->scale = v;
+}
+float node_scale(void* ctx, float id) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    return e ? e->scale : 1.0F;
+}
+void node_set_angle(void* ctx, float id, float deg) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    if (e) e->angle = deg;
+}
+float node_angle(void* ctx, float id) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    return e ? e->angle : 0.0F;
+}
+void node_set_opacity(void* ctx, float id, float a) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    if (e) e->opacity = a < 0.0F ? 0.0F : (a > 1.0F ? 1.0F : a);
+}
+float node_opacity(void* ctx, float id) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    return e ? e->opacity : 1.0F;
+}
+void node_set_z_index(void* ctx, float id, float z) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    if (e) e->z_index = (int)z;
+}
+float node_z_index(void* ctx, float id) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    return e ? (float)e->z_index : 0.0F;
+}
+
+/* 位置（Cocos node.position / setPosition）：写回 Transform2D 组件（非仅缓存字段）。 */
+void node_set_position(void* ctx, float id, float x, float y) { entity_set_pos(ctx, id, x, y); }
+float node_position_x(void* ctx, float id) { return entity_x(ctx, id); }
+float node_position_y(void* ctx, float id) { return entity_y(ctx, id); }
+
+/* 内容尺寸/锚点：由 ui.Control 承载（Cocos UITransform）。 */
+float node_width(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
+    const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
+    if (!blob || !d) return 0.0F;
+    auto* v = (const float*)nullptr;
+    (void)v;
+    const uint8_t* base = blob->data();
+    const mq_field_desc* f = mq_reflect_field(d, "offset_max");
+    if (!f) return 0.0F;
+    return *(const float*)(base + f->offset);            // Vec2.x
+}
+float node_height(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
+    const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
+    if (!blob || !d) return 0.0F;
+    const uint8_t* base = blob->data();
+    const mq_field_desc* f = mq_reflect_field(d, "offset_max");
+    if (!f) return 0.0F;
+    return *(const float*)(base + f->offset + sizeof(float));   // Vec2.y
+}
+void node_set_content_size(void* ctx, float id, float w, float h) {
+    auto* eng = (Engine*)ctx;
+    if (!comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL))
+        attach_component(*eng, (int)id, "ui.Control");        // Cocos：UITransform 恒在（按需补挂）
+    auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
+    const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
+    if (!blob || !d) return;
+    uint8_t* base = blob->data();
+    if (const mq_field_desc* f = mq_reflect_field(d, "offset_max")) {
+        *(float*)(base + f->offset) = w;
+        *(float*)(base + f->offset + sizeof(float)) = h;
+    }
+}
+void node_set_anchor(void* ctx, float id, float ax, float ay) {
+    auto* eng = (Engine*)ctx;
+    auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
+    const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
+    if (!blob || !d) return;
+    uint8_t* base = blob->data();
+    for (const char* fn : { "anchor_min", "anchor_max", "pivot" }) {
+        if (const mq_field_desc* f = mq_reflect_field(d, fn)) {
+            *(float*)(base + f->offset) = ax;
+            *(float*)(base + f->offset + sizeof(float)) = ay;
+        }
+    }
+}
+
+/* ---- 组件 ---- */
+float node_has_component(void* ctx, float id, const char* type) {
+    auto* eng = (Engine*)ctx;
+    return comp_by_name(*eng, (int)id, type, nullptr) ? 1.0F : 0.0F;
+}
+
+float node_add_component(void* ctx, float id, const char* type) {
+    auto* eng = (Engine*)ctx;
+    const char* tn = type ? type : "";
+    const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, tn);
+    if (!d) {
+        char fq[128];
+        for (const char* ns : { "scn", "ui", "physics", "anim", "render", "input" }) {
+            std::snprintf(fq, sizeof fq, "%s.%s", ns, tn);
+            d = mq_reflect_type_by_name(eng->reflect, fq);
+            if (d) break;
+        }
+    }
+    if (!d || !eng->scene->at((int)id)) return 0.0F;
+    attach_component(*eng, (int)id, d->name);
+    return 1.0F;
+}
+
+float node_remove_component(void* ctx, float id, const char* type) {
+    auto* eng = (Engine*)ctx;
+    Entity* e = eng->scene->at((int)id);
+    const mq_type_desc* d = nullptr;
+    auto* blob = comp_by_name(*eng, (int)id, type, &d);
+    if (!e || !blob || !d) return 0.0F;
+    destroy_blob(*eng, d->type_id, *blob);
+    e->comps.erase(d->type_id);
+    return 1.0F;
+}
+
+float node_component_count(void* ctx, float id) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    return e ? (float)e->comps.size() : 0.0F;
+}
+
+const char* node_component_at(void* ctx, float id, float index) {
+    auto* eng = (Engine*)ctx;
+    Entity* e = eng->scene->at((int)id);
+    if (!e) return "";
+    std::vector<uint32_t> tids;
+    for (auto& [t, b] : e->comps) tids.push_back(t);
+    std::sort(tids.begin(), tids.end());                 // 稳定顺序（type_id 升序）
+    const int i = (int)index;
+    if (i < 0 || i >= (int)tids.size()) return "";
+    const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tids[(size_t)i]);
+    return d ? d->name : "";
+}
+
+float node_child_with_component(void* ctx, float id, const char* type) {
+    auto* eng = (Engine*)ctx;
+    std::vector<int> kids;
+    for (auto& [k, e] : eng->scene->ents) if (e.parent == (int)id) kids.push_back(k);
+    std::sort(kids.begin(), kids.end());
+    for (int k : kids) if (comp_by_name(*eng, k, type, nullptr)) return (float)k;
+    return -1.0F;
+}
+
+/* ---- 组件字段（反射读写）---- */
+float node_get_number(void* ctx, float id, const char* comp, const char* field) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = comp_by_name(*eng, (int)id, comp, &d);
+    if (!blob || !d) return 0.0F;
+    return read_num(d, blob->data(), field ? field : "", 0.0F);
+}
+
+float node_set_number(void* ctx, float id, const char* comp, const char* field, float value) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = comp_by_name(*eng, (int)id, comp, &d);
+    if (!blob || !d) return 0.0F;
+    return write_num(d, blob->data(), field ? field : "", (double)value) ? 1.0F : 0.0F;
+}
+
+float node_get_bool(void* ctx, float id, const char* comp, const char* field) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = comp_by_name(*eng, (int)id, comp, &d);
+    if (!blob || !d) return 0.0F;
+    const mq_field_desc* f = mq_reflect_field(d, field ? field : "");
+    if (!f || f->kind != MQ_TK_BOOL) return 0.0F;
+    return *(const bool*)(blob->data() + f->offset) ? 1.0F : 0.0F;
+}
+
+float node_set_bool(void* ctx, float id, const char* comp, const char* field, float value) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = comp_by_name(*eng, (int)id, comp, &d);
+    if (!blob || !d) return 0.0F;
+    const mq_field_desc* f = mq_reflect_field(d, field ? field : "");
+    if (!f || f->kind != MQ_TK_BOOL) return 0.0F;
+    *(bool*)(blob->data() + f->offset) = value != 0.0F;
+    return 1.0F;
+}
+
+const char* node_get_string(void* ctx, float id, const char* comp, const char* field) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = comp_by_name(*eng, (int)id, comp, &d);
+    if (!blob || !d) return "";
+    if (const std::string* sp = read_str(d, blob->data(), field ? field : "")) return sp->c_str();
+    return "";
+}
+
+float node_set_string(void* ctx, float id, const char* comp, const char* field, const char* value) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = comp_by_name(*eng, (int)id, comp, &d);
+    if (!blob || !d) return 0.0F;
+    const mq_field_desc* f = mq_reflect_field(d, field ? field : "");
+    if (!f || f->kind != MQ_TK_STRING) return 0.0F;
+    *(std::string*)(blob->data() + f->offset) = value ? value : "";
+    return 1.0F;
+}
+
+/* ---- 事件（Cocos node.on/off/emit；emit 沿父链冒泡）---- */
+float node_on(void* ctx, float id, const char* event, const char* handler) {
+    auto* eng = (Engine*)ctx;
+    if (!eng->scene->at((int)id) || !event || !handler) return 0.0F;
+    eng->node_events[(int)id].push_back({ event, handler });
+    return 1.0F;
+}
+
+float node_off(void* ctx, float id, const char* event) {
+    auto* eng = (Engine*)ctx;
+    auto it = eng->node_events.find((int)id);
+    if (it == eng->node_events.end()) return 0.0F;
+    const std::string ev = event ? event : "";
+    auto& v = it->second;
+    const size_t before = v.size();
+    v.erase(std::remove_if(v.begin(), v.end(), [&](const Engine::NodeHandler& h) { return h.event == ev; }), v.end());
+    return (float)(before - v.size());
+}
+
+float node_emit(void* ctx, float id, const char* event) { return node_emit_number(ctx, id, event, 0.0F); }
+
+float node_emit_number(void* ctx, float id, const char* event, float value) {
+    auto* eng = (Engine*)ctx;
+    if (!eng->vm || !event) return 0.0F;
+    const std::string ev = event;
+    int hits = 0;
+    /* 目标 → 祖先（冒泡）；每层按注册顺序派发（确定性） */
+    for (int cur = (int)id; cur >= 0; ) {
+        auto it = eng->node_events.find(cur);
+        if (it != eng->node_events.end()) {
+            for (const Engine::NodeHandler& h : it->second) {
+                if (h.event != ev) continue;
+                if (!mq_script_has(eng->vm, h.handler.c_str())) continue;
+                mq_script_call2(eng->vm, h.handler.c_str(), (double)cur, (double)value, nullptr);
+                ++hits;
+            }
+        }
+        Entity* e = eng->scene->at(cur);
+        cur = e ? e->parent : -1;
+    }
+    return (float)hits;
+}
+
+/* ---- UI 控件值（按 role 统一读写）---- */
+float ui_set_value(void* ctx, float id, float v) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    if (auto* b = comp_by_name(*eng, (int)id, "ProgressBar", &d)) {
+        write_num(d, b->data(), "value", v < 0 ? 0 : (v > 1 ? 1 : v));
+        return 1.0F;
+    }
+    if (auto* b = comp_by_name(*eng, (int)id, "Slider", &d)) {
+        const float lo = read_num(d, b->data(), "min_value", 0.0F);
+        const float hi = read_num(d, b->data(), "max_value", 1.0F);
+        const float c = v < lo ? lo : (v > hi ? hi : v);
+        write_num(d, b->data(), "value", c);
+        write_num(d, b->data(), "ratio", hi > lo ? (c - lo) / (hi - lo) : 0.0F);
+        node_emit_number(eng, id, "changed", c);
+        return 1.0F;
+    }
+    return 0.0F;
+}
+
+float ui_get_value(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    if (auto* b = comp_by_name(*eng, (int)id, "ProgressBar", &d)) return read_num(d, b->data(), "value", 0.0F);
+    if (auto* b = comp_by_name(*eng, (int)id, "Slider", &d)) return read_num(d, b->data(), "value", 0.0F);
+    return 0.0F;
+}
+
+float ui_set_checked(void* ctx, float id, float on) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* b = comp_by_name(*eng, (int)id, "CheckBox", &d);
+    if (!b) return 0.0F;
+    write_num(d, b->data(), "checked", on != 0.0F ? 1.0 : 0.0);
+    node_emit_number(eng, id, "toggled", on != 0.0F ? 1.0F : 0.0F);
+    return 1.0F;
+}
+
+float ui_get_checked(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* b = comp_by_name(*eng, (int)id, "CheckBox", &d);
+    if (!b) return 0.0F;
+    return read_num(d, b->data(), "checked", 0.0F);
+}
+
+/* ---- Director ---- */
+void director_pause(void* ctx) { ((Engine*)ctx)->director_paused = true; }
+void director_resume(void* ctx) { ((Engine*)ctx)->director_paused = false; }
+float director_paused(void* ctx) { return ((Engine*)ctx)->director_paused ? 1.0F : 0.0F; }
+float director_frame(void* ctx) { return (float)((Engine*)ctx)->frame; }
+
+float director_load_scene(void* ctx, const char* path) {
+    auto* eng = (Engine*)ctx;
+    if (!path || !*path) return 0.0F;
+    eng->pending_scene = path;                     // 帧边界生效（docs/10：帧内不加载资源）
+    return 1.0F;
+}
+
+
+} // namespace host
+
+
+namespace host {
 
 /* 导航（确定性 2D 网格）：建网格/设障碍/指定目标/查询路径点数 */
 void nav_setup(void* ctx, float cols, float rows, float cell) {
@@ -2332,6 +3151,28 @@ extern "C" int mq_control_Replay_seek(void* u, const mq_json* params, char* out,
 }
 
 /* Runtime.frame：当前模拟帧号与状态摘要（脚本/CI 读模拟时间；回滚后自动一致）。 */
+extern "C" int mq_control_Director_pause(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    e->director_paused = true;
+    std::snprintf(out, cap, "{\"ok\":true,\"paused\":true,\"frame\":%llu}", (unsigned long long)e->frame);
+    return 0;
+}
+
+extern "C" int mq_control_Director_resume(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    e->director_paused = false;
+    std::snprintf(out, cap, "{\"ok\":true,\"paused\":false,\"frame\":%llu}", (unsigned long long)e->frame);
+    return 0;
+}
+
+extern "C" int mq_control_Director_status(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::snprintf(out, cap, "{\"paused\":%s,\"frame\":%llu,\"script_frames\":%llu}",
+                  e->director_paused ? "true" : "false",
+                  (unsigned long long)e->frame, (unsigned long long)e->script_frames);
+    return 0;
+}
+
 extern "C" int mq_control_Runtime_frame(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::snprintf(out, cap, "{\"frame\":%llu,\"entities\":%d,\"particles\":%zu,\"quit\":%s}",
@@ -2402,9 +3243,52 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     if (!rself) { std::print("runtime: renderer create failed\n"); return false; }
     std::print("runtime: renderer plugin '{}' backend='{}'\n", plugin, backend ? backend : "?");
 
+    obs = mq_obs_create();                       // 场景装配期即可能产生事件（脚本错误等）
+    if (!load_scene_into(scn_path)) return false;
+    platform = mq_platform_create(scene->desc.title.c_str(), W, H);
+    window = mq_platform_has_window(platform) != 0;
+    input = mq_input_create();
+    mq_input_set_hit_test(input, runtime_hit_test, this);
+    mq_input_set_parent_fn(input, runtime_parent, this);
+    mq_input_add_handler(input, runtime_input_handler, this);
+    { const char* hs = std::getenv("MAQUE_HITS"); if (hs && *hs && *hs != '0') trace_hits = true; }
+    snaps = mq_snapshot_pool_create(8, 1 << 16);
+    { const char* cp = std::getenv("MAQUE_CHECKPOINTS"); if (cp && *cp && *cp != '0') cp_active = true; }
+    /* 场景/脚本/资源/物理装配统一走 load_scene_into（与 director.loadScene 同一条路径） */
+    control = mq_control_create();
+    /* 控制面方法由 DSL（schema.yaml control_list）声明、codegen 生成注册表 —— 引擎零手写注册
+     * （docs/21 §1/§5：公开接口只声明一次）。此处只需提供实例上下文。 */
+    mq_control_register_generated(control, this);
+    /* MCP 工具表（含类型化 inputSchema）同样是生成物（docs/21 §6.3） */
+    mq_control_set_tools_json(control, [](void*) { return mq_control_tools_json(); }, nullptr);
+    std::print("runtime: platform window={} input=on\n", window ? 1 : 0);
+    return true;
+}
+
+/* 场景装配（setup 与 director.loadScene 共用）：解析 → 实例化 → 尺寸/视图 → 物理世界
+ * → 脚本 VM/绑定 → 监视 → 资源预解析 → 物理组件建体。切场景同样走此处（docs/12/20）。 */
+bool Engine::load_scene_into(const std::string& scn_path) {
+    namespace fs = std::filesystem;
+    const fs::path scnp(scn_path);
+    const std::string dir = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
+    if (vfs) mq_vfs_mount(vfs, "/", ("file://" + dir).c_str());   // 后挂载者优先 → 新场景目录生效
+
+    std::string text;
+    { void* d = nullptr; size_t n = 0;
+      if (mq_vfs_read(vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == MQ_VFS_OK) {
+          text.assign((char*)d, n); mq_vfs_free(d); } }
+    if (text.empty()) return false;
+
+    /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价 Cocos 的 onDestroy）---- */
+    if (vm) { mq_script_vm_destroy(vm); vm = nullptr; }
+    agent_paths.clear();
+    node_events.clear();
+    physics_role_bodies.clear();
+    particles.clear();
+    director_paused = false;
     scene_store = Scene();
     scene = &scene_store;
-    if (!scene->deserialize(*this, text)) { std::print("runtime: failed to deserialize scene\n"); return false; }
+    if (!scene->deserialize(*this, text)) return false;
     scene->instantiate(*this);
     scene->compute_world(*this);
 
@@ -2412,9 +3296,9 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     H = scene->desc.height > 0 ? scene->desc.height : 240;
     nviews = scene->desc.views > 0 ? scene->desc.views : 1;
     TW = W * nviews;
-    views.resize(nviews);
+    views.assign((size_t)nviews, mq_renderer_view{});
     for (int i = 0; i < nviews; ++i) {
-        mq_renderer_view& v = views[i];
+        mq_renderer_view& v = views[(size_t)i];
         v = mq_renderer_view{};
         v.vx = (float)(i * W); v.vy = 0;
         v.vw = (float)W; v.vh = (float)H;
@@ -2439,6 +3323,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
         }
     }
     rng = scene->desc.seed * 2654435761u + 12345u;
+    if (physics) { mq_physics_destroy(physics); physics = nullptr; }
     {
         mq_physics_config pcfg{};
         pcfg.struct_size = (uint32_t)sizeof pcfg;
@@ -2450,27 +3335,20 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
         physics = mq_physics_create(&pcfg);
         mq_physics_set_bounds(physics, 0.0F, 0.0F, (float)W, (float)H);
     }
+    if (nav) { mq_nav_destroy(nav); nav = nullptr; }
     std::print("runtime: scene '{}' title='{}' script='{}' {}x{} views={}\n",
                scn_path, scene->desc.title, scene->desc.script, W, H, nviews);
-
-    obs = mq_obs_create();
-    platform = mq_platform_create(scene->desc.title.c_str(), W, H);
-    window = mq_platform_has_window(platform) != 0;
-    input = mq_input_create();
-    mq_input_set_hit_test(input, runtime_hit_test, this);
-    mq_input_set_parent_fn(input, runtime_parent, this);
-    mq_input_add_handler(input, runtime_input_handler, this);
-    { const char* hs = std::getenv("MAQUE_HITS"); if (hs && *hs && *hs != '0') trace_hits = true; }
-    snaps = mq_snapshot_pool_create(8, 1 << 16);
-    { const char* cp = std::getenv("MAQUE_CHECKPOINTS"); if (cp && *cp && *cp != '0') cp_active = true; }
-    vm = mq_script_vm_create();
-    mq_script_set_rng(vm, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-    mq_bind_generated(vm, this);
 
     script_path = scene->desc.script;
     scn_vfs_path = "/" + scnp.filename().string();
     scn_full_path = scn_path;
-    scn_dir = scn_dir2;
+    scn_dir = dir;
+    /* ---- 脚本 VM：切场景重建（docs/14：脚本不跨场景共享全局态）---- */
+    if (!vm) {
+        vm = mq_script_vm_create();
+        mq_script_set_rng(vm, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+        mq_bind_generated(vm, this);
+    }
     if (!script_path.empty()) {
         std::string js;
         { void* d = nullptr; size_t n = 0;
@@ -2479,28 +3357,22 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
         script_hash = mq_vfs_hash(js.data(), js.size());
         if (mq_script_eval(vm, js.c_str(), script_path.c_str()) != 0) { std::print("runtime: script error\n"); return false; }
     }
+    if (watcher) { mq_watcher_destroy(watcher); watcher = nullptr; }
     const char* watch = std::getenv("MAQUE_WATCH");
     if (watch && *watch && *watch != '0') {
         watcher = mq_watcher_create();
-        mq_watcher_add(watcher, (std::filesystem::path(scn_dir) / scnp.filename()).string().c_str());
+        mq_watcher_add(watcher, (fs::path(scn_dir) / scnp.filename()).string().c_str());
         if (!script_path.empty())
-            mq_watcher_add(watcher, (std::filesystem::path(scn_dir) / script_path).string().c_str());
+            mq_watcher_add(watcher, (fs::path(scn_dir) / script_path).string().c_str());
         std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
     }
-    preload_scene_assets();                     // 资源 IO 在装配期完成（帧内零加载）
+    preload_scene_assets();
+    physics_components_setup();
     if (mq_event_dispatch(vm, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
         char ebuf[512] = { 0 };
         mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
         write_crash_context(ebuf[0] ? ebuf : "on_start failed");
     }
-
-    control = mq_control_create();
-    /* 控制面方法由 DSL（schema.yaml control_list）声明、codegen 生成注册表 —— 引擎零手写注册
-     * （docs/21 §1/§5：公开接口只声明一次）。此处只需提供实例上下文。 */
-    mq_control_register_generated(control, this);
-    /* MCP 工具表（含类型化 inputSchema）同样是生成物（docs/21 §6.3） */
-    mq_control_set_tools_json(control, [](void*) { return mq_control_tools_json(); }, nullptr);
-    std::print("runtime: platform window={} input=on\n", window ? 1 : 0);
     return true;
 }
 

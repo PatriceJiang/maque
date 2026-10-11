@@ -8,12 +8,15 @@
 #include <vector>
 
 struct HostFn {
-    enum Kind { Num, Str, RetStr, Mixed } kind = Num;
+    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr } kind = Num;
     bool is_str = false;                       /* Str：单字符串参数 */
     mq_script_num_fn    num = nullptr;
     mq_script_str_fn    str = nullptr;
     mq_script_ret_str_fn ret_str = nullptr;    /* 返回 JS string（宿主写入缓冲，不转移所有权） */
     mq_script_mixed_fn   mixed = nullptr;      /* 数值参数 + 尾部字符串 */
+    mq_script_multi_fn   multi = nullptr;      /* 通用：任意数值/字符串组合 */
+    mq_script_multi_ret_str_fn multi_ret_str = nullptr;
+    const char* kinds = "";                    /* 逐参数 'n' / 's' */
     void* user = nullptr;
 };
 
@@ -24,6 +27,7 @@ struct mq_script_vm {
     mq_script_rng_fn rng = nullptr;      /* 引擎 RNG（docs/10 D2） */
     void*            rng_user = nullptr;
     std::string      last_error;         /* 最近错误（per-instance，ADR-0014） */
+    std::vector<std::string*> kinds_store;   /* kinds 字符串存储（VM 释放时一并回收） */
 };
 
 /* Math.random 的替代实现：走注入的引擎 RNG（未注入则退回 quickjs 默认种子路径）。 */
@@ -35,6 +39,36 @@ static JSValue js_math_random(JSContext* ctx, JSValueConst, int, JSValueConst*, 
 }
 
 /* 统一 trampoline：用 magic 作为 HostFn 下标。 */
+/* 通用编组：按 kinds 拆分 JS 实参为数值/字符串数组后调用宿主（docs/21 §6.1）。 */
+static JSValue multi_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
+    auto* vm = static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx));
+    if (!vm) return JS_UNDEFINED;
+    HostFn& h = vm->fns[(size_t)magic];
+    double nums[16] = { 0 };
+    const char* strs[16] = { nullptr };
+    int nnum = 0, nstr = 0;
+    for (int i = 0; i < argc && i < 16; ++i) {
+        const char kind = h.kinds[i] ? h.kinds[i] : 'n';
+        if (kind == 's') {
+            const char* cs = JS_ToCString(ctx, argv[i]);
+            strs[nstr++] = cs ? cs : "";
+        } else {
+            double d = 0;
+            JS_ToFloat64(ctx, &d, argv[i]);
+            nums[nnum++] = d;
+        }
+    }
+    double ret = 0;
+    int rc = 0;
+    char sbuf[1024] = { 0 };
+    if (h.kind == HostFn::MultiRetStr) rc = h.multi_ret_str(h.user, nnum, nums, nstr, strs, sbuf, (int)sizeof sbuf);
+    else rc = h.multi(h.user, nnum, nums, nstr, strs, &ret);
+    for (int i = 0; i < nstr; ++i) if (strs[i]) JS_FreeCString(ctx, strs[i]);
+    if (rc != 0) return JS_EXCEPTION;
+    if (h.kind == HostFn::MultiRetStr) return JS_NewString(ctx, sbuf);
+    return JS_NewFloat64(ctx, ret);
+}
+
 static JSValue host_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
     auto* vm = static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx));
     if (!vm || magic < 0 || magic >= (int)vm->fns.size()) return JS_UNDEFINED;
@@ -104,6 +138,8 @@ mq_script_vm* mq_script_vm_create(void) {
 }
 
 void mq_script_vm_destroy(mq_script_vm* vm) {
+    for (auto* p : vm->kinds_store) delete p;
+    vm->kinds_store.clear();
     if (!vm) return;
     if (vm->ctx) JS_FreeContext(vm->ctx);
     if (vm->rt) JS_FreeRuntime(vm->rt);
@@ -111,9 +147,9 @@ void mq_script_vm_destroy(mq_script_vm* vm) {
 }
 
 /* 支持 "ns.fn" 形式：在全局上创建/复用命名空间对象后挂函数。 */
-static int register_common(mq_script_vm* vm, const char* name, int magic) {
-    JSValue fn = JS_NewCFunctionMagic(vm->ctx, host_trampoline, name, 4,
-                                      JS_CFUNC_generic_magic, magic);
+static int register_common(mq_script_vm* vm, const char* name, int magic, bool multi = false) {
+    JSValue fn = JS_NewCFunctionMagic(vm->ctx, multi ? multi_trampoline : host_trampoline, name,
+                                      multi ? 8 : 4, JS_CFUNC_generic_magic, magic);
     JSValue global = JS_GetGlobalObject(vm->ctx);
     std::string n(name);
     auto dot = n.rfind('.');
@@ -150,6 +186,29 @@ int mq_script_register_str(mq_script_vm* vm, const char* name, mq_script_str_fn 
 }
 
 /* 数值 + 尾部字符串（如 set_label(id, text)）。 */
+/* kinds 字符串需存活：存进 VM 的 arena（per-instance）。 */
+static const char* intern_kinds(mq_script_vm* vm, const char* kinds) {
+    auto* copy = new std::string(kinds ? kinds : "");
+    vm->kinds_store.push_back(copy);
+    return copy->c_str();
+}
+
+int mq_script_register_multi(mq_script_vm* vm, const char* name, const char* kinds,
+                             mq_script_multi_fn fn, void* user) {
+    if (!vm) return 1;
+    HostFn h; h.kind = HostFn::Multi; h.multi = fn; h.user = user; h.kinds = intern_kinds(vm, kinds);
+    vm->fns.push_back(h);
+    return register_common(vm, name, (int)vm->fns.size() - 1, true);
+}
+
+int mq_script_register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds,
+                                     mq_script_multi_ret_str_fn fn, void* user) {
+    if (!vm) return 1;
+    HostFn h; h.kind = HostFn::MultiRetStr; h.multi_ret_str = fn; h.user = user; h.kinds = intern_kinds(vm, kinds);
+    vm->fns.push_back(h);
+    return register_common(vm, name, (int)vm->fns.size() - 1, true);
+}
+
 int mq_script_register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, void* user) {
     if (!vm) return 1;
     HostFn h; h.kind = HostFn::Mixed; h.mixed = fn; h.user = user;
