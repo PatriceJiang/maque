@@ -1898,6 +1898,8 @@ role: `sprite`
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
 | `radius` | float | 8.0F |  |
+| `width` | float | 0.0F | unit: px |
+| `height` | float | 0.0F | unit: px |
 | `r` | float | 0.4F |  |
 | `g` | float | 0.8F |  |
 | `b` | float | 1.0F |  |

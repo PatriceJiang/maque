@@ -1153,6 +1153,8 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
 
 static const mq_field_desc mq_fields_scn_Sprite[] = {
     { "radius", (uint32_t)offsetof(scn::Sprite, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "width", (uint32_t)offsetof(scn::Sprite, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "height", (uint32_t)offsetof(scn::Sprite, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "r", (uint32_t)offsetof(scn::Sprite, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "g", (uint32_t)offsetof(scn::Sprite, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "b", (uint32_t)offsetof(scn::Sprite, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -4965,7 +4967,7 @@ extern const mq_type_desc mq_type_scn_Sprite = {
     300083474u,
     (uint32_t)sizeof(scn::Sprite),
     (uint32_t)alignof(scn::Sprite),
-    6u,
+    8u,
     mq_fields_scn_Sprite,
     4u,
     MQ_ROLE_SPRITE,

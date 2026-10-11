@@ -10353,6 +10353,28 @@
           "attrs": {}
         },
         {
+          "name": "width",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "height",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
           "name": "r",
           "type": "float",
           "kind": "f32",

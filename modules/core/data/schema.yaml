@@ -2302,6 +2302,9 @@
       roles: [sprite]
       fields:
         - { name: radius,   type: float,  default: 8.0F }
+        # width/height > 0 → 画**矩形**（瓦片/方块/非方形贴图）；否则按 radius 画圆
+        - { name: width,    type: float,  default: 0.0F, attrs: { unit: px } }
+        - { name: height,   type: float,  default: 0.0F, attrs: { unit: px } }
         - { name: r,        type: float,  default: 0.4F }
         - { name: g,        type: float,  default: 0.8F }
         - { name: b,        type: float,  default: 1.0F }

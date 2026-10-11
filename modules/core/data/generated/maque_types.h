@@ -2288,6 +2288,8 @@ struct Scene {
 
 struct Sprite {
     float radius = 8.0F;
+    float width = 0.0F;
+    float height = 0.0F;
     float r = 0.4F;
     float g = 0.8F;
     float b = 1.0F;

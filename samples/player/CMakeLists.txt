@@ -145,3 +145,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/canvas_e2e")
     set_tests_properties(canvas_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
+
+# 推箱子 demo（第二 demo，JS）：规则/阻挡/撤销/关卡/确定性（按键经输入模拟器，无需 DISPLAY）
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME sokoban_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/sokoban_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/sokoban/sokoban.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/sokoban_e2e")
+endif()

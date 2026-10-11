@@ -1584,8 +1584,10 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 continue;
             }
             if (!(d->role & MQ_ROLE_SPRITE)) continue;
-            float radius = 8, r = 1, g = 1, b = 1;
+            float radius = 8, r = 1, g = 1, b = 1, sw = 0, sh = 0;
             read_f32(d, blob.data(), "radius", &radius);
+            read_f32(d, blob.data(), "width", &sw);
+            read_f32(d, blob.data(), "height", &sh);
             read_f32(d, blob.data(), "r", &r);
             read_f32(d, blob.data(), "g", &g);
             read_f32(d, blob.data(), "b", &b);
@@ -1608,6 +1610,10 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
             }
             mq_renderer_item it{};
             it.x = e.x; it.y = (float)eng.H - e.y; it.size = radius;
+            /* width/height > 0 → **矩形**图元（瓦片/方块/非方形贴图）；否则 radius 的圆 */
+            const bool rect = sw > 0.0F && sh > 0.0F;
+            it.half_w = rect ? sw * 0.5F : 0.0F;
+            it.half_h = rect ? sh * 0.5F : 0.0F;
             it.r = r; it.g = g; it.b = b; it.a = 1.0F;
             it.texture = tex;
             it.layer = 0;                                        // 世界层
@@ -1724,7 +1730,15 @@ void call_script_event(Engine& eng, const mq_input_event* ev) {
     const int kind = mq_event_for_input(ev->type);
     if (kind < 0) return;
     const char* text = ev->type == MQ_INPUT_TEXT ? ev->text : nullptr;
-    mq_event_dispatch(eng.vm, kind, (double)ev->target, (double)ev->x, (double)ev->y, text);
+    /* 载荷按事件类型选择（生成的回调签名见 callbacks 段）：
+     *   指针：on_pointer_*(target, x, y)
+     *   **按键：on_key_down/up(target, key)** —— key 走第 2 个参数
+     *   文本：on_text(target, text)
+     * 此前按键误把指针 x 当作 key 传入（key 恒为 0）→ 键盘驱动的游戏无法工作。 */
+    const bool keyish = ev->type == MQ_INPUT_KEY_DOWN || ev->type == MQ_INPUT_KEY_UP;
+    mq_event_dispatch(eng.vm, kind, (double)ev->target,
+                      keyish ? (double)ev->key : (double)ev->x,
+                      keyish ? 0.0 : (double)ev->y, text);
 }
 
 /* 窗口像素 → **世界坐标**：等比缩放 + 居中留边（SDL_RenderSetLogicalSize 同规则）+ **y 轴翻转**。
