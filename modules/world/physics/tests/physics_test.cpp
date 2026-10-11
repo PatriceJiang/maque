@@ -633,6 +633,23 @@ void test_body_kinds_and_isolation() {
 
 } // namespace
 
+
+/* ---- ABI 守卫：DSL 生成的头若发生 ABI 漂移即编译失败（docs/02 R7）---- */
+static_assert(sizeof(mq_physics_body) == 8, "mq_physics_body ABI 变更");
+static_assert(sizeof(mq_physics_config) == 32, "mq_physics_config ABI 变更");
+static_assert(offsetof(mq_physics_config, gravity_y) == 8, "字段偏移变更");
+static_assert(offsetof(mq_physics_config, fixed_dt) == 12, "字段偏移变更");
+static_assert(offsetof(mq_physics_config, seed) == 24, "字段偏移变更");
+static_assert(sizeof(mq_physics_body_desc) == 56, "mq_physics_body_desc ABI 变更");
+static_assert(offsetof(mq_physics_body_desc, x) == 12, "字段偏移变更");
+static_assert(offsetof(mq_physics_body_desc, half_w) == 32, "字段偏移变更");
+static_assert(offsetof(mq_physics_body_desc, flags) == 52, "字段偏移变更");
+static_assert(sizeof(mq_physics_contact) == 20, "mq_physics_contact ABI 变更");
+static_assert(sizeof(mq_physics_v1) == 88, "插件 vtable 尺寸变更");
+static_assert(offsetof(mq_physics_v1, checksum) == 80, "vtable 槽位变更");
+static_assert(MQ_PHYSICS_ABI_VERSION == 1u, "ABI 版本变更");
+static_assert(MQ_PHYSICS_PLANE_INDEX == 0xFFFFFFFFu, "哨兵值变更");
+
 int main() {
     test_lifecycle_handles();
     test_free_fall_exact();

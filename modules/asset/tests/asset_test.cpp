@@ -69,6 +69,20 @@ static bool parse_pack(const std::string& b, std::vector<PackEntry>& out, uint64
     return true;
 }
 
+
+/* ---- ABI 守卫（docs/02 R7：跨模块 ABI 冻结；DSL 生成头若漂移则编译失败）---- */
+static_assert(sizeof(mq_asset_info) == 552, "mq_asset_info ABI 变更");
+static_assert(alignof(mq_asset_info) == 8, "mq_asset_info 对齐变更");
+static_assert(offsetof(mq_asset_info, id) == 0, "字段偏移变更");
+static_assert(offsetof(mq_asset_info, kind) == 8, "字段偏移变更");
+static_assert(offsetof(mq_asset_info, source) == 12, "字段偏移变更");
+static_assert(offsetof(mq_asset_info, cooked) == 268, "字段偏移变更");
+static_assert(offsetof(mq_asset_info, source_hash) == 528, "字段偏移变更");
+static_assert(offsetof(mq_asset_info, cooked_hash) == 536, "字段偏移变更");
+static_assert(offsetof(mq_asset_info, dep_count) == 544, "字段偏移变更");
+static_assert(offsetof(mq_asset_info, flags) == 548, "字段偏移变更");
+static_assert(MQ_ASSET_ABI_VERSION == 1u, "ABI 版本变更");
+
 int main() {
     const fs::path root = fs::temp_directory_path() / "maque_asset_test";
     fs::remove_all(root);

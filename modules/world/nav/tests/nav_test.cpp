@@ -16,6 +16,18 @@ static mq_nav_world* make_world(uint32_t w = 16, uint32_t h = 16, float cell = 1
     return mq_nav_create(&cfg);
 }
 
+
+/* ---- ABI 守卫：DSL 生成的头若发生 ABI 漂移即编译失败（docs/02 R7）---- */
+static_assert(sizeof(mq_nav_config) == 20, "mq_nav_config ABI 变更");
+static_assert(offsetof(mq_nav_config, struct_size) == 0, "字段偏移变更");
+static_assert(offsetof(mq_nav_config, width) == 4, "字段偏移变更");
+static_assert(offsetof(mq_nav_config, height) == 8, "字段偏移变更");
+static_assert(offsetof(mq_nav_config, cell_size) == 12, "字段偏移变更");
+static_assert(offsetof(mq_nav_config, allow_diagonal) == 16, "字段偏移变更");
+static_assert(sizeof(((mq_nav_config*)0)->allow_diagonal) == 1, "allow_diagonal 必须为 1 字节");
+static_assert(MQ_NAV_ERR_NOMEM == 5 && MQ_NAV_ERR_CAPACITY == 6, "错误码变更");
+static_assert(MQ_NAV_ABI_VERSION == 1u, "ABI 版本变更");
+
 int main() {
     // ---- 1) 空地图：直线路径 + 平滑 ----
     {

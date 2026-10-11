@@ -41,11 +41,21 @@ cd modules/core/data && node parser.js --check
 
 ## 架构核心
 
-- **声明 + 生成（单一真相 = `modules/core/data/schema.yaml`）**：
-  - `class_list`（数据类型）→ C++ 类型头 + C ABI 描述符 + JSON。
-  - `api_list`（函数接口）→ `maque_api.h`（声明）+ `maque_bindings.cpp`（**JS 绑定**）。
-  - 生成物在 `build/modules/core/data/generated/`；`maque_schema` 编译描述符，`maque::genbind` 编译绑定。
+- **声明 + 生成（单一真相 = `modules/core/data/schema.yaml`）**——**引擎的一切公开接口只声明一次**
+  （`docs/21` §1；手写公开接口 = 漂移之源）：
+  | DSL 段 | 声明内容 | 生成产物 | 编译目标 |
+  |--------|----------|----------|----------|
+  | `class_list` | 数据类型（struct/enum） | `maque_types.h` + `maque_desc.*` + `maque_schema.json` | `maque::schema` |
+  | `api_list` | 引擎函数接口 | `maque_api.h`（声明）+ `maque_bindings.cpp`（**JS 绑定**） | `maque::api` / `maque::genbind` |
+  | `interface` | 插件接口 | `maque_ifaces.h`（C vtable + 名称/版本宏） | 各模块 |
+  | `control_list` | 控制面方法（AI 面，docs/11 §3） | `maque_control.h`（处理器声明）+ `maque_control_gen.cpp`（注册表 + 类型化 MCP `inputSchema`） | `maque::gencontrol` |
+  | `callbacks` | 脚本事件回调（docs/14/19） | `maque_events.h` + `maque_events_gen.cpp`（回调枚举 + `on:` 输入映射 + 精确派发） | `maque::genevents` |
+  | `module_abi` | 模块 C ABI（跨模块公开面） | `abi/<module>.h`（纯 C 头 + `MQ_<MOD>_ABI_VERSION/IFACE_NAME` 宏） | 各模块（原手写头退化为 `#include` shim） |
+  - 生成物在 `build/modules/core/data/generated/`；**改接口一律改 `schema.yaml`，不要改生成物或 shim 头**。
   - **MANUAL**：`api_list` 项可带 `manual: "<header>"` → 生成器只 `#include` 该头（实现内联于头，不重复声明）。
+  - 加控制面方法 = 在 `control_list` 加一条 + 实现 `mq_control_<Domain>_<method>`（签名见生成头）。
+  - 加模块 C ABI 函数 = 在 `module_abi.fns` 加一条；结构体/枚举/宏同理（`structs`/`enums`/`macros`）。
+  - ABI 由静态断言守卫（如 `modules/world/physics/tests/physics_test.cpp` 的尺寸/偏移断言），漂移即编译失败。
 - **反射中枢**：`mq::reflect`（id/名/路径查询、标量读写、visitor）；持久化 `maque::persist` 反射驱动。
 - **运行时（浏览器）**：`modules/runtime` 的 `mq_run_scene(path)`：加载 `.scn` → 反序列化 → 加载 `.js` → 固定步长循环 → WebGPU 渲染 → 退出。
   宿主 `samples/player` 仅一行；**游戏逻辑全在资源**（`scenes/*.scn`、`scenes/*.js`）。
