@@ -208,7 +208,7 @@ void draw_ui(App& a) {
         ImGui::TextColored(a.read_only ? ImVec4(0.9F, 0.8F, 0.3F, 1.0F) : ImVec4(0.4F, 0.9F, 0.4F, 1.0F),
                            "%s", a.read_only ? "只读" : "可编辑");
         ImGui::SameLine();
-        ImGui::Text("| %s | frame %.0f | 客户端 %.0f | 方法 %.0f | 被拒 %.0f | ui %.0f fps",
+        ImGui::Text("| 1-5/Ctrl+Tab 切页 | %s | frame %.0f | 客户端 %.0f | 方法 %.0f | 被拒 %.0f | ui %.0f fps",
                     a.endpoint.empty() ? "—" : a.endpoint.c_str(), a.frame, a.clients, a.methods, a.rejected,
                     (double)ImGui::GetIO().Framerate);
         ImGui::EndMenuBar();
@@ -511,6 +511,10 @@ int main(int argc, char** argv) {
     /* 界面可读性：字号与整体缩放（默认 42px；HiDPI 会再自动乘上像素比。
      * 也可用 --font-size / MAQUE_INSPECTOR_FONT_SIZE 覆盖） */
     float font_size = 42.0F, ui_scale = 1.0F;
+    int pos_x = INT32_MIN, pos_y = INT32_MIN;
+    bool on_top = true;                     /* 工具窗口默认置顶：否则容易被游戏窗口盖住（点击落到游戏上） */
+    std::string fake_click;                 /* 诊断：合成一次点击（本机 XTest 注入无效，用它验证交互） */
+    std::string fake_key;                   /* 诊断：合成一次按键（如 "3" 或 "tab"） */
     if (const char* e = std::getenv("MAQUE_INSPECTOR_FONT_SIZE")) font_size = (float)std::atof(e);
     if (const char* e = std::getenv("MAQUE_INSPECTOR_UI_SCALE")) ui_scale = (float)std::atof(e);
     for (int i = 1; i < argc; ++i) {
@@ -519,6 +523,13 @@ int main(int argc, char** argv) {
         else if (arg == "--font-size" && i + 1 < argc) font_size = (float)std::atof(argv[++i]);
         else if (arg == "--ui-scale" && i + 1 < argc) ui_scale = (float)std::atof(argv[++i]);
         else if (arg == "--tab" && i + 1 < argc) app.tab = argv[++i];
+        else if (arg == "--pos" && i + 1 < argc) {
+            const std::string v = argv[++i];
+            const size_t comma = v.find(',');
+            if (comma != std::string::npos) { pos_x = std::atoi(v.c_str()); pos_y = std::atoi(v.c_str() + comma + 1); }
+        }
+        else if (arg == "--no-on-top") on_top = false;
+        else if (arg == "--fake-key" && i + 1 < argc) fake_key = argv[++i];
         else if (arg == "--headless") is_headless = true;
         else if (arg == "--help") {
             std::print("用法: maque_inspector [--connect <tcp:端口|uds:路径>] [--font-size 像素] "
@@ -528,6 +539,14 @@ int main(int argc, char** argv) {
     }
     if (font_size < 8.0F) font_size = 8.0F;
     if (ui_scale <= 0.0F) ui_scale = 1.0F;
+    if (const char* e = std::getenv("MAQUE_INSPECTOR_ON_TOP")) on_top = std::atoi(e) != 0;
+    if (const char* e = std::getenv("MAQUE_INSPECTOR_POS")) {
+        const std::string v = e;
+        const size_t comma = v.find(',');
+        if (comma != std::string::npos) { pos_x = std::atoi(v.c_str()); pos_y = std::atoi(v.c_str() + comma + 1); }
+    }
+    if (const char* e = std::getenv("MAQUE_INSPECTOR_FAKE_CLICK")) fake_click = e;
+    if (const char* e = std::getenv("MAQUE_INSPECTOR_FAKE_KEY")) fake_key = e;
     std::snprintf(app.connect_input, sizeof app.connect_input, "%s", app.connect_spec.c_str());
     if (is_headless) return headless(app, queue);
 
@@ -539,6 +558,8 @@ int main(int argc, char** argv) {
     SDL_Window* win = SDL_CreateWindow("Maque Inspector", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                        win_w, win_h, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!win) { std::print(stderr, "inspector: 窗口创建失败: {}\n", SDL_GetError()); SDL_Quit(); return 1; }
+    if (pos_x != INT32_MIN && pos_y != INT32_MIN) SDL_SetWindowPosition(win, pos_x, pos_y);
+    if (on_top) SDL_SetWindowAlwaysOnTop(win, SDL_TRUE);     // 工具窗口置顶，避免被游戏窗口遮挡
     SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_PRESENTVSYNC);
     if (!ren) { std::print(stderr, "inspector: 渲染器创建失败: {}\n", SDL_GetError()); SDL_DestroyWindow(win); SDL_Quit(); return 1; }
 
@@ -607,6 +628,13 @@ int main(int argc, char** argv) {
         }
     }
 
+    /* 诊断：注入一次合成点击（SDL 事件队列 → 与真实鼠标同一条路径）。
+     * 本机 Wayland 会话下 XTest 注入无效（指针不动），用它验证 tab/按钮交互链路。 */
+    Uint32 fake_at = 0, fake_release_at = 0, fake_key_at = 0, fake_key_release_at = 0;
+    ImGuiKey fake_key_release = ImGuiKey_None;
+    if (!fake_click.empty()) fake_at = SDL_GetTicks() + 1200;
+    if (!fake_key.empty()) fake_key_at = SDL_GetTicks() + 1200;
+
     bool running = true;
     Uint32 prev = SDL_GetTicks();
     while (running) {
@@ -614,16 +642,69 @@ int main(int argc, char** argv) {
         while (SDL_PollEvent(&ev)) {
             ImGui_ImplSDL2_ProcessEvent(&ev);
             if (ev.type == SDL_QUIT) running = false;
+            if (std::getenv("MAQUE_INSPECTOR_TRACE") &&
+                (ev.type == SDL_MOUSEBUTTONDOWN || ev.type == SDL_MOUSEBUTTONUP))
+                std::print("[insp] 鼠标事件 type={} ({}, {})\n", (int)ev.type, ev.button.x, ev.button.y);
             if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_ESCAPE) running = false;
         }
         const Uint32 now = SDL_GetTicks();
         const float dt = (float)(now - prev) / 1000.0F;
         prev = now;
-        pump(app, dt);
-
+        pump(app, dt);                   // 网络收发 + 定时轮询（必须在 NewFrame 之前，界面才拿到最新数据）
         ImGui_ImplSDLRenderer2_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
+        ImGui_ImplSDL2_NewFrame();       // 设置 DisplaySize；并用真实指针覆盖 MousePos
+        /* 合成点击（诊断/自动验证）：用 **ImGui 原生输入注入**而不是合成 SDL 事件 ——
+         * SDL2 后端在 NewFrame 里用 SDL_GetMouseState() 覆盖鼠标位置，合成事件会被真实指针盖掉
+         * （本机 Wayland 会话指针无法用 XTest 移动 → 只能走 ImGui 的输入队列）。
+         * 必须跨帧：同一帧 down+up 会被"每帧快照"吞掉。 */
+        if (fake_at && now >= fake_at) {
+            int fx = 0, fy = 0;
+            if (std::sscanf(fake_click.c_str(), "%d,%d", &fx, &fy) == 2) {
+                ImGui::GetIO().AddMousePosEvent((float)fx, (float)fy);
+                ImGui::GetIO().AddMouseButtonEvent(0, true);
+                fake_release_at = now + 150;
+                fake_at = 0;
+                std::print("inspector: 合成点击按下 ({}, {})\n", fx, fy);
+            }
+        } else if (fake_release_at && now >= fake_release_at) {
+            ImGui::GetIO().AddMouseButtonEvent(0, false);
+            fake_release_at = 0;
+            std::print("inspector: 合成点击抬起\n");
+        }
+        if (fake_key_at && now >= fake_key_at) {
+            fake_key_at = 0;
+            ImGuiKey k = ImGuiKey_None;
+            if (fake_key.size() == 1 && fake_key[0] >= '1' && fake_key[0] <= '5')
+                k = (ImGuiKey)(ImGuiKey_1 + (fake_key[0] - '1'));
+            else if (fake_key == "tab") k = ImGuiKey_Tab;
+            if (k != ImGuiKey_None) {
+                if (k == ImGuiKey_Tab) ImGui::GetIO().AddKeyEvent(ImGuiMod_Ctrl, true);
+                ImGui::GetIO().AddKeyEvent(k, true);
+                fake_key_release = k;
+                fake_key_release_at = now + 120;
+                std::print("inspector: 合成按键 {}\n", fake_key);
+            }
+        }
+        if (fake_key_release != ImGuiKey_None && fake_key_release_at && now >= fake_key_release_at) {
+            ImGui::GetIO().AddKeyEvent(fake_key_release, false);
+            if (fake_key_release == ImGuiKey_Tab) ImGui::GetIO().AddKeyEvent(ImGuiMod_Ctrl, false);
+            fake_key_release = ImGuiKey_None;
+            fake_key_release_at = 0;
+        }
         ImGui::NewFrame();
+        /* 键盘切换标签页：1..5 直选、Ctrl+Tab 循环（鼠标被窗口遮挡/不可用时也能操作） */
+        {
+            static const char* kTabs[] = { "属性", "控制台", "字体图集", "预览", "模式" };
+            const ImGuiIO& io = ImGui::GetIO();
+            for (int i = 0; i < 5; ++i)
+                if (ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey_1 + i), false)) app.tab = kTabs[i];
+            if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Tab, false)) {
+                int cur = 0;
+                for (int i = 0; i < 5; ++i) if (app.tab == kTabs[i]) cur = i;
+                app.tab = kTabs[(cur + 1) % 5];
+            }
+            (void)io;
+        }
         draw_ui(app);
         ImGui::Render();
         SDL_SetRenderDrawColor(ren, 16, 16, 20, 255);

@@ -54,7 +54,11 @@ cd modules/core/data && node parser.js --check
   **字体图集**（`Font.info`/`Font.glyphs`/`Font.atlas`：看动态图集的实时状态、缩放查看、悬浮显示码点与图集矩形）/
   **预览**（`Capture.screen`：分块传 PPM，可调刷新间隔与缩略图尺寸）/ 模式。
   界面字号：`--font-size`（默认 42px）、`--ui-scale`（连样式一起缩放）、`--tab <面板名>` 直接打开某面板；
-  环境变量 `MAQUE_INSPECTOR_FONT_SIZE` / `MAQUE_INSPECTOR_UI_SCALE`。
+  **键盘切页**：`1`~`5` 直选、`Ctrl+Tab` 循环（鼠标不便时用；状态栏有提示）；
+  窗口默认**置顶**（`--no-on-top` / `MAQUE_INSPECTOR_ON_TOP=0` 关闭）与 `--pos x,y` 定位 ——
+  否则容易被游戏窗口盖住（点击落到游戏上，表现为"tab 点不动"）。配对着用时游戏侧**不要**加 `MAQUE_ALWAYS_ON_TOP`。
+  环境变量：`MAQUE_INSPECTOR_FONT_SIZE` / `MAQUE_INSPECTOR_UI_SCALE` / `MAQUE_INSPECTOR_ON_TOP` / `MAQUE_INSPECTOR_POS`；
+  诊断注入（自动化验证用，本机 XTest 无效）：`MAQUE_INSPECTOR_FAKE_KEY=3` / `MAQUE_INSPECTOR_FAKE_CLICK=x,y`。
   **二进制传输**：控制面是行分隔 JSON → 图集/画面走 **base64 分块**（`offset`/`max`，单块 ≤48KB，客户端在途上限 4 且偏移递增）；
   自建纹理必须 `ImGui::RegisterUserTexture()`（1.92+ 的外部纹理 API），否则后端不创建 SDL_Texture（白图）。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
