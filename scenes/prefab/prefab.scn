@@ -1,0 +1,17 @@
+{
+  "title": "Prefab 实例化",
+  "script": "prefab.js",
+  "width": 320,
+  "height": 240,
+  "seed": 3,
+  "entities": [
+    { "name": "Root", "components": [], "children": [
+      { "name": "StarA", "components": [
+          { "type": "scn.Transform2D", "x": 80.0, "y": 120.0 },
+          { "type": "scn.PrefabInstance", "source": "star.prefab.json" } ] },
+      { "name": "StarB", "components": [
+          { "type": "scn.Transform2D", "x": 220.0, "y": 90.0 },
+          { "type": "scn.PrefabInstance", "source": "star.prefab.json" } ] }
+    ] }
+  ]
+}

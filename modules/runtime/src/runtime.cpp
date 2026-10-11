@@ -38,6 +38,7 @@
 #include <cmath>
 #include <utility>
 #include <functional>
+#include <csignal>
 
 namespace {
 
@@ -125,10 +126,17 @@ struct Engine {
     mq_snapshot_pool*   snaps = nullptr;                   // 快照池（回滚/防抖，docs/10 §4）
     mq_snapshot*        snap_last = nullptr;                // 最近一次周期快照（池内）
     mq_snapshot*        snap_manual = nullptr;              // World.snapshot 的显式快照（独立，不被周期覆盖）
+    /* 检查点快照环（docs/10 §5 分歧定位）：每 30 帧一个，二分定位首个失步帧 */
+    std::vector<mq_snapshot*> checkpoints;
+    uint32_t cp_cursor = 0;
+    uint32_t cp_interval = 30;
+    uint32_t cp_count = 8;
+    bool     cp_active = false;
     mq_watcher*         watcher = nullptr;                  // 资源热重载监视（docs/08）
     std::string         script_path;                        // 当前脚本（热重载用）
     uint64_t            script_hash = 0;
-    std::string         scn_vfs_path;                       // 场景在 VFS 中的路径
+    std::string         scn_vfs_path;                       // 场景在 VFS 中的路径（/x.scn）
+    std::string         scn_full_path;                      // 场景的原始路径（崩溃报告/重放用）
     std::string         scn_dir;                            // 场景所在目录（本地路径）
     uint32_t            reloads = 0;
     uint64_t            frame = 0;                          // 模拟帧号（= sim time / dt）
@@ -186,6 +194,8 @@ struct Engine {
     bool reload_script(std::string* err = nullptr);          // 重载脚本（帧边界调用，docs/14）
     bool reload_scene();                                    // 重载场景（重建世界，docs/08）
     uint32_t poll_watcher();                                // 帧边界检查资源变化
+    void checkpoint_push();                                 // 记录一个检查点（周期性）
+    void write_crash_context(const char* why);              // 崩溃/异常上下文（docs/09 §5、docs/10 §7）
     void export_final_snapshot();                           // 导出世界快照（MAQUE_SNAPSHOT）
     void finalize_run();                                    // 导出快照 + 录制日志（含 frames/trail 元数据）
     bool world_snapshot(mq_snapshot* snap);                 // 世界 → 快照（反射驱动，docs/10 §4）
@@ -248,6 +258,17 @@ void attach_component(Engine& eng, int idx, const char* type_name) {
     mq_json* dom = mq_json_parse("{}", 2);
     if (dom) { mq_persist_apply_json(eng.reflect, d, dom, e->comps[d->type_id].data()); mq_json_free(dom); }
     else e->comps[d->type_id].assign(d->size, 0);
+}
+
+/* ---- 终止信号（docs/09 §5）：处理器只置位并恢复默认行为，写盘在帧边界 ---- */
+volatile sig_atomic_t g_signal_hit = 0;
+const char* g_signal_name = nullptr;
+inline void on_fatal_signal(int sig) {
+    g_signal_hit = sig;
+    g_signal_name = sig == SIGSEGV ? "SIGSEGV" : sig == SIGABRT ? "SIGABRT"
+                  : sig == SIGFPE ? "SIGFPE" : sig == SIGINT ? "SIGINT" : "signal";
+    signal(sig, SIG_DFL);
+    raise(sig);
 }
 
 /* ---- 反射读取辅助（不依赖具体类型，仅按字段名） ---- */
@@ -480,7 +501,12 @@ void Engine::step_frame() {
     std::vector<mq_renderer_item> draws;
     const float dt = 1.0F / 60.0F;
     if (scene) {
-        if (mq_script_has(vm, "update")) mq_script_call1(vm, "update", dt, nullptr);
+        if (mq_script_has(vm, "update") && mq_script_call1(vm, "update", dt, nullptr) != 0) {
+            char ebuf[512] = { 0 };
+            mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
+            mq_obs_event(obs, "script", 3, "update_failed");
+            write_crash_context(ebuf[0] ? ebuf : "script update failed");      // 可精确重放（docs/09 §5）
+        }
         mq_script_gc(vm);
         anim_step(dt);                                   // 动画采样写回（docs/15 §2）
         particles_step(dt);                              // 粒子推进（docs/15 §4）
@@ -492,6 +518,7 @@ void Engine::step_frame() {
         last_checksum = world_checksum();
         trail.emplace_back(frame, last_checksum);
         if (snaps && (frame % 60 == 0)) { snap_last = mq_snapshot_pool_acquire(snaps); world_snapshot(snap_last); }
+        if (cp_active && (frame % cp_interval == 0)) checkpoint_push();
     }
     mq_obs_counter_add(obs, "frames", 1.0);
     mq_obs_gauge_set(obs, "entities", scene ? (double)scene->count() : 0.0);
@@ -796,6 +823,53 @@ bool Engine::run_frames(uint64_t n) {
     return !quit;
 }
 
+/* 检查点快照（docs/10 §5 分歧定位）：环状保存最近 N 个（默认每 30 帧），
+ * 回放失步时可用 Replay.seek 跳回任一检查点做二分/逐步定位。 */
+void Engine::checkpoint_push() {
+    if (checkpoints.empty()) {
+        checkpoints.reserve(cp_count);
+        for (uint32_t i = 0; i < cp_count; ++i) checkpoints.push_back(mq_snapshot_create());
+    }
+    mq_snapshot* s = checkpoints[cp_cursor % checkpoints.size()];
+    cp_cursor++;
+    if (!world_snapshot(s)) return;
+    mq_snapshot_set_frame(s, frame);
+    mq_snapshot_set_desc(s, ("checkpoint@" + std::to_string(frame)).c_str());
+}
+
+/* 崩溃/异常上下文（docs/09 §5）：把"精确重放所需的一切"落盘为 JSON —— 
+ * seed、场景、帧号、最近检查点、输入日志（若在录制）、世界校验和、指标。
+ * 触发点：① 脚本异常（可重放定位）；② 信号（abort/段错误，见 install_crash_handler）。 */
+void Engine::write_crash_context(const char* why) {
+    const char* out = std::getenv("MAQUE_CRASH_REPORT");
+    if (!out || !*out) return;
+    std::ofstream f(out, std::ios::binary);
+    if (!f) return;
+    uint64_t trail = world_trail();
+    /* 最近检查点 */
+    uint64_t cp_frame = 0, cp_sum = 0;
+    for (auto* s : checkpoints)
+        if (s && mq_snapshot_frame(s) > cp_frame) { cp_frame = mq_snapshot_frame(s); cp_sum = mq_snapshot_checksum(s); }
+    std::string json = "{\n";
+    json += "  \"reason\": ";
+    write_json_string_pub(json, why ? why : "unknown");
+    json += ",\n  \"scene\": ";
+    write_json_string_pub(json, scn_full_path.empty() ? scn_vfs_path : scn_full_path);
+    json += ",\n  \"frame\": " + std::to_string(frame);
+    json += ",\n  \"seed\": " + std::to_string(scene ? scene->desc.seed : 0);
+    json += ",\n  \"world_trail\": \"" + std::to_string(trail) + "\"";
+    json += ",\n  \"last_checksum\": \"" + std::to_string(last_checksum) + "\"";
+    json += ",\n  \"checkpoint\": {\"frame\": " + std::to_string(cp_frame) +
+            ", \"checksum\": \"" + std::to_string(cp_sum) + "\"}";
+    json += ",\n  \"replay\": {\"command\": \"MAQUE_REPLAY=<log> ";
+    json += scn_vfs_path + "\", \"recorded\": ";
+    json += (input && mq_input_recording(input)) ? "true" : "false";
+    json += "}";
+    json += ",\n  \"metrics\": " + std::string(mq_obs_dump_json(obs)) + "\n}\n";
+    f << json;
+    std::print(stderr, "runtime: crash context → '{}' (frame={} reason={})\n", out, frame, why ? why : "?");
+}
+
 /* 导出世界快照（崩溃复现/AI undo 的落点，docs/10 §7）。控制面每次 step 后也会调用。 */
 void Engine::export_final_snapshot() {
     const char* sp = std::getenv("MAQUE_SNAPSHOT");
@@ -856,6 +930,11 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     for (; frame < cap && !quit; ) {
         if (stop_frame && frame > stop_frame) break;
         step_frame();
+        if (g_signal_hit) {                              // 收到终止信号 → 落盘上下文后退出
+            write_crash_context(g_signal_name ? g_signal_name : "signal");
+            mq_obs_event(obs, "runtime", 3, g_signal_name ? g_signal_name : "signal");
+            break;
+        }
     }
 
     finalize_run();
@@ -926,6 +1005,33 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent) {
         if (!blob.empty()) destroy_blob(eng, d->type_id, blob);
         construct_blob(eng, d, blob);
         mq_persist_apply_json(eng.reflect, d, c, blob.data());
+    }
+    /* Prefab 实例（docs/12 §5）：按 source 载入 .prefab.json，就地展开为子实体。
+     * detached=true 表示已 bake（内容已是本场景的一部分），不再展开。 */
+    for (auto& [tid, blob] : ent->comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+        if (!d) continue;
+        const std::string* src = read_str(d, blob.data(), "source");
+        if (!src || src->empty()) continue;
+        bool detached = false;
+        if (const mq_field_desc* fd = mq_reflect_field(d, "detached")) detached = *(const bool*)(blob.data() + fd->offset);
+        if (detached) continue;
+        void* pd = nullptr; size_t pn = 0;
+        const std::string ppath = "/" + *src;
+        if (mq_vfs_read(eng.vfs, ppath.c_str(), &pd, &pn) != MQ_VFS_OK) {
+            std::print(stderr, "runtime: prefab not found '{}'\n", *src);
+            continue;
+        }
+        std::string ptext((char*)pd, pn);
+        mq_vfs_free(pd);
+        mq_json* pdom = mq_json_parse(ptext.c_str(), ptext.size());
+        if (pdom) {
+            const mq_json* pents = mq_json_get(pdom, "entities");
+            const uint32_t pcount = mq_json_len(pents);
+            for (uint32_t i = 0; i < pcount; ++i) load_entity(eng, sc, mq_json_at(pents, i), idx);
+            mq_json_free(pdom);
+            std::print("runtime: prefab '{}' instantiated under entity {}\n", *src, idx);
+        }
     }
     const mq_json* ch = mq_json_get(e, "children");
     uint32_t kn = mq_json_len(ch);
@@ -1699,6 +1805,28 @@ static int h_scene_destroy(void* u, const char*, const mq_json* params, char* ou
     return 0;
 }
 
+/* Scene.bake：把 PrefabInstance 标记为已展开（detached=true）→ 场景自包含（docs/12 §5）。 */
+static int h_scene_bake(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
+    uint32_t baked = 0;
+    for (auto& [idx, ent] : e->scene->ents) {
+        for (auto& [tid, blob] : ent.comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
+            if (!d) continue;
+            const std::string* src = read_str(d, blob.data(), "source");
+            if (!src || src->empty()) continue;
+            const mq_field_desc* fd = mq_reflect_field(d, "detached");
+            if (!fd) continue;
+            if (*(const bool*)(blob.data() + fd->offset)) continue;
+            if (!dry) *(bool*)(blob.data() + fd->offset) = true;
+            ++baked;
+        }
+    }
+    std::snprintf(out, cap, "{\"ok\":true,\"baked\":%u,\"dry_run\":%s}", baked, dry ? "true" : "false");
+    return 0;
+}
+
 /* Scene.save：把当前世界写回 .scn（编辑器落盘；docs/11 §4）。
  * 组件字段由反射序列化（与 load_json 往返一致）→ 落盘文件可直接再次加载。 */
 static int h_scene_save(void* u, const char*, const mq_json* params, char* out, size_t cap) {
@@ -1937,6 +2065,46 @@ static int h_mcp(void* u, const char*, const mq_json* params, char* out, size_t 
     return 0;
 }
 
+/* Replay.checkpoint：列出检查点（帧号/校验和）——分歧定位的锚点。 */
+static int h_checkpoints(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::string o = "{\"interval\":" + std::to_string(e->cp_interval) + ",\"active\":";
+    o += e->cp_active ? "true" : "false";
+    o += ",\"checkpoints\":[";
+    bool first = true;
+    for (auto* s : e->checkpoints) {
+        if (!s || mq_snapshot_frame(s) == 0) continue;
+        if (!first) o += ",";
+        first = false;
+        o += "{\"frame\":" + std::to_string(mq_snapshot_frame(s)) +
+             ",\"checksum\":\"" + std::to_string(mq_snapshot_checksum(s)) + "\"}";
+    }
+    o += "]}";
+    std::snprintf(out, cap, "%s", o.c_str());
+    return 0;
+}
+
+/* Replay.seek：跳到指定帧号的检查点（回滚 + 重建世界）。 */
+static int h_seek(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const uint64_t want = (uint64_t)mq_json_num(mq_json_get(params, "frame"), 0);
+    mq_snapshot* best = nullptr;
+    for (auto* s : e->checkpoints) {
+        if (!s) continue;
+        const uint64_t f = mq_snapshot_frame(s);
+        if (f && f <= want && (!best || f > mq_snapshot_frame(best))) best = s;
+    }
+    if (!best) {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no checkpoint at or before frame %llu\",\"interval\":%u}",
+                      (unsigned long long)want, e->cp_interval);
+        return 0;
+    }
+    e->world_restore(best);
+    std::snprintf(out, cap, "{\"ok\":true,\"frame\":%llu,\"checksum\":\"%llu\"}",
+                  (unsigned long long)mq_snapshot_frame(best), (unsigned long long)e->world_checksum());
+    return 0;
+}
+
 /* Runtime.frame：当前模拟帧号与状态摘要（脚本/CI 读模拟时间；回滚后自动一致）。 */
 static int h_frame(void* u, const char*, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
@@ -2061,11 +2229,13 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     mq_input_add_handler(input, runtime_input_handler, this);
     { const char* hs = std::getenv("MAQUE_HITS"); if (hs && *hs && *hs != '0') trace_hits = true; }
     snaps = mq_snapshot_pool_create(8, 1 << 16);
+    { const char* cp = std::getenv("MAQUE_CHECKPOINTS"); if (cp && *cp && *cp != '0') cp_active = true; }
     vm = mq_script_vm_create();
     mq_bind_generated(vm, this);
 
     script_path = scene->desc.script;
     scn_vfs_path = "/" + scnp.filename().string();
+    scn_full_path = scn_path;
     scn_dir = scn_dir2;
     if (!script_path.empty()) {
         std::string js;
@@ -2083,7 +2253,11 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
             mq_watcher_add(watcher, (std::filesystem::path(scn_dir) / script_path).string().c_str());
         std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
     }
-    if (mq_script_has(vm, "on_start")) mq_script_call0(vm, "on_start", nullptr);
+    if (mq_script_has(vm, "on_start") && mq_script_call0(vm, "on_start", nullptr) != 0) {
+        char ebuf[512] = { 0 };
+        mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
+        write_crash_context(ebuf[0] ? ebuf : "on_start failed");
+    }
 
     control = mq_control_create();
     mq_control_register(control, "Perf.get", h_perf, this);
@@ -2097,12 +2271,15 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     mq_control_register(control, "Scene.get", h_scene_get, this);
     mq_control_register(control, "Scene.set", h_scene_set, this);
     mq_control_register(control, "Scene.save", h_scene_save, this);
+    mq_control_register(control, "Scene.bake", h_scene_bake, this);
     mq_control_register(control, "Scene.spawn", h_scene_spawn, this);
     mq_control_register(control, "Scene.destroy", h_scene_destroy, this);
     mq_control_register(control, "Input.inject", h_inject, this);
     mq_control_register(control, "Replay.log", h_replay_log, this);
     mq_control_register(control, "Runtime.step", h_step, this);
     mq_control_register(control, "Runtime.frame", h_frame, this);
+    mq_control_register(control, "Replay.checkpoints", h_checkpoints, this);
+    mq_control_register(control, "Replay.seek", h_seek, this);
     mq_control_register(control, "Control.mcp", h_mcp, this);
     mq_control_register(control, "Reload.script", h_reload_script, this);
     mq_control_register(control, "Reload.scene", h_reload_scene, this);
@@ -2116,6 +2293,8 @@ void Engine::teardown() {
     if (vm) { mq_script_vm_destroy(vm); vm = nullptr; }
     if (obs) { mq_obs_destroy(obs); obs = nullptr; }
     if (reflect) { mq_reflect_destroy(reflect); reflect = nullptr; }
+    for (auto* s : checkpoints) mq_snapshot_destroy(s);
+    checkpoints.clear();
     mq_snapshot_destroy(snap_manual); snap_manual = nullptr;
     mq_snapshot_pool_destroy(snaps); snaps = nullptr;
     mq_watcher_destroy(watcher); watcher = nullptr;
@@ -2129,6 +2308,11 @@ void Engine::teardown() {
 
 extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (!scn_path) return 1;
+    if (std::getenv("MAQUE_CRASH_REPORT")) {
+        signal(SIGSEGV, on_fatal_signal);
+        signal(SIGABRT, on_fatal_signal);
+        signal(SIGFPE, on_fatal_signal);
+    }
     auto* eng = new Engine();
     if (!eng->setup(scn_path, nullptr)) { eng->teardown(); delete eng; return 2; }
 

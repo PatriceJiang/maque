@@ -1922,6 +1922,12 @@
         - { name: b,         type: float, default: 0.2F }
         - { name: max_count, type: uint32_t, default: 256 }    # 池上限（docs/07 §8 预算）
         - { name: enabled,   type: bool, default: true }
+    # Prefab 实例（docs/12 §5、docs/assets）：指向 prefab 资源（.prefab.json），
+    # 由引擎在加载时就地实例化为子节点；编辑期删除该组件即"断开链接"（bake）。
+    - struct: PrefabInstance
+      fields:
+        - { name: source, type: string, default: "" }        # 相对场景目录的资源路径
+        - { name: detached, type: bool, default: false }     # true = 已 bake（不再跟随源）
     # 相机（docs/13）：按 role 提取，引擎不认具体组件类型。
     - struct: Camera
       roles: [camera]
