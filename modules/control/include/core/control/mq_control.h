@@ -23,6 +23,20 @@ void        mq_control_register(mq_control* c, const char* method, mq_control_ha
 /* 处理一条 JSON-RPC 请求，返回响应 JSON（归 c 所有）。 */
 const char* mq_control_dispatch(mq_control* c, const char* request);
 
+/* 已注册方法数 / 第 i 个方法名（自省：MCP tools/list、AI 发现能力，docs/11 §3）。 */
+uint32_t    mq_control_method_count(mq_control* c);
+const char* mq_control_method_at(mq_control* c, uint32_t index);
+
+/* ---- MCP 包装（上层：把 JSON-RPC domain.method 暴露为 tools，docs/11 §2）----
+ * 支持 JSON-RPC 方法：
+ *   initialize          → { protocolVersion, serverInfo, capabilities }
+ *   tools/list          → { tools:[{name, description, inputSchema}] }
+ *   tools/call          → { name, arguments } → 转发为同名 JSON-RPC 方法
+ *   notifications/*     → 空结果（通知无需响应）
+ * 未注册的方法：若已 set_tools_handler，则交给宿主（用于 UI 侧工具）。 */
+void mq_control_set_tools_handler(mq_control* c, mq_control_handler fn, void* user);
+const char* mq_control_dispatch_mcp(mq_control* c, const char* request);
+
 #ifdef __cplusplus
 }
 #endif

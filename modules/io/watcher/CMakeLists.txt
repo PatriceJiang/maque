@@ -1,0 +1,11 @@
+# maque::watcher —— 资源热重载监视（帧边界轮询，docs/08/14）
+add_library(maque_watcher STATIC src/watcher.cpp)
+add_library(maque::watcher ALIAS maque_watcher)
+target_include_directories(maque_watcher PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set_target_properties(maque_watcher PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+
+if(MAQUE_BUILD_TESTS)
+    add_executable(maque_watcher_test tests/watcher_test.cpp)
+    target_link_libraries(maque_watcher_test PRIVATE maque::watcher)
+    add_test(NAME watcher COMMAND maque_watcher_test)
+endif()

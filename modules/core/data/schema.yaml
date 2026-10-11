@@ -1896,6 +1896,15 @@
         - { name: g,    type: float,   default: 1.0F }
         - { name: b,    type: float,   default: 1.0F }
         - { name: a,    type: float,   default: 1.0F }
+    # 相机（docs/13）：按 role 提取，引擎不认具体组件类型。
+    - struct: Camera
+      roles: [camera]
+      fields:
+        - { name: x,        type: float, default: 0.0F }        # 世界坐标（相机中心）
+        - { name: y,        type: float, default: 0.0F }
+        - { name: zoom,     type: float, default: 1.0F }        # 1 = 1:1 像素
+        - { name: rotation, type: float, default: 0.0F }        # 弧度
+        - { name: active,   type: bool,  default: true }
     - struct: Scene
       fields:
         - { name: title,    type: string,  default: "maque scene" }
@@ -1958,22 +1967,29 @@
   records:
     - record: view
       fields:
-        - { name: vx,  type: float }
-        - { name: vy,  type: float }
-        - { name: vw,  type: float }
-        - { name: vh,  type: float }
-        - { name: pan, type: float }
-        - { name: eye, type: float }
+        - { name: vx,   type: float }      # 视口（帧缓冲内，像素）
+        - { name: vy,   type: float }
+        - { name: vw,   type: float }
+        - { name: vh,   type: float }
+        - { name: pan,  type: float }      # 眼睛横向偏移（VR/多视图）
+        - { name: eye,  type: float }
+        - { name: cx,   type: float }      # 相机中心（世界坐标）
+        - { name: cy,   type: float }
+        - { name: zoom, type: float }      # 缩放（1 = 1:1）
+        - { name: rot,  type: float }      # 旋转（弧度）
     - record: item
       fields:
-        - { name: x,       type: float }
-        - { name: y,       type: float }
-        - { name: size,    type: float }
-        - { name: r,       type: float }
-        - { name: g,       type: float }
-        - { name: b,       type: float }
-        - { name: a,       type: float }
-        - { name: texture, type: int32_t }
+        - { name: x,        type: float }
+        - { name: y,        type: float }
+        - { name: size,     type: float }
+        - { name: r,        type: float }
+        - { name: g,        type: float }
+        - { name: b,        type: float }
+        - { name: a,        type: float }
+        - { name: texture,  type: int32_t }
+        - { name: rotation, type: float }  # 图元自转（弧度）
+        - { name: layer,    type: int32_t } # 分层（docs/13 §分层：先按 layer 排序）
+        - { name: z,        type: int32_t } # 同层内 z-order（稳定排序）
   methods:
     - fn: create
       returns: self

@@ -11,59 +11,73 @@
 #include <chrono>
 #include <thread>
 #include <unordered_map>
+#include <cstdlib>
 
 namespace maque::gfx {
 
 #define SV(x) WGPUStringView { (x), WGPU_STRLEN }
 
+/* 统一 uniform（48B，与 C++ float[12] 逐字段对应；WGSL uniform 布局规则下无隐式填充）：
+ *   size(8) view(8) cam(8) zoom rot pan eye(16) pad(8) */
 static const char* kSolidWGSL = R"(
-struct Globals { size: vec2f, pan: f32, eye: f32 };
-@group(0) @binding(0) var<uniform> g: Globals;
-struct Inst { pos: vec2f, radius: f32, _pad: f32, color: vec4f };
+struct U {
+  size: vec2f, view: vec2f, cam: vec2f,
+  zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
+};
+@group(0) @binding(0) var<uniform> u: U;
+struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f };
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
 struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f };
 @vertex fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
   var c = array<vec2f,6>(vec2f(-1.,-1.), vec2f(1.,-1.), vec2f(-1.,1.),
                          vec2f(-1.,1.), vec2f(1.,-1.), vec2f(1.,1.));
-  let corner = c[vi];
   let inst = insts[ii];
-  let px = inst.pos + corner * inst.radius;
-  let sx = px.x + g.pan + g.eye;
-  let x = sx / g.size.x * 2.0 - 1.0;
-  let y = 1.0 - px.y / g.size.y * 2.0;
-  var o: VOut; o.p = vec4f(x, y, 0., 1.); o.uv = corner; o.col = inst.color; return o;
+  var corner = c[vi] * inst.radius;
+  let cs = cos(inst.rot); let sn = sin(inst.rot);
+  corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
+  let q = (inst.pos + corner - u.cam) * u.zoom;
+  let px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
+  var o: VOut;
+  o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
+  o.uv = c[vi]; o.col = inst.color; return o;
 }
 @fragment fn fs(in: VOut) -> @location(0) vec4f {
   if (dot(in.uv, in.uv) > 1.0) { discard; }
-  return in.col;
+  return in.col;                                    // 直通 alpha（混合在管线做）
 }
 )";
 
 static const char* kTexWGSL = R"(
-struct Globals { size: vec2f, pan: f32, eye: f32 };
-@group(0) @binding(0) var<uniform> g: Globals;
-struct Inst { pos: vec2f, radius: f32, _pad: f32, color: vec4f };
+struct U {
+  size: vec2f, view: vec2f, cam: vec2f,
+  zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
+};
+@group(0) @binding(0) var<uniform> u: U;
+struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f };
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
 @group(0) @binding(2) var t: texture_2d<f32>;
-@group(0) @binding(3) var s: sampler;
+@group(0) @binding(3) var smp: sampler;
 struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f };
 @vertex fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
   var c = array<vec2f,6>(vec2f(-1.,-1.), vec2f(1.,-1.), vec2f(-1.,1.),
                          vec2f(-1.,1.), vec2f(1.,-1.), vec2f(1.,1.));
-  let corner = c[vi];
   let inst = insts[ii];
-  let px = inst.pos + corner * inst.radius;
-  let sx = px.x + g.pan + g.eye;
-  let x = sx / g.size.x * 2.0 - 1.0;
-  let y = 1.0 - px.y / g.size.y * 2.0;
-  var o: VOut; o.p = vec4f(x, y, 0., 1.); o.uv = corner * 0.5 + 0.5; o.col = inst.color; return o;
+  var corner = c[vi] * inst.radius;
+  let cs = cos(inst.rot); let sn = sin(inst.rot);
+  corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
+  let q = (inst.pos + corner - u.cam) * u.zoom;
+  let px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
+  var o: VOut;
+  o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
+  o.uv = c[vi] * 0.5 + 0.5; o.col = inst.color; return o;
 }
 @fragment fn fs(in: VOut) -> @location(0) vec4f {
-  let c = textureSample(t, s, in.uv);
+  let c = textureSample(t, smp, in.uv);
   if (c.a < 0.01) { discard; }
-  return c * in.col;
+  return c * in.col;                                // 直通 alpha（混合在管线做）
 }
 )";
+
 
 struct Texture { WGPUTexture tex = nullptr; WGPUTextureView view = nullptr; };
 
@@ -108,6 +122,8 @@ static WGPUShaderModule make_shader(WGPUDevice dev, const char* wgsl) {
     src.code = SV(wgsl);
     WGPUShaderModuleDescriptor smd = WGPU_SHADER_MODULE_DESCRIPTOR_INIT;
     smd.nextInChain = &src.chain;
+    /* 注意：该 wgpu-native 构建未实现 wgpuShaderModuleGetCompilationInfo（会 panic），
+     * 故不主动取编译信息；着色器错误经 uncapturedErrorCallback 报告。 */
     return wgpuDeviceCreateShaderModule(dev, &smd);
 }
 
@@ -120,6 +136,7 @@ static Device* create_device(std::string* out_backend) {
     WGPURequestAdapterOptions aopts = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
     WGPURequestAdapterCallbackInfo aci = WGPU_REQUEST_ADAPTER_CALLBACK_INFO_INIT;
     aci.mode = WGPUCallbackMode_AllowProcessEvents; aci.callback = req_adapter_cb; aci.userdata1 = &dv->adapter;
+    aopts.backendType = WGPUBackendType_Undefined;
     wgpuInstanceRequestAdapter(dv->instance, &aopts, aci);
     if (!poll(dv->instance, [&]{ return dv->adapter != nullptr; })) { delete dv; return nullptr; }
 
@@ -139,13 +156,21 @@ static Device* create_device(std::string* out_backend) {
     if (!poll(dv->instance, [&]{ return dv->device != nullptr; })) { delete dv; return nullptr; }
 
     dv->queue = wgpuDeviceGetQueue(dv->device);
+    WGPUBlendState blend = WGPU_BLEND_STATE_INIT;
+    blend.color.srcFactor = WGPUBlendFactor_SrcAlpha;                // 直通 alpha 合成
+    blend.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+    blend.color.operation = WGPUBlendOperation_Add;
+    blend.alpha.srcFactor = WGPUBlendFactor_One;
+    blend.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+    blend.alpha.operation = WGPUBlendOperation_Add;
     WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
     target.format = WGPUTextureFormat_RGBA8Unorm; target.writeMask = WGPUColorWriteMask_All;
+    target.blend = &blend;
 
     dv->solidShader = make_shader(dv->device, kSolidWGSL);
     {
         WGPUBindGroupLayoutEntry e[2] = {};
-        e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 16;
+        e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 48;
         e[1].binding = 1; e[1].visibility = WGPUShaderStage_Vertex; e[1].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
         WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 2; bd.entries = e;
         dv->solidBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
@@ -160,7 +185,7 @@ static Device* create_device(std::string* out_backend) {
     dv->texShader = make_shader(dv->device, kTexWGSL);
     {
         WGPUBindGroupLayoutEntry e[4] = {};
-        e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 16;
+        e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 48;
         e[1].binding = 1; e[1].visibility = WGPUShaderStage_Vertex; e[1].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
         e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment; e[2].texture.sampleType = WGPUTextureSampleType_Float; e[2].texture.viewDimension = WGPUTextureViewDimension_2D;
         e[3].binding = 3; e[3].visibility = WGPUShaderStage_Fragment; e[3].sampler.type = WGPUSamplerBindingType_Filtering;
@@ -204,7 +229,11 @@ static void destroy_device(Device* dv) {
     delete dv;
 }
 
-struct GpuInst { float pos[2]; float radius; float pad; float color[4]; }; // 32B
+/* 实例数据：pos(8) + radius(4) + rot(4) + color(16) = 32B（16 字节对齐，WGSL 数组步长合法）。 */
+struct GpuInst { float pos[2]; float radius; float rot; float color[4]; };
+
+/* 批处理（docs/13 §pass 层）：先按 (layer, z, 原始序) 稳定排序，再按"管线 + 贴图"分批。 */
+struct Batch { int texture; uint32_t first, count; };
 
 static WGPUBuffer make_ibuf(Device* dv, const std::vector<GpuInst>& v) {
     WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
@@ -277,13 +306,30 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
         views = &def; nviews = 1;
     }
 
-    std::vector<GpuInst> solid;
-    std::unordered_map<const Texture*, std::vector<GpuInst>> groups;
-    for (uint32_t i = 0; i < count; ++i) {
-        const mq_renderer_item& s = items[i];
-        GpuInst g{ { s.x, s.y }, s.size, 0.f, { s.r, s.g, s.b, s.a } };
-        const Texture* t = (s.texture >= 0 && s.texture < (int)dv->textures.size()) ? dv->textures[s.texture] : nullptr;
-        if (t && t->view) groups[t].push_back(g); else solid.push_back(g);
+    /* 稳定排序：layer → z → 原始下标（禁地址/哈希序，docs/10 D4、docs/13 §分层）。 */
+    std::vector<uint32_t> order(count);
+    for (uint32_t i = 0; i < count; ++i) order[i] = i;
+    std::stable_sort(order.begin(), order.end(), [&](uint32_t a, uint32_t b) {
+        const mq_renderer_item& ia = items[a];
+        const mq_renderer_item& ib = items[b];
+        if (ia.layer != ib.layer) return ia.layer < ib.layer;
+        if (ia.z != ib.z) return ia.z < ib.z;
+        return a < b;
+    });
+
+    /* 按排序后的相邻关系分批（同层同 z 内相同管线+贴图合并一次 draw）。 */
+    std::vector<GpuInst> insts;
+    insts.reserve(count);
+    std::vector<Batch> batches;
+    for (uint32_t k = 0; k < count; ++k) {
+        const mq_renderer_item& s = items[order[k]];
+        const bool has_tex = s.texture >= 0 && s.texture < (int)dv->textures.size() &&
+                             dv->textures[s.texture]->view != nullptr;
+        const int tex_id = has_tex ? s.texture : -1;
+        GpuInst g{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a } };
+        if (!batches.empty() && batches.back().texture == tex_id) batches.back().count++;
+        else batches.push_back(Batch{ tex_id, (uint32_t)insts.size(), 1 });
+        insts.push_back(g);
     }
 
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
@@ -297,10 +343,8 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
 
     WGPUBufferDescriptor ubd = WGPU_BUFFER_DESCRIPTOR_INIT;
     ubd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
-    ubd.size = 16;
-    WGPUBuffer solidBuf = solid.empty() ? nullptr : make_ibuf(dv, solid);
-    std::unordered_map<const Texture*, WGPUBuffer> groupBufs;
-    for (auto& kv : groups) groupBufs[kv.first] = make_ibuf(dv, kv.second);
+    ubd.size = 48;
+    WGPUBuffer ibuf = insts.empty() ? nullptr : make_ibuf(dv, insts);
 
     WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
     { WGPURenderPassEncoder pass = nullptr; begin_pass(enc, view, WGPULoadOp_Clear, bg, &pass);
@@ -308,41 +352,36 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
 
     for (uint32_t vi = 0; vi < nviews; ++vi) {
         const mq_renderer_view& v = views[vi];
-        float uni[4] = { (float)TW, (float)TH, v.pan, v.eye };
+        const float zoom = v.zoom > 0.0F ? v.zoom : 1.0F;
+        float uni[12] = { (float)TW, (float)TH, v.vx, v.vy, v.cx, v.cy, zoom, v.rot, v.pan, v.eye, 0.0F, 0.0F };
         WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
-        wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, 16);
-
-        if (solidBuf) {
-            WGPUBindGroupEntry be[2] = {};
-            be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
-            be[1].binding = 1; be[1].buffer = solidBuf; be[1].size = (uint64_t)solid.size() * sizeof(GpuInst);
-            WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
-            WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
-            WGPURenderPassEncoder pass = nullptr; begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
-            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
-            wgpuRenderPassEncoderSetPipeline(pass, dv->solidPipeline);
-            wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
-            wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)solid.size(), 0, 0);
-            wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
-            wgpuBindGroupRelease(bgroup);
-        }
-        for (auto& kv : groups) {
-            const Texture* texh = kv.first;
-            WGPUBuffer gb = groupBufs[texh];
-            WGPUBindGroupEntry be[4] = {};
-            be[0].binding = 0; be[0].buffer = ubuf; be[0].size = 16;
-            be[1].binding = 1; be[1].buffer = gb; be[1].size = (uint64_t)kv.second.size() * sizeof(GpuInst);
-            be[2].binding = 2; be[2].textureView = texh->view;
-            be[3].binding = 3; be[3].sampler = dv->sampler;
-            WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT; bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
-            WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
-            WGPURenderPassEncoder pass = nullptr; begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
-            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
-            wgpuRenderPassEncoderSetPipeline(pass, dv->texPipeline);
-            wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
-            wgpuRenderPassEncoderDraw(pass, 6, (uint32_t)kv.second.size(), 0, 0);
-            wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
-            wgpuBindGroupRelease(bgroup);
+        wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, sizeof uni);
+        if (ibuf) {
+            for (const Batch& b : batches) {
+                const bool textured = b.texture >= 0;
+                WGPUBindGroupEntry be[4] = {};
+                be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
+                be[1].binding = 1; be[1].buffer = ibuf;
+                be[1].size = (uint64_t)insts.size() * sizeof(GpuInst);
+                WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+                WGPUBindGroup bgroup = nullptr;
+                if (textured) {
+                    be[2].binding = 2; be[2].textureView = dv->textures[b.texture]->view;
+                    be[3].binding = 3; be[3].sampler = dv->sampler;
+                    bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
+                } else {
+                    bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
+                }
+                bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+                WGPURenderPassEncoder pass = nullptr;
+                begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
+                wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
+                wgpuRenderPassEncoderSetPipeline(pass, textured ? dv->texPipeline : dv->solidPipeline);
+                wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
+                wgpuRenderPassEncoderDraw(pass, 6, b.count, 0, b.first);
+                wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
+                wgpuBindGroupRelease(bgroup);
+            }
         }
         wgpuBufferRelease(ubuf);
     }
@@ -373,8 +412,7 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
         wgpuBufferUnmap(rbuf);
     }
     wgpuBufferRelease(rbuf);
-    if (solidBuf) wgpuBufferRelease(solidBuf);
-    for (auto& kv : groupBufs) wgpuBufferRelease(kv.second);
+    if (ibuf) wgpuBufferRelease(ibuf);
     wgpuTextureViewRelease(view); wgpuTextureRelease(tex);
     return st == WGPUMapAsyncStatus_Success ? 0 : 3;
 }

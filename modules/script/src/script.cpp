@@ -69,10 +69,13 @@ static JSValue host_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueCo
     return JS_NewFloat64(ctx, ret);
 }
 
+static thread_local std::string g_last_error;
+
 static void throw_and_print(JSContext* ctx) {
     JSValue e = JS_GetException(ctx);
     const char* s = JS_ToCString(ctx, e);
-    std::print(stderr, "[script] exception: {}\n", s ? s : "(unknown)");
+    g_last_error = s ? s : "(unknown)";
+    std::print(stderr, "[script] exception: {}\n", g_last_error);
     if (s) JS_FreeCString(ctx, s);
     JS_FreeValue(ctx, e);
 }
@@ -193,6 +196,14 @@ int mq_script_call1(mq_script_vm* vm, const char* fn, double arg, double* ret) {
 int mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, double c, double* ret) {
     double args[3] = { a, b, c };
     return call_impl(vm, fn, 3, args, ret);
+}
+
+int mq_script_last_error(mq_script_vm* vm, char* out, int cap) {
+    (void)vm;
+    if (!out || cap <= 0) return 1;
+    if (g_last_error.empty()) { out[0] = '\0'; return 1; }
+    std::snprintf(out, (size_t)cap, "%s", g_last_error.c_str());
+    return 0;
 }
 
 void mq_script_gc(mq_script_vm* vm) {

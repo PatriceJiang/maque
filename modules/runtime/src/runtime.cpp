@@ -15,6 +15,7 @@
 #include "core/observability/mq_obs.h"
 #include "core/platform/mq_platform.h"
 #include "core/input/mq_input.h"
+#include "core/watcher/mq_watcher.h"
 #include "core/control/mq_control.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
@@ -60,6 +61,12 @@ struct Engine {
     mq_input*           input = nullptr;                   // 确定性输入流（录制/回放）
     mq_snapshot_pool*   snaps = nullptr;                   // 快照池（回滚/防抖，docs/10 §4）
     mq_snapshot*        snap_last = nullptr;                // 最近一次世界快照
+    mq_watcher*         watcher = nullptr;                  // 资源热重载监视（docs/08）
+    std::string         script_path;                        // 当前脚本（热重载用）
+    uint64_t            script_hash = 0;
+    std::string         scn_vfs_path;                       // 场景在 VFS 中的路径
+    std::string         scn_dir;                            // 场景所在目录（本地路径）
+    uint32_t            reloads = 0;
     uint64_t            frame = 0;                          // 模拟帧号（= sim time / dt）
     uint64_t            last_checksum = 0;
     std::vector<std::pair<uint64_t, uint64_t>> trail;       // (frame, checksum) —— 失步定位
@@ -92,6 +99,9 @@ struct Engine {
     bool prepare_replay();                                  // 载入回放日志并设定期望校验和（docs/10 §3）
     void step_frame();                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
     bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
+    bool reload_script(std::string* err = nullptr);          // 重载脚本（帧边界调用，docs/14）
+    bool reload_scene();                                    // 重载场景（重建世界，docs/08）
+    uint32_t poll_watcher();                                // 帧边界检查资源变化
     void export_final_snapshot();                           // 导出世界快照（MAQUE_SNAPSHOT）
     void finalize_run();                                    // 导出快照 + 录制日志（含 frames/trail 元数据）
     bool world_snapshot(mq_snapshot* snap);                 // 世界 → 快照（反射驱动，docs/10 §4）
@@ -265,6 +275,8 @@ void Engine::step_frame() {
         mq_input_dispatch(input);
         if (mq_input_quit(input)) quit = true;
     }
+    // ②b 帧边界热重载：资源变化只在此处生效（docs/08/14）
+    if (watcher && (frame % 6 == 0)) poll_watcher();
     // ③ 脚本：update(dt) → 帧边界 GC（确定性，docs/14）
     std::vector<mq_renderer_item> draws;
     const float dt = 1.0F / 60.0F;
@@ -293,6 +305,74 @@ void Engine::step_frame() {
         write_ppm(frames_dir + fn, TW, H, pixels);
     }
     ++frame;
+}
+
+/* ---- 热重载（docs/08 §热重载、docs/14）：只在帧边界执行 ---- */
+
+bool Engine::reload_script(std::string* err) {
+    if (script_path.empty() || !vm) { if (err) *err = "no script"; return false; }
+    void* d = nullptr; size_t n = 0;
+    if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) != MQ_VFS_OK) {
+        if (err) *err = "script not readable";
+        return false;
+    }
+    std::string js((char*)d, n);
+    mq_vfs_free(d);
+    const uint64_t h = mq_vfs_hash(js.data(), js.size());
+    if (h == script_hash) return false;
+    /* 脚本以 IIFE 形态定义全局回调（推荐写法，见 scenes/ui.js）：每次重载得到**全新的词法作用域**，
+     * 回调被替换、`let/const` 不冲突；状态迁移由脚本显式经 globalThis 载体完成（docs/14 §6）。 */
+    if (mq_script_eval(vm, js.c_str(), script_path.c_str()) != 0) {
+        char ebuf[512] = { 0 };
+        std::string e = mq_script_last_error(vm, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "eval failed";
+        if (err) *err = e;
+        std::print(stderr, "runtime: hot reload failed for '{}': {}\n", script_path, e);
+        return false;
+    }
+    script_hash = h;
+    ++reloads;
+    mq_obs_event(obs, "runtime", 1, "script_reloaded");
+    std::print("runtime: hot reload script '{}' ({} bytes)\n", script_path, js.size());
+    return true;
+}
+
+bool Engine::reload_scene() {
+    if (scn_vfs_path.empty() || !scene) return false;
+    void* d = nullptr; size_t n = 0;
+    if (mq_vfs_read(vfs, scn_vfs_path.c_str(), &d, &n) != MQ_VFS_OK) return false;
+    std::string text((char*)d, n);
+    mq_vfs_free(d);
+    Scene* fresh = new Scene();
+    fresh->deserialize(*this, text);
+    fresh->instantiate(*this);
+    delete scene;                       // 重建世界（编辑器/AI 场景迭代路径）
+    scene = fresh;
+    scene->compute_world(*this);
+    ++reloads;
+    mq_obs_event(obs, "runtime", 1, "scene_reloaded");
+    std::print("runtime: hot reload scene '{}'\n", scn_vfs_path);
+    return true;
+}
+
+uint32_t Engine::poll_watcher() {
+    if (!watcher) return 0;
+    struct Ctx { Engine* eng; };
+    Ctx cx{ this };
+    const uint32_t changed = mq_watcher_poll(watcher, [](void* ud, const char* path, mq_watch_kind kind) {
+        auto* c = (Ctx*)ud;
+        if (kind == MQ_WATCH_REMOVED) return 0;
+        const std::string p = path ? path : "";
+        if (!c->eng->script_path.empty() &&
+            p.size() >= c->eng->script_path.size() &&
+            p.compare(p.size() - c->eng->script_path.size(), c->eng->script_path.size(), c->eng->script_path) == 0)
+            c->eng->reload_script();
+        else if (!c->eng->scn_vfs_path.empty() &&
+                 p.size() >= c->eng->scn_vfs_path.size() &&
+                 p.compare(p.size() - c->eng->scn_vfs_path.size(), c->eng->scn_vfs_path.size(), c->eng->scn_vfs_path) == 0)
+            c->eng->reload_scene();
+        return 0;
+    }, &cx);
+    return changed;
 }
 
 /* 载入回放日志（MAQUE_REPLAY）：此后所有步进都只消费记录（设备输入被忽略）。 */
@@ -623,7 +703,7 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
             if (!d) continue;
-            /* UI 控件：按 role 绘制（docs/19 §4；引擎不认具体组件类型） */
+            /* UI 控件：overlay 层（layer=1）——屏幕空间绘制，不受相机影响（docs/13 §分层） */
             if (d->role & MQ_ROLE_UI_BUTTON) {
                 float x = 0, y = 0, w = 64, h = 24, r = 0.2F, g = 0.25F, b = 0.35F;
                 int32_t z = 0;
@@ -637,9 +717,12 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 if (const mq_field_desc* fz = mq_reflect_field(d, "z")) z = *(const int32_t*)(blob.data() + fz->offset);
                 (void)z;
                 // 矩形控件以"中心 + 半径"图元表达（渲染后端当前只有 sprite 图元）
-                out.push_back(mq_renderer_item{ e.x + x + w * 0.5F, (float)eng.H - (e.y + y) - h * 0.5F,
-                                                w * 0.5F > h * 0.5F ? w * 0.5F : h * 0.5F,
-                                                r, g, b, 1.0F, -1 });
+                mq_renderer_item it{};
+                it.x = e.x + x + w * 0.5F; it.y = (float)eng.H - (e.y + y) - h * 0.5F;
+                it.size = w * 0.5F > h * 0.5F ? w * 0.5F : h * 0.5F;
+                it.r = r; it.g = g; it.b = b; it.a = 1.0F;
+                it.texture = -1; it.layer = 1; it.z = z;
+                out.push_back(it);
                 continue;
             }
             if (d->role & MQ_ROLE_UI_LABEL) {
@@ -650,7 +733,11 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 read_f32(d, blob.data(), "g", &g);
                 read_f32(d, blob.data(), "b", &b);
                 read_f32(d, blob.data(), "a", &a);
-                out.push_back(mq_renderer_item{ e.x + x, eng.H - (e.y + y), 2.0F, r, g, b, a, -1 });
+                mq_renderer_item it{};
+                it.x = e.x + x; it.y = (float)eng.H - (e.y + y);
+                it.size = 2.0F; it.r = r; it.g = g; it.b = b; it.a = a;
+                it.texture = -1; it.layer = 1; it.z = 100;      // 文本在控件之上
+                out.push_back(it);
                 continue;
             }
             if (!(d->role & MQ_ROLE_SPRITE)) continue;
@@ -672,7 +759,13 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 }
             int tex = -1;
             if (!texref.empty()) tex = eng.load_texture_ref(texref);
-            out.push_back(mq_renderer_item{ e.x, (float)eng.H - e.y, radius, r, g, b, 1.0F, tex });
+            mq_renderer_item it{};
+            it.x = e.x; it.y = (float)eng.H - e.y; it.size = radius;
+            it.r = r; it.g = g; it.b = b; it.a = 1.0F;
+            it.texture = tex;
+            it.layer = 0;                                        // 世界层
+            it.z = (int)idx;                                     // 稳定序（按实体 id，禁指针序）
+            out.push_back(it);
         }
     }
 }
@@ -1135,6 +1228,116 @@ static int h_inject(void* u, const char*, const mq_json* params, char* out, size
     return 0;
 }
 
+/* Control.mcp：MCP 语义（initialize/tools/list/tools/call）经控制平面进出。
+ * 请求体放 params.request（字符串）；也可直接传 params.method/params.name。 */
+/* Reload.script / Reload.scene：手动触发帧边界重载；dry_run=1 只报告不执行（docs/11 §4）。 */
+static int h_reload_script(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
+    if (dry) {
+        void* d = nullptr; size_t n = 0;
+        uint64_t h = 0;
+        if (!e->script_path.empty() && mq_vfs_read(e->vfs, ("/" + e->script_path).c_str(), &d, &n) == MQ_VFS_OK) {
+            h = mq_vfs_hash(d, n); mq_vfs_free(d);
+        }
+        std::snprintf(out, cap, "{\"would_reload\":%s,\"script\":\"%s\"}",
+                      h != e->script_hash ? "true" : "false", e->script_path.c_str());
+        return 0;
+    }
+    std::string err;
+    const bool ok = e->reload_script(&err);
+    std::snprintf(out, cap, "{\"reloaded\":%s,\"reloads\":%u,\"error\":\"%s\"}",
+                  ok ? "true" : "false", e->reloads, err.c_str());
+    return 0;
+}
+static int h_reload_scene(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
+    if (dry) { std::snprintf(out, cap, "{\"would_reload\":true,\"scene\":\"%s\"}", e->scn_vfs_path.c_str()); return 0; }
+    const bool ok = e->reload_scene();
+    std::snprintf(out, cap, "{\"reloaded\":%s,\"reloads\":%u,\"entities\":%d}",
+                  ok ? "true" : "false", e->reloads, e->scene ? e->scene->count() : 0);
+    return 0;
+}
+static int h_files(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::string o = "{\"watching\":" + std::to_string(e->watcher ? mq_watcher_count(e->watcher) : 0) + ",\"files\":[";
+    if (e->watcher)
+        for (uint32_t i = 0; i < mq_watcher_count(e->watcher); ++i) {
+            const char* p = mq_watcher_path_at(e->watcher, i);
+            o += std::string(i ? ",\"" : "\"") + (p ? p : "") + "\"";
+        }
+    o += "],\"reloads\":" + std::to_string(e->reloads) + "}";
+    std::snprintf(out, cap, "%s", o.c_str());
+    return 0;
+}
+
+/* Control.mcp：MCP 语义（initialize/tools/list/tools/call）。
+ * 两种入参形态：
+ *   ① params.request = "<完整 MCP 请求 JSON 文本>"（原样走 MCP 包装）
+ *   ② params.method  = "tools/call" + params.name/arguments（直接转发到同名方法，
+ *      避免手工拼 JSON —— 结构化入参优先，docs/11 §4）。 */
+static int h_mcp(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    if (const char* raw = mq_json_str(mq_json_get(params, "request"), nullptr)) {
+        std::snprintf(out, cap, "%s", mq_control_dispatch_mcp(e->control, raw));
+        return 0;
+    }
+    const char* method = mq_json_str(mq_json_get(params, "method"), nullptr);
+    if (!method) { std::snprintf(out, cap, "{\"error\":\"missing request/method\"}"); return 0; }
+    if (std::strcmp(method, "tools/call") == 0) {
+        const char* name = mq_json_str(mq_json_get(params, "name"), nullptr);
+        const mq_json* args = mq_json_get(params, "arguments");
+        if (!name) {
+            std::snprintf(out, cap, "{\"isError\":true,\"content\":[{\"type\":\"text\",\"text\":\"missing tool name\"}]}");
+            return 0;
+        }
+        /* 直接调用已注册的 JSON-RPC 方法（与 MCP tools/call 相同的语义） */
+        std::string inner = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"" + std::string(name) + "\"";
+        if (args) {
+            std::string argtxt = "{";
+            struct Ctx { std::string* out; bool first; };
+            Ctx cx{ &argtxt, true };
+            mq_json_object_each(args, [](void* ud, const char* k, const char* v) {
+                auto* c = (Ctx*)ud;
+                if (!c->first) *c->out += ",";
+                c->first = false;
+                const bool numeric = v && *v && ((v[0] >= '0' && v[0] <= '9') ||
+                                                 ((v[0] == '-' || v[0] == '+') && v[1] >= '0' && v[1] <= '9'));
+                *c->out += std::string("\"") + k + "\":" +
+                           (numeric ? std::string(v) : ("\"" + std::string(v ? v : "") + "\""));
+                return 0;
+            }, &cx);
+            argtxt += "}";
+            inner += ",\"params\":" + argtxt;
+        }
+        inner += "}";
+        const char* resp = mq_control_dispatch(e->control, inner.c_str());
+        std::string text = resp ? resp : "null";
+        std::string escaped;
+        for (char c : text) { if (c == '"' || c == '\\') escaped += '\\'; escaped += c; }
+        std::snprintf(out, cap, "{\"content\":[{\"type\":\"text\",\"text\":\"%s\"}]}", escaped.c_str());
+        return 0;
+    }
+    /* initialize / tools/list / 其它：经 MCP 包装 */
+    std::string req = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"" + std::string(method) + "\"";
+    if (const mq_json* p = mq_json_get(params, "params")) {
+        if (const char* nm = mq_json_str(mq_json_get(p, "name"), nullptr)) {
+            req += std::string(",\"params\":{\"name\":\"") + nm + "\"}";
+        }
+    }
+    req += "}";
+    /* MCP 包装返回 {"jsonrpc":..,"result":X}；此处抽出 X（外层由控制平面再包一次） */
+    const char* resp = mq_control_dispatch_mcp(e->control, req.c_str());
+    const char* res = resp ? std::strstr(resp, "\"result\":") : nullptr;
+    std::snprintf(out, cap, "%s", res ? res + 9 : (resp ? resp : "{}"));
+    if (res) {   // 去掉末尾多余的 '}'（外层控制平面会补）
+        size_t n = std::strlen(out);
+        if (n > 0 && out[n - 1] == '}') out[n - 1] = '\0';
+    }
+    return 0;
+}
+
 /* Runtime.step：确定性推进 n 帧（AI/CI 逐帧驱动，docs/11 §5）。 */
 static int h_step(void* u, const char*, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
@@ -1202,9 +1405,32 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     eng.nviews = scene.desc.views > 0 ? scene.desc.views : 1;
     eng.TW = eng.W * eng.nviews;
     eng.views.resize(eng.nviews);
-    for (int i = 0; i < eng.nviews; ++i)
-        eng.views[i] = mq_renderer_view{ (float)(i * eng.W), 0, (float)eng.W, (float)eng.H,
-                                         (float)(i * eng.W), (i - (eng.nviews - 1) * 0.5F) * scene.desc.eye_sep };
+    for (int i = 0; i < eng.nviews; ++i) {
+        mq_renderer_view& v = eng.views[i];
+        v = mq_renderer_view{};
+        v.vx = (float)(i * eng.W); v.vy = 0;
+        v.vw = (float)eng.W; v.vh = (float)eng.H;
+        v.pan = (float)(i * eng.W);
+        v.eye = (i - (eng.nviews - 1) * 0.5F) * scene.desc.eye_sep;
+        v.cx = eng.W * 0.5F; v.cy = eng.H * 0.5F;   // 默认：相机中心 = 视口中心（世界坐标 = 像素）
+        v.zoom = 1.0F;
+    }
+    /* 场景中的 Camera 组件（role=camera）覆盖视图相机（docs/13 §相机/分层） */
+    for (auto& [idx, e] : scene.ents) {
+        for (auto& [tid, blob] : e.comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            if (!d || !(d->role & MQ_ROLE_CAMERA)) continue;
+            bool active = true;
+            if (const mq_field_desc* fa = mq_reflect_field(d, "active")) active = *(const bool*)(blob.data() + fa->offset);
+            if (!active) continue;
+            float cx = eng.W * 0.5F, cy = eng.H * 0.5F, zoom = 1.0F, rot = 0.0F;
+            read_f32(d, blob.data(), "x", &cx);
+            read_f32(d, blob.data(), "y", &cy);
+            read_f32(d, blob.data(), "zoom", &zoom);
+            read_f32(d, blob.data(), "rotation", &rot);
+            for (auto& v : eng.views) { v.cx = cx; v.cy = cy; v.zoom = zoom > 0 ? zoom : 1.0F; v.rot = rot; }
+        }
+    }
     eng.rng = scene.desc.seed * 2654435761u + 12345u;
     std::print("runtime: scene '{}' title='{}' script='{}' {}x{} views={}\n",
                scn_path, scene.desc.title, scene.desc.script, eng.W, eng.H, eng.nviews);
@@ -1234,6 +1460,25 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
         if (js.empty()) { std::print("runtime: cannot read script '{}'\n", script_path); return 1; }
         if (mq_script_eval(eng.vm, js.c_str(), script_path.c_str()) != 0) { std::print("runtime: script error\n"); return 1; }
     }
+    eng.script_path = script_path;
+    eng.scn_vfs_path = "/" + scnp.filename().string();
+    eng.scn_dir = scn_dir;
+    {
+        void* d = nullptr; size_t n = 0;
+        if (!script_path.empty() && mq_vfs_read(eng.vfs, ("/" + script_path).c_str(), &d, &n) == MQ_VFS_OK) {
+            eng.script_hash = mq_vfs_hash(d, n);
+            mq_vfs_free(d);
+        }
+    }
+    /* 热重载监视（MAQUE_WATCH=1）：只监视脚本与场景两个文件（编辑器留待 M9+） */
+    const char* watch = std::getenv("MAQUE_WATCH");
+    if (watch && *watch && *watch != '0') {
+        eng.watcher = mq_watcher_create();
+        mq_watcher_add(eng.watcher, (std::filesystem::path(scn_dir) / scnp.filename()).string().c_str());
+        if (!script_path.empty())
+            mq_watcher_add(eng.watcher, (std::filesystem::path(scn_dir) / script_path).string().c_str());
+        std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(eng.watcher));
+    }
     if (mq_script_has(eng.vm, "on_start")) mq_script_call0(eng.vm, "on_start", nullptr);
 
     // 控制平面：注册方法；若无显示/AI 驱动，可 headless 服务请求
@@ -1249,6 +1494,10 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_control_register(eng.control, "Input.inject", h_inject, &eng);
     mq_control_register(eng.control, "Replay.log", h_replay_log, &eng);
     mq_control_register(eng.control, "Runtime.step", h_step, &eng);
+    mq_control_register(eng.control, "Control.mcp", h_mcp, &eng);
+    mq_control_register(eng.control, "Reload.script", h_reload_script, &eng);
+    mq_control_register(eng.control, "Reload.scene", h_reload_scene, &eng);
+    mq_control_register(eng.control, "Reload.files", h_files, &eng);
     if (const char* req = std::getenv("MAQUE_CONTROL")) {
         const bool replayed = eng.prepare_replay();
         if (!replayed && std::getenv("MAQUE_RECORD")) mq_input_record_begin(eng.input);
@@ -1281,6 +1530,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_script_vm_destroy(eng.vm);
     mq_obs_destroy(eng.obs);
     mq_reflect_destroy(eng.reflect);
+    mq_watcher_destroy(eng.watcher);
     mq_snapshot_pool_destroy(eng.snaps);
     mq_input_destroy(eng.input);
     mq_platform_destroy(eng.platform);
