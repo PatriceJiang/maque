@@ -93,6 +93,8 @@ typedef struct mq_input_frame {
 #define MQ_PLATFORM_MOD_META (1u << 3)
 
 mq_platform* mq_platform_create(const char* title, int w, int h);
+/* 把 RGBA8 帧呈现到窗口（无窗口/dummy 驱动安全空操作；MAQUE_PRESENT=off|software|accelerated） */
+int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h);
 void mq_platform_destroy(mq_platform* p);
 int mq_platform_has_window(mq_platform* p);
 void mq_platform_pump(mq_platform* p);

@@ -20222,6 +20222,32 @@
           ]
         },
         {
+          "name": "mq_platform_present",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "rgba",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "w",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "h",
+              "type": "int32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_platform_destroy",
           "returns": "void",
           "args": [

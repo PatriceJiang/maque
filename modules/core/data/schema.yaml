@@ -2742,6 +2742,10 @@
           - { name: height, type: "int" }
     fns:
       - { fn: mq_platform_create, returns: "mq_platform*", args: [ { name: title, type: "const char*" }, { name: w, type: "int" }, { name: h, type: "int" } ] }
+      - { fn: mq_platform_present, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: rgba, type: "const void*" },
+                  { name: w, type: "int32_t" }, { name: h, type: "int32_t" } ],
+          doc: "把 RGBA8 帧呈现到窗口（无窗口/dummy 驱动安全空操作；MAQUE_PRESENT=off|software|accelerated）" }
       - { fn: mq_platform_destroy, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }
       - { fn: mq_platform_has_window, returns: "int", args: [ { name: p, type: "mq_platform*" } ] }
       - { fn: mq_platform_pump, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }

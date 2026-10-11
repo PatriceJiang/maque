@@ -24,6 +24,12 @@ cd modules/core/data && node parser.js --check
 ```
 
 - `-DMAQUE_BUILD_TESTS=ON|OFF` 控制测试（默认 ON）。
+- **窗口（宿主启动期覆盖）**：`MAQUE_WINDOW=800x600` 设窗口尺寸（世界/渲染目标仍是场景尺寸，
+  窗口内**等比缩放 + 居中留边**显示，输入坐标自动映射回世界坐标）；`MAQUE_TITLE=<标题>`；
+  `MAQUE_VIEWS=n`；`MAQUE_PRESENT=off|software|accelerated`（默认 software：纯窗口表面，
+  不初始化 GL/EGL，避免与渲染插件的 wgpu(EGL) 争用）；`MAQUE_CAPTURE=<前缀>` 从**窗口表面**
+  回读前 3 帧为 PPM（用于真实窗口路径的像素级验证）；`MAQUE_KEEP_OPEN=1` 忽略脚本 `quit()`。
+  示例：`MAQUE_WINDOW=800x600 MAQUE_TITLE=MaqueEngine ./build/samples/player/maque_player scenes/ball.scn`
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
 - 系统依赖：SDL2 / libcurl / libwebsockets（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev`）。
 - 已 vendored：`third_party/quickjs-ng`、`third_party/wuffs`。

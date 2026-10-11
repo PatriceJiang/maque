@@ -116,3 +116,16 @@ engine.wasm（引擎本体）──→ 启动 VFS ──→ 拉取 game 包 (htt
 | WASM 无线程拖慢 executor | 单线程协作式，热路径避免阻塞 |
 | SIDE_MODULE 成熟度 | 优先"静态链接"或"独立 .wasm 实例化"，SIDE_MODULE 作为可选 |
 | 崩溃栈信息缺失 | 保留 DWARF + JS 栈拼接 |
+
+## 呈现（窗口输出）
+
+- 平台层提供 `mq_platform_present(p, rgba, w, h)`：把宿主渲染出的 RGBA8 帧送到窗口。
+- **默认软件路径**：`SDL_GetWindowSurface` + 等比 `SDL_BlitScaled`（居中留边）→ 不初始化 GL/EGL。
+  选择原因：渲染插件的 wgpu 自身使用 EGL，若 SDL 也建 GL 上下文，多实例/多窗口下会 `EGL BadAccess`。
+  `MAQUE_PRESENT=accelerated` 可切到 `SDL_Renderer`（GPU blit），`off` 关闭。
+- **世界尺寸 ≠ 窗口尺寸**：`MAQUE_WINDOW` 只改窗口；渲染目标与世界仍是场景尺寸（`scenes/*.scn` 的
+  `width/height`），窗口内按 `min(win/world)` 等比缩放并居中留边；宿主输入把手标坐标映射回世界坐标
+  （与 UI 命中测试同一规则）。
+- **无窗口/dummy 驱动**（`MAQUE_HEADLESS=1`）时呈现是安全空操作，headless/CI 不受影响。
+- 抓帧：`MAQUE_CAPTURE=<前缀>` 从窗口表面回读前 3 帧 PPM（`tests/window_present_e2e.sh` 用它做
+  真实窗口路径的像素级断言）。

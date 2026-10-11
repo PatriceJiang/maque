@@ -102,3 +102,12 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/text/text.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/text_e2e")
 endif()
+
+# 窗口呈现端到端（docs/05）：真实窗口 + 呈现路径 + 缩放（无显示环境自动跳过）
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME window_present_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/window_present_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/window_present_e2e")
+    set_tests_properties(window_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()

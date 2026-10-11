@@ -69,12 +69,15 @@ struct SnapshotWriter;
 
 /* 引擎内辅助（定义见 Engine 之后；Scene 与 Engine 互相引用）。 */
 void write_json_string_pub(std::string& out, const std::string& s);
+/* MAQUE_KEEP_OPEN：忽略脚本 quit()（演示用；见 host::quit） */
+bool keep_open = false;
 /* Cocos 组件语义辅助（定义见 host API 之前）：供输入回调使用。 */
 std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role);
 std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name, const mq_type_desc** out_desc);
 float read_num(const mq_type_desc* d, const void* base, const char* field, float def);
 bool  write_num(const mq_type_desc* d, void* base, const char* field, double v);
 void  slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px);
+void  window_to_target(const Engine& eng, float* x, float* y);   // 窗口像素 → 世界坐标
 /* node_emit_number / node_width 由生成的 maque_api.h 在 ::host 中声明（api_list）。 */
 void attach_component(Engine& eng, int idx, const char* type_name);
 void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& blob);
@@ -229,6 +232,7 @@ struct Engine {
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
     int W = 0, H = 0, nviews = 1, TW = 0;
+    int win_w = 0, win_h = 0;                               // 窗口尺寸（MAQUE_WINDOW 可覆盖；世界等比缩放显示）
     std::vector<mq_renderer_view> views;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
@@ -637,6 +641,9 @@ void Engine::step_frame() {
     if (rapi && rself)
         rapi->render_views(rself, TW, H, views.data(), (uint32_t)views.size(),
                            draws.data(), (uint32_t)draws.size(), bg, pixels.data(), (uint32_t)pixels.size());
+    /* 呈现到窗口（docs/05、M5）：无窗口/dummy 驱动时为安全空操作 */
+    if (platform && window && rapi && rself)
+        mq_platform_present(platform, pixels.data(), TW, H);
     if (!frames_dir.empty()) {
         char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);
         write_ppm(frames_dir + fn, TW, H, pixels);
@@ -1653,6 +1660,10 @@ int ui_hit_entity(Engine& eng, float px, float py, mq_input_target* out) {
 }
 
 int runtime_hit_test(void* user, const mq_input_event* ev, mq_input_target* out) {
+    /* 输入坐标从窗口像素映射到世界/目标坐标（窗口可缩放显示世界） */
+    mq_input_event mapped = *ev;
+    window_to_target(*(Engine*)user, &mapped.x, &mapped.y);
+    ev = &mapped;
     auto* eng = (Engine*)user;
     out->entity = -1; out->handle = (uint32_t)-1;
     if (!eng->scene || !eng->scene->count()) return 0;
@@ -1673,12 +1684,26 @@ void call_script_event(Engine& eng, const mq_input_event* ev) {
     mq_event_dispatch(eng.vm, kind, (double)ev->target, (double)ev->x, (double)ev->y, text);
 }
 
+/* 窗口像素 → 目标（世界）坐标：等比缩放 + 居中留边（SDL_RenderSetLogicalSize 同规则） */
+void window_to_target(const Engine& eng, float* x, float* y) {
+    if (eng.win_w <= 0 || eng.win_h <= 0) return;
+    const float sc = std::min((float)eng.win_w / (float)eng.W, (float)eng.win_h / (float)eng.H);
+    if (sc <= 0.0F) return;
+    const float off_x = ((float)eng.win_w - (float)eng.W * sc) * 0.5F;
+    const float off_y = ((float)eng.win_h - (float)eng.H * sc) * 0.5F;
+    *x = (*x - off_x) / sc;
+    *y = (*y - off_y) / sc;
+}
+
 int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target* target) {
     auto* eng = (Engine*)user;
     eng->ev = ev;
+    /* 脚本可见坐标 = 世界坐标（与 UI 命中测试一致） */
+    mq_input_event mapped_ev = *ev;
+    window_to_target(*eng, &mapped_ev.x, &mapped_ev.y);
     if (ev->type == MQ_INPUT_POINTER_MOVE || ev->type == MQ_INPUT_POINTER_DOWN ||
         ev->type == MQ_INPUT_POINTER_UP || ev->type == MQ_INPUT_CLICK) {
-        eng->mouse_x = ev->x; eng->mouse_y = ev->y;
+        eng->mouse_x = mapped_ev.x; eng->mouse_y = mapped_ev.y;
     }
     if (ev->type == MQ_INPUT_POINTER_MOVE && target->entity != eng->hover) {
         eng->hover = target->entity;                    // 悬停态（脚本经 ui_hover 读）
@@ -2268,7 +2293,12 @@ namespace host {
 float screen_w(void* ctx) { return (float)((Engine*)ctx)->W; }
 float screen_h(void* ctx) { return (float)((Engine*)ctx)->H; }
 float rng(void* ctx) { return (float)((Engine*)ctx)->next_rng() / 4294967296.0f; }
-void  quit(void* ctx) { ((Engine*)ctx)->quit = true; }
+void  quit(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    /* MAQUE_KEEP_OPEN=1：演示/人工查看时忽略脚本的 quit()（关闭窗口仍退出） */
+    if (keep_open) { std::print("runtime: script requested quit (ignored: MAQUE_KEEP_OPEN)\n"); return; }
+    eng->quit = true;
+}
 void  clear(void* ctx, float r, float g, float b) {
     auto* e = (Engine*)ctx; e->bg[0] = r; e->bg[1] = g; e->bg[2] = b;
 }
@@ -3645,13 +3675,17 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
 
     obs = mq_obs_create();                       // 场景装配期即可能产生事件（脚本错误等）
     if (!load_scene_into(scn_path)) return false;
-    platform = mq_platform_create(scene->desc.title.c_str(), W, H);
+    /* 窗口标题：MAQUE_TITLE 覆盖场景标题（默认用场景 title） */
+    std::string win_title = scene->desc.title;
+    if (const char* ts = std::getenv("MAQUE_TITLE"); ts && *ts) win_title = ts;
+    platform = mq_platform_create(win_title.c_str(), win_w, win_h);
     window = mq_platform_has_window(platform) != 0;
     input = mq_input_create();
     mq_input_set_hit_test(input, runtime_hit_test, this);
     mq_input_set_parent_fn(input, runtime_parent, this);
     mq_input_add_handler(input, runtime_input_handler, this);
     { const char* hs = std::getenv("MAQUE_HITS"); if (hs && *hs && *hs != '0') trace_hits = true; }
+    { const char* ko = std::getenv("MAQUE_KEEP_OPEN"); if (ko && *ko && *ko != '0') keep_open = true; }
     snaps = mq_snapshot_pool_create(8, 1 << 16);
     { const char* cp = std::getenv("MAQUE_CHECKPOINTS"); if (cp && *cp && *cp != '0') cp_active = true; }
     /* 场景/脚本/资源/物理装配统一走 load_scene_into（与 director.loadScene 同一条路径） */
@@ -3695,6 +3729,23 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     W = scene->desc.width > 0 ? scene->desc.width : 320;
     H = scene->desc.height > 0 ? scene->desc.height : 240;
     nviews = scene->desc.views > 0 ? scene->desc.views : 1;
+    /* 启动期覆盖（宿主/CI 用；docs/05、docs/22）：
+     *   MAQUE_WINDOW=WxH  窗口与渲染目标尺寸（世界坐标不变，仅改可视区）
+     *   MAQUE_VIEWS=n     视图数（1 = 单视图；>1 = 并排多视图/立体） */
+    win_w = W; win_h = H;                       // 默认：窗口 = 世界/目标尺寸
+    if (const char* ws = std::getenv("MAQUE_WINDOW")) {
+        int ow = 0, oh = 0;
+        if (std::sscanf(ws, "%dx%d", &ow, &oh) == 2 && ow > 0 && oh > 0) {
+            win_w = ow; win_h = oh;             // 只改窗口；世界/目标不变 → 窗口内等比缩放显示
+            std::print("runtime: window {}x{} (world {}x{}, scale {:.2f}x)\n",
+                       win_w, win_h, W, H,
+                       std::min((float)win_w / (float)W, (float)win_h / (float)H));
+        }
+    }
+    if (const char* vs = std::getenv("MAQUE_VIEWS")) {
+        const int v = std::atoi(vs);
+        if (v >= 1 && v <= 4) nviews = v;
+    }
     TW = W * nviews;
     views.assign((size_t)nviews, mq_renderer_view{});
     for (int i = 0; i < nviews; ++i) {

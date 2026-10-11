@@ -4,6 +4,11 @@
  * 指针位置/按键状态只由事件流推导（不查设备状态）→ 顺序与回放确定。 */
 #include "core/platform/mq_platform.h"
 
+#include <print>
+#include <vector>
+#include <cstdio>
+#include <cstdlib>
+
 #include <SDL.h>
 
 #include <deque>
@@ -45,6 +50,14 @@ uint32_t key_from_sdl(SDL_Keycode k) {
 
 struct mq_platform {
     SDL_Window* win = nullptr;
+    SDL_Renderer* ren = nullptr;      /* 呈现用（懒创建）；无窗口/off 时为 null */
+    SDL_Texture*  tex = nullptr;      /* 流式帧纹理 */
+    int tex_w = 0, tex_h = 0;
+    int present_mode = -1;            /* -1 未定；0 off；1 software；2 accelerated */
+    bool present_logged = false;
+    int  logical_w = 0, logical_h = 0;
+    bool cap_pending = false;
+    int  cap_count = 0;               /* MAQUE_CAPTURE 已抓帧数 */
     bool        sdl = false;
     bool        window = false;
     bool        quit = false;
@@ -103,10 +116,14 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == 0) {
         p->sdl = true;
         if (w > 0 && h > 0) {
+            /* 强制软件帧缓冲：SDL 不初始化 GL/EGL（渲染插件 wgpu 自己用 EGL，
+             * 二者争用会导致 EGL BadAccess —— 多实例时尤其明显） */
+            SDL_SetHint(SDL_HINT_FRAMEBUFFER_ACCELERATION, "0");
             p->win = SDL_CreateWindow(title ? title : "maque",
                                       SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                                       w, h, SDL_WINDOW_SHOWN);
             p->window = p->win != nullptr;
+            if (p->window) std::print("platform: SDL video driver='{}'\n", SDL_GetCurrentVideoDriver());
         }
         if (p->window) SDL_StartTextInput();
     }
@@ -114,6 +131,8 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
 }
 
 void mq_platform_destroy(mq_platform* p) {
+    if (p && p->tex) { SDL_DestroyTexture(p->tex); p->tex = nullptr; }
+    if (p && p->ren) { SDL_DestroyRenderer(p->ren); p->ren = nullptr; }
     if (!p) return;
     if (p->window) SDL_StopTextInput();
     if (p->win) SDL_DestroyWindow(p->win);
@@ -122,6 +141,124 @@ void mq_platform_destroy(mq_platform* p) {
 }
 
 /* 真实窗口：SDL dummy 驱动也会返回非空窗口指针，故用驱动名判定。 */
+/* 把 RGBA8 帧呈现到窗口（docs/05、M5）。
+ *   · 无窗口 / dummy 驱动 / MAQUE_PRESENT=off → 安全空操作（headless/CI 不报错）
+ *   · MAQUE_PRESENT=software|accelerated 可强制后端；默认 accelerated → software 回退
+ * 呈现失败不致命（视为无窗口），避免把渲染问题升级成"跑不起来"。 */
+int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) {
+    if (!p || !rgba || w <= 0 || h <= 0) return 1;
+    if (!p->win || !p->window) return 2;                  // 无窗口：空操作
+    if (p->present_mode < 0) {
+        /* 默认 **软件** 呈现：帧本来就在 CPU（渲染插件回读），软件 blit 无需 GL 上下文，
+         * 避免与 wgpu(EGL) 争用 —— 多实例/多窗口下 GL 上下文会 BadAccess。
+         * MAQUE_PRESENT=accelerated 可切回 GPU blit；=off 关闭呈现。 */
+        p->present_mode = 1;
+        const char* mode = std::getenv("MAQUE_PRESENT");
+        if (mode && *mode) {
+            if (std::strcmp(mode, "off") == 0) p->present_mode = 0;
+            else if (std::strcmp(mode, "accelerated") == 0) p->present_mode = 2;
+        }
+    }
+    if (p->present_mode == 0) return 3;                    // 显式关闭
+    if (p->present_mode == 1) {
+        /* 纯软件路径：写入窗口表面（X11 下为 XShm/XImage）——不涉及 GL/EGL。
+         * 目标尺寸 ≠ 窗口尺寸时按等比 + 居中留边缩放（与宿主输入映射同一规则）。 */
+        SDL_Surface* ws = SDL_GetWindowSurface(p->win);
+        if (!ws) return 4;
+        SDL_Surface* src = SDL_CreateRGBSurfaceWithFormatFrom(
+            const_cast<void*>(rgba), w, h, 32, w * 4, SDL_PIXELFORMAT_RGBA32);
+        if (!src) return 5;
+        const float sc = std::min((float)ws->w / (float)w, (float)ws->h / (float)h);
+        SDL_Rect dst;
+        dst.w = (int)((float)w * sc);
+        dst.h = (int)((float)h * sc);
+        dst.x = (ws->w - dst.w) / 2;
+        dst.y = (ws->h - dst.h) / 2;
+        SDL_FillRect(ws, nullptr, SDL_MapRGB(ws->format, 0, 0, 0));   // 留边黑
+        const int rc = SDL_BlitScaled(src, nullptr, ws, &dst);
+        SDL_FreeSurface(src);
+        if (rc != 0) return 6;
+        if (!p->present_logged) {
+            std::print("platform: present via window surface (software) target={}x{} window={}x{}\n",
+                       w, h, ws->w, ws->h);
+            p->present_logged = true;
+        }
+        if (p->cap_pending) { /* 抓帧见下（软件路径从源帧拷贝，内容一致） */ }
+        SDL_UpdateWindowSurface(p->win);
+        /* 抓帧：回读**窗口表面**（即真正呈现给用户的像素，含缩放与留边） */
+        if (const char* cap = std::getenv("MAQUE_CAPTURE"); cap && *cap && p->cap_count < 3) {
+            if (SDL_LockSurface(ws) == 0) {
+                char path[512];
+                std::snprintf(path, sizeof path, "%s_%d.ppm", cap, p->cap_count);
+                if (FILE* f = std::fopen(path, "wb")) {
+                    std::fprintf(f, "P6\n%d %d\n255\n", ws->w, ws->h);
+                    const SDL_PixelFormat* fmt = ws->format;
+                    for (int y = 0; y < ws->h; ++y) {
+                        const uint8_t* row = (const uint8_t*)ws->pixels + (size_t)y * ws->pitch;
+                        for (int x = 0; x < ws->w; ++x) {
+                            uint32_t v = 0;
+                            std::memcpy(&v, row + (size_t)x * fmt->BytesPerPixel, (size_t)fmt->BytesPerPixel);
+                            uint8_t r = 0, g = 0, b = 0, a = 0;
+                            SDL_GetRGBA(v, fmt, &r, &g, &b, &a);
+                            const uint8_t rgb[3] = { r, g, b };
+                            std::fwrite(rgb, 1, 3, f);
+                        }
+                    }
+                    std::fclose(f);
+                }
+                SDL_UnlockSurface(ws);
+            }
+            ++p->cap_count;
+        }
+        return 0;
+    }
+    if (!p->ren) {
+        /* SDL2：第二个参数是驱动索引（-1 = 自动）；用 flags 指定软件/加速 */
+        if (p->present_mode == 1) p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
+        else p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_ACCELERATED);
+        if (!p->ren) p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
+        if (!p->ren) { p->window = false; return 4; }       // 呈现不可用 → 降级为无窗口
+    }
+    if (!p->tex || p->tex_w != w || p->tex_h != h) {
+        if (p->tex) SDL_DestroyTexture(p->tex);
+        p->tex = SDL_CreateTexture(p->ren, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
+        p->tex_w = w; p->tex_h = h;
+        if (!p->tex) return 5;
+    }
+    if (!p->present_logged) {
+        SDL_RendererInfo info{};
+        if (SDL_GetRendererInfo(p->ren, &info) == 0)
+            std::print("platform: present via renderer='{}' flags={:#x} size={}x{}\n",
+                       info.name ? info.name : "?", (unsigned)info.flags, w, h);
+        p->present_logged = true;
+    }
+    if (p->logical_w != w || p->logical_h != h) {
+        SDL_RenderSetLogicalSize(p->ren, w, h);   // 等比缩放 + 居中留边（与宿主输入映射同规则）
+        p->logical_w = w; p->logical_h = h;
+    }
+    if (SDL_UpdateTexture(p->tex, nullptr, rgba, w * 4) != 0) return 6;
+    SDL_RenderClear(p->ren);
+    SDL_RenderCopy(p->ren, p->tex, nullptr, nullptr);       // 目标尺寸不同则自动缩放
+    /* 可选：从**呈现缓冲**回读抓帧（MAQUE_CAPTURE=<前缀>，取前 N 帧）
+     *   —— 用于在真实窗口路径上做像素级验证（CI/无合成器读取手段时尤其有用） */
+    if (const char* cap = std::getenv("MAQUE_CAPTURE"); cap && *cap && p->cap_count < 3) {
+        std::vector<uint8_t> px((size_t)w * h * 4);
+        if (SDL_RenderReadPixels(p->ren, nullptr, SDL_PIXELFORMAT_RGBA32, px.data(), w * 4) == 0) {
+            char path[512];
+            std::snprintf(path, sizeof path, "%s_%d.ppm", cap, p->cap_count);
+            FILE* f = std::fopen(path, "wb");
+            if (f) {
+                std::fprintf(f, "P6\n%d %d\n255\n", w, h);
+                for (int i = 0; i < w * h; ++i) std::fwrite(&px[(size_t)i * 4], 1, 3, f);
+                std::fclose(f);
+            }
+            ++p->cap_count;
+        }
+    }
+    SDL_RenderPresent(p->ren);
+    return 0;
+}
+
 int mq_platform_has_window(mq_platform* p) {
     if (!p || !p->win || !p->sdl) return 0;
     const char* drv = SDL_GetCurrentVideoDriver();
