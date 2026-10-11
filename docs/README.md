@@ -30,6 +30,8 @@
 | [19](19-输入与事件分发系统.md) | 输入与事件分发系统（指针/触摸/焦点/命中/传播） |
 | [20](20-运行时与资源模型.md) | 运行时与资源模型（引擎即浏览器，游戏即资源） |
 | [21](21-接口声明与绑定生成.md) | 接口声明与绑定生成（声明一次，生成 C++/脚本绑定） |
+| [23](23-实现与设计差距审查.md) | 实现与设计差距审查（历史快照 + §0 现况对照） |
+| [24](24-设计遵循度审查.md) | **设计遵循度审查（现况记分：符合/部分/违背/未实现 + 逐条证据）** |
 | [assets/00](assets/00-index.md) | 资产系列索引（Effect/Material/Mesh/Texture/Font/AnimationClip/Skeleton/Spine） |
 | [assets/01](assets/01-material.md) | 资产详设：材质（Material / Effect / MaterialInstance） |
 
