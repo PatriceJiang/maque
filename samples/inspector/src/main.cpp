@@ -11,6 +11,7 @@
  *   maque_inspector --connect 7777 --headless Scene.info Scene.entities
  */
 #include "client.h"
+#include "panels.h"
 
 #include <cstdio>
 #include <cstring>
@@ -43,6 +44,18 @@ struct App {
     std::string props_raw;                    // 选中实体的属性原始 JSON
     std::vector<std::string> log;
     char console[512] = "{\"jsonrpc\":\"2.0\",\"method\":\"Control.info\"}";
+    /* 字体图集 / 画面预览 */
+    insp::Fetch font_fetch, screen_fetch;
+    insp::Texture font_tex, screen_tex;
+    std::string fonts_raw;
+    std::string glyphs_raw;
+    std::vector<std::pair<int, float>> atlas_list;     /* (字体索引, 字号) */
+    int atlas_sel = 0;
+    float atlas_zoom = 3.0F;
+    std::string tab = "属性";                          /* 初始标签页（--tab） */
+    bool atlas_autoloaded = false;
+    bool screen_auto = true;
+    float screen_interval = 0.5F, screen_acc = 0.0F;
     char connect_input[128] = "7777";
     float refresh_acc = 0.0F;
 
@@ -78,6 +91,54 @@ void pump(App& a, float dt) {
             a.describe_raw = reply.raw;
         } else if (method == "Scene.get") {
             a.props_raw = reply.raw;
+        } else if (method == "Font.info") {
+            a.fonts_raw = reply.raw;
+            a.atlas_list.clear();
+            const bool was_empty = a.fonts_raw.size() < 3;
+            size_t p = 0;
+            while ((p = reply.raw.find("\"index\"", p)) != std::string::npos) {
+                const std::string sub = reply.raw.substr(p, 160);
+                a.atlas_list.emplace_back((int)insp::Client::num_field(sub, "index"),
+                                          (float)insp::Client::num_field(sub, "size"));
+                p += 7;
+            }
+            if ((was_empty || !a.atlas_autoloaded) && !a.atlas_list.empty() && !a.font_fetch.active) {
+                a.atlas_autoloaded = true;
+                char pre[96];
+                std::snprintf(pre, sizeof pre, "{\"index\":%d,\"size\":%.1f",
+                              a.atlas_list.front().first, (double)a.atlas_list.front().second);
+                a.font_fetch.start("Font.atlas", pre);
+                a.font_fetch.pump(a.client);
+                char gp[96];
+                std::snprintf(gp, sizeof gp, "{\"index\":%d,\"size\":%.1f}",
+                              a.atlas_list.front().first, (double)a.atlas_list.front().second);
+                a.client.send("Font.glyphs", gp);
+            }
+        } else if (method == "Font.glyphs") {
+            a.glyphs_raw = reply.raw;
+        } else if (method == "Font.atlas") {
+            if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
+                static int n = 0;
+                if (++n <= 6 || a.font_fetch.done)
+                    std::print("[insp] Font.atlas #{} active={} in_flight={} next={} total={} data={} done={}\n",
+                               n, a.font_fetch.active, a.font_fetch.in_flight, a.font_fetch.next_offset,
+                               a.font_fetch.total, a.font_fetch.data.size(), a.font_fetch.done);
+            }
+            if (a.font_fetch.on_reply(reply.raw) && a.font_fetch.done) {
+                a.font_tex.upload(a.font_fetch.rgba, a.font_fetch.w, a.font_fetch.h);
+                if (std::getenv("MAQUE_INSPECTOR_TRACE")) {     // 诊断：数据与纹理状态
+                    size_t ink = 0;
+                    for (size_t i = 0; i < a.font_fetch.rgba.size(); i += 4)
+                        if (a.font_fetch.rgba[i] > 40) ++ink;
+                    std::print("[insp] 图集 {}x{} 解码字节={} 墨迹像素={} texID={} status={}\n",
+                               a.font_fetch.w, a.font_fetch.h, a.font_fetch.rgba.size(), ink,
+                               (unsigned long long)(a.font_tex.tex ? a.font_tex.tex->GetTexID() : 0),
+                               a.font_tex.tex ? (int)a.font_tex.tex->Status : -1);
+                }
+            }
+        } else if (method == "Capture.screen") {
+            if (a.screen_fetch.on_reply(reply.raw) && a.screen_fetch.done)
+                a.screen_tex.upload(a.screen_fetch.rgba, a.screen_fetch.w, a.screen_fetch.h);
         } else {
             a.note((reply.ok ? "← " : "✗ ") + method + " → " + reply.raw.substr(0, 200));
         }
@@ -88,8 +149,18 @@ void pump(App& a, float dt) {
         a.client.send("Control.info");
         a.client.send("Scene.info");
         a.client.send("Scene.entities");
+        a.client.send("Font.info");
         if (!a.selected.empty())
             a.client.send("Scene.get", "{\"id\":" + a.selected + ",\"path\":\"\"}");
+    }
+    /* 分块拉取：每帧推进若干块（不阻塞 UI，也留出游戏帧时间） */
+    a.font_fetch.pump(a.client);
+    a.screen_fetch.pump(a.client);
+    a.screen_acc += dt;
+    if (a.screen_auto && a.client.connected() && !a.screen_fetch.active && a.screen_acc >= a.screen_interval) {
+        a.screen_acc = 0.0F;
+        a.screen_fetch.start("Capture.screen", "{\"max_dim\":480}");
+        a.screen_fetch.pump(a.client);
     }
 }
 
@@ -166,7 +237,10 @@ void draw_ui(App& a) {
     /* 右：属性 + 控制台 */
     ImGui::BeginChild("right", ImVec2(0, 0));
     if (ImGui::BeginTabBar("tabs")) {
-        if (ImGui::BeginTabItem("属性")) {
+        auto tab_flags = [&](const char* name) {
+            return a.tab == name ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
+        };
+        if (ImGui::BeginTabItem("属性", nullptr, tab_flags("属性"))) {
             if (a.selected.empty()) ImGui::TextDisabled("在左侧选择一个实体");
             else if (a.props_raw.empty()) ImGui::TextDisabled("（读取中…）");
             else {
@@ -228,7 +302,7 @@ void draw_ui(App& a) {
             }
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("控制台")) {
+        if (ImGui::BeginTabItem("控制台", nullptr, tab_flags("控制台"))) {
             ImGui::TextDisabled("发送任意控制面方法（JSON-RPC 单行；与 MCP 同一批方法）");
             ImGui::InputTextMultiline("##req", a.console, sizeof a.console, ImVec2(-1, 60));
             if (ImGui::Button("发送") && a.client.connected()) {
@@ -244,7 +318,115 @@ void draw_ui(App& a) {
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("模式")) {
+        if (ImGui::BeginTabItem("字体图集", nullptr, tab_flags("字体图集"))) {
+            ImGui::TextDisabled("引擎的**动态字形图集**（按需栅格化、增量打包）："
+                                "ASCII 预热 + 排版时按码点追加，generation 变化时重传纹理");
+            if (a.atlas_list.empty()) ImGui::TextDisabled("（暂无图集数据）");
+            for (size_t i = 0; i < a.atlas_list.size() && i < 24; ++i) {
+                ImGui::PushID((int)i);
+                char label[96];
+                std::snprintf(label, sizeof label, "字体 #%d  ·  %.0fpx", a.atlas_list[i].first,
+                              (double)a.atlas_list[i].second);
+                if (ImGui::Selectable(label, a.atlas_sel == (int)i)) {
+                    a.atlas_sel = (int)i;
+                    char pre[96];
+                    std::snprintf(pre, sizeof pre, "{\"index\":%d,\"size\":%.1f",
+                                  a.atlas_list[i].first, (double)a.atlas_list[i].second);
+                    a.font_fetch.start("Font.atlas", pre);
+                    a.font_fetch.pump(a.client);
+                    char gp[96];
+                    std::snprintf(gp, sizeof gp, "{\"index\":%d,\"size\":%.1f}",
+                                  a.atlas_list[i].first, (double)a.atlas_list[i].second);
+                    a.client.send("Font.glyphs", gp);
+                }
+                ImGui::PopID();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("刷新图集")) {
+                if (!a.atlas_list.empty()) {
+                    char pre[96];
+                    std::snprintf(pre, sizeof pre, "{\"index\":%d,\"size\":%.1f",
+                                  a.atlas_list[a.atlas_sel].first, (double)a.atlas_list[a.atlas_sel].second);
+                    a.font_fetch.start("Font.atlas", pre);
+                    a.font_fetch.pump(a.client);
+                }
+            }
+            ImGui::SetNextItemWidth(140);
+            ImGui::SliderFloat("缩放", &a.atlas_zoom, 0.5F, 8.0F, "%.1fx");
+            ImGui::SameLine();
+            ImGui::Text("拉取 %zu/%zu 字节", a.font_fetch.data.size(), a.font_fetch.total);
+            ImGui::Separator();
+            if (a.font_tex.valid()) {
+                const float zw = a.font_fetch.w * a.atlas_zoom, zh = a.font_fetch.h * a.atlas_zoom;
+                ImGui::BeginChild("atlas_view", ImVec2(0, 0), ImGuiChildFlags_Borders,
+                                  ImGuiWindowFlags_HorizontalScrollbar);
+                const ImVec2 p0 = ImGui::GetCursorScreenPos();
+                ImGui::Image(a.font_tex.id(), ImVec2(zw, zh));
+                /* 叠加字形格线（每 8 个字形画一条竖线；鼠标悬浮显示码点与图集矩形） */
+                ImDrawList* dl = ImGui::GetWindowDrawList();
+                dl->AddRect(p0, ImVec2(p0.x + zw, p0.y + zh), IM_COL32(90, 90, 110, 200));
+                dl->AddLine(ImVec2(p0.x, p0.y), ImVec2(p0.x + zw, p0.y + zh), IM_COL32(80, 80, 100, 90));
+                for (int gy = 0; gy * 8 < a.font_fetch.h; ++gy) {
+                    const float yy = p0.y + gy * 8 * a.atlas_zoom;
+                    dl->AddLine(ImVec2(p0.x, yy), ImVec2(p0.x + zw, yy), IM_COL32(80, 80, 100, 60));
+                }
+                if (ImGui::IsItemHovered()) {
+                    const ImVec2 m = ImGui::GetIO().MousePos;
+                    const int ax = (int)((m.x - p0.x) / a.atlas_zoom), ay = (int)((m.y - p0.y) / a.atlas_zoom);
+                    ImGui::BeginTooltip();
+                    ImGui::Text("图集坐标 (%d, %d)", ax, ay);
+                    /* 找出覆盖该点的字形（字形数几百 → 线性扫描足够） */
+                    const std::string& j = a.glyphs_raw;
+                    size_t q = 0;
+                    int shown = 0;
+                    while ((q = j.find("{\"cp\"", q)) != std::string::npos && shown < 4) {
+                        const std::string sub = j.substr(q, 120);
+                        const int cp = (int)insp::Client::num_field(sub, "cp");
+                        const int gx = (int)insp::Client::num_field(sub, "ax");
+                        const int gy = (int)insp::Client::num_field(sub, "ay");
+                        const int gw = (int)insp::Client::num_field(sub, "w");
+                        const int gh = (int)insp::Client::num_field(sub, "h");
+                        ++q;
+                        if (gw <= 0 || gh <= 0) continue;
+                        if (ax >= gx && ax < gx + gw && ay >= gy && ay < gy + gh) {
+                            ImGui::Text("U+%04X  '%c'  图集矩形 (%d,%d) %dx%d", cp,
+                                        (cp >= 32 && cp < 127) ? (char)cp : '.', gx, gy, gw, gh);
+                            ++shown;
+                        }
+                    }
+                    if (!shown) ImGui::TextDisabled("（空白区域）");
+                    ImGui::EndTooltip();
+                }
+                ImGui::EndChild();
+            } else {
+                ImGui::TextDisabled("选择左侧的图集以拉取像素（分块传输，逐帧推进）");
+            }
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("预览", nullptr, tab_flags("预览"))) {
+            ImGui::Checkbox("自动刷新", &a.screen_auto);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(160);
+            ImGui::SliderFloat("间隔(秒)", &a.screen_interval, 0.1F, 3.0F, "%.1f");
+            ImGui::SameLine();
+            if (ImGui::Button("立即抓帧") && a.client.connected()) {
+                a.screen_fetch.start("Capture.screen", "{\"max_dim\":480}");
+                a.screen_fetch.pump(a.client);
+            }
+            ImGui::SameLine();
+            ImGui::Text("拉取 %zu/%zu 字节", a.screen_fetch.data.size(), a.screen_fetch.total);
+            ImGui::Separator();
+            if (a.screen_tex.valid()) {
+                const float avail = ImGui::GetContentRegionAvail().x;
+                const float sc = a.screen_fetch.w > 0 ? avail / (float)a.screen_fetch.w : 1.0F;
+                ImGui::Image(a.screen_tex.id(),
+                             ImVec2(a.screen_fetch.w * sc, a.screen_fetch.h * sc));
+            } else {
+                ImGui::TextDisabled("（等待首帧；游戏需开启控制端点）");
+            }
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("模式", nullptr, tab_flags("模式"))) {
             ImGui::TextWrapped("%s", a.describe_raw.empty() ? "（Types.describe 无数据）" : a.describe_raw.c_str());
             ImGui::EndTabItem();
         }
@@ -291,8 +473,9 @@ int main(int argc, char** argv) {
     App app;
     std::vector<std::string> queue;
     bool is_headless = false;
-    /* 界面可读性：字号与整体缩放（默认 21px；HiDPI 会再自动乘上像素比） */
-    float font_size = 21.0F, ui_scale = 1.0F;
+    /* 界面可读性：字号与整体缩放（默认 42px；HiDPI 会再自动乘上像素比。
+     * 也可用 --font-size / MAQUE_INSPECTOR_FONT_SIZE 覆盖） */
+    float font_size = 42.0F, ui_scale = 1.0F;
     if (const char* e = std::getenv("MAQUE_INSPECTOR_FONT_SIZE")) font_size = (float)std::atof(e);
     if (const char* e = std::getenv("MAQUE_INSPECTOR_UI_SCALE")) ui_scale = (float)std::atof(e);
     for (int i = 1; i < argc; ++i) {
@@ -300,10 +483,11 @@ int main(int argc, char** argv) {
         if (arg == "--connect" && i + 1 < argc) app.connect_spec = argv[++i];
         else if (arg == "--font-size" && i + 1 < argc) font_size = (float)std::atof(argv[++i]);
         else if (arg == "--ui-scale" && i + 1 < argc) ui_scale = (float)std::atof(argv[++i]);
+        else if (arg == "--tab" && i + 1 < argc) app.tab = argv[++i];
         else if (arg == "--headless") is_headless = true;
         else if (arg == "--help") {
             std::print("用法: maque_inspector [--connect <tcp:端口|uds:路径>] [--font-size 像素] "
-                       "[--ui-scale 倍数] [--headless <方法…>]\n");
+                       "[--ui-scale 倍数] [--tab 属性|控制台|字体图集|预览|模式] [--headless <方法…>]\n");
             return 0;
         } else queue.push_back(arg);
     }
@@ -316,7 +500,7 @@ int main(int argc, char** argv) {
         std::print(stderr, "inspector: SDL_Init 失败: {}\n", SDL_GetError());
         return 1;
     }
-    const int win_w = (int)(1440 * ui_scale), win_h = (int)(900 * ui_scale);
+    const int win_w = (int)(1680 * ui_scale), win_h = (int)(1050 * ui_scale);
     SDL_Window* win = SDL_CreateWindow("Maque Inspector", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                        win_w, win_h, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!win) { std::print(stderr, "inspector: 窗口创建失败: {}\n", SDL_GetError()); SDL_Quit(); return 1; }
@@ -342,7 +526,7 @@ int main(int argc, char** argv) {
     ImGui::StyleColorsDark();
     ImGui::GetStyle().ScaleAllSizes(scale);        /* 行高/内边距/滚动条一起放大 */
     /* 中文界面：ImGui 默认字体只有 ASCII → 加载项目字体（含 CJK），字形范围取常用简体
-     * 字号 = --font-size（默认 21px）× 显示器像素比；太小/太大用 --font-size / --ui-scale 调 */
+     * 字号 = --font-size（默认 42px）× 显示器像素比；太小/太大用 --font-size / --ui-scale 调 */
     {
         const char* env = std::getenv("MAQUE_FONT");
         const char* cands[] = {
@@ -392,6 +576,7 @@ int main(int argc, char** argv) {
         SDL_SetRenderDrawColor(ren, 16, 16, 20, 255);
         SDL_RenderClear(ren);
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), ren);
+        insp::Texture::gc();                    // 回收后端已销毁的纹理
         SDL_RenderPresent(ren);
     }
     app.client.disconnect();

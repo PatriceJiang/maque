@@ -3,7 +3,7 @@
   "generated_by": "parser.js",
   "type_count": 242,
   "api_count": 116,
-  "control_count": 32,
+  "control_count": 36,
   "callback_count": 10,
   "module_count": 23,
   "types": [
@@ -16575,6 +16575,65 @@
       "args": []
     },
     {
+      "method": "Font.info",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Font.glyphs",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "index",
+          "type": "float"
+        },
+        {
+          "name": "size",
+          "type": "float"
+        }
+      ]
+    },
+    {
+      "method": "Font.atlas",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "index",
+          "type": "float"
+        },
+        {
+          "name": "size",
+          "type": "float"
+        },
+        {
+          "name": "offset",
+          "type": "float"
+        },
+        {
+          "name": "max",
+          "type": "float"
+        }
+      ]
+    },
+    {
+      "method": "Capture.screen",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "offset",
+          "type": "float"
+        },
+        {
+          "name": "max",
+          "type": "float"
+        },
+        {
+          "name": "max_dim",
+          "type": "float"
+        }
+      ]
+    },
+    {
       "method": "Types.describe",
       "namespace": "control",
       "args": []
@@ -23350,6 +23409,58 @@
             {
               "name": "size",
               "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_font_glyph_at",
+          "returns": "int",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_text_glyph*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_font_atlas_size",
+          "returns": "int",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "out_w",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "out_h",
+              "type": "uint32_t*",
               "doc": null
             }
           ]

@@ -2645,6 +2645,14 @@
   control_list:
     # ---- 自省（A1）----
     - { method: Control.info,  args: [] }
+    # ---- 字体图集（动态图集可视化，inspector 字体面板；plans/17 M2）----
+    - { method: Font.info,     args: [] }
+    - { method: Font.glyphs,   args: [ { name: index, type: float }, { name: size, type: float } ] }
+    - { method: Font.atlas,    args: [ { name: index, type: float }, { name: size, type: float },
+                                       { name: offset, type: float }, { name: max, type: float } ] }
+    # ---- 画面抓帧（实时预览面板；PPM + base64 分块）----
+    - { method: Capture.screen, args: [ { name: offset, type: float }, { name: max, type: float },
+                                        { name: max_dim, type: float } ] }
     - { method: Types.describe, args: [] }
     - { method: Scene.info, args: [] }
     - { method: Scene.entities, args: [] }
@@ -3227,6 +3235,10 @@
           doc: "图集版本号：每新增字形 +1（宿主据此决定是否重传纹理）" }
       - { fn: mq_font_glyph_count, returns: "uint32_t", args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" } ],
           doc: "该字号已栅格化的字形数（自省/测试）" }
+      - { fn: mq_font_glyph_at, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: index, type: "uint32_t" }, { name: out, type: "mq_text_glyph*" } ],
+          doc: "按索引取已栅格化字形（码点 + 图集矩形；inspector 图集面板用）" }
+      - { fn: mq_font_atlas_size, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: out_w, type: "uint32_t*" }, { name: out_h, type: "uint32_t*" } ],
+          doc: "图集当前尺寸（不复制像素；增长中）" }
 
 # 输入模拟器（开发/CI，docs/19）：帧索引场景文件 → 输入事件流；与录制/回放/确定性一致。
 - namespace: sim

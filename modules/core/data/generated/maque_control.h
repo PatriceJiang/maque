@@ -14,6 +14,14 @@ extern "C" {
 
 /* Control.info() */
 int mq_control_Control_info(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Font.info() */
+int mq_control_Font_info(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Font.glyphs(index: float, size: float) */
+int mq_control_Font_glyphs(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Font.atlas(index: float, size: float, offset: float, max: float) */
+int mq_control_Font_atlas(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Capture.screen(offset: float, max: float, max_dim: float) */
+int mq_control_Capture_screen(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Types.describe() */
 int mq_control_Types_describe(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.info() */

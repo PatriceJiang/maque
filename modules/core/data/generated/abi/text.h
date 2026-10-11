@@ -113,6 +113,10 @@ int mq_font_atlas(mq_font* font, float size, uint8_t* out_rgba, size_t cap, uint
 uint32_t mq_font_atlas_generation(mq_font* font, float size);
 /* 该字号已栅格化的字形数（自省/测试） */
 uint32_t mq_font_glyph_count(mq_font* font, float size);
+/* 按索引取已栅格化字形（码点 + 图集矩形；inspector 图集面板用） */
+int mq_font_glyph_at(mq_font* font, float size, uint32_t index, mq_text_glyph* out);
+/* 图集当前尺寸（不复制像素；增长中） */
+int mq_font_atlas_size(mq_font* font, float size, uint32_t* out_w, uint32_t* out_h);
 
 #ifdef __cplusplus
 }

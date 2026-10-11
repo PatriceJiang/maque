@@ -301,6 +301,35 @@ extern "C" int mq_font_atlas(mq_font* font, float size, uint8_t* out_rgba, size_
     return MQ_TEXT_OK;
 }
 
+extern "C" int mq_font_glyph_at(mq_font* font, float size, uint32_t index, mq_text_glyph* out) {
+    if (!font || !out) return MQ_TEXT_ERR_ARG;
+    Atlas& a = atlas_for(font, size);
+    if (index >= a.glyphs.size()) return MQ_TEXT_ERR_ARG;
+    const Glyph& g = a.glyphs[index];
+    std::memset(out, 0, sizeof *out);
+    out->codepoint = g.cp;
+    out->w = (float)g.w;
+    out->h = (float)g.h;
+    out->ax = g.ax; out->ay = g.ay;
+    out->bearing_x = g.bearing_x;
+    out->bearing_y = g.bearing_y;
+    out->device_size = a.size;
+    if (g.w > 0 && g.h > 0) {
+        out->u0 = (float)g.ax / (float)a.w;   out->v0 = (float)g.ay / (float)a.h;
+        out->u1 = (float)(g.ax + g.w) / (float)a.w;
+        out->v1 = (float)(g.ay + g.h) / (float)a.h;
+    }
+    return MQ_TEXT_OK;
+}
+
+extern "C" int mq_font_atlas_size(mq_font* font, float size, uint32_t* out_w, uint32_t* out_h) {
+    if (!font) return MQ_TEXT_ERR_ARG;
+    Atlas& a = atlas_for(font, size);
+    if (out_w) *out_w = a.w;
+    if (out_h) *out_h = a.h;
+    return MQ_TEXT_OK;
+}
+
 extern "C" uint32_t mq_font_atlas_generation(mq_font* font, float size) {
     if (!font) return 0;
     Atlas& a = atlas_for(font, size);

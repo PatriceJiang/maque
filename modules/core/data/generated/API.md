@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema.yaml`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **116** 个 · 控制面方法 **32** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
+统计：脚本 API **116** 个 · 控制面方法 **36** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -153,6 +153,10 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | 方法 | 参数 | MCP 类型 |
 |------|------|----------|
 | `Control.info` | — | — |
+| `Font.info` | — | — |
+| `Font.glyphs` | index: float, size: float | number, number |
+| `Font.atlas` | index: float, size: float, offset: float, max: float | number, number, number, number |
+| `Capture.screen` | offset: float, max: float, max_dim: float | number, number, number |
 | `Types.describe` | — | — |
 | `Scene.info` | — | — |
 | `Scene.entities` | — | — |
@@ -761,6 +765,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_font_atlas` | int | font: mq_font*, size: float, out_rgba: uint8_t*, cap: size_t, out_w: uint32_t*, out_h: uint32_t* |
 | `mq_font_atlas_generation` | uint32_t | font: mq_font*, size: float |
 | `mq_font_glyph_count` | uint32_t | font: mq_font*, size: float |
+| `mq_font_glyph_at` | int | font: mq_font*, size: float, index: uint32_t, out: mq_text_glyph* |
+| `mq_font_atlas_size` | int | font: mq_font*, size: float, out_w: uint32_t*, out_h: uint32_t* |
 
 ### sim — `maque.sim` v1
 

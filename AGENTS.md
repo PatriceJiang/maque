@@ -50,7 +50,13 @@ cd modules/core/data && node parser.js --check
   默认**只读**（D2）：变更类方法（`control_list` 里 `control_mutating` 列出的）返回 `-32001` 并计入 `Control.info.rejected`；
   加 `MAQUE_INSPECT_RW=1` 才允许编辑。inspector 工具（独立进程，ImGui + SDL2 软件渲染）：
   `./build/samples/inspector/maque_inspector --connect 7777`（`--headless <方法…>` 用于 CI，无需显示器）。
-  面板：场景树 / 属性（反射驱动，`Scene.get(id,"")` dump 组件全字段）/ 控制台（手写任意方法，与 MCP 同源）/ 模式。
+  面板：场景树 / 属性（反射驱动，`Scene.get(id,"")` dump 组件全字段）/ 控制台（手写任意方法，与 MCP 同源）/
+  **字体图集**（`Font.info`/`Font.glyphs`/`Font.atlas`：看动态图集的实时状态、缩放查看、悬浮显示码点与图集矩形）/
+  **预览**（`Capture.screen`：分块传 PPM，可调刷新间隔与缩略图尺寸）/ 模式。
+  界面字号：`--font-size`（默认 42px）、`--ui-scale`（连样式一起缩放）、`--tab <面板名>` 直接打开某面板；
+  环境变量 `MAQUE_INSPECTOR_FONT_SIZE` / `MAQUE_INSPECTOR_UI_SCALE`。
+  **二进制传输**：控制面是行分隔 JSON → 图集/画面走 **base64 分块**（`offset`/`max`，单块 ≤48KB，客户端在途上限 4 且偏移递增）；
+  自建纹理必须 `ImGui::RegisterUserTexture()`（1.92+ 的外部纹理 API），否则后端不创建 SDL_Texture（白图）。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
 - 系统依赖：SDL2 / libcurl / libwebsockets（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev`）。
 - 已 vendored：`third_party/quickjs-ng`（JS 后端）、`third_party/lua`（Lua 5.4 后端）、`third_party/wuffs`、

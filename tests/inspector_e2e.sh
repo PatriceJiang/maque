@@ -53,6 +53,23 @@ grep -q 'read-only' "$WORK/set.log" || fail "只读会话未拒绝 Scene.set"
 REJ=$(grep -o '"rejected": *[0-9]*' "$WORK/info2.log" | head -1 | grep -o '[0-9]*')
 [ "${REJ:-0}" -ge 1 ] || fail "被拒计数未增加（rejected=$REJ）"
 
+# ---- ③b 字体图集与画面抓帧（分块 base64 传输；inspector 面板的数据通路）----
+"$INSPECTOR" --connect "$PORT" --headless Font.info > "$WORK/font.log" 2>&1 || fail "Font.info 失败"
+grep -q '"atlases"' "$WORK/font.log" || fail "Font.info 未返回图集列表"
+SIZE=$(grep -o '"size": *[0-9.]*' "$WORK/font.log" | head -1 | grep -o '[0-9.]*')
+IDX=$(grep -o '"index": *[0-9]*' "$WORK/font.log" | head -1 | grep -o '[0-9]*')
+[ -n "$SIZE" ] || fail "Font.info 未返回字号"
+"$INSPECTOR" --connect "$PORT" --headless "Font.glyphs|{\"index\":$IDX,\"size\":$SIZE}" > "$WORK/glyphs.log" 2>&1
+grep -q '"cp"' "$WORK/glyphs.log" || fail "Font.glyphs 未返回字形"
+grep -q '"ax"' "$WORK/glyphs.log" || fail "Font.glyphs 未返回图集矩形"
+# 图集分块：首块应带 PPM 头（base64 的 'UDY' = "P6\n"）
+"$INSPECTOR" --connect "$PORT" --headless "Font.atlas|{\"index\":$IDX,\"size\":$SIZE,\"offset\":0,\"max\":64}" > "$WORK/atlas.log" 2>&1
+grep -q '"total"' "$WORK/atlas.log" || fail "Font.atlas 未返回总长"
+grep -q '"data":"UDY' "$WORK/atlas.log" || fail "Font.atlas 首块不是 PPM 头（base64 P6）"
+"$INSPECTOR" --connect "$PORT" --headless 'Capture.screen|{"offset":0,"max":64,"max_dim":480}' > "$WORK/screen.log" 2>&1
+grep -q '"data":"UDY' "$WORK/screen.log" || fail "Capture.screen 未返回 PPM"
+grep -q '"w": *[1-9]' "$WORK/screen.log" || fail "Capture.screen 尺寸异常"
+
 # ---- ④ 独立性：断开后游戏仍在运行 ----
 kill -0 "$GAME_PID" 2>/dev/null || fail "游戏进程意外退出"
 "$INSPECTOR" --connect "$PORT" --headless Scene.entities > "$WORK/ents.log" 2>&1
