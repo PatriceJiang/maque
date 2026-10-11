@@ -51,3 +51,19 @@ add_subdirectory(modules/api)
 add_subdirectory(modules/runtime)
 add_subdirectory(samples/player)
 add_subdirectory(samples/host)
+
+# 声明了 module_abi 的模块：公开接口头由 DSL 生成 →
+#   ① 生成目录进入 include 路径（原手写头是 #include "abi/<mod>.h" 的 shim）
+#   ② 建立对 codegen 的构建依赖（保证生成先于编译）
+# 集中在此处接线：script 等模块必须先于 core/data 加入（生成绑定 TU 依赖 script）。
+if(TARGET maque_codegen)
+    get_property(_maque_gen GLOBAL PROPERTY MAQUE_GEN_DIR)
+    if(_maque_gen)
+        foreach(_t maque_script maque_platform maque_input maque_vfs maque_asset maque_physics maque_nav)
+            if(TARGET ${_t})
+                target_include_directories(${_t} PUBLIC "${_maque_gen}")
+                add_dependencies(${_t} maque_codegen)
+            endif()
+        endforeach()
+    endif()
+endif()

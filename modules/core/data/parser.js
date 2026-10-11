@@ -366,6 +366,9 @@ function parseSchemaDocument(root) {
             doc: f.doc === undefined ? null : String(f.doc),
           })),
         })) : [],
+        typedefs: Array.isArray(ma.typedefs) ? ma.typedefs.map((t) => ({
+          name: String(t.name), type: String(t.type),
+        })) : [],
         macros: Array.isArray(ma.macros) ? ma.macros.map((m) => ({
           name: String(m.name), value: String(m.value),
           doc: m.doc === undefined ? null : String(m.doc),
@@ -1849,10 +1852,10 @@ function genModuleAbi(mod) {
   lines.push('extern "C" {')
   lines.push('#endif')
   lines.push('')
-  for (const o of mod.opaque) {
-    lines.push(`typedef struct ${o} ${o};`)
-  }
-  if (mod.opaque.length) lines.push('')
+  /* ① 前向声明：不透明句柄 + 全部结构体（避免 typedef/字段的前向引用顺序问题） */
+  const fwd = [...mod.opaque, ...mod.structs.map((st) => st.name)]
+  for (const o of fwd) lines.push(`typedef struct ${o} ${o};`)
+  if (fwd.length) lines.push('')
   for (const e of mod.enums) {
     if (e.doc) lines.push(`/* ${e.doc} */`)
     lines.push(e.name ? `typedef enum ${e.name} {` : 'enum {')
@@ -1874,6 +1877,12 @@ function genModuleAbi(mod) {
     lines.push(`} ${st.name};`)
     lines.push('')
   }
+  /* ④ 函数指针等类型别名（结构体已定义完毕） */
+  for (const td of mod.typedefs) {
+    lines.push(`typedef ${cDecl(td.type, td.name)};`)
+  }
+  if (mod.typedefs.length) lines.push('')
+  /* ⑤ 宏 */
   for (const mc of mod.macros) {
     if (mc.doc) lines.push(`/* ${mc.doc} */`)
     lines.push(`#define ${mc.name} ${mc.value}`)

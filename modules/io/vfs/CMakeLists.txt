@@ -23,9 +23,3 @@ if(MAQUE_BUILD_TESTS)
     add_test(NAME vfs COMMAND maque_vfs_test)
 endif()
 
-# 模块 C ABI 头由 DSL 生成（schema.yaml 的 module_abi 段，docs/21）
-get_property(_maque_gen GLOBAL PROPERTY MAQUE_GEN_DIR)
-if(_maque_gen AND TARGET maque_codegen)
-    target_include_directories(maque_vfs PUBLIC "${_maque_gen}")
-    add_dependencies(maque_vfs maque_codegen)
-endif()

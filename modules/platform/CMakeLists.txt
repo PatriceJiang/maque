@@ -18,3 +18,4 @@ if(SDL2_INCLUDE_DIR AND SDL2_LIBRARY)
 else()
     message(WARNING "maque: SDL2 not found; platform 模块关闭")
 endif()
+

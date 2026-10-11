@@ -23,3 +23,4 @@ if(MAQUE_BUILD_TESTS)
     target_link_libraries(maque_script_test PRIVATE maque::script)
     add_test(NAME script COMMAND maque_script_test)
 endif()
+

@@ -10,3 +10,4 @@ if(MAQUE_BUILD_TESTS)
     target_link_libraries(maque_input_test PRIVATE maque::input)
     add_test(NAME input COMMAND maque_input_test)
 endif()
+
