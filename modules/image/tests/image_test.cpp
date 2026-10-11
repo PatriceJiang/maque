@@ -17,8 +17,9 @@ static int g_failures = 0;
 
 int main() {
     uint8_t* rgba = nullptr; uint32_t w = 0, h = 0;
-    int rc = mq_image_decode(kPng2x2, sizeof(kPng2x2), &rgba, &w, &h);
-    if (rc != 0) { std::print("decode failed: {}\n", mq_image_last_error()); ++g_failures; }
+    char err[128] = { 0 };
+    int rc = mq_image_decode(kPng2x2, sizeof(kPng2x2), &rgba, &w, &h, err, sizeof err);
+    if (rc != 0) { std::print("decode failed: {}\n", err); ++g_failures; }
     CHECK(rc == 0);
     CHECK(w == 2 && h == 2);
     if (rgba) {
@@ -31,7 +32,9 @@ int main() {
     }
     // 非法输入
     uint8_t* bad = nullptr; uint32_t bw = 0, bh = 0;
-    CHECK(mq_image_decode("xxxx", 4, &bad, &bw, &bh) != 0);
+    char err2[128] = { 0 };
+    CHECK(mq_image_decode("xxxx", 4, &bad, &bw, &bh, err2, sizeof err2) != 0);
+    CHECK(err2[0] != '\0');                       // 失败原因必须写入调用方缓冲（无全局错误态）
 
     if (g_failures == 0) { std::print("image_test: all checks passed\n"); return 0; }
     std::print("image_test: {} failure(s)\n", g_failures);

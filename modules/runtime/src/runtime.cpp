@@ -340,9 +340,10 @@ int Engine::load_texture(const std::string& path) {
     void* data = nullptr; size_t n = 0;
     if (mq_vfs_read(vfs, path.c_str(), &data, &n) != 0) { std::print("runtime: texture not found '{}'\n", path); return -1; }
     uint8_t* rgba = nullptr; uint32_t w = 0, h = 0;
-    int rc = mq_image_decode(data, n, &rgba, &w, &h);
+    char err[128] = { 0 };
+    int rc = mq_image_decode(data, n, &rgba, &w, &h, err, sizeof err);
     mq_vfs_free(data);
-    if (rc != 0) { std::print("runtime: decode failed '{}': {}\n", path, mq_image_last_error()); return -1; }
+    if (rc != 0) { std::print("runtime: decode failed '{}': {}\n", path, err); return -1; }
     int id = rapi->create_texture(rself, rgba, (int)w, (int)h);
     mq_image_free(rgba);
     tex_cache[path] = id;

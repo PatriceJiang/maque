@@ -1,20 +1,7 @@
-/* maque 图像解码（Wuffs，docs/08/13）：PNG/JPEG/GIF/BMP → RGBA8(非预乘)。 */
+/* 图像解码（Wuffs）
+ * ⚠️ 声明**由 DSL 生成**（docs/21 §1「引擎的一切都在 schema.yaml 声明一次」）：
+ *   单一真相 = modules/core/data/schema.yaml 的 `module_abi` 段；
+ *   生成物   = build/modules/core/data/generated/abi/image.h。
+ * 本文件保留为稳定包含路径（消费者无需改动）。改接口请改 schema.yaml。 */
 #pragma once
-
-#include <stddef.h>
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* 解码图片为 RGBA8(非预乘)。成功 0；*out_rgba 由 mq_image_free 释放。 */
-int  mq_image_decode(const void* data, size_t size,
-                     uint8_t** out_rgba, uint32_t* out_w, uint32_t* out_h);
-void mq_image_free(void* p);
-
-const char* mq_image_last_error(void);
-
-#ifdef __cplusplus
-}
-#endif
+#include "abi/image.h"

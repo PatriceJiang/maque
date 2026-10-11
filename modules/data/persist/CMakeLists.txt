@@ -14,3 +14,6 @@ if(MAQUE_BUILD_TESTS)
     target_link_libraries(maque_snapshot_test PRIVATE maque::persist)
     add_test(NAME snapshot COMMAND maque_snapshot_test)
 endif()
+target_include_directories(maque_persist PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_persist_test PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_snapshot_test PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）

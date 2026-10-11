@@ -2678,3 +2678,103 @@
       - { fn: mq_reflect_get_i64, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: obj, type: "const void*" }, { name: field, type: "const mq_field_desc*" }, { name: out, type: "int64_t*" } ] }
       - { fn: mq_reflect_set_i64, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: obj, type: "void*" }, { name: field, type: "const mq_field_desc*" }, { name: value, type: "int64_t" } ] }
       - { fn: mq_reflect_visit, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: obj, type: "void*" }, { name: type, type: "const mq_type_desc*" }, { name: visitor, type: "const mq_visitor*" } ] }
+
+- namespace: image
+  version: 1
+  module_abi:
+    module: image
+    abi_name: "maque.image"
+    summary: "图像解码（Wuffs）：PNG/JPEG/GIF/BMP → RGBA8(非预乘)"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    fns:
+      - { fn: mq_image_decode, returns: int,
+          args: [ { name: data, type: "const void*" }, { name: size, type: "size_t" },
+                  { name: out_rgba, type: "uint8_t**" }, { name: out_w, type: "uint32_t*" },
+                  { name: out_h, type: "uint32_t*" }, { name: err, type: "char*" },
+                  { name: err_cap, type: "size_t" } ],
+          doc: "失败原因写入 err（可为 NULL）；无模块级错误状态（ADR-0014）" }
+      - { fn: mq_image_free, returns: void, args: [ { name: p, type: "void*" } ] }
+
+- namespace: persist
+  version: 1
+  module_abi:
+    module: persist
+    abi_name: "maque.persist"
+    includes: [ "\"core/reflect/mq_reflect.h\"", "\"maque_desc.h\"", "<stddef.h>" ]
+    opaque: [ mq_json ]
+    typedefs:
+      - { name: mq_json_kv_fn, type: "int (*)(void* user, const char* key, const char* value_text)" }
+    fns:
+      - { fn: mq_persist_load_json, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: json, type: "const char*" }, { name: len, type: "size_t" }, { name: out, type: "void*" } ] }
+      - { fn: mq_json_parse, returns: "mq_json*", args: [ { name: text, type: "const char*" }, { name: len, type: "size_t" } ] }
+      - { fn: mq_json_free, returns: "void", args: [ { name: doc, type: "mq_json*" } ] }
+      - { fn: mq_json_get, returns: "const mq_json*", args: [ { name: obj, type: "const mq_json*" }, { name: key, type: "const char*" } ] }
+      - { fn: mq_json_len, returns: "uint32_t", args: [ { name: arr, type: "const mq_json*" } ] }
+      - { fn: mq_json_at, returns: "const mq_json*", args: [ { name: arr, type: "const mq_json*" }, { name: i, type: "uint32_t" } ] }
+      - { fn: mq_json_num, returns: "double", args: [ { name: v, type: "const mq_json*" }, { name: def, type: "double" } ] }
+      - { fn: mq_json_str, returns: "const char*", args: [ { name: v, type: "const mq_json*" }, { name: def, type: "const char*" } ] }
+      - { fn: mq_json_object_each, returns: "uint32_t", args: [ { name: obj, type: "const mq_json*" }, { name: fn, type: "mq_json_kv_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_persist_apply_json, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: node, type: "const mq_json*" }, { name: out, type: "void*" } ] }
+      - { fn: mq_persist_write_json, returns: "size_t", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: obj, type: "const void*" }, { name: out, type: "char*" }, { name: cap, type: "size_t" } ] }
+
+- namespace: persist_binary
+  version: 1
+  module_abi:
+    module: persist_binary
+    abi_name: "maque.persist_binary"
+    includes: [ "\"core/persist/mq_persist.h\"", "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_snapshot, mq_snapshot_pool ]
+    fns:
+      - { fn: mq_persist_encode, returns: "size_t", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: obj, type: "const void*" }, { name: out, type: "void*" }, { name: out_cap, type: "size_t" } ] }
+      - { fn: mq_persist_decode, returns: "long", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: in, type: "const void*" }, { name: in_size, type: "size_t" }, { name: out, type: "void*" } ] }
+      - { fn: mq_snapshot_pool_create, returns: "mq_snapshot_pool*", args: [ { name: count, type: "uint32_t" }, { name: capacity_bytes, type: "size_t" } ] }
+      - { fn: mq_snapshot_pool_destroy, returns: "void", args: [ { name: pool, type: "mq_snapshot_pool*" } ] }
+      - { fn: mq_snapshot_pool_acquire, returns: "mq_snapshot*", args: [ { name: pool, type: "mq_snapshot_pool*" } ] }
+      - { fn: mq_snapshot_create, returns: "mq_snapshot*", args: [  ] }
+      - { fn: mq_snapshot_destroy, returns: "void", args: [ { name: s, type: "mq_snapshot*" } ] }
+      - { fn: mq_snapshot_begin, returns: "void*", args: [ { name: s, type: "mq_snapshot*" }, { name: want, type: "size_t" } ] }
+      - { fn: mq_snapshot_commit, returns: "void", args: [ { name: s, type: "mq_snapshot*" }, { name: used, type: "size_t" } ] }
+      - { fn: mq_snapshot_bytes, returns: "const void*", args: [ { name: s, type: "mq_snapshot*" }, { name: out_size, type: "size_t*" } ] }
+      - { fn: mq_snapshot_set_frame, returns: "void", args: [ { name: s, type: "mq_snapshot*" }, { name: frame, type: "uint64_t" } ] }
+      - { fn: mq_snapshot_frame, returns: "uint64_t", args: [ { name: s, type: "mq_snapshot*" } ] }
+      - { fn: mq_snapshot_set_desc, returns: "void", args: [ { name: s, type: "mq_snapshot*" }, { name: desc, type: "const char*" } ] }
+      - { fn: mq_snapshot_desc, returns: "const char*", args: [ { name: s, type: "mq_snapshot*" } ] }
+      - { fn: mq_snapshot_clone, returns: "mq_snapshot*", args: [ { name: s, type: "mq_snapshot*" } ] }
+      - { fn: mq_snapshot_checksum, returns: "uint64_t", args: [ { name: s, type: "mq_snapshot*" } ] }
+
+- namespace: watcher
+  version: 1
+  module_abi:
+    module: watcher
+    abi_name: "maque.watcher"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_watcher ]
+    typedefs:
+      - { name: mq_watch_fn, type: "int (*)(void* user, const char* path, mq_watch_kind kind)" }
+    enums:
+      - name: mq_watch_kind
+        values:
+          - { name: MQ_WATCH_MODIFIED, value: 0 }
+          - { name: MQ_WATCH_REMOVED, value: 1 }
+          - { name: MQ_WATCH_ADDED, value: 2 }
+    fns:
+      - { fn: mq_watcher_create, returns: "mq_watcher*", args: [  ] }
+      - { fn: mq_watcher_destroy, returns: "void", args: [ { name: w, type: "mq_watcher*" } ] }
+      - { fn: mq_watcher_add, returns: "int", args: [ { name: w, type: "mq_watcher*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_watcher_remove, returns: "int", args: [ { name: w, type: "mq_watcher*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_watcher_count, returns: "uint32_t", args: [ { name: w, type: "mq_watcher*" } ] }
+      - { fn: mq_watcher_path_at, returns: "const char*", args: [ { name: w, type: "mq_watcher*" }, { name: index, type: "uint32_t" } ] }
+      - { fn: mq_watcher_poll, returns: "uint32_t", args: [ { name: w, type: "mq_watcher*" }, { name: fn, type: "mq_watch_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_watcher_set_stamp, returns: "int", args: [ { name: w, type: "mq_watcher*" }, { name: path, type: "const char*" }, { name: stamp, type: "uint64_t" } ] }
+      - { fn: mq_watcher_get_stamp, returns: "uint64_t", args: [ { name: w, type: "mq_watcher*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_watcher_stat, returns: "uint64_t", args: [ { name: path, type: "const char*" } ] }
+
+- namespace: net
+  version: 1
+  module_abi:
+    module: net
+    abi_name: "maque.net"
+    opaque: [ mq_net ]
+    fns:
+      - { fn: mq_net_create, returns: "mq_net*", args: [  ] }
+      - { fn: mq_net_destroy, returns: "void", args: [ { name: net, type: "mq_net*" } ] }
