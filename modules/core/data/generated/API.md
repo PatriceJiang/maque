@@ -201,7 +201,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 记录（POD）：
 
 - `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float
-- `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
+- `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -721,9 +721,9 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 结构体：
 
-- `mq_text_style`：struct_size: uint32_t, font_size: float, line_spacing: float, wrap: uint32_t, align: uint32_t, max_width: float, r: float, g: float, b: float, a: float
-- `mq_text_glyph`：codepoint: uint32_t, x: float, y: float, w: float, h: float, u0: float, v0: float, u1: float, v1: float, r: float, g: float, b: float, a: float, size: float
-- `mq_text_metrics`：width: float, height: float, line_count: uint32_t, glyph_count: uint32_t, baseline: float
+- `mq_text_style`：struct_size: uint32_t, font_size: float, device_scale: float, pixel_snap: int32_t, hinting: int32_t, line_spacing: float, wrap: uint32_t, align: uint32_t, max_width: float, r: float, g: float, b: float, a: float
+- `mq_text_glyph`：codepoint: uint32_t, x: float, y: float, w: float, h: float, u0: float, v0: float, u1: float, v1: float, r: float, g: float, b: float, a: float, size: float, device_size: float, x0: float, y0: float, bearing_x: int32_t, bearing_y: int32_t
+- `mq_text_metrics`：width: float, height: float, line_count: uint32_t, glyph_count: uint32_t, baseline: float, ascent: float, device_scale: float
 
 | 函数 | 返回 | 参数 |
 |------|------|------|

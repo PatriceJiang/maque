@@ -2003,6 +2003,12 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     mq_text_style st{};
     st.struct_size = (uint32_t)sizeof st;
     st.font_size = size;
+    /* 设备缩放：窗口像素 / 目标像素（HiDPI 时按设备字号栅格化 → 1:1 呈现，不做二次缩放） */
+    float dev_scale = 1.0F;
+    if (eng.win_w > 0 && eng.TW > 0 && eng.win_h > 0 && eng.H > 0)
+        dev_scale = std::min((float)eng.win_w / (float)eng.TW, (float)eng.win_h / (float)eng.H);
+    st.device_scale = dev_scale > 0.0F ? dev_scale : 1.0F;
+    st.pixel_snap = 1;                                  /* pixel-perfect：字形对齐整数像素 */
     st.line_spacing = line_spacing;
     st.wrap = (uint32_t)(wrap < 0 ? 0 : wrap);
     st.align = (uint32_t)(align < 0 ? 0 : align);
@@ -2048,21 +2054,26 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     read_f32(d, e.comps[d->type_id].data(), "y", &oy);
     for (uint32_t i = 0; i < n; ++i) {
         const mq_text_glyph& gl = glyphs[i];
-        const int tex = glyph_texture(gl.size);
+        const int tex = glyph_texture(gl.device_size);      /* 图集按**设备字号**键控 */
         mq_renderer_item it{};
-        /* 字形四角：位置为左上角，尺寸取位图尺寸（无位图时跳过） */
+        /* 位图矩形（设备像素，排版侧已按 bearing 定位并像素对齐）；无位图跳过 */
         if (gl.w <= 0.0F || gl.h <= 0.0F) continue;
-        it.x = e.x + ox + gl.x + gl.w * 0.5F;
-        /* 排版坐标 y 向下（行往下排），屏幕 y 亦向下 → 基准翻转后**相加** */
-        it.y = (float)eng.H - (e.y + oy) + gl.y + gl.h * 0.5F;
-        it.size = gl.w * 0.5F > gl.h * 0.5F ? gl.w * 0.5F : gl.h * 0.5F;
+        const float half_w = gl.w * 0.5F, half_h = gl.h * 0.5F;
+        /* 锚点 = 位图左上角 (x0,y0)；排版 y 向下、屏幕 y 向下 → 基准翻转后相加 */
+        it.x = e.x + ox + gl.x0 + half_w;
+        it.y = (float)eng.H - (e.y + oy) + gl.y0 + half_h;
+        it.half_w = half_w; it.half_h = half_h;   /* 非方形矩形（方形会拉伸字形） */
+        it.filter = 1;                            /* nearest：1 纹素 = 1 像素 */
+        it.snap = 1;                              /* 左上角吸附整数像素（pixel-perfect） */
+        it.size = half_w > half_h ? half_w : half_h;   /* 兼容字段（矩形路径不用） */
         it.r = gl.r; it.g = gl.g; it.b = gl.b; it.a = gl.a;
         it.texture = tex;
         it.uv0 = gl.u0; it.uv1 = gl.v0; it.uv2 = gl.u1; it.uv3 = gl.v1;
         it.layer = 1; it.z = 100 + (int)i;
         if (std::getenv("MAQUE_TRACE_TEXT") && i < 2)
-            std::print("[text]   item[{}] pos=({:.1f},{:.1f}) size={:.2f} col=({:.2f},{:.2f},{:.2f},{:.2f}) tex={} uv=({:.3f},{:.3f},{:.3f},{:.3f})\n",
-                       i, it.x, it.y, it.size, it.r, it.g, it.b, it.a, it.texture, it.uv0, it.uv1, it.uv2, it.uv3);
+            std::print("[text]   item[{}] rect=({:.0f},{:.0f} {}x{}) tex={} nearest={} snap={}\n",
+                       i, it.x - it.half_w, it.y - it.half_h, (int)gl.w, (int)gl.h, it.texture,
+                       it.filter == 1, it.snap == 1);
         out.push_back(it);
     }
 }

@@ -25,26 +25,34 @@ struct U {
   zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
 };
 @group(0) @binding(0) var<uniform> u: U;
-struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f };
+struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f, half: vec2f, shape: f32, snap: f32 };
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
-struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f };
+struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f, @location(2) shape: f32 };
 @vertex fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
   var c = array<vec2f,6>(vec2f(-1.,-1.), vec2f(1.,-1.), vec2f(-1.,1.),
                          vec2f(-1.,1.), vec2f(1.,-1.), vec2f(1.,1.));
   let inst = insts[ii];
-  var corner = c[vi] * inst.radius;
+  // 图元尺寸：half = (半宽, 半高) 矩形（字形/图集），退化 → radius 的方形/圆形
+  let hw = select(vec2f(inst.radius), inst.half, inst.half.x > 0.0 && inst.half.y > 0.0);
+  var corner = c[vi] * hw;
   let cs = cos(inst.rot); let sn = sin(inst.rot);
   corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
   var q = (inst.pos + corner - u.cam) * u.zoom;
   let cr = cos(-u.rot); let sr = sin(-u.rot);        // 相机旋转（docs/13 §4）：逆旋转到相机空间
   q = vec2f(q.x * cr - q.y * sr, q.x * sr + q.y * cr);
-  let px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
+  var px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
+  // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素，
+  // 使得 1 纹素 ↔ 1 像素（nearest 采样下逐像素精确；中心对齐会因奇偶宽度差半像素而糊）
+  if (inst.snap > 0.5) {
+    let tl = floor(px - hw + vec2f(0.5));
+    px = tl + hw;
+  }
   var o: VOut;
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
-  o.uv = c[vi]; o.col = inst.color; return o;
+  o.uv = c[vi]; o.col = inst.color; o.shape = inst.shape; return o;
 }
 @fragment fn fs(in: VOut) -> @location(0) vec4f {
-  if (dot(in.uv, in.uv) > 1.0) { discard; }
+  if (in.shape < 0.5 && dot(in.uv, in.uv) > 1.0) { discard; }   // 圆形图元才裁角
   return in.col;                                    // 直通 alpha（混合在管线做）
 }
 )";
@@ -55,29 +63,37 @@ struct U {
   zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
 };
 @group(0) @binding(0) var<uniform> u: U;
-struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f };
+struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f, half: vec2f, shape: f32, snap: f32 };
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
 @group(0) @binding(2) var t: texture_2d<f32>;
 @group(0) @binding(3) var smp: sampler;
-struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f };
+struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f, @location(2) shape: f32 };
 @vertex fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
   var c = array<vec2f,6>(vec2f(-1.,-1.), vec2f(1.,-1.), vec2f(-1.,1.),
                          vec2f(-1.,1.), vec2f(1.,-1.), vec2f(1.,1.));
   let inst = insts[ii];
-  var corner = c[vi] * inst.radius;
+  // 图元尺寸：half = (半宽, 半高) 矩形（字形/图集），退化 → radius 的方形/圆形
+  let hw = select(vec2f(inst.radius), inst.half, inst.half.x > 0.0 && inst.half.y > 0.0);
+  var corner = c[vi] * hw;
   let cs = cos(inst.rot); let sn = sin(inst.rot);
   corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
   var q = (inst.pos + corner - u.cam) * u.zoom;
   let cr = cos(-u.rot); let sr = sin(-u.rot);        // 相机旋转（docs/13 §4）：逆旋转到相机空间
   q = vec2f(q.x * cr - q.y * sr, q.x * sr + q.y * cr);
-  let px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
+  var px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
+  // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素，
+  // 使得 1 纹素 ↔ 1 像素（nearest 采样下逐像素精确；中心对齐会因奇偶宽度差半像素而糊）
+  if (inst.snap > 0.5) {
+    let tl = floor(px - hw + vec2f(0.5));
+    px = tl + hw;
+  }
   var o: VOut;
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
   // 图集子矩形：uv.x/y = 左上，uv.z/w = 右下；退化（0,0,0,0）→ 整张贴图
   let t = c[vi] * 0.5 + 0.5;
   let full = inst.uv.z <= inst.uv.x || inst.uv.w <= inst.uv.y;
   o.uv = select(vec2f(mix(inst.uv.x, inst.uv.z, t.x), mix(inst.uv.y, inst.uv.w, t.y)), t, full);
-  o.col = inst.color; return o;
+  o.col = inst.color; o.shape = inst.shape; return o;
 }
 @fragment fn fs(in: VOut) -> @location(0) vec4f {
   let c = textureSample(t, smp, in.uv);
@@ -99,6 +115,7 @@ struct Device {
     WGPURenderPipeline texPipeline = nullptr;
     WGPUBindGroupLayout texBgl = nullptr; WGPUPipelineLayout texPl = nullptr; WGPUShaderModule texShader = nullptr;
     WGPUSampler sampler = nullptr;
+    WGPUSampler samplerNearest = nullptr;      /* 字形/像素画：nearest */
     std::string backend;
     std::vector<Texture*> textures;
 };
@@ -206,10 +223,17 @@ static Device* create_device(std::string* out_backend) {
         WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
         rp.layout = dv->texPl; rp.vertex = vert; rp.fragment = &frag; rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
         dv->texPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
-        WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
+            WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
         sd.magFilter = WGPUFilterMode_Linear; sd.minFilter = WGPUFilterMode_Linear; sd.mipmapFilter = WGPUMipmapFilterMode_Linear;
         sd.addressModeU = WGPUAddressMode_ClampToEdge; sd.addressModeV = WGPUAddressMode_ClampToEdge; sd.addressModeW = WGPUAddressMode_ClampToEdge;
         dv->sampler = wgpuDeviceCreateSampler(dv->device, &sd);
+        /* 最近邻采样器：字形/像素画 1:1 呈现（线性过滤会糊掉像素网格） */
+        WGPUSamplerDescriptor nd = WGPU_SAMPLER_DESCRIPTOR_INIT;
+        nd.magFilter = WGPUFilterMode_Nearest; nd.minFilter = WGPUFilterMode_Nearest;
+        nd.mipmapFilter = WGPUMipmapFilterMode_Nearest;
+        nd.addressModeU = WGPUAddressMode_ClampToEdge; nd.addressModeV = WGPUAddressMode_ClampToEdge;
+        nd.addressModeW = WGPUAddressMode_ClampToEdge;
+        dv->samplerNearest = wgpuDeviceCreateSampler(dv->device, &nd);
     }
     return dv;
 }
@@ -222,6 +246,7 @@ static void destroy_device(Device* dv) {
         delete t;
     }
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
+    if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
     if (dv->solidPipeline) wgpuRenderPipelineRelease(dv->solidPipeline);
     if (dv->solidPl) wgpuPipelineLayoutRelease(dv->solidPl);
     if (dv->solidBgl) wgpuBindGroupLayoutRelease(dv->solidBgl);
@@ -238,10 +263,21 @@ static void destroy_device(Device* dv) {
 }
 
 /* 实例数据：pos(8) + radius(4) + rot(4) + color(16) = 32B（16 字节对齐，WGSL 数组步长合法）。 */
-struct GpuInst { float pos[2]; float radius; float rot; float color[4]; float uv[4]; };
+/* 与 WGSL `struct Inst` 严格对齐（vec2f/f32/f32/vec4f/vec4f/vec2f/f32/f32，数组 stride=64） */
+struct GpuInst {
+    float pos[2];      /* 0  */
+    float radius;      /* 8  */
+    float rot;         /* 12 */
+    float color[4];    /* 16 */
+    float uv[4];       /* 32 */
+    float half[2];     /* 48（<=0 → 用 radius） */
+    float shape;       /* 56（0=圆形，1=矩形） */
+    float snap;        /* 60（1=左上角吸附整数像素） */
+};
+static_assert(sizeof(GpuInst) == 64, "GpuInst 必须与 WGSL Inst 布局一致（stride 64）");
 
 /* 批处理（docs/13 §pass 层）：先按 (layer, z, 原始序) 稳定排序，再按"管线 + 贴图"分批。 */
-struct Batch { int texture; uint32_t first, count; };
+struct Batch { int texture; bool nearest; uint32_t first, count; };
 
 static WGPUBuffer make_ibuf(Device* dv, const std::vector<GpuInst>& v) {
     WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
@@ -334,10 +370,15 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
         const bool has_tex = s.texture >= 0 && s.texture < (int)dv->textures.size() &&
                              dv->textures[s.texture]->view != nullptr;
         const int tex_id = has_tex ? s.texture : -1;
+        const bool rect = s.half_w > 0.0F && s.half_h > 0.0F;
+        const bool nearest = s.filter == 1;                     /* 字形/像素画：1 纹素 = 1 像素 */
         GpuInst g{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a },
-                   { s.uv0, s.uv1, s.uv2, s.uv3 } };
-        if (!batches.empty() && batches.back().texture == tex_id) batches.back().count++;
-        else batches.push_back(Batch{ tex_id, (uint32_t)insts.size(), 1 });
+                   { s.uv0, s.uv1, s.uv2, s.uv3 },
+                   { rect ? s.half_w : 0.0F, rect ? s.half_h : 0.0F },
+                   rect ? 1.0F : 0.0F, s.snap ? 1.0F : 0.0F };
+        if (!batches.empty() && batches.back().texture == tex_id && batches.back().nearest == nearest)
+            batches.back().count++;
+        else batches.push_back(Batch{ tex_id, nearest, (uint32_t)insts.size(), 1 });
         insts.push_back(g);
     }
 
@@ -376,7 +417,8 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
                 WGPUBindGroup bgroup = nullptr;
                 if (textured) {
                     be[2].binding = 2; be[2].textureView = dv->textures[b.texture]->view;
-                    be[3].binding = 3; be[3].sampler = dv->sampler;
+                    be[3].binding = 3;
+                    be[3].sampler = b.nearest && dv->samplerNearest ? dv->samplerNearest : dv->sampler;
                     bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
                 } else {
                     bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;

@@ -20,6 +20,13 @@ if(WGPU_NATIVE_LIB)
         target_compile_definitions(maque_gfx_test PRIVATE MQ_GFX_PATH="$<TARGET_FILE:maque_gfx>")
         add_dependencies(maque_gfx_test maque_gfx)
         add_test(NAME gfx COMMAND maque_gfx_test)
+
+        # 文本像素级精确（pixel 2 pixel）：矩形图元 + nearest + 像素对齐 vs 字体位图逐像素比对
+        add_executable(maque_text_pixel_test tests/text_pixel_test.cpp)
+        target_link_libraries(maque_text_pixel_test PRIVATE maque::module maque::schema maque::text)
+        target_compile_definitions(maque_text_pixel_test PRIVATE MQ_GFX_PATH="$<TARGET_FILE:maque_gfx>")
+        add_dependencies(maque_text_pixel_test maque_gfx)
+        add_test(NAME text_pixel COMMAND maque_text_pixel_test)
     endif()
 else()
     message(WARNING "maque: 未找到 wgpu-native；maque::gfx 关闭")

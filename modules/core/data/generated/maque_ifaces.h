@@ -28,6 +28,10 @@ typedef struct mq_renderer_item {
     float a;
     int32_t texture;
     float rotation;
+    float half_w;
+    float half_h;
+    int32_t filter;
+    int32_t snap;
     float uv0;
     float uv1;
     float uv2;

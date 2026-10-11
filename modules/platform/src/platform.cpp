@@ -183,7 +183,31 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
         dst.x = (ws->w - dst.w) / 2;
         dst.y = (ws->h - dst.h) / 2;
         SDL_FillRect(ws, nullptr, SDL_MapRGB(ws->format, 0, 0, 0));   // 留边黑
-        const int rc = SDL_BlitScaled(src, nullptr, ws, &dst);
+        /* 放大过滤：**整数倍**时默认最近邻（pixel-perfect：字形/像素画放大后仍是硬边），
+         * MAQUE_PRESENT_FILTER=linear|nearest 可强制；非整数倍只能线性缩放。 */
+        int filter = -1;                                   // -1 自动
+        if (const char* f = std::getenv("MAQUE_PRESENT_FILTER"); f && *f)
+            filter = std::strcmp(f, "nearest") == 0 ? 1 : (std::strcmp(f, "linear") == 0 ? 0 : -1);
+        const bool integer_scale = dst.w % w == 0 && dst.h % h == 0 && dst.w / w == dst.h / h && dst.w / w >= 2;
+        const bool nearest = filter == 1 || (filter == -1 && integer_scale);
+        int rc = 0;
+        if (nearest && dst.w % w == 0) {
+            const int k = dst.w / w;                       // 整数倍：逐像素复制（无插值）
+            SDL_Surface* big = SDL_CreateRGBSurfaceWithFormat(0, dst.w, dst.h, 32, SDL_PIXELFORMAT_RGBA32);
+            if (big) {
+                const uint8_t* sp = (const uint8_t*)rgba;
+                for (int y = 0; y < dst.h; ++y) {
+                    const uint8_t* srow = sp + (size_t)(y / k) * (size_t)w * 4;
+                    uint8_t* drow = (uint8_t*)big->pixels + (size_t)y * (size_t)big->pitch;
+                    for (int x = 0; x < dst.w; ++x)
+                        std::memcpy(drow + (size_t)x * 4, srow + (size_t)(x / k) * 4, 4);
+                }
+                rc = SDL_BlitSurface(big, nullptr, ws, &dst);
+                SDL_FreeSurface(big);
+            } else rc = -1;
+        } else {
+            rc = SDL_BlitScaled(src, nullptr, ws, &dst);
+        }
         SDL_FreeSurface(src);
         if (rc != 0) return 6;
         if (!p->present_logged) {

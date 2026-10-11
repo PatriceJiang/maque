@@ -223,6 +223,25 @@ Atlas& atlas_for(mq_font* f, float size) {
     return f->atlases.back();
 }
 
+/* 设备字号：逻辑字号 × 设备缩放，**取整**（FreeType 以整数 ppem 栅格化 → 笔画对齐像素网格） */
+float device_size_of(const mq_text_style& st, float logical) {
+    const float sc = st.device_scale > 0.0F ? st.device_scale : 1.0F;
+    float px = logical * sc;
+    if (px < 1.0F) px = 1.0F;
+    return (float)(int)(px + 0.5F);
+}
+
+/* 字体 ascent/descent（设备像素；用于把 bitmap_top 换算成位图顶部 y） */
+void font_extents(mq_font* f, float device_size, float* ascent) {
+    *ascent = device_size * 0.8F;                /* 内置位图字体的缺省 ascent */
+#if defined(MAQUE_HAVE_FREETYPE)
+    if (f && !f->builtin && f->face) {
+        if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(device_size + 0.5F)) == 0)
+            *ascent = (float)(f->face->size->metrics.ascender >> 6);
+    }
+#endif
+}
+
 const Glyph* find_glyph(const Atlas& a, uint32_t cp) {
     if (cp >= 'a' && cp <= 'z' && a.glyphs.size() && a.glyphs[0].cp == kFirstCp) {
         /* 内置字体：小写复用大写形状（文档化取舍） */
@@ -406,8 +425,11 @@ namespace {
 
 struct PlacedGlyph {
     uint32_t cp;
-    float x, y, size, r, g, b, a;
-    int w, h, bearing_x, bearing_y;
+    float x, y;                     /* 笔位置（排版空间） */
+    float x0, y0;                   /* 位图左上角（相对文本框原点，设备像素，已对齐） */
+    float size, device_size;        /* 逻辑字号 / 实际栅格化字号 */
+    float r, g, b, a;
+    int w, h, bearing_x, bearing_y; /* FreeType bitmap_left / bitmap_top */
     float u0, v0, u1, v1;
 };
 
@@ -436,9 +458,14 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
         ++line_count;
     };
 
+    float ascent = 0.0F;
     for (const Run& run : runs) {
         if (run.line_break) { end_line(); continue; }
         const float size = run.size > 0.0F ? run.size : base;
+        const float dsize = device_size_of(st, size);        /* 设备像素字号（整数） */
+        font_extents(f, dsize, &ascent);
+        /* 像素对齐：把笔位置吸附到整数设备像素（pixel-perfect 的前提之一） */
+        if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
         /* 词缓冲：按词换行（WORD 模式） */
         std::string word;
         auto flush_word = [&](bool force) {
@@ -451,34 +478,42 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
                     const float adv = mq_font_advance(f, ch, size);
                     if (pen_x + adv > max_w && pen_x > 0.0F) end_line();
                     PlacedGlyph g{};
-                    g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size;
+                    g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = dsize;
                     g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
-                    Atlas& a = atlas_for(f, size);
+                    Atlas& a = atlas_for(f, dsize);
                     const Glyph* gl = find_glyph(a, ch);
                     if (gl) {
                         g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
                         g.u0 = (float)gl->ax / (float)a.w; g.v0 = (float)gl->ay / (float)a.h;
                         g.u1 = (float)(gl->ax + gl->w) / (float)a.w; g.v1 = (float)(gl->ay + gl->h) / (float)a.h;
                     }
+                    /* 位图矩形 = 笔位置 + bearing（bitmap_left / bitmap_top 相对基线） */
+                    g.x0 = g.x + (float)g.bearing_x;
+                    g.y0 = g.y + ascent - (float)g.bearing_y;
+                    if (st.pixel_snap) { g.x0 = (float)(int)(g.x0 + 0.5F); g.y0 = (float)(int)(g.y0 + 0.5F); }
                     lines.back().glyphs.push_back(g);
                     pen_x += adv;
-                    line_h = std::max(line_h, mq_font_height(f, size));
+                    line_h = std::max(line_h, mq_font_height(f, dsize));
                 }
             } else {
                 for (unsigned char ch : word) {
                     PlacedGlyph g{};
-                    g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size;
+                    g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = dsize;
                     g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
-                    Atlas& a = atlas_for(f, size);
+                    Atlas& a = atlas_for(f, dsize);
                     const Glyph* gl = find_glyph(a, ch);
                     if (gl) {
                         g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
                         g.u0 = (float)gl->ax / (float)a.w; g.v0 = (float)gl->ay / (float)a.h;
                         g.u1 = (float)(gl->ax + gl->w) / (float)a.w; g.v1 = (float)(gl->ay + gl->h) / (float)a.h;
                     }
+                    g.x0 = g.x + (float)g.bearing_x;
+                    g.y0 = g.y + ascent - (float)g.bearing_y;
+                    if (st.pixel_snap) { g.x0 = (float)(int)(g.x0 + 0.5F); g.y0 = (float)(int)(g.y0 + 0.5F); }
                     lines.back().glyphs.push_back(g);
-                    pen_x += mq_font_advance(f, ch, size);
-                    line_h = std::max(line_h, mq_font_height(f, size));
+                    pen_x += mq_font_advance(f, ch, dsize);
+                    if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
+                    line_h = std::max(line_h, mq_font_height(f, dsize));
                 }
             }
             word.clear();
@@ -496,18 +531,22 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
             /* 不换行：整段一次排布 */
             for (unsigned char ch : word) {
                 PlacedGlyph g{};
-                g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size;
+                g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = dsize;
                 g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
-                Atlas& a = atlas_for(f, size);
+                Atlas& a = atlas_for(f, dsize);
                 const Glyph* gl = find_glyph(a, ch);
                 if (gl) {
                     g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
                     g.u0 = (float)gl->ax / (float)a.w; g.v0 = (float)gl->ay / (float)a.h;
                     g.u1 = (float)(gl->ax + gl->w) / (float)a.w; g.v1 = (float)(gl->ay + gl->h) / (float)a.h;
                 }
+                g.x0 = g.x + (float)g.bearing_x;
+                g.y0 = g.y + ascent - (float)g.bearing_y;
+                if (st.pixel_snap) { g.x0 = (float)(int)(g.x0 + 0.5F); g.y0 = (float)(int)(g.y0 + 0.5F); }
                 lines.back().glyphs.push_back(g);
-                pen_x += mq_font_advance(f, ch, size);
-                line_h = std::max(line_h, mq_font_height(f, size));
+                pen_x += mq_font_advance(f, ch, dsize);
+                if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
+                line_h = std::max(line_h, mq_font_height(f, dsize));
             }
             word.clear();
         } else {
@@ -521,8 +560,9 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
 
     float max_line_w = 0.0F;
     for (const Line& l : lines) max_line_w = std::max(max_line_w, l.width);
+    const float base_dev = device_size_of(st, base);
     float total_h = 0.0F;
-    for (const Line& l : lines) total_h += (l.height > 0.0F ? l.height : mq_font_height(f, base)) + st.line_spacing;
+    for (const Line& l : lines) total_h += (l.height > 0.0F ? l.height : mq_font_height(f, base_dev)) + st.line_spacing;
     if (total_h > 0.0F) total_h -= st.line_spacing;
 
     uint32_t count = 0;
@@ -545,7 +585,9 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
         metrics->height = total_h;
         metrics->line_count = line_count;
         metrics->glyph_count = count;
-        metrics->baseline = mq_font_height(f, base);
+        metrics->baseline = mq_font_height(f, device_size_of(st, base));
+        font_extents(f, device_size_of(st, base), &metrics->ascent);
+        metrics->device_scale = st.device_scale > 0.0F ? st.device_scale : 1.0F;
     }
     return MQ_TEXT_OK;
 }
@@ -576,6 +618,9 @@ extern "C" int mq_text_layout(mq_font* font, const mq_text_style* style, const c
         g.u0 = p.u0; g.v0 = p.v0; g.u1 = p.u1; g.v1 = p.v1;
         g.r = p.r; g.g = p.g; g.b = p.b; g.a = p.a;
         g.size = p.size;
+        g.device_size = p.device_size;
+        g.x0 = p.x0; g.y0 = p.y0;
+        g.bearing_x = p.bearing_x; g.bearing_y = p.bearing_y;
     }
     return MQ_TEXT_OK;
 }
