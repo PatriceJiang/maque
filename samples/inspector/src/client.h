@@ -112,9 +112,11 @@ public:
         return true;
     }
 
-    /* 非阻塞收：返回本次完成的响应（method, Reply） */
-    std::vector<std::pair<std::string, Reply>> poll() {
-        std::vector<std::pair<std::string, Reply>> done;
+    struct Done { int id; std::string method; Reply reply; };
+
+    /* 非阻塞收：返回本次完成的响应（id + method + Reply） */
+    std::vector<Done> poll() {
+        std::vector<Done> done;
         if (fd_ < 0) return done;
         char buf[8192];
         for (;;) {
@@ -139,7 +141,7 @@ public:
             auto it = pending_.find(id);
             const std::string method = it != pending_.end() ? it->second : std::string("?");
             if (it != pending_.end()) pending_.erase(it);
-            done.emplace_back(method, std::move(r));
+            done.push_back(Done{ id, method, std::move(r) });
         }
         if (pos > 0) in_.erase(0, pos);
         return done;

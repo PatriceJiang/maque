@@ -3702,7 +3702,7 @@ extern "C" int mq_control_Font_atlas(void* u, const mq_json* params, char* out, 
     const float size = (float)mq_json_num(mq_json_get(params, "size"), 0);
     const size_t offset = (size_t)mq_json_num(mq_json_get(params, "offset"), 0);
     size_t max_bytes = (size_t)mq_json_num(mq_json_get(params, "max"), 24 * 1024);
-    if (max_bytes == 0 || max_bytes > 48 * 1024) max_bytes = 24 * 1024;
+    if (max_bytes == 0 || max_bytes > (1u << 20)) max_bytes = 24 * 1024;   /* 允许单次传整图（≤1MB） */
     if (idx < 0 || (size_t)idx >= eng->fonts.size() || !eng->fonts[(size_t)idx].font) {
         std::snprintf(out, cap, "{\"ok\":false}");
         return 0;
@@ -3744,7 +3744,7 @@ extern "C" int mq_control_Capture_screen(void* u, const mq_json* params, char* o
     auto* eng = (Engine*)u;
     const size_t offset = (size_t)mq_json_num(mq_json_get(params, "offset"), 0);
     size_t max_bytes = (size_t)mq_json_num(mq_json_get(params, "max"), 24 * 1024);
-    if (max_bytes == 0 || max_bytes > 48 * 1024) max_bytes = 24 * 1024;
+    if (max_bytes == 0 || max_bytes > (1u << 20)) max_bytes = 24 * 1024;
     if (eng->frame_pixels.empty() || eng->frame_w <= 0 || eng->frame_h <= 0) {
         std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no frame\"}");
         return 0;

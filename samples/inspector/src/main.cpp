@@ -53,9 +53,11 @@ struct App {
     int atlas_sel = 0;
     float atlas_zoom = 3.0F;
     std::string tab = "属性";                          /* 初始标签页（--tab） */
+    insp::Texture probe_tex;                           /* 诊断：已知颜色的测试纹理 */
+    SDL_Texture* probe_raw = nullptr;                  /* 诊断：裸 SDL_Texture 对照 */
     bool atlas_autoloaded = false;
     bool screen_auto = true;
-    float screen_interval = 0.5F, screen_acc = 0.0F;
+    float screen_interval = 1.0F, screen_acc = 0.0F;
     char connect_input[128] = "7777";
     float refresh_acc = 0.0F;
 
@@ -66,7 +68,9 @@ struct App {
 };
 
 void pump(App& a, float dt) {
-    for (auto& [method, reply] : a.client.poll()) {
+    for (auto& msg : a.client.poll()) {
+        const std::string& method = msg.method;
+        const insp::Reply& reply = msg.reply;
         if (!reply.ok) a.note("✗ " + method + " → " + (reply.error.empty() ? reply.raw : reply.error));
         if (method == "Control.info") {
             a.read_only = insp::Client::str_field(reply.raw, "read_only") != "false" &&
@@ -124,21 +128,31 @@ void pump(App& a, float dt) {
                                n, a.font_fetch.active, a.font_fetch.in_flight, a.font_fetch.next_offset,
                                a.font_fetch.total, a.font_fetch.data.size(), a.font_fetch.done);
             }
-            if (a.font_fetch.on_reply(reply.raw) && a.font_fetch.done) {
+            if (a.font_fetch.on_reply(msg.id, reply.raw) && a.font_fetch.done) {
                 a.font_tex.upload(a.font_fetch.rgba, a.font_fetch.w, a.font_fetch.h);
-                if (std::getenv("MAQUE_INSPECTOR_TRACE")) {     // 诊断：数据与纹理状态
+                if (std::getenv("MAQUE_INSPECTOR_TRACE")) {     // 诊断：解码结果与纹理状态
                     size_t ink = 0;
                     for (size_t i = 0; i < a.font_fetch.rgba.size(); i += 4)
                         if (a.font_fetch.rgba[i] > 40) ++ink;
-                    std::print("[insp] 图集 {}x{} 解码字节={} 墨迹像素={} texID={} status={}\n",
+                    std::print("[insp] 图集 {}x{} 解码字节={} 墨迹像素={} 纹理={}\n",
                                a.font_fetch.w, a.font_fetch.h, a.font_fetch.rgba.size(), ink,
-                               (unsigned long long)(a.font_tex.tex ? a.font_tex.tex->GetTexID() : 0),
-                               a.font_tex.tex ? (int)a.font_tex.tex->Status : -1);
+                               a.font_tex.valid() ? "已上传" : "无");
                 }
             }
         } else if (method == "Capture.screen") {
-            if (a.screen_fetch.on_reply(reply.raw) && a.screen_fetch.done)
+            if (a.screen_fetch.on_reply(msg.id, reply.raw) && a.screen_fetch.done) {
                 a.screen_tex.upload(a.screen_fetch.rgba, a.screen_fetch.w, a.screen_fetch.h);
+                if (const char* d = std::getenv("MAQUE_INSPECTOR_DUMP")) {   // 诊断：导出解码后的画面
+                    const std::string path = std::string(d) + ".ppm";
+                    if (FILE* f = std::fopen(path.c_str(), "wb")) {
+                        std::print(f, "P6\n{} {}\n255\n", a.screen_fetch.w, a.screen_fetch.h);
+                        for (size_t i = 0; i < a.screen_fetch.rgba.size(); i += 4)
+                            std::fwrite(a.screen_fetch.rgba.data() + i, 1, 3, f);
+                        std::fclose(f);
+                        std::print("[insp] 画面已导出 {} ({}x{})\n", path, a.screen_fetch.w, a.screen_fetch.h);
+                    }
+                }
+            }
         } else {
             a.note((reply.ok ? "← " : "✗ ") + method + " → " + reply.raw.substr(0, 200));
         }
@@ -153,13 +167,13 @@ void pump(App& a, float dt) {
         if (!a.selected.empty())
             a.client.send("Scene.get", "{\"id\":" + a.selected + ",\"path\":\"\"}");
     }
-    /* 分块拉取：每帧推进若干块（不阻塞 UI，也留出游戏帧时间） */
+    /* 分块拉取：每帧推进一步（不阻塞 UI，也留出游戏帧时间） */
     a.font_fetch.pump(a.client);
     a.screen_fetch.pump(a.client);
     a.screen_acc += dt;
     if (a.screen_auto && a.client.connected() && !a.screen_fetch.active && a.screen_acc >= a.screen_interval) {
         a.screen_acc = 0.0F;
-        a.screen_fetch.start("Capture.screen", "{\"max_dim\":480}");
+        a.screen_fetch.start("Capture.screen", "{\"max_dim\":360");
         a.screen_fetch.pump(a.client);
     }
 }
@@ -194,8 +208,9 @@ void draw_ui(App& a) {
         ImGui::TextColored(a.read_only ? ImVec4(0.9F, 0.8F, 0.3F, 1.0F) : ImVec4(0.4F, 0.9F, 0.4F, 1.0F),
                            "%s", a.read_only ? "只读" : "可编辑");
         ImGui::SameLine();
-        ImGui::Text("| %s | frame %.0f | 客户端 %.0f | 方法 %.0f | 被拒 %.0f",
-                    a.endpoint.empty() ? "—" : a.endpoint.c_str(), a.frame, a.clients, a.methods, a.rejected);
+        ImGui::Text("| %s | frame %.0f | 客户端 %.0f | 方法 %.0f | 被拒 %.0f | ui %.0f fps",
+                    a.endpoint.empty() ? "—" : a.endpoint.c_str(), a.frame, a.clients, a.methods, a.rejected,
+                    (double)ImGui::GetIO().Framerate);
         ImGui::EndMenuBar();
     }
 
@@ -357,11 +372,11 @@ void draw_ui(App& a) {
             ImGui::Text("拉取 %zu/%zu 字节", a.font_fetch.data.size(), a.font_fetch.total);
             ImGui::Separator();
             if (a.font_tex.valid()) {
-                const float zw = a.font_fetch.w * a.atlas_zoom, zh = a.font_fetch.h * a.atlas_zoom;
+                const float zw = a.font_tex.width() * a.atlas_zoom, zh = a.font_tex.height() * a.atlas_zoom;
                 ImGui::BeginChild("atlas_view", ImVec2(0, 0), ImGuiChildFlags_Borders,
                                   ImGuiWindowFlags_HorizontalScrollbar);
                 const ImVec2 p0 = ImGui::GetCursorScreenPos();
-                ImGui::Image(a.font_tex.id(), ImVec2(zw, zh));
+                ImGui::Image(a.font_tex.ref(), ImVec2(zw, zh));
                 /* 叠加字形格线（每 8 个字形画一条竖线；鼠标悬浮显示码点与图集矩形） */
                 ImDrawList* dl = ImGui::GetWindowDrawList();
                 dl->AddRect(p0, ImVec2(p0.x + zw, p0.y + zh), IM_COL32(90, 90, 110, 200));
@@ -410,17 +425,37 @@ void draw_ui(App& a) {
             ImGui::SliderFloat("间隔(秒)", &a.screen_interval, 0.1F, 3.0F, "%.1f");
             ImGui::SameLine();
             if (ImGui::Button("立即抓帧") && a.client.connected()) {
-                a.screen_fetch.start("Capture.screen", "{\"max_dim\":480}");
+                a.screen_fetch.start("Capture.screen", "{\"max_dim\":360");
                 a.screen_fetch.pump(a.client);
             }
             ImGui::SameLine();
             ImGui::Text("拉取 %zu/%zu 字节", a.screen_fetch.data.size(), a.screen_fetch.total);
+            if (std::getenv("MAQUE_INSPECTOR_PROBE")) {     // 诊断：纹理通道自检（品红/青/黄/绿 四格）
+                if (!a.probe_tex.valid()) {
+                    std::vector<uint8_t> px(4 * 4 * 4, 255);
+                    for (int i = 0; i < 4; ++i) {
+                        uint8_t* q = px.data() + i * 16;
+                        if (i == 0) { q[0]=255; q[1]=0; q[2]=255; }
+                        if (i == 1) { q[0]=0; q[1]=255; q[2]=255; }
+                        if (i == 2) { q[0]=255; q[1]=255; q[2]=0; }
+                        if (i == 3) { q[0]=0; q[1]=255; q[2]=0; }
+                    }
+                    a.probe_tex.upload(px, 4, 4);
+                }
+                ImGui::Image(a.probe_tex.ref(), ImVec2(64, 64));
+                ImGui::SameLine();
+                ImGui::TextDisabled("测试纹理 A（ImTextureData 路径）");
+                ImGui::SameLine();
+                if (a.probe_raw) ImGui::Image((ImTextureID)(intptr_t)a.probe_raw, ImVec2(64, 64));
+                ImGui::SameLine();
+                ImGui::TextDisabled("对照 B（裸 SDL_Texture）");
+            }
             ImGui::Separator();
             if (a.screen_tex.valid()) {
                 const float avail = ImGui::GetContentRegionAvail().x;
-                const float sc = a.screen_fetch.w > 0 ? avail / (float)a.screen_fetch.w : 1.0F;
-                ImGui::Image(a.screen_tex.id(),
-                             ImVec2(a.screen_fetch.w * sc, a.screen_fetch.h * sc));
+                const int tw = a.screen_tex.width(), th = a.screen_tex.height();
+                const float sc = tw > 0 ? avail / (float)tw : 1.0F;
+                ImGui::Image(a.screen_tex.ref(), ImVec2(tw * sc, th * sc));
             } else {
                 ImGui::TextDisabled("（等待首帧；游戏需开启控制端点）");
             }
@@ -453,10 +488,10 @@ int headless(App& a, const std::vector<std::string>& methods) {
         for (int i = 0; i < 200; ++i) {                 // 等响应（最多 ~2s）
             auto done = a.client.poll();
             bool got = false;
-            for (auto& [mm, r] : done) {
-                if (mm != method) continue;
-                std::print("{}\n", r.raw);
-                if (!r.ok) rc = 1;
+            for (auto& msg : done) {
+                if (msg.method != method) continue;
+                std::print("{}\n", msg.reply.raw);
+                if (!msg.reply.ok) rc = 1;
                 got = true;
             }
             if (got) break;
@@ -507,6 +542,7 @@ int main(int argc, char** argv) {
     SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_PRESENTVSYNC);
     if (!ren) { std::print(stderr, "inspector: 渲染器创建失败: {}\n", SDL_GetError()); SDL_DestroyWindow(win); SDL_Quit(); return 1; }
 
+    insp::Texture::renderer = ren;                 // 纹理走 SDL_Texture（ImGui 只管 ID）
     IMGUI_CHECKVERSION();
     /* 界面缩放 = 用户倍数 × 显示器像素比（HiDPI 下逻辑尺寸 < 物理像素 → 字体才不会偏小） */
     float hidpi = 1.0F;
@@ -554,6 +590,23 @@ int main(int argc, char** argv) {
     if (app.client.connect(app.connect_spec, &err)) app.note(std::string("已连接 ") + app.connect_spec);
     else app.note("连接失败: " + err + "（可在界面上重试）");
 
+    if (std::getenv("MAQUE_INSPECTOR_PROBE")) {        // 对照 B：自己直接建纹理（legacy 路径）
+        std::vector<uint8_t> px(4 * 4 * 4, 255);
+        for (int i = 0; i < 4; ++i) {
+            uint8_t* q = px.data() + i * 16;
+            if (i == 0) { q[0] = 255; q[1] = 255; q[2] = 0; }
+            if (i == 1) { q[0] = 0; q[1] = 255; q[2] = 255; }
+            if (i == 2) { q[0] = 255; q[1] = 255; q[2] = 0; }
+            if (i == 3) { q[0] = 0; q[1] = 255; q[2] = 0; }
+        }
+        app.probe_raw = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, 4, 4);
+        if (app.probe_raw) {
+            SDL_UpdateTexture(app.probe_raw, nullptr, px.data(), 4 * 4);
+            SDL_SetTextureBlendMode(app.probe_raw, SDL_BLENDMODE_BLEND);
+            SDL_SetTextureScaleMode(app.probe_raw, SDL_ScaleModeNearest);
+        }
+    }
+
     bool running = true;
     Uint32 prev = SDL_GetTicks();
     while (running) {
@@ -576,7 +629,9 @@ int main(int argc, char** argv) {
         SDL_SetRenderDrawColor(ren, 16, 16, 20, 255);
         SDL_RenderClear(ren);
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), ren);
-        insp::Texture::gc();                    // 回收后端已销毁的纹理
+        app.font_tex.gc();
+        app.screen_tex.gc();
+        app.probe_tex.gc();                    // 回收后端已销毁的纹理
         SDL_RenderPresent(ren);
     }
     app.client.disconnect();

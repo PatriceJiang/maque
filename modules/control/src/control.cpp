@@ -173,14 +173,16 @@ const char* mq_control_dispatch(mq_control* c, const char* request) {
                       (method ? method : "") + "\"}}";
     } else {
         /* 结果缓冲按需增长（Types.describe / Scene.entities 等 dump 可能很大）。 */
+        /* 结果缓冲按需增长：大 dump（图集/画面抓帧可达数百 KB）必须能一次装下。
+         * 曾因增长次数不足 + 步长偏小，307KB 的响应被截到 32KB（表现为图像错乱）。 */
         std::vector<char> buf(8192);
         int rc = 0;
-        for (int attempt = 0; attempt < 5; ++attempt) {
+        for (int attempt = 0; attempt < 8 && buf.size() < (8u << 20); ++attempt) {
             buf[0] = '\0';
             rc = it->second.fn(it->second.user, method, params, buf.data(), buf.size());
             const size_t used = std::strlen(buf.data());
             if (used + 1 < buf.size()) break;          // 未被截断
-            buf.resize(buf.size() * 4);
+            buf.resize(buf.size() * 8);                // 步长 ×8（8192 → 64K → 512K → 4M → 8M）
         }
         if (rc != 0 || buf[0] == '\0') std::strcpy(buf.data(), "null");
         c->response = "{\"jsonrpc\":\"2.0\",\"id\":" + idtxt + ",\"result\":" + buf.data() + "}";
