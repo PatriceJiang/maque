@@ -2746,6 +2746,10 @@
           args: [ { name: p, type: "mq_platform*" }, { name: rgba, type: "const void*" },
                   { name: w, type: "int32_t" }, { name: h, type: "int32_t" } ],
           doc: "把 RGBA8 帧呈现到窗口（无窗口/dummy 驱动安全空操作；MAQUE_PRESENT=off|software|accelerated）" }
+      - { fn: mq_platform_simulate_pointer, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: kind, type: "int32_t" },
+                  { name: x, type: "float" }, { name: y, type: "float" }, { name: button, type: "int32_t" } ],
+          doc: "测试/CI 用：把指针事件压入 SDL 事件队列（kind: 0=move 1=down 2=up）——覆盖 OS→SDL→引擎的真实翻译路径" }
       - { fn: mq_platform_destroy, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }
       - { fn: mq_platform_has_window, returns: "int", args: [ { name: p, type: "mq_platform*" } ] }
       - { fn: mq_platform_pump, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }

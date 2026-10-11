@@ -495,6 +495,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 |------|------|------|
 | `mq_platform_create` | mq_platform* | title: const char*, w: int, h: int |
 | `mq_platform_present` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t |
+| `mq_platform_simulate_pointer` | int | p: mq_platform*, kind: int32_t, x: float, y: float, button: int32_t |
 | `mq_platform_destroy` | void | p: mq_platform* |
 | `mq_platform_has_window` | int | p: mq_platform* |
 | `mq_platform_pump` | void | p: mq_platform* |

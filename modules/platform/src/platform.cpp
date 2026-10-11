@@ -57,6 +57,7 @@ struct mq_platform {
     bool present_logged = false;
     int  logical_w = 0, logical_h = 0;
     bool cap_pending = false;
+    int  cap_max = -1, cap_every = 1, cap_seen = 0;
     int  cap_count = 0;               /* MAQUE_CAPTURE 已抓帧数 */
     bool        sdl = false;
     bool        window = false;
@@ -119,9 +120,16 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
             /* 强制软件帧缓冲：SDL 不初始化 GL/EGL（渲染插件 wgpu 自己用 EGL，
              * 二者争用会导致 EGL BadAccess —— 多实例时尤其明显） */
             SDL_SetHint(SDL_HINT_FRAMEBUFFER_ACCELERATION, "0");
-            p->win = SDL_CreateWindow(title ? title : "maque",
-                                      SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                      w, h, SDL_WINDOW_SHOWN);
+            /* 演示/自动化友好开关（可选）：
+             *   MAQUE_WINDOW_POS=x,y    指定窗口位置（默认交给 WM）
+             *   MAQUE_ALWAYS_ON_TOP=1   窗口置顶（演示时不被其它窗口遮挡） */
+            Uint32 flags = SDL_WINDOW_SHOWN;
+            if (const char* atop = std::getenv("MAQUE_ALWAYS_ON_TOP"); atop && *atop && *atop != '0')
+                flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+            int wx = SDL_WINDOWPOS_UNDEFINED, wy = SDL_WINDOWPOS_UNDEFINED;
+            if (const char* pos = std::getenv("MAQUE_WINDOW_POS"))
+                std::sscanf(pos, "%d,%d", &wx, &wy);
+            p->win = SDL_CreateWindow(title ? title : "maque", wx, wy, w, h, flags);
             p->window = p->win != nullptr;
             if (p->window) std::print("platform: SDL video driver='{}'\n", SDL_GetCurrentVideoDriver());
         }
@@ -185,8 +193,16 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
         }
         if (p->cap_pending) { /* 抓帧见下（软件路径从源帧拷贝，内容一致） */ }
         SDL_UpdateWindowSurface(p->win);
-        /* 抓帧：回读**窗口表面**（即真正呈现给用户的像素，含缩放与留边） */
-        if (const char* cap = std::getenv("MAQUE_CAPTURE"); cap && *cap && p->cap_count < 3) {
+        /* 抓帧：回读**窗口表面**（即真正呈现给用户的像素，含缩放与留边）
+         *   MAQUE_CAPTURE=<前缀>  MAQUE_CAPTURE_FRAMES=n（默认 3）  MAQUE_CAPTURE_EVERY=n（默认 1） */
+        if (p->cap_max < 0) {
+            p->cap_max = 3; p->cap_every = 1;
+            if (const char* v = std::getenv("MAQUE_CAPTURE_FRAMES")) p->cap_max = std::atoi(v);
+            if (const char* v = std::getenv("MAQUE_CAPTURE_EVERY")) p->cap_every = std::atoi(v) > 0 ? std::atoi(v) : 1;
+        }
+        ++p->cap_seen;
+        if (const char* cap = std::getenv("MAQUE_CAPTURE"); cap && *cap &&
+            p->cap_count < p->cap_max && (p->cap_seen % p->cap_every) == 0) {
             if (SDL_LockSurface(ws) == 0) {
                 char path[512];
                 std::snprintf(path, sizeof path, "%s_%d.ppm", cap, p->cap_count);
@@ -259,6 +275,25 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
     return 0;
 }
 
+/* 测试/CI：把指针事件压入 SDL 队列 —— 与真实 OS 事件走**同一条**翻译路径
+ * （SDL 事件 → mq_platform_pointer_event → 输入模块 → 命中测试 → 脚本回调）。
+ * 用于在没有 XTest/uinput 的环境（Wayland 会话常见）验证输入通路。 */
+int mq_platform_simulate_pointer(mq_platform* p, int32_t kind, float x, float y, int32_t button) {
+    if (!p || !p->sdl) return 1;
+    SDL_Event e{};
+    if (kind == 0) {
+        e.type = SDL_MOUSEMOTION;
+        e.motion.x = (Sint32)x; e.motion.y = (Sint32)y;
+        e.motion.which = 0; e.motion.state = 0;
+    } else {
+        e.type = kind == 1 ? SDL_MOUSEBUTTONDOWN : SDL_MOUSEBUTTONUP;
+        e.button.x = (Sint32)x; e.button.y = (Sint32)y;
+        e.button.button = (Uint8)(button <= 0 ? SDL_BUTTON_LEFT : button);
+        e.button.clicks = 1;
+    }
+    return SDL_PushEvent(&e) == 1 ? 0 : 2;
+}
+
 int mq_platform_has_window(mq_platform* p) {
     if (!p || !p->win || !p->sdl) return 0;
     const char* drv = SDL_GetCurrentVideoDriver();
@@ -269,6 +304,13 @@ void mq_platform_pump(mq_platform* p) {
     if (!p || !p->sdl) return;
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
+        if (const char* ti = std::getenv("MAQUE_TRACE_INPUT"); ti && *ti && *ti != '0' && e.type != SDL_MOUSEMOTION)
+            std::print("platform: sdl_event type={} ({})\n", (int)e.type,
+                       e.type == SDL_MOUSEBUTTONDOWN ? "mousedown" :
+                       e.type == SDL_MOUSEBUTTONUP ? "mouseup" :
+                       e.type == SDL_MOUSEMOTION ? "mousemotion" :
+                       e.type == SDL_WINDOWEVENT ? "windowevent" :
+                       e.type == SDL_KEYDOWN ? "keydown" : "other");
         switch (e.type) {
             case SDL_QUIT: p->quit = 1; break;
             case SDL_WINDOWEVENT:

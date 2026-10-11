@@ -30,6 +30,14 @@ cd modules/core/data && node parser.js --check
   不初始化 GL/EGL，避免与渲染插件的 wgpu(EGL) 争用）；`MAQUE_CAPTURE=<前缀>` 从**窗口表面**
   回读前 3 帧为 PPM（用于真实窗口路径的像素级验证）；`MAQUE_KEEP_OPEN=1` 忽略脚本 `quit()`。
   示例：`MAQUE_WINDOW=800x600 MAQUE_TITLE=MaqueEngine ./build/samples/player/maque_player scenes/ball.scn`
+- **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
+  `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
+  SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。
+  手动/脚本点击真实窗口：`python3 tools/xclick.py <窗口类名|标题> <窗口内 x> <窗口内 y>`
+  （⚠️ 本机 Wayland 会话下 **XTest 注入无效**：指针不动，故 CI 用 `MAQUE_SIM_CLICK`）。
+  演示时窗口易被其它窗口遮挡 → `MAQUE_ALWAYS_ON_TOP=1`、`MAQUE_WINDOW_POS=x,y`。
+- **输入帧缓冲必须预分配**：`mq_input_frame.pointers/pointer_cap`（step_frame 内静态缓冲）——
+  容量为 0 时平台会静默丢弃**全部**设备事件（曾导致"真实鼠标点击永远到不了脚本"）。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
 - 系统依赖：SDL2 / libcurl / libwebsockets（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev`）。
 - 已 vendored：`third_party/quickjs-ng`、`third_party/wuffs`。

@@ -20248,6 +20248,37 @@
           ]
         },
         {
+          "name": "mq_platform_simulate_pointer",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "kind",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "button",
+              "type": "int32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_platform_destroy",
           "returns": "void",
           "args": [

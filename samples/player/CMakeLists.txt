@@ -111,3 +111,12 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/window_present_e2e")
     set_tests_properties(window_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
+
+# 真实输入通路端到端（docs/19）：SDL 事件队列注入 → 平台翻译 → 脚本回调 + 坐标映射
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME input_click_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/input_click_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/input_click_e2e")
+    set_tests_properties(input_click_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()

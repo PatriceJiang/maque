@@ -211,6 +211,8 @@ struct Engine {
     std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
     std::string pending_scene;                     // director.loadScene()：帧边界切场景
     std::vector<std::pair<int, mq_physics_body>> physics_role_bodies;   // (entity, 世代句柄)
+    struct SimClick { uint64_t frame; float x, y; };
+    std::vector<SimClick> sim_clicks;       // MAQUE_SIM_CLICK 注入的点击数（帧 → 坐标）
     /* 文本渲染（docs/13/17）：字体实例 + 按字号生成的图集纹理 id（每字号一张） */
     mq_font* font = nullptr;
     std::string font_path;
@@ -570,11 +572,31 @@ uint64_t Engine::world_trail() const {
 /* 单帧推进：① 采样 ② 输入帧 ③ 脚本 update+GC ④ 校验和/快照 ⑤ 渲染。
  * 主循环与控制面 Runtime.step 走**同一条帧序** → 行为一致（docs/10 D1、docs/11）。 */
 void Engine::step_frame() {
-    static thread_local mq_input_frame iframe{};   // 缓冲由平台写入（宿主预分配语义）
+    /* 输入帧缓冲：**必须预分配**（平台按 pointer_cap/key_cap 写入；容量 0 = 静默丢弃全部设备事件）。
+     * 这是"真实鼠标/键盘事件永远到不了脚本"的根因（docs/19 §3：宿主预分配语义）。 */
+    static constexpr uint32_t kMaxPointers = 16, kMaxKeys = 32;
+    static thread_local mq_input_frame iframe{};
+    static thread_local mq_platform_pointer_event iframe_pointers[kMaxPointers]{};
+    static thread_local mq_platform_key_event iframe_keys[kMaxKeys]{};
+    iframe.pointers = iframe_pointers; iframe.pointer_cap = kMaxPointers;
+    iframe.keys = iframe_keys;         iframe.key_cap = kMaxKeys;
     // ① 采样（设备事件随时入队，固定处理点统一消费，docs/19 §3）
     if (platform) {
         mq_platform_pump(platform);
+        /* 注入点击：先移动再按下（同真实鼠标），下一帧抬起 */
+        for (const auto& sc : sim_clicks) {
+            if (sc.frame != frame) continue;
+            if (platform) {
+                mq_platform_simulate_pointer(platform, 0, sc.x, sc.y, 1);
+                mq_platform_simulate_pointer(platform, 1, sc.x, sc.y, 1);
+                mq_platform_simulate_pointer(platform, 2, sc.x, sc.y, 1);
+            }
+            std::print("runtime: sim click at frame {} pos=({:.0f},{:.0f})\n", frame, sc.x, sc.y);
+        }
         if (window) mq_platform_poll(platform, &iframe);
+        if (std::getenv("MAQUE_TRACE_INPUT") && (iframe.pointer_count || iframe.key_count))
+            std::print("runtime: polled pointers={} keys={} (frame {})\n",
+                       iframe.pointer_count, iframe.key_count, frame);
     }
     // ② 输入帧：状态/事件（回放时忽略设备输入，只喂记录）
     if (input) {
@@ -1687,9 +1709,10 @@ void call_script_event(Engine& eng, const mq_input_event* ev) {
 /* 窗口像素 → 目标（世界）坐标：等比缩放 + 居中留边（SDL_RenderSetLogicalSize 同规则） */
 void window_to_target(const Engine& eng, float* x, float* y) {
     if (eng.win_w <= 0 || eng.win_h <= 0) return;
-    const float sc = std::min((float)eng.win_w / (float)eng.W, (float)eng.win_h / (float)eng.H);
+    /* 呈现按目标尺寸（TW×H）等比缩放；多视图时 x 落在 [0,TW)，视图索引 = x / W */
+    const float sc = std::min((float)eng.win_w / (float)eng.TW, (float)eng.win_h / (float)eng.H);
     if (sc <= 0.0F) return;
-    const float off_x = ((float)eng.win_w - (float)eng.W * sc) * 0.5F;
+    const float off_x = ((float)eng.win_w - (float)eng.TW * sc) * 0.5F;
     const float off_y = ((float)eng.win_h - (float)eng.H * sc) * 0.5F;
     *x = (*x - off_x) / sc;
     *y = (*y - off_y) / sc;
@@ -1697,13 +1720,15 @@ void window_to_target(const Engine& eng, float* x, float* y) {
 
 int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target* target) {
     auto* eng = (Engine*)user;
+    /* 入口统一把窗口像素映射为**世界坐标**：命中测试、组件语义、脚本回调三者一致
+     * （窗口可缩放显示世界，docs/05）。 */
+    mq_input_event mapped = *ev;
+    window_to_target(*eng, &mapped.x, &mapped.y);
+    ev = &mapped;
     eng->ev = ev;
-    /* 脚本可见坐标 = 世界坐标（与 UI 命中测试一致） */
-    mq_input_event mapped_ev = *ev;
-    window_to_target(*eng, &mapped_ev.x, &mapped_ev.y);
     if (ev->type == MQ_INPUT_POINTER_MOVE || ev->type == MQ_INPUT_POINTER_DOWN ||
         ev->type == MQ_INPUT_POINTER_UP || ev->type == MQ_INPUT_CLICK) {
-        eng->mouse_x = mapped_ev.x; eng->mouse_y = mapped_ev.y;
+        eng->mouse_x = ev->x; eng->mouse_y = ev->y;
     }
     if (ev->type == MQ_INPUT_POINTER_MOVE && target->entity != eng->hover) {
         eng->hover = target->entity;                    // 悬停态（脚本经 ui_hover 读）
@@ -3740,6 +3765,20 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             std::print("runtime: window {}x{} (world {}x{}, scale {:.2f}x)\n",
                        win_w, win_h, W, H,
                        std::min((float)win_w / (float)W, (float)win_h / (float)H));
+        }
+    }
+    /* 测试/CI：在指定帧注入指针点击（形式 "frame:x:y[;frame:x:y]"）——
+     * 走 SDL 事件队列 → 平台翻译 → 输入模块 → 命中测试 → 脚本回调（docs/19） */
+    sim_clicks.clear();
+    if (const char* sc = std::getenv("MAQUE_SIM_CLICK")) {
+        const char* q = sc;
+        while (*q) {
+            long f = 0; int cx = 0, cy = 0;
+            if (std::sscanf(q, "%ld:%d:%d", &f, &cx, &cy) == 3)
+                sim_clicks.push_back({ (uint64_t)f, (float)cx, (float)cy });
+            const char* semi = std::strchr(q, ';');
+            if (!semi) break;
+            q = semi + 1;
         }
     }
     if (const char* vs = std::getenv("MAQUE_VIEWS")) {
