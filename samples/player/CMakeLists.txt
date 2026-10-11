@@ -78,3 +78,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/nav/nav.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/nav_e2e")
 endif()
+
+# AI 标准工作流（docs/11 §5）：自省 → 逐帧驱动 → 快照/回滚 → 采集 → MCP 工具调用
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME ai_workflow_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/ai_workflow_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/anim/anim.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/ai_workflow_e2e")
+endif()
