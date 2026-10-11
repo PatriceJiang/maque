@@ -2,6 +2,26 @@
 
 > 目的：以 **Cocos Creator 3.x** 为基准做**完备性体检**，找出 maque 缺失的节点/组件与资产。
 > 图例：✅ 已有 · 🔶 等价/部分 · ❌ 缺失 · ➕ maque 独有（Cocos 无）。
+>
+> **实现现状（2026-10-11 更新）**：§1 的表格是**设计期**的组件清单（类型已全部在 schema 中声明）；
+> 引擎侧**语义实现**本轮大幅补齐，按 Cocos API 面新增 50 个接口（全部 DSL 声明 → 生成绑定）：
+>
+> | 类别 | 已实现语义（引擎按 role 通用处理） | 验证 |
+> |------|-----------------------------------|------|
+> | Node | 层级（setParent/parent/childCount/childAt/getChildByName/find(path)）、
+> 位置/缩放/角度/透明度/zIndex/contentSize/anchor/active、destroy（帧末生效）/isValid | `cocos_e2e` |
+> | Component | has/add/remove/count/at、getComponentInChildren、反射字段读写（number/bool/string） | `cocos_e2e` |
+> | 事件 | node.on/off/emit/emit(number)，沿父链冒泡 | `cocos_e2e` |
+> | UI 布局 | ui.Container（HBox/VBox/Grid）自动布局；ui.Control 盒模型参与命中测试 | `cocos_e2e` 布局断言 |
+> | UI 控件 | Slider（拖拽改值 + changed）、CheckBox（点击切换 + toggled）、ProgressBar（值→填充）、
+> UIOpacity（子树透明度）、SafeArea（内缩）、ScrollView（内容偏移） | `cocos_e2e` |
+> | 物理 | physics.RigidBody + physics.Collider → 装配期建体、帧内步进并回写 Transform2D | `cocos_e2e` 下落断言 |
+> | Director | pause/resume/paused/frame/loadScene（帧边界切场景）；控制面 Director 域 | `cocos_e2e` 暂停断言 |
+> | 动作/定时 | Tween（linear/ease_in/ease_out/ease_in_out + tween_complete）、schedule/scheduleOnce/unschedule | `cocos_e2e` |
+>
+> **仍未实现**（诚实清单）：3D 相关（MeshRenderer/Light/Billboard/ReflectionProbe/Terrain/Skybox）、
+> 骨骼动画与动画状态机、RichText/Graphics/MotionStreak、ScrollBar/PageView、VideoPlayer/WebView、
+> AudioSource（本机无音频输出设备）、ConstantForce、LabelOutline/Shadow。
 
 ## 1. 对照总表
 

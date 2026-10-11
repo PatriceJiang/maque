@@ -65,6 +65,26 @@ cd modules/core/data && node parser.js --check
 - **渲染**：`maque::gfx`（wgpu-native）。注意：该构建的 `wgpuInstanceWaitAny` **未实现**，异步统一用 `wgpuInstanceProcessEvents` 轮询。
 - **实体/组件**：runtime 内实体表（`maque::handle`）+ 组件；**渲染从组件提取**（只读）。
 
+## 脚本可见 API（Cocos 风格，docs/18）
+
+`api_list` 中的 `host` 命名空间即脚本全局函数（`global: true` → 无前缀）。本轮按 Cocos Creator 对齐补齐：
+
+- **Node**：`node_set_parent/parent/child_count/child_at/find_child/find_path/set_name`、
+  `node_set_position/position_x/position_y`、`node_set_scale/scale`、`node_set_angle/angle`、
+  `node_set_opacity/opacity`、`node_set_z_index/z_index`、`node_width/height/set_content_size/set_anchor`、
+  `node_set_active/active`、`node_destroy`（帧末生效）、`node_valid`
+- **Component**：`node_has_component/add_component/remove_component/component_count/component_at/child_with_component`、
+  `node_get_number/set_number/get_bool/set_bool/get_string/set_string`（组件字段名可用 `Type.field` 或短名）
+- **事件**：`node_on(id, event, handler)` / `node_off` / `node_emit` / `node_emit_number`；emit 沿父链冒泡，
+  处理器是脚本里的全局函数名（引擎按名字回调）
+- **UI 值**：`ui_set_value/ui_get_value`（ProgressBar/Slider）、`ui_set_checked/ui_get_checked`（CheckBox）
+- **Director**：`director_pause/resume/paused/frame/load_scene`
+- **动作/定时**：`tween_start(id, "scn.Sprite.radius", to, duration, easing)`、`tween_stop/count/progress`、
+  `schedule_once/schedule/unschedule/schedule_count`
+
+**坐标约定**：节点位置为世界坐标（y 向上）；输入事件为屏幕坐标（y 向下）→ `y_screen = H - y_world`。
+UI 控件（`ui.Control`）以**中心**为锚点，命中矩形 = 尺寸的一半展开。
+
 ## 常见改动怎么做
 
 - **加一个数据类型/组件**：编辑 `modules/core/data/schema.yaml` 的 `class_list` → 重构建（自动重生成）。
