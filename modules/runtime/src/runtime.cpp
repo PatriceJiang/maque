@@ -4,6 +4,7 @@
  *   实体 = name + 组件；组件语义由 schema 的 roles 声明，引擎**不硬编码任何组件类型**。
  *   宿主 API 由 schema 的 api_list(ctx:true) 生成（绑定/声明），引擎只实现语义。 */
 #include "runtime/mq_runtime.h"
+#include "runtime/mq_host.h"
 
 #include "core/persist/mq_persist.h"
 #include "core/persist/mq_persist_binary.h"
@@ -50,6 +51,65 @@ struct Entity {
 struct Engine;
 struct Scene;
 struct SnapshotWriter;
+
+/* 引擎内辅助（定义见 Engine 之后；Scene 与 Engine 互相引用）。 */
+void write_json_string_pub(std::string& out, const std::string& s);
+void attach_component(Engine& eng, int idx, const char* type_name);
+void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& blob);
+void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob);
+
+struct Scene {
+    scn::Scene desc;
+    std::string text_;
+    mq_handle_table* table = nullptr;
+    Engine* eng = nullptr;                  // 组件析构需要反射 ctx（remove/重建时）
+    std::unordered_map<int, Entity> ents;
+
+    Scene() { table = mq_handle_table_create(sizeof(uint8_t), 1); }
+    ~Scene() { destroy_all(); if (table) mq_handle_table_destroy(table); }
+    Scene(const Scene&) = delete; Scene& operator=(const Scene&) = delete;
+    Scene(Scene&& o) noexcept { *this = std::move(o); }
+    Scene& operator=(Scene&& o) noexcept {
+        if (this == &o) return *this;
+        destroy_all();
+        if (table) mq_handle_table_destroy(table);
+        desc = std::move(o.desc);
+        text_ = std::move(o.text_);
+        table = o.table; o.table = nullptr;
+        eng = o.eng;
+        ents = std::move(o.ents);
+        return *this;
+    }
+    /* 析构全部组件 blob（含动态成员）。 */
+    void destroy_all() {
+        if (!eng) { ents.clear(); return; }
+        for (auto& [k, ent] : ents)
+            for (auto& [t, b] : ent.comps) destroy_blob(*eng, t, b);
+        ents.clear();
+    }
+
+    bool deserialize(Engine& eng, const std::string& text);
+    void instantiate(Engine& eng);
+    int  spawn();
+    Entity* at(int index);
+    void remove(int index);
+    int  count() const { return (int)ents.size(); }
+    void compute_world(Engine& eng);
+    uint64_t checksum(Engine& eng);     // 世界状态校验和（确定性；反射驱动）
+    void encode(Engine& eng, SnapshotWriter& w);   // 世界 → 字节（二进制 codec）
+    size_t decode(Engine& eng, const uint8_t* in, size_t n);
+    void extract(Engine& eng, std::vector<mq_renderer_item>& out);
+};
+
+/* ---- 快照写入器（Scene::encode 的字节汇；无反射依赖） ---- */
+struct SnapshotWriter {
+    std::vector<uint8_t> buf;
+    void bytes(const void* p, size_t n) {
+        const uint8_t* b = (const uint8_t*)p;
+        buf.insert(buf.end(), b, b + n);
+    }
+    template <class T> void pod(T v) { bytes(&v, sizeof(T)); }
+};
 
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
@@ -99,7 +159,9 @@ struct Engine {
     std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
     std::string name;
     const mq_type_desc* scene_type = nullptr;
-    Scene*              scene = nullptr;
+    Scene               scene_store;                        // 场景状态（移动后失效）
+    std::unique_ptr<Scene> scene_owned;                     // 宿主模式：堆上场景
+    Scene*              scene = &scene_store;
 
     std::unordered_map<std::string, int> tex_cache;
     uint32_t rng = 0;
@@ -117,6 +179,8 @@ struct Engine {
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void anim_step(float dt);                               // 关键帧采样 → 写回字段（docs/15 §2）
     void particles_step(float dt);                          // 确定性粒子推进（docs/15 §4）
+    bool setup(const std::string& scn_path, const char* renderer_override);   // 加载并装配引擎
+    void teardown();                                        // 释放全部实例资源（幂等）
     void step_frame();                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
     bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
     bool reload_script(std::string* err = nullptr);          // 重载脚本（帧边界调用，docs/14）
@@ -130,29 +194,21 @@ struct Engine {
     uint64_t world_trail() const;                           // 校验和轨迹（失步定位）
 };
 
-struct Scene {
-    scn::Scene desc;
-    std::string text_;
-    mq_handle_table* table = nullptr;
-    Engine* eng = nullptr;                  // 组件析构需要反射 ctx（remove/重建时）
-    std::unordered_map<int, Entity> ents;
-
-    Scene() { table = mq_handle_table_create(sizeof(uint8_t), 1); }
-    ~Scene() { if (table) mq_handle_table_destroy(table); }
-    Scene(const Scene&) = delete; Scene& operator=(const Scene&) = delete;
-
-    bool deserialize(Engine& eng, const std::string& text);
-    void instantiate(Engine& eng);
-    int  spawn();
-    Entity* at(int index);
-    void remove(int index);
-    int  count() const { return (int)ents.size(); }
-    void compute_world(Engine& eng);
-    uint64_t checksum(Engine& eng);     // 世界状态校验和（确定性；反射驱动）
-    void encode(Engine& eng, SnapshotWriter& w);   // 世界 → 字节（二进制 codec）
-    size_t decode(Engine& eng, const uint8_t* in, size_t n);
-    void extract(Engine& eng, std::vector<mq_renderer_item>& out);
-};
+/* JSON 字符串转义（与 persist 规则一致；runtime 侧轻量实现）。 */
+void write_json_string_pub(std::string& out, const std::string& s) {
+    out += '"';
+    for (char c : s) {
+        switch (c) {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n"; break;
+            case '\t': out += "\\t"; break;
+            case '\r': out += "\\r"; break;
+            default: out += c;
+        }
+    }
+    out += '"';
+}
 
 /* 组件 blob 生命周期（关键）：组件含 std::string/容器时，裸字节缓冲**不是有效对象**；
  * 必须显式构造（默认构造 = 反射默认值）后再反序列化，覆盖前显式析构。 */
@@ -182,22 +238,6 @@ void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& bl
     if (empty) { mq_persist_apply_json(eng.reflect, d, empty, blob.data()); mq_json_free(empty); }
 }
 
-/* JSON 字符串转义（与 persist 规则一致；runtime 侧轻量实现）。 */
-void write_json_string_pub(std::string& out, const std::string& s) {
-    out += '"';
-    for (char c : s) {
-        switch (c) {
-            case '"':  out += "\\\""; break;
-            case '\\': out += "\\\\"; break;
-            case '\n': out += "\\n"; break;
-            case '\t': out += "\\t"; break;
-            case '\r': out += "\\r"; break;
-            default: out += c;
-        }
-    }
-    out += '"';
-}
-
 /* 组件挂载：由**描述符**构造默认实例（schema 默认值生效）→ 引擎不硬编码组件类型。 */
 void attach_component(Engine& eng, int idx, const char* type_name) {
     Entity* e = eng.scene->at(idx);
@@ -209,16 +249,6 @@ void attach_component(Engine& eng, int idx, const char* type_name) {
     if (dom) { mq_persist_apply_json(eng.reflect, d, dom, e->comps[d->type_id].data()); mq_json_free(dom); }
     else e->comps[d->type_id].assign(d->size, 0);
 }
-
-/* ---- 快照写入器（Scene::encode 的字节汇；无反射依赖） ---- */
-struct SnapshotWriter {
-    std::vector<uint8_t> buf;
-    void bytes(const void* p, size_t n) {
-        const uint8_t* b = (const uint8_t*)p;
-        buf.insert(buf.end(), b, b + n);
-    }
-    template <class T> void pod(T v) { bytes(&v, sizeof(T)); }
-};
 
 /* ---- 反射读取辅助（不依赖具体类型，仅按字段名） ---- */
 bool read_f32(const mq_type_desc* d, const void* blob, const char* name, float* out) {
@@ -1935,210 +1965,282 @@ static int h_replay_log(void* u, const char*, const mq_json*, char* out, size_t 
     return 0;
 }
 
-extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
-    if (!scn_path) return 1;
+/* 装配引擎：VFS → 反射 → 渲染插件 → 场景 → 平台/输入 → 脚本 → 控制面。
+ * 两条入口（命令行 / 嵌入宿主）共用，保证行为一致。 */
+bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     std::filesystem::path scnp(scn_path);
-    std::string scn_dir = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
+    const std::string scn_dir2 = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
 
-    Engine eng;
-    eng.vfs = mq_vfs_create();
-    mq_vfs_mount(eng.vfs, "/", ("file://" + scn_dir).c_str());
+    vfs = mq_vfs_create();
+    mq_vfs_mount(vfs, "/", ("file://" + scn_dir2).c_str());
 
     std::string text;
     { void* d = nullptr; size_t n = 0;
-      if (mq_vfs_read(eng.vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == 0) { text.assign((char*)d, n); mq_vfs_free(d); } }
-    if (text.empty()) { std::print("runtime: cannot read scene '{}'\n", scn_path); mq_vfs_destroy(eng.vfs); return 1; }
+      if (mq_vfs_read(vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == MQ_VFS_OK) { text.assign((char*)d, n); mq_vfs_free(d); } }
+    if (text.empty()) { std::print("runtime: cannot read scene '{}'\n", scn_path); return false; }
 
-    // 反射 ctx（per-instance）：载入 schema
-    eng.reflect = mq_reflect_create();
-    mq_reflect_load_schema(eng.reflect);
-    eng.scene_type = mq_reflect_type_by_name(eng.reflect, "scn.Scene");
-    if (!eng.scene_type) { std::print("runtime: no scn.Scene type\n"); return 1; }
+    reflect = mq_reflect_create();
+    mq_reflect_load_schema(reflect);
+    scene_type = mq_reflect_type_by_name(reflect, "scn.Scene");
+    if (!scene_type) { std::print("runtime: no scn.Scene type\n"); return false; }
 
-    const char* plugin = std::getenv("MAQUE_RENDERER");
+    const char* plugin = renderer_override ? renderer_override : std::getenv("MAQUE_RENDERER");
 #ifdef MQ_RENDERER_DEFAULT
     if (!plugin) plugin = MQ_RENDERER_DEFAULT;
 #endif
     if (!plugin) plugin = "libmaque_gfx.so";
-    eng.host = mq_host_create();
+    host = mq_host_create();
     mq_loaded_module* rmod = nullptr;
-    if (mq_host_load(eng.host, plugin, &rmod) != 0 ||
-        !(eng.rapi = (const mq_renderer_v1*)mq_host_query(eng.host, MQ_RENDERER_API_NAME, 1))) {
+    if (mq_host_load(host, plugin, &rmod) != 0 ||
+        !(rapi = (const mq_renderer_v1*)mq_host_query(host, MQ_RENDERER_API_NAME, 1))) {
         std::print("runtime: cannot load renderer plugin '{}'\n", plugin);
-        mq_host_destroy(eng.host); mq_vfs_destroy(eng.vfs); return 2;
+        return false;
     }
     const char* backend = nullptr;
-    eng.rself = eng.rapi->create(&backend);
-    if (!eng.rself) { std::print("runtime: renderer create failed\n"); return 2; }
+    rself = rapi->create(&backend);
+    if (!rself) { std::print("runtime: renderer create failed\n"); return false; }
     std::print("runtime: renderer plugin '{}' backend='{}'\n", plugin, backend ? backend : "?");
 
-    Scene scene;
-    eng.scene = &scene;
-    if (!scene.deserialize(eng, text)) { std::print("runtime: failed to deserialize scene\n"); return 1; }
-    scene.instantiate(eng);
-    scene.compute_world(eng);
+    scene_store = Scene();
+    scene = &scene_store;
+    if (!scene->deserialize(*this, text)) { std::print("runtime: failed to deserialize scene\n"); return false; }
+    scene->instantiate(*this);
+    scene->compute_world(*this);
 
-    eng.W = scene.desc.width > 0 ? scene.desc.width : 320;
-    eng.H = scene.desc.height > 0 ? scene.desc.height : 240;
-    eng.nviews = scene.desc.views > 0 ? scene.desc.views : 1;
-    eng.TW = eng.W * eng.nviews;
-    eng.views.resize(eng.nviews);
-    for (int i = 0; i < eng.nviews; ++i) {
-        mq_renderer_view& v = eng.views[i];
+    W = scene->desc.width > 0 ? scene->desc.width : 320;
+    H = scene->desc.height > 0 ? scene->desc.height : 240;
+    nviews = scene->desc.views > 0 ? scene->desc.views : 1;
+    TW = W * nviews;
+    views.resize(nviews);
+    for (int i = 0; i < nviews; ++i) {
+        mq_renderer_view& v = views[i];
         v = mq_renderer_view{};
-        v.vx = (float)(i * eng.W); v.vy = 0;
-        v.vw = (float)eng.W; v.vh = (float)eng.H;
-        v.pan = (float)(i * eng.W);
-        v.eye = (i - (eng.nviews - 1) * 0.5F) * scene.desc.eye_sep;
-        v.cx = eng.W * 0.5F; v.cy = eng.H * 0.5F;   // 默认：相机中心 = 视口中心（世界坐标 = 像素）
+        v.vx = (float)(i * W); v.vy = 0;
+        v.vw = (float)W; v.vh = (float)H;
+        v.pan = (float)(i * W);
+        v.eye = (i - (nviews - 1) * 0.5F) * scene->desc.eye_sep;
+        v.cx = W * 0.5F; v.cy = H * 0.5F;
         v.zoom = 1.0F;
     }
-    /* 场景中的 Camera 组件（role=camera）覆盖视图相机（docs/13 §相机/分层） */
-    for (auto& [idx, e] : scene.ents) {
+    for (auto& [idx, e] : scene->ents) {                   // 场景声明的 Camera 覆盖视图相机
         for (auto& [tid, blob] : e.comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (!d || !(d->role & MQ_ROLE_CAMERA)) continue;
             bool active = true;
             if (const mq_field_desc* fa = mq_reflect_field(d, "active")) active = *(const bool*)(blob.data() + fa->offset);
             if (!active) continue;
-            float cx = eng.W * 0.5F, cy = eng.H * 0.5F, zoom = 1.0F, rot = 0.0F;
+            float cx = W * 0.5F, cy = H * 0.5F, zoom = 1.0F, rot = 0.0F;
             read_f32(d, blob.data(), "x", &cx);
             read_f32(d, blob.data(), "y", &cy);
             read_f32(d, blob.data(), "zoom", &zoom);
             read_f32(d, blob.data(), "rotation", &rot);
-            for (auto& v : eng.views) { v.cx = cx; v.cy = cy; v.zoom = zoom > 0 ? zoom : 1.0F; v.rot = rot; }
+            for (auto& v : views) { v.cx = cx; v.cy = cy; v.zoom = zoom > 0 ? zoom : 1.0F; v.rot = rot; }
         }
     }
-    eng.rng = scene.desc.seed * 2654435761u + 12345u;
-    /* 物理世界（docs/15 §3）：固定步长/固定迭代/按 body.index 稳定排序；种子来自场景（D2） */
+    rng = scene->desc.seed * 2654435761u + 12345u;
     {
         mq_physics_config pcfg{};
         pcfg.struct_size = (uint32_t)sizeof pcfg;
-        pcfg.gravity_x = 0.0F;
-        pcfg.gravity_y = scene.desc.gravity_y;
+        pcfg.gravity_y = scene->desc.gravity_y;
         pcfg.fixed_dt = 1.0F / 60.0F;
         pcfg.solver_iterations = 4;
         pcfg.max_bodies = 1024;
-        pcfg.seed = scene.desc.seed;
-        eng.physics = mq_physics_create(&pcfg);
-        mq_physics_set_bounds(eng.physics, 0.0F, 0.0F, (float)eng.W, (float)eng.H);
-        std::print("runtime: physics on (gravity_y={:.0f}, restitution={:.2f})\n",
-                   (double)scene.desc.gravity_y, (double)scene.desc.restitution);
+        pcfg.seed = scene->desc.seed;
+        physics = mq_physics_create(&pcfg);
+        mq_physics_set_bounds(physics, 0.0F, 0.0F, (float)W, (float)H);
     }
     std::print("runtime: scene '{}' title='{}' script='{}' {}x{} views={}\n",
-               scn_path, scene.desc.title, scene.desc.script, eng.W, eng.H, eng.nviews);
+               scn_path, scene->desc.title, scene->desc.script, W, H, nviews);
 
-    eng.obs = mq_obs_create();
-    // 平台/输入：窗口默认打开（有显示环境），MAQUE_HEADLESS=1 或无显示 → dummy。
-    // 事件经同一队列进入确定性事件流（docs/19 §3）。
-    eng.platform = mq_platform_create(scene.desc.title.c_str(), eng.W, eng.H);
-    eng.window = mq_platform_has_window(eng.platform) != 0;
-    eng.input = mq_input_create();
-    mq_input_set_hit_test(eng.input, runtime_hit_test, &eng);
-    mq_input_set_parent_fn(eng.input, runtime_parent, &eng);
-    mq_input_add_handler(eng.input, runtime_input_handler, &eng);
-    {
-        const char* hs = std::getenv("MAQUE_HITS");
-        if (hs && *hs && *hs != '0') eng.trace_hits = true;
-    }
-    std::print("runtime: platform window={} input=on\n", eng.window ? 1 : 0);
-    eng.snaps = mq_snapshot_pool_create(8, 1 << 16);
-    eng.vm = mq_script_vm_create();
-    mq_bind_generated(eng.vm, &eng);               // 生成绑定（math.* / host.*），注入引擎 ctx
-    const std::string& script_path = scene.desc.script;
+    obs = mq_obs_create();
+    platform = mq_platform_create(scene->desc.title.c_str(), W, H);
+    window = mq_platform_has_window(platform) != 0;
+    input = mq_input_create();
+    mq_input_set_hit_test(input, runtime_hit_test, this);
+    mq_input_set_parent_fn(input, runtime_parent, this);
+    mq_input_add_handler(input, runtime_input_handler, this);
+    { const char* hs = std::getenv("MAQUE_HITS"); if (hs && *hs && *hs != '0') trace_hits = true; }
+    snaps = mq_snapshot_pool_create(8, 1 << 16);
+    vm = mq_script_vm_create();
+    mq_bind_generated(vm, this);
+
+    script_path = scene->desc.script;
+    scn_vfs_path = "/" + scnp.filename().string();
+    scn_dir = scn_dir2;
     if (!script_path.empty()) {
         std::string js;
         { void* d = nullptr; size_t n = 0;
-          if (mq_vfs_read(eng.vfs, ("/" + script_path).c_str(), &d, &n) == 0) { js.assign((char*)d, n); mq_vfs_free(d); } }
-        if (js.empty()) { std::print("runtime: cannot read script '{}'\n", script_path); return 1; }
-        if (mq_script_eval(eng.vm, js.c_str(), script_path.c_str()) != 0) { std::print("runtime: script error\n"); return 1; }
+          if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) == MQ_VFS_OK) { js.assign((char*)d, n); mq_vfs_free(d); } }
+        if (js.empty()) { std::print("runtime: cannot read script '{}'\n", script_path); return false; }
+        script_hash = mq_vfs_hash(js.data(), js.size());
+        if (mq_script_eval(vm, js.c_str(), script_path.c_str()) != 0) { std::print("runtime: script error\n"); return false; }
     }
-    eng.script_path = script_path;
-    eng.scn_vfs_path = "/" + scnp.filename().string();
-    eng.scn_dir = scn_dir;
-    {
-        void* d = nullptr; size_t n = 0;
-        if (!script_path.empty() && mq_vfs_read(eng.vfs, ("/" + script_path).c_str(), &d, &n) == MQ_VFS_OK) {
-            eng.script_hash = mq_vfs_hash(d, n);
-            mq_vfs_free(d);
-        }
-    }
-    /* 热重载监视（MAQUE_WATCH=1）：只监视脚本与场景两个文件（编辑器留待 M9+） */
     const char* watch = std::getenv("MAQUE_WATCH");
     if (watch && *watch && *watch != '0') {
-        eng.watcher = mq_watcher_create();
-        mq_watcher_add(eng.watcher, (std::filesystem::path(scn_dir) / scnp.filename()).string().c_str());
+        watcher = mq_watcher_create();
+        mq_watcher_add(watcher, (std::filesystem::path(scn_dir) / scnp.filename()).string().c_str());
         if (!script_path.empty())
-            mq_watcher_add(eng.watcher, (std::filesystem::path(scn_dir) / script_path).string().c_str());
-        std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(eng.watcher));
+            mq_watcher_add(watcher, (std::filesystem::path(scn_dir) / script_path).string().c_str());
+        std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
     }
-    if (mq_script_has(eng.vm, "on_start")) mq_script_call0(eng.vm, "on_start", nullptr);
+    if (mq_script_has(vm, "on_start")) mq_script_call0(vm, "on_start", nullptr);
 
-    // 控制平面：注册方法；若无显示/AI 驱动，可 headless 服务请求
-    eng.control = mq_control_create();
-    mq_control_register(eng.control, "Perf.get", h_perf, &eng);
-    mq_control_register(eng.control, "Scene.info", h_scene, &eng);
-    mq_control_register(eng.control, "World.checksum", h_checksum, &eng);
-    mq_control_register(eng.control, "World.trail", h_trail, &eng);
-    mq_control_register(eng.control, "World.snapshot", h_snapshot, &eng);
-    mq_control_register(eng.control, "World.restore", h_restore, &eng);
-    mq_control_register(eng.control, "Types.describe", h_types, &eng);
-    mq_control_register(eng.control, "Scene.entities", h_entities, &eng);
-    mq_control_register(eng.control, "Scene.get", h_scene_get, &eng);
-    mq_control_register(eng.control, "Scene.set", h_scene_set, &eng);
-    mq_control_register(eng.control, "Scene.save", h_scene_save, &eng);
-    mq_control_register(eng.control, "Scene.spawn", h_scene_spawn, &eng);
-    mq_control_register(eng.control, "Scene.destroy", h_scene_destroy, &eng);
-    mq_control_register(eng.control, "Input.inject", h_inject, &eng);
-    mq_control_register(eng.control, "Replay.log", h_replay_log, &eng);
-    mq_control_register(eng.control, "Runtime.step", h_step, &eng);
-    mq_control_register(eng.control, "Runtime.frame", h_frame, &eng);
-    mq_control_register(eng.control, "Control.mcp", h_mcp, &eng);
-    mq_control_register(eng.control, "Reload.script", h_reload_script, &eng);
-    mq_control_register(eng.control, "Reload.scene", h_reload_scene, &eng);
-    mq_control_register(eng.control, "Reload.files", h_files, &eng);
+    control = mq_control_create();
+    mq_control_register(control, "Perf.get", h_perf, this);
+    mq_control_register(control, "Scene.info", h_scene, this);
+    mq_control_register(control, "World.checksum", h_checksum, this);
+    mq_control_register(control, "World.trail", h_trail, this);
+    mq_control_register(control, "World.snapshot", h_snapshot, this);
+    mq_control_register(control, "World.restore", h_restore, this);
+    mq_control_register(control, "Types.describe", h_types, this);
+    mq_control_register(control, "Scene.entities", h_entities, this);
+    mq_control_register(control, "Scene.get", h_scene_get, this);
+    mq_control_register(control, "Scene.set", h_scene_set, this);
+    mq_control_register(control, "Scene.save", h_scene_save, this);
+    mq_control_register(control, "Scene.spawn", h_scene_spawn, this);
+    mq_control_register(control, "Scene.destroy", h_scene_destroy, this);
+    mq_control_register(control, "Input.inject", h_inject, this);
+    mq_control_register(control, "Replay.log", h_replay_log, this);
+    mq_control_register(control, "Runtime.step", h_step, this);
+    mq_control_register(control, "Runtime.frame", h_frame, this);
+    mq_control_register(control, "Control.mcp", h_mcp, this);
+    mq_control_register(control, "Reload.script", h_reload_script, this);
+    mq_control_register(control, "Reload.scene", h_reload_scene, this);
+    mq_control_register(control, "Reload.files", h_files, this);
+    std::print("runtime: platform window={} input=on\n", window ? 1 : 0);
+    return true;
+}
+
+void Engine::teardown() {
+    if (control) { mq_control_destroy(control); control = nullptr; }
+    if (vm) { mq_script_vm_destroy(vm); vm = nullptr; }
+    if (obs) { mq_obs_destroy(obs); obs = nullptr; }
+    if (reflect) { mq_reflect_destroy(reflect); reflect = nullptr; }
+    mq_snapshot_destroy(snap_manual); snap_manual = nullptr;
+    mq_snapshot_pool_destroy(snaps); snaps = nullptr;
+    mq_watcher_destroy(watcher); watcher = nullptr;
+    mq_physics_destroy(physics); physics = nullptr;
+    mq_input_destroy(input); input = nullptr;
+    mq_platform_destroy(platform); platform = nullptr;
+    if (rapi && rself) { rapi->destroy(rself); rself = nullptr; }
+    mq_host_destroy(host); host = nullptr;
+    mq_vfs_destroy(vfs); vfs = nullptr;
+}
+
+extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
+    if (!scn_path) return 1;
+    auto* eng = new Engine();
+    if (!eng->setup(scn_path, nullptr)) { eng->teardown(); delete eng; return 2; }
+
     if (const char* req = std::getenv("MAQUE_CONTROL")) {
-        const bool replayed = eng.prepare_replay();
-        if (!replayed && std::getenv("MAQUE_RECORD")) mq_input_record_begin(eng.input);
-        auto serve = [&](const char* r) { std::print("{}\n", mq_control_dispatch(eng.control, r)); };
+        const bool replayed = eng->prepare_replay();
+        if (!replayed && std::getenv("MAQUE_RECORD")) mq_input_record_begin(eng->input);
+        auto serve = [&](const char* r) { std::print("{}\n", mq_control_dispatch(eng->control, r)); };
         if (std::strcmp(req, "-") == 0) {
-            char line[4096];
+            char line[8192];
             while (std::fgets(line, sizeof line, stdin)) { line[std::strcspn(line, "\n")] = 0; if (*line) serve(line); }
         } else serve(req);
-        eng.finalize_run();
+        eng->finalize_run();
         if (replayed) {
-            const char* rt = mq_input_log_get_meta(eng.input, "trail");
+            const char* rt = mq_input_log_get_meta(eng->input, "trail");
             if (rt) {
-                char tb[32]; std::snprintf(tb, sizeof tb, "%llu", (unsigned long long)eng.world_trail());
+                char tb[32]; std::snprintf(tb, sizeof tb, "%llu", (unsigned long long)eng->world_trail());
                 if (rt == std::string(tb)) std::print("runtime: replay matches recorded trail ({})\n", tb);
                 else std::print("runtime: DESYNC — replay trail {} != recorded {}\n", tb, rt);
             }
         }
-        mq_control_destroy(eng.control);
-        mq_script_vm_destroy(eng.vm); mq_obs_destroy(eng.obs); mq_reflect_destroy(eng.reflect);
-        mq_snapshot_pool_destroy(eng.snaps); mq_input_destroy(eng.input);
-        mq_platform_destroy(eng.platform);
-        if (eng.rapi && eng.rself) eng.rapi->destroy(eng.rself);
-        mq_host_destroy(eng.host); mq_vfs_destroy(eng.vfs);
+        eng->teardown(); delete eng;
         return 0;
     }
 
-    eng.main_loop(frames_dir ? frames_dir : "", scnp.filename().string());
+    std::string replay_trail;
+    if (eng->prepare_replay()) {
+        if (const char* mt = mq_input_log_get_meta(eng->input, "trail")) replay_trail = mt;
+    }
+    if (std::getenv("MAQUE_RECORD")) mq_input_record_begin(eng->input);
 
-    mq_control_destroy(eng.control);
-    mq_script_vm_destroy(eng.vm);
-    mq_obs_destroy(eng.obs);
-    mq_reflect_destroy(eng.reflect);
-    mq_physics_destroy(eng.physics);
-    mq_snapshot_destroy(eng.snap_manual);
-    mq_watcher_destroy(eng.watcher);
-    mq_snapshot_pool_destroy(eng.snaps);
-    mq_input_destroy(eng.input);
-    mq_platform_destroy(eng.platform);
-    if (eng.rapi && eng.rself) eng.rapi->destroy(eng.rself);
-    mq_host_destroy(eng.host);
-    mq_vfs_destroy(eng.vfs);
-    return eng.quit ? 0 : 1;
+    eng->main_loop(frames_dir ? frames_dir : "", std::filesystem::path(scn_path).filename().string());
+    const bool quit = eng->quit;
+    eng->teardown();
+    delete eng;
+    return quit ? 0 : 1;
+}
+
+/* ---------------- 嵌入宿主接口（P3，docs/05）：主循环归宿主 ---------------- */
+
+struct mq_host_scene {
+    Engine* eng = nullptr;
+    std::string response;
+};
+
+extern "C" mq_host_scene* mq_host_scene_create(const char* scn_path, const mq_host_desc* desc) {
+    if (!scn_path) return nullptr;
+    auto* hs = new mq_host_scene();
+    hs->eng = new Engine();
+    const char* renderer = desc ? desc->renderer : nullptr;
+    if (!hs->eng->setup(scn_path, renderer)) {
+        hs->eng->teardown();
+        delete hs->eng;
+        delete hs;
+        return nullptr;
+    }
+    return hs;
+}
+
+extern "C" void mq_host_scene_destroy(mq_host_scene* s) {
+    if (!s) return;
+    if (s->eng) { s->eng->teardown(); delete s->eng; }
+    delete s;
+}
+
+extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
+    if (!s || !s->eng) return 1;
+    Engine& e = *s->eng;
+    e.step_frame();                                   // 帧序与 mq_run_scene 完全一致
+    // 渲染该帧到宿主缓冲（step_frame 内部已渲染；这里补一次输出到调用方缓冲）
+    std::vector<mq_renderer_item> draws;
+    if (e.scene) e.scene->extract(e, draws);
+    if (!out || out_size < (size_t)e.TW * e.H * 4) return 2;
+    float bg[4] = { e.bg[0], e.bg[1], e.bg[2], e.bg[3] };
+    const int rc = e.rapi->render_views(e.rself, e.TW, e.H, e.views.data(), (uint32_t)e.views.size(),
+                                        draws.data(), (uint32_t)draws.size(), bg, out, (uint32_t)out_size);
+    return rc == 0 ? 0 : 3;
+}
+
+extern "C" void mq_host_size(mq_host_scene* s, int* w, int* h) {
+    if (!s || !s->eng) return;
+    if (w) *w = s->eng->TW;
+    if (h) *h = s->eng->H;
+}
+
+extern "C" void mq_host_push_pointer(mq_host_scene* s, int type, int button, float x, float y) {
+    if (!s || !s->eng || !s->eng->input) return;
+    mq_input_event ev{};
+    ev.type = (uint32_t)type;
+    ev.button = (uint32_t)button;
+    ev.x = x; ev.y = y;
+    ev.pointer_type = MQ_PLATFORM_POINTER_MOUSE;
+    ev.pressure = type == MQ_INPUT_POINTER_DOWN ? 1.0F : 0.0F;
+    mq_input_inject(s->eng->input, &ev);
+}
+
+extern "C" void mq_host_push_key(mq_host_scene* s, int key, int down, const char* text) {
+    if (!s || !s->eng || !s->eng->input) return;
+    mq_input_event ev{};
+    ev.type = text ? MQ_INPUT_TEXT : (down ? MQ_INPUT_KEY_DOWN : MQ_INPUT_KEY_UP);
+    ev.key = (uint32_t)key;
+    if (text) { std::strncpy(ev.text, text, sizeof(ev.text) - 1); }
+    mq_input_inject(s->eng->input, &ev);
+}
+
+extern "C" uint64_t mq_host_frame(mq_host_scene* s) { return s && s->eng ? s->eng->frame : 0; }
+extern "C" uint64_t mq_host_checksum(mq_host_scene* s) { return s && s->eng ? s->eng->world_checksum() : 0; }
+extern "C" int mq_host_should_quit(mq_host_scene* s) { return s && s->eng && s->eng->quit ? 1 : 0; }
+
+extern "C" const char* mq_host_control(mq_host_scene* s, const char* request) {
+    if (!s || !s->eng || !s->eng->control) return nullptr;
+    s->response = mq_control_dispatch(s->eng->control, request ? request : "{}");
+    return s->response.c_str();
 }
 
 extern "C" int mq_run_scene(const char* scn_path) { return mq_run_scene_ex(scn_path, nullptr); }
