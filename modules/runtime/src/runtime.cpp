@@ -2085,7 +2085,11 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     st.struct_size = (uint32_t)sizeof st;
     st.font_size = size;
     /* 设备缩放：窗口像素 / 目标像素（HiDPI 时按设备字号栅格化 → 1:1 呈现，不做二次缩放） */
-    st.device_scale = eng.canvas.scale > 0.0F ? eng.canvas.scale : 1.0F;   // 画布缩放 = 设计→设备
+    /* 字形栅格化倍率 = **渲染目标像素 / 设计像素**（=1：目标就是设计分辨率）。
+     * 注意不是画布的窗口缩放：窗口放大由 present 做（整倍 → 最近邻，保持锐利）；
+     * 若按窗口缩放栅格化（如 3x 出 36px 字形），再画进 320x240 的目标就是**降采样 3 倍** →
+     * 笔画丢失、文字发虚/乱码（曾如此）。超采样目标（目标 > 设计）时才 > 1。 */
+    st.device_scale = 1.0F;   /* 每个视图的渲染目标 = 设计分辨率（TW = W × nviews） */
     st.pixel_snap = 1;                                  /* pixel-perfect：字形对齐整数像素 */
     st.line_spacing = line_spacing;
     st.wrap = (uint32_t)(wrap < 0 ? 0 : wrap);
