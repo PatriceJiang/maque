@@ -6,15 +6,15 @@
   "seed": 2026,
   "entities": [
     { "name": "LevelName", "components": [
-        { "type": "scn.Label", "x": 8.0, "y": 224.0, "text": "", "font_size": 12.0,
+        { "type": "scn.Label", "x": 8.0, "y": 226.0, "text": "", "font_size": 18.0,
           "font": "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
           "r": 0.95, "g": 0.85, "b": 0.45, "a": 1.0 } ] },
     { "name": "Status", "components": [
-        { "type": "scn.Label", "x": 8.0, "y": 206.0, "text": "", "font_size": 11.0,
+        { "type": "scn.Label", "x": 8.0, "y": 202.0, "text": "", "font_size": 15.0,
           "font": "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
           "r": 0.75, "g": 0.85, "b": 1.0, "a": 1.0 } ] },
     { "name": "Hint", "components": [
-        { "type": "scn.Label", "x": 8.0, "y": 20.0, "text": "WASD/方向键 移动    R 重开    Z 撤销    N 下一关", "font_size": 11.0,
+        { "type": "scn.Label", "x": 8.0, "y": 16.0, "text": "WASD/方向键 移动    R 重开    Z 撤销    N 下一关", "font_size": 13.0,
           "font": "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
           "r": 0.6, "g": 0.62, "b": 0.7, "a": 1.0 } ] }
   ]

@@ -245,6 +245,7 @@ struct Engine {
     struct PendingQuad {
         const mq_font* font; float size;            // 图集键
         int ax, ay, tw, th;                         // 图集内像素原点 + 字形位图尺寸（纹素）
+        uint32_t cp;                                // 码点（跟踪用）
         float x, y, half_w, half_h;                 // 设计空间位置与半尺寸
         float r, g, b, a; int z;
     };
@@ -2017,6 +2018,21 @@ mq_font* Engine::text_font_for(const std::string& path) {
     return font;
 }
 
+/* 调试：导出图集为 PGM/PPM（MAQUE_TEXT_DUMP=<前缀>）——核查字形位图内容 */
+static void dump_atlas(const char* prefix, float sz, const std::vector<uint8_t>& rgba, uint32_t w, uint32_t h) {
+    const std::string path = std::string(prefix) + "_atlas_" + std::to_string((int)sz) + ".ppm";
+    FILE* f = std::fopen(path.c_str(), "wb");
+    if (!f) return;
+    std::print(f, "P6\n{} {}\n255\n", w, h);
+    for (size_t i = 0; i < (size_t)w * h; ++i) {
+        const uint8_t a = rgba[i * 4 + 3];
+        const uint8_t px[3] = { a, a, a };
+        std::fwrite(px, 1, 3, f);
+    }
+    std::fclose(f);
+    std::print("runtime: 图集已导出 {}\n", path);
+}
+
 /* 字形图集纹理：按 (字体, 字号) 缓存；图集增长（generation 变化）→ 重建纹理并释放旧的 */
 int Engine::glyph_texture(const mq_font* f, float size) {
     const float sz = size > 0.0F ? size : 16.0F;
@@ -2031,6 +2047,7 @@ int Engine::glyph_texture(const mq_font* f, float size) {
         if (mq_font_atlas(const_cast<mq_font*>(f), sz, rgba.data(), rgba.size(), &w, &h) != MQ_TEXT_OK) return a.texture;
         const int tex = rapi->create_texture(rself, rgba.data(), (int32_t)w, (int32_t)h);
         if (tex < 0) return a.texture;
+        if (const char* dp = std::getenv("MAQUE_TEXT_DUMP"); dp && *dp) dump_atlas(dp, sz, rgba, w, h);
         if (a.texture >= 0) retired_textures.push_back(a.texture);      // 延迟释放（见成员注释）
         a.texture = tex; a.w = w; a.h = h; a.generation = gen;
         return tex;
@@ -2039,6 +2056,7 @@ int Engine::glyph_texture(const mq_font* f, float size) {
     if (mq_font_atlas(const_cast<mq_font*>(f), sz, nullptr, 0, &w, &h) != MQ_TEXT_ERR_CAP) return -1;
     std::vector<uint8_t> rgba((size_t)w * h * 4);
     if (mq_font_atlas(const_cast<mq_font*>(f), sz, rgba.data(), rgba.size(), &w, &h) != MQ_TEXT_OK) return -1;
+    if (const char* dp = std::getenv("MAQUE_TEXT_DUMP"); dp && *dp) dump_atlas(dp, sz, rgba, w, h);
     const int tex = rapi->create_texture(rself, rgba.data(), (int32_t)w, (int32_t)h);
     if (tex < 0) return -1;
     font_atlases.push_back({ f, sz, tex, w, h, gen });
@@ -2148,6 +2166,7 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
         q.font = label_font; q.size = gl.device_size;
         q.ax = gl.ax; q.ay = gl.ay;
         q.tw = (int)gl.w; q.th = (int)gl.h;
+        q.cp = gl.codepoint;
         /* 锚点 = 位图左上角 (x0,y0)；排版 y 向下、屏幕 y 向下 → 基准翻转后相加 */
         q.x = e.x + ox + gl.x0 * inv + half_w;
         q.y = (float)eng.H - (e.y + oy) + gl.y0 * inv + half_h;
@@ -2183,6 +2202,23 @@ void Engine::text_flush(std::vector<mq_renderer_item>& out) {
         it.uv3 = (float)(q.ay + q.th) / (float)ah;
         it.layer = 1; it.z = q.z;
         out.push_back(it);
+    }
+    int traced = 0;
+    if (std::getenv("MAQUE_TRACE_TEXT")) {
+      for (const PendingQuad& tq : pending_quads) {
+        if (tq.tw <= 0 || traced >= 6) continue;
+        ++traced;
+        uint32_t tw_ = 1, th_ = 1;
+        for (const auto& fa : font_atlases)
+            if (fa.font == tq.font && fa.size == tq.size) { tw_ = fa.w; th_ = fa.h; break; }
+        /* 纹理实际尺寸 vs 图集当前尺寸：不一致 → UV 会指向纹理之外（表现为字形错乱） */
+        uint32_t aw_now = 0, ah_now = 0;
+        mq_font_atlas(const_cast<mq_font*>(tq.font), tq.size, nullptr, 0, &aw_now, &ah_now);
+        std::print("[text]   quad U+{:04X} 纹理={}x{} 图集现={}x{} texel=({},{}) {}x{} uv=({:.4f},{:.4f},{:.4f},{:.4f})\n",
+                   tq.cp, tw_, th_, aw_now, ah_now, tq.ax, tq.ay, tq.tw, tq.th,
+                   (double)tq.ax / tw_, (double)tq.ay / th_,
+                   (double)(tq.ax + tq.tw) / tw_, (double)(tq.ay + tq.th) / th_);
+      }
     }
     if (std::getenv("MAQUE_TRACE_TEXT")) {
         const PendingQuad& q0 = pending_quads.front();
