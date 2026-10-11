@@ -18,6 +18,7 @@
 > | 物理 | physics.RigidBody + physics.Collider → 装配期建体、帧内步进并回写 Transform2D | `cocos_e2e` 下落断言 |
 > | Director | pause/resume/paused/frame/loadScene（帧边界切场景）；控制面 Director 域 | `cocos_e2e` 暂停断言 |
 > | 动作/定时 | Tween（linear/ease_in/ease_out/ease_in_out + tween_complete）、schedule/scheduleOnce/unschedule | `cocos_e2e` |
+> | 文本 | **真实字体渲染**：FreeType 栅格化 → 图集 → 字形 quad（UV 子矩形）；`scn.Label` / `ui.TextLabel` / `render.RichText` 统一排版（换行 None/Word/Char、对齐 Begin/Center/End、行距、实测 text_w/h/line_count）；**富文本标记** `<color=#RRGGBB>` `<size=NN>` `<b>` `<br/>`（`parse_tags=false` 时当纯文本）；内置 5x7 位图字体作为无字体环境回退 | `text_e2e`（含像素断言） |
 >
 > **仍未实现**（诚实清单）：3D 相关（MeshRenderer/Light/Billboard/ReflectionProbe/Terrain/Skybox）、
 > 骨骼动画与动画状态机、RichText/Graphics/MotionStreak、ScrollBar/PageView、VideoPlayer/WebView、

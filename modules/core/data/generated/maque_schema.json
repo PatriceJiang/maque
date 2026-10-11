@@ -2,10 +2,10 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 240,
-  "api_count": 102,
+  "api_count": 107,
   "control_count": 27,
   "callback_count": 10,
-  "module_count": 20,
+  "module_count": 21,
   "types": [
     {
       "name": "anim.AnimatedSprite",
@@ -8115,6 +8115,9 @@
       "align": null,
       "pod": false,
       "has_dynamic": true,
+      "roles": [
+        "ui_text"
+      ],
       "fields": [
         {
           "name": "text",
@@ -8133,6 +8136,18 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "max_width",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "transient": false,
+            "unit": "px"
+          }
         },
         {
           "name": "font",
@@ -8267,6 +8282,17 @@
           "name": "links",
           "type": "string[]",
           "kind": "array_dyn",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "line_count",
+          "type": "int32_t",
+          "kind": "i32",
           "type_id": 0,
           "count": 0,
           "offset": null,
@@ -9849,6 +9875,143 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "font_size",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              1,
+              512
+            ],
+            "unit": "px"
+          }
+        },
+        {
+          "name": "align",
+          "type": "ui.Align",
+          "kind": "enum",
+          "type_id": 1234036308,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "wrap",
+          "type": "ui.TextWrap",
+          "kind": "enum",
+          "type_id": 1869600876,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "max_width",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "line_spacing",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "outline_size",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "outline_r",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "outline_g",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "outline_b",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "font",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "ref": "Font"
+          }
+        },
+        {
+          "name": "text_w",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "text_h",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "line_count",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "transient": true
+          }
         }
       ]
     },
@@ -14015,6 +14178,9 @@
       "align": null,
       "pod": false,
       "has_dynamic": true,
+      "roles": [
+        "ui_text"
+      ],
       "fields": [
         {
           "name": "text",
@@ -15685,6 +15851,80 @@
       "name": "host.ui_get_checked",
       "namespace": "host",
       "fn": "ui_get_checked",
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.ui_set_text",
+      "namespace": "host",
+      "fn": "ui_set_text",
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.ui_get_text",
+      "namespace": "host",
+      "fn": "ui_get_text",
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.ui_text_width",
+      "namespace": "host",
+      "fn": "ui_text_width",
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.ui_text_height",
+      "namespace": "host",
+      "fn": "ui_text_height",
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.ui_text_lines",
+      "namespace": "host",
+      "fn": "ui_text_lines",
       "args": [
         {
           "name": "id",
@@ -22110,6 +22350,432 @@
       ],
       "structs": [],
       "enums": []
+    },
+    {
+      "module": "text",
+      "abi_name": "maque.text",
+      "version": 1,
+      "language": "c",
+      "header": "abi/text.h",
+      "fns": [
+        {
+          "name": "mq_font_load_file",
+          "returns": "mq_font*",
+          "args": [
+            {
+              "name": "path",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_font_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_font_builtin",
+          "returns": "mq_font*",
+          "args": []
+        },
+        {
+          "name": "mq_font_height",
+          "returns": "float",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_font_advance",
+          "returns": "float",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "codepoint",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_text_measure",
+          "returns": "int",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "style",
+              "type": "const mq_text_style*",
+              "doc": null
+            },
+            {
+              "name": "text",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "out_metrics",
+              "type": "mq_text_metrics*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_text_layout",
+          "returns": "int",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "style",
+              "type": "const mq_text_style*",
+              "doc": null
+            },
+            {
+              "name": "text",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_text_glyph*",
+              "doc": null
+            },
+            {
+              "name": "cap",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "out_count",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "out_metrics",
+              "type": "mq_text_metrics*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_text_strip_markup",
+          "returns": "int",
+          "args": [
+            {
+              "name": "text",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "char*",
+              "doc": null
+            },
+            {
+              "name": "cap",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_font_atlas",
+          "returns": "int",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "out_rgba",
+              "type": "uint8_t*",
+              "doc": null
+            },
+            {
+              "name": "cap",
+              "type": "size_t",
+              "doc": null
+            },
+            {
+              "name": "out_w",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "out_h",
+              "type": "uint32_t*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "structs": [
+        {
+          "name": "mq_text_style",
+          "fields": [
+            {
+              "name": "struct_size",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "font_size",
+              "type": "float",
+              "doc": "像素字号；<=0 → 16"
+            },
+            {
+              "name": "line_spacing",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "wrap",
+              "type": "uint32_t",
+              "doc": "MQ_TEXT_WRAP_*"
+            },
+            {
+              "name": "align",
+              "type": "uint32_t",
+              "doc": "MQ_TEXT_ALIGN_*"
+            },
+            {
+              "name": "max_width",
+              "type": "float",
+              "doc": "<=0 → 不限制"
+            },
+            {
+              "name": "r",
+              "type": "float",
+              "doc": "默认前景色（可被富文本覆盖）"
+            },
+            {
+              "name": "g",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "a",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_text_glyph",
+          "fields": [
+            {
+              "name": "codepoint",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "w",
+              "type": "float",
+              "doc": "字形位图宽（像素）"
+            },
+            {
+              "name": "h",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "u0",
+              "type": "float",
+              "doc": "图集 UV"
+            },
+            {
+              "name": "v0",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "u1",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "v1",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "r",
+              "type": "float",
+              "doc": "该字形颜色（富文本 run 覆盖）"
+            },
+            {
+              "name": "g",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "a",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "float",
+              "doc": "该字形字号（笔画/位图已按此字号栅格化）"
+            }
+          ]
+        },
+        {
+          "name": "mq_text_metrics",
+          "fields": [
+            {
+              "name": "width",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "height",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "line_count",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "glyph_count",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "baseline",
+              "type": "float",
+              "doc": "首行基线相对顶部距离"
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_TEXT_OK",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_TEXT_ERR_ARG",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_TEXT_ERR_FONT",
+              "value": 2,
+              "doc": "字体加载/栅格化失败"
+            },
+            {
+              "name": "MQ_TEXT_ERR_CAP",
+              "value": 3,
+              "doc": "输出缓冲不足（out_needed 报告所需）"
+            }
+          ]
+        },
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_TEXT_ALIGN_BEGIN",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_TEXT_ALIGN_CENTER",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_TEXT_ALIGN_END",
+              "value": 2,
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_TEXT_WRAP_NONE",
+              "value": 0,
+              "doc": "不换行（\\n 仍生效）"
+            },
+            {
+              "name": "MQ_TEXT_WRAP_WORD",
+              "value": 1,
+              "doc": "按词换行（超长词按字符断）"
+            },
+            {
+              "name": "MQ_TEXT_WRAP_CHAR",
+              "value": 2,
+              "doc": "按字符换行"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

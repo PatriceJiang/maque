@@ -94,6 +94,11 @@ namespace host {
   float ui_get_value(void* ctx, float id);
   float ui_set_checked(void* ctx, float id, float on);
   float ui_get_checked(void* ctx, float id);
+  float ui_set_text(void* ctx, float id, const char* text);
+  const char* ui_get_text(void* ctx, float id);
+  float ui_text_width(void* ctx, float id);
+  float ui_text_height(void* ctx, float id);
+  float ui_text_lines(void* ctx, float id);
   void director_pause(void* ctx);
   void director_resume(void* ctx);
   float director_paused(void* ctx);

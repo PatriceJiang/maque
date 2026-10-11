@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema.yaml`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **102** 个 · 控制面方法 **27** 个 · 事件回调 **10** 个 · 模块 C ABI **20** 个 · 插件接口 **1** 个。
+统计：脚本 API **107** 个 · 控制面方法 **27** 个 · 事件回调 **10** 个 · 模块 C ABI **21** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -114,6 +114,11 @@
 | `ui_get_value` | id: float | float | ctx |
 | `ui_set_checked` | id: float, on: float | float | ctx |
 | `ui_get_checked` | id: float | float | ctx |
+| `ui_set_text` | id: float, text: string | float | ctx |
+| `ui_get_text` | id: float | string | ctx |
+| `ui_text_width` | id: float | float | ctx |
+| `ui_text_height` | id: float | float | ctx |
+| `ui_text_lines` | id: float | float | ctx |
 | `director_pause` | — | void | ctx |
 | `director_resume` | — | void | ctx |
 | `director_paused` | — | float | ctx |
@@ -192,7 +197,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 记录（POD）：
 
 - `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float
-- `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, layer: int32_t, z: int32_t
+- `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -690,3 +695,33 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 |------|------|------|
 | `mq_run_scene` | int | scn_path: const char* |
 | `mq_run_scene_ex` | int | scn_path: const char*, frames_dir: const char* |
+
+### text — `maque.text` v1
+
+头文件：`build/modules/core/data/generated/abi/text.h` · 宏：`MQ_TEXT_ABI_VERSION` / `_IFACE_NAME`
+
+字体加载/图集/文本布局/富文本标记解析（确定性纯函数，docs/13/17）
+
+枚举：
+
+- (匿名)：MQ_TEXT_OK=0, MQ_TEXT_ERR_ARG=1, MQ_TEXT_ERR_FONT=2, MQ_TEXT_ERR_CAP=3
+- (匿名)：MQ_TEXT_ALIGN_BEGIN=0, MQ_TEXT_ALIGN_CENTER=1, MQ_TEXT_ALIGN_END=2
+- (匿名)：MQ_TEXT_WRAP_NONE=0, MQ_TEXT_WRAP_WORD=1, MQ_TEXT_WRAP_CHAR=2
+
+结构体：
+
+- `mq_text_style`：struct_size: uint32_t, font_size: float, line_spacing: float, wrap: uint32_t, align: uint32_t, max_width: float, r: float, g: float, b: float, a: float
+- `mq_text_glyph`：codepoint: uint32_t, x: float, y: float, w: float, h: float, u0: float, v0: float, u1: float, v1: float, r: float, g: float, b: float, a: float, size: float
+- `mq_text_metrics`：width: float, height: float, line_count: uint32_t, glyph_count: uint32_t, baseline: float
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_font_load_file` | mq_font* | path: const char* |
+| `mq_font_destroy` | void | font: mq_font* |
+| `mq_font_builtin` | mq_font* | — |
+| `mq_font_height` | float | font: mq_font*, size: float |
+| `mq_font_advance` | float | font: mq_font*, codepoint: uint32_t, size: float |
+| `mq_text_measure` | int | font: mq_font*, style: const mq_text_style*, text: const char*, out_metrics: mq_text_metrics* |
+| `mq_text_layout` | int | font: mq_font*, style: const mq_text_style*, text: const char*, out: mq_text_glyph*, cap: uint32_t, out_count: uint32_t*, out_metrics: mq_text_metrics* |
+| `mq_text_strip_markup` | int | text: const char*, out: char*, cap: uint32_t |
+| `mq_font_atlas` | int | font: mq_font*, size: float, out_rgba: uint8_t*, cap: size_t, out_w: uint32_t*, out_h: uint32_t* |

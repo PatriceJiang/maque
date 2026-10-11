@@ -19,6 +19,7 @@
 #include "core/watcher/mq_watcher.h"
 #include "physics/mq_physics.h"
 #include "nav/mq_nav.h"
+#include "text/mq_text.h"
 #include "core/control/mq_control.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
@@ -207,6 +208,13 @@ struct Engine {
     std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
     std::string pending_scene;                     // director.loadScene()：帧边界切场景
     std::vector<std::pair<int, mq_physics_body>> physics_role_bodies;   // (entity, 世代句柄)
+    /* 文本渲染（docs/13/17）：字体实例 + 按字号生成的图集纹理 id（每字号一张） */
+    mq_font* font = nullptr;
+    std::string font_path;
+    struct FontAtlas { float size; int texture; uint32_t w, h; };
+    std::vector<FontAtlas> font_atlases;
+    int glyph_texture(float size);          // 取（必要时创建）该字号的字形图集纹理
+    void text_setup();                      // 装配期：加载字体（MAQUE_FONT → 系统字体 → 内置）
     uint64_t stop_frame = 0;                                // >0 时到该帧停止（CI 固定长度跑）
     std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
     std::string name;
@@ -232,6 +240,8 @@ struct Engine {
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）
     void ui_step();                                         // UI 组件语义（layout/progress/slider/check/safearea/scroll）
+    void extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d,
+                      std::vector<mq_renderer_item>& out, float inherit_alpha);
     void step_tweens(float dt);                             // Tween 推进（Cocos tween）
     void step_schedules(float dt);                          // 定时器推进（Cocos schedule）
     void flush_pending_destroy();                           // 延迟销毁（Cocos node.destroy）
@@ -297,19 +307,20 @@ void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob) {
 
 /* 默认构造组件 blob（走"空 JSON"反序列化，schema 默认值生效）。 */
 void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& blob) {
+    (void)eng;
     blob.assign(d->size, 0);
-    if (d->flags & MQ_TYPE_DYNAMIC) {
-        /* 关键：vector 成员在零填充缓冲里**不是合法对象**；必须先置为空向量
-         * （container_clear 是类型化算子，等价于 placement-new 空 vector 的效果），
-         * 之后才能 resize/反序列化。 */
+    /* 默认构造由描述符提供（codegen 生成 init_defaults → placement-new 生成的 C++ 类型）：
+     *   · 应用 schema 里的字段默认值（此前零填充不会应用默认值 —— 曾导致 RichText 颜色全透明等）；
+     *   · 正确构造 string / vector 等动态成员（零填充缓冲不是合法对象）。 */
+    if (d->init_defaults) {
+        d->init_defaults(blob.data());
+    } else if (d->flags & MQ_TYPE_DYNAMIC) {
         for (uint32_t i = 0; i < d->field_count; ++i) {
             const mq_field_desc* f = &d->fields[i];
             if (f->kind == MQ_TK_STRING) new (blob.data() + f->offset) std::string();
             else if (f->kind == MQ_TK_ARRAY_DYN && f->container_clear) f->container_clear(blob.data() + f->offset);
         }
     }
-    mq_json* empty = mq_json_parse("{}", 2);
-    if (empty) { mq_persist_apply_json(eng.reflect, d, empty, blob.data()); mq_json_free(empty); }
 }
 
 /* 组件挂载：由**描述符**构造默认实例（schema 默认值生效）→ 引擎不硬编码组件类型。 */
@@ -616,6 +627,11 @@ void Engine::step_frame() {
     mq_obs_counter_add(obs, "frames", 1.0);
     mq_obs_gauge_set(obs, "entities", scene ? (double)scene->count() : 0.0);
     mq_obs_gauge_set(obs, "draws", (double)draws.size());
+    if (std::getenv("MAQUE_TRACE_TEXT")) {
+        int textured = 0, solid = 0;
+        for (const auto& it : draws) (it.texture >= 0 ? textured : solid)++;
+        std::print("[text] draws={} textured={} solid={}\n", draws.size(), textured, solid);
+    }
     // ⑤ 渲染（只读快照 → 渲染不回写，docs/13 §8）
     std::vector<uint8_t> pixels((size_t)TW * H * 4);
     if (rapi && rself)
@@ -1404,6 +1420,9 @@ uint64_t Scene::checksum(Engine& eng) {
             if (!d) continue;
             for (uint32_t fi = 0; fi < d->field_count; ++fi) {
                 const mq_field_desc* f = &d->fields[fi];
+                /* transient 字段是派生/装饰状态（排版度量、控件 phase、rect…）：
+                 * 不进快照（docs/10 §4）→ 也不进校验和，否则回滚后必然不等 */
+                if (f->attrs_flags & MQ_ATTR_TRANSIENT) continue;
                 switch (f->kind) {
                     case MQ_TK_BOOL: case MQ_TK_I8: case MQ_TK_U8:
                     case MQ_TK_I16: case MQ_TK_U16: case MQ_TK_I32: case MQ_TK_U32:
@@ -1506,19 +1525,8 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 out.push_back(it);
                 continue;
             }
-            if (d->role & MQ_ROLE_UI_LABEL) {
-                float x = 0, y = 0, r = 1, g = 1, b = 1, a = 1;
-                read_f32(d, blob.data(), "x", &x);
-                read_f32(d, blob.data(), "y", &y);
-                read_f32(d, blob.data(), "r", &r);
-                read_f32(d, blob.data(), "g", &g);
-                read_f32(d, blob.data(), "b", &b);
-                read_f32(d, blob.data(), "a", &a);
-                mq_renderer_item it{};
-                it.x = e.x + x; it.y = (float)eng.H - (e.y + y);
-                it.size = 2.0F; it.r = r; it.g = g; it.b = b; it.a = a;
-                it.texture = -1; it.layer = 1; it.z = 100;      // 文本在控件之上
-                out.push_back(it);
+            if (d->role & (MQ_ROLE_UI_LABEL | MQ_ROLE_UI_TEXT)) {
+                eng.extract_text(eng, idx, e, d, out, e.opacity);   // 真实字形渲染（docs/13/17）
                 continue;
             }
             if (!(d->role & MQ_ROLE_SPRITE)) continue;
@@ -1853,6 +1861,150 @@ void slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base
     write_num(d, base, "value", v);
     write_num(d, base, "ratio", t);
     host::node_emit_number(&eng, id, "changed", v);
+}
+
+
+/* 文本：装配期选字体（MAQUE_FONT 环境变量 → 常见系统字体 → 内置 5x7 位图字体）。
+ * 图集纹理按字号惰性创建并缓存（确定性：同字号同图集，docs/10）。 */
+void Engine::text_setup() {
+    if (font) return;
+    const char* env = std::getenv("MAQUE_FONT");
+    if (env && *env) {
+        font = mq_font_load_file(env);
+        if (font) font_path = env;
+    }
+    if (!font) {
+        static const char* kCandidates[] = {
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/lato/Lato-Medium.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/tuffy/tuffy_bold.ttf",
+        };
+        for (const char* c : kCandidates) {
+            font = mq_font_load_file(c);
+            if (font) { font_path = c; break; }
+        }
+    }
+    if (!font) { font = mq_font_builtin(); font_path = "(builtin 5x7)"; }
+    std::print("runtime: text font '{}'\n", font_path);
+}
+
+int Engine::glyph_texture(float size) {
+    const float sz = size > 0.0F ? size : 16.0F;
+    for (auto& a : font_atlases) if (a.size == sz) return a.texture;
+    if (!font || !rapi || !rself) return -1;
+    uint32_t w = 0, h = 0;
+    if (mq_font_atlas(font, sz, nullptr, 0, &w, &h) != MQ_TEXT_ERR_CAP) return -1;
+    std::vector<uint8_t> rgba((size_t)w * h * 4);
+    if (mq_font_atlas(font, sz, rgba.data(), rgba.size(), &w, &h) != MQ_TEXT_OK) return -1;
+    /* 字形是白字 + alpha：渲染时按字形颜色调制（与材质管线一致） */
+    const int tex = rapi->create_texture(rself, rgba.data(), (int32_t)w, (int32_t)h);
+    if (tex < 0) return -1;
+    font_atlases.push_back({ sz, tex, w, h });
+    return tex;
+}
+
+/* 文本提取（docs/13 §8：只读）：排版后逐字形提交 quad。
+ * 支持 scn.Label（扁平字段）与 ui.TextLabel / ui.RichText（Cocos 风格字段）。 */
+void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d,
+                          std::vector<mq_renderer_item>& out, float inherit_alpha) {
+    std::string text, font_path_comp;
+    float size = 16.0F, r = 1, g = 1, b = 1, a = 1, max_w = 0, line_spacing = 0;
+    int align = 0, wrap = 0;
+    if (const std::string* tp = read_str(d, e.comps[d->type_id].data(), "text")) text = *tp;
+    if (const std::string* fp = read_str(d, e.comps[d->type_id].data(), "font")) font_path_comp = *fp;
+    read_f32(d, e.comps[d->type_id].data(), "font_size", &size);
+    read_f32(d, e.comps[d->type_id].data(), "max_width", &max_w);
+    read_f32(d, e.comps[d->type_id].data(), "line_spacing", &line_spacing);
+    /* 颜色：scn.Label 用 r/g/b/a；ui.* 用 color（Vec4） */
+    if (const mq_field_desc* fc = mq_reflect_field(d, "color")) {
+        const float* v = (const float*)(e.comps[d->type_id].data() + fc->offset);
+        r = v[0]; g = v[1]; b = v[2]; a = v[3];
+    } else {
+        read_f32(d, e.comps[d->type_id].data(), "r", &r);
+        read_f32(d, e.comps[d->type_id].data(), "g", &g);
+        read_f32(d, e.comps[d->type_id].data(), "b", &b);
+        read_f32(d, e.comps[d->type_id].data(), "a", &a);
+    }
+    align = (int)read_num(d, e.comps[d->type_id].data(), "align", 0.0F);
+    if (!mq_reflect_field(d, "align")) align = (int)read_num(d, e.comps[d->type_id].data(), "align_h", 0.0F);
+    wrap = (int)read_num(d, e.comps[d->type_id].data(), "wrap", 0.0F);
+    if (!mq_reflect_field(d, "wrap")) wrap = (int)read_num(d, e.comps[d->type_id].data(), "wrap_mode", 0.0F);
+    /* parse_tags=false：把标记当纯文本（转义 '<'） */
+    if (const mq_field_desc* fpt = mq_reflect_field(d, "parse_tags")) {
+        if (!*(const bool*)(e.comps[d->type_id].data() + fpt->offset)) {
+            std::string esc;
+            for (char c : text) { if (c == '<') esc += "&lt;"; else esc.push_back(c); }
+            text = esc;
+        }
+    }
+    if (text.empty()) return;
+
+    mq_text_style st{};
+    st.struct_size = (uint32_t)sizeof st;
+    st.font_size = size;
+    st.line_spacing = line_spacing;
+    st.wrap = (uint32_t)(wrap < 0 ? 0 : wrap);
+    st.align = (uint32_t)(align < 0 ? 0 : align);
+    st.max_width = max_w;
+    st.r = r; st.g = g; st.b = b; st.a = a * inherit_alpha;
+
+    /* 先测量（写回 transient 字段，供脚本/控制面读取），再排版 */
+    mq_text_metrics m{};
+    const int mrc = mq_text_measure(eng.font, &st, text.c_str(), &m);
+    if (std::getenv("MAQUE_TRACE_TEXT"))
+        std::print("[text] id={} type={} len={} size={:.0f} wrap={} rc={} lines={}\n",
+                   idx, d->name, text.size(), st.font_size, st.wrap, mrc, m.line_count);
+    if (mrc != MQ_TEXT_OK) return;
+    std::vector<mq_text_glyph> glyphs(m.glyph_count ? m.glyph_count : 1);
+    uint32_t n = 0;
+    const int lrc = mq_text_layout(eng.font, &st, text.c_str(), glyphs.data(), (uint32_t)glyphs.size(), &n, &m);
+    if (std::getenv("MAQUE_TRACE_TEXT"))
+        std::print("[text]   layout rc={} glyphs={} pos=({:.0f},{:.0f}) tex={} first=({:.1f},{:.1f},{:.1f}x{:.1f})\n",
+                   lrc, n, e.x, e.y, n ? glyph_texture(glyphs[0].size) : -1,
+                   n ? glyphs[0].x : 0.0F, n ? glyphs[0].y : 0.0F,
+                   n ? glyphs[0].w : 0.0F, n ? glyphs[0].h : 0.0F);
+    if (lrc != MQ_TEXT_OK) return;
+    /* transient 度量写回 */
+    if (const mq_field_desc* fw = mq_reflect_field(d, "text_w"))
+        *(float*)(e.comps[d->type_id].data() + fw->offset) = m.width;
+    if (const mq_field_desc* fh = mq_reflect_field(d, "text_h"))
+        *(float*)(e.comps[d->type_id].data() + fh->offset) = m.height;
+    if (const mq_field_desc* flc = mq_reflect_field(d, "line_count"))
+        *(int32_t*)(e.comps[d->type_id].data() + flc->offset) = (int32_t)m.line_count;
+    if (const mq_field_desc* fts = mq_reflect_field(d, "text_size")) {
+        float* v = (float*)(e.comps[d->type_id].data() + fts->offset);
+        v[0] = m.width; v[1] = m.height;
+    }
+    /* render.RichText 用 content_size 承载实测尺寸 */
+    if (const mq_field_desc* fcs = mq_reflect_field(d, "content_size")) {
+        float* v = (float*)(e.comps[d->type_id].data() + fcs->offset);
+        v[0] = m.width; v[1] = m.height;
+    }
+
+    /* 锚点：scn.Label 的 x/y 为左上角偏移；ui.* 以节点位置为左上角 */
+    float ox = 0, oy = 0;
+    read_f32(d, e.comps[d->type_id].data(), "x", &ox);
+    read_f32(d, e.comps[d->type_id].data(), "y", &oy);
+    for (uint32_t i = 0; i < n; ++i) {
+        const mq_text_glyph& gl = glyphs[i];
+        const int tex = glyph_texture(gl.size);
+        mq_renderer_item it{};
+        /* 字形四角：位置为左上角，尺寸取位图尺寸（无位图时跳过） */
+        if (gl.w <= 0.0F || gl.h <= 0.0F) continue;
+        it.x = e.x + ox + gl.x + gl.w * 0.5F;
+        /* 排版坐标 y 向下（行往下排），屏幕 y 亦向下 → 基准翻转后**相加** */
+        it.y = (float)eng.H - (e.y + oy) + gl.y + gl.h * 0.5F;
+        it.size = gl.w * 0.5F > gl.h * 0.5F ? gl.w * 0.5F : gl.h * 0.5F;
+        it.r = gl.r; it.g = gl.g; it.b = gl.b; it.a = gl.a;
+        it.texture = tex;
+        it.uv0 = gl.u0; it.uv1 = gl.v0; it.uv2 = gl.u1; it.uv3 = gl.v1;
+        it.layer = 1; it.z = 100 + (int)i;
+        if (std::getenv("MAQUE_TRACE_TEXT") && i < 2)
+            std::print("[text]   item[{}] pos=({:.1f},{:.1f}) size={:.2f} col=({:.2f},{:.2f},{:.2f},{:.2f}) tex={} uv=({:.3f},{:.3f},{:.3f},{:.3f})\n",
+                       i, it.x, it.y, it.size, it.r, it.g, it.b, it.a, it.texture, it.uv0, it.uv1, it.uv2, it.uv3);
+        out.push_back(it);
+    }
 }
 
 /* UI 组件语义（role 驱动；引擎不认具体类型名，docs/17）：
@@ -2623,6 +2775,74 @@ float ui_get_checked(void* ctx, float id) {
     return read_num(d, b->data(), "checked", 0.0F);
 }
 
+
+
+/* ---- 文本（Label/TextLabel/RichText 通用：按 role 定位组件）---- */
+std::vector<uint8_t>* text_comp(Engine& eng, int id, const mq_type_desc** out_d) {
+    std::vector<uint8_t>* blob = comp_by_role(eng, id, MQ_ROLE_UI_LABEL);
+    if (!blob) blob = comp_by_role(eng, id, MQ_ROLE_UI_TEXT);
+    if (blob && out_d) {
+        Entity* e = eng.scene->at(id);
+        for (auto& [tid, b] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            if (d && (d->role & (MQ_ROLE_UI_LABEL | MQ_ROLE_UI_TEXT)) && &b == blob) { *out_d = d; break; }
+        }
+    }
+    return blob;
+}
+
+float ui_set_text(void* ctx, float id, const char* text) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = text_comp(*eng, (int)id, &d);
+    if (!blob || !d || !text) return 0.0F;
+    const mq_field_desc* f = mq_reflect_field(d, "text");
+    if (!f || f->kind != MQ_TK_STRING) return 0.0F;
+    *(std::string*)(blob->data() + f->offset) = text;
+    return 1.0F;
+}
+
+const char* ui_get_text(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = text_comp(*eng, (int)id, &d);
+    if (!blob || !d) return "";
+    if (const std::string* s = read_str(d, blob->data(), "text")) return s->c_str();
+    return "";
+}
+
+/* 实测排版尺寸：兼容 text_w/text_h（scn.Label）、text_size（ui.TextLabel）、content_size（RichText） */
+float ui_text_width(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = text_comp(*eng, (int)id, &d);
+    if (!blob || !d) return 0.0F;
+    for (const char* fn : { "text_w", "text_size", "content_size" })
+        if (const mq_field_desc* f = mq_reflect_field(d, fn))
+            return *(const float*)(blob->data() + f->offset);
+    return 0.0F;
+}
+
+float ui_text_height(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = text_comp(*eng, (int)id, &d);
+    if (!blob || !d) return 0.0F;
+    for (const char* fn : { "text_h", "text_size", "content_size" })
+        if (const mq_field_desc* f = mq_reflect_field(d, fn))
+            return *(const float*)(blob->data() + f->offset + sizeof(float));
+    return 0.0F;
+}
+
+float ui_text_lines(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    const mq_type_desc* d = nullptr;
+    auto* blob = text_comp(*eng, (int)id, &d);
+    if (!blob || !d) return 0.0F;
+    if (const mq_field_desc* f = mq_reflect_field(d, "line_count"))
+        return (float)*(const int32_t*)(blob->data() + f->offset);
+    return 0.0F;
+}
 
 /* ---- Tween ---- */
 float tween_start(void* ctx, float id, const char* field, float to, float duration, float easing) {
@@ -3547,6 +3767,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
     }
     preload_scene_assets();
+    text_setup();                               // 字体（MAQUE_FONT → 系统字体 → 内置 5x7）
     physics_components_setup();
     if (mq_event_dispatch(vm, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
         char ebuf[512] = { 0 };
@@ -3575,6 +3796,8 @@ void Engine::teardown() {
     mq_snapshot_pool_destroy(snaps); snaps = nullptr;
     mq_watcher_destroy(watcher); watcher = nullptr;
     if (reflect) { mq_reflect_destroy(reflect); reflect = nullptr; }
+    if (font) { mq_font_destroy(font); font = nullptr; }
+    font_atlases.clear();
     mq_nav_destroy(nav); nav = nullptr;
     mq_physics_destroy(physics); physics = nullptr;
     mq_input_destroy(input); input = nullptr;

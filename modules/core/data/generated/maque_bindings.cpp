@@ -234,6 +234,9 @@ int b_host_node_get_bool(void* user, int, const double* a, int, const char** s, 
 int b_host_node_set_bool(void* user, int, const double* a, int, const char** s, double* ret) {
   *ret = (double)host::node_set_bool(user, (float)a[0], s[0], s[1], (float)a[1]); return 0;
 }  /* kinds=nssn */
+int b_host_node_get_string(void* user, int, const double* a, int, const char** s, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::node_get_string(user, (float)a[0], s[0], s[1])); return 0;
+}  /* kinds=nss */
 int b_host_node_set_string(void* user, int, const double* a, int, const char** s, double* ret) {
   *ret = (double)host::node_set_string(user, (float)a[0], s[0], s[1], s[2]); return 0;
 }  /* kinds=nsss */
@@ -260,6 +263,21 @@ int b_host_ui_set_checked(void* user, int, const double* a, double* ret) {
 }
 int b_host_ui_get_checked(void* user, int, const double* a, double* ret) {
   *ret = (double)host::ui_get_checked(user, (float)a[0]); return 0;
+}
+int b_host_ui_set_text(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::ui_set_text(user, (float)a[0], s); return 0;
+}
+int b_host_ui_get_text(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::ui_get_text(user, (float)a[0])); return 0;
+}
+int b_host_ui_text_width(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::ui_text_width(user, (float)a[0]); return 0;
+}
+int b_host_ui_text_height(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::ui_text_height(user, (float)a[0]); return 0;
+}
+int b_host_ui_text_lines(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::ui_text_lines(user, (float)a[0]); return 0;
 }
 int b_host_director_pause(void* user, int, const double* a, double* ret) {
   host::director_pause(user); return 0;
@@ -388,6 +406,7 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_multi(vm, "node_set_number", "nssn", b_host_node_set_number, ctx);
   mq_script_register_multi(vm, "node_get_bool", "nss", b_host_node_get_bool, ctx);
   mq_script_register_multi(vm, "node_set_bool", "nssn", b_host_node_set_bool, ctx);
+  mq_script_register_multi_ret_str(vm, "node_get_string", "nss", b_host_node_get_string, ctx);
   mq_script_register_multi(vm, "node_set_string", "nsss", b_host_node_set_string, ctx);
   mq_script_register_multi(vm, "node_on", "nss", b_host_node_on, ctx);
   mq_script_register_mixed(vm, "node_off", b_host_node_off, ctx);
@@ -397,6 +416,11 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "ui_get_value", b_host_ui_get_value, ctx);
   mq_script_register_num(vm, "ui_set_checked", b_host_ui_set_checked, ctx);
   mq_script_register_num(vm, "ui_get_checked", b_host_ui_get_checked, ctx);
+  mq_script_register_mixed(vm, "ui_set_text", b_host_ui_set_text, ctx);
+  mq_script_register_ret_str(vm, "ui_get_text", b_host_ui_get_text, ctx);
+  mq_script_register_num(vm, "ui_text_width", b_host_ui_text_width, ctx);
+  mq_script_register_num(vm, "ui_text_height", b_host_ui_text_height, ctx);
+  mq_script_register_num(vm, "ui_text_lines", b_host_ui_text_lines, ctx);
   mq_script_register_num(vm, "director_pause", b_host_director_pause, ctx);
   mq_script_register_num(vm, "director_resume", b_host_director_resume, ctx);
   mq_script_register_num(vm, "director_paused", b_host_director_paused, ctx);

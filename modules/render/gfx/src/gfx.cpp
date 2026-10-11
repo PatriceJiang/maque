@@ -25,7 +25,7 @@ struct U {
   zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
 };
 @group(0) @binding(0) var<uniform> u: U;
-struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f };
+struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f };
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
 struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f };
 @vertex fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
@@ -55,7 +55,7 @@ struct U {
   zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
 };
 @group(0) @binding(0) var<uniform> u: U;
-struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f };
+struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f };
 @group(0) @binding(1) var<storage, read> insts: array<Inst>;
 @group(0) @binding(2) var t: texture_2d<f32>;
 @group(0) @binding(3) var smp: sampler;
@@ -73,7 +73,11 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   let px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
   var o: VOut;
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
-  o.uv = c[vi] * 0.5 + 0.5; o.col = inst.color; return o;
+  // 图集子矩形：uv.x/y = 左上，uv.z/w = 右下；退化（0,0,0,0）→ 整张贴图
+  let t = c[vi] * 0.5 + 0.5;
+  let full = inst.uv.z <= inst.uv.x || inst.uv.w <= inst.uv.y;
+  o.uv = select(vec2f(mix(inst.uv.x, inst.uv.z, t.x), mix(inst.uv.y, inst.uv.w, t.y)), t, full);
+  o.col = inst.color; return o;
 }
 @fragment fn fs(in: VOut) -> @location(0) vec4f {
   let c = textureSample(t, smp, in.uv);
@@ -234,7 +238,7 @@ static void destroy_device(Device* dv) {
 }
 
 /* 实例数据：pos(8) + radius(4) + rot(4) + color(16) = 32B（16 字节对齐，WGSL 数组步长合法）。 */
-struct GpuInst { float pos[2]; float radius; float rot; float color[4]; };
+struct GpuInst { float pos[2]; float radius; float rot; float color[4]; float uv[4]; };
 
 /* 批处理（docs/13 §pass 层）：先按 (layer, z, 原始序) 稳定排序，再按"管线 + 贴图"分批。 */
 struct Batch { int texture; uint32_t first, count; };
@@ -330,7 +334,8 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
         const bool has_tex = s.texture >= 0 && s.texture < (int)dv->textures.size() &&
                              dv->textures[s.texture]->view != nullptr;
         const int tex_id = has_tex ? s.texture : -1;
-        GpuInst g{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a } };
+        GpuInst g{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a },
+                   { s.uv0, s.uv1, s.uv2, s.uv3 } };
         if (!batches.empty() && batches.back().texture == tex_id) batches.back().count++;
         else batches.push_back(Batch{ tex_id, (uint32_t)insts.size(), 1 });
         insts.push_back(g);

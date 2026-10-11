@@ -1,0 +1,26 @@
+{
+  "title": "Label / RichText",
+  "script": "text.js",
+  "width": 320,
+  "height": 240,
+  "seed": 11,
+  "entities": [
+    { "name": "Title", "components": [
+        { "type": "scn.Label", "x": 10.0, "y": 220.0, "text": "MAQUE TEXT",
+          "font_size": 20.0, "r": 1.0, "g": 0.9, "b": 0.3, "a": 1.0 } ] },
+
+    { "name": "Wrapped", "components": [
+        { "type": "scn.Label", "x": 10.0, "y": 180.0, "text": "wrapped label with a longer sentence",
+          "font_size": 12.0, "max_width": 150.0, "wrap": "ui::TextWrap::Word",
+          "align": "ui::Align::Begin", "r": 0.8, "g": 0.9, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "Centered", "components": [
+        { "type": "ui.TextLabel", "text": "center", "font_size": 14.0,
+          "color": { "x": 0.4, "y": 1.0, "z": 0.5, "w": 1.0 },
+          "align_h": "Align::Center", "max_width": 120.0 } ] },
+
+    { "name": "Rich", "components": [
+        { "type": "render.RichText", "font_size": 14.0, "wrap_mode": "ui::TextWrap::Word", "max_width": 120.0,
+          "text": "normal <color=#FF4040>red</color> <size=22>BIG</size> <b>bold</b><br/>second line" } ] }
+  ]
+}

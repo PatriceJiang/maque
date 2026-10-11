@@ -1220,6 +1220,7 @@ typedef struct mq_field_desc {
 #define MQ_ROLE_UI_SCROLL   (1u << 15)   /* 滚动视图（内容偏移 + 裁剪范围） */
 #define MQ_ROLE_PHYSICS_BODY (1u << 16)  /* 2D 刚体：装配期入物理世界，帧内回写变换 */
 #define MQ_ROLE_PHYSICS_COLLIDER (1u << 17) /* 2D 碰撞体：形状来自 Collider 组件 */
+#define MQ_ROLE_UI_TEXT     (1u << 18)   /* 文本：Label/RichText（排版 + 字形渲染） */
 
 /* 枚举字面量（供 JSON 文本按名字读写、AI 自省；docs/06） */
 typedef struct mq_enum_value {
@@ -1238,6 +1239,9 @@ typedef struct mq_type_desc {
     uint32_t             role;   /* MQ_ROLE_* 位标志 */
     const mq_enum_value* values;      /* 枚举值表（仅 is_enum） */
     uint32_t             value_count; /* 枚举值个数 */
+    /* 默认构造：placement-new 生成的 C++ 类型（应用 schema 默认值 + 正确构造 string/vector）。
+     * 组件/资源实例必须先调用它，否则字段是零字节而非 schema 默认值（docs/06）。 */
+    void               (*init_defaults)(void* obj);
 } mq_type_desc;
 
 /* registry (lookup by type_id / name) */
@@ -1269,6 +1273,7 @@ const ROLE_BIT = {
   ui_scroll: 'MQ_ROLE_UI_SCROLL',
   physics_body: 'MQ_ROLE_PHYSICS_BODY',
   physics_collider: 'MQ_ROLE_PHYSICS_COLLIDER',
+  ui_text: 'MQ_ROLE_UI_TEXT',
 }
 function roleBits(t) {
   const parts = (t.roles || []).map((r) => ROLE_BIT[r]).filter(Boolean)
@@ -1287,6 +1292,7 @@ function genDescSource(types) {
   lines.push('#include "maque_desc.h"')
   lines.push('#include "maque_types.h"')
   lines.push('#include <cstddef>')
+  lines.push('#include <new>')
   lines.push('')
   // offsetof on non-standard-layout (container-bearing) types is intentional:
   // those fields are flagged has_dynamic and only ever walked by the visitor.
@@ -1349,6 +1355,13 @@ function genDescSource(types) {
     lines.push('')
   }
 
+  /* 默认构造器：直接调用生成类型的 C++ 默认构造（字段默认值 + 动态成员构造一次到位） */
+  for (const t of types) {
+    const cpp = t.fqName.replace(/\./g, '::')
+    lines.push(`static void mq_defaults_${mangle(t.fqName)}(void* p) { new (p) ${cpp}{}; }`)
+  }
+  lines.push('')
+
   for (const t of types) {
     const cpp = t.fqName.replace(/\./g, '::')
     const fieldsSym = t.kind === 'struct' && t.fields.length > 0
@@ -1367,6 +1380,7 @@ function genDescSource(types) {
     lines.push(`    ${roleBits(t)},`)
     lines.push(`    ${valuesSym},`)
     lines.push(`    ${valueCount}u,`)
+    lines.push(`    mq_defaults_${mangle(t.fqName)},`)
     lines.push('};')
     lines.push('')
   }
@@ -1662,7 +1676,8 @@ function genBindingsSource(namespaces) {
       /* 其余任意组合（含"单个 string 但不在末尾"，如 tween_start(id, field, to, dur)）
        * 一律走通用编组：不再静默跳过（docs/21 §6.1）。 */
       const multiBinding = general && !numBinding && !strBinding && !mixedBinding
-      if (retStr && !numBinding) continue
+      /* 字符串返回：数值参数走 num/ret_str；含字符串参数时走 multi_ret_str（此前被静默丢弃） */
+      if (retStr && !numBinding && !multiBinding) continue
       if (!strBinding && !numBinding && !mixedBinding && !multiBinding) continue
       fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding, mixedBinding, multiBinding, retStr })
     }

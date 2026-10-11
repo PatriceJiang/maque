@@ -8,6 +8,7 @@
 #include "maque_desc.h"
 #include "maque_types.h"
 #include <cstddef>
+#include <new>
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic ignored "-Winvalid-offsetof"
@@ -893,6 +894,7 @@ static void* mq_dyn_render_RichText_runs_elem(void* f, uint32_t i) { return &sta
 static const mq_field_desc mq_fields_render_RichText[] = {
     { "text", (uint32_t)offsetof(render::RichText, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "parse_tags", (uint32_t)offsetof(render::RichText, parse_tags), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "max_width", (uint32_t)offsetof(render::RichText, max_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "font", (uint32_t)offsetof(render::RichText, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "font_size", (uint32_t)offsetof(render::RichText, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "color", (uint32_t)offsetof(render::RichText, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -907,6 +909,7 @@ static const mq_field_desc mq_fields_render_RichText[] = {
     { "content_size", (uint32_t)offsetof(render::RichText, content_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0 },
     { "runs", (uint32_t)offsetof(render::RichText, runs), MQ_TK_ARRAY_DYN, 2859154460u, 0u, 1u, 2859154460u, mq_dyn_render_RichText_runs_clear, mq_dyn_render_RichText_runs_size, mq_dyn_render_RichText_runs_resize, mq_dyn_render_RichText_runs_elem },
     { "links", (uint32_t)offsetof(render::RichText, links), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "line_count", (uint32_t)offsetof(render::RichText, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_render_Skybox[] = {
@@ -1092,6 +1095,19 @@ static const mq_field_desc mq_fields_scn_Label[] = {
     { "g", (uint32_t)offsetof(scn::Label, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "b", (uint32_t)offsetof(scn::Label, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "a", (uint32_t)offsetof(scn::Label, a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "font_size", (uint32_t)offsetof(scn::Label, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "align", (uint32_t)offsetof(scn::Label, align), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "wrap", (uint32_t)offsetof(scn::Label, wrap), MQ_TK_ENUM, 1869600876u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "max_width", (uint32_t)offsetof(scn::Label, max_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "line_spacing", (uint32_t)offsetof(scn::Label, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "outline_size", (uint32_t)offsetof(scn::Label, outline_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "outline_r", (uint32_t)offsetof(scn::Label, outline_r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "outline_g", (uint32_t)offsetof(scn::Label, outline_g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "outline_b", (uint32_t)offsetof(scn::Label, outline_b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "font", (uint32_t)offsetof(scn::Label, font), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "text_w", (uint32_t)offsetof(scn::Label, text_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "text_h", (uint32_t)offsetof(scn::Label, text_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "line_count", (uint32_t)offsetof(scn::Label, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_scn_NavAgent[] = {
@@ -2218,6 +2234,247 @@ static const mq_enum_value mq_values_ui_WrapMode[] = {
     { "Char", (int64_t)2 },
 };
 
+static void mq_defaults_anim_AnimatedSprite(void* p) { new (p) anim::AnimatedSprite{}; }
+static void mq_defaults_anim_AnimationPlayer(void* p) { new (p) anim::AnimationPlayer{}; }
+static void mq_defaults_anim_Animator(void* p) { new (p) anim::Animator{}; }
+static void mq_defaults_anim_AnimParam(void* p) { new (p) anim::AnimParam{}; }
+static void mq_defaults_anim_AnimParamType(void* p) { new (p) anim::AnimParamType{}; }
+static void mq_defaults_anim_BlendMode(void* p) { new (p) anim::BlendMode{}; }
+static void mq_defaults_anim_BonePose(void* p) { new (p) anim::BonePose{}; }
+static void mq_defaults_anim_Curve(void* p) { new (p) anim::Curve{}; }
+static void mq_defaults_anim_CurveKey(void* p) { new (p) anim::CurveKey{}; }
+static void mq_defaults_anim_FlipMode(void* p) { new (p) anim::FlipMode{}; }
+static void mq_defaults_anim_Gradient(void* p) { new (p) anim::Gradient{}; }
+static void mq_defaults_anim_GradientStop(void* p) { new (p) anim::GradientStop{}; }
+static void mq_defaults_anim_InterpMode(void* p) { new (p) anim::InterpMode{}; }
+static void mq_defaults_anim_LoopMode(void* p) { new (p) anim::LoopMode{}; }
+static void mq_defaults_anim_ParticleEmitter(void* p) { new (p) anim::ParticleEmitter{}; }
+static void mq_defaults_anim_ParticleMode(void* p) { new (p) anim::ParticleMode{}; }
+static void mq_defaults_anim_PlayMode(void* p) { new (p) anim::PlayMode{}; }
+static void mq_defaults_anim_ShapeType(void* p) { new (p) anim::ShapeType{}; }
+static void mq_defaults_anim_SimSpace(void* p) { new (p) anim::SimSpace{}; }
+static void mq_defaults_anim_Skeleton(void* p) { new (p) anim::Skeleton{}; }
+static void mq_defaults_anim_SkinningMode(void* p) { new (p) anim::SkinningMode{}; }
+static void mq_defaults_anim_SortMode(void* p) { new (p) anim::SortMode{}; }
+static void mq_defaults_anim_SpineAnimState(void* p) { new (p) anim::SpineAnimState{}; }
+static void mq_defaults_anim_SpineBlend(void* p) { new (p) anim::SpineBlend{}; }
+static void mq_defaults_anim_SpinePhysTimestep(void* p) { new (p) anim::SpinePhysTimestep{}; }
+static void mq_defaults_anim_SpineSkeleton(void* p) { new (p) anim::SpineSkeleton{}; }
+static void mq_defaults_anim_SpineUpdate(void* p) { new (p) anim::SpineUpdate{}; }
+static void mq_defaults_anim_TransitionMode(void* p) { new (p) anim::TransitionMode{}; }
+static void mq_defaults_anim_UpdateMode(void* p) { new (p) anim::UpdateMode{}; }
+static void mq_defaults_asset_AnimationClip(void* p) { new (p) asset::AnimationClip{}; }
+static void mq_defaults_asset_AnimatorController(void* p) { new (p) asset::AnimatorController{}; }
+static void mq_defaults_asset_AudioBus(void* p) { new (p) asset::AudioBus{}; }
+static void mq_defaults_asset_AudioClip(void* p) { new (p) asset::AudioClip{}; }
+static void mq_defaults_asset_AudioCurve(void* p) { new (p) asset::AudioCurve{}; }
+static void mq_defaults_asset_BlendFactor(void* p) { new (p) asset::BlendFactor{}; }
+static void mq_defaults_asset_BoneB(void* p) { new (p) asset::BoneB{}; }
+static void mq_defaults_asset_CharsetPreset(void* p) { new (p) asset::CharsetPreset{}; }
+static void mq_defaults_asset_CullMode(void* p) { new (p) asset::CullMode{}; }
+static void mq_defaults_asset_Effect(void* p) { new (p) asset::Effect{}; }
+static void mq_defaults_asset_EffectParam(void* p) { new (p) asset::EffectParam{}; }
+static void mq_defaults_asset_FileFormat(void* p) { new (p) asset::FileFormat{}; }
+static void mq_defaults_asset_FilterMode(void* p) { new (p) asset::FilterMode{}; }
+static void mq_defaults_asset_Font(void* p) { new (p) asset::Font{}; }
+static void mq_defaults_asset_FontMode(void* p) { new (p) asset::FontMode{}; }
+static void mq_defaults_asset_Key(void* p) { new (p) asset::Key{}; }
+static void mq_defaults_asset_Material(void* p) { new (p) asset::Material{}; }
+static void mq_defaults_asset_MaterialInstance(void* p) { new (p) asset::MaterialInstance{}; }
+static void mq_defaults_asset_MaterialParam(void* p) { new (p) asset::MaterialParam{}; }
+static void mq_defaults_asset_Mesh(void* p) { new (p) asset::Mesh{}; }
+static void mq_defaults_asset_NavMeshData(void* p) { new (p) asset::NavMeshData{}; }
+static void mq_defaults_asset_ParamType(void* p) { new (p) asset::ParamType{}; }
+static void mq_defaults_asset_PixelFormat(void* p) { new (p) asset::PixelFormat{}; }
+static void mq_defaults_asset_Prefab(void* p) { new (p) asset::Prefab{}; }
+static void mq_defaults_asset_RenderTarget(void* p) { new (p) asset::RenderTarget{}; }
+static void mq_defaults_asset_Scene(void* p) { new (p) asset::Scene{}; }
+static void mq_defaults_asset_ScriptAsset(void* p) { new (p) asset::ScriptAsset{}; }
+static void mq_defaults_asset_SkeletonData(void* p) { new (p) asset::SkeletonData{}; }
+static void mq_defaults_asset_SpineAtlas(void* p) { new (p) asset::SpineAtlas{}; }
+static void mq_defaults_asset_SpineData(void* p) { new (p) asset::SpineData{}; }
+static void mq_defaults_asset_SpriteFrame(void* p) { new (p) asset::SpriteFrame{}; }
+static void mq_defaults_asset_SpriteFrames(void* p) { new (p) asset::SpriteFrames{}; }
+static void mq_defaults_asset_SubMesh(void* p) { new (p) asset::SubMesh{}; }
+static void mq_defaults_asset_TerrainData(void* p) { new (p) asset::TerrainData{}; }
+static void mq_defaults_asset_Texture(void* p) { new (p) asset::Texture{}; }
+static void mq_defaults_asset_TileSet(void* p) { new (p) asset::TileSet{}; }
+static void mq_defaults_asset_Topology(void* p) { new (p) asset::Topology{}; }
+static void mq_defaults_asset_Track(void* p) { new (p) asset::Track{}; }
+static void mq_defaults_asset_TrackKind(void* p) { new (p) asset::TrackKind{}; }
+static void mq_defaults_asset_ValueType(void* p) { new (p) asset::ValueType{}; }
+static void mq_defaults_asset_WrapMode(void* p) { new (p) asset::WrapMode{}; }
+static void mq_defaults_audio_AttenuationModel(void* p) { new (p) audio::AttenuationModel{}; }
+static void mq_defaults_audio_AudioListener(void* p) { new (p) audio::AudioListener{}; }
+static void mq_defaults_audio_AudioPlayState(void* p) { new (p) audio::AudioPlayState{}; }
+static void mq_defaults_audio_AudioSource(void* p) { new (p) audio::AudioSource{}; }
+static void mq_defaults_audio_PanningMode(void* p) { new (p) audio::PanningMode{}; }
+static void mq_defaults_input_CursorShape(void* p) { new (p) input::CursorShape{}; }
+static void mq_defaults_input_InputTarget(void* p) { new (p) input::InputTarget{}; }
+static void mq_defaults_input_PointerType(void* p) { new (p) input::PointerType{}; }
+static void mq_defaults_math_Aabb(void* p) { new (p) math::Aabb{}; }
+static void mq_defaults_math_Color(void* p) { new (p) math::Color{}; }
+static void mq_defaults_math_Mat3(void* p) { new (p) math::Mat3{}; }
+static void mq_defaults_math_Mat4(void* p) { new (p) math::Mat4{}; }
+static void mq_defaults_math_Plane(void* p) { new (p) math::Plane{}; }
+static void mq_defaults_math_Quat(void* p) { new (p) math::Quat{}; }
+static void mq_defaults_math_Ray(void* p) { new (p) math::Ray{}; }
+static void mq_defaults_math_Rect(void* p) { new (p) math::Rect{}; }
+static void mq_defaults_math_Rgba(void* p) { new (p) math::Rgba{}; }
+static void mq_defaults_math_Transform2D(void* p) { new (p) math::Transform2D{}; }
+static void mq_defaults_math_Transform3D(void* p) { new (p) math::Transform3D{}; }
+static void mq_defaults_math_Vec2(void* p) { new (p) math::Vec2{}; }
+static void mq_defaults_math_Vec3(void* p) { new (p) math::Vec3{}; }
+static void mq_defaults_math_Vec4(void* p) { new (p) math::Vec4{}; }
+static void mq_defaults_nav_NavAgent(void* p) { new (p) nav::NavAgent{}; }
+static void mq_defaults_nav_NavAgentState(void* p) { new (p) nav::NavAgentState{}; }
+static void mq_defaults_nav_NavAvoidance(void* p) { new (p) nav::NavAvoidance{}; }
+static void mq_defaults_nav_NavMesh(void* p) { new (p) nav::NavMesh{}; }
+static void mq_defaults_nav_NavMeshBakeState(void* p) { new (p) nav::NavMeshBakeState{}; }
+static void mq_defaults_nav_NavMeshSource(void* p) { new (p) nav::NavMeshSource{}; }
+static void mq_defaults_physics_Area(void* p) { new (p) physics::Area{}; }
+static void mq_defaults_physics_BodyType(void* p) { new (p) physics::BodyType{}; }
+static void mq_defaults_physics_CharacterBody(void* p) { new (p) physics::CharacterBody{}; }
+static void mq_defaults_physics_Collider(void* p) { new (p) physics::Collider{}; }
+static void mq_defaults_physics_CombineRule(void* p) { new (p) physics::CombineRule{}; }
+static void mq_defaults_physics_ConstantForce(void* p) { new (p) physics::ConstantForce{}; }
+static void mq_defaults_physics_DampingOverride(void* p) { new (p) physics::DampingOverride{}; }
+static void mq_defaults_physics_ForceApplyMode(void* p) { new (p) physics::ForceApplyMode{}; }
+static void mq_defaults_physics_ForceSpace(void* p) { new (p) physics::ForceSpace{}; }
+static void mq_defaults_physics_Joint(void* p) { new (p) physics::Joint{}; }
+static void mq_defaults_physics_JointType(void* p) { new (p) physics::JointType{}; }
+static void mq_defaults_physics_LinearVelocityLimit(void* p) { new (p) physics::LinearVelocityLimit{}; }
+static void mq_defaults_physics_RigidBody(void* p) { new (p) physics::RigidBody{}; }
+static void mq_defaults_physics_ShapeType(void* p) { new (p) physics::ShapeType{}; }
+static void mq_defaults_physics_SpaceOverride(void* p) { new (p) physics::SpaceOverride{}; }
+static void mq_defaults_render_Billboard(void* p) { new (p) render::Billboard{}; }
+static void mq_defaults_render_BillboardFacing(void* p) { new (p) render::BillboardFacing{}; }
+static void mq_defaults_render_BillboardPivot(void* p) { new (p) render::BillboardPivot{}; }
+static void mq_defaults_render_BlendMode(void* p) { new (p) render::BlendMode{}; }
+static void mq_defaults_render_Camera2D(void* p) { new (p) render::Camera2D{}; }
+static void mq_defaults_render_Camera3D(void* p) { new (p) render::Camera3D{}; }
+static void mq_defaults_render_CameraProjection(void* p) { new (p) render::CameraProjection{}; }
+static void mq_defaults_render_ClearMode(void* p) { new (p) render::ClearMode{}; }
+static void mq_defaults_render_DrawCommand(void* p) { new (p) render::DrawCommand{}; }
+static void mq_defaults_render_EnvironmentSource(void* p) { new (p) render::EnvironmentSource{}; }
+static void mq_defaults_render_FillRule(void* p) { new (p) render::FillRule{}; }
+static void mq_defaults_render_FlipMode(void* p) { new (p) render::FlipMode{}; }
+static void mq_defaults_render_Graphics(void* p) { new (p) render::Graphics{}; }
+static void mq_defaults_render_GraphicsFlags(void* p) { new (p) render::GraphicsFlags{}; }
+static void mq_defaults_render_GraphicsOp(void* p) { new (p) render::GraphicsOp{}; }
+static void mq_defaults_render_ImageAlign(void* p) { new (p) render::ImageAlign{}; }
+static void mq_defaults_render_LayerKind(void* p) { new (p) render::LayerKind{}; }
+static void mq_defaults_render_Light(void* p) { new (p) render::Light{}; }
+static void mq_defaults_render_LightType(void* p) { new (p) render::LightType{}; }
+static void mq_defaults_render_LineCap(void* p) { new (p) render::LineCap{}; }
+static void mq_defaults_render_LineJoin(void* p) { new (p) render::LineJoin{}; }
+static void mq_defaults_render_MeshRenderer(void* p) { new (p) render::MeshRenderer{}; }
+static void mq_defaults_render_MotionStreak(void* p) { new (p) render::MotionStreak{}; }
+static void mq_defaults_render_PivotAnchor(void* p) { new (p) render::PivotAnchor{}; }
+static void mq_defaults_render_ProbeShape(void* p) { new (p) render::ProbeShape{}; }
+static void mq_defaults_render_ProbeSource(void* p) { new (p) render::ProbeSource{}; }
+static void mq_defaults_render_ProbeUpdateMode(void* p) { new (p) render::ProbeUpdateMode{}; }
+static void mq_defaults_render_ReflectionProbe(void* p) { new (p) render::ReflectionProbe{}; }
+static void mq_defaults_render_RenderLayer(void* p) { new (p) render::RenderLayer{}; }
+static void mq_defaults_render_RichRun(void* p) { new (p) render::RichRun{}; }
+static void mq_defaults_render_RichTagType(void* p) { new (p) render::RichTagType{}; }
+static void mq_defaults_render_RichText(void* p) { new (p) render::RichText{}; }
+static void mq_defaults_render_ShadowCastMode(void* p) { new (p) render::ShadowCastMode{}; }
+static void mq_defaults_render_ShadowMode(void* p) { new (p) render::ShadowMode{}; }
+static void mq_defaults_render_Skybox(void* p) { new (p) render::Skybox{}; }
+static void mq_defaults_render_SkyboxMode(void* p) { new (p) render::SkyboxMode{}; }
+static void mq_defaults_render_Sprite(void* p) { new (p) render::Sprite{}; }
+static void mq_defaults_render_StreakFade(void* p) { new (p) render::StreakFade{}; }
+static void mq_defaults_render_StreakMode(void* p) { new (p) render::StreakMode{}; }
+static void mq_defaults_render_StreakSample(void* p) { new (p) render::StreakSample{}; }
+static void mq_defaults_render_Terrain(void* p) { new (p) render::Terrain{}; }
+static void mq_defaults_render_TerrainLevel(void* p) { new (p) render::TerrainLevel{}; }
+static void mq_defaults_render_TerrainLodMode(void* p) { new (p) render::TerrainLodMode{}; }
+static void mq_defaults_render_TileCoord(void* p) { new (p) render::TileCoord{}; }
+static void mq_defaults_render_TileMap(void* p) { new (p) render::TileMap{}; }
+static void mq_defaults_scene_Active(void* p) { new (p) scene::Active{}; }
+static void mq_defaults_scene_Meta(void* p) { new (p) scene::Meta{}; }
+static void mq_defaults_scene_Name(void* p) { new (p) scene::Name{}; }
+static void mq_defaults_scene_Node(void* p) { new (p) scene::Node{}; }
+static void mq_defaults_scene_PrefabInstance(void* p) { new (p) scene::PrefabInstance{}; }
+static void mq_defaults_scene_PrefabOverride(void* p) { new (p) scene::PrefabOverride{}; }
+static void mq_defaults_scene_Tags(void* p) { new (p) scene::Tags{}; }
+static void mq_defaults_scene_Transform2D(void* p) { new (p) scene::Transform2D{}; }
+static void mq_defaults_scene_Transform3D(void* p) { new (p) scene::Transform3D{}; }
+static void mq_defaults_scn_AnimationPlayer(void* p) { new (p) scn::AnimationPlayer{}; }
+static void mq_defaults_scn_Button(void* p) { new (p) scn::Button{}; }
+static void mq_defaults_scn_Camera(void* p) { new (p) scn::Camera{}; }
+static void mq_defaults_scn_Label(void* p) { new (p) scn::Label{}; }
+static void mq_defaults_scn_NavAgent(void* p) { new (p) scn::NavAgent{}; }
+static void mq_defaults_scn_ParticleEmitter(void* p) { new (p) scn::ParticleEmitter{}; }
+static void mq_defaults_scn_PrefabInstance(void* p) { new (p) scn::PrefabInstance{}; }
+static void mq_defaults_scn_Scene(void* p) { new (p) scn::Scene{}; }
+static void mq_defaults_scn_Sprite(void* p) { new (p) scn::Sprite{}; }
+static void mq_defaults_scn_SpriteMaterial(void* p) { new (p) scn::SpriteMaterial{}; }
+static void mq_defaults_scn_Transform2D(void* p) { new (p) scn::Transform2D{}; }
+static void mq_defaults_script_PropertyVariant(void* p) { new (p) script::PropertyVariant{}; }
+static void mq_defaults_script_PropertyVariantType(void* p) { new (p) script::PropertyVariantType{}; }
+static void mq_defaults_script_Script(void* p) { new (p) script::Script{}; }
+static void mq_defaults_script_ScriptCallback(void* p) { new (p) script::ScriptCallback{}; }
+static void mq_defaults_script_ScriptLanguage(void* p) { new (p) script::ScriptLanguage{}; }
+static void mq_defaults_ui_Align(void* p) { new (p) ui::Align{}; }
+static void mq_defaults_ui_AlignContent(void* p) { new (p) ui::AlignContent{}; }
+static void mq_defaults_ui_AlignItems(void* p) { new (p) ui::AlignItems{}; }
+static void mq_defaults_ui_AlignSelf(void* p) { new (p) ui::AlignSelf{}; }
+static void mq_defaults_ui_Anchor(void* p) { new (p) ui::Anchor{}; }
+static void mq_defaults_ui_Button(void* p) { new (p) ui::Button{}; }
+static void mq_defaults_ui_ButtonState(void* p) { new (p) ui::ButtonState{}; }
+static void mq_defaults_ui_CheckBox(void* p) { new (p) ui::CheckBox{}; }
+static void mq_defaults_ui_CheckState(void* p) { new (p) ui::CheckState{}; }
+static void mq_defaults_ui_CompareFunc(void* p) { new (p) ui::CompareFunc{}; }
+static void mq_defaults_ui_Container(void* p) { new (p) ui::Container{}; }
+static void mq_defaults_ui_ContainerMode(void* p) { new (p) ui::ContainerMode{}; }
+static void mq_defaults_ui_Control(void* p) { new (p) ui::Control{}; }
+static void mq_defaults_ui_EditBox(void* p) { new (p) ui::EditBox{}; }
+static void mq_defaults_ui_EditLineMode(void* p) { new (p) ui::EditLineMode{}; }
+static void mq_defaults_ui_FillMode(void* p) { new (p) ui::FillMode{}; }
+static void mq_defaults_ui_FlexBasisMode(void* p) { new (p) ui::FlexBasisMode{}; }
+static void mq_defaults_ui_FlexBox(void* p) { new (p) ui::FlexBox{}; }
+static void mq_defaults_ui_FlexDirection(void* p) { new (p) ui::FlexDirection{}; }
+static void mq_defaults_ui_FlexItem(void* p) { new (p) ui::FlexItem{}; }
+static void mq_defaults_ui_FlexWrap(void* p) { new (p) ui::FlexWrap{}; }
+static void mq_defaults_ui_Image(void* p) { new (p) ui::Image{}; }
+static void mq_defaults_ui_JustifyContent(void* p) { new (p) ui::JustifyContent{}; }
+static void mq_defaults_ui_ListView(void* p) { new (p) ui::ListView{}; }
+static void mq_defaults_ui_Mask(void* p) { new (p) ui::Mask{}; }
+static void mq_defaults_ui_MaskChannel(void* p) { new (p) ui::MaskChannel{}; }
+static void mq_defaults_ui_MaskMode(void* p) { new (p) ui::MaskMode{}; }
+static void mq_defaults_ui_MouseFilter(void* p) { new (p) ui::MouseFilter{}; }
+static void mq_defaults_ui_OpacityMode(void* p) { new (p) ui::OpacityMode{}; }
+static void mq_defaults_ui_Orientation(void* p) { new (p) ui::Orientation{}; }
+static void mq_defaults_ui_PageTransition(void* p) { new (p) ui::PageTransition{}; }
+static void mq_defaults_ui_PageView(void* p) { new (p) ui::PageView{}; }
+static void mq_defaults_ui_ProgressBar(void* p) { new (p) ui::ProgressBar{}; }
+static void mq_defaults_ui_ProgressMode(void* p) { new (p) ui::ProgressMode{}; }
+static void mq_defaults_ui_RadioGroup(void* p) { new (p) ui::RadioGroup{}; }
+static void mq_defaults_ui_SafeArea(void* p) { new (p) ui::SafeArea{}; }
+static void mq_defaults_ui_SafeAreaAnchor(void* p) { new (p) ui::SafeAreaAnchor{}; }
+static void mq_defaults_ui_SafeAreaMode(void* p) { new (p) ui::SafeAreaMode{}; }
+static void mq_defaults_ui_ScrollDirection(void* p) { new (p) ui::ScrollDirection{}; }
+static void mq_defaults_ui_ScrollMode(void* p) { new (p) ui::ScrollMode{}; }
+static void mq_defaults_ui_ScrollOrientation(void* p) { new (p) ui::ScrollOrientation{}; }
+static void mq_defaults_ui_ScrollView(void* p) { new (p) ui::ScrollView{}; }
+static void mq_defaults_ui_SelectionMode(void* p) { new (p) ui::SelectionMode{}; }
+static void mq_defaults_ui_Side(void* p) { new (p) ui::Side{}; }
+static void mq_defaults_ui_SizeFlag(void* p) { new (p) ui::SizeFlag{}; }
+static void mq_defaults_ui_Slider(void* p) { new (p) ui::Slider{}; }
+static void mq_defaults_ui_SliderOrientation(void* p) { new (p) ui::SliderOrientation{}; }
+static void mq_defaults_ui_StepMode(void* p) { new (p) ui::StepMode{}; }
+static void mq_defaults_ui_StretchMode(void* p) { new (p) ui::StretchMode{}; }
+static void mq_defaults_ui_Tabs(void* p) { new (p) ui::Tabs{}; }
+static void mq_defaults_ui_TabTransition(void* p) { new (p) ui::TabTransition{}; }
+static void mq_defaults_ui_TextAlign(void* p) { new (p) ui::TextAlign{}; }
+static void mq_defaults_ui_TextLabel(void* p) { new (p) ui::TextLabel{}; }
+static void mq_defaults_ui_TextOverflow(void* p) { new (p) ui::TextOverflow{}; }
+static void mq_defaults_ui_TextWrap(void* p) { new (p) ui::TextWrap{}; }
+static void mq_defaults_ui_UIOpacity(void* p) { new (p) ui::UIOpacity{}; }
+static void mq_defaults_ui_WrapMode(void* p) { new (p) ui::WrapMode{}; }
+
 extern const mq_type_desc mq_type_anim_AnimatedSprite = {
     "anim.AnimatedSprite",
     629660702u,
@@ -2229,6 +2486,7 @@ extern const mq_type_desc mq_type_anim_AnimatedSprite = {
     0u,
     0,
     0u,
+    mq_defaults_anim_AnimatedSprite,
 };
 
 extern const mq_type_desc mq_type_anim_AnimationPlayer = {
@@ -2242,6 +2500,7 @@ extern const mq_type_desc mq_type_anim_AnimationPlayer = {
     0u,
     0,
     0u,
+    mq_defaults_anim_AnimationPlayer,
 };
 
 extern const mq_type_desc mq_type_anim_Animator = {
@@ -2255,6 +2514,7 @@ extern const mq_type_desc mq_type_anim_Animator = {
     0u,
     0,
     0u,
+    mq_defaults_anim_Animator,
 };
 
 extern const mq_type_desc mq_type_anim_AnimParam = {
@@ -2268,6 +2528,7 @@ extern const mq_type_desc mq_type_anim_AnimParam = {
     0u,
     0,
     0u,
+    mq_defaults_anim_AnimParam,
 };
 
 extern const mq_type_desc mq_type_anim_AnimParamType = {
@@ -2281,6 +2542,7 @@ extern const mq_type_desc mq_type_anim_AnimParamType = {
     0u,
     mq_values_anim_AnimParamType,
     4u,
+    mq_defaults_anim_AnimParamType,
 };
 
 extern const mq_type_desc mq_type_anim_BlendMode = {
@@ -2294,6 +2556,7 @@ extern const mq_type_desc mq_type_anim_BlendMode = {
     0u,
     mq_values_anim_BlendMode,
     3u,
+    mq_defaults_anim_BlendMode,
 };
 
 extern const mq_type_desc mq_type_anim_BonePose = {
@@ -2307,6 +2570,7 @@ extern const mq_type_desc mq_type_anim_BonePose = {
     0u,
     0,
     0u,
+    mq_defaults_anim_BonePose,
 };
 
 extern const mq_type_desc mq_type_anim_Curve = {
@@ -2320,6 +2584,7 @@ extern const mq_type_desc mq_type_anim_Curve = {
     0u,
     0,
     0u,
+    mq_defaults_anim_Curve,
 };
 
 extern const mq_type_desc mq_type_anim_CurveKey = {
@@ -2333,6 +2598,7 @@ extern const mq_type_desc mq_type_anim_CurveKey = {
     0u,
     0,
     0u,
+    mq_defaults_anim_CurveKey,
 };
 
 extern const mq_type_desc mq_type_anim_FlipMode = {
@@ -2346,6 +2612,7 @@ extern const mq_type_desc mq_type_anim_FlipMode = {
     0u,
     mq_values_anim_FlipMode,
     4u,
+    mq_defaults_anim_FlipMode,
 };
 
 extern const mq_type_desc mq_type_anim_Gradient = {
@@ -2359,6 +2626,7 @@ extern const mq_type_desc mq_type_anim_Gradient = {
     0u,
     0,
     0u,
+    mq_defaults_anim_Gradient,
 };
 
 extern const mq_type_desc mq_type_anim_GradientStop = {
@@ -2372,6 +2640,7 @@ extern const mq_type_desc mq_type_anim_GradientStop = {
     0u,
     0,
     0u,
+    mq_defaults_anim_GradientStop,
 };
 
 extern const mq_type_desc mq_type_anim_InterpMode = {
@@ -2385,6 +2654,7 @@ extern const mq_type_desc mq_type_anim_InterpMode = {
     0u,
     mq_values_anim_InterpMode,
     4u,
+    mq_defaults_anim_InterpMode,
 };
 
 extern const mq_type_desc mq_type_anim_LoopMode = {
@@ -2398,6 +2668,7 @@ extern const mq_type_desc mq_type_anim_LoopMode = {
     0u,
     mq_values_anim_LoopMode,
     4u,
+    mq_defaults_anim_LoopMode,
 };
 
 extern const mq_type_desc mq_type_anim_ParticleEmitter = {
@@ -2411,6 +2682,7 @@ extern const mq_type_desc mq_type_anim_ParticleEmitter = {
     0u,
     0,
     0u,
+    mq_defaults_anim_ParticleEmitter,
 };
 
 extern const mq_type_desc mq_type_anim_ParticleMode = {
@@ -2424,6 +2696,7 @@ extern const mq_type_desc mq_type_anim_ParticleMode = {
     0u,
     mq_values_anim_ParticleMode,
     2u,
+    mq_defaults_anim_ParticleMode,
 };
 
 extern const mq_type_desc mq_type_anim_PlayMode = {
@@ -2437,6 +2710,7 @@ extern const mq_type_desc mq_type_anim_PlayMode = {
     0u,
     mq_values_anim_PlayMode,
     4u,
+    mq_defaults_anim_PlayMode,
 };
 
 extern const mq_type_desc mq_type_anim_ShapeType = {
@@ -2450,6 +2724,7 @@ extern const mq_type_desc mq_type_anim_ShapeType = {
     0u,
     mq_values_anim_ShapeType,
     7u,
+    mq_defaults_anim_ShapeType,
 };
 
 extern const mq_type_desc mq_type_anim_SimSpace = {
@@ -2463,6 +2738,7 @@ extern const mq_type_desc mq_type_anim_SimSpace = {
     0u,
     mq_values_anim_SimSpace,
     2u,
+    mq_defaults_anim_SimSpace,
 };
 
 extern const mq_type_desc mq_type_anim_Skeleton = {
@@ -2476,6 +2752,7 @@ extern const mq_type_desc mq_type_anim_Skeleton = {
     0u,
     0,
     0u,
+    mq_defaults_anim_Skeleton,
 };
 
 extern const mq_type_desc mq_type_anim_SkinningMode = {
@@ -2489,6 +2766,7 @@ extern const mq_type_desc mq_type_anim_SkinningMode = {
     0u,
     mq_values_anim_SkinningMode,
     2u,
+    mq_defaults_anim_SkinningMode,
 };
 
 extern const mq_type_desc mq_type_anim_SortMode = {
@@ -2502,6 +2780,7 @@ extern const mq_type_desc mq_type_anim_SortMode = {
     0u,
     mq_values_anim_SortMode,
     3u,
+    mq_defaults_anim_SortMode,
 };
 
 extern const mq_type_desc mq_type_anim_SpineAnimState = {
@@ -2515,6 +2794,7 @@ extern const mq_type_desc mq_type_anim_SpineAnimState = {
     0u,
     0,
     0u,
+    mq_defaults_anim_SpineAnimState,
 };
 
 extern const mq_type_desc mq_type_anim_SpineBlend = {
@@ -2528,6 +2808,7 @@ extern const mq_type_desc mq_type_anim_SpineBlend = {
     0u,
     mq_values_anim_SpineBlend,
     6u,
+    mq_defaults_anim_SpineBlend,
 };
 
 extern const mq_type_desc mq_type_anim_SpinePhysTimestep = {
@@ -2541,6 +2822,7 @@ extern const mq_type_desc mq_type_anim_SpinePhysTimestep = {
     0u,
     mq_values_anim_SpinePhysTimestep,
     3u,
+    mq_defaults_anim_SpinePhysTimestep,
 };
 
 extern const mq_type_desc mq_type_anim_SpineSkeleton = {
@@ -2554,6 +2836,7 @@ extern const mq_type_desc mq_type_anim_SpineSkeleton = {
     0u,
     0,
     0u,
+    mq_defaults_anim_SpineSkeleton,
 };
 
 extern const mq_type_desc mq_type_anim_SpineUpdate = {
@@ -2567,6 +2850,7 @@ extern const mq_type_desc mq_type_anim_SpineUpdate = {
     0u,
     mq_values_anim_SpineUpdate,
     2u,
+    mq_defaults_anim_SpineUpdate,
 };
 
 extern const mq_type_desc mq_type_anim_TransitionMode = {
@@ -2580,6 +2864,7 @@ extern const mq_type_desc mq_type_anim_TransitionMode = {
     0u,
     mq_values_anim_TransitionMode,
     2u,
+    mq_defaults_anim_TransitionMode,
 };
 
 extern const mq_type_desc mq_type_anim_UpdateMode = {
@@ -2593,6 +2878,7 @@ extern const mq_type_desc mq_type_anim_UpdateMode = {
     0u,
     mq_values_anim_UpdateMode,
     2u,
+    mq_defaults_anim_UpdateMode,
 };
 
 extern const mq_type_desc mq_type_asset_AnimationClip = {
@@ -2606,6 +2892,7 @@ extern const mq_type_desc mq_type_asset_AnimationClip = {
     0u,
     0,
     0u,
+    mq_defaults_asset_AnimationClip,
 };
 
 extern const mq_type_desc mq_type_asset_AnimatorController = {
@@ -2619,6 +2906,7 @@ extern const mq_type_desc mq_type_asset_AnimatorController = {
     0u,
     0,
     0u,
+    mq_defaults_asset_AnimatorController,
 };
 
 extern const mq_type_desc mq_type_asset_AudioBus = {
@@ -2632,6 +2920,7 @@ extern const mq_type_desc mq_type_asset_AudioBus = {
     0u,
     0,
     0u,
+    mq_defaults_asset_AudioBus,
 };
 
 extern const mq_type_desc mq_type_asset_AudioClip = {
@@ -2645,6 +2934,7 @@ extern const mq_type_desc mq_type_asset_AudioClip = {
     0u,
     0,
     0u,
+    mq_defaults_asset_AudioClip,
 };
 
 extern const mq_type_desc mq_type_asset_AudioCurve = {
@@ -2658,6 +2948,7 @@ extern const mq_type_desc mq_type_asset_AudioCurve = {
     0u,
     0,
     0u,
+    mq_defaults_asset_AudioCurve,
 };
 
 extern const mq_type_desc mq_type_asset_BlendFactor = {
@@ -2671,6 +2962,7 @@ extern const mq_type_desc mq_type_asset_BlendFactor = {
     0u,
     mq_values_asset_BlendFactor,
     6u,
+    mq_defaults_asset_BlendFactor,
 };
 
 extern const mq_type_desc mq_type_asset_BoneB = {
@@ -2684,6 +2976,7 @@ extern const mq_type_desc mq_type_asset_BoneB = {
     0u,
     0,
     0u,
+    mq_defaults_asset_BoneB,
 };
 
 extern const mq_type_desc mq_type_asset_CharsetPreset = {
@@ -2697,6 +2990,7 @@ extern const mq_type_desc mq_type_asset_CharsetPreset = {
     0u,
     mq_values_asset_CharsetPreset,
     4u,
+    mq_defaults_asset_CharsetPreset,
 };
 
 extern const mq_type_desc mq_type_asset_CullMode = {
@@ -2710,6 +3004,7 @@ extern const mq_type_desc mq_type_asset_CullMode = {
     0u,
     mq_values_asset_CullMode,
     3u,
+    mq_defaults_asset_CullMode,
 };
 
 extern const mq_type_desc mq_type_asset_Effect = {
@@ -2723,6 +3018,7 @@ extern const mq_type_desc mq_type_asset_Effect = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Effect,
 };
 
 extern const mq_type_desc mq_type_asset_EffectParam = {
@@ -2736,6 +3032,7 @@ extern const mq_type_desc mq_type_asset_EffectParam = {
     0u,
     0,
     0u,
+    mq_defaults_asset_EffectParam,
 };
 
 extern const mq_type_desc mq_type_asset_FileFormat = {
@@ -2749,6 +3046,7 @@ extern const mq_type_desc mq_type_asset_FileFormat = {
     0u,
     mq_values_asset_FileFormat,
     3u,
+    mq_defaults_asset_FileFormat,
 };
 
 extern const mq_type_desc mq_type_asset_FilterMode = {
@@ -2762,6 +3060,7 @@ extern const mq_type_desc mq_type_asset_FilterMode = {
     0u,
     mq_values_asset_FilterMode,
     2u,
+    mq_defaults_asset_FilterMode,
 };
 
 extern const mq_type_desc mq_type_asset_Font = {
@@ -2775,6 +3074,7 @@ extern const mq_type_desc mq_type_asset_Font = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Font,
 };
 
 extern const mq_type_desc mq_type_asset_FontMode = {
@@ -2788,6 +3088,7 @@ extern const mq_type_desc mq_type_asset_FontMode = {
     0u,
     mq_values_asset_FontMode,
     3u,
+    mq_defaults_asset_FontMode,
 };
 
 extern const mq_type_desc mq_type_asset_Key = {
@@ -2801,6 +3102,7 @@ extern const mq_type_desc mq_type_asset_Key = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Key,
 };
 
 extern const mq_type_desc mq_type_asset_Material = {
@@ -2814,6 +3116,7 @@ extern const mq_type_desc mq_type_asset_Material = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Material,
 };
 
 extern const mq_type_desc mq_type_asset_MaterialInstance = {
@@ -2827,6 +3130,7 @@ extern const mq_type_desc mq_type_asset_MaterialInstance = {
     0u,
     0,
     0u,
+    mq_defaults_asset_MaterialInstance,
 };
 
 extern const mq_type_desc mq_type_asset_MaterialParam = {
@@ -2840,6 +3144,7 @@ extern const mq_type_desc mq_type_asset_MaterialParam = {
     0u,
     0,
     0u,
+    mq_defaults_asset_MaterialParam,
 };
 
 extern const mq_type_desc mq_type_asset_Mesh = {
@@ -2853,6 +3158,7 @@ extern const mq_type_desc mq_type_asset_Mesh = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Mesh,
 };
 
 extern const mq_type_desc mq_type_asset_NavMeshData = {
@@ -2866,6 +3172,7 @@ extern const mq_type_desc mq_type_asset_NavMeshData = {
     0u,
     0,
     0u,
+    mq_defaults_asset_NavMeshData,
 };
 
 extern const mq_type_desc mq_type_asset_ParamType = {
@@ -2879,6 +3186,7 @@ extern const mq_type_desc mq_type_asset_ParamType = {
     0u,
     mq_values_asset_ParamType,
     11u,
+    mq_defaults_asset_ParamType,
 };
 
 extern const mq_type_desc mq_type_asset_PixelFormat = {
@@ -2892,6 +3200,7 @@ extern const mq_type_desc mq_type_asset_PixelFormat = {
     0u,
     mq_values_asset_PixelFormat,
     7u,
+    mq_defaults_asset_PixelFormat,
 };
 
 extern const mq_type_desc mq_type_asset_Prefab = {
@@ -2905,6 +3214,7 @@ extern const mq_type_desc mq_type_asset_Prefab = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Prefab,
 };
 
 extern const mq_type_desc mq_type_asset_RenderTarget = {
@@ -2918,6 +3228,7 @@ extern const mq_type_desc mq_type_asset_RenderTarget = {
     0u,
     0,
     0u,
+    mq_defaults_asset_RenderTarget,
 };
 
 extern const mq_type_desc mq_type_asset_Scene = {
@@ -2931,6 +3242,7 @@ extern const mq_type_desc mq_type_asset_Scene = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Scene,
 };
 
 extern const mq_type_desc mq_type_asset_ScriptAsset = {
@@ -2944,6 +3256,7 @@ extern const mq_type_desc mq_type_asset_ScriptAsset = {
     0u,
     0,
     0u,
+    mq_defaults_asset_ScriptAsset,
 };
 
 extern const mq_type_desc mq_type_asset_SkeletonData = {
@@ -2957,6 +3270,7 @@ extern const mq_type_desc mq_type_asset_SkeletonData = {
     0u,
     0,
     0u,
+    mq_defaults_asset_SkeletonData,
 };
 
 extern const mq_type_desc mq_type_asset_SpineAtlas = {
@@ -2970,6 +3284,7 @@ extern const mq_type_desc mq_type_asset_SpineAtlas = {
     0u,
     0,
     0u,
+    mq_defaults_asset_SpineAtlas,
 };
 
 extern const mq_type_desc mq_type_asset_SpineData = {
@@ -2983,6 +3298,7 @@ extern const mq_type_desc mq_type_asset_SpineData = {
     0u,
     0,
     0u,
+    mq_defaults_asset_SpineData,
 };
 
 extern const mq_type_desc mq_type_asset_SpriteFrame = {
@@ -2996,6 +3312,7 @@ extern const mq_type_desc mq_type_asset_SpriteFrame = {
     0u,
     0,
     0u,
+    mq_defaults_asset_SpriteFrame,
 };
 
 extern const mq_type_desc mq_type_asset_SpriteFrames = {
@@ -3009,6 +3326,7 @@ extern const mq_type_desc mq_type_asset_SpriteFrames = {
     0u,
     0,
     0u,
+    mq_defaults_asset_SpriteFrames,
 };
 
 extern const mq_type_desc mq_type_asset_SubMesh = {
@@ -3022,6 +3340,7 @@ extern const mq_type_desc mq_type_asset_SubMesh = {
     0u,
     0,
     0u,
+    mq_defaults_asset_SubMesh,
 };
 
 extern const mq_type_desc mq_type_asset_TerrainData = {
@@ -3035,6 +3354,7 @@ extern const mq_type_desc mq_type_asset_TerrainData = {
     0u,
     0,
     0u,
+    mq_defaults_asset_TerrainData,
 };
 
 extern const mq_type_desc mq_type_asset_Texture = {
@@ -3048,6 +3368,7 @@ extern const mq_type_desc mq_type_asset_Texture = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Texture,
 };
 
 extern const mq_type_desc mq_type_asset_TileSet = {
@@ -3061,6 +3382,7 @@ extern const mq_type_desc mq_type_asset_TileSet = {
     0u,
     0,
     0u,
+    mq_defaults_asset_TileSet,
 };
 
 extern const mq_type_desc mq_type_asset_Topology = {
@@ -3074,6 +3396,7 @@ extern const mq_type_desc mq_type_asset_Topology = {
     0u,
     mq_values_asset_Topology,
     3u,
+    mq_defaults_asset_Topology,
 };
 
 extern const mq_type_desc mq_type_asset_Track = {
@@ -3087,6 +3410,7 @@ extern const mq_type_desc mq_type_asset_Track = {
     0u,
     0,
     0u,
+    mq_defaults_asset_Track,
 };
 
 extern const mq_type_desc mq_type_asset_TrackKind = {
@@ -3100,6 +3424,7 @@ extern const mq_type_desc mq_type_asset_TrackKind = {
     0u,
     mq_values_asset_TrackKind,
     2u,
+    mq_defaults_asset_TrackKind,
 };
 
 extern const mq_type_desc mq_type_asset_ValueType = {
@@ -3113,6 +3438,7 @@ extern const mq_type_desc mq_type_asset_ValueType = {
     0u,
     mq_values_asset_ValueType,
     6u,
+    mq_defaults_asset_ValueType,
 };
 
 extern const mq_type_desc mq_type_asset_WrapMode = {
@@ -3126,6 +3452,7 @@ extern const mq_type_desc mq_type_asset_WrapMode = {
     0u,
     mq_values_asset_WrapMode,
     3u,
+    mq_defaults_asset_WrapMode,
 };
 
 extern const mq_type_desc mq_type_audio_AttenuationModel = {
@@ -3139,6 +3466,7 @@ extern const mq_type_desc mq_type_audio_AttenuationModel = {
     0u,
     mq_values_audio_AttenuationModel,
     4u,
+    mq_defaults_audio_AttenuationModel,
 };
 
 extern const mq_type_desc mq_type_audio_AudioListener = {
@@ -3152,6 +3480,7 @@ extern const mq_type_desc mq_type_audio_AudioListener = {
     0u,
     0,
     0u,
+    mq_defaults_audio_AudioListener,
 };
 
 extern const mq_type_desc mq_type_audio_AudioPlayState = {
@@ -3165,6 +3494,7 @@ extern const mq_type_desc mq_type_audio_AudioPlayState = {
     0u,
     mq_values_audio_AudioPlayState,
     3u,
+    mq_defaults_audio_AudioPlayState,
 };
 
 extern const mq_type_desc mq_type_audio_AudioSource = {
@@ -3178,6 +3508,7 @@ extern const mq_type_desc mq_type_audio_AudioSource = {
     0u,
     0,
     0u,
+    mq_defaults_audio_AudioSource,
 };
 
 extern const mq_type_desc mq_type_audio_PanningMode = {
@@ -3191,6 +3522,7 @@ extern const mq_type_desc mq_type_audio_PanningMode = {
     0u,
     mq_values_audio_PanningMode,
     3u,
+    mq_defaults_audio_PanningMode,
 };
 
 extern const mq_type_desc mq_type_input_CursorShape = {
@@ -3204,6 +3536,7 @@ extern const mq_type_desc mq_type_input_CursorShape = {
     0u,
     mq_values_input_CursorShape,
     8u,
+    mq_defaults_input_CursorShape,
 };
 
 extern const mq_type_desc mq_type_input_InputTarget = {
@@ -3217,6 +3550,7 @@ extern const mq_type_desc mq_type_input_InputTarget = {
     0u,
     0,
     0u,
+    mq_defaults_input_InputTarget,
 };
 
 extern const mq_type_desc mq_type_input_PointerType = {
@@ -3230,6 +3564,7 @@ extern const mq_type_desc mq_type_input_PointerType = {
     0u,
     mq_values_input_PointerType,
     3u,
+    mq_defaults_input_PointerType,
 };
 
 extern const mq_type_desc mq_type_math_Aabb = {
@@ -3243,6 +3578,7 @@ extern const mq_type_desc mq_type_math_Aabb = {
     0u,
     0,
     0u,
+    mq_defaults_math_Aabb,
 };
 
 extern const mq_type_desc mq_type_math_Color = {
@@ -3256,6 +3592,7 @@ extern const mq_type_desc mq_type_math_Color = {
     0u,
     0,
     0u,
+    mq_defaults_math_Color,
 };
 
 extern const mq_type_desc mq_type_math_Mat3 = {
@@ -3269,6 +3606,7 @@ extern const mq_type_desc mq_type_math_Mat3 = {
     0u,
     0,
     0u,
+    mq_defaults_math_Mat3,
 };
 
 extern const mq_type_desc mq_type_math_Mat4 = {
@@ -3282,6 +3620,7 @@ extern const mq_type_desc mq_type_math_Mat4 = {
     0u,
     0,
     0u,
+    mq_defaults_math_Mat4,
 };
 
 extern const mq_type_desc mq_type_math_Plane = {
@@ -3295,6 +3634,7 @@ extern const mq_type_desc mq_type_math_Plane = {
     0u,
     0,
     0u,
+    mq_defaults_math_Plane,
 };
 
 extern const mq_type_desc mq_type_math_Quat = {
@@ -3308,6 +3648,7 @@ extern const mq_type_desc mq_type_math_Quat = {
     0u,
     0,
     0u,
+    mq_defaults_math_Quat,
 };
 
 extern const mq_type_desc mq_type_math_Ray = {
@@ -3321,6 +3662,7 @@ extern const mq_type_desc mq_type_math_Ray = {
     0u,
     0,
     0u,
+    mq_defaults_math_Ray,
 };
 
 extern const mq_type_desc mq_type_math_Rect = {
@@ -3334,6 +3676,7 @@ extern const mq_type_desc mq_type_math_Rect = {
     0u,
     0,
     0u,
+    mq_defaults_math_Rect,
 };
 
 extern const mq_type_desc mq_type_math_Rgba = {
@@ -3347,6 +3690,7 @@ extern const mq_type_desc mq_type_math_Rgba = {
     0u,
     0,
     0u,
+    mq_defaults_math_Rgba,
 };
 
 extern const mq_type_desc mq_type_math_Transform2D = {
@@ -3360,6 +3704,7 @@ extern const mq_type_desc mq_type_math_Transform2D = {
     0u,
     0,
     0u,
+    mq_defaults_math_Transform2D,
 };
 
 extern const mq_type_desc mq_type_math_Transform3D = {
@@ -3373,6 +3718,7 @@ extern const mq_type_desc mq_type_math_Transform3D = {
     0u,
     0,
     0u,
+    mq_defaults_math_Transform3D,
 };
 
 extern const mq_type_desc mq_type_math_Vec2 = {
@@ -3386,6 +3732,7 @@ extern const mq_type_desc mq_type_math_Vec2 = {
     0u,
     0,
     0u,
+    mq_defaults_math_Vec2,
 };
 
 extern const mq_type_desc mq_type_math_Vec3 = {
@@ -3399,6 +3746,7 @@ extern const mq_type_desc mq_type_math_Vec3 = {
     0u,
     0,
     0u,
+    mq_defaults_math_Vec3,
 };
 
 extern const mq_type_desc mq_type_math_Vec4 = {
@@ -3412,6 +3760,7 @@ extern const mq_type_desc mq_type_math_Vec4 = {
     0u,
     0,
     0u,
+    mq_defaults_math_Vec4,
 };
 
 extern const mq_type_desc mq_type_nav_NavAgent = {
@@ -3425,6 +3774,7 @@ extern const mq_type_desc mq_type_nav_NavAgent = {
     0u,
     0,
     0u,
+    mq_defaults_nav_NavAgent,
 };
 
 extern const mq_type_desc mq_type_nav_NavAgentState = {
@@ -3438,6 +3788,7 @@ extern const mq_type_desc mq_type_nav_NavAgentState = {
     0u,
     mq_values_nav_NavAgentState,
     6u,
+    mq_defaults_nav_NavAgentState,
 };
 
 extern const mq_type_desc mq_type_nav_NavAvoidance = {
@@ -3451,6 +3802,7 @@ extern const mq_type_desc mq_type_nav_NavAvoidance = {
     0u,
     mq_values_nav_NavAvoidance,
     2u,
+    mq_defaults_nav_NavAvoidance,
 };
 
 extern const mq_type_desc mq_type_nav_NavMesh = {
@@ -3464,6 +3816,7 @@ extern const mq_type_desc mq_type_nav_NavMesh = {
     0u,
     0,
     0u,
+    mq_defaults_nav_NavMesh,
 };
 
 extern const mq_type_desc mq_type_nav_NavMeshBakeState = {
@@ -3477,6 +3830,7 @@ extern const mq_type_desc mq_type_nav_NavMeshBakeState = {
     0u,
     mq_values_nav_NavMeshBakeState,
     4u,
+    mq_defaults_nav_NavMeshBakeState,
 };
 
 extern const mq_type_desc mq_type_nav_NavMeshSource = {
@@ -3490,6 +3844,7 @@ extern const mq_type_desc mq_type_nav_NavMeshSource = {
     0u,
     mq_values_nav_NavMeshSource,
     3u,
+    mq_defaults_nav_NavMeshSource,
 };
 
 extern const mq_type_desc mq_type_physics_Area = {
@@ -3503,6 +3858,7 @@ extern const mq_type_desc mq_type_physics_Area = {
     0u,
     0,
     0u,
+    mq_defaults_physics_Area,
 };
 
 extern const mq_type_desc mq_type_physics_BodyType = {
@@ -3516,6 +3872,7 @@ extern const mq_type_desc mq_type_physics_BodyType = {
     0u,
     mq_values_physics_BodyType,
     3u,
+    mq_defaults_physics_BodyType,
 };
 
 extern const mq_type_desc mq_type_physics_CharacterBody = {
@@ -3529,6 +3886,7 @@ extern const mq_type_desc mq_type_physics_CharacterBody = {
     0u,
     0,
     0u,
+    mq_defaults_physics_CharacterBody,
 };
 
 extern const mq_type_desc mq_type_physics_Collider = {
@@ -3542,6 +3900,7 @@ extern const mq_type_desc mq_type_physics_Collider = {
     MQ_ROLE_PHYSICS_COLLIDER,
     0,
     0u,
+    mq_defaults_physics_Collider,
 };
 
 extern const mq_type_desc mq_type_physics_CombineRule = {
@@ -3555,6 +3914,7 @@ extern const mq_type_desc mq_type_physics_CombineRule = {
     0u,
     mq_values_physics_CombineRule,
     4u,
+    mq_defaults_physics_CombineRule,
 };
 
 extern const mq_type_desc mq_type_physics_ConstantForce = {
@@ -3568,6 +3928,7 @@ extern const mq_type_desc mq_type_physics_ConstantForce = {
     0u,
     0,
     0u,
+    mq_defaults_physics_ConstantForce,
 };
 
 extern const mq_type_desc mq_type_physics_DampingOverride = {
@@ -3581,6 +3942,7 @@ extern const mq_type_desc mq_type_physics_DampingOverride = {
     0u,
     0,
     0u,
+    mq_defaults_physics_DampingOverride,
 };
 
 extern const mq_type_desc mq_type_physics_ForceApplyMode = {
@@ -3594,6 +3956,7 @@ extern const mq_type_desc mq_type_physics_ForceApplyMode = {
     0u,
     mq_values_physics_ForceApplyMode,
     2u,
+    mq_defaults_physics_ForceApplyMode,
 };
 
 extern const mq_type_desc mq_type_physics_ForceSpace = {
@@ -3607,6 +3970,7 @@ extern const mq_type_desc mq_type_physics_ForceSpace = {
     0u,
     mq_values_physics_ForceSpace,
     2u,
+    mq_defaults_physics_ForceSpace,
 };
 
 extern const mq_type_desc mq_type_physics_Joint = {
@@ -3620,6 +3984,7 @@ extern const mq_type_desc mq_type_physics_Joint = {
     0u,
     0,
     0u,
+    mq_defaults_physics_Joint,
 };
 
 extern const mq_type_desc mq_type_physics_JointType = {
@@ -3633,6 +3998,7 @@ extern const mq_type_desc mq_type_physics_JointType = {
     0u,
     mq_values_physics_JointType,
     7u,
+    mq_defaults_physics_JointType,
 };
 
 extern const mq_type_desc mq_type_physics_LinearVelocityLimit = {
@@ -3646,6 +4012,7 @@ extern const mq_type_desc mq_type_physics_LinearVelocityLimit = {
     0u,
     0,
     0u,
+    mq_defaults_physics_LinearVelocityLimit,
 };
 
 extern const mq_type_desc mq_type_physics_RigidBody = {
@@ -3659,6 +4026,7 @@ extern const mq_type_desc mq_type_physics_RigidBody = {
     MQ_ROLE_PHYSICS_BODY,
     0,
     0u,
+    mq_defaults_physics_RigidBody,
 };
 
 extern const mq_type_desc mq_type_physics_ShapeType = {
@@ -3672,6 +4040,7 @@ extern const mq_type_desc mq_type_physics_ShapeType = {
     0u,
     mq_values_physics_ShapeType,
     7u,
+    mq_defaults_physics_ShapeType,
 };
 
 extern const mq_type_desc mq_type_physics_SpaceOverride = {
@@ -3685,6 +4054,7 @@ extern const mq_type_desc mq_type_physics_SpaceOverride = {
     0u,
     mq_values_physics_SpaceOverride,
     3u,
+    mq_defaults_physics_SpaceOverride,
 };
 
 extern const mq_type_desc mq_type_render_Billboard = {
@@ -3698,6 +4068,7 @@ extern const mq_type_desc mq_type_render_Billboard = {
     0u,
     0,
     0u,
+    mq_defaults_render_Billboard,
 };
 
 extern const mq_type_desc mq_type_render_BillboardFacing = {
@@ -3711,6 +4082,7 @@ extern const mq_type_desc mq_type_render_BillboardFacing = {
     0u,
     mq_values_render_BillboardFacing,
     4u,
+    mq_defaults_render_BillboardFacing,
 };
 
 extern const mq_type_desc mq_type_render_BillboardPivot = {
@@ -3724,6 +4096,7 @@ extern const mq_type_desc mq_type_render_BillboardPivot = {
     0u,
     mq_values_render_BillboardPivot,
     2u,
+    mq_defaults_render_BillboardPivot,
 };
 
 extern const mq_type_desc mq_type_render_BlendMode = {
@@ -3737,6 +4110,7 @@ extern const mq_type_desc mq_type_render_BlendMode = {
     0u,
     mq_values_render_BlendMode,
     3u,
+    mq_defaults_render_BlendMode,
 };
 
 extern const mq_type_desc mq_type_render_Camera2D = {
@@ -3750,6 +4124,7 @@ extern const mq_type_desc mq_type_render_Camera2D = {
     0u,
     0,
     0u,
+    mq_defaults_render_Camera2D,
 };
 
 extern const mq_type_desc mq_type_render_Camera3D = {
@@ -3763,6 +4138,7 @@ extern const mq_type_desc mq_type_render_Camera3D = {
     0u,
     0,
     0u,
+    mq_defaults_render_Camera3D,
 };
 
 extern const mq_type_desc mq_type_render_CameraProjection = {
@@ -3776,6 +4152,7 @@ extern const mq_type_desc mq_type_render_CameraProjection = {
     0u,
     mq_values_render_CameraProjection,
     2u,
+    mq_defaults_render_CameraProjection,
 };
 
 extern const mq_type_desc mq_type_render_ClearMode = {
@@ -3789,6 +4166,7 @@ extern const mq_type_desc mq_type_render_ClearMode = {
     0u,
     mq_values_render_ClearMode,
     4u,
+    mq_defaults_render_ClearMode,
 };
 
 extern const mq_type_desc mq_type_render_DrawCommand = {
@@ -3802,6 +4180,7 @@ extern const mq_type_desc mq_type_render_DrawCommand = {
     0u,
     0,
     0u,
+    mq_defaults_render_DrawCommand,
 };
 
 extern const mq_type_desc mq_type_render_EnvironmentSource = {
@@ -3815,6 +4194,7 @@ extern const mq_type_desc mq_type_render_EnvironmentSource = {
     0u,
     mq_values_render_EnvironmentSource,
     4u,
+    mq_defaults_render_EnvironmentSource,
 };
 
 extern const mq_type_desc mq_type_render_FillRule = {
@@ -3828,6 +4208,7 @@ extern const mq_type_desc mq_type_render_FillRule = {
     0u,
     mq_values_render_FillRule,
     2u,
+    mq_defaults_render_FillRule,
 };
 
 extern const mq_type_desc mq_type_render_FlipMode = {
@@ -3841,6 +4222,7 @@ extern const mq_type_desc mq_type_render_FlipMode = {
     0u,
     mq_values_render_FlipMode,
     4u,
+    mq_defaults_render_FlipMode,
 };
 
 extern const mq_type_desc mq_type_render_Graphics = {
@@ -3854,6 +4236,7 @@ extern const mq_type_desc mq_type_render_Graphics = {
     0u,
     0,
     0u,
+    mq_defaults_render_Graphics,
 };
 
 extern const mq_type_desc mq_type_render_GraphicsFlags = {
@@ -3867,6 +4250,7 @@ extern const mq_type_desc mq_type_render_GraphicsFlags = {
     0u,
     mq_values_render_GraphicsFlags,
     3u,
+    mq_defaults_render_GraphicsFlags,
 };
 
 extern const mq_type_desc mq_type_render_GraphicsOp = {
@@ -3880,6 +4264,7 @@ extern const mq_type_desc mq_type_render_GraphicsOp = {
     0u,
     mq_values_render_GraphicsOp,
     10u,
+    mq_defaults_render_GraphicsOp,
 };
 
 extern const mq_type_desc mq_type_render_ImageAlign = {
@@ -3893,6 +4278,7 @@ extern const mq_type_desc mq_type_render_ImageAlign = {
     0u,
     mq_values_render_ImageAlign,
     4u,
+    mq_defaults_render_ImageAlign,
 };
 
 extern const mq_type_desc mq_type_render_LayerKind = {
@@ -3906,6 +4292,7 @@ extern const mq_type_desc mq_type_render_LayerKind = {
     0u,
     mq_values_render_LayerKind,
     3u,
+    mq_defaults_render_LayerKind,
 };
 
 extern const mq_type_desc mq_type_render_Light = {
@@ -3919,6 +4306,7 @@ extern const mq_type_desc mq_type_render_Light = {
     0u,
     0,
     0u,
+    mq_defaults_render_Light,
 };
 
 extern const mq_type_desc mq_type_render_LightType = {
@@ -3932,6 +4320,7 @@ extern const mq_type_desc mq_type_render_LightType = {
     0u,
     mq_values_render_LightType,
     3u,
+    mq_defaults_render_LightType,
 };
 
 extern const mq_type_desc mq_type_render_LineCap = {
@@ -3945,6 +4334,7 @@ extern const mq_type_desc mq_type_render_LineCap = {
     0u,
     mq_values_render_LineCap,
     4u,
+    mq_defaults_render_LineCap,
 };
 
 extern const mq_type_desc mq_type_render_LineJoin = {
@@ -3958,6 +4348,7 @@ extern const mq_type_desc mq_type_render_LineJoin = {
     0u,
     mq_values_render_LineJoin,
     3u,
+    mq_defaults_render_LineJoin,
 };
 
 extern const mq_type_desc mq_type_render_MeshRenderer = {
@@ -3971,6 +4362,7 @@ extern const mq_type_desc mq_type_render_MeshRenderer = {
     0u,
     0,
     0u,
+    mq_defaults_render_MeshRenderer,
 };
 
 extern const mq_type_desc mq_type_render_MotionStreak = {
@@ -3984,6 +4376,7 @@ extern const mq_type_desc mq_type_render_MotionStreak = {
     0u,
     0,
     0u,
+    mq_defaults_render_MotionStreak,
 };
 
 extern const mq_type_desc mq_type_render_PivotAnchor = {
@@ -3997,6 +4390,7 @@ extern const mq_type_desc mq_type_render_PivotAnchor = {
     0u,
     mq_values_render_PivotAnchor,
     4u,
+    mq_defaults_render_PivotAnchor,
 };
 
 extern const mq_type_desc mq_type_render_ProbeShape = {
@@ -4010,6 +4404,7 @@ extern const mq_type_desc mq_type_render_ProbeShape = {
     0u,
     mq_values_render_ProbeShape,
     2u,
+    mq_defaults_render_ProbeShape,
 };
 
 extern const mq_type_desc mq_type_render_ProbeSource = {
@@ -4023,6 +4418,7 @@ extern const mq_type_desc mq_type_render_ProbeSource = {
     0u,
     mq_values_render_ProbeSource,
     2u,
+    mq_defaults_render_ProbeSource,
 };
 
 extern const mq_type_desc mq_type_render_ProbeUpdateMode = {
@@ -4036,6 +4432,7 @@ extern const mq_type_desc mq_type_render_ProbeUpdateMode = {
     0u,
     mq_values_render_ProbeUpdateMode,
     3u,
+    mq_defaults_render_ProbeUpdateMode,
 };
 
 extern const mq_type_desc mq_type_render_ReflectionProbe = {
@@ -4049,6 +4446,7 @@ extern const mq_type_desc mq_type_render_ReflectionProbe = {
     0u,
     0,
     0u,
+    mq_defaults_render_ReflectionProbe,
 };
 
 extern const mq_type_desc mq_type_render_RenderLayer = {
@@ -4062,6 +4460,7 @@ extern const mq_type_desc mq_type_render_RenderLayer = {
     0u,
     0,
     0u,
+    mq_defaults_render_RenderLayer,
 };
 
 extern const mq_type_desc mq_type_render_RichRun = {
@@ -4075,6 +4474,7 @@ extern const mq_type_desc mq_type_render_RichRun = {
     0u,
     0,
     0u,
+    mq_defaults_render_RichRun,
 };
 
 extern const mq_type_desc mq_type_render_RichTagType = {
@@ -4088,6 +4488,7 @@ extern const mq_type_desc mq_type_render_RichTagType = {
     0u,
     mq_values_render_RichTagType,
     11u,
+    mq_defaults_render_RichTagType,
 };
 
 extern const mq_type_desc mq_type_render_RichText = {
@@ -4095,12 +4496,13 @@ extern const mq_type_desc mq_type_render_RichText = {
     494252u,
     (uint32_t)sizeof(render::RichText),
     (uint32_t)alignof(render::RichText),
-    16u,
+    18u,
     mq_fields_render_RichText,
     4u,
-    0u,
+    MQ_ROLE_UI_TEXT,
     0,
     0u,
+    mq_defaults_render_RichText,
 };
 
 extern const mq_type_desc mq_type_render_ShadowCastMode = {
@@ -4114,6 +4516,7 @@ extern const mq_type_desc mq_type_render_ShadowCastMode = {
     0u,
     mq_values_render_ShadowCastMode,
     3u,
+    mq_defaults_render_ShadowCastMode,
 };
 
 extern const mq_type_desc mq_type_render_ShadowMode = {
@@ -4127,6 +4530,7 @@ extern const mq_type_desc mq_type_render_ShadowMode = {
     0u,
     mq_values_render_ShadowMode,
     3u,
+    mq_defaults_render_ShadowMode,
 };
 
 extern const mq_type_desc mq_type_render_Skybox = {
@@ -4140,6 +4544,7 @@ extern const mq_type_desc mq_type_render_Skybox = {
     0u,
     0,
     0u,
+    mq_defaults_render_Skybox,
 };
 
 extern const mq_type_desc mq_type_render_SkyboxMode = {
@@ -4153,6 +4558,7 @@ extern const mq_type_desc mq_type_render_SkyboxMode = {
     0u,
     mq_values_render_SkyboxMode,
     4u,
+    mq_defaults_render_SkyboxMode,
 };
 
 extern const mq_type_desc mq_type_render_Sprite = {
@@ -4166,6 +4572,7 @@ extern const mq_type_desc mq_type_render_Sprite = {
     0u,
     0,
     0u,
+    mq_defaults_render_Sprite,
 };
 
 extern const mq_type_desc mq_type_render_StreakFade = {
@@ -4179,6 +4586,7 @@ extern const mq_type_desc mq_type_render_StreakFade = {
     0u,
     mq_values_render_StreakFade,
     4u,
+    mq_defaults_render_StreakFade,
 };
 
 extern const mq_type_desc mq_type_render_StreakMode = {
@@ -4192,6 +4600,7 @@ extern const mq_type_desc mq_type_render_StreakMode = {
     0u,
     mq_values_render_StreakMode,
     3u,
+    mq_defaults_render_StreakMode,
 };
 
 extern const mq_type_desc mq_type_render_StreakSample = {
@@ -4205,6 +4614,7 @@ extern const mq_type_desc mq_type_render_StreakSample = {
     0u,
     0,
     0u,
+    mq_defaults_render_StreakSample,
 };
 
 extern const mq_type_desc mq_type_render_Terrain = {
@@ -4218,6 +4628,7 @@ extern const mq_type_desc mq_type_render_Terrain = {
     0u,
     0,
     0u,
+    mq_defaults_render_Terrain,
 };
 
 extern const mq_type_desc mq_type_render_TerrainLevel = {
@@ -4231,6 +4642,7 @@ extern const mq_type_desc mq_type_render_TerrainLevel = {
     0u,
     0,
     0u,
+    mq_defaults_render_TerrainLevel,
 };
 
 extern const mq_type_desc mq_type_render_TerrainLodMode = {
@@ -4244,6 +4656,7 @@ extern const mq_type_desc mq_type_render_TerrainLodMode = {
     0u,
     mq_values_render_TerrainLodMode,
     2u,
+    mq_defaults_render_TerrainLodMode,
 };
 
 extern const mq_type_desc mq_type_render_TileCoord = {
@@ -4257,6 +4670,7 @@ extern const mq_type_desc mq_type_render_TileCoord = {
     0u,
     0,
     0u,
+    mq_defaults_render_TileCoord,
 };
 
 extern const mq_type_desc mq_type_render_TileMap = {
@@ -4270,6 +4684,7 @@ extern const mq_type_desc mq_type_render_TileMap = {
     0u,
     0,
     0u,
+    mq_defaults_render_TileMap,
 };
 
 extern const mq_type_desc mq_type_scene_Active = {
@@ -4283,6 +4698,7 @@ extern const mq_type_desc mq_type_scene_Active = {
     0u,
     0,
     0u,
+    mq_defaults_scene_Active,
 };
 
 extern const mq_type_desc mq_type_scene_Meta = {
@@ -4296,6 +4712,7 @@ extern const mq_type_desc mq_type_scene_Meta = {
     0u,
     0,
     0u,
+    mq_defaults_scene_Meta,
 };
 
 extern const mq_type_desc mq_type_scene_Name = {
@@ -4309,6 +4726,7 @@ extern const mq_type_desc mq_type_scene_Name = {
     0u,
     0,
     0u,
+    mq_defaults_scene_Name,
 };
 
 extern const mq_type_desc mq_type_scene_Node = {
@@ -4322,6 +4740,7 @@ extern const mq_type_desc mq_type_scene_Node = {
     0u,
     0,
     0u,
+    mq_defaults_scene_Node,
 };
 
 extern const mq_type_desc mq_type_scene_PrefabInstance = {
@@ -4335,6 +4754,7 @@ extern const mq_type_desc mq_type_scene_PrefabInstance = {
     0u,
     0,
     0u,
+    mq_defaults_scene_PrefabInstance,
 };
 
 extern const mq_type_desc mq_type_scene_PrefabOverride = {
@@ -4348,6 +4768,7 @@ extern const mq_type_desc mq_type_scene_PrefabOverride = {
     0u,
     0,
     0u,
+    mq_defaults_scene_PrefabOverride,
 };
 
 extern const mq_type_desc mq_type_scene_Tags = {
@@ -4361,6 +4782,7 @@ extern const mq_type_desc mq_type_scene_Tags = {
     0u,
     0,
     0u,
+    mq_defaults_scene_Tags,
 };
 
 extern const mq_type_desc mq_type_scene_Transform2D = {
@@ -4374,6 +4796,7 @@ extern const mq_type_desc mq_type_scene_Transform2D = {
     0u,
     0,
     0u,
+    mq_defaults_scene_Transform2D,
 };
 
 extern const mq_type_desc mq_type_scene_Transform3D = {
@@ -4387,6 +4810,7 @@ extern const mq_type_desc mq_type_scene_Transform3D = {
     0u,
     0,
     0u,
+    mq_defaults_scene_Transform3D,
 };
 
 extern const mq_type_desc mq_type_scn_AnimationPlayer = {
@@ -4400,6 +4824,7 @@ extern const mq_type_desc mq_type_scn_AnimationPlayer = {
     MQ_ROLE_ANIM_PLAYER,
     0,
     0u,
+    mq_defaults_scn_AnimationPlayer,
 };
 
 extern const mq_type_desc mq_type_scn_Button = {
@@ -4413,6 +4838,7 @@ extern const mq_type_desc mq_type_scn_Button = {
     MQ_ROLE_UI_BUTTON,
     0,
     0u,
+    mq_defaults_scn_Button,
 };
 
 extern const mq_type_desc mq_type_scn_Camera = {
@@ -4426,6 +4852,7 @@ extern const mq_type_desc mq_type_scn_Camera = {
     MQ_ROLE_CAMERA,
     0,
     0u,
+    mq_defaults_scn_Camera,
 };
 
 extern const mq_type_desc mq_type_scn_Label = {
@@ -4433,12 +4860,13 @@ extern const mq_type_desc mq_type_scn_Label = {
     3449142243u,
     (uint32_t)sizeof(scn::Label),
     (uint32_t)alignof(scn::Label),
-    8u,
+    21u,
     mq_fields_scn_Label,
     4u,
     MQ_ROLE_UI_LABEL,
     0,
     0u,
+    mq_defaults_scn_Label,
 };
 
 extern const mq_type_desc mq_type_scn_NavAgent = {
@@ -4452,6 +4880,7 @@ extern const mq_type_desc mq_type_scn_NavAgent = {
     MQ_ROLE_NAV_AGENT,
     0,
     0u,
+    mq_defaults_scn_NavAgent,
 };
 
 extern const mq_type_desc mq_type_scn_ParticleEmitter = {
@@ -4465,6 +4894,7 @@ extern const mq_type_desc mq_type_scn_ParticleEmitter = {
     MQ_ROLE_PARTICLE,
     0,
     0u,
+    mq_defaults_scn_ParticleEmitter,
 };
 
 extern const mq_type_desc mq_type_scn_PrefabInstance = {
@@ -4478,6 +4908,7 @@ extern const mq_type_desc mq_type_scn_PrefabInstance = {
     0u,
     0,
     0u,
+    mq_defaults_scn_PrefabInstance,
 };
 
 extern const mq_type_desc mq_type_scn_Scene = {
@@ -4491,6 +4922,7 @@ extern const mq_type_desc mq_type_scn_Scene = {
     0u,
     0,
     0u,
+    mq_defaults_scn_Scene,
 };
 
 extern const mq_type_desc mq_type_scn_Sprite = {
@@ -4504,6 +4936,7 @@ extern const mq_type_desc mq_type_scn_Sprite = {
     MQ_ROLE_SPRITE,
     0,
     0u,
+    mq_defaults_scn_Sprite,
 };
 
 extern const mq_type_desc mq_type_scn_SpriteMaterial = {
@@ -4517,6 +4950,7 @@ extern const mq_type_desc mq_type_scn_SpriteMaterial = {
     0u,
     0,
     0u,
+    mq_defaults_scn_SpriteMaterial,
 };
 
 extern const mq_type_desc mq_type_scn_Transform2D = {
@@ -4530,6 +4964,7 @@ extern const mq_type_desc mq_type_scn_Transform2D = {
     MQ_ROLE_TRANSFORM2D,
     0,
     0u,
+    mq_defaults_scn_Transform2D,
 };
 
 extern const mq_type_desc mq_type_script_PropertyVariant = {
@@ -4543,6 +4978,7 @@ extern const mq_type_desc mq_type_script_PropertyVariant = {
     0u,
     0,
     0u,
+    mq_defaults_script_PropertyVariant,
 };
 
 extern const mq_type_desc mq_type_script_PropertyVariantType = {
@@ -4556,6 +4992,7 @@ extern const mq_type_desc mq_type_script_PropertyVariantType = {
     0u,
     mq_values_script_PropertyVariantType,
     9u,
+    mq_defaults_script_PropertyVariantType,
 };
 
 extern const mq_type_desc mq_type_script_Script = {
@@ -4569,6 +5006,7 @@ extern const mq_type_desc mq_type_script_Script = {
     0u,
     0,
     0u,
+    mq_defaults_script_Script,
 };
 
 extern const mq_type_desc mq_type_script_ScriptCallback = {
@@ -4582,6 +5020,7 @@ extern const mq_type_desc mq_type_script_ScriptCallback = {
     0u,
     mq_values_script_ScriptCallback,
     6u,
+    mq_defaults_script_ScriptCallback,
 };
 
 extern const mq_type_desc mq_type_script_ScriptLanguage = {
@@ -4595,6 +5034,7 @@ extern const mq_type_desc mq_type_script_ScriptLanguage = {
     0u,
     mq_values_script_ScriptLanguage,
     4u,
+    mq_defaults_script_ScriptLanguage,
 };
 
 extern const mq_type_desc mq_type_ui_Align = {
@@ -4608,6 +5048,7 @@ extern const mq_type_desc mq_type_ui_Align = {
     0u,
     mq_values_ui_Align,
     3u,
+    mq_defaults_ui_Align,
 };
 
 extern const mq_type_desc mq_type_ui_AlignContent = {
@@ -4621,6 +5062,7 @@ extern const mq_type_desc mq_type_ui_AlignContent = {
     0u,
     mq_values_ui_AlignContent,
     6u,
+    mq_defaults_ui_AlignContent,
 };
 
 extern const mq_type_desc mq_type_ui_AlignItems = {
@@ -4634,6 +5076,7 @@ extern const mq_type_desc mq_type_ui_AlignItems = {
     0u,
     mq_values_ui_AlignItems,
     5u,
+    mq_defaults_ui_AlignItems,
 };
 
 extern const mq_type_desc mq_type_ui_AlignSelf = {
@@ -4647,6 +5090,7 @@ extern const mq_type_desc mq_type_ui_AlignSelf = {
     0u,
     mq_values_ui_AlignSelf,
     6u,
+    mq_defaults_ui_AlignSelf,
 };
 
 extern const mq_type_desc mq_type_ui_Anchor = {
@@ -4660,6 +5104,7 @@ extern const mq_type_desc mq_type_ui_Anchor = {
     0u,
     mq_values_ui_Anchor,
     11u,
+    mq_defaults_ui_Anchor,
 };
 
 extern const mq_type_desc mq_type_ui_Button = {
@@ -4673,6 +5118,7 @@ extern const mq_type_desc mq_type_ui_Button = {
     0u,
     0,
     0u,
+    mq_defaults_ui_Button,
 };
 
 extern const mq_type_desc mq_type_ui_ButtonState = {
@@ -4686,6 +5132,7 @@ extern const mq_type_desc mq_type_ui_ButtonState = {
     0u,
     mq_values_ui_ButtonState,
     4u,
+    mq_defaults_ui_ButtonState,
 };
 
 extern const mq_type_desc mq_type_ui_CheckBox = {
@@ -4699,6 +5146,7 @@ extern const mq_type_desc mq_type_ui_CheckBox = {
     MQ_ROLE_UI_CHECK,
     0,
     0u,
+    mq_defaults_ui_CheckBox,
 };
 
 extern const mq_type_desc mq_type_ui_CheckState = {
@@ -4712,6 +5160,7 @@ extern const mq_type_desc mq_type_ui_CheckState = {
     0u,
     mq_values_ui_CheckState,
     3u,
+    mq_defaults_ui_CheckState,
 };
 
 extern const mq_type_desc mq_type_ui_CompareFunc = {
@@ -4725,6 +5174,7 @@ extern const mq_type_desc mq_type_ui_CompareFunc = {
     0u,
     mq_values_ui_CompareFunc,
     5u,
+    mq_defaults_ui_CompareFunc,
 };
 
 extern const mq_type_desc mq_type_ui_Container = {
@@ -4738,6 +5188,7 @@ extern const mq_type_desc mq_type_ui_Container = {
     MQ_ROLE_UI_LAYOUT,
     0,
     0u,
+    mq_defaults_ui_Container,
 };
 
 extern const mq_type_desc mq_type_ui_ContainerMode = {
@@ -4751,6 +5202,7 @@ extern const mq_type_desc mq_type_ui_ContainerMode = {
     0u,
     mq_values_ui_ContainerMode,
     4u,
+    mq_defaults_ui_ContainerMode,
 };
 
 extern const mq_type_desc mq_type_ui_Control = {
@@ -4764,6 +5216,7 @@ extern const mq_type_desc mq_type_ui_Control = {
     MQ_ROLE_UI_CONTROL,
     0,
     0u,
+    mq_defaults_ui_Control,
 };
 
 extern const mq_type_desc mq_type_ui_EditBox = {
@@ -4777,6 +5230,7 @@ extern const mq_type_desc mq_type_ui_EditBox = {
     0u,
     0,
     0u,
+    mq_defaults_ui_EditBox,
 };
 
 extern const mq_type_desc mq_type_ui_EditLineMode = {
@@ -4790,6 +5244,7 @@ extern const mq_type_desc mq_type_ui_EditLineMode = {
     0u,
     mq_values_ui_EditLineMode,
     2u,
+    mq_defaults_ui_EditLineMode,
 };
 
 extern const mq_type_desc mq_type_ui_FillMode = {
@@ -4803,6 +5258,7 @@ extern const mq_type_desc mq_type_ui_FillMode = {
     0u,
     mq_values_ui_FillMode,
     5u,
+    mq_defaults_ui_FillMode,
 };
 
 extern const mq_type_desc mq_type_ui_FlexBasisMode = {
@@ -4816,6 +5272,7 @@ extern const mq_type_desc mq_type_ui_FlexBasisMode = {
     0u,
     mq_values_ui_FlexBasisMode,
     3u,
+    mq_defaults_ui_FlexBasisMode,
 };
 
 extern const mq_type_desc mq_type_ui_FlexBox = {
@@ -4829,6 +5286,7 @@ extern const mq_type_desc mq_type_ui_FlexBox = {
     0u,
     0,
     0u,
+    mq_defaults_ui_FlexBox,
 };
 
 extern const mq_type_desc mq_type_ui_FlexDirection = {
@@ -4842,6 +5300,7 @@ extern const mq_type_desc mq_type_ui_FlexDirection = {
     0u,
     mq_values_ui_FlexDirection,
     4u,
+    mq_defaults_ui_FlexDirection,
 };
 
 extern const mq_type_desc mq_type_ui_FlexItem = {
@@ -4855,6 +5314,7 @@ extern const mq_type_desc mq_type_ui_FlexItem = {
     0u,
     0,
     0u,
+    mq_defaults_ui_FlexItem,
 };
 
 extern const mq_type_desc mq_type_ui_FlexWrap = {
@@ -4868,6 +5328,7 @@ extern const mq_type_desc mq_type_ui_FlexWrap = {
     0u,
     mq_values_ui_FlexWrap,
     3u,
+    mq_defaults_ui_FlexWrap,
 };
 
 extern const mq_type_desc mq_type_ui_Image = {
@@ -4881,6 +5342,7 @@ extern const mq_type_desc mq_type_ui_Image = {
     0u,
     0,
     0u,
+    mq_defaults_ui_Image,
 };
 
 extern const mq_type_desc mq_type_ui_JustifyContent = {
@@ -4894,6 +5356,7 @@ extern const mq_type_desc mq_type_ui_JustifyContent = {
     0u,
     mq_values_ui_JustifyContent,
     6u,
+    mq_defaults_ui_JustifyContent,
 };
 
 extern const mq_type_desc mq_type_ui_ListView = {
@@ -4907,6 +5370,7 @@ extern const mq_type_desc mq_type_ui_ListView = {
     0u,
     0,
     0u,
+    mq_defaults_ui_ListView,
 };
 
 extern const mq_type_desc mq_type_ui_Mask = {
@@ -4920,6 +5384,7 @@ extern const mq_type_desc mq_type_ui_Mask = {
     0u,
     0,
     0u,
+    mq_defaults_ui_Mask,
 };
 
 extern const mq_type_desc mq_type_ui_MaskChannel = {
@@ -4933,6 +5398,7 @@ extern const mq_type_desc mq_type_ui_MaskChannel = {
     0u,
     mq_values_ui_MaskChannel,
     3u,
+    mq_defaults_ui_MaskChannel,
 };
 
 extern const mq_type_desc mq_type_ui_MaskMode = {
@@ -4946,6 +5412,7 @@ extern const mq_type_desc mq_type_ui_MaskMode = {
     0u,
     mq_values_ui_MaskMode,
     4u,
+    mq_defaults_ui_MaskMode,
 };
 
 extern const mq_type_desc mq_type_ui_MouseFilter = {
@@ -4959,6 +5426,7 @@ extern const mq_type_desc mq_type_ui_MouseFilter = {
     0u,
     mq_values_ui_MouseFilter,
     3u,
+    mq_defaults_ui_MouseFilter,
 };
 
 extern const mq_type_desc mq_type_ui_OpacityMode = {
@@ -4972,6 +5440,7 @@ extern const mq_type_desc mq_type_ui_OpacityMode = {
     0u,
     mq_values_ui_OpacityMode,
     2u,
+    mq_defaults_ui_OpacityMode,
 };
 
 extern const mq_type_desc mq_type_ui_Orientation = {
@@ -4985,6 +5454,7 @@ extern const mq_type_desc mq_type_ui_Orientation = {
     0u,
     mq_values_ui_Orientation,
     2u,
+    mq_defaults_ui_Orientation,
 };
 
 extern const mq_type_desc mq_type_ui_PageTransition = {
@@ -4998,6 +5468,7 @@ extern const mq_type_desc mq_type_ui_PageTransition = {
     0u,
     mq_values_ui_PageTransition,
     4u,
+    mq_defaults_ui_PageTransition,
 };
 
 extern const mq_type_desc mq_type_ui_PageView = {
@@ -5011,6 +5482,7 @@ extern const mq_type_desc mq_type_ui_PageView = {
     0u,
     0,
     0u,
+    mq_defaults_ui_PageView,
 };
 
 extern const mq_type_desc mq_type_ui_ProgressBar = {
@@ -5024,6 +5496,7 @@ extern const mq_type_desc mq_type_ui_ProgressBar = {
     MQ_ROLE_UI_PROGRESS,
     0,
     0u,
+    mq_defaults_ui_ProgressBar,
 };
 
 extern const mq_type_desc mq_type_ui_ProgressMode = {
@@ -5037,6 +5510,7 @@ extern const mq_type_desc mq_type_ui_ProgressMode = {
     0u,
     mq_values_ui_ProgressMode,
     2u,
+    mq_defaults_ui_ProgressMode,
 };
 
 extern const mq_type_desc mq_type_ui_RadioGroup = {
@@ -5050,6 +5524,7 @@ extern const mq_type_desc mq_type_ui_RadioGroup = {
     0u,
     0,
     0u,
+    mq_defaults_ui_RadioGroup,
 };
 
 extern const mq_type_desc mq_type_ui_SafeArea = {
@@ -5063,6 +5538,7 @@ extern const mq_type_desc mq_type_ui_SafeArea = {
     MQ_ROLE_UI_SAFEAREA,
     0,
     0u,
+    mq_defaults_ui_SafeArea,
 };
 
 extern const mq_type_desc mq_type_ui_SafeAreaAnchor = {
@@ -5076,6 +5552,7 @@ extern const mq_type_desc mq_type_ui_SafeAreaAnchor = {
     0u,
     mq_values_ui_SafeAreaAnchor,
     2u,
+    mq_defaults_ui_SafeAreaAnchor,
 };
 
 extern const mq_type_desc mq_type_ui_SafeAreaMode = {
@@ -5089,6 +5566,7 @@ extern const mq_type_desc mq_type_ui_SafeAreaMode = {
     0u,
     mq_values_ui_SafeAreaMode,
     2u,
+    mq_defaults_ui_SafeAreaMode,
 };
 
 extern const mq_type_desc mq_type_ui_ScrollDirection = {
@@ -5102,6 +5580,7 @@ extern const mq_type_desc mq_type_ui_ScrollDirection = {
     0u,
     mq_values_ui_ScrollDirection,
     2u,
+    mq_defaults_ui_ScrollDirection,
 };
 
 extern const mq_type_desc mq_type_ui_ScrollMode = {
@@ -5115,6 +5594,7 @@ extern const mq_type_desc mq_type_ui_ScrollMode = {
     0u,
     mq_values_ui_ScrollMode,
     3u,
+    mq_defaults_ui_ScrollMode,
 };
 
 extern const mq_type_desc mq_type_ui_ScrollOrientation = {
@@ -5128,6 +5608,7 @@ extern const mq_type_desc mq_type_ui_ScrollOrientation = {
     0u,
     mq_values_ui_ScrollOrientation,
     3u,
+    mq_defaults_ui_ScrollOrientation,
 };
 
 extern const mq_type_desc mq_type_ui_ScrollView = {
@@ -5141,6 +5622,7 @@ extern const mq_type_desc mq_type_ui_ScrollView = {
     MQ_ROLE_UI_SCROLL,
     0,
     0u,
+    mq_defaults_ui_ScrollView,
 };
 
 extern const mq_type_desc mq_type_ui_SelectionMode = {
@@ -5154,6 +5636,7 @@ extern const mq_type_desc mq_type_ui_SelectionMode = {
     0u,
     mq_values_ui_SelectionMode,
     3u,
+    mq_defaults_ui_SelectionMode,
 };
 
 extern const mq_type_desc mq_type_ui_Side = {
@@ -5167,6 +5650,7 @@ extern const mq_type_desc mq_type_ui_Side = {
     0u,
     mq_values_ui_Side,
     4u,
+    mq_defaults_ui_Side,
 };
 
 extern const mq_type_desc mq_type_ui_SizeFlag = {
@@ -5180,6 +5664,7 @@ extern const mq_type_desc mq_type_ui_SizeFlag = {
     0u,
     mq_values_ui_SizeFlag,
     5u,
+    mq_defaults_ui_SizeFlag,
 };
 
 extern const mq_type_desc mq_type_ui_Slider = {
@@ -5193,6 +5678,7 @@ extern const mq_type_desc mq_type_ui_Slider = {
     MQ_ROLE_UI_SLIDER,
     0,
     0u,
+    mq_defaults_ui_Slider,
 };
 
 extern const mq_type_desc mq_type_ui_SliderOrientation = {
@@ -5206,6 +5692,7 @@ extern const mq_type_desc mq_type_ui_SliderOrientation = {
     0u,
     mq_values_ui_SliderOrientation,
     2u,
+    mq_defaults_ui_SliderOrientation,
 };
 
 extern const mq_type_desc mq_type_ui_StepMode = {
@@ -5219,6 +5706,7 @@ extern const mq_type_desc mq_type_ui_StepMode = {
     0u,
     mq_values_ui_StepMode,
     2u,
+    mq_defaults_ui_StepMode,
 };
 
 extern const mq_type_desc mq_type_ui_StretchMode = {
@@ -5232,6 +5720,7 @@ extern const mq_type_desc mq_type_ui_StretchMode = {
     0u,
     mq_values_ui_StretchMode,
     6u,
+    mq_defaults_ui_StretchMode,
 };
 
 extern const mq_type_desc mq_type_ui_Tabs = {
@@ -5245,6 +5734,7 @@ extern const mq_type_desc mq_type_ui_Tabs = {
     0u,
     0,
     0u,
+    mq_defaults_ui_Tabs,
 };
 
 extern const mq_type_desc mq_type_ui_TabTransition = {
@@ -5258,6 +5748,7 @@ extern const mq_type_desc mq_type_ui_TabTransition = {
     0u,
     mq_values_ui_TabTransition,
     3u,
+    mq_defaults_ui_TabTransition,
 };
 
 extern const mq_type_desc mq_type_ui_TextAlign = {
@@ -5271,6 +5762,7 @@ extern const mq_type_desc mq_type_ui_TextAlign = {
     0u,
     mq_values_ui_TextAlign,
     4u,
+    mq_defaults_ui_TextAlign,
 };
 
 extern const mq_type_desc mq_type_ui_TextLabel = {
@@ -5281,9 +5773,10 @@ extern const mq_type_desc mq_type_ui_TextLabel = {
     12u,
     mq_fields_ui_TextLabel,
     4u,
-    0u,
+    MQ_ROLE_UI_TEXT,
     0,
     0u,
+    mq_defaults_ui_TextLabel,
 };
 
 extern const mq_type_desc mq_type_ui_TextOverflow = {
@@ -5297,6 +5790,7 @@ extern const mq_type_desc mq_type_ui_TextOverflow = {
     0u,
     mq_values_ui_TextOverflow,
     3u,
+    mq_defaults_ui_TextOverflow,
 };
 
 extern const mq_type_desc mq_type_ui_TextWrap = {
@@ -5310,6 +5804,7 @@ extern const mq_type_desc mq_type_ui_TextWrap = {
     0u,
     mq_values_ui_TextWrap,
     4u,
+    mq_defaults_ui_TextWrap,
 };
 
 extern const mq_type_desc mq_type_ui_UIOpacity = {
@@ -5323,6 +5818,7 @@ extern const mq_type_desc mq_type_ui_UIOpacity = {
     MQ_ROLE_UI_OPACITY,
     0,
     0u,
+    mq_defaults_ui_UIOpacity,
 };
 
 extern const mq_type_desc mq_type_ui_WrapMode = {
@@ -5336,6 +5832,7 @@ extern const mq_type_desc mq_type_ui_WrapMode = {
     0u,
     mq_values_ui_WrapMode,
     3u,
+    mq_defaults_ui_WrapMode,
 };
 
 const mq_type_desc* const mq_schema_types[] = {

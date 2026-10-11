@@ -245,6 +245,10 @@ namespace runtime {
 
 } // namespace runtime
 
+namespace text {
+
+} // namespace text
+
 namespace vfs {
 
 } // namespace vfs
@@ -793,113 +797,6 @@ struct PrefabInstance {
 };
 
 } // namespace scene
-
-namespace scn {
-
-struct AnimationPlayer {
-    std::string clip = "";
-    float time = 0.0F;
-    float speed = 1.0F;
-    bool loop = true;
-    bool playing = true;
-    float duration = 0.0F;
-};
-
-struct Button {
-    float x = 0.0F;
-    float y = 0.0F;
-    float width = 96.0F;
-    float height = 28.0F;
-    int32_t z = 0;
-    std::string label = "Button";
-    float r = 0.22F;
-    float g = 0.26F;
-    float b = 0.36F;
-    bool pressed = false;
-    bool hovered = false;
-    bool enabled = true;
-};
-
-struct Camera {
-    float x = 0.0F;
-    float y = 0.0F;
-    float zoom = 1.0F;
-    float rotation = 0.0F;
-    bool active = true;
-};
-
-struct Label {
-    float x = 0.0F;
-    float y = 0.0F;
-    int32_t z = 0;
-    std::string text = "";
-    float r = 1.0F;
-    float g = 1.0F;
-    float b = 1.0F;
-    float a = 1.0F;
-};
-
-struct NavAgent {
-    float tx = 0.0F;
-    float ty = 0.0F;
-    float speed = 60.0F;
-    float arrive_dist = 2.0F;
-    bool repath = true;
-    bool has_target = false;
-    int32_t state = 0;
-};
-
-struct ParticleEmitter {
-    float rate = 20.0F;
-    float lifetime = 1.0F;
-    float speed = 60.0F;
-    float spread = 0.5F;
-    float gravity = 120.0F;
-    float size = 3.0F;
-    float r = 1.0F;
-    float g = 0.6F;
-    float b = 0.2F;
-    uint32_t max_count = 256;
-    bool enabled = true;
-};
-
-struct PrefabInstance {
-    std::string source = "";
-    bool detached = false;
-};
-
-struct Scene {
-    std::string title = "maque scene";
-    std::string script = "";
-    int32_t width = 320;
-    int32_t height = 240;
-    uint32_t seed = 0;
-    int32_t views = 1;
-    float eye_sep = 0.0F;
-    float gravity_y = 900.0F;
-    float restitution = 0.86F;
-};
-
-struct Sprite {
-    float radius = 8.0F;
-    float r = 0.4F;
-    float g = 0.8F;
-    float b = 1.0F;
-    std::string texture = "";
-    std::string material = "";
-};
-
-struct SpriteMaterial {
-    math::Vec4 base_color = {1.0F,1.0F,1.0F,1.0F};
-    std::string texture = "";
-};
-
-struct Transform2D {
-    float x = 0.0F;
-    float y = 0.0F;
-};
-
-} // namespace scn
 
 namespace script {
 
@@ -1474,7 +1371,7 @@ struct TextLabel {
     std::string text;
     maque::AssetRef font;
     float font_size = 16.0F;
-    math::Vec4 color;
+    math::Vec4 color = {1.0F, 1.0F, 1.0F, 1.0F};
     ui::Align align_h = Align::Begin;
     ui::Align align_v = Align::Begin;
     ui::TextWrap wrap_mode = TextWrap::None;
@@ -2229,9 +2126,10 @@ struct Graphics {
 struct RichText {
     std::string text;
     bool parse_tags = true;
+    float max_width = 0.0F;
     maque::AssetRef font;
     float font_size = 16.0F;
-    math::Color color;
+    math::Color color = {1.0F, 1.0F, 1.0F, 1.0F};
     float outline_size = 0.0F;
     math::Color outline_color = {0.0F, 0.0F, 0.0F, 1.0F};
     ui::Align align_h = ui::Align::Begin;
@@ -2243,6 +2141,127 @@ struct RichText {
     math::Vec2 content_size;
     std::vector<render::RichRun> runs;
     std::vector<std::string> links;
+    int32_t line_count = 0;
 };
 
 } // namespace render
+
+namespace scn {
+
+struct AnimationPlayer {
+    std::string clip = "";
+    float time = 0.0F;
+    float speed = 1.0F;
+    bool loop = true;
+    bool playing = true;
+    float duration = 0.0F;
+};
+
+struct Button {
+    float x = 0.0F;
+    float y = 0.0F;
+    float width = 96.0F;
+    float height = 28.0F;
+    int32_t z = 0;
+    std::string label = "Button";
+    float r = 0.22F;
+    float g = 0.26F;
+    float b = 0.36F;
+    bool pressed = false;
+    bool hovered = false;
+    bool enabled = true;
+};
+
+struct Camera {
+    float x = 0.0F;
+    float y = 0.0F;
+    float zoom = 1.0F;
+    float rotation = 0.0F;
+    bool active = true;
+};
+
+struct Label {
+    float x = 0.0F;
+    float y = 0.0F;
+    int32_t z = 0;
+    std::string text = "";
+    float r = 1.0F;
+    float g = 1.0F;
+    float b = 1.0F;
+    float a = 1.0F;
+    float font_size = 16.0F;
+    ui::Align align = ui::Align::Begin;
+    ui::TextWrap wrap = ui::TextWrap::None;
+    float max_width = 0.0F;
+    float line_spacing = 0.0F;
+    float outline_size = 0.0F;
+    float outline_r = 0.0F;
+    float outline_g = 0.0F;
+    float outline_b = 0.0F;
+    std::string font = "";
+    float text_w = 0.0F;
+    float text_h = 0.0F;
+    int32_t line_count = 0;
+};
+
+struct NavAgent {
+    float tx = 0.0F;
+    float ty = 0.0F;
+    float speed = 60.0F;
+    float arrive_dist = 2.0F;
+    bool repath = true;
+    bool has_target = false;
+    int32_t state = 0;
+};
+
+struct ParticleEmitter {
+    float rate = 20.0F;
+    float lifetime = 1.0F;
+    float speed = 60.0F;
+    float spread = 0.5F;
+    float gravity = 120.0F;
+    float size = 3.0F;
+    float r = 1.0F;
+    float g = 0.6F;
+    float b = 0.2F;
+    uint32_t max_count = 256;
+    bool enabled = true;
+};
+
+struct PrefabInstance {
+    std::string source = "";
+    bool detached = false;
+};
+
+struct Scene {
+    std::string title = "maque scene";
+    std::string script = "";
+    int32_t width = 320;
+    int32_t height = 240;
+    uint32_t seed = 0;
+    int32_t views = 1;
+    float eye_sep = 0.0F;
+    float gravity_y = 900.0F;
+    float restitution = 0.86F;
+};
+
+struct Sprite {
+    float radius = 8.0F;
+    float r = 0.4F;
+    float g = 0.8F;
+    float b = 1.0F;
+    std::string texture = "";
+    std::string material = "";
+};
+
+struct SpriteMaterial {
+    math::Vec4 base_color = {1.0F,1.0F,1.0F,1.0F};
+    std::string texture = "";
+};
+
+struct Transform2D {
+    float x = 0.0F;
+    float y = 0.0F;
+};
+
+} // namespace scn

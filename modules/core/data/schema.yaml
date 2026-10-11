@@ -801,12 +801,14 @@
         - { name: offset, type: math.Vec2, attrs: { unit: px } }
         - { name: blend, type: BlendMode, default: "BlendMode::Alpha" }
     - struct: RichText
+      roles: [ ui_text ]
       fields:
         - { name: text, type: string }
         - { name: parse_tags, type: bool, default: true }
+        - { name: max_width, type: float, default: 0.0F, attrs: { unit: px, transient: false } }
         - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
         - { name: font_size, type: float, default: 16.0F, attrs: { unit: px } }
-        - { name: color, type: math.Color }
+        - { name: color, type: math.Color, default: "{1.0F, 1.0F, 1.0F, 1.0F}" }
         - { name: outline_size, type: float, default: 0.0F, attrs: { unit: px } }
         - { name: outline_color, type: math.Color, default: "{0.0F, 0.0F, 0.0F, 1.0F}" }
         - { name: align_h, type: ui.Align, default: "ui.Align::Begin" }
@@ -818,6 +820,7 @@
         - { name: content_size, type: math.Vec2, attrs: { transient: true } }
         - { name: runs, type: "RichRun[]", attrs: { transient: true } }
         - { name: links, type: "string[]", attrs: { transient: true } }
+        - { name: line_count, type: int32_t, default: 0, attrs: { transient: true } }
     - struct: Graphics
       fields:
         - { name: commands, type: "DrawCommand[]" }
@@ -1166,11 +1169,12 @@
         - { name: grid_cell, type: math.Vec2, attrs: { unit: px } }
         - { name: fit_content, type: bool, default: false }
     - struct: TextLabel
+      roles: [ ui_text ]
       fields:
         - { name: text, type: string }
         - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
         - { name: font_size, type: float, default: 16.0F, attrs: { unit: px, range: [1, 512] } }
-        - { name: color, type: math.Vec4 }
+        - { name: color, type: math.Vec4, default: "{1.0F, 1.0F, 1.0F, 1.0F}" }
         - { name: align_h, type: Align, default: "Align::Begin" }
         - { name: align_v, type: Align, default: "Align::Begin" }
         - { name: wrap_mode, type: TextWrap, default: "TextWrap::None" }
@@ -2287,6 +2291,20 @@
         - { name: g,    type: float,   default: 1.0F }
         - { name: b,    type: float,   default: 1.0F }
         - { name: a,    type: float,   default: 1.0F }
+        # ---- 文本排版（与 ui.TextLabel 对齐；docs/17）----
+        - { name: font_size, type: float, default: 16.0F, attrs: { unit: px, range: [1, 512] } }
+        - { name: align, type: "ui.Align", default: "ui::Align::Begin" }
+        - { name: wrap, type: "ui.TextWrap", default: "ui::TextWrap::None" }
+        - { name: max_width, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: line_spacing, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: outline_size, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: outline_r, type: float, default: 0.0F }
+        - { name: outline_g, type: float, default: 0.0F }
+        - { name: outline_b, type: float, default: 0.0F }
+        - { name: font, type: string, default: "", attrs: { ref: Font } }
+        - { name: text_w, type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: text_h, type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: line_count, type: int32_t, default: 0, attrs: { transient: true } }
     # 动画播放器（docs/15 §2）：关键帧采样，写回目标组件的反射字段。
     - struct: AnimationPlayer
       roles: [anim_player]
@@ -2459,6 +2477,12 @@
     - { fn: ui_get_value,        ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: ui_set_checked,      ctx: true, args: [ { name: id, type: float }, { name: on, type: float } ], returns: float }
     - { fn: ui_get_checked,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    # 文本（Label / TextLabel / RichText 通用：按 role 读写）
+    - { fn: ui_set_text,    ctx: true, args: [ { name: id, type: float }, { name: text, type: string } ], returns: float }
+    - { fn: ui_get_text,    ctx: true, args: [ { name: id, type: float } ], returns: string }
+    - { fn: ui_text_width,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: ui_text_height, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: ui_text_lines,  ctx: true, args: [ { name: id, type: float } ], returns: float }
     # Director（暂停/恢复/帧号/切场景；切场景在帧边界生效）
     - { fn: director_pause,      ctx: true }
     - { fn: director_resume,     ctx: true }
@@ -2511,6 +2535,10 @@
         - { name: a,        type: float }
         - { name: texture,  type: int32_t }
         - { name: rotation, type: float }  # 图元自转（弧度）
+        - { name: uv0,      type: float }  # 纹理子矩形（图集/字形）；全 0 或退化 → 整张贴图
+        - { name: uv1,      type: float }
+        - { name: uv2,      type: float }
+        - { name: uv3,      type: float }
         - { name: layer,    type: int32_t } # 分层（docs/13 §分层：先按 layer 排序）
         - { name: z,        type: int32_t } # 同层内 z-order（稳定排序）
   methods:
@@ -2978,3 +3006,83 @@
       - { fn: mq_run_scene, returns: "int", args: [ { name: scn_path, type: "const char*" } ] }
       - { fn: mq_run_scene_ex, returns: "int", args: [ { name: scn_path, type: "const char*" }, { name: frames_dir, type: "const char*" } ] }
 
+# 文本渲染（Label/RichText）：FreeType 栅格化 → 图集 → 字形 quad；布局与富文本解析为纯函数。
+- namespace: text
+  version: 1
+  module_abi:
+    module: text
+    abi_name: "maque.text"
+    summary: "字体加载/图集/文本布局/富文本标记解析（确定性纯函数，docs/13/17）"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_font ]
+    enums:
+      - doc: "错误码（0 = OK）。"
+        values:
+          - { name: MQ_TEXT_OK,        value: 0 }
+          - { name: MQ_TEXT_ERR_ARG,   value: 1 }
+          - { name: MQ_TEXT_ERR_FONT,  value: 2, doc: "字体加载/栅格化失败" }
+          - { name: MQ_TEXT_ERR_CAP,   value: 3, doc: "输出缓冲不足（out_needed 报告所需）" }
+      - doc: "水平对齐（与 ui.Align 一致：Begin/Center/End）。"
+        values:
+          - { name: MQ_TEXT_ALIGN_BEGIN,  value: 0 }
+          - { name: MQ_TEXT_ALIGN_CENTER, value: 1 }
+          - { name: MQ_TEXT_ALIGN_END,    value: 2 }
+      - doc: "换行模式（与 ui.TextWrap 一致）。"
+        values:
+          - { name: MQ_TEXT_WRAP_NONE, value: 0, doc: "不换行（\\n 仍生效）" }
+          - { name: MQ_TEXT_WRAP_WORD, value: 1, doc: "按词换行（超长词按字符断）" }
+          - { name: MQ_TEXT_WRAP_CHAR, value: 2, doc: "按字符换行" }
+    structs:
+      - name: mq_text_style
+        doc: "排版参数（struct_size 版本化）。"
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: font_size, type: "float", doc: "像素字号；<=0 → 16" }
+          - { name: line_spacing, type: "float" }
+          - { name: wrap, type: "uint32_t", doc: "MQ_TEXT_WRAP_*" }
+          - { name: align, type: "uint32_t", doc: "MQ_TEXT_ALIGN_*" }
+          - { name: max_width, type: "float", doc: "<=0 → 不限制" }
+          - { name: r, type: "float", doc: "默认前景色（可被富文本覆盖）" }
+          - { name: g, type: "float" }
+          - { name: b, type: "float" }
+          - { name: a, type: "float" }
+      - name: mq_text_glyph
+        doc: "排版输出的单个字形（位置为相对文本框左上角、y 向下）。"
+        fields:
+          - { name: codepoint, type: "uint32_t" }
+          - { name: x, type: "float" }
+          - { name: y, type: "float" }
+          - { name: w, type: "float", doc: "字形位图宽（像素）" }
+          - { name: h, type: "float" }
+          - { name: u0, type: "float", doc: "图集 UV" }
+          - { name: v0, type: "float" }
+          - { name: u1, type: "float" }
+          - { name: v1, type: "float" }
+          - { name: r, type: "float", doc: "该字形颜色（富文本 run 覆盖）" }
+          - { name: g, type: "float" }
+          - { name: b, type: "float" }
+          - { name: a, type: "float" }
+          - { name: size, type: "float", doc: "该字形字号（笔画/位图已按此字号栅格化）" }
+      - name: mq_text_metrics
+        doc: "排版结果度量。"
+        fields:
+          - { name: width, type: "float" }
+          - { name: height, type: "float" }
+          - { name: line_count, type: "uint32_t" }
+          - { name: glyph_count, type: "uint32_t" }
+          - { name: baseline, type: "float", doc: "首行基线相对顶部距离" }
+    fns:
+      - { fn: mq_font_load_file, returns: "mq_font*", args: [ { name: path, type: "const char*" } ],
+          doc: "加载 TTF/OTF；失败返回 NULL（调用方回退到内置位图字体）" }
+      - { fn: mq_font_destroy, returns: void, args: [ { name: font, type: "mq_font*" } ] }
+      - { fn: mq_font_builtin, returns: "mq_font*", args: [], doc: "内置位图字体（无外部依赖，保证 headless/CI 可用）" }
+      - { fn: mq_font_height, returns: float, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" } ] }
+      - { fn: mq_font_advance, returns: float, args: [ { name: font, type: "mq_font*" }, { name: codepoint, type: "uint32_t" }, { name: size, type: "float" } ] }
+      - { fn: mq_text_measure, returns: int, args: [ { name: font, type: "mq_font*" }, { name: style, type: "const mq_text_style*" }, { name: text, type: "const char*" }, { name: out_metrics, type: "mq_text_metrics*" } ],
+          doc: "只测量（不产生字形）" }
+      - { fn: mq_text_layout, returns: int, args: [ { name: font, type: "mq_font*" }, { name: style, type: "const mq_text_style*" }, { name: text, type: "const char*" }, { name: out, type: "mq_text_glyph*" }, { name: cap, type: "uint32_t" }, { name: out_count, type: "uint32_t*" }, { name: out_metrics, type: "mq_text_metrics*" } ],
+          doc: "排版为字形序列（支持 <color>/<size>/<b>/<br/> 富文本标记）" }
+      - { fn: mq_text_strip_markup, returns: int, args: [ { name: text, type: "const char*" }, { name: out, type: "char*" }, { name: cap, type: "uint32_t" } ],
+          doc: "去掉富文本标记后的纯文本（供自省/日志）" }
+      - { fn: mq_font_atlas, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: out_rgba, type: "uint8_t*" }, { name: cap, type: "size_t" }, { name: out_w, type: "uint32_t*" }, { name: out_h, type: "uint32_t*" } ],
+          doc: "构建指定字号的字形图集（RGBA8；确定性行式打包）" }

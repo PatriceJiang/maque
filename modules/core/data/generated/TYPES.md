@@ -1524,13 +1524,16 @@ role: `physics_body`
 
 ### render.RichText — struct (变长（含动态成员）)
 
+role: `ui_text`
+
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
 | `text` | string | — |  |
 | `parse_tags` | bool | true |  |
+| `max_width` | float | 0.0F | unit: px, transient: false |
 | `font` | asset_ref<Font> | — | ref: Font |
 | `font_size` | float | 16.0F | unit: px |
-| `color` | math.Color | — |  |
+| `color` | math.Color | {1.0F, 1.0F, 1.0F, 1.0F} |  |
 | `outline_size` | float | 0.0F | unit: px |
 | `outline_color` | math.Color | {0.0F, 0.0F, 0.0F, 1.0F} |  |
 | `align_h` | ui.Align | ui.Align::Begin |  |
@@ -1542,6 +1545,7 @@ role: `physics_body`
 | `content_size` | math.Vec2 | — | transient |
 | `runs` | RichRun[] | — | transient |
 | `links` | string[] | — | transient |
+| `line_count` | int32_t | 0 | transient |
 
 ### render.ShadowCastMode — enum
 
@@ -1820,6 +1824,19 @@ role: `ui_label`
 | `g` | float | 1.0F |  |
 | `b` | float | 1.0F |  |
 | `a` | float | 1.0F |  |
+| `font_size` | float | 16.0F | unit: px, range: 1,512 |
+| `align` | ui.Align | ui::Align::Begin |  |
+| `wrap` | ui.TextWrap | ui::TextWrap::None |  |
+| `max_width` | float | 0.0F | unit: px |
+| `line_spacing` | float | 0.0F | unit: px |
+| `outline_size` | float | 0.0F | unit: px |
+| `outline_r` | float | 0.0F |  |
+| `outline_g` | float | 0.0F |  |
+| `outline_b` | float | 0.0F |  |
+| `font` | string |  | ref: Font |
+| `text_w` | float | 0.0F | transient |
+| `text_h` | float | 0.0F | transient |
+| `line_count` | int32_t | 0 | transient |
 
 ### scn.NavAgent — struct (24B)
 
@@ -2581,12 +2598,14 @@ role: `ui_slider`
 
 ### ui.TextLabel — struct (变长（含动态成员）)
 
+role: `ui_text`
+
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
 | `text` | string | — |  |
 | `font` | asset_ref<Font> | — | ref: Font |
 | `font_size` | float | 16.0F | unit: px, range: 1,512 |
-| `color` | math.Vec4 | — |  |
+| `color` | math.Vec4 | {1.0F, 1.0F, 1.0F, 1.0F} |  |
 | `align_h` | Align | Align::Begin |  |
 | `align_v` | Align | Align::Begin |  |
 | `wrap_mode` | TextWrap | TextWrap::None |  |

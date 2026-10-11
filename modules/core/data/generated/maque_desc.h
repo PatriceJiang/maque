@@ -49,6 +49,7 @@ typedef struct mq_field_desc {
 #define MQ_ROLE_UI_SCROLL   (1u << 15)   /* 滚动视图（内容偏移 + 裁剪范围） */
 #define MQ_ROLE_PHYSICS_BODY (1u << 16)  /* 2D 刚体：装配期入物理世界，帧内回写变换 */
 #define MQ_ROLE_PHYSICS_COLLIDER (1u << 17) /* 2D 碰撞体：形状来自 Collider 组件 */
+#define MQ_ROLE_UI_TEXT     (1u << 18)   /* 文本：Label/RichText（排版 + 字形渲染） */
 
 /* 枚举字面量（供 JSON 文本按名字读写、AI 自省；docs/06） */
 typedef struct mq_enum_value {
@@ -67,6 +68,9 @@ typedef struct mq_type_desc {
     uint32_t             role;   /* MQ_ROLE_* 位标志 */
     const mq_enum_value* values;      /* 枚举值表（仅 is_enum） */
     uint32_t             value_count; /* 枚举值个数 */
+    /* 默认构造：placement-new 生成的 C++ 类型（应用 schema 默认值 + 正确构造 string/vector）。
+     * 组件/资源实例必须先调用它，否则字段是零字节而非 schema 默认值（docs/06）。 */
+    void               (*init_defaults)(void* obj);
 } mq_type_desc;
 
 /* registry (lookup by type_id / name) */

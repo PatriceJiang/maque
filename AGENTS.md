@@ -48,7 +48,7 @@ cd modules/core/data && node parser.js --check
   （`docs/21` §1；手写公开接口 = 漂移之源）：
   | DSL 段 | 声明内容 | 生成产物 | 编译目标 |
   |--------|----------|----------|----------|
-  | `class_list` | 数据类型（struct/enum） | `maque_types.h` + `maque_desc.*` + `maque_schema.json` | `maque::schema` |
+  | `class_list` | 数据类型（struct/enum） | `maque_types.h` + `maque_desc.*`（含 `init_defaults` 默认构造器）+ `maque_schema.json` | `maque::schema` |
   | `api_list` | 引擎函数接口 | `maque_api.h`（声明）+ `maque_bindings.cpp`（**JS 绑定**） | `maque::api` / `maque::genbind` |
   | `interface` | 插件接口 | `maque_ifaces.h`（C vtable + 名称/版本宏） | 各模块 |
   | `control_list` | 控制面方法（AI 面，docs/11 §3） | `maque_control.h`（处理器声明）+ `maque_control_gen.cpp`（注册表 + 类型化 MCP `inputSchema`） | `maque::gencontrol` |
@@ -86,8 +86,16 @@ cd modules/core/data && node parser.js --check
 - **动作/定时**：`tween_start(id, "scn.Sprite.radius", to, duration, easing)`、`tween_stop/count/progress`、
   `schedule_once/schedule/unschedule/schedule_count`
 
+**文本**：`ui_set_text/ui_get_text/ui_text_width/ui_text_height/ui_text_lines`（对 `scn.Label` /
+`ui.TextLabel` / `render.RichText` 通用，按 role 定位）。排版字段：`font_size` / `align`（或 `align_h`）/
+`wrap`（或 `wrap_mode`）/ `max_width` / `line_spacing`；实测结果写回 transient 字段
+（`text_w`/`text_h`/`line_count` 或 `text_size`/`content_size`）。
+富文本标记：`<color=#RRGGBB>`、`<size=NN>`、`<b>`、`<br/>`；`parse_tags=false` 时按纯文本渲染。
+字体内置回退：`MAQUE_FONT=<ttf>` 指定字体 → 常见系统字体 → 内置 5x7 位图字体（`tools/font_gen.py` 生成）。
+
 **坐标约定**：节点位置为世界坐标（y 向上）；输入事件为屏幕坐标（y 向下）→ `y_screen = H - y_world`。
 UI 控件（`ui.Control`）以**中心**为锚点，命中矩形 = 尺寸的一半展开。
+文本排版坐标 y 向下，屏幕映射为 `y_screen = H - (node_y + label_y) + glyph_y`。
 
 ## 常见改动怎么做
 
