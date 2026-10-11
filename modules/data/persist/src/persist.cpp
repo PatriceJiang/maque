@@ -200,7 +200,131 @@ void apply_field(mq_reflect_ctx* ctx, const mq_field_desc* f, void* fp, const JV
     }
 }
 
+/* ---- 反射 → JSON 文本（与 load_json 往返一致；确定性顺序） ---- */
+size_t kind_width(mq_type_kind k);
+
+void write_json_scalar(std::string& out, const void* p, mq_type_kind kind) {
+    switch (kind) {
+        case MQ_TK_BOOL: out += (*(const uint8_t*)p) ? "true" : "false"; return;
+        case MQ_TK_F32: {
+            char buf[64];
+            std::snprintf(buf, sizeof buf, "%.9g", (double)*(const float*)p);
+            out += buf;
+            return;
+        }
+        case MQ_TK_F64: {
+            char buf[64];
+            std::snprintf(buf, sizeof buf, "%.17g", *(const double*)p);
+            out += buf;
+            return;
+        }
+        case MQ_TK_I8:  out += std::to_string((int)*(const int8_t*)p); return;
+        case MQ_TK_U8:  out += std::to_string((unsigned)*(const uint8_t*)p); return;
+        case MQ_TK_I16: out += std::to_string(*(const int16_t*)p); return;
+        case MQ_TK_U16: out += std::to_string(*(const uint16_t*)p); return;
+        case MQ_TK_I32: out += std::to_string(*(const int32_t*)p); return;
+        case MQ_TK_U32: out += std::to_string(*(const uint32_t*)p); return;
+        case MQ_TK_I64: out += std::to_string(*(const int64_t*)p); return;
+        case MQ_TK_U64: out += std::to_string(*(const uint64_t*)p); return;
+        default: out += "0"; return;
+    }
+}
+
+void write_json_string(std::string& out, const std::string& s) {
+    out += '"';
+    for (char c : s) {
+        switch (c) {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n"; break;
+            case '\t': out += "\\t"; break;
+            case '\r': out += "\\r"; break;
+            default:
+                if ((unsigned char)c < 0x20) {
+                    char buf[8];
+                    std::snprintf(buf, sizeof buf, "\\u%04x", (unsigned)(unsigned char)c);
+                    out += buf;
+                } else out += c;
+        }
+    }
+    out += '"';
+}
+
+void write_json_value(mq_reflect_ctx* ctx, const mq_type_desc* t, const void* obj, std::string& out);
+
+void write_json_field(mq_reflect_ctx* ctx, const mq_field_desc* f, const void* fp, std::string& out) {
+    switch (f->kind) {
+        case MQ_TK_STRUCT: {
+            const mq_type_desc* ft = mq_reflect_type_by_id(ctx, f->type_id);
+            if (ft) write_json_value(ctx, ft, fp, out); else out += "null";
+            return;
+        }
+        case MQ_TK_ENUM: {
+            const mq_type_desc* et = mq_reflect_type_by_id(ctx, f->type_id);
+            const size_t w = kind_width(f->kind);
+            (void)w;
+            if (et) write_json_scalar(out, fp, et->size == 8 ? MQ_TK_I64 : MQ_TK_I32);
+            else out += "0";
+            return;
+        }
+        case MQ_TK_STRING: write_json_string(out, *reinterpret_cast<const std::string*>(fp)); return;
+        case MQ_TK_ARRAY_FIXED: {
+            const mq_type_desc* et = mq_reflect_type_by_id(ctx, f->type_id);
+            out += '[';
+            for (uint32_t i = 0; i < f->count; ++i) {
+                if (i) out += ',';
+                if (et) write_json_value(ctx, et, (const uint8_t*)fp + (size_t)i * et->size, out);
+                else write_json_scalar(out, (const uint8_t*)fp + (size_t)i * kind_width(f->kind), f->kind);
+            }
+            out += ']';
+            return;
+        }
+        case MQ_TK_ARRAY_DYN: {
+            const mq_type_desc* et = mq_reflect_type_by_id(ctx, f->elem_type_id);
+            out += '[';
+            if (et && f->container_size && f->container_elem) {
+                const uint32_t n = f->container_size(fp);
+                for (uint32_t i = 0; i < n; ++i) {
+                    if (i) out += ',';
+                    write_json_value(ctx, et, f->container_elem(const_cast<void*>(fp), i), out);
+                }
+            }
+            out += ']';
+            return;
+        }
+        default: write_json_scalar(out, fp, f->kind); return;
+    }
+}
+
+void write_json_value(mq_reflect_ctx* ctx, const mq_type_desc* t, const void* obj, std::string& out) {
+    if (t->flags & MQ_TYPE_ENUM) { write_json_scalar(out, obj, t->size == 8 ? MQ_TK_I64 : MQ_TK_I32); return; }
+    out += '{';
+    bool first = true;
+    for (uint32_t i = 0; i < t->field_count; ++i) {
+        const mq_field_desc* f = &t->fields[i];
+        if (f->attrs_flags & MQ_ATTR_TRANSIENT) continue;      // 瞬态不落盘
+        if (!first) out += ',';
+        first = false;
+        write_json_string(out, f->name ? f->name : "");
+        out += ':';
+        write_json_field(ctx, f, (const uint8_t*)obj + f->offset, out);
+    }
+    out += '}';
+}
+
 } // namespace
+
+extern "C" size_t mq_persist_write_json(mq_reflect_ctx* ctx, const mq_type_desc* type, const void* obj,
+                                        char* out, size_t cap) {
+    if (!ctx || !type || !obj) return 0;
+    std::string s;
+    write_json_value(ctx, type, obj, s);
+    if (!out || cap == 0) return s.size();
+    if (s.size() + 1 > cap) return s.size() + 1;               // 需要更大缓冲（不写入）
+    std::memcpy(out, s.data(), s.size());
+    out[s.size()] = '\0';
+    return s.size();
+}
 
 extern "C" int mq_persist_load_json(mq_reflect_ctx* ctx, const mq_type_desc* type, const char* json, size_t len, void* out) {
     if (!ctx || !type || !json || !out) return 1;

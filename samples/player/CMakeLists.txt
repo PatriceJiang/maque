@@ -46,3 +46,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/anim/anim.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/anim_e2e")
 endif()
+
+# 最小编辑器端到端（M9、docs/11 §3/§4）：编辑 → 落盘 → 重载 → 往返一致
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME editor_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/editor_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/anim/anim.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/editor_e2e")
+endif()

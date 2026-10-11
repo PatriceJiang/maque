@@ -134,6 +134,55 @@ int main() {
         CHECK(mq_persist_decode(C, ac, junk, sizeof junk, &acv) < 0);
     }
 
+    // ---- 5) 反射 → JSON 文本（与 load_json 往返一致；瞬态字段不落盘）----
+    {
+        const mq_type_desc* t = mq_reflect_type_by_name(C, "scn.Scene");
+        scn::Scene a{};
+        a.title = "往返\"测试";            // 含需转义的引号
+        a.script = "ball.js";
+        a.width = 400; a.height = 300; a.seed = 42u; a.views = 2; a.eye_sep = 0.25F;
+        std::vector<char> buf(4096);
+        const size_t n = mq_persist_write_json(C, t, &a, buf.data(), buf.size());
+        CHECK(n > 0 && n + 1 <= buf.size());
+        CHECK(buf[0] == '{' && buf[n - 1] == '}');
+
+        scn::Scene b{};
+        CHECK(mq_persist_load_json(C, t, buf.data(), n, &b) == 0);
+        CHECK(b.title == a.title && b.script == a.script);
+        CHECK(b.width == a.width && b.height == a.height && b.seed == a.seed);
+
+        // 决定论：二次写出字节一致
+        std::vector<char> buf2(4096);
+        const size_t n2 = mq_persist_write_json(C, t, &b, buf2.data(), buf2.size());
+        CHECK(n2 == n && std::memcmp(buf.data(), buf2.data(), n) == 0);
+
+        // 缓冲不足：返回所需长度且不写坏
+        char small[4] = { 'x', 'x', 'x', 'x' };
+        CHECK(mq_persist_write_json(C, t, &a, small, sizeof small) > sizeof small);
+        CHECK(small[0] == 'x');
+    }
+
+    // ---- 5b) 字符串字段转义 + 动态数组（非瞬态）往返 ----
+    {
+        const mq_type_desc* t = mq_reflect_type_by_name(C, "asset.AudioCurve");
+        const mq_field_desc* pts = mq_reflect_field(t, "points");
+        CHECK(pts && pts->container_resize);
+        asset::AudioCurve a{};
+        pts->container_resize(&a.points, 2);
+        ((math::Vec2*)pts->container_elem(&a.points, 0))->x = 1.5F;
+        ((math::Vec2*)pts->container_elem(&a.points, 1))->y = -2.5F;
+        std::vector<char> buf(4096);
+        const size_t n = mq_persist_write_json(C, t, &a, buf.data(), buf.size());
+        CHECK(n > 0);
+        std::string text(buf.data(), n);
+        CHECK(text.find("\"points\"") != std::string::npos);
+        asset::AudioCurve b{};
+        CHECK(mq_persist_load_json(C, t, buf.data(), n, &b) == 0);
+        CHECK(pts->container_size(&b.points) == 2u);
+        CHECK(((math::Vec2*)pts->container_elem(&b.points, 0))->x == 1.5F);
+        CHECK(((math::Vec2*)pts->container_elem(&b.points, 1))->y == -2.5F);
+    }
+
     mq_reflect_destroy(C);
     if (g_failures == 0) { std::print("snapshot_test: all checks passed\n"); return 0; }
     std::print("snapshot_test: {} failure(s)\n", g_failures);

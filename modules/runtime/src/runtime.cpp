@@ -36,6 +36,7 @@
 #include <cstdint>
 #include <cmath>
 #include <utility>
+#include <functional>
 
 namespace {
 
@@ -179,6 +180,34 @@ void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& bl
     }
     mq_json* empty = mq_json_parse("{}", 2);
     if (empty) { mq_persist_apply_json(eng.reflect, d, empty, blob.data()); mq_json_free(empty); }
+}
+
+/* JSON 字符串转义（与 persist 规则一致；runtime 侧轻量实现）。 */
+void write_json_string_pub(std::string& out, const std::string& s) {
+    out += '"';
+    for (char c : s) {
+        switch (c) {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n"; break;
+            case '\t': out += "\\t"; break;
+            case '\r': out += "\\r"; break;
+            default: out += c;
+        }
+    }
+    out += '"';
+}
+
+/* 组件挂载：由**描述符**构造默认实例（schema 默认值生效）→ 引擎不硬编码组件类型。 */
+void attach_component(Engine& eng, int idx, const char* type_name) {
+    Entity* e = eng.scene->at(idx);
+    const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, type_name);
+    if (!e || !d) return;
+    e->comps[d->type_id].assign(d->size, 0);
+    /* 默认值：用描述符字段默认（反射无默认值 API）→ 走"空 JSON"反序列化保持与场景一致 */
+    mq_json* dom = mq_json_parse("{}", 2);
+    if (dom) { mq_persist_apply_json(eng.reflect, d, dom, e->comps[d->type_id].data()); mq_json_free(dom); }
+    else e->comps[d->type_id].assign(d->size, 0);
 }
 
 /* ---- 快照写入器（Scene::encode 的字节汇；无反射依赖） ---- */
@@ -1363,18 +1392,6 @@ void physics_step(void* ctx) {
     }
 }
 
-/* 组件挂载：由**描述符**构造默认实例（schema 默认值生效）→ 引擎不硬编码组件类型。 */
-void attach_component(Engine& eng, int idx, const char* type_name) {
-    Entity* e = eng.scene->at(idx);
-    const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, type_name);
-    if (!e || !d) return;
-    e->comps[d->type_id].assign(d->size, 0);
-    /* 默认值：用描述符字段默认（反射无默认值 API）→ 走"空 JSON"反序列化保持与场景一致 */
-    mq_json* dom = mq_json_parse("{}", 2);
-    if (dom) { mq_persist_apply_json(eng.reflect, d, dom, e->comps[d->type_id].data()); mq_json_free(dom); }
-    else e->comps[d->type_id].assign(d->size, 0);
-}
-
 float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius) {
     auto* eng = (Engine*)ctx;
     float id = host::entity_spawn(eng);
@@ -1622,45 +1639,109 @@ static int h_scene_set(void* u, const char*, const mq_json* params, char* out, s
     return 0;
 }
 
-/* Scene.save：把当前世界写回 .scn（编辑器落盘；docs/11 §4 "变更类返回句柄/版本"）。
- * 输出为确定性 JSON（实体按 id 升序、组件按 type_id 升序）。 */
+/* Scene.spawn / Scene.destroy：实体增删（编辑器/AI 编辑；返回句柄与 undo 信息，docs/11 §4）。 */
+static int h_scene_spawn(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
+    const char* name = mq_json_str(mq_json_get(params, "name"), "");
+    const double parent = mq_json_num(mq_json_get(params, "parent"), -1);
+    if (dry) { std::snprintf(out, cap, "{\"ok\":true,\"dry_run\":true,\"would_spawn\":\"%s\"}", name); return 0; }
+    const int id = e->scene->spawn();
+    if (id < 0) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"spawn failed\"}"); return 0; }
+    if (Entity* ent = e->scene->at(id)) {
+        ent->name = name;
+        ent->parent = (int)parent;
+        if (const char* tn = mq_json_str(mq_json_get(params, "component"), nullptr)) attach_component(*e, id, tn);
+    }
+    std::snprintf(out, cap, "{\"ok\":true,\"id\":%d,\"undo\":{\"destroy\":%d}}", id, id);
+    return 0;
+}
+
+static int h_scene_destroy(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const int id = (int)mq_json_num(mq_json_get(params, "id"), -1);
+    const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
+    Entity* ent = e->scene->at(id);
+    if (!ent) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no such entity\"}"); return 0; }
+    if (dry) { std::snprintf(out, cap, "{\"ok\":true,\"dry_run\":true,\"name\":\"%s\"}", ent->name.c_str()); return 0; }
+    e->scene->remove(id);
+    std::snprintf(out, cap, "{\"ok\":true,\"destroyed\":%d,\"entities\":%d}", id, e->scene->count());
+    return 0;
+}
+
+/* Scene.save：把当前世界写回 .scn（编辑器落盘；docs/11 §4）。
+ * 组件字段由反射序列化（与 load_json 往返一致）→ 落盘文件可直接再次加载。 */
 static int h_scene_save(void* u, const char*, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
     if (!path) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing path\"}"); return 0; }
-    std::string json = "{\n  \"title\": \"" + e->scene->desc.title + "\",\n  \"script\": \"" +
-                       e->scene->desc.script + "\",\n  \"width\": " + std::to_string(e->scene->desc.width) +
-                       ",\n  \"height\": " + std::to_string(e->scene->desc.height) +
-                       ",\n  \"seed\": " + std::to_string(e->scene->desc.seed) +
-                       ",\n  \"entities\": [\n";
+
+    std::string json = "{\n  \"title\": ";
+    write_json_string_pub(json, e->scene->desc.title);
+    json += ",\n  \"script\": ";
+    write_json_string_pub(json, e->scene->desc.script);
+    json += ",\n  \"width\": " + std::to_string(e->scene->desc.width);
+    json += ",\n  \"height\": " + std::to_string(e->scene->desc.height);
+    json += ",\n  \"seed\": " + std::to_string(e->scene->desc.seed);
+    json += ",\n  \"gravity_y\": " + std::to_string(e->scene->desc.gravity_y);
+    json += ",\n  \"restitution\": " + std::to_string(e->scene->desc.restitution);
+    json += ",\n  \"entities\": [";
+
     std::vector<int> ids;
     for (auto& [idx, ent] : e->scene->ents) ids.push_back(idx);
     std::sort(ids.begin(), ids.end());
-    bool first = true;
-    for (int id : ids) {
+    std::function<void(int, int)> emit = [&](int id, int indent) {
         Entity* ent = e->scene->at(id);
-        if (!ent) continue;
-        if (!first) json += ",\n";
-        first = false;
-        json += "    { \"name\": \"" + ent->name + "\", \"components\": [";
+        if (!ent) return;
+        const std::string pad((size_t)indent * 2, ' ');
+        json += "\n" + pad + "{ \"name\": ";
+        write_json_string_pub(json, ent->name);
+        json += ", \"components\": [";
         std::vector<uint32_t> tids;
         for (auto& [t, b] : ent->comps) tids.push_back(t);
         std::sort(tids.begin(), tids.end());
+        std::vector<char> buf(16384);
         bool f2 = true;
         for (uint32_t t : tids) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, t);
             if (!d) continue;
+            size_t need = mq_persist_write_json(e->reflect, d, ent->comps[t].data(), buf.data(), buf.size());
+            if (need + 1 > buf.size()) { buf.resize(need + 1); need = mq_persist_write_json(e->reflect, d, ent->comps[t].data(), buf.data(), buf.size()); }
+            if (need == 0 || need + 1 > buf.size()) continue;
             if (!f2) json += ", ";
             f2 = false;
-            json += "{ \"type\": \"" + std::string(d->name) + "\" }";   // 字段级 dump 由 Scene.get 提供
+            json += "{ \"type\": ";
+            write_json_string_pub(json, d->name);
+            json += ", ";
+            json += std::string(buf.data() + 1, need - 2);          // 去掉外层 { }
+            json += " }";
         }
-        json += "] }";
+        json += "]";
+        std::vector<int> kids;
+        for (auto& [k, c] : e->scene->ents) if (c.parent == id) kids.push_back(k);
+        std::sort(kids.begin(), kids.end());
+        if (!kids.empty()) {
+            json += ", \"children\": [";
+            for (size_t i = 0; i < kids.size(); ++i) { if (i) json += ","; emit(kids[i], indent + 1); }
+            json += "\n" + pad + "]";
+        }
+        json += " }";
+    };
+    bool first = true;
+    for (int id : ids) {
+        Entity* ent = e->scene->at(id);
+        if (!ent || (ent->parent >= 0 && e->scene->at(ent->parent))) continue;   // 仅从根开始
+        if (!first) json += ",";
+        first = false;
+        emit(id, 2);
     }
     json += "\n  ]\n}\n";
+
     std::ofstream f(path, std::ios::binary);
     if (!f) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"cannot write\"}"); return 0; }
     f << json;
-    std::snprintf(out, cap, "{\"ok\":true,\"path\":\"%s\",\"entities\":%d}", path, e->scene->count());
+    std::snprintf(out, cap, "{\"ok\":true,\"path\":\"%s\",\"entities\":%d,\"bytes\":%zu}",
+                  path, e->scene->count(), json.size());
     return 0;
 }
 
@@ -2006,6 +2087,8 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_control_register(eng.control, "Scene.get", h_scene_get, &eng);
     mq_control_register(eng.control, "Scene.set", h_scene_set, &eng);
     mq_control_register(eng.control, "Scene.save", h_scene_save, &eng);
+    mq_control_register(eng.control, "Scene.spawn", h_scene_spawn, &eng);
+    mq_control_register(eng.control, "Scene.destroy", h_scene_destroy, &eng);
     mq_control_register(eng.control, "Input.inject", h_inject, &eng);
     mq_control_register(eng.control, "Replay.log", h_replay_log, &eng);
     mq_control_register(eng.control, "Runtime.step", h_step, &eng);

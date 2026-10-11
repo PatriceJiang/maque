@@ -33,6 +33,12 @@ uint32_t mq_json_object_each(const mq_json* obj, mq_json_kv_fn fn, void* user);
 int mq_persist_apply_json(mq_reflect_ctx* ctx, const mq_type_desc* type,
                           const mq_json* node, void* out);
 
+/* 反射对象 → JSON 文本（确定性：字段顺序 = 声明顺序；瞬态字段跳过）。
+ * 写入 out（含结尾 '\0' 以内不超过 cap）与 load_json 往返一致；返回写入长度（不含 '\0'），
+ * 需要更大缓冲时返回所需长度（> cap）且不写入。 */
+size_t mq_persist_write_json(mq_reflect_ctx* ctx, const mq_type_desc* type, const void* obj,
+                             char* out, size_t cap);
+
 #ifdef __cplusplus
 }
 #endif
