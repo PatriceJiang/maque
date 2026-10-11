@@ -241,6 +241,7 @@ static Device* create_device(std::string* out_backend) {
 static void destroy_device(Device* dv) {
     if (!dv) return;
     for (auto* t : dv->textures) {
+        if (!t) continue;                  /* 已由 destroy_texture 释放（槽位保留但指针为空） */
         if (t->view) wgpuTextureViewRelease(t->view);
         if (t->tex) wgpuTextureRelease(t->tex);
         delete t;
@@ -331,6 +332,18 @@ static int32_t r_create_texture(void* self, const uint8_t* rgba, int32_t w, int3
     dv->textures.push_back(t);
     return (int32_t)dv->textures.size() - 1;
 }
+static void r_destroy_texture(void* self, int32_t id) {
+    auto* dv = (Device*)self;
+    if (!dv || id < 0 || id >= (int)dv->textures.size()) return;
+    Texture* t = dv->textures[(size_t)id];
+    if (t) {
+        if (t->view) wgpuTextureViewRelease(t->view);
+        if (t->tex) wgpuTextureRelease(t->tex);
+        delete t;
+    }
+    dv->textures[(size_t)id] = nullptr;      /* 槽位保留（id 稳定，避免悬空引用） */
+}
+
 static int32_t r_has_texture(void* self, int32_t id) {
     auto* dv = (Device*)self;
     return (dv && id >= 0 && id < (int)dv->textures.size()) ? 1 : 0;
@@ -368,6 +381,7 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
     for (uint32_t k = 0; k < count; ++k) {
         const mq_renderer_item& s = items[order[k]];
         const bool has_tex = s.texture >= 0 && s.texture < (int)dv->textures.size() &&
+                             dv->textures[s.texture] != nullptr &&          /* 槽位可能已释放（destroy_texture） */
                              dv->textures[s.texture]->view != nullptr;
         const int tex_id = has_tex ? s.texture : -1;
         const bool rect = s.half_w > 0.0F && s.half_h > 0.0F;
@@ -472,7 +486,7 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
 
 static const mq_renderer_v1 g_api = {
     { (uint32_t)sizeof(mq_renderer_v1), MQ_ABI_VERSION },
-    r_create, r_destroy, r_create_texture, r_has_texture, r_render_views
+    r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {

@@ -117,7 +117,13 @@ GC 仅在帧边界推进（`mq_script_frame_boundary`）。加后端见 docs/14�
 `wrap`（或 `wrap_mode`）/ `max_width` / `line_spacing`；实测结果写回 transient 字段
 （`text_w`/`text_h`/`line_count` 或 `text_size`/`content_size`）。
 富文本标记：`<color=#RRGGBB>`、`<size=NN>`、`<b>`、`<br/>`；`parse_tags=false` 时按纯文本渲染。
-字体内置回退：`MAQUE_FONT=<ttf>` 指定字体 → 常见系统字体 → 内置 5x7 位图字体（`tools/font_gen.py` 生成）。
+**字体解析顺序**：`MAQUE_FONT=<ttf>` → **`scenes/fonts/` 下首个 `.ttf`（仓库自带，含中文）** →
+常见系统字体 → 内置 5x7 位图字体（`tools/font_gen.py` 生成）。组件级覆盖：`scn.Label` /
+`ui.TextLabel` / `render.RichText` 的 `font` 字段（相对工作目录或场景目录解析）。
+**字形图集按需增长**（任意 Unicode/CJK）：ASCII 预热 95 字形，其余码点排版时惰性栅格化并打包；
+`mq_font_atlas_generation` 变化 → 宿主刷新纹理（**旧纹理延迟到下一帧释放**，避免帧内悬空）；
+排版按 **UTF-8 码点**（非字节），CJK 逐字可断行；文本图元**两阶段**提交：先全部排版（预热图集），
+再按**最终图集尺寸**算 UV（否则先排的标签会用过期 UV 采样 → 错位/重叠）。
 
 **文本 pixel-perfect（FreeType 集成）**：排版在**设备像素**空间进行 ——
 `mq_text_style.device_scale`（= 窗口/目标缩放）决定实际栅格化字号（`round(font_size × scale)`，整数 ppem →

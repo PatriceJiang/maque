@@ -33,14 +33,23 @@ struct Glyph {
     float    advance = 0.0F;
 };
 
+/* 字形图集：**按需栅格化 + 增量打包**（任意 Unicode，含 CJK，docs/13 §字形管线）。
+ *   · 宽固定 kAtlasW、高按需增长到 kAtlasMaxH；行式打包（追加顺序 = 码点出现顺序 → 确定性）
+ *   · generation：每次新增字形自增，宿主据此决定纹理是否重传
+ *   · 容量用尽后跳过新字形（不影响已排好的字形） */
+constexpr uint32_t kAtlasW = 512;
+constexpr uint32_t kAtlasMaxH = 1024;
+constexpr uint32_t kAtlasPad = 1;
+
 struct Atlas {
     float size = 0.0F;
     uint32_t w = 0, h = 0;
     std::vector<uint8_t> rgba;
-    /* 码点 → 字形索引 */
-    std::vector<std::pair<uint32_t, uint32_t>> cps;
     std::vector<Glyph> glyphs;
+    uint32_t generation = 0;
+    uint32_t cur_x = kAtlasPad, cur_y = kAtlasPad, row_h = 0;
     bool valid = false;
+    bool full = false;
 };
 
 } // namespace
@@ -85,20 +94,6 @@ void builtin_glyph_bitmap(const mq_font* f, uint32_t cp, float size, std::vector
         }
     }
     *out_w = w; *out_h = h;
-}
-
-/* 行式打包：按码点升序放置（确定性）。返回图集尺寸。 */
-void pack_atlas(Atlas& a, uint32_t pad = 1) {
-    uint32_t x = pad, y = pad, row_h = 0;
-    for (auto& g : a.glyphs) {
-        if (x + (uint32_t)g.w + pad > 256 && x > pad) { x = pad; y += row_h + pad; row_h = 0; }
-        g.ax = (int)x; g.ay = (int)y;
-        x += (uint32_t)g.w + pad;
-        row_h = std::max(row_h, (uint32_t)g.h);
-    }
-    a.w = 256;
-    a.h = y + row_h + pad;
-    a.rgba.assign((size_t)a.w * a.h * 4, 0);
 }
 
 } // namespace
@@ -151,95 +146,117 @@ extern "C" void mq_font_destroy(mq_font* font) {
 
 namespace {
 
+const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size);
+
+/* 图集惰性创建：ASCII 预热（常见文本零额外开销、行为与旧版一致），其余码点按需栅格化。 */
 Atlas& atlas_for(mq_font* f, float size) {
     const float sz = size > 0.0F ? size : 16.0F;
     for (auto& a : f->atlases) if (a.size == sz && a.valid) return a;
     Atlas a;
     a.size = sz;
+    a.w = kAtlasW;
+    a.h = kAtlasPad * 2;
+    a.rgba.assign((size_t)a.w * a.h * 4, 0);
+    a.valid = true;
+    f->atlases.push_back(std::move(a));
+    Atlas& out = f->atlases.back();
+    for (uint32_t cp = kFirstCp; cp <= kLastCp; ++cp) (void)ensure_glyph(f, out, cp, sz);
+    return out;
+}
+
+/* 按需栅格化一个码点并打包：已存在返回既有；放不下返回 nullptr（调用方跳过）。 */
+const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size) {
+    for (const auto& g : a.glyphs) if (g.cp == cp) return &g;
+    if (a.full) return nullptr;
+
+    Glyph g;
+    g.cp = cp;
+    std::vector<uint8_t> bmp;                 /* RGBA（白字 + alpha） */
+    int bw = 0, bh = 0;
     if (f->builtin) {
-        for (uint32_t cp = kFirstCp; cp <= kLastCp; ++cp) {
-            Glyph g;
-            g.cp = cp;
-            std::vector<uint8_t> bmp;
-            builtin_glyph_bitmap(f, cp, sz, bmp, &g.w, &g.h);
-            g.advance = (float)g.w + 1.0F;
-            g.bearing_y = g.h;
-            a.glyphs.push_back(g);
-        }
+        builtin_glyph_bitmap(f, cp, size, bmp, &bw, &bh);
+        g.advance = (float)bw + 1.0F;
+        g.bearing_y = bh;
     }
 #if defined(MAQUE_HAVE_FREETYPE)
     else if (f->face) {
-        if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(sz + 0.5F)) != 0) { a.valid = false; f->atlases.push_back(std::move(a)); return f->atlases.back(); }
-        for (uint32_t cp = kFirstCp; cp <= kLastCp; ++cp) {
-            if (FT_Load_Char(f->face, cp, FT_LOAD_RENDER) != 0) continue;
-            FT_GlyphSlot sl = f->face->glyph;
-            Glyph g;
-            g.cp = cp;
-            g.w = (int)sl->bitmap.width;
-            g.h = (int)sl->bitmap.rows;
-            g.bearing_x = sl->bitmap_left;
-            g.bearing_y = sl->bitmap_top;
-            g.advance = (float)(sl->advance.x >> 6);
-            a.glyphs.push_back(g);
+        if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(size + 0.5F)) != 0) return nullptr;
+        if (FT_Load_Char(f->face, cp, FT_LOAD_RENDER) != 0) return nullptr;
+        FT_GlyphSlot sl = f->face->glyph;
+        bw = (int)sl->bitmap.width;
+        bh = (int)sl->bitmap.rows;
+        g.bearing_x = sl->bitmap_left;
+        g.bearing_y = sl->bitmap_top;
+        g.advance = (float)(sl->advance.x >> 6);
+        if (bw > 0 && bh > 0) {
+            bmp.assign((size_t)bw * bh * 4, 0);
+            for (int y = 0; y < bh; ++y)
+                for (int x = 0; x < bw; ++x) {
+                    uint8_t* d = bmp.data() + ((size_t)y * bw + x) * 4;
+                    d[0] = d[1] = d[2] = 255;
+                    d[3] = sl->bitmap.buffer[(size_t)y * sl->bitmap.pitch + x];
+                }
         }
     }
 #endif
-    pack_atlas(a);
-    /* 逐字形把位图写进图集（FreeType：8bit 灰度 → 白字 + alpha） */
-    if (!f->builtin) {
-#if defined(MAQUE_HAVE_FREETYPE)
-        for (auto& g : a.glyphs) {
-            if (g.w <= 0 || g.h <= 0) continue;
-            if (FT_Load_Char(f->face, g.cp, FT_LOAD_RENDER) != 0) continue;
-            FT_Bitmap& bm = f->face->glyph->bitmap;
-            for (int y = 0; y < g.h; ++y) {
-                for (int x = 0; x < g.w; ++x) {
-                    const uint8_t v = bm.buffer[(size_t)y * bm.pitch + x];
-                    uint8_t* p = a.rgba.data() + (((size_t)(g.ay + y) * a.w) + (uint32_t)(g.ax + x)) * 4;
-                    p[0] = 255; p[1] = 255; p[2] = 255; p[3] = v;
-                }
+    else return nullptr;
+
+    uint32_t px = a.cur_x, py = a.cur_y;
+    if (bw > 0 && bh > 0) {
+        if (px + (uint32_t)bw + kAtlasPad > a.w && px > kAtlasPad) {      /* 换行 */
+            px = kAtlasPad;
+            py += a.row_h + kAtlasPad;
+            a.row_h = 0;
+        }
+        if (py + (uint32_t)bh + kAtlasPad > kAtlasMaxH) { a.full = true; return nullptr; }
+        /* 图集高度按需增长：**必须先扩容 rgba 再写入**（否则越界写 → 堆损坏） */
+        const uint32_t need_h = py + (uint32_t)bh + kAtlasPad;
+        if (need_h > a.h) {
+            a.rgba.resize((size_t)a.w * need_h * 4, 0);
+            a.h = need_h;
+        }
+        for (int y = 0; y < bh; ++y)
+            for (int x = 0; x < bw; ++x) {
+                const uint8_t alpha = bmp[((size_t)y * bw + x) * 4 + 3];
+                if (!alpha) continue;
+                uint8_t* d = a.rgba.data() + (((size_t)(py + y) * a.w) + (uint32_t)(px + x)) * 4;
+                d[0] = 255; d[1] = 255; d[2] = 255; d[3] = alpha;
             }
-        }
-#endif
-    } else {
-        for (auto& g : a.glyphs) {
-            std::vector<uint8_t> bmp;
-            int w = 0, h = 0;
-            builtin_glyph_bitmap(f, g.cp, sz, bmp, &w, &h);
-            for (int y = 0; y < h; ++y)
-                for (int x = 0; x < w; ++x) {
-                    const uint8_t* src = bmp.data() + ((size_t)y * w + x) * 4;
-                    if (src[3] == 0) continue;
-                    uint8_t* p = a.rgba.data() + (((size_t)(g.ay + y) * a.w) + (uint32_t)(g.ax + x)) * 4;
-                    p[0] = 255; p[1] = 255; p[2] = 255; p[3] = src[3];
-                }
-        }
+        g.ax = (int)px; g.ay = (int)py;
+        a.cur_x = px + (uint32_t)bw + kAtlasPad;
+        a.row_h = std::max(a.row_h, (uint32_t)bh);
     }
-    a.cps.clear();
-    for (uint32_t i = 0; i < a.glyphs.size(); ++i) a.cps.push_back({ a.glyphs[i].cp, i });
-    std::sort(a.cps.begin(), a.cps.end());
-    a.valid = true;
-    f->atlases.push_back(std::move(a));
-    return f->atlases.back();
+    g.w = bw > 0 ? bw : 0;
+    g.h = bh > 0 ? bh : 0;
+    a.glyphs.push_back(g);
+    ++a.generation;
+    return &a.glyphs.back();
 }
 
-/* 设备字号：逻辑字号 × 设备缩放，**取整**（FreeType 以整数 ppem 栅格化 → 笔画对齐像素网格） */
-float device_size_of(const mq_text_style& st, float logical) {
-    const float sc = st.device_scale > 0.0F ? st.device_scale : 1.0F;
-    float px = logical * sc;
-    if (px < 1.0F) px = 1.0F;
-    return (float)(int)(px + 0.5F);
+/* ---- UTF-8：排版按**码点**（旧实现按字节 → CJK 会被拆成 3 个伪字形）---- */
+const char* utf8_next(const char* p, uint32_t* out_cp) {
+    const unsigned char c = (unsigned char)*p;
+    if (c < 0x80) { *out_cp = c; return p + 1; }
+    uint32_t cp = 0;
+    int extra = 0;
+    if ((c & 0xE0) == 0xC0) { cp = c & 0x1Fu; extra = 1; }
+    else if ((c & 0xF0) == 0xE0) { cp = c & 0x0Fu; extra = 2; }
+    else if ((c & 0xF8) == 0xF0) { cp = c & 0x07u; extra = 3; }
+    else { *out_cp = 0xFFFD; return p + 1; }
+    for (int i = 1; i <= extra; ++i) {
+        const unsigned char cc = (unsigned char)p[i];
+        if ((cc & 0xC0) != 0x80) { *out_cp = 0xFFFD; return p + 1; }      /* 截断 → 替换符 */
+        cp = (cp << 6) | (cc & 0x3Fu);
+    }
+    *out_cp = cp;
+    return p + extra + 1;
 }
 
-/* 字体 ascent/descent（设备像素；用于把 bitmap_top 换算成位图顶部 y） */
-void font_extents(mq_font* f, float device_size, float* ascent) {
-    *ascent = device_size * 0.8F;                /* 内置位图字体的缺省 ascent */
-#if defined(MAQUE_HAVE_FREETYPE)
-    if (f && !f->builtin && f->face) {
-        if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(device_size + 0.5F)) == 0)
-            *ascent = (float)(f->face->size->metrics.ascender >> 6);
-    }
-#endif
+/* CJK/假名/谚文/全角标点之间可换行（无空格语言 → 逐字断行机会） */
+bool is_cjk(uint32_t cp) {
+    return (cp >= 0x2E80 && cp <= 0x9FFF) || (cp >= 0xAC00 && cp <= 0xD7AF) ||
+           (cp >= 0xF900 && cp <= 0xFAFF) || (cp >= 0xFF00 && cp <= 0xFF60) ||
+           (cp >= 0x20000 && cp <= 0x2FA1F);
 }
 
 const Glyph* find_glyph(const Atlas& a, uint32_t cp) {
@@ -248,6 +265,25 @@ const Glyph* find_glyph(const Atlas& a, uint32_t cp) {
     }
     for (const auto& g : a.glyphs) if (g.cp == cp) return &g;
     return nullptr;
+}
+
+/* 设备字号：逻辑字号 × 设备缩放，**取整**（FreeType 整数 ppem → 笔画落在像素网格） */
+float device_size_of(const mq_text_style& st, float logical) {
+    const float sc = st.device_scale > 0.0F ? st.device_scale : 1.0F;
+    float px = logical * sc;
+    if (px < 1.0F) px = 1.0F;
+    return (float)(int)(px + 0.5F);
+}
+
+/* 字体 ascent（设备像素；用于把 FreeType bitmap_top 换算成位图顶部 y） */
+void font_extents(mq_font* f, float device_size, float* ascent) {
+    *ascent = device_size * 0.8F;                     /* 内置位图字体缺省 */
+#if defined(MAQUE_HAVE_FREETYPE)
+    if (f && !f->builtin && f->face) {
+        if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(device_size + 0.5F)) == 0)
+            *ascent = (float)(f->face->size->metrics.ascender >> 6);
+    }
+#endif
 }
 
 } // namespace
@@ -262,6 +298,18 @@ extern "C" int mq_font_atlas(mq_font* font, float size, uint8_t* out_rgba, size_
     if (!out_rgba || cap < need) return MQ_TEXT_ERR_CAP;
     std::memcpy(out_rgba, a.rgba.data(), need);
     return MQ_TEXT_OK;
+}
+
+extern "C" uint32_t mq_font_atlas_generation(mq_font* font, float size) {
+    if (!font) return 0;
+    Atlas& a = atlas_for(font, size);
+    return a.generation;
+}
+
+extern "C" uint32_t mq_font_glyph_count(mq_font* font, float size) {
+    if (!font) return 0;
+    Atlas& a = atlas_for(font, size);
+    return (uint32_t)a.glyphs.size();
 }
 
 extern "C" float mq_font_height(mq_font* font, float size) {
@@ -430,6 +478,7 @@ struct PlacedGlyph {
     float size, device_size;        /* 逻辑字号 / 实际栅格化字号 */
     float r, g, b, a;
     int w, h, bearing_x, bearing_y; /* FreeType bitmap_left / bitmap_top */
+    int ax = 0, ay = 0;             /* 图集内像素原点 */
     float u0, v0, u1, v1;
 };
 
@@ -464,94 +513,65 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
         const float size = run.size > 0.0F ? run.size : base;
         const float dsize = device_size_of(st, size);        /* 设备像素字号（整数） */
         font_extents(f, dsize, &ascent);
-        /* 像素对齐：把笔位置吸附到整数设备像素（pixel-perfect 的前提之一） */
         if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
-        /* 词缓冲：按词换行（WORD 模式） */
-        std::string word;
-        auto flush_word = [&](bool force) {
+
+        Atlas& atlas = atlas_for(f, dsize);
+        std::vector<uint32_t> word;                          /* 词缓冲（码点） */
+
+        /* 落一个字形：按需栅格化 → 位图矩形（含 bearing）→ 像素对齐 */
+        auto place = [&](uint32_t cp) {
+            PlacedGlyph g{};
+            g.cp = cp; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = dsize;
+            g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
+            const Glyph* gl = ensure_glyph(f, atlas, cp, dsize);
+            float adv = mq_font_advance(f, cp, dsize);
+            if (gl) {
+                g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
+                g.ax = gl->ax; g.ay = gl->ay;
+                if (gl->w > 0 && gl->h > 0) {
+                    g.u0 = (float)gl->ax / (float)atlas.w; g.v0 = (float)gl->ay / (float)atlas.h;
+                    g.u1 = (float)(gl->ax + gl->w) / (float)atlas.w;
+                    g.v1 = (float)(gl->ay + gl->h) / (float)atlas.h;
+                }
+                if (gl->advance > 0.0F) adv = gl->advance;
+            }
+            g.x0 = g.x + (float)g.bearing_x;                 /* 位图左上角 = 笔位置 + bearing */
+            g.y0 = g.y + ascent - (float)g.bearing_y;        /* y 向下：基线 − bitmap_top */
+            if (st.pixel_snap) { g.x0 = (float)(int)(g.x0 + 0.5F); g.y0 = (float)(int)(g.y0 + 0.5F); }
+            lines.back().glyphs.push_back(g);
+            pen_x += adv;
+            if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
+            line_h = std::max(line_h, mq_font_height(f, dsize));
+        };
+
+        auto flush_word = [&]() {
             if (word.empty()) return;
-            float wsum = 0.0F;
-            for (unsigned char ch : word) wsum += mq_font_advance(f, ch, size);
-            if (max_w > 0.0F && pen_x + wsum > max_w && pen_x > 0.0F) end_line();
-            if (max_w > 0.0F && st.wrap == MQ_TEXT_WRAP_CHAR) {
-                for (unsigned char ch : word) {
-                    const float adv = mq_font_advance(f, ch, size);
-                    if (pen_x + adv > max_w && pen_x > 0.0F) end_line();
-                    PlacedGlyph g{};
-                    g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = dsize;
-                    g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
-                    Atlas& a = atlas_for(f, dsize);
-                    const Glyph* gl = find_glyph(a, ch);
-                    if (gl) {
-                        g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
-                        g.u0 = (float)gl->ax / (float)a.w; g.v0 = (float)gl->ay / (float)a.h;
-                        g.u1 = (float)(gl->ax + gl->w) / (float)a.w; g.v1 = (float)(gl->ay + gl->h) / (float)a.h;
-                    }
-                    /* 位图矩形 = 笔位置 + bearing（bitmap_left / bitmap_top 相对基线） */
-                    g.x0 = g.x + (float)g.bearing_x;
-                    g.y0 = g.y + ascent - (float)g.bearing_y;
-                    if (st.pixel_snap) { g.x0 = (float)(int)(g.x0 + 0.5F); g.y0 = (float)(int)(g.y0 + 0.5F); }
-                    lines.back().glyphs.push_back(g);
-                    pen_x += adv;
-                    line_h = std::max(line_h, mq_font_height(f, dsize));
+            if (st.wrap == MQ_TEXT_WRAP_CHAR) {
+                for (uint32_t cp : word) {
+                    if (max_w > 0.0F && pen_x > 0.0F && pen_x + mq_font_advance(f, cp, dsize) > max_w)
+                        end_line();
+                    place(cp);
                 }
             } else {
-                for (unsigned char ch : word) {
-                    PlacedGlyph g{};
-                    g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = dsize;
-                    g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
-                    Atlas& a = atlas_for(f, dsize);
-                    const Glyph* gl = find_glyph(a, ch);
-                    if (gl) {
-                        g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
-                        g.u0 = (float)gl->ax / (float)a.w; g.v0 = (float)gl->ay / (float)a.h;
-                        g.u1 = (float)(gl->ax + gl->w) / (float)a.w; g.v1 = (float)(gl->ay + gl->h) / (float)a.h;
-                    }
-                    g.x0 = g.x + (float)g.bearing_x;
-                    g.y0 = g.y + ascent - (float)g.bearing_y;
-                    if (st.pixel_snap) { g.x0 = (float)(int)(g.x0 + 0.5F); g.y0 = (float)(int)(g.y0 + 0.5F); }
-                    lines.back().glyphs.push_back(g);
-                    pen_x += mq_font_advance(f, ch, dsize);
-                    if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
-                    line_h = std::max(line_h, mq_font_height(f, dsize));
-                }
+                float wsum = 0.0F;
+                for (uint32_t cp : word) wsum += mq_font_advance(f, cp, dsize);
+                if (max_w > 0.0F && pen_x > 0.0F && pen_x + wsum > max_w) end_line();
+                for (uint32_t cp : word) place(cp);
             }
             word.clear();
-            (void)force;
         };
-        for (size_t i = 0; i < run.text.size(); ++i) {
-            const char ch = run.text[i];
-            (void)ch;
-            word.push_back(run.text[i]);
-            /* 拉丁文本：空格后可断行（WORD）；CJK 无空格，由 CHAR 模式处理 */
-            if (run.text[i] == ' ' && st.wrap == MQ_TEXT_WRAP_WORD) flush_word(false);
+
+        const char* cur = run.text.c_str();
+        while (*cur) {
+            uint32_t cp = 0;
+            const char* nx = utf8_next(cur, &cp);
+            if (nx == cur) break;
+            cur = nx;
+            word.push_back(cp);
+            /* WORD：空格后断行；CJK 逐字可断（无空格语言不会整段溢出） */
+            if (st.wrap == MQ_TEXT_WRAP_WORD && (cp == ' ' || is_cjk(cp))) flush_word();
         }
-        if (st.wrap == MQ_TEXT_WRAP_WORD) flush_word(false);
-        else if (st.wrap == MQ_TEXT_WRAP_NONE) {
-            /* 不换行：整段一次排布 */
-            for (unsigned char ch : word) {
-                PlacedGlyph g{};
-                g.cp = ch; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = dsize;
-                g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
-                Atlas& a = atlas_for(f, dsize);
-                const Glyph* gl = find_glyph(a, ch);
-                if (gl) {
-                    g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
-                    g.u0 = (float)gl->ax / (float)a.w; g.v0 = (float)gl->ay / (float)a.h;
-                    g.u1 = (float)(gl->ax + gl->w) / (float)a.w; g.v1 = (float)(gl->ay + gl->h) / (float)a.h;
-                }
-                g.x0 = g.x + (float)g.bearing_x;
-                g.y0 = g.y + ascent - (float)g.bearing_y;
-                if (st.pixel_snap) { g.x0 = (float)(int)(g.x0 + 0.5F); g.y0 = (float)(int)(g.y0 + 0.5F); }
-                lines.back().glyphs.push_back(g);
-                pen_x += mq_font_advance(f, ch, dsize);
-                if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
-                line_h = std::max(line_h, mq_font_height(f, dsize));
-            }
-            word.clear();
-        } else {
-            flush_word(false);        /* CHAR / 默认：按字符断行 */
-        }
+        flush_word();                                        /* NONE/CHAR/WORD 统一收尾 */
     }
     lines.back().width = pen_x;
     lines.back().height = line_h;
@@ -620,6 +640,7 @@ extern "C" int mq_text_layout(mq_font* font, const mq_text_style* style, const c
         g.size = p.size;
         g.device_size = p.device_size;
         g.x0 = p.x0; g.y0 = p.y0;
+        g.ax = p.ax; g.ay = p.ay;
         g.bearing_x = p.bearing_x; g.bearing_y = p.bearing_y;
     }
     return MQ_TEXT_OK;

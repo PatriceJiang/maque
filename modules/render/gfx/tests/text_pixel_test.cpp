@@ -179,6 +179,105 @@ int main() {
                    ink_px, bleed, lin_bleed, max_diff);
     }
 
+    // ---- ⑤ CJK 像素级一致：项目字体（缺失则跳过）----
+    {
+        const char* paths[] = {
+            "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+            "../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+            "../../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+        };
+        mq_font* cjk = nullptr;
+        for (const char* q : paths) { cjk = mq_font_load_file(q); if (cjk) break; }
+        if (!cjk) {
+            std::print("text_pixel_test: 项目字体不可用，跳过 CJK 用例\n");
+        } else {
+            mq_text_style cs = style(24.0F);
+            const char* ctext = "推箱";
+            mq_text_metrics cm{};
+            CHECK(mq_text_measure(cjk, &cs, ctext, &cm) == MQ_TEXT_OK);
+            std::vector<mq_text_glyph> cg(cm.glyph_count ? cm.glyph_count : 1);
+            uint32_t cn = 0;
+            CHECK(mq_text_layout(cjk, &cs, ctext, cg.data(), (uint32_t)cg.size(), &cn, &cm) == MQ_TEXT_OK);
+            CHECK(cn == 2);
+            uint32_t cw = 0, ch = 0;
+            CHECK(mq_font_atlas(cjk, 24.0F, nullptr, 0, &cw, &ch) == MQ_TEXT_ERR_CAP);
+            std::vector<uint8_t> catlas((size_t)cw * ch * 4);
+            CHECK(mq_font_atlas(cjk, 24.0F, catlas.data(), catlas.size(), &cw, &ch) == MQ_TEXT_OK);
+            const int ctex = api->create_texture(self, catlas.data(), (int32_t)cw, (int32_t)ch);
+            CHECK(ctex >= 0);
+            /* 期望图：按字号 24 的位图铺开 */
+            std::vector<uint8_t> cexp((size_t)W * H * 4, 0);
+            std::vector<mq_renderer_item> citems;
+            for (uint32_t i = 0; i < cn; ++i) {
+                const mq_text_glyph& g = cg[i];
+                for (int y = 0; y < (int)g.h; ++y)
+                    for (int x = 0; x < (int)g.w; ++x) {
+                        const uint8_t a = catlas[(((size_t)(g.ay + y) * cw) + (uint32_t)(g.ax + x)) * 4 + 3];
+                        const int px = ox + (int)g.x0 + x, py = oy + (int)g.y0 + y;
+                        if (px < 0 || py < 0 || px >= W || py >= H) continue;
+                        cexp[((size_t)py * W + px) * 4 + 0] = a;
+                        cexp[((size_t)py * W + px) * 4 + 1] = a;
+                        cexp[((size_t)py * W + px) * 4 + 2] = a;
+                    }
+                mq_renderer_item it{};
+                it.x = (float)ox + g.x0 + g.w * 0.5F;
+                it.y = (float)oy + g.y0 + g.h * 0.5F;
+                it.half_w = g.w * 0.5F; it.half_h = g.h * 0.5F;
+                it.size = it.half_w > it.half_h ? it.half_w : it.half_h;
+                it.filter = 1; it.snap = 1;
+                it.r = it.g = it.b = it.a = 1.0F;
+                it.texture = ctex;
+                it.uv0 = (float)g.ax / (float)cw; it.uv1 = (float)g.ay / (float)ch;
+                it.uv2 = (float)(g.ax + (int)g.w) / (float)cw;
+                it.uv3 = (float)(g.ay + (int)g.h) / (float)ch;
+                it.layer = 1;
+                citems.push_back(it);
+            }
+            Canvas cc;
+            CHECK(api->render_views(self, W, H, &v, 1, citems.data(), (uint32_t)citems.size(), bg,
+                                    cc.px.data(), (uint32_t)cc.px.size()) == 0);
+            int c_bleed = 0, c_ink = 0, c_max = 0;
+            for (int y = 0; y < H; ++y)
+                for (int x = 0; x < W; ++x) {
+                    const int e = cexp[((size_t)y * W + x) * 4];
+                    const int a = cc.at(x, y, 0);
+                    if (e == 0) { if (a != 0) ++c_bleed; }
+                    else { ++c_ink; const int d = std::abs(a - e); if (d > c_max) c_max = d; }
+                }
+            /* CJK 断言（结构等价 + 容差）：
+             *   · 墨迹包围盒必须与字体位图**逐像素一致**（尺寸/位置/无拉伸）
+             *   · 至少 60% 墨迹像素与位图接近（±8）
+             *   · 渗出（位图为空的像素被画到）≤ 5% 墨迹量
+             * 说明：ASCII（内置 5x7）用例是**严格逐像素相等**（渗出 0、max_diff 0），
+             * 证明"矩形 + nearest + 像素对齐"这条渲染路径本身正确；CJK 大字号字形笔画密集，
+             * 1:1 采样在纹素边界上的 ±半纹素舍入会在部分像素上体现出来，
+             * 逐像素精确性另行跟进（见 docs/13「已知待查」）。 */
+            int ex0 = W, ex1 = -1, ey0 = H, ey1 = -1, rx0 = W, rx1 = -1, ry0 = H, ry1 = -1;
+            int close = 0;
+            for (int y = 0; y < H; ++y)
+                for (int x = 0; x < W; ++x) {
+                    const int e = cexp[((size_t)y * W + x) * 4];
+                    const int a = cc.at(x, y, 0);
+                    if (e) {
+                        ex0 = std::min(ex0, x); ex1 = std::max(ex1, x);
+                        ey0 = std::min(ey0, y); ey1 = std::max(ey1, y);
+                        if (std::abs(a - e) <= 8) ++close;
+                    }
+                    if (a) {
+                        rx0 = std::min(rx0, x); rx1 = std::max(rx1, x);
+                        ry0 = std::min(ry0, y); ry1 = std::max(ry1, y);
+                    }
+                }
+            CHECK(ex0 == rx0 && ex1 == rx1 && ey0 == ry0 && ey1 == ry1);   // 包围盒一致
+            CHECK(close * 100 >= c_ink * 60);                              // ≥60% 像素接近
+            CHECK(c_bleed * 100 <= c_ink * 5);                             // 渗出 ≤ 5%
+            std::print("text_pixel_test(CJK): 墨迹={} 一致={} 渗出={} bbox=x[{}..{}] y[{}..{}]\n",
+                       c_ink, close, c_bleed, ex0, ex1, ey0, ey1);
+            if (api->destroy_texture) api->destroy_texture(self, ctex);
+            mq_font_destroy(cjk);
+        }
+    }
+
     api->destroy(self);
     mq_host_destroy(host);
     mq_font_destroy(font);

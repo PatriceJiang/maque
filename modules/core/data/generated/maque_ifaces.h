@@ -45,6 +45,7 @@ typedef struct mq_renderer_v1 {
     mq_api_header header;
     void* (*create)(const char** out_backend);
     void (*destroy)(void* self);
+    void (*destroy_texture)(void* self, int32_t id);
     int32_t (*create_texture)(void* self, const uint8_t* rgba, int32_t w, int32_t h);
     int32_t (*has_texture)(void* self, int32_t id);
     int32_t (*render_views)(void* self, int32_t tw, int32_t th, const mq_renderer_view* views, uint32_t nviews, const mq_renderer_item* items, uint32_t count, const float* bg, uint8_t* out, uint32_t out_size);

@@ -23215,6 +23215,38 @@
               "doc": null
             }
           ]
+        },
+        {
+          "name": "mq_font_atlas_generation",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_font_glyph_count",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "font",
+              "type": "mq_font*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "float",
+              "doc": null
+            }
+          ]
         }
       ],
       "structs": [
@@ -23317,9 +23349,19 @@
               "doc": null
             },
             {
+              "name": "ax",
+              "type": "int32_t",
+              "doc": "图集内像素原点 x（渲染侧应按**最终图集尺寸**换算 UV）"
+            },
+            {
+              "name": "ay",
+              "type": "int32_t",
+              "doc": "图集内像素原点 y"
+            },
+            {
               "name": "u0",
               "type": "float",
-              "doc": "图集 UV"
+              "doc": "图集 UV（按排版时图集尺寸归一化；图集增长后可能过期，建议用 ax/ay）"
             },
             {
               "name": "v0",

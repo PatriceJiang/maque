@@ -229,13 +229,33 @@ struct Engine {
     std::string sim_path;                   // MAQUE_SIM 载入的场景文件（自省用）
     void sim_setup();                       // 装配期：MAQUE_SIM / MAQUE_SIM_CLICK → 载入场景
     void sim_feed(uint64_t frame);           // 每帧：把到期事件注入输入流（窗口坐标→世界）
-    /* 文本渲染（docs/13/17）：字体实例 + 按字号生成的图集纹理 id（每字号一张） */
+    /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
+     * 图集**按需增长**（任意 Unicode/CJK）→ 用 generation 判断是否需要重传纹理。 */
     mq_font* font = nullptr;
     std::string font_path;
-    struct FontAtlas { float size; int texture; uint32_t w, h; };
+    struct FontEntry { std::string path; mq_font* font; };
+    std::vector<FontEntry> fonts;           // 字体缓存（默认字体在 fonts[0]）
+    struct FontAtlas { const mq_font* font; float size; int texture; uint32_t w, h, generation; };
     std::vector<FontAtlas> font_atlases;
-    int glyph_texture(float size);          // 取（必要时创建）该字号的字形图集纹理
-    void text_setup();                      // 装配期：加载字体（MAQUE_FONT → 系统字体 → 内置）
+    /* 文本两阶段（docs/13 §字形管线）：
+     *   阶段 1（排版）：逐标签 measure+layout（**预热图集**），把字形收集为"待发图元"（无纹理/UV）
+     *   阶段 2（收尾）：全部标签排版完成后，按 (字体,字号) 刷新一次图集纹理，再按**最终图集尺寸**
+     *                   计算 UV 并提交图元 —— 否则先排的标签会用过期 UV 采样（错位/重叠）。
+     *   同时避免"帧内重建纹理 + 图元仍引用旧 id"的悬空问题。 */
+    struct PendingQuad {
+        const mq_font* font; float size;            // 图集键
+        int ax, ay, tw, th;                         // 图集内像素原点 + 字形位图尺寸（纹素）
+        float x, y, half_w, half_h;                 // 设计空间位置与半尺寸
+        float r, g, b, a; int z;
+    };
+    std::vector<PendingQuad> pending_quads;
+    void text_flush(std::vector<mq_renderer_item>& out);        // 阶段 2
+    /* 退役纹理：图集增长后替换下来的旧纹理**延迟到下一帧**释放 ——
+     * 同一帧里先前已排队的字形图元仍引用旧 id（帧内释放会导致悬空/崩溃）。 */
+    std::vector<int> retired_textures;
+    mq_font* text_font_for(const std::string& path);   // 按标签的 font 字段选字体（缓存）
+    int glyph_texture(const mq_font* f, float size);   // 取（必要时创建/刷新）字形图集纹理
+    void text_setup();                      // 装配期：加载字体（MAQUE_FONT → 项目字体 → 系统 → 内置）
     uint64_t stop_frame = 0;                                // >0 时到该帧停止（CI 固定长度跑）
     std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
     std::string name;
@@ -658,6 +678,7 @@ void Engine::step_frame() {
         ui_step();                                       // UI 组件语义（layout/progress/slider/check/safearea/scroll）
         scene->compute_world(*this);
         scene->extract(*this, draws);
+    text_flush(draws);            // 文本阶段 2：刷新图集纹理并按最终尺寸计算 UV
     }
     // ④ 世界校验和 + 周期快照（确定性验证 + 回滚点，docs/10 §4/§5）
     if (scene) {
@@ -1975,21 +1996,52 @@ void Engine::text_setup() {
         }
     }
     if (!font) { font = mq_font_builtin(); font_path = "(builtin 5x7)"; }
+    fonts.push_back({ font_path, font });
     std::print("runtime: text font '{}'\n", font_path);
 }
 
-int Engine::glyph_texture(float size) {
+/* 字体选择：标签的 font 字段（相对路径按 CWD 与场景目录解析）→ 缓存 */
+mq_font* Engine::text_font_for(const std::string& path) {
+    if (path.empty()) return font;
+    for (const auto& fe : fonts) if (fe.path == path && fe.font) return fe.font;
+    std::vector<std::string> tries = { path, scn_dir + "/" + path };
+    for (const auto& t : tries) {
+        if (mq_font* f = mq_font_load_file(t.c_str())) {
+            fonts.push_back({ path, f });
+            std::print("runtime: label font '{}'\n", t);
+            return f;
+        }
+    }
+    std::print(stderr, "runtime: label font '{}' not found (fallback: {})\n", path, font_path);
+    fonts.push_back({ path, nullptr });
+    return font;
+}
+
+/* 字形图集纹理：按 (字体, 字号) 缓存；图集增长（generation 变化）→ 重建纹理并释放旧的 */
+int Engine::glyph_texture(const mq_font* f, float size) {
     const float sz = size > 0.0F ? size : 16.0F;
-    for (auto& a : font_atlases) if (a.size == sz) return a.texture;
-    if (!font || !rapi || !rself) return -1;
+    if (!f || !rapi || !rself) return -1;
+    const uint32_t gen = mq_font_atlas_generation(const_cast<mq_font*>(f), sz);
+    for (auto& a : font_atlases) {
+        if (a.font != f || a.size != sz) continue;
+        if (a.generation == gen && a.texture >= 0) return a.texture;      /* 未变化 → 复用 */
+        uint32_t w = 0, h = 0;
+        if (mq_font_atlas(const_cast<mq_font*>(f), sz, nullptr, 0, &w, &h) != MQ_TEXT_ERR_CAP) return a.texture;
+        std::vector<uint8_t> rgba((size_t)w * h * 4);
+        if (mq_font_atlas(const_cast<mq_font*>(f), sz, rgba.data(), rgba.size(), &w, &h) != MQ_TEXT_OK) return a.texture;
+        const int tex = rapi->create_texture(rself, rgba.data(), (int32_t)w, (int32_t)h);
+        if (tex < 0) return a.texture;
+        if (a.texture >= 0) retired_textures.push_back(a.texture);      // 延迟释放（见成员注释）
+        a.texture = tex; a.w = w; a.h = h; a.generation = gen;
+        return tex;
+    }
     uint32_t w = 0, h = 0;
-    if (mq_font_atlas(font, sz, nullptr, 0, &w, &h) != MQ_TEXT_ERR_CAP) return -1;
+    if (mq_font_atlas(const_cast<mq_font*>(f), sz, nullptr, 0, &w, &h) != MQ_TEXT_ERR_CAP) return -1;
     std::vector<uint8_t> rgba((size_t)w * h * 4);
-    if (mq_font_atlas(font, sz, rgba.data(), rgba.size(), &w, &h) != MQ_TEXT_OK) return -1;
-    /* 字形是白字 + alpha：渲染时按字形颜色调制（与材质管线一致） */
+    if (mq_font_atlas(const_cast<mq_font*>(f), sz, rgba.data(), rgba.size(), &w, &h) != MQ_TEXT_OK) return -1;
     const int tex = rapi->create_texture(rself, rgba.data(), (int32_t)w, (int32_t)h);
     if (tex < 0) return -1;
-    font_atlases.push_back({ sz, tex, w, h });
+    font_atlases.push_back({ f, sz, tex, w, h, gen });
     return tex;
 }
 
@@ -2042,18 +2094,20 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     st.r = r; st.g = g; st.b = b; st.a = a * inherit_alpha;
 
     /* 先测量（写回 transient 字段，供脚本/控制面读取），再排版 */
+    /* 字体：标签的 font 字段优先（相对路径按 CWD/场景目录解析），否则默认字体 */
+    mq_font* label_font = eng.text_font_for(font_path_comp);
     mq_text_metrics m{};
-    const int mrc = mq_text_measure(eng.font, &st, text.c_str(), &m);
+    const int mrc = mq_text_measure(label_font, &st, text.c_str(), &m);
     if (std::getenv("MAQUE_TRACE_TEXT"))
         std::print("[text] id={} type={} len={} size={:.0f} wrap={} rc={} lines={}\n",
                    idx, d->name, text.size(), st.font_size, st.wrap, mrc, m.line_count);
     if (mrc != MQ_TEXT_OK) return;
     std::vector<mq_text_glyph> glyphs(m.glyph_count ? m.glyph_count : 1);
     uint32_t n = 0;
-    const int lrc = mq_text_layout(eng.font, &st, text.c_str(), glyphs.data(), (uint32_t)glyphs.size(), &n, &m);
+    const int lrc = mq_text_layout(label_font, &st, text.c_str(), glyphs.data(), (uint32_t)glyphs.size(), &n, &m);
     if (std::getenv("MAQUE_TRACE_TEXT"))
         std::print("[text]   layout rc={} glyphs={} pos=({:.0f},{:.0f}) tex={} first=({:.1f},{:.1f},{:.1f}x{:.1f})\n",
-                   lrc, n, e.x, e.y, n ? glyph_texture(glyphs[0].size) : -1,
+                   lrc, n, e.x, e.y, n ? glyph_texture(label_font, glyphs[0].device_size) : -1,
                    n ? glyphs[0].x : 0.0F, n ? glyphs[0].y : 0.0F,
                    n ? glyphs[0].w : 0.0F, n ? glyphs[0].h : 0.0F);
     if (lrc != MQ_TEXT_OK) return;
@@ -2079,32 +2133,64 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     float ox = 0, oy = 0;
     read_f32(d, e.comps[d->type_id].data(), "x", &ox);
     read_f32(d, e.comps[d->type_id].data(), "y", &oy);
+    /* 阶段 1：只收集（纹理与 UV 留到 text_flush，按**最终**图集计算） */
     for (uint32_t i = 0; i < n; ++i) {
         const mq_text_glyph& gl = glyphs[i];
-        const int tex = glyph_texture(gl.device_size);      /* 图集按**设备字号**键控 */
-        mq_renderer_item it{};
-        /* 位图矩形（设备像素，排版侧已按 bearing 定位并像素对齐）；无位图跳过 */
         if (gl.w <= 0.0F || gl.h <= 0.0F) continue;
-        /* 位图尺寸/位置都是**设备像素**（按设备字号栅格化的结果）→ 换算回设计像素再落位，
-         * 否则窗口放大 N 倍时文字会随之变成 N 倍大（曾导致标签重叠溢出）。 */
+        /* 位图尺寸/位置都是**设备像素**（按设备字号栅格化）→ 换算回设计像素再落位，
+         * 否则窗口放大 N 倍时文字会随之变成 N 倍大。 */
         const float half_w = gl.w * 0.5F * inv, half_h = gl.h * 0.5F * inv;
+        PendingQuad q{};
+        q.font = label_font; q.size = gl.device_size;
+        q.ax = gl.ax; q.ay = gl.ay;
+        q.tw = (int)gl.w; q.th = (int)gl.h;
         /* 锚点 = 位图左上角 (x0,y0)；排版 y 向下、屏幕 y 向下 → 基准翻转后相加 */
-        it.x = e.x + ox + gl.x0 * inv + half_w;
-        it.y = (float)eng.H - (e.y + oy) + gl.y0 * inv + half_h;
-        it.half_w = half_w; it.half_h = half_h;   /* 非方形矩形（方形会拉伸字形） */
-        it.filter = 1;                            /* nearest：1 纹素 = 1 像素 */
-        it.snap = 1;                              /* 左上角吸附整数像素（pixel-perfect） */
-        it.size = half_w > half_h ? half_w : half_h;   /* 兼容字段（矩形路径不用） */
-        it.r = gl.r; it.g = gl.g; it.b = gl.b; it.a = gl.a;
+        q.x = e.x + ox + gl.x0 * inv + half_w;
+        q.y = (float)eng.H - (e.y + oy) + gl.y0 * inv + half_h;
+        q.half_w = half_w; q.half_h = half_h;
+        q.r = gl.r; q.g = gl.g; q.b = gl.b; q.a = gl.a;
+        q.z = 100 + (int)i;
+        eng.pending_quads.push_back(q);
+    }
+}
+
+/* 阶段 2：刷新图集纹理（按最终尺寸）→ 计算 UV → 提交图元。
+ * 必须在**所有**标签排版完成后调用（否则 UV 指向的图集尺寸会过期）。 */
+void Engine::text_flush(std::vector<mq_renderer_item>& out) {
+    if (pending_quads.empty()) return;
+    for (const PendingQuad& q : pending_quads) {
+        const int tex = glyph_texture(q.font, q.size);
+        if (tex < 0) continue;
+        /* 取该 (字体,字号) 的图集尺寸（= 纹理尺寸）→ 按最终尺寸换算 UV */
+        uint32_t aw = 1, ah = 1;
+        for (const auto& a : font_atlases)
+            if (a.font == q.font && a.size == q.size) { aw = a.w ? a.w : 1; ah = a.h ? a.h : 1; break; }
+        mq_renderer_item it{};
+        it.x = q.x; it.y = q.y;
+        it.half_w = q.half_w; it.half_h = q.half_h;
+        it.size = q.half_w > q.half_h ? q.half_w : q.half_h;   /* 兼容字段 */
+        it.filter = 1;                                          /* 1 纹素 = 1 像素 */
+        it.snap = 1;                                            /* 左上角吸附整数像素 */
+        it.r = q.r; it.g = q.g; it.b = q.b; it.a = q.a;
         it.texture = tex;
-        it.uv0 = gl.u0; it.uv1 = gl.v0; it.uv2 = gl.u1; it.uv3 = gl.v1;
-        it.layer = 1; it.z = 100 + (int)i;
-        if (std::getenv("MAQUE_TRACE_TEXT") && i < 2)
-            std::print("[text]   item[{}] rect=({:.0f},{:.0f} {}x{}) tex={} nearest={} snap={}\n",
-                       i, it.x - it.half_w, it.y - it.half_h, (int)gl.w, (int)gl.h, it.texture,
-                       it.filter == 1, it.snap == 1);
+        it.uv0 = (float)q.ax / (float)aw;
+        it.uv1 = (float)q.ay / (float)ah;
+        it.uv2 = (float)(q.ax + q.tw) / (float)aw;
+        it.uv3 = (float)(q.ay + q.th) / (float)ah;
+        it.layer = 1; it.z = q.z;
         out.push_back(it);
     }
+    if (std::getenv("MAQUE_TRACE_TEXT")) {
+        const PendingQuad& q0 = pending_quads.front();
+        uint32_t aw0 = 1, ah0 = 1;
+        for (const auto& a : font_atlases)
+            if (a.font == q0.font && a.size == q0.size) { aw0 = a.w; ah0 = a.h; break; }
+        std::print("[text]   flush {} quad(s) 图集={}x{} 首个 texel=({},{}) {}x{} → uv=({:.4f},{:.4f},{:.4f},{:.4f})\n",
+                   pending_quads.size(), aw0, ah0, q0.ax, q0.ay, q0.tw, q0.th,
+                   (double)q0.ax / aw0, (double)q0.ay / ah0,
+                   (double)(q0.ax + q0.tw) / aw0, (double)(q0.ay + q0.th) / ah0);
+    }
+    pending_quads.clear();
 }
 
 

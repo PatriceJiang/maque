@@ -12,20 +12,20 @@
   const GRID_X = 14, GRID_Y = 40;   // 网格左上角（世界坐标，y 向上）
 
   const LEVELS = [
-    { name: 'Level 1 - Warmup', map: [
+    { name: '第 1 关 · 热身', map: [
       '#######',
       '#     #',
       '# .$@ #',
       '#     #',
       '#######' ] },
-    { name: 'Level 2 - Corner', map: [
+    { name: '第 2 关 · 转角', map: [
       '########',
       '#      #',
       '# .$$@ #',
       '#  .   #',
       '#      #',
       '########' ] },
-    { name: 'Level 3 - Two boxes', map: [
+    { name: '第 3 关 · 双箱', map: [
       '#########',
       '#       #',
       '# . . $ #',
@@ -140,10 +140,10 @@
   function refresh() {
     for (const b of boxes) paint(b);
     done = boxes.length > 0 && boxes.every(b => b.onGoal);
-    const name = LEVELS[level].name + (done ? '   [SOLVED - press N]' : '');
+    const name = LEVELS[level].name + (done ? '   ✅ 完成（按 N 下一关）' : '');
     node_set_string(entity_find('LevelName'), 'scn.Label', 'text', name);
     node_set_string(entity_find('Status'), 'scn.Label', 'text',
-      'Steps ' + steps + '   Pushes ' + pushes + '   Boxes '
+      '步数 ' + steps + '   推动 ' + pushes + '   箱子 '
         + boxes.filter(b => b.onGoal).length + '/' + boxes.length);
     if (done) log('sokoban_done level=' + level + ' steps=' + steps + ' pushes=' + pushes);
   }

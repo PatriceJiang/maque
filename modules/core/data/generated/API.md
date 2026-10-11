@@ -216,6 +216,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 |------|------|------|
 | `create` | out_backend: const char** | self |
 | `destroy` | self: self | void |
+| `destroy_texture` | self: self, id: int32_t | void |
 | `create_texture` | self: self, rgba: const uint8_t*, w: int32_t, h: int32_t | int32_t |
 | `has_texture` | self: self, id: int32_t | int32_t |
 | `render_views` | self: self, tw: int32_t, th: int32_t, views: const mq_renderer_view*, nviews: uint32_t, items: const mq_renderer_item*, count: uint32_t, bg: const float*, out: uint8_t*, out_size: uint32_t | int32_t |
@@ -736,7 +737,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 结构体：
 
 - `mq_text_style`：struct_size: uint32_t, font_size: float, device_scale: float, pixel_snap: int32_t, hinting: int32_t, line_spacing: float, wrap: uint32_t, align: uint32_t, max_width: float, r: float, g: float, b: float, a: float
-- `mq_text_glyph`：codepoint: uint32_t, x: float, y: float, w: float, h: float, u0: float, v0: float, u1: float, v1: float, r: float, g: float, b: float, a: float, size: float, device_size: float, x0: float, y0: float, bearing_x: int32_t, bearing_y: int32_t
+- `mq_text_glyph`：codepoint: uint32_t, x: float, y: float, w: float, h: float, ax: int32_t, ay: int32_t, u0: float, v0: float, u1: float, v1: float, r: float, g: float, b: float, a: float, size: float, device_size: float, x0: float, y0: float, bearing_x: int32_t, bearing_y: int32_t
 - `mq_text_metrics`：width: float, height: float, line_count: uint32_t, glyph_count: uint32_t, baseline: float, ascent: float, device_scale: float
 
 | 函数 | 返回 | 参数 |
@@ -750,6 +751,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_text_layout` | int | font: mq_font*, style: const mq_text_style*, text: const char*, out: mq_text_glyph*, cap: uint32_t, out_count: uint32_t*, out_metrics: mq_text_metrics* |
 | `mq_text_strip_markup` | int | text: const char*, out: char*, cap: uint32_t |
 | `mq_font_atlas` | int | font: mq_font*, size: float, out_rgba: uint8_t*, cap: size_t, out_w: uint32_t*, out_h: uint32_t* |
+| `mq_font_atlas_generation` | uint32_t | font: mq_font*, size: float |
+| `mq_font_glyph_count` | uint32_t | font: mq_font*, size: float |
 
 ### sim — `maque.sim` v1
 

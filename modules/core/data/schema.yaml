@@ -2613,6 +2613,10 @@
       args: [ { name: out_backend, type: "const char**" } ]
     - fn: destroy
       args: [ { name: self, type: self } ]
+    - fn: destroy_texture
+      returns: void
+      args: [ { name: self, type: "self" }, { name: id, type: "int32_t" } ]
+      doc: "释放纹理（字形图集增长后替换旧纹理用；id 无效则忽略）"
     - fn: create_texture
       returns: int32_t
       args: [ { name: self, type: self }, { name: rgba, type: "const uint8_t*" }, { name: w, type: int32_t }, { name: h, type: int32_t } ]
@@ -3156,7 +3160,9 @@
           - { name: y, type: "float" }
           - { name: w, type: "float", doc: "字形位图宽（像素）" }
           - { name: h, type: "float" }
-          - { name: u0, type: "float", doc: "图集 UV" }
+          - { name: ax, type: "int32_t", doc: "图集内像素原点 x（渲染侧应按**最终图集尺寸**换算 UV）" }
+          - { name: ay, type: "int32_t", doc: "图集内像素原点 y" }
+          - { name: u0, type: "float", doc: "图集 UV（按排版时图集尺寸归一化；图集增长后可能过期，建议用 ax/ay）" }
           - { name: v0, type: "float" }
           - { name: u1, type: "float" }
           - { name: v1, type: "float" }
@@ -3194,7 +3200,11 @@
       - { fn: mq_text_strip_markup, returns: int, args: [ { name: text, type: "const char*" }, { name: out, type: "char*" }, { name: cap, type: "uint32_t" } ],
           doc: "去掉富文本标记后的纯文本（供自省/日志）" }
       - { fn: mq_font_atlas, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: out_rgba, type: "uint8_t*" }, { name: cap, type: "size_t" }, { name: out_w, type: "uint32_t*" }, { name: out_h, type: "uint32_t*" } ],
-          doc: "构建指定字号的字形图集（RGBA8；确定性行式打包）" }
+          doc: "取指定字号的字形图集（RGBA8；**按需增长**：排版过的码点才会进入图集）" }
+      - { fn: mq_font_atlas_generation, returns: "uint32_t", args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" } ],
+          doc: "图集版本号：每新增字形 +1（宿主据此决定是否重传纹理）" }
+      - { fn: mq_font_glyph_count, returns: "uint32_t", args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" } ],
+          doc: "该字号已栅格化的字形数（自省/测试）" }
 
 # 输入模拟器（开发/CI，docs/19）：帧索引场景文件 → 输入事件流；与录制/回放/确定性一致。
 - namespace: sim

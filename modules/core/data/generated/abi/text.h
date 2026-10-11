@@ -65,7 +65,9 @@ typedef struct mq_text_glyph {
     float y;
     float w;   /* 字形位图宽（像素） */
     float h;
-    float u0;   /* 图集 UV */
+    int32_t ax;   /* 图集内像素原点 x（渲染侧应按**最终图集尺寸**换算 UV） */
+    int32_t ay;   /* 图集内像素原点 y */
+    float u0;   /* 图集 UV（按排版时图集尺寸归一化；图集增长后可能过期，建议用 ax/ay） */
     float v0;
     float u1;
     float v1;
@@ -105,8 +107,12 @@ int mq_text_measure(mq_font* font, const mq_text_style* style, const char* text,
 int mq_text_layout(mq_font* font, const mq_text_style* style, const char* text, mq_text_glyph* out, uint32_t cap, uint32_t* out_count, mq_text_metrics* out_metrics);
 /* 去掉富文本标记后的纯文本（供自省/日志） */
 int mq_text_strip_markup(const char* text, char* out, uint32_t cap);
-/* 构建指定字号的字形图集（RGBA8；确定性行式打包） */
+/* 取指定字号的字形图集（RGBA8；**按需增长**：排版过的码点才会进入图集） */
 int mq_font_atlas(mq_font* font, float size, uint8_t* out_rgba, size_t cap, uint32_t* out_w, uint32_t* out_h);
+/* 图集版本号：每新增字形 +1（宿主据此决定是否重传纹理） */
+uint32_t mq_font_atlas_generation(mq_font* font, float size);
+/* 该字号已栅格化的字形数（自省/测试） */
+uint32_t mq_font_glyph_count(mq_font* font, float size);
 
 #ifdef __cplusplus
 }

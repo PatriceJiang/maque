@@ -128,7 +128,83 @@ int main() {
         CHECK(n == 6);
     }
 
+    // ---- 8) UTF-8：多字节按**码点**排版（旧实现按字节会拆成多个伪字形）----
+    {
+        mq_text_style st = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+        mq_text_metrics m{};
+        CHECK(mq_text_measure(f, &st, "中A", &m) == MQ_TEXT_OK);
+        CHECK(m.glyph_count == 2);                       // 不是 4（中 = 3 字节）
+        CHECK(mq_text_measure(f, &st, "推箱子", &m) == MQ_TEXT_OK);
+        CHECK(m.glyph_count == 3);
+        char plain[64] = { 0 };
+        CHECK(mq_text_strip_markup("中<color=#ff0000>文</color>", plain, sizeof plain) == MQ_TEXT_OK);
+        CHECK(std::strcmp(plain, "中文") == 0);
+        /* 注：CJK 断行需要含 CJK 字形的字体（内置 5x7 无 CJK → 推进为 1px），
+         * 因此该用例放在下方"项目字体"段。 */
+    }
+
     mq_font_destroy(f);
+
+    // ---- 9) CJK 动态字形缓存（项目字体；缺失则跳过）----
+    {
+        const char* paths[] = {
+            "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+            "../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+            "../../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+        };
+        mq_font* cjk = nullptr;
+        for (const char* p : paths) { cjk = mq_font_load_file(p); if (cjk) break; }
+        if (!cjk) {
+            std::print("text_test: 项目字体不可用，跳过 CJK 用例\n");
+        } else {
+            mq_text_style st = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+            /* ASCII 预热 + 按需增长：初次已含 95 个 ASCII 字形 */
+            const uint32_t base = mq_font_glyph_count(cjk, 16.0F);
+            CHECK(base >= 95);
+            const uint32_t gen0 = mq_font_atlas_generation(cjk, 16.0F);
+            mq_text_metrics m{};
+            CHECK(mq_text_measure(cjk, &st, "推箱子中文渲染测试", &m) == MQ_TEXT_OK);
+            CHECK(m.glyph_count == 9);
+            std::vector<mq_text_glyph> g(m.glyph_count);
+            uint32_t n = 0;
+            CHECK(mq_text_layout(cjk, &st, "推箱子中文渲染测试", g.data(), (uint32_t)g.size(), &n, &m) == MQ_TEXT_OK);
+            int drawn = 0;
+            for (uint32_t i = 0; i < n; ++i) {
+                CHECK(g[i].ax >= 0 && g[i].ay >= 0);      // 有图集像素原点
+                if (g[i].w > 0.0F && g[i].h > 0.0F) ++drawn;
+            }
+            CHECK(drawn == 9);                            // 全部有字形（无缺失）
+            CHECK(m.width > 100.0F);                      // CJK 宽度按全角推进
+            CHECK(mq_font_atlas_generation(cjk, 16.0F) > gen0);      // 图集增长
+            /* CJK 逐字可断行（无空格语言）：max_width 不足时应换行 */
+            mq_text_style wst = style(16.0F, MQ_TEXT_WRAP_WORD, MQ_TEXT_ALIGN_BEGIN, 100.0F);
+            mq_text_metrics wm{};
+            CHECK(mq_text_measure(cjk, &wst, "推箱子中文渲染测试", &wm) == MQ_TEXT_OK);
+            CHECK(wm.line_count >= 2);
+            CHECK(mq_font_glyph_count(cjk, 16.0F) == base + 9);
+            /* 图集确实变大（高度按需增长且缓冲随之扩容 —— 曾因未扩容导致越界写） */
+            uint32_t aw = 0, ah = 0;
+            CHECK(mq_font_atlas(cjk, 16.0F, nullptr, 0, &aw, &ah) == MQ_TEXT_ERR_CAP);
+            CHECK(aw > 0 && ah > 2);
+            std::vector<uint8_t> atlas((size_t)aw * ah * 4);
+            CHECK(mq_font_atlas(cjk, 16.0F, atlas.data(), atlas.size(), &aw, &ah) == MQ_TEXT_OK);
+            bool ink = false;
+            for (size_t i = 3; i < atlas.size(); i += 4) if (atlas[i] > 0) { ink = true; break; }
+            CHECK(ink);
+            /* 大批量不同码点 → 图集持续增长且不越界（ASan 下同时验证） */
+            std::string many;
+            for (uint32_t cp = 0x4E00; cp < 0x4E00 + 300; ++cp) {
+                many += (char)(0xE0 | (cp >> 12));
+                many += (char)(0x80 | ((cp >> 6) & 0x3F));
+                many += (char)(0x80 | (cp & 0x3F));
+            }
+            mq_text_style st2 = style(24.0F, MQ_TEXT_WRAP_CHAR, MQ_TEXT_ALIGN_BEGIN, 200.0F);
+            mq_text_metrics m2{};
+            CHECK(mq_text_measure(cjk, &st2, many.c_str(), &m2) == MQ_TEXT_OK);
+            CHECK(mq_font_glyph_count(cjk, 24.0F) > 95);
+            mq_font_destroy(cjk);
+        }
+    }
 
     // ---- 7) FreeType 路径（若可用）：加载系统字体并排版 ----
     {
