@@ -103,3 +103,4 @@
 **e2e 回归**（`samples/player`）：`player_run`、`determinism`、`control_plane`、`ui_e2e`、
 `hot_reload_e2e`、`anim_e2e`、`editor_e2e`、`prefab_e2e`、`crash_context_e2e`、`nav_e2e`、
 `host_tick`、`host_multi_instance`。
+| [17](17-inspector.md) | 游戏检查器（ImGui + TCP 控制面，独立进程） |
