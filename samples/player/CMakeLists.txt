@@ -38,3 +38,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/ui.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/hot_e2e")
 endif()
+
+# 动画/粒子端到端（docs/15 §2/§4、docs/10 §5）：关键帧采样 + 粒子发射 + 确定性 + 回滚保真
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME anim_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/anim_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/anim/anim.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/anim_e2e")
+endif()

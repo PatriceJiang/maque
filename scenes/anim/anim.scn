@@ -1,0 +1,24 @@
+{
+  "title": "动画与粒子",
+  "script": "anim.js",
+  "width": 320,
+  "height": 240,
+  "seed": 11,
+  "gravity_y": 900.0,
+  "restitution": 0.86,
+  "entities": [
+    { "name": "Root", "components": [], "children": [
+      { "name": "Pulse", "components": [
+          { "type": "scn.Transform2D", "x": 160.0, "y": 120.0 },
+          { "type": "scn.Sprite", "radius": 6.0, "r": 0.9, "g": 0.5, "b": 1.0 },
+          { "type": "scn.AnimationPlayer", "clip": "fade.anim.json", "speed": 1.0, "loop": true, "playing": true } ] },
+      { "name": "Sparks", "components": [
+          { "type": "scn.Transform2D", "x": 160.0, "y": 150.0 },
+          { "type": "scn.ParticleEmitter", "rate": 30.0, "lifetime": 1.0, "speed": 70.0,
+            "spread": 0.6, "gravity": 140.0, "size": 3.0, "r": 1.0, "g": 0.7, "b": 0.25,
+            "max_count": 128, "enabled": true } ] },
+      { "name": "Hint", "components": [
+          { "type": "scn.Label", "x": 8.0, "y": 196.0, "z": 0, "text": "AnimationPlayer + ParticleEmitter" } ] }
+    ] }
+  ]
+}

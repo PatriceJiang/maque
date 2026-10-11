@@ -1,0 +1,14 @@
+{
+  "name": "fade",
+  "length": 2.0,
+  "loop": "anim.LoopMode::Loop",
+  "interpolation": "anim.InterpMode::Linear",
+  "fps": 30.0,
+  "tracks": [
+    { "kind": "asset.TrackKind::Property", "field_path": "scn.Sprite.radius",
+      "value_type": "asset.ValueType::Float", "key_count": 3,
+      "keys": [ { "time": 0.0, "value": { "x": 6.0,  "y": 0, "z": 0, "w": 0 } },
+                { "time": 1.0, "value": { "x": 22.0, "y": 0, "z": 0, "w": 0 } },
+                { "time": 2.0, "value": { "x": 6.0,  "y": 0, "z": 0, "w": 0 } } ] }
+  ]
+}

@@ -1105,6 +1105,8 @@ typedef struct mq_field_desc {
 #define MQ_ROLE_UI_BUTTON   (1u << 2)
 #define MQ_ROLE_UI_LABEL    (1u << 3)
 #define MQ_ROLE_CAMERA      (1u << 4)
+#define MQ_ROLE_ANIM_PLAYER (1u << 5)
+#define MQ_ROLE_PARTICLE    (1u << 6)
 
 typedef struct mq_type_desc {
     const char*          name;   /* fully qualified ns.Name */
@@ -1133,6 +1135,8 @@ const ROLE_BIT = {
   ui_button: 'MQ_ROLE_UI_BUTTON',
   ui_label: 'MQ_ROLE_UI_LABEL',
   camera: 'MQ_ROLE_CAMERA',
+  anim_player: 'MQ_ROLE_ANIM_PLAYER',
+  particle_emitter: 'MQ_ROLE_PARTICLE',
 }
 function roleBits(t) {
   const parts = (t.roles || []).map((r) => ROLE_BIT[r]).filter(Boolean)

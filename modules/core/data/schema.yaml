@@ -205,7 +205,8 @@
     - struct: Track
       fields:
         - { name: kind, type: TrackKind, default: "TrackKind::Property" }
-        - { name: field_path, type: uint32_t, default: 0 }
+        # 目标字段路径（点分，如 "scn.Sprite.radius"）；文本优先、可 diff（docs/08）
+        - { name: field_path, type: string, default: "" }
         - { name: bone_index, type: uint16_t, default: 0 }
         - { name: value_type, type: ValueType, default: "ValueType::Float" }
         - { name: interpolation, type: anim.InterpMode, default: "anim.InterpMode::Inherit" }
@@ -1896,6 +1897,31 @@
         - { name: g,    type: float,   default: 1.0F }
         - { name: b,    type: float,   default: 1.0F }
         - { name: a,    type: float,   default: 1.0F }
+    # 动画播放器（docs/15 §2）：关键帧采样，写回目标组件的反射字段。
+    - struct: AnimationPlayer
+      roles: [anim_player]
+      fields:
+        - { name: clip,     type: string,  default: "" }        # 动画片段资源（assets JSON）
+        - { name: time,     type: float,   default: 0.0F }      # 播放头（秒，由引擎推进）
+        - { name: speed,    type: float,   default: 1.0F }
+        - { name: loop,     type: bool,    default: true }
+        - { name: playing,  type: bool,    default: true }
+        - { name: duration, type: float,   default: 0.0F }      # 采样后写回（只读语义）
+    # CPU 粒子发射器（docs/15 §4）：确定性（引擎 RNG，参与回放），上限受池大小约束。
+    - struct: ParticleEmitter
+      roles: [particle_emitter]
+      fields:
+        - { name: rate,      type: float, default: 20.0F }     # 每秒发射数
+        - { name: lifetime,  type: float, default: 1.0F }      # 秒
+        - { name: speed,     type: float, default: 60.0F }     # 初速度（像素/秒）
+        - { name: spread,    type: float, default: 0.5F }      # 方向随机幅度（0..1）
+        - { name: gravity,   type: float, default: 120.0F }    # 自定义重力（与物理无关）
+        - { name: size,      type: float, default: 3.0F }
+        - { name: r,         type: float, default: 1.0F }
+        - { name: g,         type: float, default: 0.6F }
+        - { name: b,         type: float, default: 0.2F }
+        - { name: max_count, type: uint32_t, default: 256 }    # 池上限（docs/07 §8 预算）
+        - { name: enabled,   type: bool, default: true }
     # 相机（docs/13）：按 role 提取，引擎不认具体组件类型。
     - struct: Camera
       roles: [camera]
