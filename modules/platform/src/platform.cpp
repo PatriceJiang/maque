@@ -147,6 +147,11 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
     if ((!std::getenv("DISPLAY") && !std::getenv("WAYLAND_DISPLAY")) || (hl && *hl && *hl != '0'))
         setenv("SDL_VIDEODRIVER", "dummy", 1);
 
+    /* 不让 SDL 接管信号（必须在 SDL_Init 前设置）：SDL 只把 SIGTERM/SIGINT 转成 SDL_QUIT 事件，
+     * 无窗口（headless/CI）时没人处理该事件 → 进程杀不掉（CI 超时清理会卡住）。
+     * 引擎自己装处理器走优雅退出（runtime 的 on_quit_signal）。 */
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+
     auto* p = new mq_platform();
     p->w = w > 0 ? w : 320;
     p->h = h > 0 ? h : 240;

@@ -15,6 +15,17 @@
 
 ---
 
+## 0. 进度
+
+| 里程碑 | 状态 | 说明 |
+|--------|------|------|
+| M0 端点 + 最小面板 | ✅ 已完成（2026-10-11） | 游戏侧 TCP/UDS 端点（`MAQUE_INSPECT`，帧边界轮询、单线程、只读默认 + `-32001` 拒绝与计数）；`Control.info`；inspector 进程（ImGui master + SDL2/SDLRenderer2，中文界面）：场景树 / 属性（`Scene.get(id,"")` 反射 dump）/ 控制台 / 模式；`--headless` 供 CI；`tests/inspector_e2e.sh`（TCP+UDS、只读拒绝、反射查询、attach/detach 无侵入） |
+| M1 属性编辑器 | ⏳ | 需要 `Scene.set` 的权限开关与 UI 控件（schema 驱动：Types.describe → 输入控件） |
+| M2 预览/截图/日志 | ⏳ | 截图经 `Capture.*`（待加方法）；日志流式订阅 |
+| M3 回放时间线 / 输入模拟器面板 | ⏳ | 复用 Replay.* / Input.sim_* |
+
+---
+
 ## 1. 目标与非目标
 
 **目标**

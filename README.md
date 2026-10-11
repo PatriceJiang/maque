@@ -56,6 +56,12 @@ ctest --test-dir build --output-on-failure
 > | `canvas/canvas.scn` | 画布与分辨率策略（同一 UI 适配不同窗口/显示器） |
 > | `lua/lua.scn` | Lua 脚本后端（与 JS 版**同一份语义**，世界演化逐帧一致） |
 > | `anim/` · `nav/` | 动画采样/物理粒子 · A* 导航与追踪 |
+>
+> **Inspector（独立进程检查器，plans/17）**：
+> ```bash
+> MAQUE_INSPECT=7777 ./build/samples/player/maque_player scenes/sokoban/sokoban.scn   # 游戏开端点（默认只读）
+> ./build/samples/inspector/maque_inspector --connect 7777                          # attach（场景树/属性/控制台）
+> ```
 
 > **依赖**：
 > - 构建期 codegen 需 `node` + `yaml`（`npm install`）。

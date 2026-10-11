@@ -156,6 +156,8 @@ struct Engine {
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
     mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
     mq_control*         control = nullptr;                 // 控制平面（JSON-RPC）
+    mq_control_server*  ctl_server = nullptr;              // 控制端点（inspector attach；plans/17 §3）
+    bool                inspect_read_only = true;          // 默认只读（D2）；MAQUE_INSPECT_RW=1 开启编辑
     mq_platform*        platform = nullptr;                // 窗口/设备输入（headless 时 dummy）
     mq_input*           input = nullptr;                   // 确定性输入流（录制/回放）
     mq_snapshot_pool*   snaps = nullptr;                   // 快照池（回滚/防抖，docs/10 §4）
@@ -271,6 +273,10 @@ struct Engine {
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
     int W = 0, H = 0, nviews = 1, TW = 0;
+    /* 渲染分辨率倍率（超采样，docs/17 §渲染分辨率）：渲染目标 = 设计分辨率 × ss。
+     * ss = 0 → 自动跟随窗口像素（上限 4）；1 → 设计分辨率（像素风）；N → 固定 N 倍。
+     * 文字按目标像素栅格化（device_scale = ss）→ ss 越接近"窗口/设计"，文字越平滑（无锯齿）。 */
+    float ss = 1.0F;
     int win_w = 0, win_h = 0;                               // 窗口尺寸（MAQUE_WINDOW 可覆盖；世界等比缩放显示）
     std::vector<mq_renderer_view> views;
 
@@ -385,6 +391,12 @@ const char* g_signal_name = nullptr;
 int  g_crash_fd = -1;
 char g_crash_buf[16384];
 volatile sig_atomic_t g_crash_len = 0;
+/* 优雅退出标志（宿主 kill / CI 超时清理用）。
+ * 注意：SDL2 会**接管 SIGTERM/SIGINT 并只投递 SDL_QUIT 事件** —— 无窗口（headless）时没人处理该事件，
+ * 进程就杀不掉了。这里自己装处理器置标志，主循环据此走正常退出路径（teardown/端点清理）。 */
+volatile sig_atomic_t g_quit_requested = 0;
+inline void on_quit_signal(int) { g_quit_requested = 1; }
+
 inline void on_fatal_signal(int sig) {
     g_signal_hit = sig;
     g_signal_name = sig == SIGSEGV ? "SIGSEGV" : sig == SIGABRT ? "SIGABRT"
@@ -628,6 +640,14 @@ void Engine::step_frame() {
             std::print("runtime: polled pointers={} keys={} (frame {})\n",
                        iframe.pointer_count, iframe.key_count, frame);
     }
+    // ① 帧首：控制端点轮询（inspector/MCP；非阻塞、单线程、帧边界一次 → 不改确定性）
+    if (ctl_server) mq_control_server_poll(ctl_server);
+    // ① 帧首：释放上一帧退役的字形图集纹理（此时已无图元引用旧 id）
+    if (!retired_textures.empty()) {
+        if (rapi && rself && rapi->destroy_texture)
+            for (int t : retired_textures) rapi->destroy_texture(rself, t);
+        retired_textures.clear();
+    }
     // ①b 输入模拟器：把该帧到期的事件注入输入流（与设备事件同一条路径；回放时跳过）
     /* ①a 画布解析（docs/17）：每帧重算"设计 → 设备像素"映射。
      * 每帧而非"仅尺寸变化"：脚本/控制面可在运行时改 fit_mode / design_* / 安全区，
@@ -698,20 +718,21 @@ void Engine::step_frame() {
         std::print("[text] draws={} textured={} solid={}\n", draws.size(), textured, solid);
     }
     // ⑤ 渲染（只读快照 → 渲染不回写，docs/13 §8）
-    std::vector<uint8_t> pixels((size_t)TW * H * 4);
+    const int SWpx = (int)(W * ss + 0.5F), SHpx = (int)(H * ss + 0.5F);
+    std::vector<uint8_t> pixels((size_t)TW * SHpx * 4);
     if (rapi && rself)
-        rapi->render_views(rself, TW, H, views.data(), (uint32_t)views.size(),
+        rapi->render_views(rself, TW, SHpx, views.data(), (uint32_t)views.size(),
                            draws.data(), (uint32_t)draws.size(), bg, pixels.data(), (uint32_t)pixels.size());
     /* 呈现到窗口（docs/05、M5）：无窗口/dummy 驱动时为安全空操作 */
     if (platform && window && rapi && rself) {
         /* 呈现按**画布策略**给出的目标矩形（缩放/留边由分辨率策略决定；整倍放大用最近邻） */
         const int dx = (int)(canvas.offset_x + 0.5F), dy = (int)(canvas.offset_y + 0.5F);
         const int dw = (int)(canvas.viewport_w + 0.5F), dh = (int)(canvas.viewport_h + 0.5F);
-        mq_platform_present_rect(platform, pixels.data(), TW, H, dx, dy, dw, dh, -1);
+        mq_platform_present_rect(platform, pixels.data(), TW, SHpx, dx, dy, dw, dh, -1);
     }
     if (!frames_dir.empty()) {
         char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);
-        write_ppm(frames_dir + fn, TW, H, pixels);
+        write_ppm(frames_dir + fn, TW, SHpx, pixels);
     }
     ++frame;
 }
@@ -1236,6 +1257,11 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     frame = 0;
     for (; frame < cap && !quit; ) {
         if (stop_frame && frame > stop_frame) break;
+        if (g_quit_requested) {                          // SIGTERM/SIGINT → 优雅退出（正常收尾 + 清理端点）
+            quit = true;
+            mq_obs_event(obs, "runtime", 1, "terminated");
+            break;
+        }
         step_frame();
         if (g_signal_hit) {                              // 收到终止信号 → 落盘上下文后退出
             write_crash_context(g_signal_name ? g_signal_name : "signal");
@@ -2107,7 +2133,7 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
      * 注意不是画布的窗口缩放：窗口放大由 present 做（整倍 → 最近邻，保持锐利）；
      * 若按窗口缩放栅格化（如 3x 出 36px 字形），再画进 320x240 的目标就是**降采样 3 倍** →
      * 笔画丢失、文字发虚/乱码（曾如此）。超采样目标（目标 > 设计）时才 > 1。 */
-    st.device_scale = 1.0F;   /* 每个视图的渲染目标 = 设计分辨率（TW = W × nviews） */
+    st.device_scale = eng.ss;   /* 字形按**渲染目标像素**栅格化（目标 = 设计 × ss，见 Engine::ss） */
     st.pixel_snap = 1;                                  /* pixel-perfect：字形对齐整数像素 */
     st.line_spacing = line_spacing;
     st.wrap = (uint32_t)(wrap < 0 ? 0 : wrap);
@@ -3586,6 +3612,19 @@ extern "C" int mq_control_World_checksum(void* u, const mq_json*, char* out, siz
 }
 
 /* Types.describe：反射自省（docs/06/11 A1）——类型/字段/属性导出给 AI/工具。 */
+/* Control.info：端点/权限/计数（inspector 状态栏；plans/17 §3） */
+extern "C" int mq_control_Control_info(void* u, const mq_json*, char* out, size_t cap) {
+    auto* eng = (Engine*)u;
+    const char* url = eng->ctl_server ? mq_control_server_url(eng->ctl_server) : "";
+    (void)std::snprintf(out, cap,
+        "{\"endpoint\":\"%s\",\"read_only\":%s,\"clients\":%u,\"rejected\":%u,"
+        "\"methods\":%u,\"frame\":%llu}",
+        url, eng->inspect_read_only ? "true" : "false",
+        mq_control_server_clients(eng->ctl_server), mq_control_server_rejected(eng->ctl_server),
+        mq_control_method_count(eng->control), (unsigned long long)eng->frame);
+    return 0;                                   /* 约定：内容写入 out，返回 0（见其它 handler） */
+}
+
 extern "C" int mq_control_Types_describe(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::string o = "[";
@@ -3626,6 +3665,44 @@ extern "C" int mq_control_Scene_get(void* u, const mq_json* params, char* out, s
     auto* e = (Engine*)u;
     const int id = (int)mq_json_num(mq_json_get(params, "id"), -1);
     const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
+    /* path == "" → **dump 整个实体**（反射驱动：组件 + 全部标量字段）——inspector 属性面板用 */
+    if (path && !*path) {
+        Entity* ent = e->scene ? e->scene->at(id) : nullptr;
+        if (!ent) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no entity\"}"); return 0; }
+        size_t n = 0;
+        n += (size_t)std::snprintf(out + n, n < cap ? cap - n : 0, "{\"ok\":true,\"id\":%d,\"name\":\"%s\",\"components\":[",
+                                   id, ent->name.c_str());
+        bool first_c = true;
+        for (auto& [tid, blob] : ent->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
+            if (!d) continue;
+            n += (size_t)std::snprintf(out + n, n < cap ? cap - n : 0, "%s{\"type\":\"%s\",\"fields\":{",
+                                       first_c ? "" : ",", d->name);
+            first_c = false;
+            bool first_f = true;
+            for (uint32_t fi = 0; fi < d->field_count; ++fi) {
+                const mq_field_desc* f = &d->fields[fi];
+                void* fp = blob.data() + f->offset;
+                char val[160] = { 0 };
+                switch (f->kind) {
+                    case MQ_TK_F32: std::snprintf(val, sizeof val, "%.4g", *(float*)fp); break;
+                    case MQ_TK_I32: std::snprintf(val, sizeof val, "%d", *(int32_t*)fp); break;
+                    case MQ_TK_U32: std::snprintf(val, sizeof val, "%u", *(uint32_t*)fp); break;
+                    case MQ_TK_I64: std::snprintf(val, sizeof val, "%lld", (long long)*(int64_t*)fp); break;
+                    case MQ_TK_U64: std::snprintf(val, sizeof val, "%llu", (unsigned long long)*(uint64_t*)fp); break;
+                    case MQ_TK_BOOL: std::snprintf(val, sizeof val, "%s", *(bool*)fp ? "true" : "false"); break;
+                    case MQ_TK_STRING: std::snprintf(val, sizeof val, "\"%s\"", ((std::string*)fp)->c_str()); break;
+                    default: std::snprintf(val, sizeof val, "null"); break;   /* 复合类型：面板暂不展开 */
+                }
+                n += (size_t)std::snprintf(out + n, n < cap ? cap - n : 0, "%s\"%s\":%s",
+                                           first_f ? "" : ",", f->name, val);
+                first_f = false;
+            }
+            n += (size_t)std::snprintf(out + n, n < cap ? cap - n : 0, "}}");
+        }
+        n += (size_t)std::snprintf(out + n, n < cap ? cap - n : 0, "]}");
+        return 0;
+    }
     const mq_type_desc* tt = nullptr; const mq_field_desc* tf = nullptr; void* base = nullptr;
     if (id < 0 || !path || !resolve_field_path(*e, id, path, &tt, &tf, &base)) {
         std::snprintf(out, cap, "{\"ok\":false}");
@@ -4146,6 +4223,10 @@ extern "C" int mq_control_Replay_log(void* u, const mq_json*, char* out, size_t 
 /* 装配引擎：VFS → 反射 → 渲染插件 → 场景 → 平台/输入 → 脚本 → 控制面。
  * 两条入口（命令行 / 嵌入宿主）共用，保证行为一致。 */
 bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
+    /* 优雅退出：**无条件**安装（宿主 kill / CI 超时清理）——
+     * 注意 SDL_HINT_NO_SIGNAL_HANDLERS 已阻止 SDL 接管；这里必须在平台创建之后仍持有处理器。 */
+    signal(SIGTERM, on_quit_signal);
+    signal(SIGINT, on_quit_signal);
     if (const char* cr = std::getenv("MAQUE_CRASH_REPORT"); cr && *cr) {   // 两条入口共用
         signal(SIGSEGV, on_fatal_signal);
         signal(SIGABRT, on_fatal_signal);
@@ -4259,17 +4340,34 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         const int v = std::atoi(vs);
         if (v >= 1 && v <= 4) nviews = v;
     }
-    TW = W * nviews;
+    /* 渲染分辨率倍率：0 → 自动（窗口/设计，上限 4）；1 → 设计分辨率；N → 固定 N 倍 */
+    float rs = 0.0F;
+    if (const char* e = std::getenv("MAQUE_RENDER_SCALE")) rs = (float)std::atof(e);
+    if (rs <= 0.0F && scene && canvas_entity >= 0) {                 /* 画布组件的 render_scale */
+        if (Entity* ce = scene->at(canvas_entity)) {
+            for (auto& [tid, blob] : ce->comps) {
+                const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+                if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
+                read_f32(d, blob.data(), "render_scale", &rs);
+                break;
+            }
+        }
+    }
+    if (rs <= 0.0F && win_w > 0) rs = (float)win_w / (float)(W > 0 ? W : 1);      // 自动：跟随窗口像素
+    if (rs <= 0.0F) rs = 1.0F;
+    ss = rs > 4.0F ? 4.0F : (rs < 1.0F ? 1.0F : rs);
+    const int SW = (int)(W * ss + 0.5F), SH = (int)(H * ss + 0.5F);
+    TW = SW * nviews;
     views.assign((size_t)nviews, mq_renderer_view{});
     for (int i = 0; i < nviews; ++i) {
         mq_renderer_view& v = views[(size_t)i];
         v = mq_renderer_view{};
-        v.vx = (float)(i * W); v.vy = 0;
-        v.vw = (float)W; v.vh = (float)H;
-        v.pan = (float)(i * W);
+        v.vx = (float)(i * SW); v.vy = 0;
+        v.vw = (float)SW; v.vh = (float)SH;
+        v.pan = (float)(i * SW);
         v.eye = (i - (nviews - 1) * 0.5F) * scene->desc.eye_sep;
         v.cx = W * 0.5F; v.cy = H * 0.5F;
-        v.zoom = 1.0F;
+        v.zoom = ss;                          /* 世界 → 目标：按倍率放大（设计分辨率 × ss） */
     }
     for (auto& [idx, e] : scene->ents) {                   // 场景声明的 Camera 覆盖视图相机
         for (auto& [tid, blob] : e.comps) {
@@ -4283,7 +4381,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             read_f32(d, blob.data(), "y", &cy);
             read_f32(d, blob.data(), "zoom", &zoom);
             read_f32(d, blob.data(), "rotation", &rot);
-            for (auto& v : views) { v.cx = cx; v.cy = cy; v.zoom = zoom > 0 ? zoom : 1.0F; v.rot = rot; }
+            for (auto& v : views) { v.cx = cx; v.cy = cy; v.zoom = (zoom > 0 ? zoom : 1.0F) * ss; v.rot = rot; }
         }
     }
     rng = scene->desc.seed * 2654435761u + 12345u;
@@ -4359,6 +4457,8 @@ bool Engine::load_scene_into(const std::string& scn_path) {
 }
 
 void Engine::teardown() {
+    /* 控制端点：统一在此销毁（含 UDS socket 文件清理）——正常退出与 MAQUE_CONTROL 路径都经过这里 */
+    if (ctl_server) { mq_control_server_destroy(ctl_server); ctl_server = nullptr; }
     /* 释放顺序：先释放"依赖 reflect 的资源"（clips 的字符串成员要经反射析构），再销毁 reflect。 */
     if (control) { mq_control_destroy(control); control = nullptr; }
     if (vm) { mq_script_vm_destroy(vm); vm = nullptr; }
@@ -4393,6 +4493,18 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (!scn_path) return 1;
     auto* eng = new Engine();
     if (!eng->setup(scn_path, nullptr)) { eng->teardown(); delete eng; return 2; }
+
+    /* 控制端点：inspector 用（MAQUE_INSPECT=7777 / tcp:7777 / uds:/tmp/x.sock） */
+    if (const char* spec = std::getenv("MAQUE_INSPECT"); spec && *spec && std::strcmp(spec, "off") != 0) {
+        const bool rw = std::getenv("MAQUE_INSPECT_RW") != nullptr;
+        eng->inspect_read_only = !rw;
+        eng->ctl_server = mq_control_server_create(eng->control, spec, eng->inspect_read_only ? 1 : 0);
+        if (eng->ctl_server)
+            std::print("runtime: control endpoint {} ({})\n", mq_control_server_url(eng->ctl_server),
+                       eng->inspect_read_only ? "read-only" : "read-write");
+        else
+            std::print(stderr, "runtime: control endpoint 创建失败: {}\n", spec);
+    }
 
     if (const char* req = std::getenv("MAQUE_CONTROL")) {
         const bool replayed = eng->prepare_replay();

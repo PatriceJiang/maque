@@ -1,5 +1,5 @@
 # maque::control —— 控制平面（JSON-RPC 帧；方法由宿主注册）
-add_library(maque_control STATIC src/control.cpp)
+add_library(maque_control STATIC src/control.cpp src/server.cpp)
 add_library(maque::control ALIAS maque_control)
 target_include_directories(maque_control PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(maque_control PUBLIC maque::persist)

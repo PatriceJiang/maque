@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+/* Control.info() */
+int mq_control_Control_info(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Types.describe() */
 int mq_control_Types_describe(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.info() */

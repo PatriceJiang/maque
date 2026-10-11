@@ -2070,7 +2070,7 @@ role: `transform2d`
 | `Pressed` | 2 |
 | `Disabled` | 3 |
 
-### ui.Canvas — struct (84B)
+### ui.Canvas — struct (88B)
 
 role: `ui_canvas`
 
@@ -2081,6 +2081,7 @@ role: `ui_canvas`
 | `fit_mode` | FitMode | FitMode::ShowAll |  |
 | `align` | Align | Align::Center |  |
 | `dpi_scale` | bool | true |  |
+| `render_scale` | float | 0.0F | range: 0,8 |
 | `min_scale` | float | 0.0F | unit: px, doc: 缩放下限（0=不限） |
 | `max_scale` | float | 0.0F | unit: px, doc: 缩放上限（0=不限） |
 | `scale` | float | 1.0F | transient |

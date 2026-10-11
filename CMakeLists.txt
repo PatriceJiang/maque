@@ -63,5 +63,6 @@ add_subdirectory(modules/render/gfx)
 add_subdirectory(modules/api)
 add_subdirectory(modules/runtime)
 add_subdirectory(samples/player)
+add_subdirectory(samples/inspector)
 add_subdirectory(samples/host)
 

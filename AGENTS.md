@@ -45,9 +45,16 @@ cd modules/core/data && node parser.js --check
   并被录制覆盖 → 录制/回放等价；引擎内部一律世界坐标（设备事件在平台边界转换）。
 - **输入帧缓冲必须预分配**：`mq_input_frame.pointers/pointer_cap`（step_frame 内静态缓冲）——
   容量为 0 时平台会静默丢弃**全部**设备事件（曾导致"真实鼠标点击永远到不了脚本"）。
+- **控制端点 / Inspector（plans/17、docs/09/11）**：`MAQUE_INSPECT=7777`（或 `tcp:7777` / `uds:/tmp/maque.sock`）
+  在游戏内开一个**单线程、非阻塞、帧边界轮询**的 JSON-RPC 端点（与 stdin 控制面同一 dispatch，无线程 → 不改确定性）；
+  默认**只读**（D2）：变更类方法（`control_list` 里 `control_mutating` 列出的）返回 `-32001` 并计入 `Control.info.rejected`；
+  加 `MAQUE_INSPECT_RW=1` 才允许编辑。inspector 工具（独立进程，ImGui + SDL2 软件渲染）：
+  `./build/samples/inspector/maque_inspector --connect 7777`（`--headless <方法…>` 用于 CI，无需显示器）。
+  面板：场景树 / 属性（反射驱动，`Scene.get(id,"")` dump 组件全字段）/ 控制台（手写任意方法，与 MCP 同源）/ 模式。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
 - 系统依赖：SDL2 / libcurl / libwebsockets（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev`）。
-- 已 vendored：`third_party/quickjs-ng`（JS 后端）、`third_party/lua`（Lua 5.4 后端）、`third_party/wuffs`。
+- 已 vendored：`third_party/quickjs-ng`（JS 后端）、`third_party/lua`（Lua 5.4 后端）、`third_party/wuffs`、
+  `third_party/imgui`（master；**仅 inspector 链接**，游戏进程不引入 UI 依赖）。
 
 ## 硬约定（改代码前先读）
 

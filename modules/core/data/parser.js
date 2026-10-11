@@ -323,6 +323,7 @@ function parseSchemaDocument(root) {
     }
     // 控制平面方法（AI/工具公开面，docs/11 §3、docs/21 §6.3）
     const controls = []
+    const mutatingSet = new Set(Array.isArray(nsEntry.control_mutating) ? nsEntry.control_mutating.map(String) : [])
     if (Array.isArray(nsEntry.control_list)) {
       for (const c of nsEntry.control_list) {
         if (!c || c.method === undefined) {
@@ -335,6 +336,7 @@ function parseSchemaDocument(root) {
             ? c.args.map((a) => ({ name: String(a.name), type: String(a.type) }))
             : [],
           summary: c.summary === undefined ? null : String(c.summary),
+          mutating: c.mutating === true || mutatingSet.has(String(c.method)),   // 权限（D2 默认只读）
         })
       }
     }
@@ -1862,6 +1864,21 @@ function genControlSource(namespaces) {
     }
   }
   lines.push('};')
+  lines.push('')
+  lines.push('// 权限判定单一真相（D2）：变更类方法由 control_list 的 mutating 标记决定')
+  lines.push('static const char* kMutating[] = {')
+  for (const ns of namespaces) {
+    for (const c of ns.controls || []) {
+      if (c.mutating) lines.push(`  "${c.method}",`)
+    }
+  }
+  lines.push('};')
+  lines.push('')
+  lines.push('extern "C" int mq_control_is_mutating(const char* method) {')
+  lines.push('  if (!method) return 0;')
+  lines.push('  for (const char* m : kMutating) if (std::strcmp(m, method) == 0) return 1;')
+  lines.push('  return 0;')
+  lines.push('}')
   lines.push('')
   lines.push('extern "C" void mq_control_register_generated(mq_control* c, void* user) {')
   lines.push('  if (!c) return;')

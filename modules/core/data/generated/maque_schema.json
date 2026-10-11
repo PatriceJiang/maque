@@ -3,7 +3,7 @@
   "generated_by": "parser.js",
   "type_count": 242,
   "api_count": 116,
-  "control_count": 31,
+  "control_count": 32,
   "callback_count": 10,
   "module_count": 23,
   "types": [
@@ -11163,7 +11163,7 @@
       "namespace": "ui",
       "kind": "struct",
       "type_id": 4251436635,
-      "size": 84,
+      "size": 88,
       "align": 4,
       "pod": true,
       "has_dynamic": false,
@@ -11221,12 +11221,26 @@
           "attrs": {}
         },
         {
-          "name": "min_scale",
+          "name": "render_scale",
           "type": "float",
           "kind": "f32",
           "type_id": 0,
           "count": 0,
           "offset": 20,
+          "attrs": {
+            "range": [
+              0,
+              8
+            ]
+          }
+        },
+        {
+          "name": "min_scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 24,
           "attrs": {
             "doc": "缩放下限（0=不限）",
             "unit": "px"
@@ -11238,7 +11252,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 24,
+          "offset": 28,
           "attrs": {
             "doc": "缩放上限（0=不限）",
             "unit": "px"
@@ -11250,7 +11264,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 28,
+          "offset": 32,
           "attrs": {
             "transient": true
           }
@@ -11261,7 +11275,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 32,
+          "offset": 36,
           "attrs": {
             "transient": true
           }
@@ -11272,7 +11286,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 36,
+          "offset": 40,
           "attrs": {
             "transient": true
           }
@@ -11283,7 +11297,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 40,
+          "offset": 44,
           "attrs": {
             "transient": true
           }
@@ -11294,7 +11308,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 44,
+          "offset": 48,
           "attrs": {
             "transient": true
           }
@@ -11305,7 +11319,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 48,
+          "offset": 52,
           "attrs": {
             "transient": true
           }
@@ -11316,7 +11330,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 52,
+          "offset": 56,
           "attrs": {
             "transient": true
           }
@@ -11327,7 +11341,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 56,
+          "offset": 60,
           "attrs": {
             "doc": "绘制区（设备像素）",
             "transient": true
@@ -11339,7 +11353,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 60,
+          "offset": 64,
           "attrs": {
             "transient": true
           }
@@ -11350,7 +11364,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 64,
+          "offset": 68,
           "attrs": {
             "doc": "显示器内容缩放（HiDPI）",
             "transient": true
@@ -11362,7 +11376,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 68,
+          "offset": 72,
           "attrs": {
             "doc": "安全区内缩（刘海/圆角，设备像素）",
             "transient": true
@@ -11374,7 +11388,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 72,
+          "offset": 76,
           "attrs": {
             "transient": true
           }
@@ -11385,7 +11399,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 76,
+          "offset": 80,
           "attrs": {
             "transient": true
           }
@@ -11396,7 +11410,7 @@
           "kind": "f32",
           "type_id": 0,
           "count": 0,
-          "offset": 80,
+          "offset": 84,
           "attrs": {
             "transient": true
           }
@@ -16556,6 +16570,11 @@
   ],
   "controls": [
     {
+      "method": "Control.info",
+      "namespace": "control",
+      "args": []
+    },
+    {
       "method": "Types.describe",
       "namespace": "control",
       "args": []
@@ -20348,6 +20367,93 @@
             {
               "name": "user",
               "type": "void*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_control_is_mutating",
+          "returns": "int",
+          "args": [
+            {
+              "name": "method",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_control_server_create",
+          "returns": "mq_control_server*",
+          "args": [
+            {
+              "name": "c",
+              "type": "mq_control*",
+              "doc": null
+            },
+            {
+              "name": "spec",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "read_only",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_control_server_poll",
+          "returns": "int",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_control_server*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_control_server_clients",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_control_server*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_control_server_url",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_control_server*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_control_server_rejected",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_control_server*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_control_server_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_control_server*",
               "doc": null
             }
           ]

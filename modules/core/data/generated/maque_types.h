@@ -1149,6 +1149,7 @@ struct Canvas {
     ui::FitMode fit_mode = FitMode::ShowAll;
     ui::Align align = Align::Center;
     bool dpi_scale = true;
+    float render_scale = 0.0F;
     float min_scale = 0.0F;
     float max_scale = 0.0F;
     float scale = 1.0F;

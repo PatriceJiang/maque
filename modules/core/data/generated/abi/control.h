@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 typedef struct mq_control mq_control;
+typedef struct mq_control_server mq_control_server;
 
 typedef int (*mq_control_handler)(void* user, const char* method, const mq_json* params, char* out, size_t out_cap);
 typedef const char* (*mq_control_tools_json_fn)(void* user);
@@ -26,6 +27,18 @@ uint32_t mq_control_method_count(mq_control* c);
 const char* mq_control_method_at(mq_control* c, uint32_t index);
 void mq_control_set_tools_handler(mq_control* c, mq_control_handler fn, void* user);
 void mq_control_set_tools_json(mq_control* c, mq_control_tools_json_fn fn, void* user);
+/* 该方法是否为变更类（权限判定；由 control_list 的 mutating 标记生成） */
+int mq_control_is_mutating(const char* method);
+/* 监听端点：spec = "tcp:7777" / "uds:/tmp/x.sock" / "7777"（仅回环）；read_only=1 时拒绝变更类方法 */
+mq_control_server* mq_control_server_create(mq_control* c, const char* spec, int read_only);
+/* 帧边界轮询：非阻塞收发（单线程、不改确定性）；返回本次处理的消息数 */
+int mq_control_server_poll(mq_control_server* s);
+uint32_t mq_control_server_clients(mq_control_server* s);
+/* 实际监听地址（tcp://127.0.0.1:7777 或 uds:///tmp/…）——inspector 据此 attach */
+const char* mq_control_server_url(mq_control_server* s);
+/* 因权限被拒绝的变更请求数（只读会话可见） */
+uint32_t mq_control_server_rejected(mq_control_server* s);
+void mq_control_server_destroy(mq_control_server* s);
 const char* mq_control_dispatch_mcp(mq_control* c, const char* request);
 
 #ifdef __cplusplus

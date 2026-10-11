@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema.yaml`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **116** 个 · 控制面方法 **31** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
+统计：脚本 API **116** 个 · 控制面方法 **32** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -152,6 +152,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 | 方法 | 参数 | MCP 类型 |
 |------|------|----------|
+| `Control.info` | — | — |
 | `Types.describe` | — | — |
 | `Scene.info` | — | — |
 | `Scene.entities` | — | — |
@@ -466,6 +467,13 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_control_method_at` | const char* | c: mq_control*, index: uint32_t |
 | `mq_control_set_tools_handler` | void | c: mq_control*, fn: mq_control_handler, user: void* |
 | `mq_control_set_tools_json` | void | c: mq_control*, fn: mq_control_tools_json_fn, user: void* |
+| `mq_control_is_mutating` | int | method: const char* |
+| `mq_control_server_create` | mq_control_server* | c: mq_control*, spec: const char*, read_only: int |
+| `mq_control_server_poll` | int | s: mq_control_server* |
+| `mq_control_server_clients` | uint32_t | s: mq_control_server* |
+| `mq_control_server_url` | const char* | s: mq_control_server* |
+| `mq_control_server_rejected` | uint32_t | s: mq_control_server* |
+| `mq_control_server_destroy` | void | s: mq_control_server* |
 | `mq_control_dispatch_mcp` | const char* | c: mq_control*, request: const char* |
 
 ### vfs — `maque.vfs` v1
