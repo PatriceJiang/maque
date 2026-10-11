@@ -198,6 +198,13 @@ struct Engine {
     std::unordered_map<int, std::vector<NodeHandler>> node_events;
     bool director_paused = false;                  // director.pause()：跳过模拟，仅保留采样/渲染
     uint64_t script_frames = 0;                    // 脚本 update 实际执行次数（对照暂停）
+    /* Tween（Cocos tween）：确定性固定步长推进；写入反射字段路径（与动画同一机制） */
+    struct Tween { int entity; std::string path; float from, to, elapsed, duration; int easing; };
+    std::vector<Tween> tweens;
+    /* 定时器（Cocos schedule/scheduleOnce）：帧驱动，确定性 */
+    struct Scheduled { std::string handler; float interval, remaining; bool repeat; };
+    std::vector<Scheduled> schedules;
+    std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
     std::string pending_scene;                     // director.loadScene()：帧边界切场景
     std::vector<std::pair<int, mq_physics_body>> physics_role_bodies;   // (entity, 世代句柄)
     uint64_t stop_frame = 0;                                // >0 时到该帧停止（CI 固定长度跑）
@@ -225,6 +232,9 @@ struct Engine {
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）
     void ui_step();                                         // UI 组件语义（layout/progress/slider/check/safearea/scroll）
+    void step_tweens(float dt);                             // Tween 推进（Cocos tween）
+    void step_schedules(float dt);                          // 定时器推进（Cocos schedule）
+    void flush_pending_destroy();                           // 延迟销毁（Cocos node.destroy）
     void physics_components_setup();                        // 装配期：按 role 建物理体（Cocos RigidBody2D/Collider2D）
     void physics_components_step(float dt);                 // 帧内：步进并回写变换
     void anim_step(float dt);                               // 关键帧采样 → 写回字段（docs/15 §2）
@@ -577,6 +587,8 @@ void Engine::step_frame() {
          * （Cocos director.pause 语义；输入仍被采样，便于 resume 后继续）。 */
     } else if (scene) {
         ++script_frames;
+        step_tweens(dt);                             // Tween（Cocos tween）
+        step_schedules(dt);                          // 定时器（Cocos schedule/scheduleOnce）
         if (mq_event_dispatch(vm, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr) != 0) {
             char ebuf[512] = { 0 };
             mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
@@ -588,6 +600,7 @@ void Engine::step_frame() {
         particles_step(dt);                              // 粒子推进（docs/15 §4）
         nav_step();                                      // 导航代理推进（A* + 追踪）
         physics_components_step(dt);                     // 组件驱动物理（Cocos RigidBody2D）
+        flush_pending_destroy();                         // node.destroy()：帧边界统一销毁
         ui_step();                                       // UI 组件语义（layout/progress/slider/check/safearea/scroll）
         scene->compute_world(*this);
         scene->extract(*this, draws);
@@ -1969,6 +1982,64 @@ void Engine::ui_step() {
     }
 }
 
+
+/* Tween（Cocos tween().to()）：在固定步长内把字段从 from 插值到 to；
+ * 缓动 0=linear 1=ease_in 2=ease_out 3=ease_in_out；完成派发 "tween_complete"。 */
+void Engine::step_tweens(float dt) {
+    if (tweens.empty()) return;
+    std::vector<size_t> done;
+    for (size_t i = 0; i < tweens.size(); ++i) {
+        Tween& tw = tweens[i];
+        tw.elapsed += dt;
+        float t = tw.duration > 0.0F ? tw.elapsed / tw.duration : 1.0F;
+        if (t > 1.0F) t = 1.0F;
+        float e = t;
+        switch (tw.easing) {
+            case 1: e = t * t; break;                       // ease_in
+            case 2: e = 1.0F - (1.0F - t) * (1.0F - t); break;   // ease_out
+            case 3: e = t < 0.5F ? 2.0F * t * t : 1.0F - 2.0F * (1.0F - t) * (1.0F - t); break;
+            default: break;
+        }
+        const float v = tw.from + (tw.to - tw.from) * e;
+        const mq_type_desc* td = nullptr;
+        const mq_field_desc* fd = nullptr;
+        void* base = nullptr;
+        if (resolve_field_path(*this, tw.entity, tw.path, &td, &fd, &base) && fd)
+            write_num(td, base, fd->name, (double)v);
+        if (t >= 1.0F) {
+            host::node_emit_number(this, (float)tw.entity, "tween_complete", tw.to);
+            done.push_back(i);
+        }
+    }
+    for (auto it = done.rbegin(); it != done.rend(); ++it) tweens.erase(tweens.begin() + (long)*it);
+}
+
+/* 定时器（Cocos schedule/scheduleOnce）：按固定步长累计，到点调用脚本函数（按名字）。 */
+void Engine::step_schedules(float dt) {
+    if (schedules.empty() || !vm) return;
+    std::vector<size_t> drop;
+    for (size_t i = 0; i < schedules.size(); ++i) {
+        Scheduled& sc = schedules[i];
+        sc.remaining -= dt;
+        if (sc.remaining > 0.0F) continue;
+        if (mq_script_has(vm, sc.handler.c_str()))
+            mq_script_call1(vm, sc.handler.c_str(), (double)dt, nullptr);
+        if (sc.repeat) sc.remaining += sc.interval > 0.0F ? sc.interval : (1.0F / 60.0F);
+        else drop.push_back(i);
+    }
+    for (auto it = drop.rbegin(); it != drop.rend(); ++it) schedules.erase(schedules.begin() + (long)*it);
+}
+
+/* node.destroy()：延迟到帧边界统一销毁（Cocos：destroy 在当前帧末生效）。 */
+void Engine::flush_pending_destroy() {
+    if (pending_destroy.empty()) return;
+    if (std::getenv("MAQUE_TRACE_UI")) std::print("[ui] destroy {} node(s)\n", pending_destroy.size());
+    std::vector<int> ids = pending_destroy;
+    pending_destroy.clear();
+    std::sort(ids.begin(), ids.end());
+    for (int id : ids) if (scene->at(id)) scene->remove(id);
+}
+
 /* 物理组件（Cocos RigidBody2D/Collider2D 等价）：装配期建体，帧内步进并回写变换。
  * 只在场景里存在 physics_body role 时启用（不影响脚本显式驱动 physics_step 的场景）。 */
 void Engine::physics_components_setup() {
@@ -2550,6 +2621,115 @@ float ui_get_checked(void* ctx, float id) {
     auto* b = comp_by_name(*eng, (int)id, "CheckBox", &d);
     if (!b) return 0.0F;
     return read_num(d, b->data(), "checked", 0.0F);
+}
+
+
+/* ---- Tween ---- */
+float tween_start(void* ctx, float id, const char* field, float to, float duration, float easing) {
+    auto* eng = (Engine*)ctx;
+    if (!eng->scene->at((int)id) || !field) return 0.0F;
+    const mq_type_desc* td = nullptr;
+    const mq_field_desc* fd = nullptr;
+    void* base = nullptr;
+    if (!resolve_field_path(*eng, (int)id, field, &td, &fd, &base) || !fd) return 0.0F;
+    const float from = read_num(td, base, fd->name, 0.0F);
+    eng->tweens.push_back({ (int)id, field, from, to, 0.0F, duration > 0.0F ? duration : (1.0F / 60.0F),
+                            (int)easing });
+    return 1.0F;
+}
+
+float tween_stop(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    const size_t before = eng->tweens.size();
+    eng->tweens.erase(std::remove_if(eng->tweens.begin(), eng->tweens.end(),
+                                     [&](const Engine::Tween& t) { return t.entity == (int)id; }),
+                      eng->tweens.end());
+    return (float)(before - eng->tweens.size());
+}
+
+float tween_count(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    int n = 0;
+    for (const auto& t : eng->tweens) if (t.entity == (int)id) ++n;
+    return (float)n;
+}
+
+float tween_progress(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    for (const auto& t : eng->tweens)
+        if (t.entity == (int)id) return t.duration > 0.0F ? (t.elapsed / t.duration) : 1.0F;
+    return 1.0F;
+}
+
+/* ---- schedule / scheduleOnce ---- */
+float schedule_once(void* ctx, const char* handler, float delay) {
+    auto* eng = (Engine*)ctx;
+    if (!handler || !*handler) return 0.0F;
+    eng->schedules.push_back({ handler, 0.0F, delay > 0.0F ? delay : 0.0F, false });
+    return 1.0F;
+}
+
+float schedule(void* ctx, const char* handler, float interval) {
+    auto* eng = (Engine*)ctx;
+    if (!handler || !*handler || interval <= 0.0F) return 0.0F;
+    eng->schedules.push_back({ handler, interval, interval, true });
+    return 1.0F;
+}
+
+float unschedule(void* ctx, const char* handler) {
+    auto* eng = (Engine*)ctx;
+    if (!handler) return 0.0F;
+    const std::string h = handler;
+    const size_t before = eng->schedules.size();
+    eng->schedules.erase(std::remove_if(eng->schedules.begin(), eng->schedules.end(),
+                                        [&](const Engine::Scheduled& s) { return s.handler == h; }),
+                         eng->schedules.end());
+    return (float)(before - eng->schedules.size());
+}
+
+float schedule_count(void* ctx) { return (float)((Engine*)ctx)->schedules.size(); }
+
+/* ---- destroy / find(path) ---- */
+float node_destroy(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    if (!eng->scene->at((int)id)) return 0.0F;
+    eng->pending_destroy.push_back((int)id);
+    return 1.0F;
+}
+
+/* Cocos isValid(node)：实体仍存在且未处于待销毁队列。 */
+/* Cocos isValid(node)：节点在**帧末真正销毁前**仍然有效（destroy 只是排队）。 */
+float node_valid(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    return eng->scene->at((int)id) ? 1.0F : 0.0F;
+}
+
+float node_find_path(void* ctx, float root, const char* path) {
+    auto* eng = (Engine*)ctx;
+    if (!path || !*path) return -1.0F;
+    int cur = (int)root;
+    std::string seg;
+    for (const char* p = path;; ++p) {
+        if (*p == '/' || *p == '\0') {
+            if (!seg.empty() && seg != ".") {
+                int next = -1;
+                std::vector<int> kids;
+                for (auto& [k, e] : eng->scene->ents) if (e.parent == cur) kids.push_back(k);
+                std::sort(kids.begin(), kids.end());
+                for (int k : kids) {
+                    Entity* e = eng->scene->at(k);
+                    if (e && e->name == seg) { next = k; break; }
+                }
+                cur = next;
+                if (cur < 0) return -1.0F;
+            }
+            seg.clear();
+            if (*p == '\0') break;
+        } else {
+            seg.push_back(*p);
+        }
+    }
+    return (float)cur;
 }
 
 /* ---- Director ---- */

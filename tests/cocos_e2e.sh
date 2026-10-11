@@ -87,10 +87,10 @@ cat > "$WORK/req2.txt" <<EOF
 {"jsonrpc":"2.0","id":14,"method":"Director.resume"}
 {"jsonrpc":"2.0","id":15,"method":"Runtime.step","params":{"frames":1}}
 {"jsonrpc":"2.0","id":16,"method":"Director.status"}
-{"jsonrpc":"2.0","id":17,"method":"Runtime.step","params":{"frames":31}}
+{"jsonrpc":"2.0","id":17,"method":"Runtime.step","params":{"frames":45}}
 {"jsonrpc":"2.0","id":18,"method":"World.trail"}
 EOF
-MAQUE_CONTROL=- MAQUE_MAX_FRAMES=45 "$PLAYER" "$SCENE" < "$WORK/req2.txt" > "$WORK/out.txt" 2>&1 || true
+MAQUE_CONTROL=- MAQUE_MAX_FRAMES=60 "$PLAYER" "$SCENE" < "$WORK/req2.txt" > "$WORK/out.txt" 2>&1 || true
 
 SUMMARY=$(grep -o 'cocos_summary .*' "$WORK/out.txt" | head -1)
 [ -n "$SUMMARY" ] || fail "script summary not found (scene did not reach frame 40)"
@@ -129,6 +129,16 @@ ck('事件：CheckBox 已切换为选中', d.get('muted') in (True, 1), d.get('m
 eng, scr = d.get('engine_frame_end', 0), d.get('frames', 0)
 ck('Director：暂停期间脚本 update 未执行', eng - scr >= 4, (eng, scr))
 ck('Director：恢复后仍在跑', st.get('paused') is False, st.get('paused'))
+ck('Tween：半径插值到目标值', abs(d.get('tween_radius', 0) - 20.0) < 0.01, d.get('tween_radius'))
+ck('Tween：完成后自动移除', d.get('tween_left') == 0, d.get('tween_left'))
+ck('Tween：完成事件已派发', (d.get('tween_done') or 0) >= 1, d.get('tween_done'))
+ck('scheduleOnce：只触发一次', d.get('timer_once') == 1, d.get('timer_once'))
+ck('schedule：周期性触发', (d.get('timer_repeat') or 0) >= 2, d.get('timer_repeat'))
+ck('unschedule：已移除定时器', d.get('schedules_before_unschedule') == 1 and d.get('schedules_after_unschedule') == 0,
+   (d.get('schedules_before_unschedule'), d.get('schedules_after_unschedule')))
+ck('find(path)：按路径命中节点', d.get('found_path') == d['ids']['volume'], d.get('found_path'))
+ck('destroy：调用时仍有效（帧末销毁）', d.get('valid_right_after_destroy_call') == 1, d.get('valid_right_after_destroy_call'))
+ck('destroy：帧边界后已销毁', d.get('destroyed') == 1, d.get('destroyed'))
 if bad:
     print('cocos_e2e: FAIL ' + '; '.join(bad), file=sys.stderr)
     sys.exit(1)
@@ -138,7 +148,7 @@ print(f"cocos_e2e: 语义全部通过（children={d.get('panel_children')} layou
 PY
 
 # ---- 确定性：同输入两跑一致 ----
-MAQUE_CONTROL=- MAQUE_MAX_FRAMES=45 "$PLAYER" "$SCENE" < "$WORK/req2.txt" > "$WORK/out2.txt" 2>&1 || true
+MAQUE_CONTROL=- MAQUE_MAX_FRAMES=60 "$PLAYER" "$SCENE" < "$WORK/req2.txt" > "$WORK/out2.txt" 2>&1 || true
 TRAIL2=$(grep -F '"id":18,"result"' "$WORK/out2.txt" | grep -o '"trail":"[0-9]*"' | grep -o '[0-9]*')
 [ -n "$TRAIL1" ] && [ "$TRAIL1" = "$TRAIL2" ] || fail "determinism broken: $TRAIL1 != $TRAIL2"
 

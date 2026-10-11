@@ -2466,6 +2466,24 @@
     - { fn: director_frame,      ctx: true, returns: float }
     - { fn: director_load_scene, ctx: true, args: [ { name: path, type: string } ], returns: float }
 
+    # ---- Cocos 常用 API 续：Tween / schedule / destroy / find(path) ----
+    # Tween（确定性：固定步长推进，完成时派发 tween_complete）
+    - { fn: tween_start,   ctx: true, args: [ { name: id, type: float }, { name: field, type: string },
+                                             { name: to, type: float }, { name: duration, type: float },
+                                             { name: easing, type: float } ], returns: float }
+    - { fn: tween_stop,    ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: tween_count,   ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: tween_progress, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    # 定时器（帧驱动，确定性；delay/interval 以秒计）
+    - { fn: schedule_once, ctx: true, args: [ { name: handler, type: string }, { name: delay, type: float } ], returns: float }
+    - { fn: schedule,      ctx: true, args: [ { name: handler, type: string }, { name: interval, type: float } ], returns: float }
+    - { fn: unschedule,    ctx: true, args: [ { name: handler, type: string } ], returns: float }
+    - { fn: schedule_count, ctx: true, returns: float }
+    # 节点销毁（延迟到帧边界，等价 Cocos node.destroy()）+ 路径查找 find("Canvas/Panel")
+    - { fn: node_destroy,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_valid,    ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_find_path, ctx: true, args: [ { name: root, type: float }, { name: path, type: string } ], returns: float }
+
 # 插件接口 ABI（由 DSL 生成 C vtable；docs/02/21）。opaque self = void*。
 - interface: renderer
   version: 1

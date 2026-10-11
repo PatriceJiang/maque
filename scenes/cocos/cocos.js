@@ -10,6 +10,10 @@
     S.slider_events = (S.slider_events || 0) + 1;
     S.slider_value = value;
   };
+  globalThis.on_tween_done = function (id, value) { S.tween_done = (S.tween_done || 0) + 1; };
+  globalThis.on_timer_once = function (dt) { S.timer_once = (S.timer_once || 0) + 1; };
+  globalThis.on_timer_repeat = function (dt) { S.timer_repeat = (S.timer_repeat || 0) + 1; };
+
   globalThis.on_mute_toggled = function (id, on) {
     S.mute_events = (S.mute_events || 0) + 1;
     S.muted = on;
@@ -60,13 +64,18 @@
     // ---- 事件订阅（Cocos node.on）----
     node_on(volume, 'changed', 'on_slider_changed');
     node_on(mute, 'toggled', 'on_mute_toggled');
+    node_on(spawned, 'tween_complete', 'on_tween_done');
 
     // ---- UI 控件值 ----
     ui_set_value(bar, 0.25);
     S.bar_value = ui_get_value(bar);
     S.mute_checked = ui_get_checked(mute);
 
-    // ---- 层级/布局：Panel 的垂直布局在帧内生效 ----
+    // ---- Cocos 常用 API 续：tween / schedule / find(path) ----
+    S.found_path = node_find_path(canvas, 'Panel/Volume');
+    tween_start(spawned, 'scn.Sprite.radius', 20.0, 0.5, 0);      // 0.5 秒内半径 9 → 20（线性）
+    schedule_once('on_timer_once', 0.5);                          // 0.5 秒后触发一次
+    schedule('on_timer_repeat', 0.25);                            // 每 0.25 秒触发
     S.layout_before = [entity_y(bar), entity_y(volume)];
     note('cocos.js ready');
   };
@@ -80,16 +89,29 @@
       S.layout_after = [entity_y(S.ids.bar), entity_y(S.ids.volume)];
       S.fall_y_3 = entity_y(entity_find('Fall'));
     }
-    if (S.frames === 40) {
+    if (S.frames === 44) {
+      S.valid_before_destroy = node_valid(S.ids.spawned);
+      S.schedules_before_unschedule = schedule_count();
+      S.tween_radius_end = node_get_number(S.ids.spawned, 'scn.Sprite', 'radius');
+      // node.destroy 只是排队：帧末才真正销毁（Cocos 语义）
+      node_destroy(S.ids.spawned);
+      S.valid_right_after_destroy_call = node_valid(S.ids.spawned);
+      unschedule('on_timer_repeat');
+      S.schedules_after_unschedule = schedule_count();
+    }
+    if (S.frames === 46) {
+      S.destroyed = 1 - node_valid(S.ids.spawned);        // 帧边界已生效 → 1
+    }
+    if (S.frames === 50) {
       S.fall_y_40 = entity_y(entity_find('Fall'));
-      S.paused = director_paused();
       S.bar_value_end = ui_get_value(S.ids.bar);
       S.engine_frame_end = director_frame();
-      S.paused_flag = director_paused();
+      S.paused = director_paused();
+      S.tween_radius = S.tween_radius_end;
+      S.tween_left = tween_count(S.ids.spawned);
       S.slider_events = S.slider_events || 0;
       S.mute_events = S.mute_events || 0;
-      // 结构化自省（e2e 断言用；单行 JSON）
-      log('cocos_summary ' + JSON.stringify(S));
+      log('cocos_summary ' + JSON.stringify(S));          // 单行 JSON（e2e 断言）
     }
     if (input_key(1) > 0) quit();
   };

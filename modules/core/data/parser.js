@@ -1659,7 +1659,9 @@ function genBindingsSource(namespaces) {
       /* multi：任意数量/位置的 string（如 node_set_number(id, comp, field, value)）。
        * 生成 'n'/'s' 类型串 → mq_script_register_multi 通用编组（docs/21 §6.1）。 */
       const general = args.every((a) => a.type === 'string' || API_SCALARS.has(a.type))
-      const multiBinding = general && !numBinding && strArg.length > 1
+      /* 其余任意组合（含"单个 string 但不在末尾"，如 tween_start(id, field, to, dur)）
+       * 一律走通用编组：不再静默跳过（docs/21 §6.1）。 */
+      const multiBinding = general && !numBinding && !strBinding && !mixedBinding
       if (retStr && !numBinding) continue
       if (!strBinding && !numBinding && !mixedBinding && !multiBinding) continue
       fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding, mixedBinding, multiBinding, retStr })
