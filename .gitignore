@@ -8,3 +8,5 @@ third_party/wgpu-native/lib/*.so
 third_party/wgpu-native/lib/*.a
 
 # 注意：modules/core/data/generated/ **入库**（生成的公开接口是交付物，docs/21）
+# CTest 在源码树根运行时的临时产物（构建产物不入库）
+Testing/
