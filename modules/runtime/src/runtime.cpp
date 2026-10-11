@@ -22,7 +22,9 @@
 #include "core/control/mq_control.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
-#include "maque_ifaces.h"                 // 生成：mq_renderer_v1（插件接口 ABI）
+#include "maque_ifaces.h"
+#include "maque_control.h"
+#include "maque_events.h"                 // 生成：mq_renderer_v1（插件接口 ABI）
 #include "core/module/mq_module.h"          // mq_host（dlopen 加载插件）
 #include "maque_types.h"
 
@@ -535,7 +537,7 @@ void Engine::step_frame() {
     std::vector<mq_renderer_item> draws;
     const float dt = 1.0F / 60.0F;
     if (scene) {
-        if (mq_script_has(vm, "update") && mq_script_call1(vm, "update", dt, nullptr) != 0) {
+        if (mq_event_dispatch(vm, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr) != 0) {
             char ebuf[512] = { 0 };
             mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
             mq_obs_event(obs, "script", 3, "update_failed");
@@ -1548,10 +1550,12 @@ int runtime_parent(void* user, int entity) {
     return e ? e->parent : -1;
 }
 
-/* 把语义事件路由给脚本（docs/19 §8）：回调名固定，参数为标量（生成绑定约束，docs/21）。 */
-void call_script_event(Engine& eng, const char* fn, const mq_input_event* ev) {
-    if (!mq_script_has(eng.vm, fn)) return;
-    mq_script_call3(eng.vm, fn, (double)ev->target, (double)ev->x, (double)ev->y, nullptr);
+/* 事件 → 脚本回调：映射与参数个数全部由 DSL 声明、codegen 生成（docs/14 §4、docs/19 §8）。 */
+void call_script_event(Engine& eng, const mq_input_event* ev) {
+    const int kind = mq_event_for_input(ev->type);
+    if (kind < 0) return;
+    const char* text = ev->type == MQ_INPUT_TEXT ? ev->text : nullptr;
+    mq_event_dispatch(eng.vm, kind, (double)ev->target, (double)ev->x, (double)ev->y, text);
 }
 
 int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target* target) {
@@ -1582,17 +1586,7 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
                     *(bool*)(blob.data() + fp->offset) = false;
             }
     }
-    switch (ev->type) {
-        case MQ_INPUT_POINTER_DOWN:   call_script_event(*eng, "on_pointer_down", ev); break;
-        case MQ_INPUT_POINTER_UP:     call_script_event(*eng, "on_pointer_up", ev); break;
-        case MQ_INPUT_POINTER_MOVE:   call_script_event(*eng, "on_pointer_move", ev); break;
-        case MQ_INPUT_POINTER_WHEEL:  call_script_event(*eng, "on_wheel", ev); break;
-        case MQ_INPUT_CLICK:          call_script_event(*eng, "on_click", ev); break;
-        case MQ_INPUT_KEY_DOWN:       call_script_event(*eng, "on_key_down", ev); break;
-        case MQ_INPUT_KEY_UP:         call_script_event(*eng, "on_key_up", ev); break;
-        case MQ_INPUT_TEXT:           call_script_event(*eng, "on_text", ev); break;
-        default: break;
-    }
+    call_script_event(*eng, ev);          // 分发表由生成代码提供
     if (eng->trace_hits)
         std::print("[input] type={} phase={} target={} pos=({:.1f},{:.1f})\n",
                    (int)ev->type, (int)ev->phase, target->entity, ev->x, ev->y);
@@ -1892,17 +1886,17 @@ float ui_pressed(void* ctx, float id) {
 } // namespace host
 
 /* ---- 控制平面方法（引擎能力，docs/11） ---- */
-static int h_perf(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_Perf_get(void* u, const mq_json*, char* out, size_t cap) {
     std::snprintf(out, cap, "%s", mq_obs_dump_json(((Engine*)u)->obs));
     return 0;
 }
-static int h_scene(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_Scene_info(void* u, const mq_json*, char* out, size_t cap) {
     auto& d = ((Engine*)u)->scene->desc;
     std::snprintf(out, cap, "{\"title\":\"%s\",\"script\":\"%s\",\"width\":%d,\"height\":%d,\"views\":%d}",
                   d.title.c_str(), d.script.c_str(), d.width, d.height, d.views);
     return 0;
 }
-static int h_checksum(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_World_checksum(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::snprintf(out, cap,
                   "{\"trail\":\"%llu\",\"last\":\"%llu\",\"frame\":%llu,"
@@ -1917,7 +1911,7 @@ static int h_checksum(void* u, const char*, const mq_json*, char* out, size_t ca
 }
 
 /* Types.describe：反射自省（docs/06/11 A1）——类型/字段/属性导出给 AI/工具。 */
-static int h_types(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_Types_describe(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::string o = "[";
     const uint32_t n = mq_reflect_count(e->reflect);
@@ -1935,7 +1929,7 @@ static int h_types(void* u, const char*, const mq_json*, char* out, size_t cap) 
 }
 
 /* Scene.entities：实体/组件 dump（AI 可读；docs/12）。 */
-static int h_entities(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_Scene_entities(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::string o = "[";
     bool first = true;
@@ -1953,7 +1947,7 @@ static int h_entities(void* u, const char*, const mq_json*, char* out, size_t ca
 
 /* Scene.get / Scene.set：按实体 + 字段路径读写组件字段（反射驱动；编辑器/AI 的编辑面）。
  * params: { id, path, value? }。path 形式 "Type.field" 或裸 "field"（docs/11 §3/§4）。 */
-static int h_scene_get(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Scene_get(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const int id = (int)mq_json_num(mq_json_get(params, "id"), -1);
     const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
@@ -1983,7 +1977,7 @@ static int h_scene_get(void* u, const char*, const mq_json* params, char* out, s
     return 0;
 }
 
-static int h_scene_set(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Scene_set(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const int id = (int)mq_json_num(mq_json_get(params, "id"), -1);
     const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
@@ -2007,7 +2001,7 @@ static int h_scene_set(void* u, const char*, const mq_json* params, char* out, s
 }
 
 /* Scene.spawn / Scene.destroy：实体增删（编辑器/AI 编辑；返回句柄与 undo 信息，docs/11 §4）。 */
-static int h_scene_spawn(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Scene_spawn(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
     const char* name = mq_json_str(mq_json_get(params, "name"), "");
@@ -2024,7 +2018,7 @@ static int h_scene_spawn(void* u, const char*, const mq_json* params, char* out,
     return 0;
 }
 
-static int h_scene_destroy(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Scene_destroy(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const int id = (int)mq_json_num(mq_json_get(params, "id"), -1);
     const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
@@ -2037,7 +2031,7 @@ static int h_scene_destroy(void* u, const char*, const mq_json* params, char* ou
 }
 
 /* Scene.bake：把 PrefabInstance 标记为已展开（detached=true）→ 场景自包含（docs/12 §5）。 */
-static int h_scene_bake(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Scene_bake(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
     uint32_t baked = 0;
@@ -2060,7 +2054,7 @@ static int h_scene_bake(void* u, const char*, const mq_json* params, char* out, 
 
 /* Scene.save：把当前世界写回 .scn（编辑器落盘；docs/11 §4）。
  * 组件字段由反射序列化（与 load_json 往返一致）→ 落盘文件可直接再次加载。 */
-static int h_scene_save(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
     if (!path) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing path\"}"); return 0; }
@@ -2135,7 +2129,7 @@ static int h_scene_save(void* u, const char*, const mq_json* params, char* out, 
 }
 
 /* World.snapshot：抓当前世界快照（返回字节数与校验和；AI undo/回滚点）。 */
-static int h_snapshot(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_World_snapshot(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     if (!e->snap_manual) e->snap_manual = mq_snapshot_create();     // 独立于周期池（不会被 60 帧环覆盖）
     if (!e->world_snapshot(e->snap_manual)) { std::snprintf(out, cap, "{\"ok\":false}"); return 0; }
@@ -2147,7 +2141,7 @@ static int h_snapshot(void* u, const char*, const mq_json*, char* out, size_t ca
 }
 
 /* World.restore：回到最近快照（A5 快迭代/undo，docs/10 §4）。 */
-static int h_restore(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_World_restore(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     mq_snapshot* src = e->snap_manual ? e->snap_manual : e->snap_last;
     if (!src) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no snapshot\"}"); return 0; }
@@ -2156,7 +2150,7 @@ static int h_restore(void* u, const char*, const mq_json*, char* out, size_t cap
     return 0;
 }
 
-static int h_trail(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_World_trail(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::string o = "{\"trail\":\"" + std::to_string(e->world_trail()) + "\",\"frames\":[";
     char item[64];
@@ -2171,7 +2165,7 @@ static int h_trail(void* u, const char*, const mq_json*, char* out, size_t cap) 
 }
 
 /* Input.inject：AI/CI 注入输入（docs/11/19 §9）——与设备事件同一事件流。 */
-static int h_inject(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Input_inject(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     mq_input_event ev{};
     ev.type = (uint32_t)mq_json_num(mq_json_get(params, "type"), (double)MQ_INPUT_POINTER_DOWN);
@@ -2189,7 +2183,7 @@ static int h_inject(void* u, const char*, const mq_json* params, char* out, size
 /* Control.mcp：MCP 语义（initialize/tools/list/tools/call）经控制平面进出。
  * 请求体放 params.request（字符串）；也可直接传 params.method/params.name。 */
 /* Reload.script / Reload.scene：手动触发帧边界重载；dry_run=1 只报告不执行（docs/11 §4）。 */
-static int h_reload_script(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Reload_script(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
     if (dry) {
@@ -2208,7 +2202,7 @@ static int h_reload_script(void* u, const char*, const mq_json* params, char* ou
                   ok ? "true" : "false", e->reloads, err.c_str());
     return 0;
 }
-static int h_reload_scene(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Reload_scene(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
     if (dry) { std::snprintf(out, cap, "{\"would_reload\":true,\"scene\":\"%s\"}", e->scn_vfs_path.c_str()); return 0; }
@@ -2217,7 +2211,7 @@ static int h_reload_scene(void* u, const char*, const mq_json* params, char* out
                   ok ? "true" : "false", e->reloads, e->scene ? e->scene->count() : 0);
     return 0;
 }
-static int h_files(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_Reload_files(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::string o = "{\"watching\":" + std::to_string(e->watcher ? mq_watcher_count(e->watcher) : 0) + ",\"files\":[";
     if (e->watcher)
@@ -2235,7 +2229,7 @@ static int h_files(void* u, const char*, const mq_json*, char* out, size_t cap) 
  *   ① params.request = "<完整 MCP 请求 JSON 文本>"（原样走 MCP 包装）
  *   ② params.method  = "tools/call" + params.name/arguments（直接转发到同名方法，
  *      避免手工拼 JSON —— 结构化入参优先，docs/11 §4）。 */
-static int h_mcp(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Control_mcp(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     if (const char* raw = mq_json_str(mq_json_get(params, "request"), nullptr)) {
         std::snprintf(out, cap, "%s", mq_control_dispatch_mcp(e->control, raw));
@@ -2297,7 +2291,7 @@ static int h_mcp(void* u, const char*, const mq_json* params, char* out, size_t 
 }
 
 /* Replay.checkpoint：列出检查点（帧号/校验和）——分歧定位的锚点。 */
-static int h_checkpoints(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_Replay_checkpoints(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::string o = "{\"interval\":" + std::to_string(e->cp_interval) + ",\"active\":";
     o += e->cp_active ? "true" : "false";
@@ -2316,7 +2310,7 @@ static int h_checkpoints(void* u, const char*, const mq_json*, char* out, size_t
 }
 
 /* Replay.seek：跳到指定帧号的检查点（回滚 + 重建世界）。 */
-static int h_seek(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Replay_seek(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const uint64_t want = (uint64_t)mq_json_num(mq_json_get(params, "frame"), 0);
     mq_snapshot* best = nullptr;
@@ -2337,7 +2331,7 @@ static int h_seek(void* u, const char*, const mq_json* params, char* out, size_t
 }
 
 /* Runtime.frame：当前模拟帧号与状态摘要（脚本/CI 读模拟时间；回滚后自动一致）。 */
-static int h_frame(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_Runtime_frame(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     std::snprintf(out, cap, "{\"frame\":%llu,\"entities\":%d,\"particles\":%zu,\"quit\":%s}",
                   (unsigned long long)e->frame, e->scene ? e->scene->count() : 0,
@@ -2346,7 +2340,7 @@ static int h_frame(void* u, const char*, const mq_json*, char* out, size_t cap) 
 }
 
 /* Runtime.step：确定性推进 n 帧（AI/CI 逐帧驱动，docs/11 §5）。 */
-static int h_step(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+extern "C" int mq_control_Runtime_step(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const double n = mq_json_num(mq_json_get(params, "frames"), 1);
     const uint64_t steps = n > 0 ? (uint64_t)n : 1;
@@ -2358,7 +2352,7 @@ static int h_step(void* u, const char*, const mq_json* params, char* out, size_t
 }
 
 /* Replay.log：导出输入日志（录制/回放是数据，docs/10 §3）。 */
-static int h_replay_log(void* u, const char*, const mq_json*, char* out, size_t cap) {
+extern "C" int mq_control_Replay_log(void* u, const mq_json*, char* out, size_t cap) {
     const char* json = mq_input_log_json(((Engine*)u)->input);
     std::snprintf(out, cap, "%s", json ? json : "{}");
     return 0;
@@ -2493,37 +2487,18 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
         std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
     }
     preload_scene_assets();                     // 资源 IO 在装配期完成（帧内零加载）
-    if (mq_script_has(vm, "on_start") && mq_script_call0(vm, "on_start", nullptr) != 0) {
+    if (mq_event_dispatch(vm, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
         char ebuf[512] = { 0 };
         mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
         write_crash_context(ebuf[0] ? ebuf : "on_start failed");
     }
 
     control = mq_control_create();
-    mq_control_register(control, "Perf.get", h_perf, this);
-    mq_control_register(control, "Scene.info", h_scene, this);
-    mq_control_register(control, "World.checksum", h_checksum, this);
-    mq_control_register(control, "World.trail", h_trail, this);
-    mq_control_register(control, "World.snapshot", h_snapshot, this);
-    mq_control_register(control, "World.restore", h_restore, this);
-    mq_control_register(control, "Types.describe", h_types, this);
-    mq_control_register(control, "Scene.entities", h_entities, this);
-    mq_control_register(control, "Scene.get", h_scene_get, this);
-    mq_control_register(control, "Scene.set", h_scene_set, this);
-    mq_control_register(control, "Scene.save", h_scene_save, this);
-    mq_control_register(control, "Scene.bake", h_scene_bake, this);
-    mq_control_register(control, "Scene.spawn", h_scene_spawn, this);
-    mq_control_register(control, "Scene.destroy", h_scene_destroy, this);
-    mq_control_register(control, "Input.inject", h_inject, this);
-    mq_control_register(control, "Replay.log", h_replay_log, this);
-    mq_control_register(control, "Runtime.step", h_step, this);
-    mq_control_register(control, "Runtime.frame", h_frame, this);
-    mq_control_register(control, "Replay.checkpoints", h_checkpoints, this);
-    mq_control_register(control, "Replay.seek", h_seek, this);
-    mq_control_register(control, "Control.mcp", h_mcp, this);
-    mq_control_register(control, "Reload.script", h_reload_script, this);
-    mq_control_register(control, "Reload.scene", h_reload_scene, this);
-    mq_control_register(control, "Reload.files", h_files, this);
+    /* 控制面方法由 DSL（schema.yaml control_list）声明、codegen 生成注册表 —— 引擎零手写注册
+     * （docs/21 §1/§5：公开接口只声明一次）。此处只需提供实例上下文。 */
+    mq_control_register_generated(control, this);
+    /* MCP 工具表（含类型化 inputSchema）同样是生成物（docs/21 §6.3） */
+    mq_control_set_tools_json(control, [](void*) { return mq_control_tools_json(); }, nullptr);
     std::print("runtime: platform window={} input=on\n", window ? 1 : 0);
     return true;
 }

@@ -24,6 +24,11 @@ int  mq_script_has(mq_script_vm* vm, const char* fn);
 int  mq_script_call0(mq_script_vm* vm, const char* fn, double* ret);
 int  mq_script_call1(mq_script_vm* vm, const char* fn, double arg, double* ret);
 int  mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, double c, double* ret);
+int  mq_script_call2(mq_script_vm* vm, const char* fn, double a, double b, double* ret);
+/* 数值 + 字符串（文本输入等事件）：字符串不跨边界传对象。 */
+int  mq_script_call1s(mq_script_vm* vm, const char* fn, double a, const char* s, double* ret);
+int  mq_script_call2s(mq_script_vm* vm, const char* fn, double a, double b, const char* s, double* ret);
+int  mq_script_call0s(mq_script_vm* vm, const char* fn, const char* s, double* ret);
 
 /* 最近一次求值/调用失败的错误文本（热重载诊断用）。成功写入返回 0；无错误返回 1。 */
 int mq_script_last_error(mq_script_vm* vm, char* out, int cap);

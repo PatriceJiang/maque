@@ -208,6 +208,40 @@ int mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, double
     double args[3] = { a, b, c };
     return call_impl(vm, fn, 3, args, ret);
 }
+int mq_script_call2(mq_script_vm* vm, const char* fn, double a, double b, double* ret) {
+    double args[2] = { a, b };
+    return call_impl(vm, fn, 2, args, ret);
+}
+/* 数值参数 + 末尾字符串：统一实现（n 为数值个数，0..2）。 */
+static int call_with_str(mq_script_vm* vm, const char* fn, int n, const double* nums,
+                         const char* s, double* ret) {
+    if (ret) *ret = 0.0;
+    JSValue global = JS_GetGlobalObject(vm->ctx);
+    JSValue f = JS_GetPropertyStr(vm->ctx, global, fn);
+    JS_FreeValue(vm->ctx, global);
+    if (!JS_IsFunction(vm->ctx, f)) { JS_FreeValue(vm->ctx, f); return 1; }
+    JSValue args[3];
+    for (int i = 0; i < n; ++i) args[i] = JS_NewFloat64(vm->ctx, nums[i]);
+    args[n] = JS_NewString(vm->ctx, s ? s : "");
+    JSValue r = JS_Call(vm->ctx, f, JS_UNDEFINED, n + 1, args);
+    for (int i = 0; i <= n; ++i) JS_FreeValue(vm->ctx, args[i]);
+    JS_FreeValue(vm->ctx, f);
+    if (JS_IsException(r)) { throw_and_print(vm->ctx); return 2; }
+    if (ret) { double d = 0; JS_ToFloat64(vm->ctx, &d, r); *ret = d; }
+    JS_FreeValue(vm->ctx, r);
+    return 0;
+}
+int mq_script_call1s(mq_script_vm* vm, const char* fn, double a, const char* s, double* ret) {
+    const double n[1] = { a };
+    return call_with_str(vm, fn, 1, n, s, ret);
+}
+int mq_script_call2s(mq_script_vm* vm, const char* fn, double a, double b, const char* s, double* ret) {
+    const double n[2] = { a, b };
+    return call_with_str(vm, fn, 2, n, s, ret);
+}
+int mq_script_call0s(mq_script_vm* vm, const char* fn, const char* s, double* ret) {
+    return call_with_str(vm, fn, 0, nullptr, s, ret);
+}
 
 void mq_script_set_rng(mq_script_vm* vm, mq_script_rng_fn fn, void* user) {
     if (!vm || !vm->ctx) return;

@@ -35,6 +35,9 @@ const char* mq_control_method_at(mq_control* c, uint32_t index);
  *   notifications/*     → 空结果（通知无需响应）
  * 未注册的方法：若已 set_tools_handler，则交给宿主（用于 UI 侧工具）。 */
 void mq_control_set_tools_handler(mq_control* c, mq_control_handler fn, void* user);
+/* 类型化工具表提供者（由 codegen 生成，含每方法 inputSchema）；设置后 tools/list 用它。 */
+typedef const char* (*mq_control_tools_json_fn)(void* user);
+void mq_control_set_tools_json(mq_control* c, mq_control_tools_json_fn fn, void* user);
 const char* mq_control_dispatch_mcp(mq_control* c, const char* request);
 
 #ifdef __cplusplus

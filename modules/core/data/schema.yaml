@@ -2063,3 +2063,61 @@
     - fn: render_views
       returns: int32_t
       args: [ { name: self, type: self }, { name: tw, type: int32_t }, { name: th, type: int32_t }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: uint32_t }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: uint32_t }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]
+
+# 控制平面方法（AI/工具公开面，docs/11 §3、docs/21 §6.3）：声明一次 → 生成
+#   · maque_control.h      处理器声明（引擎只实现语义）
+#   · maque_control_gen.cpp 注册表（runtime 不再手写 mq_control_register）
+#   · 类型化 MCP inputSchema（供 tools/list 返回给 AI）
+# type: float/string/bool/json；json = 任意 JSON 值（对象/数组）。
+- namespace: control
+  version: 1
+  control_list:
+    # ---- 自省（A1）----
+    - { method: Types.describe, args: [] }
+    - { method: Scene.info, args: [] }
+    - { method: Scene.entities, args: [] }
+    - { method: Scene.get,    args: [ { name: id, type: float }, { name: path, type: string } ] }
+    # ---- 编辑（A5、docs/11 §4：破坏性操作支持 dry_run）----
+    - { method: Scene.set,     args: [ { name: id, type: float }, { name: path, type: string },
+                                       { name: value, type: json }, { name: dry_run, type: bool } ] }
+    - { method: Scene.spawn,   args: [ { name: name, type: string }, { name: parent, type: float },
+                                       { name: component, type: string }, { name: dry_run, type: bool } ] }
+    - { method: Scene.destroy, args: [ { name: id, type: float }, { name: dry_run, type: bool } ] }
+    - { method: Scene.bake,    args: [ { name: dry_run, type: bool } ] }
+    - { method: Scene.save,    args: [ { name: path, type: string } ] }
+    # ---- 运行与帧（A4）----
+    - { method: Runtime.step,  args: [ { name: frames, type: float } ] }
+    - { method: Runtime.frame, args: [] }
+    # ---- 确定性（A3、docs/10）----
+    - { method: World.checksum, args: [] }
+    - { method: World.trail,    args: [] }
+    - { method: World.snapshot, args: [] }
+    - { method: World.restore,  args: [] }
+    - { method: Replay.log,         args: [] }
+    - { method: Replay.checkpoints, args: [] }
+    - { method: Replay.seek,        args: [ { name: frame, type: float } ] }
+    # ---- 输入注入（docs/19 §9）----
+    - { method: Input.inject, args: [ { name: type, type: float }, { name: x, type: float },
+                                      { name: y, type: float }, { name: button, type: float },
+                                      { name: key, type: float } ] }
+    # ---- 性能与日志（A2）----
+    - { method: Perf.get, args: [] }
+    # ---- 热重载（docs/08/14）----
+    - { method: Reload.script, args: [ { name: dry_run, type: bool } ] }
+    - { method: Reload.scene,  args: [ { name: dry_run, type: bool } ] }
+    - { method: Reload.files,  args: [] }
+    # ---- MCP 包装（docs/11 §2）----
+    - { method: Control.mcp, args: [ { name: method, type: string }, { name: request, type: string },
+                                     { name: name, type: string }, { name: arguments, type: json } ] }
+  # 脚本事件回调（docs/14 §4、docs/19 §8）：引擎按声明调用，名字与参数统一来自 DSL
+  callbacks:
+    - { name: on_start,        args: [] }
+    - { name: update,          args: [ { name: dt, type: float } ] }
+    - { name: on_pointer_down, on: pointer_down, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_pointer_up,   on: pointer_up, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_pointer_move, on: pointer_move, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_wheel,        on: pointer_wheel, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_click,        on: click, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_key_down,     on: key_down, args: [ { name: target, type: float }, { name: key, type: float } ] }
+    - { name: on_key_up,       on: key_up, args: [ { name: target, type: float }, { name: key, type: float } ] }
+    - { name: on_text,         on: text, args: [ { name: target, type: float }, { name: text, type: string } ] }

@@ -12,6 +12,8 @@ struct mq_control {
     size_t response_cap = 4096;
     mq_control_handler tools_fn = nullptr;
     void* tools_user = nullptr;
+    mq_control_tools_json_fn tools_json = nullptr;   // 生成物：类型化 inputSchema
+    void* tools_json_user = nullptr;
 };
 
 /* method → MCP 工具描述（domain.method 与 CDP 同构，docs/11 §3/§9）。 */
@@ -58,6 +60,12 @@ void mq_control_set_tools_handler(mq_control* c, mq_control_handler fn, void* us
     c->tools_user = user;
 }
 
+void mq_control_set_tools_json(mq_control* c, mq_control_tools_json_fn fn, void* user) {
+    if (!c) return;
+    c->tools_json = fn;
+    c->tools_json_user = user;
+}
+
 /* MCP 包装：tools/list 由已注册方法生成（能力即工具，docs/11 §5）。 */
 const char* mq_control_dispatch_mcp(mq_control* c, const char* request) {
     if (!c) return "{}";
@@ -79,6 +87,13 @@ const char* mq_control_dispatch_mcp(mq_control* c, const char* request) {
         result = "{\"protocolVersion\":\"2024-11-05\",\"serverInfo\":{\"name\":\"maque\",\"version\":\"1\"},"
                  "\"capabilities\":{\"tools\":{}}}";
     } else if (std::strcmp(method, "tools/list") == 0) {
+        /* 优先用 codegen 生成的类型化工具表（docs/21 §6.3：同一 DSL 再生成 MCP 工具）。 */
+        if (c->tools_json) {
+            const char* gen = c->tools_json(c->tools_json_user);
+            if (gen && gen[0]) { result = std::string("{\"tools\":") + gen + "}"; mq_json_free(dom);
+                                 c->response = "{\"jsonrpc\":\"2.0\",\"id\":" + idtxt + ",\"result\":" + result + "}";
+                                 return c->response.c_str(); }
+        }
         std::string list = "{\"tools\":[";
         bool first = true;
         for (auto& [name, e] : c->methods) {
