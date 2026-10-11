@@ -52,7 +52,8 @@ struct App {
     std::vector<std::pair<int, float>> atlas_list;     /* (字体索引, 字号) */
     int atlas_sel = 0;
     float atlas_zoom = 3.0F;
-    std::string tab = "属性";                          /* 初始标签页（--tab） */
+    std::string tab = "属性";                          /* 目标标签页（--tab / 键盘 / 鼠标点选） */
+    std::string tab_applied;                           /* 已经应用过的页（避免每帧强制选中） */
     insp::Texture probe_tex;                           /* 诊断：已知颜色的测试纹理 */
     SDL_Texture* probe_raw = nullptr;                  /* 诊断：裸 SDL_Texture 对照 */
     bool atlas_autoloaded = false;
@@ -208,9 +209,24 @@ void draw_ui(App& a) {
         ImGui::TextColored(a.read_only ? ImVec4(0.9F, 0.8F, 0.3F, 1.0F) : ImVec4(0.4F, 0.9F, 0.4F, 1.0F),
                            "%s", a.read_only ? "只读" : "可编辑");
         ImGui::SameLine();
-        ImGui::Text("| 1-5/Ctrl+Tab 切页 | %s | frame %.0f | 客户端 %.0f | 方法 %.0f | 被拒 %.0f | ui %.0f fps",
-                    a.endpoint.empty() ? "—" : a.endpoint.c_str(), a.frame, a.clients, a.methods, a.rejected,
-                    (double)ImGui::GetIO().Framerate);
+        ImGui::Text("| frame %.0f | ui %.0f fps", a.frame, (double)ImGui::GetIO().Framerate);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("端点 %s\n客户端 %.0f · 方法 %.0f · 被拒 %.0f\n键位：1-5 / Ctrl+Tab 切页",
+                              a.endpoint.empty() ? "—" : a.endpoint.c_str(), a.clients, a.methods, a.rejected);
+        /* 兜底入口：菜单栏里也放一排"切页按钮"（大控件，比标签页更容易命中；
+         * 某些环境下标签页点击可能被窗口管理器/合成器吃掉） */
+        ImGui::SameLine();
+        ImGui::Text("|");
+        static const char* kQuick[] = { "属性", "控制台", "字体图集", "预览", "模式" };
+        for (int i = 0; i < 5; ++i) {
+            ImGui::SameLine();
+            const bool cur = (a.tab == kQuick[i]);
+            if (cur) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26F, 0.59F, 0.98F, 1.0F));
+            char lbl[32];
+            std::snprintf(lbl, sizeof lbl, "%d %s", i + 1, kQuick[i]);
+            if (ImGui::SmallButton(lbl)) a.tab = kQuick[i];
+            if (cur) ImGui::PopStyleColor();
+        }
         ImGui::EndMenuBar();
     }
 
@@ -252,10 +268,26 @@ void draw_ui(App& a) {
     /* 右：属性 + 控制台 */
     ImGui::BeginChild("right", ImVec2(0, 0));
     if (ImGui::BeginTabBar("tabs")) {
+        /* 只在"目标页刚变化"的那一帧用 SetSelected 强制切换；此后交还给 ImGui。
+         * 曾经每帧都按 a.tab 强制选中 → 鼠标点其它页会被立刻抢回（表现为"tab 无法切换"）。 */
+        const bool force_tab = a.tab != a.tab_applied;
         auto tab_flags = [&](const char* name) {
-            return a.tab == name ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
+            return (force_tab && a.tab == name) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
         };
+        /* 页面打开中 → 记录当前页（鼠标点选也生效）；但**强制切换那一帧不要回写**：
+         * SetSelected 到下一帧才生效，本帧打开的仍是旧页，回写会把刚设的目标页取消掉。 */
+        auto sync_tab = [&](const char* name) { if (!force_tab) a.tab = name; };
         if (ImGui::BeginTabItem("属性", nullptr, tab_flags("属性"))) {
+            sync_tab("属性");
+            if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
+                static int n_e5b19ee680a7 = 0;
+                if (++n_e5b19ee680a7 % 120 == 1) {
+                    const ImVec2 ta = ImGui::GetItemRectMin(), tb = ImGui::GetItemRectMax();
+                    std::print("[insp] tab 属性 rect ({:.0f},{:.0f})-({:.0f},{:.0f}) mouse=({:.0f},{:.0f})\n",
+                               (double)ta.x, (double)ta.y, (double)tb.x, (double)tb.y,
+                               (double)ImGui::GetIO().MousePos.x, (double)ImGui::GetIO().MousePos.y);
+                }
+            }
             if (a.selected.empty()) ImGui::TextDisabled("在左侧选择一个实体");
             else if (a.props_raw.empty()) ImGui::TextDisabled("（读取中…）");
             else {
@@ -318,6 +350,16 @@ void draw_ui(App& a) {
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("控制台", nullptr, tab_flags("控制台"))) {
+            sync_tab("控制台");
+            if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
+                static int n_e68ea7e588b6e58fb0 = 0;
+                if (++n_e68ea7e588b6e58fb0 % 120 == 1) {
+                    const ImVec2 ta = ImGui::GetItemRectMin(), tb = ImGui::GetItemRectMax();
+                    std::print("[insp] tab 控制台 rect ({:.0f},{:.0f})-({:.0f},{:.0f}) mouse=({:.0f},{:.0f})\n",
+                               (double)ta.x, (double)ta.y, (double)tb.x, (double)tb.y,
+                               (double)ImGui::GetIO().MousePos.x, (double)ImGui::GetIO().MousePos.y);
+                }
+            }
             ImGui::TextDisabled("发送任意控制面方法（JSON-RPC 单行；与 MCP 同一批方法）");
             ImGui::InputTextMultiline("##req", a.console, sizeof a.console, ImVec2(-1, 60));
             if (ImGui::Button("发送") && a.client.connected()) {
@@ -334,6 +376,16 @@ void draw_ui(App& a) {
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("字体图集", nullptr, tab_flags("字体图集"))) {
+            sync_tab("字体图集");
+            if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
+                static int n_e5ad97e4bd93e59bbee99b86 = 0;
+                if (++n_e5ad97e4bd93e59bbee99b86 % 120 == 1) {
+                    const ImVec2 ta = ImGui::GetItemRectMin(), tb = ImGui::GetItemRectMax();
+                    std::print("[insp] tab 字体图集 rect ({:.0f},{:.0f})-({:.0f},{:.0f}) mouse=({:.0f},{:.0f})\n",
+                               (double)ta.x, (double)ta.y, (double)tb.x, (double)tb.y,
+                               (double)ImGui::GetIO().MousePos.x, (double)ImGui::GetIO().MousePos.y);
+                }
+            }
             ImGui::TextDisabled("引擎的**动态字形图集**（按需栅格化、增量打包）："
                                 "ASCII 预热 + 排版时按码点追加，generation 变化时重传纹理");
             if (a.atlas_list.empty()) ImGui::TextDisabled("（暂无图集数据）");
@@ -419,6 +471,16 @@ void draw_ui(App& a) {
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("预览", nullptr, tab_flags("预览"))) {
+            sync_tab("预览");
+            if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
+                static int n_e9a284e8a788 = 0;
+                if (++n_e9a284e8a788 % 120 == 1) {
+                    const ImVec2 ta = ImGui::GetItemRectMin(), tb = ImGui::GetItemRectMax();
+                    std::print("[insp] tab 预览 rect ({:.0f},{:.0f})-({:.0f},{:.0f}) mouse=({:.0f},{:.0f})\n",
+                               (double)ta.x, (double)ta.y, (double)tb.x, (double)tb.y,
+                               (double)ImGui::GetIO().MousePos.x, (double)ImGui::GetIO().MousePos.y);
+                }
+            }
             ImGui::Checkbox("自动刷新", &a.screen_auto);
             ImGui::SameLine();
             ImGui::SetNextItemWidth(160);
@@ -462,10 +524,22 @@ void draw_ui(App& a) {
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("模式", nullptr, tab_flags("模式"))) {
+            sync_tab("模式");
+            if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
+                static int n_e6a8a1e5bc8f = 0;
+                if (++n_e6a8a1e5bc8f % 120 == 1) {
+                    const ImVec2 ta = ImGui::GetItemRectMin(), tb = ImGui::GetItemRectMax();
+                    std::print("[insp] tab 模式 rect ({:.0f},{:.0f})-({:.0f},{:.0f}) mouse=({:.0f},{:.0f})\n",
+                               (double)ta.x, (double)ta.y, (double)tb.x, (double)tb.y,
+                               (double)ImGui::GetIO().MousePos.x, (double)ImGui::GetIO().MousePos.y);
+                }
+            }
             ImGui::TextWrapped("%s", a.describe_raw.empty() ? "（Types.describe 无数据）" : a.describe_raw.c_str());
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
+        /* 强制那一帧：目标页在下一帧生效 → 这里先记成"未应用"，下一帧再确认 */
+        a.tab_applied = force_tab ? std::string() : a.tab;
     }
     ImGui::EndChild();
     ImGui::End();
@@ -641,9 +715,20 @@ int main(int argc, char** argv) {
     /* 诊断：注入一次合成点击（SDL 事件队列 → 与真实鼠标同一条路径）。
      * 本机 Wayland 会话下 XTest 注入无效（指针不动），用它验证 tab/按钮交互链路。 */
     Uint32 fake_at = 0, fake_release_at = 0, fake_key_at = 0, fake_key_release_at = 0;
+    (void)0;
     ImGuiKey fake_key_release = ImGuiKey_None;
     if (!fake_click.empty()) fake_at = SDL_GetTicks() + 1200;
     if (!fake_key.empty()) fake_key_at = SDL_GetTicks() + 1200;
+
+    SDL_RaiseWindow(win);
+    SDL_SetWindowInputFocus(win);                        // X11：把输入焦点拿过来
+    SDL_PumpEvents();
+    if ((SDL_GetWindowFlags(win) & SDL_WINDOW_INPUT_FOCUS) == 0) {
+        /* 某些窗口管理器/合成器下不会自动给焦点；ImGui 在 AppFocusLost 时会**清空鼠标输入**
+         * （键盘照常）→ 表现为"所有控件点不动"。这里显式告知已获得焦点。 */
+        ImGui::GetIO().AddFocusEvent(true);
+        std::print("inspector: 窗口未获得输入焦点 → 已显式置为聚焦（否则鼠标输入会被丢弃）\n");
+    }
 
     bool running = true;
     Uint32 prev = SDL_GetTicks();
@@ -716,6 +801,15 @@ int main(int argc, char** argv) {
             (void)io;
         }
         draw_ui(app);
+        if (std::getenv("MAQUE_INSPECTOR_TRACE") && !fake_click.empty() && SDL_GetTicks() < fake_at + 3000) {
+            const ImGuiIO& tio = ImGui::GetIO();
+            static int n = 0;
+            if (++n % 1 == 0 && n < 200)
+                std::print("[insp] 鼠标 pos=({:.0f},{:.0f}) down={} clicked={} AppFocusLost={} SDL焦点={} 当前页={}\n",
+                           (double)tio.MousePos.x, (double)tio.MousePos.y, tio.MouseDown[0],
+                           ImGui::IsMouseClicked(0), tio.AppFocusLost,
+                           (SDL_GetWindowFlags(win) & SDL_WINDOW_INPUT_FOCUS) ? 1 : 0, app.tab);
+        }
         ImGui::Render();
         SDL_SetRenderDrawColor(ren, 16, 16, 20, 255);
         SDL_RenderClear(ren);
