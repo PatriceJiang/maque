@@ -32,6 +32,7 @@
 | [21](21-接口声明与绑定生成.md) | 接口声明与绑定生成（声明一次，生成 C++/脚本绑定） |
 | [23](23-实现与设计差距审查.md) | 实现与设计差距审查（历史快照 + §0 现况对照） |
 | [24](24-设计遵循度审查.md) | **设计遵循度审查（现况记分：符合/部分/违背/未实现 + 逐条证据）** |
+| [api/](api/README.md) | **API 参考（自动生成，随仓库提交）**：脚本 API / 控制面 / 事件 / 插件 vtable / 模块 C ABI / 数据类型 |
 | [assets/00](assets/00-index.md) | 资产系列索引（Effect/Material/Mesh/Texture/Font/AnimationClip/Skeleton/Spine） |
 | [assets/01](assets/01-material.md) | 资产详设：材质（Material / Effect / MaterialInstance） |
 

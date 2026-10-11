@@ -21,5 +21,5 @@ if(LWS_FOUND)
 else()
     message(WARNING "maque: libwebsockets not found; net 模块关闭")
 endif()
-target_include_directories(maque_net PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
-target_include_directories(maque_net_test PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_net PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_net_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）

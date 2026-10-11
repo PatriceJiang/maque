@@ -27,6 +27,16 @@ endif()
 
 enable_testing()
 
+# DSL 生成物目录（**入库**：生成的公开接口是仓库产物，docs/21）
+#   - 单一真相 = modules/core/data/schema.yaml
+#   - 生成：`cmake --build build --target maque_codegen`（构建时自动重生成）
+#   - 漂移校验：ctest -R codegen_drift（重新生成到临时目录并逐字节比对）
+set(MAQUE_GEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules/core/data/generated"
+    CACHE PATH "Directory holding codegen outputs (tracked)")
+
+# 生成头（含各模块 abi/<mod>.h 的 shim 目标）对全项目可见：配置期已生成，无需逐目标接线。
+include_directories("${MAQUE_GEN_DIR}")
+
 # script 需先于 data（data 生成绑定 TU 依赖 script）
 add_subdirectory(modules/script)
 add_subdirectory(modules/core/data)
@@ -52,21 +62,3 @@ add_subdirectory(modules/runtime)
 add_subdirectory(samples/player)
 add_subdirectory(samples/host)
 
-# 声明了 module_abi 的模块：公开接口头由 DSL 生成 →
-#   ① 生成目录进入 include 路径（原手写头是 #include "abi/<mod>.h" 的 shim）
-#   ② 建立对 codegen 的构建依赖（保证生成先于编译）
-# 集中在此处接线：script 等模块必须先于 core/data 加入（生成绑定 TU 依赖 script）。
-if(TARGET maque_codegen)
-    get_property(_maque_gen GLOBAL PROPERTY MAQUE_GEN_DIR)
-    if(_maque_gen)
-        foreach(_t maque_script maque_platform maque_input maque_vfs maque_asset maque_physics maque_nav
-              maque_handle maque_module maque_reflect maque_observability
-              maque_persist maque_watcher maque_image maque_net
-              maque_control maque_runtime)
-            if(TARGET ${_t})
-                target_include_directories(${_t} PUBLIC "${_maque_gen}")
-                add_dependencies(${_t} maque_codegen)
-            endif()
-        endforeach()
-    endif()
-endif()

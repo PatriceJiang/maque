@@ -1,6 +1,6 @@
 # maque::api —— 引擎 API 实现（匹配生成的 maque_api.h 声明）
 add_library(maque_api STATIC src/api.cpp)
-target_include_directories(maque_api PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # maque_bind.h（DSL 生成，docs/21）
+target_include_directories(maque_api PUBLIC "${MAQUE_GEN_DIR}")   # maque_bind.h（DSL 生成，docs/21）
 add_library(maque::api ALIAS maque_api)
 target_include_directories(maque_api PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(maque_api PUBLIC maque::schema maque::script)

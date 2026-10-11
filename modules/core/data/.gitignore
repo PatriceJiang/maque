@@ -1,4 +1,4 @@
 node_modules/
 package-lock.json
-generated/
 
+# 注意：generated/ **入库**（生成的公开接口是交付物，docs/21）；勿在此忽略

@@ -8,7 +8,8 @@
 
 find_program(NODE_EXECUTABLE node)
 
-set(MAQUE_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+# 生成到**源码树**（入库）：生成物是公开接口的交付物，不是临时构建产物（docs/21）
+set(MAQUE_GEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")
 set(MAQUE_SCHEMA   "${CMAKE_CURRENT_SOURCE_DIR}/schema.yaml")
 set(MAQUE_PARSER   "${CMAKE_CURRENT_SOURCE_DIR}/parser.js")
 
@@ -44,33 +45,47 @@ set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/abi/control.h"
     "${MAQUE_GEN_DIR}/abi/host_scene.h"
     "${MAQUE_GEN_DIR}/abi/runtime.h"
-    "${MAQUE_GEN_DIR}/abi/math.h")
+    "${MAQUE_GEN_DIR}/abi/math.h"
+    "${MAQUE_GEN_DIR}/API.md"
+    "${MAQUE_GEN_DIR}/TYPES.md")
 
 if(NODE_EXECUTABLE)
-    add_custom_command(
-        OUTPUT  ${MAQUE_GEN_FILES}
-        COMMAND "${CMAKE_COMMAND}" -E make_directory "${MAQUE_GEN_DIR}"
-        COMMAND "${NODE_EXECUTABLE}" "${MAQUE_PARSER}"
-                --schema "${MAQUE_SCHEMA}" --out "${MAQUE_GEN_DIR}"
-        # 在源目录运行以便找到 node_modules 与 yaml 依赖（首次需 `npm install`）
+    # 生成物**入库**（源码树）→ 在**配置期**生成：任何编译单元都能直接包含生成头，
+    # 不需要逐目标建立构建依赖（schema/parser 变更会触发重新配置，见 CMAKE_CONFIGURE_DEPENDS）。
+    execute_process(
+        COMMAND "${NODE_EXECUTABLE}" "${MAQUE_PARSER}" --schema "${MAQUE_SCHEMA}" --out "${MAQUE_GEN_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        DEPENDS "${MAQUE_SCHEMA}" "${MAQUE_PARSER}"
-        COMMENT "maque: 从 schema.yaml 生成反射代码"
-        VERBATIM)
+        RESULT_VARIABLE MAQUE_CODEGEN_RC
+        OUTPUT_QUIET)
+    if(NOT MAQUE_CODEGEN_RC EQUAL 0)
+        message(FATAL_ERROR "maque: codegen 失败（node parser.js 返回 ${MAQUE_CODEGEN_RC}）")
+    endif()
+
+    # schema/parser 变化 → 自动重新配置（从而重新生成）
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+                 "${MAQUE_SCHEMA}" "${MAQUE_PARSER}")
 
     add_library(maque_schema STATIC "${MAQUE_GEN_DIR}/maque_desc.cpp")
     add_library(maque::schema ALIAS maque_schema)
     target_include_directories(maque_schema PUBLIC "${MAQUE_GEN_DIR}")
-    set_target_properties(maque_schema PROPERTIES
-        CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+    set_target_properties(maque_schema PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 
-    # 便捷：`ninja maque_codegen` 强制重生成
-    add_custom_target(maque_codegen DEPENDS ${MAQUE_GEN_FILES})
+    # 便捷：`cmake --build build --target maque_codegen` 手动重生成
+    add_custom_target(maque_codegen
+        COMMAND "${NODE_EXECUTABLE}" "${MAQUE_PARSER}" --schema "${MAQUE_SCHEMA}" --out "${MAQUE_GEN_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "maque: 从 schema.yaml 生成（类型/描述符/API/绑定/控制面/事件/ABI/文档）"
+        VERBATIM)
 
-    # 供下游（如 api 模块）引用生成目录与文件
+    # 漂移校验：重新生成到临时目录并与入库版本逐字节比对
+    add_test(NAME codegen_drift
+             COMMAND "${CMAKE_COMMAND}" -E env
+                     "MAQUE_SCHEMA=${MAQUE_SCHEMA}" "MAQUE_PARSER=${MAQUE_PARSER}"
+                     "MAQUE_TRACKED=${MAQUE_GEN_DIR}"
+                     bash "${CMAKE_SOURCE_DIR}/tests/codegen_drift.sh")
+
     set_property(GLOBAL PROPERTY MAQUE_GEN_DIR "${MAQUE_GEN_DIR}")
 
-    # 兼容旧的 INTERFACE 目标名（暴露生成目录）
     add_library(maque_data INTERFACE)
     add_library(maque::data ALIAS maque_data)
     target_include_directories(maque_data INTERFACE "${MAQUE_GEN_DIR}")

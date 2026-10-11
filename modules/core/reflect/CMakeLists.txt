@@ -13,5 +13,5 @@ if(MAQUE_BUILD_TESTS)
     target_link_libraries(maque_reflect_test PRIVATE maque::reflect)
     add_test(NAME reflect COMMAND maque_reflect_test)
 endif()
-target_include_directories(maque_reflect PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
-target_include_directories(maque_reflect_test PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_reflect PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_reflect_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）

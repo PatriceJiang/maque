@@ -2074,6 +2074,223 @@ function genModuleAbi(mod) {
   return lines.join('\n')
 }
 
+
+/* ---------------------------------------------------------------------------
+ * 文档生成（docs/21 §6.5：从声明生成参考文档）
+ *   API.md    —— 脚本 API / 控制面方法 / 事件回调 / 插件接口 / 模块 C ABI
+ *   TYPES.md  —— 数据类型（字段、默认值、attrs、role）
+ * 生成物随 codegen 一起产出；`tools/gen_api_docs.sh` 会同步一份到 docs/api/ 供阅读。
+ * ------------------------------------------------------------------------- */
+function mdEsc(v) {
+  return String(v === undefined || v === null ? '' : v).replace(/\|/g, '\\|')
+}
+function roleNames(t) {
+  return (t.roles || []).join(', ')
+}
+function attrsStr(attrs) {
+  const keys = Object.keys(attrs || {})
+  if (!keys.length) return ''
+  return keys.map((k) => {
+    const v = attrs[k]
+    return v === true ? k : `${k}: ${v}`
+  }).join(', ')
+}
+
+function genApiDoc(namespaces, interfaces) {
+  const L = []
+  let apiCount = 0, ctrlCount = 0, cbCount = 0, modCount = 0
+  for (const ns of namespaces) {
+    apiCount += (ns.apis || []).length
+    ctrlCount += (ns.controls || []).length
+    cbCount += (ns.callbacks || []).length
+    if (ns.moduleAbi) modCount++
+  }
+  L.push('# maque API 参考（自动生成）')
+  L.push('')
+  L.push('> ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema.yaml`（**唯一真相**）生成，**请勿手工编辑**。')
+  L.push('> 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。')
+  L.push('')
+  L.push(`统计：脚本 API **${apiCount}** 个 · 控制面方法 **${ctrlCount}** 个 · 事件回调 **${cbCount}** 个 · 模块 C ABI **${modCount}** 个 · 插件接口 **${interfaces.length}** 个。`)
+  L.push('')
+  L.push('## 目录')
+  L.push('')
+  L.push('1. [脚本 API（api_list）](#1-脚本-apiapilist)')
+  L.push('2. [控制面方法（control_list，AI/MCP）](#2-控制面方法control_listaimcp)')
+  L.push('3. [脚本事件回调（callbacks）](#3-脚本事件回调callbacks)')
+  L.push('4. [插件接口（interface → C vtable）](#4-插件接口interface--c-vtable)')
+  L.push('5. [模块 C ABI（module_abi）](#5-模块-c-abimodule_abi)')
+  L.push('6. [数据类型与组件](TYPES.md)')
+  L.push('')
+
+  /* 1. 脚本 API */
+  L.push('## 1. 脚本 API（api_list）')
+  L.push('')
+  L.push('脚本里直接调用（`host` 命名空间为全局函数，无前缀；其余为 `<ns>.<fn>`）。')
+  L.push('`ctx` = 首参注入引擎实例（脚本不可见）。')
+  L.push('')
+  for (const ns of namespaces) {
+    if (!(ns.apis || []).length) continue
+    L.push(`### ${ns.name}${ns.global ? '（全局，无前缀）' : ''}`)
+    L.push('')
+    L.push('| 函数 | 参数 | 返回 | 说明 |')
+    L.push('|------|------|------|------|')
+    for (const a of ns.apis) {
+      const name = ns.global ? a.name : `${ns.name}.${a.name}`
+      const args = a.args.map((x) => `${x.name}: ${x.type}`).join(', ')
+      const note = a.manual ? `MANUAL → \`${a.manual}\`` : (a.ctx ? 'ctx' : '')
+      L.push(`| \`${name}\` | ${mdEsc(args) || '—'} | ${mdEsc(a.returns)} | ${note} |`)
+    }
+    L.push('')
+  }
+
+  /* 2. 控制面方法 */
+  L.push('## 2. 控制面方法（control_list，AI/MCP）')
+  L.push('')
+  L.push('JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；')
+  L.push('同一份声明还生成 MCP `tools/list`（含类型化 `inputSchema`）。')
+  L.push('')
+  L.push('| 方法 | 参数 | MCP 类型 |')
+  L.push('|------|------|----------|')
+  for (const ns of namespaces) {
+    for (const c of ns.controls || []) {
+      const args = c.args.map((x) => `${x.name}: ${x.type}`).join(', ')
+      const types = c.args.map((x) => jsonTypeFor(x.type)).join(', ')
+      L.push(`| \`${c.method}\` | ${mdEsc(args) || '—'} | ${types || '—'} |`)
+    }
+  }
+  L.push('')
+
+  /* 3. 回调 */
+  L.push('## 3. 脚本事件回调（callbacks）')
+  L.push('')
+  L.push('引擎按名字调用脚本里的全局函数；`触发` 列为对应输入事件（无则非输入触发）。')
+  L.push('')
+  L.push('| 回调 | 参数 | 触发 |')
+  L.push('|------|------|------|')
+  for (const ns of namespaces) {
+    for (const cb of ns.callbacks || []) {
+      const args = cb.args.map((x) => `${x.name}: ${x.type}`).join(', ')
+      L.push(`| \`${cb.name}\` | ${mdEsc(args) || '—'} | ${mdEsc(cb.on) || '—'} |`)
+    }
+  }
+  L.push('')
+
+  /* 4. 插件接口 */
+  L.push('## 4. 插件接口（interface → C vtable）')
+  L.push('')
+  L.push('跨 `.so` 的唯一函数表；宿主经 `maque::module`(dlopen) 加载并校验版本/结构大小。')
+  L.push('')
+  for (const it of interfaces) {
+    L.push(`### ${it.name} v${it.version} — \`${it.apiName}\``)
+    L.push('')
+    if ((it.records || []).length) {
+      L.push('记录（POD）：')
+      L.push('')
+      for (const rec of it.records) {
+        L.push(`- \`${rec.name}\`：${rec.fields.map((f) => `${f.name}: ${f.type}`).join(', ')}`)
+      }
+      L.push('')
+    }
+    L.push('| 方法 | 参数 | 返回 |')
+    L.push('|------|------|------|')
+    for (const m of it.methods) {
+      const args = m.args.map((a) => `${a.name}: ${a.type}`).join(', ')
+      L.push(`| \`${m.fn}\` | ${mdEsc(args) || '—'} | ${mdEsc(m.returns)} |`)
+    }
+    L.push('')
+  }
+
+  /* 5. 模块 C ABI */
+  L.push('## 5. 模块 C ABI（module_abi）')
+  L.push('')
+  L.push('每模块的公开 C 头由 DSL 生成（原手写头是 `#include "abi/<mod>.h"` shim）；')
+  L.push('`language: cxx` 的模块生成命名空间声明。')
+  L.push('')
+  for (const ns of namespaces) {
+    const m = ns.moduleAbi
+    if (!m) continue
+    L.push(`### ${m.module} — \`${m.abiName}\` v${m.version}${m.language === 'cxx' ? '（C++）' : ''}`)
+    L.push('')
+    L.push(`头文件：\`build/modules/core/data/generated/abi/${m.module}.h\` · 宏：\`MQ_${m.module.toUpperCase()}_ABI_VERSION\` / \`_IFACE_NAME\``)
+    L.push('')
+    if (m.summary) { L.push(`${m.summary}`); L.push('') }
+    if ((m.enums || []).length) {
+      L.push('枚举：')
+      L.push('')
+      for (const e of m.enums) {
+        L.push(`- ${e.name ? `\`${e.name}\`` : '(匿名)'}：${e.values.map((v) => `${v.name}=${v.value}`).join(', ')}`)
+      }
+      L.push('')
+    }
+    if ((m.structs || []).length) {
+      L.push('结构体：')
+      L.push('')
+      for (const st of m.structs) {
+        L.push(`- \`${st.name}\`：${st.fields.map((f) => `${f.name}: ${f.type}`).join(', ')}`)
+      }
+      L.push('')
+    }
+    L.push('| 函数 | 返回 | 参数 |')
+    L.push('|------|------|------|')
+    for (const f of m.fns) {
+      const args = f.args.map((a) => `${a.name}: ${a.type}`).join(', ')
+      L.push(`| \`${f.name}\` | ${mdEsc(f.returns)} | ${mdEsc(args) || '—'} |`)
+    }
+    L.push('')
+  }
+  return L.join('\n')
+}
+
+function genTypeDoc(namespaces) {
+  const L = []
+  const types = sortedTypes(namespaces)
+  L.push('# maque 数据类型参考（自动生成）')
+  L.push('')
+  L.push('> ⚠️ 由 `modules/core/data/parser.js` 从 `schema.yaml` 生成，**请勿手工编辑**。')
+  L.push('> 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。')
+  L.push('')
+  L.push(`共 **${types.length}** 个类型。字段格式：\`名称: 类型 = 默认值 (attrs)\`。`)
+  L.push('')
+  const byNs = new Map()
+  for (const t of types) {
+    if (!byNs.has(t.ns)) byNs.set(t.ns, [])
+    byNs.get(t.ns).push(t)
+  }
+  for (const [ns, list] of byNs) {
+    L.push(`## ${ns}（${list.length}）`)
+    L.push('')
+    for (const t of list) {
+      const sz = t.size !== null && t.size !== undefined ? t.size : typeSize(t)
+      const szTxt = sz === null || sz === undefined ? '变长（含动态成员）' : `${sz}B`
+      const head = t.kind === 'enum'
+        ? `### ${t.fqName} — enum`
+        : t.kind === 'alias' ? `### ${t.fqName} — alias \`${t.aliasText}\``
+        : `### ${t.fqName} — struct (${szTxt})`
+      L.push(head)
+      L.push('')
+      if (t.roles && t.roles.length) { L.push(`role: \`${roleNames(t)}\``); L.push('') }
+      if (t.kind === 'enum') {
+        L.push('| 值 | 数值 |')
+        L.push('|----|------|')
+        for (const v of t.values) L.push(`| \`${v.name}\` | ${v.value} |`)
+      } else if (t.kind === 'struct') {
+        if (!t.fields.length) { L.push('（无字段）') }
+        else {
+          L.push('| 字段 | 类型 | 默认值 | attrs |')
+          L.push('|------|------|--------|-------|')
+          for (const f of t.fields) {
+            const def = f.default === null || f.default === undefined ? '—'
+                      : String(Array.isArray(f.default) ? '{' + f.default.join(', ') + '}' : f.default)
+            L.push(`| \`${f.name}\` | ${mdEsc(f.typeText)} | ${mdEsc(def)} | ${mdEsc(attrsStr(f.attrs))} |`)
+          }
+        }
+      }
+      L.push('')
+    }
+  }
+  return L.join('\n')
+}
+
 function main() {
   let args
   try {
@@ -2163,6 +2380,8 @@ function main() {
     ['maque_bindings.cpp', genBindingsSource(namespaces)],
     ['maque_ifaces.h', genInterfacesHeader(interfaces)],
     ['maque_bind.h', genBindHeader()],
+    ['API.md', genApiDoc(namespaces, interfaces)],
+    ['TYPES.md', genTypeDoc(namespaces)],
     ['maque_control.h', genControlHeader(namespaces)],
     ['maque_control_gen.cpp', genControlSource(namespaces)],
     ['maque_events.h', genEventsHeader(namespaces)],

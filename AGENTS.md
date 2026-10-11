@@ -37,7 +37,10 @@ cd modules/core/data && node parser.js --check
 4. **无全局可变状态**（多实例，不同实例各持一份）。
 5. **确定性**：模拟单线程、固定步长、引擎 RNG、帧内不发异步、**脚本 cycle GC 仅帧边界**（`docs/10/14`）。
 6. **不做无关注释**；不改与本任务无关的文件。
-7. **不提交构建产物**：`build/`、`third_party/wgpu-native/lib/*`、`modules/core/data/generated/` 均已 gitignore。
+7. **构建产物不入库，但生成物入库**：
+   - 不入库：`build/`、`third_party/wgpu-native/lib/*`。
+   - **入库**：`modules/core/data/generated/`（生成的头/绑定/描述符/JSON/**API.md**/**TYPES.md**）
+     —— 生成的公开接口是交付物，改 `schema.yaml` 后必须重新生成并提交（`ctest -R codegen_drift` 会抓漂移）。
 
 ## 架构核心
 
@@ -51,7 +54,8 @@ cd modules/core/data && node parser.js --check
   | `control_list` | 控制面方法（AI 面，docs/11 §3） | `maque_control.h`（处理器声明）+ `maque_control_gen.cpp`（注册表 + 类型化 MCP `inputSchema`） | `maque::gencontrol` |
   | `callbacks` | 脚本事件回调（docs/14/19） | `maque_events.h` + `maque_events_gen.cpp`（回调枚举 + `on:` 输入映射 + 精确派发） | `maque::genevents` |
   | `module_abi` | 模块 C/C++ ABI（跨模块公开面，**20 个模块全覆盖**） | `abi/<module>.h`（纯 C 头 + `MQ_<MOD>_ABI_VERSION/IFACE_NAME` 宏；`language: cxx` + `namespace:` 时生成 C++ 命名空间声明） | 各模块（原手写头退化为 `#include` shim） |
-  - 生成物在 `build/modules/core/data/generated/`；**改接口一律改 `schema.yaml`，不要改生成物或 shim 头**。
+  - 生成物在 `modules/core/data/generated/`（**源码树、随仓库提交**；构建配置期自动生成）；
+    **改接口一律改 `schema.yaml`，不要改生成物或 shim 头**。人读文档：`generated/API.md`、`generated/TYPES.md`。
   - **MANUAL**：`api_list` 项可带 `manual: "<header>"` → 生成器只 `#include` 该头（实现内联于头，不重复声明）。
   - 加控制面方法 = 在 `control_list` 加一条 + 实现 `mq_control_<Domain>_<method>`（签名见生成头）。
   - 加模块 C ABI 函数 = 在 `module_abi.fns` 加一条；结构体/枚举/宏同理（`structs`/`enums`/`macros`）。
@@ -103,7 +107,7 @@ UI 控件（`ui.Control`）以**中心**为锚点，命中矩形 = 尺寸的一�
 ## 文档地图
 
 - 设计文档：`docs/`（根文档 `docs/00-设计哲学与约束.md`；索引 `docs/README.md`）。
-- 接口绑定机制：`docs/21-接口声明与绑定生成.md`。
+- 接口绑定机制：`docs/21-接口声明与绑定生成.md`；**API 参考（自动生成）**：`docs/api/README.md` → `modules/core/data/generated/API.md`。
 - 运行时/资源模型：`docs/20-运行时与资源模型.md`。
 - 里程碑/路线图：`docs/milestones/00-路线图.md`。
 - 各模块开发计划：`plans/`（`plans/README.md`）。

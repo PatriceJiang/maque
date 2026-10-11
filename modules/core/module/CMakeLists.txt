@@ -19,5 +19,5 @@ if(MAQUE_BUILD_TESTS)
     add_dependencies(maque_host_test maque_test_module)
     add_test(NAME module COMMAND maque_host_test "$<TARGET_FILE:maque_test_module>")
 endif()
-target_include_directories(maque_module PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
-target_include_directories(maque_test_module PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_module PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_test_module PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
