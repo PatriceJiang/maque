@@ -18,18 +18,27 @@ void          mq_script_vm_destroy(mq_script_vm* vm);
 int  mq_script_eval(mq_script_vm* vm, const char* src, const char* filename);
 /* 是否存在全局函数。 */
 int  mq_script_has(mq_script_vm* vm, const char* fn);
-/* 调用全局函数（0/1 个数值参数）；ret 可空。成功 0。 */
+/* 调用全局函数（0/1/3 个数值参数）；ret 可空。成功 0。
+ * 多参数形态供事件分发（docs/19 §8）：只传标量，不跨边界传对象。 */
 int  mq_script_call0(mq_script_vm* vm, const char* fn, double* ret);
 int  mq_script_call1(mq_script_vm* vm, const char* fn, double arg, double* ret);
+int  mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, double c, double* ret);
 
 /* 帧边界 GC（确定性：模拟帧内不隐式回收）。返回本次回收对象数估计。 */
 void mq_script_gc(mq_script_vm* vm);
 
-/* 原生函数（宿主提供）。返回值作为 JS number；返回非 0 表示 JS 异常。 */
+/* 原生函数（宿主提供）。返回值作为 JS number；返回非 0 表示 JS 异常。
+ * ret_str：把结果文本写入 ret（容量 ret_cap），由 VM 复制为 JS string —— 宿主不转移所有权。 */
 typedef int (*mq_script_num_fn)(void* user, int argc, const double* argv, double* ret);
 typedef int (*mq_script_str_fn)(void* user, const char* arg, double* ret);
+typedef int (*mq_script_ret_str_fn)(void* user, int argc, const double* argv, char* ret, int ret_cap);
 int mq_script_register_num(mq_script_vm* vm, const char* name, mq_script_num_fn fn, void* user);
 int mq_script_register_str(mq_script_vm* vm, const char* name, mq_script_str_fn fn, void* user);
+int mq_script_register_ret_str(mq_script_vm* vm, const char* name, mq_script_ret_str_fn fn, void* user);
+
+/* 数值参数 + 单个尾部字符串（如 set_label(id, text)）：字符串不跨边界传对象。 */
+typedef int (*mq_script_mixed_fn)(void* user, int argc, const double* argv, const char* s, double* ret);
+int mq_script_register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, void* user);
 
 #ifdef __cplusplus
 }

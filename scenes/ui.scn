@@ -1,0 +1,35 @@
+{
+  "title": "UI 输入测试",
+  "script": "ui.js",
+  "width": 320,
+  "height": 240,
+  "seed": 7,
+  "entities": [
+    {
+      "name": "Root",
+      "components": [],
+      "children": [
+        {
+          "name": "ScoreLabel",
+          "components": [
+            { "type": "scn.Label", "x": 8.0, "y": 196.0, "z": 0, "text": "score: 0", "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 }
+          ]
+        },
+        {
+          "name": "SpawnButton",
+          "components": [
+            { "type": "scn.Button", "x": 24.0, "y": 218.0, "width": 96.0, "height": 28.0, "z": 10,
+              "label": "生成", "r": 0.25, "g": 0.6, "b": 0.35 }
+          ]
+        },
+        {
+          "name": "ClearButton",
+          "components": [
+            { "type": "scn.Button", "x": 140.0, "y": 218.0, "width": 96.0, "height": 28.0, "z": 10,
+              "label": "清空", "r": 0.6, "g": 0.3, "b": 0.3 }
+          ]
+        }
+      ]
+    }
+  ]
+}

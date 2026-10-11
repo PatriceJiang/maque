@@ -1869,6 +1869,33 @@
       fields:
         - { name: base_color, type: math.Vec4, default: "{1.0F,1.0F,1.0F,1.0F}" }
         - { name: texture,    type: string,    default: "" }
+    # UI 控件（docs/19 §4/§8、components/04/08）：命中测试/绘制只按 role，引擎不认具体类型。
+    - struct: Button
+      roles: [ui_button]
+      fields:
+        - { name: x,       type: float,   default: 0.0F }
+        - { name: y,       type: float,   default: 0.0F }
+        - { name: width,   type: float,   default: 96.0F }
+        - { name: height,  type: float,   default: 28.0F }
+        - { name: z,       type: int32_t, default: 0 }          # z-order（越大越靠上）
+        - { name: label,   type: string,  default: "Button" }
+        - { name: r,       type: float,   default: 0.22F }
+        - { name: g,       type: float,   default: 0.26F }
+        - { name: b,       type: float,   default: 0.36F }
+        - { name: pressed, type: bool,    default: false }      # 由 input 分发写回（瞬态语义）
+        - { name: hovered, type: bool,    default: false }
+        - { name: enabled, type: bool,    default: true }
+    - struct: Label
+      roles: [ui_label]
+      fields:
+        - { name: x,    type: float,   default: 0.0F }
+        - { name: y,    type: float,   default: 0.0F }
+        - { name: z,    type: int32_t, default: 0 }
+        - { name: text, type: string,  default: "" }
+        - { name: r,    type: float,   default: 1.0F }
+        - { name: g,    type: float,   default: 1.0F }
+        - { name: b,    type: float,   default: 1.0F }
+        - { name: a,    type: float,   default: 1.0F }
     - struct: Scene
       fields:
         - { name: title,    type: string,  default: "maque scene" }
@@ -1899,6 +1926,31 @@
     - { fn: entity_y,      ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: entity_count,  ctx: true, returns: float }
     - { fn: entity_destroy,ctx: true, args: [ { name: id, type: float } ] }
+    - { fn: entity_name,   ctx: true, args: [ { name: id, type: float } ], returns: string }
+    - { fn: entity_find,   ctx: true, args: [ { name: name, type: string } ], returns: float }
+    # 输入（docs/19）：脚本读"事件发生时"的状态，不读设备（确定性/回放友好）
+    - { fn: input_x,       ctx: true, returns: float }
+    - { fn: input_y,       ctx: true, returns: float }
+    - { fn: input_target,  ctx: true, returns: float }     # 命中实体（-1 = 未命中）
+    - { fn: input_down,    ctx: true, returns: float }     # 左键/指针是否按住
+    - { fn: input_key,     ctx: true, args: [ { name: code, type: float } ], returns: float }
+    - { fn: input_focus,   ctx: true, returns: float }
+    - { fn: input_set_focus, ctx: true, args: [ { name: id, type: float } ] }
+    # UI（docs/19 §4/§8、components/04）：命中/悬停查询（引擎按 role，不认具体组件）
+    - { fn: ui_hit,        ctx: true, returns: float }     # 当前指针下最上层可交互控件
+    - { fn: ui_hover,      ctx: true, returns: float }     # 上一帧悬停控件
+    - { fn: ui_pressed,    ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_z,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_set_z,  ctx: true, args: [ { name: id, type: float }, { name: z, type: float } ] }
+    # 游戏常用组合（保持脚本只表达玩法；物理语义在引擎侧，docs/15/19）
+    - { fn: spawn_ball,    ctx: true, args: [ { name: x, type: float }, { name: y, type: float },
+                                             { name: vx, type: float }, { name: vy, type: float },
+                                             { name: radius, type: float } ], returns: float }
+    - { fn: bounce_step,   ctx: true, args: [ { name: dt, type: float } ] }
+    - { fn: ball_clear,    ctx: true }
+    # 组件字段（脚本改文本等；引擎按 role 定位组件，不认具体类型名）
+    - { fn: set_label,     ctx: true, args: [ { name: id, type: float }, { name: text, type: string } ] }
+    - { fn: ui_hit_at,     ctx: true, args: [ { name: x, type: float }, { name: y, type: float } ], returns: float }
 
 # 插件接口 ABI（由 DSL 生成 C vtable；docs/02/21）。opaque self = void*。
 - interface: renderer

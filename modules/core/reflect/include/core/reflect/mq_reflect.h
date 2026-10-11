@@ -33,6 +33,11 @@ int mq_reflect_register(mq_reflect_ctx* ctx, const mq_type_desc* type);
 const mq_type_desc*  mq_reflect_type_by_id(mq_reflect_ctx* ctx, uint32_t type_id);
 const mq_type_desc*  mq_reflect_type_by_name(mq_reflect_ctx* ctx, const char* fq_name);
 
+/* 枚举已注册类型（自省/AI：docs/06 A1、docs/11 Types domain）。
+ * 顺序 = 注册顺序（确定性，禁地址依赖）。 */
+uint32_t             mq_reflect_count(mq_reflect_ctx* ctx);
+const mq_type_desc*  mq_reflect_type_at(mq_reflect_ctx* ctx, uint32_t index);
+
 /* 字段查找（不需 ctx）。 */
 const mq_field_desc* mq_reflect_field(const mq_type_desc* type, const char* field_name);
 const mq_field_desc* mq_reflect_field_path(mq_reflect_ctx* ctx, const mq_type_desc* type,

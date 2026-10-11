@@ -8,9 +8,12 @@
 #include <vector>
 
 struct HostFn {
-    bool is_str = false;
-    mq_script_num_fn num = nullptr;
-    mq_script_str_fn str = nullptr;
+    enum Kind { Num, Str, RetStr, Mixed } kind = Num;
+    bool is_str = false;                       /* Str：单字符串参数 */
+    mq_script_num_fn    num = nullptr;
+    mq_script_str_fn    str = nullptr;
+    mq_script_ret_str_fn ret_str = nullptr;    /* 返回 JS string（宿主写入缓冲，不转移所有权） */
+    mq_script_mixed_fn   mixed = nullptr;      /* 数值参数 + 尾部字符串 */
     void* user = nullptr;
 };
 
@@ -27,7 +30,29 @@ static JSValue host_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueCo
     HostFn& h = vm->fns[magic];
     double ret = 0.0;
     int rc = 0;
-    if (h.is_str) {
+    if (h.kind == HostFn::RetStr) {
+        std::vector<double> args(argc);
+        for (int i = 0; i < argc; ++i) {
+            double d = 0.0;
+            if (JS_ToFloat64(ctx, &d, argv[i])) { JS_ThrowTypeError(ctx, "numeric arg required"); return JS_EXCEPTION; }
+            args[i] = d;
+        }
+        char buf[1024];
+        buf[0] = '\0';
+        rc = h.ret_str ? h.ret_str(h.user, argc, args.data(), buf, (int)sizeof buf) : 0;
+        if (rc) return JS_EXCEPTION;
+        return JS_NewString(ctx, buf);
+    } else if (h.kind == HostFn::Mixed) {
+        std::vector<double> args(argc > 0 ? argc - 1 : 0);
+        for (int i = 0; i + 1 < argc; ++i) {
+            double d = 0.0;
+            if (JS_ToFloat64(ctx, &d, argv[i])) { JS_ThrowTypeError(ctx, "numeric arg required"); return JS_EXCEPTION; }
+            args[i] = d;
+        }
+        const char* s = JS_ToCString(ctx, argc > 0 ? argv[argc - 1] : JS_UNDEFINED);
+        rc = h.mixed ? h.mixed(h.user, (int)args.size(), args.data(), s ? s : "", &ret) : 0;
+        if (s) JS_FreeCString(ctx, s);
+    } else if (h.is_str) {
         const char* s = JS_ToCString(ctx, argc > 0 ? argv[0] : JS_UNDEFINED);
         rc = h.str ? h.str(h.user, s ? s : "", &ret) : 0;
         if (s) JS_FreeCString(ctx, s);
@@ -98,14 +123,30 @@ static int register_common(mq_script_vm* vm, const char* name, int magic) {
 
 int mq_script_register_num(mq_script_vm* vm, const char* name, mq_script_num_fn fn, void* user) {
     if (!vm) return 1;
-    HostFn h; h.is_str = false; h.num = fn; h.user = user;
+    HostFn h; h.kind = HostFn::Num; h.is_str = false; h.num = fn; h.user = user;
     vm->fns.push_back(h);
     return register_common(vm, name, (int)vm->fns.size() - 1);
 }
 
 int mq_script_register_str(mq_script_vm* vm, const char* name, mq_script_str_fn fn, void* user) {
     if (!vm) return 1;
-    HostFn h; h.is_str = true; h.str = fn; h.user = user;
+    HostFn h; h.kind = HostFn::Str; h.is_str = true; h.str = fn; h.user = user;
+    vm->fns.push_back(h);
+    return register_common(vm, name, (int)vm->fns.size() - 1);
+}
+
+/* 数值 + 尾部字符串（如 set_label(id, text)）。 */
+int mq_script_register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, void* user) {
+    if (!vm) return 1;
+    HostFn h; h.kind = HostFn::Mixed; h.mixed = fn; h.user = user;
+    vm->fns.push_back(h);
+    return register_common(vm, name, (int)vm->fns.size() - 1);
+}
+
+/* 返回 JS string 的原生函数（如 entity_name）：结果写入宿主缓冲，VM 复制。 */
+int mq_script_register_ret_str(mq_script_vm* vm, const char* name, mq_script_ret_str_fn fn, void* user) {
+    if (!vm) return 1;
+    HostFn h; h.kind = HostFn::RetStr; h.ret_str = fn; h.user = user;
     vm->fns.push_back(h);
     return register_common(vm, name, (int)vm->fns.size() - 1);
 }
@@ -135,7 +176,8 @@ static int call_impl(mq_script_vm* vm, const char* fn, int argc, double* argv, d
     JSValue f = JS_GetPropertyStr(vm->ctx, global, fn);
     JS_FreeValue(vm->ctx, global);
     if (!JS_IsFunction(vm->ctx, f)) { JS_FreeValue(vm->ctx, f); return 1; }
-    JSValue args[1];
+    JSValue args[3];
+    if (argc > 3) argc = 3;
     for (int i = 0; i < argc; ++i) args[i] = JS_NewFloat64(vm->ctx, argv[i]);
     JSValue r = JS_Call(vm->ctx, f, JS_UNDEFINED, argc, argc ? args : nullptr);
     for (int i = 0; i < argc; ++i) JS_FreeValue(vm->ctx, args[i]);
@@ -148,6 +190,10 @@ static int call_impl(mq_script_vm* vm, const char* fn, int argc, double* argv, d
 
 int mq_script_call0(mq_script_vm* vm, const char* fn, double* ret) { return call_impl(vm, fn, 0, nullptr, ret); }
 int mq_script_call1(mq_script_vm* vm, const char* fn, double arg, double* ret) { return call_impl(vm, fn, 1, &arg, ret); }
+int mq_script_call3(mq_script_vm* vm, const char* fn, double a, double b, double c, double* ret) {
+    double args[3] = { a, b, c };
+    return call_impl(vm, fn, 3, args, ret);
+}
 
 void mq_script_gc(mq_script_vm* vm) {
     if (vm && vm->rt) JS_RunGC(vm->rt);

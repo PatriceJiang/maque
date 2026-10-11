@@ -250,6 +250,25 @@ extern "C" const char* mq_json_str(const mq_json* v, const char* def) {
     const auto* j = reinterpret_cast<const JVal*>(v);
     return j->kind == JVal::Str ? j->str.c_str() : def;
 }
+extern "C" uint32_t mq_json_object_each(const mq_json* obj, mq_json_kv_fn fn, void* user) {
+    if (!obj || !fn) return 0;
+    const auto* v = reinterpret_cast<const JVal*>(obj);
+    if (v->kind != JVal::Obj) return 0;
+    uint32_t n = 0;
+    for (auto& kv : v->obj) {
+        std::string text;
+        switch (kv.second.kind) {
+            case JVal::Str:  text = kv.second.str; break;
+            case JVal::Bool: text = kv.second.b ? "1" : "0"; break;
+            case JVal::Num:  text = std::to_string(kv.second.num); break;
+            case JVal::Null: text = ""; break;
+            default: continue;                       // 容器值不参与键值文本遍历
+        }
+        ++n;
+        if (fn(user, kv.first.c_str(), text.c_str()) != 0) break;
+    }
+    return n;
+}
 
 extern "C" int mq_persist_apply_json(mq_reflect_ctx* ctx, const mq_type_desc* type, const mq_json* node, void* out) {
     if (!ctx || !type || !node || !out) return 1;

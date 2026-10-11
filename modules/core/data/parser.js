@@ -941,6 +941,7 @@ function genTypesHeader(namespaces) {
   lines.push('#pragma once')
   lines.push('')
   lines.push('#include <cstdint>')
+  lines.push('#include <cstdio>')
   lines.push('#include <string>')
   lines.push('#include <vector>')
   lines.push('#include <map>')
@@ -1093,6 +1094,7 @@ typedef struct mq_field_desc {
     uint32_t     attrs_flags;  /* bit0 transient, bit1 readonly, bit2 deprecated */
     /* 动态数组（T[]）的容器算子（其余字段为 0）——使反射可类型化地增删/取元素 */
     uint32_t     elem_type_id;                    /* 具名元素类型 id；0 否则 */
+    uint32_t   (*container_size)(const void* field);
     void       (*container_resize)(void* field, uint32_t n);
     void*      (*container_elem)(void* field, uint32_t i);
 } mq_field_desc;
@@ -1100,6 +1102,8 @@ typedef struct mq_field_desc {
 /* 组件语义角色（由 schema 的 roles 声明；引擎据此通用处理，不硬编码类型）。 */
 #define MQ_ROLE_TRANSFORM2D (1u << 0)
 #define MQ_ROLE_SPRITE      (1u << 1)
+#define MQ_ROLE_UI_BUTTON   (1u << 2)
+#define MQ_ROLE_UI_LABEL    (1u << 3)
 
 typedef struct mq_type_desc {
     const char*          name;   /* fully qualified ns.Name */
@@ -1122,7 +1126,12 @@ extern const uint32_t            mq_schema_type_count;
 `
 }
 
-const ROLE_BIT = { transform2d: 'MQ_ROLE_TRANSFORM2D', sprite: 'MQ_ROLE_SPRITE' }
+const ROLE_BIT = {
+  transform2d: 'MQ_ROLE_TRANSFORM2D',
+  sprite: 'MQ_ROLE_SPRITE',
+  ui_button: 'MQ_ROLE_UI_BUTTON',
+  ui_label: 'MQ_ROLE_UI_LABEL',
+}
 function roleBits(t) {
   const parts = (t.roles || []).map((r) => ROLE_BIT[r]).filter(Boolean)
   return parts.length ? parts.join(' | ') : '0u'
@@ -1165,6 +1174,7 @@ function genDescSource(types) {
       if (!de) continue
       const base = `mq_dyn_${mangle(t.fqName)}_${mangle(f.name)}`
       const elemCpp = de.fqName.replace(/\./g, '::')
+      lines.push(`static uint32_t ${base}_size(const void* f) { return (uint32_t)static_cast<const std::vector<${elemCpp}>*>(f)->size(); }`)
       lines.push(`static void ${base}_resize(void* f, uint32_t n) { static_cast<std::vector<${elemCpp}>*>(f)->resize(n); }`)
       lines.push(`static void* ${base}_elem(void* f, uint32_t i) { return &static_cast<std::vector<${elemCpp}>*>(f)->at(i); }`)
     }
@@ -1178,9 +1188,9 @@ function genDescSource(types) {
       let extra
       if (de) {
         const base = `mq_dyn_${mangle(t.fqName)}_${mangle(f.name)}`
-        extra = `${de.typeId}u, ${base}_resize, ${base}_elem`
+        extra = `${de.typeId}u, ${base}_size, ${base}_resize, ${base}_elem`
       } else {
-        extra = `0u, 0, 0`
+        extra = `0u, 0, 0, 0`
       }
       lines.push(
         `    { "${f.name}", (uint32_t)offsetof(${t.fqName.replace(/\./g, '::')}, ${f.name}), ` +
@@ -1439,6 +1449,7 @@ function genBindingsSource(namespaces) {
   lines.push('#include "maque_api.h"')
   lines.push('#include "core/script/mq_script.h"')
   lines.push('#include <cstdint>')
+  lines.push('#include <cstdio>')
   lines.push('')
   lines.push('namespace {')
 
@@ -1448,12 +1459,19 @@ function genBindingsSource(namespaces) {
     for (const fn of ns.apis || []) {
       const args = fn.args || []
       const strBinding = args.length === 1 && args[0].type === 'string'
+      // 数值 + 单个尾部字符串（如 set_label(id, text)）也支持：字符串作为 s 参数传入
+      const strArg = args.filter((a) => a.type === 'string')
+      const mixedBinding = !strBinding && strArg.length === 1 &&
+                           args[args.length - 1].type === 'string' &&
+                           args.every((a) => a.type === 'string' || API_SCALARS.has(a.type))
       const numBinding = args.every((a) => API_SCALARS.has(a.type))
-      if (!strBinding && !numBinding) continue
-      fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding })
+      const retStr = fn.returns === 'string'
+      if (retStr && !numBinding) continue
+      if (!strBinding && !numBinding && !mixedBinding) continue
+      fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding, mixedBinding, retStr })
     }
   }
-  for (const { ns, fn, strBinding } of fns) {
+  for (const { ns, fn, strBinding, mixedBinding } of fns) {
     const sym = `b_${ns}_${fn.name}`
     if (strBinding) {
       lines.push(`int ${sym}(void* user, const char* s, double* ret) {`)
@@ -1461,6 +1479,23 @@ function genBindingsSource(namespaces) {
       const call = `${ns}::${fn.name}(${args})`
       if (fn.returns === 'void') lines.push(`  ${call}; return 0;`)
       else lines.push(`  *ret = (double)${call}; return 0;`)
+      lines.push('}')
+    } else if (mixedBinding) {
+      const parts = []
+      if (fn.ctx) parts.push('user')
+      let ai = 0
+      for (const a of fn.args) parts.push(a.type === 'string' ? 's' : apiCast(a.type, `a[${ai++}]`))
+      lines.push(`int ${sym}(void* user, int, const double* a, const char* s, double* ret) {`)
+      const call = `${ns}::${fn.name}(${parts.join(', ')})`
+      if (fn.returns === 'void') lines.push(`  ${call}; return 0;`)
+      else lines.push(`  *ret = (double)${call}; return 0;`)
+      lines.push('}')
+    } else if (fn.returns === 'string') {
+      const parts = []
+      if (fn.ctx) parts.push('user')
+      fn.args.forEach((a, i) => parts.push(apiCast(a.type, `a[${i}]`)))
+      lines.push(`int ${sym}(void* user, int, const double* a, char* ret, int cap) {`)
+      lines.push(`  std::snprintf(ret, (size_t)cap, "%s", ${ns}::${fn.name}(${parts.join(', ')})); return 0;`)
       lines.push('}')
     } else {
       const parts = []
@@ -1476,10 +1511,12 @@ function genBindingsSource(namespaces) {
   lines.push('} // namespace')
   lines.push('')
   lines.push('extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {')
-  for (const { ns, global, fn, strBinding } of fns) {
+  for (const { ns, global, fn, strBinding, mixedBinding } of fns) {
     const sym = `b_${ns}_${fn.name}`
     const user = fn.ctx ? 'ctx' : 'nullptr'
-    const reg = strBinding ? 'mq_script_register_str' : 'mq_script_register_num'
+    const reg = strBinding ? 'mq_script_register_str'
+              : mixedBinding ? 'mq_script_register_mixed'
+              : (fn.returns === 'string' ? 'mq_script_register_ret_str' : 'mq_script_register_num')
     const jsName = global ? fn.name : `${ns}.${fn.name}`
     lines.push(`  ${reg}(vm, "${jsName}", ${sym}, ${user});`)
   }

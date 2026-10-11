@@ -2,12 +2,14 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include <cstring>
 
 struct mq_control {
     struct Entry { mq_control_handler fn; void* user; };
     std::map<std::string, Entry> methods;
     std::string response;
+    size_t response_cap = 4096;
 };
 
 static std::string quote(const char* s) {
@@ -51,10 +53,18 @@ const char* mq_control_dispatch(mq_control* c, const char* request) {
                       ",\"error\":{\"code\":-32601,\"message\":\"method not found: " +
                       (method ? method : "") + "\"}}";
     } else {
-        char out[4096]; out[0] = '\0';
-        int rc = it->second.fn(it->second.user, method, params, out, sizeof out);
-        if (rc != 0 || out[0] == '\0') std::strcpy(out, "null");
-        c->response = "{\"jsonrpc\":\"2.0\",\"id\":" + idtxt + ",\"result\":" + out + "}";
+        /* 结果缓冲按需增长（Types.describe / Scene.entities 等 dump 可能很大）。 */
+        std::vector<char> buf(8192);
+        int rc = 0;
+        for (int attempt = 0; attempt < 5; ++attempt) {
+            buf[0] = '\0';
+            rc = it->second.fn(it->second.user, method, params, buf.data(), buf.size());
+            const size_t used = std::strlen(buf.data());
+            if (used + 1 < buf.size()) break;          // 未被截断
+            buf.resize(buf.size() * 4);
+        }
+        if (rc != 0 || buf[0] == '\0') std::strcpy(buf.data(), "null");
+        c->response = "{\"jsonrpc\":\"2.0\",\"id\":" + idtxt + ",\"result\":" + buf.data() + "}";
     }
     mq_json_free(dom);
     return c->response.c_str();

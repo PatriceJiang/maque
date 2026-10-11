@@ -6,12 +6,15 @@
 #include "runtime/mq_runtime.h"
 
 #include "core/persist/mq_persist.h"
+#include "core/persist/mq_persist_binary.h"
 #include "core/reflect/mq_reflect.h"
 #include "core/script/mq_script.h"
 #include "core/handle/mq_handle.h"
 #include "core/vfs/mq_vfs.h"
 #include "core/image/mq_image.h"
 #include "core/observability/mq_obs.h"
+#include "core/platform/mq_platform.h"
+#include "core/input/mq_input.h"
 #include "core/control/mq_control.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
@@ -28,6 +31,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <cstdint>
+#include <utility>
 
 namespace {
 
@@ -40,6 +45,7 @@ struct Entity {
 
 struct Engine;
 struct Scene;
+struct SnapshotWriter;
 
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
@@ -50,7 +56,24 @@ struct Engine {
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
     mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
     mq_control*         control = nullptr;                 // 控制平面（JSON-RPC）
+    mq_platform*        platform = nullptr;                // 窗口/设备输入（headless 时 dummy）
+    mq_input*           input = nullptr;                   // 确定性输入流（录制/回放）
+    mq_snapshot_pool*   snaps = nullptr;                   // 快照池（回滚/防抖，docs/10 §4）
+    mq_snapshot*        snap_last = nullptr;                // 最近一次世界快照
+    uint64_t            frame = 0;                          // 模拟帧号（= sim time / dt）
     uint64_t            last_checksum = 0;
+    std::vector<std::pair<uint64_t, uint64_t>> trail;       // (frame, checksum) —— 失步定位
+    bool                window = false;                     // 是否真窗口（有显示环境）
+    bool                trace_hits = false;                 // MAQUE_HITS=1：命中轨迹打印（调试）
+    int                 hover = -1;                         // 悬停实体（上帧命中）
+    int                 capture = -1;                       // 指针捕获（拖拽中）
+    float               mouse_x = 0, mouse_y = 0;
+    const mq_input_event* ev = nullptr;                     // 正在分发的语义事件（脚本可读）
+    struct Ball { int id; float vx, vy, radius; };
+    std::vector<Ball> balls;                                // bounce_step 的确定性模拟集合（按 id 升序）
+    uint64_t stop_frame = 0;                                // >0 时到该帧停止（CI 固定长度跑）
+    std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
+    std::string name;
     const mq_type_desc* scene_type = nullptr;
     Scene*              scene = nullptr;
 
@@ -66,6 +89,14 @@ struct Engine {
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
     bool load_material(const std::string& ref, scn::SpriteMaterial& out);
     void main_loop(const std::string& frames_dir, const std::string& name);
+    bool prepare_replay();                                  // 载入回放日志并设定期望校验和（docs/10 §3）
+    void step_frame();                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
+    bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
+    void export_final_snapshot();                           // 导出世界快照（MAQUE_SNAPSHOT）
+    void finalize_run();                                    // 导出快照 + 录制日志（含 frames/trail 元数据）
+    bool world_snapshot(mq_snapshot* snap);                 // 世界 → 快照（反射驱动，docs/10 §4）
+    void world_restore(const mq_snapshot* snap);            // 快照 → 世界
+    uint64_t world_trail() const;                           // 校验和轨迹（失步定位）
 };
 
 struct Scene {
@@ -86,7 +117,19 @@ struct Scene {
     int  count() const { return (int)ents.size(); }
     void compute_world(Engine& eng);
     uint64_t checksum(Engine& eng);     // 世界状态校验和（确定性；反射驱动）
+    void encode(Engine& eng, SnapshotWriter& w);   // 世界 → 字节（二进制 codec）
+    size_t decode(Engine& eng, const uint8_t* in, size_t n);
     void extract(Engine& eng, std::vector<mq_renderer_item>& out);
+};
+
+/* ---- 快照写入器（Scene::encode 的字节汇；无反射依赖） ---- */
+struct SnapshotWriter {
+    std::vector<uint8_t> buf;
+    void bytes(const void* p, size_t n) {
+        const uint8_t* b = (const uint8_t*)p;
+        buf.insert(buf.end(), b, b + n);
+    }
+    template <class T> void pod(T v) { bytes(&v, sizeof(T)); }
 };
 
 /* ---- 反射读取辅助（不依赖具体类型，仅按字段名） ---- */
@@ -173,35 +216,185 @@ bool Engine::load_material(const std::string& ref, scn::SpriteMaterial& out) {
     return rc == 0;
 }
 
-void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
-    if (!frames_dir.empty()) std::filesystem::create_directories(frames_dir);
-    const float dt = 1.0F / 60.0F;
-    const int   cap = 60 * 60;
-    std::vector<uint8_t> pixels((size_t)TW * H * 4);
+/* 世界 → 快照（反射驱动；进快照池避免抖动，docs/07 §8、docs/10 §4）。 */
+bool Engine::world_snapshot(mq_snapshot* snap) {
+    if (!scene || !snap) return false;
+    SnapshotWriter w;
+    w.buf.reserve(1 << 16);
+    scene->encode(*this, w);                            // 先前置容量（快照池缓冲复用，避免抖动）
+    void* out = mq_snapshot_begin(snap, w.buf.size() ? w.buf.size() : 1);
+    if (!out) return false;
+    if (!w.buf.empty()) std::memcpy(out, w.buf.data(), w.buf.size());
+    mq_snapshot_commit(snap, w.buf.size());
+    return true;
+}
+
+/* 快照 → 世界（道具/子节点/组件逐字段恢复；prefab 就地实例化，docs/12 §5）。 */
+void Engine::world_restore(const mq_snapshot* snap) {
+    if (!scene || !snap) return;
+    size_t n = 0;
+    const void* bytes = mq_snapshot_bytes(const_cast<mq_snapshot*>(snap), &n);
+    if (!bytes || !n) return;
+    scene->decode(*this, (const uint8_t*)bytes, n);
+    scene->compute_world(*this);
+}
+
+/* 校验和轨迹（逐帧；用于失步定位与回放对比，docs/10 §5/§7）。 */
+uint64_t Engine::world_trail() const {
+    uint64_t h = 1469598103934665603ull;
+    for (auto& [f, c] : trail) {
+        h ^= f; h *= 1099511628211ull;
+        h ^= c; h *= 1099511628211ull;
+    }
+    return h;
+}
+
+/* 单帧推进：① 采样 ② 输入帧 ③ 脚本 update+GC ④ 校验和/快照 ⑤ 渲染。
+ * 主循环与控制面 Runtime.step 走**同一条帧序** → 行为一致（docs/10 D1、docs/11）。 */
+void Engine::step_frame() {
+    static thread_local mq_input_frame iframe{};   // 缓冲由平台写入（宿主预分配语义）
+    // ① 采样（设备事件随时入队，固定处理点统一消费，docs/19 §3）
+    if (platform) {
+        mq_platform_pump(platform);
+        if (window) mq_platform_poll(platform, &iframe);
+    }
+    // ② 输入帧：状态/事件（回放时忽略设备输入，只喂记录）
+    if (input) {
+        if (!mq_input_replaying(input) && window) mq_input_begin_frame(input, &iframe, frame);
+        else mq_input_begin_frame(input, nullptr, frame);
+        mq_input_dispatch(input);
+        if (mq_input_quit(input)) quit = true;
+    }
+    // ③ 脚本：update(dt) → 帧边界 GC（确定性，docs/14）
     std::vector<mq_renderer_item> draws;
-    uint64_t trail = 1469598103934665603ull;
-    mq_obs_event(obs, "runtime", 1, "loop_start");
-    int frame = 0;
-    for (; frame < cap && !quit; ++frame) {
-        draws.clear();
-        if (scene) {
-            if (mq_script_has(vm, "update")) mq_script_call1(vm, "update", dt, nullptr);
-            mq_script_gc(vm);
-            scene->compute_world(*this);
-            scene->extract(*this, draws);
-        }
+    const float dt = 1.0F / 60.0F;
+    if (scene) {
+        if (mq_script_has(vm, "update")) mq_script_call1(vm, "update", dt, nullptr);
+        mq_script_gc(vm);
+        scene->compute_world(*this);
+        scene->extract(*this, draws);
+    }
+    // ④ 世界校验和 + 周期快照（确定性验证 + 回滚点，docs/10 §4/§5）
+    if (scene) {
+        last_checksum = scene->checksum(*this);
+        trail.emplace_back(frame, last_checksum);
+        if (snaps && (frame % 60 == 0)) { snap_last = mq_snapshot_pool_acquire(snaps); world_snapshot(snap_last); }
+    }
+    mq_obs_counter_add(obs, "frames", 1.0);
+    mq_obs_gauge_set(obs, "entities", scene ? (double)scene->count() : 0.0);
+    mq_obs_gauge_set(obs, "draws", (double)draws.size());
+    // ⑤ 渲染（只读快照 → 渲染不回写，docs/13 §8）
+    std::vector<uint8_t> pixels((size_t)TW * H * 4);
+    if (rapi && rself)
         rapi->render_views(rself, TW, H, views.data(), (uint32_t)views.size(),
                            draws.data(), (uint32_t)draws.size(), bg, pixels.data(), (uint32_t)pixels.size());
-        if (!frames_dir.empty()) {
-            char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", frame);
-            write_ppm(frames_dir + fn, TW, H, pixels);
-        }
+    if (!frames_dir.empty()) {
+        char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);
+        write_ppm(frames_dir + fn, TW, H, pixels);
     }
-    last_checksum = trail;
+    ++frame;
+}
+
+/* 载入回放日志（MAQUE_REPLAY）：此后所有步进都只消费记录（设备输入被忽略）。 */
+bool Engine::prepare_replay() {
+    const char* rp = std::getenv("MAQUE_REPLAY");
+    if (!rp || !input) return false;
+    std::ifstream f(rp, std::ios::binary);
+    if (!f) { std::print("runtime: cannot open replay log '{}'\n", rp); return false; }
+    std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    if (text.empty() || mq_input_log_load_json(input, text.c_str()) != 0) {
+        std::print("runtime: cannot load replay log '{}'\n", rp);
+        return false;
+    }
+    const char* mf = mq_input_log_get_meta(input, "frames");
+    std::print("runtime: replay '{}' ({} frames expected)\n", rp, mf ? mf : "?");
+    return true;
+}
+
+/* 控制面 Runtime.step：确定性推进 n 帧（AI/CI 驱动同一帧序）。 */
+bool Engine::run_frames(uint64_t n) {
+    for (uint64_t i = 0; i < n && !quit; ++i) step_frame();
+    return !quit;
+}
+
+/* 导出世界快照（崩溃复现/AI undo 的落点，docs/10 §7）。控制面每次 step 后也会调用。 */
+void Engine::export_final_snapshot() {
+    const char* sp = std::getenv("MAQUE_SNAPSHOT");
+    if (!sp || !snaps) return;
+    if (!snap_last) snap_last = mq_snapshot_pool_acquire(snaps);
+    if (!world_snapshot(snap_last)) return;
+    size_t n = 0;
+    const void* b = mq_snapshot_bytes(snap_last, &n);
+    std::ofstream f(sp, std::ios::binary);
+    if (f && b && n) {
+        mq_snapshot_set_frame(snap_last, frame);
+        f.write((const char*)b, (std::streamsize)n);
+        std::print("runtime: snapshot → '{}' ({} bytes, frame {})\n", sp, n, frame);
+    }
+}
+
+/* 终局导出：快照 + 录制日志（frames/trail 元数据 → 回放失步检测的基准）。 */
+void Engine::finalize_run() {
+    if (const char* td = std::getenv("MAQUE_TRAIL_OUT")) {   // 失步定位：逐帧校验和（docs/10 §5）
+        std::ofstream f(td, std::ios::binary);
+        for (auto& [fr, sum] : trail) f << fr << " " << sum << "\n";
+    }
+    if (snaps) { snap_last = mq_snapshot_pool_acquire(snaps); world_snapshot(snap_last); }
+    export_final_snapshot();
+    if (input && mq_input_recording(input)) {
+        mq_input_log_set_meta(input, "frames", std::to_string(frame).c_str());
+        char tb[32]; std::snprintf(tb, sizeof tb, "%llu", (unsigned long long)world_trail());
+        mq_input_log_set_meta(input, "trail", tb);
+        if (const char* rp = std::getenv("MAQUE_RECORD")) {
+            std::ofstream f(rp, std::ios::binary);
+            const char* json = mq_input_log_json(input);
+            if (f && json) f << json;
+            std::print("runtime: recorded input log → '{}' ({} frames)\n", rp, frame);
+        }
+        mq_input_record_end(input);
+    }
+}
+
+void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
+    this->frames_dir = frames_dir;
+    this->name = name;
+    if (!frames_dir.empty()) std::filesystem::create_directories(frames_dir);
+    uint64_t cap = 60 * 60;
+    if (const char* mf = std::getenv("MAQUE_MAX_FRAMES")) { long v = std::strtol(mf, nullptr, 10); if (v > 0) cap = (uint64_t)v; }
+    if (const char* sf = std::getenv("MAQUE_STOP_FRAME")) { long v = std::strtol(sf, nullptr, 10); if (v > 0) { cap = (uint64_t)v + 1; stop_frame = (uint64_t)v; } }
+
+    /* 回放（docs/10 §3/§5）：输入是数据 → 同一日志应逐帧复现 */
+    std::string replay_trail;
+    if (prepare_replay()) {
+        if (const char* mt = input ? mq_input_log_get_meta(input, "trail") : nullptr) replay_trail = mt;
+        if (const char* mf = input ? mq_input_log_get_meta(input, "frames") : nullptr)
+            cap = (uint64_t)std::strtoull(mf, nullptr, 10) + 1;
+    }
+    if (input && std::getenv("MAQUE_RECORD")) mq_input_record_begin(input);
+
+    mq_obs_event(obs, "runtime", 1, "loop_start");
+    frame = 0;
+    for (; frame < cap && !quit; ) {
+        if (stop_frame && frame > stop_frame) break;
+        step_frame();
+    }
+
+    finalize_run();
+
+    if (const char* td = std::getenv("MAQUE_TRAIL_OUT")) {   // 失步定位（docs/10 §5）
+        std::ofstream f(td, std::ios::binary);
+        for (auto& [fr, sum] : trail) f << fr << " " << sum << "\n";
+    }
+    // 失步检测：回放必须有记录里的校验和（docs/10 §5）
+    if (!replay_trail.empty()) {
+        char tb[32]; std::snprintf(tb, sizeof tb, "%llu", (unsigned long long)world_trail());
+        if (replay_trail == tb) std::print("runtime: replay matches recorded trail ({})\n", tb);
+        else std::print("runtime: DESYNC — replay trail {} != recorded {}\n", tb, replay_trail);
+    }
     mq_obs_gauge_set(obs, "frames_total", (double)frame);
     mq_obs_event(obs, "runtime", 1, quit ? "quit" : "timeout");
     std::print("runtime: '{}' exited after {} frames (quit={}) world_trail=0x{:016x}\n",
-               name, frame, quit ? 1 : 0, trail);
+               name, frame, quit ? 1 : 0, world_trail());
 }
 
 /* ---- Scene ---- */
@@ -267,6 +460,76 @@ void Scene::instantiate(Engine& eng) {
     std::print("runtime: instantiated {} root entities\n", n);
 }
 
+/* ---- 世界快照（docs/10 §4）：实体/组件用二进制 codec 逐字段序列化。
+ * 布局：u32 实体数；每实体 {i32 index, i32 parent, u32 name_len+name,
+ *        u32 组件数, 每组件 {u32 type_id, u32 bytes, payload}}。
+ * 转换按 index 排序 → 不依赖哈希迭代顺序（docs/10 D4）。 ---- */
+void Scene::encode(Engine& eng, SnapshotWriter& w) {
+    std::vector<int> idx;
+    for (auto& [k, v] : ents) idx.push_back(k);
+    std::sort(idx.begin(), idx.end());
+    w.pod((uint32_t)idx.size());
+    for (int k : idx) {
+        Entity& e = ents[k];
+        w.pod((int32_t)k);
+        w.pod((int32_t)e.parent);
+        w.pod((uint32_t)e.name.size());
+        w.bytes(e.name.data(), e.name.size());
+        std::vector<uint32_t> tids;
+        for (auto& [t, b] : e.comps) tids.push_back(t);
+        std::sort(tids.begin(), tids.end());
+        w.pod((uint32_t)tids.size());
+        for (uint32_t t : tids) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, t);
+            auto& blob = e.comps[t];
+            std::vector<uint8_t> tmp(blob.size() + 64);
+            size_t n = d ? mq_persist_encode(eng.reflect, d, blob.data(), tmp.data(), tmp.size()) : 0;
+            w.pod(t);
+            w.pod((uint32_t)n);
+            if (n) w.bytes(tmp.data(), n);
+        }
+    }
+}
+
+size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
+    size_t pos = 0;
+    auto take = [&](void* dst, size_t bytes) -> bool {
+        if (pos + bytes > n) return false;
+        std::memcpy(dst, in + pos, bytes);
+        pos += bytes;
+        return true;
+    };
+    uint32_t count = 0;
+    if (!take(&count, 4) || count > (1u << 20)) return 0;
+    for (auto& [k, v] : ents) mq_handle_table_free(table, mq_handle_table_handle_at(table, (uint32_t)k));
+    ents.clear();
+    for (uint32_t i = 0; i < count; ++i) {
+        int32_t k = 0, parent = -1;
+        uint32_t name_len = 0;
+        if (!take(&k, 4) || !take(&parent, 4) || !take(&name_len, 4)) return 0;
+        if (name_len > 4096 || pos + name_len > n) return 0;
+        std::string nm((const char*)in + pos, name_len);
+        pos += name_len;
+        uint32_t comps = 0;
+        if (!take(&comps, 4) || comps > 4096) return 0;
+        Entity e;
+        e.name = std::move(nm);
+        e.parent = parent;
+        if (k < 0) return 0;              // 实体索引按快照重建（脚本 id 稳定，docs/10 D4）
+        for (uint32_t c = 0; c < comps; ++c) {
+            uint32_t tid = 0, len = 0;
+            if (!take(&tid, 4) || !take(&len, 4) || pos + len > n) return 0;
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            std::vector<uint8_t> blob(d ? d->size : 0);
+            if (d && len && mq_persist_decode(eng.reflect, d, in + pos, len, blob.data()) < 0) return 0;
+            pos += len;
+            if (d) e.comps[tid] = std::move(blob);
+        }
+        ents[k] = std::move(e);
+    }
+    return pos;
+}
+
 /* 世界校验和：按 id/type 排序，哈希各组件的标量字段（不确定性来源如字符串/动态容器跳过）。
  * 反射驱动，与具体组件无关。用于确定性验证（docs/10）。 */
 uint64_t Scene::checksum(Engine& eng) {
@@ -308,20 +571,50 @@ uint64_t Scene::checksum(Engine& eng) {
 }
 
 /* 组件语义由 roles 决定：transform2d / sprite —— 引擎不认具体组件类型。 */
-void Scene::compute_world(Engine& eng) {
-    for (auto& [idx, e] : ents) {
-        float lx = 0, ly = 0;
-        for (auto& [tid, blob] : e.comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
-            if (d && (d->role & MQ_ROLE_TRANSFORM2D)) {
-                read_f32(d, blob.data(), "x", &lx);
-                read_f32(d, blob.data(), "y", &ly);
+/* 组件局部位置：按 role 读；兼容两种声明形态（扁平 x/y 或 math.Transform2D.local.position）。
+ * 引擎不认具体组件类型 —— 只看 role 与标准字段路径（docs/12/17）。 */
+static void read_local_pos(Engine& eng, const Entity& e, float* lx, float* ly) {
+    *lx = 0; *ly = 0;
+    for (auto& [tid, blob] : e.comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+        if (!d || !(d->role & MQ_ROLE_TRANSFORM2D)) continue;
+        if (read_f32(d, blob.data(), "x", lx) && read_f32(d, blob.data(), "y", ly)) return;
+        if (const mq_field_desc* fl = mq_reflect_field(d, "local")) {
+            const mq_type_desc* lt = mq_reflect_type_by_id(eng.reflect, fl->type_id);
+            if (lt) {
+                const void* lp = blob.data() + fl->offset;
+                if (const mq_field_desc* fp = mq_reflect_field(lt, "position")) {
+                    const mq_type_desc* pt = mq_reflect_type_by_id(eng.reflect, fp->type_id);
+                    if (pt) {
+                        read_f32(pt, (const uint8_t*)lp + fp->offset, "x", lx);
+                        read_f32(pt, (const uint8_t*)lp + fp->offset, "y", ly);
+                    }
+                }
             }
         }
-        if (e.parent >= 0) {
-            if (Entity* pe = at(e.parent)) { e.x = pe->x + lx; e.y = pe->y + ly; continue; }
-        }
-        e.x = lx; e.y = ly;
+    }
+}
+
+/* 世界矩阵自根向叶累积（确定性：父先于子；迭代顺序不影响结果，docs/10 D4）。 */
+void Scene::compute_world(Engine& eng) {
+    std::vector<int> roots;
+    for (auto& [idx, e] : ents) if (e.parent < 0 || !at(e.parent)) roots.push_back(idx);
+    std::sort(roots.begin(), roots.end());
+    std::vector<std::pair<int, int>> stack;      // (index, parent index)
+    for (int r : roots) stack.emplace_back(r, -1);
+    while (!stack.empty()) {
+        auto [idx, pidx] = stack.back();
+        stack.pop_back();
+        Entity* e = at(idx);
+        if (!e) continue;
+        float lx = 0, ly = 0;
+        read_local_pos(eng, *e, &lx, &ly);
+        if (pidx >= 0) { if (Entity* pe = at(pidx)) { e->x = pe->x + lx; e->y = pe->y + ly; } }
+        else { e->x = lx; e->y = ly; }
+        std::vector<int> kids;
+        for (auto& [k, c] : ents) if (c.parent == idx) kids.push_back(k);
+        std::sort(kids.begin(), kids.end(), std::greater<int>());   // 栈序 → 最小 id 先处理（稳定）
+        for (int k : kids) stack.emplace_back(k, idx);
     }
 }
 
@@ -329,7 +622,38 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
     for (auto& [idx, e] : ents) {
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
-            if (!d || !(d->role & MQ_ROLE_SPRITE)) continue;
+            if (!d) continue;
+            /* UI 控件：按 role 绘制（docs/19 §4；引擎不认具体组件类型） */
+            if (d->role & MQ_ROLE_UI_BUTTON) {
+                float x = 0, y = 0, w = 64, h = 24, r = 0.2F, g = 0.25F, b = 0.35F;
+                int32_t z = 0;
+                read_f32(d, blob.data(), "x", &x);
+                read_f32(d, blob.data(), "y", &y);
+                read_f32(d, blob.data(), "width", &w);
+                read_f32(d, blob.data(), "height", &h);
+                read_f32(d, blob.data(), "r", &r);
+                read_f32(d, blob.data(), "g", &g);
+                read_f32(d, blob.data(), "b", &b);
+                if (const mq_field_desc* fz = mq_reflect_field(d, "z")) z = *(const int32_t*)(blob.data() + fz->offset);
+                (void)z;
+                // 矩形控件以"中心 + 半径"图元表达（渲染后端当前只有 sprite 图元）
+                out.push_back(mq_renderer_item{ e.x + x + w * 0.5F, (float)eng.H - (e.y + y) - h * 0.5F,
+                                                w * 0.5F > h * 0.5F ? w * 0.5F : h * 0.5F,
+                                                r, g, b, 1.0F, -1 });
+                continue;
+            }
+            if (d->role & MQ_ROLE_UI_LABEL) {
+                float x = 0, y = 0, r = 1, g = 1, b = 1, a = 1;
+                read_f32(d, blob.data(), "x", &x);
+                read_f32(d, blob.data(), "y", &y);
+                read_f32(d, blob.data(), "r", &r);
+                read_f32(d, blob.data(), "g", &g);
+                read_f32(d, blob.data(), "b", &b);
+                read_f32(d, blob.data(), "a", &a);
+                out.push_back(mq_renderer_item{ e.x + x, eng.H - (e.y + y), 2.0F, r, g, b, a, -1 });
+                continue;
+            }
+            if (!(d->role & MQ_ROLE_SPRITE)) continue;
             float radius = 8, r = 1, g = 1, b = 1;
             read_f32(d, blob.data(), "radius", &radius);
             read_f32(d, blob.data(), "r", &r);
@@ -351,6 +675,125 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
             out.push_back(mq_renderer_item{ e.x, (float)eng.H - e.y, radius, r, g, b, 1.0F, tex });
         }
     }
+}
+
+/* ---- UI 命中测试（docs/19 §4）：z-order + 树深 稳定排序，命中最上层 ---- */
+struct HitBest { int entity = -1; int z = INT32_MIN; int depth = -1; float lx = 0, ly = 0; };
+
+void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& best) {
+    Entity* e = eng.scene->at(idx);
+    if (!e) return;
+    /* 有效 z = 自身 z + 祖先 z（层级叠加，稳定） */
+    int zsum = 0;
+    for (auto& [tid, blob] : e->comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+        if (!d) continue;
+        bool ui = (d->role & (MQ_ROLE_UI_BUTTON | MQ_ROLE_UI_LABEL)) != 0;
+        if (!ui) continue;
+        float x = 0, y = 0, w = 0, h = 0;
+        int32_t z = 0;
+        read_f32(d, blob.data(), "x", &x);
+        read_f32(d, blob.data(), "y", &y);
+        read_f32(d, blob.data(), "width", &w);
+        read_f32(d, blob.data(), "height", &h);
+        if (const mq_field_desc* fz = mq_reflect_field(d, "z")) z = *(const int32_t*)(blob.data() + fz->offset);
+        zsum += z;
+        if (!(d->role & MQ_ROLE_UI_BUTTON)) continue;        // 仅可交互控件参与命中
+        /* 坐标：世界 y 向上，屏幕 y 向下（docs/19 §4）→ 控件矩形 = [sy-h, sy] × [sx, sx+w] */
+        const float sx = e->x + x, sy = (float)eng.H - (e->y + y);
+        const float bw = w > 0 ? w : 64, bh = h > 0 ? h : 24;
+        const float bx = sx, by = sy - bh;
+        if (px >= bx && px <= bx + bw && py >= by && py <= by + bh) {
+            const int score = zsum;
+            /* 稳定：z 大者优先；同 z 取树深大者（后绘制者在上） */
+            if (score > best.z || (score == best.z && depth > best.depth)) {
+                best.entity = idx; best.z = score; best.depth = depth;
+                best.lx = px - bx; best.ly = py - by;
+            }
+        }
+    }
+    for (auto& [k, child] : eng.scene->ents)
+        if (child.parent == idx) collect_hits(eng, k, depth + 1, px, py, best);
+}
+
+/* 命中查询（事件与控制面/脚本共用一套）→ 行为一致（docs/19 §4）。 */
+int ui_hit_entity(Engine& eng, float px, float py, mq_input_target* out) {
+    if (out) { out->entity = -1; out->handle = (uint32_t)-1; out->depth = 0; out->z = 0; }
+    if (!eng.scene || !eng.scene->count()) return -1;
+    HitBest best;
+    for (auto& [k, e] : eng.scene->ents)
+        if (e.parent < 0) collect_hits(eng, k, 0, px, py, best);
+    if (best.entity < 0) return -1;
+    if (out) {
+        out->entity = best.entity; out->handle = (uint32_t)best.entity;
+        out->depth = best.depth; out->z = best.z;
+        out->local_x = best.lx; out->local_y = best.ly;
+    }
+    return best.entity;
+}
+
+int runtime_hit_test(void* user, const mq_input_event* ev, mq_input_target* out) {
+    auto* eng = (Engine*)user;
+    out->entity = -1; out->handle = (uint32_t)-1;
+    if (!eng->scene || !eng->scene->count()) return 0;
+    const float px = ev->x, py = ev->y;   // 窗口与帧缓冲同尺度（docs/19 §4）
+    return ui_hit_entity(*eng, px, py, out) >= 0 ? 1 : 0;
+}
+
+int runtime_parent(void* user, int entity) {
+    Entity* e = ((Engine*)user)->scene->at(entity);
+    return e ? e->parent : -1;
+}
+
+/* 把语义事件路由给脚本（docs/19 §8）：回调名固定，参数为标量（生成绑定约束，docs/21）。 */
+void call_script_event(Engine& eng, const char* fn, const mq_input_event* ev) {
+    if (!mq_script_has(eng.vm, fn)) return;
+    mq_script_call3(eng.vm, fn, (double)ev->target, (double)ev->x, (double)ev->y, nullptr);
+}
+
+int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target* target) {
+    auto* eng = (Engine*)user;
+    eng->ev = ev;
+    if (ev->type == MQ_INPUT_POINTER_MOVE || ev->type == MQ_INPUT_POINTER_DOWN ||
+        ev->type == MQ_INPUT_POINTER_UP || ev->type == MQ_INPUT_CLICK) {
+        eng->mouse_x = ev->x; eng->mouse_y = ev->y;
+    }
+    if (ev->type == MQ_INPUT_POINTER_MOVE && target->entity != eng->hover) {
+        eng->hover = target->entity;                    // 悬停态（脚本经 ui_hover 读）
+    }
+    if (target->entity >= 0) {
+        /* 控件状态写回（按钮按下/悬停；docs/19 §8：组件订阅语义事件） */
+        Entity* e = eng->scene->at(target->entity);
+        if (e && ev->type == MQ_INPUT_POINTER_DOWN)
+            for (auto& [tid, blob] : e->comps) {
+                const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+                if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
+                if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
+                    *(bool*)(blob.data() + fp->offset) = true;
+            }
+        if (e && ev->type == MQ_INPUT_POINTER_UP)
+            for (auto& [tid, blob] : e->comps) {
+                const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+                if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
+                if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
+                    *(bool*)(blob.data() + fp->offset) = false;
+            }
+    }
+    switch (ev->type) {
+        case MQ_INPUT_POINTER_DOWN:   call_script_event(*eng, "on_pointer_down", ev); break;
+        case MQ_INPUT_POINTER_UP:     call_script_event(*eng, "on_pointer_up", ev); break;
+        case MQ_INPUT_POINTER_MOVE:   call_script_event(*eng, "on_pointer_move", ev); break;
+        case MQ_INPUT_POINTER_WHEEL:  call_script_event(*eng, "on_wheel", ev); break;
+        case MQ_INPUT_CLICK:          call_script_event(*eng, "on_click", ev); break;
+        case MQ_INPUT_KEY_DOWN:       call_script_event(*eng, "on_key_down", ev); break;
+        case MQ_INPUT_KEY_UP:         call_script_event(*eng, "on_key_up", ev); break;
+        case MQ_INPUT_TEXT:           call_script_event(*eng, "on_text", ev); break;
+        default: break;
+    }
+    if (eng->trace_hits)
+        std::print("[input] type={} phase={} target={} pos=({:.1f},{:.1f})\n",
+                   (int)ev->type, (int)ev->phase, target->entity, ev->x, ev->y);
+    return 0;   // 不消费：脚本/组件各自决定
 }
 
 /* cfg：反射读 scn.Scene 标量字段。 */
@@ -397,12 +840,28 @@ float entity_spawn(void* ctx) { return (float)((Engine*)ctx)->scene->spawn(); }
 void  entity_set_pos(void* ctx, float id, float x, float y) {
     auto* e = (Engine*)ctx;
     if (Entity* ent = e->scene->at((int)id)) {
-        // 写回 transform2d 组件（按角色）
+        // 写回 transform2d 组件（按 role；兼容扁平 x/y 与 math.Transform2D.local.position）
         for (auto& [tid, blob] : ent->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
-            if (d && (d->role & MQ_ROLE_TRANSFORM2D)) {
-                if (const mq_field_desc* fx = mq_reflect_field(d, "x")) *(float*)(blob.data() + fx->offset) = x;
-                if (const mq_field_desc* fy = mq_reflect_field(d, "y")) *(float*)(blob.data() + fy->offset) = y;
+            if (!d || !(d->role & MQ_ROLE_TRANSFORM2D)) continue;
+            const mq_field_desc* fx = mq_reflect_field(d, "x");
+            const mq_field_desc* fy = mq_reflect_field(d, "y");
+            if (fx && fy) {
+                *(float*)(blob.data() + fx->offset) = x;
+                *(float*)(blob.data() + fy->offset) = y;
+                continue;
+            }
+            if (const mq_field_desc* fl = mq_reflect_field(d, "local")) {
+                const mq_type_desc* lt = mq_reflect_type_by_id(e->reflect, fl->type_id);
+                if (!lt) continue;
+                void* lp = blob.data() + fl->offset;
+                if (const mq_field_desc* fp = mq_reflect_field(lt, "position")) {
+                    const mq_type_desc* pt = mq_reflect_type_by_id(e->reflect, fp->type_id);
+                    if (!pt) continue;
+                    void* pos = (uint8_t*)lp + fp->offset;
+                    if (const mq_field_desc* px = mq_reflect_field(pt, "x")) *(float*)((uint8_t*)pos + px->offset) = x;
+                    if (const mq_field_desc* py = mq_reflect_field(pt, "y")) *(float*)((uint8_t*)pos + py->offset) = y;
+                }
             }
         }
         ent->x = x; ent->y = y;
@@ -412,6 +871,165 @@ float entity_x(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int
 float entity_y(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->y : 0.0f; }
 float entity_count(void* ctx) { return (float)((Engine*)ctx)->scene->count(); }
 void  entity_destroy(void* ctx, float id) { ((Engine*)ctx)->scene->remove((int)id); }
+
+/* 实体查询（脚本按名字找节点，docs/12/19） */
+const char* entity_name(void* ctx, float id) {
+    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    return e ? e->name.c_str() : "";
+}
+float entity_find(void* ctx, const char* name) {
+    if (!name) return -1.0F;
+    auto* eng = (Engine*)ctx;
+    int best = -1;
+    for (auto& [k, e] : eng->scene->ents)          // 稳定：取最小 id（确定性，docs/10 D4）
+        if (e.name == name && (best < 0 || k < best)) best = k;
+    return (float)best;
+}
+/* 确定性反弹模拟（ball_demo 的玩法语义移入引擎侧组合 API；走引擎 RNG 与固定步长，docs/10） */
+void bounce_step(void* ctx, float dt) {
+    auto* eng = (Engine*)ctx;
+    std::sort(eng->balls.begin(), eng->balls.end(),
+              [](const Engine::Ball& a, const Engine::Ball& b) { return a.id < b.id; });
+    const float W = (float)eng->W, H = (float)eng->H;
+    for (auto& b : eng->balls) {
+        Entity* e = eng->scene->at(b.id);
+        if (!e) continue;
+        b.vy += 900.0F * dt;                        // 重力（像素/秒²）
+        float nx = e->x + b.vx * dt;
+        float ny = e->y + b.vy * dt;
+        if (nx < b.radius) { nx = b.radius; b.vx = -b.vx * 0.86F; }
+        if (nx > W - b.radius) { nx = W - b.radius; b.vx = -b.vx * 0.86F; }
+        if (ny > H - b.radius) { ny = H - b.radius; b.vy = -b.vy * 0.86F; }
+        if (ny < b.radius) { ny = b.radius; b.vy = -b.vy * 0.86F; }
+        host::entity_set_pos(eng, (float)b.id, nx, ny);
+        e->x = nx; e->y = ny;
+    }
+}
+
+/* 组件挂载：由**描述符**构造默认实例（schema 默认值生效）→ 引擎不硬编码组件类型。 */
+void attach_component(Engine& eng, int idx, const char* type_name) {
+    Entity* e = eng.scene->at(idx);
+    const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, type_name);
+    if (!e || !d) return;
+    e->comps[d->type_id].assign(d->size, 0);
+    /* 默认值：用描述符字段默认（反射无默认值 API）→ 走"空 JSON"反序列化保持与场景一致 */
+    mq_json* dom = mq_json_parse("{}", 2);
+    if (dom) { mq_persist_apply_json(eng.reflect, d, dom, e->comps[d->type_id].data()); mq_json_free(dom); }
+    else e->comps[d->type_id].assign(d->size, 0);
+}
+
+float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius) {
+    auto* eng = (Engine*)ctx;
+    float id = host::entity_spawn(eng);
+    if (id < 0) return -1.0F;
+    attach_component(*eng, (int)id, "scn.Transform2D");
+    attach_component(*eng, (int)id, "scn.Sprite");
+    Entity* be = eng->scene->at((int)id);
+    if (be) {
+        for (auto& [tid, blob] : be->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+            if (!d || !(d->role & MQ_ROLE_SPRITE)) continue;
+            if (const mq_field_desc* fr = mq_reflect_field(d, "radius")) *(float*)(blob.data() + fr->offset) = radius > 0 ? radius : 8.0F;
+            if (const mq_field_desc* fg = mq_reflect_field(d, "r")) *(float*)(blob.data() + fg->offset) = 0.4F + eng->next_rng() / 4294967296.0F * 0.6F;
+            if (const mq_field_desc* fg = mq_reflect_field(d, "g")) *(float*)(blob.data() + fg->offset) = 0.5F;
+            if (const mq_field_desc* fb = mq_reflect_field(d, "b")) *(float*)(blob.data() + fb->offset) = 1.0F;
+        }
+    }
+    host::entity_set_pos(eng, id, x, y);
+    eng->balls.push_back(Engine::Ball{ (int)id, vx, vy, radius > 0 ? radius : 8.0F });
+    return id;
+}
+
+/* 写回 Label 组件的 text（按 role；字符串字段，docs/19 §8）。 */
+void set_label(void* ctx, float id, const char* text) {
+    auto* eng = (Engine*)ctx;
+    Entity* e = eng->scene->at((int)id);
+    if (!e || !text) return;
+    for (auto& [tid, blob] : e->comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        if (!d || !(d->role & MQ_ROLE_UI_LABEL)) continue;
+        if (const mq_field_desc* f = mq_reflect_field(d, "text"))
+            *(std::string*)(blob.data() + f->offset) = text;
+    }
+}
+
+void ball_clear(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    for (auto& b : eng->balls) host::entity_destroy(eng, (float)b.id);
+    eng->balls.clear();
+}
+
+float ui_hit_at(void* ctx, float x, float y) {
+    auto* eng = (Engine*)ctx;
+    return (float)ui_hit_entity(*eng, x, y, nullptr);
+}
+
+float entity_z(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    Entity* e = eng->scene->at((int)id);
+    if (!e) return 0.0F;
+    for (auto& [tid, blob] : e->comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
+        if (const mq_field_desc* fz = mq_reflect_field(d, "z"))
+            return (float)*(const int32_t*)(blob.data() + fz->offset);
+    }
+    return 0.0F;
+}
+void entity_set_z(void* ctx, float id, float z) {
+    auto* eng = (Engine*)ctx;
+    Entity* e = eng->scene->at((int)id);
+    if (!e) return;
+    for (auto& [tid, blob] : e->comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
+        if (const mq_field_desc* fz = mq_reflect_field(d, "z")) *(int32_t*)(blob.data() + fz->offset) = (int32_t)z;
+    }
+}
+
+/* 输入状态（事件发生时；docs/19 §9：不读设备，回放一致） */
+float input_x(void* ctx) { return ((Engine*)ctx)->mouse_x; }
+float input_y(void* ctx) { return ((Engine*)ctx)->mouse_y; }
+float input_target(void* ctx) {
+    auto* e = (Engine*)ctx;
+    return e->ev ? (float)e->ev->target : -1.0F;
+}
+float input_down(void* ctx) {
+    auto* e = (Engine*)ctx;
+    return e->input && mq_input_pointer_down(e->input, 0) ? 1.0F : 0.0F;
+}
+float input_key(void* ctx, float code) {
+    auto* e = (Engine*)ctx;
+    return e->input && mq_input_key_down(e->input, (uint32_t)code) ? 1.0F : 0.0F;
+}
+float input_focus(void* ctx) { return (float)mq_input_focus(((Engine*)ctx)->input); }
+void  input_set_focus(void* ctx, float id) { mq_input_set_focus(((Engine*)ctx)->input, (int)id); }
+
+/* UI 命中查询（复用与控制面同一套命中测试 → 行为一致） */
+float ui_hit(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    if (!eng->input) return -1.0F;
+    mq_input_event probe{};
+    probe.type = MQ_INPUT_POINTER_MOVE;
+    probe.x = eng->mouse_x; probe.y = eng->mouse_y;
+    mq_input_target t{};
+    t.entity = -1;
+    runtime_hit_test(eng, &probe, &t);
+    return (float)t.entity;
+}
+float ui_hover(void* ctx) { return (float)((Engine*)ctx)->hover; }
+float ui_pressed(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    Entity* e = eng->scene->at((int)id);
+    if (!e) return 0.0F;
+    for (auto& [tid, blob] : e->comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
+        if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
+            return *(const bool*)(blob.data() + fp->offset) ? 1.0F : 0.0F;
+    }
+    return 0.0F;
+}
 
 } // namespace host
 
@@ -428,6 +1046,111 @@ static int h_scene(void* u, const char*, const mq_json*, char* out, size_t cap) 
 }
 static int h_checksum(void* u, const char*, const mq_json*, char* out, size_t cap) {
     std::snprintf(out, cap, "{\"trail\":\"%llu\"}", (unsigned long long)((Engine*)u)->last_checksum);
+    return 0;
+}
+
+/* Types.describe：反射自省（docs/06/11 A1）——类型/字段/属性导出给 AI/工具。 */
+static int h_types(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::string o = "[";
+    const uint32_t n = mq_reflect_count(e->reflect);
+    char item[512];
+    for (uint32_t i = 0; i < n; ++i) {
+        const mq_type_desc* d = mq_reflect_type_at(e->reflect, i);
+        if (!d) continue;
+        std::snprintf(item, sizeof item, "%s{\"name\":\"%s\",\"id\":%u,\"fields\":%u,\"role\":%u}",
+                      i ? "," : "", d->name, d->type_id, d->field_count, d->role);
+        o += item;
+    }
+    o += "]";
+    std::snprintf(out, cap, "%s", o.c_str());
+    return 0;
+}
+
+/* Scene.entities：实体/组件 dump（AI 可读；docs/12）。 */
+static int h_entities(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::string o = "[";
+    bool first = true;
+    char item[256];
+    for (auto& [idx, ent] : e->scene->ents) {
+        std::snprintf(item, sizeof item, "%s{\"id\":%d,\"name\":\"%s\",\"parent\":%d,\"x\":%.4f,\"y\":%.4f,\"components\":%zu}",
+                      first ? "" : ",", idx, ent.name.c_str(), ent.parent, ent.x, ent.y, ent.comps.size());
+        first = false;
+        o += item;
+    }
+    o += "]";
+    std::snprintf(out, cap, "%s", o.c_str());
+    return 0;
+}
+
+/* World.snapshot：抓当前世界快照（返回字节数与校验和；AI undo/回滚点）。 */
+static int h_snapshot(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    if (!e->snap_last) e->snap_last = mq_snapshot_pool_acquire(e->snaps);
+    if (!e->world_snapshot(e->snap_last)) { std::snprintf(out, cap, "{\"ok\":false}"); return 0; }
+    size_t n = 0; mq_snapshot_bytes(e->snap_last, &n);
+    std::snprintf(out, cap, "{\"ok\":true,\"bytes\":%zu,\"checksum\":\"%llu\",\"frame\":%llu}",
+                  n, (unsigned long long)mq_snapshot_checksum(e->snap_last),
+                  (unsigned long long)e->frame);
+    return 0;
+}
+
+/* World.restore：回到最近快照（A5 快迭代/undo，docs/10 §4）。 */
+static int h_restore(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    if (!e->snap_last) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no snapshot\"}"); return 0; }
+    e->world_restore(e->snap_last);
+    std::snprintf(out, cap, "{\"ok\":true,\"entities\":%d}", e->scene->count());
+    return 0;
+}
+
+static int h_trail(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::string o = "{\"trail\":\"" + std::to_string(e->world_trail()) + "\",\"frames\":[";
+    char item[64];
+    for (size_t i = 0; i < e->trail.size(); ++i) {
+        std::snprintf(item, sizeof item, "%s[%llu,\"%llu\"]", i ? "," : "",
+                      (unsigned long long)e->trail[i].first, (unsigned long long)e->trail[i].second);
+        o += item;
+    }
+    o += "]}";
+    std::snprintf(out, cap, "%s", o.c_str());
+    return 0;
+}
+
+/* Input.inject：AI/CI 注入输入（docs/11/19 §9）——与设备事件同一事件流。 */
+static int h_inject(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    mq_input_event ev{};
+    ev.type = (uint32_t)mq_json_num(mq_json_get(params, "type"), (double)MQ_INPUT_POINTER_DOWN);
+    ev.pointer_id = (uint32_t)mq_json_num(mq_json_get(params, "pointer_id"), 0);
+    ev.pointer_type = (uint32_t)mq_json_num(mq_json_get(params, "pointer_type"), 0);
+    ev.button = (uint32_t)mq_json_num(mq_json_get(params, "button"), 0);
+    ev.key = (uint32_t)mq_json_num(mq_json_get(params, "key"), 0);
+    ev.x = (float)mq_json_num(mq_json_get(params, "x"), 0);
+    ev.y = (float)mq_json_num(mq_json_get(params, "y"), 0);
+    mq_input_inject(e->input, &ev);
+    std::snprintf(out, cap, "{\"ok\":true,\"injected\":\"%s\"}", mq_json_str(mq_json_get(params, "type"), "?"));
+    return 0;
+}
+
+/* Runtime.step：确定性推进 n 帧（AI/CI 逐帧驱动，docs/11 §5）。 */
+static int h_step(void* u, const char*, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const double n = mq_json_num(mq_json_get(params, "frames"), 1);
+    const uint64_t steps = n > 0 ? (uint64_t)n : 1;
+    e->run_frames(steps);
+    std::snprintf(out, cap, "{\"frame\":%llu,\"checksum\":\"%llu\",\"entities\":%d,\"quit\":%s}",
+                  (unsigned long long)e->frame, (unsigned long long)e->last_checksum,
+                  e->scene ? e->scene->count() : 0, e->quit ? "true" : "false");
+    return 0;
+}
+
+/* Replay.log：导出输入日志（录制/回放是数据，docs/10 §3）。 */
+static int h_replay_log(void* u, const char*, const mq_json*, char* out, size_t cap) {
+    const char* json = mq_input_log_json(((Engine*)u)->input);
+    std::snprintf(out, cap, "%s", json ? json : "{}");
     return 0;
 }
 
@@ -487,6 +1210,20 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
                scn_path, scene.desc.title, scene.desc.script, eng.W, eng.H, eng.nviews);
 
     eng.obs = mq_obs_create();
+    // 平台/输入：窗口默认打开（有显示环境），MAQUE_HEADLESS=1 或无显示 → dummy。
+    // 事件经同一队列进入确定性事件流（docs/19 §3）。
+    eng.platform = mq_platform_create(scene.desc.title.c_str(), eng.W, eng.H);
+    eng.window = mq_platform_has_window(eng.platform) != 0;
+    eng.input = mq_input_create();
+    mq_input_set_hit_test(eng.input, runtime_hit_test, &eng);
+    mq_input_set_parent_fn(eng.input, runtime_parent, &eng);
+    mq_input_add_handler(eng.input, runtime_input_handler, &eng);
+    {
+        const char* hs = std::getenv("MAQUE_HITS");
+        if (hs && *hs && *hs != '0') eng.trace_hits = true;
+    }
+    std::print("runtime: platform window={} input=on\n", eng.window ? 1 : 0);
+    eng.snaps = mq_snapshot_pool_create(8, 1 << 16);
     eng.vm = mq_script_vm_create();
     mq_bind_generated(eng.vm, &eng);               // 生成绑定（math.* / host.*），注入引擎 ctx
     const std::string& script_path = scene.desc.script;
@@ -504,14 +1241,35 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_control_register(eng.control, "Perf.get", h_perf, &eng);
     mq_control_register(eng.control, "Scene.info", h_scene, &eng);
     mq_control_register(eng.control, "World.checksum", h_checksum, &eng);
+    mq_control_register(eng.control, "World.trail", h_trail, &eng);
+    mq_control_register(eng.control, "World.snapshot", h_snapshot, &eng);
+    mq_control_register(eng.control, "World.restore", h_restore, &eng);
+    mq_control_register(eng.control, "Types.describe", h_types, &eng);
+    mq_control_register(eng.control, "Scene.entities", h_entities, &eng);
+    mq_control_register(eng.control, "Input.inject", h_inject, &eng);
+    mq_control_register(eng.control, "Replay.log", h_replay_log, &eng);
+    mq_control_register(eng.control, "Runtime.step", h_step, &eng);
     if (const char* req = std::getenv("MAQUE_CONTROL")) {
+        const bool replayed = eng.prepare_replay();
+        if (!replayed && std::getenv("MAQUE_RECORD")) mq_input_record_begin(eng.input);
         auto serve = [&](const char* r) { std::print("{}\n", mq_control_dispatch(eng.control, r)); };
         if (std::strcmp(req, "-") == 0) {
             char line[4096];
             while (std::fgets(line, sizeof line, stdin)) { line[std::strcspn(line, "\n")] = 0; if (*line) serve(line); }
         } else serve(req);
+        eng.finalize_run();
+        if (replayed) {
+            const char* rt = mq_input_log_get_meta(eng.input, "trail");
+            if (rt) {
+                char tb[32]; std::snprintf(tb, sizeof tb, "%llu", (unsigned long long)eng.world_trail());
+                if (rt == std::string(tb)) std::print("runtime: replay matches recorded trail ({})\n", tb);
+                else std::print("runtime: DESYNC — replay trail {} != recorded {}\n", tb, rt);
+            }
+        }
         mq_control_destroy(eng.control);
         mq_script_vm_destroy(eng.vm); mq_obs_destroy(eng.obs); mq_reflect_destroy(eng.reflect);
+        mq_snapshot_pool_destroy(eng.snaps); mq_input_destroy(eng.input);
+        mq_platform_destroy(eng.platform);
         if (eng.rapi && eng.rself) eng.rapi->destroy(eng.rself);
         mq_host_destroy(eng.host); mq_vfs_destroy(eng.vfs);
         return 0;
@@ -523,6 +1281,9 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     mq_script_vm_destroy(eng.vm);
     mq_obs_destroy(eng.obs);
     mq_reflect_destroy(eng.reflect);
+    mq_snapshot_pool_destroy(eng.snaps);
+    mq_input_destroy(eng.input);
+    mq_platform_destroy(eng.platform);
     if (eng.rapi && eng.rself) eng.rapi->destroy(eng.rself);
     mq_host_destroy(eng.host);
     mq_vfs_destroy(eng.vfs);

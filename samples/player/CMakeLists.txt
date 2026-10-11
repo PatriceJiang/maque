@@ -22,3 +22,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME control_plane COMMAND bash -c
       "MAQUE_CONTROL='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"Perf.get\"}' $<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -q '\"metrics\"'")
 endif()
+
+# 输入/UI/快照/回放端到端（docs/10 §3/§5、docs/19 §9）：注入 → 分发 → 生成 → 回放一致
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME ui_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/ui_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ui.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/ui_e2e")
+endif()

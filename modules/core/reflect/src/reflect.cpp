@@ -93,6 +93,14 @@ const mq_type_desc* mq_reflect_type_by_name(mq_reflect_ctx* ctx, const char* fq_
     return it == ctx->by_name.end() ? nullptr : it->second;
 }
 
+uint32_t mq_reflect_count(mq_reflect_ctx* ctx) {
+    return ctx ? (uint32_t)ctx->types.size() : 0u;
+}
+const mq_type_desc* mq_reflect_type_at(mq_reflect_ctx* ctx, uint32_t index) {
+    if (!ctx || index >= ctx->types.size()) return nullptr;
+    return ctx->types[index];
+}
+
 const mq_field_desc* mq_reflect_field(const mq_type_desc* type, const char* field_name) {
     if (!type || !field_name) return nullptr;
     for (uint32_t i = 0; i < type->field_count; ++i)
