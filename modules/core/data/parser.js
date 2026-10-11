@@ -371,6 +371,10 @@ function parseSchemaDocument(root) {
         })) : [],
         macros: Array.isArray(ma.macros) ? ma.macros.map((m) => ({
           name: String(m.name), value: String(m.value),
+          // value_cxx：C++ 与 C 取值不同的宏（如复合字面量 vs 列表初始化）
+          valueCxx: m.value_cxx === undefined ? null : String(m.value_cxx),
+          // raw：整段原样输出（含 #if defined(_WIN32) 等平台条件）
+          raw: m.raw === undefined ? null : String(m.raw),
           doc: m.doc === undefined ? null : String(m.doc),
         })) : [],
         fns: (ma.fns || []).map((f) => ({
@@ -1885,7 +1889,17 @@ function genModuleAbi(mod) {
   /* ⑤ 宏 */
   for (const mc of mod.macros) {
     if (mc.doc) lines.push(`/* ${mc.doc} */`)
-    lines.push(`#define ${mc.name} ${mc.value}`)
+    if (mc.raw) {
+      for (const ln of mc.raw.split('\n')) lines.push(ln)
+    } else if (mc.valueCxx) {
+      lines.push('#ifdef __cplusplus')
+      lines.push(`#define ${mc.name} ${mc.valueCxx}`)
+      lines.push('#else')
+      lines.push(`#define ${mc.name} ${mc.value}`)
+      lines.push('#endif')
+    } else {
+      lines.push(`#define ${mc.name} ${mc.value}`)
+    }
   }
   if (mod.macros.length) lines.push('')
   for (const f of mod.fns) {

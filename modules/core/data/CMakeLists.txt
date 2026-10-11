@@ -30,7 +30,11 @@ set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/abi/physics.h"
     "${MAQUE_GEN_DIR}/abi/platform.h"
     "${MAQUE_GEN_DIR}/abi/input.h"
-    "${MAQUE_GEN_DIR}/abi/script.h")
+    "${MAQUE_GEN_DIR}/abi/script.h"
+    "${MAQUE_GEN_DIR}/abi/handle.h"
+    "${MAQUE_GEN_DIR}/abi/module.h"
+    "${MAQUE_GEN_DIR}/abi/reflect.h"
+    "${MAQUE_GEN_DIR}/abi/obs.h")
 
 if(NODE_EXECUTABLE)
     add_custom_command(

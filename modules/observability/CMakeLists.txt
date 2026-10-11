@@ -8,3 +8,5 @@ if(MAQUE_BUILD_TESTS)
     target_link_libraries(maque_obs_test PRIVATE maque::observability)
     add_test(NAME obs COMMAND maque_obs_test)
 endif()
+target_include_directories(maque_observability PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_obs_test PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）

@@ -9,3 +9,5 @@ if(MAQUE_BUILD_TESTS)
     target_link_libraries(maque_handle_test PRIVATE maque::handle)
     add_test(NAME handle COMMAND maque_handle_test)
 endif()
+target_include_directories(maque_handle PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
+target_include_directories(maque_handle_test PUBLIC "${CMAKE_BINARY_DIR}/modules/core/data/generated")   # DSL 生成的 ABI 头（docs/21）
