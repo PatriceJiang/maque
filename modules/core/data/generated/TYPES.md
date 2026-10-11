@@ -3,7 +3,7 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema.yaml` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **240** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **242** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
 ## anim（29）
 
@@ -1980,7 +1980,7 @@ role: `transform2d`
 | `Python` | 2 |
 | `V8` | 3 |
 
-## ui（57）
+## ui（59）
 
 ### ui.Align — enum
 
@@ -2067,6 +2067,34 @@ role: `transform2d`
 | `Hover` | 1 |
 | `Pressed` | 2 |
 | `Disabled` | 3 |
+
+### ui.Canvas — struct (84B)
+
+role: `ui_canvas`
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `design_width` | float | 0.0F | unit: px |
+| `design_height` | float | 0.0F | unit: px |
+| `fit_mode` | FitMode | FitMode::ShowAll |  |
+| `align` | Align | Align::Center |  |
+| `dpi_scale` | bool | true |  |
+| `min_scale` | float | 0.0F | unit: px, doc: 缩放下限（0=不限） |
+| `max_scale` | float | 0.0F | unit: px, doc: 缩放上限（0=不限） |
+| `scale` | float | 1.0F | transient |
+| `scale_x` | float | 1.0F | transient |
+| `scale_y` | float | 1.0F | transient |
+| `offset_x` | float | 0.0F | transient |
+| `offset_y` | float | 0.0F | transient |
+| `viewport_w` | float | 0.0F | transient |
+| `viewport_h` | float | 0.0F | transient |
+| `window_w` | float | 0.0F | transient, doc: 绘制区（设备像素） |
+| `window_h` | float | 0.0F | transient |
+| `device_scale` | float | 1.0F | transient, doc: 显示器内容缩放（HiDPI） |
+| `safe_left` | float | 0.0F | transient, doc: 安全区内缩（刘海/圆角，设备像素） |
+| `safe_top` | float | 0.0F | transient |
+| `safe_right` | float | 0.0F | transient |
+| `safe_bottom` | float | 0.0F | transient |
 
 ### ui.CheckBox — struct (变长（含动态成员）)
 
@@ -2200,6 +2228,17 @@ role: `ui_control`
 | `TopToBottom` | 2 |
 | `BottomToTop` | 3 |
 | `Radial` | 4 |
+
+### ui.FitMode — enum
+
+| 值 | 数值 |
+|----|------|
+| `None` | 0 |
+| `FitWidth` | 1 |
+| `FitHeight` | 2 |
+| `ShowAll` | 3 |
+| `NoBorder` | 4 |
+| `Exact` | 5 |
 
 ### ui.FlexBasisMode — enum
 

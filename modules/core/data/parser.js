@@ -1221,6 +1221,7 @@ typedef struct mq_field_desc {
 #define MQ_ROLE_PHYSICS_BODY (1u << 16)  /* 2D 刚体：装配期入物理世界，帧内回写变换 */
 #define MQ_ROLE_PHYSICS_COLLIDER (1u << 17) /* 2D 碰撞体：形状来自 Collider 组件 */
 #define MQ_ROLE_UI_TEXT     (1u << 18)   /* 文本：Label/RichText（排版 + 字形渲染） */
+#define MQ_ROLE_UI_CANVAS   (1u << 19)   /* 画布：UI 根 + 分辨率策略（设计分辨率 → 设备像素） */
 
 /* 枚举字面量（供 JSON 文本按名字读写、AI 自省；docs/06） */
 typedef struct mq_enum_value {
@@ -1274,6 +1275,7 @@ const ROLE_BIT = {
   physics_body: 'MQ_ROLE_PHYSICS_BODY',
   physics_collider: 'MQ_ROLE_PHYSICS_COLLIDER',
   ui_text: 'MQ_ROLE_UI_TEXT',
+  ui_canvas: 'MQ_ROLE_UI_CANVAS',
 }
 function roleBits(t) {
   const parts = (t.roles || []).map((r) => ROLE_BIT[r]).filter(Boolean)

@@ -1,0 +1,28 @@
+{
+  "title": "canvas",
+  "script": "canvas.js",
+  "width": 480,
+  "height": 270,
+  "seed": 7,
+  "entities": [
+    { "name": "Canvas", "components": [
+        { "type": "ui.Canvas", "design_width": 480.0, "design_height": 270.0,
+          "fit_mode": "FitMode::ShowAll", "align": "ui::Align::Center" } ] },
+
+    { "name": "TopLeft", "parent": "Canvas", "components": [
+        { "type": "scn.Label", "x": 8.0, "y": 250.0, "text": "TL 8,250", "font_size": 12.0,
+          "r": 1.0, "g": 0.85, "b": 0.3, "a": 1.0 } ] },
+
+    { "name": "BottomRight", "parent": "Canvas", "components": [
+        { "type": "scn.Label", "x": 396.0, "y": 8.0, "text": "BR 396,8", "font_size": 12.0,
+          "r": 0.4, "g": 0.9, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "Info", "parent": "Canvas", "components": [
+        { "type": "scn.Label", "x": 150.0, "y": 140.0, "text": "", "font_size": 14.0,
+          "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "HitButton", "parent": "Canvas", "components": [
+        { "type": "scn.Button", "x": 200.0, "y": 100.0, "width": 80.0, "height": 32.0, "z": 5,
+          "label": "点我" } ] }
+  ]
+}

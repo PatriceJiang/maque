@@ -264,6 +264,33 @@ int b_host_ui_set_checked(void* user, int, const double* a, double* ret) {
 int b_host_ui_get_checked(void* user, int, const double* a, double* ret) {
   *ret = (double)host::ui_get_checked(user, (float)a[0]); return 0;
 }
+int b_host_window_w(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::window_w(user); return 0;
+}
+int b_host_window_h(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::window_h(user); return 0;
+}
+int b_host_canvas_scale(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::canvas_scale(user); return 0;
+}
+int b_host_canvas_scale_x(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::canvas_scale_x(user); return 0;
+}
+int b_host_canvas_scale_y(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::canvas_scale_y(user); return 0;
+}
+int b_host_canvas_offset_x(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::canvas_offset_x(user); return 0;
+}
+int b_host_canvas_offset_y(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::canvas_offset_y(user); return 0;
+}
+int b_host_canvas_device_scale(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::canvas_device_scale(user); return 0;
+}
+int b_host_canvas_safe_area(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::canvas_safe_area(user, (float)a[0]); return 0;
+}
 int b_host_ui_set_text(void* user, int, const double* a, const char* s, double* ret) {
   *ret = (double)host::ui_set_text(user, (float)a[0], s); return 0;
 }
@@ -416,6 +443,15 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "ui_get_value", b_host_ui_get_value, ctx);
   mq_script_register_num(vm, "ui_set_checked", b_host_ui_set_checked, ctx);
   mq_script_register_num(vm, "ui_get_checked", b_host_ui_get_checked, ctx);
+  mq_script_register_num(vm, "window_w", b_host_window_w, ctx);
+  mq_script_register_num(vm, "window_h", b_host_window_h, ctx);
+  mq_script_register_num(vm, "canvas_scale", b_host_canvas_scale, ctx);
+  mq_script_register_num(vm, "canvas_scale_x", b_host_canvas_scale_x, ctx);
+  mq_script_register_num(vm, "canvas_scale_y", b_host_canvas_scale_y, ctx);
+  mq_script_register_num(vm, "canvas_offset_x", b_host_canvas_offset_x, ctx);
+  mq_script_register_num(vm, "canvas_offset_y", b_host_canvas_offset_y, ctx);
+  mq_script_register_num(vm, "canvas_device_scale", b_host_canvas_device_scale, ctx);
+  mq_script_register_num(vm, "canvas_safe_area", b_host_canvas_safe_area, ctx);
   mq_script_register_mixed(vm, "ui_set_text", b_host_ui_set_text, ctx);
   mq_script_register_ret_str(vm, "ui_get_text", b_host_ui_get_text, ctx);
   mq_script_register_num(vm, "ui_text_width", b_host_ui_text_width, ctx);

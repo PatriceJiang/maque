@@ -94,6 +94,15 @@ namespace host {
   float ui_get_value(void* ctx, float id);
   float ui_set_checked(void* ctx, float id, float on);
   float ui_get_checked(void* ctx, float id);
+  float window_w(void* ctx);
+  float window_h(void* ctx);
+  float canvas_scale(void* ctx);
+  float canvas_scale_x(void* ctx);
+  float canvas_scale_y(void* ctx);
+  float canvas_offset_x(void* ctx);
+  float canvas_offset_y(void* ctx);
+  float canvas_device_scale(void* ctx);
+  float canvas_safe_area(void* ctx, float edge);
   float ui_set_text(void* ctx, float id, const char* text);
   const char* ui_get_text(void* ctx, float id);
   float ui_text_width(void* ctx, float id);

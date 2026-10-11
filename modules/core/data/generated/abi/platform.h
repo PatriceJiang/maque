@@ -95,6 +95,16 @@ typedef struct mq_input_frame {
 mq_platform* mq_platform_create(const char* title, int w, int h);
 /* 把 RGBA8 帧呈现到窗口（无窗口/dummy 驱动安全空操作；MAQUE_PRESENT=off|software|accelerated） */
 int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h);
+/* 绘制区尺寸（设备像素；HiDPI 下大于窗口逻辑尺寸） */
+void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h);
+/* 显示器内容缩放（绘制区/窗口；1.0 = 非 HiDPI） */
+float mq_platform_content_scale(mq_platform* p);
+/* 自上次调用以来窗口是否更换显示器/尺寸变化（画布需重解析） */
+int mq_platform_display_changed(mq_platform* p);
+/* 安全区内缩（设备像素，刘海/圆角）；画布解析时扣除 */
+void mq_platform_set_safe_area(mq_platform* p, float l, float t, float r, float b);
+/* 把帧按**指定目标矩形**呈现（画布策略决定缩放/留边；filter 0=linear 1=nearest -1=自动） */
+int mq_platform_present_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h, int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter);
 /* 测试/CI 用：把指针事件压入 SDL 事件队列（kind: 0=move 1=down 2=up）——覆盖 OS→SDL→引擎的真实翻译路径 */
 int mq_platform_simulate_pointer(mq_platform* p, int32_t kind, float x, float y, int32_t button);
 void mq_platform_destroy(mq_platform* p);

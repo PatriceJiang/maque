@@ -66,6 +66,10 @@ struct AudioSource {
 
 } // namespace audio
 
+namespace canvas {
+
+} // namespace canvas
+
 namespace control {
 
 } // namespace control
@@ -943,6 +947,15 @@ enum class FillMode : int32_t {
     Radial      = 4,
 };
 
+enum class FitMode : int32_t {
+    None      = 0,
+    FitWidth  = 1,
+    FitHeight = 2,
+    ShowAll   = 3,
+    NoBorder  = 4,
+    Exact     = 5,
+};
+
 enum class FlexBasisMode : int32_t {
     Auto    = 0,
     Points  = 1,
@@ -1128,6 +1141,30 @@ struct Button {
     bool disabled = false;
     std::string action;
     ui::ButtonState state = ButtonState::Normal;
+};
+
+struct Canvas {
+    float design_width = 0.0F;
+    float design_height = 0.0F;
+    ui::FitMode fit_mode = FitMode::ShowAll;
+    ui::Align align = Align::Center;
+    bool dpi_scale = true;
+    float min_scale = 0.0F;
+    float max_scale = 0.0F;
+    float scale = 1.0F;
+    float scale_x = 1.0F;
+    float scale_y = 1.0F;
+    float offset_x = 0.0F;
+    float offset_y = 0.0F;
+    float viewport_w = 0.0F;
+    float viewport_h = 0.0F;
+    float window_w = 0.0F;
+    float window_h = 0.0F;
+    float device_scale = 1.0F;
+    float safe_left = 0.0F;
+    float safe_top = 0.0F;
+    float safe_right = 0.0F;
+    float safe_bottom = 0.0F;
 };
 
 struct CheckBox {

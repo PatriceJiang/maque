@@ -1209,6 +1209,30 @@ static const mq_field_desc mq_fields_ui_Button[] = {
     { "state", (uint32_t)offsetof(ui::Button, state), MQ_TK_ENUM, 1789463920u, 0u, 1u, 0u, 0, 0, 0, 0 },
 };
 
+static const mq_field_desc mq_fields_ui_Canvas[] = {
+    { "design_width", (uint32_t)offsetof(ui::Canvas, design_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "design_height", (uint32_t)offsetof(ui::Canvas, design_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "fit_mode", (uint32_t)offsetof(ui::Canvas, fit_mode), MQ_TK_ENUM, 2154508541u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "align", (uint32_t)offsetof(ui::Canvas, align), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "dpi_scale", (uint32_t)offsetof(ui::Canvas, dpi_scale), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "min_scale", (uint32_t)offsetof(ui::Canvas, min_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "max_scale", (uint32_t)offsetof(ui::Canvas, max_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "scale", (uint32_t)offsetof(ui::Canvas, scale), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "scale_x", (uint32_t)offsetof(ui::Canvas, scale_x), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "scale_y", (uint32_t)offsetof(ui::Canvas, scale_y), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "offset_x", (uint32_t)offsetof(ui::Canvas, offset_x), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "offset_y", (uint32_t)offsetof(ui::Canvas, offset_y), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "viewport_w", (uint32_t)offsetof(ui::Canvas, viewport_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "viewport_h", (uint32_t)offsetof(ui::Canvas, viewport_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "window_w", (uint32_t)offsetof(ui::Canvas, window_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "window_h", (uint32_t)offsetof(ui::Canvas, window_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "device_scale", (uint32_t)offsetof(ui::Canvas, device_scale), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "safe_left", (uint32_t)offsetof(ui::Canvas, safe_left), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "safe_top", (uint32_t)offsetof(ui::Canvas, safe_top), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "safe_right", (uint32_t)offsetof(ui::Canvas, safe_right), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "safe_bottom", (uint32_t)offsetof(ui::Canvas, safe_bottom), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+};
+
 static const mq_field_desc mq_fields_ui_CheckBox[] = {
     { "checked", (uint32_t)offsetof(ui::CheckBox, checked), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "tristate", (uint32_t)offsetof(ui::CheckBox, tristate), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -2066,6 +2090,15 @@ static const mq_enum_value mq_values_ui_FillMode[] = {
     { "Radial", (int64_t)4 },
 };
 
+static const mq_enum_value mq_values_ui_FitMode[] = {
+    { "None", (int64_t)0 },
+    { "FitWidth", (int64_t)1 },
+    { "FitHeight", (int64_t)2 },
+    { "ShowAll", (int64_t)3 },
+    { "NoBorder", (int64_t)4 },
+    { "Exact", (int64_t)5 },
+};
+
 static const mq_enum_value mq_values_ui_FlexBasisMode[] = {
     { "Auto", (int64_t)0 },
     { "Points", (int64_t)1 },
@@ -2424,6 +2457,7 @@ static void mq_defaults_ui_AlignSelf(void* p) { new (p) ui::AlignSelf{}; }
 static void mq_defaults_ui_Anchor(void* p) { new (p) ui::Anchor{}; }
 static void mq_defaults_ui_Button(void* p) { new (p) ui::Button{}; }
 static void mq_defaults_ui_ButtonState(void* p) { new (p) ui::ButtonState{}; }
+static void mq_defaults_ui_Canvas(void* p) { new (p) ui::Canvas{}; }
 static void mq_defaults_ui_CheckBox(void* p) { new (p) ui::CheckBox{}; }
 static void mq_defaults_ui_CheckState(void* p) { new (p) ui::CheckState{}; }
 static void mq_defaults_ui_CompareFunc(void* p) { new (p) ui::CompareFunc{}; }
@@ -2433,6 +2467,7 @@ static void mq_defaults_ui_Control(void* p) { new (p) ui::Control{}; }
 static void mq_defaults_ui_EditBox(void* p) { new (p) ui::EditBox{}; }
 static void mq_defaults_ui_EditLineMode(void* p) { new (p) ui::EditLineMode{}; }
 static void mq_defaults_ui_FillMode(void* p) { new (p) ui::FillMode{}; }
+static void mq_defaults_ui_FitMode(void* p) { new (p) ui::FitMode{}; }
 static void mq_defaults_ui_FlexBasisMode(void* p) { new (p) ui::FlexBasisMode{}; }
 static void mq_defaults_ui_FlexBox(void* p) { new (p) ui::FlexBox{}; }
 static void mq_defaults_ui_FlexDirection(void* p) { new (p) ui::FlexDirection{}; }
@@ -5135,6 +5170,20 @@ extern const mq_type_desc mq_type_ui_ButtonState = {
     mq_defaults_ui_ButtonState,
 };
 
+extern const mq_type_desc mq_type_ui_Canvas = {
+    "ui.Canvas",
+    4251436635u,
+    (uint32_t)sizeof(ui::Canvas),
+    (uint32_t)alignof(ui::Canvas),
+    21u,
+    mq_fields_ui_Canvas,
+    2u,
+    MQ_ROLE_UI_CANVAS,
+    0,
+    0u,
+    mq_defaults_ui_Canvas,
+};
+
 extern const mq_type_desc mq_type_ui_CheckBox = {
     "ui.CheckBox",
     3045632590u,
@@ -5259,6 +5308,20 @@ extern const mq_type_desc mq_type_ui_FillMode = {
     mq_values_ui_FillMode,
     5u,
     mq_defaults_ui_FillMode,
+};
+
+extern const mq_type_desc mq_type_ui_FitMode = {
+    "ui.FitMode",
+    2154508541u,
+    (uint32_t)sizeof(ui::FitMode),
+    (uint32_t)alignof(ui::FitMode),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_ui_FitMode,
+    6u,
+    mq_defaults_ui_FitMode,
 };
 
 extern const mq_type_desc mq_type_ui_FlexBasisMode = {
@@ -6026,6 +6089,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_Anchor,
     &mq_type_ui_Button,
     &mq_type_ui_ButtonState,
+    &mq_type_ui_Canvas,
     &mq_type_ui_CheckBox,
     &mq_type_ui_CheckState,
     &mq_type_ui_CompareFunc,
@@ -6035,6 +6099,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_EditBox,
     &mq_type_ui_EditLineMode,
     &mq_type_ui_FillMode,
+    &mq_type_ui_FitMode,
     &mq_type_ui_FlexBasisMode,
     &mq_type_ui_FlexBox,
     &mq_type_ui_FlexDirection,
@@ -6078,7 +6143,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 240u;
+const uint32_t mq_schema_type_count = 242u;
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 240,
-  "api_count": 107,
+  "type_count": 242,
+  "api_count": 116,
   "control_count": 31,
   "callback_count": 10,
-  "module_count": 22,
+  "module_count": 23,
   "types": [
     {
       "name": "anim.AnimatedSprite",
@@ -11137,6 +11137,251 @@
       "fields": []
     },
     {
+      "name": "ui.Canvas",
+      "namespace": "ui",
+      "kind": "struct",
+      "type_id": 4251436635,
+      "size": 84,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "roles": [
+        "ui_canvas"
+      ],
+      "fields": [
+        {
+          "name": "design_width",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 0,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "design_height",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 4,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "fit_mode",
+          "type": "FitMode",
+          "kind": "enum",
+          "type_id": 2154508541,
+          "count": 0,
+          "offset": 8,
+          "attrs": {}
+        },
+        {
+          "name": "align",
+          "type": "Align",
+          "kind": "enum",
+          "type_id": 1234036308,
+          "count": 0,
+          "offset": 12,
+          "attrs": {}
+        },
+        {
+          "name": "dpi_scale",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": 16,
+          "attrs": {}
+        },
+        {
+          "name": "min_scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 20,
+          "attrs": {
+            "doc": "缩放下限（0=不限）",
+            "unit": "px"
+          }
+        },
+        {
+          "name": "max_scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 24,
+          "attrs": {
+            "doc": "缩放上限（0=不限）",
+            "unit": "px"
+          }
+        },
+        {
+          "name": "scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 28,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "scale_x",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 32,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "scale_y",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 36,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "offset_x",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 40,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "offset_y",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 44,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "viewport_w",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 48,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "viewport_h",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 52,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "window_w",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 56,
+          "attrs": {
+            "doc": "绘制区（设备像素）",
+            "transient": true
+          }
+        },
+        {
+          "name": "window_h",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 60,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "device_scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 64,
+          "attrs": {
+            "doc": "显示器内容缩放（HiDPI）",
+            "transient": true
+          }
+        },
+        {
+          "name": "safe_left",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 68,
+          "attrs": {
+            "doc": "安全区内缩（刘海/圆角，设备像素）",
+            "transient": true
+          }
+        },
+        {
+          "name": "safe_top",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 72,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "safe_right",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 76,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "safe_bottom",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": 80,
+          "attrs": {
+            "transient": true
+          }
+        }
+      ]
+    },
+    {
       "name": "ui.CheckBox",
       "namespace": "ui",
       "kind": "struct",
@@ -11976,6 +12221,44 @@
         {
           "name": "Radial",
           "value": 4
+        }
+      ],
+      "fields": []
+    },
+    {
+      "name": "ui.FitMode",
+      "namespace": "ui",
+      "kind": "enum",
+      "type_id": 2154508541,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "None",
+          "value": 0
+        },
+        {
+          "name": "FitWidth",
+          "value": 1
+        },
+        {
+          "name": "FitHeight",
+          "value": 2
+        },
+        {
+          "name": "ShowAll",
+          "value": 3
+        },
+        {
+          "name": "NoBorder",
+          "value": 4
+        },
+        {
+          "name": "Exact",
+          "value": 5
         }
       ],
       "fields": []
@@ -15854,6 +16137,92 @@
       "args": [
         {
           "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.window_w",
+      "namespace": "host",
+      "fn": "window_w",
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.window_h",
+      "namespace": "host",
+      "fn": "window_h",
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.canvas_scale",
+      "namespace": "host",
+      "fn": "canvas_scale",
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.canvas_scale_x",
+      "namespace": "host",
+      "fn": "canvas_scale_x",
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.canvas_scale_y",
+      "namespace": "host",
+      "fn": "canvas_scale_y",
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.canvas_offset_x",
+      "namespace": "host",
+      "fn": "canvas_offset_x",
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.canvas_offset_y",
+      "namespace": "host",
+      "fn": "canvas_offset_y",
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.canvas_device_scale",
+      "namespace": "host",
+      "fn": "canvas_device_scale",
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.canvas_safe_area",
+      "namespace": "host",
+      "fn": "canvas_safe_area",
+      "args": [
+        {
+          "name": "edge",
           "type": "float"
         }
       ],
@@ -20345,6 +20714,131 @@
           ]
         },
         {
+          "name": "mq_platform_drawable_size",
+          "returns": "void",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "out_w",
+              "type": "int32_t*",
+              "doc": null
+            },
+            {
+              "name": "out_h",
+              "type": "int32_t*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_content_scale",
+          "returns": "float",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_display_changed",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_set_safe_area",
+          "returns": "void",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "l",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "t",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "r",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_present_rect",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "rgba",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "w",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "h",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "dx",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "dy",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "dw",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "dh",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "filter",
+              "type": "int32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_platform_simulate_pointer",
           "returns": "int",
           "args": [
@@ -23291,6 +23785,282 @@
               "name": "MQ_SIM_SPACE_WORLD",
               "value": 1,
               "doc": "世界坐标（直接使用）"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "module": "canvas",
+      "abi_name": "maque.canvas",
+      "version": 1,
+      "language": "c",
+      "header": "abi/canvas.h",
+      "fns": [
+        {
+          "name": "mq_canvas_resolve",
+          "returns": "int",
+          "args": [
+            {
+              "name": "desc",
+              "type": "const mq_canvas_desc*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_canvas_metrics*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_canvas_window_to_design",
+          "returns": "int",
+          "args": [
+            {
+              "name": "m",
+              "type": "const mq_canvas_metrics*",
+              "doc": null
+            },
+            {
+              "name": "wx",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "wy",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "out_dx",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "out_dy",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_canvas_design_to_window",
+          "returns": "int",
+          "args": [
+            {
+              "name": "m",
+              "type": "const mq_canvas_metrics*",
+              "doc": null
+            },
+            {
+              "name": "dx",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dy",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "out_wx",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "out_wy",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "structs": [
+        {
+          "name": "mq_canvas_desc",
+          "fields": [
+            {
+              "name": "struct_size",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "design_w",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "design_h",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "fit",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "align",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "min_scale",
+              "type": "float",
+              "doc": "<=0 → 不限"
+            },
+            {
+              "name": "max_scale",
+              "type": "float",
+              "doc": "<=0 → 不限"
+            },
+            {
+              "name": "window_w",
+              "type": "float",
+              "doc": "绘制区宽（设备像素）"
+            },
+            {
+              "name": "window_h",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dpi_scale",
+              "type": "float",
+              "doc": "显示器内容缩放（HiDPI）；窗口/安全区已按此换算时传 1"
+            },
+            {
+              "name": "safe_left",
+              "type": "float",
+              "doc": "安全区内缩（设备像素）"
+            },
+            {
+              "name": "safe_top",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "safe_right",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "safe_bottom",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_canvas_metrics",
+          "fields": [
+            {
+              "name": "scale",
+              "type": "float",
+              "doc": "等比缩放（Exact 时取 min 供文字等使用）"
+            },
+            {
+              "name": "scale_x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "scale_y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "offset_x",
+              "type": "float",
+              "doc": "画布原点在绘制区中的偏移（设备像素）"
+            },
+            {
+              "name": "offset_y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "viewport_w",
+              "type": "float",
+              "doc": "画布可视矩形（设备像素）"
+            },
+            {
+              "name": "viewport_h",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "window_w",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "window_h",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "device_scale",
+              "type": "float",
+              "doc": "生效的显示器内容缩放"
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_CANVAS_FIT_NONE",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_CANVAS_FIT_WIDTH",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_CANVAS_FIT_HEIGHT",
+              "value": 2,
+              "doc": null
+            },
+            {
+              "name": "MQ_CANVAS_FIT_SHOW_ALL",
+              "value": 3,
+              "doc": null
+            },
+            {
+              "name": "MQ_CANVAS_FIT_NO_BORDER",
+              "value": 4,
+              "doc": null
+            },
+            {
+              "name": "MQ_CANVAS_FIT_EXACT",
+              "value": 5,
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_CANVAS_ALIGN_BEGIN",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_CANVAS_ALIGN_CENTER",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_CANVAS_ALIGN_END",
+              "value": 2,
+              "doc": null
             }
           ]
         }

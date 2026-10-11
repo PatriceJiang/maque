@@ -33,7 +33,7 @@
 |---|---|---|
 | Node | 节点（反射记录） | 🔶 maque 节点=反射记录+组件 |
 | UITransform | **Control** | 🔶 等价（2D 盒模型） |
-| Canvas（UI 根） | RenderLayer(UI) / 分层 | 🔶 等价 |
+| Canvas（UI 根 + 分辨率策略） | `ui.Canvas`（设计分辨率 + fit_mode + 安全区 + HiDPI） | ✅ 已实现（docs/17 §画布） |
 | Widget（对齐父级） | **Control**（锚点/偏移）+ FlexItem | 🔶 等价 |
 | Layout（H/V/Grid 自动布局） | **Container** / **FlexBox** | ✅ 且更强（含 Flexbox） |
 | SafeArea | — | ❌ 缺失 |

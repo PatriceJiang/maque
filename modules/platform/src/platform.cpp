@@ -58,6 +58,8 @@ struct mq_platform {
     int  logical_w = 0, logical_h = 0;
     bool cap_pending = false;
     int  cap_max = -1, cap_every = 1, cap_seen = 0;
+    float safe[4] = { 0, 0, 0, 0 };      /* 安全区内缩（设备像素） */
+    int  display_dirty = 0;              /* 尺寸/显示器变化待消费 */
     int  cap_count = 0;               /* MAQUE_CAPTURE 已抓帧数 */
     bool        sdl = false;
     bool        window = false;
@@ -79,6 +81,40 @@ struct mq_platform {
 namespace {
 
 /* 入队并更新指针状态（设备与注入共用；delta 在此统一计算）。 */
+/* 抓帧：回读**窗口表面**（真正呈现给用户的像素，含画布留边）→ PPM */
+static void capture_window(mq_platform* p) {
+    if (p->cap_max < 0) {
+        p->cap_max = 3; p->cap_every = 1;
+        if (const char* v = std::getenv("MAQUE_CAPTURE_FRAMES")) p->cap_max = std::atoi(v);
+        if (const char* v = std::getenv("MAQUE_CAPTURE_EVERY")) p->cap_every = std::atoi(v) > 0 ? std::atoi(v) : 1;
+    }
+    ++p->cap_seen;
+    const char* cap = std::getenv("MAQUE_CAPTURE");
+    if (!cap || !*cap || p->cap_count >= p->cap_max || (p->cap_seen % p->cap_every) != 0) return;
+    SDL_Surface* ws = SDL_GetWindowSurface(p->win);
+    if (!ws || SDL_LockSurface(ws) != 0) { ++p->cap_count; return; }
+    char path[512];
+    std::snprintf(path, sizeof path, "%s_%d.ppm", cap, p->cap_count);
+    if (FILE* f = std::fopen(path, "wb")) {
+        std::fprintf(f, "P6\n%d %d\n255\n", ws->w, ws->h);
+        const SDL_PixelFormat* fmt = ws->format;
+        for (int y = 0; y < ws->h; ++y) {
+            const uint8_t* row = (const uint8_t*)ws->pixels + (size_t)y * ws->pitch;
+            for (int x = 0; x < ws->w; ++x) {
+                uint32_t v = 0;
+                std::memcpy(&v, row + (size_t)x * fmt->BytesPerPixel, (size_t)fmt->BytesPerPixel);
+                uint8_t r = 0, g = 0, b = 0, a = 0;
+                SDL_GetRGBA(v, fmt, &r, &g, &b, &a);
+                const uint8_t rgb[3] = { r, g, b };
+                std::fwrite(rgb, 1, 3, f);
+            }
+        }
+        std::fclose(f);
+    }
+    SDL_UnlockSurface(ws);
+    ++p->cap_count;
+}
+
 void queue_pointer(mq_platform* p, const mq_platform_pointer_event& in) {
     mq_platform::PEv q{};
     q.ev = in;
@@ -123,7 +159,7 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
             /* 演示/自动化友好开关（可选）：
              *   MAQUE_WINDOW_POS=x,y    指定窗口位置（默认交给 WM）
              *   MAQUE_ALWAYS_ON_TOP=1   窗口置顶（演示时不被其它窗口遮挡） */
-            Uint32 flags = SDL_WINDOW_SHOWN;
+            Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
             if (const char* atop = std::getenv("MAQUE_ALWAYS_ON_TOP"); atop && *atop && *atop != '0')
                 flags |= SDL_WINDOW_ALWAYS_ON_TOP;
             int wx = SDL_WINDOWPOS_UNDEFINED, wy = SDL_WINDOWPOS_UNDEFINED;
@@ -153,6 +189,45 @@ void mq_platform_destroy(mq_platform* p) {
  *   · 无窗口 / dummy 驱动 / MAQUE_PRESENT=off → 安全空操作（headless/CI 不报错）
  *   · MAQUE_PRESENT=software|accelerated 可强制后端；默认 accelerated → software 回退
  * 呈现失败不致命（视为无窗口），避免把渲染问题升级成"跑不起来"。 */
+int mq_platform_present_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h,
+                             int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter) {
+    if (!p || !rgba || w <= 0 || h <= 0) return 1;
+    if (!p->win || !p->window) return 2;
+    if (p->present_mode < 0) { mq_platform_present(p, rgba, w, h); return 0; }   /* 触发模式初始化 */
+    /* 复用软件窗口表面路径：目标矩形由调用方（画布策略）给出 */
+    SDL_Surface* ws = SDL_GetWindowSurface(p->win);
+    if (!ws) return 4;
+    SDL_Surface* src = SDL_CreateRGBSurfaceWithFormatFrom(
+        const_cast<void*>(rgba), w, h, 32, w * 4, SDL_PIXELFORMAT_RGBA32);
+    if (!src) return 5;
+    SDL_Rect dst{ dx, dy, dw, dh };
+    SDL_FillRect(ws, nullptr, SDL_MapRGB(ws->format, 0, 0, 0));                 // 画布外为黑
+    int rc = 0;
+    const bool nearest = filter == 1 || (filter < 0 && dw % w == 0 && dw / w >= 2 && dw / w == dh / h);
+    if (nearest && dw % w == 0) {
+        const int k = dw / w;
+        SDL_Surface* big = SDL_CreateRGBSurfaceWithFormat(0, dw, dh, 32, SDL_PIXELFORMAT_RGBA32);
+        if (big) {
+            const uint8_t* sp = (const uint8_t*)rgba;
+            for (int y = 0; y < dh; ++y) {
+                const uint8_t* srow = sp + (size_t)std::min(h - 1, y / k) * (size_t)w * 4;
+                uint8_t* drow = (uint8_t*)big->pixels + (size_t)y * (size_t)big->pitch;
+                for (int x = 0; x < dw; ++x)
+                    std::memcpy(drow + (size_t)x * 4, srow + (size_t)std::min(w - 1, x / k) * 4, 4);
+            }
+            rc = SDL_BlitSurface(big, nullptr, ws, &dst);
+            SDL_FreeSurface(big);
+        } else rc = -1;
+    } else {
+        rc = SDL_BlitScaled(src, nullptr, ws, &dst);
+    }
+    SDL_FreeSurface(src);
+    if (rc != 0) return 6;
+    SDL_UpdateWindowSurface(p->win);
+    capture_window(p);
+    return 0;
+}
+
 int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) {
     if (!p || !rgba || w <= 0 || h <= 0) return 1;
     if (!p->win || !p->window) return 2;                  // 无窗口：空操作
@@ -217,39 +292,7 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
         }
         if (p->cap_pending) { /* 抓帧见下（软件路径从源帧拷贝，内容一致） */ }
         SDL_UpdateWindowSurface(p->win);
-        /* 抓帧：回读**窗口表面**（即真正呈现给用户的像素，含缩放与留边）
-         *   MAQUE_CAPTURE=<前缀>  MAQUE_CAPTURE_FRAMES=n（默认 3）  MAQUE_CAPTURE_EVERY=n（默认 1） */
-        if (p->cap_max < 0) {
-            p->cap_max = 3; p->cap_every = 1;
-            if (const char* v = std::getenv("MAQUE_CAPTURE_FRAMES")) p->cap_max = std::atoi(v);
-            if (const char* v = std::getenv("MAQUE_CAPTURE_EVERY")) p->cap_every = std::atoi(v) > 0 ? std::atoi(v) : 1;
-        }
-        ++p->cap_seen;
-        if (const char* cap = std::getenv("MAQUE_CAPTURE"); cap && *cap &&
-            p->cap_count < p->cap_max && (p->cap_seen % p->cap_every) == 0) {
-            if (SDL_LockSurface(ws) == 0) {
-                char path[512];
-                std::snprintf(path, sizeof path, "%s_%d.ppm", cap, p->cap_count);
-                if (FILE* f = std::fopen(path, "wb")) {
-                    std::fprintf(f, "P6\n%d %d\n255\n", ws->w, ws->h);
-                    const SDL_PixelFormat* fmt = ws->format;
-                    for (int y = 0; y < ws->h; ++y) {
-                        const uint8_t* row = (const uint8_t*)ws->pixels + (size_t)y * ws->pitch;
-                        for (int x = 0; x < ws->w; ++x) {
-                            uint32_t v = 0;
-                            std::memcpy(&v, row + (size_t)x * fmt->BytesPerPixel, (size_t)fmt->BytesPerPixel);
-                            uint8_t r = 0, g = 0, b = 0, a = 0;
-                            SDL_GetRGBA(v, fmt, &r, &g, &b, &a);
-                            const uint8_t rgb[3] = { r, g, b };
-                            std::fwrite(rgb, 1, 3, f);
-                        }
-                    }
-                    std::fclose(f);
-                }
-                SDL_UnlockSurface(ws);
-            }
-            ++p->cap_count;
-        }
+        capture_window(p);
         return 0;
     }
     if (!p->ren) {
@@ -299,6 +342,39 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
     return 0;
 }
 
+void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h) {
+    int w = 0, h = 0;
+    if (p && p->win) SDL_GetWindowSizeInPixels(p->win, &w, &h);   /* 设备像素（HiDPI 下更大） */
+    if (out_w) *out_w = w;
+    if (out_h) *out_h = h;
+}
+
+float mq_platform_content_scale(mq_platform* p) {
+    if (!p || !p->win) return 1.0F;
+    /* 测试/远程桌面可强制：MAQUE_DPI_SCALE=2 */
+    if (const char* env = std::getenv("MAQUE_DPI_SCALE")) {
+        const float v = (float)std::atof(env);
+        if (v > 0.0F) return v;
+    }
+    int lw = 0, lh = 0, pw = 0, ph = 0;
+    SDL_GetWindowSize(p->win, &lw, &lh);
+    SDL_GetWindowSizeInPixels(p->win, &pw, &ph);
+    if (lw > 0 && pw > 0) return (float)pw / (float)lw;
+    return 1.0F;
+}
+
+int mq_platform_display_changed(mq_platform* p) {
+    if (!p) return 0;
+    const int d = p->display_dirty;
+    p->display_dirty = 0;
+    return d;
+}
+
+void mq_platform_set_safe_area(mq_platform* p, float l, float t, float r, float b) {
+    if (!p) return;
+    p->safe[0] = l; p->safe[1] = t; p->safe[2] = r; p->safe[3] = b;
+}
+
 /* 测试/CI：把指针事件压入 SDL 队列 —— 与真实 OS 事件走**同一条**翻译路径
  * （SDL 事件 → mq_platform_pointer_event → 输入模块 → 命中测试 → 脚本回调）。
  * 用于在没有 XTest/uinput 的环境（Wayland 会话常见）验证输入通路。 */
@@ -340,8 +416,10 @@ void mq_platform_pump(mq_platform* p) {
             case SDL_WINDOWEVENT:
                 if (e.window.event == SDL_WINDOWEVENT_RESIZED ||
                     e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                    p->resized = 1; p->w = e.window.data1; p->h = e.window.data2;
-                } else if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) p->focused = 1;
+                    p->resized = 1; p->display_dirty = 1; p->w = e.window.data1; p->h = e.window.data2;
+                }
+                /* 换显示器（不同 DPI）同样要求重解析画布（docs/17 多显示器适配） */
+                if (e.window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED) p->display_dirty = 1; else if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) p->focused = 1;
                 else if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST) p->focused = 0;
                 break;
             case SDL_MOUSEMOTION: {

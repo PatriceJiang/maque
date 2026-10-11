@@ -127,6 +127,13 @@ GC 仅在帧边界推进（`mq_script_frame_boundary`）。加后端见 docs/14�
 硬证据：`ctest -R text_pixel` —— 渲染结果与字体模块位图**逐像素一致**（渗出 0、max_diff 0），
 且内置"线性 + 半像素偏移"对照组证明测试有鉴别力。
 
+**画布 / 分辨率策略（`ui.Canvas`）**：UI 按**设计分辨率**排版，运行时适配任意窗口与显示器。
+`fit_mode`（None/FitWidth/FitHeight/ShowAll/NoBorder/Exact）+ `align` + `min/max_scale` + 安全区；
+解析结果写回 transient（`scale/scale_x/scale_y/offset_x/offset_y/viewport_*/window_*/device_scale`）。
+呈现、输入映射、文字栅格化**共用同一份映射**（错一处就错位）；策略数学在 `modules/ui/canvas`（纯函数 + 单测）。
+脚本：`screen_w/h()`=设计分辨率，`window_w/h()`=设备像素，`canvas_scale()/canvas_offset_x/y()/canvas_device_scale()`。
+测试/CI：`MAQUE_DPI_SCALE=2` 模拟 HiDPI，`MAQUE_SAFE_AREA="l,t,r,b"` 模拟刘海；`ctest -R 'canvas'` 覆盖。
+
 **坐标约定**：节点位置、**输入事件、脚本可见坐标统一为世界坐标（y 向上）**；
 设备事件在平台边界做一次"窗口 → 世界"转换（等比缩放 + 居中留边 + y 翻转），注入/模拟事件按世界坐标给出。
 渲染时再翻到屏幕坐标（`y_screen = H - y_world`）。UI 控件（`ui.Control`）以**中心**为锚点。

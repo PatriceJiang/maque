@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema.yaml`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **107** 个 · 控制面方法 **31** 个 · 事件回调 **10** 个 · 模块 C ABI **22** 个 · 插件接口 **1** 个。
+统计：脚本 API **116** 个 · 控制面方法 **31** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -114,6 +114,15 @@
 | `ui_get_value` | id: float | float | ctx |
 | `ui_set_checked` | id: float, on: float | float | ctx |
 | `ui_get_checked` | id: float | float | ctx |
+| `window_w` | — | float | ctx |
+| `window_h` | — | float | ctx |
+| `canvas_scale` | — | float | ctx |
+| `canvas_scale_x` | — | float | ctx |
+| `canvas_scale_y` | — | float | ctx |
+| `canvas_offset_x` | — | float | ctx |
+| `canvas_offset_y` | — | float | ctx |
+| `canvas_device_scale` | — | float | ctx |
+| `canvas_safe_area` | edge: float | float | ctx |
 | `ui_set_text` | id: float, text: string | float | ctx |
 | `ui_get_text` | id: float | string | ctx |
 | `ui_text_width` | id: float | float | ctx |
@@ -504,6 +513,11 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 |------|------|------|
 | `mq_platform_create` | mq_platform* | title: const char*, w: int, h: int |
 | `mq_platform_present` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t |
+| `mq_platform_drawable_size` | void | p: mq_platform*, out_w: int32_t*, out_h: int32_t* |
+| `mq_platform_content_scale` | float | p: mq_platform* |
+| `mq_platform_display_changed` | int | p: mq_platform* |
+| `mq_platform_set_safe_area` | void | p: mq_platform*, l: float, t: float, r: float, b: float |
+| `mq_platform_present_rect` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t, dx: int32_t, dy: int32_t, dw: int32_t, dh: int32_t, filter: int32_t |
 | `mq_platform_simulate_pointer` | int | p: mq_platform*, kind: int32_t, x: float, y: float, button: int32_t |
 | `mq_platform_destroy` | void | p: mq_platform* |
 | `mq_platform_has_window` | int | p: mq_platform* |
@@ -767,3 +781,25 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_sim_loop` | int | sim: mq_sim* |
 | `mq_sim_loaded` | int | sim: mq_sim* |
 | `mq_sim_last_frame` | uint64_t | sim: mq_sim* |
+
+### canvas — `maque.canvas` v1
+
+头文件：`build/modules/core/data/generated/abi/canvas.h` · 宏：`MQ_CANVAS_ABI_VERSION` / `_IFACE_NAME`
+
+分辨率策略：设计分辨率 → 绘制区（设备像素）的缩放/偏移/安全区解析（纯函数）
+
+枚举：
+
+- (匿名)：MQ_CANVAS_FIT_NONE=0, MQ_CANVAS_FIT_WIDTH=1, MQ_CANVAS_FIT_HEIGHT=2, MQ_CANVAS_FIT_SHOW_ALL=3, MQ_CANVAS_FIT_NO_BORDER=4, MQ_CANVAS_FIT_EXACT=5
+- (匿名)：MQ_CANVAS_ALIGN_BEGIN=0, MQ_CANVAS_ALIGN_CENTER=1, MQ_CANVAS_ALIGN_END=2
+
+结构体：
+
+- `mq_canvas_desc`：struct_size: uint32_t, design_w: float, design_h: float, fit: int32_t, align: int32_t, min_scale: float, max_scale: float, window_w: float, window_h: float, dpi_scale: float, safe_left: float, safe_top: float, safe_right: float, safe_bottom: float
+- `mq_canvas_metrics`：scale: float, scale_x: float, scale_y: float, offset_x: float, offset_y: float, viewport_w: float, viewport_h: float, window_w: float, window_h: float, device_scale: float
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_canvas_resolve` | int | desc: const mq_canvas_desc*, out: mq_canvas_metrics* |
+| `mq_canvas_window_to_design` | int | m: const mq_canvas_metrics*, wx: float, wy: float, out_dx: float*, out_dy: float* |
+| `mq_canvas_design_to_window` | int | m: const mq_canvas_metrics*, dx: float, dy: float, out_wx: float*, out_wy: float* |

@@ -21,6 +21,7 @@
 #include "nav/mq_nav.h"
 #include "text/mq_text.h"
 #include "sim/mq_sim.h"
+#include "canvas/mq_canvas.h"
 
 #include <fstream>
 #include "core/control/mq_control.h"
@@ -216,6 +217,13 @@ struct Engine {
     std::string pending_scene;                     // director.loadScene()：帧边界切场景
     std::vector<std::pair<int, mq_physics_body>> physics_role_bodies;   // (entity, 世代句柄)
     /* 输入模拟器（docs/19）：.sim.json 场景 → 帧索引输入事件流（确定性；与录制/回放一致） */
+    /* 画布（分辨率策略，docs/17）：把设计分辨率适配到任意窗口/显示器 */
+    mq_canvas_metrics canvas{};           // 当前解析结果（设计 → 设备像素）
+    float canvas_safe[4] = { 0, 0, 0, 0 }; // 安全区内缩（设备像素；平台层可设置）
+    int canvas_entity = -1;               // 场景里的 ui.Canvas（-1 = 无 → 用场景尺寸兜底）
+    bool canvas_active = false;
+    void canvas_setup();                  // 装配期：定位画布实体
+    void canvas_resolve();                // 每帧/尺寸变化：重解析 + 写回 transient 字段
     mq_sim* sim = nullptr;
     bool sim_active = false;
     std::string sim_path;                   // MAQUE_SIM 载入的场景文件（自省用）
@@ -600,6 +608,12 @@ void Engine::step_frame() {
                        iframe.pointer_count, iframe.key_count, frame);
     }
     // ①b 输入模拟器：把该帧到期的事件注入输入流（与设备事件同一条路径；回放时跳过）
+    /* ①a 画布解析（docs/17）：每帧重算"设计 → 设备像素"映射。
+     * 每帧而非"仅尺寸变化"：脚本/控制面可在运行时改 fit_mode / design_* / 安全区，
+     * 必须立即生效；纯函数（几次乘法）开销可忽略。窗口/显示器变化同样被覆盖。 */
+    canvas_resolve();
+    (void)mq_platform_display_changed;   /* 尺寸变化由每帧解析自然覆盖（保留 API 供宿主查询） */
+
     sim_feed(frame);
     // ② 输入帧：状态/事件（回放时忽略设备输入，只喂记录）
     if (input) {
@@ -667,8 +681,12 @@ void Engine::step_frame() {
         rapi->render_views(rself, TW, H, views.data(), (uint32_t)views.size(),
                            draws.data(), (uint32_t)draws.size(), bg, pixels.data(), (uint32_t)pixels.size());
     /* 呈现到窗口（docs/05、M5）：无窗口/dummy 驱动时为安全空操作 */
-    if (platform && window && rapi && rself)
-        mq_platform_present(platform, pixels.data(), TW, H);
+    if (platform && window && rapi && rself) {
+        /* 呈现按**画布策略**给出的目标矩形（缩放/留边由分辨率策略决定；整倍放大用最近邻） */
+        const int dx = (int)(canvas.offset_x + 0.5F), dy = (int)(canvas.offset_y + 0.5F);
+        const int dw = (int)(canvas.viewport_w + 0.5F), dh = (int)(canvas.viewport_h + 0.5F);
+        mq_platform_present_rect(platform, pixels.data(), TW, H, dx, dy, dw, dh, -1);
+    }
     if (!frames_dir.empty()) {
         char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);
         write_ppm(frames_dir + fn, TW, H, pixels);
@@ -1713,15 +1731,12 @@ void call_script_event(Engine& eng, const mq_input_event* ev) {
  * 窗口/SDL 事件是 y 向下；引擎世界与脚本是 y 向上（docs/12 §坐标、docs/19 §4）——
  * 漏掉翻转会导致点击位置上下镜像（曾经的真实缺陷）。 */
 void window_to_world(const Engine& eng, float* x, float* y) {
-    if (eng.win_w <= 0 || eng.win_h <= 0) return;
-    /* 呈现按目标尺寸（TW×H）等比缩放；多视图时 x 落在 [0,TW)，视图索引 = x / W */
-    const float sc = std::min((float)eng.win_w / (float)eng.TW, (float)eng.win_h / (float)eng.H);
-    if (sc <= 0.0F) return;
-    const float off_x = ((float)eng.win_w - (float)eng.TW * sc) * 0.5F;
-    const float off_y = ((float)eng.win_h - (float)eng.H * sc) * 0.5F;
-    const float ty = (*y - off_y) / sc;             // 目标空间 y（向下）
-    *x = (*x - off_x) / sc;
-    *y = (float)eng.H - ty;                         // → 世界 y（向上）
+    /* 窗口设备像素 → 设计坐标（由画布策略决定缩放/留边；多视图时除以视图数落到单视图） */
+    float dx = 0.0F, dy = 0.0F;
+    if (mq_canvas_window_to_design(&eng.canvas, *x, *y, &dx, &dy) != 0) return;
+    const int views = eng.nviews > 0 ? eng.nviews : 1;
+    *x = dx / (float)views;
+    *y = (float)eng.H - dy;                         // 设计 y 向下 → 世界 y 向上
 }
 
 /* 设备事件：位置映射 + 方向量翻转（指针位移 dy 与滚轮 scroll_y 同属 y 轴方向） */
@@ -2004,10 +2019,7 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     st.struct_size = (uint32_t)sizeof st;
     st.font_size = size;
     /* 设备缩放：窗口像素 / 目标像素（HiDPI 时按设备字号栅格化 → 1:1 呈现，不做二次缩放） */
-    float dev_scale = 1.0F;
-    if (eng.win_w > 0 && eng.TW > 0 && eng.win_h > 0 && eng.H > 0)
-        dev_scale = std::min((float)eng.win_w / (float)eng.TW, (float)eng.win_h / (float)eng.H);
-    st.device_scale = dev_scale > 0.0F ? dev_scale : 1.0F;
+    st.device_scale = eng.canvas.scale > 0.0F ? eng.canvas.scale : 1.0F;   // 画布缩放 = 设计→设备
     st.pixel_snap = 1;                                  /* pixel-perfect：字形对齐整数像素 */
     st.line_spacing = line_spacing;
     st.wrap = (uint32_t)(wrap < 0 ? 0 : wrap);
@@ -2095,6 +2107,104 @@ static bool read_sim_scenario(mq_vfs* vfs, const char* path, std::string& out) {
     if (!f) return false;
     out.assign((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     return !out.empty();
+}
+
+/* ---- 画布与分辨率策略（docs/17）----
+ * 设计分辨率 = 场景 width/height（或 ui.Canvas.design_*）；渲染目标即设计分辨率；
+ * 画布策略决定"设计 → 绘制区（设备像素）"的缩放与留边，供 呈现 / 输入映射 / 文字栅格化 三方共用。
+ * 没有 ui.Canvas 实体时按 ShowAll + 居中兜底（与既有行为一致）。 */
+void Engine::canvas_setup() {
+    canvas_entity = -1;
+    if (!scene) return;
+    for (auto& [idx, e] : scene->ents) {
+        for (auto& [tid, blob] : e.comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
+            canvas_entity = idx;                       /* 升序首个画布 */
+            canvas_active = true;
+            std::print("runtime: canvas on entity {} (design {}x{})\n", idx,
+                       read_num(d, blob.data(), "design_width", 0.0F),
+                       read_num(d, blob.data(), "design_height", 0.0F));
+            break;
+        }
+        if (canvas_entity >= 0) break;
+    }
+}
+
+void Engine::canvas_resolve() {
+    mq_canvas_desc desc{};
+    desc.struct_size = (uint32_t)sizeof desc;
+    /* 设计分辨率：画布组件优先，其次场景尺寸（向后兼容） */
+    desc.design_w = (float)W;
+    desc.design_h = (float)H;
+    desc.fit = MQ_CANVAS_FIT_SHOW_ALL;
+    desc.align = MQ_CANVAS_ALIGN_CENTER;
+    desc.dpi_scale = 1.0F;
+    desc.safe_left = canvas_safe[0]; desc.safe_top = canvas_safe[1];
+    desc.safe_right = canvas_safe[2]; desc.safe_bottom = canvas_safe[3];
+    if (canvas_entity >= 0) {
+        Entity* e = scene->at(canvas_entity);
+        if (e) {
+            for (auto& [tid, blob] : e->comps) {
+                const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+                if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
+                const float dw = read_num(d, blob.data(), "design_width", 0.0F);
+                const float dh = read_num(d, blob.data(), "design_height", 0.0F);
+                if (dw > 0.0F && dh > 0.0F) { desc.design_w = dw; desc.design_h = dh; }
+                desc.fit = (int32_t)read_num(d, blob.data(), "fit_mode", (float)MQ_CANVAS_FIT_SHOW_ALL);
+                desc.align = (int32_t)read_num(d, blob.data(), "align", (float)MQ_CANVAS_ALIGN_CENTER);
+                desc.min_scale = read_num(d, blob.data(), "min_scale", 0.0F);
+                desc.max_scale = read_num(d, blob.data(), "max_scale", 0.0F);
+                const bool dpi = read_num(d, blob.data(), "dpi_scale", 1.0F) != 0.0F;
+                desc.dpi_scale = (dpi && platform && window) ? mq_platform_content_scale(platform) : 1.0F;
+                /* 写回解析结果（transient）：脚本/控制面可读 */
+                break;
+            }
+        }
+    } else if (platform && window) {
+        desc.dpi_scale = mq_platform_content_scale(platform);
+    }
+    /* 绘制区 = 窗口**设备像素**（HiDPI 下大于逻辑尺寸）；
+     * 无窗口（headless/CI）→ 取渲染目标的**单视图**尺寸（= 设计分辨率，缩放 1） */
+    const int views = nviews > 0 ? nviews : 1;
+    desc.window_w = (float)(TW / views);
+    desc.window_h = (float)H;
+    if (platform && window) {
+        int32_t dw = 0, dh = 0;
+        mq_platform_drawable_size(platform, &dw, &dh);
+        if (dw > 0 && dh > 0) { desc.window_w = (float)dw; desc.window_h = (float)dh; }
+    }
+    const int rc = mq_canvas_resolve(&desc, &canvas);
+    if (rc != 0 && std::getenv("MAQUE_TRACE_CANVAS"))
+        std::print(stderr, "runtime: canvas resolve fallback (rc={})\n", rc);
+    /* 回写 transient 字段 */
+    if (canvas_entity >= 0) {
+        Entity* e = scene->at(canvas_entity);
+        if (e) {
+            std::vector<uint8_t>* blob = nullptr;
+            const mq_type_desc* d = nullptr;
+            for (auto& [tid, b] : e->comps) {
+                const mq_type_desc* t = mq_reflect_type_by_id(reflect, tid);
+                if (t && (t->role & MQ_ROLE_UI_CANVAS)) { blob = &b; d = t; break; }
+            }
+            if (blob && d) {
+                write_num(d, blob->data(), "scale", canvas.scale);
+                write_num(d, blob->data(), "scale_x", canvas.scale_x);
+                write_num(d, blob->data(), "scale_y", canvas.scale_y);
+                write_num(d, blob->data(), "offset_x", canvas.offset_x);
+                write_num(d, blob->data(), "offset_y", canvas.offset_y);
+                write_num(d, blob->data(), "viewport_w", canvas.viewport_w);
+                write_num(d, blob->data(), "viewport_h", canvas.viewport_h);
+                write_num(d, blob->data(), "window_w", canvas.window_w);
+                write_num(d, blob->data(), "window_h", canvas.window_h);
+                write_num(d, blob->data(), "device_scale", canvas.device_scale);
+            }
+        }
+    }
+    if (std::getenv("MAQUE_TRACE_CANVAS"))
+        std::print("[canvas] design={}x{} win={}x{} fit={} scale=({:.3f},{:.3f}) off=({:.1f},{:.1f}) dpi={:.2f}\n",
+                   desc.design_w, desc.design_h, desc.window_w, desc.window_h, desc.fit,
+                   canvas.scale_x, canvas.scale_y, canvas.offset_x, canvas.offset_y, canvas.device_scale);
 }
 
 /* ---- 输入模拟器（docs/19）----
@@ -2444,6 +2554,20 @@ void Engine::physics_components_step(float) {
 
 namespace host {
 
+float window_w(void* ctx) { return (float)((Engine*)ctx)->canvas.window_w; }
+float window_h(void* ctx) { return (float)((Engine*)ctx)->canvas.window_h; }
+float canvas_scale(void* ctx) { return ((Engine*)ctx)->canvas.scale; }
+float canvas_scale_x(void* ctx) { return ((Engine*)ctx)->canvas.scale_x; }
+float canvas_scale_y(void* ctx) { return ((Engine*)ctx)->canvas.scale_y; }
+float canvas_offset_x(void* ctx) { return ((Engine*)ctx)->canvas.offset_x; }
+float canvas_offset_y(void* ctx) { return ((Engine*)ctx)->canvas.offset_y; }
+float canvas_device_scale(void* ctx) { return ((Engine*)ctx)->canvas.device_scale; }
+float canvas_safe_area(void* ctx, float edge) {
+    auto* eng = (Engine*)ctx;
+    const int e = (int)edge;
+    if (e < 0 || e > 3) return 0.0F;
+    return eng->canvas_safe[e];
+}
 float screen_w(void* ctx) { return (float)((Engine*)ctx)->W; }
 float screen_h(void* ctx) { return (float)((Engine*)ctx)->H; }
 float rng(void* ctx) { return (float)((Engine*)ctx)->next_rng() / 4294967296.0f; }
@@ -4070,6 +4194,14 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     preload_scene_assets();
     text_setup();                               // 字体（MAQUE_FONT → 系统字体 → 内置 5x7）
     sim_setup();                                // 输入模拟器（MAQUE_SIM / MAQUE_SIM_CLICK）
+    canvas_setup();                             // 画布（分辨率策略，docs/17）
+    if (const char* sa = std::getenv("MAQUE_SAFE_AREA")) {   // "l,t,r,b"（设备像素；测试/刘海屏）
+        float l = 0, t = 0, r = 0, b = 0;
+        if (std::sscanf(sa, "%f,%f,%f,%f", &l, &t, &r, &b) == 4) {
+            canvas_safe[0] = l; canvas_safe[1] = t; canvas_safe[2] = r; canvas_safe[3] = b;
+            if (platform) mq_platform_set_safe_area(platform, l, t, r, b);
+        }
+    }
     physics_components_setup();
     if (mq_event_dispatch(vm, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
         char ebuf[512] = { 0 };
