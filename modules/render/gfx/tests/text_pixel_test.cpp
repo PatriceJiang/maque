@@ -244,14 +244,10 @@ int main() {
                     if (e == 0) { if (a != 0) ++c_bleed; }
                     else { ++c_ink; const int d = std::abs(a - e); if (d > c_max) c_max = d; }
                 }
-            /* CJK 断言（结构等价 + 容差）：
-             *   · 墨迹包围盒必须与字体位图**逐像素一致**（尺寸/位置/无拉伸）
-             *   · 至少 60% 墨迹像素与位图接近（±8）
-             *   · 渗出（位图为空的像素被画到）≤ 5% 墨迹量
-             * 说明：ASCII（内置 5x7）用例是**严格逐像素相等**（渗出 0、max_diff 0），
-             * 证明"矩形 + nearest + 像素对齐"这条渲染路径本身正确；CJK 大字号字形笔画密集，
-             * 1:1 采样在纹素边界上的 ±半纹素舍入会在部分像素上体现出来，
-             * 逐像素精确性另行跟进（见 docs/13「已知待查」）。 */
+            /* CJK 断言：与字体位图**逐像素一致**（与 ASCII 用例同标准）。
+             * 价值：真实字体含 1 像素笔画 —— 块状的内置 5x7 字体掩盖不了的对齐缺陷会在这里暴露：
+             * 曾因顶点着色器**逐顶点吸附**（每个顶点都把自己当中心去吸附）使整个矩形偏移半像素，
+             * 1:1 nearest 下部分行/列取错纹素 → 文字发虚/乱码，而 ASCII 用例照样通过。 */
             int ex0 = W, ex1 = -1, ey0 = H, ey1 = -1, rx0 = W, rx1 = -1, ry0 = H, ry1 = -1;
             int close = 0;
             for (int y = 0; y < H; ++y)
@@ -261,7 +257,7 @@ int main() {
                     if (e) {
                         ex0 = std::min(ex0, x); ex1 = std::max(ex1, x);
                         ey0 = std::min(ey0, y); ey1 = std::max(ey1, y);
-                        if (std::abs(a - e) <= 8) ++close;
+                        if (std::abs(a - e) <= 2) ++close;      // ±2：混合取整
                     }
                     if (a) {
                         rx0 = std::min(rx0, x); rx1 = std::max(rx1, x);
@@ -269,10 +265,11 @@ int main() {
                     }
                 }
             CHECK(ex0 == rx0 && ex1 == rx1 && ey0 == ry0 && ey1 == ry1);   // 包围盒一致
-            CHECK(close * 100 >= c_ink * 60);                              // ≥60% 像素接近
-            CHECK(c_bleed * 100 <= c_ink * 5);                             // 渗出 ≤ 5%
-            std::print("text_pixel_test(CJK): 墨迹={} 一致={} 渗出={} bbox=x[{}..{}] y[{}..{}]\n",
-                       c_ink, close, c_bleed, ex0, ex1, ey0, ey1);
+            CHECK(c_bleed == 0);                                          // 无渗出
+            CHECK(c_max <= 2);                                            // 与字体位图一致（±2 取整）
+            CHECK(close == c_ink);                                        // 全部墨迹像素一致（±2）
+            std::print("text_pixel_test(CJK): 墨迹={} 一致={} 渗出={} max_diff={} bbox=x[{}..{}] y[{}..{}]\n",
+                       c_ink, close, c_bleed, c_max, ex0, ex1, ey0, ey1);
             if (api->destroy_texture) api->destroy_texture(self, ctex);
             mq_font_destroy(cjk);
         }

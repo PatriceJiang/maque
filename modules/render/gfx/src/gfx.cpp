@@ -37,16 +37,21 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   var corner = c[vi] * hw;
   let cs = cos(inst.rot); let sn = sin(inst.rot);
   corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
-  var q = (inst.pos + corner - u.cam) * u.zoom;
   let cr = cos(-u.rot); let sr = sin(-u.rot);        // 相机旋转（docs/13 §4）：逆旋转到相机空间
-  q = vec2f(q.x * cr - q.y * sr, q.x * sr + q.y * cr);
-  var px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
-  // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素，
-  // 使得 1 纹素 ↔ 1 像素（nearest 采样下逐像素精确；中心对齐会因奇偶宽度差半像素而糊）
+  /* 顶点 = **中心** + 顶点偏移。吸附必须作用在"图元中心"上（且只算一次），
+   * 否则逐顶点吸附会把每个顶点按"自己是中心"平移 → 整个矩形偏移半像素
+   * （1:1 nearest 下表现为部分行/列取错纹素 → 文字发虚/乱码；块状图元看不出来）。 */
+  let center = (inst.pos - u.cam) * u.zoom;
+  var cc = vec2f(center.x * cr - center.y * sr, center.x * sr + center.y * cr);
+  let kc0 = corner * u.zoom;
+  let kc = vec2f(kc0.x * cr - kc0.y * sr, kc0.x * sr + kc0.y * cr);
+  var pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
+  // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素（1 纹素 ↔ 1 像素）
   if (inst.snap > 0.5) {
-    let tl = floor(px - hw + vec2f(0.5));
-    px = tl + hw;
+    let tl = floor(pc - hw + vec2f(0.5));
+    pc = tl + hw;
   }
+  let px = pc + kc;
   var o: VOut;
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
   o.uv = c[vi]; o.col = inst.color; o.shape = inst.shape; return o;
@@ -77,16 +82,21 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   var corner = c[vi] * hw;
   let cs = cos(inst.rot); let sn = sin(inst.rot);
   corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
-  var q = (inst.pos + corner - u.cam) * u.zoom;
   let cr = cos(-u.rot); let sr = sin(-u.rot);        // 相机旋转（docs/13 §4）：逆旋转到相机空间
-  q = vec2f(q.x * cr - q.y * sr, q.x * sr + q.y * cr);
-  var px = q + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
-  // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素，
-  // 使得 1 纹素 ↔ 1 像素（nearest 采样下逐像素精确；中心对齐会因奇偶宽度差半像素而糊）
+  /* 顶点 = **中心** + 顶点偏移。吸附必须作用在"图元中心"上（且只算一次），
+   * 否则逐顶点吸附会把每个顶点按"自己是中心"平移 → 整个矩形偏移半像素
+   * （1:1 nearest 下表现为部分行/列取错纹素 → 文字发虚/乱码；块状图元看不出来）。 */
+  let center = (inst.pos - u.cam) * u.zoom;
+  var cc = vec2f(center.x * cr - center.y * sr, center.x * sr + center.y * cr);
+  let kc0 = corner * u.zoom;
+  let kc = vec2f(kc0.x * cr - kc0.y * sr, kc0.x * sr + kc0.y * cr);
+  var pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
+  // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素（1 纹素 ↔ 1 像素）
   if (inst.snap > 0.5) {
-    let tl = floor(px - hw + vec2f(0.5));
-    px = tl + hw;
+    let tl = floor(pc - hw + vec2f(0.5));
+    pc = tl + hw;
   }
+  let px = pc + kc;
   var o: VOut;
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
   // 图集子矩形：uv.x/y = 左上，uv.z/w = 右下；退化（0,0,0,0）→ 整张贴图
