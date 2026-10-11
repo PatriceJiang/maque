@@ -60,6 +60,8 @@ uint32_t mq_sim_cursor(mq_sim* sim);
 int mq_sim_finished(mq_sim* sim);
 void mq_sim_reset(mq_sim* sim);
 void mq_sim_set_loop(mq_sim* sim, int loop);
+/* 是否循环回放 */
+int mq_sim_loop(mq_sim* sim);
 int mq_sim_loaded(mq_sim* sim);
 /* 最后事件帧号（场景时长参考） */
 uint64_t mq_sim_last_frame(mq_sim* sim);

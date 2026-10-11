@@ -96,6 +96,8 @@ extern "C" void mq_sim_reset(mq_sim* sim) { if (sim) { sim->cursor = 0; sim->pha
 
 extern "C" void mq_sim_set_loop(mq_sim* sim, int loop) { if (sim) sim->loop = loop != 0; }
 
+extern "C" int mq_sim_loop(mq_sim* sim) { return sim && sim->loop ? 1 : 0; }
+
 extern "C" int mq_sim_loaded(mq_sim* sim) { return sim && sim->loaded ? 1 : 0; }
 
 extern "C" uint32_t mq_sim_count(mq_sim* sim) { return sim ? (uint32_t)sim->events.size() : 0; }

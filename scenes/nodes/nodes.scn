@@ -1,6 +1,6 @@
 {
-  "title": "Cocos 风格 API",
-  "script": "cocos.js",
+  "title": "节点 / 组件 API",
+  "script": "nodes.js",
   "width": 320,
   "height": 240,
   "seed": 7,
@@ -30,7 +30,7 @@
         { "type": "ui.CheckBox", "checked": false } ] },
 
     { "name": "Hint", "components": [
-        { "type": "scn.Label", "x": 8.0, "y": 210.0, "text": "cocos api" } ] },
+        { "type": "scn.Label", "x": 8.0, "y": 210.0, "text": "node api" } ] },
 
     { "name": "Fall", "components": [
         { "type": "scn.Transform2D", "x": 60.0, "y": 20.0 },

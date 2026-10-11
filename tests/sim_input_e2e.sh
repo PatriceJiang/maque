@@ -30,8 +30,8 @@ run() {   # run <log> [env...] -- 固定窗口与世界尺寸
 # ---- ① 场景文件回放 ----
 run "$WORK/a.log" MAQUE_SIM="$SIM" MAQUE_MAX_FRAMES=120
 grep -q "sim '$SIM' loaded" "$WORK/a.log" || fail "场景未载入"
-grep -q 'ball: click #1 spawn.*at (40,60)'  "$WORK/a.log" || fail "第 1 次点击坐标映射不符"
-grep -q 'ball: click #2 spawn.*at (240,180)' "$WORK/a.log" || fail "第 2 次点击坐标映射不符"
+grep -q 'ball: click #1 spawn.*at (40,180)'  "$WORK/a.log" || fail "第 1 次点击坐标映射不符"
+grep -q 'ball: click #2 spawn.*at (240,60)' "$WORK/a.log" || fail "第 2 次点击坐标映射不符"
 grep -q 'balls=3' "$WORK/a.log" || fail "球数应为 3"
 
 # ---- ② 确定性：两跑一致 ----

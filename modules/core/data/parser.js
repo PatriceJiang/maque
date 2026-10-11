@@ -1211,7 +1211,7 @@ typedef struct mq_field_desc {
 #define MQ_ROLE_PARTICLE    (1u << 6)
 #define MQ_ROLE_NAV_AGENT   (1u << 7)
 #define MQ_ROLE_UI_CONTROL  (1u << 8)    /* 2D 盒模型/节点属性（visible/opacity/scale/angle/z_index） */
-#define MQ_ROLE_UI_LAYOUT   (1u << 9)    /* 自动布局（H/V/GRID，Cocos Layout 等价） */
+#define MQ_ROLE_UI_LAYOUT   (1u << 9)    /* 自动布局（H/V/GRID，Layout 等价） */
 #define MQ_ROLE_UI_PROGRESS (1u << 10)   /* 进度条（填充子节点宽度/缩放） */
 #define MQ_ROLE_UI_SLIDER   (1u << 11)   /* 滑块（拖拽改值 + changed 事件） */
 #define MQ_ROLE_UI_CHECK    (1u << 12)   /* 复选框（点击切换 + toggled 事件） */

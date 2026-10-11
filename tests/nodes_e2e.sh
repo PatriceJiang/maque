@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cocos 风格 API 端到端（docs/18 对照）：层级 / 节点属性 / 组件 / 事件 / UI 控件 / 物理组件 / Director。
+# 节点/组件 API 端到端（docs/18）：层级 / 节点属性 / 组件 / 事件 / UI 控件 / 物理组件 / Director。
 #   ① 节点层级：setParent、childCount、childAt、getChildByName
 #   ② 节点属性：scale/angle/opacity/zIndex/contentSize（写回组件，非仅缓存）
 #   ③ 组件：addComponent/getComponent(has)/property 读写/componentCount/componentAt
@@ -17,7 +17,7 @@ WORK="$3"
 rm -rf "$WORK"; mkdir -p "$WORK"
 export MAQUE_HEADLESS=1
 
-fail() { echo "cocos_e2e: FAIL $*" >&2; exit 1; }
+fail() { echo "nodes_e2e: FAIL $*" >&2; exit 1; }
 
 # ---- 第一跑：驱动交互（滑块拖拽 + 复选框点击 + Director 暂停）----
 run() {   # $1=out file
@@ -64,8 +64,8 @@ else: print('')" "$1"; }
 VOL=$(pos Volume); MUTE=$(pos Mute)
 [ -n "$VOL" ] && [ -n "$MUTE" ] || fail "Volume/Mute not found"
 # 输入事件用屏幕坐标（y 向下）；节点 y 为世界坐标（y 向上）→ y_screen = H - y_world
-VX=$(echo "$VOL" | cut -d' ' -f1); VY=$(python3 -c "print(f'{$SCREEN_H-$(echo "$VOL" | cut -d' ' -f2):.1f}')")
-MX=$(echo "$MUTE" | cut -d' ' -f1); MY=$(python3 -c "print(f'{$SCREEN_H-$(echo "$MUTE" | cut -d' ' -f2):.1f}')")
+VX=$(echo "$VOL" | cut -d' ' -f1); VY=$(echo "$VOL" | cut -d' ' -f2)   # 注入坐标 = 世界坐标（y 向上）
+MX=$(echo "$MUTE" | cut -d' ' -f1); MY=$(echo "$MUTE" | cut -d' ' -f2)
 
 # 滑块拖拽：按下（左端偏左）→ 移动到（右端偏右）→ 抬起；复选框：点击
 VX_L=$(python3 -c "print(f'{$VX-50:.1f}')")
@@ -92,14 +92,14 @@ cat > "$WORK/req2.txt" <<EOF
 EOF
 MAQUE_CONTROL=- MAQUE_MAX_FRAMES=60 "$PLAYER" "$SCENE" < "$WORK/req2.txt" > "$WORK/out.txt" 2>&1 || true
 
-SUMMARY=$(grep -o 'cocos_summary .*' "$WORK/out.txt" | head -1)
+SUMMARY=$(grep -o 'nodes_summary .*' "$WORK/out.txt" | head -1)
 [ -n "$SUMMARY" ] || fail "script summary not found (scene did not reach frame 40)"
 TRAIL1=$(grep -F '"id":18,"result"' "$WORK/out.txt" | grep -o '"trail":"[0-9]*"' | grep -o '[0-9]*')
 STATUS=$(grep -F '"id":16,"result"' "$WORK/out.txt" | head -1)
 
 python3 - "$SUMMARY" "$STATUS" <<'PY' || exit 1
 import json, sys
-raw = sys.argv[1][len('cocos_summary '):]
+raw = sys.argv[1][len('nodes_summary '):]
 d = json.loads(raw)
 st = json.JSONDecoder().raw_decode(sys.argv[2].split('"result":', 1)[1])[0] if sys.argv[2] else {}
 bad = []
@@ -140,9 +140,9 @@ ck('find(path)：按路径命中节点', d.get('found_path') == d['ids']['volume
 ck('destroy：调用时仍有效（帧末销毁）', d.get('valid_right_after_destroy_call') == 1, d.get('valid_right_after_destroy_call'))
 ck('destroy：帧边界后已销毁', d.get('destroyed') == 1, d.get('destroyed'))
 if bad:
-    print('cocos_e2e: FAIL ' + '; '.join(bad), file=sys.stderr)
+    print('nodes_e2e: FAIL ' + '; '.join(bad), file=sys.stderr)
     sys.exit(1)
-print(f"cocos_e2e: 语义全部通过（children={d.get('panel_children')} layout={lay} "
+print(f"nodes_e2e: 语义全部通过（children={d.get('panel_children')} layout={lay} "
       f"fall={d.get('fall_y_3')}→{d.get('fall_y_40')} slider->{d.get('slider_value'):.2f} "
       f"muted={d.get('muted')} paused_skipped={eng-scr})")
 PY
@@ -152,5 +152,5 @@ MAQUE_CONTROL=- MAQUE_MAX_FRAMES=60 "$PLAYER" "$SCENE" < "$WORK/req2.txt" > "$WO
 TRAIL2=$(grep -F '"id":18,"result"' "$WORK/out2.txt" | grep -o '"trail":"[0-9]*"' | grep -o '[0-9]*')
 [ -n "$TRAIL1" ] && [ "$TRAIL1" = "$TRAIL2" ] || fail "determinism broken: $TRAIL1 != $TRAIL2"
 
-echo "cocos_e2e: ok (trail=$TRAIL1)"
+echo "nodes_e2e: ok (trail=$TRAIL1)"
 exit 0

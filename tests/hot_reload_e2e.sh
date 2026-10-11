@@ -37,9 +37,9 @@ send() { printf '%s\n' "$1" >&9; sleep 0.35; }   # 逐条发送，留出帧循�
 
 send '{"jsonrpc":"2.0","id":1,"method":"Reload.files"}'
 send '{"jsonrpc":"2.0","id":2,"method":"Reload.script","params":{"dry_run":1}}'
-send '{"jsonrpc":"2.0","id":3,"method":"Input.inject","params":{"type":0,"x":60,"y":22,"button":0}}'
+send '{"jsonrpc":"2.0","id":3,"method":"Input.inject","params":{"type":0,"x":60,"y":230,"button":0}}'
 send '{"jsonrpc":"2.0","id":4,"method":"Runtime.step","params":{"frames":1}}'
-send '{"jsonrpc":"2.0","id":5,"method":"Input.inject","params":{"type":1,"x":60,"y":22,"button":0}}'
+send '{"jsonrpc":"2.0","id":5,"method":"Input.inject","params":{"type":1,"x":60,"y":230,"button":0}}'
 send '{"jsonrpc":"2.0","id":6,"method":"Runtime.step","params":{"frames":5}}'
 send '{"jsonrpc":"2.0","id":7,"method":"Scene.entities"}'
 send '{"jsonrpc":"2.0","id":8,"method":"World.trail"}'
@@ -72,9 +72,9 @@ cp "$WORK/game.js" "$WORK/game_noreload.js.bak"
 head -n -2 "$WORK/game.js" > "$WORK/game_orig.js" && mv "$WORK/game_orig.js" "$WORK/game.js"
 TRAIL_B="$WORK/trail_noreload.txt"
 cat > "$WORK/req_base.txt" <<'EOF'
-{"jsonrpc":"2.0","id":3,"method":"Input.inject","params":{"type":0,"x":60,"y":22,"button":0}}
+{"jsonrpc":"2.0","id":3,"method":"Input.inject","params":{"type":0,"x":60,"y":230,"button":0}}
 {"jsonrpc":"2.0","id":4,"method":"Runtime.step","params":{"frames":1}}
-{"jsonrpc":"2.0","id":5,"method":"Input.inject","params":{"type":1,"x":60,"y":22,"button":0}}
+{"jsonrpc":"2.0","id":5,"method":"Input.inject","params":{"type":1,"x":60,"y":230,"button":0}}
 {"jsonrpc":"2.0","id":6,"method":"Runtime.step","params":{"frames":5}}
 {"jsonrpc":"2.0","id":14,"method":"Runtime.step","params":{"frames":5}}
 EOF

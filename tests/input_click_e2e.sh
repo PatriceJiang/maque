@@ -49,9 +49,9 @@ MAQUE_CAPTURE="$WORK/click" MAQUE_CAPTURE_FRAMES=6 MAQUE_CAPTURE_EVERY=20 MAQUE_
 
 grep -q 'ball: click #1 spawn' "$WORK/click.log" || { echo "input_click_e2e: FAIL 第 1 次点击未到达脚本" >&2; exit 1; }
 grep -q 'ball: click #2 spawn' "$WORK/click.log" || { echo "input_click_e2e: FAIL 第 2 次点击未到达脚本" >&2; exit 1; }
-# 窗口坐标 → 世界坐标（800x600 显示 320x240 世界 → 2.5x）
-grep -q 'at (40,60)' "$WORK/click.log" || { echo "input_click_e2e: FAIL 坐标映射(40,60) 不符" >&2; exit 1; }
-grep -q 'at (240,180)' "$WORK/click.log" || { echo "input_click_e2e: FAIL 坐标映射(240,180) 不符" >&2; exit 1; }
+# 窗口坐标 → 世界坐标（800x600 显示 320x240 世界 → 2.5x，且 y 轴翻转：150/2.5=60 → 240-60=180）
+grep -q 'at (40,180)' "$WORK/click.log" || { echo "input_click_e2e: FAIL 坐标映射(40,180) 不符" >&2; exit 1; }
+grep -q 'at (240,60)' "$WORK/click.log" || { echo "input_click_e2e: FAIL 坐标映射(240,60) 不符" >&2; exit 1; }
 grep -q 'balls=3' "$WORK/click.log" || { echo "input_click_e2e: FAIL 球数应为 3" >&2; exit 1; }
 
 AFTER=$(count_bright "$WORK/click_5.ppm")

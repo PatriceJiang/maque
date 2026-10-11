@@ -22,11 +22,11 @@ export MAQUE_STOP_FRAME=60
 run_case() {
   # $1=记录文件（可空） $2=回放文件（可空）
   MAQUE_RECORD="$1" MAQUE_REPLAY="$2" MAQUE_CONTROL=- "$PLAYER" "$SCENE" 2>/dev/null <<'EOF'
-{"jsonrpc":"2.0","id":1,"method":"Input.inject","params":{"type":2,"x":60,"y":22,"pointer_type":0}}
+{"jsonrpc":"2.0","id":1,"method":"Input.inject","params":{"type":2,"x":60,"y":230,"pointer_type":0}}
 {"jsonrpc":"2.0","id":2,"method":"Runtime.step","params":{"frames":2}}
-{"jsonrpc":"2.0","id":3,"method":"Input.inject","params":{"type":0,"x":60,"y":22,"button":0}}
+{"jsonrpc":"2.0","id":3,"method":"Input.inject","params":{"type":0,"x":60,"y":230,"button":0}}
 {"jsonrpc":"2.0","id":4,"method":"Runtime.step","params":{"frames":1}}
-{"jsonrpc":"2.0","id":5,"method":"Input.inject","params":{"type":1,"x":60,"y":22,"button":0}}
+{"jsonrpc":"2.0","id":5,"method":"Input.inject","params":{"type":1,"x":60,"y":230,"button":0}}
 {"jsonrpc":"2.0","id":6,"method":"Runtime.step","params":{"frames":6}}
 {"jsonrpc":"2.0","id":11,"method":"Scene.entities"}
 {"jsonrpc":"2.0","id":12,"method":"World.snapshot"}
@@ -36,9 +36,9 @@ run_case() {
 {"jsonrpc":"2.0","id":17,"method":"World.trail"}
 {"jsonrpc":"2.0","id":21,"method":"Types.describe"}
 {"jsonrpc":"2.0","id":22,"method":"Replay.log"}
-{"jsonrpc":"2.0","id":31,"method":"Input.inject","params":{"type":0,"x":188,"y":22,"button":0}}
+{"jsonrpc":"2.0","id":31,"method":"Input.inject","params":{"type":0,"x":188,"y":230,"button":0}}
 {"jsonrpc":"2.0","id":32,"method":"Runtime.step","params":{"frames":1}}
-{"jsonrpc":"2.0","id":33,"method":"Input.inject","params":{"type":1,"x":188,"y":22,"button":0}}
+{"jsonrpc":"2.0","id":33,"method":"Input.inject","params":{"type":1,"x":188,"y":230,"button":0}}
 {"jsonrpc":"2.0","id":34,"method":"Runtime.step","params":{"frames":2}}
 {"jsonrpc":"2.0","id":35,"method":"Scene.entities"}
 {"jsonrpc":"2.0","id":36,"method":"World.trail"}

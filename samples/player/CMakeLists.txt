@@ -87,12 +87,12 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/ai_workflow_e2e")
 endif()
 
-# Cocos 风格 API 端到端（docs/18）：层级/节点属性/组件/事件/UI 控件/物理组件/Director
+# 节点/组件 API 端到端（docs/18）：层级/节点属性/组件/事件/UI 控件/物理组件/Director
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
-    add_test(NAME cocos_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/cocos_e2e.sh"
+    add_test(NAME nodes_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/nodes_e2e.sh"
              $<TARGET_FILE:maque_player>
-             "${CMAKE_SOURCE_DIR}/scenes/cocos/cocos.scn"
-             "${CMAKE_CURRENT_BINARY_DIR}/cocos_e2e")
+             "${CMAKE_SOURCE_DIR}/scenes/nodes/nodes.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/nodes_e2e")
 endif()
 
 # 文本端到端（docs/17/18）：Label/TextLabel/RichText 排版 + 富文本 run + 像素级验证

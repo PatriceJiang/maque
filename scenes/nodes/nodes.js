@@ -1,4 +1,4 @@
-// cocos.js —— 演示 Cocos Creator 风格的节点/组件/事件 API（docs/18 对照）
+// nodes.js —— 演示节点/组件/事件/动作 API（对照见 docs/18）
 (function () {
   'use strict';
   const S = (globalThis.__maque = globalThis.__maque || { log: [] });
@@ -20,7 +20,7 @@
   };
 
   globalThis.on_start = function () {
-    // ---- 节点层级（Cocos setParent / children）----
+    // ---- 节点层级（父子 / 子节点查询）----
     const canvas = entity_find('Canvas');
     const panel = entity_find('Panel');
     const bar = entity_find('Bar');
@@ -43,7 +43,7 @@
     S.child0_of_panel = node_child_at(panel, 0);
     S.find_child = node_find_child(panel, 'Volume');
 
-    // ---- 节点属性（Cocos position/scale/angle/opacity/zIndex/active）----
+    // ---- 节点属性（position/scale/angle/opacity/zIndex/active）----
     node_set_scale(spawned, 1.5);
     node_set_angle(spawned, 30.0);
     node_set_opacity(spawned, 0.5);
@@ -53,7 +53,7 @@
     S.spawned_props = [node_scale(spawned), node_angle(spawned), node_opacity(spawned),
                        node_z_index(spawned), node_width(spawned), node_height(spawned)];
 
-    // ---- 组件（Cocos addComponent / getComponent / property）----
+    // ---- 组件（addComponent / getComponent / 字段读写）----
     node_add_component(spawned, 'scn.Sprite');
     S.has_sprite = node_has_component(spawned, 'scn.Sprite');
     node_set_number(spawned, 'scn.Sprite', 'radius', 9.0);
@@ -61,7 +61,7 @@
     S.component_count = node_component_count(spawned);
     S.component0 = node_component_at(spawned, 0);
 
-    // ---- 事件订阅（Cocos node.on）----
+    // ---- 事件订阅（node_on / emit 冒泡）----
     node_on(volume, 'changed', 'on_slider_changed');
     node_on(mute, 'toggled', 'on_mute_toggled');
     node_on(spawned, 'tween_complete', 'on_tween_done');
@@ -71,18 +71,18 @@
     S.bar_value = ui_get_value(bar);
     S.mute_checked = ui_get_checked(mute);
 
-    // ---- Cocos 常用 API 续：tween / schedule / find(path) ----
+    // ---- 常用 API 续：tween / schedule / find(path) ----
     S.found_path = node_find_path(canvas, 'Panel/Volume');
     tween_start(spawned, 'scn.Sprite.radius', 20.0, 0.5, 0);      // 0.5 秒内半径 9 → 20（线性）
     schedule_once('on_timer_once', 0.5);                          // 0.5 秒后触发一次
     schedule('on_timer_repeat', 0.25);                            // 每 0.25 秒触发
     S.layout_before = [entity_y(bar), entity_y(volume)];
-    note('cocos.js ready');
+    note('nodes.js ready');
   };
 
   globalThis.update = function () {
     S.frames = (S.frames || 0) + 1;
-    // 进度条随时间推进（Cocos ProgressBar.value）
+    // 进度条随时间推进（ProgressBar.value 由脚本写入）
     ui_set_value(S.ids.bar, Math.min(1.0, 0.25 + S.frames * 0.01));
     // 自省快照供控制面读取
     if (S.frames === 3) {
@@ -93,7 +93,7 @@
       S.valid_before_destroy = node_valid(S.ids.spawned);
       S.schedules_before_unschedule = schedule_count();
       S.tween_radius_end = node_get_number(S.ids.spawned, 'scn.Sprite', 'radius');
-      // node.destroy 只是排队：帧末才真正销毁（Cocos 语义）
+      // node.destroy 只是排队：帧末才真正销毁
       node_destroy(S.ids.spawned);
       S.valid_right_after_destroy_call = node_valid(S.ids.spawned);
       unschedule('on_timer_repeat');
@@ -111,7 +111,7 @@
       S.tween_left = tween_count(S.ids.spawned);
       S.slider_events = S.slider_events || 0;
       S.mute_events = S.mute_events || 0;
-      log('cocos_summary ' + JSON.stringify(S));          // 单行 JSON（e2e 断言）
+      log('nodes_summary ' + JSON.stringify(S));          // 单行 JSON（e2e 断言）
     }
     if (input_key(1) > 0) quit();
   };

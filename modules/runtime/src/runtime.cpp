@@ -56,7 +56,7 @@ struct Entity {
     std::string name;
     int parent = -1;
     float x = 0, y = 0;                                    // 局部坐标（父空间）
-    /* Cocos Node 属性（对照 Cocos Creator 3.x Node）：active/scale/angle/opacity 影响
+    /* 节点属性（active/scale/angle/opacity）：active/scale/angle/opacity 影响
      * 自身与子树；z_index 参与 UI/绘制稳定排序。全部进快照与校验和（docs/10）。 */
     bool  active = true;
     float scale = 1.0F;
@@ -74,13 +74,14 @@ struct SnapshotWriter;
 void write_json_string_pub(std::string& out, const std::string& s);
 /* MAQUE_KEEP_OPEN：忽略脚本 quit()（演示用；见 host::quit） */
 bool keep_open = false;
-/* Cocos 组件语义辅助（定义见 host API 之前）：供输入回调使用。 */
+/* 组件语义辅助（定义见 host API 之前）：供输入回调使用。 */
 std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role);
 std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name, const mq_type_desc** out_desc);
 float read_num(const mq_type_desc* d, const void* base, const char* field, float def);
 bool  write_num(const mq_type_desc* d, void* base, const char* field, double v);
 void  slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px);
-void  window_to_target(const Engine& eng, float* x, float* y);   // 窗口像素 → 世界坐标
+void  window_to_world(const Engine& eng, float* x, float* y);   // 窗口像素 → 世界坐标（含 y 翻转）
+void  device_event_to_world(const Engine& eng, mq_platform_pointer_event* p);  // 位置 + 方向量
 /* node_emit_number / node_width 由生成的 maque_api.h 在 ::host 中声明（api_list）。 */
 void attach_component(Engine& eng, int idx, const char* type_name);
 void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& blob);
@@ -200,15 +201,15 @@ struct Engine {
     /* 每个 NavAgent 的路径缓存（按实体 id；path 为 [x,y] 交错世界坐标） */
     struct AgentPath { std::vector<float> path; uint32_t index = 0; };
     std::unordered_map<int, AgentPath> agent_paths;
-    /* Cocos 风格节点事件表（entity → [(event, handler)]；注册序即派发序，确定性） */
+    /* 节点事件表（entity → [(event, handler)]；注册序即派发序，确定性） */
     struct NodeHandler { std::string event; std::string handler; };
     std::unordered_map<int, std::vector<NodeHandler>> node_events;
     bool director_paused = false;                  // director.pause()：跳过模拟，仅保留采样/渲染
     uint64_t script_frames = 0;                    // 脚本 update 实际执行次数（对照暂停）
-    /* Tween（Cocos tween）：确定性固定步长推进；写入反射字段路径（与动画同一机制） */
+    /* Tween（补间）：确定性固定步长推进；写入反射字段路径（与动画同一机制） */
     struct Tween { int entity; std::string path; float from, to, elapsed, duration; int easing; };
     std::vector<Tween> tweens;
-    /* 定时器（Cocos schedule/scheduleOnce）：帧驱动，确定性 */
+    /* 定时器（定时器）：帧驱动，确定性 */
     struct Scheduled { std::string handler; float interval, remaining; bool repeat; };
     std::vector<Scheduled> schedules;
     std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
@@ -255,10 +256,10 @@ struct Engine {
     void ui_step();                                         // UI 组件语义（layout/progress/slider/check/safearea/scroll）
     void extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d,
                       std::vector<mq_renderer_item>& out, float inherit_alpha);
-    void step_tweens(float dt);                             // Tween 推进（Cocos tween）
-    void step_schedules(float dt);                          // 定时器推进（Cocos schedule）
-    void flush_pending_destroy();                           // 延迟销毁（Cocos node.destroy）
-    void physics_components_setup();                        // 装配期：按 role 建物理体（Cocos RigidBody2D/Collider2D）
+    void step_tweens(float dt);                             // Tween 推进（补间）
+    void step_schedules(float dt);                          // 定时器推进（定时器）
+    void flush_pending_destroy();                           // 延迟销毁（帧末生效）
+    void physics_components_setup();                        // 装配期：按 role 建物理体（刚体/碰撞体组件）
     void physics_components_step(float dt);                 // 帧内：步进并回写变换
     void anim_step(float dt);                               // 关键帧采样 → 写回字段（docs/15 §2）
     void particles_step(float dt);                          // 确定性粒子推进（docs/15 §4）
@@ -593,7 +594,7 @@ void Engine::step_frame() {
         if (window) mq_platform_poll(platform, &iframe);
         /* 设备事件：窗口像素 → 世界坐标（只在此处转换一次；引擎内部一律世界坐标） */
         for (uint32_t i = 0; i < iframe.pointer_count; ++i)
-            window_to_target(*this, &iframe.pointers[i].x, &iframe.pointers[i].y);
+            device_event_to_world(*this, &iframe.pointers[i]);
         if (std::getenv("MAQUE_TRACE_INPUT") && (iframe.pointer_count || iframe.key_count))
             std::print("runtime: polled pointers={} keys={} (frame {})\n",
                        iframe.pointer_count, iframe.key_count, frame);
@@ -623,11 +624,11 @@ void Engine::step_frame() {
     const float dt = 1.0F / 60.0F;
     if (scene && director_paused) {
         /* director.pause()：跳过模拟（脚本/动画/粒子/导航/物理/UI 布局），仅保留采样与渲染
-         * （Cocos director.pause 语义；输入仍被采样，便于 resume 后继续）。 */
+         * （暂停语义；输入仍被采样，便于 resume 后继续）。 */
     } else if (scene) {
         ++script_frames;
-        step_tweens(dt);                             // Tween（Cocos tween）
-        step_schedules(dt);                          // 定时器（Cocos schedule/scheduleOnce）
+        step_tweens(dt);                             // Tween（补间）
+        step_schedules(dt);                          // 定时器（定时器）
         if (mq_event_dispatch(vm, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr) != 0) {
             char ebuf[512] = { 0 };
             mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
@@ -638,7 +639,7 @@ void Engine::step_frame() {
         anim_step(dt);                                   // 动画采样写回（docs/15 §2）
         particles_step(dt);                              // 粒子推进（docs/15 §4）
         nav_step();                                      // 导航代理推进（A* + 追踪）
-        physics_components_step(dt);                     // 组件驱动物理（Cocos RigidBody2D）
+        physics_components_step(dt);                     // 组件驱动物理（RigidBody2D）
         flush_pending_destroy();                         // node.destroy()：帧边界统一销毁
         ui_step();                                       // UI 组件语义（layout/progress/slider/check/safearea/scroll）
         scene->compute_world(*this);
@@ -1606,7 +1607,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
     if (!e) return;
     /* 有效 z = 自身 z + 祖先 z（层级叠加，稳定） */
     int zsum = 0;
-    /* Cocos 风格：ui.Control 提供盒模型（anchor/offset/size），交互性由 role 决定 */
+    /* ui.Control 提供盒模型（anchor/offset/size），交互性由 role 决定 */
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
         if (!d) continue;
@@ -1629,8 +1630,8 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
                     interactive = true;
             }
             if (interactive && w > 0 && h > 0) {
-                /* 节点位置 = 控件中心（与精灵居中绘制一致）；屏幕 y 向下 = H - 世界 y */
-                const float cx = e->x, cy = (float)eng.H - e->y;
+                /* 节点位置 = 控件中心（与精灵居中绘制一致）；输入已是世界坐标 → 直接比较 */
+                const float cx = e->x, cy = e->y;
                 const float bx = cx - w * 0.5F, by = cy - h * 0.5F;
                 if (px >= bx && px <= bx + w && py >= by && py <= by + h) {
                     if (zsum > best.z || (zsum == best.z && depth > best.depth)) {
@@ -1654,10 +1655,9 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
         if (const mq_field_desc* fz = mq_reflect_field(d, "z")) z = *(const int32_t*)(blob.data() + fz->offset);
         zsum += z;
         if (!(d->role & MQ_ROLE_UI_BUTTON)) continue;        // 仅可交互控件参与命中
-        /* 坐标：世界 y 向上，屏幕 y 向下（docs/19 §4）→ 控件矩形 = [sy-h, sy] × [sx, sx+w] */
-        const float sx = e->x + x, sy = (float)eng.H - (e->y + y);
+        /* 本地 (x,y) = 世界坐标下的矩形左下角 → 矩形 = [x, x+w] × [y, y+h]（y 向上） */
         const float bw = w > 0 ? w : 64, bh = h > 0 ? h : 24;
-        const float bx = sx, by = sy - bh;
+        const float bx = e->x + x, by = e->y + y;
         if (px >= bx && px <= bx + bw && py >= by && py <= by + bh) {
             const int score = zsum;
             /* 稳定：z 大者优先；同 z 取树深大者（后绘制者在上） */
@@ -1688,15 +1688,12 @@ int ui_hit_entity(Engine& eng, float px, float py, mq_input_target* out) {
 }
 
 int runtime_hit_test(void* user, const mq_input_event* ev, mq_input_target* out) {
-    /* 输入坐标从窗口像素映射到世界/目标坐标（窗口可缩放显示世界） */
-    mq_input_event mapped = *ev;
-    window_to_target(*(Engine*)user, &mapped.x, &mapped.y);
-    ev = &mapped;
+    /* 输入事件坐标在进入引擎前已统一为**世界坐标**（设备事件在平台边界映射、
+     * 注入/模拟事件按世界坐标给出）→ 这里直接按世界矩形命中（不再二次映射）。 */
     auto* eng = (Engine*)user;
     out->entity = -1; out->handle = (uint32_t)-1;
     if (!eng->scene || !eng->scene->count()) return 0;
-    const float px = ev->x, py = ev->y;   // 窗口与帧缓冲同尺度（docs/19 §4）
-    return ui_hit_entity(*eng, px, py, out) >= 0 ? 1 : 0;
+    return ui_hit_entity(*eng, ev->x, ev->y, out) >= 0 ? 1 : 0;
 }
 
 int runtime_parent(void* user, int entity) {
@@ -1712,16 +1709,26 @@ void call_script_event(Engine& eng, const mq_input_event* ev) {
     mq_event_dispatch(eng.vm, kind, (double)ev->target, (double)ev->x, (double)ev->y, text);
 }
 
-/* 窗口像素 → 目标（世界）坐标：等比缩放 + 居中留边（SDL_RenderSetLogicalSize 同规则） */
-void window_to_target(const Engine& eng, float* x, float* y) {
+/* 窗口像素 → **世界坐标**：等比缩放 + 居中留边（SDL_RenderSetLogicalSize 同规则）+ **y 轴翻转**。
+ * 窗口/SDL 事件是 y 向下；引擎世界与脚本是 y 向上（docs/12 §坐标、docs/19 §4）——
+ * 漏掉翻转会导致点击位置上下镜像（曾经的真实缺陷）。 */
+void window_to_world(const Engine& eng, float* x, float* y) {
     if (eng.win_w <= 0 || eng.win_h <= 0) return;
     /* 呈现按目标尺寸（TW×H）等比缩放；多视图时 x 落在 [0,TW)，视图索引 = x / W */
     const float sc = std::min((float)eng.win_w / (float)eng.TW, (float)eng.win_h / (float)eng.H);
     if (sc <= 0.0F) return;
     const float off_x = ((float)eng.win_w - (float)eng.TW * sc) * 0.5F;
     const float off_y = ((float)eng.win_h - (float)eng.H * sc) * 0.5F;
+    const float ty = (*y - off_y) / sc;             // 目标空间 y（向下）
     *x = (*x - off_x) / sc;
-    *y = (*y - off_y) / sc;
+    *y = (float)eng.H - ty;                         // → 世界 y（向上）
+}
+
+/* 设备事件：位置映射 + 方向量翻转（指针位移 dy 与滚轮 scroll_y 同属 y 轴方向） */
+void device_event_to_world(const Engine& eng, mq_platform_pointer_event* p) {
+    window_to_world(eng, &p->x, &p->y);
+    p->dy = -p->dy;
+    p->scroll_y = -p->scroll_y;
 }
 
 int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target* target) {
@@ -1753,7 +1760,7 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
                 if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
                     *(bool*)(blob.data() + fp->offset) = false;
             }
-        /* Slider：按下进入拖拽，拖动中按水平比例改值（Cocos Slider 语义） */
+        /* Slider：按下进入拖拽，拖动中按水平比例改值（滑块语义） */
         if (e) {
             for (auto& [tid, blob] : e->comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
@@ -1769,7 +1776,7 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
                         slider_apply_pointer(*eng, target->entity, d, blob.data(), ev->x);
                 }
             }
-            /* CheckBox：点击切换 + toggled 事件（Cocos Toggle 语义） */
+            /* CheckBox：点击切换 + toggled 事件（开关语义） */
             if (ev->type == MQ_INPUT_CLICK) {
                 for (auto& [tid, blob] : e->comps) {
                     const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
@@ -1820,7 +1827,7 @@ std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role) {
     return nullptr;
 }
 
-/* 直接按类型名找组件（Cocos getComponent("Type") 语义；支持短名与 fq 名）。 */
+/* 直接按类型名找组件（getComponent("Type") 语义；支持短名与 fq 名）。 */
 std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
                                    const mq_type_desc** out_desc) {
     Entity* e = eng.scene->at(id);
@@ -1893,7 +1900,7 @@ bool write_num(const mq_type_desc* d, void* base, const char* field, double v) {
     }
 }
 
-/* Slider：把指针 x 映射为值（Cocos Slider 的 progress 语义）。 */
+/* Slider：把指针 x 映射为值（Slider 的 progress 语义）。 */
 void slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px) {
     Entity* e = eng.scene->at(id);
     if (!e) return;
@@ -1958,7 +1965,7 @@ int Engine::glyph_texture(float size) {
 }
 
 /* 文本提取（docs/13 §8：只读）：排版后逐字形提交 quad。
- * 支持 scn.Label（扁平字段）与 ui.TextLabel / ui.RichText（Cocos 风格字段）。 */
+ * 支持 scn.Label（扁平字段）与 ui.TextLabel / ui.RichText（字段）。 */
 void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d,
                           std::vector<mq_renderer_item>& out, float inherit_alpha) {
     std::string text, font_path_comp;
@@ -2120,7 +2127,7 @@ void Engine::sim_setup() {
     }
     sim_active = true;
     std::print("runtime: sim '{}' loaded: {} event(s), last frame {}, loop={}\n",
-               sim_path, mq_sim_count(sim), mq_sim_last_frame(sim), 0);
+               sim_path, mq_sim_count(sim), mq_sim_last_frame(sim), mq_sim_loop(sim));
 }
 
 void Engine::sim_feed(uint64_t frame) {
@@ -2154,8 +2161,11 @@ void Engine::sim_feed(uint64_t frame) {
                          : se.kind == MQ_SIM_KEY_DOWN     ? MQ_INPUT_KEY_DOWN
                          : MQ_INPUT_KEY_UP;
             }
-            /* 坐标空间：window（窗口像素）→ 世界坐标；world 直接用 */
-            if (se.space == MQ_SIM_SPACE_WINDOW) window_to_target(*this, &ev.x, &ev.y);
+            /* 坐标空间：window（窗口像素）→ 世界坐标（含 y 翻转与方向量翻转）；world 直接用 */
+            if (se.space == MQ_SIM_SPACE_WINDOW) {
+                window_to_world(*this, &ev.x, &ev.y);
+                ev.dy = -ev.dy; ev.scroll_y = -ev.scroll_y;
+            }
             if (trace_hits)
                 std::print("[sim] frame={} kind={} -> input type={} pos=({:.1f},{:.1f})\n",
                            frame, se.kind, (int)ev.type, ev.x, ev.y);
@@ -2166,10 +2176,10 @@ void Engine::sim_feed(uint64_t frame) {
 }
 
 /* UI 组件语义（role 驱动；引擎不认具体类型名，docs/17）：
- *   · ui_layout：H/V/GRID 自动布局（Cocos Layout）
- *   · ui_progress：按 value 调整填充子节点宽度（Cocos ProgressBar）
- *   · ui_safe_area：按内缩重排目标节点（Cocos SafeArea/Widget）
- *   · ui_scroll：内容偏移（Cocos ScrollView 的 scrollOffset） */
+ *   · ui_layout：H/V/GRID 自动布局（Layout）
+ *   · ui_progress：按 value 调整填充子节点宽度（ProgressBar）
+ *   · ui_safe_area：按内缩重排目标节点（SafeArea/Widget）
+ *   · ui_scroll：内容偏移（ScrollView 的 scrollOffset） */
 void Engine::ui_step() {
     if (!scene) return;
     std::vector<int> ids;
@@ -2205,7 +2215,7 @@ void Engine::ui_step() {
                         const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
                         if (const mq_field_desc* f = mq_reflect_field(cd, "offset_max")) {
                             const float* v = (const float*)(ctrl->data() + f->offset);
-                            kw = v[0]; kh = v[1];        // Vec2：offset_max 即内容尺寸（Cocos contentSize）
+                            kw = v[0]; kh = v[1];        // Vec2：offset_max 即内容尺寸（contentSize）
                         }
                     }
                     /* mode: 0=Free 1=Horizontal 2=Vertical 3=Grid */
@@ -2293,7 +2303,7 @@ void Engine::ui_step() {
 }
 
 
-/* Tween（Cocos tween().to()）：在固定步长内把字段从 from 插值到 to；
+/* Tween（tween().to()）：在固定步长内把字段从 from 插值到 to；
  * 缓动 0=linear 1=ease_in 2=ease_out 3=ease_in_out；完成派发 "tween_complete"。 */
 void Engine::step_tweens(float dt) {
     if (tweens.empty()) return;
@@ -2324,7 +2334,7 @@ void Engine::step_tweens(float dt) {
     for (auto it = done.rbegin(); it != done.rend(); ++it) tweens.erase(tweens.begin() + (long)*it);
 }
 
-/* 定时器（Cocos schedule/scheduleOnce）：按固定步长累计，到点调用脚本函数（按名字）。 */
+/* 定时器（定时器）：按固定步长累计，到点调用脚本函数（按名字）。 */
 void Engine::step_schedules(float dt) {
     if (schedules.empty() || !vm) return;
     std::vector<size_t> drop;
@@ -2340,7 +2350,7 @@ void Engine::step_schedules(float dt) {
     for (auto it = drop.rbegin(); it != drop.rend(); ++it) schedules.erase(schedules.begin() + (long)*it);
 }
 
-/* node.destroy()：延迟到帧边界统一销毁（Cocos：destroy 在当前帧末生效）。 */
+/* node.destroy()：延迟到帧边界统一销毁（销毁在当前帧末生效）。 */
 void Engine::flush_pending_destroy() {
     if (pending_destroy.empty()) return;
     if (std::getenv("MAQUE_TRACE_UI")) std::print("[ui] destroy {} node(s)\n", pending_destroy.size());
@@ -2350,7 +2360,7 @@ void Engine::flush_pending_destroy() {
     for (int id : ids) if (scene->at(id)) scene->remove(id);
 }
 
-/* 物理组件（Cocos RigidBody2D/Collider2D 等价）：装配期建体，帧内步进并回写变换。
+/* 物理组件（RigidBody2D/Collider2D 等价）：装配期建体，帧内步进并回写变换。
  * 只在场景里存在 physics_body role 时启用（不影响脚本显式驱动 physics_step 的场景）。 */
 void Engine::physics_components_setup() {
     if (!scene || !physics) return;
@@ -2569,7 +2579,7 @@ void set_label(void* ctx, float id, const char* text) {
 
 
 /* ============================================================================
- * Cocos 风格节点/组件 API（对照 Cocos Creator 3.x：Node / Component / Director）
+ * 节点/组件 API（对照 参考实现：Node / Component / Director）
  * 全部经反射按 role 处理，不硬编码组件类型名（docs/06/17/18）。
  * ==========================================================================*/
 
@@ -2577,7 +2587,7 @@ void set_label(void* ctx, float id, const char* text) {
 
 
 /* ---------------- 宿主 API 实现（声明来自生成的 maque_api.h） ---------------- */
-/* ---- Cocos 语义辅助（全局：host 函数与引擎内部共用）---- */
+/* ---- 语义辅助（全局：host 函数与引擎内部共用）---- */
 
 /* ---- 层级 ---- */
 float node_set_parent(void* ctx, float id, float parent) {
@@ -2675,12 +2685,12 @@ float node_z_index(void* ctx, float id) {
     return e ? (float)e->z_index : 0.0F;
 }
 
-/* 位置（Cocos node.position / setPosition）：写回 Transform2D 组件（非仅缓存字段）。 */
+/* 位置（node.position / setPosition）：写回 Transform2D 组件（非仅缓存字段）。 */
 void node_set_position(void* ctx, float id, float x, float y) { entity_set_pos(ctx, id, x, y); }
 float node_position_x(void* ctx, float id) { return entity_x(ctx, id); }
 float node_position_y(void* ctx, float id) { return entity_y(ctx, id); }
 
-/* 内容尺寸/锚点：由 ui.Control 承载（Cocos UITransform）。 */
+/* 内容尺寸/锚点：由 ui.Control 承载（UITransform）。 */
 float node_width(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
     auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
@@ -2706,7 +2716,7 @@ float node_height(void* ctx, float id) {
 void node_set_content_size(void* ctx, float id, float w, float h) {
     auto* eng = (Engine*)ctx;
     if (!comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL))
-        attach_component(*eng, (int)id, "ui.Control");        // Cocos：UITransform 恒在（按需补挂）
+        attach_component(*eng, (int)id, "ui.Control");        // 控件盒模型恒在（按需补挂）
     auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
     const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
     if (!blob || !d) return;
@@ -2849,7 +2859,7 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
     return 1.0F;
 }
 
-/* ---- 事件（Cocos node.on/off/emit；emit 沿父链冒泡）---- */
+/* ---- 事件（node.on/off/emit；emit 沿父链冒泡）---- */
 float node_on(void* ctx, float id, const char* event, const char* handler) {
     auto* eng = (Engine*)ctx;
     if (!eng->scene->at((int)id) || !event || !handler) return 0.0F;
@@ -3080,8 +3090,8 @@ float node_destroy(void* ctx, float id) {
     return 1.0F;
 }
 
-/* Cocos isValid(node)：实体仍存在且未处于待销毁队列。 */
-/* Cocos isValid(node)：节点在**帧末真正销毁前**仍然有效（destroy 只是排队）。 */
+/* isValid(node)：实体仍存在且未处于待销毁队列。 */
+/* isValid(node)：节点在**帧末真正销毁前**仍然有效（destroy 只是排队）。 */
 float node_valid(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
     return eng->scene->at((int)id) ? 1.0F : 0.0F;
@@ -3934,7 +3944,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
           text.assign((char*)d, n); mq_vfs_free(d); } }
     if (text.empty()) return false;
 
-    /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价 Cocos 的 onDestroy）---- */
+    /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价  onDestroy）---- */
     if (vm) { mq_script_vm_destroy(vm); vm = nullptr; }
     agent_paths.clear();
     node_events.clear();

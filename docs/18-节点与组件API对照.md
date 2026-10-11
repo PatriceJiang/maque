@@ -1,23 +1,25 @@
-# 18 · 与 Cocos Creator 节点/组件对照
+# 18 · 节点/组件 API 完备性对照
 
-> 目的：以 **Cocos Creator 3.x** 为基准做**完备性体检**，找出 maque 缺失的节点/组件与资产。
-> 图例：✅ 已有 · 🔶 等价/部分 · ❌ 缺失 · ➕ maque 独有（Cocos 无）。
+> **本文是"参考对照"文档，不是设计来源**：参考基准 与 Our Machinery（docs/03）
+> 仅作为**参考基准**用于完备性体检；maque 不依赖、不模仿其实现，代码与命名也不使用其专有名称。
+> 目的：以主流 2D 引擎的公开 API 面为基准做**完备性体检**，找出 maque 缺失的节点/组件与资产。
+> 图例：✅ 已有 · 🔶 等价/部分 · ❌ 缺失 · ➕ maque 独有（参考基准无）。
 >
 > **实现现状（2026-10-11 更新）**：§1 的表格是**设计期**的组件清单（类型已全部在 schema 中声明）；
-> 引擎侧**语义实现**本轮大幅补齐，按 Cocos API 面新增 50 个接口（全部 DSL 声明 → 生成绑定）：
+> 引擎侧**语义实现**本轮大幅补齐，按参考基准的 API 面新增 50 个接口（全部 DSL 声明 → 生成绑定）：
 >
 > | 类别 | 已实现语义（引擎按 role 通用处理） | 验证 |
 > |------|-----------------------------------|------|
 > | Node | 层级（setParent/parent/childCount/childAt/getChildByName/find(path)）、
-> 位置/缩放/角度/透明度/zIndex/contentSize/anchor/active、destroy（帧末生效）/isValid | `cocos_e2e` |
-> | Component | has/add/remove/count/at、getComponentInChildren、反射字段读写（number/bool/string） | `cocos_e2e` |
-> | 事件 | node.on/off/emit/emit(number)，沿父链冒泡 | `cocos_e2e` |
-> | UI 布局 | ui.Container（HBox/VBox/Grid）自动布局；ui.Control 盒模型参与命中测试 | `cocos_e2e` 布局断言 |
+> 位置/缩放/角度/透明度/zIndex/contentSize/anchor/active、destroy（帧末生效）/isValid | `nodes_e2e` |
+> | Component | has/add/remove/count/at、getComponentInChildren、反射字段读写（number/bool/string） | `nodes_e2e` |
+> | 事件 | node.on/off/emit/emit(number)，沿父链冒泡 | `nodes_e2e` |
+> | UI 布局 | ui.Container（HBox/VBox/Grid）自动布局；ui.Control 盒模型参与命中测试 | `nodes_e2e` 布局断言 |
 > | UI 控件 | Slider（拖拽改值 + changed）、CheckBox（点击切换 + toggled）、ProgressBar（值→填充）、
-> UIOpacity（子树透明度）、SafeArea（内缩）、ScrollView（内容偏移） | `cocos_e2e` |
-> | 物理 | physics.RigidBody + physics.Collider → 装配期建体、帧内步进并回写 Transform2D | `cocos_e2e` 下落断言 |
-> | Director | pause/resume/paused/frame/loadScene（帧边界切场景）；控制面 Director 域 | `cocos_e2e` 暂停断言 |
-> | 动作/定时 | Tween（linear/ease_in/ease_out/ease_in_out + tween_complete）、schedule/scheduleOnce/unschedule | `cocos_e2e` |
+> UIOpacity（子树透明度）、SafeArea（内缩）、ScrollView（内容偏移） | `nodes_e2e` |
+> | 物理 | physics.RigidBody + physics.Collider → 装配期建体、帧内步进并回写 Transform2D | `nodes_e2e` 下落断言 |
+> | Director | pause/resume/paused/frame/loadScene（帧边界切场景）；控制面 Director 域 | `nodes_e2e` 暂停断言 |
+> | 动作/定时 | Tween（linear/ease_in/ease_out/ease_in_out + tween_complete）、schedule/scheduleOnce/unschedule | `nodes_e2e` |
 > | 文本 | **真实字体渲染**：FreeType 栅格化 → 图集 → 字形 quad（UV 子矩形）；`scn.Label` / `ui.TextLabel` / `render.RichText` 统一排版（换行 None/Word/Char、对齐 Begin/Center/End、行距、实测 text_w/h/line_count）；**富文本标记** `<color=#RRGGBB>` `<size=NN>` `<b>` `<br/>`（`parse_tags=false` 时当纯文本）；内置 5x7 位图字体作为无字体环境回退 | `text_e2e`（含像素断言） |
 >
 > **仍未实现**（诚实清单）：3D 相关（MeshRenderer/Light/Billboard/ReflectionProbe/Terrain/Skybox）、
@@ -27,7 +29,7 @@
 ## 1. 对照总表
 
 ### 结构与 UI 基础
-| Cocos Creator | maque | 说明 |
+| 参考基准 | maque | 说明 |
 |---|---|---|
 | Node | 节点（反射记录） | 🔶 maque 节点=反射记录+组件 |
 | UITransform | **Control** | 🔶 等价（2D 盒模型） |
@@ -39,7 +41,7 @@
 | BlockInputEvents | — | ❌ 缺失 |
 
 ### 2D 渲染 / 文本
-| Cocos Creator | maque | 说明 |
+| 参考基准 | maque | 说明 |
 |---|---|---|
 | Sprite | **Sprite** | ✅ |
 | Label | **TextLabel** | ✅ |
@@ -54,7 +56,7 @@
 | LabelOutline / LabelShadow | — | ❌ 缺失（可由 effect 实现） |
 
 ### UI 交互控件
-| Cocos Creator | maque | 说明 |
+| 参考基准 | maque | 说明 |
 |---|---|---|
 | Button | **Button** | ✅ |
 | Toggle | **CheckBox** | ✅ |
@@ -69,7 +71,7 @@
 | WebView | — | ❌ 缺失 |
 
 ### 3D 渲染 / 光照
-| Cocos Creator | maque | 说明 |
+| 参考基准 | maque | 说明 |
 |---|---|---|
 | MeshRenderer | **MeshRenderer** | ✅ |
 | SkinnedMeshRenderer | MeshRenderer + **Skeleton** | 🔶 等价（拆为组合） |
@@ -82,7 +84,7 @@
 | Terrain | — | ❌ 缺失 |
 
 ### 物理
-| Cocos Creator | maque | 说明 |
+| 参考基准 | maque | 说明 |
 |---|---|---|
 | RigidBody / RigidBody2D | **RigidBody** | ✅（维度 enum） |
 | 各类 Collider | **Collider**（shape enum） | ✅ |
@@ -90,7 +92,7 @@
 | ConstantForce | — | ❌ 缺失 |
 
 ### 动画 / 音频
-| Cocos Creator | maque | 说明 |
+| 参考基准 | maque | 说明 |
 |---|---|---|
 | Animation | **AnimationPlayer** | ✅ |
 | SkeletalAnimation | **Animator + Skeleton** | ✅ |
@@ -99,7 +101,7 @@
 | —（无导航） | **NavAgent / NavMesh** | ➕ |
 
 ### 资产（被引用但未设计）
-| Cocos Creator 资产 | maque | 说明 |
+| 参考基准 资产 | maque | 说明 |
 |---|---|---|
 | Material / MaterialInstance | **已补**（`assets/01-material.md`） | ✅ 本轮 |
 | Effect / Shader | Effect 资产 | ✅ 本轮（`assets/01`） |

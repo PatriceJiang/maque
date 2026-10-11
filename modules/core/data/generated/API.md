@@ -759,5 +759,6 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_sim_finished` | int | sim: mq_sim* |
 | `mq_sim_reset` | void | sim: mq_sim* |
 | `mq_sim_set_loop` | void | sim: mq_sim*, loop: int |
+| `mq_sim_loop` | int | sim: mq_sim* |
 | `mq_sim_loaded` | int | sim: mq_sim* |
 | `mq_sim_last_frame` | uint64_t | sim: mq_sim* |

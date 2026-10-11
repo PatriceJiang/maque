@@ -23038,6 +23038,17 @@
           ]
         },
         {
+          "name": "mq_sim_loop",
+          "returns": "int",
+          "args": [
+            {
+              "name": "sim",
+              "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_sim_loaded",
           "returns": "int",
           "args": [

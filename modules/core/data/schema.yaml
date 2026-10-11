@@ -2427,7 +2427,7 @@
     - { fn: nav_path_len,  ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: nav_tick,      ctx: true }
 
-    # ---- Cocos 风格节点/组件 API（对照 Cocos Creator 3.x 的 Node / Component / Director）----
+    # ---- 节点/组件 API（节点 / 组件 / Director 三件套）----
     # 层级（setParent / parent / children / getChildByName）
     - { fn: node_set_parent,     ctx: true, args: [ { name: id, type: float }, { name: parent, type: float } ], returns: float }
     - { fn: node_parent,         ctx: true, args: [ { name: id, type: float } ], returns: float }
@@ -2460,14 +2460,14 @@
     - { fn: node_component_count, ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: node_component_at,   ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
     - { fn: node_child_with_component, ctx: true, args: [ { name: id, type: float }, { name: type, type: string } ], returns: float }
-    # 组件字段（反射读写：对标 Cocos 的 property 读写）
+    # 组件字段（反射读写：字段反射读写）
     - { fn: node_get_number,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
     - { fn: node_set_number,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
     - { fn: node_get_bool,       ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
     - { fn: node_set_bool,       ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
     - { fn: node_get_string,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: string }
     - { fn: node_set_string,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: string } ], returns: float }
-    # 事件（node.on / off / emit；emit 沿父链冒泡，对标 Cocos 的触摸冒泡）
+    # 事件（node.on / off / emit；emit 沿父链冒泡，沿父链冒泡）
     - { fn: node_on,             ctx: true, args: [ { name: id, type: float }, { name: event, type: string }, { name: handler, type: string } ], returns: float }
     - { fn: node_off,            ctx: true, args: [ { name: id, type: float }, { name: event, type: string } ], returns: float }
     - { fn: node_emit,           ctx: true, args: [ { name: id, type: float }, { name: event, type: string } ], returns: float }
@@ -2490,7 +2490,7 @@
     - { fn: director_frame,      ctx: true, returns: float }
     - { fn: director_load_scene, ctx: true, args: [ { name: path, type: string } ], returns: float }
 
-    # ---- Cocos 常用 API 续：Tween / schedule / destroy / find(path) ----
+    # ---- 常用 API 续：Tween / schedule / destroy / find(path) ----
     # Tween（确定性：固定步长推进，完成时派发 tween_complete）
     - { fn: tween_start,   ctx: true, args: [ { name: id, type: float }, { name: field, type: string },
                                              { name: to, type: float }, { name: duration, type: float },
@@ -2503,7 +2503,7 @@
     - { fn: schedule,      ctx: true, args: [ { name: handler, type: string }, { name: interval, type: float } ], returns: float }
     - { fn: unschedule,    ctx: true, args: [ { name: handler, type: string } ], returns: float }
     - { fn: schedule_count, ctx: true, returns: float }
-    # 节点销毁（延迟到帧边界，等价 Cocos node.destroy()）+ 路径查找 find("Canvas/Panel")
+    # 节点销毁（延迟到帧边界，帧末生效）+ 路径查找 find("Canvas/Panel")
     - { fn: node_destroy,  ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: node_valid,    ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: node_find_path, ctx: true, args: [ { name: root, type: float }, { name: path, type: string } ], returns: float }
@@ -3155,5 +3155,6 @@
       - { fn: mq_sim_finished, returns: int, args: [ { name: sim, type: "mq_sim*" } ] }
       - { fn: mq_sim_reset,    returns: void, args: [ { name: sim, type: "mq_sim*" } ] }
       - { fn: mq_sim_set_loop, returns: void, args: [ { name: sim, type: "mq_sim*" }, { name: loop, type: "int" } ] }
+      - { fn: mq_sim_loop,     returns: int, args: [ { name: sim, type: "mq_sim*" } ], doc: "是否循环回放" }
       - { fn: mq_sim_loaded,   returns: int, args: [ { name: sim, type: "mq_sim*" } ] }
       - { fn: mq_sim_last_frame, returns: "uint64_t", args: [ { name: sim, type: "mq_sim*" } ], doc: "最后事件帧号（场景时长参考）" }

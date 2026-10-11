@@ -90,9 +90,9 @@ cd modules/core/data && node parser.js --check
 - **渲染**：`maque::gfx`（wgpu-native）。注意：该构建的 `wgpuInstanceWaitAny` **未实现**，异步统一用 `wgpuInstanceProcessEvents` 轮询。
 - **实体/组件**：runtime 内实体表（`maque::handle`）+ 组件；**渲染从组件提取**（只读）。
 
-## 脚本可见 API（Cocos 风格，docs/18）
+## 脚本可见 API（docs/18）
 
-`api_list` 中的 `host` 命名空间即脚本全局函数（`global: true` → 无前缀）。本轮按 Cocos Creator 对齐补齐：
+`api_list` 中的 `host` 命名空间即脚本全局函数（`global: true` → 无前缀）。本轮按参考实现的惯例补齐（对照见 docs/18）：
 
 - **Node**：`node_set_parent/parent/child_count/child_at/find_child/find_path/set_name`、
   `node_set_position/position_x/position_y`、`node_set_scale/scale`、`node_set_angle/angle`、
