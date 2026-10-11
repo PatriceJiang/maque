@@ -8,6 +8,13 @@ project(Maque CXX C ASM)
 
 option(MAQUE_BUILD_TESTS "Build maque unit tests" ON)
 
+# WASM/浏览器目标（P3，docs/plan-wasm.md）：由 cmake/toolchain-emscripten.cmake 置位。
+# WASM 下渲染插件（wgpu-native .so）与原生网络后端不可用，由宿主 JS 侧承担（docs/05 §3）。
+if(EMSCRIPTEN)
+    message(STATUS "maque: WASM/浏览器目标（主循环归宿主；见 docs/plan-wasm.md）")
+    set(MAQUE_WASM ON)
+endif()
+
 enable_testing()
 
 # script 需先于 data（data 生成绑定 TU 依赖 script）

@@ -22,6 +22,9 @@
 - **资产管线**：导入 / 依赖图 / 拓扑序 / 校验 / 烘焙 / 打包 / dump JSON（内容寻址 ID）。
 - **控制平面**：JSON-RPC domain.method + **MCP 包装**（tools/list、tools/call）→ AI/CI 可加载、
   逐帧驱动、注入输入、截帧、取校验和、热重载。
+- **嵌入宿主接口**（`runtime/mq_host.h`）：主循环归宿主（浏览器 rAF / RTOS 任务 / 自研循环），
+  多实例并存且逐帧确定；WASM 目标见 `docs/plan-wasm.md`。
+- **编辑器/AI 编辑面**：`Scene.get/set(dry_run)/spawn/destroy/save`（反射驱动，落盘可再次加载）。
 
 ## 快速开始
 
@@ -88,7 +91,8 @@ M0–M5、M7、M8 与 P1 已完成；M4/M6/M9 见下（细节 `docs/milestones/R
 - **M6** 🟡 确定性 2D 物理求解器（`modules/world/physics`，C ABI vtable + 世代句柄）；
   本机无 Rust 工具链，Rapier 后端按 ADR-0028 走"退化自研求解器"路径，接口不变。
 - **M9** 🟡 帧边界热重载（脚本/场景，`Reload.*` + `dry_run`）；编辑器壳待做。
-- **P3** ⬜ WASM 目标需 Emscripten 工具链。
+- **P3** 🟡 可移植化已完成（宿主主循环接口 + `samples/host` + 多实例验证 + Emscripten 工具链
+  与接线文档 `docs/plan-wasm.md`）；本机无 Emscripten，未产出 `.wasm` 二进制。
 
-回归：`ctest --test-dir build`（23 项，含 5 个端到端：`player_run`、`determinism`、
-`control_plane`、`ui_e2e`、`hot_reload_e2e`）。
+回归：`ctest --test-dir build`（27 项，含端到端：`player_run`、`determinism`、`control_plane`、
+`ui_e2e`、`hot_reload_e2e`、`anim_e2e`、`editor_e2e`、`host_tick`、`host_multi_instance`）。
