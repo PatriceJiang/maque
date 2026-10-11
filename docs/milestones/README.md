@@ -34,5 +34,8 @@
 | AI 工具面 | `Control.mcp`（initialize / tools/list / tools/call） |
 | 宿主主循环 | `runtime/mq_host.h`：`mq_host_tick` 由宿主驱动（`samples/host`） |
 | 编辑面 | `Scene.get/set/spawn/destroy/save`（`tests/editor.sh`、`editor_e2e`） |
+| 动画/粒子 | `scn.AnimationPlayer` / `scn.ParticleEmitter`（`anim_e2e`） |
+| 导航 | `nav_setup/nav_block/nav_goto/nav_tick` + `scn.NavAgent`（`nav_e2e`） |
+| 崩溃复现 | `MAQUE_CRASH_REPORT`（报告含 seed/帧号/检查点/重放指引；`crash_context_e2e`） |
 
 一键回归：`ctest --test-dir build`（含 `ui_e2e`、`hot_reload_e2e`、`determinism`、`control_plane`）。

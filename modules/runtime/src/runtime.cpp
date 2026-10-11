@@ -18,6 +18,7 @@
 #include "core/input/mq_input.h"
 #include "core/watcher/mq_watcher.h"
 #include "physics/mq_physics.h"
+#include "nav/mq_nav.h"
 #include "core/control/mq_control.h"
 #include "core/api/mq_api.h"
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
@@ -163,6 +164,10 @@ struct Engine {
     uint32_t max_particles = 2048;
     std::vector<Ball> balls;                                // 与物理世界对应的实体集合（按 id 升序）
     mq_physics_world* physics = nullptr;                    // 确定性 2D 求解器（docs/15 §3）
+    mq_nav_world*     nav = nullptr;                        // 确定性 2D 网格寻路（docs/15 导航）
+    /* 每个 NavAgent 的路径缓存（按实体 id；path 为 [x,y] 交错世界坐标） */
+    struct AgentPath { std::vector<float> path; uint32_t index = 0; };
+    std::unordered_map<int, AgentPath> agent_paths;
     uint64_t stop_frame = 0;                                // >0 时到该帧停止（CI 固定长度跑）
     std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
     std::string name;
@@ -185,6 +190,7 @@ struct Engine {
     void main_loop(const std::string& frames_dir, const std::string& name);
     bool prepare_replay();                                  // 载入回放日志并设定期望校验和（docs/10 §3）
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
+    void nav_step();                                        // 导航代理推进（寻路 + 追踪）
     void anim_step(float dt);                               // 关键帧采样 → 写回字段（docs/15 §2）
     void particles_step(float dt);                          // 确定性粒子推进（docs/15 §4）
     bool setup(const std::string& scn_path, const char* renderer_override);   // 加载并装配引擎
@@ -510,6 +516,7 @@ void Engine::step_frame() {
         mq_script_gc(vm);
         anim_step(dt);                                   // 动画采样写回（docs/15 §2）
         particles_step(dt);                              // 粒子推进（docs/15 §4）
+        nav_step();                                      // 导航代理推进（A* + 追踪）
         scene->compute_world(*this);
         scene->extract(*this, draws);
     }
@@ -729,6 +736,72 @@ void Engine::particles_step(float dt) {
                 p.size = size; p.r = r; p.g = g; p.b = b;
                 particles.push_back(p);
             }
+        }
+    }
+}
+
+/* ---- 导航（docs/15 导航）：A* 在帧内确定性执行，代理沿路径追踪 ---- */
+void Engine::nav_step() {
+    if (!scene || !nav) return;
+    std::vector<int> ids;
+    for (auto& [idx, e] : scene->ents) ids.push_back(idx);
+    std::sort(ids.begin(), ids.end());                      // 升序 → 更新顺序确定（docs/10 D4）
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        for (auto& [tid, blob] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            if (!d || !(d->role & MQ_ROLE_NAV_AGENT)) continue;
+            bool has_target = false;
+            if (const mq_field_desc* f = mq_reflect_field(d, "has_target")) has_target = *(const bool*)(blob.data() + f->offset);
+            const mq_field_desc* fstate = mq_reflect_field(d, "state");
+            if (!has_target) { if (fstate) *(int32_t*)(blob.data() + fstate->offset) = 0; continue; }
+            float tx = 0, ty = 0, speed = 60, arrive = 2;
+            read_f32(d, blob.data(), "tx", &tx);
+            read_f32(d, blob.data(), "ty", &ty);
+            read_f32(d, blob.data(), "speed", &speed);
+            read_f32(d, blob.data(), "arrive_dist", &arrive);
+            bool repath = true;
+            if (const mq_field_desc* f = mq_reflect_field(d, "repath")) repath = *(const bool*)(blob.data() + f->offset);
+
+            AgentPath& ap = agent_paths[id];
+            /* 路径缺失/目标变化 → 重新寻路（确定性：与实体 id 顺序无关的单点查询） */
+            const bool need_path = ap.path.empty() || ap.index >= ap.path.size() / 2;
+            if (need_path || (repath && !ap.path.empty())) {
+                const uint32_t idx_last = ap.path.empty() ? 0 : (uint32_t)(ap.path.size() / 2 - 1);
+                const float goal_x = ap.path.empty() ? tx : ap.path[idx_last * 2];
+                const float goal_y = ap.path.empty() ? ty : ap.path[idx_last * 2 + 1];
+                if (need_path || (repath && (goal_x != tx || goal_y != ty))) {
+                    std::vector<float> buf(2 * 4096);
+                    uint32_t n = 0, need = 0;
+                    const int rc = mq_nav_find_path(nav, e->x, e->y, tx, ty, buf.data(),
+                                                   (uint32_t)buf.size() / 2, &n, &need);
+                    if (rc == MQ_NAV_ERR_CAPACITY) {
+                        buf.resize(need);
+                        mq_nav_find_path(nav, e->x, e->y, tx, ty, buf.data(), need, &n, &need);
+                    }
+                    if (rc == MQ_NAV_OK) {
+                        n = mq_nav_smooth(nav, buf.data(), n);
+                        ap.path.assign(buf.begin(), buf.begin() + (size_t)n * 2);
+                        ap.index = 0;
+                        if (fstate) *(int32_t*)(blob.data() + fstate->offset) = 1;   // Moving
+                    } else {
+                        ap.path.clear();
+                        ap.index = 0;
+                        if (fstate) *(int32_t*)(blob.data() + fstate->offset) = 3;   // NoPath
+                        continue;
+                    }
+                }
+            }
+            if (ap.path.empty()) continue;
+            float x = e->x, y = e->y;
+            const float dt = 1.0F / 60.0F;
+            const int rc = mq_nav_step_towards(nav, &x, &y, ap.path.data(),
+                                               (uint32_t)(ap.path.size() / 2), &ap.index,
+                                               speed, dt, arrive);
+            host::entity_set_pos(this, (float)id, x, y);
+            e->x = x; e->y = y;
+            if (rc == 1 && fstate) *(int32_t*)(blob.data() + fstate->offset) = 2;    // Arrived
         }
     }
 }
@@ -1577,6 +1650,52 @@ void set_label(void* ctx, float id, const char* text) {
     }
 }
 
+/* 导航（确定性 2D 网格）：建网格/设障碍/指定目标/查询路径点数 */
+void nav_setup(void* ctx, float cols, float rows, float cell) {
+    auto* eng = (Engine*)ctx;
+    mq_nav_config cfg{};
+    cfg.struct_size = (uint32_t)sizeof cfg;
+    cfg.width = cols > 0 ? (uint32_t)cols : 32u;
+    cfg.height = rows > 0 ? (uint32_t)rows : 32u;
+    cfg.cell_size = cell > 0 ? cell : 16.0F;
+    cfg.allow_diagonal = 1;
+    if (eng->nav) mq_nav_destroy(eng->nav);
+    eng->nav = mq_nav_create(&cfg);
+    eng->agent_paths.clear();
+}
+
+void nav_block(void* ctx, float cx, float cy, float w, float h) {
+    auto* eng = (Engine*)ctx;
+    if (!eng->nav) return;
+    mq_nav_set_rect(eng->nav, (uint32_t)cx, (uint32_t)cy,
+                    w > 0 ? (uint32_t)w : 1u, h > 0 ? (uint32_t)h : 1u, 1);
+}
+
+float nav_goto(void* ctx, float id, float x, float y) {
+    auto* eng = (Engine*)ctx;
+    Entity* e = eng->scene->at((int)id);
+    if (!e) return 0.0F;
+    for (auto& [tid, blob] : e->comps) {
+        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        if (!d || !(d->role & MQ_ROLE_NAV_AGENT)) continue;
+        if (const mq_field_desc* fx = mq_reflect_field(d, "tx")) *(float*)(blob.data() + fx->offset) = x;
+        if (const mq_field_desc* fy = mq_reflect_field(d, "ty")) *(float*)(blob.data() + fy->offset) = y;
+        if (const mq_field_desc* fh = mq_reflect_field(d, "has_target")) *(bool*)(blob.data() + fh->offset) = true;
+        eng->agent_paths[(int)id].path.clear();          // 目标变化 → 下一帧重算
+        eng->agent_paths[(int)id].index = 0;
+        return 1.0F;
+    }
+    return 0.0F;
+}
+
+float nav_path_len(void* ctx, float id) {
+    auto* eng = (Engine*)ctx;
+    auto it = eng->agent_paths.find((int)id);
+    return it == eng->agent_paths.end() ? 0.0F : (float)(it->second.path.size() / 2);
+}
+
+void nav_tick(void* ctx) { ((Engine*)ctx)->nav_step(); }
+
 void ball_clear(void* ctx) {
     auto* eng = (Engine*)ctx;
     for (auto& b : eng->balls) {
@@ -2298,6 +2417,7 @@ void Engine::teardown() {
     mq_snapshot_destroy(snap_manual); snap_manual = nullptr;
     mq_snapshot_pool_destroy(snaps); snaps = nullptr;
     mq_watcher_destroy(watcher); watcher = nullptr;
+    mq_nav_destroy(nav); nav = nullptr;
     mq_physics_destroy(physics); physics = nullptr;
     mq_input_destroy(input); input = nullptr;
     mq_platform_destroy(platform); platform = nullptr;

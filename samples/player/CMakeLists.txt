@@ -70,3 +70,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/anim"
              "${CMAKE_CURRENT_BINARY_DIR}/crash_e2e")
 endif()
+
+# 导航端到端（docs/15 导航）：A* 路径 → 逐帧追踪 → 到达目标；两跑确定性
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME nav_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/nav_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/nav/nav.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/nav_e2e")
+endif()

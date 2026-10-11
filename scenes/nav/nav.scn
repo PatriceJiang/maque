@@ -1,0 +1,23 @@
+{
+  "title": "导航（A*）",
+  "script": "nav.js",
+  "width": 320,
+  "height": 240,
+  "seed": 5,
+  "entities": [
+    { "name": "Root", "components": [], "children": [
+      { "name": "WallA", "components": [
+          { "type": "scn.Transform2D", "x": 110.0, "y": 0.0 },
+          { "type": "scn.Sprite", "radius": 10.0, "r": 0.35, "g": 0.35, "b": 0.4 } ] },
+      { "name": "WallB", "components": [
+          { "type": "scn.Transform2D", "x": 110.0, "y": 40.0 },
+          { "type": "scn.Sprite", "radius": 10.0, "r": 0.35, "g": 0.35, "b": 0.4 } ] },
+      { "name": "Walker", "components": [
+          { "type": "scn.Transform2D", "x": 40.0, "y": 40.0 },
+          { "type": "scn.Sprite", "radius": 6.0, "r": 0.3, "g": 1.0, "b": 0.5 },
+          { "type": "scn.NavAgent", "speed": 70.0, "arrive_dist": 2.0, "repath": true } ] },
+      { "name": "Hint", "components": [
+          { "type": "scn.Label", "x": 8.0, "y": 196.0, "z": 0, "text": "NavAgent: A* grid pathfind" } ] }
+    ] }
+  ]
+}

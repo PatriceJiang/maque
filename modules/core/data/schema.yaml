@@ -1928,6 +1928,17 @@
       fields:
         - { name: source, type: string, default: "" }        # 相对场景目录的资源路径
         - { name: detached, type: bool, default: false }     # true = 已 bake（不再跟随源）
+    # 导航代理（2D 网格切片；docs/15 持续项）：寻路由确定性 nav 模块完成。
+    - struct: NavAgent
+      roles: [nav_agent]
+      fields:
+        - { name: tx,          type: float,  default: 0.0F }     # 目标（世界坐标）
+        - { name: ty,          type: float,  default: 0.0F }
+        - { name: speed,       type: float,  default: 60.0F }    # 像素/秒
+        - { name: arrive_dist, type: float,  default: 2.0F }
+        - { name: repath,      type: bool,   default: true }     # 目标移动时重算
+        - { name: has_target,  type: bool,   default: false }
+        - { name: state,       type: int32_t, default: 0 }       # 0 空闲 1 移动 2 到达 3 无路
     # 相机（docs/13）：按 role 提取，引擎不认具体组件类型。
     - struct: Camera
       roles: [camera]
@@ -1996,6 +2007,15 @@
     # 组件字段（脚本改文本等；引擎按 role 定位组件，不认具体类型名）
     - { fn: set_label,     ctx: true, args: [ { name: id, type: float }, { name: text, type: string } ] }
     - { fn: ui_hit_at,     ctx: true, args: [ { name: x, type: float }, { name: y, type: float } ], returns: float }
+    # 导航（确定性 2D 网格 A*）：建网格 / 设障碍 / 指定目标 / 查询路径长度
+    - { fn: nav_setup,     ctx: true, args: [ { name: cols, type: float }, { name: rows, type: float },
+                                             { name: cell, type: float } ] }
+    - { fn: nav_block,     ctx: true, args: [ { name: cx, type: float }, { name: cy, type: float },
+                                             { name: w, type: float }, { name: h, type: float } ] }
+    - { fn: nav_goto,      ctx: true, args: [ { name: id, type: float }, { name: x, type: float },
+                                             { name: y, type: float } ], returns: float }
+    - { fn: nav_path_len,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: nav_tick,      ctx: true }
 
 # 插件接口 ABI（由 DSL 生成 C vtable；docs/02/21）。opaque self = void*。
 - interface: renderer

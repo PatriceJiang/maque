@@ -90,7 +90,11 @@
 | 16 | script（quickjs） | ✅ | ✅ | ✅ | 🟡 | 绑定生成 + 事件回调 + 热重载；capability 沙箱待做 |
 
 **附加模块（超出 16 篇计划，随里程碑新增）**：`input`（确定性输入流，docs/19）、
-`watcher`（帧边界热重载，docs/08/14）、`image`（Wuffs 解码）、`net`（libwebsockets）、
-`api`（DSL 生成的宿主 API/绑定）、`runtime`（引擎"浏览器"）。
+`watcher`（帧边界重载，docs/08/14）、`world/physics`（确定性 2D 物理）、
+`world/nav`（确定性 2D 网格 A* + 平滑 + 追踪）、`asset`（资产管线）、
+`image`（Wuffs 解码）、`net`（libwebsockets）、`api`（DSL 生成的宿主 API/绑定）、
+`runtime`（引擎"浏览器" + 嵌入宿主 `mq_host_*`）。
 
-**e2e 回归**（`samples/player`）：`player_run`、`determinism`、`control_plane`、`ui_e2e`、`hot_reload_e2e`。
+**e2e 回归**（`samples/player`）：`player_run`、`determinism`、`control_plane`、`ui_e2e`、
+`hot_reload_e2e`、`anim_e2e`、`editor_e2e`、`prefab_e2e`、`crash_context_e2e`、`nav_e2e`、
+`host_tick`、`host_multi_instance`。
