@@ -161,3 +161,10 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/multilang/multilang.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/multilang_e2e")
 endif()
+
+# 多脚本热重载（docs/14 §多 VM）：增量生效 + 其它脚本状态保留 + 坏脚本原子回退
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME hot_reload_multi_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/hot_reload_multi_e2e.sh"
+             $<TARGET_FILE:maque_player> "${CMAKE_SOURCE_DIR}/scenes/multilang"
+             "${CMAKE_CURRENT_BINARY_DIR}/hot_reload_multi_e2e")
+endif()

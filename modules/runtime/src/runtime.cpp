@@ -157,6 +157,7 @@ struct Engine {
     mq_script_bus*      bus = nullptr;
     mq_script_vm*       vm = nullptr;
     std::vector<std::string> script_paths;   // 已装载脚本（声明顺序；自省/诊断用）
+    std::vector<uint64_t> script_hashes;     // 每个脚本的内容哈希（热重载判定"哪个改了"）
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
     mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
     mq_control*         control = nullptr;                 // 控制平面（JSON-RPC）
@@ -309,7 +310,7 @@ struct Engine {
     void step_frame();                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
     bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
     void preload_scene_assets();                            // 装配期预解析纹理/材质（extract 只读，docs/13 §8）
-    bool reload_script(std::string* err = nullptr);          // 重载脚本（帧边界调用，docs/14）
+    bool reload_script(std::string* err = nullptr, const std::string* only = nullptr);   // 重载脚本（多脚本：按路径）
     bool reload_scene();                                    // 重载场景（重建世界，docs/08）
     bool load_scene_into(const std::string& scn_path);       // 场景装配（setup / director.loadScene 共用）
     uint32_t poll_watcher();                                // 帧边界检查资源变化
@@ -1049,32 +1050,50 @@ void Engine::preload_scene_assets() {
 
 /* ---- 热重载（docs/08 §热重载、docs/14）：只在帧边界执行 ---- */
 
-bool Engine::reload_script(std::string* err) {
-    if (script_path.empty() || !vm) { if (err) *err = "no script"; return false; }
-    /* 注：热重载按"单脚本"语义重载第一个 VM（多脚本热重载见 docs/14 待办） */
-    void* d = nullptr; size_t n = 0;
-    if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) != MQ_VFS_OK) {
-        if (err) *err = "script not readable";
-        return false;
+bool Engine::reload_script(std::string* err, const std::string* only) {
+    if (script_paths.empty() || !bus) { if (err) *err = "no script"; return false; }
+    bool any = false;
+    for (size_t i = 0; i < script_paths.size(); ++i) {
+        const std::string& sp = script_paths[i];
+        if (only && !only->empty() && *only != sp) continue;      // 只重载改动的那个脚本
+        void* d = nullptr; size_t n = 0;
+        if (mq_vfs_read(vfs, ("/" + sp).c_str(), &d, &n) != MQ_VFS_OK) continue;
+        std::string src((char*)d, n);
+        mq_vfs_free(d);
+        const uint64_t h = mq_vfs_hash(src.data(), src.size());
+        if (i < script_hashes.size() && h == script_hashes[i]) continue;   // 内容未变 → 跳过
+        /* 原子热重载：先建**全新 VM** 并 eval；成功才换入槽位（顺序不变，其它脚本状态保留）。
+         * 失败则销毁新 VM、保留旧的 —— 写坏一个脚本不会让正在跑的游戏失去该逻辑。 */
+        const char* lang = mq_script_lang_for_path(sp.c_str());
+        mq_script_vm* fresh = mq_script_vm_create_lang(lang);
+        if (!fresh) { if (err) *err = "backend unavailable"; return false; }
+        mq_script_set_rng(fresh, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+        mq_bind_generated(fresh, this);
+        if (mq_script_eval(fresh, src.c_str(), sp.c_str()) != 0) {
+            char ebuf[512] = { 0 };
+            std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "eval failed";
+            mq_script_vm_destroy(fresh);                       // 保留旧 VM：游戏继续用旧逻辑
+            if (err) *err = e;
+            std::print(stderr, "runtime: hot reload failed for '{}': {} (旧脚本保留)\n", sp, e);
+            return false;
+        }
+        mq_script_bus_swap(bus, (uint32_t)i, fresh, sp.c_str());
+        /* 换入后**只对新 VM** 派发 on_start：脚本重新初始化并重新注册它的事件处理器。
+         * （不加这一步，热更后的脚本会失去 node_on 注册 → 收不到任何事件，功能静默失效。） */
+        if (mq_event_dispatch(fresh, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
+            char ebuf[512] = { 0 };
+            std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "on_start failed";
+            std::print(stderr, "runtime: hot reload on_start failed for '{}': {}\n", sp, e);
+        }
+        if (script_hashes.size() <= i) script_hashes.resize(i + 1, 0);
+        script_hashes[i] = h;
+        if (script_paths.size() == 1) { script_hash = h; vm = fresh; }
+        any = true;
+        mq_obs_event(obs, "runtime", 1, "script_reloaded");
+        std::print("runtime: hot reload script '{}' ({} bytes, slot {})\n", sp, src.size(), i);
     }
-    std::string src((char*)d, n);
-    mq_vfs_free(d);
-    const uint64_t h = mq_vfs_hash(src.data(), src.size());
-    if (h == script_hash) return false;
-    /* 脚本以 IIFE 形态定义全局回调（推荐写法，见 scenes/ui.js）：每次重载得到**全新的词法作用域**，
-     * 回调被替换、`let/const` 不冲突；状态迁移由脚本显式经 globalThis 载体完成（docs/14 §6）。 */
-    if (mq_script_eval(vm, src.c_str(), script_path.c_str()) != 0) {
-        char ebuf[512] = { 0 };
-        std::string e = mq_script_last_error(vm, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "eval failed";
-        if (err) *err = e;
-        std::print(stderr, "runtime: hot reload failed for '{}': {}\n", script_path, e);
-        return false;
-    }
-    script_hash = h;
-    ++reloads;
-    mq_obs_event(obs, "runtime", 1, "script_reloaded");
-    std::print("runtime: hot reload script '{}' ({} bytes)\n", script_path, src.size());
-    return true;
+    if (any) ++reloads;
+    return any;
 }
 
 bool Engine::reload_scene() {
@@ -1103,10 +1122,15 @@ uint32_t Engine::poll_watcher() {
         auto* c = (Ctx*)ud;
         if (kind == MQ_WATCH_REMOVED) return 0;
         const std::string p = path ? path : "";
-        if (!c->eng->script_path.empty() &&
-            p.size() >= c->eng->script_path.size() &&
-            p.compare(p.size() - c->eng->script_path.size(), c->eng->script_path.size(), c->eng->script_path) == 0)
-            c->eng->reload_script();
+        bool is_script = false;
+        for (const std::string& sp : c->eng->script_paths) {          // 多脚本：按路径定位改的是哪一个
+            if (p.size() >= sp.size() && p.compare(p.size() - sp.size(), sp.size(), sp) == 0) {
+                c->eng->reload_script(nullptr, &sp);
+                is_script = true;
+                break;
+            }
+        }
+        if (is_script) { /* 已处理 */ }
         else if (!c->eng->scn_vfs_path.empty() &&
                  p.size() >= c->eng->scn_vfs_path.size() &&
                  p.compare(p.size() - c->eng->scn_vfs_path.size(), c->eng->scn_vfs_path.size(), c->eng->scn_vfs_path) == 0)
@@ -4648,6 +4672,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
           if (mq_vfs_read(vfs, ("/" + path).c_str(), &d, &n) == MQ_VFS_OK) { src.assign((char*)d, n); mq_vfs_free(d); } }
         if (src.empty()) { std::print("runtime: cannot read script '{}'\n", path); return false; }
         if (load_list.size() == 1) script_hash = mq_vfs_hash(src.data(), src.size());
+        script_hashes.push_back(mq_vfs_hash(src.data(), src.size()));
         if (mq_script_eval(one, src.c_str(), path.c_str()) != 0) { std::print("runtime: script error\n"); return false; }
         mq_script_bus_add(bus, one, path.c_str());
     }
@@ -4660,8 +4685,8 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     if (watch && *watch && *watch != '0') {
         watcher = mq_watcher_create();
         mq_watcher_add(watcher, (fs::path(scn_dir) / scnp.filename()).string().c_str());
-        if (!script_path.empty())
-            mq_watcher_add(watcher, (fs::path(scn_dir) / script_path).string().c_str());
+        for (const std::string& sp : script_paths)          // 监视**全部**脚本（多脚本热重载）
+            mq_watcher_add(watcher, (fs::path(scn_dir) / sp).string().c_str());
         std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
     }
     preload_scene_assets();

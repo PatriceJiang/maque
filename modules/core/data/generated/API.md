@@ -393,6 +393,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_script_bus_create` | mq_script_bus* | — |
 | `mq_script_bus_add` | int | bus: mq_script_bus*, vm: mq_script_vm*, name: const char* |
 | `mq_script_bus_count` | uint32_t | bus: mq_script_bus* |
+| `mq_script_bus_swap` | mq_script_vm* | bus: mq_script_bus*, index: uint32_t, vm: mq_script_vm*, name: const char* |
 | `mq_script_bus_vm_at` | mq_script_vm* | bus: mq_script_bus*, index: uint32_t |
 | `mq_script_bus_name_at` | const char* | bus: mq_script_bus*, index: uint32_t |
 | `mq_script_bus_has` | int | bus: mq_script_bus*, fn: const char* |

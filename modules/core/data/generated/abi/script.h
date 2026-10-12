@@ -40,6 +40,8 @@ mq_script_bus* mq_script_bus_create(void);
 /* 加入 VM（顺序 = 脚本声明顺序 = 投递顺序 → 确定性）；name 为脚本路径（自省） */
 int mq_script_bus_add(mq_script_bus* bus, mq_script_vm* vm, const char* name);
 uint32_t mq_script_bus_count(mq_script_bus* bus);
+/* 把**已准备好（创建+eval 成功）**的 VM 换入槽位并销毁旧的（热重载原子替换：失败时调用方保留旧 VM）；顺序不变 */
+mq_script_vm* mq_script_bus_swap(mq_script_bus* bus, uint32_t index, mq_script_vm* vm, const char* name);
 mq_script_vm* mq_script_bus_vm_at(mq_script_bus* bus, uint32_t index);
 /* 该 VM 的脚本路径（诊断/自省） */
 const char* mq_script_bus_name_at(mq_script_bus* bus, uint32_t index);

@@ -135,6 +135,11 @@ cd modules/core/data && node parser.js --check
 事件按**处理器名**路由（`node_on(id,"evt","on_evt")` + `node_emit_number(id,"evt",v)`）→ 语言无关，
 JS 注册的处理器可由 Lua 触发，反之亦然。宿主/工具用控制面 **`Scene.emit`**（变更类方法，只读会话拒绝）。
 样例：`scenes/multilang/`（JS 玩法 + Lua AI）；测试 `ctest -R multilang`。
+**热重载（按文件、原子，docs/14 §热重载）**：`MAQUE_WATCH=1` 监视场景 + **全部脚本**；
+只重建**改动的那一个** VM（其它脚本状态保留）、**槽位不变**（投递顺序不变）、
+新 VM eval **成功才换入**（失败保留旧 VM → 热更出错不致命），换入后只对新 VM 派发一次 `on_start`
+（重新注册事件处理器）。测试 `ctest -R hot_reload`。
+⚠️ 长跑进程的日志在重定向到文件时是**全缓冲**：测试里要 `stdbuf -oL`，否则会误判"脚本没生效"。
 
 **脚本后端（`.js` / `.lua`）**：语言按脚本扩展名选择（`"script": "game.lua"` → Lua 后端，
 docs/14）。两后端**同一套 API 面与回调**（DSL 生成绑定；`math.clamp` 等在 Lua 侧合并进 `math` 标准库）。

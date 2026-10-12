@@ -19185,6 +19185,32 @@
           ]
         },
         {
+          "name": "mq_script_bus_swap",
+          "returns": "mq_script_vm*",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_script_bus_vm_at",
           "returns": "mq_script_vm*",
           "args": [

@@ -58,6 +58,6 @@
     if (S.frames % 60 === 0)
       node_set_string(S.status, 'scn.Label', 'text',
         'JS 帧 ' + S.frames + '   AI 决策 ' + S.decisions + '（Lua）');
-    if (S.frames === 150) log('ml_summary applied=' + S.decisions + ' frames=' + S.frames);
+    if (S.frames % 150 === 0) log('ml_summary applied=' + S.decisions + ' frames=' + S.frames);
   };
 })();

@@ -34,6 +34,16 @@ extern "C" int mq_script_bus_add(mq_script_bus* bus, mq_script_vm* vm, const cha
     return (int)bus->vms.size() - 1;
 }
 
+/* 把已准备好的 VM 换入槽位（热重载原子替换）：销毁旧 VM、**顺序不变**。
+ * 由调用方先完成"创建 + eval"，成功后再换入 —— 编译/加载失败时旧 VM 原样保留（热更出错不致命）。 */
+extern "C" mq_script_vm* mq_script_bus_swap(mq_script_bus* bus, uint32_t index, mq_script_vm* vm, const char* name) {
+    if (!bus || index >= bus->vms.size() || !vm) return nullptr;
+    mq_script_vm_destroy(bus->vms[index].vm);
+    bus->vms[index].vm = vm;
+    if (name) bus->vms[index].name = name;
+    return vm;
+}
+
 extern "C" uint32_t mq_script_bus_count(mq_script_bus* bus) {
     return bus ? (uint32_t)bus->vms.size() : 0;
 }
