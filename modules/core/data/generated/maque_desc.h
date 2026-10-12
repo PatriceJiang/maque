@@ -15,6 +15,10 @@ typedef enum mq_type_kind {
     MQ_TK_ENTITY_REF, MQ_TK_ASSET_REF, MQ_TK_OPTIONAL
 } mq_type_kind;
 
+/* 动态数组的元素类型哨兵：元素是字符串（无具名类型可引用）。
+ * 反射/persist 据此按 std::string 处理（此前 string[] 因 elem_type_id=0 被整体跳过）。 */
+#define MQ_ELEM_TYPE_STRING 0xFFFFFFFFu
+
 typedef struct mq_field_desc {
     const char*  name;
     uint32_t     offset;       /* offsetof(Type, field) */

@@ -129,6 +129,13 @@ cd modules/core/data && node parser.js --check
 - **动作/定时**：`tween_start(id, "scn.Sprite.radius", to, duration, easing)`、`tween_stop/count/progress`、
   `schedule_once/schedule/unschedule/schedule_count`
 
+**多脚本 / 跨语言（事件总线，docs/14 §多 VM）**：`scn.Scene.scripts: ["game.js", "ai.lua"]` →
+每个脚本一个 VM，由**事件总线**统一投递：**顺序 = 声明顺序**、**只投给订阅者**、**载荷只有标量/字符串**、
+**错误隔离**（`mq_script_bus_error_count` 增量判定 → 写崩溃上下文）、GC 逐 VM 在帧边界。
+事件按**处理器名**路由（`node_on(id,"evt","on_evt")` + `node_emit_number(id,"evt",v)`）→ 语言无关，
+JS 注册的处理器可由 Lua 触发，反之亦然。宿主/工具用控制面 **`Scene.emit`**（变更类方法，只读会话拒绝）。
+样例：`scenes/multilang/`（JS 玩法 + Lua AI）；测试 `ctest -R multilang`。
+
 **脚本后端（`.js` / `.lua`）**：语言按脚本扩展名选择（`"script": "game.lua"` → Lua 后端，
 docs/14）。两后端**同一套 API 面与回调**（DSL 生成绑定；`math.clamp` 等在 Lua 侧合并进 `math` 标准库）。
 Lua 为沙箱运行（无 `io/os/package/debug/require/collectgarbage`），`math.random` 由引擎 RNG 接管，

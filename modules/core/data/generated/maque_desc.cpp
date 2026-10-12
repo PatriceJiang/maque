@@ -173,11 +173,23 @@ static const mq_field_desc mq_fields_asset_AnimationClip[] = {
     { "tracks", (uint32_t)offsetof(asset::AnimationClip, tracks), MQ_TK_ARRAY_DYN, 1084542974u, 0u, 0u, 1084542974u, mq_dyn_asset_AnimationClip_tracks_clear, mq_dyn_asset_AnimationClip_tracks_size, mq_dyn_asset_AnimationClip_tracks_resize, mq_dyn_asset_AnimationClip_tracks_elem },
 };
 
+static void mq_dyn_asset_AnimatorController_states_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_AnimatorController_states_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_AnimatorController_states_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_AnimatorController_states_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
+static void mq_dyn_asset_AnimatorController_parameters_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_AnimatorController_parameters_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_AnimatorController_parameters_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_AnimatorController_parameters_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
+static void mq_dyn_asset_AnimatorController_transitions_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_AnimatorController_transitions_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_AnimatorController_transitions_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_AnimatorController_transitions_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_AnimatorController[] = {
     { "name", (uint32_t)offsetof(asset::AnimatorController, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "states", (uint32_t)offsetof(asset::AnimatorController, states), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "parameters", (uint32_t)offsetof(asset::AnimatorController, parameters), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "transitions", (uint32_t)offsetof(asset::AnimatorController, transitions), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "states", (uint32_t)offsetof(asset::AnimatorController, states), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_states_clear, mq_dyn_asset_AnimatorController_states_size, mq_dyn_asset_AnimatorController_states_resize, mq_dyn_asset_AnimatorController_states_elem },
+    { "parameters", (uint32_t)offsetof(asset::AnimatorController, parameters), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_parameters_clear, mq_dyn_asset_AnimatorController_parameters_size, mq_dyn_asset_AnimatorController_parameters_resize, mq_dyn_asset_AnimatorController_parameters_elem },
+    { "transitions", (uint32_t)offsetof(asset::AnimatorController, transitions), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_transitions_clear, mq_dyn_asset_AnimatorController_transitions_size, mq_dyn_asset_AnimatorController_transitions_resize, mq_dyn_asset_AnimatorController_transitions_elem },
 };
 
 static const mq_field_desc mq_fields_asset_AudioBus[] = {
@@ -234,21 +246,33 @@ static const mq_field_desc mq_fields_asset_EffectParam[] = {
     { "default_value", (uint32_t)offsetof(asset::EffectParam, default_value), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
+static void mq_dyn_asset_Font_charset_ranges_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_Font_charset_ranges_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_Font_charset_ranges_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_Font_charset_ranges_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
+static void mq_dyn_asset_Font_charset_extra_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_Font_charset_extra_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_Font_charset_extra_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_Font_charset_extra_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
+static void mq_dyn_asset_Font_fallback_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_Font_fallback_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_Font_fallback_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_Font_fallback_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_Font[] = {
     { "name", (uint32_t)offsetof(asset::Font, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "source", (uint32_t)offsetof(asset::Font, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "mode", (uint32_t)offsetof(asset::Font, mode), MQ_TK_ENUM, 3953170109u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "sizes", (uint32_t)offsetof(asset::Font, sizes), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "charset_preset", (uint32_t)offsetof(asset::Font, charset_preset), MQ_TK_ENUM, 561650886u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "charset_ranges", (uint32_t)offsetof(asset::Font, charset_ranges), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "charset_extra", (uint32_t)offsetof(asset::Font, charset_extra), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "charset_ranges", (uint32_t)offsetof(asset::Font, charset_ranges), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_charset_ranges_clear, mq_dyn_asset_Font_charset_ranges_size, mq_dyn_asset_Font_charset_ranges_resize, mq_dyn_asset_Font_charset_ranges_elem },
+    { "charset_extra", (uint32_t)offsetof(asset::Font, charset_extra), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_charset_extra_clear, mq_dyn_asset_Font_charset_extra_size, mq_dyn_asset_Font_charset_extra_resize, mq_dyn_asset_Font_charset_extra_elem },
     { "sdf_spread", (uint32_t)offsetof(asset::Font, sdf_spread), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "sdf_px_range", (uint32_t)offsetof(asset::Font, sdf_px_range), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "atlas_max_size", (uint32_t)offsetof(asset::Font, atlas_max_size), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "atlas_padding", (uint32_t)offsetof(asset::Font, atlas_padding), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "bold", (uint32_t)offsetof(asset::Font, bold), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "italic", (uint32_t)offsetof(asset::Font, italic), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fallback", (uint32_t)offsetof(asset::Font, fallback), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "fallback", (uint32_t)offsetof(asset::Font, fallback), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_fallback_clear, mq_dyn_asset_Font_fallback_size, mq_dyn_asset_Font_fallback_resize, mq_dyn_asset_Font_fallback_elem },
 };
 
 static const mq_field_desc mq_fields_asset_Key[] = {
@@ -363,26 +387,42 @@ static void mq_dyn_asset_SkeletonData_bones_clear(void* f) { static_cast<std::ve
 static uint32_t mq_dyn_asset_SkeletonData_bones_size(const void* f) { return (uint32_t)static_cast<const std::vector<asset::BoneB>*>(f)->size(); }
 static void mq_dyn_asset_SkeletonData_bones_resize(void* f, uint32_t n) { static_cast<std::vector<asset::BoneB>*>(f)->resize(n); }
 static void* mq_dyn_asset_SkeletonData_bones_elem(void* f, uint32_t i) { return &static_cast<std::vector<asset::BoneB>*>(f)->at(i); }
+static void mq_dyn_asset_SkeletonData_constraints_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_SkeletonData_constraints_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_SkeletonData_constraints_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_SkeletonData_constraints_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_SkeletonData[] = {
     { "name", (uint32_t)offsetof(asset::SkeletonData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "bones", (uint32_t)offsetof(asset::SkeletonData, bones), MQ_TK_ARRAY_DYN, 3027706389u, 0u, 0u, 3027706389u, mq_dyn_asset_SkeletonData_bones_clear, mq_dyn_asset_SkeletonData_bones_size, mq_dyn_asset_SkeletonData_bones_resize, mq_dyn_asset_SkeletonData_bones_elem },
     { "skinning", (uint32_t)offsetof(asset::SkeletonData, skinning), MQ_TK_ENUM, 371730434u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "constraints", (uint32_t)offsetof(asset::SkeletonData, constraints), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "constraints", (uint32_t)offsetof(asset::SkeletonData, constraints), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SkeletonData_constraints_clear, mq_dyn_asset_SkeletonData_constraints_size, mq_dyn_asset_SkeletonData_constraints_resize, mq_dyn_asset_SkeletonData_constraints_elem },
 };
 
+static void mq_dyn_asset_SpineAtlas_regions_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_SpineAtlas_regions_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_SpineAtlas_regions_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_SpineAtlas_regions_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_SpineAtlas[] = {
     { "name", (uint32_t)offsetof(asset::SpineAtlas, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "textures", (uint32_t)offsetof(asset::SpineAtlas, textures), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "regions", (uint32_t)offsetof(asset::SpineAtlas, regions), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "regions", (uint32_t)offsetof(asset::SpineAtlas, regions), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineAtlas_regions_clear, mq_dyn_asset_SpineAtlas_regions_size, mq_dyn_asset_SpineAtlas_regions_resize, mq_dyn_asset_SpineAtlas_regions_elem },
 };
 
+static void mq_dyn_asset_SpineData_skins_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_SpineData_skins_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_SpineData_skins_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_SpineData_skins_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
+static void mq_dyn_asset_SpineData_animations_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_asset_SpineData_animations_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_asset_SpineData_animations_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_asset_SpineData_animations_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_SpineData[] = {
     { "name", (uint32_t)offsetof(asset::SpineData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "skeleton", (uint32_t)offsetof(asset::SpineData, skeleton), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "atlas", (uint32_t)offsetof(asset::SpineData, atlas), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "textures", (uint32_t)offsetof(asset::SpineData, textures), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skins", (uint32_t)offsetof(asset::SpineData, skins), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "animations", (uint32_t)offsetof(asset::SpineData, animations), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "skins", (uint32_t)offsetof(asset::SpineData, skins), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineData_skins_clear, mq_dyn_asset_SpineData_skins_size, mq_dyn_asset_SpineData_skins_resize, mq_dyn_asset_SpineData_skins_elem },
+    { "animations", (uint32_t)offsetof(asset::SpineData, animations), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineData_animations_clear, mq_dyn_asset_SpineData_animations_size, mq_dyn_asset_SpineData_animations_resize, mq_dyn_asset_SpineData_animations_elem },
 };
 
 static const mq_field_desc mq_fields_asset_SpriteFrame[] = {
@@ -891,6 +931,10 @@ static void mq_dyn_render_RichText_runs_clear(void* f) { static_cast<std::vector
 static uint32_t mq_dyn_render_RichText_runs_size(const void* f) { return (uint32_t)static_cast<const std::vector<render::RichRun>*>(f)->size(); }
 static void mq_dyn_render_RichText_runs_resize(void* f, uint32_t n) { static_cast<std::vector<render::RichRun>*>(f)->resize(n); }
 static void* mq_dyn_render_RichText_runs_elem(void* f, uint32_t i) { return &static_cast<std::vector<render::RichRun>*>(f)->at(i); }
+static void mq_dyn_render_RichText_links_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_render_RichText_links_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_render_RichText_links_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_render_RichText_links_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_render_RichText[] = {
     { "text", (uint32_t)offsetof(render::RichText, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "parse_tags", (uint32_t)offsetof(render::RichText, parse_tags), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -908,7 +952,7 @@ static const mq_field_desc mq_fields_render_RichText[] = {
     { "meta_underlined", (uint32_t)offsetof(render::RichText, meta_underlined), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "content_size", (uint32_t)offsetof(render::RichText, content_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0 },
     { "runs", (uint32_t)offsetof(render::RichText, runs), MQ_TK_ARRAY_DYN, 2859154460u, 0u, 1u, 2859154460u, mq_dyn_render_RichText_runs_clear, mq_dyn_render_RichText_runs_size, mq_dyn_render_RichText_runs_resize, mq_dyn_render_RichText_runs_elem },
-    { "links", (uint32_t)offsetof(render::RichText, links), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "links", (uint32_t)offsetof(render::RichText, links), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, MQ_ELEM_TYPE_STRING, mq_dyn_render_RichText_links_clear, mq_dyn_render_RichText_links_size, mq_dyn_render_RichText_links_resize, mq_dyn_render_RichText_links_elem },
     { "line_count", (uint32_t)offsetof(render::RichText, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
 };
 
@@ -1036,8 +1080,12 @@ static const mq_field_desc mq_fields_scene_PrefabOverride[] = {
     { "field_path", (uint32_t)offsetof(scene::PrefabOverride, field_path), MQ_TK_ARRAY_FIXED, 0u, 128u, 0u, 0u, 0, 0, 0, 0 },
 };
 
+static void mq_dyn_scene_Tags_values_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_scene_Tags_values_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_scene_Tags_values_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_scene_Tags_values_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_scene_Tags[] = {
-    { "values", (uint32_t)offsetof(scene::Tags, values), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "values", (uint32_t)offsetof(scene::Tags, values), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scene_Tags_values_clear, mq_dyn_scene_Tags_values_size, mq_dyn_scene_Tags_values_resize, mq_dyn_scene_Tags_values_elem },
     { "count", (uint32_t)offsetof(scene::Tags, count), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
 };
 
@@ -1139,9 +1187,14 @@ static const mq_field_desc mq_fields_scn_PrefabInstance[] = {
     { "detached", (uint32_t)offsetof(scn::PrefabInstance, detached), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
+static void mq_dyn_scn_Scene_scripts_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_scn_Scene_scripts_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_scn_Scene_scripts_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_scn_Scene_scripts_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_scn_Scene[] = {
     { "title", (uint32_t)offsetof(scn::Scene, title), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "script", (uint32_t)offsetof(scn::Scene, script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "scripts", (uint32_t)offsetof(scn::Scene, scripts), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_Scene_scripts_clear, mq_dyn_scn_Scene_scripts_size, mq_dyn_scn_Scene_scripts_resize, mq_dyn_scn_Scene_scripts_elem },
     { "width", (uint32_t)offsetof(scn::Scene, width), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "height", (uint32_t)offsetof(scn::Scene, height), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "seed", (uint32_t)offsetof(scn::Scene, seed), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -4954,7 +5007,7 @@ extern const mq_type_desc mq_type_scn_Scene = {
     410509289u,
     (uint32_t)sizeof(scn::Scene),
     (uint32_t)alignof(scn::Scene),
-    9u,
+    10u,
     mq_fields_scn_Scene,
     4u,
     0u,

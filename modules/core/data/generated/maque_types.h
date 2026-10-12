@@ -2278,6 +2278,7 @@ struct PrefabInstance {
 struct Scene {
     std::string title = "maque scene";
     std::string script = "";
+    std::vector<std::string> scripts;
     int32_t width = 320;
     int32_t height = 240;
     uint32_t seed = 0;

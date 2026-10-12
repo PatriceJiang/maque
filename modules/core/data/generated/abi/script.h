@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 typedef struct mq_script_vm mq_script_vm;
+typedef struct mq_script_bus mq_script_bus;
 
 typedef uint32_t (*mq_script_rng_fn)(void* user);
 typedef int (*mq_script_num_fn)(void* user, int argc, const double* argv, double* ret);
@@ -34,6 +35,28 @@ int mq_script_backends(char* out, int cap);
 /* 该 VM 的后端语言 id */
 const char* mq_script_lang(mq_script_vm* vm);
 void mq_script_vm_destroy(mq_script_vm* vm);
+/* 创建事件总线（多脚本/多语言）；总线**拥有**其 VM，销毁总线即销毁全部 VM */
+mq_script_bus* mq_script_bus_create(void);
+/* 加入 VM（顺序 = 脚本声明顺序 = 投递顺序 → 确定性）；name 为脚本路径（自省） */
+int mq_script_bus_add(mq_script_bus* bus, mq_script_vm* vm, const char* name);
+uint32_t mq_script_bus_count(mq_script_bus* bus);
+mq_script_vm* mq_script_bus_vm_at(mq_script_bus* bus, uint32_t index);
+/* 该 VM 的脚本路径（诊断/自省） */
+const char* mq_script_bus_name_at(mq_script_bus* bus, uint32_t index);
+/* 是否有任一 VM 定义了该处理器（订阅判定） */
+int mq_script_bus_has(mq_script_bus* bus, const char* fn);
+/* 按顺序向定义了 fn 的每个 VM 调用 fn(a,b[,text])；返回命中的 VM 数（跨语言事件即此调用） */
+int mq_script_bus_call(mq_script_bus* bus, const char* fn, double a, double b, const char* text);
+int mq_script_bus_call3(mq_script_bus* bus, const char* fn, double a, double b, double c, const char* text);
+/* 帧边界：逐 VM 推进 GC（确定性，docs/10 D7） */
+void mq_script_bus_gc(mq_script_bus* bus);
+/* 累计出错次数（单调）：调用方比较前后差值即可判定本次派发是否出错（错误隔离不等于静默） */
+uint32_t mq_script_bus_error_count(mq_script_bus* bus);
+/* 最近一次出错的 VM 的错误信息（错误隔离：一个脚本出错不影响其它脚本） */
+int mq_script_bus_last_error(mq_script_bus* bus, char* out, int cap);
+/* 给总线上全部 VM 注入同一引擎 RNG（两语言同一 seed → 同一序列） */
+void mq_script_bus_set_rng(mq_script_bus* bus, mq_script_rng_fn fn, void* user);
+void mq_script_bus_destroy(mq_script_bus* bus);
 int mq_script_eval(mq_script_vm* vm, const char* src, const char* filename);
 int mq_script_has(mq_script_vm* vm, const char* fn);
 int mq_script_call0(mq_script_vm* vm, const char* fn, double* ret);

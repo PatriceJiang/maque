@@ -152,7 +152,11 @@ struct Engine {
     const mq_renderer_v1* rapi = nullptr;                 // 渲染器插件接口
     void*               rself = nullptr;                  // 渲染器实例
     mq_vfs*             vfs = nullptr;
+    /* 多脚本/多语言（docs/14 §多 VM）：**事件总线**持有全部 VM 并负责按声明顺序投递。
+     * `vm` 仅指第一个 VM（便捷/自省）；任何"调用脚本处理器"的地方都必须走 bus（跨语言广播）。 */
+    mq_script_bus*      bus = nullptr;
     mq_script_vm*       vm = nullptr;
+    std::vector<std::string> script_paths;   // 已装载脚本（声明顺序；自省/诊断用）
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
     mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
     mq_control*         control = nullptr;                 // 控制平面（JSON-RPC）
@@ -319,6 +323,9 @@ struct Engine {
     uint64_t world_checksum();                              // 世界校验和：场景 + 物理 + 粒子（docs/10 §5）
     uint64_t world_trail() const;                           // 校验和轨迹（失步定位）
 };
+
+/* 事件 kind → 处理器名 → **总线广播**（多脚本/多语言的唯一事件入口；定义见下方） */
+int dispatch_event(Engine& eng, int kind, double a, double b, double c, const char* text);
 
 /* JSON 字符串转义（与 persist 规则一致；runtime 侧轻量实现）。 */
 void write_json_string_pub(std::string& out, const std::string& s) {
@@ -686,13 +693,17 @@ void Engine::step_frame() {
         ++script_frames;
         step_tweens(dt);                             // Tween（补间）
         step_schedules(dt);                          // 定时器（定时器）
-        if (mq_event_dispatch(vm, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr) != 0) {
+        /* 脚本错误的判定：总线**错误计数**的增量（每个 VM 各自受保护调用 → 错误隔离但不静默）。
+         * 注意不能拿 dispatch_event 的返回值判断：它返回的是命中数，不是错误码。 */
+        const uint32_t err_before = bus ? mq_script_bus_error_count(bus) : 0;
+        dispatch_event(*this, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr);
+        if (bus && mq_script_bus_error_count(bus) != err_before) {
             char ebuf[512] = { 0 };
-            mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
+            mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
             mq_obs_event(obs, "script", 3, "update_failed");
             write_crash_context(ebuf[0] ? ebuf : "script update failed");      // 可精确重放（docs/09 §5）
         }
-        mq_script_frame_boundary(vm);               // 帧边界：GC 只在此处（docs/10 D7）
+        if (bus) mq_script_bus_gc(bus);             // 帧边界：逐 VM 推进 GC（docs/10 D7）
         anim_step(dt);                                   // 动画采样写回（docs/15 §2）
         particles_step(dt);                              // 粒子推进（docs/15 §4）
         nav_step();                                      // 导航代理推进（A* + 追踪）
@@ -1040,6 +1051,7 @@ void Engine::preload_scene_assets() {
 
 bool Engine::reload_script(std::string* err) {
     if (script_path.empty() || !vm) { if (err) *err = "no script"; return false; }
+    /* 注：热重载按"单脚本"语义重载第一个 VM（多脚本热重载见 docs/14 待办） */
     void* d = nullptr; size_t n = 0;
     if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) != MQ_VFS_OK) {
         if (err) *err = "script not readable";
@@ -1781,6 +1793,16 @@ int runtime_parent(void* user, int entity) {
 }
 
 /* 事件 → 脚本回调：映射与参数个数全部由 DSL 声明、codegen 生成（docs/14 §4、docs/19 §8）。 */
+/* 事件 kind → 处理器名（生成的事件表是单一真相）→ 总线广播。
+ * 多脚本/多语言下这是**唯一**的事件入口：按声明顺序投给定义了该处理器的每个 VM。 */
+int dispatch_event(Engine& eng, int kind, double a, double b, double c, const char* text) {
+    if (!eng.bus) return 0;
+    uint32_t n = 0;
+    const mq_event_desc* tab = mq_event_table(&n);
+    if (!tab || kind < 0 || (uint32_t)kind >= n) return 0;
+    return mq_script_bus_call3(eng.bus, tab[kind].name, a, b, c, text);
+}
+
 void call_script_event(Engine& eng, const mq_input_event* ev) {
     const int kind = mq_event_for_input(ev->type);
     if (kind < 0) return;
@@ -1791,7 +1813,7 @@ void call_script_event(Engine& eng, const mq_input_event* ev) {
      *   文本：on_text(target, text)
      * 此前按键误把指针 x 当作 key 传入（key 恒为 0）→ 键盘驱动的游戏无法工作。 */
     const bool keyish = ev->type == MQ_INPUT_KEY_DOWN || ev->type == MQ_INPUT_KEY_UP;
-    mq_event_dispatch(eng.vm, kind, (double)ev->target,
+    dispatch_event(eng, kind, (double)ev->target,
                       keyish ? (double)ev->key : (double)ev->x,
                       keyish ? 0.0 : (double)ev->y, text);
 }
@@ -2633,14 +2655,13 @@ void Engine::step_tweens(float dt) {
 
 /* 定时器（定时器）：按固定步长累计，到点调用脚本函数（按名字）。 */
 void Engine::step_schedules(float dt) {
-    if (schedules.empty() || !vm) return;
+    if (schedules.empty() || !bus) return;
     std::vector<size_t> drop;
     for (size_t i = 0; i < schedules.size(); ++i) {
         Scheduled& sc = schedules[i];
         sc.remaining -= dt;
         if (sc.remaining > 0.0F) continue;
-        if (mq_script_has(vm, sc.handler.c_str()))
-            mq_script_call1(vm, sc.handler.c_str(), (double)dt, nullptr);
+        mq_script_bus_call(bus, sc.handler.c_str(), (double)dt, 0.0, nullptr);
         if (sc.repeat) sc.remaining += sc.interval > 0.0F ? sc.interval : (1.0F / 60.0F);
         else drop.push_back(i);
     }
@@ -3193,7 +3214,7 @@ float node_emit(void* ctx, float id, const char* event) { return node_emit_numbe
 
 float node_emit_number(void* ctx, float id, const char* event, float value) {
     auto* eng = (Engine*)ctx;
-    if (!eng->vm || !event) return 0.0F;
+    if (!eng->bus || !event) return 0.0F;
     const std::string ev = event;
     int hits = 0;
     /* 目标 → 祖先（冒泡）；每层按注册顺序派发（确定性） */
@@ -3202,8 +3223,7 @@ float node_emit_number(void* ctx, float id, const char* event, float value) {
         if (it != eng->node_events.end()) {
             for (const Engine::NodeHandler& h : it->second) {
                 if (h.event != ev) continue;
-                if (!mq_script_has(eng->vm, h.handler.c_str())) continue;
-                mq_script_call2(eng->vm, h.handler.c_str(), (double)cur, (double)value, nullptr);
+                mq_script_bus_call(eng->bus, h.handler.c_str(), (double)cur, (double)value, nullptr);
                 ++hits;
             }
         }
@@ -3794,6 +3814,20 @@ extern "C" int mq_control_Capture_screen(void* u, const mq_json* params, char* o
     std::snprintf(out, cap, "{\"ok\":true,\"w\":%d,\"h\":%d,\"total\":%zu,\"offset\":%zu,"
                             "\"size\":%zu,\"data\":\"%s\"}",
                   w, h, total, offset, take, b64.c_str());
+    return 0;
+}
+
+/* Scene.emit：宿主/工具 → 脚本事件（与脚本内 node_emit_number 同一路径）。
+ * 多语言下按**处理器名**路由：哪个 VM 注册了该处理器就由谁处理（跨语言/宿主→脚本共用一条路）。 */
+extern "C" int mq_control_Scene_emit(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* eng = (Engine*)u;
+    const int id = (int)mq_json_num(mq_json_get(params, "id"), -1);
+    const char* event = mq_json_str(mq_json_get(params, "event"), nullptr);
+    const float value = (float)mq_json_num(mq_json_get(params, "value"), 0);
+    if (id < 0 || !event || !*event) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"bad args\"}"); return 0; }
+    const float hits = host::node_emit_number(eng, (float)id, event, value);
+    std::snprintf(out, cap, "{\"ok\":true,\"event\":\"%s\",\"id\":%d,\"value\":%.4g,\"handlers\":%.0f}",
+                  event, id, (double)value, (double)hits);
     return 0;
 }
 
@@ -4493,7 +4527,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     if (text.empty()) return false;
 
     /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价  onDestroy）---- */
-    if (vm) { mq_script_vm_destroy(vm); vm = nullptr; }
+    if (bus) { mq_script_bus_destroy(bus); bus = nullptr; vm = nullptr; }   // 总线拥有 VM
     agent_paths.clear();
     node_events.clear();
     physics_role_bodies.clear();
@@ -4583,35 +4617,44 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         mq_physics_set_bounds(physics, 0.0F, 0.0F, (float)W, (float)H);
     }
     if (nav) { mq_nav_destroy(nav); nav = nullptr; }
-    std::print("runtime: scene '{}' title='{}' script='{}' {}x{} views={}\n",
-               scn_path, scene->desc.title, scene->desc.script, W, H, nviews);
+    std::print("runtime: scene '{}' title='{}' script='{}' scripts={} {}x{} views={}\n",
+               scn_path, scene->desc.title, scene->desc.script, scene->desc.scripts.size(), W, H, nviews);
 
     script_path = scene->desc.script;
+    /* 多脚本（多语言）：scripts 非空则按**声明顺序**逐个装载（顺序 = 事件投递顺序） */
+    std::vector<std::string> load_list;
+    if (!scene->desc.scripts.empty()) load_list = scene->desc.scripts;
+    else if (!script_path.empty()) load_list.push_back(script_path);
+    script_paths = load_list;
     scn_vfs_path = "/" + scnp.filename().string();
     scn_full_path = scn_path;
     scn_dir = dir;
     /* ---- 脚本 VM：按脚本语言选后端（docs/14「统一后端 ABI」：js / lua）----
      * 语言由文件扩展名决定（mq_script_lang_for_path），未编入的后端会明确报错而不是静默降级。 */
-    if (!vm) {
-        const char* want = mq_script_lang_for_path(script_path.c_str());
-        vm = mq_script_vm_create_lang(want);
-        if (!vm) {
+    if (!bus) bus = mq_script_bus_create();
+    for (const std::string& path : load_list) {
+        const char* want = mq_script_lang_for_path(path.c_str());
+        mq_script_vm* one = mq_script_vm_create_lang(want);
+        if (!one) {
             std::print(stderr, "runtime: script backend '{}' unavailable for '{}' (backends: {})\n",
-                       want, script_path, [] { char b[64] = { 0 }; mq_script_backends(b, sizeof b); return std::string(b); }());
+                       want, path, [] { char b[64] = { 0 }; mq_script_backends(b, sizeof b); return std::string(b); }());
             return false;
         }
-        std::print("runtime: script backend '{}' for '{}'\n", mq_script_lang(vm), script_path);
-        mq_script_set_rng(vm, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-        mq_bind_generated(vm, this);
-    }
-    if (!script_path.empty()) {
+        std::print("runtime: script backend '{}' for '{}'\n", mq_script_lang(one), path);
+        mq_script_set_rng(one, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+        mq_bind_generated(one, this);
         std::string src;
         { void* d = nullptr; size_t n = 0;
-          if (mq_vfs_read(vfs, ("/" + script_path).c_str(), &d, &n) == MQ_VFS_OK) { src.assign((char*)d, n); mq_vfs_free(d); } }
-        if (src.empty()) { std::print("runtime: cannot read script '{}'\n", script_path); return false; }
-        script_hash = mq_vfs_hash(src.data(), src.size());
-        if (mq_script_eval(vm, src.c_str(), script_path.c_str()) != 0) { std::print("runtime: script error\n"); return false; }
+          if (mq_vfs_read(vfs, ("/" + path).c_str(), &d, &n) == MQ_VFS_OK) { src.assign((char*)d, n); mq_vfs_free(d); } }
+        if (src.empty()) { std::print("runtime: cannot read script '{}'\n", path); return false; }
+        if (load_list.size() == 1) script_hash = mq_vfs_hash(src.data(), src.size());
+        if (mq_script_eval(one, src.c_str(), path.c_str()) != 0) { std::print("runtime: script error\n"); return false; }
+        mq_script_bus_add(bus, one, path.c_str());
     }
+    vm = mq_script_bus_vm_at(bus, 0);          /* 便捷指针：只读/自省用途 */
+    if (load_list.size() > 1)
+        std::print("runtime: multi-script bus with {} VM(s) (dispatch order = declaration order)\n",
+                   mq_script_bus_count(bus));
     if (watcher) { mq_watcher_destroy(watcher); watcher = nullptr; }
     const char* watch = std::getenv("MAQUE_WATCH");
     if (watch && *watch && *watch != '0') {
@@ -4633,9 +4676,11 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         }
     }
     physics_components_setup();
-    if (mq_event_dispatch(vm, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
+    const uint32_t err0 = bus ? mq_script_bus_error_count(bus) : 0;
+    dispatch_event(*this, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr);
+    if (bus && mq_script_bus_error_count(bus) != err0) {
         char ebuf[512] = { 0 };
-        mq_script_last_error(vm, ebuf, (int)sizeof ebuf);
+        mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
         write_crash_context(ebuf[0] ? ebuf : "on_start failed");
     }
     return true;
@@ -4646,7 +4691,7 @@ void Engine::teardown() {
     if (ctl_server) { mq_control_server_destroy(ctl_server); ctl_server = nullptr; }
     /* 释放顺序：先释放"依赖 reflect 的资源"（clips 的字符串成员要经反射析构），再销毁 reflect。 */
     if (control) { mq_control_destroy(control); control = nullptr; }
-    if (vm) { mq_script_vm_destroy(vm); vm = nullptr; }
+    if (bus) { mq_script_bus_destroy(bus); bus = nullptr; vm = nullptr; }   // 总线拥有 VM
     if (obs) { mq_obs_destroy(obs); obs = nullptr; }
     if (reflect) {
         const mq_type_desc* ct = mq_reflect_type_by_name(reflect, "asset.AnimationClip");

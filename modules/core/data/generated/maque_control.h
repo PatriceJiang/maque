@@ -28,6 +28,8 @@ int mq_control_Types_describe(void* user, const mq_json* params, char* out, size
 int mq_control_Scene_info(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.entities() */
 int mq_control_Scene_entities(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.emit(id: float, event: string, value: float) */
+int mq_control_Scene_emit(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.get(id: float, path: string) */
 int mq_control_Scene_get(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.set(id: float, path: string, value: json, dry_run: bool) */

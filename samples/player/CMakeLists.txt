@@ -153,3 +153,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/sokoban/sokoban.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/sokoban_e2e")
 endif()
+
+# 多语言脚本协作（docs/14 §多 VM）：跨语言事件 + 确定性 + 宿主 emit
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME multilang_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/multilang_e2e.sh"
+             $<TARGET_FILE:maque_player> $<TARGET_FILE:maque_inspector>
+             "${CMAKE_SOURCE_DIR}/scenes/multilang/multilang.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/multilang_e2e")
+endif()

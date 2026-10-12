@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema.yaml`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **116** 个 · 控制面方法 **36** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
+统计：脚本 API **116** 个 · 控制面方法 **37** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -160,6 +160,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Types.describe` | — | — |
 | `Scene.info` | — | — |
 | `Scene.entities` | — | — |
+| `Scene.emit` | id: float, event: string, value: float | number, string, number |
 | `Scene.get` | id: float, path: string | number, string |
 | `Scene.set` | id: float, path: string, value: json, dry_run: bool | number, string, object, boolean |
 | `Scene.spawn` | name: string, parent: float, component: string, dry_run: bool | string, number, string, boolean |
@@ -389,6 +390,19 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_script_backends` | int | out: char*, cap: int |
 | `mq_script_lang` | const char* | vm: mq_script_vm* |
 | `mq_script_vm_destroy` | void | vm: mq_script_vm* |
+| `mq_script_bus_create` | mq_script_bus* | — |
+| `mq_script_bus_add` | int | bus: mq_script_bus*, vm: mq_script_vm*, name: const char* |
+| `mq_script_bus_count` | uint32_t | bus: mq_script_bus* |
+| `mq_script_bus_vm_at` | mq_script_vm* | bus: mq_script_bus*, index: uint32_t |
+| `mq_script_bus_name_at` | const char* | bus: mq_script_bus*, index: uint32_t |
+| `mq_script_bus_has` | int | bus: mq_script_bus*, fn: const char* |
+| `mq_script_bus_call` | int | bus: mq_script_bus*, fn: const char*, a: double, b: double, text: const char* |
+| `mq_script_bus_call3` | int | bus: mq_script_bus*, fn: const char*, a: double, b: double, c: double, text: const char* |
+| `mq_script_bus_gc` | void | bus: mq_script_bus* |
+| `mq_script_bus_error_count` | uint32_t | bus: mq_script_bus* |
+| `mq_script_bus_last_error` | int | bus: mq_script_bus*, out: char*, cap: int |
+| `mq_script_bus_set_rng` | void | bus: mq_script_bus*, fn: mq_script_rng_fn, user: void* |
+| `mq_script_bus_destroy` | void | bus: mq_script_bus* |
 | `mq_script_eval` | int | vm: mq_script_vm*, src: const char*, filename: const char* |
 | `mq_script_has` | int | vm: mq_script_vm*, fn: const char* |
 | `mq_script_call0` | int | vm: mq_script_vm*, fn: const char*, ret: double* |

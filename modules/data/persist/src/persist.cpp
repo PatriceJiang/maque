@@ -207,8 +207,18 @@ void apply_field(mq_reflect_ctx* ctx, const mq_field_desc* f, void* fp, const JV
             return;
         }
         case MQ_TK_ARRAY_DYN: {
-            /* 动态数组：经容器算子（codegen 生成）类型化地 resize + 逐元素反序列化。 */
+            /* 动态数组：经容器算子（codegen 生成）类型化地 resize + 逐元素反序列化。
+             * 元素是字符串时 elem_type_id = MQ_ELEM_TYPE_STRING（无具名类型）→ 直接按 std::string 处理。 */
             if (v.kind != JVal::Arr || !f->container_resize || !f->container_elem) return;
+            if (f->elem_type_id == MQ_ELEM_TYPE_STRING) {
+                f->container_resize(fp, (uint32_t)v.arr.size());
+                for (uint32_t i = 0; i < (uint32_t)v.arr.size(); ++i) {
+                    auto* e = (std::string*)f->container_elem(fp, i);
+                    if (e && v.arr[i].kind == JVal::Str) *e = v.arr[i].str;
+                    else if (e) e->clear();
+                }
+                return;
+            }
             const mq_type_desc* et = mq_reflect_type_by_id(ctx, f->elem_type_id);
             if (!et) return;
             f->container_resize(fp, (uint32_t)v.arr.size());
@@ -318,6 +328,19 @@ void write_json_field(mq_reflect_ctx* ctx, const mq_field_desc* f, const void* f
             return;
         }
         case MQ_TK_ARRAY_DYN: {
+            if (f->elem_type_id == MQ_ELEM_TYPE_STRING) {
+                out += '[';
+                if (f->container_size && f->container_elem) {
+                    const uint32_t n = f->container_size(fp);
+                    for (uint32_t i = 0; i < n; ++i) {
+                        if (i) out += ',';
+                        const auto* e = (const std::string*)f->container_elem(const_cast<void*>(fp), i);
+                        out += '"'; out += e ? *e : std::string(); out += '"';
+                    }
+                }
+                out += ']';
+                return;
+            }
             const mq_type_desc* et = mq_reflect_type_by_id(ctx, f->elem_type_id);
             out += '[';
             if (et && f->container_size && f->container_elem) {

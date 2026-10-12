@@ -1883,6 +1883,7 @@ role: `particle_emitter`
 |------|------|--------|-------|
 | `title` | string | maque scene |  |
 | `script` | string |  |  |
+| `scripts` | string[] | — |  |
 | `width` | int32_t | 320 |  |
 | `height` | int32_t | 240 |  |
 | `seed` | uint32_t | 0 |  |

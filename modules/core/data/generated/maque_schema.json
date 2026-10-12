@@ -3,7 +3,7 @@
   "generated_by": "parser.js",
   "type_count": 242,
   "api_count": 116,
-  "control_count": 36,
+  "control_count": 37,
   "callback_count": 10,
   "module_count": 23,
   "types": [
@@ -10266,6 +10266,15 @@
           "attrs": {}
         },
         {
+          "name": "scripts",
+          "type": "string[]",
+          "kind": "array_dyn",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "width",
           "type": "int32_t",
           "kind": "i32",
@@ -16649,6 +16658,24 @@
       "args": []
     },
     {
+      "method": "Scene.emit",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "event",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ]
+    },
+    {
       "method": "Scene.get",
       "namespace": "control",
       "args": [
@@ -19116,6 +19143,233 @@
             {
               "name": "vm",
               "type": "mq_script_vm*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_create",
+          "returns": "mq_script_bus*",
+          "args": []
+        },
+        {
+          "name": "mq_script_bus_add",
+          "returns": "int",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_count",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_vm_at",
+          "returns": "mq_script_vm*",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_name_at",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_has",
+          "returns": "int",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "fn",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_call",
+          "returns": "int",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "fn",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "a",
+              "type": "double",
+              "doc": null
+            },
+            {
+              "name": "b",
+              "type": "double",
+              "doc": null
+            },
+            {
+              "name": "text",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_call3",
+          "returns": "int",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "fn",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "a",
+              "type": "double",
+              "doc": null
+            },
+            {
+              "name": "b",
+              "type": "double",
+              "doc": null
+            },
+            {
+              "name": "c",
+              "type": "double",
+              "doc": null
+            },
+            {
+              "name": "text",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_gc",
+          "returns": "void",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_error_count",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_last_error",
+          "returns": "int",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "char*",
+              "doc": null
+            },
+            {
+              "name": "cap",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_set_rng",
+          "returns": "void",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
+              "doc": null
+            },
+            {
+              "name": "fn",
+              "type": "mq_script_rng_fn",
+              "doc": null
+            },
+            {
+              "name": "user",
+              "type": "void*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bus_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "bus",
+              "type": "mq_script_bus*",
               "doc": null
             }
           ]

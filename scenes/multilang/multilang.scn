@@ -1,0 +1,17 @@
+{
+  "title": "multilang",
+  "scripts": ["game.js", "ai.lua"],
+  "width": 320,
+  "height": 240,
+  "seed": 20261012,
+  "entities": [
+    { "name": "Title", "components": [
+        { "type": "scn.Label", "x": 8.0, "y": 228.0, "text": "多语言协作：JS 玩法 + Lua AI（事件总线）", "font_size": 13.0,
+          "font": "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+          "r": 0.95, "g": 0.85, "b": 0.45, "a": 1.0 } ] },
+    { "name": "Status", "components": [
+        { "type": "scn.Label", "x": 8.0, "y": 208.0, "text": "", "font_size": 12.0,
+          "font": "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+          "r": 0.75, "g": 0.85, "b": 1.0, "a": 1.0 } ] }
+  ]
+}

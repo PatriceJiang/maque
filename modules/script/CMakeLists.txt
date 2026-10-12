@@ -15,7 +15,7 @@ set_target_properties(quickjs PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON)
 
 # maque::script —— quickjs 封装（C ABI，docs/14）
 add_library(maque_script STATIC
-    src/script.cpp        # 公共 ABI 派发层（docs/14 统一后端 ABI）
+    src/script.cpp src/bus.cpp        # 公共 ABI 派发层（docs/14 统一后端 ABI）
     src/js_backend.cpp    # quickjs-ng 后端
     src/lua_backend.cpp   # lua 5.4 后端（沙箱 + 确定性 GC）
 )

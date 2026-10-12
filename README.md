@@ -55,6 +55,7 @@ ctest --test-dir build --output-on-failure
 > | `nodes/nodes.scn` | 节点/组件/事件/补间/定时器 API |
 > | `canvas/canvas.scn` | 画布与分辨率策略（同一 UI 适配不同窗口/显示器） |
 > | `lua/lua.scn` | Lua 脚本后端（与 JS 版**同一份语义**，世界演化逐帧一致） |
+> | `multilang/multilang.scn` | **多语言协作**：JS 玩法 + Lua AI，只通过事件总线互相调用 |
 > | `anim/` · `nav/` | 动画采样/物理粒子 · A* 导航与追踪 |
 >
 > **Inspector（独立进程检查器，plans/17）**：

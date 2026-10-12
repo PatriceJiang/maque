@@ -2119,7 +2119,7 @@
     module: script
     abi_name: "maque.script"
     includes: [ "<stddef.h>", "<stdint.h>" ]
-    opaque: [ mq_script_vm ]
+    opaque: [ mq_script_vm, mq_script_bus ]
     typedefs:
       - { name: mq_script_rng_fn, type: "uint32_t (*)(void* user)" }
       - { name: mq_script_num_fn, type: "int (*)(void* user, int argc, const double* argv, double* ret)" }
@@ -2141,6 +2141,30 @@
       - { fn: mq_script_lang, returns: "const char*", args: [ { name: vm, type: "mq_script_vm*" } ],
           doc: "该 VM 的后端语言 id" }
       - { fn: mq_script_vm_destroy, returns: "void", args: [ { name: vm, type: "mq_script_vm*" } ] }
+      # ---- 事件总线（多 VM / 跨语言协作，docs/14 §多 VM、docs/19 §事件）----
+      # 语义：**按加入顺序**逐 VM 投递；只投给定义了该处理器的 VM；每个 VM 独立保护调用（错误隔离）。
+      - { fn: mq_script_bus_create, returns: "mq_script_bus*", args: [  ],
+          doc: "创建事件总线（多脚本/多语言）；总线**拥有**其 VM，销毁总线即销毁全部 VM" }
+      - { fn: mq_script_bus_add, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" } ],
+          doc: "加入 VM（顺序 = 脚本声明顺序 = 投递顺序 → 确定性）；name 为脚本路径（自省）" }
+      - { fn: mq_script_bus_count, returns: "uint32_t", args: [ { name: bus, type: "mq_script_bus*" } ] }
+      - { fn: mq_script_bus_vm_at, returns: "mq_script_vm*", args: [ { name: bus, type: "mq_script_bus*" }, { name: index, type: "uint32_t" } ] }
+      - { fn: mq_script_bus_name_at, returns: "const char*", args: [ { name: bus, type: "mq_script_bus*" }, { name: index, type: "uint32_t" } ],
+          doc: "该 VM 的脚本路径（诊断/自省）" }
+      - { fn: mq_script_bus_has, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: fn, type: "const char*" } ],
+          doc: "是否有任一 VM 定义了该处理器（订阅判定）" }
+      - { fn: mq_script_bus_call, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: fn, type: "const char*" }, { name: a, type: double }, { name: b, type: double }, { name: text, type: "const char*" } ],
+          doc: "按顺序向定义了 fn 的每个 VM 调用 fn(a,b[,text])；返回命中的 VM 数（跨语言事件即此调用）" }
+      - { fn: mq_script_bus_call3, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: fn, type: "const char*" }, { name: a, type: double }, { name: b, type: double }, { name: c, type: double }, { name: text, type: "const char*" } ] }
+      - { fn: mq_script_bus_gc, returns: void, args: [ { name: bus, type: "mq_script_bus*" } ],
+          doc: "帧边界：逐 VM 推进 GC（确定性，docs/10 D7）" }
+      - { fn: mq_script_bus_error_count, returns: "uint32_t", args: [ { name: bus, type: "mq_script_bus*" } ],
+          doc: "累计出错次数（单调）：调用方比较前后差值即可判定本次派发是否出错（错误隔离不等于静默）" }
+      - { fn: mq_script_bus_last_error, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: out, type: "char*" }, { name: cap, type: int } ],
+          doc: "最近一次出错的 VM 的错误信息（错误隔离：一个脚本出错不影响其它脚本）" }
+      - { fn: mq_script_bus_set_rng, returns: void, args: [ { name: bus, type: "mq_script_bus*" }, { name: fn, type: "mq_script_rng_fn" }, { name: user, type: "void*" } ],
+          doc: "给总线上全部 VM 注入同一引擎 RNG（两语言同一 seed → 同一序列）" }
+      - { fn: mq_script_bus_destroy, returns: void, args: [ { name: bus, type: "mq_script_bus*" } ] }
       - { fn: mq_script_eval, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: src, type: "const char*" }, { name: filename, type: "const char*" } ] }
       - { fn: mq_script_has, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" } ] }
       - { fn: mq_script_call0, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" }, { name: ret, type: "double*" } ] }
@@ -2414,6 +2438,9 @@
       fields:
         - { name: title,    type: string,  default: "maque scene" }
         - { name: script,   type: string,  default: "" }      # 关联脚本资源（相对场景目录）
+        # 多脚本（多语言）协作：按**声明顺序**创建 VM 并投递事件（确定性）。
+        # 留空则用上面的 script；两者都给时 scripts 生效。
+        - { name: scripts,  type: "string[]", doc: "多脚本列表（多语言，按声明顺序）" }
         - { name: width,    type: int32_t, default: 320 }
         - { name: height,   type: int32_t, default: 240 }
         - { name: seed,     type: uint32_t, default: 0 }
@@ -2638,7 +2665,7 @@
 - namespace: control
   version: 1
   # 变更类方法（权限单一真相，D2 默认只读）：只读会话对这些方法返回 -32001
-  control_mutating: [ Scene.set, Scene.spawn, Scene.destroy, Scene.bake, Scene.save,
+  control_mutating: [ Scene.set, Scene.spawn, Scene.destroy, Scene.bake, Scene.save, Scene.emit,
                       Runtime.step, Director.pause, Director.resume, World.restore,
                       Replay.seek, Input.sim_load, Input.sim_stop, Input.inject,
                       Reload.script, Reload.scene, Reload.files ]
@@ -2656,6 +2683,9 @@
     - { method: Types.describe, args: [] }
     - { method: Scene.info, args: [] }
     - { method: Scene.entities, args: [] }
+    # 宿主/工具 → 脚本：触发节点事件（与脚本内 node_emit_number 同一路径；多语言按处理器名路由）
+    - { method: Scene.emit,   args: [ { name: id, type: float }, { name: event, type: string },
+                                      { name: value, type: float } ] }
     - { method: Scene.get,    args: [ { name: id, type: float }, { name: path, type: string } ] }
     # ---- 编辑（A5、docs/11 §4：破坏性操作支持 dry_run）----
     - { method: Scene.set,     args: [ { name: id, type: float  }, { name: path, type: string },

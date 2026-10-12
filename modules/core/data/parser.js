@@ -1188,6 +1188,10 @@ typedef enum mq_type_kind {
     MQ_TK_ENTITY_REF, MQ_TK_ASSET_REF, MQ_TK_OPTIONAL
 } mq_type_kind;
 
+/* 动态数组的元素类型哨兵：元素是字符串（无具名类型可引用）。
+ * 反射/persist 据此按 std::string 处理（此前 string[] 因 elem_type_id=0 被整体跳过）。 */
+#define MQ_ELEM_TYPE_STRING 0xFFFFFFFFu
+
 typedef struct mq_field_desc {
     const char*  name;
     uint32_t     offset;       /* offsetof(Type, field) */
@@ -1309,10 +1313,13 @@ function genDescSource(types) {
   lines.push('#endif')
   lines.push('')
 
-  // 动态数组（T[]，具名 struct 元素）的容器算子
-  const dynElem = (node) =>
-    (node && node.cat === 'array_dyn' && node.elem && node.elem.cat === 'named' && node.elem.resolved)
-      ? node.elem.resolved : null
+  // 动态数组（T[]）的容器算子元素：具名 struct，或字符串（元素类型由哨兵表示）
+  const dynElem = (node) => {
+    if (!node || node.cat !== 'array_dyn' || !node.elem) return null
+    if (node.elem.cat === 'string') return { sentinel: true, fqName: 'std::string', typeId: 0 }
+    if (node.elem.cat === 'named' && node.elem.resolved) return node.elem.resolved
+    return null
+  }
 
   for (const t of types) {
     if (t.kind !== 'struct' || t.fields.length === 0) continue
@@ -1321,7 +1328,7 @@ function genDescSource(types) {
       const de = dynElem(f.typeNode)
       if (!de) continue
       const base = `mq_dyn_${mangle(t.fqName)}_${mangle(f.name)}`
-      const elemCpp = de.fqName.replace(/\./g, '::')
+      const elemCpp = de.sentinel ? 'std::string' : de.fqName.replace(/\./g, '::')
       lines.push(`static void ${base}_clear(void* f) { static_cast<std::vector<${elemCpp}>*>(f)->clear(); }`)
       lines.push(`static uint32_t ${base}_size(const void* f) { return (uint32_t)static_cast<const std::vector<${elemCpp}>*>(f)->size(); }`)
       lines.push(`static void ${base}_resize(void* f, uint32_t n) { static_cast<std::vector<${elemCpp}>*>(f)->resize(n); }`)
@@ -1337,7 +1344,8 @@ function genDescSource(types) {
       let extra
       if (de) {
         const base = `mq_dyn_${mangle(t.fqName)}_${mangle(f.name)}`
-        extra = `${de.typeId}u, ${base}_clear, ${base}_size, ${base}_resize, ${base}_elem`
+        const elemId = de.sentinel ? 'MQ_ELEM_TYPE_STRING' : `${de.typeId}u`
+        extra = `${elemId}, ${base}_clear, ${base}_size, ${base}_resize, ${base}_elem`
       } else {
         extra = `0u, 0, 0, 0, 0`
       }
