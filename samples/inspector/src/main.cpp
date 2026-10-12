@@ -52,8 +52,10 @@ struct App {
     std::vector<std::pair<int, float>> atlas_list;     /* (字体索引, 字号) */
     int atlas_sel = 0;
     float atlas_zoom = 3.0F;
-    std::string tab = "属性";                          /* 目标标签页（--tab / 键盘 / 鼠标点选） */
-    std::string tab_applied;                           /* 已经应用过的页（避免每帧强制选中） */
+    std::string tab = "属性";                          /* 请求页（--tab / 键盘；空 = 无请求） */
+    std::string tab_cur;                               /* 当前实际页（由打开的标签页回写/鼠标点选） */
+    ImVec2 tab_rect_min[5] = {};                       /* 各标签页矩形（ImGui 内部布局，自测用） */
+    ImVec2 tab_rect_max[5] = {};
     insp::Texture probe_tex;                           /* 诊断：已知颜色的测试纹理 */
     SDL_Texture* probe_raw = nullptr;                  /* 诊断：裸 SDL_Texture 对照 */
     bool atlas_autoloaded = false;
@@ -209,24 +211,12 @@ void draw_ui(App& a) {
         ImGui::TextColored(a.read_only ? ImVec4(0.9F, 0.8F, 0.3F, 1.0F) : ImVec4(0.4F, 0.9F, 0.4F, 1.0F),
                            "%s", a.read_only ? "只读" : "可编辑");
         ImGui::SameLine();
-        ImGui::Text("| frame %.0f | ui %.0f fps", a.frame, (double)ImGui::GetIO().Framerate);
+        ImGui::Text("| %s | frame %.0f | ui %.0f fps",
+                    a.endpoint.empty() ? "未连接端点" : a.endpoint.c_str(), a.frame,
+                    (double)ImGui::GetIO().Framerate);
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("端点 %s\n客户端 %.0f · 方法 %.0f · 被拒 %.0f\n键位：1-5 / Ctrl+Tab 切页",
-                              a.endpoint.empty() ? "—" : a.endpoint.c_str(), a.clients, a.methods, a.rejected);
-        /* 兜底入口：菜单栏里也放一排"切页按钮"（大控件，比标签页更容易命中；
-         * 某些环境下标签页点击可能被窗口管理器/合成器吃掉） */
-        ImGui::SameLine();
-        ImGui::Text("|");
-        static const char* kQuick[] = { "属性", "控制台", "字体图集", "预览", "模式" };
-        for (int i = 0; i < 5; ++i) {
-            ImGui::SameLine();
-            const bool cur = (a.tab == kQuick[i]);
-            if (cur) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26F, 0.59F, 0.98F, 1.0F));
-            char lbl[32];
-            std::snprintf(lbl, sizeof lbl, "%d %s", i + 1, kQuick[i]);
-            if (ImGui::SmallButton(lbl)) a.tab = kQuick[i];
-            if (cur) ImGui::PopStyleColor();
-        }
+            ImGui::SetTooltip("客户端 %.0f · 方法 %.0f · 被拒 %.0f\n键位：1-5 / Ctrl+Tab 切页",
+                              a.clients, a.methods, a.rejected);
         ImGui::EndMenuBar();
     }
 
@@ -268,24 +258,47 @@ void draw_ui(App& a) {
     /* 右：属性 + 控制台 */
     ImGui::BeginChild("right", ImVec2(0, 0));
     if (ImGui::BeginTabBar("tabs")) {
-        /* 只在"目标页刚变化"的那一帧用 SetSelected 强制切换；此后交还给 ImGui。
-         * 曾经每帧都按 a.tab 强制选中 → 鼠标点其它页会被立刻抢回（表现为"tab 无法切换"）。 */
-        const bool force_tab = a.tab != a.tab_applied;
+        /* 只在"有请求且与当前页不同"时用 SetSelected 强制一次，随后清空请求交还 ImGui。
+         * （每帧强制会抢回鼠标点选；而残留请求会让强制永不结束 —— 两者都曾导致"tab 点不动"。） */
+        const bool force_tab = !a.tab.empty() && a.tab != a.tab_cur;
         auto tab_flags = [&](const char* name) {
             return (force_tab && a.tab == name) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
         };
         /* 页面打开中 → 记录当前页（鼠标点选也生效）；但**强制切换那一帧不要回写**：
          * SetSelected 到下一帧才生效，本帧打开的仍是旧页，回写会把刚设的目标页取消掉。 */
-        auto sync_tab = [&](const char* name) { if (!force_tab) a.tab = name; };
-        if (ImGui::BeginTabItem("属性", nullptr, tab_flags("属性"))) {
+        auto sync_tab = [&](const char* name) { a.tab_cur = name; };      // 打开的页就是当前页（含鼠标点选）
+        /* 结束标签页并记录它的矩形（矩形在 EndTabItem 之后才有效；用于自测/CI 精确点击） */
+        auto end_tab = [&](const char* name) {
+            ImGui::EndTabItem();
+            if (a.tab == name) {
+                a.tab_rect_min[0] = ImGui::GetItemRectMin();
+                a.tab_rect_max[0] = ImGui::GetItemRectMax();
+                if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
+                    static int n = 0;
+                    if (++n % 180 == 1)
+                        std::print("[insp] 选中页 {} rect ({:.0f},{:.0f})-({:.0f},{:.0f}) 中心=({:.0f},{:.0f})\n",
+                                   name, (double)a.tab_rect_min[0].x, (double)a.tab_rect_min[0].y,
+                                   (double)a.tab_rect_max[0].x, (double)a.tab_rect_max[0].y,
+                                   (double)((a.tab_rect_min[0].x + a.tab_rect_max[0].x) * 0.5F),
+                                   (double)((a.tab_rect_min[0].y + a.tab_rect_max[0].y) * 0.5F));
+                }
+            }
+        };
+        const bool open_e5b19ee680a7 = ImGui::BeginTabItem("属性", nullptr, tab_flags("属性"));
+        if (std::getenv("MAQUE_INSPECTOR_TRACE") && ImGui::IsItemHovered()) {
+            static bool was_e5b19ee680a7 = false;
+            if (!was_e5b19ee680a7) std::print("[insp] 悬停 tab 属性\n");
+            was_e5b19ee680a7 = true;
+        } else { static bool was_e5b19ee680a7 = false; was_e5b19ee680a7 = false; }
+        if (open_e5b19ee680a7) {
             sync_tab("属性");
             if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
-                static int n_e5b19ee680a7 = 0;
-                if (++n_e5b19ee680a7 % 120 == 1) {
+                static int n0 = 0;
+                if (++n0 % 120 == 1) {
                     const ImVec2 ta = ImGui::GetItemRectMin(), tb = ImGui::GetItemRectMax();
-                    std::print("[insp] tab 属性 rect ({:.0f},{:.0f})-({:.0f},{:.0f}) mouse=({:.0f},{:.0f})\n",
+                    std::print("[insp] 选中页 rect ({:.0f},{:.0f})-({:.0f},{:.0f}) 中心=({:.0f},{:.0f})\n",
                                (double)ta.x, (double)ta.y, (double)tb.x, (double)tb.y,
-                               (double)ImGui::GetIO().MousePos.x, (double)ImGui::GetIO().MousePos.y);
+                               (double)((ta.x + tb.x) * 0.5F), (double)((ta.y + tb.y) * 0.5F));
                 }
             }
             if (a.selected.empty()) ImGui::TextDisabled("在左侧选择一个实体");
@@ -347,9 +360,15 @@ void draw_ui(App& a) {
                     ImGui::EndTable();
                 }
             }
-            ImGui::EndTabItem();
+            end_tab("控制台");
         }
-        if (ImGui::BeginTabItem("控制台", nullptr, tab_flags("控制台"))) {
+        const bool open_e68ea7e588b6e58fb0 = ImGui::BeginTabItem("控制台", nullptr, tab_flags("控制台"));
+        if (std::getenv("MAQUE_INSPECTOR_TRACE") && ImGui::IsItemHovered()) {
+            static bool was_e68ea7e588b6e58fb0 = false;
+            if (!was_e68ea7e588b6e58fb0) std::print("[insp] 悬停 tab 控制台\n");
+            was_e68ea7e588b6e58fb0 = true;
+        } else { static bool was_e68ea7e588b6e58fb0 = false; was_e68ea7e588b6e58fb0 = false; }
+        if (open_e68ea7e588b6e58fb0) {
             sync_tab("控制台");
             if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
                 static int n_e68ea7e588b6e58fb0 = 0;
@@ -373,9 +392,15 @@ void draw_ui(App& a) {
             ImGui::BeginChild("log", ImVec2(0, 0), ImGuiChildFlags_Borders);
             for (const std::string& l : a.log) ImGui::TextWrapped("%s", l.c_str());
             ImGui::EndChild();
-            ImGui::EndTabItem();
+            end_tab("字体图集");
         }
-        if (ImGui::BeginTabItem("字体图集", nullptr, tab_flags("字体图集"))) {
+        const bool open_e5ad97e4bd93e59bbee99b86 = ImGui::BeginTabItem("字体图集", nullptr, tab_flags("字体图集"));
+        if (std::getenv("MAQUE_INSPECTOR_TRACE") && ImGui::IsItemHovered()) {
+            static bool was_e5ad97e4bd93e59bbee99b86 = false;
+            if (!was_e5ad97e4bd93e59bbee99b86) std::print("[insp] 悬停 tab 字体图集\n");
+            was_e5ad97e4bd93e59bbee99b86 = true;
+        } else { static bool was_e5ad97e4bd93e59bbee99b86 = false; was_e5ad97e4bd93e59bbee99b86 = false; }
+        if (open_e5ad97e4bd93e59bbee99b86) {
             sync_tab("字体图集");
             if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
                 static int n_e5ad97e4bd93e59bbee99b86 = 0;
@@ -468,9 +493,15 @@ void draw_ui(App& a) {
             } else {
                 ImGui::TextDisabled("选择左侧的图集以拉取像素（分块传输，逐帧推进）");
             }
-            ImGui::EndTabItem();
+            end_tab("预览");
         }
-        if (ImGui::BeginTabItem("预览", nullptr, tab_flags("预览"))) {
+        const bool open_e9a284e8a788 = ImGui::BeginTabItem("预览", nullptr, tab_flags("预览"));
+        if (std::getenv("MAQUE_INSPECTOR_TRACE") && ImGui::IsItemHovered()) {
+            static bool was_e9a284e8a788 = false;
+            if (!was_e9a284e8a788) std::print("[insp] 悬停 tab 预览\n");
+            was_e9a284e8a788 = true;
+        } else { static bool was_e9a284e8a788 = false; was_e9a284e8a788 = false; }
+        if (open_e9a284e8a788) {
             sync_tab("预览");
             if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
                 static int n_e9a284e8a788 = 0;
@@ -521,9 +552,15 @@ void draw_ui(App& a) {
             } else {
                 ImGui::TextDisabled("（等待首帧；游戏需开启控制端点）");
             }
-            ImGui::EndTabItem();
+            end_tab("模式");
         }
-        if (ImGui::BeginTabItem("模式", nullptr, tab_flags("模式"))) {
+        const bool open_e6a8a1e5bc8f = ImGui::BeginTabItem("模式", nullptr, tab_flags("模式"));
+        if (std::getenv("MAQUE_INSPECTOR_TRACE") && ImGui::IsItemHovered()) {
+            static bool was_e6a8a1e5bc8f = false;
+            if (!was_e6a8a1e5bc8f) std::print("[insp] 悬停 tab 模式\n");
+            was_e6a8a1e5bc8f = true;
+        } else { static bool was_e6a8a1e5bc8f = false; was_e6a8a1e5bc8f = false; }
+        if (open_e6a8a1e5bc8f) {
             sync_tab("模式");
             if (std::getenv("MAQUE_INSPECTOR_TRACE")) {
                 static int n_e6a8a1e5bc8f = 0;
@@ -538,8 +575,7 @@ void draw_ui(App& a) {
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
-        /* 强制那一帧：目标页在下一帧生效 → 这里先记成"未应用"，下一帧再确认 */
-        a.tab_applied = force_tab ? std::string() : a.tab;
+        if (!a.tab.empty() && a.tab == a.tab_cur) a.tab.clear();   // 请求已被满足 → 交还 ImGui
     }
     ImGui::EndChild();
     ImGui::End();
@@ -714,7 +750,7 @@ int main(int argc, char** argv) {
 
     /* 诊断：注入一次合成点击（SDL 事件队列 → 与真实鼠标同一条路径）。
      * 本机 Wayland 会话下 XTest 注入无效（指针不动），用它验证 tab/按钮交互链路。 */
-    Uint32 fake_at = 0, fake_release_at = 0, fake_key_at = 0, fake_key_release_at = 0;
+    Uint32 fake_at = 0, fake_down_at = 0, fake_release_at = 0, fake_key_at = 0, fake_key_release_at = 0;
     (void)0;
     ImGuiKey fake_key_release = ImGuiKey_None;
     if (!fake_click.empty()) fake_at = SDL_GetTicks() + 1200;
@@ -752,15 +788,51 @@ int main(int argc, char** argv) {
          * SDL2 后端在 NewFrame 里用 SDL_GetMouseState() 覆盖鼠标位置，合成事件会被真实指针盖掉
          * （本机 Wayland 会话指针无法用 XTest 移动 → 只能走 ImGui 的输入队列）。
          * 必须跨帧：同一帧 down+up 会被"每帧快照"吞掉。 */
-        if (fake_at && now >= fake_at) {
-            int fx = 0, fy = 0;
-            if (std::sscanf(fake_click.c_str(), "%d,%d", &fx, &fy) == 2) {
-                ImGui::GetIO().AddMousePosEvent((float)fx, (float)fy);
-                ImGui::GetIO().AddMouseButtonEvent(0, true);
-                fake_release_at = now + 150;
-                fake_at = 0;
-                std::print("inspector: 合成点击按下 ({}, {})\n", fx, fy);
+        if (fake_click == "sweep") {                       // 自测：扫描 tab 栏，命中即报告
+            static int sx = 460, sy = 125;
+            static Uint32 next_at = 0;
+            static bool sweep_moved = false;
+            if (next_at == 0) next_at = now + 500;
+            /* 三段式：先移动（让悬停成立）→ 下一帧按下 → 再抬起；同帧按下不会激活控件 */
+            if (now >= next_at) {
+                if (!sweep_moved) {
+                    ImGui::GetIO().AddMousePosEvent((float)sx, (float)sy);
+                    SDL_WarpMouseInWindow(win, sx, sy);
+                    SDL_PumpEvents();
+                    sweep_moved = true;
+                    next_at = now + 60;
+                } else {
+                    ImGui::GetIO().AddMouseButtonEvent(0, true);
+                    fake_release_at = now + 120;
+                    std::print("inspector: 扫描点击 ({}, {}) 当前页={}\n", sx, sy, app.tab_cur);
+                    sweep_moved = false;
+                    sx += 20;
+                    if (sx > 1100) { sx = 460; sy += 20; if (sy > 200) sy = 125; }
+                    next_at = now + 320;
+                }
             }
+        } else if (fake_at && now >= fake_at) {
+            int fx = 0, fy = 0;
+            bool have = false;
+            if (std::sscanf(fake_click.c_str(), "%d,%d", &fx, &fy) == 2) {
+                have = true;
+            }
+            if (have) {
+                /* 先只移动（让 ImGui 在本帧据此算出悬停窗口/控件），
+                 * 下一帧再按下 —— 同一帧里同时给位置和按下，控件可能还没被判定为悬停。 */
+                ImGui::GetIO().AddMousePosEvent((float)fx, (float)fy);
+                SDL_WarpMouseInWindow(win, fx, fy);          // 真的挪指针（X11 生效；Wayland 可能被忽略）
+                SDL_PumpEvents();
+                fake_down_at = now + 80;
+                fake_at = 0;
+                std::print("inspector: 合成移动 ({}, {})\n", fx, fy);
+            }
+        }
+        if (fake_down_at && now >= fake_down_at) {
+            ImGui::GetIO().AddMouseButtonEvent(0, true);
+            fake_release_at = now + 200;
+            fake_down_at = 0;
+            std::print("inspector: 合成点击按下\n");
         } else if (fake_release_at && now >= fake_release_at) {
             ImGui::GetIO().AddMouseButtonEvent(0, false);
             fake_release_at = 0;
@@ -805,10 +877,11 @@ int main(int argc, char** argv) {
             const ImGuiIO& tio = ImGui::GetIO();
             static int n = 0;
             if (++n % 1 == 0 && n < 200)
-                std::print("[insp] 鼠标 pos=({:.0f},{:.0f}) down={} clicked={} AppFocusLost={} SDL焦点={} 当前页={}\n",
+                std::print("[insp] 鼠标 pos=({:.0f},{:.0f}) down={} clicked={} 悬停控件={} 悬停窗口={} WantMouse={} 当前页={}\n",
                            (double)tio.MousePos.x, (double)tio.MousePos.y, tio.MouseDown[0],
-                           ImGui::IsMouseClicked(0), tio.AppFocusLost,
-                           (SDL_GetWindowFlags(win) & SDL_WINDOW_INPUT_FOCUS) ? 1 : 0, app.tab);
+                           ImGui::IsMouseClicked(0), ImGui::IsAnyItemHovered() ? 1 : 0,
+                           ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) ? 1 : 0,
+                           tio.WantCaptureMouse ? 1 : 0, app.tab_cur);
         }
         ImGui::Render();
         SDL_SetRenderDrawColor(ren, 16, 16, 20, 255);

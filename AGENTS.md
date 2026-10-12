@@ -58,7 +58,12 @@ cd modules/core/data && node parser.js --check
   窗口默认**置顶**（`--no-on-top` / `MAQUE_INSPECTOR_ON_TOP=0` 关闭）与 `--pos x,y` 定位 ——
   否则容易被游戏窗口盖住（点击落到游戏上，表现为"tab 点不动"）。配对着用时游戏侧**不要**加 `MAQUE_ALWAYS_ON_TOP`。
   环境变量：`MAQUE_INSPECTOR_FONT_SIZE` / `MAQUE_INSPECTOR_UI_SCALE` / `MAQUE_INSPECTOR_ON_TOP` / `MAQUE_INSPECTOR_POS`；
-  诊断注入（自动化验证用，本机 XTest 无效）：`MAQUE_INSPECTOR_FAKE_KEY=3` / `MAQUE_INSPECTOR_FAKE_CLICK=x,y`。
+  诊断/自测注入（本机 XTest 无法移动指针，故用这两条；两者都走真实事件路径）：
+  `MAQUE_INSPECTOR_FAKE_KEY=3`（按键切页）、`MAQUE_INSPECTOR_FAKE_CLICK=x,y`（真实挪指针 + 三段式点击）、
+  `MAQUE_INSPECTOR_FAKE_CLICK=sweep`（沿 tab 栏扫描点击，验证所有标签页可点）；
+  配合 `MAQUE_INSPECTOR_TRACE=1` 打印鼠标 pos/down/clicked/悬停控件/悬停 tab/当前页。
+  **点击被"抢回"的坑**：给标签页长期传 `ImGuiTabItemFlags_SetSelected` 会每帧强制选中，
+  鼠标点选会被立刻覆盖；请求必须"满足后即清空"（请求页 / 当前页分离）。
   **二进制传输**：控制面是行分隔 JSON → 图集/画面走 **base64 分块**（`offset`/`max`，单块 ≤48KB，客户端在途上限 4 且偏移递增）；
   自建纹理必须 `ImGui::RegisterUserTexture()`（1.92+ 的外部纹理 API），否则后端不创建 SDL_Texture（白图）。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
