@@ -45,6 +45,11 @@ cd modules/core/data && node parser.js --check
   并被录制覆盖 → 录制/回放等价；引擎内部一律世界坐标（设备事件在平台边界转换）。
 - **输入帧缓冲必须预分配**：`mq_input_frame.pointers/pointer_cap`（step_frame 内静态缓冲）——
   容量为 0 时平台会静默丢弃**全部**设备事件（曾导致"真实鼠标点击永远到不了脚本"）。
+- **VFS / 远程加载（docs/04）**：VFS 支持 `http(s)://` **目录挂载**（libcurl；逐段 percent-encode、
+  404→`MQ_VFS_ERR_NOTFOUND`、同 URL 会话内只抓一次）。运行 `./build/samples/player/maque_player https://host/game.scn`
+  即"远程游戏即资源"（场景/脚本/资源全走 VFS）；`MAQUE_MOUNT="/cdn=https://cdn.example.com/assets/,/x=../shared"`
+  额外挂载（后挂载优先 → 可遮蔽远程目录，是"远程游戏 + 本地覆盖"的开发路径）；远程场景无文件监视热重载。
+  测试：`ctest -R 'vfs|remote_e2e'`（本地 127.0.0.1 HTTP 服务器，不依赖外网）。
 - **控制端点 / Inspector（plans/17、docs/09/11）**：`MAQUE_INSPECT=7777`（或 `tcp:7777` / `uds:/tmp/maque.sock`）
   在游戏内开一个**单线程、非阻塞、帧边界轮询**的 JSON-RPC 端点（与 stdin 控制面同一 dispatch，无线程 → 不改确定性）；
   默认**只读**（D2）：变更类方法（`control_list` 里 `control_mutating` 列出的）返回 `-32001` 并计入 `Control.info.rejected`；

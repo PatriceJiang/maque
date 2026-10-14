@@ -154,6 +154,18 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/sokoban_e2e")
 endif()
 
+# 远程加载端到端（docs/04）：VFS 挂 http 目录 —— 场景/脚本经 HTTP 抓取 + 与本地轨迹一致
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    find_package(CURL QUIET)
+    if(CURL_FOUND)
+        add_test(NAME remote_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/remote_e2e.sh"
+                 $<TARGET_FILE:maque_player>
+                 "${CMAKE_SOURCE_DIR}/scenes"
+                 "${CMAKE_CURRENT_BINARY_DIR}/remote_e2e")
+        set_tests_properties(remote_e2e PROPERTIES SKIP_RETURN_CODE 77)
+    endif()
+endif()
+
 # 多语言脚本协作（docs/14 §多 VM）：跨语言事件 + 确定性 + 宿主 emit
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME multilang_e2e COMMAND bash "${CMAKE_SOURCE_DIR}/tests/multilang_e2e.sh"

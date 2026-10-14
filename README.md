@@ -20,7 +20,8 @@
   **可录制、可回放、可注入**；UI 控件按 role 命中（引擎不认具体组件）。
 - **确定性物理**：自研 2D 求解器（固定步长/固定迭代/按 body.index 稳定排序；C ABI vtable，可换后端）。
 - **快照 / 回滚 / 失步定位**：反射驱动二进制 codec + 快照池；逐帧世界校验和轨迹。
-- **VFS**：`file/mem/zip/builtin/res` + 直接 URL（libcurl）+ 内容哈希校验；**图像解码** Wuffs。
+- **VFS**：`file/mem/zip/builtin/res` 挂载 + **http(s) 目录挂载**（libcurl：整局游戏可经 HTTP 加载）
+  + 直接 URL + 内容哈希校验；**图像解码** Wuffs。
 - **资产管线**：导入 / 依赖图 / 拓扑序 / 校验 / 烘焙 / 打包 / dump JSON（内容寻址 ID）。
 - **控制平面**：JSON-RPC domain.method + **MCP 包装**（tools/list、tools/call）→ AI/CI 可加载、
   逐帧驱动、注入输入、截帧、取校验和、热重载。
@@ -83,7 +84,7 @@ modules/
   math            数学库
   observability   可观测性（结构化事件 + 指标, per-instance）
   control         控制平面（JSON-RPC，方法注册；AI/CI 可驱动）
-  io/vfs          虚拟文件系统 (file/URL)
+  io/vfs          虚拟文件系统（file/mem/zip/http(s) 挂载 + 内容哈希）
   net             网络 (libwebsockets)
   platform        平台层 (SDL2 窗口/输入)
   data/persist    持久化/反序列化 + JSON DOM

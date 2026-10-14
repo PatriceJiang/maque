@@ -1,10 +1,10 @@
-# maque::vfs —— 虚拟文件系统（挂载 + file:// 后端）
+# maque::vfs —— 虚拟文件系统（挂载 + file/mem/zip/http(s) 后端；docs/04）
 add_library(maque_vfs STATIC src/vfs.cpp)
 add_library(maque::vfs ALIAS maque_vfs)
 target_include_directories(maque_vfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set_target_properties(maque_vfs PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 
-# libcurl：URL(http/https/file) 抓取
+# libcurl：URL(http/https/file) 抓取 + http(s) 目录挂载（docs/04 §4）
 find_package(CURL QUIET)
 if(CURL_FOUND)
     target_link_libraries(maque_vfs PUBLIC CURL::libcurl)
@@ -19,6 +19,10 @@ if(MAQUE_BUILD_TESTS)
     target_link_libraries(maque_vfs_test PRIVATE maque::vfs)
     if(CURL_FOUND)
         target_compile_definitions(maque_vfs_test PRIVATE MQ_HAVE_CURL)
+    endif()
+    if(UNIX)
+        # 单测内建极简 HTTP 服务器（mount http:// 用例不依赖外部网络）
+        target_compile_definitions(maque_vfs_test PRIVATE MQ_TEST_HTTP)
     endif()
     add_test(NAME vfs COMMAND maque_vfs_test)
 endif()

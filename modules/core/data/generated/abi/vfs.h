@@ -25,7 +25,8 @@ enum {
     MQ_VFS_ERR_NOMEM = 4,   /* 内存不足 */
     MQ_VFS_ERR_FORMAT = 5,   /* 容器格式损坏（如 zip 头） */
     MQ_VFS_ERR_IO = 6,   /* 网络/磁盘 IO */
-    MQ_VFS_ERR_HASH = 7   /* 内容哈希不匹配（远程资产校验） */
+    MQ_VFS_ERR_HASH = 7,   /* 内容哈希不匹配（远程资产校验） */
+    MQ_VFS_ERR_UNSUPPORTED = 8   /* 协议/后端未支持（如未链接 libcurl 时的 http(s) 挂载） */
 };
 
 mq_vfs* mq_vfs_create(void);

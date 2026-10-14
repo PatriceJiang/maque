@@ -10,6 +10,111 @@
 #include <fstream>
 #include <filesystem>
 
+/* 极简 HTTP 服务器（仅用于本测试，避免依赖外部网络）：GET 命中文件表 → 200，否则 404。
+ * 请求路径按 %XX 解码后查表 —— 因此能验证 VFS 侧确实做了逐段 percent-encode。
+ * 只实现 Linux/macOS 路径（其它平台跳过 URL 相关用例）。 */
+#if defined(MQ_HAVE_CURL) && defined(MQ_TEST_HTTP)
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <atomic>
+#include <map>
+#include <mutex>
+#include <thread>
+
+struct HttpServer {
+    int fd = -1;
+    int port = 0;
+    std::thread th;
+    std::atomic<int> requests{ 0 };
+    std::atomic<bool> stop{ false };
+    std::map<std::string, std::string> files;    // 解码后的路径 → 内容
+    std::mutex mu;
+
+    bool start() {
+        fd = ::socket(AF_INET, SOCK_STREAM, 0);
+        if (fd < 0) return false;
+        int one = 1;
+        ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+        sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        addr.sin_port = 0;                        // 内核分配空闲端口
+        if (::bind(fd, (sockaddr*)&addr, sizeof addr) != 0) return false;
+        socklen_t len = sizeof addr;
+        if (::getsockname(fd, (sockaddr*)&addr, &len) != 0) return false;
+        port = ntohs(addr.sin_port);
+        if (::listen(fd, 8) != 0) return false;
+        th = std::thread([this] {
+            while (!stop) {
+                const int c = ::accept(fd, nullptr, nullptr);
+                if (c < 0) break;
+                handle(c);
+                ::close(c);
+            }
+        });
+        return true;
+    }
+    ~HttpServer() {
+        stop = true;
+        if (fd >= 0) ::shutdown(fd, SHUT_RDWR);
+        if (th.joinable()) th.join();
+        if (fd >= 0) ::close(fd);
+    }
+    void set(std::string path, std::string body) {
+        std::lock_guard g(mu);
+        files[std::move(path)] = std::move(body);
+    }
+
+private:
+    static std::string decode(const std::string& s) {
+        std::string out;
+        for (size_t i = 0; i < s.size(); ++i) {
+            if (s[i] == '%' && i + 2 < s.size()) {
+                auto hex = [](char c) { return c >= '0' && c <= '9' ? c - '0'
+                                             : (c | 0x20) >= 'a' && (c | 0x20) <= 'f' ? (c | 0x20) - 'a' + 10 : -1; };
+                const int hi = hex(s[i + 1]), lo = hex(s[i + 2]);
+                if (hi >= 0 && lo >= 0) { out.push_back((char)(hi * 16 + lo)); i += 2; continue; }
+            }
+            out.push_back(s[i]);
+        }
+        return out;
+    }
+    void handle(int c) {
+        std::string req;
+        char buf[2048];
+        while (req.find("\r\n\r\n") == std::string::npos && req.size() < 8192) {
+            const ssize_t n = ::recv(c, buf, sizeof buf, 0);
+            if (n <= 0) return;
+            req.append(buf, (size_t)n);
+        }
+        const size_t sp1 = req.find(' ');
+        const size_t sp2 = sp1 == std::string::npos ? std::string::npos : req.find(' ', sp1 + 1);
+        if (sp1 == std::string::npos || sp2 == std::string::npos) return;
+        const std::string path = decode(req.substr(sp1 + 1, sp2 - sp1 - 1));
+        requests.fetch_add(1);
+        std::string body;
+        bool found = false;
+        { std::lock_guard g(mu);
+          const auto it = files.find(path);
+          if (it != files.end()) { body = it->second; found = true; } }
+        const std::string head = found ? "HTTP/1.1 200 OK\r\n" : "HTTP/1.1 404 Not Found\r\n";
+        const std::string resp = head + "Content-Length: " + std::to_string(body.size())
+                               + "\r\nConnection: close\r\n\r\n" + body;
+        ::send(c, resp.data(), resp.size(), 0);
+    }
+};
+
+#elif defined(MQ_HAVE_CURL)
+
+/* 非 POSIX 平台：不建本地 HTTP 服务器（URL 挂载用例跳过）。 */
+struct HttpServer { bool start() { return false; } };
+
+#endif
+
 namespace fs = std::filesystem;
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
@@ -80,6 +185,67 @@ int main() {
         void* u = nullptr; size_t un = 0;
         CHECK(mq_vfs_read(vfs, url.c_str(), &u, &un) == 0);
         if (u) { std::string s((char*)u, un); mq_vfs_free(u); CHECK(s == "hello"); }
+    }
+#endif
+
+#if defined(MQ_HAVE_CURL) && defined(MQ_TEST_HTTP)
+    // ---- http:// 目录挂载（docs/04 §4/§5）：URL 基址 + 相对路径拼接 + 会话缓存 ----
+    {
+        HttpServer srv;
+        CHECK(srv.start());
+        srv.set("/cdn/a.txt", "remote-a");
+        srv.set("/cdn/sub/b.txt", "remote-b");
+        srv.set("/cdn/空 格.txt", "unicode-ok");          // 逐段 percent-encode 往返
+        srv.set("/other/a.txt", "other-a");
+        const std::string base = "http://127.0.0.1:" + std::to_string(srv.port);
+
+        CHECK(mq_vfs_mount(vfs, "/cdn", (base + "/cdn").c_str()) == MQ_VFS_OK);   // 结尾不带 '/' 也等价
+        CHECK(readall(vfs, "/cdn/a.txt") == "remote-a");
+        CHECK(readall(vfs, "/cdn/sub/b.txt") == "remote-b");
+        CHECK(readall(vfs, "/cdn/空 格.txt") == "unicode-ok");
+        CHECK(mq_vfs_exists(vfs, "/cdn/a.txt"));
+
+        // 会话缓存：同一 URL 只走一次网络（装载期可复现，docs/04 §8）
+        const int reqs = srv.requests.load();
+        CHECK(readall(vfs, "/cdn/a.txt") == "remote-a");
+        CHECK(readall(vfs, "/cdn/a.txt") == "remote-a");
+        CHECK(srv.requests.load() == reqs);
+
+        // 404 → NOTFOUND（HTTP 状态码映射）
+        void* d = nullptr; size_t n = 0;
+        CHECK(mq_vfs_read(vfs, "/cdn/missing.txt", &d, &n) == MQ_VFS_ERR_NOTFOUND);
+
+        // 最长前缀 + 后挂载优先：另一个 URL 目录遮蔽 /cdn/sub
+        CHECK(mq_vfs_mount(vfs, "/cdn/sub", (base + "/other/").c_str()) == MQ_VFS_OK);
+        CHECK(readall(vfs, "/cdn/sub/b.txt") == "<err>");
+        CHECK(readall(vfs, "/cdn/sub/a.txt") == "other-a");
+
+        // 直接 URL（不经挂载）与挂载共享同一缓存
+        const int reqs2 = srv.requests.load();
+        CHECK(readall(vfs, (base + "/cdn/a.txt").c_str()) == "remote-a");
+        CHECK(srv.requests.load() == reqs2);
+
+        // 远程资产完整性（ADR-0030）：哈希校验读
+        const uint64_t h = mq_vfs_hash_path(vfs, "/cdn/a.txt");
+        CHECK(h == mq_vfs_hash("remote-a", 8));
+        CHECK(mq_vfs_read_verified(vfs, "/cdn/a.txt", h, &d, &n) == MQ_VFS_OK);
+        mq_vfs_free(d);
+        CHECK(mq_vfs_read_verified(vfs, "/cdn/a.txt", h ^ 1u, &d, &n) == MQ_VFS_ERR_HASH);
+
+        // 路径穿越防护（docs/04 §9）：VFS 层统一拦截 ".." 段（'/' 与 '\' 都算分隔符）
+        CHECK(mq_vfs_read(vfs, "/cdn/../../etc/passwd", &d, &n) == MQ_VFS_ERR_ARG);
+        CHECK(mq_vfs_read(vfs, "/cdn/..\\..\\windows", &d, &n) == MQ_VFS_ERR_ARG);
+        CHECK(mq_vfs_read(vfs, "/cdn/../a.txt", &d, &n) == MQ_VFS_ERR_ARG);
+        CHECK(mq_vfs_resolve(vfs, "/cdn/../a.txt", nullptr, 0) == MQ_VFS_ERR_ARG);
+        CHECK(readall(vfs, "/cdn/back\\slash.txt") == "<err>");    // 反斜杠本身是合法文件名字符
+
+        // resolve 诊断：URL 挂载返回完整 URL（观测/调试）
+        char res[256] = { 0 };
+        CHECK(mq_vfs_resolve(vfs, "/cdn/a.txt", res, sizeof res) == MQ_VFS_OK);
+        CHECK(std::string(res) == base + "/cdn/a.txt");
+
+        // 非法 URL 源（只有 scheme）
+        CHECK(mq_vfs_mount(vfs, "/bad", "http://") == MQ_VFS_ERR_ARG);
     }
 #endif
 

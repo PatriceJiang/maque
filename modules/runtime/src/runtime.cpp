@@ -4463,6 +4463,60 @@ extern "C" int mq_control_Replay_log(void* u, const mq_json*, char* out, size_t 
     return 0;
 }
 
+/* 场景来源 → VFS 根挂载（docs/04 §4/§5）：
+ *   · 本地路径 → 挂 file://<场景目录> 到 "/"
+ *   · http(s)://…  → 挂 URL 目录（基址 = 场景 URL 的父目录）到 "/"（远程游戏即资源）
+ * 输出场景在 VFS 里的路径（"/<文件名>"）与来源目录（本地路径 / URL 基址）。
+ * 返回 false：路径非法或挂载失败（未链接 libcurl 时 URL 挂载返回 UNSUPPORTED）。 */
+bool mount_scene_source(mq_vfs* vfs, const std::string& scn_path, std::string& vfs_path, std::string& dir_out) {
+    if (!vfs || scn_path.empty()) return false;
+    const bool remote = scn_path.rfind("http://", 0) == 0 || scn_path.rfind("https://", 0) == 0;
+    std::string dir, file;
+    if (remote) {
+        const size_t slash = scn_path.find_last_of('/');
+        if (slash == std::string::npos || slash + 1 >= scn_path.size()) return false;
+        dir = scn_path.substr(0, slash + 1);                  // 含结尾 '/' —— URL 基址
+        file = scn_path.substr(slash + 1);
+    } else {
+        const std::filesystem::path scnp(scn_path);
+        dir = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
+        file = scnp.filename().string();
+    }
+    const std::string source = remote ? dir : ("file://" + dir);
+    const int rc = mq_vfs_mount(vfs, "/", source.c_str());
+    if (rc != MQ_VFS_OK) {
+        std::print(stderr, "runtime: mount scene source '{}' failed (rc={})\n", source, rc);
+        return false;
+    }
+    dir_out = dir;
+    vfs_path = "/" + file;
+    return true;
+}
+
+/* MAQUE_MOUNT="/cdn=https://host/assets/,/extra=../shared"：额外挂载（后挂载优先，docs/04 §5）。
+ * 场景目录挂载之后应用：本地开发时把资源指向 CDN，或从 URL 场景挂本地补丁目录。 */
+void apply_env_mounts(mq_vfs* vfs) {
+    const char* spec = std::getenv("MAQUE_MOUNT");
+    if (!spec || !*spec || !vfs) return;
+    const std::string s(spec);
+    size_t i = 0;
+    while (i <= s.size()) {
+        const size_t comma = s.find(',', i);
+        const std::string item = s.substr(i, comma == std::string::npos ? std::string::npos : comma - i);
+        const size_t eq = item.find('=');
+        if (eq != std::string::npos && eq > 0) {
+            const std::string mp = item.substr(0, eq), src = item.substr(eq + 1);
+            const int rc = mq_vfs_mount(vfs, mp.c_str(), src.c_str());
+            if (rc == MQ_VFS_OK) std::print("runtime: mount '{}' <- {}\n", mp, src);
+            else std::print(stderr, "runtime: mount '{}' <- {} failed (rc={})\n", mp, src, rc);
+        } else {
+            std::print(stderr, "runtime: MAQUE_MOUNT item '{}' ignored (expected <mountpoint>=<source>)\n", item);
+        }
+        if (comma == std::string::npos) break;
+        i = comma + 1;
+    }
+}
+
 /* 装配引擎：VFS → 反射 → 渲染插件 → 场景 → 平台/输入 → 脚本 → 控制面。
  * 两条入口（命令行 / 嵌入宿主）共用，保证行为一致。 */
 bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
@@ -4477,15 +4531,17 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
         signal(SIGINT, on_fatal_signal);
         if (g_crash_fd < 0) g_crash_fd = ::open(cr, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     }
-    std::filesystem::path scnp(scn_path);
-    const std::string scn_dir2 = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
-
     vfs = mq_vfs_create();
-    mq_vfs_mount(vfs, "/", ("file://" + scn_dir2).c_str());
+    std::string scn_vfs;
+    if (!mount_scene_source(vfs, scn_path, scn_vfs, scn_dir)) {
+        std::print("runtime: bad scene source '{}'\n", scn_path);
+        return false;
+    }
+    apply_env_mounts(vfs);
 
     std::string text;
     { void* d = nullptr; size_t n = 0;
-      if (mq_vfs_read(vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == MQ_VFS_OK) { text.assign((char*)d, n); mq_vfs_free(d); } }
+      if (mq_vfs_read(vfs, scn_vfs.c_str(), &d, &n) == MQ_VFS_OK) { text.assign((char*)d, n); mq_vfs_free(d); } }
     if (text.empty()) { std::print("runtime: cannot read scene '{}'\n", scn_path); return false; }
 
     reflect = mq_reflect_create();
@@ -4540,13 +4596,14 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
  * → 脚本 VM/绑定 → 监视 → 资源预解析 → 物理组件建体。切场景同样走此处（docs/12/20）。 */
 bool Engine::load_scene_into(const std::string& scn_path) {
     namespace fs = std::filesystem;
-    const fs::path scnp(scn_path);
-    const std::string dir = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
-    if (vfs) mq_vfs_mount(vfs, "/", ("file://" + dir).c_str());   // 后挂载者优先 → 新场景目录生效
+    /* 场景来源挂载（本地目录 / http(s) URL 目录）——后挂载者优先 → 新场景来源生效 */
+    std::string scn_vfs;
+    if (!mount_scene_source(vfs, scn_path, scn_vfs, scn_dir)) return false;
+    apply_env_mounts(vfs);        // MAQUE_MOUNT 覆盖目录保持最高优先级（幂等，不重复追加）
 
     std::string text;
     { void* d = nullptr; size_t n = 0;
-      if (mq_vfs_read(vfs, ("/" + scnp.filename().string()).c_str(), &d, &n) == MQ_VFS_OK) {
+      if (mq_vfs_read(vfs, scn_vfs.c_str(), &d, &n) == MQ_VFS_OK) {
           text.assign((char*)d, n); mq_vfs_free(d); } }
     if (text.empty()) return false;
 
@@ -4650,9 +4707,9 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     if (!scene->desc.scripts.empty()) load_list = scene->desc.scripts;
     else if (!script_path.empty()) load_list.push_back(script_path);
     script_paths = load_list;
-    scn_vfs_path = "/" + scnp.filename().string();
+    scn_vfs_path = scn_vfs;
     scn_full_path = scn_path;
-    scn_dir = dir;
+    /* scn_dir = 来源目录（本地路径或 URL 基址），由 mount_scene_source 写入 */
     /* ---- 脚本 VM：按脚本语言选后端（docs/14「统一后端 ABI」：js / lua）----
      * 语言由文件扩展名决定（mq_script_lang_for_path），未编入的后端会明确报错而不是静默降级。 */
     if (!bus) bus = mq_script_bus_create();
@@ -4681,13 +4738,19 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         std::print("runtime: multi-script bus with {} VM(s) (dispatch order = declaration order)\n",
                    mq_script_bus_count(bus));
     if (watcher) { mq_watcher_destroy(watcher); watcher = nullptr; }
+    const bool remote_scene = scn_path.rfind("http://", 0) == 0 || scn_path.rfind("https://", 0) == 0;
     const char* watch = std::getenv("MAQUE_WATCH");
     if (watch && *watch && *watch != '0') {
-        watcher = mq_watcher_create();
-        mq_watcher_add(watcher, (fs::path(scn_dir) / scnp.filename()).string().c_str());
-        for (const std::string& sp : script_paths)          // 监视**全部**脚本（多脚本热重载）
-            mq_watcher_add(watcher, (fs::path(scn_dir) / sp).string().c_str());
-        std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
+        if (remote_scene) {
+            // 远程场景没有本地文件可监视：热重载不可用（用 MAQUE_MOUNT 挂本地覆盖目录做开发迭代）
+            std::print("runtime: hot reload disabled for remote scene '{}'\n", scn_path);
+        } else {
+            watcher = mq_watcher_create();
+            mq_watcher_add(watcher, (fs::path(scn_dir) / scn_vfs_path.substr(1)).string().c_str());
+            for (const std::string& sp : script_paths)          // 监视**全部**脚本（多脚本热重载）
+                mq_watcher_add(watcher, (fs::path(scn_dir) / sp).string().c_str());
+            std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
+        }
     }
     preload_scene_assets();
     text_setup();                               // 字体（MAQUE_FONT → 系统字体 → 内置 5x7）
