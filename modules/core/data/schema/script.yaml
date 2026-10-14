@@ -1,0 +1,134 @@
+# script —— modules/script
+- imports: [./math.yaml]
+
+- namespace: script
+  version: 1
+  class_list:
+    - enum: ScriptLanguage
+      values:
+        - { name: JS, value: 0 }
+        - { name: Lua, value: 1 }
+        - { name: Python, value: 2 }
+        - { name: V8, value: 3 }
+    - enum: ScriptCallback
+      underlying: uint32_t
+      values:
+        - { name: OnEnterTree, value: 1 }
+        - { name: Ready, value: 2 }
+        - { name: Process, value: 4 }
+        - { name: PhysicsProcess, value: 8 }
+        - { name: OnExitTree, value: 16 }
+        - { name: OnDestroy, value: 32 }
+    - enum: PropertyVariantType
+      values:
+        - { name: Bool, value: 0 }
+        - { name: Int, value: 1 }
+        - { name: Float, value: 2 }
+        - { name: Vec2, value: 3 }
+        - { name: Vec3, value: 4 }
+        - { name: Color, value: 5 }
+        - { name: String, value: 6 }
+        - { name: EntityRef, value: 7 }
+        - { name: AssetRef, value: 8 }
+    - struct: PropertyVariant
+      fields:
+        - { name: type, type: PropertyVariantType, default: "PropertyVariantType::Bool" }
+        - { name: b, type: bool, default: false }
+        - { name: i, type: int64_t, default: 0 }
+        - { name: f, type: double, default: 0.0 }
+        - { name: v, type: math.Vec4 }
+        - { name: s, type: string }
+    - struct: Script
+      fields:
+        - { name: source, type: "asset_ref<ScriptAsset>", attrs: { ref: ScriptAsset } }
+        - { name: language, type: ScriptLanguage, default: "ScriptLanguage::JS" }
+        - { name: enabled, type: bool, default: true }
+        - { name: callbacks, type: uint32_t, default: 62 }
+        - { name: exposed, type: "map<string, PropertyVariant>" }
+        - { name: vm, type: uint64_t, default: 0, attrs: { transient: true } }
+        - { name: expose_defs, type: uint64_t, default: 0, attrs: { transient: true, readonly: true } }
+        - { name: init_err, type: uint16_t, default: 0, attrs: { transient: true, readonly: true } }
+  module_abi:
+    module: script
+    abi_name: "maque.script"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_script_vm, mq_script_bus ]
+    typedefs:
+      - { name: mq_script_rng_fn, type: "uint32_t (*)(void* user)" }
+      - { name: mq_script_num_fn, type: "int (*)(void* user, int argc, const double* argv, double* ret)" }
+      - { name: mq_script_str_fn, type: "int (*)(void* user, const char* arg, double* ret)" }
+      - { name: mq_script_ret_str_fn, type: "int (*)(void* user, int argc, const double* argv, char* ret, int ret_cap)" }
+      - { name: mq_script_mixed_fn, type: "int (*)(void* user, int argc, const double* argv, const char* s, double* ret)" }
+      - { name: mq_script_multi_fn, type: "int (*)(void* user, int nnum, const double* nums, int nstr, const char** strs, double* ret)",
+          doc: "通用编组：任意数值/字符串组合（docs/21 §6.1）" }
+      - { name: mq_script_multi_ret_str_fn, type: "int (*)(void* user, int nnum, const double* nums, int nstr, const char** strs, char* ret, int ret_cap)" }
+    fns:
+      - { fn: mq_script_vm_create, returns: "mq_script_vm*", args: [  ],
+          doc: "按默认后端创建 VM（等价 mq_script_vm_create_lang(NULL)）" }
+      - { fn: mq_script_vm_create_lang, returns: "mq_script_vm*", args: [ { name: lang, type: "const char*" } ],
+          doc: "按语言创建 VM：js（默认）/ lua；未编入的后端返回 NULL" }
+      - { fn: mq_script_lang_for_path, returns: "const char*", args: [ { name: path, type: "const char*" } ],
+          doc: "按脚本文件扩展名选择语言 id（.lua → lua，其余 → js）" }
+      - { fn: mq_script_backends, returns: "int", args: [ { name: out, type: "char*" }, { name: cap, type: "int" } ],
+          doc: "已编入的后端列表（逗号分隔）" }
+      - { fn: mq_script_lang, returns: "const char*", args: [ { name: vm, type: "mq_script_vm*" } ],
+          doc: "该 VM 的后端语言 id" }
+      - { fn: mq_script_vm_destroy, returns: "void", args: [ { name: vm, type: "mq_script_vm*" } ] }
+      # ---- 事件总线（多 VM / 跨语言协作，docs/14 §多 VM、docs/19 §事件）----
+      # 语义：**按加入顺序**逐 VM 投递；只投给定义了该处理器的 VM；每个 VM 独立保护调用（错误隔离）。
+      - { fn: mq_script_bus_create, returns: "mq_script_bus*", args: [  ],
+          doc: "创建事件总线（多脚本/多语言）；总线**拥有**其 VM，销毁总线即销毁全部 VM" }
+      - { fn: mq_script_bus_add, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" } ],
+          doc: "加入 VM（顺序 = 脚本声明顺序 = 投递顺序 → 确定性）；name 为脚本路径（自省）" }
+      - { fn: mq_script_bus_count, returns: "uint32_t", args: [ { name: bus, type: "mq_script_bus*" } ] }
+      - { fn: mq_script_bus_swap, returns: "mq_script_vm*", args: [ { name: bus, type: "mq_script_bus*" }, { name: index, type: "uint32_t" }, { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" } ],
+          doc: "把**已准备好（创建+eval 成功）**的 VM 换入槽位并销毁旧的（热重载原子替换：失败时调用方保留旧 VM）；顺序不变" }
+      - { fn: mq_script_bus_vm_at, returns: "mq_script_vm*", args: [ { name: bus, type: "mq_script_bus*" }, { name: index, type: "uint32_t" } ] }
+      - { fn: mq_script_bus_name_at, returns: "const char*", args: [ { name: bus, type: "mq_script_bus*" }, { name: index, type: "uint32_t" } ],
+          doc: "该 VM 的脚本路径（诊断/自省）" }
+      - { fn: mq_script_bus_has, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: fn, type: "const char*" } ],
+          doc: "是否有任一 VM 定义了该处理器（订阅判定）" }
+      - { fn: mq_script_bus_call, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: fn, type: "const char*" }, { name: a, type: double }, { name: b, type: double }, { name: text, type: "const char*" } ],
+          doc: "按顺序向定义了 fn 的每个 VM 调用 fn(a,b[,text])；返回命中的 VM 数（跨语言事件即此调用）" }
+      - { fn: mq_script_bus_call3, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: fn, type: "const char*" }, { name: a, type: double }, { name: b, type: double }, { name: c, type: double }, { name: text, type: "const char*" } ] }
+      - { fn: mq_script_bus_gc, returns: void, args: [ { name: bus, type: "mq_script_bus*" } ],
+          doc: "帧边界：逐 VM 推进 GC（确定性，docs/10 D7）" }
+      - { fn: mq_script_bus_error_count, returns: "uint32_t", args: [ { name: bus, type: "mq_script_bus*" } ],
+          doc: "累计出错次数（单调）：调用方比较前后差值即可判定本次派发是否出错（错误隔离不等于静默）" }
+      - { fn: mq_script_bus_last_error, returns: int, args: [ { name: bus, type: "mq_script_bus*" }, { name: out, type: "char*" }, { name: cap, type: int } ],
+          doc: "最近一次出错的 VM 的错误信息（错误隔离：一个脚本出错不影响其它脚本）" }
+      - { fn: mq_script_bus_set_rng, returns: void, args: [ { name: bus, type: "mq_script_bus*" }, { name: fn, type: "mq_script_rng_fn" }, { name: user, type: "void*" } ],
+          doc: "给总线上全部 VM 注入同一引擎 RNG（两语言同一 seed → 同一序列）" }
+      - { fn: mq_script_bus_destroy, returns: void, args: [ { name: bus, type: "mq_script_bus*" } ] }
+      - { fn: mq_script_eval, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: src, type: "const char*" }, { name: filename, type: "const char*" } ] }
+      - { fn: mq_script_has, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" } ] }
+      - { fn: mq_script_call0, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" }, { name: ret, type: "double*" } ] }
+      - { fn: mq_script_call1, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" }, { name: arg, type: "double" }, { name: ret, type: "double*" } ] }
+      - { fn: mq_script_call3, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" }, { name: a, type: "double" }, { name: b, type: "double" }, { name: c, type: "double" }, { name: ret, type: "double*" } ] }
+      - { fn: mq_script_call2, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" }, { name: a, type: "double" }, { name: b, type: "double" }, { name: ret, type: "double*" } ] }
+      - { fn: mq_script_call1s, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" }, { name: a, type: "double" }, { name: s, type: "const char*" }, { name: ret, type: "double*" } ] }
+      - { fn: mq_script_call2s, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" }, { name: a, type: "double" }, { name: b, type: "double" }, { name: s, type: "const char*" }, { name: ret, type: "double*" } ] }
+      - { fn: mq_script_call0s, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "const char*" }, { name: s, type: "const char*" }, { name: ret, type: "double*" } ] }
+      - { fn: mq_script_last_error, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: out, type: "char*" }, { name: cap, type: "int" } ] }
+      - { fn: mq_script_set_rng, returns: "void", args: [ { name: vm, type: "mq_script_vm*" }, { name: fn, type: "mq_script_rng_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_script_gc, returns: "void", args: [ { name: vm, type: "mq_script_vm*" } ] }
+      - { fn: mq_script_frame_boundary, returns: "void", args: [ { name: vm, type: "mq_script_vm*" } ],
+          doc: "帧边界钩子：GC 等只在此处发生（docs/10 D7）—— 各后端语义一致" }
+      - { fn: mq_script_register_num, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_num_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_script_register_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_str_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_script_register_ret_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_ret_str_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_script_register_mixed, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_mixed_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_script_register_multi, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: fn, type: "mq_script_multi_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_script_register_multi_ret_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: fn, type: "mq_script_multi_ret_str_fn" }, { name: user, type: "void*" } ] }
+  # 脚本事件回调（docs/14 §4、docs/19 §8）：引擎按声明调用，名字与参数统一来自 DSL
+  callbacks:
+    - { name: on_start,        args: [] }
+    - { name: update,          args: [ { name: dt, type: float } ] }
+    - { name: on_pointer_down, on: pointer_down, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_pointer_up,   on: pointer_up, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_pointer_move, on: pointer_move, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_wheel,        on: pointer_wheel, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_click,        on: click, args: [ { name: target, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { name: on_key_down,     on: key_down, args: [ { name: target, type: float }, { name: key, type: float } ] }
+    - { name: on_key_up,       on: key_up, args: [ { name: target, type: float }, { name: key, type: float } ] }
+    - { name: on_text,         on: text, args: [ { name: target, type: float }, { name: text, type: string } ] }

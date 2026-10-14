@@ -1,4 +1,4 @@
-/* 引擎 API 实现（对应 schema.yaml api_list 的声明）。
+/* 引擎 API 实现（对应 schema/ api_list 的声明）。
  * 生成的头 maque_api.h 声明签名，这里提供实现；绑定由生成代码完成。 */
 #include "maque_api.h"
 

@@ -1,0 +1,260 @@
+# physics —— modules/world/physics
+- imports: [../math.yaml]
+
+- namespace: physics
+  version: 1
+  class_list:
+    - enum: BodyType
+      values:
+        - { name: Static, value: 0 }
+        - { name: Kinematic, value: 1 }
+        - { name: Dynamic, value: 2 }
+    - enum: ShapeType
+      values:
+        - { name: Box, value: 0 }
+        - { name: Circle, value: 1 }
+        - { name: Capsule, value: 2 }
+        - { name: Cylinder, value: 3 }
+        - { name: Convex, value: 4 }
+        - { name: TriMesh, value: 5 }
+        - { name: HeightField, value: 6 }
+    - enum: JointType
+      values:
+        - { name: Fixed, value: 0 }
+        - { name: Revolute, value: 1 }
+        - { name: Prismatic, value: 2 }
+        - { name: Ball, value: 3 }
+        - { name: Rope, value: 4 }
+        - { name: Spring, value: 5 }
+        - { name: Generic, value: 6 }
+    - enum: CombineRule
+      values:
+        - { name: Average, value: 0 }
+        - { name: Min, value: 1 }
+        - { name: Multiply, value: 2 }
+        - { name: Max, value: 3 }
+    - enum: SpaceOverride
+      values:
+        - { name: Disabled, value: 0 }
+        - { name: Combine, value: 1 }
+        - { name: Replace, value: 2 }
+    - enum: ForceApplyMode
+      values:
+        - { name: Continuous, value: 0 }
+        - { name: Impulse, value: 1 }
+    - enum: ForceSpace
+      values:
+        - { name: World, value: 0 }
+        - { name: Local, value: 1 }
+    - struct: RigidBody
+      roles: [ physics_body ]
+      fields:
+        - { name: body_type, type: BodyType, default: "BodyType::Static" }
+        - { name: mass, type: float, default: 1.0F, attrs: { unit: kg } }
+        - { name: linear_damping, type: float, default: 0.0F, attrs: { unit: "1/s" } }
+        - { name: angular_damping, type: float, default: 0.0F, attrs: { unit: "1/s" } }
+        - { name: gravity_scale, type: float, default: 1.0F }
+        - { name: ccd_enabled, type: bool, default: false }
+        - { name: can_sleep, type: bool, default: true }
+        - { name: locked_translation, type: uint8_t, default: 0, attrs: { range: [0, 7] } }
+        - { name: locked_rotation, type: uint8_t, default: 0, attrs: { range: [0, 7] } }
+        - { name: linear_velocity, type: math.Vec3, attrs: { transient: true, readonly: true } }
+        - { name: angular_velocity, type: math.Vec3, attrs: { transient: true, readonly: true } }
+        - { name: sleeping, type: bool, default: false, attrs: { transient: true, readonly: true } }
+        - { name: body_handle, type: uint64_t, default: 0, attrs: { transient: true } }
+        - { name: world_slot, type: uint32_t, default: 0, attrs: { transient: true } }
+    - struct: Collider
+      roles: [ physics_collider ]
+      fields:
+        - { name: shape_type, type: ShapeType, default: "ShapeType::Box" }
+        - { name: half_extents, type: math.Vec3, default: "{0.5F, 0.5F, 0.5F}" }
+        - { name: radius, type: float, default: 0.5F }
+        - { name: half_height, type: float, default: 0.5F }
+        - { name: convex_mesh, type: "asset_ref<Mesh>", attrs: { ref: Mesh } }
+        - { name: trimesh, type: "asset_ref<Mesh>", attrs: { ref: Mesh } }
+        - { name: height_scale, type: math.Vec2, default: "{1.0F, 1.0F}" }
+        - { name: density, type: float, default: 1.0F, attrs: { unit: "kg/m3" } }
+        - { name: friction, type: float, default: 0.5F }
+        - { name: restitution, type: float, default: 0.0F }
+        - { name: friction_combine, type: CombineRule, default: "CombineRule::Average" }
+        - { name: restitution_combine, type: CombineRule, default: "CombineRule::Average" }
+        - { name: is_sensor, type: bool, default: false }
+        - { name: collision_layer, type: uint32_t, default: 1 }
+        - { name: collision_mask, type: uint32_t, default: 4294967295 }
+        - { name: offset_position, type: math.Vec3 }
+        - { name: offset_rotation, type: math.Quat }
+        - { name: collider_handle, type: uint64_t, default: 0, attrs: { transient: true } }
+        - { name: owner_body, type: uint64_t, default: 0, attrs: { transient: true } }
+    - struct: CharacterBody
+      fields:
+        - { name: desired_velocity, type: math.Vec3 }
+        - { name: up_direction, type: math.Vec3, default: "{0.0F, 1.0F, 0.0F}" }
+        - { name: floor_max_angle, type: float, default: 45.0F, attrs: { unit: deg, range: [0, 90] } }
+        - { name: step_height, type: float, default: 0.25F }
+        - { name: snap_length, type: float, default: 0.0F }
+        - { name: max_slides, type: uint32_t, default: 4, attrs: { range: [0, 16] } }
+        - { name: auto_apply_gravity, type: bool, default: true }
+        - { name: gravity_scale, type: float, default: 1.0F }
+        - { name: velocity, type: math.Vec3, attrs: { transient: true, readonly: true } }
+        - { name: on_floor, type: bool, default: false, attrs: { transient: true, readonly: true } }
+        - { name: on_wall, type: bool, default: false, attrs: { transient: true, readonly: true } }
+        - { name: on_ceiling, type: bool, default: false, attrs: { transient: true, readonly: true } }
+        - { name: floor_normal, type: math.Vec3, attrs: { transient: true, readonly: true } }
+        - { name: controller_handle, type: uint64_t, default: 0, attrs: { transient: true } }
+    - struct: Area
+      fields:
+        - { name: monitoring, type: bool, default: true }
+        - { name: monitorable, type: bool, default: true }
+        - { name: priority, type: int32_t, default: 0 }
+        - { name: gravity_space_override, type: SpaceOverride, default: "SpaceOverride::Disabled" }
+        - { name: gravity_direction, type: math.Vec3, default: "{0.0F, -1.0F, 0.0F}" }
+        - { name: gravity, type: float, default: 9.81F }
+        - { name: linear_damping_override, type: float, default: 0.0F }
+        - { name: angular_damping_override, type: float, default: 0.0F }
+        - { name: collision_layer, type: uint32_t, default: 1 }
+        - { name: collision_mask, type: uint32_t, default: 4294967295 }
+        - { name: overlap_count, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }
+        - { name: area_handle, type: uint64_t, default: 0, attrs: { transient: true } }
+    - struct: Joint
+      fields:
+        - { name: joint_type, type: JointType, default: "JointType::Fixed" }
+        - { name: body_a, type: entity_ref, attrs: { ref: RigidBody } }
+        - { name: body_b, type: entity_ref, attrs: { ref: RigidBody } }
+        - { name: anchor_a, type: math.Vec3 }
+        - { name: anchor_b, type: math.Vec3 }
+        - { name: axis, type: math.Vec3, default: "{0.0F, 1.0F, 0.0F}" }
+        - { name: limits_enabled, type: bool, default: false }
+        - { name: limit_min, type: float, default: 0.0F }
+        - { name: limit_max, type: float, default: 0.0F }
+        - { name: motor_enabled, type: bool, default: false }
+        - { name: motor_target_vel, type: float, default: 0.0F }
+        - { name: motor_max_force, type: float, default: 0.0F }
+        - { name: break_force, type: float, default: 0.0F }
+        - { name: break_torque, type: float, default: 0.0F }
+        - { name: joint_handle, type: uint64_t, default: 0, attrs: { transient: true } }
+    - struct: ConstantForce
+      fields:
+        - { name: force, type: math.Vec3, attrs: { unit: N } }
+        - { name: torque, type: math.Vec3, attrs: { unit: "N.m" } }
+        - { name: space, type: ForceSpace, default: "ForceSpace::World" }
+        - { name: apply_mode, type: ForceApplyMode, default: "ForceApplyMode::Continuous" }
+        - { name: enabled, type: bool, default: true }
+        - { name: only_when_awake, type: bool, default: true }
+        - { name: impulse_consumed, type: bool, default: false, attrs: { transient: true, readonly: true } }
+    - struct: LinearVelocityLimit
+      fields:
+        - { name: max_linear_speed, type: float, default: 0.0F, attrs: { unit: "m/s" } }
+        - { name: max_angular_speed, type: float, default: 0.0F, attrs: { unit: "rad/s" } }
+        - { name: enabled, type: bool, default: true }
+        - { name: linear_speed, type: float, default: 0.0F, attrs: { transient: true, readonly: true } }
+        - { name: angular_speed, type: float, default: 0.0F, attrs: { transient: true, readonly: true } }
+    - struct: DampingOverride
+      fields:
+        - { name: linear_damping, type: float, default: 0.0F, attrs: { unit: "1/s" } }
+        - { name: angular_damping, type: float, default: 0.0F, attrs: { unit: "1/s" } }
+        - { name: enabled, type: bool, default: true }
+        - { name: priority, type: int32_t, default: 0 }
+  module_abi:
+    module: physics
+    abi_name: "maque.physics"
+    summary: "确定性 2D 物理求解器（ADR-0028 回退路径；插件 vtable 冻结）"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_physics_world ]
+    macros:
+      - { name: MQ_PHYSICS_BODY_INVALID_INDEX, value: "0xFFFFFFFFu" }
+      - { name: MQ_PHYSICS_BF_LOCK_ROTATION, value: "(1u << 0)", doc: "bit0 锁定旋转（2D no-op，保留位语义）" }
+      - { name: MQ_PHYSICS_BF_DISABLE_GRAVITY, value: "(1u << 1)", doc: "bit1 关闭重力" }
+      - { name: MQ_PHYSICS_PLANE_INDEX, value: "0xFFFFFFFFu", doc: "平面接触的 b_index 哨兵" }
+    enums:
+      - doc: "错误码（无异常越界；0 = OK）。"
+        values:
+          - { name: MQ_PHYSICS_OK,               value: 0 }
+          - { name: MQ_PHYSICS_ERR_INVALID_ARG,  value: 1, doc: "空指针 / 非法数值 / 越界参数" }
+          - { name: MQ_PHYSICS_ERR_INVALID_HANDLE, value: 2, doc: "slot 空或 generation 过期" }
+          - { name: MQ_PHYSICS_ERR_OUT_OF_MEMORY, value: 3 }
+          - { name: MQ_PHYSICS_ERR_CAPACITY,     value: 4, doc: "已达 max_bodies" }
+          - { name: MQ_PHYSICS_ERR_NOT_SUPPORTED, value: 5 }
+      - values:
+          - { name: MQ_PHYSICS_BODY_STATIC,    value: 0 }
+          - { name: MQ_PHYSICS_BODY_KINEMATIC, value: 1 }
+          - { name: MQ_PHYSICS_BODY_DYNAMIC,   value: 2 }
+      - values:
+          - { name: MQ_PHYSICS_SHAPE_BALL,   value: 0 }
+          - { name: MQ_PHYSICS_SHAPE_CUBOID, value: 1 }
+    structs:
+      - name: mq_physics_body
+        doc: "世代句柄（index 0 恒为无效；移除即 generation++ 防悬垂）。"
+        fields:
+          - { name: index, type: "uint32_t" }
+          - { name: generation, type: "uint32_t" }
+      - name: mq_physics_config
+        doc: "世界配置（struct_size 版本化，只增不改）。"
+        fields:
+          - { name: struct_size, type: "uint32_t", doc: "= sizeof；0 → 全部取默认" }
+          - { name: gravity_x, type: "float", doc: "默认 0" }
+          - { name: gravity_y, type: "float", doc: "默认 900（屏幕 y 向下，像素/秒²）" }
+          - { name: fixed_dt, type: "float", doc: "默认 1/60；必须 > 0" }
+          - { name: solver_iterations, type: "uint32_t", doc: "默认 4；每步恒跑该次数" }
+          - { name: max_bodies, type: "uint32_t", doc: "容量，默认 256；0 = 默认" }
+          - { name: seed, type: "uint64_t", doc: "引擎 seed（docs/10 D2）；v1 求解器无 RNG，仅记录" }
+      - name: mq_physics_body_desc
+        doc: "刚体描述（struct_size 版本化）。"
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: type, type: "uint32_t", doc: "MQ_PHYSICS_BODY_*" }
+          - { name: shape, type: "uint32_t", doc: "MQ_PHYSICS_SHAPE_*" }
+          - { name: x, type: "float" }
+          - { name: y, type: "float" }
+          - { name: vx, type: "float" }
+          - { name: vy, type: "float" }
+          - { name: radius, type: "float", doc: "BALL：> 0" }
+          - { name: half_w, type: "float" }
+          - { name: half_h, type: "float" }
+          - { name: mass, type: "float", doc: "<= 0 → 由密度推导（默认质量 1）" }
+          - { name: restitution, type: "float", doc: "0..1，默认 0.5" }
+          - { name: friction, type: "float", doc: "0..1，默认 0.2" }
+          - { name: flags, type: "uint32_t", doc: "位0 锁旋转（no-op）；位1 关闭重力" }
+      - name: mq_physics_contact
+        doc: "本帧接触（稳定按 (a_index,b_index) 升序；平面接触 b_index = PLANE）。"
+        fields:
+          - { name: a_index, type: "uint32_t" }
+          - { name: b_index, type: "uint32_t", doc: "恒有 a_index < b_index（平面接触 = PLANE）" }
+          - { name: nx, type: "float" }
+          - { name: ny, type: "float", doc: "单位法线：a → b 方向" }
+          - { name: depth, type: "float", doc: "穿透深度 >= 0" }
+      - name: mq_physics_v1
+        doc: "插件 vtable（docs/02 §3）：跨 .so 的唯一函数表。"
+        fields:
+          - { name: abi_version, type: "uint32_t" }
+          - { name: name, type: "const char*" }
+          - { name: create, type: "mq_physics_world* (*)(const mq_physics_config*)" }
+          - { name: destroy, type: "void (*)(mq_physics_world*)" }
+          - { name: add_body, type: "int (*)(mq_physics_world*, const mq_physics_body_desc*, mq_physics_body*)" }
+          - { name: remove_body, type: "int (*)(mq_physics_world*, mq_physics_body)" }
+          - { name: step, type: "int (*)(mq_physics_world*)" }
+          - { name: get_transform, type: "int (*)(mq_physics_world*, mq_physics_body, float*, float*)" }
+          - { name: set_transform, type: "int (*)(mq_physics_world*, mq_physics_body, float, float)" }
+          - { name: set_velocity, type: "int (*)(mq_physics_world*, mq_physics_body, float, float)" }
+          - { name: checksum, type: "uint64_t (*)(mq_physics_world*)" }
+    fns:
+      - { fn: mq_physics_create,        returns: "mq_physics_world*", args: [ { name: cfg, type: "const mq_physics_config*" } ], doc: "cfg 为 NULL → 全默认" }
+      - { fn: mq_physics_destroy,       returns: void,     args: [ { name: w, type: "mq_physics_world*" } ] }
+      - { fn: mq_physics_add_body,      returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: d, type: "const mq_physics_body_desc*" }, { name: out, type: "mq_physics_body*" } ] }
+      - { fn: mq_physics_remove_body,   returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" } ] }
+      - { fn: mq_physics_body_count,    returns: int,      args: [ { name: w, type: "mq_physics_world*" } ], doc: "-1: 世界无效" }
+      - { fn: mq_physics_body_valid,    returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" } ] }
+      - { fn: mq_physics_get_transform, returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
+      - { fn: mq_physics_set_transform, returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: x, type: "float" }, { name: y, type: "float" } ] }
+      - { fn: mq_physics_get_velocity,  returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: vx, type: "float*" }, { name: vy, type: "float*" } ] }
+      - { fn: mq_physics_set_velocity,  returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: vx, type: "float" }, { name: vy, type: "float" } ] }
+      - { fn: mq_physics_interpolate,   returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: alpha, type: "float" }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
+      - { fn: mq_physics_set_bounds,    returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: min_x, type: "float" }, { name: min_y, type: "float" }, { name: max_x, type: "float" }, { name: max_y, type: "float" } ] }
+      - { fn: mq_physics_step,          returns: int,      args: [ { name: w, type: "mq_physics_world*" } ] }
+      - { fn: mq_physics_step_count,    returns: uint32_t, args: [ { name: w, type: "mq_physics_world*" } ] }
+      - { fn: mq_physics_checksum,      returns: uint64_t, args: [ { name: w, type: "mq_physics_world*" } ] }
+      - { fn: mq_physics_contact_count, returns: uint32_t, args: [ { name: w, type: "mq_physics_world*" } ] }
+      - { fn: mq_physics_contact_at,    returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: i, type: "uint32_t" }, { name: out, type: "mq_physics_contact*" } ] }
+      - { fn: mq_physics_state_size,    returns: size_t,   args: [ { name: w, type: "mq_physics_world*" } ] }
+      - { fn: mq_physics_save_state,    returns: size_t,   args: [ { name: w, type: "mq_physics_world*" }, { name: out, type: "void*" }, { name: cap, type: "size_t" } ] }
+      - { fn: mq_physics_load_state,    returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: in, type: "const void*" }, { name: size, type: "size_t" } ] }
+      - { fn: mq_physics_query,         returns: "const mq_physics_v1*", args: [ { name: abi_version, type: "uint32_t" } ], doc: "主版本匹配返回静态 const vtable，否则 NULL" }

@@ -1,6 +1,6 @@
 # maque::data —— schema 驱动的反射类型生成 (docs/06, SCHEMA.md)
 #
-# 用 parser.js 从 schema.yaml 生成：
+# 用 parser.js 从 schema/（目录，入口 schema/schema.yaml；一个文件一个模块 + import）生成：
 #   generated/maque_types.h   C++ 类型
 #   generated/maque_desc.h/.cpp C ABI 描述符
 #   generated/maque_schema.json
@@ -9,9 +9,14 @@
 find_program(NODE_EXECUTABLE node)
 
 # 生成到**源码树**（入库）：生成物是公开接口的交付物，不是临时构建产物（docs/21）
-set(MAQUE_GEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")
-set(MAQUE_SCHEMA   "${CMAKE_CURRENT_SOURCE_DIR}/schema.yaml")
-set(MAQUE_PARSER   "${CMAKE_CURRENT_SOURCE_DIR}/parser.js")
+set(MAQUE_GEN_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/generated")
+set(MAQUE_SCHEMA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/schema")
+# --schema 接受目录（入口 = <目录>/schema.yaml）或单个文件（旧式单文件）
+set(MAQUE_SCHEMA     "${MAQUE_SCHEMA_DIR}")
+set(MAQUE_PARSER     "${CMAKE_CURRENT_SOURCE_DIR}/parser.js")
+
+# schema 目录内**全部**文件（内容变更 → 重新配置；目录本身也列入 → 新增/删除文件同样触发）
+file(GLOB_RECURSE MAQUE_SCHEMA_FILES "${MAQUE_SCHEMA_DIR}/*.yaml" "${MAQUE_SCHEMA_DIR}/*.yml")
 
 set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/maque_types.h"
@@ -56,14 +61,16 @@ if(NODE_EXECUTABLE)
         COMMAND "${NODE_EXECUTABLE}" "${MAQUE_PARSER}" --schema "${MAQUE_SCHEMA}" --out "${MAQUE_GEN_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         RESULT_VARIABLE MAQUE_CODEGEN_RC
-        OUTPUT_QUIET)
+        OUTPUT_VARIABLE MAQUE_CODEGEN_OUT
+        ERROR_VARIABLE MAQUE_CODEGEN_ERR)
     if(NOT MAQUE_CODEGEN_RC EQUAL 0)
-        message(FATAL_ERROR "maque: codegen 失败（node parser.js 返回 ${MAQUE_CODEGEN_RC}）")
+        # parser.js 的诊断（import 成环 / 结构依赖未 import / 尺寸不符…）原样转出，便于定位
+        message(FATAL_ERROR "maque: codegen 失败（node parser.js 返回 ${MAQUE_CODEGEN_RC}）\n${MAQUE_CODEGEN_ERR}${MAQUE_CODEGEN_OUT}")
     endif()
 
-    # schema/parser 变化 → 自动重新配置（从而重新生成）
+    # schema 目录 / parser 变化 → 自动重新配置（从而重新生成）
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-                 "${MAQUE_SCHEMA}" "${MAQUE_PARSER}")
+                 ${MAQUE_SCHEMA_FILES} "${MAQUE_SCHEMA_DIR}" "${MAQUE_PARSER}")
 
     add_library(maque_schema STATIC "${MAQUE_GEN_DIR}/maque_desc.cpp")
     add_library(maque::schema ALIAS maque_schema)
@@ -74,8 +81,12 @@ if(NODE_EXECUTABLE)
     add_custom_target(maque_codegen
         COMMAND "${NODE_EXECUTABLE}" "${MAQUE_PARSER}" --schema "${MAQUE_SCHEMA}" --out "${MAQUE_GEN_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMENT "maque: 从 schema.yaml 生成（类型/描述符/API/绑定/控制面/事件/ABI/文档）"
+        COMMENT "maque: 从 schema/ 生成（类型/描述符/API/绑定/控制面/事件/ABI/文档）"
         VERBATIM)
+
+    # schema 目录 / import 机制单测（loadSchema / parseSchemaTree / checkSchemaImports）
+    add_test(NAME schema_imports
+             COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/schema_import_test.js")
 
     # 漂移校验：重新生成到临时目录并与入库版本逐字节比对
     add_test(NAME codegen_drift

@@ -1,0 +1,66 @@
+# canvas —— modules/ui/canvas
+# 分辨率策略（画布适配，docs/17）：纯函数、无依赖 —— UI 排版的"适配规则"单一真相。
+- namespace: canvas
+  version: 1
+  module_abi:
+    module: canvas
+    abi_name: "maque.canvas"
+    summary: "分辨率策略：设计分辨率 → 绘制区（设备像素）的缩放/偏移/安全区解析（纯函数）"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    enums:
+      - doc: "适配策略（与 ui.FitMode 对齐）"
+        values:
+          - { name: MQ_CANVAS_FIT_NONE,      value: 0 }
+          - { name: MQ_CANVAS_FIT_WIDTH,     value: 1 }
+          - { name: MQ_CANVAS_FIT_HEIGHT,    value: 2 }
+          - { name: MQ_CANVAS_FIT_SHOW_ALL,  value: 3 }
+          - { name: MQ_CANVAS_FIT_NO_BORDER, value: 4 }
+          - { name: MQ_CANVAS_FIT_EXACT,     value: 5 }
+      - doc: "对齐（与 ui.Align 对齐）"
+        values:
+          - { name: MQ_CANVAS_ALIGN_BEGIN,  value: 0 }
+          - { name: MQ_CANVAS_ALIGN_CENTER, value: 1 }
+          - { name: MQ_CANVAS_ALIGN_END,    value: 2 }
+    structs:
+      - name: mq_canvas_desc
+        doc: "输入：设计分辨率 + 策略 + 绘制区（设备像素）"
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: design_w, type: "float" }
+          - { name: design_h, type: "float" }
+          - { name: fit, type: "int32_t" }
+          - { name: align, type: "int32_t" }
+          - { name: min_scale, type: "float", doc: "<=0 → 不限" }
+          - { name: max_scale, type: "float", doc: "<=0 → 不限" }
+          - { name: window_w, type: "float", doc: "绘制区宽（设备像素）" }
+          - { name: window_h, type: "float" }
+          - { name: dpi_scale, type: "float", doc: "显示器内容缩放（HiDPI）；窗口/安全区已按此换算时传 1" }
+          - { name: safe_left, type: "float", doc: "安全区内缩（设备像素）" }
+          - { name: safe_top, type: "float" }
+          - { name: safe_right, type: "float" }
+          - { name: safe_bottom, type: "float" }
+      - name: mq_canvas_metrics
+        doc: "输出：设计 → 设备像素的映射（含留边/裁剪/安全区）"
+        fields:
+          - { name: scale, type: "float", doc: "等比缩放（Exact 时取 min 供文字等使用）" }
+          - { name: scale_x, type: "float" }
+          - { name: scale_y, type: "float" }
+          - { name: offset_x, type: "float", doc: "画布原点在绘制区中的偏移（设备像素）" }
+          - { name: offset_y, type: "float" }
+          - { name: viewport_w, type: "float", doc: "画布可视矩形（设备像素）" }
+          - { name: viewport_h, type: "float" }
+          - { name: window_w, type: "float" }
+          - { name: window_h, type: "float" }
+          - { name: device_scale, type: "float", doc: "生效的显示器内容缩放" }
+    fns:
+      - { fn: mq_canvas_resolve, returns: int,
+          args: [ { name: desc, type: "const mq_canvas_desc*" }, { name: out, type: "mq_canvas_metrics*" } ],
+          doc: "解析分辨率策略（确定性纯函数；非法输入回退 1:1 并返回非 0）" }
+      - { fn: mq_canvas_window_to_design, returns: int,
+          args: [ { name: m, type: "const mq_canvas_metrics*" }, { name: wx, type: "float" }, { name: wy, type: "float" },
+                  { name: out_dx, type: "float*" }, { name: out_dy, type: "float*" } ],
+          doc: "窗口（设备像素）→ 设计坐标（输入映射用；含留边/裁剪）" }
+      - { fn: mq_canvas_design_to_window, returns: int,
+          args: [ { name: m, type: "const mq_canvas_metrics*" }, { name: dx, type: "float" }, { name: dy, type: "float" },
+                  { name: out_wx, type: "float*" }, { name: out_wy, type: "float*" } ],
+          doc: "设计坐标 → 窗口（设备像素）" }

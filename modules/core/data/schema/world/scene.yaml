@@ -1,0 +1,57 @@
+# scene —— 场景/节点组件模型（世界层）
+- imports: [../math.yaml]
+
+- namespace: scene
+  version: 1
+  class_list:
+    - struct: Node
+      fields:
+        - { name: parent, type: entity_ref, attrs: { ref: Node } }
+        - { name: children, type: "entity_ref[]", attrs: { ref: Node } }
+    - struct: Name
+      size: 68
+      fields:
+        - { name: value, type: "char[64]", default: '""', attrs: { tooltip: "节点显示名（UTF-8，定长 64 字节）" } }
+        - { name: hash, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }
+    - struct: Active
+      size: 2
+      fields:
+        - { name: enabled, type: bool, default: true, attrs: { tooltip: "本节点是否生效" } }
+        - { name: active_in_hierarchy, type: bool, default: true, attrs: { transient: true, readonly: true } }
+    - struct: Tags
+      fields:
+        - { name: values, type: "string[]", attrs: { ref: interned_string } }
+        - { name: count, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }
+    - struct: Meta
+      fields:
+        - { name: stable_id, type: uint64_t, default: 0, attrs: { readonly: true, tooltip: "稳定节点 ID" } }
+        - { name: entries, type: "map<string, string>", attrs: { ref: interned_string } }
+        - { name: comment, type: "char[256]", default: '""' }
+        - { name: source_scene, type: "asset_ref<asset.Scene>", default: "null", attrs: { ref: asset.Scene } }
+        - { name: source_prefab, type: "asset_ref<Prefab>", default: "null", attrs: { ref: Prefab } }
+    - struct: PrefabOverride
+      fields:
+        - { name: node, type: entity_ref }
+        - { name: source_stable_id, type: uint64_t, default: 0 }
+        - { name: component_type_id, type: uint32_t, default: 0 }
+        - { name: field_path, type: "char[128]", default: '""' }
+    - struct: PrefabInstance
+      fields:
+        - { name: source, type: "asset_ref<Prefab>", default: "null", attrs: { ref: Prefab } }
+        - { name: overrides, type: "PrefabOverride[]" }
+        - { name: is_variant, type: bool, default: false }
+        - { name: override_count, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }
+        - { name: dirty, type: bool, default: false, attrs: { transient: true, readonly: true } }
+    - struct: Transform2D
+      size: 60
+      fields:
+        - { name: local, type: math.Transform2D }
+        - { name: world, type: math.Mat3, attrs: { transient: true } }
+        - { name: world_dirty, type: uint8_t, default: 1, attrs: { transient: true } }
+    - struct: Transform3D
+      size: 120
+      fields:
+        - { name: local, type: math.Transform3D }
+        - { name: world, type: math.Mat4, attrs: { transient: true } }
+        - { name: rotation_quat, type: math.Quat, attrs: { transient: true } }
+        - { name: world_dirty, type: uint8_t, default: 1, attrs: { transient: true } }

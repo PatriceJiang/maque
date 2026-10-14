@@ -1,0 +1,537 @@
+# ui —— modules/ui
+- imports: [../math.yaml]
+
+- namespace: ui
+  version: 1
+  class_list:
+    - enum: Anchor
+      values:
+        - { name: TopLeft, value: 0 }
+        - { name: TopCenter, value: 1 }
+        - { name: TopRight, value: 2 }
+        - { name: CenterLeft, value: 3 }
+        - { name: Center, value: 4 }
+        - { name: CenterRight, value: 5 }
+        - { name: BottomLeft, value: 6 }
+        - { name: BottomCenter, value: 7 }
+        - { name: BottomRight, value: 8 }
+        - { name: FullRect, value: 9 }
+        - { name: Custom, value: 10 }
+    - enum: SizeFlag
+      values:
+        - { name: ShrinkBegin, value: 0 }
+        - { name: ShrinkCenter, value: 1 }
+        - { name: ShrinkEnd, value: 2 }
+        - { name: Expand, value: 3 }
+        - { name: ExpandFill, value: 4 }
+    - enum: MouseFilter
+      values:
+        - { name: Stop, value: 0 }
+        - { name: Pass, value: 1 }
+        - { name: Ignore, value: 2 }
+    - enum: ContainerMode
+      values:
+        - { name: Free, value: 0 }
+        - { name: HBox, value: 1 }
+        - { name: VBox, value: 2 }
+        - { name: Grid, value: 3 }
+    - enum: Align
+      values:
+        - { name: Begin, value: 0 }
+        - { name: Center, value: 1 }
+        - { name: End, value: 2 }
+    - enum: TextWrap
+      values:
+        - { name: None, value: 0 }
+        - { name: Word, value: 1 }
+        - { name: Char, value: 2 }
+        - { name: WordSmart, value: 3 }
+    - enum: StretchMode
+      values:
+        - { name: Scale, value: 0 }
+        - { name: KeepAspect, value: 1 }
+        - { name: KeepAspectCentered, value: 2 }
+        - { name: KeepAspectCovered, value: 3 }
+        - { name: Tile, value: 4 }
+        - { name: KeepCentered, value: 5 }
+    - enum: ButtonState
+      values:
+        - { name: Normal, value: 0 }
+        - { name: Hover, value: 1 }
+        - { name: Pressed, value: 2 }
+        - { name: Disabled, value: 3 }
+    - enum: CheckState
+      values:
+        - { name: Unchecked, value: 0 }
+        - { name: Checked, value: 1 }
+        - { name: Indeterminate, value: 2 }
+    - enum: Orientation
+      values:
+        - { name: Vertical, value: 0 }
+        - { name: Horizontal, value: 1 }
+    - enum: ScrollOrientation
+      values:
+        - { name: Horizontal, value: 0 }
+        - { name: Vertical, value: 1 }
+        - { name: Both, value: 2 }
+    - enum: TabTransition
+      values:
+        - { name: None, value: 0 }
+        - { name: Fade, value: 1 }
+        - { name: Slide, value: 2 }
+    - enum: Side
+      values:
+        - { name: Top, value: 0 }
+        - { name: Bottom, value: 1 }
+        - { name: Left, value: 2 }
+        - { name: Right, value: 3 }
+    - enum: ScrollMode
+      values:
+        - { name: Disabled, value: 0 }
+        - { name: Auto, value: 1 }
+        - { name: Always, value: 2 }
+    - enum: SelectionMode
+      values:
+        - { name: None, value: 0 }
+        - { name: Single, value: 1 }
+        - { name: Multi, value: 2 }
+    - enum: MaskMode
+      values:
+        - { name: Rect, value: 0 }
+        - { name: RoundedRect, value: 1 }
+        - { name: Texture, value: 2 }
+        - { name: Stencil, value: 3 }
+    - enum: MaskChannel
+      values:
+        - { name: Alpha, value: 0 }
+        - { name: Luminance, value: 1 }
+        - { name: Red, value: 2 }
+    - enum: CompareFunc
+      values:
+        - { name: Always, value: 0 }
+        - { name: Equal, value: 1 }
+        - { name: NotEqual, value: 2 }
+        - { name: Less, value: 3 }
+        - { name: Greater, value: 4 }
+    - enum: SliderOrientation
+      values:
+        - { name: Horizontal, value: 0 }
+        - { name: Vertical, value: 1 }
+    - enum: StepMode
+      values:
+        - { name: None, value: 0 }
+        - { name: Steps, value: 1 }
+    - enum: FillMode
+      values:
+        - { name: LeftToRight, value: 0 }
+        - { name: RightToLeft, value: 1 }
+        - { name: TopToBottom, value: 2 }
+        - { name: BottomToTop, value: 3 }
+        - { name: Radial, value: 4 }
+    - enum: ProgressMode
+      values:
+        - { name: Determinate, value: 0 }
+        - { name: Indeterminate, value: 1 }
+    - enum: ScrollDirection
+      values:
+        - { name: Horizontal, value: 0 }
+        - { name: Vertical, value: 1 }
+    - enum: PageTransition
+      values:
+        - { name: None, value: 0 }
+        - { name: Slide, value: 1 }
+        - { name: Fade, value: 2 }
+        - { name: Cursor, value: 3 }
+    - enum: SafeAreaMode
+      values:
+        - { name: Device, value: 0 }
+        - { name: Custom, value: 1 }
+    - enum: SafeAreaAnchor
+      values:
+        - { name: Self, value: 0 }
+        - { name: Children, value: 1 }
+    - enum: OpacityMode
+      values:
+        - { name: Normal, value: 0 }
+        - { name: Gamma, value: 1 }
+    - enum: FlexDirection
+      values:
+        - { name: Row, value: 0 }
+        - { name: RowReverse, value: 1 }
+        - { name: Column, value: 2 }
+        - { name: ColumnReverse, value: 3 }
+    - enum: FlexWrap
+      values:
+        - { name: NoWrap, value: 0 }
+        - { name: Wrap, value: 1 }
+        - { name: WrapReverse, value: 2 }
+    - enum: JustifyContent
+      values:
+        - { name: Start, value: 0 }
+        - { name: End, value: 1 }
+        - { name: Center, value: 2 }
+        - { name: SpaceBetween, value: 3 }
+        - { name: SpaceAround, value: 4 }
+        - { name: SpaceEvenly, value: 5 }
+    - enum: AlignItems
+      values:
+        - { name: Stretch, value: 0 }
+        - { name: Start, value: 1 }
+        - { name: End, value: 2 }
+        - { name: Center, value: 3 }
+        - { name: Baseline, value: 4 }
+    - enum: AlignContent
+      values:
+        - { name: Stretch, value: 0 }
+        - { name: Start, value: 1 }
+        - { name: End, value: 2 }
+        - { name: Center, value: 3 }
+        - { name: SpaceBetween, value: 4 }
+        - { name: SpaceAround, value: 5 }
+    - enum: FlexBasisMode
+      values:
+        - { name: Auto, value: 0 }
+        - { name: Points, value: 1 }
+        - { name: Percent, value: 2 }
+    - enum: AlignSelf
+      values:
+        - { name: Auto, value: 0 }
+        - { name: Start, value: 1 }
+        - { name: End, value: 2 }
+        - { name: Center, value: 3 }
+        - { name: Stretch, value: 4 }
+        - { name: Baseline, value: 5 }
+    - enum: EditLineMode
+      values:
+        - { name: SingleLine, value: 0 }
+        - { name: MultiLine, value: 1 }
+    - enum: TextOverflow
+      values:
+        - { name: Clip, value: 0 }
+        - { name: Ellipsis, value: 1 }
+        - { name: Scroll, value: 2 }
+    - enum: WrapMode
+      values:
+        - { name: None, value: 0 }
+        - { name: Word, value: 1 }
+        - { name: Char, value: 2 }
+    - enum: TextAlign
+      values:
+        - { name: Left, value: 0 }
+        - { name: Center, value: 1 }
+        - { name: Right, value: 2 }
+        - { name: Justify, value: 3 }
+    - struct: Control
+      roles: [ ui_control ]
+      fields:
+        - { name: anchor_preset, type: Anchor, default: "Anchor::TopLeft" }
+        - { name: anchor_min, type: math.Vec2, attrs: { range: [0, 1] } }
+        - { name: anchor_max, type: math.Vec2, attrs: { range: [0, 1] } }
+        - { name: offset_min, type: math.Vec2, attrs: { unit: px } }
+        - { name: offset_max, type: math.Vec2, default: "{100.0F, 30.0F}", attrs: { unit: px } }
+        - { name: pivot, type: math.Vec2, attrs: { range: [0, 1] } }
+        - { name: min_size, type: math.Vec2, attrs: { unit: px } }
+        - { name: max_size, type: math.Vec2, attrs: { unit: px } }
+        - { name: size_flags_h, type: SizeFlag, default: "SizeFlag::ShrinkBegin" }
+        - { name: size_flags_v, type: SizeFlag, default: "SizeFlag::ShrinkBegin" }
+        - { name: visible, type: bool, default: true }
+        - { name: mouse_filter, type: MouseFilter, default: "MouseFilter::Stop" }
+        - { name: z_index, type: int32_t, default: 0 }
+        - { name: rect, type: math.Vec4, attrs: { transient: true } }
+        - { name: scale, type: math.Vec2, default: "{1.0F, 1.0F}" }
+        - { name: rotation, type: float, default: 0.0F, attrs: { unit: rad } }
+    - struct: Container
+      roles: [ ui_layout ]
+      fields:
+        - { name: mode, type: ContainerMode, default: "ContainerMode::Free" }
+        - { name: padding, type: math.Vec4, attrs: { unit: px } }
+        - { name: spacing, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: align_main, type: Align, default: "Align::Begin" }
+        - { name: align_cross, type: Align, default: "Align::Begin" }
+        - { name: columns, type: int32_t, default: 1, attrs: { range: [1, 128] } }
+        - { name: grid_cell, type: math.Vec2, attrs: { unit: px } }
+        - { name: fit_content, type: bool, default: false }
+    # 画布（UI 根 + 分辨率策略）：把"设计分辨率"适配到任意窗口/显示器（docs/17）
+    - enum: FitMode
+      doc: "适配策略：设计分辨率 → 绘制区（设备像素）"
+      values:
+        - { name: None,      value: 0, doc: "1:1（1 设计像素 = 1 设备像素，不做缩放）" }
+        - { name: FitWidth,  value: 1, doc: "按宽度等比适配（高度可能溢出/留边）" }
+        - { name: FitHeight, value: 2, doc: "按高度等比适配" }
+        - { name: ShowAll,   value: 3, doc: "等比缩放完整显示 + 留边（letterbox，默认）" }
+        - { name: NoBorder,  value: 4, doc: "等比缩放铺满 + 裁剪（crop）" }
+        - { name: Exact,     value: 5, doc: "非等比拉伸铺满（可能变形）" }
+    - struct: Canvas
+      roles: [ ui_canvas ]
+      doc: "UI 根与分辨率策略：解析后的度量每帧写回 transient 字段（脚本/控制面可读）"
+      fields:
+        - { name: design_width,  type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: design_height, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: fit_mode,      type: FitMode, default: "FitMode::ShowAll" }
+        - { name: align,         type: Align, default: "Align::Center", doc: "留边/裁剪时画布在窗口中的对齐" }
+        - { name: dpi_scale,     type: bool, default: true, doc: "是否让绘制区跟随显示器内容缩放（HiDPI）" }
+        # 渲染分辨率倍率（超采样）：0 = 自动（跟随窗口像素，上限 4）；1 = 设计分辨率（像素风，放大有锯齿）；
+        # N = 固定 N 倍。文字按**渲染目标像素**栅格化 → 目标越接近窗口分辨率，文字越平滑
+        - { name: render_scale,  type: float, default: 0.0F, attrs: { range: [0, 8] }, doc: "渲染分辨率倍率（0=自动跟随窗口像素）" }
+        - { name: min_scale,     type: float, default: 0.0F, attrs: { unit: px, doc: "缩放下限（0=不限）" } }
+        - { name: max_scale,     type: float, default: 0.0F, attrs: { unit: px, doc: "缩放上限（0=不限）" } }
+        # ---- 解析结果（transient：每帧由引擎写回）----
+        - { name: scale,        type: float, default: 1.0F, attrs: { transient: true } }
+        - { name: scale_x,      type: float, default: 1.0F, attrs: { transient: true } }
+        - { name: scale_y,      type: float, default: 1.0F, attrs: { transient: true } }
+        - { name: offset_x,     type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: offset_y,     type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: viewport_w,   type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: viewport_h,   type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: window_w,     type: float, default: 0.0F, attrs: { transient: true, doc: "绘制区（设备像素）" } }
+        - { name: window_h,     type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: device_scale, type: float, default: 1.0F, attrs: { transient: true, doc: "显示器内容缩放（HiDPI）" } }
+        - { name: safe_left,    type: float, default: 0.0F, attrs: { transient: true, doc: "安全区内缩（刘海/圆角，设备像素）" } }
+        - { name: safe_top,     type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: safe_right,   type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: safe_bottom,  type: float, default: 0.0F, attrs: { transient: true } }
+
+    - struct: TextLabel
+      roles: [ ui_text ]
+      fields:
+        - { name: text, type: string }
+        - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
+        - { name: font_size, type: float, default: 16.0F, attrs: { unit: px, range: [1, 512] } }
+        - { name: color, type: math.Vec4, default: "{1.0F, 1.0F, 1.0F, 1.0F}" }
+        - { name: align_h, type: Align, default: "Align::Begin" }
+        - { name: align_v, type: Align, default: "Align::Begin" }
+        - { name: wrap_mode, type: TextWrap, default: "TextWrap::None" }
+        - { name: line_spacing, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: outline_size, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: outline_color, type: math.Vec4, default: "{0.0F, 0.0F, 0.0F, 1.0F}" }
+        - { name: uppercase, type: bool, default: false }
+        - { name: text_size, type: math.Vec2, attrs: { transient: true } }
+    - struct: Image
+      fields:
+        - { name: texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: region, type: math.Vec4 }
+        - { name: modulate, type: math.Vec4, default: "{1.0F, 1.0F, 1.0F, 1.0F}" }
+        - { name: stretch_mode, type: StretchMode, default: "StretchMode::Scale" }
+        - { name: flip_h, type: bool, default: false }
+        - { name: flip_v, type: bool, default: false }
+        - { name: tile_scale, type: math.Vec2, default: "{1.0F, 1.0F}" }
+        - { name: nine_patch_margin, type: math.Vec4, attrs: { unit: px } }
+        - { name: texture_size, type: math.Vec2, attrs: { transient: true } }
+    - struct: Button
+      fields:
+        - { name: text, type: string }
+        - { name: icon, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
+        - { name: font_size, type: float, default: 16.0F, attrs: { unit: px } }
+        - { name: icon_align, type: Align, default: "Align::Begin" }
+        - { name: text_color, type: math.Vec4 }
+        - { name: style_normal, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: style_hover, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: style_pressed, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: style_disabled, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: bg_color, type: math.Vec4, default: "{0.3F, 0.3F, 0.3F, 1.0F}" }
+        - { name: toggle_mode, type: bool, default: false }
+        - { name: button_pressed, type: bool, default: false }
+        - { name: disabled, type: bool, default: false }
+        - { name: action, type: string }
+        - { name: state, type: ButtonState, default: "ButtonState::Normal", attrs: { transient: true } }
+    - struct: CheckBox
+      roles: [ ui_check ]
+      fields:
+        - { name: checked, type: bool, default: false }
+        - { name: tristate, type: bool, default: false }
+        - { name: indeterminate, type: bool, default: false }
+        - { name: disabled, type: bool, default: false }
+        - { name: text, type: string }
+        - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
+        - { name: font_size, type: float, default: 16.0F, attrs: { unit: px, range: [1, 512] } }
+        - { name: text_color, type: math.Vec4 }
+        - { name: icon_checked, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: icon_unchecked, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: icon_indeterminate, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: box_position, type: Align, default: "Align::Begin" }
+        - { name: state, type: CheckState, default: "CheckState::Unchecked", attrs: { transient: true } }
+    - struct: RadioGroup
+      fields:
+        - { name: selected_index, type: int32_t, default: -1, attrs: { range: [-1, 65535] } }
+        - { name: allow_unselect, type: bool, default: false }
+        - { name: loop, type: bool, default: true }
+        - { name: orientation, type: Orientation, default: "Orientation::Vertical" }
+        - { name: disabled, type: bool, default: false }
+        - { name: selected, type: entity_ref, attrs: { ref: Control, transient: true } }
+        - { name: member_count, type: int32_t, default: 0, attrs: { transient: true, readonly: true } }
+    - struct: Tabs
+      fields:
+        - { name: current_tab, type: int32_t, default: 0, attrs: { range: [0, 65535] } }
+        - { name: tab_bar, type: entity_ref, attrs: { ref: Control } }
+        - { name: side, type: Side, default: "Side::Top" }
+        - { name: transition, type: TabTransition, default: "TabTransition::None" }
+        - { name: transition_time, type: float, default: 0.15F, attrs: { unit: s, range: [0, 10] } }
+        - { name: tab_count, type: int32_t, default: 0, attrs: { transient: true, readonly: true } }
+        - { name: current_page, type: entity_ref, attrs: { ref: Control, transient: true } }
+    - struct: ScrollView
+      roles: [ ui_scroll ]
+      fields:
+        - { name: content, type: entity_ref, attrs: { ref: Control } }
+        - { name: scroll_h, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: scroll_v, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: scroll_mode_h, type: ScrollMode, default: "ScrollMode::Auto" }
+        - { name: scroll_mode_v, type: ScrollMode, default: "ScrollMode::Auto" }
+        - { name: scroll_step, type: math.Vec2, default: "{16.0F, 16.0F}", attrs: { unit: px } }
+        - { name: follow_focus, type: bool, default: false }
+        - { name: deadzone, type: int32_t, default: 0, attrs: { unit: px } }
+        - { name: smooth, type: bool, default: false }
+        - { name: bar_thickness, type: float, default: 8.0F, attrs: { unit: px } }
+        - { name: scroll_offset, type: math.Vec2, attrs: { unit: px, transient: true } }
+        - { name: content_size, type: math.Vec2, attrs: { unit: px, transient: true } }
+    - struct: ListView
+      fields:
+        - { name: item_template, type: "asset_ref<asset.Scene>", attrs: { ref: asset.Scene } }
+        - { name: data_source, type: entity_ref, attrs: { ref: Script } }
+        - { name: item_count, type: int32_t, default: 0, attrs: { range: [0, 1000000] } }
+        - { name: item_extent, type: float, default: 40.0F, attrs: { unit: px, range: [0, 8192] } }
+        - { name: orientation, type: Orientation, default: "Orientation::Vertical" }
+        - { name: spacing, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: overscan, type: int32_t, default: 2, attrs: { range: [0, 64] } }
+        - { name: selection_mode, type: SelectionMode, default: "SelectionMode::Single" }
+        - { name: selected_index, type: int32_t, default: -1, attrs: { range: [-1, 1000000] } }
+        - { name: scroll, type: entity_ref, attrs: { ref: ScrollView } }
+        - { name: pool_size, type: int32_t, default: 0, attrs: { transient: true, readonly: true } }
+    - struct: Mask
+      fields:
+        - { name: mask_mode, type: MaskMode, default: "MaskMode::Rect" }
+        - { name: clip_children, type: bool, default: true }
+        - { name: corner_radius, type: math.Vec4, attrs: { unit: px } }
+        - { name: mask_texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: texture_channel, type: MaskChannel, default: "MaskChannel::Alpha" }
+        - { name: invert, type: bool, default: false }
+        - { name: stencil_ref, type: int32_t, default: 0, attrs: { range: [0, 255] } }
+        - { name: stencil_write, type: bool, default: true }
+        - { name: stencil_compare, type: CompareFunc, default: "CompareFunc::Equal" }
+        - { name: feather, type: float, default: 0.0F, attrs: { unit: px, range: [0, 64] } }
+    - struct: Slider
+      roles: [ ui_slider ]
+      fields:
+        - { name: min_value, type: float, default: 0.0F }
+        - { name: max_value, type: float, default: 1.0F }
+        - { name: value, type: float, default: 0.0F }
+        - { name: step, type: float, default: 0.0F }
+        - { name: step_mode, type: StepMode, default: "StepMode::None" }
+        - { name: orientation, type: SliderOrientation, default: "SliderOrientation::Horizontal" }
+        - { name: invert, type: bool, default: false }
+        - { name: exp_edit, type: bool, default: false }
+        - { name: allow_greater, type: bool, default: false }
+        - { name: disabled, type: bool, default: false }
+        - { name: track_texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: grabber_texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: grabber_radius, type: float, default: 8.0F, attrs: { unit: px } }
+        - { name: show_value_label, type: bool, default: false }
+        - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
+        - { name: dragging, type: bool, default: false, attrs: { transient: true } }
+        - { name: ratio, type: float, default: 0.0F, attrs: { range: [0, 1], transient: true } }
+    - struct: ProgressBar
+      roles: [ ui_progress ]
+      fields:
+        - { name: value, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: min_display, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: mode, type: ProgressMode, default: "ProgressMode::Determinate" }
+        - { name: fill_mode, type: FillMode, default: "FillMode::LeftToRight" }
+        - { name: radial_center, type: math.Vec2, default: "{0.5F, 0.5F}", attrs: { range: [0, 1] } }
+        - { name: radial_begin, type: float, default: 0.0F, attrs: { unit: rad } }
+        - { name: radial_fill, type: float, default: -6.2831853F, attrs: { unit: rad } }
+        - { name: indeterminate_speed, type: float, default: 1.0F, attrs: { unit: "1/s", range: [0, 10] } }
+        - { name: overlay, type: bool, default: false }
+        - { name: back_texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: fill_texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: back_color, type: math.Vec4, default: "{0.2F, 0.2F, 0.2F, 1.0F}" }
+        - { name: fill_color, type: math.Vec4, default: "{0.4F, 0.8F, 0.4F, 1.0F}" }
+        - { name: show_percentage, type: bool, default: false }
+        - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
+        - { name: phase, type: float, default: 0.0F, attrs: { range: [0, 1], transient: true } }
+    - struct: PageView
+      fields:
+        - { name: current_page, type: int32_t, default: 0, attrs: { range: [0, 65535] } }
+        - { name: direction, type: ScrollDirection, default: "ScrollDirection::Horizontal" }
+        - { name: loop, type: bool, default: false }
+        - { name: transition, type: PageTransition, default: "PageTransition::Slide" }
+        - { name: transition_time, type: float, default: 0.3F, attrs: { unit: s, range: [0, 10] } }
+        - { name: drag_threshold, type: float, default: 0.25F, attrs: { range: [0, 1] } }
+        - { name: fling_threshold, type: float, default: 400.0F, attrs: { unit: "px/s" } }
+        - { name: deadzone, type: int32_t, default: 0, attrs: { unit: px } }
+        - { name: snap, type: bool, default: true }
+        - { name: clip_content, type: bool, default: true }
+        - { name: page_count, type: int32_t, default: 0, attrs: { transient: true, readonly: true } }
+        - { name: page_ratio, type: float, default: 0.0F, attrs: { range: [0, 1], transient: true } }
+        - { name: current_node, type: entity_ref, attrs: { ref: Control, transient: true } }
+    - struct: SafeArea
+      roles: [ ui_safe_area ]
+      fields:
+        - { name: mode, type: SafeAreaMode, default: "SafeAreaMode::Device" }
+        - { name: anchor, type: SafeAreaAnchor, default: "SafeAreaAnchor::Children" }
+        - { name: target, type: entity_ref, attrs: { ref: Control } }
+        - { name: inset_left, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: inset_top, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: inset_right, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: inset_bottom, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: min_size, type: math.Vec2, attrs: { unit: px } }
+        - { name: debug_draw, type: bool, default: false }
+        - { name: resolved_inset, type: math.Vec4, attrs: { unit: px, transient: true } }
+    - struct: UIOpacity
+      roles: [ ui_opacity ]
+      fields:
+        - { name: opacity, type: float, default: 1.0F, attrs: { range: [0, 1] } }
+        - { name: mode, type: OpacityMode, default: "OpacityMode::Normal" }
+        - { name: affect_children, type: bool, default: true }
+        - { name: root, type: entity_ref, attrs: { ref: Control } }
+        - { name: visible_threshold, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: final_alpha, type: float, default: 1.0F, attrs: { range: [0, 1], transient: true } }
+    - struct: FlexBox
+      fields:
+        - { name: direction, type: FlexDirection, default: "FlexDirection::Row" }
+        - { name: wrap, type: FlexWrap, default: "FlexWrap::NoWrap" }
+        - { name: justify_content, type: JustifyContent, default: "JustifyContent::Start" }
+        - { name: align_items, type: AlignItems, default: "AlignItems::Stretch" }
+        - { name: align_content, type: AlignContent, default: "AlignContent::Stretch" }
+        - { name: gap_main, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: gap_cross, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: padding, type: math.Vec4 }
+        - { name: reverse_safe, type: bool, default: false }
+        - { name: dirty, type: bool, default: true, attrs: { transient: true } }
+    - struct: FlexItem
+      fields:
+        - { name: grow, type: float, default: 0.0F }
+        - { name: shrink, type: float, default: 1.0F }
+        - { name: basis_mode, type: FlexBasisMode, default: "FlexBasisMode::Auto" }
+        - { name: basis_value, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: align_self, type: AlignSelf, default: "AlignSelf::Auto" }
+        - { name: order, type: int32_t, default: 0 }
+        - { name: min_main, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: max_main, type: float, default: -1.0F, attrs: { unit: px } }
+    - struct: EditBox
+      fields:
+        - { name: text, type: string }
+        - { name: placeholder, type: string }
+        - { name: line_mode, type: EditLineMode, default: "EditLineMode::SingleLine" }
+        - { name: max_length, type: int32_t, default: 0 }
+        - { name: editable, type: bool, default: true }
+        - { name: secret, type: bool, default: false }
+        - { name: secret_char, type: uint32_t, default: 8226 }
+        - { name: select_all_on_focus, type: bool, default: false }
+        - { name: clear_button, type: bool, default: false }
+        - { name: text_color, type: math.Vec4 }
+        - { name: placeholder_color, type: math.Vec4, default: "{1.0F, 1.0F, 1.0F, 0.5F}" }
+        - { name: selection_color, type: math.Vec4, default: "{0.3F, 0.5F, 1.0F, 0.4F}" }
+        - { name: caret_color, type: math.Vec4 }
+        - { name: caret_width, type: float, default: 1.0F, attrs: { unit: px } }
+        - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
+        - { name: font_size, type: float, default: 16.0F, attrs: { unit: px } }
+        - { name: align, type: TextAlign, default: "TextAlign::Left" }
+        - { name: overflow, type: TextOverflow, default: "TextOverflow::Clip" }
+        - { name: wrap_mode, type: WrapMode, default: "WrapMode::Word" }
+        - { name: line_spacing, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: caret_pos, type: int32_t, default: 0, attrs: { transient: true } }
+        - { name: sel_start, type: int32_t, default: -1, attrs: { transient: true } }
+        - { name: sel_end, type: int32_t, default: -1, attrs: { transient: true } }
+        - { name: scroll_offset, type: math.Vec2, attrs: { transient: true } }
+        - { name: focused, type: bool, default: false, attrs: { transient: true } }
+        - { name: ime_composing, type: bool, default: false, attrs: { transient: true } }

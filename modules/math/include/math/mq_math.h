@@ -2,7 +2,7 @@
  * 纯函数、无状态、可内联；布局即 ABI（docs/06/07）。
  * 约定：Mat4 列主序 m[col*4+row]；欧拉角 XYZ 弧度。
  *
- * ⚠️ **函数声明由 DSL 生成**（docs/21 §1）：单一真相 = schema.yaml 的 `module_abi`
+ * ⚠️ **函数声明由 DSL 生成**（docs/21 §1）：单一真相 = schema/ 的 `module_abi`
  *   （math 段，language: cxx）；生成物 = build/modules/core/data/generated/abi/math.h。
  *   本文件只保留**运算符与 inline 实现**。 */
 #pragma once

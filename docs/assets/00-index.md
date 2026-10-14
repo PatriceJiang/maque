@@ -30,7 +30,7 @@
 
 ## 3. 命名空间对齐
 
-资产类型与 `modules/core/data/schema.yaml` 的 `asset` 命名空间对齐：
+资产类型与 `modules/core/data/schema/` 的 `asset` 命名空间对齐：
 
 ```yaml
 - namespace: asset

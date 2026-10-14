@@ -1,0 +1,135 @@
+# math —— modules/math
+- namespace: math
+  version: 1
+  class_list:
+    - struct: Vec2
+      size: 8
+      fields:
+        - { name: x, type: float, default: 0.0F }
+        - { name: y, type: float, default: 0.0F }
+    - struct: Vec3
+      size: 12
+      fields:
+        - { name: x, type: float, default: 0.0F }
+        - { name: y, type: float, default: 0.0F }
+        - { name: z, type: float, default: 0.0F }
+    - struct: Vec4
+      size: 16
+      fields:
+        - { name: x, type: float, default: 0.0F }
+        - { name: y, type: float, default: 0.0F }
+        - { name: z, type: float, default: 0.0F }
+        - { name: w, type: float, default: 0.0F }
+    - struct: Quat
+      size: 16
+      fields:
+        - { name: x, type: float, default: 0.0F }
+        - { name: y, type: float, default: 0.0F }
+        - { name: z, type: float, default: 0.0F }
+        - { name: w, type: float, default: 1.0F }
+    - struct: Mat3
+      size: 36
+      fields:
+        - { name: m, type: "float[9]", default: "{0.0F}" }
+    - struct: Mat4
+      size: 64
+      fields:
+        - { name: m, type: "float[16]", default: "{0.0F}" }
+    - struct: Transform2D
+      size: 20
+      fields:
+        - { name: position, type: Vec2, default: "{0.0F, 0.0F}" }
+        - { name: rotation, type: float, default: 0.0F, attrs: { unit: radian } }
+        - { name: scale, type: Vec2, default: "{1.0F, 1.0F}" }
+    - struct: Transform3D
+      size: 36
+      fields:
+        - { name: position, type: Vec3, default: "{0.0F, 0.0F, 0.0F}" }
+        - { name: rotation, type: Vec3, default: "{0.0F, 0.0F, 0.0F}", attrs: { unit: radian, tooltip: "Euler XYZ" } }
+        - { name: scale, type: Vec3, default: "{1.0F, 1.0F, 1.0F}" }
+    - struct: Rect
+      size: 16
+      fields:
+        - { name: x, type: float, default: 0.0F }
+        - { name: y, type: float, default: 0.0F }
+        - { name: width, type: float, default: 0.0F }
+        - { name: height, type: float, default: 0.0F }
+    - struct: Color
+      size: 16
+      fields:
+        - { name: r, type: float, default: 1.0F }
+        - { name: g, type: float, default: 1.0F }
+        - { name: b, type: float, default: 1.0F }
+        - { name: a, type: float, default: 1.0F }
+    - struct: Rgba
+      size: 16
+      fields:
+        - { name: r, type: float, default: 0.0F }
+        - { name: g, type: float, default: 0.0F }
+        - { name: b, type: float, default: 0.0F }
+        - { name: a, type: float, default: 1.0F }
+    - struct: Aabb
+      size: 24
+      fields:
+        - { name: min, type: Vec3, default: "{0.0F, 0.0F, 0.0F}" }
+        - { name: max, type: Vec3, default: "{0.0F, 0.0F, 0.0F}" }
+    - struct: Ray
+      size: 24
+      fields:
+        - { name: origin, type: Vec3, default: "{0.0F, 0.0F, 0.0F}" }
+        - { name: direction, type: Vec3, default: "{0.0F, 0.0F, -1.0F}" }
+    - struct: Plane
+      size: 16
+      fields:
+        - { name: normal, type: Vec3, default: "{0.0F, 1.0F, 0.0F}" }
+        - { name: distance, type: float, default: 0.0F }
+  # 函数接口声明（→ 生成 C++ 头 + JS 绑定，docs/21）
+  api_list:
+    - fn: clamp
+      args: [ { name: value, type: float }, { name: lo, type: float }, { name: hi, type: float } ]
+      returns: float
+    - fn: lerp
+      args: [ { name: a, type: float }, { name: b, type: float }, { name: t, type: float } ]
+      returns: float
+    - fn: saturate                 # MANUAL：实现内联在 math.custom.h
+      args: [ { name: x, type: float } ]
+      returns: float
+      manual: "math.custom.h"
+  module_abi:
+    module: math
+    abi_name: "maque.math"
+    language: cxx
+    namespace: math
+    summary: "数学库：对生成 POD 类型的确定性操作（布局即 ABI，docs/06/07）"
+    includes: [ '"maque_types.h"', "<cmath>" ]
+    consts:
+      - { name: kPi, type: float, value: "3.14159265358979323846F" }
+    fns:
+      - { fn: dot, returns: "float", args: [ { name: a, type: "const Vec2&" }, { name: b, type: "const Vec2&" } ] }
+      - { fn: length_sq, returns: "float", args: [ { name: a, type: "const Vec2&" } ] }
+      - { fn: length, returns: "float", args: [ { name: a, type: "const Vec2&" } ] }
+      - { fn: lerp, returns: "Vec2", args: [ { name: a, type: "const Vec2&" }, { name: b, type: "const Vec2&" }, { name: t, type: "float" } ] }
+      - { fn: normalize, returns: "Vec2", args: [ { name: a, type: "const Vec2&" } ] }
+      - { fn: dot, returns: "float", args: [ { name: a, type: "const Vec3&" }, { name: b, type: "const Vec3&" } ] }
+      - { fn: cross, returns: "Vec3", args: [ { name: a, type: "const Vec3&" }, { name: b, type: "const Vec3&" } ] }
+      - { fn: length_sq, returns: "float", args: [ { name: a, type: "const Vec3&" } ] }
+      - { fn: length, returns: "float", args: [ { name: a, type: "const Vec3&" } ] }
+      - { fn: distance, returns: "float", args: [ { name: a, type: "const Vec3&" }, { name: b, type: "const Vec3&" } ] }
+      - { fn: lerp, returns: "Vec3", args: [ { name: a, type: "const Vec3&" }, { name: b, type: "const Vec3&" }, { name: t, type: "float" } ] }
+      - { fn: normalize, returns: "Vec3", args: [ { name: a, type: "const Vec3&" } ] }
+      - { fn: dot, returns: "float", args: [ { name: a, type: "const Vec4&" }, { name: b, type: "const Vec4&" } ] }
+      - { fn: lerp, returns: "Vec4", args: [ { name: a, type: "const Vec4&" }, { name: b, type: "const Vec4&" }, { name: t, type: "float" } ] }
+      - { fn: quat_identity, returns: "Quat", args: [  ] }
+      - { fn: quat_conjugate, returns: "Quat", args: [ { name: q, type: "const Quat&" } ] }
+      - { fn: quat_normalize, returns: "Quat", args: [ { name: q, type: "const Quat&" } ] }
+      - { fn: quat_from_axis_angle, returns: "Quat", args: [ { name: axis, type: "const Vec3&" }, { name: radians, type: "float" } ] }
+      - { fn: quat_rotate, returns: "Vec3", args: [ { name: q, type: "const Quat&" }, { name: v, type: "const Vec3&" } ] }
+      - { fn: quat_slerp, returns: "Quat", args: [ { name: a, type: "Quat" }, { name: b, type: "Quat" }, { name: t, type: "float" } ] }
+      - { fn: mat4_identity, returns: "Mat4", args: [  ] }
+      - { fn: transform_point, returns: "Vec3", args: [ { name: a, type: "const Mat4&" }, { name: p, type: "const Vec3&" } ] }
+      - { fn: transform_vector, returns: "Vec3", args: [ { name: a, type: "const Mat4&" }, { name: v, type: "const Vec3&" } ] }
+      - { fn: mat4_translation, returns: "Mat4", args: [ { name: t, type: "const Vec3&" } ] }
+      - { fn: mat4_scale, returns: "Mat4", args: [ { name: s, type: "const Vec3&" } ] }
+      - { fn: mat4_from_quat, returns: "Mat4", args: [ { name: q, type: "const Quat&" } ] }
+      - { fn: mat4_from_transform, returns: "Mat4", args: [ { name: t, type: "const Transform3D&" } ] }
+      - { fn: to_euler_xyz, returns: "Vec3", args: [ { name: q, type: "const Quat&" } ] }

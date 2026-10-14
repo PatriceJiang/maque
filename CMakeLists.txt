@@ -28,7 +28,7 @@ endif()
 enable_testing()
 
 # DSL 生成物目录（**入库**：生成的公开接口是仓库产物，docs/21）
-#   - 单一真相 = modules/core/data/schema.yaml
+#   - 单一真相 = modules/core/data/schema/（目录，入口 schema.yaml；一文件一模块 + import 依赖）
 #   - 生成：`cmake --build build --target maque_codegen`（构建时自动重生成）
 #   - 漂移校验：ctest -R codegen_drift（重新生成到临时目录并逐字节比对）
 set(MAQUE_GEN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules/core/data/generated"

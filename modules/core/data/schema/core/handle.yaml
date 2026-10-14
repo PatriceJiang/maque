@@ -1,0 +1,32 @@
+# handle —— modules/core/handle
+- namespace: handle
+  version: 1
+  module_abi:
+    module: handle
+    abi_name: "maque.handle"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_handle_table ]
+    macros:
+      - { name: MQ_HANDLE_INDEX_NONE, value: "0xFFFFFFFFu", doc: "空槽哨兵（index 全 1）" }
+      - { name: MQ_HANDLE_INVALID, value: "((mq_handle){ MQ_HANDLE_INDEX_NONE, 0u })",
+          value_cxx: "mq_handle{ MQ_HANDLE_INDEX_NONE, 0u }", doc: "无效句柄（C 复合字面量 / C++ 列表初始化）" }
+    code: |
+      /* 句柄相等（用于比较，勿直接 memcmp 结构体填充）。 */
+      static inline int mq_handle_equal(mq_handle a, mq_handle b) {
+          return a.index == b.index && a.generation == b.generation;
+      }
+    structs:
+      - name: mq_handle
+        fields:
+          - { name: index, type: "uint32_t" }
+          - { name: generation, type: "uint32_t" }
+    fns:
+      - { fn: mq_handle_table_create, returns: "mq_handle_table*", args: [ { name: elem_size, type: "size_t" }, { name: elem_align, type: "size_t" } ] }
+      - { fn: mq_handle_table_destroy, returns: "void", args: [ { name: table, type: "mq_handle_table*" } ] }
+      - { fn: mq_handle_table_alloc, returns: "mq_handle", args: [ { name: table, type: "mq_handle_table*" }, { name: out_storage, type: "void**" } ] }
+      - { fn: mq_handle_table_free, returns: "int", args: [ { name: table, type: "mq_handle_table*" }, { name: h, type: "mq_handle" } ] }
+      - { fn: mq_handle_table_get, returns: "void*", args: [ { name: table, type: "mq_handle_table*" }, { name: h, type: "mq_handle" } ] }
+      - { fn: mq_handle_table_valid, returns: "int", args: [ { name: table, type: "mq_handle_table*" }, { name: h, type: "mq_handle" } ] }
+      - { fn: mq_handle_table_count, returns: "uint32_t", args: [ { name: table, type: "mq_handle_table*" } ] }
+      - { fn: mq_handle_table_capacity, returns: "uint32_t", args: [ { name: table, type: "mq_handle_table*" } ] }
+      - { fn: mq_handle_table_handle_at, returns: "mq_handle", args: [ { name: table, type: "mq_handle_table*" }, { name: index, type: "uint32_t" } ] }

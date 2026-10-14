@@ -1,0 +1,108 @@
+# control —— modules/control
+# 控制平面方法（AI/工具公开面，docs/11 §3、docs/21 §6.3）：声明一次 → 生成
+#   · maque_control.h      处理器声明（引擎只实现语义）
+#   · maque_control_gen.cpp 注册表（runtime 不再手写 mq_control_register）
+#   · 类型化 MCP inputSchema（供 tools/list 返回给 AI）
+# type: float/string/bool/json；json = 任意 JSON 值（对象/数组）。
+- namespace: control
+  version: 1
+  # 变更类方法（权限单一真相，D2 默认只读）：只读会话对这些方法返回 -32001
+  control_mutating: [ Scene.set, Scene.spawn, Scene.destroy, Scene.bake, Scene.save, Scene.emit,
+                      Runtime.step, Director.pause, Director.resume, World.restore,
+                      Replay.seek, Input.sim_load, Input.sim_stop, Input.inject,
+                      Reload.script, Reload.scene, Reload.files ]
+  control_list:
+    # ---- 自省（A1）----
+    - { method: Control.info,  args: [] }
+    # ---- 字体图集（动态图集可视化，inspector 字体面板；plans/17 M2）----
+    - { method: Font.info,     args: [] }
+    - { method: Font.glyphs,   args: [ { name: index, type: float }, { name: size, type: float } ] }
+    - { method: Font.atlas,    args: [ { name: index, type: float }, { name: size, type: float },
+                                       { name: offset, type: float }, { name: max, type: float } ] }
+    # ---- 画面抓帧（实时预览面板；PPM + base64 分块）----
+    - { method: Capture.screen, args: [ { name: offset, type: float }, { name: max, type: float },
+                                        { name: max_dim, type: float } ] }
+    - { method: Types.describe, args: [] }
+    - { method: Scene.info, args: [] }
+    - { method: Scene.entities, args: [] }
+    # 宿主/工具 → 脚本：触发节点事件（与脚本内 node_emit_number 同一路径；多语言按处理器名路由）
+    - { method: Scene.emit,   args: [ { name: id, type: float }, { name: event, type: string },
+                                      { name: value, type: float } ] }
+    - { method: Scene.get,    args: [ { name: id, type: float }, { name: path, type: string } ] }
+    # ---- 编辑（A5、docs/11 §4：破坏性操作支持 dry_run）----
+    - { method: Scene.set,     args: [ { name: id, type: float  }, { name: path, type: string },
+                                       { name: value, type: json }, { name: dry_run, type: bool } ] }
+    - { method: Scene.spawn,   args: [ { name: name, type: string  }, { name: parent, type: float },
+                                       { name: component, type: string }, { name: dry_run, type: bool } ] }
+    - { method: Scene.destroy, args: [ { name: id, type: float  }, { name: dry_run, type: bool } ] }
+    - { method: Scene.bake,    args: [ { name: dry_run, type: bool  } ] }
+    - { method: Scene.save,    args: [ { name: path, type: string  } ] }
+    # ---- 运行与帧（A4）----
+    - { method: Runtime.step,  args: [ { name: frames, type: float  } ] }
+    - { method: Runtime.frame, args: [] }
+    - { method: Director.pause,  args: []  }
+    - { method: Director.resume, args: []  }
+    - { method: Director.status, args: [] }
+    # ---- 确定性（A3、docs/10）----
+    - { method: World.checksum, args: [] }
+    - { method: World.trail,    args: [] }
+    - { method: World.snapshot, args: [] }
+    - { method: World.restore,  args: []  }
+    - { method: Replay.log,         args: [] }
+    - { method: Replay.checkpoints, args: [] }
+    - { method: Replay.seek,        args: [ { name: frame, type: float  } ] }
+    # ---- 输入注入（docs/19 §9）----
+    # ---- 输入模拟器（docs/19：开发/自动化/演示；帧索引场景文件）----
+    - { method: Input.sim_load,   args: [ { name: path, type: string  }, { name: json, type: string },
+                                          { name: loop, type: bool }, { name: reset, type: bool } ] }
+    - { method: Input.sim_status, args: [] }
+    - { method: Input.sim_events, args: [] }
+    - { method: Input.sim_stop,   args: []  }
+    - { method: Input.inject, args: [ { name: type, type: float  }, { name: x, type: float },
+                                      { name: y, type: float }, { name: button, type: float },
+                                      { name: key, type: float } ] }
+    # ---- 性能与日志（A2）----
+    - { method: Perf.get, args: [] }
+    # ---- 热重载（docs/08/14）----
+    - { method: Reload.script, args: [ { name: dry_run, type: bool  } ] }
+    - { method: Reload.scene,  args: [ { name: dry_run, type: bool  } ] }
+    - { method: Reload.files,  args: []  }
+    # ---- MCP 包装（docs/11 §2）----
+    - { method: Control.mcp, args: [ { name: method, type: string }, { name: request, type: string },
+                                     { name: name, type: string }, { name: arguments, type: json } ] }
+
+
+# 模块 C ABI（docs/02「跨模块只暴露 C ABI + 版本化」、docs/21「声明一次」）：
+# 生成的 abi/<module>.h 与原手写头**逐条等价**；原头改为 #include shim，消费者路径不变。
+  module_abi:
+    module: control
+    abi_name: "maque.control"
+    includes: [ "\"core/persist/mq_persist.h\"", "<stddef.h>" ]
+    opaque: [ mq_control, mq_control_server ]
+    typedefs:
+      - { name: mq_control_handler, type: "int (*)(void* user, const char* method,
+                                  const mq_json* params, char* out, size_t out_cap)" }
+      - { name: mq_control_tools_json_fn, type: "const char* (*)(void* user)" }
+    fns:
+      - { fn: mq_control_create, returns: "mq_control*", args: [  ] }
+      - { fn: mq_control_destroy, returns: "void", args: [ { name: c, type: "mq_control*" } ] }
+      - { fn: mq_control_register, returns: "void", args: [ { name: c, type: "mq_control*" }, { name: method, type: "const char*" }, { name: fn, type: "mq_control_handler" }, { name: user, type: "void*" } ] }
+      - { fn: mq_control_dispatch, returns: "const char*", args: [ { name: c, type: "mq_control*" }, { name: request, type: "const char*" } ] }
+      - { fn: mq_control_method_count, returns: "uint32_t", args: [ { name: c, type: "mq_control*" } ] }
+      - { fn: mq_control_method_at, returns: "const char*", args: [ { name: c, type: "mq_control*" }, { name: index, type: "uint32_t" } ] }
+      - { fn: mq_control_set_tools_handler, returns: "void", args: [ { name: c, type: "mq_control*" }, { name: fn, type: "mq_control_handler" }, { name: user, type: "void*" } ] }
+      - { fn: mq_control_set_tools_json, returns: "void", args: [ { name: c, type: "mq_control*" }, { name: fn, type: "mq_control_tools_json_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_control_is_mutating, returns: int, args: [ { name: method, type: "const char*" } ],
+          doc: "该方法是否为变更类（权限判定；由 control_list 的 mutating 标记生成）" }
+      # ---- 控制端点（inspector 用；docs/09/11、plans/17 §3）：单线程、非阻塞、帧边界轮询 ----
+      - { fn: mq_control_server_create, returns: "mq_control_server*", args: [ { name: c, type: "mq_control*" }, { name: spec, type: "const char*" }, { name: read_only, type: "int" } ],
+          doc: "监听端点：spec = \"tcp:7777\" / \"uds:/tmp/x.sock\" / \"7777\"（仅回环）；read_only=1 时拒绝变更类方法" }
+      - { fn: mq_control_server_poll, returns: int, args: [ { name: s, type: "mq_control_server*" } ],
+          doc: "帧边界轮询：非阻塞收发（单线程、不改确定性）；返回本次处理的消息数" }
+      - { fn: mq_control_server_clients, returns: "uint32_t", args: [ { name: s, type: "mq_control_server*" } ] }
+      - { fn: mq_control_server_url, returns: "const char*", args: [ { name: s, type: "mq_control_server*" } ],
+          doc: "实际监听地址（tcp://127.0.0.1:7777 或 uds:///tmp/…）——inspector 据此 attach" }
+      - { fn: mq_control_server_rejected, returns: "uint32_t", args: [ { name: s, type: "mq_control_server*" } ],
+          doc: "因权限被拒绝的变更请求数（只读会话可见）" }
+      - { fn: mq_control_server_destroy, returns: void, args: [ { name: s, type: "mq_control_server*" } ] }
+      - { fn: mq_control_dispatch_mcp, returns: "const char*", args: [ { name: c, type: "mq_control*" }, { name: request, type: "const char*" } ] }

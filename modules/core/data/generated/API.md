@@ -1,6 +1,6 @@
 # maque API 参考（自动生成）
 
-> ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema.yaml`（**唯一真相**）生成，**请勿手工编辑**。
+> ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
 统计：脚本 API **116** 个 · 控制面方法 **37** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
@@ -19,7 +19,7 @@
 脚本里直接调用（`host` 命名空间为全局函数，无前缀；其余为 `<ns>.<fn>`）。
 `ctx` = 首参注入引擎实例（脚本不可见）。
 
-### math
+### math · `math.yaml`
 
 | 函数 | 参数 | 返回 | 说明 |
 |------|------|------|------|
@@ -27,7 +27,7 @@
 | `math.lerp` | a: float, b: float, t: float | float |  |
 | `math.saturate` | x: float | float | MANUAL → `math.custom.h` |
 
-### host（全局，无前缀）
+### host（全局，无前缀） · `runtime/host.yaml`
 
 | 函数 | 参数 | 返回 | 说明 |
 |------|------|------|------|
@@ -269,6 +269,258 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mat4_from_transform` | Mat4 | t: const Transform3D& |
 | `to_euler_xyz` | Vec3 | q: const Quat& |
 
+### handle — `maque.handle` v1
+
+头文件：`build/modules/core/data/generated/abi/handle.h` · 宏：`MQ_HANDLE_ABI_VERSION` / `_IFACE_NAME`
+
+结构体：
+
+- `mq_handle`：index: uint32_t, generation: uint32_t
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_handle_table_create` | mq_handle_table* | elem_size: size_t, elem_align: size_t |
+| `mq_handle_table_destroy` | void | table: mq_handle_table* |
+| `mq_handle_table_alloc` | mq_handle | table: mq_handle_table*, out_storage: void** |
+| `mq_handle_table_free` | int | table: mq_handle_table*, h: mq_handle |
+| `mq_handle_table_get` | void* | table: mq_handle_table*, h: mq_handle |
+| `mq_handle_table_valid` | int | table: mq_handle_table*, h: mq_handle |
+| `mq_handle_table_count` | uint32_t | table: mq_handle_table* |
+| `mq_handle_table_capacity` | uint32_t | table: mq_handle_table* |
+| `mq_handle_table_handle_at` | mq_handle | table: mq_handle_table*, index: uint32_t |
+
+### module — `maque.module` v1
+
+头文件：`build/modules/core/data/generated/abi/module.h` · 宏：`MQ_MODULE_ABI_VERSION` / `_IFACE_NAME`
+
+结构体：
+
+- `mq_api_header`：struct_size: uint32_t, abi_version: uint32_t
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_host_create` | mq_host* | — |
+| `mq_host_destroy` | void | host: mq_host* |
+| `mq_host_load` | int | host: mq_host*, path: const char*, out_module: mq_loaded_module** |
+| `mq_host_unload` | void | host: mq_host*, module: mq_loaded_module* |
+| `mq_host_module_count` | uint32_t | host: mq_host* |
+| `mq_host_query` | void* | host: mq_host*, interface_name: const char*, min_version: uint32_t |
+
+### reflect — `maque.reflect` v1
+
+头文件：`build/modules/core/data/generated/abi/reflect.h` · 宏：`MQ_REFLECT_ABI_VERSION` / `_IFACE_NAME`
+
+结构体：
+
+- `mq_visitor`：user: void*, on_enter: int (*)(void* user, const mq_type_desc* type, void* obj), on_exit: int (*)(void* user, const mq_type_desc* type, void* obj), on_field: int (*)(void* user, const mq_field_desc* field, const void* value_ptr)
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_reflect_create` | mq_reflect_ctx* | — |
+| `mq_reflect_destroy` | void | ctx: mq_reflect_ctx* |
+| `mq_reflect_load_schema` | int | ctx: mq_reflect_ctx* |
+| `mq_reflect_register` | int | ctx: mq_reflect_ctx*, type: const mq_type_desc* |
+| `mq_reflect_type_by_id` | const mq_type_desc* | ctx: mq_reflect_ctx*, type_id: uint32_t |
+| `mq_reflect_type_by_name` | const mq_type_desc* | ctx: mq_reflect_ctx*, fq_name: const char* |
+| `mq_reflect_count` | uint32_t | ctx: mq_reflect_ctx* |
+| `mq_reflect_type_at` | const mq_type_desc* | ctx: mq_reflect_ctx*, index: uint32_t |
+| `mq_reflect_field` | const mq_field_desc* | type: const mq_type_desc*, field_name: const char* |
+| `mq_reflect_field_path` | const mq_field_desc* | ctx: mq_reflect_ctx*, type: const mq_type_desc*, path: const char*, out_absolute_offset: uint32_t* |
+| `mq_reflect_get_f64` | int | ctx: mq_reflect_ctx*, obj: const void*, field: const mq_field_desc*, out: double* |
+| `mq_reflect_set_f64` | int | ctx: mq_reflect_ctx*, obj: void*, field: const mq_field_desc*, value: double |
+| `mq_reflect_get_i64` | int | ctx: mq_reflect_ctx*, obj: const void*, field: const mq_field_desc*, out: int64_t* |
+| `mq_reflect_set_i64` | int | ctx: mq_reflect_ctx*, obj: void*, field: const mq_field_desc*, value: int64_t |
+| `mq_reflect_visit` | int | ctx: mq_reflect_ctx*, obj: void*, type: const mq_type_desc*, visitor: const mq_visitor* |
+
+### vfs — `maque.vfs` v1
+
+头文件：`build/modules/core/data/generated/abi/vfs.h` · 宏：`MQ_VFS_ABI_VERSION` / `_IFACE_NAME`
+
+虚拟文件系统：挂载点 + 多协议后端（docs/04）
+
+枚举：
+
+- (匿名)：MQ_VFS_OK=0, MQ_VFS_ERR_ARG=1, MQ_VFS_ERR_NO_MOUNT=2, MQ_VFS_ERR_NOTFOUND=3, MQ_VFS_ERR_NOMEM=4, MQ_VFS_ERR_FORMAT=5, MQ_VFS_ERR_IO=6, MQ_VFS_ERR_HASH=7
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_vfs_create` | mq_vfs* | — |
+| `mq_vfs_destroy` | void | vfs: mq_vfs* |
+| `mq_vfs_mount` | int | vfs: mq_vfs*, mountpoint: const char*, source: const char* |
+| `mq_vfs_add_mem` | int | vfs: mq_vfs*, name: const char*, data: const void*, size: size_t |
+| `mq_vfs_mount_zip` | int | vfs: mq_vfs*, mountpoint: const char*, zip_path: const char* |
+| `mq_vfs_exists` | int | vfs: mq_vfs*, path: const char* |
+| `mq_vfs_register_builtin` | void | vfs: mq_vfs*, logical: const char*, data: const void*, size: size_t |
+| `mq_vfs_read` | int | vfs: mq_vfs*, path: const char*, out: void**, out_size: size_t* |
+| `mq_vfs_free` | void | p: void* |
+| `mq_vfs_hash` | uint64_t | data: const void*, size: size_t |
+| `mq_vfs_hash_path` | uint64_t | vfs: mq_vfs*, path: const char* |
+| `mq_vfs_read_verified` | int | vfs: mq_vfs*, path: const char*, expect: uint64_t, out: void**, out_size: size_t* |
+| `mq_vfs_resolve` | int | vfs: mq_vfs*, path: const char*, out: char*, out_cap: size_t |
+
+### watcher — `maque.watcher` v1
+
+头文件：`build/modules/core/data/generated/abi/watcher.h` · 宏：`MQ_WATCHER_ABI_VERSION` / `_IFACE_NAME`
+
+枚举：
+
+- `mq_watch_kind`：MQ_WATCH_MODIFIED=0, MQ_WATCH_REMOVED=1, MQ_WATCH_ADDED=2
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_watcher_create` | mq_watcher* | — |
+| `mq_watcher_destroy` | void | w: mq_watcher* |
+| `mq_watcher_add` | int | w: mq_watcher*, path: const char* |
+| `mq_watcher_remove` | int | w: mq_watcher*, path: const char* |
+| `mq_watcher_count` | uint32_t | w: mq_watcher* |
+| `mq_watcher_path_at` | const char* | w: mq_watcher*, index: uint32_t |
+| `mq_watcher_poll` | uint32_t | w: mq_watcher*, fn: mq_watch_fn, user: void* |
+| `mq_watcher_set_stamp` | int | w: mq_watcher*, path: const char*, stamp: uint64_t |
+| `mq_watcher_get_stamp` | uint64_t | w: mq_watcher*, path: const char* |
+| `mq_watcher_stat` | uint64_t | path: const char* |
+
+### net — `maque.net` v1
+
+头文件：`build/modules/core/data/generated/abi/net.h` · 宏：`MQ_NET_ABI_VERSION` / `_IFACE_NAME`
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_net_create` | mq_net* | — |
+| `mq_net_destroy` | void | net: mq_net* |
+
+### platform — `maque.platform` v1
+
+头文件：`build/modules/core/data/generated/abi/platform.h` · 宏：`MQ_PLATFORM_ABI_VERSION` / `_IFACE_NAME`
+
+枚举：
+
+- `mq_platform_pointer_type`：MQ_PLATFORM_POINTER_MOUSE=0, MQ_PLATFORM_POINTER_TOUCH=1, MQ_PLATFORM_POINTER_PEN=2
+- `mq_platform_pointer_event_type`：MQ_PLATFORM_POINTER_DOWN=0, MQ_PLATFORM_POINTER_UP=1, MQ_PLATFORM_POINTER_MOVE=2, MQ_PLATFORM_POINTER_WHEEL=3, MQ_PLATFORM_POINTER_CANCEL=4
+- (匿名)：MQ_KEY_UNKNOWN=0, MQ_KEY_ESCAPE=1, MQ_KEY_SPACE=2, MQ_KEY_ENTER=3, MQ_KEY_TAB=4, MQ_KEY_BACKSPACE=5, MQ_KEY_LEFT=6, MQ_KEY_RIGHT=7, MQ_KEY_UP=8, MQ_KEY_DOWN=9, MQ_KEY_TEXT=10, MQ_KEY_A=32
+
+结构体：
+
+- `mq_platform_pointer_event`：pointer_id: uint32_t, type: uint32_t, pointer_type: uint32_t, button: uint32_t, x: float, y: float, dx: float, dy: float, pressure: float, scroll_x: float, scroll_y: float, modifiers: uint32_t
+- `mq_platform_key_event`：key: uint32_t, scancode: uint32_t, modifiers: uint32_t, repeat: uint32_t, down: uint32_t, text: char[16]
+- `mq_input_frame`：quit: int, focused: int, mouse_x: float, mouse_y: float, mouse_down: int, pointers: mq_platform_pointer_event*, pointer_count: uint32_t, pointer_cap: uint32_t, keys: mq_platform_key_event*, key_count: uint32_t, key_cap: uint32_t, resized: int, width: int, height: int
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_platform_create` | mq_platform* | title: const char*, w: int, h: int |
+| `mq_platform_present` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t |
+| `mq_platform_drawable_size` | void | p: mq_platform*, out_w: int32_t*, out_h: int32_t* |
+| `mq_platform_content_scale` | float | p: mq_platform* |
+| `mq_platform_display_changed` | int | p: mq_platform* |
+| `mq_platform_set_safe_area` | void | p: mq_platform*, l: float, t: float, r: float, b: float |
+| `mq_platform_present_rect` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t, dx: int32_t, dy: int32_t, dw: int32_t, dh: int32_t, filter: int32_t |
+| `mq_platform_simulate_pointer` | int | p: mq_platform*, kind: int32_t, x: float, y: float, button: int32_t |
+| `mq_platform_destroy` | void | p: mq_platform* |
+| `mq_platform_has_window` | int | p: mq_platform* |
+| `mq_platform_pump` | void | p: mq_platform* |
+| `mq_platform_poll` | uint32_t | p: mq_platform*, out: mq_input_frame* |
+| `mq_platform_inject_pointer` | void | p: mq_platform*, ev: const mq_platform_pointer_event* |
+| `mq_platform_inject_key` | void | p: mq_platform*, ev: const mq_platform_key_event* |
+| `mq_platform_set_title` | void | p: mq_platform*, title: const char* |
+| `mq_platform_request_quit` | void | p: mq_platform* |
+
+### persist — `maque.persist` v1
+
+头文件：`build/modules/core/data/generated/abi/persist.h` · 宏：`MQ_PERSIST_ABI_VERSION` / `_IFACE_NAME`
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_persist_load_json` | int | ctx: mq_reflect_ctx*, type: const mq_type_desc*, json: const char*, len: size_t, out: void* |
+| `mq_json_parse` | mq_json* | text: const char*, len: size_t |
+| `mq_json_free` | void | doc: mq_json* |
+| `mq_json_get` | const mq_json* | obj: const mq_json*, key: const char* |
+| `mq_json_len` | uint32_t | arr: const mq_json* |
+| `mq_json_at` | const mq_json* | arr: const mq_json*, i: uint32_t |
+| `mq_json_num` | double | v: const mq_json*, def: double |
+| `mq_json_str` | const char* | v: const mq_json*, def: const char* |
+| `mq_json_object_each` | uint32_t | obj: const mq_json*, fn: mq_json_kv_fn, user: void* |
+| `mq_persist_apply_json` | int | ctx: mq_reflect_ctx*, type: const mq_type_desc*, node: const mq_json*, out: void* |
+| `mq_persist_write_json` | size_t | ctx: mq_reflect_ctx*, type: const mq_type_desc*, obj: const void*, out: char*, cap: size_t |
+
+### persist_binary — `maque.persist_binary` v1
+
+头文件：`build/modules/core/data/generated/abi/persist_binary.h` · 宏：`MQ_PERSIST_BINARY_ABI_VERSION` / `_IFACE_NAME`
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_persist_encode` | size_t | ctx: mq_reflect_ctx*, type: const mq_type_desc*, obj: const void*, out: void*, out_cap: size_t |
+| `mq_persist_decode` | long | ctx: mq_reflect_ctx*, type: const mq_type_desc*, in: const void*, in_size: size_t, out: void* |
+| `mq_snapshot_pool_create` | mq_snapshot_pool* | count: uint32_t, capacity_bytes: size_t |
+| `mq_snapshot_pool_destroy` | void | pool: mq_snapshot_pool* |
+| `mq_snapshot_pool_acquire` | mq_snapshot* | pool: mq_snapshot_pool* |
+| `mq_snapshot_create` | mq_snapshot* | — |
+| `mq_snapshot_destroy` | void | s: mq_snapshot* |
+| `mq_snapshot_begin` | void* | s: mq_snapshot*, want: size_t |
+| `mq_snapshot_commit` | void | s: mq_snapshot*, used: size_t |
+| `mq_snapshot_bytes` | const void* | s: mq_snapshot*, out_size: size_t* |
+| `mq_snapshot_set_frame` | void | s: mq_snapshot*, frame: uint64_t |
+| `mq_snapshot_frame` | uint64_t | s: mq_snapshot* |
+| `mq_snapshot_set_desc` | void | s: mq_snapshot*, desc: const char* |
+| `mq_snapshot_desc` | const char* | s: mq_snapshot* |
+| `mq_snapshot_clone` | mq_snapshot* | s: mq_snapshot* |
+| `mq_snapshot_checksum` | uint64_t | s: mq_snapshot* |
+
+### image — `maque.image` v1
+
+头文件：`build/modules/core/data/generated/abi/image.h` · 宏：`MQ_IMAGE_ABI_VERSION` / `_IFACE_NAME`
+
+图像解码（Wuffs）：PNG/JPEG/GIF/BMP → RGBA8(非预乘)
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_image_decode` | int | data: const void*, size: size_t, out_rgba: uint8_t**, out_w: uint32_t*, out_h: uint32_t*, err: char*, err_cap: size_t |
+| `mq_image_free` | void | p: void* |
+
+### script — `maque.script` v1
+
+头文件：`build/modules/core/data/generated/abi/script.h` · 宏：`MQ_SCRIPT_ABI_VERSION` / `_IFACE_NAME`
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_script_vm_create` | mq_script_vm* | — |
+| `mq_script_vm_create_lang` | mq_script_vm* | lang: const char* |
+| `mq_script_lang_for_path` | const char* | path: const char* |
+| `mq_script_backends` | int | out: char*, cap: int |
+| `mq_script_lang` | const char* | vm: mq_script_vm* |
+| `mq_script_vm_destroy` | void | vm: mq_script_vm* |
+| `mq_script_bus_create` | mq_script_bus* | — |
+| `mq_script_bus_add` | int | bus: mq_script_bus*, vm: mq_script_vm*, name: const char* |
+| `mq_script_bus_count` | uint32_t | bus: mq_script_bus* |
+| `mq_script_bus_swap` | mq_script_vm* | bus: mq_script_bus*, index: uint32_t, vm: mq_script_vm*, name: const char* |
+| `mq_script_bus_vm_at` | mq_script_vm* | bus: mq_script_bus*, index: uint32_t |
+| `mq_script_bus_name_at` | const char* | bus: mq_script_bus*, index: uint32_t |
+| `mq_script_bus_has` | int | bus: mq_script_bus*, fn: const char* |
+| `mq_script_bus_call` | int | bus: mq_script_bus*, fn: const char*, a: double, b: double, text: const char* |
+| `mq_script_bus_call3` | int | bus: mq_script_bus*, fn: const char*, a: double, b: double, c: double, text: const char* |
+| `mq_script_bus_gc` | void | bus: mq_script_bus* |
+| `mq_script_bus_error_count` | uint32_t | bus: mq_script_bus* |
+| `mq_script_bus_last_error` | int | bus: mq_script_bus*, out: char*, cap: int |
+| `mq_script_bus_set_rng` | void | bus: mq_script_bus*, fn: mq_script_rng_fn, user: void* |
+| `mq_script_bus_destroy` | void | bus: mq_script_bus* |
+| `mq_script_eval` | int | vm: mq_script_vm*, src: const char*, filename: const char* |
+| `mq_script_has` | int | vm: mq_script_vm*, fn: const char* |
+| `mq_script_call0` | int | vm: mq_script_vm*, fn: const char*, ret: double* |
+| `mq_script_call1` | int | vm: mq_script_vm*, fn: const char*, arg: double, ret: double* |
+| `mq_script_call3` | int | vm: mq_script_vm*, fn: const char*, a: double, b: double, c: double, ret: double* |
+| `mq_script_call2` | int | vm: mq_script_vm*, fn: const char*, a: double, b: double, ret: double* |
+| `mq_script_call1s` | int | vm: mq_script_vm*, fn: const char*, a: double, s: const char*, ret: double* |
+| `mq_script_call2s` | int | vm: mq_script_vm*, fn: const char*, a: double, b: double, s: const char*, ret: double* |
+| `mq_script_call0s` | int | vm: mq_script_vm*, fn: const char*, s: const char*, ret: double* |
+| `mq_script_last_error` | int | vm: mq_script_vm*, out: char*, cap: int |
+| `mq_script_set_rng` | void | vm: mq_script_vm*, fn: mq_script_rng_fn, user: void* |
+| `mq_script_gc` | void | vm: mq_script_vm* |
+| `mq_script_frame_boundary` | void | vm: mq_script_vm* |
+| `mq_script_register_num` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_num_fn, user: void* |
+| `mq_script_register_str` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_str_fn, user: void* |
+| `mq_script_register_ret_str` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_ret_str_fn, user: void* |
+| `mq_script_register_mixed` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_mixed_fn, user: void* |
+| `mq_script_register_multi` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_fn, user: void* |
+| `mq_script_register_multi_ret_str` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_ret_str_fn, user: void* |
+
 ### asset — `maque.asset` v1
 
 头文件：`build/modules/core/data/generated/abi/asset.h` · 宏：`MQ_ASSET_ABI_VERSION` / `_IFACE_NAME`
@@ -378,51 +630,39 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_nav_step_towards` | int | w: mq_nav_world*, px: float*, py: float*, path_xy: const float*, count: uint32_t, index: uint32_t*, speed: float, dt: float, arrive_dist: float |
 | `mq_nav_last_expanded` | uint32_t | w: mq_nav_world* |
 
-### script — `maque.script` v1
+### text — `maque.text` v1
 
-头文件：`build/modules/core/data/generated/abi/script.h` · 宏：`MQ_SCRIPT_ABI_VERSION` / `_IFACE_NAME`
+头文件：`build/modules/core/data/generated/abi/text.h` · 宏：`MQ_TEXT_ABI_VERSION` / `_IFACE_NAME`
+
+字体加载/图集/文本布局/富文本标记解析（确定性纯函数，docs/13/17）
+
+枚举：
+
+- (匿名)：MQ_TEXT_OK=0, MQ_TEXT_ERR_ARG=1, MQ_TEXT_ERR_FONT=2, MQ_TEXT_ERR_CAP=3
+- (匿名)：MQ_TEXT_ALIGN_BEGIN=0, MQ_TEXT_ALIGN_CENTER=1, MQ_TEXT_ALIGN_END=2
+- (匿名)：MQ_TEXT_WRAP_NONE=0, MQ_TEXT_WRAP_WORD=1, MQ_TEXT_WRAP_CHAR=2
+
+结构体：
+
+- `mq_text_style`：struct_size: uint32_t, font_size: float, device_scale: float, pixel_snap: int32_t, hinting: int32_t, line_spacing: float, wrap: uint32_t, align: uint32_t, max_width: float, r: float, g: float, b: float, a: float
+- `mq_text_glyph`：codepoint: uint32_t, x: float, y: float, w: float, h: float, ax: int32_t, ay: int32_t, u0: float, v0: float, u1: float, v1: float, r: float, g: float, b: float, a: float, size: float, device_size: float, x0: float, y0: float, bearing_x: int32_t, bearing_y: int32_t
+- `mq_text_metrics`：width: float, height: float, line_count: uint32_t, glyph_count: uint32_t, baseline: float, ascent: float, device_scale: float
 
 | 函数 | 返回 | 参数 |
 |------|------|------|
-| `mq_script_vm_create` | mq_script_vm* | — |
-| `mq_script_vm_create_lang` | mq_script_vm* | lang: const char* |
-| `mq_script_lang_for_path` | const char* | path: const char* |
-| `mq_script_backends` | int | out: char*, cap: int |
-| `mq_script_lang` | const char* | vm: mq_script_vm* |
-| `mq_script_vm_destroy` | void | vm: mq_script_vm* |
-| `mq_script_bus_create` | mq_script_bus* | — |
-| `mq_script_bus_add` | int | bus: mq_script_bus*, vm: mq_script_vm*, name: const char* |
-| `mq_script_bus_count` | uint32_t | bus: mq_script_bus* |
-| `mq_script_bus_swap` | mq_script_vm* | bus: mq_script_bus*, index: uint32_t, vm: mq_script_vm*, name: const char* |
-| `mq_script_bus_vm_at` | mq_script_vm* | bus: mq_script_bus*, index: uint32_t |
-| `mq_script_bus_name_at` | const char* | bus: mq_script_bus*, index: uint32_t |
-| `mq_script_bus_has` | int | bus: mq_script_bus*, fn: const char* |
-| `mq_script_bus_call` | int | bus: mq_script_bus*, fn: const char*, a: double, b: double, text: const char* |
-| `mq_script_bus_call3` | int | bus: mq_script_bus*, fn: const char*, a: double, b: double, c: double, text: const char* |
-| `mq_script_bus_gc` | void | bus: mq_script_bus* |
-| `mq_script_bus_error_count` | uint32_t | bus: mq_script_bus* |
-| `mq_script_bus_last_error` | int | bus: mq_script_bus*, out: char*, cap: int |
-| `mq_script_bus_set_rng` | void | bus: mq_script_bus*, fn: mq_script_rng_fn, user: void* |
-| `mq_script_bus_destroy` | void | bus: mq_script_bus* |
-| `mq_script_eval` | int | vm: mq_script_vm*, src: const char*, filename: const char* |
-| `mq_script_has` | int | vm: mq_script_vm*, fn: const char* |
-| `mq_script_call0` | int | vm: mq_script_vm*, fn: const char*, ret: double* |
-| `mq_script_call1` | int | vm: mq_script_vm*, fn: const char*, arg: double, ret: double* |
-| `mq_script_call3` | int | vm: mq_script_vm*, fn: const char*, a: double, b: double, c: double, ret: double* |
-| `mq_script_call2` | int | vm: mq_script_vm*, fn: const char*, a: double, b: double, ret: double* |
-| `mq_script_call1s` | int | vm: mq_script_vm*, fn: const char*, a: double, s: const char*, ret: double* |
-| `mq_script_call2s` | int | vm: mq_script_vm*, fn: const char*, a: double, b: double, s: const char*, ret: double* |
-| `mq_script_call0s` | int | vm: mq_script_vm*, fn: const char*, s: const char*, ret: double* |
-| `mq_script_last_error` | int | vm: mq_script_vm*, out: char*, cap: int |
-| `mq_script_set_rng` | void | vm: mq_script_vm*, fn: mq_script_rng_fn, user: void* |
-| `mq_script_gc` | void | vm: mq_script_vm* |
-| `mq_script_frame_boundary` | void | vm: mq_script_vm* |
-| `mq_script_register_num` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_num_fn, user: void* |
-| `mq_script_register_str` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_str_fn, user: void* |
-| `mq_script_register_ret_str` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_ret_str_fn, user: void* |
-| `mq_script_register_mixed` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_mixed_fn, user: void* |
-| `mq_script_register_multi` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_fn, user: void* |
-| `mq_script_register_multi_ret_str` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_ret_str_fn, user: void* |
+| `mq_font_load_file` | mq_font* | path: const char* |
+| `mq_font_destroy` | void | font: mq_font* |
+| `mq_font_builtin` | mq_font* | — |
+| `mq_font_height` | float | font: mq_font*, size: float |
+| `mq_font_advance` | float | font: mq_font*, codepoint: uint32_t, size: float |
+| `mq_text_measure` | int | font: mq_font*, style: const mq_text_style*, text: const char*, out_metrics: mq_text_metrics* |
+| `mq_text_layout` | int | font: mq_font*, style: const mq_text_style*, text: const char*, out: mq_text_glyph*, cap: uint32_t, out_count: uint32_t*, out_metrics: mq_text_metrics* |
+| `mq_text_strip_markup` | int | text: const char*, out: char*, cap: uint32_t |
+| `mq_font_atlas` | int | font: mq_font*, size: float, out_rgba: uint8_t*, cap: size_t, out_w: uint32_t*, out_h: uint32_t* |
+| `mq_font_atlas_generation` | uint32_t | font: mq_font*, size: float |
+| `mq_font_glyph_count` | uint32_t | font: mq_font*, size: float |
+| `mq_font_glyph_at` | int | font: mq_font*, size: float, index: uint32_t, out: mq_text_glyph* |
+| `mq_font_atlas_size` | int | font: mq_font*, size: float, out_w: uint32_t*, out_h: uint32_t* |
 
 ### input — `maque.input` v1
 
@@ -472,317 +712,6 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_input_log_set_meta` | void | in: mq_input*, key: const char*, value: const char* |
 | `mq_input_log_get_meta` | const char* | in: mq_input*, key: const char* |
 
-### control — `maque.control` v1
-
-头文件：`build/modules/core/data/generated/abi/control.h` · 宏：`MQ_CONTROL_ABI_VERSION` / `_IFACE_NAME`
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_control_create` | mq_control* | — |
-| `mq_control_destroy` | void | c: mq_control* |
-| `mq_control_register` | void | c: mq_control*, method: const char*, fn: mq_control_handler, user: void* |
-| `mq_control_dispatch` | const char* | c: mq_control*, request: const char* |
-| `mq_control_method_count` | uint32_t | c: mq_control* |
-| `mq_control_method_at` | const char* | c: mq_control*, index: uint32_t |
-| `mq_control_set_tools_handler` | void | c: mq_control*, fn: mq_control_handler, user: void* |
-| `mq_control_set_tools_json` | void | c: mq_control*, fn: mq_control_tools_json_fn, user: void* |
-| `mq_control_is_mutating` | int | method: const char* |
-| `mq_control_server_create` | mq_control_server* | c: mq_control*, spec: const char*, read_only: int |
-| `mq_control_server_poll` | int | s: mq_control_server* |
-| `mq_control_server_clients` | uint32_t | s: mq_control_server* |
-| `mq_control_server_url` | const char* | s: mq_control_server* |
-| `mq_control_server_rejected` | uint32_t | s: mq_control_server* |
-| `mq_control_server_destroy` | void | s: mq_control_server* |
-| `mq_control_dispatch_mcp` | const char* | c: mq_control*, request: const char* |
-
-### vfs — `maque.vfs` v1
-
-头文件：`build/modules/core/data/generated/abi/vfs.h` · 宏：`MQ_VFS_ABI_VERSION` / `_IFACE_NAME`
-
-虚拟文件系统：挂载点 + 多协议后端（docs/04）
-
-枚举：
-
-- (匿名)：MQ_VFS_OK=0, MQ_VFS_ERR_ARG=1, MQ_VFS_ERR_NO_MOUNT=2, MQ_VFS_ERR_NOTFOUND=3, MQ_VFS_ERR_NOMEM=4, MQ_VFS_ERR_FORMAT=5, MQ_VFS_ERR_IO=6, MQ_VFS_ERR_HASH=7
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_vfs_create` | mq_vfs* | — |
-| `mq_vfs_destroy` | void | vfs: mq_vfs* |
-| `mq_vfs_mount` | int | vfs: mq_vfs*, mountpoint: const char*, source: const char* |
-| `mq_vfs_add_mem` | int | vfs: mq_vfs*, name: const char*, data: const void*, size: size_t |
-| `mq_vfs_mount_zip` | int | vfs: mq_vfs*, mountpoint: const char*, zip_path: const char* |
-| `mq_vfs_exists` | int | vfs: mq_vfs*, path: const char* |
-| `mq_vfs_register_builtin` | void | vfs: mq_vfs*, logical: const char*, data: const void*, size: size_t |
-| `mq_vfs_read` | int | vfs: mq_vfs*, path: const char*, out: void**, out_size: size_t* |
-| `mq_vfs_free` | void | p: void* |
-| `mq_vfs_hash` | uint64_t | data: const void*, size: size_t |
-| `mq_vfs_hash_path` | uint64_t | vfs: mq_vfs*, path: const char* |
-| `mq_vfs_read_verified` | int | vfs: mq_vfs*, path: const char*, expect: uint64_t, out: void**, out_size: size_t* |
-| `mq_vfs_resolve` | int | vfs: mq_vfs*, path: const char*, out: char*, out_cap: size_t |
-
-### platform — `maque.platform` v1
-
-头文件：`build/modules/core/data/generated/abi/platform.h` · 宏：`MQ_PLATFORM_ABI_VERSION` / `_IFACE_NAME`
-
-枚举：
-
-- `mq_platform_pointer_type`：MQ_PLATFORM_POINTER_MOUSE=0, MQ_PLATFORM_POINTER_TOUCH=1, MQ_PLATFORM_POINTER_PEN=2
-- `mq_platform_pointer_event_type`：MQ_PLATFORM_POINTER_DOWN=0, MQ_PLATFORM_POINTER_UP=1, MQ_PLATFORM_POINTER_MOVE=2, MQ_PLATFORM_POINTER_WHEEL=3, MQ_PLATFORM_POINTER_CANCEL=4
-- (匿名)：MQ_KEY_UNKNOWN=0, MQ_KEY_ESCAPE=1, MQ_KEY_SPACE=2, MQ_KEY_ENTER=3, MQ_KEY_TAB=4, MQ_KEY_BACKSPACE=5, MQ_KEY_LEFT=6, MQ_KEY_RIGHT=7, MQ_KEY_UP=8, MQ_KEY_DOWN=9, MQ_KEY_TEXT=10, MQ_KEY_A=32
-
-结构体：
-
-- `mq_platform_pointer_event`：pointer_id: uint32_t, type: uint32_t, pointer_type: uint32_t, button: uint32_t, x: float, y: float, dx: float, dy: float, pressure: float, scroll_x: float, scroll_y: float, modifiers: uint32_t
-- `mq_platform_key_event`：key: uint32_t, scancode: uint32_t, modifiers: uint32_t, repeat: uint32_t, down: uint32_t, text: char[16]
-- `mq_input_frame`：quit: int, focused: int, mouse_x: float, mouse_y: float, mouse_down: int, pointers: mq_platform_pointer_event*, pointer_count: uint32_t, pointer_cap: uint32_t, keys: mq_platform_key_event*, key_count: uint32_t, key_cap: uint32_t, resized: int, width: int, height: int
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_platform_create` | mq_platform* | title: const char*, w: int, h: int |
-| `mq_platform_present` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t |
-| `mq_platform_drawable_size` | void | p: mq_platform*, out_w: int32_t*, out_h: int32_t* |
-| `mq_platform_content_scale` | float | p: mq_platform* |
-| `mq_platform_display_changed` | int | p: mq_platform* |
-| `mq_platform_set_safe_area` | void | p: mq_platform*, l: float, t: float, r: float, b: float |
-| `mq_platform_present_rect` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t, dx: int32_t, dy: int32_t, dw: int32_t, dh: int32_t, filter: int32_t |
-| `mq_platform_simulate_pointer` | int | p: mq_platform*, kind: int32_t, x: float, y: float, button: int32_t |
-| `mq_platform_destroy` | void | p: mq_platform* |
-| `mq_platform_has_window` | int | p: mq_platform* |
-| `mq_platform_pump` | void | p: mq_platform* |
-| `mq_platform_poll` | uint32_t | p: mq_platform*, out: mq_input_frame* |
-| `mq_platform_inject_pointer` | void | p: mq_platform*, ev: const mq_platform_pointer_event* |
-| `mq_platform_inject_key` | void | p: mq_platform*, ev: const mq_platform_key_event* |
-| `mq_platform_set_title` | void | p: mq_platform*, title: const char* |
-| `mq_platform_request_quit` | void | p: mq_platform* |
-
-### handle — `maque.handle` v1
-
-头文件：`build/modules/core/data/generated/abi/handle.h` · 宏：`MQ_HANDLE_ABI_VERSION` / `_IFACE_NAME`
-
-结构体：
-
-- `mq_handle`：index: uint32_t, generation: uint32_t
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_handle_table_create` | mq_handle_table* | elem_size: size_t, elem_align: size_t |
-| `mq_handle_table_destroy` | void | table: mq_handle_table* |
-| `mq_handle_table_alloc` | mq_handle | table: mq_handle_table*, out_storage: void** |
-| `mq_handle_table_free` | int | table: mq_handle_table*, h: mq_handle |
-| `mq_handle_table_get` | void* | table: mq_handle_table*, h: mq_handle |
-| `mq_handle_table_valid` | int | table: mq_handle_table*, h: mq_handle |
-| `mq_handle_table_count` | uint32_t | table: mq_handle_table* |
-| `mq_handle_table_capacity` | uint32_t | table: mq_handle_table* |
-| `mq_handle_table_handle_at` | mq_handle | table: mq_handle_table*, index: uint32_t |
-
-### module — `maque.module` v1
-
-头文件：`build/modules/core/data/generated/abi/module.h` · 宏：`MQ_MODULE_ABI_VERSION` / `_IFACE_NAME`
-
-结构体：
-
-- `mq_api_header`：struct_size: uint32_t, abi_version: uint32_t
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_host_create` | mq_host* | — |
-| `mq_host_destroy` | void | host: mq_host* |
-| `mq_host_load` | int | host: mq_host*, path: const char*, out_module: mq_loaded_module** |
-| `mq_host_unload` | void | host: mq_host*, module: mq_loaded_module* |
-| `mq_host_module_count` | uint32_t | host: mq_host* |
-| `mq_host_query` | void* | host: mq_host*, interface_name: const char*, min_version: uint32_t |
-
-### obs — `maque.obs` v1
-
-头文件：`build/modules/core/data/generated/abi/obs.h` · 宏：`MQ_OBS_ABI_VERSION` / `_IFACE_NAME`
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_obs_create` | mq_obs_ctx* | — |
-| `mq_obs_destroy` | void | ctx: mq_obs_ctx* |
-| `mq_obs_event` | void | ctx: mq_obs_ctx*, domain: const char*, level: int, event: const char* |
-| `mq_obs_counter_add` | void | ctx: mq_obs_ctx*, name: const char*, delta: double |
-| `mq_obs_gauge_set` | void | ctx: mq_obs_ctx*, name: const char*, value: double |
-| `mq_obs_gauge_get` | double | ctx: mq_obs_ctx*, name: const char* |
-| `mq_obs_dump_json` | const char* | ctx: mq_obs_ctx* |
-
-### reflect — `maque.reflect` v1
-
-头文件：`build/modules/core/data/generated/abi/reflect.h` · 宏：`MQ_REFLECT_ABI_VERSION` / `_IFACE_NAME`
-
-结构体：
-
-- `mq_visitor`：user: void*, on_enter: int (*)(void* user, const mq_type_desc* type, void* obj), on_exit: int (*)(void* user, const mq_type_desc* type, void* obj), on_field: int (*)(void* user, const mq_field_desc* field, const void* value_ptr)
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_reflect_create` | mq_reflect_ctx* | — |
-| `mq_reflect_destroy` | void | ctx: mq_reflect_ctx* |
-| `mq_reflect_load_schema` | int | ctx: mq_reflect_ctx* |
-| `mq_reflect_register` | int | ctx: mq_reflect_ctx*, type: const mq_type_desc* |
-| `mq_reflect_type_by_id` | const mq_type_desc* | ctx: mq_reflect_ctx*, type_id: uint32_t |
-| `mq_reflect_type_by_name` | const mq_type_desc* | ctx: mq_reflect_ctx*, fq_name: const char* |
-| `mq_reflect_count` | uint32_t | ctx: mq_reflect_ctx* |
-| `mq_reflect_type_at` | const mq_type_desc* | ctx: mq_reflect_ctx*, index: uint32_t |
-| `mq_reflect_field` | const mq_field_desc* | type: const mq_type_desc*, field_name: const char* |
-| `mq_reflect_field_path` | const mq_field_desc* | ctx: mq_reflect_ctx*, type: const mq_type_desc*, path: const char*, out_absolute_offset: uint32_t* |
-| `mq_reflect_get_f64` | int | ctx: mq_reflect_ctx*, obj: const void*, field: const mq_field_desc*, out: double* |
-| `mq_reflect_set_f64` | int | ctx: mq_reflect_ctx*, obj: void*, field: const mq_field_desc*, value: double |
-| `mq_reflect_get_i64` | int | ctx: mq_reflect_ctx*, obj: const void*, field: const mq_field_desc*, out: int64_t* |
-| `mq_reflect_set_i64` | int | ctx: mq_reflect_ctx*, obj: void*, field: const mq_field_desc*, value: int64_t |
-| `mq_reflect_visit` | int | ctx: mq_reflect_ctx*, obj: void*, type: const mq_type_desc*, visitor: const mq_visitor* |
-
-### image — `maque.image` v1
-
-头文件：`build/modules/core/data/generated/abi/image.h` · 宏：`MQ_IMAGE_ABI_VERSION` / `_IFACE_NAME`
-
-图像解码（Wuffs）：PNG/JPEG/GIF/BMP → RGBA8(非预乘)
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_image_decode` | int | data: const void*, size: size_t, out_rgba: uint8_t**, out_w: uint32_t*, out_h: uint32_t*, err: char*, err_cap: size_t |
-| `mq_image_free` | void | p: void* |
-
-### persist — `maque.persist` v1
-
-头文件：`build/modules/core/data/generated/abi/persist.h` · 宏：`MQ_PERSIST_ABI_VERSION` / `_IFACE_NAME`
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_persist_load_json` | int | ctx: mq_reflect_ctx*, type: const mq_type_desc*, json: const char*, len: size_t, out: void* |
-| `mq_json_parse` | mq_json* | text: const char*, len: size_t |
-| `mq_json_free` | void | doc: mq_json* |
-| `mq_json_get` | const mq_json* | obj: const mq_json*, key: const char* |
-| `mq_json_len` | uint32_t | arr: const mq_json* |
-| `mq_json_at` | const mq_json* | arr: const mq_json*, i: uint32_t |
-| `mq_json_num` | double | v: const mq_json*, def: double |
-| `mq_json_str` | const char* | v: const mq_json*, def: const char* |
-| `mq_json_object_each` | uint32_t | obj: const mq_json*, fn: mq_json_kv_fn, user: void* |
-| `mq_persist_apply_json` | int | ctx: mq_reflect_ctx*, type: const mq_type_desc*, node: const mq_json*, out: void* |
-| `mq_persist_write_json` | size_t | ctx: mq_reflect_ctx*, type: const mq_type_desc*, obj: const void*, out: char*, cap: size_t |
-
-### persist_binary — `maque.persist_binary` v1
-
-头文件：`build/modules/core/data/generated/abi/persist_binary.h` · 宏：`MQ_PERSIST_BINARY_ABI_VERSION` / `_IFACE_NAME`
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_persist_encode` | size_t | ctx: mq_reflect_ctx*, type: const mq_type_desc*, obj: const void*, out: void*, out_cap: size_t |
-| `mq_persist_decode` | long | ctx: mq_reflect_ctx*, type: const mq_type_desc*, in: const void*, in_size: size_t, out: void* |
-| `mq_snapshot_pool_create` | mq_snapshot_pool* | count: uint32_t, capacity_bytes: size_t |
-| `mq_snapshot_pool_destroy` | void | pool: mq_snapshot_pool* |
-| `mq_snapshot_pool_acquire` | mq_snapshot* | pool: mq_snapshot_pool* |
-| `mq_snapshot_create` | mq_snapshot* | — |
-| `mq_snapshot_destroy` | void | s: mq_snapshot* |
-| `mq_snapshot_begin` | void* | s: mq_snapshot*, want: size_t |
-| `mq_snapshot_commit` | void | s: mq_snapshot*, used: size_t |
-| `mq_snapshot_bytes` | const void* | s: mq_snapshot*, out_size: size_t* |
-| `mq_snapshot_set_frame` | void | s: mq_snapshot*, frame: uint64_t |
-| `mq_snapshot_frame` | uint64_t | s: mq_snapshot* |
-| `mq_snapshot_set_desc` | void | s: mq_snapshot*, desc: const char* |
-| `mq_snapshot_desc` | const char* | s: mq_snapshot* |
-| `mq_snapshot_clone` | mq_snapshot* | s: mq_snapshot* |
-| `mq_snapshot_checksum` | uint64_t | s: mq_snapshot* |
-
-### watcher — `maque.watcher` v1
-
-头文件：`build/modules/core/data/generated/abi/watcher.h` · 宏：`MQ_WATCHER_ABI_VERSION` / `_IFACE_NAME`
-
-枚举：
-
-- `mq_watch_kind`：MQ_WATCH_MODIFIED=0, MQ_WATCH_REMOVED=1, MQ_WATCH_ADDED=2
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_watcher_create` | mq_watcher* | — |
-| `mq_watcher_destroy` | void | w: mq_watcher* |
-| `mq_watcher_add` | int | w: mq_watcher*, path: const char* |
-| `mq_watcher_remove` | int | w: mq_watcher*, path: const char* |
-| `mq_watcher_count` | uint32_t | w: mq_watcher* |
-| `mq_watcher_path_at` | const char* | w: mq_watcher*, index: uint32_t |
-| `mq_watcher_poll` | uint32_t | w: mq_watcher*, fn: mq_watch_fn, user: void* |
-| `mq_watcher_set_stamp` | int | w: mq_watcher*, path: const char*, stamp: uint64_t |
-| `mq_watcher_get_stamp` | uint64_t | w: mq_watcher*, path: const char* |
-| `mq_watcher_stat` | uint64_t | path: const char* |
-
-### net — `maque.net` v1
-
-头文件：`build/modules/core/data/generated/abi/net.h` · 宏：`MQ_NET_ABI_VERSION` / `_IFACE_NAME`
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_net_create` | mq_net* | — |
-| `mq_net_destroy` | void | net: mq_net* |
-
-### host_scene — `maque.host_scene` v1
-
-头文件：`build/modules/core/data/generated/abi/host_scene.h` · 宏：`MQ_HOST_SCENE_ABI_VERSION` / `_IFACE_NAME`
-
-枚举：
-
-- (匿名)：MQ_HOST_POINTER_DOWN=0, MQ_HOST_POINTER_UP=1, MQ_HOST_POINTER_MOVE=2, MQ_HOST_POINTER_WHEEL=3, MQ_HOST_POINTER_CANCEL=4
-
-结构体：
-
-- `mq_host_desc`：struct_size: uint32_t, width: int32_t, height: int32_t, renderer: const char*, flags: uint32_t
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_host_scene_create` | mq_host_scene* | scn_path: const char*, desc: const mq_host_desc* |
-| `mq_host_scene_destroy` | void | s: mq_host_scene* |
-| `mq_host_tick` | int | s: mq_host_scene*, out: uint8_t*, out_size: size_t |
-| `mq_host_size` | void | s: mq_host_scene*, w: int*, h: int* |
-| `mq_host_push_pointer` | void | s: mq_host_scene*, type: int, button: int, x: float, y: float |
-| `mq_host_push_key` | void | s: mq_host_scene*, key: int, down: int, text: const char* |
-| `mq_host_frame` | uint64_t | s: mq_host_scene* |
-| `mq_host_checksum` | uint64_t | s: mq_host_scene* |
-| `mq_host_should_quit` | int | s: mq_host_scene* |
-| `mq_host_control` | const char* | s: mq_host_scene*, request: const char* |
-
-### runtime — `maque.runtime` v1
-
-头文件：`build/modules/core/data/generated/abi/runtime.h` · 宏：`MQ_RUNTIME_ABI_VERSION` / `_IFACE_NAME`
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_run_scene` | int | scn_path: const char* |
-| `mq_run_scene_ex` | int | scn_path: const char*, frames_dir: const char* |
-
-### text — `maque.text` v1
-
-头文件：`build/modules/core/data/generated/abi/text.h` · 宏：`MQ_TEXT_ABI_VERSION` / `_IFACE_NAME`
-
-字体加载/图集/文本布局/富文本标记解析（确定性纯函数，docs/13/17）
-
-枚举：
-
-- (匿名)：MQ_TEXT_OK=0, MQ_TEXT_ERR_ARG=1, MQ_TEXT_ERR_FONT=2, MQ_TEXT_ERR_CAP=3
-- (匿名)：MQ_TEXT_ALIGN_BEGIN=0, MQ_TEXT_ALIGN_CENTER=1, MQ_TEXT_ALIGN_END=2
-- (匿名)：MQ_TEXT_WRAP_NONE=0, MQ_TEXT_WRAP_WORD=1, MQ_TEXT_WRAP_CHAR=2
-
-结构体：
-
-- `mq_text_style`：struct_size: uint32_t, font_size: float, device_scale: float, pixel_snap: int32_t, hinting: int32_t, line_spacing: float, wrap: uint32_t, align: uint32_t, max_width: float, r: float, g: float, b: float, a: float
-- `mq_text_glyph`：codepoint: uint32_t, x: float, y: float, w: float, h: float, ax: int32_t, ay: int32_t, u0: float, v0: float, u1: float, v1: float, r: float, g: float, b: float, a: float, size: float, device_size: float, x0: float, y0: float, bearing_x: int32_t, bearing_y: int32_t
-- `mq_text_metrics`：width: float, height: float, line_count: uint32_t, glyph_count: uint32_t, baseline: float, ascent: float, device_scale: float
-
-| 函数 | 返回 | 参数 |
-|------|------|------|
-| `mq_font_load_file` | mq_font* | path: const char* |
-| `mq_font_destroy` | void | font: mq_font* |
-| `mq_font_builtin` | mq_font* | — |
-| `mq_font_height` | float | font: mq_font*, size: float |
-| `mq_font_advance` | float | font: mq_font*, codepoint: uint32_t, size: float |
-| `mq_text_measure` | int | font: mq_font*, style: const mq_text_style*, text: const char*, out_metrics: mq_text_metrics* |
-| `mq_text_layout` | int | font: mq_font*, style: const mq_text_style*, text: const char*, out: mq_text_glyph*, cap: uint32_t, out_count: uint32_t*, out_metrics: mq_text_metrics* |
-| `mq_text_strip_markup` | int | text: const char*, out: char*, cap: uint32_t |
-| `mq_font_atlas` | int | font: mq_font*, size: float, out_rgba: uint8_t*, cap: size_t, out_w: uint32_t*, out_h: uint32_t* |
-| `mq_font_atlas_generation` | uint32_t | font: mq_font*, size: float |
-| `mq_font_glyph_count` | uint32_t | font: mq_font*, size: float |
-| `mq_font_glyph_at` | int | font: mq_font*, size: float, index: uint32_t, out: mq_text_glyph* |
-| `mq_font_atlas_size` | int | font: mq_font*, size: float, out_w: uint32_t*, out_h: uint32_t* |
-
 ### sim — `maque.sim` v1
 
 头文件：`build/modules/core/data/generated/abi/sim.h` · 宏：`MQ_SIM_ABI_VERSION` / `_IFACE_NAME`
@@ -813,6 +742,77 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_sim_loop` | int | sim: mq_sim* |
 | `mq_sim_loaded` | int | sim: mq_sim* |
 | `mq_sim_last_frame` | uint64_t | sim: mq_sim* |
+
+### runtime — `maque.runtime` v1
+
+头文件：`build/modules/core/data/generated/abi/runtime.h` · 宏：`MQ_RUNTIME_ABI_VERSION` / `_IFACE_NAME`
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_run_scene` | int | scn_path: const char* |
+| `mq_run_scene_ex` | int | scn_path: const char*, frames_dir: const char* |
+
+### host_scene — `maque.host_scene` v1
+
+头文件：`build/modules/core/data/generated/abi/host_scene.h` · 宏：`MQ_HOST_SCENE_ABI_VERSION` / `_IFACE_NAME`
+
+枚举：
+
+- (匿名)：MQ_HOST_POINTER_DOWN=0, MQ_HOST_POINTER_UP=1, MQ_HOST_POINTER_MOVE=2, MQ_HOST_POINTER_WHEEL=3, MQ_HOST_POINTER_CANCEL=4
+
+结构体：
+
+- `mq_host_desc`：struct_size: uint32_t, width: int32_t, height: int32_t, renderer: const char*, flags: uint32_t
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_host_scene_create` | mq_host_scene* | scn_path: const char*, desc: const mq_host_desc* |
+| `mq_host_scene_destroy` | void | s: mq_host_scene* |
+| `mq_host_tick` | int | s: mq_host_scene*, out: uint8_t*, out_size: size_t |
+| `mq_host_size` | void | s: mq_host_scene*, w: int*, h: int* |
+| `mq_host_push_pointer` | void | s: mq_host_scene*, type: int, button: int, x: float, y: float |
+| `mq_host_push_key` | void | s: mq_host_scene*, key: int, down: int, text: const char* |
+| `mq_host_frame` | uint64_t | s: mq_host_scene* |
+| `mq_host_checksum` | uint64_t | s: mq_host_scene* |
+| `mq_host_should_quit` | int | s: mq_host_scene* |
+| `mq_host_control` | const char* | s: mq_host_scene*, request: const char* |
+
+### control — `maque.control` v1
+
+头文件：`build/modules/core/data/generated/abi/control.h` · 宏：`MQ_CONTROL_ABI_VERSION` / `_IFACE_NAME`
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_control_create` | mq_control* | — |
+| `mq_control_destroy` | void | c: mq_control* |
+| `mq_control_register` | void | c: mq_control*, method: const char*, fn: mq_control_handler, user: void* |
+| `mq_control_dispatch` | const char* | c: mq_control*, request: const char* |
+| `mq_control_method_count` | uint32_t | c: mq_control* |
+| `mq_control_method_at` | const char* | c: mq_control*, index: uint32_t |
+| `mq_control_set_tools_handler` | void | c: mq_control*, fn: mq_control_handler, user: void* |
+| `mq_control_set_tools_json` | void | c: mq_control*, fn: mq_control_tools_json_fn, user: void* |
+| `mq_control_is_mutating` | int | method: const char* |
+| `mq_control_server_create` | mq_control_server* | c: mq_control*, spec: const char*, read_only: int |
+| `mq_control_server_poll` | int | s: mq_control_server* |
+| `mq_control_server_clients` | uint32_t | s: mq_control_server* |
+| `mq_control_server_url` | const char* | s: mq_control_server* |
+| `mq_control_server_rejected` | uint32_t | s: mq_control_server* |
+| `mq_control_server_destroy` | void | s: mq_control_server* |
+| `mq_control_dispatch_mcp` | const char* | c: mq_control*, request: const char* |
+
+### obs — `maque.obs` v1
+
+头文件：`build/modules/core/data/generated/abi/obs.h` · 宏：`MQ_OBS_ABI_VERSION` / `_IFACE_NAME`
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_obs_create` | mq_obs_ctx* | — |
+| `mq_obs_destroy` | void | ctx: mq_obs_ctx* |
+| `mq_obs_event` | void | ctx: mq_obs_ctx*, domain: const char*, level: int, event: const char* |
+| `mq_obs_counter_add` | void | ctx: mq_obs_ctx*, name: const char*, delta: double |
+| `mq_obs_gauge_set` | void | ctx: mq_obs_ctx*, name: const char*, value: double |
+| `mq_obs_gauge_get` | double | ctx: mq_obs_ctx*, name: const char* |
+| `mq_obs_dump_json` | const char* | ctx: mq_obs_ctx* |
 
 ### canvas — `maque.canvas` v1
 

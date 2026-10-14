@@ -5,7 +5,7 @@
 >
 > 本类共 5 个组件：**Name · Active · Tags · Meta · PrefabInstance(二期)**。
 > 它们不产生绘制/物理/脚本行为，只描述**节点是谁、是否生效、如何归类、如何被外部引用、如何从 Prefab 派生**。
-> 所有字段均为反射 POD：`schema.yaml` 描述，`static_assert(sizeof==size)`；只放数据 + 句柄，禁裸指针与 `std::`。
+> 所有字段均为反射 POD：`schema/` 描述，`static_assert(sizeof==size)`；只放数据 + 句柄，禁裸指针与 `std::`。
 
 ---
 

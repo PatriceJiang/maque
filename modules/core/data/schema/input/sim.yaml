@@ -1,0 +1,58 @@
+# sim —— modules/input/simulator
+# 输入模拟器（开发/CI，docs/19）：帧索引场景文件 → 输入事件流；与录制/回放/确定性一致。
+- namespace: sim
+  version: 1
+  module_abi:
+    module: sim
+    abi_name: "maque.sim"
+    summary: "输入模拟器：把 .sim.json 场景回放为确定性输入事件流（开发/自动化/演示）"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_sim ]
+    enums:
+      - doc: "模拟事件类型（与输入事件语义一致）"
+        values:
+          - { name: MQ_SIM_POINTER_MOVE,  value: 0 }
+          - { name: MQ_SIM_POINTER_DOWN,  value: 1 }
+          - { name: MQ_SIM_POINTER_UP,    value: 2 }
+          - { name: MQ_SIM_POINTER_WHEEL, value: 3 }
+          - { name: MQ_SIM_KEY_DOWN,      value: 4 }
+          - { name: MQ_SIM_KEY_UP,        value: 5 }
+          - { name: MQ_SIM_TEXT,          value: 6 }
+      - doc: "坐标空间"
+        values:
+          - { name: MQ_SIM_SPACE_WINDOW, value: 0, doc: "窗口像素（宿主负责映射为世界坐标）" }
+          - { name: MQ_SIM_SPACE_WORLD,  value: 1, doc: "世界坐标（直接使用）" }
+    structs:
+      - name: mq_sim_event
+        doc: "单个模拟事件（text 指向模拟器内部存储，生命周期到下次 load/reset/destroy）"
+        fields:
+          - { name: frame, type: "uint64_t" }
+          - { name: kind, type: "uint32_t" }
+          - { name: space, type: "uint32_t" }
+          - { name: x, type: "float" }
+          - { name: y, type: "float" }
+          - { name: dx, type: "float" }
+          - { name: dy, type: "float" }
+          - { name: button, type: "uint32_t" }
+          - { name: key, type: "uint32_t" }
+          - { name: text, type: "const char*" }
+    fns:
+      - { fn: mq_sim_create,   returns: "mq_sim*", args: [] }
+      - { fn: mq_sim_destroy,  returns: void, args: [ { name: sim, type: "mq_sim*" } ] }
+      - { fn: mq_sim_load_json, returns: int,
+          args: [ { name: sim, type: "mq_sim*" }, { name: json, type: "const char*" }, { name: len, type: "size_t" },
+                  { name: err, type: "char*" }, { name: err_cap, type: "size_t" } ],
+          doc: "载入场景 JSON（失败非 0 并写 err）；成功后游标归零" }
+      - { fn: mq_sim_count,    returns: "uint32_t", args: [ { name: sim, type: "mq_sim*" } ] }
+      - { fn: mq_sim_event_at, returns: int, args: [ { name: sim, type: "mq_sim*" }, { name: index, type: "uint32_t" }, { name: out, type: "mq_sim_event*" } ] }
+      - { fn: mq_sim_due,      returns: int,
+          args: [ { name: sim, type: "mq_sim*" }, { name: frame, type: "uint64_t" }, { name: out, type: "mq_sim_event*" },
+                  { name: cap, type: "uint32_t" }, { name: out_count, type: "uint32_t*" } ],
+          doc: "取出该帧到期的全部事件（声明顺序）；游标前进（loop 时回绕）" }
+      - { fn: mq_sim_cursor,   returns: "uint32_t", args: [ { name: sim, type: "mq_sim*" } ] }
+      - { fn: mq_sim_finished, returns: int, args: [ { name: sim, type: "mq_sim*" } ] }
+      - { fn: mq_sim_reset,    returns: void, args: [ { name: sim, type: "mq_sim*" } ] }
+      - { fn: mq_sim_set_loop, returns: void, args: [ { name: sim, type: "mq_sim*" }, { name: loop, type: "int" } ] }
+      - { fn: mq_sim_loop,     returns: int, args: [ { name: sim, type: "mq_sim*" } ], doc: "是否循环回放" }
+      - { fn: mq_sim_loaded,   returns: int, args: [ { name: sim, type: "mq_sim*" } ] }
+      - { fn: mq_sim_last_frame, returns: "uint64_t", args: [ { name: sim, type: "mq_sim*" } ], doc: "最后事件帧号（场景时长参考）" }

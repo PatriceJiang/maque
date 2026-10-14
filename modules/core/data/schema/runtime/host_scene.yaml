@@ -1,0 +1,34 @@
+# host_scene —— 宿主场景服务 · modules/runtime
+- namespace: host_scene
+  version: 1
+  module_abi:
+    module: host_scene
+    abi_name: "maque.host_scene"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_host_scene ]
+    enums:
+      - values:
+          - { name: MQ_HOST_POINTER_DOWN, value: 0 }
+          - { name: MQ_HOST_POINTER_UP, value: 1 }
+          - { name: MQ_HOST_POINTER_MOVE, value: 2 }
+          - { name: MQ_HOST_POINTER_WHEEL, value: 3 }
+          - { name: MQ_HOST_POINTER_CANCEL, value: 4 }
+    structs:
+      - name: mq_host_desc
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: width, type: "int32_t" }
+          - { name: height, type: "int32_t" }
+          - { name: renderer, type: "const char*" }
+          - { name: flags, type: "uint32_t" }
+    fns:
+      - { fn: mq_host_scene_create, returns: "mq_host_scene*", args: [ { name: scn_path, type: "const char*" }, { name: desc, type: "const mq_host_desc*" } ] }
+      - { fn: mq_host_scene_destroy, returns: "void", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_tick, returns: "int", args: [ { name: s, type: "mq_host_scene*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: "size_t" } ] }
+      - { fn: mq_host_size, returns: "void", args: [ { name: s, type: "mq_host_scene*" }, { name: w, type: "int*" }, { name: h, type: "int*" } ] }
+      - { fn: mq_host_push_pointer, returns: "void", args: [ { name: s, type: "mq_host_scene*" }, { name: type, type: "int" }, { name: button, type: "int" }, { name: x, type: "float" }, { name: y, type: "float" } ] }
+      - { fn: mq_host_push_key, returns: "void", args: [ { name: s, type: "mq_host_scene*" }, { name: key, type: "int" }, { name: down, type: "int" }, { name: text, type: "const char*" } ] }
+      - { fn: mq_host_frame, returns: "uint64_t", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_checksum, returns: "uint64_t", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_should_quit, returns: "int", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_control, returns: "const char*", args: [ { name: s, type: "mq_host_scene*" }, { name: request, type: "const char*" } ] }

@@ -1,0 +1,117 @@
+# input —— modules/input
+- namespace: input
+  version: 1
+  class_list:
+    - enum: PointerType
+      values:
+        - { name: Mouse, value: 0 }
+        - { name: Touch, value: 1 }
+        - { name: Pen, value: 2 }
+    - enum: CursorShape
+      values:
+        - { name: Arrow, value: 0 }
+        - { name: Hand, value: 1 }
+        - { name: Text, value: 2 }
+        - { name: Crosshair, value: 3 }
+        - { name: Move, value: 4 }
+        - { name: ResizeH, value: 5 }
+        - { name: ResizeV, value: 6 }
+        - { name: NotAllowed, value: 7 }
+    - struct: InputTarget
+      fields:
+        - { name: pickable, type: bool, default: true }
+        - { name: pick_layer, type: uint32_t, default: 1 }
+        - { name: drag_enabled, type: bool, default: false }
+        - { name: hover_cursor, type: CursorShape, default: "CursorShape::Arrow" }
+  module_abi:
+    module: input
+    abi_name: "maque.input"
+    includes: [ "<stddef.h>", "<stdint.h>", '"core/platform/mq_platform.h"' ]
+    opaque: [ mq_input ]
+    typedefs:
+      - { name: mq_input_handler, type: "int (*)(void* user, const mq_input_event* ev, mq_input_target* target)" }
+      - { name: mq_input_hit_test, type: "int (*)(void* user, const mq_input_event* ev, mq_input_target* out)" }
+      - { name: mq_input_parent_fn, type: "int (*)(void* user, int entity)" }
+    macros:
+      - { name: MQ_INPUT_LOG_VERSION, value: "1u" }
+    enums:
+      - name: mq_input_phase
+        values:
+          - { name: MQ_INPUT_PHASE_CAPTURE, value: 0 }
+          - { name: MQ_INPUT_PHASE_TARGET, value: 1 }
+          - { name: MQ_INPUT_PHASE_BUBBLE, value: 2 }
+      - name: mq_input_event_type
+        values:
+          - { name: MQ_INPUT_POINTER_DOWN, value: 0 }
+          - { name: MQ_INPUT_POINTER_UP, value: 1 }
+          - { name: MQ_INPUT_POINTER_MOVE, value: 2 }
+          - { name: MQ_INPUT_POINTER_WHEEL, value: 3 }
+          - { name: MQ_INPUT_POINTER_ENTER, value: 4 }
+          - { name: MQ_INPUT_POINTER_LEAVE, value: 5 }
+          - { name: MQ_INPUT_CLICK, value: 6 }
+          - { name: MQ_INPUT_DOUBLE_CLICK, value: 7 }
+          - { name: MQ_INPUT_KEY_DOWN, value: 8 }
+          - { name: MQ_INPUT_KEY_UP, value: 9 }
+          - { name: MQ_INPUT_TEXT, value: 10 }
+          - { name: MQ_INPUT_POINTER_CANCEL, value: 11 }
+    structs:
+      - name: mq_input_target
+        fields:
+          - { name: entity, type: "int" }
+          - { name: handle, type: "uint32_t" }
+          - { name: depth, type: "int" }
+          - { name: z, type: "int" }
+          - { name: local_x, type: "float" }
+          - { name: local_y, type: "float" }
+          - { name: consumed, type: "int" }
+          - { name: stopped, type: "int" }
+      - name: mq_input_event
+        fields:
+          - { name: type, type: "uint32_t" }
+          - { name: phase, type: "uint32_t" }
+          - { name: pointer_id, type: "uint32_t" }
+          - { name: pointer_type, type: "uint32_t" }
+          - { name: button, type: "uint32_t" }
+          - { name: modifiers, type: "uint32_t" }
+          - { name: key, type: "uint32_t" }
+          - { name: text, type: "char[16]" }
+          - { name: x, type: "float" }
+          - { name: y, type: "float" }
+          - { name: dx, type: "float" }
+          - { name: dy, type: "float" }
+          - { name: scroll_x, type: "float" }
+          - { name: scroll_y, type: "float" }
+          - { name: pressure, type: "float" }
+          - { name: target, type: "int" }
+    fns:
+      - { fn: mq_input_create, returns: "mq_input*", args: [  ] }
+      - { fn: mq_input_destroy, returns: "void", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_begin_frame, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: frame, type: "const mq_input_frame*" }, { name: frame_index, type: "uint64_t" } ] }
+      - { fn: mq_input_set_hit_test, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: fn, type: "mq_input_hit_test" }, { name: user, type: "void*" } ] }
+      - { fn: mq_input_set_parent_fn, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: fn, type: "mq_input_parent_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_input_add_handler, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: fn, type: "mq_input_handler" }, { name: user, type: "void*" } ] }
+      - { fn: mq_input_dispatch, returns: "uint32_t", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_end_frame, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: frame_index, type: "uint64_t" } ] }
+      - { fn: mq_input_quit, returns: "int", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_pointer_pos, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: pointer_id, type: "uint32_t" }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
+      - { fn: mq_input_pointer_down, returns: "int", args: [ { name: in, type: "mq_input*" }, { name: pointer_id, type: "uint32_t" } ] }
+      - { fn: mq_input_key_down, returns: "int", args: [ { name: in, type: "mq_input*" }, { name: key, type: "uint32_t" } ] }
+      - { fn: mq_input_focus, returns: "int", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_set_focus, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: entity, type: "int" } ] }
+      - { fn: mq_input_set_capture, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: pointer_id, type: "uint32_t" }, { name: entity, type: "int" } ] }
+      - { fn: mq_input_get_capture, returns: "int", args: [ { name: in, type: "mq_input*" }, { name: pointer_id, type: "uint32_t" } ] }
+      - { fn: mq_input_release_capture, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: pointer_id, type: "uint32_t" } ] }
+      - { fn: mq_input_frame_index, returns: "int", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_record_begin, returns: "void", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_record_end, returns: "void", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_recording, returns: "int", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_replay_begin, returns: "int", args: [ { name: in, type: "mq_input*" }, { name: log, type: "const void*" }, { name: size, type: "size_t" } ] }
+      - { fn: mq_input_replay_end, returns: "void", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_replaying, returns: "int", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_inject, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: ev, type: "const mq_input_event*" } ] }
+      - { fn: mq_input_last_consumed, returns: "int", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_log_bytes, returns: "const void*", args: [ { name: in, type: "mq_input*" }, { name: out_size, type: "size_t*" } ] }
+      - { fn: mq_input_log_json, returns: "const char*", args: [ { name: in, type: "mq_input*" } ] }
+      - { fn: mq_input_log_load_json, returns: "int", args: [ { name: in, type: "mq_input*" }, { name: json, type: "const char*" } ] }
+      - { fn: mq_input_log_set_meta, returns: "void", args: [ { name: in, type: "mq_input*" }, { name: key, type: "const char*" }, { name: value, type: "const char*" } ] }
+      - { fn: mq_input_log_get_meta, returns: "const char*", args: [ { name: in, type: "mq_input*" }, { name: key, type: "const char*" } ] }

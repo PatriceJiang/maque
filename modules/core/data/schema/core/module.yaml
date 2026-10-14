@@ -1,0 +1,27 @@
+# module —— modules/core/module
+- namespace: module
+  version: 1
+  module_abi:
+    module: module
+    abi_name: "maque.module"
+    includes: [ "<stdint.h>" ]
+    opaque: [ mq_host, mq_loaded_module ]
+    typedefs:
+      - { name: mq_module_query_fn, type: "void* (*)(const char* interface_name, uint32_t min_version)" }
+    macros:
+      - { name: MQ_ABI_VERSION, value: "1u" }
+      - { name: MQ_MODULE_QUERY_SYMBOL, value: "\"mq_module_query\"" }
+      - { name: MQ_MODULE_EXPORT, value: "", doc: "导出宏（保证符号可见）：平台条件原样输出",
+          raw: "#if defined(_WIN32)\n#  define MQ_MODULE_EXPORT __declspec(dllexport)\n#else\n#  define MQ_MODULE_EXPORT __attribute__((visibility(\"default\")))\n#endif" }
+    structs:
+      - name: mq_api_header
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: abi_version, type: "uint32_t" }
+    fns:
+      - { fn: mq_host_create, returns: "mq_host*", args: [  ] }
+      - { fn: mq_host_destroy, returns: "void", args: [ { name: host, type: "mq_host*" } ] }
+      - { fn: mq_host_load, returns: "int", args: [ { name: host, type: "mq_host*" }, { name: path, type: "const char*" }, { name: out_module, type: "mq_loaded_module**" } ] }
+      - { fn: mq_host_unload, returns: "void", args: [ { name: host, type: "mq_host*" }, { name: module, type: "mq_loaded_module*" } ] }
+      - { fn: mq_host_module_count, returns: "uint32_t", args: [ { name: host, type: "mq_host*" } ] }
+      - { fn: mq_host_query, returns: "void*", args: [ { name: host, type: "mq_host*" }, { name: interface_name, type: "const char*" }, { name: min_version, type: "uint32_t" } ] }

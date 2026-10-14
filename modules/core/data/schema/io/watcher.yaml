@@ -1,0 +1,27 @@
+# watcher —— modules/io/watcher
+- namespace: watcher
+  version: 1
+  module_abi:
+    module: watcher
+    abi_name: "maque.watcher"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_watcher ]
+    typedefs:
+      - { name: mq_watch_fn, type: "int (*)(void* user, const char* path, mq_watch_kind kind)" }
+    enums:
+      - name: mq_watch_kind
+        values:
+          - { name: MQ_WATCH_MODIFIED, value: 0 }
+          - { name: MQ_WATCH_REMOVED, value: 1 }
+          - { name: MQ_WATCH_ADDED, value: 2 }
+    fns:
+      - { fn: mq_watcher_create, returns: "mq_watcher*", args: [  ] }
+      - { fn: mq_watcher_destroy, returns: "void", args: [ { name: w, type: "mq_watcher*" } ] }
+      - { fn: mq_watcher_add, returns: "int", args: [ { name: w, type: "mq_watcher*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_watcher_remove, returns: "int", args: [ { name: w, type: "mq_watcher*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_watcher_count, returns: "uint32_t", args: [ { name: w, type: "mq_watcher*" } ] }
+      - { fn: mq_watcher_path_at, returns: "const char*", args: [ { name: w, type: "mq_watcher*" }, { name: index, type: "uint32_t" } ] }
+      - { fn: mq_watcher_poll, returns: "uint32_t", args: [ { name: w, type: "mq_watcher*" }, { name: fn, type: "mq_watch_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_watcher_set_stamp, returns: "int", args: [ { name: w, type: "mq_watcher*" }, { name: path, type: "const char*" }, { name: stamp, type: "uint64_t" } ] }
+      - { fn: mq_watcher_get_stamp, returns: "uint64_t", args: [ { name: w, type: "mq_watcher*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_watcher_stat, returns: "uint64_t", args: [ { name: path, type: "const char*" } ] }

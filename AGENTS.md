@@ -16,7 +16,7 @@ cmake --build build
 # 全部测试（CTest）
 ctest --test-dir build --output-on-failure
 
-# 只跑 codegen 校验（schema 语法/尺寸/引用）
+# 只跑 codegen 校验（schema 目录/import/尺寸/引用）
 cd modules/core/data && node parser.js --check
 
 # 运行示例
@@ -83,11 +83,11 @@ cd modules/core/data && node parser.js --check
 7. **构建产物不入库，但生成物入库**：
    - 不入库：`build/`、`third_party/wgpu-native/lib/*`。
    - **入库**：`modules/core/data/generated/`（生成的头/绑定/描述符/JSON/**API.md**/**TYPES.md**）
-     —— 生成的公开接口是交付物，改 `schema.yaml` 后必须重新生成并提交（`ctest -R codegen_drift` 会抓漂移）。
+     —— 生成的公开接口是交付物，改 `schema/` 后必须重新生成并提交（`ctest -R codegen_drift` 会抓漂移）。
 
 ## 架构核心
 
-- **声明 + 生成（单一真相 = `modules/core/data/schema.yaml`）**——**引擎的一切公开接口只声明一次**
+- **声明 + 生成（单一真相 = `modules/core/data/schema/` 目录）**——**引擎的一切公开接口只声明一次**
   （`docs/21` §1；手写公开接口 = 漂移之源）：
   | DSL 段 | 声明内容 | 生成产物 | 编译目标 |
   |--------|----------|----------|----------|
@@ -98,14 +98,18 @@ cd modules/core/data && node parser.js --check
   | `callbacks` | 脚本事件回调（docs/14/19） | `maque_events.h` + `maque_events_gen.cpp`（回调枚举 + `on:` 输入映射 + 精确派发） | `maque::genevents` |
   | `module_abi` | 模块 C/C++ ABI（跨模块公开面，**20 个模块全覆盖**） | `abi/<module>.h`（纯 C 头 + `MQ_<MOD>_ABI_VERSION/IFACE_NAME` 宏；`language: cxx` + `namespace:` 时生成 C++ 命名空间声明） | 各模块（原手写头退化为 `#include` shim） |
   - 生成物在 `modules/core/data/generated/`（**源码树、随仓库提交**；构建配置期自动生成）；
-    **改接口一律改 `schema.yaml`，不要改生成物或 shim 头**。人读文档：`generated/API.md`、`generated/TYPES.md`。
+    **改接口一律改 `schema/`（一个文件一个 namespace，目录镜像 `modules/`），不要改生成物或 shim 头**。
+    人读文档：`generated/API.md`、`generated/TYPES.md`；schema 目录/import 规范：`modules/core/data/SCHEMA.md`。
+  - 加一个 schema 文件 = 在 `schema/<区>/<模块>.yaml` 新建（目录层级镜像 `modules/`）+ 在入口
+    `schema/schema.yaml` 登记；有依赖就写 `- imports: [./x.yaml]`（结构引用必须落在 import 闭包内，
+    `ctest -R schema_imports` / `node parser.js --check` 会校验）。
   - **MANUAL**：`api_list` 项可带 `manual: "<header>"` → 生成器只 `#include` 该头（实现内联于头，不重复声明）。
   - 加控制面方法 = 在 `control_list` 加一条 + 实现 `mq_control_<Domain>_<method>`（签名见生成头）。
   - 加模块 C ABI 函数 = 在 `module_abi.fns` 加一条；结构体/枚举/宏同理（`structs`/`enums`/`macros`）。
   - ABI 由静态断言守卫（如 `modules/world/physics/tests/physics_test.cpp` 的尺寸/偏移断言），漂移即编译失败。
   - `module_abi` 支持 `opaque/typedefs/consts/macros(值/`value_cxx`/`raw`)/code/structs/enums/fns`；
-    迁移工具：`tools/hdr2abi.py`（头 → DSL）、`tools/migrate_abi.py`（转换 + 合并 schema.yaml）。
-    **改接口只改 schema.yaml，不要改 shim 头或生成物**。
+    迁移工具：`tools/hdr2abi.py`（头 → DSL）、`tools/migrate_abi.py`（转换 + 合并进 `schema/`）。
+    **改接口只改 `schema/`，不要改 shim 头或生成物**。
 - **反射中枢**：`mq::reflect`（id/名/路径查询、标量读写、visitor）；持久化 `maque::persist` 反射驱动。
 - **运行时（浏览器）**：`modules/runtime` 的 `mq_run_scene(path)`：加载 `.scn` → 反序列化 → 加载 `.js` → 固定步长循环 → WebGPU 渲染 → 退出。
   宿主 `samples/player` 仅一行；**游戏逻辑全在资源**（`scenes/*.scn`、`scenes/*.js`）。
@@ -181,7 +185,7 @@ GC 仅在帧边界推进（`mq_script_frame_boundary`）。加后端见 docs/14�
 
 ## 常见改动怎么做
 
-- **加一个数据类型/组件**：编辑 `modules/core/data/schema.yaml` 的 `class_list` → 重构建（自动重生成）。
+- **加一个数据类型/组件**：编辑 `modules/core/data/schema/<模块>.yaml` 的 `class_list` → 重构建（自动重生成）。
 - **加一个引擎接口**：在 `api_list` 加 `fn/args/returns`（标量/string）；实现放 `modules/api/src/api.cpp`；
   要内联实现则用 `manual: "<header>"` 并把头放到 `modules/api/include/`。
 - **加一个模块**：`modules/<area>/<name>/`，含 `include/`、`src/`、`tests/`、`CMakeLists.txt`；

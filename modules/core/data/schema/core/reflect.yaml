@@ -1,0 +1,38 @@
+# reflect —— modules/core/reflect
+- namespace: reflect
+  version: 1
+  module_abi:
+    module: reflect
+    abi_name: "maque.reflect"
+    includes: [ "\"maque_desc.h\"", "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_reflect_ctx ]
+    macros:
+      - { name: MQ_ATTR_TRANSIENT, value: "(1u << 0)" }
+      - { name: MQ_ATTR_READONLY, value: "(1u << 1)" }
+      - { name: MQ_ATTR_DEPRECATED, value: "(1u << 2)" }
+      - { name: MQ_TYPE_ENUM, value: "(1u << 0)" }
+      - { name: MQ_TYPE_POD, value: "(1u << 1)" }
+      - { name: MQ_TYPE_DYNAMIC, value: "(1u << 2)" }
+    structs:
+      - name: mq_visitor
+        fields:
+          - { name: user, type: "void*" }
+          - { name: on_enter, type: "int (*)(void* user, const mq_type_desc* type, void* obj)" }
+          - { name: on_exit, type: "int (*)(void* user, const mq_type_desc* type, void* obj)" }
+          - { name: on_field, type: "int (*)(void* user, const mq_field_desc* field, const void* value_ptr)" }
+    fns:
+      - { fn: mq_reflect_create, returns: "mq_reflect_ctx*", args: [  ] }
+      - { fn: mq_reflect_destroy, returns: "void", args: [ { name: ctx, type: "mq_reflect_ctx*" } ] }
+      - { fn: mq_reflect_load_schema, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" } ] }
+      - { fn: mq_reflect_register, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" } ] }
+      - { fn: mq_reflect_type_by_id, returns: "const mq_type_desc*", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type_id, type: "uint32_t" } ] }
+      - { fn: mq_reflect_type_by_name, returns: "const mq_type_desc*", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: fq_name, type: "const char*" } ] }
+      - { fn: mq_reflect_count, returns: "uint32_t", args: [ { name: ctx, type: "mq_reflect_ctx*" } ] }
+      - { fn: mq_reflect_type_at, returns: "const mq_type_desc*", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: index, type: "uint32_t" } ] }
+      - { fn: mq_reflect_field, returns: "const mq_field_desc*", args: [ { name: type, type: "const mq_type_desc*" }, { name: field_name, type: "const char*" } ] }
+      - { fn: mq_reflect_field_path, returns: "const mq_field_desc*", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: path, type: "const char*" }, { name: out_absolute_offset, type: "uint32_t*" } ] }
+      - { fn: mq_reflect_get_f64, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: obj, type: "const void*" }, { name: field, type: "const mq_field_desc*" }, { name: out, type: "double*" } ] }
+      - { fn: mq_reflect_set_f64, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: obj, type: "void*" }, { name: field, type: "const mq_field_desc*" }, { name: value, type: "double" } ] }
+      - { fn: mq_reflect_get_i64, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: obj, type: "const void*" }, { name: field, type: "const mq_field_desc*" }, { name: out, type: "int64_t*" } ] }
+      - { fn: mq_reflect_set_i64, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: obj, type: "void*" }, { name: field, type: "const mq_field_desc*" }, { name: value, type: "int64_t" } ] }
+      - { fn: mq_reflect_visit, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: obj, type: "void*" }, { name: type, type: "const mq_type_desc*" }, { name: visitor, type: "const mq_visitor*" } ] }

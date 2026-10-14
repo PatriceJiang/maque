@@ -12,17 +12,17 @@
 
 ### 与 schema 的关系（唯一真相）
 
-`modules/core/data/schema.yaml` 的 `namespace: math` 是**布局唯一真相**：
+`modules/core/data/schema/` 的 `namespace: math` 是**布局唯一真相**：
 `Vec2(8) / Vec3(12) / Vec4(16) / Mat3(36) / Mat4(64) / Transform(48)`。
 生成的 C++ POD 头（`parser.js` 产出）由本模块 `#include`，本模块**只做加法**（补 `Quat`、几何类型与全部操作函数），**不改字段/尺寸**。
-> `Quat`、`Aabb`、`Ray`、`Plane` 等需回写 `schema.yaml`（新增条目），由 `codegen` 生成布局；本模块负责其操作面。任何布局变更 → 同步 bump `MQ_MATH_ABI_VERSION`。
+> `Quat`、`Aabb`、`Ray`、`Plane` 等需回写 `schema/`（新增条目），由 `codegen` 生成布局；本模块负责其操作面。任何布局变更 → 同步 bump `MQ_MATH_ABI_VERSION`。
 
 ---
 
 ## 2. 接口层设计（完备，先冻结）
 
 > **与其余模块的差异说明**：math **无实例、无状态、无回调**，因此不需要 vtable 与函数指针表（ADR-0013 的 vtable 用在有生命周期的模块）。
-> math 的跨 `.so` 接口面 = **POD 布局（C ABI）+ 内联自由函数**。布局由 `schema.yaml` + `static_assert` 冻结并版本化；操作函数是 `inline noexcept` 头文件实现，跨 `.so` 编译期各模块各得一份，**无 ABI 失配风险**（与 GLM/Eigen 头库同理）。
+> math 的跨 `.so` 接口面 = **POD 布局（C ABI）+ 内联自由函数**。布局由 `schema/` + `static_assert` 冻结并版本化；操作函数是 `inline noexcept` 头文件实现，跨 `.so` 编译期各模块各得一份，**无 ABI 失配风险**（与 GLM/Eigen 头库同理）。
 
 ### 2.1 公共头与版本
 
@@ -36,7 +36,7 @@
 
 namespace math {
 
-/* 布局契约：与 schema.yaml 逐字段一致（sizeof 断言） */
+/* 布局契约：与 schema/ 逐字段一致（sizeof 断言） */
 static_assert(sizeof(Vec2) == 8);
 static_assert(sizeof(Vec3) == 12);
 static_assert(sizeof(Vec4) == 16);
@@ -356,7 +356,7 @@ static_assert(offsetof(Transform, scale)    == 24);
 
 ## 5. 开发计划（分阶段 TDD）
 
-1. **阶段 0 · 冻结接口**：确定 `mq_math.h` 全部类型与操作签名；把 `Quat/Aabb/Ray/Plane` 回写 `schema.yaml`；codegen 产出 `math_types.h`；`static_assert` 全通过；`MQ_MATH_ABI_VERSION=1`。**接口不完备不得进入阶段 1。**
+1. **阶段 0 · 冻结接口**：确定 `mq_math.h` 全部类型与操作签名；把 `Quat/Aabb/Ray/Plane` 回写 `schema/`；codegen 产出 `math_types.h`；`static_assert` 全通过；`MQ_MATH_ABI_VERSION=1`。**接口不完备不得进入阶段 1。**
 2. **阶段 1 · 测试骨架（红）**：落地 §4.1 全部用例（含 S/D 场景），此时实现为空壳 → 全红。建立 doctest + 断言桩 + 计数分配器。
 3. **阶段 2 · 最小实现到绿**：按接口分组实现——标量→向量→矩阵→四元数→Interp→Transform→几何；每实现一组，跑对应测试转绿。优先保证布局与纯函数性质。
 4. **阶段 3 · 补边界/错误/确定性**：打磨零向量/奇异/退化分支、`try_*` 路径、`det_*` 确定性实现与误差界；打通 D-01..D-06；重构去重、收紧内联。
@@ -380,7 +380,7 @@ static_assert(offsetof(Transform, scale)    == 24);
 | libm 三角函数跨平台不 bit 一致，破坏回放（A3） | 模拟路径强制走 `det_*`；系统函数仅限视觉路径；D-06 设误差界 |
 | FMA 收缩/`-ffast-math` 导致结果漂移 | 编译期 `fp contract(off)` + 禁 fast-math；D-02 守护；CI 固定编译选项 |
 | SIMD 与标量结果不一致 | 标量参考实现为权威；SIMD 仅在能 bit 复现时启用，否则仅视觉路径 |
-| schema 与 math 头漂移（`Quat` 等手写） | 一切布局经 `schema.yaml`+codegen；`static_assert` 守门；禁手工改生成物 |
+| schema 与 math 头漂移（`Quat` 等手写） | 一切布局经 `schema/`+codegen；`static_assert` 守门；禁手工改生成物 |
 | 列主序 / Euler 约定被误用（跨模块） | 写死在 `mq_math.h` 头注释 + 单测 T-22/T-24/T-25；renderer/physics 接入时对拍 |
 | 奇异矩阵/零向量在 release 产生 UB | `try_*` + 确定性回退 + `is_finite`；T-11/T-21/T-35 覆盖 |
 | 头文件膨胀拖累嵌入式编译 | 小函数强制 `inline`；大函数（`inverse/slerp`）单实现点；按需 include |
@@ -389,4 +389,4 @@ static_assert(offsetof(Transform, scale)    == 24);
 ## 8. Owner agent
 
 - **角色标识**：`agent-math`
-- **职责边界**：仅负责 `math` 模块的**接口冻结、测试与实现**（`modules/math/` 与 `mq_math.h`、`math_types.h` 生成配置）；并按需将 `Quat/Aabb/Ray/Plane` **回写** `schema.yaml`（新增条目，不改既有字段/尺寸）。**不修改**其它模块的实现；跨模块布局问题通过接口断言暴露给对应 owner。
+- **职责边界**：仅负责 `math` 模块的**接口冻结、测试与实现**（`modules/math/` 与 `mq_math.h`、`math_types.h` 生成配置）；并按需将 `Quat/Aabb/Ray/Plane` **回写** `schema/`（新增条目，不改既有字段/尺寸）。**不修改**其它模块的实现；跨模块布局问题通过接口断言暴露给对应 owner。

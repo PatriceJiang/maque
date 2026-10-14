@@ -1,0 +1,101 @@
+# text —— modules/render/text
+# 文本渲染（Label/RichText）：FreeType 栅格化 → 图集 → 字形 quad；布局与富文本解析为纯函数。
+- namespace: text
+  version: 1
+  module_abi:
+    module: text
+    abi_name: "maque.text"
+    summary: "字体加载/图集/文本布局/富文本标记解析（确定性纯函数，docs/13/17）"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_font ]
+    enums:
+      - doc: "错误码（0 = OK）。"
+        values:
+          - { name: MQ_TEXT_OK,        value: 0 }
+          - { name: MQ_TEXT_ERR_ARG,   value: 1 }
+          - { name: MQ_TEXT_ERR_FONT,  value: 2, doc: "字体加载/栅格化失败" }
+          - { name: MQ_TEXT_ERR_CAP,   value: 3, doc: "输出缓冲不足（out_needed 报告所需）" }
+      - doc: "水平对齐（与 ui.Align 一致：Begin/Center/End）。"
+        values:
+          - { name: MQ_TEXT_ALIGN_BEGIN,  value: 0 }
+          - { name: MQ_TEXT_ALIGN_CENTER, value: 1 }
+          - { name: MQ_TEXT_ALIGN_END,    value: 2 }
+      - doc: "换行模式（与 ui.TextWrap 一致）。"
+        values:
+          - { name: MQ_TEXT_WRAP_NONE, value: 0, doc: "不换行（\\n 仍生效）" }
+          - { name: MQ_TEXT_WRAP_WORD, value: 1, doc: "按词换行（超长词按字符断）" }
+          - { name: MQ_TEXT_WRAP_CHAR, value: 2, doc: "按字符换行" }
+    structs:
+      - name: mq_text_style
+        doc: "排版参数（struct_size 版本化）。"
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: font_size, type: "float", doc: "逻辑像素字号；<=0 → 16" }
+          - { name: device_scale, type: "float", doc: "设备像素缩放（HiDPI/窗口缩放）：栅格化字号 = round(font_size × device_scale)；<=0 → 1" }
+          - { name: pixel_snap, type: "int32_t", doc: "1 = 字形位置对齐到整数设备像素（pixel-perfect，默认）" }
+          - { name: hinting, type: "int32_t", doc: "0 = 默认 hinting（整数笔画、清晰），1 = 关闭 hinting（几何精确）" }
+          - { name: line_spacing, type: "float" }
+          - { name: wrap, type: "uint32_t", doc: "MQ_TEXT_WRAP_*" }
+          - { name: align, type: "uint32_t", doc: "MQ_TEXT_ALIGN_*" }
+          - { name: max_width, type: "float", doc: "<=0 → 不限制" }
+          - { name: r, type: "float", doc: "默认前景色（可被富文本覆盖）" }
+          - { name: g, type: "float" }
+          - { name: b, type: "float" }
+          - { name: a, type: "float" }
+      - name: mq_text_glyph
+        doc: "排版输出的单个字形（位置为相对文本框左上角、y 向下）。"
+        fields:
+          - { name: codepoint, type: "uint32_t" }
+          - { name: x, type: "float" }
+          - { name: y, type: "float" }
+          - { name: w, type: "float", doc: "字形位图宽（像素）" }
+          - { name: h, type: "float" }
+          - { name: ax, type: "int32_t", doc: "图集内像素原点 x（渲染侧应按**最终图集尺寸**换算 UV）" }
+          - { name: ay, type: "int32_t", doc: "图集内像素原点 y" }
+          - { name: u0, type: "float", doc: "图集 UV（按排版时图集尺寸归一化；图集增长后可能过期，建议用 ax/ay）" }
+          - { name: v0, type: "float" }
+          - { name: u1, type: "float" }
+          - { name: v1, type: "float" }
+          - { name: r, type: "float", doc: "该字形颜色（富文本 run 覆盖）" }
+          - { name: g, type: "float" }
+          - { name: b, type: "float" }
+          - { name: a, type: "float" }
+          - { name: size, type: "float", doc: "该字形逻辑字号" }
+          - { name: device_size, type: "float", doc: "实际栅格化字号（设备像素，整数）" }
+          - { name: x0, type: "float", doc: "位图左上角 x（相对文本框原点，设备像素，已像素对齐）" }
+          - { name: y0, type: "float", doc: "位图左上角 y（相对文本框原点，设备像素，已像素对齐；y 向下）" }
+          - { name: bearing_x, type: "int32_t", doc: "FreeType bitmap_left（设备像素）" }
+          - { name: bearing_y, type: "int32_t", doc: "FreeType bitmap_top（相对基线，设备像素）" }
+      - name: mq_text_metrics
+        doc: "排版结果度量。"
+        fields:
+          - { name: width, type: "float" }
+          - { name: height, type: "float" }
+          - { name: line_count, type: "uint32_t" }
+          - { name: glyph_count, type: "uint32_t" }
+          - { name: baseline, type: "float", doc: "首行基线相对顶部距离（设备像素）" }
+          - { name: ascent, type: "float", doc: "字体 ascent（设备像素）" }
+          - { name: device_scale, type: "float", doc: "本次排版使用的设备缩放" }
+    fns:
+      - { fn: mq_font_load_file, returns: "mq_font*", args: [ { name: path, type: "const char*" } ],
+          doc: "加载 TTF/OTF；失败返回 NULL（调用方回退到内置位图字体）" }
+      - { fn: mq_font_destroy, returns: void, args: [ { name: font, type: "mq_font*" } ] }
+      - { fn: mq_font_builtin, returns: "mq_font*", args: [], doc: "内置位图字体（无外部依赖，保证 headless/CI 可用）" }
+      - { fn: mq_font_height, returns: float, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" } ] }
+      - { fn: mq_font_advance, returns: float, args: [ { name: font, type: "mq_font*" }, { name: codepoint, type: "uint32_t" }, { name: size, type: "float" } ] }
+      - { fn: mq_text_measure, returns: int, args: [ { name: font, type: "mq_font*" }, { name: style, type: "const mq_text_style*" }, { name: text, type: "const char*" }, { name: out_metrics, type: "mq_text_metrics*" } ],
+          doc: "只测量（不产生字形）" }
+      - { fn: mq_text_layout, returns: int, args: [ { name: font, type: "mq_font*" }, { name: style, type: "const mq_text_style*" }, { name: text, type: "const char*" }, { name: out, type: "mq_text_glyph*" }, { name: cap, type: "uint32_t" }, { name: out_count, type: "uint32_t*" }, { name: out_metrics, type: "mq_text_metrics*" } ],
+          doc: "排版为字形序列（支持 <color>/<size>/<b>/<br/> 富文本标记）" }
+      - { fn: mq_text_strip_markup, returns: int, args: [ { name: text, type: "const char*" }, { name: out, type: "char*" }, { name: cap, type: "uint32_t" } ],
+          doc: "去掉富文本标记后的纯文本（供自省/日志）" }
+      - { fn: mq_font_atlas, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: out_rgba, type: "uint8_t*" }, { name: cap, type: "size_t" }, { name: out_w, type: "uint32_t*" }, { name: out_h, type: "uint32_t*" } ],
+          doc: "取指定字号的字形图集（RGBA8；**按需增长**：排版过的码点才会进入图集）" }
+      - { fn: mq_font_atlas_generation, returns: "uint32_t", args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" } ],
+          doc: "图集版本号：每新增字形 +1（宿主据此决定是否重传纹理）" }
+      - { fn: mq_font_glyph_count, returns: "uint32_t", args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" } ],
+          doc: "该字号已栅格化的字形数（自省/测试）" }
+      - { fn: mq_font_glyph_at, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: index, type: "uint32_t" }, { name: out, type: "mq_text_glyph*" } ],
+          doc: "按索引取已栅格化字形（码点 + 图集矩形；inspector 图集面板用）" }
+      - { fn: mq_font_atlas_size, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: out_w, type: "uint32_t*" }, { name: out_h, type: "uint32_t*" } ],
+          doc: "图集当前尺寸（不复制像素；增长中）" }

@@ -4527,7 +4527,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     { const char* cp = std::getenv("MAQUE_CHECKPOINTS"); if (cp && *cp && *cp != '0') cp_active = true; }
     /* 场景/脚本/资源/物理装配统一走 load_scene_into（与 director.loadScene 同一条路径） */
     control = mq_control_create();
-    /* 控制面方法由 DSL（schema.yaml control_list）声明、codegen 生成注册表 —— 引擎零手写注册
+    /* 控制面方法由 DSL（schema/ control_list）声明、codegen 生成注册表 —— 引擎零手写注册
      * （docs/21 §1/§5：公开接口只声明一次）。此处只需提供实例上下文。 */
     mq_control_register_generated(control, this);
     /* MCP 工具表（含类型化 inputSchema）同样是生成物（docs/21 §6.3） */

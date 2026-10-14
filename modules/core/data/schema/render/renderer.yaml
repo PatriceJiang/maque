@@ -1,0 +1,57 @@
+# renderer —— 渲染插件接口（C vtable）· modules/render/gfx
+# 插件接口 ABI（由 DSL 生成 C vtable；docs/02/21）。opaque self = void*。
+- interface: renderer
+  version: 1
+  records:
+    - record: view
+      fields:
+        - { name: vx,   type: float }      # 视口（帧缓冲内，像素）
+        - { name: vy,   type: float }
+        - { name: vw,   type: float }
+        - { name: vh,   type: float }
+        - { name: pan,  type: float }      # 眼睛横向偏移（VR/多视图）
+        - { name: eye,  type: float }
+        - { name: cx,   type: float }      # 相机中心（世界坐标）
+        - { name: cy,   type: float }
+        - { name: zoom, type: float }      # 缩放（1 = 1:1）
+        - { name: rot,  type: float }      # 旋转（弧度）
+    - record: item
+      fields:
+        - { name: x,        type: float }
+        - { name: y,        type: float }
+        - { name: size,     type: float }
+        - { name: r,        type: float }
+        - { name: g,        type: float }
+        - { name: b,        type: float }
+        - { name: a,        type: float }
+        - { name: texture,  type: int32_t }
+        - { name: rotation, type: float }  # 图元自转（弧度）
+        - { name: half_w,   type: float }  # 非方形矩形半宽（<=0 → 回退到 size，兼容旧调用）
+        - { name: half_h,   type: float }  # 非方形矩形半高（<=0 → 回退到 size）
+        - { name: filter,   type: int32_t } # 采样过滤：0=linear（默认，精灵缩放），1=nearest（字形/像素画）
+        - { name: snap,     type: int32_t } # 1 = 位置四舍五入到整数目标像素（pixel-perfect）
+        - { name: uv0,      type: float }  # 纹理子矩形（图集/字形）；全 0 或退化 → 整张贴图
+        - { name: uv1,      type: float }
+        - { name: uv2,      type: float }
+        - { name: uv3,      type: float }
+        - { name: layer,    type: int32_t } # 分层（docs/13 §分层：先按 layer 排序）
+        - { name: z,        type: int32_t } # 同层内 z-order（稳定排序）
+  methods:
+    - fn: create
+      returns: self
+      args: [ { name: out_backend, type: "const char**" } ]
+    - fn: destroy
+      args: [ { name: self, type: self } ]
+    - fn: destroy_texture
+      returns: void
+      args: [ { name: self, type: "self" }, { name: id, type: "int32_t" } ]
+      doc: "释放纹理（字形图集增长后替换旧纹理用；id 无效则忽略）"
+    - fn: create_texture
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: rgba, type: "const uint8_t*" }, { name: w, type: int32_t }, { name: h, type: int32_t } ]
+    - fn: has_texture
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: id, type: int32_t } ]
+    - fn: render_views
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: tw, type: int32_t }, { name: th, type: int32_t }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: uint32_t }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: uint32_t }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]

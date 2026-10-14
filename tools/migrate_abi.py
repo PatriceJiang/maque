@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""把模块头迁移到 DSL：转换 → 合并进 schema.yaml（迁移辅助，非构建依赖）。
+"""把模块头迁移到 DSL：转换 → 合并进 schema/ 目录（迁移辅助，非构建依赖）。
 
 用法：python3 tools/migrate_abi.py <header> <module> [<namespace>] [--apply]
 不带 --apply 只打印将要写入的 module_abi 段（干跑）。
+--apply 时按命名空间找到 schema/ 下声明它的那个文件（一个文件一个 namespace），
+在其中补 module_abi 段；找不到就报错（先建文件并在 schema/schema.yaml 登记）。
 """
 import re
 import subprocess
@@ -10,15 +12,23 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCHEMA = ROOT / 'modules/core/data/schema.yaml'
+SCHEMA_DIR = ROOT / 'modules/core/data/schema'
 
 
-def convert(header: str, module: str) -> str:
-    r = subprocess.run([sys.executable, str(ROOT / 'tools/hdr2abi.py'), header, module],
-                       capture_output=True, text=True)
-    if r.returncode != 0:
-        raise SystemExit(r.stderr)
-    return r.stdout.rstrip('\n')
+def schema_files() -> list[Path]:
+    """schema 目录内全部 schema 文件（入口 schema.yaml 除外）。"""
+    return sorted(p for p in SCHEMA_DIR.rglob('*.yaml') if p.name != 'schema.yaml')
+
+
+def find_namespace_file(ns: str) -> Path:
+    """定位声明 `- namespace: <ns>` 的文件（同一 namespace 只应有一个声明文件）。"""
+    hits = [p for p in schema_files()
+            if re.search(rf'^- namespace: {re.escape(ns)}\s*$', p.read_text(), re.M)]
+    if not hits:
+        raise SystemExit(f'namespace {ns} 不存在于 {SCHEMA_DIR}/（先建文件并在 schema.yaml 登记）')
+    if len(hits) > 1:
+        raise SystemExit(f'namespace {ns} 声明在多个文件: {", ".join(str(p) for p in hits)}')
+    return hits[0]
 
 
 def merge(schema: str, ns: str, block: str) -> str:
@@ -43,9 +53,9 @@ def main() -> int:
     if not apply:
         print(block)
         return 0
-    schema = SCHEMA.read_text()
-    SCHEMA.write_text(merge(schema, ns, block))
-    print(f'merged module_abi for {module} into namespace {ns}')
+    target = find_namespace_file(ns)
+    target.write_text(merge(target.read_text(), ns, block))
+    print(f'merged module_abi for {module} into namespace {ns} ({target.relative_to(ROOT)})')
     return 0
 
 

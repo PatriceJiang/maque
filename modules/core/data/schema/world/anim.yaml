@@ -1,0 +1,218 @@
+# anim —— 世界层动画组件（尚无独立模块目录）
+- imports: [../math.yaml]
+
+- namespace: anim
+  version: 1
+  class_list:
+    - enum: LoopMode
+      values:
+        - { name: Once, value: 0 }
+        - { name: Loop, value: 1 }
+        - { name: PingPong, value: 2 }
+        - { name: ClampForever, value: 3 }
+    - enum: PlayMode
+      values:
+        - { name: Once, value: 0 }
+        - { name: Loop, value: 1 }
+        - { name: PingPong, value: 2 }
+        - { name: ClampForever, value: 3 }
+    - enum: UpdateMode
+      values:
+        - { name: Process, value: 0 }
+        - { name: Physics, value: 1 }
+    - enum: InterpMode
+      values:
+        - { name: Inherit, value: -1 }
+        - { name: Step, value: 0 }
+        - { name: Linear, value: 1 }
+        - { name: Cubic, value: 2 }
+    - enum: AnimParamType
+      values:
+        - { name: Float, value: 0 }
+        - { name: Int, value: 1 }
+        - { name: Bool, value: 2 }
+        - { name: Trigger, value: 3 }
+    - enum: TransitionMode
+      values:
+        - { name: Interrupt, value: 0 }
+        - { name: WhenDone, value: 1 }
+    - enum: SkinningMode
+      values:
+        - { name: Linear, value: 0 }
+        - { name: DualQuat, value: 1 }
+    - enum: ShapeType
+      values:
+        - { name: Point, value: 0 }
+        - { name: Circle, value: 1 }
+        - { name: Box, value: 2 }
+        - { name: Sphere, value: 3 }
+        - { name: Hemisphere, value: 4 }
+        - { name: Cone, value: 5 }
+        - { name: Edge, value: 6 }
+    - enum: SimSpace
+      values:
+        - { name: Local, value: 0 }
+        - { name: World, value: 1 }
+    - enum: ParticleMode
+      values:
+        - { name: CPU, value: 0 }
+        - { name: GPU, value: 1 }
+    - enum: BlendMode
+      values:
+        - { name: Alpha, value: 0 }
+        - { name: Additive, value: 1 }
+        - { name: Multiply, value: 2 }
+    - enum: SortMode
+      values:
+        - { name: None, value: 0 }
+        - { name: ByDepth, value: 1 }
+        - { name: ByAge, value: 2 }
+    - enum: FlipMode
+      values:
+        - { name: None, value: 0 }
+        - { name: Horizontal, value: 1 }
+        - { name: Vertical, value: 2 }
+        - { name: Both, value: 3 }
+    - enum: SpineBlend
+      values:
+        - { name: Setup, value: 0 }
+        - { name: First, value: 1 }
+        - { name: Replace, value: 2 }
+        - { name: Add, value: 3 }
+        - { name: Multiply, value: 4 }
+        - { name: Screen, value: 5 }
+    - enum: SpinePhysTimestep
+      values:
+        - { name: Inherit, value: 0 }
+        - { name: Fixed, value: 1 }
+        - { name: NoPhysics, value: 2 }
+    - enum: SpineUpdate
+      values:
+        - { name: Process, value: 0 }
+        - { name: Physics, value: 1 }
+    - struct: GradientStop
+      size: 20
+      fields:
+        - { name: t, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: color, type: math.Rgba }
+    - struct: Gradient
+      size: 164
+      fields:
+        - { name: count, type: uint8_t, default: 0, attrs: { range: [0, 8] } }
+        - { name: stops, type: "GradientStop[8]" }
+    - struct: CurveKey
+      size: 16
+      fields:
+        - { name: t, type: float, default: 0.0F }
+        - { name: value, type: float, default: 0.0F }
+        - { name: in_tangent, type: float, default: 0.0F }
+        - { name: out_tangent, type: float, default: 0.0F }
+    - struct: Curve
+      fields:
+        - { name: interp, type: InterpMode, default: "InterpMode::Linear" }
+        - { name: count, type: uint8_t, default: 0, attrs: { range: [0, 8] } }
+        - { name: keys, type: "CurveKey[8]" }
+    - struct: AnimParam
+      size: 16
+      fields:
+        - { name: name_hash, type: uint32_t, default: 0 }
+        - { name: type, type: AnimParamType, default: "AnimParamType::Float" }
+        - { name: value, type: float, default: 0.0F }
+        - { name: ivalue, type: int32_t, default: 0 }
+    - struct: BonePose
+      size: 40
+      fields:
+        - { name: position, type: math.Vec3 }
+        - { name: rotation, type: math.Quat }
+        - { name: scale, type: math.Vec3, default: "{1.0F, 1.0F, 1.0F}" }
+    - struct: SpineAnimState
+      fields:
+        - { name: time, type: float, default: 0.0F, attrs: { unit: s } }
+        - { name: track, type: int32_t, default: 0 }
+        - { name: loop, type: bool, default: false }
+    - struct: AnimationPlayer
+      fields:
+        - { name: clip, type: "asset_ref<AnimationClip>", attrs: { ref: AnimationClip } }
+        - { name: autoplay, type: bool, default: true }
+        - { name: loop, type: LoopMode, default: "LoopMode::Loop" }
+        - { name: update_mode, type: UpdateMode, default: "UpdateMode::Process" }
+        - { name: speed, type: float, default: 1.0F, attrs: { range: [0, 100] } }
+        - { name: playing, type: bool, default: false }
+        - { name: time, type: float, default: 0.0F, attrs: { readonly: true, unit: s } }
+        - { name: track_mask, type: uint64_t, default: "0xFFFFFFFFFFFFFFFFULL" }
+        - { name: event_sink, type: entity_ref, attrs: { ref: Script } }
+    - struct: Animator
+      fields:
+        - { name: controller, type: "asset_ref<AnimatorController>", attrs: { ref: AnimatorController } }
+        - { name: parameters, type: "AnimParam[16]" }
+        - { name: param_count, type: uint8_t, default: 0, attrs: { readonly: true } }
+        - { name: current_state, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }
+        - { name: normalized_time, type: float, default: 0.0F, attrs: { transient: true, readonly: true, range: [0, 1] } }
+        - { name: speed, type: float, default: 1.0F, attrs: { range: [0, 100] } }
+        - { name: apply_physics, type: bool, default: false }
+        - { name: target, type: entity_ref, attrs: { ref: AnimationPlayer } }
+    - struct: Skeleton
+      fields:
+        - { name: skeleton, type: "asset_ref<SkeletonData>", attrs: { ref: SkeletonData } }
+        - { name: bone_root, type: entity_ref, attrs: { ref: "scene.Node" } }
+        - { name: skinning_mode, type: SkinningMode, default: "SkinningMode::Linear" }
+        - { name: poses, type: "BonePose[]", attrs: { transient: true } }
+        - { name: skinning_matrices, type: "math.Mat4[]", attrs: { transient: true } }
+        - { name: bounds, type: math.Aabb, attrs: { transient: true, readonly: true } }
+    - struct: ParticleEmitter
+      fields:
+        - { name: mode, type: ParticleMode, default: "ParticleMode::CPU" }
+        - { name: sim_space, type: SimSpace, default: "SimSpace::Local" }
+        - { name: texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: blend, type: BlendMode, default: "BlendMode::Additive" }
+        - { name: shape, type: ShapeType, default: "ShapeType::Point" }
+        - { name: shape_size, type: math.Vec3, attrs: { unit: m } }
+        - { name: shape_angle, type: float, default: 0.0F, attrs: { unit: deg, range: [0, 180] } }
+        - { name: rate, type: float, default: 10.0F, attrs: { range: [0, 100000], unit: "1/s" } }
+        - { name: burst_count, type: uint16_t, default: 0 }
+        - { name: lifetime, type: Curve, attrs: { unit: s } }
+        - { name: start_speed, type: Curve, attrs: { unit: "m/s" } }
+        - { name: gravity, type: math.Vec3, default: "{0.0F, -9.8F, 0.0F}", attrs: { unit: "m/s2" } }
+        - { name: start_size, type: Curve }
+        - { name: size_over_life, type: Curve }
+        - { name: color_over_life, type: Gradient }
+        - { name: max_particles, type: uint32_t, default: 1000, attrs: { range: [0, 1000000] } }
+        - { name: seed, type: uint32_t, default: 0 }
+        - { name: prewarm, type: float, default: 0.0F, attrs: { unit: s } }
+        - { name: emit, type: bool, default: true }
+        - { name: sort_mode, type: SortMode, default: "SortMode::None" }
+        - { name: rng_state, type: uint64_t, default: 0, attrs: { transient: true } }
+    - struct: AnimatedSprite
+      fields:
+        - { name: frames, type: "asset_ref<SpriteFrames>", attrs: { ref: SpriteFrames } }
+        - { name: animation, type: uint32_t, default: 0 }
+        - { name: autoplay, type: bool, default: true }
+        - { name: play_mode, type: PlayMode, default: "PlayMode::Loop" }
+        - { name: fps, type: float, default: 10.0F, attrs: { range: [0.0001, 240] } }
+        - { name: speed, type: float, default: 1.0F, attrs: { range: [0, 100] } }
+        - { name: frame, type: uint16_t, default: 0, attrs: { range: [0, 65535] } }
+        - { name: time, type: float, default: 0.0F, attrs: { readonly: true, unit: s } }
+        - { name: playing, type: bool, default: false }
+        - { name: flip, type: FlipMode, default: "FlipMode::None" }
+        - { name: color, type: math.Color }
+        - { name: pivot, type: math.Vec2, default: "{0.5F, 0.5F}", attrs: { unit: normalized } }
+        - { name: z_index, type: int32_t, default: 0 }
+        - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
+    - struct: SpineSkeleton
+      fields:
+        - { name: skeleton, type: "asset_ref<SpineData>", attrs: { ref: SpineData } }
+        - { name: skin, type: uint32_t, default: 0 }
+        - { name: animation, type: uint32_t, default: 0 }
+        - { name: autoplay, type: bool, default: true }
+        - { name: play_mode, type: PlayMode, default: "PlayMode::Loop" }
+        - { name: speed, type: float, default: 1.0F, attrs: { range: [0, 100] } }
+        - { name: blend, type: SpineBlend, default: "SpineBlend::Replace" }
+        - { name: update_mode, type: SpineUpdate, default: "SpineUpdate::Process" }
+        - { name: phys_timestep, type: SpinePhysTimestep, default: "SpinePhysTimestep::Inherit" }
+        - { name: flip, type: FlipMode, default: "FlipMode::None" }
+        - { name: color, type: math.Color }
+        - { name: z_index, type: int32_t, default: 0 }
+        - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: state, type: SpineAnimState, attrs: { transient: true, readonly: true } }
+        - { name: instance, type: uint64_t, default: 0, attrs: { transient: true, readonly: true } }

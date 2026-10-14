@@ -2,13 +2,13 @@
 
 > 上游：`17 §2/§3`（组件设计约定与记录格式）、`06`（反射 = 组件形状唯一真相）、`12`（节点树 / 父节点 / 生命周期）。
 > 归属模块：`core`（`world` 命名空间；变换是跨渲染 / 物理 / UI 的**基础能力**，无独立模块可依赖）。
-> 依赖类型：`math::Vec2`、`math::Vec3`、`math::Quat`、`math::Mat3`、`math::Mat4`（均来自 `modules/core/data/schema.yaml` 的 `math` 命名空间）。
+> 依赖类型：`math::Vec2`、`math::Vec3`、`math::Quat`、`math::Mat3`、`math::Mat4`（均来自 `modules/core/data/schema/` 的 `math` 命名空间）。
 >
 > 本文件同时说明与现有 `math::Transform`（Vec3 版）的关系（§1）。
 
 ## 1. 与现有 `math::Transform` 的关系（结论）
 
-现有 `schema.yaml` 的 `math::Transform`（`position/rotation/scale: Vec3`，size 48）是一个**纯数学值类型（value type，POD）**，
+现有 `schema/` 的 `math::Transform`（`position/rotation/scale: Vec3`，size 48）是一个**纯数学值类型（value type，POD）**，
 **不是**可挂在节点上的组件：它没有 `type_id` 语义、没有父/世界缓存、没有对节点树的约定。
 
 本设计给出如下结论：
@@ -21,7 +21,7 @@
 3. **不采用"组件字段直接平铺 position/rotation/scale"**：平铺会迫使我们为 2D/3D 各写一份字段表且与 `math` 值类型重复；
    内联 `local` 让"数学值"与"组件语义（缓存 / 序列化 / 生命周期）"分离，符合 `17 §2.5` 单一职责。
 
-建议 `schema.yaml` 变更（示意，落地按此）：
+建议 `schema/` 变更（示意，落地按此）：
 
 ```yaml
 - namespace: math

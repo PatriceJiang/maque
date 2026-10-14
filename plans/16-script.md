@@ -270,7 +270,7 @@ void* mq_module_query(const char* interface_name, uint32_t min_version);
 
 - **签名规范（冻结）**：`"<ret> ns.Class::method(<arg1>,<arg2>,...)"`，类型用反射 fqname 或标量记号
   （`i32/f64/bool/str/handle<world::Enemy>`）；例：`"i32 world::Enemy::damage(world::Entity,int32_t)"`。
-- **生成物**：codegen 从 `schema.yaml` + API 声明生成：
+- **生成物**：codegen 从 `schema/` + API 声明生成：
   1. `gen/script_bindings.c`：对每个 API 调 `register_host_fn(vm, sig, glue_fn, cap_required)`；
   2. `glue_fn`：用 `mq_script_codec_v1` 把 `mq_script_val[]` ↔ POD（经 `to_script/from_script`）；
   3. `gen/script_bindings.h`：注册入口 `void mq_script_register_generated(const mq_script_host_v1*, mq_script_vm_v1*)`。
@@ -410,7 +410,7 @@ void* mq_module_query(const char* interface_name, uint32_t min_version);
 | S3 | **沙箱远程游戏** | 以 `sandbox=1` 加载远程 `enemy.js`，尝试 `fs.write`/`net.post` | 两次均 `E_CAP_DENIED`；游戏逻辑（SCENE_READ/WRITE 白名单内）正常 |
 | S4 | **确定性回放** | 同一 seed + 同输入序列 + 同脚本，记录两帧的 `(指令数, RNG 值, 伤害序列, checksum)` | 两次轨迹**逐帧字节一致** |
 | S5 | **热重载迭代（A5）** | 运行中把敌人 dmg 从 10 改 20，帧边界重载 | 实例 HP/位置保留；后续攻击 dmg=20 |
-| S6 | **反射新增 API 自动暴露** | 向 `schema.yaml` 加 `Enemy::heal(i32)` → 重生成 → 脚本调用 | 无需手写代码即生效；CI 门禁通过 |
+| S6 | **反射新增 API 自动暴露** | 向 `schema/` 加 `Enemy::heal(i32)` → 重生成 → 脚本调用 | 无需手写代码即生效；CI 门禁通过 |
 | S7 | **脚本异常 → 定位** | 脚本故意越界访问句柄 | `E_RUNTIME` + `vm_stack`+宿主栈拼接，指向源行 |
 | S8 | **生命周期清理** | 销毁敌人节点 | `on_exit_tree`→`on_destroy` 依序调用；外部资源在帧边界析构；零泄漏 |
 

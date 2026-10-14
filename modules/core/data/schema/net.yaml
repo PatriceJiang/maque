@@ -1,0 +1,10 @@
+# net —— modules/net
+- namespace: net
+  version: 1
+  module_abi:
+    module: net
+    abi_name: "maque.net"
+    opaque: [ mq_net ]
+    fns:
+      - { fn: mq_net_create, returns: "mq_net*", args: [  ] }
+      - { fn: mq_net_destroy, returns: "void", args: [ { name: net, type: "mq_net*" } ] }

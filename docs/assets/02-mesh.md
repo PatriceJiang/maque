@@ -8,7 +8,7 @@
 ## 1. 定位与归属
 
 - **归属模块**：`renderer`（GPU 消费）；烘焙与导入由 `ai` 模块（`08 §6`）。
-- **命名空间**：`asset.Mesh`（`modules/core/data/schema.yaml`）。
+- **命名空间**：`asset.Mesh`（`modules/core/data/schema/`）。
 - **作用**：承载**几何数据**（顶点位置/法线/UV/顶点色 + 索引 + 子网格划分），供：
   - `MeshRenderer.mesh`（`03 §MeshRenderer`）→ 3D 网格绘制；
   - `NavMesh.geometry`（`07 §NavMesh`）→ 导航烘焙几何源；
@@ -46,7 +46,7 @@ mesh:
 
 ## 3. 结构 / 字段（schema 风格）
 
-与 `schema.yaml` 的 `asset.Mesh` 对齐，并补足渲染所需（`06 §3` 类型系统）：
+与 `schema/` 的 `asset.Mesh` 对齐，并补足渲染所需（`06 §3` 类型系统）：
 
 ```yaml
 - namespace: asset

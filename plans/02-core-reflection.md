@@ -9,7 +9,7 @@
   1. **句柄**：定义 `mq_handle{index,generation}` 与通用槽表（slot table），提供世代校验、稳定性迭代。
   2. **反射运行时（中枢）**：定义 `type_id`（全限定名稳定哈希）、类型/枚举/字段描述符（数据，可跨 `.so`）、
      类型注册表、按 `field_path` 的读写、`visit(data, visitor)`、构造/销毁/复制。
-  3. **codegen 契约**：一次 `schema.yaml` → 三种产出（C++ POD 头 / C ABI 描述符 / JSON schema），扩展 `parser.js`。
+  3. **codegen 契约**：一次 `schema/` → 三种产出（C++ POD 头 / C ABI 描述符 / JSON schema），扩展 `parser.js`。
 - **所在层**：基础层（`modules/core/{data,handles,reflect}`）。依赖方向只能向下（不依赖任何上层模块）。
 - **上游文档**：`docs/06-反射与代码生成.md`（主）、`docs/07-内存与数据模型.md`、`docs/02-模块系统-ABI与多实例.md`、
   `docs/00-设计哲学与约束.md`（A1 可自省、ADR-0001/0002/0013/0014）、`docs/08`（codec=visitor）、`docs/12`（组件=反射类型）。
@@ -325,13 +325,13 @@ void* mq_module_query(const char* interface_name, uint32_t min_version);
 
 ### 2.9 codegen 契约（一次 schema → 三种产出）
 
-**输入**：`modules/core/data/schema.yaml`（在现有 `namespace/class/enum/fields` 上扩展
+**输入**：`modules/core/data/schema/`（在现有 `namespace/class/enum/fields` 上扩展
 `struct`、`attrs`、引用类型 `entity_ref`/`asset_ref<T>`、动态容器 `T[]`/`map<K,V>`/`string`/`optional<T>`）。
 
 **CLI（冻结）**：
 ```
 node modules/core/data/parser.js \
-    --schema schema.yaml \
+    --schema schema/ \
     --out-cpp  <dir>      # gen/<ns>.h：C++ POD 头（static_assert(sizeof==size) + default）
     --out-abi  <dir>      # gen/<schema>_reflect.h/.cpp：C ABI 描述符 + 注册函数
     --out-json <dir>      # gen/<schema>.schema.json：机器可读 schema（AI/校验）

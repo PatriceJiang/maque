@@ -9,7 +9,9 @@
 ## 特性
 
 - **多实例 / 零全局可变状态 / 插件化**（模块即 `.so`，跨边界 C ABI）。
-- **反射中枢**：`schema.yaml` 一处声明 → 生成 C++ 类型 / C ABI 描述符 / JSON / **脚本绑定**。
+- **反射中枢**：`schema/` 一处声明 → 生成 C++ 类型 / C ABI 描述符 / JSON / **脚本绑定**。
+- **schema = 目录**：一个文件一个模块（目录镜像 `modules/`），入口 `schema.yaml` 登记全部文件，
+  文件间 `imports` 声明依赖（合并顺序 = 依赖优先的后序遍历；结构引用必须落在 import 闭包内）。
 - **声明式接口绑定**：`api_list` 一次声明，生成 C++ 头 + JS 绑定（支持 MANUAL 头内联实现）。
 - **脚本优先**：quickjs(JS) 作为游戏逻辑层；帧边界 GC；**帧边界热重载**（IIFE + globalThis 状态迁移）。
 - **真实 WebGPU 渲染**（wgpu-native）：离屏渲染 + readback；相机（中心/缩放/旋转）、

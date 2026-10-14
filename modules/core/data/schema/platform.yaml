@@ -1,0 +1,115 @@
+# platform —— modules/platform
+- namespace: platform
+  version: 1
+  module_abi:
+    module: platform
+    abi_name: "maque.platform"
+    includes: [ "<stdint.h>" ]
+    opaque: [ mq_platform ]
+    macros:
+      - { name: MQ_PLATFORM_MOD_SHIFT, value: "(1u << 0)" }
+      - { name: MQ_PLATFORM_MOD_CTRL, value: "(1u << 1)" }
+      - { name: MQ_PLATFORM_MOD_ALT, value: "(1u << 2)" }
+      - { name: MQ_PLATFORM_MOD_META, value: "(1u << 3)" }
+    enums:
+      - name: mq_platform_pointer_type
+        values:
+          - { name: MQ_PLATFORM_POINTER_MOUSE, value: 0 }
+          - { name: MQ_PLATFORM_POINTER_TOUCH, value: 1 }
+          - { name: MQ_PLATFORM_POINTER_PEN, value: 2 }
+      - name: mq_platform_pointer_event_type
+        values:
+          - { name: MQ_PLATFORM_POINTER_DOWN, value: 0 }
+          - { name: MQ_PLATFORM_POINTER_UP, value: 1 }
+          - { name: MQ_PLATFORM_POINTER_MOVE, value: 2 }
+          - { name: MQ_PLATFORM_POINTER_WHEEL, value: 3 }
+          - { name: MQ_PLATFORM_POINTER_CANCEL, value: 4 }
+      - values:
+          - { name: MQ_KEY_UNKNOWN, value: 0 }
+          - { name: MQ_KEY_ESCAPE, value: 1 }
+          - { name: MQ_KEY_SPACE, value: 2 }
+          - { name: MQ_KEY_ENTER, value: 3 }
+          - { name: MQ_KEY_TAB, value: 4 }
+          - { name: MQ_KEY_BACKSPACE, value: 5 }
+          - { name: MQ_KEY_LEFT, value: 6 }
+          - { name: MQ_KEY_RIGHT, value: 7 }
+          - { name: MQ_KEY_UP, value: 8 }
+          - { name: MQ_KEY_DOWN, value: 9 }
+          - { name: MQ_KEY_TEXT, value: 10 }
+          - { name: MQ_KEY_A, value: 32 }
+    structs:
+      - name: mq_platform_pointer_event
+        fields:
+          - { name: pointer_id, type: "uint32_t" }
+          - { name: type, type: "uint32_t" }
+          - { name: pointer_type, type: "uint32_t" }
+          - { name: button, type: "uint32_t" }
+          - { name: x, type: "float" }
+          - { name: y, type: "float" }
+          - { name: dx, type: "float" }
+          - { name: dy, type: "float" }
+          - { name: pressure, type: "float" }
+          - { name: scroll_x, type: "float" }
+          - { name: scroll_y, type: "float" }
+          - { name: modifiers, type: "uint32_t" }
+      - name: mq_platform_key_event
+        fields:
+          - { name: key, type: "uint32_t" }
+          - { name: scancode, type: "uint32_t" }
+          - { name: modifiers, type: "uint32_t" }
+          - { name: repeat, type: "uint32_t" }
+          - { name: down, type: "uint32_t" }
+          - { name: text, type: "char[16]" }
+      - name: mq_input_frame
+        fields:
+          - { name: quit, type: "int" }
+          - { name: focused, type: "int" }
+          - { name: mouse_x, type: "float" }
+          - { name: mouse_y, type: "float" }
+          - { name: mouse_down, type: "int" }
+          - { name: pointers, type: "mq_platform_pointer_event*" }
+          - { name: pointer_count, type: "uint32_t" }
+          - { name: pointer_cap, type: "uint32_t" }
+          - { name: keys, type: "mq_platform_key_event*" }
+          - { name: key_count, type: "uint32_t" }
+          - { name: key_cap, type: "uint32_t" }
+          - { name: resized, type: "int" }
+          - { name: width, type: "int" }
+          - { name: height, type: "int" }
+    fns:
+      - { fn: mq_platform_create, returns: "mq_platform*", args: [ { name: title, type: "const char*" }, { name: w, type: "int" }, { name: h, type: "int" } ] }
+      - { fn: mq_platform_present, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: rgba, type: "const void*" },
+                  { name: w, type: "int32_t" }, { name: h, type: "int32_t" } ],
+          doc: "把 RGBA8 帧呈现到窗口（无窗口/dummy 驱动安全空操作；MAQUE_PRESENT=off|software|accelerated）" }
+      - { fn: mq_platform_drawable_size, returns: void,
+          args: [ { name: p, type: "mq_platform*" }, { name: out_w, type: "int32_t*" }, { name: out_h, type: "int32_t*" } ],
+          doc: "绘制区尺寸（设备像素；HiDPI 下大于窗口逻辑尺寸）" }
+      - { fn: mq_platform_content_scale, returns: float,
+          args: [ { name: p, type: "mq_platform*" } ],
+          doc: "显示器内容缩放（绘制区/窗口；1.0 = 非 HiDPI）" }
+      - { fn: mq_platform_display_changed, returns: int,
+          args: [ { name: p, type: "mq_platform*" } ],
+          doc: "自上次调用以来窗口是否更换显示器/尺寸变化（画布需重解析）" }
+      - { fn: mq_platform_set_safe_area, returns: void,
+          args: [ { name: p, type: "mq_platform*" }, { name: l, type: "float" }, { name: t, type: "float" },
+                  { name: r, type: "float" }, { name: b, type: "float" } ],
+          doc: "安全区内缩（设备像素，刘海/圆角）；画布解析时扣除" }
+      - { fn: mq_platform_present_rect, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: rgba, type: "const void*" },
+                  { name: w, type: "int32_t" }, { name: h, type: "int32_t" },
+                  { name: dx, type: "int32_t" }, { name: dy, type: "int32_t" },
+                  { name: dw, type: "int32_t" }, { name: dh, type: "int32_t" }, { name: filter, type: "int32_t" } ],
+          doc: "把帧按**指定目标矩形**呈现（画布策略决定缩放/留边；filter 0=linear 1=nearest -1=自动）" }
+      - { fn: mq_platform_simulate_pointer, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: kind, type: "int32_t" },
+                  { name: x, type: "float" }, { name: y, type: "float" }, { name: button, type: "int32_t" } ],
+          doc: "测试/CI 用：把指针事件压入 SDL 事件队列（kind: 0=move 1=down 2=up）——覆盖 OS→SDL→引擎的真实翻译路径" }
+      - { fn: mq_platform_destroy, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }
+      - { fn: mq_platform_has_window, returns: "int", args: [ { name: p, type: "mq_platform*" } ] }
+      - { fn: mq_platform_pump, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }
+      - { fn: mq_platform_poll, returns: "uint32_t", args: [ { name: p, type: "mq_platform*" }, { name: out, type: "mq_input_frame*" } ] }
+      - { fn: mq_platform_inject_pointer, returns: "void", args: [ { name: p, type: "mq_platform*" }, { name: ev, type: "const mq_platform_pointer_event*" } ] }
+      - { fn: mq_platform_inject_key, returns: "void", args: [ { name: p, type: "mq_platform*" }, { name: ev, type: "const mq_platform_key_event*" } ] }
+      - { fn: mq_platform_set_title, returns: "void", args: [ { name: p, type: "mq_platform*" }, { name: title, type: "const char*" } ] }
+      - { fn: mq_platform_request_quit, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }

@@ -1,0 +1,9 @@
+# runtime —— modules/runtime
+- namespace: runtime
+  version: 1
+  module_abi:
+    module: runtime
+    abi_name: "maque.runtime"
+    fns:
+      - { fn: mq_run_scene, returns: "int", args: [ { name: scn_path, type: "const char*" } ] }
+      - { fn: mq_run_scene_ex, returns: "int", args: [ { name: scn_path, type: "const char*" }, { name: frames_dir, type: "const char*" } ] }

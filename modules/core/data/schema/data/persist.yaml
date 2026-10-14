@@ -1,0 +1,22 @@
+# persist —— modules/data/persist
+- namespace: persist
+  version: 1
+  module_abi:
+    module: persist
+    abi_name: "maque.persist"
+    includes: [ "\"core/reflect/mq_reflect.h\"", "\"maque_desc.h\"", "<stddef.h>" ]
+    opaque: [ mq_json ]
+    typedefs:
+      - { name: mq_json_kv_fn, type: "int (*)(void* user, const char* key, const char* value_text)" }
+    fns:
+      - { fn: mq_persist_load_json, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: json, type: "const char*" }, { name: len, type: "size_t" }, { name: out, type: "void*" } ] }
+      - { fn: mq_json_parse, returns: "mq_json*", args: [ { name: text, type: "const char*" }, { name: len, type: "size_t" } ] }
+      - { fn: mq_json_free, returns: "void", args: [ { name: doc, type: "mq_json*" } ] }
+      - { fn: mq_json_get, returns: "const mq_json*", args: [ { name: obj, type: "const mq_json*" }, { name: key, type: "const char*" } ] }
+      - { fn: mq_json_len, returns: "uint32_t", args: [ { name: arr, type: "const mq_json*" } ] }
+      - { fn: mq_json_at, returns: "const mq_json*", args: [ { name: arr, type: "const mq_json*" }, { name: i, type: "uint32_t" } ] }
+      - { fn: mq_json_num, returns: "double", args: [ { name: v, type: "const mq_json*" }, { name: def, type: "double" } ] }
+      - { fn: mq_json_str, returns: "const char*", args: [ { name: v, type: "const mq_json*" }, { name: def, type: "const char*" } ] }
+      - { fn: mq_json_object_each, returns: "uint32_t", args: [ { name: obj, type: "const mq_json*" }, { name: fn, type: "mq_json_kv_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_persist_apply_json, returns: "int", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: node, type: "const mq_json*" }, { name: out, type: "void*" } ] }
+      - { fn: mq_persist_write_json, returns: "size_t", args: [ { name: ctx, type: "mq_reflect_ctx*" }, { name: type, type: "const mq_type_desc*" }, { name: obj, type: "const void*" }, { name: out, type: "char*" }, { name: cap, type: "size_t" } ] }

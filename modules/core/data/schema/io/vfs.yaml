@@ -1,0 +1,34 @@
+# vfs —— modules/io/vfs
+- namespace: vfs
+  version: 1
+  module_abi:
+    module: vfs
+    abi_name: "maque.vfs"
+    summary: "虚拟文件系统：挂载点 + 多协议后端（docs/04）"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_vfs ]
+    enums:
+      - doc: "错误码（结构化；docs/11 §4）。"
+        values:
+          - { name: MQ_VFS_OK,           value: 0, doc: "成功" }
+          - { name: MQ_VFS_ERR_ARG,      value: 1, doc: "空指针/非法参数" }
+          - { name: MQ_VFS_ERR_NO_MOUNT, value: 2, doc: "无匹配挂载点" }
+          - { name: MQ_VFS_ERR_NOTFOUND, value: 3, doc: "挂载内不存在" }
+          - { name: MQ_VFS_ERR_NOMEM,    value: 4, doc: "内存不足" }
+          - { name: MQ_VFS_ERR_FORMAT,   value: 5, doc: "容器格式损坏（如 zip 头）" }
+          - { name: MQ_VFS_ERR_IO,       value: 6, doc: "网络/磁盘 IO" }
+          - { name: MQ_VFS_ERR_HASH,     value: 7, doc: "内容哈希不匹配（远程资产校验）" }
+    fns:
+      - { fn: mq_vfs_create,        returns: "mq_vfs*", args: [] }
+      - { fn: mq_vfs_destroy,       returns: void,      args: [ { name: vfs, type: "mq_vfs*" } ] }
+      - { fn: mq_vfs_mount,         returns: int,       args: [ { name: vfs, type: "mq_vfs*" }, { name: mountpoint, type: "const char*" }, { name: source, type: "const char*" } ] }
+      - { fn: mq_vfs_add_mem,       returns: int,       args: [ { name: vfs, type: "mq_vfs*" }, { name: name, type: "const char*" }, { name: data, type: "const void*" }, { name: size, type: "size_t" } ] }
+      - { fn: mq_vfs_mount_zip,     returns: int,       args: [ { name: vfs, type: "mq_vfs*" }, { name: mountpoint, type: "const char*" }, { name: zip_path, type: "const char*" } ] }
+      - { fn: mq_vfs_exists,        returns: int,       args: [ { name: vfs, type: "mq_vfs*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_vfs_register_builtin, returns: void,   args: [ { name: vfs, type: "mq_vfs*" }, { name: logical, type: "const char*" }, { name: data, type: "const void*" }, { name: size, type: "size_t" } ] }
+      - { fn: mq_vfs_read,          returns: int,       args: [ { name: vfs, type: "mq_vfs*" }, { name: path, type: "const char*" }, { name: out, type: "void**" }, { name: out_size, type: "size_t*" } ] }
+      - { fn: mq_vfs_free,          returns: void,      args: [ { name: p, type: "void*" } ] }
+      - { fn: mq_vfs_hash,          returns: uint64_t,  args: [ { name: data, type: "const void*" }, { name: size, type: "size_t" } ] }
+      - { fn: mq_vfs_hash_path,     returns: uint64_t,  args: [ { name: vfs, type: "mq_vfs*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_vfs_read_verified, returns: int,       args: [ { name: vfs, type: "mq_vfs*" }, { name: path, type: "const char*" }, { name: expect, type: "uint64_t" }, { name: out, type: "void**" }, { name: out_size, type: "size_t*" } ] }
+      - { fn: mq_vfs_resolve,       returns: int,       args: [ { name: vfs, type: "mq_vfs*" }, { name: path, type: "const char*" }, { name: out, type: "char*" }, { name: out_cap, type: "size_t" } ] }

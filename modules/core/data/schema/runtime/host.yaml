@@ -1,0 +1,149 @@
+# host —— 脚本全局 API · modules/runtime
+# 宿主 API（引擎能力）：ctx:true → 生成 C 声明 + JS 绑定（docs/21）
+- namespace: host
+  version: 1
+  global: true          # host.* 绑定到脚本全局（log(...)）
+  api_list:
+    - { fn: screen_w,      returns: float,  ctx: true }
+    - { fn: screen_h,      returns: float,  ctx: true }
+    - { fn: rng,           returns: float,  ctx: true }
+    - { fn: quit,          returns: void,   ctx: true }
+    - { fn: clear,         ctx: true, args: [ { name: r, type: float }, { name: g, type: float }, { name: b, type: float } ] }
+    - { fn: log,           ctx: true, args: [ { name: msg,  type: string } ] }
+    - { fn: cfg,           ctx: true, args: [ { name: path, type: string } ], returns: float }
+    - { fn: load_texture,  ctx: true, args: [ { name: path, type: string } ], returns: float }
+    - { fn: entity_spawn,  ctx: true, returns: float }
+    - { fn: entity_set_pos,ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { fn: entity_x,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_y,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_count,  ctx: true, returns: float }
+    - { fn: entity_destroy,ctx: true, args: [ { name: id, type: float } ] }
+    - { fn: entity_name,   ctx: true, args: [ { name: id, type: float } ], returns: string }
+    - { fn: entity_find,   ctx: true, args: [ { name: name, type: string } ], returns: float }
+    # 实体 id 单调分配（永不复用）→ 陈旧 id 可判定：valid=0 表示已销毁/从未存在
+    - { fn: entity_valid,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    # 输入（docs/19）：脚本读"事件发生时"的状态，不读设备（确定性/回放友好）
+    - { fn: input_x,       ctx: true, returns: float }
+    - { fn: input_y,       ctx: true, returns: float }
+    - { fn: input_target,  ctx: true, returns: float }     # 命中实体（-1 = 未命中）
+    - { fn: input_down,    ctx: true, returns: float }     # 左键/指针是否按住
+    - { fn: input_key,     ctx: true, args: [ { name: code, type: float } ], returns: float }
+    - { fn: input_focus,   ctx: true, returns: float }
+    - { fn: input_set_focus, ctx: true, args: [ { name: id, type: float } ] }
+    # UI（docs/19 §4/§8、components/04）：命中/悬停查询（引擎按 role，不认具体组件）
+    - { fn: ui_hit,        ctx: true, returns: float }     # 当前指针下最上层可交互控件
+    - { fn: ui_hover,      ctx: true, returns: float }     # 上一帧悬停控件
+    - { fn: ui_pressed,    ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_z,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_set_z,  ctx: true, args: [ { name: id, type: float }, { name: z, type: float } ] }
+    # 游戏常用组合（保持脚本只表达玩法；物理语义在引擎侧，docs/15/19）
+    - { fn: spawn_ball,    ctx: true, args: [ { name: x, type: float }, { name: y, type: float },
+                                             { name: vx, type: float }, { name: vy, type: float },
+                                             { name: radius, type: float } ], returns: float }
+    - { fn: bounce_step,   ctx: true, args: [ { name: dt, type: float } ] }   # 兼容旧脚本（自 M6 起为 no-op）
+    - { fn: physics_step,  ctx: true }                                       # 固定步长物理推进（docs/15 §3）
+    - { fn: ball_clear,    ctx: true }
+    # 组件字段（脚本改文本等；引擎按 role 定位组件，不认具体类型名）
+    - { fn: set_label,     ctx: true, args: [ { name: id, type: float }, { name: text, type: string } ] }
+    - { fn: ui_hit_at,     ctx: true, args: [ { name: x, type: float }, { name: y, type: float } ], returns: float }
+    # 导航（确定性 2D 网格 A*）：建网格 / 设障碍 / 指定目标 / 查询路径长度
+    - { fn: nav_setup,     ctx: true, args: [ { name: cols, type: float }, { name: rows, type: float },
+                                             { name: cell, type: float } ] }
+    - { fn: nav_block,     ctx: true, args: [ { name: cx, type: float }, { name: cy, type: float },
+                                             { name: w, type: float }, { name: h, type: float } ] }
+    - { fn: nav_goto,      ctx: true, args: [ { name: id, type: float }, { name: x, type: float },
+                                             { name: y, type: float } ], returns: float }
+    - { fn: nav_path_len,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: nav_tick,      ctx: true }
+
+    # ---- 节点/组件 API（节点 / 组件 / Director 三件套）----
+    # 层级（setParent / parent / children / getChildByName）
+    - { fn: node_set_parent,     ctx: true, args: [ { name: id, type: float }, { name: parent, type: float } ], returns: float }
+    - { fn: node_parent,         ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_child_count,    ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_child_at,       ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float }
+    - { fn: node_find_child,     ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float }
+    - { fn: node_set_name,       ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ] }
+    # 节点属性（active / scale / angle / opacity / zIndex / contentSize / anchor）
+    - { fn: node_set_active,     ctx: true, args: [ { name: id, type: float }, { name: on, type: float } ] }
+    - { fn: node_active,         ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_set_scale,      ctx: true, args: [ { name: id, type: float }, { name: s, type: float } ] }
+    - { fn: node_scale,          ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_set_angle,      ctx: true, args: [ { name: id, type: float }, { name: deg, type: float } ] }
+    - { fn: node_angle,          ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_set_opacity,    ctx: true, args: [ { name: id, type: float }, { name: a, type: float } ] }
+    - { fn: node_opacity,        ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_set_z_index,    ctx: true, args: [ { name: id, type: float }, { name: z, type: float } ] }
+    - { fn: node_z_index,        ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_width,          ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_height,         ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_set_position,   ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float } ] }
+    - { fn: node_position_x,     ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_position_y,     ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_set_content_size, ctx: true, args: [ { name: id, type: float }, { name: w, type: float }, { name: h, type: float } ] }
+    - { fn: node_set_anchor,     ctx: true, args: [ { name: id, type: float }, { name: ax, type: float }, { name: ay, type: float } ] }
+    # 组件（getComponent / addComponent / getComponentInChildren 等价）
+    - { fn: node_has_component,  ctx: true, args: [ { name: id, type: float }, { name: type, type: string } ], returns: float }
+    - { fn: node_add_component,  ctx: true, args: [ { name: id, type: float }, { name: type, type: string } ], returns: float }
+    - { fn: node_remove_component, ctx: true, args: [ { name: id, type: float }, { name: type, type: string } ], returns: float }
+    - { fn: node_component_count, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_component_at,   ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: node_child_with_component, ctx: true, args: [ { name: id, type: float }, { name: type, type: string } ], returns: float }
+    # 组件字段（反射读写：字段反射读写）
+    - { fn: node_get_number,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
+    - { fn: node_set_number,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
+    - { fn: node_get_bool,       ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
+    - { fn: node_set_bool,       ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
+    - { fn: node_get_string,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: string }
+    - { fn: node_set_string,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: string } ], returns: float }
+    # 事件（node.on / off / emit；emit 沿父链冒泡，沿父链冒泡）
+    - { fn: node_on,             ctx: true, args: [ { name: id, type: float }, { name: event, type: string }, { name: handler, type: string } ], returns: float }
+    - { fn: node_off,            ctx: true, args: [ { name: id, type: float }, { name: event, type: string } ], returns: float }
+    - { fn: node_emit,           ctx: true, args: [ { name: id, type: float }, { name: event, type: string } ], returns: float }
+    - { fn: node_emit_number,    ctx: true, args: [ { name: id, type: float }, { name: event, type: string }, { name: value, type: float } ], returns: float }
+    # UI 控件值（按 role 统一读写：ProgressBar / Slider / CheckBox）
+    - { fn: ui_set_value,        ctx: true, args: [ { name: id, type: float }, { name: v, type: float } ], returns: float }
+    - { fn: ui_get_value,        ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: ui_set_checked,      ctx: true, args: [ { name: id, type: float }, { name: on, type: float } ], returns: float }
+    - { fn: ui_get_checked,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    # 画布 / 分辨率策略（docs/17）：设计分辨率 → 设备像素的适配结果
+    - { fn: window_w,         ctx: true, args: [], returns: float, doc: "绘制区宽（设备像素；HiDPI 下大于 screen_w）" }
+    - { fn: window_h,         ctx: true, args: [], returns: float }
+    - { fn: canvas_scale,     ctx: true, args: [], returns: float, doc: "设计 → 设备 的等比缩放" }
+    - { fn: canvas_scale_x,   ctx: true, args: [], returns: float }
+    - { fn: canvas_scale_y,   ctx: true, args: [], returns: float }
+    - { fn: canvas_offset_x,  ctx: true, args: [], returns: float, doc: "画布原点的绘制区偏移（留边）" }
+    - { fn: canvas_offset_y,  ctx: true, args: [], returns: float }
+    - { fn: canvas_device_scale, ctx: true, args: [], returns: float, doc: "显示器内容缩放（HiDPI）" }
+    - { fn: canvas_safe_area, ctx: true, args: [ { name: edge, type: float } ], returns: float,
+        doc: "安全区内缩（0=左 1=上 2=右 3=下，设备像素）" }
+    # 文本（Label / TextLabel / RichText 通用：按 role 读写）
+    - { fn: ui_set_text,    ctx: true, args: [ { name: id, type: float }, { name: text, type: string } ], returns: float }
+    - { fn: ui_get_text,    ctx: true, args: [ { name: id, type: float } ], returns: string }
+    - { fn: ui_text_width,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: ui_text_height, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: ui_text_lines,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    # Director（暂停/恢复/帧号/切场景；切场景在帧边界生效）
+    - { fn: director_pause,      ctx: true }
+    - { fn: director_resume,     ctx: true }
+    - { fn: director_paused,     ctx: true, returns: float }
+    - { fn: director_frame,      ctx: true, returns: float }
+    - { fn: director_load_scene, ctx: true, args: [ { name: path, type: string } ], returns: float }
+
+    # ---- 常用 API 续：Tween / schedule / destroy / find(path) ----
+    # Tween（确定性：固定步长推进，完成时派发 tween_complete）
+    - { fn: tween_start,   ctx: true, args: [ { name: id, type: float }, { name: field, type: string },
+                                             { name: to, type: float }, { name: duration, type: float },
+                                             { name: easing, type: float } ], returns: float }
+    - { fn: tween_stop,    ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: tween_count,   ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: tween_progress, ctx: true, args: [ { name: id, type: float } ], returns: float }
+    # 定时器（帧驱动，确定性；delay/interval 以秒计）
+    - { fn: schedule_once, ctx: true, args: [ { name: handler, type: string }, { name: delay, type: float } ], returns: float }
+    - { fn: schedule,      ctx: true, args: [ { name: handler, type: string }, { name: interval, type: float } ], returns: float }
+    - { fn: unschedule,    ctx: true, args: [ { name: handler, type: string } ], returns: float }
+    - { fn: schedule_count, ctx: true, returns: float }
+    # 节点销毁（延迟到帧边界，帧末生效）+ 路径查找 find("Canvas/Panel")
+    - { fn: node_destroy,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_valid,    ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: node_find_path, ctx: true, args: [ { name: root, type: float }, { name: path, type: string } ], returns: float }

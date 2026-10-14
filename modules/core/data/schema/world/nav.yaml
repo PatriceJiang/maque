@@ -1,0 +1,100 @@
+# nav —— modules/world/nav
+- imports: [../math.yaml]
+
+- namespace: nav
+  version: 1
+  class_list:
+    - enum: NavAgentState
+      values:
+        - { name: Idle, value: 0 }
+        - { name: Moving, value: 1 }
+        - { name: PathPending, value: 2 }
+        - { name: Arrived, value: 3 }
+        - { name: OffMesh, value: 4 }
+        - { name: Failed, value: 5 }
+    - enum: NavAvoidance
+      values:
+        - { name: None, value: 0 }
+        - { name: RVO2, value: 1 }
+    - enum: NavMeshSource
+      values:
+        - { name: Geometry, value: 0 }
+        - { name: Colliders, value: 1 }
+        - { name: Explicit, value: 2 }
+    - enum: NavMeshBakeState
+      values:
+        - { name: Dirty, value: 0 }
+        - { name: Baking, value: 1 }
+        - { name: Baked, value: 2 }
+        - { name: Failed, value: 3 }
+    - struct: NavAgent
+      fields:
+        - { name: navmesh, type: "asset_ref<NavMeshData>", attrs: { ref: NavMeshData } }
+        - { name: target_entity, type: entity_ref, attrs: { ref: "scene.Node" } }
+        - { name: target_position, type: math.Vec3, attrs: { unit: m } }
+        - { name: speed, type: float, default: 3.5F, attrs: { range: [0, 100], unit: "m/s" } }
+        - { name: acceleration, type: float, default: 8.0F, attrs: { unit: "m/s2" } }
+        - { name: radius, type: float, default: 0.5F, attrs: { unit: m } }
+        - { name: height, type: float, default: 1.8F, attrs: { unit: m } }
+        - { name: stopping_distance, type: float, default: 0.5F, attrs: { unit: m } }
+        - { name: max_slope, type: float, default: 45.0F, attrs: { unit: deg } }
+        - { name: step_height, type: float, default: 0.4F, attrs: { unit: m } }
+        - { name: avoidance, type: NavAvoidance, default: "NavAvoidance::None" }
+        - { name: state, type: NavAgentState, default: "NavAgentState::Idle", attrs: { readonly: true } }
+        - { name: path, type: "math.Vec3[]", attrs: { transient: true } }
+        - { name: path_index, type: uint16_t, default: 0, attrs: { transient: true } }
+        - { name: desired_velocity, type: math.Vec3, attrs: { transient: true } }
+        - { name: query, type: uint64_t, default: 0, attrs: { transient: true } }
+    - struct: NavMesh
+      fields:
+        - { name: source, type: NavMeshSource, default: "NavMeshSource::Geometry" }
+        - { name: geometry, type: "asset_ref<Mesh>", attrs: { ref: Mesh } }
+        - { name: data, type: "asset_ref<NavMeshData>", attrs: { ref: NavMeshData } }
+        - { name: cell_size, type: float, default: 0.3F, attrs: { unit: m } }
+        - { name: cell_height, type: float, default: 0.2F, attrs: { unit: m } }
+        - { name: agent_radius, type: float, default: 0.5F, attrs: { unit: m } }
+        - { name: agent_height, type: float, default: 1.8F, attrs: { unit: m } }
+        - { name: max_slope, type: float, default: 45.0F, attrs: { unit: deg } }
+        - { name: max_edge_length, type: float, default: 12.0F, attrs: { unit: m } }
+        - { name: region_min_size, type: float, default: 8.0F, attrs: { unit: "m2" } }
+        - { name: bake_state, type: NavMeshBakeState, default: "NavMeshBakeState::Baked", attrs: { readonly: true } }
+        - { name: accel, type: uint64_t, default: 0, attrs: { transient: true } }
+  module_abi:
+    module: nav
+    abi_name: "maque.nav"
+    summary: "确定性 2D 网格寻路：A* + 视线平滑 + 固定步长追踪"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_nav_world ]
+    enums:
+      - values:
+          - { name: MQ_NAV_OK,          value: 0 }
+          - { name: MQ_NAV_ERR_ARG,     value: 1 }
+          - { name: MQ_NAV_ERR_RANGE,   value: 2, doc: "坐标越界" }
+          - { name: MQ_NAV_ERR_BLOCKED, value: 3, doc: "起点/终点不可行走" }
+          - { name: MQ_NAV_ERR_NOPATH,  value: 4, doc: "无可行路径" }
+          - { name: MQ_NAV_ERR_NOMEM,   value: 5 }
+          - { name: MQ_NAV_ERR_CAPACITY, value: 6, doc: "路径缓冲不足（out_needed 报告所需）" }
+    structs:
+      - name: mq_nav_config
+        doc: "网格配置；struct_size 必须为 sizeof(mq_nav_config)（版本化结构，docs/02）。"
+        fields:
+          - { name: struct_size, type: "uint32_t", doc: "= sizeof(mq_nav_config)" }
+          - { name: width, type: "uint32_t" }
+          - { name: height, type: "uint32_t" }
+          - { name: cell_size, type: "float" }
+          - { name: allow_diagonal, type: "uint8_t", doc: "1 = 允许八向移动（对角移动不切角）" }
+    fns:
+      - { fn: mq_nav_create,          returns: "mq_nav_world*", args: [ { name: cfg, type: "const mq_nav_config*" } ] }
+      - { fn: mq_nav_destroy,         returns: void,     args: [ { name: w, type: "mq_nav_world*" } ] }
+      - { fn: mq_nav_set_blocked,     returns: int,      args: [ { name: w, type: "mq_nav_world*" }, { name: x, type: "uint32_t" }, { name: y, type: "uint32_t" }, { name: blocked, type: "int" } ] }
+      - { fn: mq_nav_is_blocked,      returns: int,      args: [ { name: w, type: "mq_nav_world*" }, { name: x, type: "uint32_t" }, { name: y, type: "uint32_t" } ] }
+      - { fn: mq_nav_set_rect,        returns: int,      args: [ { name: w, type: "mq_nav_world*" }, { name: x, type: "uint32_t" }, { name: y, type: "uint32_t" }, { name: width, type: "uint32_t" }, { name: height, type: "uint32_t" }, { name: blocked, type: "int" } ] }
+      - { fn: mq_nav_walkable_count,  returns: uint32_t, args: [ { name: w, type: "mq_nav_world*" } ] }
+      - { fn: mq_nav_cell_at,         returns: int,      args: [ { name: w, type: "mq_nav_world*" }, { name: wx, type: "float" }, { name: wy, type: "float" }, { name: out_x, type: "uint32_t*" }, { name: out_y, type: "uint32_t*" } ] }
+      - { fn: mq_nav_cell_center,     returns: void,     args: [ { name: w, type: "mq_nav_world*" }, { name: x, type: "uint32_t" }, { name: y, type: "uint32_t" }, { name: out_wx, type: "float*" }, { name: out_wy, type: "float*" } ] }
+      - { fn: mq_nav_is_walkable_at,  returns: int,      args: [ { name: w, type: "mq_nav_world*" }, { name: wx, type: "float" }, { name: wy, type: "float" } ] }
+      - { fn: mq_nav_find_path,       returns: int,      args: [ { name: w, type: "mq_nav_world*" }, { name: sx, type: "float" }, { name: sy, type: "float" }, { name: tx, type: "float" }, { name: ty, type: "float" }, { name: out_xy, type: "float*" }, { name: out_cap, type: "uint32_t" }, { name: out_count, type: "uint32_t*" }, { name: out_needed, type: "uint32_t*" } ] }
+      - { fn: mq_nav_line_of_sight,   returns: int,      args: [ { name: w, type: "mq_nav_world*" }, { name: ax, type: "float" }, { name: ay, type: "float" }, { name: bx, type: "float" }, { name: by, type: "float" } ] }
+      - { fn: mq_nav_smooth,          returns: uint32_t, args: [ { name: w, type: "mq_nav_world*" }, { name: xy, type: "float*" }, { name: count, type: "uint32_t" } ] }
+      - { fn: mq_nav_step_towards,    returns: int,      args: [ { name: w, type: "mq_nav_world*" }, { name: px, type: "float*" }, { name: py, type: "float*" }, { name: path_xy, type: "const float*" }, { name: count, type: "uint32_t" }, { name: index, type: "uint32_t*" }, { name: speed, type: "float" }, { name: dt, type: "float" }, { name: arrive_dist, type: "float" } ] }
+      - { fn: mq_nav_last_expanded,   returns: uint32_t, args: [ { name: w, type: "mq_nav_world*" } ] }

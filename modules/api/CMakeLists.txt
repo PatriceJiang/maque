@@ -6,7 +6,7 @@ target_include_directories(maque_api PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include
 target_link_libraries(maque_api PUBLIC maque::schema maque::script)
 set_target_properties(maque_api PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 
-# 生成的脚本绑定 TU（从 schema.yaml api_list 生成；调用引擎 API）
+# 生成的脚本绑定 TU（从 schema/ 的 api_list 生成；调用引擎 API）
 get_property(MAQUE_GEN_DIR GLOBAL PROPERTY MAQUE_GEN_DIR)
 if(MAQUE_GEN_DIR AND TARGET maque_codegen)
     set(_bind "${MAQUE_GEN_DIR}/maque_bindings.cpp")

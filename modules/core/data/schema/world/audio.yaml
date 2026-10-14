@@ -1,0 +1,43 @@
+# audio —— 世界层音频组件（尚无独立模块目录）
+- namespace: audio
+  version: 1
+  class_list:
+    - enum: AttenuationModel
+      values:
+        - { name: InverseDistance, value: 0 }
+        - { name: Linear, value: 1 }
+        - { name: Exponential, value: 2 }
+        - { name: CustomCurve, value: 3 }
+    - enum: PanningMode
+      values:
+        - { name: Stereo2D, value: 0 }
+        - { name: Spatial3D, value: 1 }
+        - { name: Spatial3D_HRTF, value: 2 }
+    - enum: AudioPlayState
+      values:
+        - { name: Stopped, value: 0 }
+        - { name: Playing, value: 1 }
+        - { name: Paused, value: 2 }
+    - struct: AudioSource
+      fields:
+        - { name: clip, type: "asset_ref<AudioClip>", attrs: { ref: AudioClip } }
+        - { name: bus, type: "asset_ref<AudioBus>", attrs: { ref: AudioBus } }
+        - { name: autoplay, type: bool, default: false }
+        - { name: loop, type: bool, default: false }
+        - { name: volume, type: float, default: 1.0F, attrs: { range: [0, 4], unit: linear } }
+        - { name: pitch, type: float, default: 1.0F, attrs: { range: [0.01, 4] } }
+        - { name: panning, type: PanningMode, default: "PanningMode::Stereo2D" }
+        - { name: attenuation, type: AttenuationModel, default: "AttenuationModel::InverseDistance" }
+        - { name: curve, type: "asset_ref<AudioCurve>", attrs: { ref: AudioCurve } }
+        - { name: min_distance, type: float, default: 1.0F, attrs: { unit: m } }
+        - { name: max_distance, type: float, default: 50.0F, attrs: { unit: m } }
+        - { name: doppler, type: float, default: 0.0F, attrs: { range: [0, 2] } }
+        - { name: state, type: AudioPlayState, default: "AudioPlayState::Stopped", attrs: { transient: true } }
+        - { name: playhead, type: float, default: 0.0F, attrs: { transient: true, unit: s } }
+        - { name: voice, type: uint64_t, default: 0, attrs: { transient: true } }
+    - struct: AudioListener
+      fields:
+        - { name: active, type: bool, default: true }
+        - { name: master_volume, type: float, default: 1.0F, attrs: { range: [0, 2], unit: linear } }
+        - { name: doppler_scale, type: float, default: 1.0F, attrs: { range: [0, 2] } }
+        - { name: listener, type: uint64_t, default: 0, attrs: { transient: true } }

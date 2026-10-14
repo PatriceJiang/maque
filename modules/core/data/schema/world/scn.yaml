@@ -1,0 +1,138 @@
+# scn —— .scn 场景文档格式（世界层）
+- imports: [../math.yaml, ../ui/ui.yaml]
+
+- namespace: scn
+  version: 1
+  class_list:
+    # 组件类型（docs/17）：entity 由带 type 的若干组件组合而成。
+    # roles 声明组件语义角色（引擎据此通用处理，不硬编码类型）。
+    - struct: Transform2D
+      roles: [transform2d]
+      fields:
+        - { name: x, type: float, default: 0.0F }
+        - { name: y, type: float, default: 0.0F }
+    - struct: Sprite
+      roles: [sprite]
+      fields:
+        - { name: radius,   type: float,  default: 8.0F }
+        # width/height > 0 → 画**矩形**（瓦片/方块/非方形贴图）；否则按 radius 画圆
+        - { name: width,    type: float,  default: 0.0F, attrs: { unit: px } }
+        - { name: height,   type: float,  default: 0.0F, attrs: { unit: px } }
+        - { name: r,        type: float,  default: 0.4F }
+        - { name: g,        type: float,  default: 0.8F }
+        - { name: b,        type: float,  default: 1.0F }
+        - { name: texture,  type: string, default: "" }        # 贴图资源引用
+        - { name: material, type: string, default: "" }        # 材质资源引用(builtin:/或assets)
+    # 材质资源（轻量；docs/assets/01）：着色基色 + 贴图引用
+    - struct: SpriteMaterial
+      fields:
+        - { name: base_color, type: math.Vec4, default: "{1.0F,1.0F,1.0F,1.0F}" }
+        - { name: texture,    type: string,    default: "" }
+    # UI 控件（docs/19 §4/§8、components/04/08）：命中测试/绘制只按 role，引擎不认具体类型。
+    - struct: Button
+      roles: [ui_button]
+      fields:
+        - { name: x,       type: float,   default: 0.0F }
+        - { name: y,       type: float,   default: 0.0F }
+        - { name: width,   type: float,   default: 96.0F }
+        - { name: height,  type: float,   default: 28.0F }
+        - { name: z,       type: int32_t, default: 0 }          # z-order（越大越靠上）
+        - { name: label,   type: string,  default: "Button" }
+        - { name: r,       type: float,   default: 0.22F }
+        - { name: g,       type: float,   default: 0.26F }
+        - { name: b,       type: float,   default: 0.36F }
+        - { name: pressed, type: bool,    default: false }      # 由 input 分发写回（瞬态语义）
+        - { name: hovered, type: bool,    default: false }
+        - { name: enabled, type: bool,    default: true }
+    - struct: Label
+      roles: [ui_label]
+      fields:
+        - { name: x,    type: float,   default: 0.0F }
+        - { name: y,    type: float,   default: 0.0F }
+        - { name: z,    type: int32_t, default: 0 }
+        - { name: text, type: string,  default: "" }
+        - { name: r,    type: float,   default: 1.0F }
+        - { name: g,    type: float,   default: 1.0F }
+        - { name: b,    type: float,   default: 1.0F }
+        - { name: a,    type: float,   default: 1.0F }
+        # ---- 文本排版（与 ui.TextLabel 对齐；docs/17）----
+        - { name: font_size, type: float, default: 16.0F, attrs: { unit: px, range: [1, 512] } }
+        - { name: align, type: "ui.Align", default: "ui::Align::Begin" }
+        - { name: wrap, type: "ui.TextWrap", default: "ui::TextWrap::None" }
+        - { name: max_width, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: line_spacing, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: outline_size, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: outline_r, type: float, default: 0.0F }
+        - { name: outline_g, type: float, default: 0.0F }
+        - { name: outline_b, type: float, default: 0.0F }
+        - { name: font, type: string, default: "", attrs: { ref: Font } }
+        - { name: text_w, type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: text_h, type: float, default: 0.0F, attrs: { transient: true } }
+        - { name: line_count, type: int32_t, default: 0, attrs: { transient: true } }
+    # 动画播放器（docs/15 §2）：关键帧采样，写回目标组件的反射字段。
+    - struct: AnimationPlayer
+      roles: [anim_player]
+      fields:
+        - { name: clip,     type: string,  default: "" }        # 动画片段资源（assets JSON）
+        - { name: time,     type: float,   default: 0.0F }      # 播放头（秒，由引擎推进）
+        - { name: speed,    type: float,   default: 1.0F }
+        - { name: loop,     type: bool,    default: true }
+        - { name: playing,  type: bool,    default: true }
+        - { name: duration, type: float,   default: 0.0F }      # 采样后写回（只读语义）
+    # CPU 粒子发射器（docs/15 §4）：确定性（引擎 RNG，参与回放），上限受池大小约束。
+    - struct: ParticleEmitter
+      roles: [particle_emitter]
+      fields:
+        - { name: rate,      type: float, default: 20.0F }     # 每秒发射数
+        - { name: lifetime,  type: float, default: 1.0F }      # 秒
+        - { name: speed,     type: float, default: 60.0F }     # 初速度（像素/秒）
+        - { name: spread,    type: float, default: 0.5F }      # 方向随机幅度（0..1）
+        - { name: gravity,   type: float, default: 120.0F }    # 自定义重力（与物理无关）
+        - { name: size,      type: float, default: 3.0F }
+        - { name: r,         type: float, default: 1.0F }
+        - { name: g,         type: float, default: 0.6F }
+        - { name: b,         type: float, default: 0.2F }
+        - { name: max_count, type: uint32_t, default: 256 }    # 池上限（docs/07 §8 预算）
+        - { name: enabled,   type: bool, default: true }
+    # Prefab 实例（docs/12 §5、docs/assets）：指向 prefab 资源（.prefab.json），
+    # 由引擎在加载时就地实例化为子节点；编辑期删除该组件即"断开链接"（bake）。
+    - struct: PrefabInstance
+      fields:
+        - { name: source, type: string, default: "" }        # 相对场景目录的资源路径
+        - { name: detached, type: bool, default: false }     # true = 已 bake（不再跟随源）
+    # 导航代理（2D 网格切片；docs/15 持续项）：寻路由确定性 nav 模块完成。
+    - struct: NavAgent
+      roles: [nav_agent]
+      fields:
+        - { name: tx,          type: float,  default: 0.0F }     # 目标（世界坐标）
+        - { name: ty,          type: float,  default: 0.0F }
+        - { name: speed,       type: float,  default: 60.0F }    # 像素/秒
+        - { name: arrive_dist, type: float,  default: 2.0F }
+        - { name: repath,      type: bool,   default: true }     # 目标移动时重算
+        - { name: has_target,  type: bool,   default: false }
+        - { name: state,       type: int32_t, default: 0 }       # 0 空闲 1 移动 2 到达 3 无路
+    # 相机（docs/13）：按 role 提取，引擎不认具体组件类型。
+    - struct: Camera
+      roles: [camera]
+      fields:
+        - { name: x,        type: float, default: 0.0F }        # 世界坐标（相机中心）
+        - { name: y,        type: float, default: 0.0F }
+        - { name: zoom,     type: float, default: 1.0F }        # 1 = 1:1 像素
+        - { name: rotation, type: float, default: 0.0F }        # 弧度
+        - { name: active,   type: bool,  default: true }
+    - struct: Scene
+      fields:
+        - { name: title,    type: string,  default: "maque scene" }
+        - { name: script,   type: string,  default: "" }      # 关联脚本资源（相对场景目录）
+        # 多脚本（多语言）协作：按**声明顺序**创建 VM 并投递事件（确定性）。
+        # 留空则用上面的 script；两者都给时 scripts 生效。
+        - { name: scripts,  type: "string[]", doc: "多脚本列表（多语言，按声明顺序）" }
+        - { name: width,    type: int32_t, default: 320 }
+        - { name: height,   type: int32_t, default: 240 }
+        - { name: seed,     type: uint32_t, default: 0 }
+        - { name: views,    type: int32_t, default: 1 }         # 同屏视图数（VR: 2）
+        - { name: eye_sep,  type: float,   default: 0.0F }      # 眼距/视差（像素）
+        # 物理（docs/15 §3）：求解器由引擎侧确定性模块提供，场景只声明参数
+        - { name: gravity_y,   type: float, default: 900.0F }   # 重力（像素/秒²，y 向下）
+        - { name: restitution, type: float, default: 0.86F }    # 弹性（0..1）
+        # entities 不在此：节点树通用（name/children/components），组件按 type 反射反序列化      # 引擎 RNG 种子（确定性）

@@ -48,7 +48,7 @@
 | 约束 | 影响 |
 |------|------|
 | **不改游戏确定性**（docs/10） | 端点**单线程、帧边界轮询**，非阻塞 IO，无线程；变更类操作在 M5 记账进输入日志 |
-| **协议单一真相**（docs/21） | 新方法一律进 `schema.yaml` 的 `control_list`；新 ABI 一律进 `module_abi`；生成物入库 |
+| **协议单一真相**（docs/21） | 新方法一律进 `schema/` 的 `control_list`；新 ABI 一律进 `module_abi`；生成物入库 |
 | **权限必须可声明**（D2） | `control_list` 项新增 `mutating: true` 标记 → 生成 `mq_control_is_mutating()` 与 MCP 元数据；服务端按会话权限拒绝 |
 | **不引入重依赖** | 游戏侧：POSIX socket（零依赖）；工具侧：`third_party/imgui`（MIT，仅 inspector 链接） |
 | **不碰 GL/EGL**（docs/05 教训） | Inspector 用 **SDL2 + SDL_Renderer2（软件）** 渲染 ImGui，不用 OpenGL/EGL |
@@ -164,12 +164,12 @@
 
 | 落点 | 改动 |
 |------|------|
-| `schema.yaml` → `control_list` | §4 表 11 个方法 + 变更类 `mutating` 标记（含已有变更方法） |
-| `schema.yaml` → `module_abi: control` | `mq_control_server_create/destroy/poll/client_count/stats/close_client`、`mq_control_is_mutating` |
-| `schema.yaml` → `module_abi: obs` | `mq_obs_log_push/at/count/clear`（环形缓冲） |
-| `schema.yaml` → `module_abi: vfs` | `mq_vfs_list`（列目录：name/kind/size） |
-| `schema.yaml` → `module_abi: net` | `mq_net_status`（计数器结构体） |
-| `schema.yaml` → `interface: renderer` | `stats` 记录 + `capture` 能力位 |
+| `schema/` → `control_list` | §4 表 11 个方法 + 变更类 `mutating` 标记（含已有变更方法） |
+| `schema/` → `module_abi: control` | `mq_control_server_create/destroy/poll/client_count/stats/close_client`、`mq_control_is_mutating` |
+| `schema/` → `module_abi: obs` | `mq_obs_log_push/at/count/clear`（环形缓冲） |
+| `schema/` → `module_abi: vfs` | `mq_vfs_list`（列目录：name/kind/size） |
+| `schema/` → `module_abi: net` | `mq_net_status`（计数器结构体） |
+| `schema/` → `interface: renderer` | `stats` 记录 + `capture` 能力位 |
 | 新模块 `modules/control/transport/` | TCP + UDS 端点（非阻塞、行分隔帧、多客户端配额） |
 | 新 host `samples/inspector/` | ImGui 工具（client + 面板 + `--headless`） |
 | `third_party/imgui`（pin commit，**master**） | `imgui_impl_sdl2` + `imgui_impl_sdlrenderer2` |
@@ -225,7 +225,7 @@
 | 截图/预览卡顿 | 按需捕获 + 降采样 + 限频 + 每帧字节预算；抓帧复用已有 CPU 缓冲 |
 | ImGui（master，无 docking）布局受限 | 自绘 splitter + 标签页（§6.1）；不引入多窗口管理 |
 | 工具与游戏的图形栈冲突 | 工具用 SDL_Renderer2（软件）；与游戏 wgpu 完全隔离，工具崩溃不影响游戏 |
-| 协议漂移 | 单一真相 `schema.yaml` + `codegen_drift` 测试 + MCP schema 同源生成 |
+| 协议漂移 | 单一真相 `schema/` + `codegen_drift` 测试 + MCP schema 同源生成 |
 | 大载荷阻塞 | 行上限 + 结构化错误 + （后续）二进制旁路 |
 
 ## 10. 工作量估算

@@ -2,7 +2,7 @@
 """从头文件反向生成 module_abi DSL（迁移辅助工具，非构建依赖）。
 
 用法：python3 tools/hdr2abi.py <header> <module> [<namespace>]
-输出：可直接粘贴进 modules/core/data/schema.yaml 的 module_abi 段。
+输出：可直接粘贴进 modules/core/data/schema/ 的 module_abi 段。
 """
 import re
 import subprocess

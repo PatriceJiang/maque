@@ -1,0 +1,43 @@
+# maque schema 入口（唯一真相的根，SCHEMA.md §1）。
+#
+# schema/ 目录 = 引擎全部公开接口的声明（类型 / 脚本 API / 控制面 / 回调 / 插件接口 / 模块 C ABI），
+# 一个文件一个命名空间（或一个插件接口），目录层级镜像 modules/ 的模块树。
+#
+# 规则：
+#   · 本清单列出**全部** schema 文件，顺序 = 合并顺序（依赖在前）；
+#   · 每个文件可写 `- imports: [<路径>…]`（相对本文件），被 import 的文件先于本文件合并；
+#   · import 图必须无环；字段类型引用（结构依赖）必须落在本文件或 import 闭包内；
+#   · 目录内未被本清单（经 import）覆盖的文件 = 错误；新增文件必须登记到本清单。
+
+- imports:
+    - math.yaml
+    - core/handle.yaml
+    - core/module.yaml
+    - core/reflect.yaml
+    - io/vfs.yaml
+    - io/watcher.yaml
+    - net.yaml
+    - platform.yaml
+    - data/persist.yaml
+    - data/persist_binary.yaml
+    - image.yaml
+    - world/anim.yaml
+    - script.yaml
+    - asset.yaml
+    - world/scene.yaml
+    - ui/ui.yaml
+    - world/scn.yaml
+    - world/audio.yaml
+    - world/physics.yaml
+    - world/nav.yaml
+    - render/render.yaml
+    - render/renderer.yaml
+    - render/text.yaml
+    - input/input.yaml
+    - input/sim.yaml
+    - runtime/runtime.yaml
+    - runtime/host.yaml
+    - runtime/host_scene.yaml
+    - control.yaml
+    - observability/obs.yaml
+    - ui/canvas.yaml

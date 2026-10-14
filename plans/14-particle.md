@@ -199,7 +199,7 @@ typedef struct mq_particle_v1 {
 ```
 
 - **命名空间/符号**：`mq_particle_*` C 符号；C++ 侧薄封装 `particle::` 仅在模块内部。
-- **组件 `ParticleEmitter`**：其 schema 条目（`namespace: particle`）即 `mq_particle_emitter_desc` 的布局唯一真相；codegen 产出 POD 头 + 反射描述，`static_assert(sizeof(...))` 守门（写回 `schema.yaml`，见 docs/06）。
+- **组件 `ParticleEmitter`**：其 schema 条目（`namespace: particle`）即 `mq_particle_emitter_desc` 的布局唯一真相；codegen 产出 POD 头 + 反射描述，`static_assert(sizeof(...))` 守门（写回 `schema/`，见 docs/06）。
 
 ### 2.2 公开类型清单
 
@@ -416,7 +416,7 @@ typedef struct mq_particle_v1 {
 
 ## 5. 开发计划（分阶段 TDD）
 
-1. **阶段 0 · 冻结接口**：落地 `mq_particle.h` 全部类型/函数/错误码/版本；把 `particle` 的 `ParticleEmitter` 回写 `schema.yaml`；codegen 产出 POD + 反射描述；`static_assert` 全过；`MQ_PARTICLE_ABI_VERSION=1`。**接口不完备不得进入阶段 1**。
+1. **阶段 0 · 冻结接口**：落地 `mq_particle.h` 全部类型/函数/错误码/版本；把 `particle` 的 `ParticleEmitter` 回写 `schema/`；codegen 产出 POD + 反射描述；`static_assert` 全过；`MQ_PARTICLE_ABI_VERSION=1`。**接口不完备不得进入阶段 1**。
 2. **阶段 1 · 测试骨架（红）**：实现 §4.1/4.2/4.3 全部用例（实现为空壳 → 全红）；建立 `fake_rng`/`counting_alloc`/`fake_transform_source`/`fake_render_sink`/`assert_sink`。
 3. **阶段 2 · 最小实现到绿**：按序实现 —— ① 实例/句柄/池（reserve/create/destroy）→ ② 发射累加器与采样（确定顺序）→ ③ 积分/老化/回收 → ④ extract/gpu_dispatch → ⑤ checksum/snapshot。每块转绿。
 4. **阶段 3 · 补边界/错误/确定性**：打磨耗尽策略、悬垂句柄、未 reserve、快照往返；打通 D-01..D-08；重构去重、确保热路径零分配（T-38）与无虚函数。

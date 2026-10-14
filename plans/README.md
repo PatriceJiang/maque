@@ -89,7 +89,7 @@
 | 15 | renderer（WebGPU/pass 层） | ✅ | ✅ | ✅ | 🟡 | 相机/分层/批处理/alpha 合成已落地；pass 图待做 |
 | 16 | script（quickjs） | ✅ | ✅ | ✅ | 🟡 | 绑定生成 + 事件回调 + 热重载；capability 沙箱待做 |
 
-**声明即真相（docs/21）**：公开接口全部在 `modules/core/data/schema.yaml` 声明一次 → 生成
+**声明即真相（docs/21）**：公开接口全部在 `modules/core/data/schema/` 声明一次 → 生成
 类型头/描述符/JSON（`class_list`）、引擎 API 声明 + JS 绑定（`api_list`）、插件 C vtable（`interface`）、
 控制面方法 + MCP schema（`control_list`）、脚本事件回调路由（`callbacks`）、模块 C ABI 头（`module_abi`）。
 **禁止手写公开接口**；生成的 ABI 由静态断言守卫，漂移即编译失败。

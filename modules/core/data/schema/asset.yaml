@@ -1,0 +1,342 @@
+# asset —— modules/asset
+- imports: [./math.yaml, ./world/anim.yaml, ./script.yaml]
+
+- namespace: asset
+  version: 1
+  class_list:
+    - enum: FileFormat
+      values:
+        - { name: PNG, value: 0 }
+        - { name: JPG, value: 1 }
+        - { name: GIF, value: 2 }
+    - enum: Topology
+      values:
+        - { name: TriangleList, value: 0 }
+        - { name: LineList, value: 1 }
+        - { name: PointList, value: 2 }
+    - enum: PixelFormat
+      values:
+        - { name: RGBA8, value: 0 }
+        - { name: RGBA8_SRGB, value: 1 }
+        - { name: RGBA16F, value: 2 }
+        - { name: R8, value: 3 }
+        - { name: BC7, value: 4 }
+        - { name: ETC2_RGBA, value: 5 }
+        - { name: ASTC_4x4, value: 6 }
+    - enum: FilterMode
+      values:
+        - { name: Nearest, value: 0 }
+        - { name: Linear, value: 1 }
+    - enum: WrapMode
+      values:
+        - { name: Repeat, value: 0 }
+        - { name: ClampToEdge, value: 1 }
+        - { name: MirroredRepeat, value: 2 }
+    - enum: FontMode
+      values:
+        - { name: Bitmap, value: 0 }
+        - { name: SDF, value: 1 }
+        - { name: MSDF, value: 2 }
+    - enum: CharsetPreset
+      values:
+        - { name: Ascii, value: 0 }
+        - { name: Latin, value: 1 }
+        - { name: LatinAndCJK, value: 2 }
+        - { name: AllOfFont, value: 3 }
+    - enum: ParamType
+      values:
+        - { name: Float, value: 0 }
+        - { name: Int, value: 1 }
+        - { name: UInt, value: 2 }
+        - { name: Vec2, value: 3 }
+        - { name: Vec3, value: 4 }
+        - { name: Vec4, value: 5 }
+        - { name: Color, value: 6 }
+        - { name: Mat3, value: 7 }
+        - { name: Mat4, value: 8 }
+        - { name: Texture, value: 9 }
+        - { name: Sampler, value: 10 }
+    - enum: CullMode
+      values:
+        - { name: None, value: 0 }
+        - { name: Front, value: 1 }
+        - { name: Back, value: 2 }
+    - enum: BlendFactor
+      values:
+        - { name: Zero, value: 0 }
+        - { name: One, value: 1 }
+        - { name: SrcAlpha, value: 2 }
+        - { name: OneMinusSrcAlpha, value: 3 }
+        - { name: DstAlpha, value: 4 }
+        - { name: OneMinusDstAlpha, value: 5 }
+    - enum: TrackKind
+      values:
+        - { name: Property, value: 0 }
+        - { name: Bone, value: 1 }
+    - enum: ValueType
+      values:
+        - { name: Float, value: 0 }
+        - { name: Vec2, value: 1 }
+        - { name: Vec3, value: 2 }
+        - { name: Quat, value: 3 }
+        - { name: Color, value: 4 }
+        - { name: Bool, value: 5 }
+    - struct: SubMesh
+      size: 12
+      fields:
+        - { name: first_index, type: uint32_t, default: 0 }
+        - { name: index_count, type: uint32_t, default: 0 }
+        - { name: material_slot, type: uint16_t, default: 0 }
+    - struct: BoneB
+      size: 112
+      fields:
+        - { name: name_hash, type: uint32_t, default: 0 }
+        - { name: parent, type: int16_t, default: -1 }
+        - { name: bind_position, type: math.Vec3 }
+        - { name: bind_rotation, type: math.Quat }
+        - { name: bind_scale, type: math.Vec3, default: "{1.0F, 1.0F, 1.0F}" }
+        - { name: inverse_bind, type: math.Mat4 }
+    - struct: SpriteFrame
+      size: 20
+      fields:
+        - { name: region, type: math.Rect, default: "{0.0F, 0.0F, 1.0F, 1.0F}" }
+        - { name: duration, type: float, default: 0.1F, attrs: { unit: s, range: [0, 100] } }
+    - struct: Key
+      size: 28
+      fields:
+        - { name: time, type: float, default: 0.0F, attrs: { unit: s } }
+        - { name: value, type: math.Vec4 }
+        - { name: in_tangent, type: float, default: 0.0F }
+        - { name: out_tangent, type: float, default: 0.0F }
+    - struct: Track
+      fields:
+        - { name: kind, type: TrackKind, default: "TrackKind::Property" }
+        # 目标字段路径（点分，如 "scn.Sprite.radius"）；文本优先、可 diff（docs/08）
+        - { name: field_path, type: string, default: "" }
+        - { name: bone_index, type: uint16_t, default: 0 }
+        - { name: value_type, type: ValueType, default: "ValueType::Float" }
+        - { name: interpolation, type: anim.InterpMode, default: "anim.InterpMode::Inherit" }
+        - { name: key_count, type: uint16_t, default: 0 }
+        - { name: keys, type: "Key[]" }
+    - struct: EffectParam
+      fields:
+        - { name: name, type: string }
+        - { name: type, type: ParamType, default: "ParamType::Float" }
+        - { name: default_value, type: string }
+    - struct: MaterialParam
+      fields:
+        - { name: name, type: string }
+        - { name: type, type: ParamType, default: "ParamType::Float" }
+        - { name: value, type: string }
+    - struct: Texture
+      fields:
+        - { name: width, type: uint32_t, default: 0 }
+        - { name: height, type: uint32_t, default: 0 }
+        - { name: file_format, type: FileFormat, default: "FileFormat::PNG" }
+        - { name: data, type: "uint8_t[]" }
+        - { name: pixel_format, type: PixelFormat, default: "PixelFormat::RGBA8" }
+        - { name: mip_levels, type: uint8_t, default: 1 }
+        - { name: srgb, type: bool, default: true }
+        - { name: filter, type: FilterMode, default: "FilterMode::Linear" }
+        - { name: wrap_u, type: WrapMode, default: "WrapMode::Repeat" }
+        - { name: wrap_v, type: WrapMode, default: "WrapMode::Repeat" }
+    - struct: Mesh
+      fields:
+        - { name: vertices, type: "math.Vec3[]" }
+        - { name: indices, type: "uint32_t[]" }
+        - { name: normals, type: "math.Vec3[]" }
+        - { name: uvs, type: "math.Vec2[]" }
+        - { name: colors, type: "math.Vec4[]" }
+        - { name: tangents, type: "math.Vec4[]" }
+        - { name: joints, type: "uint16_t[]" }
+        - { name: weights, type: "math.Vec4[]" }
+        - { name: topology, type: Topology, default: "Topology::TriangleList" }
+        - { name: submeshes, type: "SubMesh[]" }
+        - { name: bounds, type: math.Aabb }
+    - struct: Font
+      fields:
+        - { name: name, type: string }
+        - { name: source, type: string }
+        - { name: mode, type: FontMode, default: "FontMode::SDF" }
+        - { name: sizes, type: "uint32_t[]" }
+        - { name: charset_preset, type: CharsetPreset, default: "CharsetPreset::Latin" }
+        - { name: charset_ranges, type: "string[]" }
+        - { name: charset_extra, type: "string[]" }
+        - { name: sdf_spread, type: float, default: 8.0F }
+        - { name: sdf_px_range, type: float, default: 4.0F }
+        - { name: atlas_max_size, type: uint32_t, default: 2048 }
+        - { name: atlas_padding, type: uint32_t, default: 2 }
+        - { name: bold, type: bool, default: false }
+        - { name: italic, type: bool, default: false }
+        - { name: fallback, type: "string[]" }
+    - struct: AnimationClip
+      fields:
+        - { name: name, type: string }
+        - { name: length, type: float, default: 0.0F, attrs: { unit: s, readonly: true } }
+        - { name: loop, type: anim.LoopMode, default: "anim.LoopMode::Loop" }
+        - { name: interpolation, type: anim.InterpMode, default: "anim.InterpMode::Linear" }
+        - { name: fps, type: float, default: 30.0F }
+        - { name: tracks, type: "Track[]" }
+    - struct: SkeletonData
+      fields:
+        - { name: name, type: string }
+        - { name: bones, type: "BoneB[]" }
+        - { name: skinning, type: anim.SkinningMode, default: "anim::SkinningMode::Linear" }
+        - { name: constraints, type: "string[]" }
+    - struct: SpineAtlas
+      fields:
+        - { name: name, type: string }
+        - { name: textures, type: "asset_ref<Texture>[]", attrs: { ref: Texture } }
+        - { name: regions, type: "string[]" }
+    - struct: SpineData
+      fields:
+        - { name: name, type: string }
+        - { name: skeleton, type: string }
+        - { name: atlas, type: "asset_ref<SpineAtlas>", attrs: { ref: SpineAtlas } }
+        - { name: textures, type: "asset_ref<Texture>[]", attrs: { ref: Texture } }
+        - { name: skins, type: "string[]" }
+        - { name: animations, type: "string[]" }
+    - struct: Effect
+      fields:
+        - { name: name, type: string }
+        - { name: wgsl, type: string }
+        - { name: params, type: "EffectParam[]" }
+        - { name: blend_src, type: BlendFactor, default: "BlendFactor::SrcAlpha" }
+        - { name: blend_dst, type: BlendFactor, default: "BlendFactor::OneMinusSrcAlpha" }
+        - { name: depth_test, type: bool, default: true }
+        - { name: depth_write, type: bool, default: true }
+        - { name: cull_mode, type: CullMode, default: "CullMode::Back" }
+        - { name: primitive, type: Topology, default: "Topology::TriangleList" }
+    - struct: Material
+      fields:
+        - { name: name, type: string }
+        - { name: effect, type: "asset_ref<Effect>", attrs: { ref: Effect } }
+        - { name: params, type: "MaterialParam[]" }
+    - struct: MaterialInstance
+      fields:
+        - { name: name, type: string }
+        - { name: parent, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: overrides, type: "MaterialParam[]" }
+    - struct: Scene
+      fields:
+        - { name: name, type: string }
+        - { name: root, type: entity_ref, attrs: { ref: "scene.Node" } }
+    - struct: Prefab
+      fields:
+        - { name: name, type: string }
+        - { name: root, type: entity_ref, attrs: { ref: "scene.Node" } }
+    - struct: RenderTarget
+      fields:
+        - { name: name, type: string }
+        - { name: width, type: uint32_t, default: 0 }
+        - { name: height, type: uint32_t, default: 0 }
+    - struct: TileSet
+      fields:
+        - { name: name, type: string }
+        - { name: texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: tile_size, type: math.Vec2, default: "{16.0F, 16.0F}" }
+        - { name: tile_count, type: uint32_t, default: 0 }
+    - struct: SpriteFrames
+      fields:
+        - { name: name, type: string }
+        - { name: frames, type: "SpriteFrame[]" }
+    - struct: AnimatorController
+      fields:
+        - { name: name, type: string }
+        - { name: states, type: "string[]" }
+        - { name: parameters, type: "string[]" }
+        - { name: transitions, type: "string[]" }
+    - struct: ScriptAsset
+      fields:
+        - { name: name, type: string }
+        - { name: language, type: script.ScriptLanguage, default: "script::ScriptLanguage::JS" }
+        - { name: source, type: string }
+    - struct: AudioClip
+      fields:
+        - { name: name, type: string }
+        - { name: source, type: string }
+        - { name: length, type: float, default: 0.0F, attrs: { unit: s } }
+        - { name: sample_rate, type: uint32_t, default: 0 }
+        - { name: channels, type: uint8_t, default: 1 }
+    - struct: AudioBus
+      fields:
+        - { name: name, type: string }
+        - { name: volume, type: float, default: 1.0F }
+        - { name: mute, type: bool, default: false }
+    - struct: AudioCurve
+      fields:
+        - { name: name, type: string }
+        - { name: points, type: "math.Vec2[]" }
+    - struct: NavMeshData
+      fields:
+        - { name: name, type: string }
+        - { name: vertices, type: "math.Vec3[]" }
+        - { name: indices, type: "uint32_t[]" }
+        - { name: cell_size, type: float, default: 0.3F, attrs: { unit: m } }
+    - struct: TerrainData
+      fields:
+        - { name: name, type: string }
+        - { name: height_map, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: width, type: uint32_t, default: 0 }
+        - { name: height, type: uint32_t, default: 0 }
+        - { name: layer_count, type: uint8_t, default: 1 }
+  module_abi:
+    module: asset
+    abi_name: "maque.asset"
+    summary: "资产管线：导入 → 依赖图 → 烘焙 → 打包 → dump（docs/08、ADR-0009）"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_vfs, mq_asset_db ]
+    macros:
+      - { name: MQ_ASSET_FLAG_COOKED, value: "1u", doc: "bit0：已有烘焙产物" }
+      - { name: MQ_ASSET_FLAG_MISSING_DEP, value: "2u", doc: "bit1：存在缺失依赖（查询时实时计算）" }
+    enums:
+      - doc: "错误码（0 = OK）。"
+        values:
+          - { name: MQ_ASSET_OK,             value: 0 }
+          - { name: MQ_ASSET_ERR_ARG,        value: 1 }
+          - { name: MQ_ASSET_ERR_NOT_FOUND,  value: 2 }
+          - { name: MQ_ASSET_ERR_IO,         value: 3 }
+          - { name: MQ_ASSET_ERR_FORMAT,     value: 4 }
+          - { name: MQ_ASSET_ERR_NO_MEM,     value: 5 }
+          - { name: MQ_ASSET_ERR_DEPENDENCY, value: 6 }
+          - { name: MQ_ASSET_ERR_DUPLICATE,  value: 7 }
+      - name: mq_asset_kind
+        doc: "资源种类（与 schema 的 asset 命名空间对应；未知类型用 Other）。"
+        values:
+          - { name: MQ_ASSET_KIND_OTHER,     value: 0 }
+          - { name: MQ_ASSET_KIND_TEXTURE,   value: 1 }
+          - { name: MQ_ASSET_KIND_MATERIAL,  value: 2 }
+          - { name: MQ_ASSET_KIND_MESH,      value: 3 }
+          - { name: MQ_ASSET_KIND_FONT,      value: 4 }
+          - { name: MQ_ASSET_KIND_ANIMATION, value: 5 }
+          - { name: MQ_ASSET_KIND_SCENE,     value: 6 }
+          - { name: MQ_ASSET_KIND_SCRIPT,    value: 7 }
+    structs:
+      - name: mq_asset_info
+        doc: "资源记录（稳定 ID / 源路径 / 烘焙产物 / 内容哈希）。"
+        fields:
+          - { name: id, type: "uint64_t", doc: "稳定 ID（内容哈希派生；同内容同 ID）" }
+          - { name: kind, type: "mq_asset_kind" }
+          - { name: source, type: "char[256]", doc: "源路径（相对 VFS 挂载根）" }
+          - { name: cooked, type: "char[256]", doc: "烘焙产物路径（未烘焙为空）" }
+          - { name: source_hash, type: "uint64_t", doc: "源内容哈希（FNV-1a 64）" }
+          - { name: cooked_hash, type: "uint64_t", doc: "产物哈希（未烘焙为 0）" }
+          - { name: dep_count, type: "uint32_t", doc: "依赖数" }
+          - { name: flags, type: "uint32_t", doc: "bit0 已烘焙, bit1 有缺失依赖" }
+    fns:
+      - { fn: mq_asset_create,           returns: "mq_asset_db*", args: [ { name: vfs, type: "mq_vfs*" } ], doc: "vfs 由调用方持有（只借用）；NULL = 纯内存模式" }
+      - { fn: mq_asset_destroy,          returns: void,     args: [ { name: db, type: "mq_asset_db*" } ] }
+      - { fn: mq_asset_import,           returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: path, type: "const char*" }, { name: out, type: "mq_asset_info*" } ] }
+      - { fn: mq_asset_find,             returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: path, type: "const char*" }, { name: out, type: "mq_asset_info*" } ] }
+      - { fn: mq_asset_find_by_id,       returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: id, type: "uint64_t" }, { name: out, type: "mq_asset_info*" } ] }
+      - { fn: mq_asset_count,            returns: uint32_t, args: [ { name: db, type: "mq_asset_db*" } ] }
+      - { fn: mq_asset_info_at,          returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: index, type: "uint32_t" }, { name: out, type: "mq_asset_info*" } ] }
+      - { fn: mq_asset_add_dependency,   returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: path, type: "const char*" }, { name: dep_path, type: "const char*" } ] }
+      - { fn: mq_asset_dependency_count, returns: uint32_t, args: [ { name: db, type: "mq_asset_db*" }, { name: path, type: "const char*" } ] }
+      - { fn: mq_asset_dependency_at,    returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: path, type: "const char*" }, { name: index, type: "uint32_t" }, { name: out, type: "char*" }, { name: out_cap, type: "size_t" } ] }
+      - { fn: mq_asset_toposort,         returns: uint32_t, args: [ { name: db, type: "mq_asset_db*" }, { name: out, type: "char(*)[256]" }, { name: out_cap, type: "uint32_t" } ] }
+      - { fn: mq_asset_validate,         returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: missing_out, type: "char*" }, { name: missing_cap, type: "size_t" } ] }
+      - { fn: mq_asset_cook,             returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: path, type: "const char*" }, { name: out_path, type: "const char*" } ] }
+      - { fn: mq_asset_pack,             returns: int,      args: [ { name: db, type: "mq_asset_db*" }, { name: paths, type: "const char* const*" }, { name: count, type: "uint32_t" }, { name: out_path, type: "const char*" } ] }
+      - { fn: mq_asset_dump_json,        returns: "const char*", args: [ { name: db, type: "mq_asset_db*" } ] }
+      - { fn: mq_asset_count_kind,       returns: uint32_t, args: [ { name: db, type: "mq_asset_db*" }, { name: kind, type: "mq_asset_kind" } ] }

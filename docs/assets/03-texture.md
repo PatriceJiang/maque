@@ -8,7 +8,7 @@
 ## 1. 定位与归属
 
 - **归属模块**：`renderer`（GPU 消费）；导入/烘焙由 `ai` 模块（`08 §6`）。
-- **命名空间**：`asset.Texture`（`modules/core/data/schema.yaml`）。
+- **命名空间**：`asset.Texture`（`modules/core/data/schema/`）。
 - **作用**：承载**二维像素数据**（颜色/遮罩/精灵表/粒子图/UI 图集），供：
   - `Sprite.texture` / `TileSet`（`03 §Sprite`/`§TileMap`）；
   - `Image.texture` / `TextLabel` 字形图集（`04`）；
@@ -49,7 +49,7 @@ texture:
 
 ## 4. 结构 / 字段（schema 风格）
 
-与 `schema.yaml` 的 `asset.Texture` 对齐（`06 §3`）：
+与 `schema/` 的 `asset.Texture` 对齐（`06 §3`）：
 
 ```yaml
 - namespace: asset

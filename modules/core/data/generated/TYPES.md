@@ -1,11 +1,11 @@
 # maque 数据类型参考（自动生成）
 
-> ⚠️ 由 `modules/core/data/parser.js` 从 `schema.yaml` 生成，**请勿手工编辑**。
+> ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
 共 **242** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
-## anim（29）
+## anim（29） · `world/anim.yaml`
 
 ### anim.AnimatedSprite — struct (变长（含动态成员）)
 
@@ -301,7 +301,7 @@
 | `Process` | 0 |
 | `Physics` | 1 |
 
-## asset（41）
+## asset（41） · `asset.yaml`
 
 ### asset.AnimationClip — struct (变长（含动态成员）)
 
@@ -697,7 +697,7 @@
 | `ClampToEdge` | 1 |
 | `MirroredRepeat` | 2 |
 
-## audio（5）
+## audio（5） · `world/audio.yaml`
 
 ### audio.AttenuationModel — enum
 
@@ -753,7 +753,7 @@
 | `Spatial3D` | 1 |
 | `Spatial3D_HRTF` | 2 |
 
-## input（3）
+## input（3） · `input/input.yaml`
 
 ### input.CursorShape — enum
 
@@ -785,7 +785,7 @@
 | `Touch` | 1 |
 | `Pen` | 2 |
 
-## math（14）
+## math（14） · `math.yaml`
 
 ### math.Aabb — struct (24B)
 
@@ -896,7 +896,7 @@
 | `z` | float | 0.0F |  |
 | `w` | float | 0.0F |  |
 
-## nav（6）
+## nav（6） · `world/nav.yaml`
 
 ### nav.NavAgent — struct (变长（含动态成员）)
 
@@ -971,7 +971,7 @@
 | `Colliders` | 1 |
 | `Explicit` | 2 |
 
-## physics（15）
+## physics（15） · `world/physics.yaml`
 
 ### physics.Area — struct (56B)
 
@@ -1170,7 +1170,7 @@ role: `physics_body`
 | `Combine` | 1 |
 | `Replace` | 2 |
 
-## render（45）
+## render（45） · `render/render.yaml`
 
 ### render.Billboard — struct (变长（含动态成员）)
 
@@ -1688,7 +1688,7 @@ role: `ui_text`
 | `z_index` | int32_t | 0 |  |
 | `collision_source` | asset_ref<TileSet> | — | ref: TileSet, deprecated |
 
-## scene（9）
+## scene（9） · `world/scene.yaml`
 
 ### scene.Active — struct (2B)
 
@@ -1764,7 +1764,7 @@ role: `ui_text`
 | `rotation_quat` | math.Quat | — | transient |
 | `world_dirty` | uint8_t | 1 | transient |
 
-## scn（11）
+## scn（11） · `world/scn.yaml`
 
 ### scn.AnimationPlayer — struct (变长（含动态成员）)
 
@@ -1923,7 +1923,7 @@ role: `transform2d`
 | `x` | float | 0.0F |  |
 | `y` | float | 0.0F |  |
 
-## script（5）
+## script（5） · `script.yaml`
 
 ### script.PropertyVariant — struct (变长（含动态成员）)
 
@@ -1983,7 +1983,7 @@ role: `transform2d`
 | `Python` | 2 |
 | `V8` | 3 |
 
-## ui（59）
+## ui（59） · `ui/ui.yaml`
 
 ### ui.Align — enum
 

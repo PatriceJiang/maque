@@ -1,0 +1,15 @@
+# obs —— modules/observability
+- namespace: obs
+  version: 1
+  module_abi:
+    module: obs
+    abi_name: "maque.obs"
+    opaque: [ mq_obs_ctx ]
+    fns:
+      - { fn: mq_obs_create, returns: "mq_obs_ctx*", args: [  ] }
+      - { fn: mq_obs_destroy, returns: "void", args: [ { name: ctx, type: "mq_obs_ctx*" } ] }
+      - { fn: mq_obs_event, returns: "void", args: [ { name: ctx, type: "mq_obs_ctx*" }, { name: domain, type: "const char*" }, { name: level, type: "int" }, { name: event, type: "const char*" } ] }
+      - { fn: mq_obs_counter_add, returns: "void", args: [ { name: ctx, type: "mq_obs_ctx*" }, { name: name, type: "const char*" }, { name: delta, type: "double" } ] }
+      - { fn: mq_obs_gauge_set, returns: "void", args: [ { name: ctx, type: "mq_obs_ctx*" }, { name: name, type: "const char*" }, { name: value, type: "double" } ] }
+      - { fn: mq_obs_gauge_get, returns: "double", args: [ { name: ctx, type: "mq_obs_ctx*" }, { name: name, type: "const char*" } ] }
+      - { fn: mq_obs_dump_json, returns: "const char*", args: [ { name: ctx, type: "mq_obs_ctx*" } ] }

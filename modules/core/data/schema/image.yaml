@@ -1,0 +1,16 @@
+# image —— modules/image
+- namespace: image
+  version: 1
+  module_abi:
+    module: image
+    abi_name: "maque.image"
+    summary: "图像解码（Wuffs）：PNG/JPEG/GIF/BMP → RGBA8(非预乘)"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    fns:
+      - { fn: mq_image_decode, returns: int,
+          args: [ { name: data, type: "const void*" }, { name: size, type: "size_t" },
+                  { name: out_rgba, type: "uint8_t**" }, { name: out_w, type: "uint32_t*" },
+                  { name: out_h, type: "uint32_t*" }, { name: err, type: "char*" },
+                  { name: err_cap, type: "size_t" } ],
+          doc: "失败原因写入 err（可为 NULL）；无模块级错误状态（ADR-0014）" }
+      - { fn: mq_image_free, returns: void, args: [ { name: p, type: "void*" } ] }

@@ -1,0 +1,392 @@
+# render —— modules/render/gfx
+- imports: [../math.yaml, ../ui/ui.yaml]
+
+- namespace: render
+  version: 1
+  class_list:
+    - enum: FlipMode
+      values:
+        - { name: None, value: 0 }
+        - { name: Horizontal, value: 1 }
+        - { name: Vertical, value: 2 }
+        - { name: Both, value: 3 }
+    - enum: PivotAnchor
+      values:
+        - { name: TopLeft, value: 0 }
+        - { name: Center, value: 1 }
+        - { name: BottomCenter, value: 2 }
+        - { name: Custom, value: 3 }
+    - enum: CameraProjection
+      values:
+        - { name: Perspective, value: 0 }
+        - { name: Orthographic, value: 1 }
+    - enum: ClearMode
+      values:
+        - { name: Skybox, value: 0 }
+        - { name: Color, value: 1 }
+        - { name: DepthOnly, value: 2 }
+        - { name: None, value: 3 }
+    - enum: ShadowCastMode
+      values:
+        - { name: Off, value: 0 }
+        - { name: On, value: 1 }
+        - { name: DoubleSided, value: 2 }
+    - enum: LightType
+      values:
+        - { name: Directional, value: 0 }
+        - { name: Point, value: 1 }
+        - { name: Spot, value: 2 }
+    - enum: ShadowMode
+      values:
+        - { name: Off, value: 0 }
+        - { name: Hard, value: 1 }
+        - { name: Soft, value: 2 }
+    - enum: LayerKind
+      values:
+        - { name: Canvas2D, value: 0 }
+        - { name: World3D, value: 1 }
+        - { name: UI, value: 2 }
+    - enum: BlendMode
+      values:
+        - { name: Alpha, value: 0 }
+        - { name: Additive, value: 1 }
+        - { name: Multiply, value: 2 }
+    - enum: RichTagType
+      values:
+        - { name: Text, value: 0 }
+        - { name: Color, value: 1 }
+        - { name: Bold, value: 2 }
+        - { name: Italic, value: 3 }
+        - { name: Underline, value: 4 }
+        - { name: Strikethrough, value: 5 }
+        - { name: Font, value: 6 }
+        - { name: Size, value: 7 }
+        - { name: Outline, value: 8 }
+        - { name: Image, value: 9 }
+        - { name: Link, value: 10 }
+    - enum: ImageAlign
+      values:
+        - { name: Baseline, value: 0 }
+        - { name: Center, value: 1 }
+        - { name: Top, value: 2 }
+        - { name: Bottom, value: 3 }
+    - enum: GraphicsOp
+      values:
+        - { name: Line, value: 0 }
+        - { name: Polyline, value: 1 }
+        - { name: Polygon, value: 2 }
+        - { name: Rect, value: 3 }
+        - { name: Circle, value: 4 }
+        - { name: Ellipse, value: 5 }
+        - { name: Arc, value: 6 }
+        - { name: QuadraticBezier, value: 7 }
+        - { name: CubicBezier, value: 8 }
+        - { name: ConvexPoly, value: 9 }
+    - enum: GraphicsFlags
+      underlying: uint32_t
+      values:
+        - { name: Fill, value: 1 }
+        - { name: Stroke, value: 2 }
+        - { name: Closed, value: 4 }
+    - enum: LineJoin
+      values:
+        - { name: Miter, value: 0 }
+        - { name: Bevel, value: 1 }
+        - { name: Round, value: 2 }
+    - enum: LineCap
+      values:
+        - { name: None, value: 0 }
+        - { name: Butt, value: 1 }
+        - { name: Round, value: 2 }
+        - { name: Square, value: 3 }
+    - enum: FillRule
+      values:
+        - { name: NonZero, value: 0 }
+        - { name: EvenOdd, value: 1 }
+    - enum: StreakMode
+      values:
+        - { name: Ribbon, value: 0 }
+        - { name: Line, value: 1 }
+        - { name: Points, value: 2 }
+    - enum: StreakFade
+      values:
+        - { name: None, value: 0 }
+        - { name: Head, value: 1 }
+        - { name: Tail, value: 2 }
+        - { name: Both, value: 3 }
+    - enum: BillboardFacing
+      values:
+        - { name: FullScreen, value: 0 }
+        - { name: YAxisLocked, value: 1 }
+        - { name: ViewPlane, value: 2 }
+        - { name: LookAtCamera, value: 3 }
+    - enum: BillboardPivot
+      values:
+        - { name: Center, value: 0 }
+        - { name: Bottom, value: 1 }
+    - enum: ProbeSource
+      values:
+        - { name: Baked, value: 0 }
+        - { name: Realtime, value: 1 }
+    - enum: ProbeUpdateMode
+      values:
+        - { name: OnLoad, value: 0 }
+        - { name: EveryFrame, value: 1 }
+        - { name: Interval, value: 2 }
+    - enum: ProbeShape
+      values:
+        - { name: Sphere, value: 0 }
+        - { name: Box, value: 1 }
+    - enum: EnvironmentSource
+      values:
+        - { name: None, value: 0 }
+        - { name: Color, value: 1 }
+        - { name: Gradient, value: 2 }
+        - { name: Texture, value: 3 }
+    - enum: SkyboxMode
+      values:
+        - { name: Procedural, value: 0 }
+        - { name: Cubemap, value: 1 }
+        - { name: Equirect, value: 2 }
+        - { name: Color, value: 3 }
+    - enum: TerrainLodMode
+      values:
+        - { name: Auto, value: 0 }
+        - { name: Fixed, value: 1 }
+    - struct: TileCoord
+      size: 8
+      fields:
+        - { name: x, type: int32_t, default: 0 }
+        - { name: y, type: int32_t, default: 0 }
+    - struct: RichRun
+      size: 36
+      fields:
+        - { name: tag, type: RichTagType, default: "RichTagType::Text" }
+        - { name: text_begin, type: uint32_t, default: 0 }
+        - { name: text_len, type: uint32_t, default: 0 }
+        - { name: color, type: math.Color }
+        - { name: font_size, type: float, default: 16.0F }
+        - { name: link, type: uint32_t, default: 4294967295 }
+    - struct: DrawCommand
+      size: 52
+      fields:
+        - { name: op, type: GraphicsOp, default: "GraphicsOp::Line" }
+        - { name: first, type: uint32_t, default: 0 }
+        - { name: count, type: uint32_t, default: 0 }
+        - { name: flags, type: uint32_t, default: 0 }
+        - { name: color, type: math.Color }
+        - { name: param, type: math.Vec4 }
+        - { name: width, type: float, default: 0.0F }
+    - struct: StreakSample
+      size: 16
+      fields:
+        - { name: pos, type: math.Vec2 }
+        - { name: age, type: float, default: 0.0F }
+        - { name: width, type: float, default: 0.0F }
+    - struct: TerrainLevel
+      size: 12
+      fields:
+        - { name: level, type: uint8_t, default: 0 }
+        - { name: max_distance, type: float, default: 0.0F, attrs: { unit: m } }
+        - { name: resolution, type: uint16_t, default: 0 }
+    - struct: Sprite
+      fields:
+        - { name: texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: region, type: math.Rect, default: "{0.0F, 0.0F, 1.0F, 1.0F}" }
+        - { name: hframes, type: uint16_t, default: 1, attrs: { range: [1, 1024] } }
+        - { name: vframes, type: uint16_t, default: 1, attrs: { range: [1, 1024] } }
+        - { name: frame, type: uint16_t, default: 0, attrs: { range: [0, 65535] } }
+        - { name: flip, type: FlipMode, default: "FlipMode::None" }
+        - { name: color, type: math.Color }
+        - { name: pivot, type: math.Vec2, default: "{0.5F, 0.5F}", attrs: { unit: normalized } }
+        - { name: pivot_anchor, type: PivotAnchor, default: "PivotAnchor::Center" }
+        - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: z_index, type: int32_t, default: 0 }
+    - struct: TileMap
+      fields:
+        - { name: tileset, type: "asset_ref<TileSet>", attrs: { ref: TileSet } }
+        - { name: cell_size, type: math.Vec2, default: "{16.0F, 16.0F}", attrs: { unit: px } }
+        - { name: columns, type: uint32_t, default: 0, attrs: { readonly: true } }
+        - { name: rows, type: uint32_t, default: 0 }
+        - { name: tile_ids, type: "uint32_t[]" }
+        - { name: origin, type: TileCoord }
+        - { name: modulate, type: math.Color }
+        - { name: z_index, type: int32_t, default: 0 }
+        - { name: collision_source, type: "asset_ref<TileSet>", attrs: { ref: TileSet, deprecated: true } }
+    - struct: Camera2D
+      fields:
+        - { name: active, type: bool, default: true }
+        - { name: priority, type: int32_t, default: 0 }
+        - { name: zoom, type: math.Vec2, default: "{1.0F, 1.0F}" }
+        - { name: offset, type: math.Vec2 }
+        - { name: viewport, type: math.Rect, default: "{0.0F, 0.0F, 1.0F, 1.0F}", attrs: { unit: normalized } }
+        - { name: layer_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
+        - { name: clear_color, type: math.Color }
+    - struct: Camera3D
+      fields:
+        - { name: active, type: bool, default: true }
+        - { name: priority, type: int32_t, default: 0 }
+        - { name: projection, type: CameraProjection, default: "CameraProjection::Perspective" }
+        - { name: fov_y, type: float, default: 60.0F, attrs: { unit: deg } }
+        - { name: ortho_height, type: float, default: 2.0F }
+        - { name: near, type: float, default: 0.1F }
+        - { name: far, type: float, default: 1000.0F }
+        - { name: viewport, type: math.Rect, default: "{0.0F, 0.0F, 1.0F, 1.0F}", attrs: { unit: normalized } }
+        - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
+        - { name: clear_mode, type: ClearMode, default: "ClearMode::Skybox" }
+        - { name: clear_color, type: math.Color }
+        - { name: exposure, type: float, default: 1.0F }
+    - struct: MeshRenderer
+      fields:
+        - { name: mesh, type: "asset_ref<Mesh>", attrs: { ref: Mesh } }
+        - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: material_overrides, type: "asset_ref<Material>[]", attrs: { ref: Material } }
+        - { name: cast_shadow, type: ShadowCastMode, default: "ShadowCastMode::On" }
+        - { name: receive_shadow, type: bool, default: true }
+        - { name: visible, type: bool, default: true }
+        - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
+        - { name: layer, type: entity_ref, attrs: { ref: RenderLayer, weak: true } }
+    - struct: Light
+      fields:
+        - { name: type, type: LightType, default: "LightType::Directional" }
+        - { name: color, type: math.Color }
+        - { name: intensity, type: float, default: 1.0F }
+        - { name: range, type: float, default: 10.0F, attrs: { unit: m } }
+        - { name: inner_angle, type: float, default: 20.0F, attrs: { unit: deg } }
+        - { name: outer_angle, type: float, default: 30.0F, attrs: { unit: deg } }
+        - { name: shadow_mode, type: ShadowMode, default: "ShadowMode::Off" }
+        - { name: shadow_bias, type: float, default: 0.001F }
+        - { name: shadow_distance, type: float, default: 50.0F, attrs: { unit: m } }
+        - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
+        - { name: priority, type: int32_t, default: 0 }
+        - { name: layer, type: entity_ref, attrs: { ref: RenderLayer, weak: true } }
+    - struct: RenderLayer
+      fields:
+        - { name: kind, type: LayerKind, default: "LayerKind::World3D" }
+        - { name: order, type: int32_t, default: 0 }
+        - { name: visible, type: bool, default: true }
+        - { name: camera, type: entity_ref, attrs: { ref: Camera2D, weak: true } }
+        - { name: viewport, type: math.Rect, default: "{0.0F, 0.0F, 1.0F, 1.0F}", attrs: { unit: normalized } }
+        - { name: clear, type: bool, default: true }
+        - { name: clear_color, type: math.Color }
+        - { name: target, type: "asset_ref<RenderTarget>", attrs: { ref: RenderTarget } }
+        - { name: follow_viewport, type: bool, default: true }
+        - { name: offset, type: math.Vec2, attrs: { unit: px } }
+        - { name: blend, type: BlendMode, default: "BlendMode::Alpha" }
+    - struct: RichText
+      roles: [ ui_text ]
+      fields:
+        - { name: text, type: string }
+        - { name: parse_tags, type: bool, default: true }
+        - { name: max_width, type: float, default: 0.0F, attrs: { unit: px, transient: false } }
+        - { name: font, type: "asset_ref<Font>", attrs: { ref: Font } }
+        - { name: font_size, type: float, default: 16.0F, attrs: { unit: px } }
+        - { name: color, type: math.Color, default: "{1.0F, 1.0F, 1.0F, 1.0F}" }
+        - { name: outline_size, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: outline_color, type: math.Color, default: "{0.0F, 0.0F, 0.0F, 1.0F}" }
+        - { name: align_h, type: ui.Align, default: "ui.Align::Begin" }
+        - { name: align_v, type: ui.Align, default: "ui.Align::Begin" }
+        - { name: wrap_mode, type: ui.TextWrap, default: "ui.TextWrap::Word" }
+        - { name: line_spacing, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: image_align, type: ImageAlign, default: "ImageAlign::Baseline" }
+        - { name: meta_underlined, type: bool, default: true }
+        - { name: content_size, type: math.Vec2, attrs: { transient: true } }
+        - { name: runs, type: "RichRun[]", attrs: { transient: true } }
+        - { name: links, type: "string[]", attrs: { transient: true } }
+        - { name: line_count, type: int32_t, default: 0, attrs: { transient: true } }
+    - struct: Graphics
+      fields:
+        - { name: commands, type: "DrawCommand[]" }
+        - { name: points, type: "math.Vec2[]" }
+        - { name: point_colors, type: "math.Color[]" }
+        - { name: fill_color, type: math.Color }
+        - { name: line_color, type: math.Color }
+        - { name: width, type: float, default: 1.0F, attrs: { unit: px } }
+        - { name: line_join, type: LineJoin, default: "LineJoin::Miter" }
+        - { name: line_cap, type: LineCap, default: "LineCap::Butt" }
+        - { name: fill_rule, type: FillRule, default: "FillRule::NonZero" }
+        - { name: miter_limit, type: float, default: 4.0F, attrs: { range: [1, 16] } }
+        - { name: curve_tolerance, type: float, default: 0.25F, attrs: { unit: px } }
+        - { name: antialiased, type: bool, default: true }
+        - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: z_index, type: int32_t, default: 0 }
+        - { name: cache_geometry, type: bool, default: true }
+        - { name: geometry, type: "math.Vec2[]", attrs: { transient: true } }
+        - { name: indices, type: "uint32_t[]", attrs: { transient: true } }
+        - { name: dirty, type: bool, default: true, attrs: { transient: true } }
+    - struct: MotionStreak
+      fields:
+        - { name: mode, type: StreakMode, default: "StreakMode::Ribbon" }
+        - { name: width, type: float, default: 16.0F, attrs: { unit: px } }
+        - { name: width_curve, type: float, default: 1.0F, attrs: { range: [0, 4] } }
+        - { name: color_start, type: math.Color }
+        - { name: color_end, type: math.Color, default: "{1.0F, 1.0F, 1.0F, 0.0F}" }
+        - { name: fade_mode, type: StreakFade, default: "StreakFade::Both" }
+        - { name: lifetime, type: float, default: 0.5F, attrs: { unit: s } }
+        - { name: min_distance, type: float, default: 2.0F, attrs: { unit: px } }
+        - { name: max_points, type: uint32_t, default: 64, attrs: { range: [2, 1024] } }
+        - { name: points_per_sec, type: float, default: 0.0F }
+        - { name: point_size, type: float, default: 4.0F, attrs: { unit: px } }
+        - { name: texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: z_index, type: int32_t, default: 0 }
+        - { name: emit, type: bool, default: true }
+        - { name: samples, type: "StreakSample[]", attrs: { transient: true } }
+        - { name: geometry, type: "math.Vec2[]", attrs: { transient: true } }
+        - { name: indices, type: "uint32_t[]", attrs: { transient: true } }
+    - struct: Billboard
+      fields:
+        - { name: facing, type: BillboardFacing, default: "BillboardFacing::YAxisLocked" }
+        - { name: pivot, type: BillboardPivot, default: "BillboardPivot::Center" }
+        - { name: lock_scale, type: bool, default: false }
+        - { name: align_up, type: math.Vec3, default: "{0.0F, 1.0F, 0.0F}" }
+        - { name: target_camera, type: entity_ref, attrs: { ref: Camera3D, weak: true } }
+        - { name: enabled, type: bool, default: true }
+    - struct: ReflectionProbe
+      fields:
+        - { name: source, type: ProbeSource, default: "ProbeSource::Baked" }
+        - { name: update_mode, type: ProbeUpdateMode, default: "ProbeUpdateMode::OnLoad" }
+        - { name: interval, type: float, default: 1.0F, attrs: { unit: s } }
+        - { name: resolution, type: uint16_t, default: 128, attrs: { range: [32, 1024] } }
+        - { name: shape, type: ProbeShape, default: "ProbeShape::Sphere" }
+        - { name: radius, type: float, default: 10.0F, attrs: { unit: m } }
+        - { name: box_size, type: math.Vec3, default: "{10.0F, 10.0F, 10.0F}", attrs: { unit: m } }
+        - { name: blend_distance, type: float, default: 1.0F, attrs: { unit: m } }
+        - { name: intensity, type: float, default: 1.0F }
+        - { name: priority, type: int32_t, default: 0 }
+        - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
+        - { name: layer, type: entity_ref, attrs: { ref: RenderLayer, weak: true } }
+        - { name: baked_cubemap, type: "asset_ref<Texture>", attrs: { ref: Texture, transient: true } }
+    - struct: Skybox
+      fields:
+        - { name: skybox_mode, type: SkyboxMode, default: "SkyboxMode::Color" }
+        - { name: skybox_texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: skybox_color, type: math.Color, default: "{0.05F, 0.05F, 0.08F, 1.0F}" }
+        - { name: skybox_rotation, type: float, default: 0.0F, attrs: { unit: deg, range: [0, 360] } }
+        - { name: skybox_intensity, type: float, default: 1.0F }
+        - { name: env_source, type: EnvironmentSource, default: "EnvironmentSource::Color" }
+        - { name: env_texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        - { name: env_color, type: math.Color, default: "{0.2F, 0.2F, 0.22F, 1.0F}" }
+        - { name: env_sky_color, type: math.Color, default: "{0.3F, 0.4F, 0.6F, 1.0F}" }
+        - { name: env_ground_color, type: math.Color, default: "{0.2F, 0.18F, 0.15F, 1.0F}" }
+        - { name: env_intensity, type: float, default: 1.0F }
+        - { name: diffuse_contribution, type: float, default: 1.0F, attrs: { range: [0, 1] } }
+        - { name: specular_contribution, type: float, default: 1.0F, attrs: { range: [0, 1] } }
+        - { name: priority, type: int32_t, default: 0 }
+        - { name: active, type: bool, default: true }
+    - struct: Terrain
+      fields:
+        - { name: terrain_data, type: "asset_ref<TerrainData>", attrs: { ref: TerrainData } }
+        - { name: layer_material, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: tile_size, type: float, default: 16.0F, attrs: { unit: m } }
+        - { name: lod_mode, type: TerrainLodMode, default: "TerrainLodMode::Auto" }
+        - { name: lod_levels, type: "TerrainLevel[]" }
+        - { name: fixed_lod, type: uint8_t, default: 0 }
+        - { name: lod_bias, type: float, default: 0.0F }
+        - { name: height_scale, type: float, default: 1.0F }
+        - { name: cast_shadow, type: bool, default: true }
+        - { name: receive_shadow, type: bool, default: true }
+        - { name: visible, type: bool, default: true }
+        - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
+        - { name: layer, type: entity_ref, attrs: { ref: RenderLayer, weak: true } }
+        - { name: lod_chunks, type: "uint16_t[]", attrs: { transient: true } }
