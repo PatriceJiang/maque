@@ -13,7 +13,7 @@
 - **schema = 目录**：一个文件一个模块（目录镜像 `modules/`），入口 `schema.yaml` 登记全部文件，
   文件间 `imports` 声明依赖（合并顺序 = 依赖优先的后序遍历；结构引用必须落在 import 闭包内）。
 - **声明式接口绑定**：`api_list` 一次声明，生成 C++ 头 + JS 绑定（支持 MANUAL 头内联实现）。
-- **脚本优先**：quickjs(JS) 作为游戏逻辑层；帧边界 GC；**帧边界热重载**（IIFE + globalThis 状态迁移）。
+- **脚本优先**：quickjs(JS) 作为游戏逻辑层；帧边界 GC；**帧边界热重载**（按文件增量 + 原子替换 + 槽位不变；状态边界见 docs/14 §7）。
 - **真实 WebGPU 渲染**（wgpu-native）：离屏渲染 + readback；相机（中心/缩放/旋转）、
   分层与 z 稳定排序、按"管线 × 贴图"分批、直通 alpha 合成。
 - **输入即数据**（docs/19）：SDL2 归一化指针/键盘/文本 → 确定性事件流 → 捕获/目标/冒泡分发 →
@@ -76,7 +76,7 @@ ctest --test-dir build --output-on-failure
 
 ```
 modules/
-  core/data       schema.yaml + codegen(parser.js) → maque::schema
+  core/data       schema/ + codegen(parser.js) → maque::schema
   core/reflect    反射运行时 (mq::reflect)
   core/handle     世代句柄槽表
   core/module     模块宿主 (.so / registry)

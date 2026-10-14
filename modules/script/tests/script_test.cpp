@@ -46,7 +46,9 @@ int main() {
     // 语法错误
     CHECK(mq_script_eval(vm, "function ( {", "bad.js") != 0);
 
-    // ---- 热重载语义（docs/14 §6）：IIFE 形态 + 状态经 globalThis 载体迁移 ----
+    // ---- 同一 VM 内二次 eval 的语义（工具/测试路径；引擎热更**不**走这条：热更 = 新建 VM，
+    //      旧 VM 销毁 → globalThis 也随 VM 消失，脚本状态不跨重载，docs/14 §7）：
+    //      IIFE 形态可安全重复 eval（顶层 let/const 不重复声明），状态载体显式放 globalThis ----
     const char* v1 =
         "(function () {\n"
         "  var S = globalThis.__st || (globalThis.__st = { n: 0 });\n"
@@ -59,7 +61,7 @@ int main() {
     CHECK(mq_script_call0(vm, "bump", &a) == 0 && a == 2.0);
     CHECK(mq_script_call0(vm, "version", &a) == 0 && a == 1.0);
 
-    // 重载同一形态脚本（新词法作用域）：函数被替换，globalThis 载体状态保留
+    // 同一 VM 内重复 eval 同一形态脚本（新词法作用域）：函数被替换，globalThis 载体状态保留
     const char* v2 =
         "(function () {\n"
         "  var S = globalThis.__st || (globalThis.__st = { n: 0 });\n"
@@ -67,7 +69,7 @@ int main() {
         "  globalThis.version = function () { return 2; };\n"
         "})();";
     CHECK(mq_script_eval(vm, v2, "hot2.js") == 0);
-    CHECK(mq_script_call0(vm, "bump", &b) == 0 && b == 12.0);    // 2 + 10：状态迁移成功
+    CHECK(mq_script_call0(vm, "bump", &b) == 0 && b == 12.0);    // 2 + 10：同 VM 内载体状态延续
     CHECK(mq_script_call0(vm, "version", &b) == 0 && b == 2.0);  // 函数已替换
 
     // 语法错误不得破坏已加载的脚本

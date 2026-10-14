@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# 热重载端到端测试（docs/08 §热重载、docs/14 §6、docs/11 §4 dry-run）。
+# 热重载端到端测试（docs/08 §热重载、docs/14 §6/§7、docs/11 §4 dry-run）。
 #
 # 判定链（单进程、经 FIFO 控制通道，模拟"编辑器/用户在运行中改脚本"）：
 #   ① 监视列表包含脚本与场景；
 #   ② 未改动时 Reload.script(dry_run) → would_reload=false；
 #   ③ 改动脚本后：dry_run=true → 真重载成功 → reloads 递增；
 #   ④ 重载后世界轨迹与改动前一致（热重载不破坏确定性）；
-#   ⑤ 脚本私域状态经 globalThis 载体迁移（score 保留）。
+#   ⑤ 状态边界（docs/14 §7）：热更 = 新 VM，**脚本内状态不跨重载保留** —— 重载后 on_start
+#      打印的 score 回到 0（此前点击已把 score 加到 1），契约即"要保留就放世界侧"。
 set -u
 
 PLAYER="$1"
@@ -106,6 +107,13 @@ grep -q "hot reload script" "$OUT" || fail "no hot reload log line"
 [ -s "$TRAIL_B" ] || fail "no per-frame trail from the baseline run"
 diff -q "$TRAIL_A" "$TRAIL_B" >/dev/null || fail "per-frame trails differ (reload perturbed the simulation)"
 grep -q "hot reload script" "$OUT" || fail "reload did not report success"
+
+# ⑤ 状态边界（docs/14 §7）：热更 = 新 VM（旧 VM 销毁）→ 脚本内状态不跨重载保留。
+#    点击已把 ui.js 的 S.score 加到 1；重载后 on_start 打印的必须是 0（新 VM 的全新状态）。
+READY=$(grep -c 'ui.js ready' "$OUT")
+[ "$READY" -ge 2 ] || fail "重载后未重新初始化脚本（on_start 未对新 VM 派发）"
+SCORE_AFTER=$(grep 'ui.js ready' "$OUT" | tail -1 | grep -o 'score=[0-9]*' | cut -d= -f2)
+[ "$SCORE_AFTER" = "0" ] || fail "热更后脚本状态未清零（score=$SCORE_AFTER）—— 引擎不做跨 VM 状态迁移（docs/14 §7）"
 
 
 echo "hot_reload_e2e: ok (reloads=1 frames=$(wc -l < "$TRAIL_A") trail=$TRAIL2)"
