@@ -1,0 +1,45 @@
+{
+  "title": "Spine 2D - dragon (multi-page atlas)",
+  "script": "spine.js",
+  "width": 320,
+  "height": 240,
+  "seed": 20241016,
+  "entities": [
+    {
+      "name": "backdrop",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 120 },
+        { "type": "scn.Sprite", "width": 320, "height": 240, "r": 0.08, "g": 0.09, "b": 0.14 }
+      ]
+    },
+    {
+      "name": "dragon",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 104 },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/dragon-ess.skel",
+          "animation": 0,
+          "autoplay": true,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "hud",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 226 },
+        { "type": "scn.Label", "text": "dragon", "font_size": 12, "align": "center" }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 12 },
+        { "type": "scn.Label", "text": "UP/DOWN: anim   SPACE: pause", "font_size": 8, "align": "center" }
+      ]
+    }
+  ]
+}

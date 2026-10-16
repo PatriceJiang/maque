@@ -1,0 +1,209 @@
+{
+  "title": "Tank Duel",
+  "script": "tank.js",
+  "width": 640,
+  "height": 480,
+  "seed": 20240301,
+  "entities": [
+    { "name": "ground", "components": [
+        { "type": "scn.Transform2D", "x": 320, "y": 240 },
+        { "type": "scn.Sprite", "width": 640, "height": 480, "material": "/art/ground.mat.json" } ] },
+
+    { "name": "patch1", "components": [
+        { "type": "scn.Transform2D", "x": 105, "y": 255 },
+        { "type": "scn.Sprite", "width": 96, "height": 72, "material": "/art/dirt.mat.json" } ] },
+    { "name": "patch2", "components": [
+        { "type": "scn.Transform2D", "x": 535, "y": 255 },
+        { "type": "scn.Sprite", "width": 96, "height": 72, "material": "/art/dirt.mat.json" } ] },
+    { "name": "patch3", "components": [
+        { "type": "scn.Transform2D", "x": 245, "y": 398 },
+        { "type": "scn.Sprite", "width": 96, "height": 72, "material": "/art/dirt.mat.json" } ] },
+    { "name": "patch4", "components": [
+        { "type": "scn.Transform2D", "x": 395, "y": 398 },
+        { "type": "scn.Sprite", "width": 96, "height": 72, "material": "/art/dirt.mat.json" } ] },
+    { "name": "patch5", "components": [
+        { "type": "scn.Transform2D", "x": 320, "y": 300 },
+        { "type": "scn.Sprite", "width": 96, "height": 72, "material": "/art/dirt.mat.json" } ] },
+    { "name": "patch6", "components": [
+        { "type": "scn.Transform2D", "x": 95, "y": 95 },
+        { "type": "scn.Sprite", "width": 96, "height": 72, "material": "/art/dirt.mat.json" } ] },
+
+    { "name": "crate1", "components": [
+        { "type": "scn.Transform2D", "x": 180, "y": 320 },
+        { "type": "scn.Sprite", "width": 48, "height": 48, "material": "/art/crate.mat.json" } ] },
+    { "name": "crate2", "components": [
+        { "type": "scn.Transform2D", "x": 460, "y": 320 },
+        { "type": "scn.Sprite", "width": 48, "height": 48, "material": "/art/crate.mat.json" } ] },
+    { "name": "crate3", "components": [
+        { "type": "scn.Transform2D", "x": 320, "y": 215 },
+        { "type": "scn.Sprite", "width": 48, "height": 48, "material": "/art/crate.mat.json" } ] },
+    { "name": "crate4", "components": [
+        { "type": "scn.Transform2D", "x": 175, "y": 125 },
+        { "type": "scn.Sprite", "width": 48, "height": 48, "material": "/art/crate.mat.json" } ] },
+    { "name": "crate5", "components": [
+        { "type": "scn.Transform2D", "x": 465, "y": 125 },
+        { "type": "scn.Sprite", "width": 48, "height": 48, "material": "/art/crate.mat.json" } ] },
+
+    { "name": "track1", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track2", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track3", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track4", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track5", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track6", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track7", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track8", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track9", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track10", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track11", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track12", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track13", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track14", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track15", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track16", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track17", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track18", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track19", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+    { "name": "track20", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 6, "height": 16, "r": 0.17, "g": 0.15, "b": 0.13 } ] },
+
+    { "name": "shadow_player", "components": [
+        { "type": "scn.Transform2D", "x": 320, "y": 88 },
+        { "type": "scn.Sprite", "width": 56, "height": 42, "material": "/art/shadow.mat.json" } ] },
+
+    { "name": "player_hull", "components": [
+        { "type": "scn.Transform2D", "x": 320, "y": 90 },
+        { "type": "scn.Sprite", "width": 44, "height": 34, "texture": "/art/hull.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+      "children": [
+        { "name": "player_hpback", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 26 },
+            { "type": "scn.Sprite", "width": 36, "height": 5, "r": 0.12, "g": 0.10, "b": 0.10 } ] },
+        { "name": "player_hpfill", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 26 },
+            { "type": "scn.Sprite", "width": 36, "height": 5, "r": 0.35, "g": 0.86, "b": 0.36 } ] },
+        { "name": "player_nose", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 15 },
+            { "type": "scn.Sprite", "width": 10, "height": 6, "r": 0.62, "g": 0.74, "b": 0.40 } ] },
+        { "name": "player_turret", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 0 },
+            { "type": "scn.Sprite", "width": 26, "height": 26, "texture": "/art/turret.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+          "children": [
+            { "name": "player_barrel", "components": [
+                { "type": "scn.Transform2D", "x": 0, "y": 12 },
+                { "type": "scn.Sprite", "width": 12, "height": 32, "texture": "/art/barrel.png", "r": 1.0, "g": 1.0, "b": 1.0 } ] },
+            { "name": "player_flash", "components": [
+                { "type": "scn.Transform2D", "x": 0, "y": 28 },
+                { "type": "scn.Sprite", "width": 16, "height": 16, "r": 1.0, "g": 0.86, "b": 0.32 } ] } ] } ] },
+
+    { "name": "shadow_e1", "components": [ { "type": "scn.Transform2D", "x": 70, "y": 378 }, { "type": "scn.Sprite", "width": 52, "height": 40, "material": "/art/shadow.mat.json" } ] },
+    { "name": "e1_hull", "components": [
+        { "type": "scn.Transform2D", "x": 70, "y": 380 },
+        { "type": "scn.Sprite", "width": 40, "height": 32, "texture": "/art/enemy_hull.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+      "children": [
+        { "name": "e1_hpback", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.12, "g": 0.10, "b": 0.10 } ] },
+        { "name": "e1_hpfill", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.90, "g": 0.34, "b": 0.26 } ] },
+        { "name": "e1_nose", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 14 }, { "type": "scn.Sprite", "width": 9, "height": 6, "r": 0.72, "g": 0.44, "b": 0.32 } ] },
+        { "name": "e1_turret", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 0 },
+            { "type": "scn.Sprite", "width": 24, "height": 24, "texture": "/art/enemy_turret.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+          "children": [
+            { "name": "e1_barrel", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 11 }, { "type": "scn.Sprite", "width": 12, "height": 32, "texture": "/art/barrel.png", "r": 1.0, "g": 0.78, "b": 0.62 } ] },
+            { "name": "e1_flash", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 27 }, { "type": "scn.Sprite", "width": 14, "height": 14, "r": 1.0, "g": 0.72, "b": 0.28 } ] } ] } ] },
+
+    { "name": "shadow_e2", "components": [ { "type": "scn.Transform2D", "x": 570, "y": 378 }, { "type": "scn.Sprite", "width": 52, "height": 40, "material": "/art/shadow.mat.json" } ] },
+    { "name": "e2_hull", "components": [
+        { "type": "scn.Transform2D", "x": 570, "y": 380 },
+        { "type": "scn.Sprite", "width": 40, "height": 32, "texture": "/art/enemy_hull.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+      "children": [
+        { "name": "e2_hpback", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.12, "g": 0.10, "b": 0.10 } ] },
+        { "name": "e2_hpfill", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.90, "g": 0.34, "b": 0.26 } ] },
+        { "name": "e2_nose", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 14 }, { "type": "scn.Sprite", "width": 9, "height": 6, "r": 0.72, "g": 0.44, "b": 0.32 } ] },
+        { "name": "e2_turret", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 0 },
+            { "type": "scn.Sprite", "width": 24, "height": 24, "texture": "/art/enemy_turret.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+          "children": [
+            { "name": "e2_barrel", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 11 }, { "type": "scn.Sprite", "width": 12, "height": 32, "texture": "/art/barrel.png", "r": 1.0, "g": 0.78, "b": 0.62 } ] },
+            { "name": "e2_flash", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 27 }, { "type": "scn.Sprite", "width": 14, "height": 14, "r": 1.0, "g": 0.72, "b": 0.28 } ] } ] } ] },
+
+    { "name": "shadow_e3", "components": [ { "type": "scn.Transform2D", "x": 70, "y": 228 }, { "type": "scn.Sprite", "width": 52, "height": 40, "material": "/art/shadow.mat.json" } ] },
+    { "name": "e3_hull", "components": [
+        { "type": "scn.Transform2D", "x": 70, "y": 230 },
+        { "type": "scn.Sprite", "width": 40, "height": 32, "texture": "/art/enemy_hull.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+      "children": [
+        { "name": "e3_hpback", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.12, "g": 0.10, "b": 0.10 } ] },
+        { "name": "e3_hpfill", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.90, "g": 0.34, "b": 0.26 } ] },
+        { "name": "e3_nose", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 14 }, { "type": "scn.Sprite", "width": 9, "height": 6, "r": 0.72, "g": 0.44, "b": 0.32 } ] },
+        { "name": "e3_turret", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 0 },
+            { "type": "scn.Sprite", "width": 24, "height": 24, "texture": "/art/enemy_turret.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+          "children": [
+            { "name": "e3_barrel", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 11 }, { "type": "scn.Sprite", "width": 12, "height": 32, "texture": "/art/barrel.png", "r": 1.0, "g": 0.78, "b": 0.62 } ] },
+            { "name": "e3_flash", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 27 }, { "type": "scn.Sprite", "width": 14, "height": 14, "r": 1.0, "g": 0.72, "b": 0.28 } ] } ] } ] },
+
+    { "name": "shadow_e4", "components": [ { "type": "scn.Transform2D", "x": 570, "y": 228 }, { "type": "scn.Sprite", "width": 52, "height": 40, "material": "/art/shadow.mat.json" } ] },
+    { "name": "e4_hull", "components": [
+        { "type": "scn.Transform2D", "x": 570, "y": 230 },
+        { "type": "scn.Sprite", "width": 40, "height": 32, "texture": "/art/enemy_hull.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+      "children": [
+        { "name": "e4_hpback", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.12, "g": 0.10, "b": 0.10 } ] },
+        { "name": "e4_hpfill", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.90, "g": 0.34, "b": 0.26 } ] },
+        { "name": "e4_nose", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 14 }, { "type": "scn.Sprite", "width": 9, "height": 6, "r": 0.72, "g": 0.44, "b": 0.32 } ] },
+        { "name": "e4_turret", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 0 },
+            { "type": "scn.Sprite", "width": 24, "height": 24, "texture": "/art/enemy_turret.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+          "children": [
+            { "name": "e4_barrel", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 11 }, { "type": "scn.Sprite", "width": 12, "height": 32, "texture": "/art/barrel.png", "r": 1.0, "g": 0.78, "b": 0.62 } ] },
+            { "name": "e4_flash", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 27 }, { "type": "scn.Sprite", "width": 14, "height": 14, "r": 1.0, "g": 0.72, "b": 0.28 } ] } ] } ] },
+
+    { "name": "shadow_e5", "components": [ { "type": "scn.Transform2D", "x": 320, "y": 398 }, { "type": "scn.Sprite", "width": 52, "height": 40, "material": "/art/shadow.mat.json" } ] },
+    { "name": "e5_hull", "components": [
+        { "type": "scn.Transform2D", "x": 320, "y": 400 },
+        { "type": "scn.Sprite", "width": 40, "height": 32, "texture": "/art/enemy_hull.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+      "children": [
+        { "name": "e5_hpback", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.12, "g": 0.10, "b": 0.10 } ] },
+        { "name": "e5_hpfill", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 24 }, { "type": "scn.Sprite", "width": 32, "height": 4, "r": 0.90, "g": 0.34, "b": 0.26 } ] },
+        { "name": "e5_nose", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 14 }, { "type": "scn.Sprite", "width": 9, "height": 6, "r": 0.72, "g": 0.44, "b": 0.32 } ] },
+        { "name": "e5_turret", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 0 },
+            { "type": "scn.Sprite", "width": 24, "height": 24, "texture": "/art/enemy_turret.png", "r": 1.0, "g": 1.0, "b": 1.0 } ],
+          "children": [
+            { "name": "e5_barrel", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 11 }, { "type": "scn.Sprite", "width": 12, "height": 32, "texture": "/art/barrel.png", "r": 1.0, "g": 0.78, "b": 0.62 } ] },
+            { "name": "e5_flash", "components": [ { "type": "scn.Transform2D", "x": 0, "y": 27 }, { "type": "scn.Sprite", "width": 14, "height": 14, "r": 1.0, "g": 0.72, "b": 0.28 } ] } ] } ] },
+
+    { "name": "wreck_player", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 44, "height": 36, "material": "/art/wreck.mat.json" } ] },
+    { "name": "wreck1", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 44, "height": 36, "material": "/art/wreck.mat.json" } ] },
+    { "name": "wreck2", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 44, "height": 36, "material": "/art/wreck.mat.json" } ] },
+    { "name": "wreck3", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 44, "height": 36, "material": "/art/wreck.mat.json" } ] },
+    { "name": "wreck4", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 44, "height": 36, "material": "/art/wreck.mat.json" } ] },
+    { "name": "wreck5", "components": [ { "type": "scn.Transform2D", "x": -9999, "y": -9999 }, { "type": "scn.Sprite", "width": 44, "height": 36, "material": "/art/wreck.mat.json" } ] },
+
+    { "name": "hud_hp", "components": [
+        { "type": "scn.Transform2D", "x": 14, "y": 464 },
+        { "type": "scn.Label", "text": "HP 100", "font_size": 18, "r": 0.92, "g": 0.96, "b": 0.88 } ] },
+    { "name": "hud_score", "components": [
+        { "type": "scn.Transform2D", "x": 250, "y": 464 },
+        { "type": "scn.Label", "text": "SCORE 0", "font_size": 18, "r": 1.0, "g": 0.94, "b": 0.62 } ] },
+    { "name": "hud_wave", "components": [
+        { "type": "scn.Transform2D", "x": 424, "y": 464 },
+        { "type": "scn.Label", "text": "WAVE 1", "font_size": 18, "r": 0.86, "g": 0.90, "b": 0.96 } ] },
+    { "name": "hud_enemy", "components": [
+        { "type": "scn.Transform2D", "x": 536, "y": 464 },
+        { "type": "scn.Label", "text": "ENEMY 5", "font_size": 18, "r": 1.0, "g": 0.66, "b": 0.56 } ] },
+    { "name": "hud_hpback", "components": [
+        { "type": "scn.Transform2D", "x": 104, "y": 442 },
+        { "type": "scn.Sprite", "width": 180, "height": 12, "r": 0.10, "g": 0.09, "b": 0.09 } ] },
+    { "name": "hud_hpbar", "components": [
+        { "type": "scn.Transform2D", "x": 104, "y": 442 },
+        { "type": "ui.Control", "offset_max": { "x": 180, "y": 12 } },
+        { "type": "ui.ProgressBar", "value": 1.0, "fill_color": { "x": 0.35, "y": 0.86, "z": 0.36, "w": 1.0 } } ],
+      "children": [
+        { "name": "hud_hpfill", "components": [
+            { "type": "scn.Transform2D", "x": 0, "y": 0 },
+            { "type": "ui.Control", "offset_max": { "x": 180, "y": 12 } },
+            { "type": "scn.Sprite", "width": 180, "height": 12, "r": 0.35, "g": 0.86, "b": 0.36 } ] } ] },
+    { "name": "hud_hint", "components": [
+        { "type": "scn.Transform2D", "x": 158, "y": 20 },
+        { "type": "scn.Label", "text": "WASD DRIVE   POINTER AIM   CLICK/SPACE FIRE", "font_size": 16, "r": 0.90, "g": 0.92, "b": 0.86 } ] },
+    { "name": "hud_state", "components": [
+        { "type": "scn.Transform2D", "x": 118, "y": 258 },
+        { "type": "scn.Label", "text": "", "font_size": 22, "r": 1.0, "g": 0.88, "b": 0.60 } ] }
+  ]
+}
