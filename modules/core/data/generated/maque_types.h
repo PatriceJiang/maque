@@ -459,7 +459,8 @@ struct Skeleton {
 };
 
 struct SpineSkeleton {
-    maque::AssetRef skeleton;
+    std::string skeleton = "";
+    std::string atlas = "";
     uint32_t skin = 0;
     uint32_t animation = 0;
     bool autoplay = true;
@@ -471,7 +472,7 @@ struct SpineSkeleton {
     anim::FlipMode flip = FlipMode::None;
     math::Color color;
     int32_t z_index = 0;
-    maque::AssetRef material;
+    std::string material = "";
     anim::SpineAnimState state;
     uint64_t instance = 0;
 };

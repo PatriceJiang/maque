@@ -30,12 +30,13 @@ enum {
     MQ_SPINE_ERR_NOMEM = 5
 };
 
-/* 图集页（一页 = 一张纹理；多页图集如 dragon 有 6 页） */
+/* 图集页（一页 = 一张纹理；多页图集如 dragon 有 5 页） */
 typedef struct mq_spine_page {
     const char* name;   /* 页名（图集内声明的纹理文件名） */
     int width;   /* 像素宽（回填后有效） */
     int height;
     uint64_t texture;   /* 引擎侧纹理句柄（回填；0 = 未回填） */
+    int pma;   /* 1 = 页纹理是**预乘 alpha**（图集里的 `pma: true`）→ 渲染侧须用相应混合方程 */
 } mq_spine_page;
 
 /* 绘制批次：同一图集页 + 同一混合模式的一段连续索引（spine 的批处理结果） */
@@ -46,7 +47,7 @@ typedef struct mq_spine_batch {
     uint32_t index_count;
 } mq_spine_batch;
 
-/* 一帧绘制数据。顶点数组按 2 分量（x,y，屏幕像素、y 向下）打包；uv 按 2 分量归一化。 */
+/* 一帧绘制数据。顶点按 2 分量（x,y，**骨架子空间**：与 Spine 编辑器一致、y 向上）打包；uv 按 2 分量归一化到**整张图集页**（不是区域局部）。引擎渲染目标是 y 向下 → 由上层翻一次 y（见 runtime::spine_step）。 */
 typedef struct mq_spine_draw {
     int vertex_count;
     int index_count;

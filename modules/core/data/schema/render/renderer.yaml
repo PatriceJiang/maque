@@ -36,6 +36,24 @@
         - { name: uv3,      type: float }
         - { name: layer,    type: int32_t } # 分层（docs/13 §分层：先按 layer 排序）
         - { name: z,        type: int32_t } # 同层内 z-order（稳定排序）
+    # 网格图元（spine/骨骼网格/任意三角形网格）：顶点数组 + 索引 + 页纹理。
+    # 为什么需要它：item 只能表达"矩形/圆 + 单张贴图 + 每实例一次变换"，
+    # 而骨骼动画一帧是**任意四边形/三角形网格**（逐顶点 UV + 逐顶点颜色 + 索引）。
+    - record: mesh
+      fields:
+        - { name: vertices,   type: "const float*" }    # 2 分量/顶点（渲染目标像素空间；y 向下）
+        - { name: uvs,        type: "const float*" }    # 2 分量/顶点（归一化）
+        - { name: colors,     type: "const float*" }    # 4 分量/顶点（RGBA，逐顶点）
+        - { name: indices,    type: "const uint32_t*" } # 三角形索引（相对 vertices 起点）
+        - { name: vertex_count, type: uint32_t }        # 本网格顶点数（2/4 分量按数组类型）
+        - { name: first_index, type: uint32_t }         # 本批次在 indices 内的起点
+        - { name: index_count, type: uint32_t }         # 本批次索引数（三角形列表）
+        - { name: base_vertex, type: uint32_t }         # 顶点基准（加到每个索引上）
+        - { name: texture,    type: int32_t }           # 页纹理句柄（-1 = 无纹理）
+        - { name: blend,      type: int32_t }           # 0=normal 1=additive 2=multiply 3=screen
+        - { name: pma,        type: int32_t }           # 1 = 纹理是**预乘 alpha**（spine 图集常见）
+        - { name: layer,      type: int32_t }
+        - { name: z,          type: int32_t }
   methods:
     - fn: create
       returns: self
@@ -55,3 +73,8 @@
     - fn: render_views
       returns: int32_t
       args: [ { name: self, type: self }, { name: tw, type: int32_t }, { name: th, type: int32_t }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: uint32_t }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: uint32_t }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]
+    # 图元 + **网格**一次成帧（同一渲染目标，统一按 layer/z 排序 → 网格与精灵可正确互相遮挡）。
+    # 这是 render_views 的超集；不带网格时等价于 render_views（兼容旧调用）。
+    - fn: render_mesh_views
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: tw, type: "int32_t" }, { name: th, type: "int32_t" }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: "uint32_t" }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: "uint32_t" }, { name: meshes, type: "const mq_renderer_mesh*" }, { name: mesh_count, type: "uint32_t" }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: "uint32_t" } ]

@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **129** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **25** 个 · 插件接口 **1** 个。
+统计：脚本 API **141** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **25** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -162,6 +162,18 @@
 | `node_destroy` | id: float | float | ctx |
 | `node_valid` | id: float | float | ctx |
 | `node_find_path` | root: float, path: string | float | ctx |
+| `spine_animation_count` | id: float | float | ctx |
+| `spine_animation_name` | id: float, index: float | string | ctx |
+| `spine_animation_index` | id: float, name: string | float | ctx |
+| `spine_play` | id: float, name: string, loop: float | float | ctx |
+| `spine_current_animation` | id: float | string | ctx |
+| `spine_set_skin` | id: float, name: string | float | ctx |
+| `spine_skin_count` | id: float | float | ctx |
+| `spine_skin_name` | id: float, index: float | string | ctx |
+| `spine_time` | id: float | float | ctx |
+| `spine_set_time` | id: float, t: float | float | ctx |
+| `spine_pages` | id: float | float | ctx |
+| `spine_page_texture` | id: float, index: float | float | ctx |
 
 ## 2. 控制面方法（control_list，AI/MCP）
 
@@ -241,6 +253,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 - `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float
 - `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
+- `mesh`：vertices: const float*, uvs: const float*, colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, z: int32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -250,6 +263,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `create_texture` | self: self, rgba: const uint8_t*, w: int32_t, h: int32_t | int32_t |
 | `has_texture` | self: self, id: int32_t | int32_t |
 | `render_views` | self: self, tw: int32_t, th: int32_t, views: const mq_renderer_view*, nviews: uint32_t, items: const mq_renderer_item*, count: uint32_t, bg: const float*, out: uint8_t*, out_size: uint32_t | int32_t |
+| `render_mesh_views` | self: self, tw: int32_t, th: int32_t, views: const mq_renderer_view*, nviews: uint32_t, items: const mq_renderer_item*, count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, bg: const float*, out: uint8_t*, out_size: uint32_t | int32_t |
 
 ## 5. 模块 C ABI（module_abi）
 
@@ -536,7 +550,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 
 结构体：
 
-- `mq_spine_page`：name: const char*, width: int, height: int, texture: uint64_t
+- `mq_spine_page`：name: const char*, width: int, height: int, texture: uint64_t, pma: int
 - `mq_spine_batch`：page: int, blend: int, first_index: uint32_t, index_count: uint32_t
 - `mq_spine_draw`：vertex_count: int, index_count: int, batch_count: int, bounds_x: float, bounds_y: float, bounds_w: float, bounds_h: float
 
@@ -845,6 +859,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_sim_loop` | int | sim: mq_sim* |
 | `mq_sim_loaded` | int | sim: mq_sim* |
 | `mq_sim_last_frame` | uint64_t | sim: mq_sim* |
+| `mq_sim_normalize_key` | uint32_t | key: uint32_t |
 
 ### runtime — `maque.runtime` v1
 

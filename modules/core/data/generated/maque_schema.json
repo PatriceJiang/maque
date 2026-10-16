@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 242,
-  "api_count": 129,
+  "api_count": 141,
   "control_count": 43,
   "callback_count": 10,
   "module_count": 25,
@@ -1394,21 +1394,31 @@
       "kind": "struct",
       "type_id": 2414443662,
       "size": null,
-      "align": 1,
-      "pod": true,
-      "has_dynamic": false,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
       "source": "world/anim.yaml",
+      "roles": [
+        "spine_skeleton"
+      ],
       "fields": [
         {
           "name": "skeleton",
-          "type": "asset_ref<SpineData>",
-          "kind": "asset_ref",
+          "type": "string",
+          "kind": "string",
           "type_id": 0,
           "count": 0,
           "offset": null,
-          "attrs": {
-            "ref": "SpineData"
-          }
+          "attrs": {}
+        },
+        {
+          "name": "atlas",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         },
         {
           "name": "skin",
@@ -1516,14 +1526,12 @@
         },
         {
           "name": "material",
-          "type": "asset_ref<Material>",
-          "kind": "asset_ref",
+          "type": "string",
+          "kind": "string",
           "type_id": 0,
           "count": 0,
           "offset": null,
-          "attrs": {
-            "ref": "Material"
-          }
+          "attrs": {}
         },
         {
           "name": "state",
@@ -17117,6 +17125,218 @@
       "returns": "float",
       "ctx": true,
       "manual": null
+    },
+    {
+      "name": "host.spine_animation_count",
+      "namespace": "host",
+      "fn": "spine_animation_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_animation_name",
+      "namespace": "host",
+      "fn": "spine_animation_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_animation_index",
+      "namespace": "host",
+      "fn": "spine_animation_index",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_play",
+      "namespace": "host",
+      "fn": "spine_play",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "loop",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_current_animation",
+      "namespace": "host",
+      "fn": "spine_current_animation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_skin",
+      "namespace": "host",
+      "fn": "spine_set_skin",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_skin_count",
+      "namespace": "host",
+      "fn": "spine_skin_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_skin_name",
+      "namespace": "host",
+      "fn": "spine_skin_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_time",
+      "namespace": "host",
+      "fn": "spine_time",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_time",
+      "namespace": "host",
+      "fn": "spine_set_time",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "t",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_pages",
+      "namespace": "host",
+      "fn": "spine_pages",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_page_texture",
+      "namespace": "host",
+      "fn": "spine_page_texture",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
     }
   ],
   "controls": [
@@ -21356,6 +21576,11 @@
               "name": "texture",
               "type": "uint64_t",
               "doc": "引擎侧纹理句柄（回填；0 = 未回填）"
+            },
+            {
+              "name": "pma",
+              "type": "int",
+              "doc": "1 = 页纹理是**预乘 alpha**（图集里的 `pma: true`）→ 渲染侧须用相应混合方程"
             }
           ]
         },
@@ -25309,6 +25534,17 @@
             {
               "name": "sim",
               "type": "mq_sim*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_sim_normalize_key",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "key",
+              "type": "uint32_t",
               "doc": null
             }
           ]

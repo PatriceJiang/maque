@@ -40,6 +40,22 @@ typedef struct mq_renderer_item {
     int32_t z;
 } mq_renderer_item;
 
+typedef struct mq_renderer_mesh {
+    const float* vertices;
+    const float* uvs;
+    const float* colors;
+    const uint32_t* indices;
+    uint32_t vertex_count;
+    uint32_t first_index;
+    uint32_t index_count;
+    uint32_t base_vertex;
+    int32_t texture;
+    int32_t blend;
+    int32_t pma;
+    int32_t layer;
+    int32_t z;
+} mq_renderer_mesh;
+
 #define MQ_RENDERER_API_NAME "maque.renderer"
 typedef struct mq_renderer_v1 {
     mq_api_header header;
@@ -49,4 +65,5 @@ typedef struct mq_renderer_v1 {
     int32_t (*create_texture)(void* self, const uint8_t* rgba, int32_t w, int32_t h);
     int32_t (*has_texture)(void* self, int32_t id);
     int32_t (*render_views)(void* self, int32_t tw, int32_t th, const mq_renderer_view* views, uint32_t nviews, const mq_renderer_item* items, uint32_t count, const float* bg, uint8_t* out, uint32_t out_size);
+    int32_t (*render_mesh_views)(void* self, int32_t tw, int32_t th, const mq_renderer_view* views, uint32_t nviews, const mq_renderer_item* items, uint32_t count, const mq_renderer_mesh* meshes, uint32_t mesh_count, const float* bg, uint8_t* out, uint32_t out_size);
 } mq_renderer_v1;

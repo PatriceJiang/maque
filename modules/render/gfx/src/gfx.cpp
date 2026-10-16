@@ -23,7 +23,8 @@ namespace maque::gfx {
  * 配置期由 cmake/shader_pack.cmake + tools/shader_pack.js 打包成压缩源码（zstd），
  * 这里按名字取（未编入的 shader → NULL，见 MAQUE_SHADER_<NAME>=OFF 的剔除开关）。
  *   solid    —— 无贴图图元（矩形/圆/方块）
- *   textured —— 贴图图元（图集子矩形 + 采样器），uniform 布局与 solid 一致（48B） */
+ *   textured —— 贴图图元（图集子矩形 + 采样器），uniform 布局与 solid 一致（48B）
+ *   mesh     —— 网格图元（逐顶点 pos/uv/color + 索引），uniform 布局同上（48B） */
 struct Texture { WGPUTexture tex = nullptr; WGPUTextureView view = nullptr; };
 
 struct Device {
@@ -35,6 +36,10 @@ struct Device {
     WGPUBindGroupLayout solidBgl = nullptr; WGPUPipelineLayout solidPl = nullptr; WGPUShaderModule solidShader = nullptr;
     WGPURenderPipeline texPipeline = nullptr;
     WGPUBindGroupLayout texBgl = nullptr; WGPUPipelineLayout texPl = nullptr; WGPUShaderModule texShader = nullptr;
+    /* 网格管线：[混合模式 0..3][pma 0/1]。预乘 alpha 与直通 alpha 的混合方程不同
+     * （spine 图集默认 pma: true），所以同一混合模式要两份。 */
+    WGPURenderPipeline meshPipeline[4][2] = {};
+    WGPUBindGroupLayout meshBgl = nullptr; WGPUPipelineLayout meshPl = nullptr; WGPUShaderModule meshShader = nullptr;
     WGPUSampler sampler = nullptr;
     WGPUSampler samplerNearest = nullptr;      /* 字形/像素画：nearest */
     std::string backend;
@@ -165,6 +170,57 @@ static Device* create_device(std::string* out_backend) {
         nd.addressModeW = WGPUAddressMode_ClampToEdge;
         dv->samplerNearest = wgpuDeviceCreateSampler(dv->device, &nd);
     }
+
+    /* ---- 网格管线（mesh）：顶点缓冲 + 索引 + 页纹理 + 逐顶点颜色（骨骼动画/任意三角网格）---- */
+    const char* mesh_wgsl = mq_builtin_shader_text("mesh");
+    if (!mesh_wgsl) std::print(stderr, "gfx: 内建 shader 'mesh' 不可用 → 网格图元（spine 等）不渲染"
+                                       "（剔除开关 MAQUE_SHADER_MESH=ON 可编回）\n");
+    if (mesh_wgsl) dv->meshShader = make_shader(dv->device, mesh_wgsl);
+    if (dv->meshShader) {
+        WGPUBindGroupLayoutEntry me[3] = {};
+        me[0].binding = 0; me[0].visibility = WGPUShaderStage_Vertex;   me[0].buffer.type = WGPUBufferBindingType_Uniform; me[0].buffer.minBindingSize = 48;
+        me[1].binding = 1; me[1].visibility = WGPUShaderStage_Fragment; me[1].texture.sampleType = WGPUTextureSampleType_Float; me[1].texture.viewDimension = WGPUTextureViewDimension_2D;
+        me[2].binding = 2; me[2].visibility = WGPUShaderStage_Fragment; me[2].sampler.type = WGPUSamplerBindingType_Filtering;
+        WGPUBindGroupLayoutDescriptor mbd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; mbd.entryCount = 3; mbd.entries = me;
+        dv->meshBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &mbd);
+        WGPUPipelineLayoutDescriptor mpl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT; mpl.bindGroupLayoutCount = 1; mpl.bindGroupLayouts = &dv->meshBgl;
+        dv->meshPl = wgpuDeviceCreatePipelineLayout(dv->device, &mpl);
+        /* 顶点布局：交错 stride 32B（pos.xy | uv.xy | color.rgba），与 CPU 侧 MeshVertex 一一对应 */
+        WGPUVertexAttribute mattrs[3] = {};
+        mattrs[0].format = WGPUVertexFormat_Float32x2; mattrs[0].offset = 0;  mattrs[0].shaderLocation = 0;
+        mattrs[1].format = WGPUVertexFormat_Float32x2; mattrs[1].offset = 8;  mattrs[1].shaderLocation = 1;
+        mattrs[2].format = WGPUVertexFormat_Float32x4; mattrs[2].offset = 16; mattrs[2].shaderLocation = 2;
+        WGPUVertexBufferLayout mvbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
+        mvbl.stepMode = WGPUVertexStepMode_Vertex; mvbl.arrayStride = 32;
+        mvbl.attributeCount = 3; mvbl.attributes = mattrs;
+        for (int blend = 0; blend < 4; ++blend) {
+            for (int pma = 0; pma < 2; ++pma) {
+                WGPUBlendState mb = WGPU_BLEND_STATE_INIT;
+                if (blend == 1) {                       /* additive */
+                    mb.color.srcFactor = WGPUBlendFactor_One; mb.color.dstFactor = WGPUBlendFactor_One;
+                } else {                                    /* normal（含 multiply/screen 的回退，见 render_impl） */
+                    /* pma=1：纹理已预乘 → 源因子必须 ONE，否则 alpha 被乘两次（边缘发暗） */
+                    mb.color.srcFactor = pma ? WGPUBlendFactor_One : WGPUBlendFactor_SrcAlpha;
+                    mb.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+                }
+                mb.color.operation = WGPUBlendOperation_Add;
+                mb.alpha.srcFactor = WGPUBlendFactor_One; mb.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+                mb.alpha.operation = WGPUBlendOperation_Add;
+                WGPUColorTargetState mt = WGPU_COLOR_TARGET_STATE_INIT;
+                mt.format = WGPUTextureFormat_RGBA8Unorm; mt.writeMask = WGPUColorWriteMask_All;
+                mt.blend = &mb;
+                WGPUFragmentState mfrag = WGPU_FRAGMENT_STATE_INIT;
+                mfrag.module = dv->meshShader; mfrag.entryPoint = SV("fs"); mfrag.targetCount = 1; mfrag.targets = &mt;
+                WGPUVertexState mvert = WGPU_VERTEX_STATE_INIT;
+                mvert.module = dv->meshShader; mvert.entryPoint = SV("vs");
+                mvert.bufferCount = 1; mvert.buffers = &mvbl;
+                WGPURenderPipelineDescriptor mrp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+                mrp.layout = dv->meshPl; mrp.vertex = mvert; mrp.fragment = &mfrag;
+                mrp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+                dv->meshPipeline[blend][pma] = wgpuDeviceCreateRenderPipeline(dv->device, &mrp);
+            }
+        }
+    }
     return dv;
 }
 
@@ -178,6 +234,12 @@ static void destroy_device(Device* dv) {
     }
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
     if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
+    for (int b = 0; b < 4; ++b)
+        for (int p = 0; p < 2; ++p)
+            if (dv->meshPipeline[b][p]) wgpuRenderPipelineRelease(dv->meshPipeline[b][p]);
+    if (dv->meshPl) wgpuPipelineLayoutRelease(dv->meshPl);
+    if (dv->meshBgl) wgpuBindGroupLayoutRelease(dv->meshBgl);
+    if (dv->meshShader) wgpuShaderModuleRelease(dv->meshShader);
     if (dv->solidPipeline) wgpuRenderPipelineRelease(dv->solidPipeline);
     if (dv->solidPl) wgpuPipelineLayoutRelease(dv->solidPl);
     if (dv->solidBgl) wgpuBindGroupLayoutRelease(dv->solidBgl);
@@ -279,14 +341,34 @@ static int32_t r_has_texture(void* self, int32_t id) {
     return (dv && id >= 0 && id < (int)dv->textures.size()) ? 1 : 0;
 }
 
-static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
-                              const mq_renderer_view* views, uint32_t nviews,
-                              const mq_renderer_item* items, uint32_t count,
-                              const float* bg, uint8_t* out, uint32_t out_size) {
+/* 网格顶点（与 assets/builtin/shaders/mesh/shader.wgsl 的顶点布局严格一致：stride 32B） */
+struct MeshVertex { float x, y, u, v, r, g, b, a; };
+static_assert(sizeof(MeshVertex) == 32, "MeshVertex 必须与 WGSL 顶点布局一致（stride 32）");
+
+/* 一条绘制命令：**图元批次**（实例化 6 顶点）或**网格批次**（索引绘制）。
+ * 两者在同一序列里按 (layer, z, 原始序) 排序 → 网格与精灵可以正确互相遮挡。 */
+struct Cmd {
+    int layer = 0, z = 0;
+    uint32_t seq = 0;         /* 原始下标（同键时的稳定次序） */
+    int kind = 0;             /* 0 = 图元，1 = 网格 */
+    uint32_t first = 0;       /* 图元：insts 起点；网格：meshes 下标 */
+    uint32_t count = 0;       /* 图元：实例数；网格：恒 1 */
+    int texture = -1;
+    bool nearest = false;
+};
+
+/* 成帧主路径：图元 + 网格 → 同一渲染目标（render_views 是其 meshes == nullptr 的特例）。 */
+static int32_t render_impl(void* self, int32_t TW, int32_t TH,
+                           const mq_renderer_view* views, uint32_t nviews,
+                           const mq_renderer_item* items, uint32_t count,
+                           const mq_renderer_mesh* meshes, uint32_t mesh_count,
+                           const float* bg, uint8_t* out, uint32_t out_size) {
 
     Device* dv = (Device*)self;
     if (!dv || !out) return 1;
     if ((uint64_t)TW * TH * 4 > out_size) return 2;
+    if (count && !items) return 1;
+    if (mesh_count && !meshes) return 1;
     if (nviews == 0 || !views) {
         static mq_renderer_view def{ 0, 0, 0, 0, 0, 0 };
         def.vw = (float)TW; def.vh = (float)TH;
@@ -303,27 +385,89 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
         if (ia.z != ib.z) return ia.z < ib.z;
         return a < b;
     });
+    std::vector<uint32_t> morder(mesh_count);
+    for (uint32_t i = 0; i < mesh_count; ++i) morder[i] = i;
+    std::stable_sort(morder.begin(), morder.end(), [&](uint32_t a, uint32_t b) {
+        const mq_renderer_mesh& ia = meshes[a];
+        const mq_renderer_mesh& ib = meshes[b];
+        if (ia.layer != ib.layer) return ia.layer < ib.layer;
+        if (ia.z != ib.z) return ia.z < ib.z;
+        return a < b;
+    });
 
-    /* 按排序后的相邻关系分批（同层同 z 内相同管线+贴图合并一次 draw）。 */
+    /* 合并两条有序序列 → 一条绘制命令序列。相邻的"同贴图 + 同采样"图元仍合并成一次实例化
+     * 绘制（保留原批处理收益），网格则插在它该在的位置上。 */
     std::vector<GpuInst> insts;
     insts.reserve(count);
-    std::vector<Batch> batches;
-    for (uint32_t k = 0; k < count; ++k) {
-        const mq_renderer_item& s = items[order[k]];
-        const bool has_tex = s.texture >= 0 && s.texture < (int)dv->textures.size() &&
-                             dv->textures[s.texture] != nullptr &&          /* 槽位可能已释放（destroy_texture） */
-                             dv->textures[s.texture]->view != nullptr;
-        const int tex_id = has_tex ? s.texture : -1;
-        const bool rect = s.half_w > 0.0F && s.half_h > 0.0F;
-        const bool nearest = s.filter == 1;                     /* 字形/像素画：1 纹素 = 1 像素 */
-        GpuInst g{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a },
-                   { s.uv0, s.uv1, s.uv2, s.uv3 },
-                   { rect ? s.half_w : 0.0F, rect ? s.half_h : 0.0F },
-                   rect ? 1.0F : 0.0F, s.snap ? 1.0F : 0.0F };
-        if (!batches.empty() && batches.back().texture == tex_id && batches.back().nearest == nearest)
-            batches.back().count++;
-        else batches.push_back(Batch{ tex_id, nearest, (uint32_t)insts.size(), 1 });
-        insts.push_back(g);
+    std::vector<Cmd> cmds;
+    cmds.reserve((size_t)count + (size_t)mesh_count);
+    size_t ii = 0, mi = 0;
+    while (ii < count || mi < mesh_count) {
+        bool take_item;
+        if (ii >= count) take_item = false;
+        else if (mi >= mesh_count) take_item = true;
+        else {
+            const mq_renderer_item& a = items[order[ii]];
+            const mq_renderer_mesh& b = meshes[morder[mi]];
+            if (a.layer != b.layer) take_item = a.layer < b.layer;
+            else if (a.z != b.z) take_item = a.z < b.z;
+            else take_item = order[ii] <= morder[mi];       /* 同键：图元在前（稳定、可复现） */
+        }
+        if (take_item) {
+            const mq_renderer_item& s = items[order[ii]];
+            const bool has_tex = s.texture >= 0 && s.texture < (int)dv->textures.size() &&
+                                 dv->textures[s.texture] != nullptr &&          /* 槽位可能已释放（destroy_texture） */
+                                 dv->textures[s.texture]->view != nullptr;
+            const int tex_id = has_tex ? s.texture : -1;
+            const bool rect = s.half_w > 0.0F && s.half_h > 0.0F;
+            const bool nearest = s.filter == 1;                 /* 字形/像素画：1 纹素 = 1 像素 */
+            GpuInst g{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a },
+                       { s.uv0, s.uv1, s.uv2, s.uv3 },
+                       { rect ? s.half_w : 0.0F, rect ? s.half_h : 0.0F },
+                       rect ? 1.0F : 0.0F, s.snap ? 1.0F : 0.0F };
+            if (!cmds.empty() && cmds.back().kind == 0 && cmds.back().texture == tex_id &&
+                cmds.back().nearest == nearest) {
+                cmds.back().count++;
+            } else {
+                Cmd c; c.layer = s.layer; c.z = s.z; c.seq = order[ii]; c.kind = 0;
+                c.first = (uint32_t)insts.size(); c.count = 1; c.texture = tex_id; c.nearest = nearest;
+                cmds.push_back(c);
+            }
+            insts.push_back(g);
+            ++ii;
+        } else {
+            const mq_renderer_mesh& m = meshes[morder[mi]];
+            Cmd c; c.layer = m.layer; c.z = m.z; c.seq = morder[mi]; c.kind = 1;
+            c.first = morder[mi]; c.count = 1; c.texture = m.texture;
+            cmds.push_back(c);
+            ++mi;
+        }
+    }
+
+    /* ---- 网格几何：所有网格的顶点**交错**打进一个顶点缓冲 + 一个索引缓冲，
+     *      每个批次用 (vbase, ibase, base_vertex) 定位 —— 避免逐批创建 GPU 缓冲。 ---- */
+    std::vector<MeshVertex> mverts;
+    std::vector<uint32_t> midx;
+    std::vector<uint32_t> vbase(mesh_count, 0), ibase(mesh_count, 0);
+    std::vector<uint8_t> mvalid(mesh_count, 0);
+    for (uint32_t k = 0; k < mesh_count; ++k) {
+        const mq_renderer_mesh& m = meshes[k];
+        if (!m.vertices || !m.indices || m.vertex_count == 0 || m.index_count == 0) continue;
+        vbase[k] = (uint32_t)mverts.size();
+        ibase[k] = (uint32_t)midx.size();
+        for (uint32_t i = 0; i < m.vertex_count; ++i) {
+            MeshVertex mv{};
+            mv.x = m.vertices[(size_t)i * 2]; mv.y = m.vertices[(size_t)i * 2 + 1];
+            mv.u = m.uvs ? m.uvs[(size_t)i * 2] : 0.0F;
+            mv.v = m.uvs ? m.uvs[(size_t)i * 2 + 1] : 0.0F;
+            if (m.colors) {
+                mv.r = m.colors[(size_t)i * 4]; mv.g = m.colors[(size_t)i * 4 + 1];
+                mv.b = m.colors[(size_t)i * 4 + 2]; mv.a = m.colors[(size_t)i * 4 + 3];
+            } else { mv.r = mv.g = mv.b = mv.a = 1.0F; }
+            mverts.push_back(mv);
+        }
+        for (uint32_t t = 0; t < m.index_count; ++t) midx.push_back(m.indices[(size_t)m.first_index + t]);
+        mvalid[k] = 1;
     }
 
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
@@ -340,6 +484,20 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
     ubd.size = 48;
     WGPUBuffer ibuf = insts.empty() ? nullptr : make_ibuf(dv, insts);
 
+    WGPUBuffer mvbuf = nullptr, mibuf = nullptr;
+    if (!mverts.empty() && !midx.empty()) {
+        WGPUBufferDescriptor vbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        vbd.usage = WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst;
+        vbd.size = (uint64_t)mverts.size() * sizeof(MeshVertex);
+        mvbuf = wgpuDeviceCreateBuffer(dv->device, &vbd);
+        wgpuQueueWriteBuffer(dv->queue, mvbuf, 0, mverts.data(), vbd.size);
+        WGPUBufferDescriptor ibd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        ibd.usage = WGPUBufferUsage_Index | WGPUBufferUsage_CopyDst;
+        ibd.size = (uint64_t)midx.size() * sizeof(uint32_t);
+        mibuf = wgpuDeviceCreateBuffer(dv->device, &ibd);
+        wgpuQueueWriteBuffer(dv->queue, mibuf, 0, midx.data(), ibd.size);
+    }
+
     WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
     { WGPURenderPassEncoder pass = nullptr; begin_pass(enc, view, WGPULoadOp_Clear, bg, &pass);
       wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass); }
@@ -355,45 +513,97 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
         float uni[12] = { (float)TW, (float)TH, v.vx, v.vy, v.cx, v.cy, zoom, v.rot, v.pan, v.eye, 0.0F, 0.0F };
         WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
         wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, sizeof uni);
-        if (ibuf) {
-            for (const Batch& b : batches) {
-                const bool textured = b.texture >= 0;
-                /* 该批次的管线不可用（对应内建 shader 被剔除 / 解压失败）→ 跳过该批次。
-                 * 只提示一次，避免逐帧刷屏；不崩、不静默（初始化时已打印原因）。 */
-                if (!(textured ? dv->texPipeline : dv->solidPipeline)) {
-                    static bool warned_solid = false, warned_tex = false;
-                    bool& warned = textured ? warned_tex : warned_solid;
+        for (const Cmd& c : cmds) {
+            /* ---- 网格批次 ---- */
+            if (c.kind == 1) {
+                if (!mvbuf || !mibuf || !mvalid[c.first]) continue;
+                const mq_renderer_mesh& m = meshes[c.first];
+                int blend = (m.blend >= 0 && m.blend < 4) ? m.blend : 0;
+                if (blend >= 2) {
+                    /* multiply / screen 需要 dst-color 类 blend factor，本 wgpu-native 构建的
+                     * WGPUBlendFactor 里没有（只有 zero/one/src/dst/*alpha）→ 回退 normal 并提示一次。
+                     * 不静默假装支持（docs/27 已知限制同样记录这一点）。 */
+                    static bool warned_mul = false, warned_screen = false;
+                    bool& warned = (blend == 2) ? warned_mul : warned_screen;
                     if (!warned) {
                         warned = true;
-                        std::print(stderr, "gfx: 跳过批次（内建 shader '{}' 未编入；见 MAQUE_SHADER_* 开关）\n",
-                                   textured ? "textured" : "solid");
+                        std::print(stderr, "gfx: 网格混合模式 {}（multiply/screen）无对应 blend factor → 回退 normal\n",
+                                   (int)m.blend);
+                    }
+                    blend = 0;
+                }
+                const bool has_tex = c.texture >= 0 && c.texture < (int)dv->textures.size() &&
+                                     dv->textures[c.texture] != nullptr && dv->textures[c.texture]->view != nullptr;
+                const int pma = m.pma ? 1 : 0;
+                WGPURenderPipeline pipe = dv->meshPipeline[blend][pma];
+                if (!pipe) {
+                    static bool warned_mesh_pipe = false;
+                    if (!warned_mesh_pipe) {
+                        warned_mesh_pipe = true;
+                        std::print(stderr, "gfx: 跳过网格批次（内建 shader 'mesh' 未编入；见 MAQUE_SHADER_* 开关）\n");
                     }
                     continue;
                 }
-                WGPUBindGroupEntry be[4] = {};
+                if (!has_tex) continue;          /* 无页纹理 → 无法采样（不静默画错颜色） */
+                WGPUBindGroupEntry be[3] = {};
                 be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
-                be[1].binding = 1; be[1].buffer = ibuf;
-                be[1].size = (uint64_t)insts.size() * sizeof(GpuInst);
+                be[1].binding = 1; be[1].textureView = dv->textures[c.texture]->view;
+                be[2].binding = 2; be[2].sampler = dv->sampler;
                 WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-                WGPUBindGroup bgroup = nullptr;
-                if (textured) {
-                    be[2].binding = 2; be[2].textureView = dv->textures[b.texture]->view;
-                    be[3].binding = 3;
-                    be[3].sampler = b.nearest && dv->samplerNearest ? dv->samplerNearest : dv->sampler;
-                    bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
-                } else {
-                    bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
-                }
-                bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+                bgd.layout = dv->meshBgl; bgd.entryCount = 3; bgd.entries = be;
+                WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
                 WGPURenderPassEncoder pass = nullptr;
                 begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
                 wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
-                wgpuRenderPassEncoderSetPipeline(pass, textured ? dv->texPipeline : dv->solidPipeline);
+                wgpuRenderPassEncoderSetPipeline(pass, pipe);
                 wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
-                wgpuRenderPassEncoderDraw(pass, 6, b.count, 0, b.first);
+                wgpuRenderPassEncoderSetVertexBuffer(pass, 0, mvbuf, 0, (uint64_t)mverts.size() * sizeof(MeshVertex));
+                wgpuRenderPassEncoderSetIndexBuffer(pass, mibuf, WGPUIndexFormat_Uint32, 0,
+                                                    (uint64_t)midx.size() * sizeof(uint32_t));
+                wgpuRenderPassEncoderDrawIndexed(pass, m.index_count, 1, ibase[c.first],
+                                                 (int32_t)(vbase[c.first] + m.base_vertex), 0);
                 wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
                 wgpuBindGroupRelease(bgroup);
+                continue;
             }
+            /* ---- 图元批次（实例化矩形/圆） ---- */
+            if (!ibuf) continue;
+            const bool textured = c.texture >= 0;
+            /* 该批次的管线不可用（对应内建 shader 被剔除 / 解压失败）→ 跳过该批次。
+             * 只提示一次，避免逐帧刷屏；不崩、不静默（初始化时已打印原因）。 */
+            if (!(textured ? dv->texPipeline : dv->solidPipeline)) {
+                static bool warned_solid = false, warned_tex = false;
+                bool& warned = textured ? warned_tex : warned_solid;
+                if (!warned) {
+                    warned = true;
+                    std::print(stderr, "gfx: 跳过批次（内建 shader '{}' 未编入；见 MAQUE_SHADER_* 开关）\n",
+                               textured ? "textured" : "solid");
+                }
+                continue;
+            }
+            WGPUBindGroupEntry be[4] = {};
+            be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
+            be[1].binding = 1; be[1].buffer = ibuf;
+            be[1].size = (uint64_t)insts.size() * sizeof(GpuInst);
+            WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+            WGPUBindGroup bgroup = nullptr;
+            if (textured) {
+                be[2].binding = 2; be[2].textureView = dv->textures[c.texture]->view;
+                be[3].binding = 3;
+                be[3].sampler = c.nearest && dv->samplerNearest ? dv->samplerNearest : dv->sampler;
+                bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
+            } else {
+                bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
+            }
+            bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+            WGPURenderPassEncoder pass = nullptr;
+            begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
+            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
+            wgpuRenderPassEncoderSetPipeline(pass, textured ? dv->texPipeline : dv->solidPipeline);
+            wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
+            wgpuRenderPassEncoderDraw(pass, 6, c.count, 0, c.first);
+            wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
+            wgpuBindGroupRelease(bgroup);
         }
         wgpuBufferRelease(ubuf);
     }
@@ -424,16 +634,35 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
         wgpuBufferUnmap(rbuf);
     }
     wgpuBufferRelease(rbuf);
+    if (mibuf) wgpuBufferRelease(mibuf);
+    if (mvbuf) wgpuBufferRelease(mvbuf);
     if (ibuf) wgpuBufferRelease(ibuf);
     wgpuTextureViewRelease(view); wgpuTextureRelease(tex);
     return st == WGPUMapAsyncStatus_Success ? 0 : 3;
+}
+
+/* 兼容入口：只有图元（render_views 语义不变）。 */
+static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
+                              const mq_renderer_view* views, uint32_t nviews,
+                              const mq_renderer_item* items, uint32_t count,
+                              const float* bg, uint8_t* out, uint32_t out_size) {
+    return render_impl(self, TW, TH, views, nviews, items, count, nullptr, 0, bg, out, out_size);
+}
+
+/* 图元 + 网格一次成帧（骨骼动画等任意三角网格走这里）。 */
+static int32_t r_render_mesh_views(void* self, int32_t TW, int32_t TH,
+                                   const mq_renderer_view* views, uint32_t nviews,
+                                   const mq_renderer_item* items, uint32_t count,
+                                   const mq_renderer_mesh* meshes, uint32_t mesh_count,
+                                   const float* bg, uint8_t* out, uint32_t out_size) {
+    return render_impl(self, TW, TH, views, nviews, items, count, meshes, mesh_count, bg, out, out_size);
 }
 
 } // extern "C"
 
 static const mq_renderer_v1 g_api = {
     { (uint32_t)sizeof(mq_renderer_v1), MQ_ABI_VERSION },
-    r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views
+    r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views, r_render_mesh_views
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {

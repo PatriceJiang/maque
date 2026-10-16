@@ -262,9 +262,12 @@
 
 ### anim.SpineSkeleton — struct (变长（含动态成员）)
 
+role: `spine_skeleton`
+
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
-| `skeleton` | asset_ref<SpineData> | — | ref: SpineData |
+| `skeleton` | string |  |  |
+| `atlas` | string |  |  |
 | `skin` | uint32_t | 0 |  |
 | `animation` | uint32_t | 0 |  |
 | `autoplay` | bool | true |  |
@@ -276,7 +279,7 @@
 | `flip` | FlipMode | FlipMode::None |  |
 | `color` | math.Color | — |  |
 | `z_index` | int32_t | 0 |  |
-| `material` | asset_ref<Material> | — | ref: Material |
+| `material` | string |  |  |
 | `state` | SpineAnimState | — | transient, readonly |
 | `instance` | uint64_t | 0 | transient, readonly |
 

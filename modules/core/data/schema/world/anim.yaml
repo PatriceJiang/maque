@@ -200,10 +200,15 @@
         - { name: z_index, type: int32_t, default: 0 }
         - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
     - struct: SpineSkeleton
+      roles: [spine_skeleton]     # 引擎按 role 定位（docs/12 §7：不硬编码组件类型）
       fields:
-        - { name: skeleton, type: "asset_ref<SpineData>", attrs: { ref: SpineData } }
-        - { name: skin, type: uint32_t, default: 0 }
-        - { name: animation, type: uint32_t, default: 0 }
+        # 资源引用用**稳定路径字符串**（与 scn.Sprite.texture/material 同一约定）。
+        # 为什么不用 asset_ref<SpineData>：asset_ref 是**内容哈希句柄**（persist 序列化成 "0x…"），
+        # 场景作者无法手写路径，而 spine 的骨架/图集恰恰是"按路径去 VFS 读"（远程素材同理）。
+        - { name: skeleton, type: string, default: "" }     # 骨架：.skel = 二进制 / .json = 文本
+        - { name: atlas,    type: string, default: "" }     # 图集 .atlas；空 → 用 material / 与骨架同名
+        - { name: skin, type: uint32_t, default: 0 }        # 皮肤下标（声明序）
+        - { name: animation, type: uint32_t, default: 0 }   # 动画下标（声明序；脚本可改，改了就真的切）
         - { name: autoplay, type: bool, default: true }
         - { name: play_mode, type: PlayMode, default: "PlayMode::Loop" }
         - { name: speed, type: float, default: 1.0F, attrs: { range: [0, 100] } }
@@ -213,7 +218,7 @@
         - { name: flip, type: FlipMode, default: "FlipMode::None" }
         - { name: color, type: math.Color }
         - { name: z_index, type: int32_t, default: 0 }
-        - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
+        - { name: material, type: string, default: "" }     # 兼容/别名：spine 用它指向 .atlas（见 atlas）
         - { name: state, type: SpineAnimState, attrs: { transient: true, readonly: true } }
         - { name: instance, type: uint64_t, default: 0, attrs: { transient: true, readonly: true } }
 
@@ -238,13 +243,14 @@
           - { name: MQ_SPINE_ERR_PAGE,     value: 4, doc: "图集页纹理未回填" }
           - { name: MQ_SPINE_ERR_NOMEM,    value: 5 }
     structs:
-      - doc: "图集页（一页 = 一张纹理；多页图集如 dragon 有 6 页）"
+      - doc: "图集页（一页 = 一张纹理；多页图集如 dragon 有 5 页）"
         name: mq_spine_page
         fields:
           - { name: name, type: "const char*", doc: "页名（图集内声明的纹理文件名）" }
           - { name: width, type: int, doc: "像素宽（回填后有效）" }
           - { name: height, type: int }
           - { name: texture, type: "uint64_t", doc: "引擎侧纹理句柄（回填；0 = 未回填）" }
+          - { name: pma, type: int, doc: "1 = 页纹理是**预乘 alpha**（图集里的 `pma: true`）→ 渲染侧须用相应混合方程" }
       - doc: "绘制批次：同一图集页 + 同一混合模式的一段连续索引（spine 的批处理结果）"
         name: mq_spine_batch
         fields:
@@ -252,7 +258,7 @@
           - { name: blend, type: int, doc: "spine 混合模式原值（0=Normal,1=Additive,2=Multiply,3=Screen）" }
           - { name: first_index, type: uint32_t, doc: "索引起始（相对 mq_spine_draw 的 indices）" }
           - { name: index_count, type: uint32_t }
-      - doc: "一帧绘制数据。顶点数组按 2 分量（x,y，屏幕像素、y 向下）打包；uv 按 2 分量归一化。"
+      - doc: "一帧绘制数据。顶点按 2 分量（x,y，**骨架子空间**：与 Spine 编辑器一致、y 向上）打包；uv 按 2 分量归一化到**整张图集页**（不是区域局部）。引擎渲染目标是 y 向下 → 由上层翻一次 y（见 runtime::spine_step）。"
         name: mq_spine_draw
         fields:
           - { name: vertex_count, type: int }

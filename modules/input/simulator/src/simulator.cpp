@@ -274,12 +274,17 @@ extern "C" int mq_sim_due(mq_sim* sim, uint64_t frame, mq_sim_event* out,
  *   · SDL 风格 → 转换（32→SPACE、97..122→大写、方向键/回车/退格等 → MQ_KEY_*）；
  *   · 其它可打印 ASCII（33..126）→ 原样；其余 → MQ_KEY_UNKNOWN。 */
 uint32_t mq_sim_normalize_key(uint32_t key) {
+    /* ① **规范键优先**：8/9 同时是 MQ_KEY_UP/DOWN 与 SDL Tab/Backspace 的数值，
+     *    引擎统一后的规范空间就是脚本看到的键空间 → 必须优先按规范解释，
+     *    否则 .sim.json 里写 `key: 9`(DOWN) 会被吃成 TAB（实测就是这么把 sokoban 打断的）。
+     *    代价：SDL 的 Tab/Backspace（9/8）不再能由这两个值表达 —— 键盘输入用不到它们，
+     *    真要用请写 MQ_KEY_TAB/MQ_KEY_BACKSPACE 的规范值（4/5）。 */
+    if (key >= 1u && key <= MQ_KEY_TEXT) return key;
+    /* ② 其余 SDL 风格码 → 规范值（这些数值不与 MQ_KEY_* 冲突） */
     switch (key) {
-    case 27u:  return MQ_KEY_ESCAPE;      /* ESC 在两边同值，写作显式分支便于阅读 */
-    case 32u:  return MQ_KEY_SPACE;       /* SDL 空格 32 → 规范 2 */
     case 13u:  return MQ_KEY_ENTER;       /* SDL 回车 13 → 规范 3 */
-    case 9u:   return MQ_KEY_TAB;         /* SDL Tab 9 → 规范 4 */
-    case 8u:   return MQ_KEY_BACKSPACE;   /* SDL 退格 8 → 规范 5 */
+    case 27u:  return MQ_KEY_ESCAPE;      /* ESC 两边同值，显式写便于阅读 */
+    case 32u:  return MQ_KEY_SPACE;       /* SDL 空格 32 → 规范 2 */
     default: break;
     }
     switch (key) {                        /* SDL 方向键是大数值（0x40000000 起） */
@@ -290,7 +295,6 @@ uint32_t mq_sim_normalize_key(uint32_t key) {
     default: break;
     }
     if (key >= 'a' && key <= 'z') return key - 32u;   /* 小写字母 → 大写 ASCII */
-    if (key >= 1u && key <= MQ_KEY_TEXT) return key;  /* 已是 MQ_KEY_* 规范值 */
     if (key >= 32u && key < 127u) return key;         /* 其它可打印 ASCII 原样 */
     return MQ_KEY_UNKNOWN;
 }

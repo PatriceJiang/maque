@@ -217,6 +217,9 @@ int mq_spine_data_page(mq_spine_data *data, int index, mq_spine_page *out) {
     /* 纹理句柄存在 loader 的表里（page->texture 是贴图对象槽位，本引擎放的就是句柄，
      * 但按页名查更稳：解析期 page->texture 先被占位、后由 load 覆盖）。 */
     out->texture = (p && data->loader) ? data->loader->texture_for_name(p->name.buffer()) : 0;
+    /* pma（图集里的 `pma: true`）：预乘 alpha 的纹理必须配 `src=ONE` 的混合方程，
+     * 否则边缘会被乘两次 alpha（发暗/发黑）。渲染侧按这个标志选管线。 */
+    out->pma = (p && p->pma) ? 1 : 0;
     return MQ_SPINE_OK;
 }
 int mq_spine_data_page_texture(mq_spine_data *data, int index, uint64_t texture) {
@@ -462,8 +465,10 @@ int mq_spine_instance_transform_position(mq_spine_instance *inst, int index, flo
 
 /* ---- 绘制数据导出 ----------------------------------------------------------------
  * 语义（docs/assets/06 §2.4）：**只读**产出"绘制输入"，不写任何模拟状态、不碰 GPU。
- * 顶点已在骨架空间求值好，这里叠加实例的平移/缩放/翻转，得到"绘制数据空间"坐标
- * （y 向下，与引擎屏幕像素一致：引擎侧只需再乘画布缩放）。
+ * 顶点已在**骨架空间**求值（与 Spine 编辑器一致：**y 向上**，实测 spineboy 站立包围盒
+ * y ∈ [-8, 654]、脚在 y≈0），这里叠加实例的平移/缩放/翻转；坐标空间保持不变（仍是 y 向上）。
+ * ⚠️ 引擎渲染目标是 y 向下 → **上层负责翻一次 y**（runtime::spine_step：screen_y = H - world_y - ly）。
+ * 本模块不自作主张翻 y：那样"骨架旋转/翻转"的语义会在两处互相抵消，排查代价极高（实测踩过）。
  * 顺序 = 骨架的**绘制顺序**（含 draw order timeline 的效果）；批处理按 (页, 混合模式) 划分，
  * 与官方运行时一致，保证叠加/正片叠底等混合的层次正确。
  * 裁剪附件（mask）暂不产生几何 —— 已在 samples/spine/README 记为已知限制，不静默假装支持。 */
@@ -544,7 +549,11 @@ int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs,
              *   computeWorldVertices(Slot&, start, count, float* worldVertices, offset, stride)
              * （4.2 的这个签名里**没有** Skeleton&，与 4.3 不同） */
             ma->computeWorldVertices(*slot, 0, static_cast<size_t>(vcount) * 2, world, 0, 2);
-            uvArr = &ma->getRegionUVs();
+            /* ⚠️ 必须用 **getUVs()**（"normalized within the entire texture"，即归一化到整张图集页），
+             * 不能用 getRegionUVs()（那是**区域局部** 0..1）——用错的表现是：每个网格附件都去采样
+             * 图集页的左上角一小块，spineboy 整只角色落进空白区 → **画面里什么都看不见**
+             * （踩过：截图只有 HUD/背景，经顶点/UV/颜色 trace 才定位到这一行）。 */
+            uvArr = &ma->getUVs();
             Vector<unsigned short> &tri = ma->getTriangles();
             const int ntri = static_cast<int>(tri.size());
             if (idx + ntri > max_indices) break;

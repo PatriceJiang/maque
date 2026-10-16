@@ -251,3 +251,4 @@ add_subdirectory(samples/inspector)
 add_subdirectory(samples/host)
 add_subdirectory(samples/flappy)   # 独立游戏工程（玩法全在资源里；见该目录 CMakeLists 顶部说明）
 add_subdirectory(samples/tank)     # 独立游戏工程（俯视坦克对战；同样是薄宿主 + 资源化玩法）
+add_subdirectory(samples/spine)    # Spine 2D 素材演示（官方骨架 + ↑/↓ 切动画；docs/27）

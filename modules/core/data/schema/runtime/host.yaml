@@ -160,3 +160,29 @@
     - { fn: node_destroy,  ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: node_valid,    ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: node_find_path, ctx: true, args: [ { name: root, type: float }, { name: path, type: string } ], returns: float }
+
+    # ---- Spine 2D（docs/27、docs/assets/06 §2）：按实体 id 寻址的骨骼动画查询/控制 ----
+    # 说明：动画名是**稳定路径**（骨架内声明序）；下标 i 是骨架内的声明序（docs/10 D4）。
+    # 越界/无实例一律返回 0 / "" / -1，且不崩（脚本侧无需防御）。
+    - { fn: spine_animation_count,  ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "动画个数（无 SpineSkeleton 组件 → 0）" }
+    - { fn: spine_animation_name,   ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string,
+        doc: "第 index 个动画名（声明序；越界 → \"\"）" }
+    - { fn: spine_animation_index,  ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "动画名 → 声明序下标（不存在 → -1）" }
+    - { fn: spine_play,             ctx: true, args: [ { name: id, type: float }, { name: name, type: string }, { name: loop, type: float } ], returns: float,
+        doc: "播放动画（loop != 0 循环）；成功 0，失败 -1（名字不存在/无实例）" }
+    - { fn: spine_current_animation, ctx: true, args: [ { name: id, type: float } ], returns: string,
+        doc: "track 0 当前动画名（未播放 → \"\"）" }
+    - { fn: spine_set_skin,         ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "换皮肤（名字不存在 → -1）" }
+    - { fn: spine_skin_count,       ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_skin_name,        ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: spine_time,             ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "track 0 播放头时间（秒）" }
+    - { fn: spine_set_time,         ctx: true, args: [ { name: id, type: float }, { name: t, type: float } ], returns: float,
+        doc: "设置播放头时间（确定性回放/定格用；下一帧 step 生效）" }
+    - { fn: spine_pages,            ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "图集页数（多页图集 = 多次绘制批次）" }
+    - { fn: spine_page_texture,     ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float,
+        doc: "第 index 页的引擎纹理句柄（-1 = 无/越界；用于确认纹理真的上传了）" }

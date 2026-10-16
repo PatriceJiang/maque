@@ -143,7 +143,8 @@ static const mq_field_desc mq_fields_anim_SpineAnimState[] = {
 };
 
 static const mq_field_desc mq_fields_anim_SpineSkeleton[] = {
-    { "skeleton", (uint32_t)offsetof(anim::SpineSkeleton, skeleton), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "skeleton", (uint32_t)offsetof(anim::SpineSkeleton, skeleton), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "atlas", (uint32_t)offsetof(anim::SpineSkeleton, atlas), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "skin", (uint32_t)offsetof(anim::SpineSkeleton, skin), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "animation", (uint32_t)offsetof(anim::SpineSkeleton, animation), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "autoplay", (uint32_t)offsetof(anim::SpineSkeleton, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -155,7 +156,7 @@ static const mq_field_desc mq_fields_anim_SpineSkeleton[] = {
     { "flip", (uint32_t)offsetof(anim::SpineSkeleton, flip), MQ_TK_ENUM, 577626198u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "color", (uint32_t)offsetof(anim::SpineSkeleton, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "z_index", (uint32_t)offsetof(anim::SpineSkeleton, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(anim::SpineSkeleton, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "material", (uint32_t)offsetof(anim::SpineSkeleton, material), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "state", (uint32_t)offsetof(anim::SpineSkeleton, state), MQ_TK_STRUCT, 1681902629u, 0u, 3u, 0u, 0, 0, 0, 0 },
     { "instance", (uint32_t)offsetof(anim::SpineSkeleton, instance), MQ_TK_U64, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
 };
@@ -2921,10 +2922,10 @@ extern const mq_type_desc mq_type_anim_SpineSkeleton = {
     2414443662u,
     (uint32_t)sizeof(anim::SpineSkeleton),
     (uint32_t)alignof(anim::SpineSkeleton),
-    15u,
+    16u,
     mq_fields_anim_SpineSkeleton,
-    2u,
-    0u,
+    4u,
+    MQ_ROLE_SPINE,
     0,
     0u,
     mq_defaults_anim_SpineSkeleton,

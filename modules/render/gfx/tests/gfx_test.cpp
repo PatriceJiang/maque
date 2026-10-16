@@ -138,6 +138,72 @@ int main() {
         CHECK(cv.at(160, 120, 1) > 200);
     }
 
+    // ---- 6) 网格图元（render_mesh_views）：逐顶点 UV 的四边形 + 索引绘制 + 页纹理 ----
+    //        这是骨骼动画（spine）走的路径：任意四边形网格，不能退化成"实例化矩形"。
+    {
+        // 2x2 纹理：左上红、右上绿、左下蓝、右下黄（行列 = 屏幕顺序，y 向下）
+        const uint8_t texels[16] = { 255,0,0,255,   0,255,0,255,
+                                     0,0,255,255,   255,255,0,255 };
+        const int tex = api->create_texture(self, texels, 2, 2);
+        CHECK(tex >= 0);
+        // 顶点（渲染目标像素空间，y 向下）：覆盖 (60,60)-(260,180)
+        const float verts[8] = { 60.0F,60.0F,  260.0F,60.0F,  60.0F,180.0F,  260.0F,180.0F };
+        const float uvs[8]   = { 0.0F,0.0F,    1.0F,0.0F,     0.0F,1.0F,     1.0F,1.0F };
+        const float cols[16] = { 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1 };
+        const uint32_t idx[6] = { 0,1,2, 2,1,3 };
+        mq_renderer_mesh m{};
+        m.vertices = verts; m.uvs = uvs; m.colors = cols; m.indices = idx;
+        m.vertex_count = 4; m.index_count = 6; m.first_index = 0; m.base_vertex = 0;
+        m.texture = tex; m.blend = 0; m.pma = 0; m.layer = 0; m.z = 0;
+        mq_renderer_view v{};
+        v.vw = 320; v.vh = 240; v.cx = 160; v.cy = 120; v.zoom = 1.0F;
+        cv.clear();
+        const int rc = api->render_mesh_views(self, 320, 240, &v, 1, nullptr, 0, &m, 1,
+                                              bg, cv.px.data(), (uint32_t)cv.px.size());
+        CHECK(rc == 0);
+        CHECK(cv.at(70, 70, 0) > 180 && cv.at(70, 70, 1) < 80);      // 左上 = 红
+        CHECK(cv.at(250, 70, 1) > 180 && cv.at(250, 70, 0) < 80);    // 右上 = 绿
+        CHECK(cv.at(70, 170, 2) > 180 && cv.at(70, 170, 0) < 80);    // 左下 = 蓝
+        CHECK(cv.at(20, 20, 0) < 40 && cv.at(20, 20, 2) < 60);       // 四边形外 = 背景
+        // 图元 + 网格同帧：网格 layer/z 参与统一排序（z 大的后画）
+        {
+            mq_renderer_item cover[1] = { sprite(160.0F, 120.0F, 40.0F, 1.0F, 1.0F, 1.0F, 0, /*z*/5) };
+            cv.clear();
+            api->render_mesh_views(self, 320, 240, &v, 1, cover, 1, &m, 1,
+                                   bg, cv.px.data(), (uint32_t)cv.px.size());
+            CHECK(cv.at(70, 70, 0) > 180);                            // 网格 z=0 先画 → 白块盖不住四角
+            CHECK(cv.at(160, 120, 0) > 200 && cv.at(160, 120, 1) > 200);   // 中心被 z=5 的白块覆盖
+        }
+        api->destroy_texture(self, tex);
+    }
+
+    // ---- 6b) 网格 + **预乘 alpha 页纹理**（spine 图集的 pma: true 场景）+ 1024x256 大页 ----
+    {
+        const int W = 1024, H = 256;
+        std::vector<uint8_t> texels((size_t)W * H * 4);
+        for (size_t i = 0; i < texels.size(); i += 4) {          // 不透明洋红（预乘后仍是 255,0,255,255）
+            texels[i] = 255; texels[i + 1] = 0; texels[i + 2] = 255; texels[i + 3] = 255;
+        }
+        const int tex = api->create_texture(self, texels.data(), W, H);
+        CHECK(tex >= 0);
+        const float verts[8] = { 60.0F,60.0F,  260.0F,60.0F,  60.0F,180.0F,  260.0F,180.0F };
+        const float uvs[8]   = { 0.0F,0.0F,    1.0F,0.0F,     0.0F,1.0F,     1.0F,1.0F };
+        const float cols[16] = { 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1 };
+        const uint32_t idx[6] = { 0,1,2, 2,1,3 };
+        mq_renderer_mesh m{};
+        m.vertices = verts; m.uvs = uvs; m.colors = cols; m.indices = idx;
+        m.vertex_count = 4; m.index_count = 6; m.texture = tex;
+        m.blend = 0; m.pma = 1; m.layer = 0; m.z = 0;
+        mq_renderer_view v{};
+        v.vw = 320; v.vh = 240; v.cx = 160; v.cy = 120; v.zoom = 1.0F;
+        cv.clear();
+        const int rc = api->render_mesh_views(self, 320, 240, &v, 1, nullptr, 0, &m, 1,
+                                              bg, cv.px.data(), (uint32_t)cv.px.size());
+        CHECK(rc == 0);
+        CHECK(cv.at(160, 120, 0) > 200 && cv.at(160, 120, 2) > 200 && cv.at(160, 120, 1) < 60);
+        api->destroy_texture(self, tex);
+    }
+
     api->destroy(self);
     mq_host_destroy(host);
     if (g_failures == 0) { std::print("gfx_test: all checks passed\n"); return 0; }

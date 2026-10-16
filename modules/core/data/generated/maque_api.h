@@ -140,4 +140,16 @@ namespace host {
   float node_destroy(void* ctx, float id);
   float node_valid(void* ctx, float id);
   float node_find_path(void* ctx, float root, const char* path);
+  float spine_animation_count(void* ctx, float id);
+  const char* spine_animation_name(void* ctx, float id, float index);
+  float spine_animation_index(void* ctx, float id, const char* name);
+  float spine_play(void* ctx, float id, const char* name, float loop);
+  const char* spine_current_animation(void* ctx, float id);
+  float spine_set_skin(void* ctx, float id, const char* name);
+  float spine_skin_count(void* ctx, float id);
+  const char* spine_skin_name(void* ctx, float id, float index);
+  float spine_time(void* ctx, float id);
+  float spine_set_time(void* ctx, float id, float t);
+  float spine_pages(void* ctx, float id);
+  float spine_page_texture(void* ctx, float id, float index);
 }

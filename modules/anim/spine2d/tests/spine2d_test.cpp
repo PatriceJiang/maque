@@ -95,8 +95,9 @@ static void test_spineboy() {
     CHECK(pg.name != nullptr);
     CHECK(pg.texture != 0);              /* 回调回填了 */
     CHECK(pg.width > 0 && pg.height > 0);
+    CHECK_EQ(pg.pma, 1);                 /* 官方 pma 图集在 atlas 里声明 `pma: true` */
     CHECK_EQ(log.pages.size(), (size_t)1);
-    std::print("  页 '{}' {}x{}\n", pg.name ? pg.name : "(null)", pg.width, pg.height);
+    std::print("  页 '{}' {}x{} pma={}\n", pg.name ? pg.name : "(null)", pg.width, pg.height, pg.pma);
 
     mq_spine_instance *in = mq_spine_instance_create(d);
     CHECK(in != nullptr);
@@ -123,7 +124,11 @@ static void test_spineboy() {
     CHECK_EQ(covered, (uint32_t)out.index_count);
     /* 索引都必须在顶点范围内（越界索引会让 GPU 直接崩） */
     for (int i = 0; i < out.index_count; ++i) CHECK(idx[(size_t)i] < (uint32_t)out.vertex_count);
-    /* UV 必须在 [0,1]（归一化坐标） */
+    /* UV 必须在 [0,1]（归一化坐标）。
+     * 注意这条**不足以**抓住"用了 getRegionUVs()（区域局部）而不是 getUVs()（归一化到整页）"：
+     * 两者都在 [0,1] 内（实测：正确的 UV 并集跨度 952x252 px / 页 1024x256，错误的并集 1024x256 px），
+     * 所以本单测**不再**假装能守它 —— 真正的判据是**像素级**的：
+     * tests/spine_e2e.sh 解码截图并断言"角色区域有足够多的非背景像素"（用错 accessor 时是 0）。 */
     for (int i = 0; i < out.vertex_count * 2; ++i) CHECK(uv[(size_t)i] >= -0.001F && uv[(size_t)i] <= 1.001F);
 
     /* 时间语义（确定性回放依赖它）：
@@ -214,6 +219,7 @@ static void test_dragon_multipage() {
         CHECK_EQ(mq_spine_data_page(d, i, &pg), MQ_SPINE_OK);
         CHECK(pg.name != nullptr && pg.name[0] != '\0');
         CHECK(pg.texture != 0);
+        CHECK_EQ(pg.pma, 1);             /* dragon-pma.atlas 同样声明 pma: true */
     }
     mq_spine_page overflow{};
     CHECK_EQ(mq_spine_data_page(d, pages, &overflow), MQ_SPINE_ERR_ARG);

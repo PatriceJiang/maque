@@ -6,6 +6,10 @@ compile_commands.json
 # 配置/构建日志（tools/win/build.ps1 与手工 cmake 的落盘输出）
 /configure-*.log
 /build-*.log
+# 临时重定向的构建输出（调试时 `cmake --build > out.txt` 之类的产物）
+/*-out.txt
+/*-out.log
+/out.txt
 
 # wgpu-native binary SDK (headers are committed; binaries are not)
 third_party/wgpu-native/lib/*.so

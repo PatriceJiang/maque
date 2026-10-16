@@ -135,6 +135,25 @@ tools\win\build.cmd -Sanitize address -RunTests
   **可按 shader 剔除**（默认全部）：`cmake -S . -B build -DMAQUE_SHADER_TEXTURED=OFF`
   → 不生成/不链接/不进二进制（gfx 取不到时打印原因并跳过该批次）；手动重打包 `--target maque_shaders`。
   测试：`ctest -R builtin_shaders`（注册表 = 开关 + 解压文本与磁盘资产逐字节一致）。
+- **两类图元：textured（实例化矩形/圆）与 mesh（任意三角网格）**：
+  - `textured`：一个实例 = 一个矩形/圆，逐实例一次变换 —— 精灵/字形/UI 用。
+  - `mesh`：**逐顶点** pos/uv/color + 索引缓冲 —— 骨骼动画（Spine）那种"一帧一变形的网格"用。
+    顶点缓冲 stride 32B（pos.xy / uv.xy / col.rgba，见 `assets/builtin/shaders/mesh/shader.wgsl` 顶部），
+    提交走 `mq_renderer_v1::render_mesh_views(self, tw, th, views, nviews, items, count, meshes, mesh_count, bg, out, out_size)`。
+  - 两者**共用同一份相机 uniform 布局**（48B：size/view/cam/zoom/rot/pan/eye），且顶点都已是
+    "渲染目标像素空间、y 向下"→ 变换逐项一致（**不要再翻 y**）。
+  - 剔除开关：`-DMAQUE_SHADER_MESH=OFF` 时不生成/不链接，gfx 取不到时打印原因并跳过网格图元。
+- **节点属性对渲染生效（含层级累积）**：`node_set_angle`（度）/`node_set_scale`/`node_set_opacity`
+  影响**自身与子树** —— 提取时沿父链累积（角度相加、缩放相乘、透明度相乘并夹 [0,1]），
+  `node_set_active(id,0)` 隐藏整棵子树。所以"炮塔挂在车体下、各自转向"这类层级结构直接可用：
+  子节点的角度是**相对父节点**的局部角。
+  （历史坑：这些字段曾被提取整个忽略 → 四个 API 静默无效；渲染项 ABI 本来就有
+  `rotation`/`a`/`half_w`/`half_h`，只是没填。）
+- **脚本键码是"引擎规范键空间"**：`MQ_KEY_*`（空格=2、回车=3、Tab=4、退格=5、左右=6/7、上下=8/9）
+  + **大写 ASCII**（'w' → 87）。真实设备事件在平台边界经 `key_from_sdl` 归一化，
+  `.sim.json` 注入经 `mq_sim_normalize_key` 归一化 —— **两条路径同一套码**，脚本只需认一套。
+  写 `.sim.json` 时用 SDL 风格码（空格 32、'w' 119、方向键 0x40000052 等）也可以，会被自动转换。
+  （历史坑：两条路径语义不同 → 回放/热更/CI 与真机不一致；按 raw SDL 码判断按键的脚本永不触发。）
 - **控制端点 / Inspector（plans/17、docs/09/11）**：`MAQUE_INSPECT=7777`（或 `tcp:7777` / `uds:/tmp/maque.sock`）
   在游戏内开一个**单线程、非阻塞、帧边界轮询**的 JSON-RPC 端点（与 stdin 控制面同一 dispatch，无线程 → 不改确定性）；
   默认**只读**（D2）：变更类方法（`control_list` 里 `control_mutating` 列出的）返回 `-32001` 并计入 `Control.info.rejected`；

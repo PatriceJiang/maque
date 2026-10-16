@@ -393,6 +393,42 @@ int b_host_node_valid(void* user, int, const double* a, double* ret) {
 int b_host_node_find_path(void* user, int, const double* a, const char* s, double* ret) {
   *ret = (double)host::node_find_path(user, (float)a[0], s); return 0;
 }
+int b_host_spine_animation_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_animation_count(user, (float)a[0]); return 0;
+}
+int b_host_spine_animation_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_animation_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_animation_index(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::spine_animation_index(user, (float)a[0], s); return 0;
+}
+int b_host_spine_play(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::spine_play(user, (float)a[0], s[0], (float)a[1]); return 0;
+}  /* kinds=nsn */
+int b_host_spine_current_animation(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_current_animation(user, (float)a[0])); return 0;
+}
+int b_host_spine_set_skin(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::spine_set_skin(user, (float)a[0], s); return 0;
+}
+int b_host_spine_skin_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_skin_count(user, (float)a[0]); return 0;
+}
+int b_host_spine_skin_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_skin_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_time(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_time(user, (float)a[0]); return 0;
+}
+int b_host_spine_set_time(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_time(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_pages(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_pages(user, (float)a[0]); return 0;
+}
+int b_host_spine_page_texture(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_page_texture(user, (float)a[0], (float)a[1]); return 0;
+}
 } // namespace
 
 extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
@@ -525,4 +561,16 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "node_destroy", b_host_node_destroy, ctx);
   mq_script_register_num(vm, "node_valid", b_host_node_valid, ctx);
   mq_script_register_mixed(vm, "node_find_path", b_host_node_find_path, ctx);
+  mq_script_register_num(vm, "spine_animation_count", b_host_spine_animation_count, ctx);
+  mq_script_register_ret_str(vm, "spine_animation_name", b_host_spine_animation_name, ctx);
+  mq_script_register_mixed(vm, "spine_animation_index", b_host_spine_animation_index, ctx);
+  mq_script_register_multi(vm, "spine_play", "nsn", b_host_spine_play, ctx);
+  mq_script_register_ret_str(vm, "spine_current_animation", b_host_spine_current_animation, ctx);
+  mq_script_register_mixed(vm, "spine_set_skin", b_host_spine_set_skin, ctx);
+  mq_script_register_num(vm, "spine_skin_count", b_host_spine_skin_count, ctx);
+  mq_script_register_ret_str(vm, "spine_skin_name", b_host_spine_skin_name, ctx);
+  mq_script_register_num(vm, "spine_time", b_host_spine_time, ctx);
+  mq_script_register_num(vm, "spine_set_time", b_host_spine_set_time, ctx);
+  mq_script_register_num(vm, "spine_pages", b_host_spine_pages, ctx);
+  mq_script_register_num(vm, "spine_page_texture", b_host_spine_page_texture, ctx);
 }
