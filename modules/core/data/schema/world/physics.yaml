@@ -192,7 +192,7 @@
         fields:
           - { name: struct_size, type: "uint32_t", doc: "= sizeof；0 → 全部取默认" }
           - { name: gravity_x, type: "float", doc: "默认 0" }
-          - { name: gravity_y, type: "float", doc: "默认 900（屏幕 y 向下，像素/秒²）" }
+          - { name: gravity_y, type: "float", doc: "默认 -900（世界坐标 y 向上 → 向下为负；像素/秒²）" }
           - { name: fixed_dt, type: "float", doc: "默认 1/60；必须 > 0" }
           - { name: solver_iterations, type: "uint32_t", doc: "默认 4；每步恒跑该次数" }
           - { name: max_bodies, type: "uint32_t", doc: "容量，默认 256；0 = 默认" }
@@ -220,7 +220,7 @@
           - { name: a_index, type: "uint32_t" }
           - { name: b_index, type: "uint32_t", doc: "恒有 a_index < b_index（平面接触 = PLANE）" }
           - { name: nx, type: "float" }
-          - { name: ny, type: "float", doc: "单位法线：a → b 方向" }
+          - { name: ny, type: "float", doc: "单位法线：a → b（平面接触：把体推回世界内部的**内向**法线）" }
           - { name: depth, type: "float", doc: "穿透深度 >= 0" }
       - name: mq_physics_v1
         doc: "插件 vtable（docs/02 §3）：跨 .so 的唯一函数表。"
@@ -248,7 +248,7 @@
       - { fn: mq_physics_get_velocity,  returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: vx, type: "float*" }, { name: vy, type: "float*" } ] }
       - { fn: mq_physics_set_velocity,  returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: vx, type: "float" }, { name: vy, type: "float" } ] }
       - { fn: mq_physics_interpolate,   returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: b, type: "mq_physics_body" }, { name: alpha, type: "float" }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
-      - { fn: mq_physics_set_bounds,    returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: min_x, type: "float" }, { name: min_y, type: "float" }, { name: max_x, type: "float" }, { name: max_y, type: "float" } ] }
+      - { fn: mq_physics_set_bounds,    returns: int,      args: [ { name: w, type: "mq_physics_world*" }, { name: min_x, type: "float" }, { name: min_y, type: "float" }, { name: max_x, type: "float" }, { name: max_y, type: "float" } ], doc: "四条静态平面：min_y = y 小的一侧、max_y = y 大的一侧（世界 y 向上 → min_y 是屏幕下沿）；DYNAMIC 体被挡在 [min+ext, max-ext]" }
       - { fn: mq_physics_step,          returns: int,      args: [ { name: w, type: "mq_physics_world*" } ] }
       - { fn: mq_physics_step_count,    returns: uint32_t, args: [ { name: w, type: "mq_physics_world*" } ] }
       - { fn: mq_physics_checksum,      returns: uint64_t, args: [ { name: w, type: "mq_physics_world*" } ] }

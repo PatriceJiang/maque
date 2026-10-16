@@ -19,6 +19,9 @@
     - { fn: entity_count,  ctx: true, returns: float }
     - { fn: entity_destroy,ctx: true, args: [ { name: id, type: float } ] }
     - { fn: entity_name,   ctx: true, args: [ { name: id, type: float } ], returns: string }
+    # 运行期配置：读宿主环境变量（不存在 → ""）。
+    # 用途：游戏资源（远程/热更内容）不该被硬编码；CI 与调试也需要"给资源一个开关"。
+    - { fn: env,           ctx: true, args: [ { name: name, type: string } ], returns: string }
     - { fn: entity_find,   ctx: true, args: [ { name: name, type: string } ], returns: float }
     # 实体 id 单调分配（永不复用）→ 陈旧 id 可判定：valid=0 表示已销毁/从未存在
     - { fn: entity_valid,  ctx: true, args: [ { name: id, type: float } ], returns: float }
@@ -42,6 +45,16 @@
                                              { name: radius, type: float } ], returns: float }
     - { fn: bounce_step,   ctx: true, args: [ { name: dt, type: float } ] }   # 兼容旧脚本（自 M6 起为 no-op）
     - { fn: physics_step,  ctx: true }                                       # 固定步长物理推进（docs/15 §3）
+    # 碰撞查询（docs/15 §3、docs/19）：**本帧**求解器算出的接触对，供脚本做玩法判定
+    #（撞管死亡 / 穿越得分 / 机关触发）。语义刻意保持"查询"而非"回调"：引擎不硬编码
+    # 任何碰撞回调，玩法仍在脚本层；顺序按 (a_index,b_index) 升序 → 确定性（docs/10 D4）。
+    # 配对的接触返回 true，撞世界边界（平面）的接触返回 false。
+    - { fn: physics_contact_count,    ctx: true, returns: float }
+    - { fn: physics_contact_pair,     ctx: true, args: [ { name: i, type: float } ], returns: bool }
+    - { fn: physics_contact_a,        ctx: true, args: [ { name: i, type: float } ], returns: float }
+    - { fn: physics_contact_b,        ctx: true, args: [ { name: i, type: float } ], returns: float }
+    - { fn: physics_contact_normal_x, ctx: true, args: [ { name: i, type: float } ], returns: float }
+    - { fn: physics_contact_normal_y, ctx: true, args: [ { name: i, type: float } ], returns: float }
     - { fn: ball_clear,    ctx: true }
     # 组件字段（脚本改文本等；引擎按 role 定位组件，不认具体类型名）
     - { fn: set_label,     ctx: true, args: [ { name: id, type: float }, { name: text, type: string } ] }

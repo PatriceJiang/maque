@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 242,
-  "api_count": 122,
+  "api_count": 129,
   "control_count": 43,
   "callback_count": 10,
   "module_count": 24,
@@ -15404,6 +15404,21 @@
       "manual": null
     },
     {
+      "name": "host.env",
+      "namespace": "host",
+      "fn": "env",
+      "global": true,
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
       "name": "host.entity_find",
       "namespace": "host",
       "fn": "entity_find",
@@ -15635,6 +15650,91 @@
       "global": true,
       "args": [],
       "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.physics_contact_count",
+      "namespace": "host",
+      "fn": "physics_contact_count",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.physics_contact_pair",
+      "namespace": "host",
+      "fn": "physics_contact_pair",
+      "global": true,
+      "args": [
+        {
+          "name": "i",
+          "type": "float"
+        }
+      ],
+      "returns": "bool",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.physics_contact_a",
+      "namespace": "host",
+      "fn": "physics_contact_a",
+      "global": true,
+      "args": [
+        {
+          "name": "i",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.physics_contact_b",
+      "namespace": "host",
+      "fn": "physics_contact_b",
+      "global": true,
+      "args": [
+        {
+          "name": "i",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.physics_contact_normal_x",
+      "namespace": "host",
+      "fn": "physics_contact_normal_x",
+      "global": true,
+      "args": [
+        {
+          "name": "i",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.physics_contact_normal_y",
+      "namespace": "host",
+      "fn": "physics_contact_normal_y",
+      "global": true,
+      "args": [
+        {
+          "name": "i",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
       "ctx": true,
       "manual": null
     },
@@ -22179,7 +22279,7 @@
             {
               "name": "gravity_y",
               "type": "float",
-              "doc": "默认 900（屏幕 y 向下，像素/秒²）"
+              "doc": "默认 -900（世界坐标 y 向上 → 向下为负；像素/秒²）"
             },
             {
               "name": "fixed_dt",
@@ -22299,7 +22399,7 @@
             {
               "name": "ny",
               "type": "float",
-              "doc": "单位法线：a → b 方向"
+              "doc": "单位法线：a → b（平面接触：把体推回世界内部的**内向**法线）"
             },
             {
               "name": "depth",

@@ -13,6 +13,12 @@
  *   5) 静息钳制：接触面上法向速度小于 (0.5 + 1.5*|g|*dt) 像素/秒时清零 —— 确定性、
  *      与负载无关，消除落定后的持续抖动。
  * 边界：世界边界为静态平面（深度取各平面重叠量），DYNAMIC 体取自身恢复系数/摩擦。
+ * 坐标约定（权威，见 docs/15 §3.1）：物理世界**就是**世界坐标，**y 向上**。
+ *   · 重力是矢量：`gravity_y < 0` = 屏幕向下（默认 -900）；`> 0` = 向上加速。
+ *   · 边界平面：`min_y` 是 y 小的一侧（世界 y 向上 → 屏幕下沿），`max_y` 是 y 大的一侧（屏幕上沿）；
+ *     四条平面都向内推体（min_y 平面法线 (0,-1)，max_y 平面 (0,+1)）。体被挡在
+ *     `[min + 外接半径, max - 外接半径]` 内（BALL 取 radius，CUBOID 取 half_w/half_h）。
+ *   · 接触法线恒为 a → b（平面接触 = 内向法线、b_index = PLANE）。
  * 确定性：无墙钟 / 无线程 / 无 std::random / 无指针序；浮点仅普通 float 运算；
  *          体表、存活索引表与接触缓冲均在 create 时一次性预留，step 内零分配。
  * 每实例状态：全部在 mq_physics_world 内（docs/02 §5 零全局可变状态）。 */
@@ -26,7 +32,8 @@
 
 namespace {
 
-constexpr float kDefaultGravityY = 900.0F;
+/* 默认重力 y 分量：世界坐标 y 向上 → 屏幕向下 = -y。 */
+constexpr float kDefaultGravityY = -900.0F;
 constexpr float kDefaultFixedDt = 1.0F / 60.0F;
 constexpr uint32_t kDefaultSolverIterations = 4;
 constexpr uint32_t kDefaultMaxBodies = 256;

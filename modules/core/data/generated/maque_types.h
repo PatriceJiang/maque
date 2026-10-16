@@ -2288,7 +2288,7 @@ struct Scene {
     uint32_t seed = 0;
     int32_t views = 1;
     float eye_sep = 0.0F;
-    float gravity_y = 900.0F;
+    float gravity_y = -900.0F;
     float restitution = 0.86F;
 };
 

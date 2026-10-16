@@ -35,6 +35,7 @@ namespace host {
   float entity_count(void* ctx);
   void entity_destroy(void* ctx, float id);
   const char* entity_name(void* ctx, float id);
+  const char* env(void* ctx, const char* name);
   float entity_find(void* ctx, const char* name);
   float entity_valid(void* ctx, float id);
   float input_x(void* ctx);
@@ -52,6 +53,12 @@ namespace host {
   float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius);
   void bounce_step(void* ctx, float dt);
   void physics_step(void* ctx);
+  float physics_contact_count(void* ctx);
+  bool physics_contact_pair(void* ctx, float i);
+  float physics_contact_a(void* ctx, float i);
+  float physics_contact_b(void* ctx, float i);
+  float physics_contact_normal_x(void* ctx, float i);
+  float physics_contact_normal_y(void* ctx, float i);
   void ball_clear(void* ctx);
   void set_label(void* ctx, float id, const char* text);
   float ui_hit_at(void* ctx, float x, float y);

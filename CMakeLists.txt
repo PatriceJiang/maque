@@ -246,3 +246,4 @@ add_subdirectory(modules/runtime)
 add_subdirectory(samples/player)
 add_subdirectory(samples/inspector)
 add_subdirectory(samples/host)
+add_subdirectory(samples/flappy)   # 独立游戏工程（玩法全在资源里；见该目录 CMakeLists 顶部说明）

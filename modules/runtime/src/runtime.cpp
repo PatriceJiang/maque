@@ -233,6 +233,12 @@ struct Engine {
     std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
     std::string pending_scene;                     // director.loadScene()：帧边界切场景
     std::vector<std::pair<int, mq_physics_body>> physics_role_bodies;   // (entity, 世代句柄)
+    /* 碰撞查询（docs/15 §3、docs/19）：把求解器本帧的接触对映射回实体 id，供脚本判玩法。
+     * 内容是"帧内派生缓存"，**不进快照/校验和**（真相仍是物理体状态）。
+     * 惰性刷新：物理 step 后首次查询时重建，之后复用；下一帧 step 置脏。 */
+    std::vector<std::pair<int, int>> contact_entities;   // 与求解器 contacts 同序（a_index 升序）
+    bool contacts_dirty = false;
+    void refresh_contacts();                             // 重建 contact_entities（幂等）
     /* 输入模拟器（docs/19）：.sim.json 场景 → 帧索引输入事件流（确定性；与录制/回放一致） */
     /* 画布（分辨率策略，docs/17）：把设计分辨率适配到任意窗口/显示器 */
     mq_canvas_metrics canvas{};           // 当前解析结果（设计 → 设备像素）
@@ -2814,6 +2820,7 @@ void Engine::physics_components_setup() {
         const double body_type = read_num(bd, body_blob->data(), "body_type", 0.0F);
         const double is_static = body_type == 0.0 ? 1.0 : 0.0;
         double radius = 0.0, hw = 0.0, hh = 0.0;
+        double shape_type = 0.0, friction = 0.5, restitution = 0.0;
         if (auto* col = comp_by_role(*this, id, MQ_ROLE_PHYSICS_COLLIDER)) {
             const mq_type_desc* cd = nullptr;
             for (auto& [tid, b] : e->comps) {
@@ -2821,12 +2828,56 @@ void Engine::physics_components_setup() {
                 if (d && (d->role & MQ_ROLE_PHYSICS_COLLIDER)) { cd = d; break; }
             }
             if (cd) {
-                radius = read_num(cd, col->data(), "radius", 8.0F);
-                hw = read_num(cd, col->data(), "half_w", 8.0F);
-                hh = read_num(cd, col->data(), "half_h", 8.0F);
+                /* 字段名必须与 schema 的 `physics.Collider`（world/physics.yaml）**逐字段一致**。
+                 * 踩过的大坑：这里曾读 `half_w`/`half_h` —— 那两个字段在 Collider 里**根本不存在**，
+                 * 于是永远拿到默认值、几何全错；同时完全没读 `shape_type`（形状靠 radius>0 猜）。
+                 * 结果是"碰撞表面看着存在、球却直接穿过地板"：bug 藏在默认值里，很难看出来。
+                 *   shape_type: ShapeType（Box=0 Circle=1 Capsule=2 …）→ 求解器只支持 Ball/Cuboid
+                 *   half_extents: math.Vec3（**嵌套 struct**）→ 2D 取其 x/y，z 忽略 */
+                shape_type = read_num(cd, col->data(), "shape_type", 0.0F);
+                radius = read_num(cd, col->data(), "radius", 0.5F);
+                friction = read_num(cd, col->data(), "friction", 0.5F);
+                restitution = read_num(cd, col->data(), "restitution", 0.0F);
+                if (const mq_field_desc* f = mq_reflect_field(cd, "half_extents")) {
+                    const mq_type_desc* vt = mq_reflect_type_by_id(reflect, f->type_id);
+                    const uint8_t* p = col->data() + f->offset;
+                    if (const mq_field_desc* fx = vt ? mq_reflect_field(vt, "x") : nullptr)
+                        hw = *(const float*)(p + fx->offset);
+                    if (const mq_field_desc* fy = vt ? mq_reflect_field(vt, "y") : nullptr)
+                        hh = *(const float*)(p + fy->offset);
+                }
+                /* Capsule(2)/Cylinder(3) 的轴向半高在 half_height；2D 下沿用为半高 */
+                if (shape_type == 2.0 || shape_type == 3.0)
+                    hh = read_num(cd, col->data(), "half_height", 0.5F);
             }
         }
-        if (radius <= 0.0 && hw <= 0.0 && hh <= 0.0) radius = 8.0;   // 默认圆
+        /* 形状按**声明的 shape_type** 决定，而不是靠"radius 是否 > 0"猜。
+         * Box → Cuboid；Circle（以及 2D 下退化的 Capsule）→ Ball；
+         * Convex/TriMesh/HeightField 求解器不支持：明确告警并退化为 Box。 */
+        bool is_circle = (shape_type == 1.0 || shape_type == 2.0);
+        if (shape_type >= 4.0) {
+            std::print(stderr, "runtime: entity {} '{}' 的 Collider.shape_type={} 在 2D 求解器下不支持；"
+                               "已按 Box 处理\n", id, e->name, (int)shape_type);
+            is_circle = false;
+        }
+        if (is_circle) {
+            hw = hh = 0.0;
+            if (radius <= 0.0) {
+                std::print(stderr, "runtime: entity {} '{}' 的 Collider 是 Circle 但 radius<=0；已按 8 兜底\n",
+                           id, e->name);
+                radius = 8.0;
+            }
+        } else {
+            radius = 0.0;
+            /* 尺寸非正 = 无效碰撞体：**不静默兜底**（静默兜底正是上面那个 bug 藏住的原因），
+             * 明确告警并按圆兜底（旧行为），让作者一眼看到"忘了写尺寸"。 */
+            if (hw <= 0.0 || hh <= 0.0) {
+                std::print(stderr, "runtime: entity {} '{}' 的 Collider 是 Box 但 half_extents 非正"
+                                   "（{:.2f},{:.2f}）；已按半径 8 的圆兜底 —— 请显式声明尺寸\n",
+                           id, e->name, hw, hh);
+                hw = hh = 0.0; radius = 8.0; is_circle = true;
+            }
+        }
         mq_physics_body_desc desc{};
         desc.struct_size = (uint32_t)sizeof desc;
         desc.type = is_static != 0.0 ? MQ_PHYSICS_BODY_STATIC : MQ_PHYSICS_BODY_DYNAMIC;
@@ -2847,8 +2898,31 @@ void Engine::physics_components_step(float) {
         std::print("runtime: {} physics body(ies) from components\n", physics_role_bodies.size());
         reported = true;
     }
+    contacts_dirty = true;                          // 新一轮 step 后接触对需重建（见 refresh_contacts）
     if (!physics || physics_role_bodies.empty()) return;
     mq_physics_step(physics);                       // 固定步长在世界配置里（docs/10 D1）
+    /* 诊断（MAQUE_TRACE_PHYSICS=1）：逐帧打印实体位置 + 本帧接触对（排查"为什么判定不中"） */
+    if (std::getenv("MAQUE_TRACE_PHYSICS")) {
+        static int trace_n = 0;
+        if (trace_n < 40) {
+            std::print(stderr, "[phys] f{}", trace_n);
+            for (auto& [id, body] : physics_role_bodies) {
+                float x = 0, y = 0, vx = 0, vy = 0;
+                mq_physics_get_transform(physics, body, &x, &y);
+                mq_physics_get_velocity(physics, body, &vx, &vy);
+                std::print(stderr, " e{}@({:.1f},{:.1f})v({:.0f},{:.0f})", id, x, y, vx, vy);
+            }
+            const uint32_t nc = mq_physics_contact_count(physics);
+            std::print(stderr, " contacts={}", nc);
+            for (uint32_t i = 0; i < nc; ++i) {
+                mq_physics_contact c{};
+                if (mq_physics_contact_at(physics, i, &c) == 0)
+                    std::print(stderr, " [a={} b={} n=({:.1f},{:.1f}) d={:.2f}]", c.a_index, c.b_index, c.nx, c.ny, c.depth);
+            }
+            std::print(stderr, "\n");
+            ++trace_n;
+        }
+    }
     for (auto& [id, body] : physics_role_bodies) {
         Entity* e = scene->at(id);
         if (!e) continue;
@@ -2857,6 +2931,35 @@ void Engine::physics_components_step(float) {
             e->world_x = x; e->world_y = y;
             host::entity_set_pos(this, (float)id, x, y);   // 写回 Transform2D（否则被 flatten_world 覆盖）
         }
+    }
+}
+
+/* 把求解器**本帧**的接触对映射回实体 id（docs/15 §3、docs/19）。
+ *
+ * 设计取舍：
+ *   · 引擎只提供**查询**，不提供"碰撞回调"——玩法（撞管死亡/得分）属于脚本层，
+ *     引擎不硬编码任何组件名或事件语义（与"引擎即浏览器、游戏即资源"一致）；
+ *   · 结果保持求解器顺序（a_index 升序）→ 确定性（docs/10 D4）；
+ *   · 不认识的 body.index（例如 spawn_ball 的临时球）映射为 -1，脚本据此跳过；
+ *   · 撞世界边界是**平面接触**（b_index = MQ_PHYSICS_PLANE_INDEX）→ 该对映射为 (-1,-1)，
+ *     脚本用 physics_contact_pair() 区分"实体对实体"与"撞边界"；
+ *   · 惰性重建：一次 step 后首次查询建表，之后复用；下一帧 step 置脏。 */
+void Engine::refresh_contacts() {
+    if (!contacts_dirty) return;
+    contacts_dirty = false;
+    contact_entities.clear();
+    if (!physics) return;
+    const uint32_t n = mq_physics_contact_count(physics);
+    contact_entities.reserve(n);
+    for (uint32_t i = 0; i < n; ++i) {
+        mq_physics_contact c{};
+        if (mq_physics_contact_at(physics, i, &c) != 0) { contact_entities.emplace_back(-1, -1); continue; }
+        int ea = -1, eb = -1;
+        for (const auto& [id, body] : physics_role_bodies) {
+            if (body.index == c.a_index) ea = id;
+            if (body.index == c.b_index) eb = id;
+        }
+        contact_entities.emplace_back(ea, eb);
     }
 }
 
@@ -2953,6 +3056,16 @@ float entity_find(void* ctx, const char* name) {
         if (e.name == name && (best < 0 || k < best)) best = k;
     return (float)best;
 }
+/* 运行期配置：读宿主环境变量（不存在 → ""）。返回 std::string 的 c_str，绑定侧立即拷贝。 */
+const char* env(void*, const char* name) {
+    static std::string scratch;
+    scratch.clear();
+    if (name && *name) {
+        if (const char* v = std::getenv(name)) scratch = v;
+    }
+    return scratch.c_str();
+}
+
 /* 物理步进（docs/15 §3）：无参数——固定步长由求解器配置决定（禁止脚本改变 dt）。
  * 求解器内部按 body.index 稳定排序、固定迭代 → 确定性；结果只读回写到组件。 */
 void bounce_step(void*, float) {
@@ -2971,6 +3084,52 @@ void physics_step(void* ctx) {
         mq_physics_get_velocity(eng->physics, b.body, &b.vx, &b.vy);
         host::entity_set_pos(eng, (float)b.id, x, y);
     }
+}
+
+/* ---- 碰撞查询（docs/15 §3、docs/19）------------------------------------------------
+ * 把求解器**本帧**算出的接触对交给脚本判玩法（撞管死亡 / 穿越得分 / 机关触发）。
+ * 刻意只做"查询"不做"回调"：引擎不硬编码碰撞事件语义，玩法仍在脚本层。
+ * 索引越界一律安全返回（false / -1 / 0），不崩——脚本是远程/热更内容，必须容错。 */
+float physics_contact_count(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    eng->refresh_contacts();
+    return (float)eng->contact_entities.size();
+}
+bool physics_contact_pair(void* ctx, float i) {
+    auto* eng = (Engine*)ctx;
+    eng->refresh_contacts();
+    const int k = (int)i;
+    if (k < 0 || (size_t)k >= eng->contact_entities.size()) return false;
+    const auto& [a, b] = eng->contact_entities[(size_t)k];
+    return a >= 0 && b >= 0;                        // 撞世界边界（平面接触）→ false
+}
+float physics_contact_a(void* ctx, float i) {
+    auto* eng = (Engine*)ctx;
+    eng->refresh_contacts();
+    const int k = (int)i;
+    return (k >= 0 && (size_t)k < eng->contact_entities.size()) ? (float)eng->contact_entities[(size_t)k].first : -1.0F;
+}
+float physics_contact_b(void* ctx, float i) {
+    auto* eng = (Engine*)ctx;
+    eng->refresh_contacts();
+    const int k = (int)i;
+    return (k >= 0 && (size_t)k < eng->contact_entities.size()) ? (float)eng->contact_entities[(size_t)k].second : -1.0F;
+}
+/* 接触法线（单位向量；a → b 方向，见 abi/physics.h）。平面接触同样有法线。 */
+static bool contact_normal_at(Engine* eng, float i, float* nx, float* ny) {
+    if (!eng->physics) return false;
+    mq_physics_contact c{};
+    if (mq_physics_contact_at(eng->physics, (uint32_t)i, &c) != 0) return false;
+    *nx = c.nx; *ny = c.ny;
+    return true;
+}
+float physics_contact_normal_x(void* ctx, float i) {
+    float nx = 0, ny = 0;
+    return contact_normal_at((Engine*)ctx, i, &nx, &ny) ? nx : 0.0F;
+}
+float physics_contact_normal_y(void* ctx, float i) {
+    float nx = 0, ny = 0;
+    return contact_normal_at((Engine*)ctx, i, &nx, &ny) ? ny : 0.0F;
 }
 
 float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius) {
@@ -3301,6 +3460,26 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
     const mq_field_desc* f = mq_reflect_field(d, field ? field : "");
     if (!f || f->kind != MQ_TK_STRING) return 0.0F;
     *(std::string*)(blob->data() + f->offset) = value ? value : "";
+    /* 改了资源引用就**当场解析并缓存**。
+     * 为什么必须在这里做：渲染提取（Scene::extract）是**只读**的（docs/13 §8 / docs/15 §1：
+     * 不得触发加载），它只查 material_cache / tex_cache。装配期会预解析场景自带实体的资源，
+     * 但**脚本运行时生成的**实体没有那次机会 —— 于是贴图缺失、图元退化成纯色方块
+     *（实测：动态生成的水管全是 sprite 默认蓝色，而不是贴图的绿色）。
+     * 所以"赋值即解析"是这条路径上唯一能补齐的时机。 */
+    if (d->role & MQ_ROLE_SPRITE) {
+        const std::string ref = value ? value : "";
+        if (!ref.empty()) {
+            if (f == mq_reflect_field(d, "material")) {
+                scn::SpriteMaterial m{};
+                if (eng->load_material(ref, m)) {
+                    eng->material_cache[ref] = m;
+                    if (!m.texture.empty()) eng->load_texture_ref(m.texture);
+                }
+            } else if (f == mq_reflect_field(d, "texture")) {
+                eng->load_texture_ref(ref);
+            }
+        }
+    }
     return 1.0F;
 }
 
@@ -4915,6 +5094,11 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     rng = scene->desc.seed * 2654435761u + 12345u;
     if (physics) { mq_physics_destroy(physics); physics = nullptr; }
     {
+        /* 物理装配（坐标约定权威说明见 docs/15 §3.1）：
+         *   · 物理世界**就是世界坐标（y 向上）**，`scn.Scene.gravity_y` 是该坐标系下的 y 分量
+         *     → 直接透传，不取反；默认 -900（负 = 屏幕向下掉，正 = 向上加速）。
+         *   · 边界 = 场景矩形在世界坐标下的四条平面：min=(0,0) 是**屏幕左下**、max=(W,H) 是右上。
+         *     所以物体会被挡在 y ∈ [radius, H-radius]（这才是"屏幕底部的地面"）。 */
         mq_physics_config pcfg{};
         pcfg.struct_size = (uint32_t)sizeof pcfg;
         pcfg.gravity_y = scene->desc.gravity_y;

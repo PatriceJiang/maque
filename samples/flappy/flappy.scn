@@ -1,0 +1,79 @@
+{
+  "title": "Flappy Bird",
+  "script": "flappy.js",
+  "width": 320,
+  "height": 240,
+  "seed": 20241016,
+  "entities": [
+    {
+      "name": "sky",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 120 },
+        { "type": "scn.Sprite", "width": 320, "height": 240, "material": "/art/sky.mat.json" }
+      ]
+    },
+    {
+      "name": "cloud_far",
+      "components": [
+        { "type": "scn.Transform2D", "x": 60, "y": 190 },
+        { "type": "scn.Sprite", "width": 68, "height": 20, "material": "/art/cloud.mat.json" }
+      ]
+    },
+    {
+      "name": "cloud_far2",
+      "components": [
+        { "type": "scn.Transform2D", "x": 260, "y": 205 },
+        { "type": "scn.Sprite", "width": 68, "height": 20, "material": "/art/cloud.mat.json" }
+      ]
+    },
+    {
+      "name": "cloud_near",
+      "components": [
+        { "type": "scn.Transform2D", "x": 180, "y": 170 },
+        { "type": "scn.Sprite", "width": 68, "height": 20, "material": "/art/cloud.mat.json" }
+      ]
+    },
+    {
+      "name": "bird",
+      "components": [
+        { "type": "scn.Transform2D", "x": 84, "y": 130 },
+        { "type": "scn.Sprite", "radius": 9, "material": "/art/bird.mat.json" }
+      ]
+    },
+    {
+      "name": "ground",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 10 },
+        { "type": "scn.Sprite", "width": 320, "height": 20, "material": "/art/ground.mat.json" }
+      ]
+    },
+    {
+      "name": "ground2",
+      "components": [
+        { "type": "scn.Transform2D", "x": 480, "y": 10 },
+        { "type": "scn.Sprite", "width": 320, "height": 20, "material": "/art/ground.mat.json" }
+      ]
+    },
+    {
+      "name": "grass",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 23 },
+        { "type": "scn.Sprite", "width": 320, "height": 6, "material": "/art/grass.mat.json" }
+      ]
+    },
+    {
+      "name": "grass2",
+      "components": [
+        { "type": "scn.Transform2D", "x": 480, "y": 23 },
+        { "type": "scn.Sprite", "width": 320, "height": 6, "material": "/art/grass.mat.json" }
+      ]
+    },
+    {
+      "name": "hud",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 208 },
+        { "type": "scn.Label", "text": "TAP / SPACE", "font_size": 16, "align": "center" }
+      ]
+    }
+  ]
+}

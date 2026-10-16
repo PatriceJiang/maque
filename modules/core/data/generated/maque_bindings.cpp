@@ -78,6 +78,9 @@ int b_host_entity_destroy(void* user, int, const double* a, double* ret) {
 int b_host_entity_name(void* user, int, const double* a, char* ret, int cap) {
   std::snprintf(ret, (size_t)cap, "%s", host::entity_name(user, (float)a[0])); return 0;
 }
+int b_host_env(void* user, int, const double* a, int, const char** s, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::env(user, s[0])); return 0;
+}  /* kinds=s */
 int b_host_entity_find(void* user, const char* s, double* ret) {
   *ret = (double)host::entity_find(user, s); return 0;
 }
@@ -128,6 +131,24 @@ int b_host_bounce_step(void* user, int, const double* a, double* ret) {
 }
 int b_host_physics_step(void* user, int, const double* a, double* ret) {
   host::physics_step(user); return 0;
+}
+int b_host_physics_contact_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::physics_contact_count(user); return 0;
+}
+int b_host_physics_contact_pair(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::physics_contact_pair(user, (float)a[0]); return 0;
+}
+int b_host_physics_contact_a(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::physics_contact_a(user, (float)a[0]); return 0;
+}
+int b_host_physics_contact_b(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::physics_contact_b(user, (float)a[0]); return 0;
+}
+int b_host_physics_contact_normal_x(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::physics_contact_normal_x(user, (float)a[0]); return 0;
+}
+int b_host_physics_contact_normal_y(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::physics_contact_normal_y(user, (float)a[0]); return 0;
 }
 int b_host_ball_clear(void* user, int, const double* a, double* ret) {
   host::ball_clear(user); return 0;
@@ -399,6 +420,7 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "entity_count", b_host_entity_count, ctx);
   mq_script_register_num(vm, "entity_destroy", b_host_entity_destroy, ctx);
   mq_script_register_ret_str(vm, "entity_name", b_host_entity_name, ctx);
+  mq_script_register_multi_ret_str(vm, "env", "s", b_host_env, ctx);
   mq_script_register_str(vm, "entity_find", b_host_entity_find, ctx);
   mq_script_register_num(vm, "entity_valid", b_host_entity_valid, ctx);
   mq_script_register_num(vm, "input_x", b_host_input_x, ctx);
@@ -416,6 +438,12 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "spawn_ball", b_host_spawn_ball, ctx);
   mq_script_register_num(vm, "bounce_step", b_host_bounce_step, ctx);
   mq_script_register_num(vm, "physics_step", b_host_physics_step, ctx);
+  mq_script_register_num(vm, "physics_contact_count", b_host_physics_contact_count, ctx);
+  mq_script_register_num(vm, "physics_contact_pair", b_host_physics_contact_pair, ctx);
+  mq_script_register_num(vm, "physics_contact_a", b_host_physics_contact_a, ctx);
+  mq_script_register_num(vm, "physics_contact_b", b_host_physics_contact_b, ctx);
+  mq_script_register_num(vm, "physics_contact_normal_x", b_host_physics_contact_normal_x, ctx);
+  mq_script_register_num(vm, "physics_contact_normal_y", b_host_physics_contact_normal_y, ctx);
   mq_script_register_num(vm, "ball_clear", b_host_ball_clear, ctx);
   mq_script_register_mixed(vm, "set_label", b_host_set_label, ctx);
   mq_script_register_num(vm, "ui_hit_at", b_host_ui_hit_at, ctx);

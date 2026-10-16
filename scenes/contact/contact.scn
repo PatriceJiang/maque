@@ -1,0 +1,27 @@
+{
+  "title": "physics contact",
+  "script": "physics_contact.js",
+  "width": 320,
+  "height": 240,
+  "seed": 7,
+  "entities": [
+    {
+      "name": "shelf",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 200 },
+        { "type": "scn.Sprite", "half_w": 60, "half_h": 20 },
+        { "type": "physics.RigidBody", "body_type": "BodyType::Static" },
+        { "type": "physics.Collider", "shape_type": "ShapeType::Box", "half_extents": { "x": 60.0, "y": 20.0, "z": 0.5 } }
+      ]
+    },
+    {
+      "name": "ball",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 150 },
+        { "type": "scn.Sprite", "radius": 8 },
+        { "type": "physics.RigidBody", "body_type": "BodyType::Dynamic" },
+        { "type": "physics.Collider", "shape_type": "ShapeType::Circle", "radius": 8.0, "restitution": 0.0 }
+      ]
+    }
+  ]
+}

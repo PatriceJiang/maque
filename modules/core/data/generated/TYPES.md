@@ -1889,7 +1889,7 @@ role: `particle_emitter`
 | `seed` | uint32_t | 0 |  |
 | `views` | int32_t | 1 |  |
 | `eye_sep` | float | 0.0F |  |
-| `gravity_y` | float | 900.0F |  |
+| `gravity_y` | float | -900.0F |  |
 | `restitution` | float | 0.86F |  |
 
 ### scn.Sprite — struct (变长（含动态成员）)

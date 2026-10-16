@@ -52,7 +52,7 @@ typedef struct mq_physics_body {
 typedef struct mq_physics_config {
     uint32_t struct_size;   /* = sizeof；0 → 全部取默认 */
     float gravity_x;   /* 默认 0 */
-    float gravity_y;   /* 默认 900（屏幕 y 向下，像素/秒²） */
+    float gravity_y;   /* 默认 -900（世界坐标 y 向上 → 向下为负；像素/秒²） */
     float fixed_dt;   /* 默认 1/60；必须 > 0 */
     uint32_t solver_iterations;   /* 默认 4；每步恒跑该次数 */
     uint32_t max_bodies;   /* 容量，默认 256；0 = 默认 */
@@ -82,7 +82,7 @@ typedef struct mq_physics_contact {
     uint32_t a_index;
     uint32_t b_index;   /* 恒有 a_index < b_index（平面接触 = PLANE） */
     float nx;
-    float ny;   /* 单位法线：a → b 方向 */
+    float ny;   /* 单位法线：a → b（平面接触：把体推回世界内部的**内向**法线） */
     float depth;   /* 穿透深度 >= 0 */
 } mq_physics_contact;
 
@@ -122,6 +122,7 @@ int mq_physics_set_transform(mq_physics_world* w, mq_physics_body b, float x, fl
 int mq_physics_get_velocity(mq_physics_world* w, mq_physics_body b, float* vx, float* vy);
 int mq_physics_set_velocity(mq_physics_world* w, mq_physics_body b, float vx, float vy);
 int mq_physics_interpolate(mq_physics_world* w, mq_physics_body b, float alpha, float* x, float* y);
+/* 四条静态平面：min_y = y 小的一侧、max_y = y 大的一侧（世界 y 向上 → min_y 是屏幕下沿）；DYNAMIC 体被挡在 [min+ext, max-ext] */
 int mq_physics_set_bounds(mq_physics_world* w, float min_x, float min_y, float max_x, float max_y);
 int mq_physics_step(mq_physics_world* w);
 uint32_t mq_physics_step_count(mq_physics_world* w);

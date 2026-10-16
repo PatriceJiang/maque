@@ -1,5 +1,11 @@
 // maque physics 模块单测（独立：仅依赖 maque::physics + mq_physics.h）
-// 覆盖：生命周期/句柄、自由落体、弹跳、确定性、稳定排序、快照往返、只读插值、插件 vtable。
+// 覆盖：生命周期/句柄、自由落体、弹跳、确定性、稳定排序、快照往返、只读插值、插件 vtable、
+//       坐标约定（世界 y 向上：默认重力 -900 = 向屏幕下方）与世界边界四平面的实际位置。
+//
+// 读法提示：本文件多数既有用例把 gravity_y 设成 **+900**，那是"向上加速"的纯数学用例
+// （求解器对 y 方向无偏好）；**引擎的坐标约定**（世界 y 向上、默认重力 -900 = 向下掉、
+// min_y 是屏幕下沿）由 test_coordinate_convention / test_bounds_sides /
+// test_scene_fall_onto_floor 三个用例钉住，权威说明见 docs/15 §3.1。
 #include "physics/mq_physics.h"
 
 #include <cmath>
@@ -13,7 +19,7 @@ static int g_failures = 0;
 
 namespace {
 
-constexpr float kFloorY = 200.0F;   /* 地面平面（y 向下） */
+constexpr float kFloorY = 200.0F;   /* 边界**上限**平面 max_y（旧用例用 +y 重力 → 球被挡在这一侧） */
 constexpr float kBallRadius = 10.0F;
 
 mq_physics_config make_config() {
@@ -540,7 +546,7 @@ void test_body_kinds_and_isolation() {
     box.type = MQ_PHYSICS_BODY_STATIC;
     box.shape = MQ_PHYSICS_SHAPE_CUBOID;
     box.half_w = 30.0F;
-    box.half_h = 20.0F; /* 顶面 y = 160 */
+    box.half_h = 20.0F; /* 上/下面分别是 y = 200 / y = 160；本用例 +y 重力 → 球停在 y = 160 那面 */
     mq_physics_body box_h{};
     CHECK(mq_physics_add_body(w, &box, &box_h) == MQ_PHYSICS_OK);
 
@@ -590,7 +596,7 @@ void test_body_kinds_and_isolation() {
     CHECK(mq_physics_get_velocity(w, fixed_h, &bvx, &bvy) == MQ_PHYSICS_OK);
     CHECK(bx == 200.0F && by == 30.0F && bvy == 0.0F); /* 关重力：悬停 */
 
-    /* 球落在静态盒顶面（y ≈ 160 - r），不穿透、不抖 */
+    /* 球停在静态盒 y = 160 那一面上（y ≈ 160 - r），不穿透、不抖 */
     CHECK(mq_physics_get_transform(w, fall_h, &bx, &by) == MQ_PHYSICS_OK);
     CHECK(mq_physics_get_velocity(w, fall_h, &bvx, &bvy) == MQ_PHYSICS_OK);
     CHECK(std::fabs(by - 150.0F) < 1.0e-2F);
@@ -628,6 +634,159 @@ void test_body_kinds_and_isolation() {
     CHECK(mq_physics_body_count(x) == 0 && mq_physics_body_count(y) == 0);
     mq_physics_destroy(x);
     mq_physics_destroy(y);
+    mq_physics_destroy(w);}
+
+/* 10) 坐标约定（权威，docs/15 §3.1）：物理世界 = 世界坐标，**y 向上**
+ *     → 默认重力必须为负（-900 = 向屏幕下方掉）；runtime 把 scn.Scene.gravity_y 原样透传。 */
+void test_coordinate_convention() {
+    const float dt = 1.0F / 60.0F;
+    for (int variant = 0; variant < 2; ++variant) {
+        mq_physics_config zero{};
+        mq_physics_world* w =
+            (variant == 0) ? mq_physics_create(nullptr) : mq_physics_create(&zero);
+        CHECK(w != nullptr); /* NULL / struct_size=0 → 全默认 */
+        mq_physics_body_desc d = make_ball(100.0F, 120.0F);
+        mq_physics_body h{};
+        CHECK(mq_physics_add_body(w, &d, &h) == MQ_PHYSICS_OK);
+        CHECK(mq_physics_step(w) == MQ_PHYSICS_OK);
+        float x = 0.0F, y = 0.0F, vx = 0.0F, vy = 0.0F;
+        CHECK(mq_physics_get_transform(w, h, &x, &y) == MQ_PHYSICS_OK);
+        CHECK(mq_physics_get_velocity(w, h, &vx, &vy) == MQ_PHYSICS_OK);
+        CHECK(vy < 0.0F);          /* 默认重力朝 -y（世界向下 = 屏幕向下） */
+        CHECK(y < 120.0F);         /* 位置朝 -y 移动 */
+        CHECK(vy == -900.0F * dt); /* 半隐式 Euler 第一步：v = g*dt，逐位相等 */
+        CHECK(x == 100.0F && vx == 0.0F);
+        mq_physics_destroy(w);
+    }
+}
+
+/* 11) 世界边界四条平面：min_y 是 **y 小**的一侧（世界 y 向上 → 屏幕**下沿**），
+ *     max_y 是 y 大的一侧（屏幕上沿）；体被挡在 [min+外接半径, max-外接半径] 内。
+ *     与 docs/15 §3.1 的可复现实验同参数（320x240、r=8、120 px/s、restitution=0）。 */
+void test_bounds_sides() {
+    const float r = 8.0F;
+    /* 每个方向**单独一个世界**：同一世界里两条路径可能交叉（球-球接触会污染结果） */
+    const auto run = [&](float vx0, float vy0, float& out_x, float& out_y, float& out_nx,
+                         float& out_ny) {
+        mq_physics_config cfg2 = make_config();
+        cfg2.gravity_y = 0.0F; /* 关重力：位移只来自初速度（避免与重力方向混淆） */
+        mq_physics_world* w2 = mq_physics_create(&cfg2);
+        CHECK(w2 != nullptr);
+        CHECK(mq_physics_set_bounds(w2, 0.0F, 0.0F, 320.0F, 240.0F) == MQ_PHYSICS_OK);
+        mq_physics_body_desc d = make_ball(160.0F, 120.0F, r);
+        d.vx = vx0;
+        d.vy = vy0;
+        d.restitution = 0.0F;
+        mq_physics_body h{};
+        CHECK(mq_physics_add_body(w2, &d, &h) == MQ_PHYSICS_OK);
+        for (int i = 0; i < 150; ++i)
+            CHECK(mq_physics_step(w2) == MQ_PHYSICS_OK);
+        float fvx = 0.0F, fvy = 0.0F;
+        CHECK(mq_physics_get_transform(w2, h, &out_x, &out_y) == MQ_PHYSICS_OK);
+        CHECK(mq_physics_get_velocity(w2, h, &fvx, &fvy) == MQ_PHYSICS_OK);
+        CHECK(fvx == 0.0F && fvy == 0.0F); /* 落定：静息钳制清零 */
+        out_nx = 0.0F;
+        out_ny = 0.0F;
+        const uint32_t n = mq_physics_contact_count(w2);
+        CHECK(n == 1u); /* 只有一个体 → 至多一条接触，且必是平面 */
+        for (uint32_t i = 0; i < n; ++i) {
+            mq_physics_contact c{};
+            CHECK(mq_physics_contact_at(w2, i, &c) == MQ_PHYSICS_OK);
+            CHECK(c.b_index == MQ_PHYSICS_PLANE_INDEX);
+            CHECK(c.a_index == h.index);
+            out_nx = c.nx;
+            out_ny = c.ny;
+        }
+        mq_physics_destroy(w2);
+    };
+
+    float x = 0.0F, y = 0.0F, nx = 0.0F, ny = 0.0F;
+    /* 朝 -y（世界向下）→ 被 min_y 平面挡住：y = min_y + r = 8，法线内向 (0,-1) */
+    run(0.0F, -120.0F, x, y, nx, ny);
+    CHECK(std::fabs(y - (0.0F + r)) < 1.0e-2F);
+    CHECK(x == 160.0F && nx == 0.0F && ny == -1.0F);
+    /* 朝 +y → max_y 平面：y = max_y - r = 232，法线 (0,+1) */
+    run(0.0F, 120.0F, x, y, nx, ny);
+    CHECK(std::fabs(y - (240.0F - r)) < 1.0e-2F);
+    CHECK(x == 160.0F && nx == 0.0F && ny == 1.0F);
+    /* 朝 -x → min_x 平面：x = 8，法线 (-1,0) */
+    run(-120.0F, 0.0F, x, y, nx, ny);
+    CHECK(std::fabs(x - (0.0F + r)) < 1.0e-2F);
+    CHECK(y == 120.0F && nx == -1.0F && ny == 0.0F);
+    /* 朝 +x → max_x 平面：x = 312，法线 (+1,0) */
+    run(120.0F, 0.0F, x, y, nx, ny);
+    CHECK(std::fabs(x - (320.0F - r)) < 1.0e-2F);
+    CHECK(y == 120.0F && nx == 1.0F && ny == 0.0F);
+
+    /* CUBOID 按 half_w/half_h 内缩（不是 radius） */
+    {
+        mq_physics_config cfg2 = make_config();
+        cfg2.gravity_y = 0.0F;
+        mq_physics_world* w2 = mq_physics_create(&cfg2);
+        CHECK(mq_physics_set_bounds(w2, 0.0F, 0.0F, 320.0F, 240.0F) == MQ_PHYSICS_OK);
+        mq_physics_body_desc box = make_ball(160.0F, 120.0F);
+        box.shape = MQ_PHYSICS_SHAPE_CUBOID;
+        box.radius = 0.0F;
+        box.half_w = 12.0F;
+        box.half_h = 30.0F;
+        box.vx = -120.0F;
+        box.restitution = 0.0F;
+        mq_physics_body hb{};
+        CHECK(mq_physics_add_body(w2, &box, &hb) == MQ_PHYSICS_OK);
+        for (int i = 0; i < 150; ++i)
+            CHECK(mq_physics_step(w2) == MQ_PHYSICS_OK);
+        CHECK(mq_physics_get_transform(w2, hb, &x, &y) == MQ_PHYSICS_OK);
+        CHECK(std::fabs(x - (0.0F + 12.0F)) < 1.0e-2F);
+        CHECK(std::fabs(y - 120.0F) < 1.0e-2F);
+        mq_physics_destroy(w2);
+    }
+}
+
+/* 12) 场景语义（"让物体在屏幕上往下掉"）：世界 y 向上 + 重力 -900 + 静态地面盒
+ *     → 球落到地面盒 **世界 y 更大**的那一面（视觉上的盒顶），停在 上面 y + 半径。 */
+void test_scene_fall_onto_floor() {
+    mq_physics_config cfg = make_config();
+    cfg.gravity_y = -900.0F; /* = scn.Scene.gravity_y 的默认值（runtime 原样透传） */
+    mq_physics_world* w = mq_physics_create(&cfg);
+    CHECK(w != nullptr);
+    CHECK(mq_physics_set_bounds(w, 0.0F, 0.0F, 320.0F, 240.0F) == MQ_PHYSICS_OK);
+
+    /* 地面：静态盒中心 y=100、半高 20 → 两面 y=80 / y=120；上面 = y 更大的一侧 = 屏幕更高处 */
+    mq_physics_body_desc floor = make_ball(160.0F, 100.0F);
+    floor.type = MQ_PHYSICS_BODY_STATIC;
+    floor.shape = MQ_PHYSICS_SHAPE_CUBOID;
+    floor.half_w = 60.0F;
+    floor.half_h = 20.0F;
+    floor.restitution = 0.0F;
+    mq_physics_body hf{};
+    CHECK(mq_physics_add_body(w, &floor, &hf) == MQ_PHYSICS_OK);
+
+    /* 球：动态圆 r=8，从 y=200（屏幕上方）开始落 */
+    mq_physics_body_desc ball = make_ball(160.0F, 200.0F, 8.0F);
+    ball.restitution = 0.0F;
+    mq_physics_body hb{};
+    CHECK(mq_physics_add_body(w, &ball, &hb) == MQ_PHYSICS_OK);
+
+    for (int i = 0; i < 120; ++i)
+        CHECK(mq_physics_step(w) == MQ_PHYSICS_OK);
+
+    float x = 0.0F, y = 0.0F, vx = 0.0F, vy = 0.0F;
+    CHECK(mq_physics_get_transform(w, hb, &x, &y) == MQ_PHYSICS_OK);
+    CHECK(mq_physics_get_velocity(w, hb, &vx, &vy) == MQ_PHYSICS_OK);
+    CHECK(std::fabs(y - 128.0F) < 1.0e-2F); /* 120（盒上面）+ 8（半径） */
+    CHECK(y < 200.0F);                      /* 下落 = 世界 y 减小 */
+    CHECK(vy == 0.0F);                      /* 落定不抖 */
+    /* 接触法线 a → b = 盒 → 球 = (0,+1)：球在盒的世界 y 更大的一侧 */
+    bool found = false;
+    for (uint32_t i = 0u; i < mq_physics_contact_count(w); ++i) {
+        mq_physics_contact c{};
+        CHECK(mq_physics_contact_at(w, i, &c) == MQ_PHYSICS_OK);
+        if (c.a_index == hf.index && c.b_index == hb.index) {
+            found = true;
+            CHECK(c.nx == 0.0F && c.ny == 1.0F);
+        }
+    }
+    CHECK(found);
     mq_physics_destroy(w);
 }
 
@@ -660,6 +819,9 @@ int main() {
     test_interpolation_readonly();
     test_plugin_vtable();
     test_body_kinds_and_isolation();
+    test_coordinate_convention();
+    test_bounds_sides();
+    test_scene_fall_onto_floor();
 
     if (g_failures == 0) {
         std::print("physics_test: all checks passed\n");

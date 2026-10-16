@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **122** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **24** 个 · 插件接口 **1** 个。
+统计：脚本 API **129** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **24** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -57,6 +57,7 @@
 | `entity_count` | — | float | ctx |
 | `entity_destroy` | id: float | void | ctx |
 | `entity_name` | id: float | string | ctx |
+| `env` | name: string | string | ctx |
 | `entity_find` | name: string | float | ctx |
 | `entity_valid` | id: float | float | ctx |
 | `input_x` | — | float | ctx |
@@ -74,6 +75,12 @@
 | `spawn_ball` | x: float, y: float, vx: float, vy: float, radius: float | float | ctx |
 | `bounce_step` | dt: float | void | ctx |
 | `physics_step` | — | void | ctx |
+| `physics_contact_count` | — | float | ctx |
+| `physics_contact_pair` | i: float | bool | ctx |
+| `physics_contact_a` | i: float | float | ctx |
+| `physics_contact_b` | i: float | float | ctx |
+| `physics_contact_normal_x` | i: float | float | ctx |
+| `physics_contact_normal_y` | i: float | float | ctx |
 | `ball_clear` | — | void | ctx |
 | `set_label` | id: float, text: string | void | ctx |
 | `ui_hit_at` | x: float, y: float | float | ctx |
