@@ -9,6 +9,8 @@
 #   ⑦ Director：控制面 pause/resume（暂停期间脚本 update 不再执行）
 #   ⑧ 确定性：同输入两跑 world_trail 一致
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 
 PLAYER="$1"
 SCENE="$2"
@@ -48,12 +50,12 @@ EOF
 MAQUE_CONTROL=- MAQUE_MAX_FRAMES=4 "$PLAYER" "$SCENE" < "$WORK/req.txt" > "$WORK/coords.txt" 2>&1 || true
 ENT=$(grep -F '"id":2,"result"' "$WORK/coords.txt" | head -1)
 [ -n "$ENT" ] || fail "could not read entity table"
-SCREEN_H=$(grep -F '"id":3,"result"' "$WORK/coords.txt" | head -1 | python3 -c "
+SCREEN_H=$(grep -F '"id":3,"result"' "$WORK/coords.txt" | head -1 | "$PY" -c "
 import json,sys
 d=json.JSONDecoder().raw_decode(sys.stdin.read().split('\"result\":',1)[1])[0]
 print(int(d.get('height', 240)))")
 
-pos() { printf '%s' "$ENT" | python3 -c "
+pos() { printf '%s' "$ENT" | "$PY" -c "
 import json,sys
 txt=sys.stdin.read().split('\"result\":',1)[1]
 d,_=json.JSONDecoder().raw_decode(txt)          # 行内可能含后续输出 → 只解第一个 JSON
@@ -68,8 +70,8 @@ VX=$(echo "$VOL" | cut -d' ' -f1); VY=$(echo "$VOL" | cut -d' ' -f2)   # 注入�
 MX=$(echo "$MUTE" | cut -d' ' -f1); MY=$(echo "$MUTE" | cut -d' ' -f2)
 
 # 滑块拖拽：按下（左端偏左）→ 移动到（右端偏右）→ 抬起；复选框：点击
-VX_L=$(python3 -c "print(f'{$VX-50:.1f}')")
-VX_R=$(python3 -c "print(f'{$VX+60:.1f}')")
+VX_L=$("$PY" -c "print(f'{$VX-50:.1f}')")
+VX_R=$("$PY" -c "print(f'{$VX+60:.1f}')")
 cat > "$WORK/req2.txt" <<EOF
 {"jsonrpc":"2.0","id":1,"method":"Runtime.step","params":{"frames":2}}
 {"jsonrpc":"2.0","id":2,"method":"Input.inject","params":{"type":0,"x":$VX_L,"y":$VY,"button":0}}
@@ -97,7 +99,7 @@ SUMMARY=$(grep -o 'nodes_summary .*' "$WORK/out.txt" | head -1)
 TRAIL1=$(grep -F '"id":18,"result"' "$WORK/out.txt" | grep -o '"trail":"[0-9]*"' | grep -o '[0-9]*')
 STATUS=$(grep -F '"id":16,"result"' "$WORK/out.txt" | head -1)
 
-python3 - "$SUMMARY" "$STATUS" <<'PY' || exit 1
+"$PY" - "$SUMMARY" "$STATUS" <<'PY' || exit 1
 import json, sys
 raw = sys.argv[1][len('nodes_summary '):]
 d = json.loads(raw)

@@ -4,7 +4,24 @@
 #   ② 其它脚本（JS）**状态保留**、投递顺序不变（这是增量热更的核心价值）
 #   ③ 原子替换：写坏脚本**不致命**（新 VM 丢弃、旧 VM 继续跑，游戏照常）
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 PLAYER="$1"; SCENE_DIR="$2"; WORK="$3"
+
+# Windows 跳过。本用例必须**在 player 运行中**读它的日志（轮询 `ml_summary`），
+# 而这依赖 GNU 的 `stdbuf -oL` 把重定向输出改成行缓冲 —— C 运行时对"重定向到文件"
+# 默认全缓冲，Windows 上没有 stdbuf，日志在进程退出前看不到（实测：轮询 8s 仍为空，
+# 报"初始跨语言事件未发生"）。
+#   试过但**不可行**：在宿主里用 setvbuf 切行缓冲 —— C 标准规定流被写过之后再 setvbuf
+#   是未定义行为，实测 Windows 上直接 0xC0000409 崩溃（且 `<print>` 的静态初始化早于 main）。
+#   也试过 TCP 控制端点替代轮询，但本用例的判定全部基于日志文本，改造面过大。
+# 记录在案的覆盖缺口：Windows 上"运行中日志观测"未覆盖；但热重载的语义覆盖仍在 ——
+#   `multilang_e2e`（双 VM 装载/跨语言事件/确定性）与 `ctest -R watcher`（文件监视/重载判定）
+#   在 Windows 上均通过；跨语言热重载与 Linux 共用同一份平台无关代码。
+case "$(uname -s 2>/dev/null || echo unknown)" in
+    MINGW*|MSYS*|CYGWIN*) echo "hot_reload_multi_e2e: skip（Windows：无 stdbuf，运行中读日志不可行；见脚本注释）"; exit 77 ;;
+esac
+
 rm -rf "$WORK"; mkdir -p "$WORK/run"
 cp "$SCENE_DIR"/multilang.scn "$SCENE_DIR"/game.js "$SCENE_DIR"/ai.lua "$WORK/run/"
 export MAQUE_HEADLESS=1
@@ -21,7 +38,7 @@ BASE_APPLIED=$(grep -o 'ml_summary applied=[0-9]*' "$WORK/log.txt" | head -1 | g
 [ -n "$BASE_APPLIED" ] || fail "未取到初始决策数"
 
 # ---- ① 改 Lua：把 AI 的 y 公式换成显眼的新值 + 打标记 ----
-python3 - "$WORK/run/ai.lua" <<'PY'
+"$PY" - "$WORK/run/ai.lua" <<'PY'
 import sys
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()

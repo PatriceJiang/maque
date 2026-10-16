@@ -3,10 +3,21 @@
 /build-*/
 compile_commands.json
 
+# 配置/构建日志（tools/win/build.ps1 与手工 cmake 的落盘输出）
+/configure-*.log
+/build-*.log
+
 # wgpu-native binary SDK (headers are committed; binaries are not)
 third_party/wgpu-native/lib/*.so
 third_party/wgpu-native/lib/*.a
+third_party/wgpu-native/lib/*.dll
+third_party/wgpu-native/lib/*.lib
+third_party/wgpu-native/lib/*.pdb
 
 # 注意：modules/core/data/generated/ **入库**（生成的公开接口是交付物，docs/21）
 # CTest 在源码树根运行时的临时产物（构建产物不入库）
 Testing/
+.maque/
+
+# Windows 第三方原生依赖（下载/构建产物，不入库）
+/.deps/

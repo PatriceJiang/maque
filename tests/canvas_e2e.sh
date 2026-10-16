@@ -6,12 +6,17 @@
 #   ④ **输入映射**：窗口坐标点击 → 设计坐标（含留边偏移）→ 命中按钮
 #   ⑤ 安全区（刘海）：可用区扣除内缩，画布矩形随之收缩
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 
 PLAYER="$1"
 SCENE="$2"
 WORK="$3"
 
-if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
+# 无显示环境判定：Linux/Wayland 看 DISPLAY / WAYLAND_DISPLAY；**Windows 没有这两个变量**，
+# 但窗口系统始终可用（SDL 用 windows 驱动）——旧写法会让 Windows 上的窗口用例"假跳过"。
+_mq_is_windows() { case "$(uname -s 2>/dev/null || echo unknown)" in MINGW*|MSYS*|CYGWIN*) return 0 ;; *) return 1 ;; esac; }
+if ! _mq_is_windows && [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
   echo "canvas_e2e: skip（无显示环境：需要真实窗口尺寸与输入）"
   exit 77                                   # CTest SKIP_RETURN_CODE
 fi
@@ -30,7 +35,7 @@ run() {
 }
 
 check() {   # check <json> <python 表达式，用 m 取字段> <说明>
-  python3 - "$1" "$2" <<'PY' || exit 1
+  "$PY" - "$1" "$2" <<'PY' || exit 1
 import json, sys
 m = json.loads(sys.argv[1])
 ok = eval(sys.argv[2], {"m": m, "abs": abs, "min": min, "max": max})
@@ -73,7 +78,7 @@ check "$S" 'm["off_x"] >= 40 and m["off_y"] >= 20'           "偏移不小于安
 # 同一条定宽文本在 1x（设计尺寸窗口）与 3x 下的**设计单位**宽度/高度必须一致。
 S1=$(run "$WORK/t1.log" 480x270)
 S3=$(run "$WORK/t3.log" 1440x810)
-python3 - "$S1" "$S3" <<'EOT' || exit 1
+"$PY" - "$S1" "$S3" <<'EOT' || exit 1
 import json, sys
 a, b = json.loads(sys.argv[1]), json.loads(sys.argv[2])
 if abs(a["scale"] - 1.0) > 1e-3 or abs(b["scale"] - 3.0) > 1e-3:
@@ -102,7 +107,7 @@ cat > "$WORK/req.txt" <<'EOF'
 EOF
 MAQUE_WINDOW=800x600 MAQUE_CONTROL=- MAQUE_VIEWS=1 MAQUE_MAX_FRAMES=40 \
   "$PLAYER" "$SCENE" < "$WORK/req.txt" > "$WORK/fit.log" 2>&1 || true
-python3 - "$WORK/fit.log" <<'PY' || exit 1
+"$PY" - "$WORK/fit.log" <<'PY' || exit 1
 import json, re, sys
 text = open(sys.argv[1]).read()
 res = {}

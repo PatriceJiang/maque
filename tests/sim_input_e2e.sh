@@ -11,7 +11,10 @@ PLAYER="$1"
 SCENE="$2"
 WORK="$3"
 
-if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
+# 无显示环境判定：Linux/Wayland 看 DISPLAY / WAYLAND_DISPLAY；**Windows 没有这两个变量**，
+# 但窗口系统始终可用（SDL 用 windows 驱动）——旧写法会让 Windows 上的窗口用例"假跳过"。
+_mq_is_windows() { case "$(uname -s 2>/dev/null || echo unknown)" in MINGW*|MSYS*|CYGWIN*) return 0 ;; *) return 1 ;; esac; }
+if ! _mq_is_windows && [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
   echo "sim_input_e2e: skip（无显示环境：设备输入帧只在有窗口时消费）"
   exit 77                                   # CTest SKIP_RETURN_CODE
 fi
@@ -29,7 +32,9 @@ run() {   # run <log> [env...] -- 固定窗口与世界尺寸
 
 # ---- ① 场景文件回放 ----
 run "$WORK/a.log" MAQUE_SIM="$SIM" MAQUE_MAX_FRAMES=120
-grep -q "sim '$SIM' loaded" "$WORK/a.log" || fail "场景未载入"
+# 只匹配**文件名**：MSYS 下 $SIM 是 POSIX 形式（/e/Github/...），而引擎打印的是收到的
+# 原始路径（E:/Github/...）→ 两者不同形。断言"哪个场景被载入"用 basename 才跨平台可靠。
+grep -q "sim '.*$(basename "$SIM")' loaded" "$WORK/a.log" || fail "场景未载入"
 grep -q 'ball: click #1 spawn.*at (40,180)'  "$WORK/a.log" || fail "第 1 次点击坐标映射不符"
 grep -q 'ball: click #2 spawn.*at (240,60)' "$WORK/a.log" || fail "第 2 次点击坐标映射不符"
 grep -q 'balls=3' "$WORK/a.log" || fail "球数应为 3"

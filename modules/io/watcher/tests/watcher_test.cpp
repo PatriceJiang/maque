@@ -20,13 +20,15 @@ static int on_change(void* user, const char* path, mq_watch_kind kind) {
     return 0;
 }
 
+#include "maque_test_fs.h"
+
 int main() {
-    fs::path root = fs::temp_directory_path() / "maque_watcher_test";
-    fs::remove_all(root);
+    fs::path root;
+    if (!maque_test_setup_dir("watcher", root)) return 77;
     fs::create_directories(root);
     const fs::path a = root / "a.js";
     const fs::path b = root / "b.scn";
-    { std::ofstream(a) << "let x = 1;\n"; }
+    maque_put_file(a, "let x = 1;\n");
 
     mq_watcher* w = mq_watcher_create();
     CHECK(w != nullptr);
@@ -39,13 +41,13 @@ int main() {
     CHECK(mq_watcher_poll(w, on_change, &log) == 0);            // 无变化
     CHECK(log.events.empty());
 
-    { std::ofstream(a) << "let x = 2; // longer\n"; }
+    maque_put_file(a, "let x = 2; // longer\n");
     CHECK(mq_watcher_poll(w, on_change, &log) == 1);
     CHECK(log.events.size() == 1);
     CHECK(log.events[0] == "modified:" + a.string());
 
     log.events.clear();
-    { std::ofstream(b) << "scene"; }
+    maque_put_file(b, "scene");
     CHECK(mq_watcher_poll(w, on_change, &log) == 1);
     CHECK(log.events[0] == "added:" + b.string());
 

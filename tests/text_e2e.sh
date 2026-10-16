@@ -7,6 +7,8 @@
 #   ④ 截断/对齐：Center/End 使首字形右移
 #   ⑤ 像素：黄色（Label 自定义色）、绿色（TextLabel color）、红色（富文本 run）、白色（默认色）均出现
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 
 PLAYER="$1"
 SCENE="$2"
@@ -25,7 +27,7 @@ SUMMARY=$(grep -o 'text_summary .*' "$WORK/out.txt" | head -1)
 FRAME=$(ls "$WORK/frames"/frame_*.ppm 2>/dev/null | sort | tail -1)
 [ -n "$FRAME" ] || fail "no PPM frame produced (need renderer)"
 
-python3 - "$SUMMARY" "$FRAME" <<'PY' || exit 1
+"$PY" - "$SUMMARY" "$FRAME" <<'PY' || exit 1
 import json, sys
 from collections import Counter
 d = json.loads(sys.argv[1][len('text_summary '):])

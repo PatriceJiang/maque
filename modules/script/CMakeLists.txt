@@ -10,7 +10,11 @@ add_library(quickjs STATIC
     "${QJS_DIR}/quickjs.c")
 target_include_directories(quickjs PUBLIC "${QJS_DIR}")
 target_compile_definitions(quickjs PRIVATE _GNU_SOURCE)
-target_link_libraries(quickjs PUBLIC m)
+# `m`（libm）只在类 UNIX 存在；Windows 上会被解析成 `m.lib` → "could not open 'm.lib'"
+#（数学函数在 CRT 里）。_GNU_SOURCE 在 MSVC 下无意义但无害（glibc 特性开关）。
+if(UNIX)
+    target_link_libraries(quickjs PUBLIC m)
+endif()
 set_target_properties(quickjs PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON)
 
 # maque::script —— quickjs 封装（C ABI，docs/14）
@@ -32,10 +36,12 @@ set_target_properties(maque_script PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUI
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_lua_test tests/lua_test.cpp)
+maque_deploy_asan(maque_lua_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_lua_test PRIVATE maque::script)
     add_test(NAME lua COMMAND maque_lua_test)
 
     add_executable(maque_script_test tests/script_test.cpp)
+maque_deploy_asan(maque_script_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_script_test PRIVATE maque::script)
     add_test(NAME script COMMAND maque_script_test)
 endif()

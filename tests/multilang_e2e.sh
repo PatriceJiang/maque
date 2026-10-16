@@ -6,6 +6,8 @@
 #   ④ 确定性：同输入两跑 world_trail 与日志序列完全一致（多 VM 不破坏可回放）
 #   ⑤ 宿主 → 脚本：控制面 Scene.emit 触发脚本处理器（与脚本内 emit 同一条路径）
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 PLAYER="$1"; INSPECTOR="$2"; SCENE="$3"; WORK="$4"
 rm -rf "$WORK"; mkdir -p "$WORK"
 fail() { echo "multilang_e2e: FAIL $*" >&2; exit 1; }
@@ -53,7 +55,7 @@ grep -q 'control endpoint' "$WORK/game.log" || { kill "$GAME_PID" 2>/dev/null; f
 
 # 找到 Status 实体（事件 target）；由 inspector 的 headless 模式查询
 ENTS=$("$INSPECTOR" --connect "$PORT" --headless Scene.entities 2>/dev/null | tail -1)
-SID=$(printf '%s' "$ENTS" | python3 -c "
+SID=$(printf '%s' "$ENTS" | "$PY" -c "
 import json,sys
 d=json.loads(sys.stdin.read())['result']
 for e in d:
@@ -71,7 +73,7 @@ printf '%s' "$EMIT" | grep -q '"handlers":[1-9]' || { kill "$GAME_PID" 2>/dev/nu
 OK=0
 for _ in $(seq 1 40); do
   ENTS2=$("$INSPECTOR" --connect "$PORT" --headless Scene.entities 2>/dev/null | tail -1)
-  if printf '%s' "$ENTS2" | python3 -c "
+  if printf '%s' "$ENTS2" | "$PY" -c "
 import json,sys
 d=json.loads(sys.stdin.read())['result']
 want=float('$EXPECT_Y')

@@ -16,6 +16,7 @@ endif()
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_text_test tests/text_test.cpp)
+maque_deploy_asan(maque_text_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_text_test PRIVATE maque::text)
     add_test(NAME text COMMAND maque_text_test)
 endif()

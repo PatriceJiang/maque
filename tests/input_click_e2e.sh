@@ -6,12 +6,17 @@
 #   ③ 断言：脚本收到 on_pointer_down 并在点击处生成球；窗口像素亮区随球数增加
 #   ④ 断言：窗口坐标 → 世界坐标映射正确（窗口 800x600 显示世界 320x240 → 2.5x）
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 
 PLAYER="$1"
 SCENE="$2"
 WORK="$3"
 
-if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
+# 无显示环境判定：Linux/Wayland 看 DISPLAY / WAYLAND_DISPLAY；**Windows 没有这两个变量**，
+# 但窗口系统始终可用（SDL 用 windows 驱动）——旧写法会让 Windows 上的窗口用例"假跳过"。
+_mq_is_windows() { case "$(uname -s 2>/dev/null || echo unknown)" in MINGW*|MSYS*|CYGWIN*) return 0 ;; *) return 1 ;; esac; }
+if ! _mq_is_windows && [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
   echo "input_click_e2e: skip（无显示环境）"
   exit 77                                   # CTest SKIP_RETURN_CODE
 fi
@@ -20,7 +25,7 @@ rm -rf "$WORK"; mkdir -p "$WORK"
 unset MAQUE_HEADLESS
 
 count_bright() {   # $1 = ppm
-  python3 - "$1" <<'PY'
+  "$PY" - "$1" <<'PY'
 import sys
 parts = open(sys.argv[1], 'rb').read().split(b'\n', 3)
 w, h = map(int, parts[1].split()); px = parts[3]

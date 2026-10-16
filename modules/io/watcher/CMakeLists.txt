@@ -6,6 +6,7 @@ set_target_properties(maque_watcher PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQU
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_watcher_test tests/watcher_test.cpp)
+maque_deploy_asan(maque_watcher_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_watcher_test PRIVATE maque::watcher)
     add_test(NAME watcher COMMAND maque_watcher_test)
 endif()

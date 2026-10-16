@@ -4,11 +4,16 @@
 #   ② 只读：变更类方法被拒绝（-32001）并计数；只读方法正常
 #   ③ 反射：Scene.info / Scene.entities / Types.describe 经 TCP 返回
 #   ④ 独立性：游戏不因 inspector 断开而退出（attach/detach 无侵入）
-#   ⑤ UDS：uds: 传输同样可用
+#   ⑤ UDS：uds: 传输同样可用（Windows 无 POSIX 语义的 AF_UNIX → 跳过该用例，
+#      改为断言"两侧都明确失败并说明原因"，见 modules/control/src/server.cpp 与 src/client.h）
 set -u
 INSPECTOR="$1"; PLAYER="$2"; SCENE="$3"; WORK="$4"
 rm -rf "$WORK"; mkdir -p "$WORK"
 fail() { echo "inspector_e2e: FAIL $*" >&2; exit 1; }
+
+# 平台：Git Bash/MSYS 下 uds: 不可用（Windows 无 POSIX 语义的 AF_UNIX）→ ⑤ 走跳过分支
+IS_WINDOWS=0
+case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) IS_WINDOWS=1 ;; esac
 
 PORT=$(( (RANDOM % 2000) + 21000 ))
 UDSPATH="$WORK/maque.sock"
@@ -18,7 +23,8 @@ start_game() {   # start_game <log> <spec>
     "$PLAYER" "$SCENE" > "$1" 2>&1 &
   GAME_PID=$!
   for _ in $(seq 1 60); do
-    grep -q 'control endpoint' "$1" && return 0
+    # 只看**成功**行：失败行（"control endpoint 创建失败: …"）也含同样的字样
+    grep -qE 'control endpoint (tcp|uds)://' "$1" && return 0
     sleep 0.1
   done
   return 1
@@ -35,6 +41,7 @@ stop_game() {
   wait "$GAME_PID" 2>/dev/null
   GAME_PID=""
 }
+trap 'stop_game' EXIT        # 任何退出路径（含 fail）都不留孤儿游戏进程
 
 # ---- ① TCP 端点 + ③ 反射 ----
 start_game "$WORK/game.log" "$PORT" || fail "游戏未启动端点"
@@ -77,7 +84,24 @@ grep -q '"result"' "$WORK/ents.log" || fail "Scene.entities 无结果"
 kill -0 "$GAME_PID" 2>/dev/null || fail "inspector 运行后游戏进程消失"
 stop_game
 
-# ---- ⑤ UDS 传输 ----
+# ---- ⑤ UDS 传输（Windows 不支持 uds: → 明确失败；见 modules/control/src/server.cpp）----
+if [ "$IS_WINDOWS" = 1 ]; then
+  echo "inspector_e2e: skip ⑤ UDS（Windows 无 POSIX 语义的 AF_UNIX 端点）"
+  # 反证一：游戏侧 uds: 端点必须**创建失败**并说明原因（不得静默降级成 tcp）
+  MAQUE_HEADLESS=1 MAQUE_MAX_FRAMES=5 MAQUE_INSPECT="uds:$UDSPATH" \
+    "$PLAYER" "$SCENE" > "$WORK/game_uds.log" 2>&1 || true
+  grep -q 'control endpoint 创建失败' "$WORK/game_uds.log" \
+    || fail "Windows 上 uds 端点应创建失败（见 $WORK/game_uds.log）"
+  grep -q '在 Windows 上不支持' "$WORK/game_uds.log" || fail "uds 失败未说明原因（见 $WORK/game_uds.log）"
+  if grep -q 'control endpoint tcp://' "$WORK/game_uds.log"; then fail "uds 不得静默降级为 tcp"; fi
+  # 反证二：inspector 侧 uds: 同样明确失败（不是挂起、不是连到别处）
+  "$INSPECTOR" --connect "uds:$UDSPATH" --headless Control.info > "$WORK/uds.log" 2>&1 \
+    && fail "Windows 上 inspector 的 uds: 连接不应成功"
+  grep -q '不支持' "$WORK/uds.log" || fail "inspector 的 uds 失败未说明原因（见 $WORK/uds.log）"
+  echo "inspector_e2e: ok（TCP 端点、只读拒绝与计数、反射查询、attach/detach 无侵入；UDS 在 Windows 跳过）"
+  exit 0
+fi
+
 start_game "$WORK/game_uds.log" "uds:$UDSPATH" || fail "UDS 端点未启动"
 grep -q "uds://$UDSPATH" "$WORK/game_uds.log" || fail "UDS 地址不符"
 "$INSPECTOR" --connect "uds:$UDSPATH" --headless Control.info > "$WORK/uds.log" 2>&1 \

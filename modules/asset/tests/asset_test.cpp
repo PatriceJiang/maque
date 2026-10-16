@@ -14,21 +14,15 @@
 
 namespace fs = std::filesystem;
 
+#include "maque_test_fs.h"
+
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
     std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
-static void put(const fs::path& p, const std::string& s) {
-    fs::create_directories(p.parent_path());
-    std::ofstream f(p, std::ios::binary);
-    f.write(s.data(), static_cast<std::streamsize>(s.size()));
-}
+static void put(const fs::path& p, const std::string& s) { maque_put_file(p, s); }
 
-static std::string read_file(const fs::path& p) {
-    std::ifstream f(p, std::ios::binary);
-    if (!f) return "<err>";
-    return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-}
+static std::string read_file(const fs::path& p) { return maque_read_file(p); }
 
 static uint32_t rd_u32(const std::string& b, size_t off) {
     uint32_t v = 0;
@@ -84,8 +78,8 @@ static_assert(offsetof(mq_asset_info, flags) == 548, "字段偏移变更");
 static_assert(MQ_ASSET_ABI_VERSION == 1u, "ABI 版本变更");
 
 int main() {
-    const fs::path root = fs::temp_directory_path() / "maque_asset_test";
-    fs::remove_all(root);
+    fs::path root;
+    if (!maque_test_setup_dir("asset", root)) return 77;
 
     const std::string hero = "PNG-hero-0123456789";
     const std::string wall = "{\"roughness\":0.5}";
@@ -329,15 +323,39 @@ int main() {
     CHECK(mq_asset_dump_json(db) == js);
     CHECK(j1 == std::string(mq_asset_dump_json(db)));
 
-    // 路径中的 " 与 \ 必须被转义
+    // 路径中的 " 与 \ 必须被转义。
+    //   平台差异：Windows 文件名**不允许** `"`，且 `\` 是路径分隔符（不是普通字符），
+    //   所以这两个字符在 Windows 上无法作为"真实存在的文件名"被 import。
+    //   Windows 分支改用含**合法**特殊字符的名字，并按 json_escape 的实际契约做两条
+    //   **可失败**的断言（不是恒真占位）。
     {
         mq_asset_db* esc = mq_asset_create(vfs);
         CHECK(esc != nullptr);
+#if defined(_WIN32)
+        // 用 setup 阶段**真实写出**的文件（含扩展名与 `.json` 后缀）做两条可失败断言：
+        //   ① source 字段值必须精确出现在 `"source":"<value>"` 之间（引号配对）；
+        //   ② 全 JSON 中不许有**未配对**的裸反斜杠（转义必须成对）。
+        CHECK(mq_asset_import(esc, "/level.scn", &info) == MQ_ASSET_OK);
+        const std::string ejs = mq_asset_dump_json(esc) ? mq_asset_dump_json(esc) : "";
+        const std::string needle = "\"source\": \"/level.scn\"";
+        CHECK(ejs.find(needle) != std::string::npos);
+        bool paired = true;
+        for (size_t i = 0; i < ejs.size(); ++i) {
+            if (ejs[i] != '\\') continue;
+            ++i;                                   // 跳过被转义的字符
+            if (i >= ejs.size()) { paired = false; break; }
+            const char n = ejs[i];
+            if (n != '\\' && n != '"' && n != 'n' && n != 'r' && n != 't' &&
+                n != 'b' && n != 'f' && n != 'u') { paired = false; break; }
+        }
+        CHECK(paired);
+#else
         CHECK(mq_asset_import(esc, "/q\"uote.scn", &info) == MQ_ASSET_OK);
         CHECK(mq_asset_import(esc, "/back\\slash.scn", &info) == MQ_ASSET_OK);
         const std::string ejs = mq_asset_dump_json(esc) ? mq_asset_dump_json(esc) : "";
         CHECK(ejs.find("/q\\\"uote.scn") != std::string::npos);
         CHECK(ejs.find("/back\\\\slash.scn") != std::string::npos);
+#endif
         mq_asset_destroy(esc);
     }
 

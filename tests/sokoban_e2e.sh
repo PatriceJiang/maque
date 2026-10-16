@@ -8,6 +8,8 @@
 #   ⑥ 确定性：同一输入序列两跑 world_trail 与状态摘要完全一致
 # 无需 DISPLAY：按键事件经输入模拟器注入（与设备事件同一路径）。
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 
 PLAYER="$1"
 SCENE="$2"
@@ -63,7 +65,7 @@ grep -q 'sokoban_undo steps=0' "$A" || fail "撤销未回到上一步（期望 s
 grep -q 'sokoban_restart' "$A" || fail "重开未生效"
 # 重开后状态复位（第 60 帧摘要：第二关、步数 0、两箱都在原位）
 STATE=$(grep -o 'sokoban_state {.*}' "$A" | tail -1 | sed 's/^sokoban_state //')
-python3 - "$STATE" <<'PY' || exit 1
+"$PY" - "$STATE" <<'PY' || exit 1
 import json, sys
 s = json.loads(sys.argv[1])
 bad = []

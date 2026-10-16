@@ -4,6 +4,8 @@
 #   → Scene.entities / Perf.get → Control.mcp(tools/call)
 # 这是"AI 能自主加载/调试/预览/采集"的最小可脚本化闭环。
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 PLAYER="${1:?player path}"
 SCENE="${2:?scene path}"
 W="${3:?work dir}"; rm -rf "$W"; mkdir -p "$W"
@@ -27,7 +29,7 @@ printf '%s\n' \
  | MAQUE_HEADLESS=1 MAQUE_CONTROL=- "$PLAYER" "$SCENE" > "$W/out.txt" 2>&1 \
   || { echo "ai_workflow_e2e: player failed" >&2; exit 1; }
 
-python3 - "$W/out.txt" <<'PY'
+"$PY" - "$W/out.txt" <<'PY'
 import json, sys, re
 lines = [l for l in open(sys.argv[1], encoding='utf-8') if l.startswith('{"jsonrpc"')]
 resp = {}

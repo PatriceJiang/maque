@@ -3,6 +3,7 @@
  * 注入（inject_*）与设备事件走同一队列 → AI/CI/回放与真机路径一致（docs/19 §9）。
  * 指针位置/按键状态只由事件流推导（不查设备状态）→ 顺序与回放确定。 */
 #include "core/platform/mq_platform.h"
+#include "core/compat/mq_env.h"   // setenv/unsetenv 的跨平台封装（Windows 无 setenv）
 
 #include <print>
 #include <vector>
@@ -139,13 +140,25 @@ void queue_key(mq_platform* p, const mq_platform_key_event& in) {
 
 } // namespace
 
+/* 无可用显示 → 强制 SDL dummy 驱动。
+ *   Linux/其它 UNIX：看 DISPLAY / WAYLAND_DISPLAY（无 X11/Wayland 时 dummy 才安全）。
+ *   Windows：没有这两个变量，**不能**据此判 headless，否则真实窗口永远不会创建
+ *   （曾经的缺陷：Windows 上恒为 dummy）。仅看 MAQUE_HEADLESS。 */
+static bool maque_should_force_headless() {
+    const char* hl = std::getenv("MAQUE_HEADLESS");
+    if (hl && *hl && *hl != '0') return true;
+#if defined(_WIN32)
+    return false;
+#else
+    return !std::getenv("DISPLAY") && !std::getenv("WAYLAND_DISPLAY");
+#endif
+}
+
 extern "C" {
 
 mq_platform* mq_platform_create(const char* title, int w, int h) {
     // 无显示或显式 headless → dummy 视频驱动（headless 安全；必须在 SDL_Init 之前设置）
-    const char* hl = std::getenv("MAQUE_HEADLESS");
-    if ((!std::getenv("DISPLAY") && !std::getenv("WAYLAND_DISPLAY")) || (hl && *hl && *hl != '0'))
-        setenv("SDL_VIDEODRIVER", "dummy", 1);
+    if (maque_should_force_headless()) maque::compat::set_env("SDL_VIDEODRIVER", "dummy");
 
     /* 不让 SDL 接管信号（必须在 SDL_Init 前设置）：SDL 只把 SIGTERM/SIGINT 转成 SDL_QUIT 事件，
      * 无窗口（headless/CI）时没人处理该事件 → 进程杀不掉（CI 超时清理会卡住）。

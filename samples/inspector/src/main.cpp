@@ -13,7 +13,9 @@
 #include "client.h"
 #include "panels.h"
 
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <print>
 #include <string>

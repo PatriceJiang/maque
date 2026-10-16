@@ -1,6 +1,7 @@
 // platform(SDL2) 单元测试（headless：dummy 视频驱动）。
 // 覆盖：采集归一化 / 事件顺序 / 注入路径（AI/CI/回放与真机同队列）/ 容量截断 / 退出。
 #include "core/platform/mq_platform.h"
+#include "core/compat/mq_env.h"   // setenv/unsetenv 的跨平台封装（Windows 无 setenv）
 
 #include <print>
 #include <vector>
@@ -29,7 +30,8 @@ struct Frame {
 } // namespace
 
 int main() {
-    setenv("MAQUE_HEADLESS", "1", 1);   // 单测必须走 dummy 路径（有显示环境也确定）
+    // 单测必须走 dummy 路径（有显示环境也确定）。Windows 无 setenv，走兼容封装。
+    maque::compat::set_env("MAQUE_HEADLESS", "1");
     mq_platform* p = mq_platform_create("maque-test", 320, 240);
     CHECK(p != nullptr);
     CHECK(mq_platform_has_window(p) == 0);        // headless / dummy

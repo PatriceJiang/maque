@@ -6,9 +6,11 @@
 #   ④ 远程 404 → 明确失败（HTTP 状态码 → MQ_VFS_ERR_NOTFOUND，而不是静默）
 # 仅用 127.0.0.1，不依赖外部网络。
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 PLAYER="$1"; SCENES="$2"; WORK="$3"
 
-command -v python3 >/dev/null || { echo "remote_e2e: skip（无 python3，无法起本地 HTTP 服务器）"; exit 77; }
+[ "$HAVE_PY" = 1 ] || { echo "remote_e2e: skip（无 "$PY"，无法起本地 HTTP 服务器）"; exit 77; }
 
 rm -rf "$WORK"; mkdir -p "$WORK"
 export MAQUE_HEADLESS=1
@@ -19,7 +21,7 @@ trap cleanup EXIT
 fail() { echo "remote_e2e: FAIL $*" >&2; exit 1; }
 
 # ---- 本地 HTTP 服务器：127.0.0.1 随机端口，只服务 scenes/ 目录（沿子目录下钻）----
-python3 - "$SCENES" "$WORK/port" <<'PY' &
+"$PY" - "$SCENES" "$WORK/port" <<'PY' &
 import http.server, os, socket, sys
 root, portfile = sys.argv[1], sys.argv[2]
 os.chdir(root)
@@ -58,7 +60,11 @@ TRAIL_LOCAL=$(grep -o 'world_trail=0x[0-9a-f]*' "$WORK/local.log" | tail -1)
 mkdir -p "$WORK/override"
 cp "$SCENES/ball.scn" "$WORK/override/"
 { echo "log('remote_e2e: local override active');"; cat "$SCENES/ball.js"; } > "$WORK/override/ball.js"
-MAQUE_MOUNT="/=$WORK/override" MAQUE_MAX_FRAMES=30 timeout 60 "$PLAYER" "$BASE/ball.scn" > "$WORK/override.log" 2>&1 || true
+# ⚠ Windows（Git Bash / MSYS）会把**像路径**的环境变量值做 POSIX→Windows 转换：
+#   MAQUE_MOUNT="/=/tmp/x" 这种"挂载点=路径"的复合串会被拆坏成
+#   `mount 'C:\Program Files\Git\' <- E;C:\Program Files\Git\...`
+#   → 挂载点与源全错，断言必然失败。用 MSYS_NO_PATHCONV=1 关掉该转换（Linux 上无副作用）。
+MAQUE_MOUNT="/=$WORK/override" MSYS_NO_PATHCONV=1 MAQUE_MAX_FRAMES=30 timeout 60 "$PLAYER" "$BASE/ball.scn" > "$WORK/override.log" 2>&1 || true
 grep -q "runtime: mount '/'" "$WORK/override.log" || fail "MAQUE_MOUNT 未生效"
 grep -q "local override active" "$WORK/override.log" || fail "本地覆盖未遮蔽远程脚本"
 

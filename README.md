@@ -22,6 +22,9 @@
 - **快照 / 回滚 / 失步定位**：反射驱动二进制 codec + 快照池；逐帧世界校验和轨迹。
 - **VFS**：`file/mem/zip/builtin/res` 挂载 + **http(s) 目录挂载**（libcurl：整局游戏可经 HTTP 加载）
   + 直接 URL + 内容哈希校验；**图像解码** Wuffs。
+- **键值存储 / 存档**：`storage.*` 脚本 API，模式可配（`file://`（默认 `<场景目录>/.maque`）/`mem://`/`http(s)://`/`ws(s)://`）
+  + `(uid,session)` 命名空间；控制面可读写（AI/CI 可核对存档）。见 docs/25。
+- **场景 → 图片**：`maque_player --shot out.png [--shot-frame N] scene.scn`（离屏渲染一张图；VSCode 预览插件在 `editors/vscode/`）。
 - **资产管线**：导入 / 依赖图 / 拓扑序 / 校验 / 烘焙 / 打包 / dump JSON（内容寻址 ID）。
 - **控制平面**：JSON-RPC domain.method + **MCP 包装**（tools/list、tools/call）→ AI/CI 可加载、
   逐帧驱动、注入输入、截帧、取校验和、热重载。
@@ -93,8 +96,10 @@ modules/
   api             引擎 API 实现 + 生成绑定
   runtime         引擎运行时 ("浏览器")：Engine + Scene + main_loop
   script          脚本 (quickjs)
-samples/player    宿主（仅一行 mq_run_scene）
+samples/player    宿主（仅一行 mq_run_scene；--shot 渲染一张图）
+editors/vscode    .scn 预览插件（本地安装，见该目录 README）
 scenes/           游戏资源 (.scn + .js)
+assets/builtin/   内建资源（shaders/<name>/：一个 shader 一个目录 → 配置期打包为压缩源码）
 third_party/      wgpu-native / quickjs-ng / wuffs
 docs/             设计文档 (00–21 + components/ + assets/ + milestones/)
 plans/            各模块开发计划
@@ -109,7 +114,28 @@ plans/            各模块开发计划
 
 ## 状态
 
+**平台**：Linux（GCC/Clang）与 **Windows x64（clang-cl + Ninja）** 均为完整支持目标；
+WASM/浏览器见 P3。
+
 M0–M5、M7、M8 与 P1 已完成；M4/M6/M9 见下（细节 `docs/milestones/README.md`）：
+
+### Windows 构建（clang-cl + ASan）
+
+```powershell
+# 一次性：取/构建第三方依赖（SDL2 · zlib-ng · zstd · freetype · libcurl · libwebsockets）
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\fetch-deps.ps1
+
+# 配置 + 构建 + 测试（默认 Debug + AddressSanitizer）
+tools\win\build.cmd -RunTests
+tools\win\build.cmd -Sanitize "" -BuildType Release -RunTests   # 不带 ASan 的 Release
+```
+
+- 依赖装到 `.deps/dist`（**不入库**），并按同一 clang-cl + `/MD` 构建，避免运行时不匹配；
+  `.deps/deps.cmake` 由脚本生成，根 CMake 自动 include。
+- wgpu-native 用官方 Windows x64 MSVC 包（`wgpu_native.dll` + `.lib` 放入
+  `third_party/wgpu-native/lib/`，**不入库**）。
+- 细节与已知平台差异（UDS 仅 Linux、`wss://` 需要 TLS 版 lws、Windows 上模块不 `FreeLibrary` 等）
+  见 `AGENTS.md` 的「Windows」与「ASan / UBSan」两节。
 
 - **M4** ✅ VFS 多后端（file/mem/zip/builtin/URL）+ 内容哈希 + Wuffs 解码 + 材质。
 - **M6** 🟡 确定性 2D 物理求解器（`modules/world/physics`，C ABI vtable + 世代句柄）；

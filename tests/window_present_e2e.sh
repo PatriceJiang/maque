@@ -5,12 +5,17 @@
 #   ③ 从**窗口表面**回读像素（MAQUE_CAPTURE）→ 断言画面非纯背景（渲染确实呈现到窗口）
 #   ④ 世界尺寸 ≠ 窗口尺寸时按等比缩放（letterbox）：窗口像素 = 世界像素 × scale
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 
 PLAYER="$1"
 SCENE="$2"
 WORK="$3"
 
-if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
+# 无显示环境判定：Linux/Wayland 看 DISPLAY / WAYLAND_DISPLAY；**Windows 没有这两个变量**，
+# 但窗口系统始终可用（SDL 用 windows 驱动）——旧写法会让 Windows 上的窗口用例"假跳过"。
+_mq_is_windows() { case "$(uname -s 2>/dev/null || echo unknown)" in MINGW*|MSYS*|CYGWIN*) return 0 ;; *) return 1 ;; esac; }
+if ! _mq_is_windows && [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
   echo "window_present_e2e: skip（无显示环境）"
   exit 77                                   # CTest SKIP_RETURN_CODE
 fi
@@ -28,7 +33,7 @@ grep -q "window 800x600" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未
 grep -q "platform window=1" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未创建真实窗口" >&2; exit 1; }
 grep -q "present via window surface" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未走呈现路径" >&2; exit 1; }
 
-python3 - "$WORK/win_0.ppm" <<'PY' || exit 1
+"$PY" - "$WORK/win_0.ppm" <<'PY' || exit 1
 import sys
 parts = open(sys.argv[1], 'rb').read().split(b'\n', 3)
 w, h = map(int, parts[1].split())

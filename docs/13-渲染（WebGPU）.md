@@ -14,7 +14,7 @@
 ## 2. 数据流
 
 ```
-节点树/ECS ──bake──▶ Renderable 组件 ──提取(cull/batch)──▶ 绘制描述(DrawList)
+节点树（唯一模型）──flatten_world() 每帧展平──▶ 实体视图（world_x/y 缓存）──提取(cull/batch)──▶ 绘制描述(DrawList)
    (文档 12)                                    │
                                                 ▼
                          Render Graph（pass 依赖）──▶ WebGPU 命令 ──▶ 交换/离屏目标
@@ -50,7 +50,10 @@
 ## 5. 资源与管线
 
 - **GPU 资源经 VFS 资产加载**（纹理/网格/着色器），异步 + 流式（文档 04/08）。
-- **着色器**：WGSL；可在开发期以**文本入库**（文档 08 §4，diff/AI 友好）。
+- **着色器**：WGSL，**文本入库**（文档 08 §4，diff/AI 友好）；**内建 shader 源码在
+  `assets/builtin/shaders/<name>/`（一个 shader 一个目录）**，配置期由 `cmake/shader_pack.cmake` +
+  `tools/shader_pack.js` 打包成构建目录里的**压缩源码**（zstd -19；运行时 libzstd 解压并缓存），
+  可按 shader 剔除（`MAQUE_SHADER_<NAME>=OFF`，默认全部编入）。详见该目录的 README。
 - **管线/绑定组缓存**：按状态哈希缓存，避免每帧重编译。
 - **实例化 / 批处理 / 剔除**：CPU 侧配合 gather；GPU-driven 可选（按平台评估）。
 

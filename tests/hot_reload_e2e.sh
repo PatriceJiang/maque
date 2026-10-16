@@ -9,10 +9,23 @@
 #   ⑤ 状态边界（docs/14 §7）：热更 = 新 VM，**脚本内状态不跨重载保留** —— 重载后 on_start
 #      打印的 score 回到 0（此前点击已把 score 加到 1），契约即"要保留就放世界侧"。
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 
 PLAYER="$1"
 SCENE="$2"
 WORK="$3"
+
+# Windows 跳过：本用例经 **FIFO**（mkfifo + 重定向 stdin）向 player 送控制命令。
+# Git Bash 的 FIFO 由 MSYS 运行时实现，数据送不到**原生 Windows 进程**的 stdin
+#（普通管道可以，实测 `echo ... | maque_player` 正常；FIFO 则命令永不生效、
+# 日志里一行响应都没有）→ 用例在 Windows 必然失败且原因是环境而非引擎。
+# 记录在案的覆盖缺口：Windows 上"热重载 + FIFO 控制通道"的组合未被 e2e 覆盖，
+# 但热重载的核心路径有独立单测覆盖（`ctest -R watcher`：文件监视/事件/重载判定，
+# Windows 上已通过），且 TCP 控制端点在 `inspector_headless` 里被真跑通。
+case "$(uname -s 2>/dev/null || echo unknown)" in
+    MINGW*|MSYS*|CYGWIN*) echo "hot_reload_e2e: skip（Windows：Git Bash 的 FIFO 送不到原生进程 stdin；见脚本注释）"; exit 77 ;;
+esac
 
 rm -rf "$WORK"
 mkdir -p "$WORK"
@@ -46,7 +59,7 @@ send '{"jsonrpc":"2.0","id":7,"method":"Scene.entities"}'
 send '{"jsonrpc":"2.0","id":8,"method":"World.trail"}'
 
 # ---- 改动脚本（运行中）：替换 update 为"记录标记"版本，验证新代码确实生效 ----
-python3 - "$WORK/game.js" <<'PYEOF'
+"$PY" - "$WORK/game.js" <<'PYEOF'
 import sys
 path = sys.argv[1]
 src = open(path, encoding='utf-8').read()

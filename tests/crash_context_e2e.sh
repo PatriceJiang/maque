@@ -2,6 +2,8 @@
 # 崩溃/异常上下文端到端（docs/09 §5、docs/10 §7）：
 #   脚本抛错 → 引擎写结构化报告（seed/帧号/检查点/重放指引）→ 校验内容并可据此重放。
 set -u
+. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
+[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
 
 PLAYER="$1"
 SCENE_DIR="$2"      # 场景所在目录（含 anim.scn / anim.js / fade.anim.json）
@@ -35,7 +37,7 @@ MAQUE_CRASH_REPORT="$REPORT" MAQUE_CHECKPOINTS=1 \
 [ -f "$REPORT" ] || fail "crash report not written"
 grep -q "crash context" "$WORK/out1.txt" || fail "no crash context log line"
 
-python3 - "$REPORT" > "$WORK/parsed.txt" <<'PY' || fail "crash report content invalid"
+"$PY" - "$REPORT" > "$WORK/parsed.txt" <<'PY' || fail "crash report content invalid"
 import json, sys
 d = json.load(open(sys.argv[1]))
 assert d["reason"].startswith("Error: intentional crash"), d["reason"]

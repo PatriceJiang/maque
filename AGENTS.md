@@ -24,6 +24,70 @@ cd modules/core/data && node parser.js --check
 ```
 
 - `-DMAQUE_BUILD_TESTS=ON|OFF` 控制测试（默认 ON）。
+
+### Windows（clang-cl + Ninja；完整支持）
+
+```powershell
+# ① 一次性：取第三方依赖（SDL2 / zlib-ng / zstd / freetype / libcurl / libwebsockets）
+#    下载源码 → 用同一 clang-cl 构建 → 装到 .deps/dist → 生成 .deps/deps.cmake + 自检
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\fetch-deps.ps1
+
+# ② 配置 + 构建 + 测试（一条命令；默认 Debug + ASan）
+tools\win\build.cmd                 # 配置 + 构建
+tools\win\build.cmd -RunTests       # 再跑 ctest
+tools\win\build.cmd -Sanitize "" -BuildType Release -RunTests   # 不带 ASan 的 Release
+
+# 或手工（等价）：
+cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Debug `
+      -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" `
+      -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DMAQUE_SANITIZE=address
+cmake --build build-win
+ctest --test-dir build-win --output-on-failure
+```
+
+- **切勿加载 `vcvars64.bat`**：它会把 PATH 指向 VS 自带的 clang-cl 19.x，并让 CMake 的
+  `Detecting CXX compiler ABI info` **永久挂起**（已实测）。CMake 会自行定位 MSVC/Windows SDK。
+- **wgpu-native**：Windows 用官方 `wgpu-windows-x86_64-msvc-release.zip` 里的
+  `wgpu_native.dll` + `wgpu_native.lib`（放到 `third_party/wgpu-native/lib/`，二者不入库）。
+  仓库现有 `webgpu.h` 与 v29.0.1.1 发行包逐字节等价（仅行尾不同），故无需替换头文件。
+- **e2e 用 Git Bash**：CMake 自动探测并把绝对路径传给 `add_test`。Windows 自带的
+  `C:\WINDOWS\system32\bash.exe` 是 **WSL 启动器**，语义不一致，会被显式排除
+  （`-DMAQUE_BASH=<bash.exe>` 可覆盖）。
+- **UDS（`uds:`）在 Windows 明确不支持**（控制端点与 inspector 客户端都只支持 `tcp:端口`），
+  调用方会得到清晰报错而非静默降级。
+- `libwebsockets` 的 Windows 构建 **TLS 关闭 → 仅 `ws://`**（`wss://` 不可用）。
+- 已知平台差异：模块卸载在 Windows 上**默认不调用 `FreeLibrary`**（见
+  `modules/core/module/src/host.cpp` 顶部注释：wgpu 类库的 DLL 退出路径会踩已卸载内存）；
+  `MAQUE_MODULE_FORCE_UNLOAD=1` 可强制打开。
+- **单测临时目录**：用 `tests/maque_test_fs.h` 的 `maque_test_setup_dir()`，**不要**直接
+  `fs::temp_directory_path()` + 抛异常的 `fs::create_directories`。后者在 TEMP 不可写时抛
+  未捕获的 `filesystem_error` → 进程 `__fastfail`（退出码 `0xC0000409`）、**零输出**，
+  完全看不出原因（实测三连崩）。helper 会探测可写性并回退到 CWD 下的 `maque-test-tmp/`，
+  也可用 `MAQUE_TEST_TMPDIR` 指定。
+- **e2e 需要 Python 3 解析 JSON**：脚本顶部 `. "$(dirname "$0")/maque_python.sh"` 取 `$PY`，
+  **不要**直接写 `python3` —— Windows 的 `WindowsApps\python3.exe` 是 Microsoft Store
+  占位程序（0 字节），裸调用会弹安装提示并挂住。helper 用 `"$cand" -c 'pass'` 探测，
+  自动退回 `python` / `py -3`。
+
+### ASan / UBSan（可选，跨平台）
+
+```bash
+# Linux（GCC/Clang）
+cmake -S . -B build-asan -G Ninja -DCMAKE_BUILD_TYPE=Debug -DMAQUE_SANITIZE=address,undefined
+# Windows（clang-cl；仅 address）
+tools\win\build.cmd -Sanitize address -RunTests
+```
+
+- `-DMAQUE_SANITIZE=` 空 = 关闭。Windows 上会自动把 MSVC 运行时从 `/MDd` 改成 `/MD`
+  （ASan 不支持调试版 CRT），并把 clang 的动态 ASan 运行时显式接进链接行、
+  复制到各可执行文件/插件旁（否则启动即 `0xC0000135` / 链接报 `__asan_*` 未定义）。
+- **鉴别力自检**（别只看"能构建"）：故意越界应被报出 `heap-buffer-overflow`：
+  ```bash
+  printf 'int main(){int*p=new int[4];p[4]=1;return p[4];}\n' > t.cpp
+  clang-cl /std:c++latest -fsanitize=address t.cpp && ./t.exe    # Windows
+  clang++ -fsanitize=address t.cpp -o t && ./t                    # Linux
+  ```
+
 - **窗口（宿主启动期覆盖）**：`MAQUE_WINDOW=800x600` 设窗口尺寸（世界/渲染目标仍是场景尺寸，
   窗口内**等比缩放 + 居中留边**显示，输入坐标自动映射回世界坐标）；`MAQUE_TITLE=<标题>`；
   `MAQUE_VIEWS=n`；`MAQUE_PRESENT=off|software|accelerated`（默认 software：纯窗口表面，
@@ -49,7 +113,28 @@ cd modules/core/data && node parser.js --check
   404→`MQ_VFS_ERR_NOTFOUND`、同 URL 会话内只抓一次）。运行 `./build/samples/player/maque_player https://host/game.scn`
   即"远程游戏即资源"（场景/脚本/资源全走 VFS）；`MAQUE_MOUNT="/cdn=https://cdn.example.com/assets/,/x=../shared"`
   额外挂载（后挂载优先 → 可遮蔽远程目录，是"远程游戏 + 本地覆盖"的开发路径）；远程场景无文件监视热重载。
+  **协议实现按目录分**：`modules/io/vfs/src/{file,mem,zip,url,builtin}/backend.cpp`（核心 `vfs.cpp`
+  只做实例状态 + 最长前缀匹配 + 分发；共享工具 `util.cpp`，内部接口 `vfs_internal.h`）。
   测试：`ctest -R 'vfs|remote_e2e'`（本地 127.0.0.1 HTTP 服务器，不依赖外网）。
+- **键值存储 / 存档（docs/25、storage 模块）**：`storage.set/get/exists/remove/keys/info`（脚本，JS/Lua 同一套绑定）
+  —— 模式由 spec 决定：`file://<目录>`（默认 **`<场景目录>/.maque`**，场景在 CWD 时为 `<CWD>/.maque`）、
+  `mem://`（不落盘）、`http(s)://`（REST：`GET/PUT/DELETE <base>/<uid>/<session>/<key>` + `GET <base>/<uid>/<session>?keys=1`）、
+  `ws(s)://`（JSON 文本帧，协议名 `maque.storage.v1`）。命名空间 `MAQUE_UID`（默认 `default`）/
+  `MAQUE_SESSION`（默认持久档 `main`；给运行期 id 即临时档）；`MAQUE_STORAGE` 覆盖模式。
+  控制面：`Storage.info/list/get`（只读）· `Storage.put/remove`（变更类）。样例 `scenes/storage/`（JS 与 Lua 同逻辑）；
+  测试：`ctest -R storage`（四模式单测，http/ws 用测试内建服务端）。
+- **场景 → 图片（截图/预览）**：`./build/samples/player/maque_player --shot <out.png|.ppm> [--shot-frame N] <scene.scn>`
+  （`MAQUE_SHOT` / `MAQUE_SHOT_FRAME` 同义；默认第 1 帧；**截图后即退出**，一条命令得一张图）。
+  PNG 由 image 模块写出（zlib 可用则真压缩，否则 stored deflate）；尺寸 = 渲染目标（设计分辨率 × 视图 × `MAQUE_SS`）。
+  测试：`ctest -R shot_e2e`（PNG 有效性/确定性/PPM/错误路径）。VSCode 预览插件：`editors/vscode/`（`install.sh` 装到本地扩展目录；
+  文档在该目录 README）。绑定面一致性：`ctest -R bindings_e2e`（schema → JS/Lua 探针，逐条检查可调用性）。
+- **内建 shader（assets/builtin/shaders/）**：**一个 shader 一个目录**（目录名 = shader 名，
+  目录内 `*.wgsl` 按文件名排序拼接），源码是唯一真相；配置期由 `cmake/shader_pack.cmake` +
+  `tools/shader_pack.js` 打包成构建目录里的**压缩源码**（zstd -19；生成物不入库，改资产自动重打包）。
+  运行时由 libzstd 解压并缓存（`MAQUE_BUILTIN_SHADER_COMPRESS=OFF` → 直嵌原文）。
+  **可按 shader 剔除**（默认全部）：`cmake -S . -B build -DMAQUE_SHADER_TEXTURED=OFF`
+  → 不生成/不链接/不进二进制（gfx 取不到时打印原因并跳过该批次）；手动重打包 `--target maque_shaders`。
+  测试：`ctest -R builtin_shaders`（注册表 = 开关 + 解压文本与磁盘资产逐字节一致）。
 - **控制端点 / Inspector（plans/17、docs/09/11）**：`MAQUE_INSPECT=7777`（或 `tcp:7777` / `uds:/tmp/maque.sock`）
   在游戏内开一个**单线程、非阻塞、帧边界轮询**的 JSON-RPC 端点（与 stdin 控制面同一 dispatch，无线程 → 不改确定性）；
   默认**只读**（D2）：变更类方法（`control_list` 里 `control_mutating` 列出的）返回 `-32001` 并计入 `Control.info.rejected`；
