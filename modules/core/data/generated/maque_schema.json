@@ -5,7 +5,7 @@
   "api_count": 129,
   "control_count": 43,
   "callback_count": 10,
-  "module_count": 24,
+  "module_count": 25,
   "types": [
     {
       "name": "anim.AnimatedSprite",
@@ -20605,6 +20605,863 @@
       ],
       "structs": [],
       "enums": []
+    },
+    {
+      "module": "spine2d",
+      "abi_name": "maque.spine2d",
+      "version": 1,
+      "language": "c",
+      "header": "abi/spine2d.h",
+      "fns": [
+        {
+          "name": "mq_spine_abi_version",
+          "returns": "uint32_t",
+          "args": []
+        },
+        {
+          "name": "mq_spine_data_create",
+          "returns": "mq_spine_data*",
+          "args": [
+            {
+              "name": "skeleton_data",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "skeleton_size",
+              "type": "size_t",
+              "doc": null
+            },
+            {
+              "name": "skeleton_is_binary",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "atlas_data",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "atlas_dir_hint",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "load_texture",
+              "type": "mq_spine_texture_cb",
+              "doc": null
+            },
+            {
+              "name": "user",
+              "type": "void*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_animation_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_animation_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_animation_index",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_skin_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_skin_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_page_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_page",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_spine_page*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_page_texture",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "texture",
+              "type": "uint64_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_create",
+          "returns": "mq_spine_instance*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_skin",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_play",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "animation",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "loop",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_stop",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_time",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "time",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_step",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "dt",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_time",
+          "returns": "float",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_animation_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_animation_complete",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_transform",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "scale",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "flip_x",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "flip_y",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_color",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "r",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "g",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "a",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_color",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "r",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "g",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "b",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "a",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_position",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "bone",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_float",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "target",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "field",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "value",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "blend",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_add_float",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "target",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "field",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "value",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "blend",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_get_float",
+          "returns": "float",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "target",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "field",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_ik_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_ik_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_ik_set_mix",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "mix",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_transform_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_transform_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_transform_position",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_draw",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "vertices",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "uvs",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "colors",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "indices",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "batches",
+              "type": "mq_spine_batch*",
+              "doc": null
+            },
+            {
+              "name": "max_vertices",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "max_indices",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "max_batches",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_spine_draw*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "structs": [
+        {
+          "name": "mq_spine_page",
+          "fields": [
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": "页名（图集内声明的纹理文件名）"
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "doc": "像素宽（回填后有效）"
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "texture",
+              "type": "uint64_t",
+              "doc": "引擎侧纹理句柄（回填；0 = 未回填）"
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_batch",
+          "fields": [
+            {
+              "name": "page",
+              "type": "int",
+              "doc": "mq_spine_page 下标；-1 = 无纹理（如纯色占位）"
+            },
+            {
+              "name": "blend",
+              "type": "int",
+              "doc": "spine 混合模式原值（0=Normal,1=Additive,2=Multiply,3=Screen）"
+            },
+            {
+              "name": "first_index",
+              "type": "uint32_t",
+              "doc": "索引起始（相对 mq_spine_draw 的 indices）"
+            },
+            {
+              "name": "index_count",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_draw",
+          "fields": [
+            {
+              "name": "vertex_count",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "index_count",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "batch_count",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "bounds_x",
+              "type": "float",
+              "doc": "姿势包围盒（绘制数据空间，可选用于剔除）"
+            },
+            {
+              "name": "bounds_y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "bounds_w",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "bounds_h",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_SPINE_OK",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_SPINE_ERR_ARG",
+              "value": 1,
+              "doc": "空指针/非法数值"
+            },
+            {
+              "name": "MQ_SPINE_ERR_FORMAT",
+              "value": 2,
+              "doc": "骨架或图集解析失败（格式/版本不匹配）"
+            },
+            {
+              "name": "MQ_SPINE_ERR_NOTFOUND",
+              "value": 3,
+              "doc": "动画名/皮肤名不存在"
+            },
+            {
+              "name": "MQ_SPINE_ERR_PAGE",
+              "value": 4,
+              "doc": "图集页纹理未回填"
+            },
+            {
+              "name": "MQ_SPINE_ERR_NOMEM",
+              "value": 5,
+              "doc": null
+            }
+          ]
+        }
+      ]
     },
     {
       "module": "script",

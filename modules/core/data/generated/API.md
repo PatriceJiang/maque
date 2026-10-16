@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **129** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **24** 个 · 插件接口 **1** 个。
+统计：脚本 API **129** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **25** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -523,6 +523,60 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_image_decode` | int | data: const void*, size: size_t, out_rgba: uint8_t**, out_w: uint32_t*, out_h: uint32_t*, err: char*, err_cap: size_t |
 | `mq_image_free` | void | p: void* |
 | `mq_image_write_png` | int | path: const char*, w: uint32_t, h: uint32_t, rgba: const void*, stride: uint32_t |
+
+### spine2d — `maque.spine2d` v1
+
+头文件：`build/modules/core/data/generated/abi/spine2d.h` · 宏：`MQ_SPINE2D_ABI_VERSION` / `_IFACE_NAME`
+
+Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 + 绘制数据（docs/assets/06 §2）
+
+枚举：
+
+- (匿名)：MQ_SPINE_OK=0, MQ_SPINE_ERR_ARG=1, MQ_SPINE_ERR_FORMAT=2, MQ_SPINE_ERR_NOTFOUND=3, MQ_SPINE_ERR_PAGE=4, MQ_SPINE_ERR_NOMEM=5
+
+结构体：
+
+- `mq_spine_page`：name: const char*, width: int, height: int, texture: uint64_t
+- `mq_spine_batch`：page: int, blend: int, first_index: uint32_t, index_count: uint32_t
+- `mq_spine_draw`：vertex_count: int, index_count: int, batch_count: int, bounds_x: float, bounds_y: float, bounds_w: float, bounds_h: float
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_spine_abi_version` | uint32_t | — |
+| `mq_spine_data_create` | mq_spine_data* | skeleton_data: const void*, skeleton_size: size_t, skeleton_is_binary: int, atlas_data: const char*, atlas_dir_hint: const char*, load_texture: mq_spine_texture_cb, user: void* |
+| `mq_spine_data_destroy` | void | data: mq_spine_data* |
+| `mq_spine_data_animation_count` | int | data: mq_spine_data* |
+| `mq_spine_data_animation_name` | const char* | data: mq_spine_data*, index: int |
+| `mq_spine_data_animation_index` | int | data: mq_spine_data*, name: const char* |
+| `mq_spine_data_skin_count` | int | data: mq_spine_data* |
+| `mq_spine_data_skin_name` | const char* | data: mq_spine_data*, index: int |
+| `mq_spine_data_page_count` | int | data: mq_spine_data* |
+| `mq_spine_data_page` | int | data: mq_spine_data*, index: int, out: mq_spine_page* |
+| `mq_spine_data_page_texture` | int | data: mq_spine_data*, index: int, texture: uint64_t |
+| `mq_spine_instance_create` | mq_spine_instance* | data: mq_spine_data* |
+| `mq_spine_instance_destroy` | void | inst: mq_spine_instance* |
+| `mq_spine_instance_set_skin` | int | inst: mq_spine_instance*, name: const char* |
+| `mq_spine_instance_play` | int | inst: mq_spine_instance*, animation: const char*, loop: int, track: int |
+| `mq_spine_instance_stop` | void | inst: mq_spine_instance* |
+| `mq_spine_instance_set_time` | int | inst: mq_spine_instance*, track: int, time: float |
+| `mq_spine_instance_step` | int | inst: mq_spine_instance*, dt: float |
+| `mq_spine_instance_time` | float | inst: mq_spine_instance*, track: int |
+| `mq_spine_instance_animation_name` | const char* | inst: mq_spine_instance*, track: int |
+| `mq_spine_instance_animation_complete` | int | inst: mq_spine_instance*, track: int |
+| `mq_spine_instance_set_transform` | void | inst: mq_spine_instance*, x: float, y: float, scale: float, flip_x: int, flip_y: int |
+| `mq_spine_instance_set_color` | void | inst: mq_spine_instance*, r: float, g: float, b: float, a: float |
+| `mq_spine_instance_color` | void | inst: mq_spine_instance*, r: float*, g: float*, b: float*, a: float* |
+| `mq_spine_instance_bone_position` | int | inst: mq_spine_instance*, bone: const char*, x: float*, y: float* |
+| `mq_spine_instance_set_float` | int | inst: mq_spine_instance*, target: int, index: int, field: int, value: float, blend: float |
+| `mq_spine_instance_add_float` | int | inst: mq_spine_instance*, target: int, index: int, field: int, value: float, blend: float |
+| `mq_spine_instance_get_float` | float | inst: mq_spine_instance*, target: int, index: int, field: int |
+| `mq_spine_instance_ik_count` | int | inst: mq_spine_instance* |
+| `mq_spine_instance_ik_name` | const char* | inst: mq_spine_instance*, index: int |
+| `mq_spine_instance_ik_set_mix` | int | inst: mq_spine_instance*, index: int, mix: float |
+| `mq_spine_instance_transform_count` | int | inst: mq_spine_instance* |
+| `mq_spine_instance_transform_name` | const char* | inst: mq_spine_instance*, index: int |
+| `mq_spine_instance_transform_position` | int | inst: mq_spine_instance*, index: int, x: float*, y: float* |
+| `mq_spine_instance_draw` | int | inst: mq_spine_instance*, vertices: float*, uvs: float*, colors: float*, indices: uint32_t*, batches: mq_spine_batch*, max_vertices: int, max_indices: int, max_batches: int, out: mq_spine_draw* |
 
 ### script — `maque.script` v1
 
