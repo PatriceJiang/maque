@@ -204,6 +204,51 @@ PY
     echo "spine_e2e: 渲染自证 ok（anim '$A' vs '$B' 同帧截图不同，且角色像素已画出）"
     ;;
 
+mask)
+    # 裁剪遮罩（mask）回归。为什么这个测试必须存在：
+    #   Spine 的遮罩**不是 setup 姿势自动生效的** —— `Skeleton::setSkin` 只给"setup 里声明了
+    #   attachment 名"的槽挂皮肤附件（读 spine-cpp 源码确认），而官方 spineboy 的 `clipping`
+    #   槽在 setup 里没有附件名，且它的 **11 个动画没有一个**驱动该槽 →
+    #   正常播放时遮罩根本不生效，"裁剪代码是否正确"用现成素材无法证明。
+    #   所以这里用 MAQUE_SPINE_MASK 显式开启遮罩，做三件事：
+    #     ① 遮罩真的挂上了（日志）
+    #     ② 裁剪路真的被走到、且几何被改变（MAQUE_TRACE_SPINE_DRAW 的计数）
+    #     ③ 渲染结果与不开启时**不同**（像素级，最强判据）
+    echo "spine_e2e[mask]: 用 MAQUE_SPINE_MASK 显式开启遮罩（官方素材默认不启用遮罩）"
+    grep -qiE 'panic|Assertion failed|ERROR: AddressSanitizer|stack-overflow' "$WORK"/*.log 2>/dev/null && true
+
+    MAQUE_SPINE_MASK="clipping:clipping" MAQUE_TRACE_SPINE_DRAW=1 \
+        "$BIN" --shot "$WORK/mask_on.png" --shot-frame 30 "$SCN" >"$WORK/mask_on.log" 2>&1
+    "$BIN" --shot "$WORK/mask_off.png" --shot-frame 30 "$SCN" >"$WORK/mask_off.log" 2>&1
+    [ -s "$WORK/mask_on.png" ] || { cat "$WORK/mask_on.log"; fail "遮罩截图未生成"; }
+    [ -s "$WORK/mask_off.png" ] || { cat "$WORK/mask_off.log"; fail "无遮罩截图未生成"; }
+    has_errors "$WORK/mask_on.log" && { cat "$WORK/mask_on.log"; fail "开启遮罩后运行期报错"; }
+
+    # ① 遮罩挂上了
+    grep -q '遮罩已启用' "$WORK/mask_on.log" || {
+        cat "$WORK/mask_on.log"; fail "遮罩未启用（MAQUE_SPINE_MASK 没生效）"; }
+    # ② 裁剪路被走到，且几何确实被改变（顶点数不完全等于未裁剪值）
+    if ! "$PY" - "$WORK/mask_on.log" <<'PY'
+import re, sys
+log = open(sys.argv[1], encoding='utf-8', errors='replace').read()
+m = re.search(r'clipStarts=(\d+) 被裁剪附件=(\d+) 顶点 (\d+)->(\d+) \(总 (\d+) 顶点\)', log)
+assert m, '日志里没有裁剪统计行（MAQUE_TRACE_SPINE_DRAW 没生效？）'
+starts, atts, before, after, total = (int(x) for x in m.groups())
+assert starts >= 1, f'裁剪一次都没启动（clipStarts={starts}）—— 遮罩附件没被识别成 ClippingAttachment？'
+assert atts >= 1, f'没有任何附件被裁剪（clippedAtts={atts}）—— 裁剪路没走到'
+assert total > 0, '裁剪后一个顶点都没有 → 角色会被整只裁掉（多半是多边形/坐标空间不对）'
+assert before != after, f'裁剪前后顶点数相同（{before}）—— clipTriangles 没真的改变几何'
+print(f'spine_e2e: 遮罩 ok（裁剪启动 {starts} 次、被裁剪附件 {atts} 个、顶点 {before}->{after}、总 {total}）')
+PY
+    then
+        cat "$WORK/mask_on.log"; fail "裁剪统计断言失败"
+    fi
+    # ③ 最强判据：开启与不开启遮罩，渲染结果必须不同
+    cmp -s "$WORK/mask_on.png" "$WORK/mask_off.png" && {
+        fail "开启遮罩与不开启的截图完全相同 —— 裁剪没进渲染"; }
+    echo "spine_e2e: 遮罩回归 ok（开/关渲染结果不同）"
+    ;;
+
 dragon)
     run "$WORK/dragon.log" 40
     grep -q 'spine: ready' "$WORK/dragon.log" || { cat "$WORK/dragon.log"; fail "dragon 未进入 ready"; }

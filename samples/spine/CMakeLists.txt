@@ -23,4 +23,10 @@ if(MAQUE_BUILD_TESTS)
     add_test(NAME spine_dragon COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/spine_e2e.sh"
              dragon $<TARGET_FILE:maque_spine> "${CMAKE_CURRENT_SOURCE_DIR}/dragon.scn")
     set_tests_properties(spine_dragon PROPERTIES SKIP_RETURN_CODE 77 SKIP_REGULAR_EXPRESSION "SKIP")
+
+    # 裁剪遮罩（mask）回归：官方 spineboy 的遮罩在 setup/动画里都不生效，
+    # 必须显式开启才能验证裁剪路 —— 详见 tests/spine_e2e.sh 的 mask 分支注释。
+    add_test(NAME spine_mask COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/spine_e2e.sh"
+             mask $<TARGET_FILE:maque_spine> "${CMAKE_CURRENT_SOURCE_DIR}/spine.scn")
+    set_tests_properties(spine_mask PROPERTIES SKIP_RETURN_CODE 77 SKIP_REGULAR_EXPRESSION "SKIP")
 endif()

@@ -19,6 +19,8 @@
 #include "anim/mq_spine2d.h"
 
 #include <spine/spine.h>
+#include <spine/ClippingAttachment.h>
+#include <spine/SkeletonClipping.h>
 
 #include <cmath>
 #include <cstdio>
@@ -105,6 +107,10 @@ struct mq_spine_instance {
     bool flipX = false, flipY = false;
     float r = 1.0F, g = 1.0F, b = 1.0F, a = 1.0F;
     Vector<float> worldVerts;                     // 逐附件求值暂存（复用，避免每帧分配）
+    Vector<unsigned short> localIdx;              // 逐附件**局部 0 基**索引（clipTriangles 要求）
+    /* 裁剪遮罩状态（spine 的 mask）：一个实例一份，逐帧按槽序推进。
+     * 官方参考实现 SkeletonRenderer 也持有一个 SkeletonClipping。 */
+    SkeletonClipping clipper;
 };
 
 extern "C" {
@@ -243,8 +249,57 @@ mq_spine_instance *mq_spine_instance_create(mq_spine_data *data) {
     inst->skeleton = new Skeleton(data->skeletonData);
     inst->stateData = new AnimationStateData(data->skeletonData);
     inst->state = new AnimationState(inst->stateData);
+    /* **必须显式应用默认皮肤**：Spine 的"setup 姿势附件"并不都在 SkeletonData::slots 里 ——
+     * 皮肤的附件（含**裁剪遮罩**）存在 skin 下，不应用皮肤就不会挂到槽上。
+     * 实测：不设皮肤时 `getSkin()==null`，spineboy 的 `clipping` 槽**没有附件** →
+     * 遮罩永不生效（而且皮肤自带的其它附件也一起缺失）。
+     * 官方各平台样例都在创建后 `setSkin(defaultSkin)`；这里照做。 */
+    if (Skin *def = data->skeletonData->getDefaultSkin()) inst->skeleton->setSkin(def);
     inst->skeleton->setToSetupPose();
+
+    /* 遮罩验收入口（MAQUE_SPINE_MASK="槽名:皮肤附件名"，默认 "clipping:clipping"）。
+     *
+     * 为什么需要它：Spine 的裁剪遮罩**不是**在 setup 姿势里自动挂上的 ——
+     * `Skeleton::setSkin` 只给"setup 姿势里声明了 attachment 名"的槽挂皮肤附件
+     *（读 spine-cpp 源码 Skeleton.cpp:setSkin 确认），而 spineboy 的 `clipping` 槽在
+     * setup 里没有附件名，遮罩要靠**动画时间轴或代码显式设置**才生效。
+     * 官方 spineboy 的 11 个动画**没有一个**驱动该槽，所以默认播放时遮罩根本不生效 ——
+     * 于是"裁剪代码路是否真的正确"无法用现成素材证明。
+     * 这个入口让人能显式打开遮罩做验证（e2e 用它做像素级断言），默认关闭、不影响正常渲染。 */
+    if (const char *spec = std::getenv("MAQUE_SPINE_MASK")) {
+        std::string s(spec);
+        const size_t colon = s.find(':');
+        const std::string slotName = colon == std::string::npos ? s : s.substr(0, colon);
+        const std::string attName = colon == std::string::npos ? s : s.substr(colon + 1);
+        Skin *def = inst->owner->skeletonData->getDefaultSkin();
+        Slot *slot = slotName.empty() ? nullptr : inst->skeleton->findSlot(String(slotName.c_str()));
+        Attachment *att = nullptr;
+        if (def && slot) att = def->getAttachment(slot->getData().getIndex(), String(attName.c_str()));
+        if (slot && att) {
+            slot->setAttachment(att);
+            std::print(stderr, "[spine2d] 遮罩已启用: slot={} att={} 类={}\n", slotName, attName,
+                       att->getRTTI().getClassName());
+        } else {
+            std::print(stderr, "[spine2d] 遮罩启用失败: slot={} att={}（findSlot={} getAttachment={}）\n",
+                       slotName, attName, slot ? "ok" : "null", att ? "ok" : "null");
+        }
+    }
+
     inst->skeleton->updateWorldTransform(Physics_Update);
+    if (std::getenv("MAQUE_TRACE_SPINE_DRAW")) {
+        Skeleton &sk = *inst->skeleton;
+        std::print(stderr, "[spine2d] create: slots={} skin={}\n",
+                   sk.getSlots().size(), sk.getSkin() ? sk.getSkin()->getName().buffer() : "(null)");
+        /* 逐槽打印附件类型与是否有遮挡（重点看裁剪槽） */
+        for (size_t i = 0; i < sk.getDrawOrder().size(); ++i) {
+            Slot *s = sk.getDrawOrder()[i];
+            if (!s) continue;
+            const char *nm = s->getData().getName().buffer();
+            Attachment *a = s->getAttachment();
+            std::print(stderr, "[spine2d]   slot#{} {:<24} att={}\n", i, nm ? nm : "?",
+                       a ? a->getRTTI().getClassName() : "(none)");
+        }
+    }
     return inst;
 }
 
@@ -448,7 +503,7 @@ const char *mq_spine_instance_transform_name(mq_spine_instance *inst, int index)
         ->getData().getName().buffer();
 }
 int mq_spine_instance_transform_position(mq_spine_instance *inst, int index, float *x, float *y) {
-    if (!inst || !x || !y || index < 0 ||
+    if (!inst || !inst->skeleton || !x || !y || index < 0 ||
         index >= static_cast<int>(inst->skeleton->getTransformConstraints().size()))
         return MQ_SPINE_ERR_ARG;
     TransformConstraint *tc = inst->skeleton->getTransformConstraints()[static_cast<size_t>(index)];
@@ -493,53 +548,73 @@ int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs,
     const float sy = inst->flipY ? -inst->scale : inst->scale;
 
     Vector<Slot *> &order = sk.getDrawOrder();
+    SkeletonClipping &clipper = inst->clipper;
+    /* 诊断（MAQUE_TRACE_SPINE_DRAW=1）：裁剪路是否真的被走到、裁掉了多少几何。
+     * 为什么需要：遮罩可能"生效但没改变可见像素"，此时截图与不开启**完全一样**，
+     * 只看图无法判断代码路有没有跑 —— 所以要有可观测的计数。 */
+    const bool traceDraw = std::getenv("MAQUE_TRACE_SPINE_DRAW") != nullptr;
+    int clipStarts = 0, clippedAtts = 0, vertsBefore = 0, vertsAfter = 0;
     for (size_t si = 0; si < order.size(); ++si) {
         Slot *slot = order[si];
         if (!slot) continue;
         Attachment *att = slot->getAttachment();
-        if (!att) continue;
-        if (!slot->getData().getName().buffer()) continue;   // 防御：槽数据异常时跳过而非崩
+        if (!att) { clipper.clipEnd(*slot); continue; }
+        if (!slot->getData().getName().buffer()) { clipper.clipEnd(*slot); continue; }
 
         /* 附件类型判别用 C++ RTTI（本项目为 spine 打开 /GR，见 third_party/spine-cpp/CMakeLists.txt）。
          * LinkedMesh 派生自 MeshAttachment，故一个 dynamic_cast 覆盖两者。
-         * 其余（裁剪/包围盒/路径/点）不产生填充几何，跳过。 */
+         * 包围盒/路径/点不产生填充几何，跳过。 */
         RegionAttachment *ra = dynamic_cast<RegionAttachment *>(att);
         MeshAttachment *ma = dynamic_cast<MeshAttachment *>(att);
-        if (!ra && !ma) continue;
+        ClippingAttachment *clip = dynamic_cast<ClippingAttachment *>(att);
+
+        /* 裁剪遮罩（mask）：spine 的"裁剪附件"从该槽起生效、直到它的 endSlot。
+         * 官方参考实现（SkeletonRenderer::render）：遇到裁剪附件就 clipStart 并 continue；
+         * 之后每个附件若 clipper.isClipping() 就用自己的几何去 clipTriangles，
+         * 取 getClippedVertices/Triangles/UVs 作为输出；每次处理完调用 clipEnd(slot)
+         * （它会在到达 endSlot 时真正结束本次裁剪），循环末尾再 clipEnd() 收尾。 */
+        if (clip) { clipper.clipStart(*slot, clip); ++clipStarts; continue; }
+        if (!ra && !ma) { clipper.clipEnd(*slot); continue; }
 
         TextureRegion *tr = ra ? ra->getRegion() : ma->getRegion();
-        if (!tr) continue;
+        if (!tr) { clipper.clipEnd(*slot); continue; }
         /* rendererObject 是"渲染器的贴图对象"（本引擎 = 纹理句柄），**不是** AtlasRegion*，
          * 不要解引用它 —— 只判断"有没有贴图"。UV/尺寸从 tr 自身取（TextureRegion 自带 u/v/u2/v2）。 */
         const uintptr_t texHandle = reinterpret_cast<uintptr_t>(tr->rendererObject);
-        if (texHandle == 0) continue;      /* 无贴图 → 跳过 */
+        if (texHandle == 0) { clipper.clipEnd(*slot); continue; }
 
+        /* 颜色 = 实例色 × 槽色 × **附件色**（官方参考实现同款三项相乘）。
+         * 附件自身颜色由动画/皮肤设置，漏乘会让"变红/变暗"这类受击反馈失效。 */
+        const Color &ac = ra ? ra->getColor() : ma->getColor();
         const Color &slotColor = slot->getColor();
-        const float cr = inst->r * slotColor.r;
-        const float cg = inst->g * slotColor.g;
-        const float cb = inst->b * slotColor.b;
-        const float ca = inst->a * slotColor.a;
+        const float cr = inst->r * slotColor.r * ac.r;
+        const float cg = inst->g * slotColor.g * ac.g;
+        const float cb = inst->b * slotColor.b * ac.b;
+        const float ca = inst->a * slotColor.a * ac.a;
+        if (ca <= 0.0F) { clipper.clipEnd(*slot); continue; }   /* 全透明：不必产出几何 */
 
-        Vector<float> *uvArr = nullptr;
         int vcount = 0;
-        const int segStart = idx;
+        Vector<float> *uvArr = nullptr;
+        /* 局部 0 基索引（**不能**预先加 vtx 偏移）：clipTriangles 需要局部索引，
+         * 官方实现也是先裁剪、再按 batch 输出。 */
+        unsigned short *localIdx = inst->localIdx.buffer();
+        int localIdxCount = 0;
         float *world = inst->worldVerts.buffer();
 
         if (ra) {
             vcount = 4;
-            if (vtx + vcount > max_vertices) break;
             if (inst->worldVerts.size() < 8) inst->worldVerts.setSize(8, 0.0F);
             world = inst->worldVerts.buffer();
             ra->computeWorldVertices(*slot, world, 0, 2);
             uvArr = &ra->getUVs();
             static const unsigned short kQuad[6] = { 0, 1, 2, 2, 3, 0 };
-            if (idx + 6 > max_indices) break;
-            for (int k = 0; k < 6; ++k) indices[idx + k] = static_cast<uint32_t>(vtx) + kQuad[k];
-            idx += 6;
+            if (inst->localIdx.size() < 6) inst->localIdx.setSize(6, 0);
+            localIdx = inst->localIdx.buffer();
+            for (int k = 0; k < 6; ++k) localIdx[k] = kQuad[k];
+            localIdxCount = 6;
         } else {
             vcount = static_cast<int>(ma->getWorldVerticesLength() / 2);
-            if (vcount <= 0) continue;
-            if (vtx + vcount > max_vertices) break;
+            if (vcount <= 0) { clipper.clipEnd(*slot); continue; }
             /* 扩容要**先做**，做完再取 buffer —— setSize 可能重分配，先取的指针会失效
              *（ASan 在这里抓到过 access-violation，就是这个原因）。 */
             if (inst->worldVerts.size() < ma->getWorldVerticesLength())
@@ -555,10 +630,38 @@ int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs,
              * （踩过：截图只有 HUD/背景，经顶点/UV/颜色 trace 才定位到这一行）。 */
             uvArr = &ma->getUVs();
             Vector<unsigned short> &tri = ma->getTriangles();
-            const int ntri = static_cast<int>(tri.size());
-            if (idx + ntri > max_indices) break;
-            for (int k = 0; k < ntri; ++k) indices[idx + k] = static_cast<uint32_t>(vtx) + tri[k];
-            idx += ntri;
+            localIdxCount = static_cast<int>(tri.size());
+            if (inst->localIdx.size() < tri.size()) inst->localIdx.setSize(tri.size(), 0);
+            localIdx = inst->localIdx.buffer();
+            for (int k = 0; k < localIdxCount; ++k) localIdx[k] = tri[static_cast<size_t>(k)];
+        }
+
+        /* 在裁剪区域内 → 用裁剪后的几何替换原几何 */
+        if (clipper.isClipping()) {
+            const int wBefore = vcount;
+            const int iBefore = localIdxCount;
+            /* 参数是**索引个数**，不是字节数 —— 传字节数会让它多读一倍索引并越界
+             *（ASan 实测：SkeletonClipping.cpp:180 access-violation，就是这里传错了）。 */
+            clipper.clipTriangles(world, localIdx, static_cast<size_t>(localIdxCount),
+                                  uvArr->buffer(), 2);
+            world = clipper.getClippedVertices().buffer();
+            uvArr = &clipper.getClippedUVs();
+            Vector<unsigned short> &ctri = clipper.getClippedTriangles();
+            localIdx = ctri.buffer();
+            vcount = static_cast<int>(clipper.getClippedVertices().size() >> 1);
+            localIdxCount = static_cast<int>(ctri.size());
+            ++clippedAtts;
+            vertsBefore += wBefore; vertsAfter += vcount;
+            if (traceDraw)
+                std::print(stderr, "[spine2d] clip slot={} att={} v {}->{} i {}->{}\n",
+                           slot->getData().getName().buffer(),
+                           ra ? "region" : "mesh", wBefore, vcount, iBefore, localIdxCount);
+            if (vcount <= 0 || localIdxCount <= 0) { clipper.clipEnd(*slot); continue; }
+        }
+
+        if (vtx + vcount > max_vertices || idx + localIdxCount > max_indices) {
+            clipper.clipEnd(*slot);
+            break;
         }
 
         for (int k = 0; k < vcount; ++k) {
@@ -583,28 +686,37 @@ int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs,
                 if (py < minY) minY = py; if (py > maxY) maxY = py;
             }
         }
+        /* 索引在这里才加 vtx 偏移（裁剪路径产出的是局部索引） */
+        for (int k = 0; k < localIdxCount; ++k)
+            indices[idx + k] = static_cast<uint32_t>(vtx) + localIdx[k];
+        idx += localIdxCount;
 
         /* 页号：直接用 spine 给 region 的页索引（AtlasPage::index），不反查、不缓存指针。 */
         int page = -1;
         for (const auto &kv : inst->owner->handleToPage)
             if (kv.first == static_cast<uint64_t>(texHandle)) { page = kv.second; break; }
         const int blend = static_cast<int>(slot->getData().getBlendMode());
-        if (page < -1) continue;
-        const int segCount = idx - segStart;
+        const int segCount = localIdxCount;
         if (nbatch > 0 && page == curPage && blend == curBlend) {
             batches[nbatch - 1].index_count += static_cast<uint32_t>(segCount);
         } else {
-            if (nbatch >= max_batches) break;
+            if (nbatch >= max_batches) { clipper.clipEnd(*slot); break; }
             curPage = page;
             curBlend = blend;
             batches[nbatch].page = page;
             batches[nbatch].blend = blend;
-            batches[nbatch].first_index = static_cast<uint32_t>(segStart);
+            batches[nbatch].first_index = static_cast<uint32_t>(idx - segCount);
             batches[nbatch].index_count = static_cast<uint32_t>(segCount);
             ++nbatch;
         }
         vtx += vcount;
+        clipper.clipEnd(*slot);
     }
+    clipper.clipEnd();
+
+    if (traceDraw)
+        std::print(stderr, "[spine2d] draw: clipStarts={} 被裁剪附件={} 顶点 {}->{} (总 {} 顶点)\n",
+                   clipStarts, clippedAtts, vertsBefore, vertsAfter, vtx);
 
     out->vertex_count = vtx;
     out->index_count = idx;
