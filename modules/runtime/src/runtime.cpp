@@ -2885,7 +2885,12 @@ void Engine::physics_components_setup() {
         desc.x = e->world_x; desc.y = e->world_y;
         desc.radius = (float)radius;
         desc.half_w = (float)hw; desc.half_h = (float)hh;
-        desc.mass = 1.0F; desc.restitution = 0.5F; desc.friction = 0.2F;
+        /* 摩擦/弹性来自组件声明（此前写死 0.5/0.2，声明被静默忽略 —— 表现是
+         * "把 Collider.restitution 从 0.0 改成 0.95，逐帧位置完全一致"，回弹比恒为 0.5）。
+         * 注意：ABI 的 mq_physics_body_desc 没有 layer/mask 字段，按层过滤暂不可用。 */
+        desc.mass = 1.0F;
+        desc.restitution = (float)restitution;
+        desc.friction = (float)friction;
         mq_physics_body out_body{};
         if (mq_physics_add_body(physics, &desc, &out_body) == MQ_PHYSICS_OK)
             physics_role_bodies.push_back({ id, out_body });

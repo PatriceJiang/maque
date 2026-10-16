@@ -4,23 +4,24 @@
   "width": 320,
   "height": 240,
   "seed": 7,
+  "gravity_y": -600,
   "entities": [
     {
       "name": "shelf",
       "components": [
-        { "type": "scn.Transform2D", "x": 160, "y": 200 },
-        { "type": "scn.Sprite", "half_w": 60, "half_h": 20 },
+        { "type": "scn.Transform2D", "x": 160, "y": 100 },
+        { "type": "scn.Sprite", "width": 120, "height": 24, "r": 0.35, "g": 0.7, "b": 0.4 },
         { "type": "physics.RigidBody", "body_type": "BodyType::Static" },
-        { "type": "physics.Collider", "shape_type": "ShapeType::Box", "half_extents": { "x": 60.0, "y": 20.0, "z": 0.5 } }
+        { "type": "physics.Collider", "shape_type": "ShapeType::Box", "half_extents": { "x": 60.0, "y": 12.0, "z": 0.5 } }
       ]
     },
     {
       "name": "ball",
       "components": [
-        { "type": "scn.Transform2D", "x": 160, "y": 150 },
-        { "type": "scn.Sprite", "radius": 8 },
+        { "type": "scn.Transform2D", "x": 160, "y": 200 },
+        { "type": "scn.Sprite", "radius": 8, "r": 0.95, "g": 0.75, "b": 0.3 },
         { "type": "physics.RigidBody", "body_type": "BodyType::Dynamic" },
-        { "type": "physics.Collider", "shape_type": "ShapeType::Circle", "radius": 8.0, "restitution": 0.0 }
+        { "type": "physics.Collider", "shape_type": "ShapeType::Circle", "radius": 8.0, "restitution": 0.0, "friction": 0.4 }
       ]
     }
   ]
