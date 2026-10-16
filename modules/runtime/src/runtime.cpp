@@ -1662,6 +1662,36 @@ void Scene::flatten_world(Engine& eng) {
     }
 }
 
+/* 节点属性沿父链累积（angle/scale/opacity）。
+ *
+ * 为什么需要它：`flatten_world` 只累积**位置**（父子坐标相加），而 `Entity` 上的
+ * angle/scale/opacity 是"影响自身与子树"的节点属性（见 Entity 定义处注释）。
+ * 渲染提取若不累积，子节点的朝向/缩放就不会跟随父节点 —— 炮塔装在车体上、
+ * 挂点、动作部件这类层级结构就摆不对。
+ *
+ * 语义与 2D 直觉一致：
+ *   · 角度**相加**（每级旋转都是相对父级的局部旋转）；
+ *   · 缩放**相乘**；
+ *   · 透明度**相乘**（父级半透明则整棵子树都更透明），并夹到 [0,1]；
+ *   · active 由调用方判断（子节点不会"复活"父节点隐藏的内容）。
+ * 自父向子累积的顺序与 flatten_world 的遍历一致（最小 id 先），结果稳定（docs/10 D4）。 */
+void accumulate_node_attrs(Engine& eng, int idx, float& angle_deg, float& scale, float& opacity) {
+    angle_deg = 0.0F; scale = 1.0F; opacity = 1.0F;
+    if (!eng.scene) return;
+    int guard = 0;
+    for (int cur = idx; cur >= 0 && guard < 4096; ++guard) {
+        Entity* e = eng.scene->at(cur);
+        if (!e) break;
+        angle_deg += e->angle;
+        scale *= e->scale;
+        opacity *= e->opacity;
+        if (e->parent == cur) break;             // 自环保护（脏数据不应造成死循环）
+        cur = e->parent;
+    }
+    if (opacity < 0.0F) opacity = 0.0F;
+    if (opacity > 1.0F) opacity = 1.0F;
+}
+
 void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
     /* 粒子（docs/15 §4）：只读提取，alpha 随寿命衰减；在实体图元之后按稳定顺序输出 */
     for (auto& p : eng.particles) {
@@ -1704,6 +1734,13 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 continue;
             }
             if (!(d->role & MQ_ROLE_SPRITE)) continue;
+            /* 节点属性（active/angle/scale/opacity）此前被**整个忽略** ——
+             * 实测：node_set_angle 不旋转、node_set_active(0) 不隐藏、node_set_scale /
+             * node_set_opacity 对 sprite 无效。渲染项 ABI 本来就有这些字段
+             *（rotation/a/half_w/half_h），只是提取时没填。 */
+            if (!e.active) continue;                          // 隐藏（含整棵子树）
+            float node_angle = 0.0F, node_scale = 1.0F, node_opacity = 1.0F;
+            accumulate_node_attrs(eng, idx, node_angle, node_scale, node_opacity);
             float radius = 8, r = 1, g = 1, b = 1, sw = 0, sh = 0;
             read_f32(d, blob.data(), "radius", &radius);
             read_f32(d, blob.data(), "width", &sw);
@@ -1729,12 +1766,18 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 tex = ti == eng.tex_cache.end() ? -1 : ti->second;
             }
             mq_renderer_item it{};
-            it.x = e.world_x; it.y = (float)eng.H - e.world_y; it.size = radius;
-            /* width/height > 0 → **矩形**图元（瓦片/方块/非方形贴图）；否则 radius 的圆 */
+            it.x = e.world_x; it.y = (float)eng.H - e.world_y;
+            /* width/height > 0 → **矩形**图元（瓦片/方块/非方形贴图）；否则 radius 的圆。
+             * 节点缩放对两者都生效（半径/半宽半高同时乘）。 */
             const bool rect = sw > 0.0F && sh > 0.0F;
-            it.half_w = rect ? sw * 0.5F : 0.0F;
-            it.half_h = rect ? sh * 0.5F : 0.0F;
-            it.r = r; it.g = g; it.b = b; it.a = 1.0F;
+            it.size = radius * node_scale;
+            it.half_w = rect ? sw * 0.5F * node_scale : 0.0F;
+            it.half_h = rect ? sh * 0.5F * node_scale : 0.0F;
+            /* 角度：实体存度，渲染项要弧度，且 y 轴已翻到屏幕空间 → 取负保持视觉方向一致
+             *（世界 y 向上、屏幕 y 向下；不取负的话"抬头"会变成"低头"）。 */
+            it.rotation = -node_angle * 3.14159265358979323846F / 180.0F;
+            it.r = r; it.g = g; it.b = b;
+            it.a = node_opacity;
             it.texture = tex;
             it.layer = 0;                                        // 世界层
             it.z = (int)idx;                                     // 稳定序（按实体 id，禁指针序）
