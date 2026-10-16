@@ -242,6 +242,9 @@ add_subdirectory(modules/world/nav)
 # 选 4.2 并**打开 C++ RTTI**（封装层用 dynamic_cast 判别附件类型）—— 见 third_party/spine-cpp/CMakeLists.txt。
 add_subdirectory(modules/anim/spine2d)
 add_subdirectory(modules/ui/canvas)
+# 引擎侧 ImGui（即时模式调试/调参 UI）。**只有需要 UI 的宿主**链接它（spine sample / inspector），
+# 其它程序（tank、flappy）不链接 → 不引入 UI 依赖、二进制不变大。
+add_subdirectory(modules/ui/imgui)
 add_subdirectory(modules/render/text)
 add_subdirectory(modules/render/gfx)
 add_subdirectory(modules/api)
