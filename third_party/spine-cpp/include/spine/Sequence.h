@@ -30,134 +30,69 @@
 #ifndef Spine_Sequence_h
 #define Spine_Sequence_h
 
-#include <spine/Array.h>
-#include <spine/RTTI.h>
+#include <spine/Vector.h>
 #include <spine/SpineString.h>
 #include <spine/TextureRegion.h>
 
 namespace spine {
-	class SlotPose;
-	class RegionAttachment;
-	class MeshAttachment;
+	class Slot;
+
+	class Attachment;
 
 	class SkeletonBinary;
 	class SkeletonJson;
 
-	/// Holds texture regions, UVs, and vertex offsets for rendering a region or mesh attachment.
-	/// Regions must be populated and update() called before use.
 	class SP_API Sequence : public SpineObject {
 		friend class SkeletonBinary;
 		friend class SkeletonJson;
-
 	public:
-		/// @param count The number of texture regions this sequence will display.
-		/// @param pathSuffix If true, getPath(String, int) has a numeric suffix. If false, all regions will use the same path,
-		/// so count should be 1.
-		Sequence(int count, bool pathSuffix);
-
-		/// Copy constructor.
-		Sequence(const Sequence &other);
+		Sequence(int count);
 
 		~Sequence();
 
-		/// Computes UVs and offsets for the specified attachment. Must be called if the regions
-		/// or attachment properties are changed.
-		void update(RegionAttachment &attachment);
-		void update(MeshAttachment &attachment);
+		Sequence *copy();
 
-		/// The list of texture regions this sequence will display.
-		Array<TextureRegion *> &getRegions() {
-			return _regions;
-		}
+		void apply(Slot *slot, Attachment *attachment);
 
-		/// Returns the getRegions() index for SlotPose::getSequenceIndex().
-		int resolveIndex(SlotPose &pose);
+		String getPath(const String &basePath, int index);
 
-		/// Returns the texture region from getRegions() for the specified index.
-		TextureRegion *getRegion(int index);
+		int getId() { return _id; }
 
-		/// Returns the UVs for the specified index. getRegions() must be populated and update() called before calling this method.
-		Array<float> &getUVs(int index);
+		void setId(int id) { _id = id; }
 
-		/// Returns vertex offsets from the center of a RegionAttachment. Invalid to call for a MeshAttachment.
-		Array<float> &getOffsets(int index);
+		int getStart() { return _start; }
 
-		/// The starting number for the numeric getPath(String, int) suffix.
-		int getStart() {
-			return _start;
-		}
+		void setStart(int start) { _start = start; }
 
-		void setStart(int start) {
-			_start = start;
-		}
+		int getDigits() { return _digits; }
 
-		/// The minimum number of digits in the numeric getPath(String, int) suffix, for zero padding. 0 for no zero padding.
-		int getDigits() {
-			return _digits;
-		}
+		void setDigits(int digits) { _digits = digits; }
 
-		void setDigits(int digits) {
-			_digits = digits;
-		}
+		int getSetupIndex() { return _setupIndex; }
 
-		/// The index of the region to show for the setup pose.
-		int getSetupIndex() {
-			return _setupIndex;
-		}
+		void setSetupIndex(int setupIndex) { _setupIndex = setupIndex; }
 
-		void setSetupIndex(int setupIndex) {
-			_setupIndex = setupIndex;
-		}
-
-		/// Returns true if getPath(String, int) has a numeric suffix.
-		bool hasPathSuffix() {
-			return _pathSuffix;
-		}
-
-		/// Returns the specified base path with an optional numeric suffix for the specified index.
-		String &getPath(const String &basePath, int index);
-
-		/// Returns a unique ID for this sequence.
-		int getId() {
-			return _id;
-		}
+		Vector<TextureRegion *> &getRegions() { return _regions; }
 
 	private:
-		static int _nextID;
 		int _id;
-		Array<TextureRegion *> _regions;
-		bool _pathSuffix;
-		Array<Array<float>> _uvs;
-		Array<Array<float>> _offsets;
+		Vector<TextureRegion *> _regions;
 		int _start;
 		int _digits;
 		int _setupIndex;
-		String _tmpPath;
 
-		static int nextID();
+		int getNextID();
 	};
 
-	/// Controls how getRegions() are displayed over time.
 	enum SequenceMode {
-		SequenceMode_hold = 0,
-		SequenceMode_once = 1,
-		SequenceMode_loop = 2,
-		SequenceMode_pingpong = 3,
-		SequenceMode_onceReverse = 4,
-		SequenceMode_loopReverse = 5,
-		SequenceMode_pingpongReverse = 6
+		hold = 0,
+		once = 1,
+		loop = 2,
+		pingpong = 3,
+		onceReverse = 4,
+		loopReverse = 5,
+		pingpongReverse = 6
 	};
-
-	inline SequenceMode SequenceMode_valueOf(const String &value) {
-		if (value == "hold") return SequenceMode_hold;
-		if (value == "once") return SequenceMode_once;
-		if (value == "loop") return SequenceMode_loop;
-		if (value == "pingpong") return SequenceMode_pingpong;
-		if (value == "onceReverse") return SequenceMode_onceReverse;
-		if (value == "loopReverse") return SequenceMode_loopReverse;
-		if (value == "pingpongReverse") return SequenceMode_pingpongReverse;
-		return SequenceMode_hold;
-	}
 }
 
 #endif

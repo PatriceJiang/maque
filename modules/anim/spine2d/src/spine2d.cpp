@@ -1,13 +1,21 @@
 /* maque::spine2d —— Spine 2D 官方运行时（spine-cpp）的 C ABI 封装。
  *
- * 分层（docs/assets/06 §2、docs/02）：
- *   · 本模块只依赖 spine-cpp + 标准库；**不碰 GPU、不解码纹理**。
- *   · 骨架与图集从**内存**进来（调用方用 VFS 读），图集页纹理通过回调交给引擎侧解码上传，
- *     回填句柄后再查询。
- *   · 对外只有 C ABI + 不透明句柄，分配者释放（句柄由本模块分配，故由本模块销毁）。
+ * 上游版本：spine-runtimes **4.2** 分支的 spine-cpp（third_party/spine-cpp）。
+ * 为什么是 4.2：4.3 把附件内部结构收成 friend-only（RegionAttachment 不再有
+ * `getRegion()/getUVs()`、computeWorldVertices 需要外部传 vertexOffsets）、姿势数值搬到
+ * `*Pose` 类、约束收进统一 getConstraints()，与 docs/assets/06 §2 的描述不符；
+ * 4.2 的公开面与设计文档一致，能用最少胶水接上。
  *
- * 确定性（docs/10）：不做任何内部计时、不开线程、不用系统熵；时间只由 dt / set_time 驱动。
- * 渲染只读：mq_spine_draw 只填调用方缓冲，不改任何模拟状态。 */
+ * 编译要求：**打开 C++ RTTI**（用 dynamic_cast 判别附件类型；spine 自研 RTTI 只给类名字符串）。
+ * 异常仍关闭：spine 用 getError() 返回错误信息，不靠异常。
+ *
+ * 分层（docs/assets/06 §2、docs/02）：
+ *   · 只依赖 spine-cpp + 标准库；**不碰 GPU、不解码纹理**。
+ *   · 骨架与图集从**内存**进来（调用方用 VFS 读）；图集页纹理经回调交引擎解码上传后回填句柄。
+ *   · 对外只有 C ABI + 不透明句柄；句柄由本模块分配，故由本模块销毁（docs/02 分配者释放）。
+ *
+ * 确定性（docs/10）：不做内部计时、不开线程、不用系统熵；时间只由 dt / set_time 驱动。
+ * 渲染只读：绘制导出只填调用方缓冲，不改任何模拟状态。 */
 #include "anim/mq_spine2d.h"
 
 #include <spine/spine.h>
@@ -23,41 +31,47 @@ using namespace spine;
 
 namespace {
 
-/* ---- 图集页纹理回调适配：spine 的 TextureLoader 把页名交给我们，我们去问引擎 ---- */
+/* 图集页纹理回调适配：spine 把页名交给我们，我们去问引擎要纹理句柄。 */
 struct CallbackTextureLoader : public TextureLoader {
     mq_spine_texture_cb cb = nullptr;
     void *user = nullptr;
-    /* 跨页目录前缀（图集里写的是相对文件名，实际读取由引擎侧按页名再查 VFS） */
-    std::string dirHint;
-    /* spine 会为每页调用一次 load()；我们记下页名 → 纹理句柄，供 mq_spine_data_page 用 */
-    std::vector<std::pair<std::string, uint64_t>> pages;
-    std::vector<std::string> failed;
+    std::vector<std::string> pages;
+
+    /* 页名 → 引擎纹理句柄（另存一份，供 mq_spine_data_page 查询） */
+    std::vector<std::pair<std::string, uint64_t>> pageTextures;
 
     void load(AtlasPage &page, const String &path) override {
         const std::string name(path.buffer(), path.length());
         uint64_t tex = 0;
         int rc = MQ_SPINE_ERR_PAGE;
         if (cb) {
-            /* file_data = nullptr：纹理文件由引擎侧自己按页名去 VFS 取（它才知道挂载点）。
-             * 这里只传页名与目录提示，回调负责读文件 + 解码 + 上传 + 返回句柄。 */
+            /* file_data = nullptr：纹理文件由引擎侧按页名自己去 VFS 取（只有它知道挂载点），
+             * 回调负责读文件 + 解码 + 上传 + 返回句柄。 */
             rc = cb(user, name.c_str(), nullptr, 0, &tex);
         }
         if (rc != MQ_SPINE_OK || tex == 0) {
-            failed.push_back(name);
             page.texture = nullptr;
             return;
         }
+        /* spine 的约定：这里存的是**渲染器自己的贴图对象**（不透明）。本引擎就用纹理句柄
+         * 作为该对象 —— 它随后会被带到 region->rendererObject，渲染侧原样取回即可，
+         * 不需要（也不能）解释成 AtlasRegion*。 */
         page.texture = reinterpret_cast<void *>(static_cast<uintptr_t>(tex));
-        pages.emplace_back(name, tex);
+        pageTextures.emplace_back(name, tex);
+    }
+
+    uint64_t texture_for_name(const std::string &name) const {
+        for (const auto &kv : pageTextures)
+            if (kv.first == name) return kv.second;
+        return 0;
     }
 
     void unload(void * /*texture*/) override {
-        /* 纹理归引擎所有（它创建、它销毁）；这里不释放，避免双重释放（docs/02 分配者释放）。 */
+        /* 纹理归引擎所有（它创建、它销毁）；这里不释放，避免双重释放（docs/02）。 */
     }
 };
 
-/* 页名 → 下标（spine 的 AtlasPage 指针 → 我们导出的下标） */
-int page_index_of(const std::vector<AtlasPage *> &pages, AtlasPage *p) {
+int page_index_of(const Vector<AtlasPage *> &pages, AtlasPage *p) {
     for (size_t i = 0; i < pages.size(); ++i)
         if (pages[i] == p) return static_cast<int>(i);
     return -1;
@@ -68,10 +82,17 @@ int page_index_of(const std::vector<AtlasPage *> &pages, AtlasPage *p) {
 /* 不透明句柄的真实类型（C ABI 只暴露前置声明） */
 struct mq_spine_data {
     SkeletonData *skeletonData = nullptr;
-    Atlas *atlas = nullptr;                       // 拥有，负责销毁页与区域
+    Atlas *atlas = nullptr;                       // 拥有：负责销毁页与区域
     CallbackTextureLoader *loader = nullptr;      // 拥有
-    std::vector<AtlasPage *> pages;               // atlas 拥有；这里只存指针做下标映射
-    std::vector<std::string> animNames;           // 稳定序（声明序）
+    /* 附件加载器必须**活到骨架数据销毁**：附件在解析期留下它的指针（spine 内部按引用持有），
+     * 若用栈上局部对象，解析返回后就成了悬空指针 —— ASan 实测在绘制时抓到
+     * access-violation（freed 填充 0xf2f2...）。所以堆分配并由本结构持有。 */
+    AtlasAttachmentLoader *attachmentLoader = nullptr;
+    // 页表不在此缓存指针：atlas 解析过程中页表会增长重分配，缓存指针会悬空（ASan 实测）
+    /* 纹理句柄 → 页号：绘制时从 region 只能拿到"贴图对象"（= 句柄），
+     * 而批次要按页划分，所以加载期建这张表（页表在解析中会增长，故按值存）。 */
+    std::vector<std::pair<uint64_t, int>> handleToPage;
+    std::vector<std::string> animNames;           // 稳定序（声明序，docs/10 D4）
     std::vector<std::string> skinNames;
 };
 
@@ -83,12 +104,7 @@ struct mq_spine_instance {
     float x = 0.0F, y = 0.0F, scale = 1.0F;
     bool flipX = false, flipY = false;
     float r = 1.0F, g = 1.0F, b = 1.0F, a = 1.0F;
-    /* 复用的临时缓冲：避免每帧分配（绘制数据是逐帧派生的） */
-    std::vector<float> worldVerts;
-    std::vector<float> uvBuf;
-    std::vector<float> colBuf;
-    std::vector<uint32_t> idxBuf;
-    std::vector<mq_spine_batch> batchBuf;
+    Vector<float> worldVerts;                     // 逐附件求值暂存（复用，避免每帧分配）
 };
 
 extern "C" {
@@ -103,38 +119,35 @@ mq_spine_data *mq_spine_data_create(const void *skeleton_data, size_t skeleton_s
 
     auto *d = new mq_spine_data();
 
-    /* 1) 图集：spine 的 Atlas 支持"从内存创建"（docs/assets/06 §2 要求数据可来自 VFS/远程）。
+    /* 1) 图集：从**内存**创建（数据可来自 VFS/远程/内存，docs/04）。
      *    页纹理不走它的文件读取，而是走我们的 TextureLoader 回调交给引擎。 */
     d->loader = new CallbackTextureLoader();
     d->loader->cb = load_texture;
     d->loader->user = user;
-    if (atlas_dir_hint) d->loader->dirHint = atlas_dir_hint;
-
     const char *dir = atlas_dir_hint ? atlas_dir_hint : "";
     d->atlas = new Atlas(atlas_data, static_cast<int>(std::strlen(atlas_data)), dir, d->loader, true);
-    d->pages = d->atlas->getPages();
 
-    /* 骨架解析：纹理已由 loader 交给引擎，故不创建纹理（createTexture 参数只作用于图集）。 */
-    AtlasAttachmentLoader attachmentLoader(*d->atlas);
+    /* 2) 骨架解析。4.2 的加载器收**指针**；错误走 getError()（不用异常）。 */
+    d->attachmentLoader = new AtlasAttachmentLoader(d->atlas);
     SkeletonData *sd = nullptr;
     if (skeleton_is_binary) {
-        SkeletonBinary binary(attachmentLoader);
-        binary.setScale(1.0F);
+        SkeletonBinary binary(d->attachmentLoader, false);
         sd = binary.readSkeletonData(static_cast<const unsigned char *>(skeleton_data),
                                      static_cast<int>(skeleton_size));
         if (!sd) {
             std::print(stderr, "spine2d: 二进制骨架解析失败: {}\n", binary.getError().buffer());
+            delete d->attachmentLoader;
             delete d->atlas;
             delete d->loader;
             delete d;
             return nullptr;
         }
     } else {
-        SkeletonJson json(attachmentLoader);
-        json.setScale(1.0F);
+        SkeletonJson json(d->attachmentLoader, false);
         sd = json.readSkeletonData(static_cast<const char *>(skeleton_data));
         if (!sd) {
             std::print(stderr, "spine2d: JSON 骨架解析失败: {}\n", json.getError().buffer());
+            delete d->attachmentLoader;
             delete d->atlas;
             delete d->loader;
             delete d;
@@ -142,6 +155,16 @@ mq_spine_data *mq_spine_data_create(const void *skeleton_data, size_t skeleton_s
         }
     }
     d->skeletonData = sd;
+
+    /* 建"句柄 → 页号"表（页号用 AtlasPage::index；句柄从 loader 的页名表拿） */
+    if (d->atlas && d->loader) {
+        Vector<AtlasPage *> &pg = d->atlas->getPages();
+        for (size_t i = 0; i < pg.size(); ++i) {
+            if (!pg[i]) continue;
+            const uint64_t h = d->loader->texture_for_name(pg[i]->name.buffer());
+            if (h != 0) d->handleToPage.emplace_back(h, pg[i]->index);
+        }
+    }
 
     /* 动画/皮肤名快照：**声明序**（稳定，docs/10 D4），供 UI/AI 按稳定下标枚举 */
     for (size_t i = 0; i < sd->getAnimations().size(); ++i)
@@ -153,8 +176,9 @@ mq_spine_data *mq_spine_data_create(const void *skeleton_data, size_t skeleton_s
 
 void mq_spine_data_destroy(mq_spine_data *data) {
     if (!data) return;
-    delete data->skeletonData;
-    delete data->atlas;   // 拥有页与区域；页纹理归引擎，loader::unload 故意不释放
+    delete data->skeletonData;        // 先删骨架数据（其附件引用着 attachmentLoader）
+    delete data->attachmentLoader;
+    delete data->atlas;               // 拥有页与区域；页纹理归引擎，loader::unload 故意不释放
     delete data->loader;
     delete data;
 }
@@ -180,49 +204,43 @@ const char *mq_spine_data_skin_name(mq_spine_data *data, int index) {
     return data->skinNames[static_cast<size_t>(index)].c_str();
 }
 int mq_spine_data_page_count(mq_spine_data *data) {
-    return data ? static_cast<int>(data->pages.size()) : 0;
+    return (data && data->atlas) ? static_cast<int>(data->atlas->getPages().size()) : 0;
 }
 int mq_spine_data_page(mq_spine_data *data, int index, mq_spine_page *out) {
-    if (!data || !out || index < 0 || index >= static_cast<int>(data->pages.size()))
-        return MQ_SPINE_ERR_ARG;
-    AtlasPage *p = data->pages[static_cast<size_t>(index)];
+    if (!data || !data->atlas || !out) return MQ_SPINE_ERR_ARG;
+    Vector<AtlasPage *> &pages = data->atlas->getPages();
+    if (index < 0 || index >= static_cast<int>(pages.size())) return MQ_SPINE_ERR_ARG;
+    AtlasPage *p = pages[static_cast<size_t>(index)];
     out->name = p ? p->name.buffer() : nullptr;
     out->width = p ? p->width : 0;
     out->height = p ? p->height : 0;
-    out->texture = p ? static_cast<uint64_t>(reinterpret_cast<uintptr_t>(p->texture)) : 0;
+    /* 纹理句柄存在 loader 的表里（page->texture 是贴图对象槽位，本引擎放的就是句柄，
+     * 但按页名查更稳：解析期 page->texture 先被占位、后由 load 覆盖）。 */
+    out->texture = (p && data->loader) ? data->loader->texture_for_name(p->name.buffer()) : 0;
     return MQ_SPINE_OK;
 }
 int mq_spine_data_page_texture(mq_spine_data *data, int index, uint64_t texture) {
-    if (!data || index < 0 || index >= static_cast<int>(data->pages.size()))
-        return MQ_SPINE_ERR_ARG;
-    AtlasPage *p = data->pages[static_cast<size_t>(index)];
+    if (!data || !data->atlas) return MQ_SPINE_ERR_ARG;
+    Vector<AtlasPage *> &pages = data->atlas->getPages();
+    if (index < 0 || index >= static_cast<int>(pages.size())) return MQ_SPINE_ERR_ARG;
+    AtlasPage *p = pages[static_cast<size_t>(index)];
     if (!p) return MQ_SPINE_ERR_ARG;
     p->texture = reinterpret_cast<void *>(static_cast<uintptr_t>(texture));
+    if (data->loader) {
+        for (auto &kv : data->loader->pageTextures)
+            if (kv.first == p->name.buffer()) { kv.second = texture; break; }
+    }
     return MQ_SPINE_OK;
 }
 
 mq_spine_instance *mq_spine_instance_create(mq_spine_data *data) {
     if (!data || !data->skeletonData) return nullptr;
     auto *inst = new mq_spine_instance();
-    if (!inst) return nullptr;
     inst->owner = data;
-    inst->skeleton = new Skeleton(*data->skeletonData);
-    inst->stateData = new AnimationStateData(*data->skeletonData);
-    if (!inst->skeleton || !inst->stateData) {
-        delete inst->skeleton;
-        delete inst->stateData;
-        delete inst;
-        return nullptr;
-    }
-    inst->state = new AnimationState(*inst->stateData);
-    if (!inst->state) {
-        delete inst->skeleton;
-        delete inst->stateData;
-        delete inst;
-        return nullptr;
-    }
-    /* setup 姿势 + 世界变换，保证未播放动画时也有正确姿势 */
-    inst->skeleton->setupPose();
+    inst->skeleton = new Skeleton(data->skeletonData);
+    inst->stateData = new AnimationStateData(data->skeletonData);
+    inst->state = new AnimationState(inst->stateData);
+    inst->skeleton->setToSetupPose();
     inst->skeleton->updateWorldTransform(Physics_Update);
     return inst;
 }
@@ -237,16 +255,15 @@ void mq_spine_instance_destroy(mq_spine_instance *inst) {
 
 int mq_spine_instance_set_skin(mq_spine_instance *inst, const char *name) {
     if (!inst || !name) return MQ_SPINE_ERR_ARG;
-    if (!inst->skeleton->getData().findSkin(String(name))) return MQ_SPINE_ERR_NOTFOUND;
+    if (!inst->skeleton->getData()->findSkin(String(name))) return MQ_SPINE_ERR_NOTFOUND;
     inst->skeleton->setSkin(String(name));
-    inst->skeleton->setupPoseSlots();
+    inst->skeleton->setSlotsToSetupPose();
     return MQ_SPINE_OK;
 }
 
 int mq_spine_instance_play(mq_spine_instance *inst, const char *animation, int loop, int track) {
-    if (!inst || !animation) return MQ_SPINE_ERR_ARG;
-    if (track < 0) return MQ_SPINE_ERR_ARG;
-    if (!inst->skeleton->getData().findAnimation(String(animation))) return MQ_SPINE_ERR_NOTFOUND;
+    if (!inst || !animation || track < 0) return MQ_SPINE_ERR_ARG;
+    if (!inst->skeleton->getData()->findAnimation(String(animation))) return MQ_SPINE_ERR_NOTFOUND;
     inst->state->setAnimation(static_cast<size_t>(track), String(animation), loop != 0);
     return MQ_SPINE_OK;
 }
@@ -257,7 +274,7 @@ void mq_spine_instance_stop(mq_spine_instance *inst) {
 
 int mq_spine_instance_set_time(mq_spine_instance *inst, int track, float time) {
     if (!inst || !inst->state || track < 0) return MQ_SPINE_ERR_ARG;
-    TrackEntry *e = inst->state->getTrack(static_cast<size_t>(track));
+    TrackEntry *e = inst->state->getCurrent(static_cast<size_t>(track));
     if (!e) return MQ_SPINE_ERR_NOTFOUND;
     e->setTrackTime(time);
     return MQ_SPINE_OK;
@@ -265,7 +282,7 @@ int mq_spine_instance_set_time(mq_spine_instance *inst, int track, float time) {
 
 int mq_spine_instance_step(mq_spine_instance *inst, float dt) {
     if (!inst || !std::isfinite(dt)) return MQ_SPINE_ERR_ARG;
-    /* 固定步语义：由调用方传主循环的固定 dt（docs/10 D1）；本模块不自建计时器 */
+    /* 固定步语义：dt 由调用方按主循环固定步长给（docs/10 D1）；本模块不自建计时器 */
     inst->state->update(dt);
     inst->state->apply(*inst->skeleton);
     inst->skeleton->updateWorldTransform(Physics_Update);
@@ -274,20 +291,20 @@ int mq_spine_instance_step(mq_spine_instance *inst, float dt) {
 
 float mq_spine_instance_time(mq_spine_instance *inst, int track) {
     if (!inst || !inst->state || track < 0) return 0.0F;
-    TrackEntry *e = inst->state->getTrack(static_cast<size_t>(track));
+    TrackEntry *e = inst->state->getCurrent(static_cast<size_t>(track));
     return e ? e->getTrackTime() : 0.0F;
 }
 
 const char *mq_spine_instance_animation_name(mq_spine_instance *inst, int track) {
     if (!inst || !inst->state || track < 0) return nullptr;
-    TrackEntry *e = inst->state->getTrack(static_cast<size_t>(track));
+    TrackEntry *e = inst->state->getCurrent(static_cast<size_t>(track));
     if (!e) return nullptr;
-    return e->getAnimation().getName().buffer();
+    return e->getAnimation()->getName().buffer();
 }
 
 int mq_spine_instance_animation_complete(mq_spine_instance *inst, int track) {
     if (!inst || !inst->state || track < 0) return 0;
-    TrackEntry *e = inst->state->getTrack(static_cast<size_t>(track));
+    TrackEntry *e = inst->state->getCurrent(static_cast<size_t>(track));
     return (e && e->isComplete()) ? 1 : 0;
 }
 
@@ -303,12 +320,14 @@ void mq_spine_instance_set_transform(mq_spine_instance *inst, float x, float y, 
 void mq_spine_instance_set_color(mq_spine_instance *inst, float r, float g, float b, float a) {
     if (!inst) return;
     inst->r = r; inst->g = g; inst->b = b; inst->a = a;
-    inst->skeleton->setColor(Color(r, g, b, a));
+    /* 4.2 的 Skeleton 只有 getColor()（无 setColor 重载）→ 写它返回的引用 */
+    Color &sc = inst->skeleton->getColor();
+    sc.r = r; sc.g = g; sc.b = b; sc.a = a;
 }
 
 void mq_spine_instance_color(mq_spine_instance *inst, float *r, float *g, float *b, float *a) {
     if (!inst) return;
-    Color c = inst->skeleton->getColor();
+    Color &c = inst->skeleton->getColor();
     if (r) *r = c.r; if (g) *g = c.g; if (b) *b = c.b; if (a) *a = c.a;
 }
 
@@ -316,44 +335,53 @@ int mq_spine_instance_bone_position(mq_spine_instance *inst, const char *bone, f
     if (!inst || !bone || !x || !y) return MQ_SPINE_ERR_ARG;
     Bone *bn = inst->skeleton->findBone(String(bone));
     if (!bn) return MQ_SPINE_ERR_NOTFOUND;
-    /* 4.3：世界坐标在 pose 上（getAppliedPose 是"渲染用最终姿势"） */
-    *x = bn->getAppliedPose().getWorldX();
-    *y = bn->getAppliedPose().getWorldY();
+    *x = bn->getWorldX();
+    *y = bn->getWorldY();
     return MQ_SPINE_OK;
 }
 
-/* ---- IK 约束访问（spine-cpp 4.3）--------------------------------------------------
- * 4.3 的姿势数值在各自的 Pose 类上（IkConstraintPose），约束对象则由
- * Skeleton::getConstraints() 统一持有（Constraint*，需按类型判别），
- * 所以这里按 IkConstraint 过滤后暴露一个稳定的**下标序列**（= 该数组中的 IK 次序，
- * 确定性，docs/10 D4），而不是把 spine 的指针暴露出去。
- * field: 0=mix 1=softness 2=bend_direction 3=compress 4=stretch */
+/* ---- IK / 变换约束 ----------------------------------------------------------------
+ * 4.2 的数值直接挂在约束对象上（IkConstraint::setMix 等），不必像 4.3 那样绕 pose。
+ * 下标 = 该类型在骨架内的次序（getIkConstraints() 的稳定序，docs/10 D4）。 */
 static IkConstraint *ik_at(mq_spine_instance *inst, int index) {
     if (!inst || index < 0) return nullptr;
-    auto &cs = inst->skeleton->getConstraints();
-    int k = 0;
-    for (size_t i = 0; i < cs.size(); ++i) {
-        IkConstraint *ik = dynamic_cast<IkConstraint *>(cs[i]);
-        if (!ik) continue;
-        if (k == index) return ik;
-        ++k;
-    }
-    return nullptr;
+    Vector<IkConstraint *> &iks = inst->skeleton->getIkConstraints();
+    if (index >= static_cast<int>(iks.size())) return nullptr;
+    return iks[static_cast<size_t>(index)];
 }
 
-int mq_spine_instance_set_float(mq_spine_instance *inst, int /*target*/, int index, int field,
+int mq_spine_instance_set_float(mq_spine_instance *inst, int target, int index, int field,
                                 float value, float /*blend*/) {
-    IkConstraint *ik = ik_at(inst, index);
-    if (!ik) return MQ_SPINE_ERR_ARG;
-    IkConstraintPose &pose = ik->getAppliedPose();
-    switch (field) {
-    case 0: pose.setMix(value); return MQ_SPINE_OK;
-    case 1: pose.setSoftness(value); return MQ_SPINE_OK;
-    case 2: pose.setBendDirection(value >= 0.0F ? 1 : -1); return MQ_SPINE_OK;
-    case 3: pose.setCompress(value != 0.0F); return MQ_SPINE_OK;
-    case 4: pose.setStretch(value != 0.0F); return MQ_SPINE_OK;
-    default: return MQ_SPINE_ERR_ARG;
+    if (!inst || index < 0) return MQ_SPINE_ERR_ARG;
+    if (target == 0) {
+        IkConstraint *ik = ik_at(inst, index);
+        if (!ik) return MQ_SPINE_ERR_ARG;
+        switch (field) {
+        case 0: ik->setMix(value); break;
+        case 1: ik->setSoftness(value); break;
+        case 2: ik->setBendDirection(value >= 0.0F ? 1 : -1); break;
+        case 3: ik->setCompress(value != 0.0F); break;
+        case 4: ik->setStretch(value != 0.0F); break;
+        default: return MQ_SPINE_ERR_ARG;
+        }
+        return MQ_SPINE_OK;
     }
+    if (target == 1) {   /* 变换约束 mix 的 6 个分量 */
+        Vector<TransformConstraint *> &tcs = inst->skeleton->getTransformConstraints();
+        if (index >= static_cast<int>(tcs.size())) return MQ_SPINE_ERR_ARG;
+        TransformConstraint *tc = tcs[static_cast<size_t>(index)];
+        switch (field) {
+        case 0: tc->setMixRotate(value); break;
+        case 1: tc->setMixX(value); break;
+        case 2: tc->setMixY(value); break;
+        case 3: tc->setMixScaleX(value); break;
+        case 4: tc->setMixScaleY(value); break;
+        case 5: tc->setMixShearY(value); break;
+        default: return MQ_SPINE_ERR_ARG;
+        }
+        return MQ_SPINE_OK;
+    }
+    return MQ_SPINE_ERR_ARG;
 }
 
 int mq_spine_instance_add_float(mq_spine_instance *inst, int target, int index, int field,
@@ -365,27 +393,39 @@ int mq_spine_instance_add_float(mq_spine_instance *inst, int target, int index, 
     return mq_spine_instance_set_float(inst, target, index, field, next, blend);
 }
 
-float mq_spine_instance_get_float(mq_spine_instance *inst, int /*target*/, int index, int field) {
-    IkConstraint *ik = ik_at(inst, index);
-    if (!ik) return 0.0F;
-    IkConstraintPose &pose = ik->getAppliedPose();
-    switch (field) {
-    case 0: return pose.getMix();
-    case 1: return pose.getSoftness();
-    case 2: return static_cast<float>(pose.getBendDirection());
-    case 3: return pose.getCompress() ? 1.0F : 0.0F;
-    case 4: return pose.getStretch() ? 1.0F : 0.0F;
-    default: return 0.0F;
+float mq_spine_instance_get_float(mq_spine_instance *inst, int target, int index, int field) {
+    if (!inst || index < 0) return 0.0F;
+    if (target == 0) {
+        IkConstraint *ik = ik_at(inst, index);
+        if (!ik) return 0.0F;
+        switch (field) {
+        case 0: return ik->getMix();
+        case 1: return ik->getSoftness();
+        case 2: return static_cast<float>(ik->getBendDirection());
+        case 3: return ik->getCompress() ? 1.0F : 0.0F;
+        case 4: return ik->getStretch() ? 1.0F : 0.0F;
+        default: return 0.0F;
+        }
     }
+    if (target == 1) {
+        Vector<TransformConstraint *> &tcs = inst->skeleton->getTransformConstraints();
+        if (index >= static_cast<int>(tcs.size())) return 0.0F;
+        TransformConstraint *tc = tcs[static_cast<size_t>(index)];
+        switch (field) {
+        case 0: return tc->getMixRotate();
+        case 1: return tc->getMixX();
+        case 2: return tc->getMixY();
+        case 3: return tc->getMixScaleX();
+        case 4: return tc->getMixScaleY();
+        case 5: return tc->getMixShearY();
+        default: return 0.0F;
+        }
+    }
+    return 0.0F;
 }
 
 int mq_spine_instance_ik_count(mq_spine_instance *inst) {
-    if (!inst) return 0;
-    auto &cs = inst->skeleton->getConstraints();
-    int k = 0;
-    for (size_t i = 0; i < cs.size(); ++i)
-        if (dynamic_cast<IkConstraint *>(cs[i])) ++k;
-    return k;
+    return inst ? static_cast<int>(inst->skeleton->getIkConstraints().size()) : 0;
 }
 const char *mq_spine_instance_ik_name(mq_spine_instance *inst, int index) {
     IkConstraint *ik = ik_at(inst, index);
@@ -394,111 +434,98 @@ const char *mq_spine_instance_ik_name(mq_spine_instance *inst, int index) {
 int mq_spine_instance_ik_set_mix(mq_spine_instance *inst, int index, float mix) {
     return mq_spine_instance_set_float(inst, 0, index, 0, mix, 1.0F);
 }
-
-/* 变换约束：同样按类型过滤出稳定下标序列（4.3 无 getTransformConstraints()） */
-static TransformConstraint *transform_at(mq_spine_instance *inst, int index) {
-    if (!inst || index < 0) return nullptr;
-    auto &cs = inst->skeleton->getConstraints();
-    int k = 0;
-    for (size_t i = 0; i < cs.size(); ++i) {
-        TransformConstraint *tc = dynamic_cast<TransformConstraint *>(cs[i]);
-        if (!tc) continue;
-        if (k == index) return tc;
-        ++k;
-    }
-    return nullptr;
-}
 int mq_spine_instance_transform_count(mq_spine_instance *inst) {
-    if (!inst) return 0;
-    auto &cs = inst->skeleton->getConstraints();
-    int k = 0;
-    for (size_t i = 0; i < cs.size(); ++i)
-        if (dynamic_cast<TransformConstraint *>(cs[i])) ++k;
-    return k;
+    return inst ? static_cast<int>(inst->skeleton->getTransformConstraints().size()) : 0;
 }
 const char *mq_spine_instance_transform_name(mq_spine_instance *inst, int index) {
-    TransformConstraint *tc = transform_at(inst, index);
-    return tc ? tc->getData().getName().buffer() : nullptr;
+    if (!inst || index < 0 ||
+        index >= static_cast<int>(inst->skeleton->getTransformConstraints().size()))
+        return nullptr;
+    return inst->skeleton->getTransformConstraints()[static_cast<size_t>(index)]
+        ->getData().getName().buffer();
 }
 int mq_spine_instance_transform_position(mq_spine_instance *inst, int index, float *x, float *y) {
-    if (!x || !y) return MQ_SPINE_ERR_ARG;
-    TransformConstraint *tc = transform_at(inst, index);
-    if (!tc) return MQ_SPINE_ERR_ARG;
-    Bone *target = tc->getData().getTarget();
+    if (!inst || !x || !y || index < 0 ||
+        index >= static_cast<int>(inst->skeleton->getTransformConstraints().size()))
+        return MQ_SPINE_ERR_ARG;
+    TransformConstraint *tc = inst->skeleton->getTransformConstraints()[static_cast<size_t>(index)];
+    /* 4.2 的 getTarget() 返回 **BoneData***（声明期的骨骼数据），不是 Bone*。
+     * 所以这里无法给"世界坐标"——改为按名字在骨架实例里查同名骨骼，返回其世界位置。 */
+    BoneData *targetData = tc->getData().getTarget();
+    if (!targetData) return MQ_SPINE_ERR_NOTFOUND;
+    Bone *target = inst->skeleton->findBone(targetData->getName());
     if (!target) return MQ_SPINE_ERR_NOTFOUND;
-    /* 变换约束没有"世界位置"；返回其目标骨骼的世界位置（调试/跟随用） */
-    *x = target->getAppliedPose().getWorldX();
-    *y = target->getAppliedPose().getWorldY();
+    *x = target->getWorldX();
+    *y = target->getWorldY();
     return MQ_SPINE_OK;
 }
 
 /* ---- 绘制数据导出 ----------------------------------------------------------------
  * 语义（docs/assets/06 §2.4）：**只读**产出"绘制输入"，不写任何模拟状态、不碰 GPU。
- * 顶点已在骨架空间求值好，这里再叠加实例的平移/缩放/翻转，得到"绘制数据空间"坐标
- * （y 向下，与引擎的屏幕像素一致：引擎侧只需再乘画布缩放即可）。
- * 顺序 = 骨架的**绘制顺序**（含 draw order timeline 的效果），批处理按 (页, 混合模式) 划分 —— 
- * 与 spine 官方运行时的分组一致，保证叠加/正片叠底等混合模式的层次正确。 */
+ * 顶点已在骨架空间求值好，这里叠加实例的平移/缩放/翻转，得到"绘制数据空间"坐标
+ * （y 向下，与引擎屏幕像素一致：引擎侧只需再乘画布缩放）。
+ * 顺序 = 骨架的**绘制顺序**（含 draw order timeline 的效果）；批处理按 (页, 混合模式) 划分，
+ * 与官方运行时一致，保证叠加/正片叠底等混合的层次正确。
+ * 裁剪附件（mask）暂不产生几何 —— 已在 samples/spine/README 记为已知限制，不静默假装支持。 */
 int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs, float *colors,
-                  uint32_t *indices, mq_spine_batch *batches, int max_vertices, int max_indices,
-                  int max_batches, mq_spine_draw *out) {
+                           uint32_t *indices, mq_spine_batch *batches, int max_vertices,
+                           int max_indices, int max_batches, mq_spine_draw *out) {
     if (!inst || !out || !vertices || !uvs || !colors || !indices || !batches)
         return MQ_SPINE_ERR_ARG;
     if (max_vertices <= 0 || max_indices <= 0 || max_batches <= 0) return MQ_SPINE_ERR_ARG;
 
     Skeleton &sk = *inst->skeleton;
     sk.updateWorldTransform(Physics_Update);
-
     std::memset(out, 0, sizeof *out);
 
-    /* 世界顶点暂存：按需增长（每帧复用，避免逐附件分配） */
-    if (inst->worldVerts.size() < 4096) inst->worldVerts.resize(4096);
+    if (inst->worldVerts.size() < 4096) inst->worldVerts.setSize(4096, 0.0F);
 
     int vtx = 0, idx = 0, nbatch = 0;
-    int curPage = -2;
-    int curBlend = -2;
+    int curPage = -2, curBlend = -2;
     float minX = 0, minY = 0, maxX = 0, maxY = 0;
     bool hasBounds = false;
     const float sx = inst->flipX ? -inst->scale : inst->scale;
     const float sy = inst->flipY ? -inst->scale : inst->scale;
 
-    Array<Slot *> &order = sk.getDrawOrder().getAppliedPose();
+    Vector<Slot *> &order = sk.getDrawOrder();
     for (size_t si = 0; si < order.size(); ++si) {
         Slot *slot = order[si];
         if (!slot) continue;
-        Attachment *att = slot->getAppliedPose().getAttachment();
+        Attachment *att = slot->getAttachment();
         if (!att) continue;
+        if (!slot->getData().getName().buffer()) continue;   // 防御：槽数据异常时跳过而非崩
 
-        /* 只处理会"画出来"的附件。4.3 的 RTTI 没有类型枚举（只有 getClassName()），
-         * 所以用 dynamic_cast 判别 —— 比字符串比较稳，也和"不依赖名字"的约定一致。
-         * 裁剪/包围盒/路径/点不产生填充几何；裁剪遮罩暂不支持（README 记为已知限制，
-         * 不静默假装支持）。 */
+        /* 附件类型判别用 C++ RTTI（本项目为 spine 打开 /GR，见 third_party/spine-cpp/CMakeLists.txt）。
+         * LinkedMesh 派生自 MeshAttachment，故一个 dynamic_cast 覆盖两者。
+         * 其余（裁剪/包围盒/路径/点）不产生填充几何，跳过。 */
         RegionAttachment *ra = dynamic_cast<RegionAttachment *>(att);
         MeshAttachment *ma = dynamic_cast<MeshAttachment *>(att);
         if (!ra && !ma) continue;
 
-        Array<float> *uvArr = nullptr;
-        Array<unsigned short> *triArr = nullptr;
-        int vcount = 0;
-        int segStart = idx;          /* 本附件索引段的起点 */
-        float *world = inst->worldVerts.data();
-        /* 图集区域（两个分支都要用；无区域 = 无纹理 → 跳过） */
-        AtlasRegion *ar = nullptr;
-        if (ra && ra->getRegion())
-            ar = static_cast<AtlasRegion *>(ra->getRegion()->getRendererObject());
-        else if (ma)
-            ar = ma->getRegion();
-        if (!ar) continue;
+        TextureRegion *tr = ra ? ra->getRegion() : ma->getRegion();
+        if (!tr) continue;
+        /* rendererObject 是"渲染器的贴图对象"（本引擎 = 纹理句柄），**不是** AtlasRegion*，
+         * 不要解引用它 —— 只判断"有没有贴图"。UV/尺寸从 tr 自身取（TextureRegion 自带 u/v/u2/v2）。 */
+        const uintptr_t texHandle = reinterpret_cast<uintptr_t>(tr->rendererObject);
+        if (texHandle == 0) continue;      /* 无贴图 → 跳过 */
 
-        const Color &slotColor = slot->getAppliedPose().getColor();
-        float cr = inst->r * slotColor.r;
-        float cg = inst->g * slotColor.g;
-        float cb = inst->b * slotColor.b;
-        float ca = inst->a * slotColor.a;
+        const Color &slotColor = slot->getColor();
+        const float cr = inst->r * slotColor.r;
+        const float cg = inst->g * slotColor.g;
+        const float cb = inst->b * slotColor.b;
+        const float ca = inst->a * slotColor.a;
+
+        Vector<float> *uvArr = nullptr;
+        int vcount = 0;
+        const int segStart = idx;
+        float *world = inst->worldVerts.buffer();
 
         if (ra) {
             vcount = 4;
             if (vtx + vcount > max_vertices) break;
-            ra->computeWorldVertices(*slot, inst->worldVerts, 0, 2);
+            if (inst->worldVerts.size() < 8) inst->worldVerts.setSize(8, 0.0F);
+            world = inst->worldVerts.buffer();
+            ra->computeWorldVertices(*slot, world, 0, 2);
             uvArr = &ra->getUVs();
             static const unsigned short kQuad[6] = { 0, 1, 2, 2, 3, 0 };
             if (idx + 6 > max_indices) break;
@@ -508,25 +535,26 @@ int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs,
             vcount = static_cast<int>(ma->getWorldVerticesLength() / 2);
             if (vcount <= 0) continue;
             if (vtx + vcount > max_vertices) break;
+            /* 扩容要**先做**，做完再取 buffer —— setSize 可能重分配，先取的指针会失效
+             *（ASan 在这里抓到过 access-violation，就是这个原因）。 */
             if (inst->worldVerts.size() < ma->getWorldVerticesLength())
-                inst->worldVerts.resize(ma->getWorldVerticesLength());
-            world = inst->worldVerts.data();
-            ma->computeWorldVertices(sk, *slot, 0, static_cast<size_t>(vcount) * 2, world, 0, 2);
+                inst->worldVerts.setSize(ma->getWorldVerticesLength(), 0.0F);
+            world = inst->worldVerts.buffer();
+            /* 4.2：网格走 VertexAttachment 的 6 参版本：
+             *   computeWorldVertices(Slot&, start, count, float* worldVertices, offset, stride)
+             * （4.2 的这个签名里**没有** Skeleton&，与 4.3 不同） */
+            ma->computeWorldVertices(*slot, 0, static_cast<size_t>(vcount) * 2, world, 0, 2);
             uvArr = &ma->getRegionUVs();
-            triArr = &ma->getTriangles();
-            if (idx + static_cast<int>(triArr->size()) > max_indices) break;
-            for (size_t k = 0; k < triArr->size(); ++k)
-                indices[idx + k] = static_cast<uint32_t>(vtx) + (*triArr)[k];
-            idx += static_cast<int>(triArr->size());
+            Vector<unsigned short> &tri = ma->getTriangles();
+            const int ntri = static_cast<int>(tri.size());
+            if (idx + ntri > max_indices) break;
+            for (int k = 0; k < ntri; ++k) indices[idx + k] = static_cast<uint32_t>(vtx) + tri[k];
+            idx += ntri;
         }
-        (void)world;
 
-        /* 写入顶点/UV/颜色（world 可能是共享缓冲，两个分支都已就位） */
         for (int k = 0; k < vcount; ++k) {
-            const float wx = world[k * 2];
-            const float wy = world[k * 2 + 1];
-            const float px = inst->x + wx * sx;
-            const float py = inst->y + wy * sy;
+            const float px = inst->x + world[k * 2] * sx;
+            const float py = inst->y + world[k * 2 + 1] * sy;
             vertices[(vtx + k) * 2] = px;
             vertices[(vtx + k) * 2 + 1] = py;
             if (uvArr && static_cast<size_t>(k) * 2 + 1 < uvArr->size()) {
@@ -540,18 +568,20 @@ int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs,
             colors[(vtx + k) * 4 + 1] = cg;
             colors[(vtx + k) * 4 + 2] = cb;
             colors[(vtx + k) * 4 + 3] = ca;
-            if (!hasBounds) {
-                minX = maxX = px; minY = maxY = py; hasBounds = true;
-            } else {
+            if (!hasBounds) { minX = maxX = px; minY = maxY = py; hasBounds = true; }
+            else {
                 if (px < minX) minX = px; if (px > maxX) maxX = px;
                 if (py < minY) minY = py; if (py > maxY) maxY = py;
             }
         }
 
-        const int page = page_index_of(inst->owner->pages, ar->getPage());
-        const int blend = static_cast<int>(slot->getData()->getBlendMode());
+        /* 页号：直接用 spine 给 region 的页索引（AtlasPage::index），不反查、不缓存指针。 */
+        int page = -1;
+        for (const auto &kv : inst->owner->handleToPage)
+            if (kv.first == static_cast<uint64_t>(texHandle)) { page = kv.second; break; }
+        const int blend = static_cast<int>(slot->getData().getBlendMode());
+        if (page < -1) continue;
         const int segCount = idx - segStart;
-        /* 同 (页, 混合) → 归入当前批次（索引连续）；否则开新批次 */
         if (nbatch > 0 && page == curPage && blend == curBlend) {
             batches[nbatch - 1].index_count += static_cast<uint32_t>(segCount);
         } else {

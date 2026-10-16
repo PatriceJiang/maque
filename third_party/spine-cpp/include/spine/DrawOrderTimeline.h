@@ -33,36 +33,28 @@
 #include <spine/Timeline.h>
 
 namespace spine {
-	/// Changes the Skeleton::getDrawOrder().
 	class SP_API DrawOrderTimeline : public Timeline {
 		friend class SkeletonBinary;
 
 		friend class SkeletonJson;
 
-		RTTI_DECL
+	RTTI_DECL
 
 	public:
-		static PropertyId getPropertyId();
-
 		explicit DrawOrderTimeline(size_t frameCount);
 
-		virtual void apply(Skeleton &skeleton, float lastTime, float time, Array<Event *> *events, float alpha, MixFrom from, bool add, bool out,
-						   bool appliedPose) override;
+		virtual void
+		apply(Skeleton &skeleton, float lastTime, float time, Vector<Event *> *pEvents, float alpha, MixBlend blend,
+			  MixDirection direction);
 
-		size_t getFrameCount();
+		/// Sets the time and value of the specified keyframe.
+		/// @param drawOrder May be NULL to use bind pose draw order
+		void setFrame(size_t frame, float time, Vector<int> &drawOrder);
 
-		/// The draw order for each frame. See setFrame().
-		Array<Array<int>> &getDrawOrders();
-
-		/// Sets the time and draw order for the specified frame.
-		/// @param frame Between 0 and frameCount, inclusive.
-		/// @param time The frame time in seconds.
-		/// @param drawOrder For each slot in Skeleton::getSlots(), the index of the slot in the new draw order. May be null to use
-		///           setup pose draw order.
-		void setFrame(size_t frame, float time, Array<int> *drawOrder);
+		Vector <Vector<int>> &getDrawOrders();
 
 	private:
-		Array<Array<int>> _drawOrders;
+		Vector <Vector<int>> _drawOrders;
 	};
 }
 

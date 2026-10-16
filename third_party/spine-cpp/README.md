@@ -14,43 +14,43 @@ For the official legal terms governing the Spine Runtimes, please read the [Spin
 
 ## Spine version
 
-spine-cpp works with data exported from spine 4.3.xx.
+spine-cpp works with data exported from spine 4.2.xx.
 
 spine-cpp supports all spine features.
+
+## Setup
+
+1. Download the spine Runtimes source using [git](https://help.github.com/articles/set-up-git) or by downloading it as a zip via the download button above.
+2. Copy the contents of the `spine-cpp/spine-cpp/src` and `spine-cpp/spine-cpp/include` directories into your project. Be sure your header search is configured to find the contents of the `spine-cpp/spine-cpp/include` directory. Note that the includes use `spine/Xxx.h`, so the `spine` directory cannot be omitted when copying the files.
 
 ## Usage
 
 ### [Please see the spine-cpp guide for full documentation](http://esotericsoftware.com/spine-cpp)
 
-## Setup
+## Extension
 
-### Manual Copy
+Extending spine-cpp requires implementing both the `SpineExtension` class and the TextureLoader class:
 
-1. Download the spine Runtimes source using [git](https://help.github.com/articles/set-up-git) or by downloading it as a zip via the download button above.
-2. Copy the contents of the `spine-cpp/spine-cpp/src` and `spine-cpp/spine-cpp/include` directories into your project. Be sure your header search is configured to find the contents of the `spine-cpp/spine-cpp/include` directory. Note that the includes use `spine/Xxx.h`, so the `spine` directory cannot be omitted when copying the files.
+```
+#include <spine/Extension.h>
+void spine::SpineExtension *spine::getDefaultExtension() {
+  return new spine::DefaultExtension();
+}
 
-### CMake
+class MyTextureLoader : public spine::TextureLoader
+{
+  virtual void load(spine::AtlasPage& page, const spine::String& path) {
+    void* texture = ... load the texture based on path ...
+    page->setRendererObject(texture); // use the texture later in your rendering code
+  }
 
-You can use CMake's FetchContent to include spine-cpp in your project:
-
-```cmake
-include(FetchContent)
-FetchContent_Declare(
-  spine-runtimes
-  GIT_REPOSITORY https://github.com/EsotericSoftware/spine-runtimes.git
-  GIT_TAG 4.3
-)
-FetchContent_MakeAvailable(spine-runtimes)
-
-add_subdirectory(${spine-runtimes_SOURCE_DIR}/spine-cpp ${spine-runtimes_BINARY_DIR}/spine-cpp)
-target_link_libraries(your_target PRIVATE spine-cpp)
+  virtual void unload(void* texture) { // TODO }
+};
 ```
 
 ## Runtimes extending spine-cpp
 - [spine-glfw](../spine-glfw)
 - [spine-sdl](../spine-sdl)
 - [spine-sfml](../spine-sfml/cpp)
-- [spine-godot](../spine-godot)
+- [spine-cocos2dx](../spine-cocos2dx)
 - [spine-ue](../spine-ue)
-- [spine-flutter (via spine-c & FFI)](../spine-flutter)
-- [spine-ios (via spine-c & FFI)](../spine-ios)

@@ -65,8 +65,7 @@ static RenderCommand *createRenderCommand(BlockAllocator &allocator, int numVert
 	return cmd;
 }
 
-static RenderCommand *batchSubCommands(BlockAllocator &allocator, Array<RenderCommand *> &commands, int first, int last, int numVertices,
-									   int numIndices) {
+static RenderCommand *batchSubCommands(BlockAllocator &allocator, Vector<RenderCommand *> &commands, int first, int last, int numVertices, int numIndices) {
 	RenderCommand *batched = createRenderCommand(allocator, numVertices, numIndices, commands[first]->blendMode, commands[first]->texture);
 	float *positions = batched->positions;
 	float *uvs = batched->uvs;
@@ -80,7 +79,8 @@ static RenderCommand *batchSubCommands(BlockAllocator &allocator, Array<RenderCo
 		memcpy(uvs, cmd->uvs, sizeof(float) * 2 * cmd->numVertices);
 		memcpy(colors, cmd->colors, sizeof(int32_t) * cmd->numVertices);
 		memcpy(darkColors, cmd->darkColors, sizeof(int32_t) * cmd->numVertices);
-		for (int ii = 0; ii < cmd->numIndices; ii++) indices[ii] = cmd->indices[ii] + indicesOffset;
+		for (int ii = 0; ii < cmd->numIndices; ii++)
+			indices[ii] = cmd->indices[ii] + indicesOffset;
 		indicesOffset += cmd->numVertices;
 		positions += 2 * cmd->numVertices;
 		uvs += 2 * cmd->numVertices;
@@ -91,7 +91,7 @@ static RenderCommand *batchSubCommands(BlockAllocator &allocator, Array<RenderCo
 	return batched;
 }
 
-static RenderCommand *batchCommands(BlockAllocator &allocator, Array<RenderCommand *> &commands) {
+static RenderCommand *batchCommands(BlockAllocator &allocator, Vector<RenderCommand *> &commands) {
 	if (commands.size() == 0) return nullptr;
 
 	RenderCommand *root = nullptr;
@@ -110,8 +110,11 @@ static RenderCommand *batchCommands(BlockAllocator &allocator, Array<RenderComma
 			continue;
 		}
 
-		if (cmd != nullptr && cmd->texture == first->texture && cmd->blendMode == first->blendMode && cmd->colors[0] == first->colors[0] &&
-			cmd->darkColors[0] == first->darkColors[0] && numIndices + cmd->numIndices < 0xffff) {
+		if (cmd != nullptr && cmd->texture == first->texture &&
+			cmd->blendMode == first->blendMode &&
+			cmd->colors[0] == first->colors[0] &&
+			cmd->darkColors[0] == first->darkColors[0] &&
+			numIndices + cmd->numIndices < 0xffff) {
 			numVertices += cmd->numVertices;
 			numIndices += cmd->numIndices;
 		} else {
@@ -139,27 +142,26 @@ RenderCommand *SkeletonRenderer::render(Skeleton &skeleton) {
 
 	SkeletonClipping &clipper = _clipping;
 
-	Array<Slot *> &drawOrder = skeleton.getDrawOrder().getAppliedPose();
-	for (unsigned i = 0; i < drawOrder.size(); ++i) {
-		Slot &slot = *drawOrder[i];
-		Attachment *attachment = slot.getAppliedPose().getAttachment();
+	for (unsigned i = 0; i < skeleton.getSlots().size(); ++i) {
+		Slot &slot = *skeleton.getDrawOrder()[i];
+		Attachment *attachment = slot.getAttachment();
 		if (!attachment) {
 			clipper.clipEnd(slot);
 			continue;
 		}
 
 		// Early out if the slot color is 0 or the bone is not active
-		if ((slot.getAppliedPose().getColor().a == 0 || !slot.getBone().isActive()) && !attachment->getRTTI().isExactly(ClippingAttachment::rtti)) {
+		if ((slot.getColor().a == 0 || !slot.getBone().isActive()) && !attachment->getRTTI().isExactly(ClippingAttachment::rtti)) {
 			clipper.clipEnd(slot);
 			continue;
 		}
 
-		Array<float> *worldVertices = &_worldVertices;
-		Array<unsigned short> *quadIndices = &_quadIndices;
-		Array<float> *vertices = worldVertices;
+		Vector<float> *worldVertices = &_worldVertices;
+		Vector<unsigned short> *quadIndices = &_quadIndices;
+		Vector<float> *vertices = worldVertices;
 		int32_t verticesCount;
-		Array<float> *uvs;
-		Array<unsigned short> *indices;
+		Vector<float> *uvs;
+		Vector<unsigned short> *indices;
 		int32_t indicesCount;
 		Color *attachmentColor;
 		void *texture;
@@ -168,59 +170,54 @@ RenderCommand *SkeletonRenderer::render(Skeleton &skeleton) {
 			RegionAttachment *regionAttachment = (RegionAttachment *) attachment;
 			attachmentColor = &regionAttachment->getColor();
 
+			// Early out if the slot color is 0
 			if (attachmentColor->a == 0) {
 				clipper.clipEnd(slot);
 				continue;
 			}
 
-			Sequence &sequence = regionAttachment->getSequence();
-			int sequenceIndex = sequence.resolveIndex(slot.getAppliedPose());
-			TextureRegion *region = sequence.getRegion(sequenceIndex);
 			worldVertices->setSize(8, 0);
-			regionAttachment->computeWorldVertices(slot, regionAttachment->getOffsets(slot.getAppliedPose()), *worldVertices, 0, 2);
+			regionAttachment->computeWorldVertices(slot, *worldVertices, 0, 2);
 			verticesCount = 4;
-			uvs = &sequence.getUVs(sequenceIndex);
+			uvs = &regionAttachment->getUVs();
 			indices = quadIndices;
 			indicesCount = 6;
-			texture = region->_rendererObject;
+			texture = regionAttachment->getRegion()->rendererObject;
 
 		} else if (attachment->getRTTI().isExactly(MeshAttachment::rtti)) {
 			MeshAttachment *mesh = (MeshAttachment *) attachment;
 			attachmentColor = &mesh->getColor();
 
+			// Early out if the slot color is 0
 			if (attachmentColor->a == 0) {
 				clipper.clipEnd(slot);
 				continue;
 			}
 
-			Sequence &sequence = mesh->getSequence();
-			int sequenceIndex = sequence.resolveIndex(slot.getAppliedPose());
-			TextureRegion *region = sequence.getRegion(sequenceIndex);
 			worldVertices->setSize(mesh->getWorldVerticesLength(), 0);
-			mesh->computeWorldVertices(skeleton, slot, 0, mesh->getWorldVerticesLength(), worldVertices->buffer(), 0, 2);
+			mesh->computeWorldVertices(slot, 0, mesh->getWorldVerticesLength(), worldVertices->buffer(), 0, 2);
 			verticesCount = (int32_t) (mesh->getWorldVerticesLength() >> 1);
-			uvs = &sequence.getUVs(sequenceIndex);
+			uvs = &mesh->getUVs();
 			indices = &mesh->getTriangles();
 			indicesCount = (int32_t) indices->size();
-			texture = region->_rendererObject;
+			texture = mesh->getRegion()->rendererObject;
 
 		} else if (attachment->getRTTI().isExactly(ClippingAttachment::rtti)) {
-			ClippingAttachment *clip = (ClippingAttachment *) slot.getAppliedPose().getAttachment();
-			clipper.clipStart(skeleton, slot, clip);
+			ClippingAttachment *clip = (ClippingAttachment *) slot.getAttachment();
+			clipper.clipStart(slot, clip);
 			continue;
 		} else
 			continue;
 
-		uint8_t r = static_cast<uint8_t>(skeleton.getColor().r * slot.getAppliedPose().getColor().r * attachmentColor->r * 255);
-		uint8_t g = static_cast<uint8_t>(skeleton.getColor().g * slot.getAppliedPose().getColor().g * attachmentColor->g * 255);
-		uint8_t b = static_cast<uint8_t>(skeleton.getColor().b * slot.getAppliedPose().getColor().b * attachmentColor->b * 255);
-		uint8_t a = static_cast<uint8_t>(skeleton.getColor().a * slot.getAppliedPose().getColor().a * attachmentColor->a * 255);
+		uint8_t r = static_cast<uint8_t>(skeleton.getColor().r * slot.getColor().r * attachmentColor->r * 255);
+		uint8_t g = static_cast<uint8_t>(skeleton.getColor().g * slot.getColor().g * attachmentColor->g * 255);
+		uint8_t b = static_cast<uint8_t>(skeleton.getColor().b * slot.getColor().b * attachmentColor->b * 255);
+		uint8_t a = static_cast<uint8_t>(skeleton.getColor().a * slot.getColor().a * attachmentColor->a * 255);
 		uint32_t color = (a << 24) | (r << 16) | (g << 8) | b;
 		uint32_t darkColor = 0xff000000;
-		if (slot.getAppliedPose().hasDarkColor()) {
-			Color &slotDarkColor = slot.getAppliedPose().getDarkColor();
-			darkColor = 0xff000000 | (static_cast<uint8_t>(slotDarkColor.r * 255) << 16) | (static_cast<uint8_t>(slotDarkColor.g * 255) << 8) |
-				static_cast<uint8_t>(slotDarkColor.b * 255);
+		if (slot.hasDarkColor()) {
+			Color &slotDarkColor = slot.getDarkColor();
+			darkColor = 0xff000000 | (static_cast<uint8_t>(slotDarkColor.r * 255) << 16) | (static_cast<uint8_t>(slotDarkColor.g * 255) << 8) | static_cast<uint8_t>(slotDarkColor.b * 255);
 		}
 
 		if (clipper.isClipping()) {

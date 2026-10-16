@@ -32,9 +32,10 @@
 
 #include <spine/Timeline.h>
 #include <spine/SpineObject.h>
-#include <spine/Array.h>
+#include <spine/Vector.h>
+#include <spine/MixBlend.h>
+#include <spine/MixDirection.h>
 #include <spine/SpineString.h>
-#include <spine/SlotTimeline.h>
 
 namespace spine {
 
@@ -42,46 +43,39 @@ namespace spine {
 
 	class Slot;
 
-	class SlotPose;
-
 	class Event;
 
-	class SP_API AttachmentTimeline : public Timeline, public SlotTimeline {
+	class SP_API AttachmentTimeline : public Timeline {
 		friend class SkeletonBinary;
 
 		friend class SkeletonJson;
 
-		RTTI_DECL
+	RTTI_DECL
 
 	public:
 		explicit AttachmentTimeline(size_t frameCount, int slotIndex);
 
 		virtual ~AttachmentTimeline();
 
-		virtual void apply(Skeleton &skeleton, float lastTime, float time, Array<Event *> *events, float alpha, MixFrom from, bool add, bool out,
-						   bool appliedPose) override;
+		virtual void
+		apply(Skeleton &skeleton, float lastTime, float time, Vector<Event *> *pEvents, float alpha, MixBlend blend,
+			  MixDirection direction);
 
-		/// Sets the time and attachment name for the specified frame.
-		/// @param frame Between 0 and frameCount, inclusive.
-		/// @param time The frame time in seconds.
+		/// Sets the time and value of the specified keyframe.
 		void setFrame(int frame, float time, const String &attachmentName);
 
-		/// The attachment name for each frame. May contain null values to clear the attachment.
-		Array<String> &getAttachmentNames();
+		Vector<String> &getAttachmentNames();
 
-		virtual int getSlotIndex() override {
-			return _slotIndex;
-		}
+		int getSlotIndex() { return _slotIndex; }
 
-		virtual void setSlotIndex(int inValue) override {
-			_slotIndex = inValue;
-		}
+		void setSlotIndex(int inValue) { _slotIndex = inValue; }
 
 	protected:
 		int _slotIndex;
-		Array<String> _attachmentNames;
 
-		void setAttachment(Skeleton &skeleton, SlotPose &pose, String *attachmentName);
+		Vector<String> _attachmentNames;
+
+		void setAttachment(Skeleton &skeleton, Slot &slot, String *attachmentName);
 	};
 }
 

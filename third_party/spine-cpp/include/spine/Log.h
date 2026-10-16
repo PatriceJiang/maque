@@ -27,55 +27,31 @@
  * THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#ifndef Spine_Slider_h
-#define Spine_Slider_h
+#ifndef SPINE_DEBUG_LOG_H
+#define SPINE_DEBUG_LOG_H
 
-#include <spine/Constraint.h>
-#include <spine/SliderData.h>
-#include <spine/SliderPose.h>
+#include <spine/spine.h>
 
 namespace spine {
-	class Skeleton;
-	class Bone;
-	class Animation;
+	SP_API void spDebug_printSkeletonData(SkeletonData *skeletonData);
 
-	/// Applies an animation based on either the slider's SliderPose::getTime() or a bone's transform property.
-	///
-	/// See https://esotericsoftware.com/spine-sliders Sliders in the Spine User Guide.
-	// Non-exported base class that inherits from the template
-	class SliderBase : public ConstraintGeneric<Slider, SliderData, SliderPose> {
-	public:
-		SliderBase(SliderData &data) : ConstraintGeneric<Slider, SliderData, SliderPose>(data) {
-		}
-	};
+	SP_API void spDebug_printAnimation(Animation *animation);
 
-	class SP_API Slider : public SliderBase {
-		friend class Skeleton;
-		friend class SliderTimeline;
-		friend class SliderMixTimeline;
+	SP_API void spDebug_printTimeline(Timeline *timeline);
 
-		RTTI_DECL
+	SP_API void spDebug_printBoneDatas(Vector<BoneData *> &boneDatas);
 
-	public:
-		Slider(SliderData &data, Skeleton &skeleton);
+	SP_API void spDebug_printBoneData(BoneData *boneData);
 
-		Slider &copy(Skeleton &skeleton);
+	SP_API void spDebug_printSkeleton(Skeleton *skeleton);
 
-		virtual void update(Skeleton &skeleton, Physics physics) override;
+	SP_API void spDebug_printBones(Vector<Bone *> &bones);
 
-		virtual void sort(Skeleton &skeleton) override;
+	SP_API void spDebug_printBone(Bone *bone);
 
-		virtual bool isSourceActive() override;
+	SP_API void spDebug_printFloats(float *values, int numFloats);
 
-		/// When set, the bone's transform property is used to set the slider's SliderPose::getTime().
-		Bone &getBone();
-
-		void setBone(Bone &bone);
-
-	private:
-		Bone *_bone;
-		static float _offsets[6];
-	};
+	SP_API void spDebug_printFloats(Vector<float> &values);
 }
 
-#endif /* Spine_Slider_h */
+#endif

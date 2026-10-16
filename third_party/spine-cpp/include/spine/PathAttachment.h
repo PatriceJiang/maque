@@ -39,32 +39,28 @@ namespace spine {
 
 		friend class SkeletonJson;
 
-		RTTI_DECL
+	RTTI_DECL
 
 	public:
 		explicit PathAttachment(const String &name);
 
 		/// The length in the setup pose from the start of the path to the end of each curve.
-		Array<float> &getLengths();
+		Vector<float> &getLengths();
 
-		void setLengths(Array<float> &inValue);
-
-		bool getClosed();
+		bool isClosed();
 
 		void setClosed(bool inValue);
 
-		/// If true, additional calculations are performed to make computing positions along the path more accurate so
-		/// movement along the path has a constant speed.
-		bool getConstantSpeed();
+		bool isConstantSpeed();
 
 		void setConstantSpeed(bool inValue);
 
 		Color &getColor();
 
-		virtual Attachment &copy() override;
+		virtual Attachment *copy();
 
 	private:
-		Array<float> _lengths;
+		Vector<float> _lengths;
 		bool _closed;
 		bool _constantSpeed;
 		Color _color;

@@ -28,46 +28,72 @@
  *****************************************************************************/
 
 #include <spine/SlotData.h>
-#include <spine/SlotPose.h>
-#include <spine/BoneData.h>
 
 #include <assert.h>
 
 using namespace spine;
 
-SlotData::SlotData(int index, const String &name, BoneData &boneData)
-	: PosedDataGeneric<SlotPose>(name), _index(index), _boneData(boneData), _attachmentName(), _blendMode(BlendMode_Normal), _visible(true) {
-	assert(index >= 0);
+SlotData::SlotData(int index, const String &name, BoneData &boneData) : _index(index),
+																		_name(name),
+																		_boneData(boneData),
+																		_color(1, 1, 1, 1),
+																		_darkColor(0, 0, 0, 0),
+																		_hasDarkColor(false),
+																		_attachmentName(),
+																		_blendMode(BlendMode_Normal),
+																		_visible(true) {
+	assert(_index >= 0);
+	assert(_name.length() > 0);
 }
 
 int SlotData::getIndex() {
 	return _index;
 }
 
+const String &SlotData::getName() {
+	return _name;
+}
+
 BoneData &SlotData::getBoneData() {
 	return _boneData;
 }
 
-void SlotData::setAttachmentName(const String &attachmentName) {
-	_attachmentName = attachmentName;
+Color &SlotData::getColor() {
+	return _color;
+}
+
+Color &SlotData::getDarkColor() {
+	return _darkColor;
+}
+
+bool SlotData::hasDarkColor() {
+	return _hasDarkColor;
+}
+
+void SlotData::setHasDarkColor(bool inValue) {
+	_hasDarkColor = inValue;
 }
 
 const String &SlotData::getAttachmentName() {
 	return _attachmentName;
 }
 
+void SlotData::setAttachmentName(const String &inValue) {
+	_attachmentName = inValue;
+}
+
 BlendMode SlotData::getBlendMode() {
 	return _blendMode;
 }
 
-void SlotData::setBlendMode(BlendMode blendMode) {
-	_blendMode = blendMode;
+void SlotData::setBlendMode(BlendMode inValue) {
+	_blendMode = inValue;
 }
 
-bool SlotData::getVisible() {
+bool SlotData::isVisible() {
 	return _visible;
 }
 
-void SlotData::setVisible(bool visible) {
-	_visible = visible;
+void SlotData::setVisible(bool inValue) {
+	this->_visible = inValue;
 }

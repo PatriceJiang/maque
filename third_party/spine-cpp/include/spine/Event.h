@@ -36,10 +36,7 @@
 namespace spine {
 	class EventData;
 
-	/// Fired by EventTimeline when specific animation times are reached.
-	///
-	/// See Timeline::apply(), AnimationStateListener::event(), and
-	/// https://esotericsoftware.com/spine-events Events in the Spine User Guide.
+/// Stores the current pose values for an Event.
 	class SP_API Event : public SpineObject {
 		friend class SkeletonBinary;
 
@@ -50,33 +47,27 @@ namespace spine {
 	public:
 		Event(float time, const EventData &data);
 
-		/// The event's setup pose data.
 		const EventData &getData();
 
-		/// The animation time this event was keyed, or -1 for the setup pose.
+		/// The animation time this event was keyed.
 		float getTime();
 
-		/// The integer payload for this event.
-		int getInt();
+		int getIntValue();
 
-		void setInt(int inValue);
+		void setIntValue(int inValue);
 
-		/// The float payload for this event.
-		float getFloat();
+		float getFloatValue();
 
-		void setFloat(float inValue);
+		void setFloatValue(float inValue);
 
-		/// The string payload for this event.
-		const String &getString();
+		const String &getStringValue();
 
-		void setString(const String &inValue);
+		void setStringValue(const String &inValue);
 
-		/// If an audio path is set, the volume for the audio.
 		float getVolume();
 
 		void setVolume(float inValue);
 
-		/// If an audio path is set, the left/right balance for the audio.
 		float getBalance();
 
 		void setBalance(float inValue);

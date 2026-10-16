@@ -27,58 +27,28 @@
  * THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#ifndef Spine_IkConstraintPose_h
-#define Spine_IkConstraintPose_h
+#ifndef Spine_Updatable_h
+#define Spine_Updatable_h
 
-#include <spine/Pose.h>
 #include <spine/RTTI.h>
+#include <spine/SpineObject.h>
+#include <spine/Physics.h>
 
 namespace spine {
-
-	/// Stores a pose for an IK constraint.
-	class SP_API IkConstraintPose : public Pose<IkConstraintPose> {
-		friend class IkConstraint;
-		friend class IkConstraintTimeline;
-		friend class SkeletonJson;
-		friend class SkeletonBinary;
+	class SP_API Updatable : public SpineObject {
+	RTTI_DECL
 
 	public:
-		IkConstraintPose();
-		virtual ~IkConstraintPose();
+		Updatable();
 
-		virtual void set(IkConstraintPose &pose) override;
+		virtual ~Updatable();
 
-		/// A percentage (0-1) that controls the mix between the constrained and unconstrained rotation.
-		///
-		/// For two bone IK: if the parent bone has local nonuniform scale, the child bone's local Y translation is set to 0.
-		float getMix();
-		void setMix(float mix);
+		virtual void update(Physics physics) = 0;
 
-		/// For two bone IK, the target bone's distance from the maximum reach of the bones where rotation begins to slow. The bones
-		/// will not straighten completely until the target is this far out of range.
-		float getSoftness();
-		void setSoftness(float softness);
+		virtual bool isActive() = 0;
 
-		/// For two bone IK, controls the bend direction of the IK bones, either 1 or -1.
-		int getBendDirection();
-		void setBendDirection(int bendDirection);
-
-		/// For one bone IK, when true and the target is too close, the bone is scaled to reach it.
-		bool getCompress();
-		void setCompress(bool compress);
-
-		/// When true and the target is out of range, the parent bone is scaled to reach it.
-		///
-		/// For two bone IK: 1) the child bone's local Y translation is set to 0, 2) stretch is not applied if softness is
-		/// > 0, and 3) if the parent bone has local nonuniform scale, stretch is not applied.
-		bool getStretch();
-		void setStretch(bool stretch);
-
-	private:
-		int _bendDirection;
-		bool _compress, _stretch;
-		float _mix, _softness;
+		virtual void setActive(bool inValue) = 0;
 	};
 }
 
-#endif /* Spine_IkConstraintPose_h */
+#endif /* Spine_Updatable_h */

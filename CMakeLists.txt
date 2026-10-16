@@ -238,12 +238,9 @@ add_subdirectory(modules/data/persist)
 add_subdirectory(modules/image)
 add_subdirectory(modules/world/physics)
 add_subdirectory(modules/world/nav)
-# Spine 2D 官方运行时接入（docs/assets/06 §2）—— **进行中，暂不纳入默认构建**。
-# 现状：spine-cpp 已 vendored（third_party/spine-cpp，分支 4.3）、schema 的 module_abi 已声明、
-# 模块骨架与单测已就位；但 4.3 的附件内部结构基本是 friend-only（RegionAttachment 不再公开
-# region/uvs，computeWorldVertices 需要外部传 vertexOffsets），与 docs/assets/06 §2 设想的
-# 接法不同，绘制导出尚未打通。**打开下面这行即可参与构建**（当前会编译失败，属已知状态）。
-# add_subdirectory(modules/anim/spine2d)
+# Spine 2D 官方运行时接入（docs/assets/06 §2、docs/27）：vendored spine-cpp **4.2** + C ABI 封装。
+# 选 4.2 并**打开 C++ RTTI**（封装层用 dynamic_cast 判别附件类型）—— 见 third_party/spine-cpp/CMakeLists.txt。
+add_subdirectory(modules/anim/spine2d)
 add_subdirectory(modules/ui/canvas)
 add_subdirectory(modules/render/text)
 add_subdirectory(modules/render/gfx)
@@ -253,3 +250,4 @@ add_subdirectory(samples/player)
 add_subdirectory(samples/inspector)
 add_subdirectory(samples/host)
 add_subdirectory(samples/flappy)   # 独立游戏工程（玩法全在资源里；见该目录 CMakeLists 顶部说明）
+add_subdirectory(samples/tank)     # 独立游戏工程（俯视坦克对战；同样是薄宿主 + 资源化玩法）

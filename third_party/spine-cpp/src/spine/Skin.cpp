@@ -49,37 +49,38 @@ static void disposeAttachment(Attachment *attachment) {
 	if (attachment->getRefCount() == 0) delete attachment;
 }
 
-void Skin::AttachmentMap::put(size_t slotIndex, const String &placeholder, Attachment *attachment) {
-	if (slotIndex >= _buckets.size()) _buckets.setSize(slotIndex + 1, Array<Entry>());
-	Array<Entry> &bucket = _buckets[slotIndex];
-	int existing = findInBucket(bucket, placeholder);
+void Skin::AttachmentMap::put(size_t slotIndex, const String &attachmentName, Attachment *attachment) {
+	if (slotIndex >= _buckets.size())
+		_buckets.setSize(slotIndex + 1, Vector<Entry>());
+	Vector<Entry> &bucket = _buckets[slotIndex];
+	int existing = findInBucket(bucket, attachmentName);
 	attachment->reference();
 	if (existing >= 0) {
 		disposeAttachment(bucket[existing]._attachment);
 		bucket[existing]._attachment = attachment;
 	} else {
-		bucket.add(Entry(slotIndex, placeholder, attachment));
+		bucket.add(Entry(slotIndex, attachmentName, attachment));
 	}
 }
 
-Attachment *Skin::AttachmentMap::get(size_t slotIndex, const String &placeholder) {
+Attachment *Skin::AttachmentMap::get(size_t slotIndex, const String &attachmentName) {
 	if (slotIndex >= _buckets.size()) return NULL;
-	int existing = findInBucket(_buckets[slotIndex], placeholder);
+	int existing = findInBucket(_buckets[slotIndex], attachmentName);
 	return existing >= 0 ? _buckets[slotIndex][existing]._attachment : NULL;
 }
 
-void Skin::AttachmentMap::remove(size_t slotIndex, const String &placeholder) {
+void Skin::AttachmentMap::remove(size_t slotIndex, const String &attachmentName) {
 	if (slotIndex >= _buckets.size()) return;
-	int existing = findInBucket(_buckets[slotIndex], placeholder);
+	int existing = findInBucket(_buckets[slotIndex], attachmentName);
 	if (existing >= 0) {
 		disposeAttachment(_buckets[slotIndex][existing]._attachment);
 		_buckets[slotIndex].removeAt(existing);
 	}
 }
 
-int Skin::AttachmentMap::findInBucket(Array<Entry> &bucket, const String &placeholder) {
+int Skin::AttachmentMap::findInBucket(Vector<Entry> &bucket, const String &attachmentName) {
 	for (size_t i = 0; i < bucket.size(); i++)
-		if (bucket[i]._placeholder == placeholder) return (int) i;
+		if (bucket[i]._name == attachmentName) return (int) i;
 	return -1;
 }
 
@@ -99,29 +100,30 @@ Skin::~Skin() {
 	}
 }
 
-void Skin::setAttachment(size_t slotIndex, const String &placeholder, Attachment *attachment) {
-	_attachments.put(slotIndex, placeholder, attachment);
+void Skin::setAttachment(size_t slotIndex, const String &name, Attachment *attachment) {
+	assert(attachment);
+	_attachments.put(slotIndex, name, attachment);
 }
 
-Attachment *Skin::getAttachment(size_t slotIndex, const String &placeholder) {
-	return _attachments.get(slotIndex, placeholder);
+Attachment *Skin::getAttachment(size_t slotIndex, const String &name) {
+	return _attachments.get(slotIndex, name);
 }
 
-void Skin::removeAttachment(size_t slotIndex, const String &placeholder) {
-	_attachments.remove(slotIndex, placeholder);
+void Skin::removeAttachment(size_t slotIndex, const String &name) {
+	_attachments.remove(slotIndex, name);
 }
 
-void Skin::findNamesForSlot(size_t slotIndex, Array<String> &names) {
+void Skin::findNamesForSlot(size_t slotIndex, Vector<String> &names) {
 	Skin::AttachmentMap::Entries entries = _attachments.getEntries();
 	while (entries.hasNext()) {
 		Skin::AttachmentMap::Entry &entry = entries.next();
 		if (entry._slotIndex == slotIndex) {
-			names.add(entry._placeholder);
+			names.add(entry._name);
 		}
 	}
 }
 
-void Skin::findAttachmentsForSlot(size_t slotIndex, Array<Attachment *> &attachments) {
+void Skin::findAttachmentsForSlot(size_t slotIndex, Vector<Attachment *> &attachments) {
 	Skin::AttachmentMap::Entries entries = _attachments.getEntries();
 	while (entries.hasNext()) {
 		Skin::AttachmentMap::Entry &entry = entries.next();
@@ -138,55 +140,56 @@ Skin::AttachmentMap::Entries Skin::getAttachments() {
 }
 
 void Skin::attachAll(Skeleton &skeleton, Skin &oldSkin) {
-	Array<Slot *> &slots = skeleton.getSlots();
+	Vector<Slot *> &slots = skeleton.getSlots();
 	Skin::AttachmentMap::Entries entries = oldSkin.getAttachments();
 	while (entries.hasNext()) {
 		Skin::AttachmentMap::Entry &entry = entries.next();
 		int slotIndex = (int) entry._slotIndex;
 		Slot *slot = slots[slotIndex];
 
-		if (slot->getPose().getAttachment() == entry._attachment) {
-			Attachment *attachment = getAttachment(slotIndex, entry._placeholder);
-			if (attachment) slot->getPose().setAttachment(attachment);
+		if (slot->getAttachment() == entry._attachment) {
+			Attachment *attachment = getAttachment(slotIndex, entry._name);
+			if (attachment) slot->setAttachment(attachment);
 		}
 	}
 }
 
-void Skin::addSkin(Skin &other) {
-	for (size_t i = 0; i < other.getBones().size(); i++)
-		if (!_bones.contains(other.getBones()[i])) _bones.add(other.getBones()[i]);
+void Skin::addSkin(Skin *other) {
+	for (size_t i = 0; i < other->getBones().size(); i++)
+		if (!_bones.contains(other->getBones()[i])) _bones.add(other->getBones()[i]);
 
-	for (size_t i = 0; i < other.getConstraints().size(); i++)
-		if (!_constraints.contains(other.getConstraints()[i])) _constraints.add(other.getConstraints()[i]);
+	for (size_t i = 0; i < other->getConstraints().size(); i++)
+		if (!_constraints.contains(other->getConstraints()[i])) _constraints.add(other->getConstraints()[i]);
 
-	AttachmentMap::Entries entries = other.getAttachments();
+	AttachmentMap::Entries entries = other->getAttachments();
 	while (entries.hasNext()) {
 		AttachmentMap::Entry &entry = entries.next();
-		setAttachment(entry._slotIndex, entry._placeholder, entry._attachment);
+		setAttachment(entry._slotIndex, entry._name, entry._attachment);
 	}
 }
 
-void Skin::copySkin(Skin &other) {
-	for (size_t i = 0; i < other.getBones().size(); i++)
-		if (!_bones.contains(other.getBones()[i])) _bones.add(other.getBones()[i]);
+void Skin::copySkin(Skin *other) {
+	for (size_t i = 0; i < other->getBones().size(); i++)
+		if (!_bones.contains(other->getBones()[i])) _bones.add(other->getBones()[i]);
 
-	for (size_t i = 0; i < other.getConstraints().size(); i++)
-		if (!_constraints.contains(other.getConstraints()[i])) _constraints.add(other.getConstraints()[i]);
+	for (size_t i = 0; i < other->getConstraints().size(); i++)
+		if (!_constraints.contains(other->getConstraints()[i])) _constraints.add(other->getConstraints()[i]);
 
-	AttachmentMap::Entries entries = other.getAttachments();
+	AttachmentMap::Entries entries = other->getAttachments();
 	while (entries.hasNext()) {
 		AttachmentMap::Entry &entry = entries.next();
 		if (entry._attachment->getRTTI().isExactly(MeshAttachment::rtti))
-			setAttachment(entry._slotIndex, entry._placeholder, &static_cast<MeshAttachment *>(entry._attachment)->newLinkedMesh());
+			setAttachment(entry._slotIndex, entry._name,
+						  static_cast<MeshAttachment *>(entry._attachment)->newLinkedMesh());
 		else
-			setAttachment(entry._slotIndex, entry._placeholder, &entry._attachment->copy());
+			setAttachment(entry._slotIndex, entry._name, entry._attachment->copy());
 	}
 }
 
-Array<ConstraintData *> &Skin::getConstraints() {
+Vector<ConstraintData *> &Skin::getConstraints() {
 	return _constraints;
 }
 
-Array<BoneData *> &Skin::getBones() {
+Vector<BoneData *> &Skin::getBones() {
 	return _bones;
 }

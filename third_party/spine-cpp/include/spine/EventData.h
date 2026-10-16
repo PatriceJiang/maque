@@ -32,10 +32,9 @@
 
 #include <spine/SpineObject.h>
 #include <spine/SpineString.h>
-#include <spine/Event.h>
 
 namespace spine {
-	/// Stores the setup pose values for an Event.
+/// Stores the setup pose values for an Event.
 	class SP_API EventData : public SpineObject {
 		friend class SkeletonBinary;
 
@@ -46,22 +45,41 @@ namespace spine {
 	public:
 		explicit EventData(const String &name);
 
-		/// The name of the event, unique across all events in the skeleton.
+		/// The name of the event, which is unique within the skeleton.
 		const String &getName() const;
 
-		/// The setup values that are shared by all events with this data.
-		Event &getSetupPose();
-		const Event &getSetupPose() const;
+		int getIntValue() const;
 
-		/// Path to an audio file relative to the audio folder as defined in Spine.
+		void setIntValue(int inValue);
+
+		float getFloatValue() const;
+
+		void setFloatValue(float inValue);
+
+		const String &getStringValue() const;
+
+		void setStringValue(const String &inValue);
+
 		const String &getAudioPath() const;
 
 		void setAudioPath(const String &inValue);
 
+		float getVolume() const;
+
+		void setVolume(float inValue);
+
+		float getBalance() const;
+
+		void setBalance(float inValue);
+
 	private:
 		const String _name;
+		int _intValue;
+		float _floatValue;
+		String _stringValue;
 		String _audioPath;
-		Event _setupPose;
+		float _volume;
+		float _balance;
 	};
 }
 

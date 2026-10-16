@@ -32,10 +32,9 @@
 
 
 #include <stdlib.h>
-#include <string.h>
 #include <spine/dll.h>
 
-#define SP_UNUSED(x) (void) (x)
+#define SP_UNUSED(x) (void)(x)
 
 namespace spine {
 	class String;
@@ -71,14 +70,6 @@ namespace spine {
 			return getInstance()->_readFile(path, length);
 		}
 
-		static char *strdup(const char *str, const char *file, int line) {
-			if (!str) return nullptr;
-			size_t len = strlen(str) + 1;
-			char *copy = (char *) getInstance()->_alloc(len, file, line);
-			memcpy(copy, str, len);
-			return copy;
-		}
-
 		static void setInstance(SpineExtension *inSpineExtension);
 
 		static SpineExtension *getInstance();
@@ -97,9 +88,7 @@ namespace spine {
 
 		virtual char *_readFile(const String &path, int *length) = 0;
 
-		virtual void _beforeFree(void *ptr) {
-			SP_UNUSED(ptr);
-		}
+		virtual void _beforeFree(void *ptr) { SP_UNUSED(ptr); }
 
 	protected:
 		SpineExtension();
@@ -126,10 +115,10 @@ namespace spine {
 		virtual char *_readFile(const String &path, int *length) override;
 	};
 
-	// This function is to be implemented by engine specific runtimes to provide
-	// the default extension for that engine. It is called the first time
-	// SpineExtension::getInstance() is called, when no instance has been set
-	// yet.
+// This function is to be implemented by engine specific runtimes to provide
+// the default extension for that engine. It is called the first time
+// SpineExtension::getInstance() is called, when no instance has been set
+// yet.
 	extern SpineExtension *getDefaultExtension();
 }
 

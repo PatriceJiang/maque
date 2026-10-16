@@ -41,25 +41,24 @@
 
 using namespace spine;
 
-RTTI_IMPL(PathConstraintSpacingTimeline, ConstraintTimeline1)
+RTTI_IMPL(PathConstraintSpacingTimeline, PathConstraintPositionTimeline)
 
-PathConstraintSpacingTimeline::PathConstraintSpacingTimeline(size_t frameCount, size_t bezierCount, int constraintIndex)
-	: ConstraintTimeline1(frameCount, bezierCount, constraintIndex, Property_PathConstraintSpacing) {
+PathConstraintSpacingTimeline::PathConstraintSpacingTimeline(size_t frameCount, size_t bezierCount,
+															 int pathConstraintIndex) : CurveTimeline1(frameCount,
+																									   bezierCount),
+																						_pathConstraintIndex(
+																								pathConstraintIndex) {
+	PropertyId ids[] = {((PropertyId) Property_PathConstraintSpacing << 32) | pathConstraintIndex};
+	setPropertyIds(ids, 1);
 }
 
-PathConstraintSpacingTimeline::~PathConstraintSpacingTimeline() {
-}
-
-void PathConstraintSpacingTimeline::apply(Skeleton &skeleton, float lastTime, float time, Array<Event *> *events, float alpha, MixFrom from, bool add,
-										  bool out, bool appliedPose) {
+void PathConstraintSpacingTimeline::apply(Skeleton &skeleton, float lastTime, float time, Vector<Event *> *pEvents,
+										  float alpha, MixBlend blend, MixDirection direction) {
 	SP_UNUSED(lastTime);
-	SP_UNUSED(events);
-	SP_UNUSED(out);
+	SP_UNUSED(pEvents);
+	SP_UNUSED(direction);
 
-	PathConstraint *constraint = (PathConstraint *) skeleton._constraints[_constraintIndex];
-	if (constraint->isActive()) {
-		PathConstraintPose &pose = appliedPose ? *constraint->_appliedPose : constraint->_pose;
-		PathConstraintData &data = constraint->_data;
-		pose._spacing = getAbsoluteValue(time, alpha, from, false, pose._spacing, data._setupPose._spacing);
-	}
+	PathConstraint *constraint = skeleton._pathConstraints[_pathConstraintIndex];
+	if (constraint->_active)
+		constraint->_spacing = getAbsoluteValue(time, alpha, blend, constraint->_spacing, constraint->_data._spacing);
 }

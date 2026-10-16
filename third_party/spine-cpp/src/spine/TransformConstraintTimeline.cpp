@@ -38,62 +38,60 @@
 #include <spine/SlotData.h>
 #include <spine/TransformConstraint.h>
 #include <spine/TransformConstraintData.h>
-#include <spine/TransformConstraintPose.h>
 
 using namespace spine;
 
-RTTI_IMPL_MULTI(TransformConstraintTimeline, CurveTimeline, ConstraintTimeline)
+RTTI_IMPL(TransformConstraintTimeline, CurveTimeline)
 
-TransformConstraintTimeline::TransformConstraintTimeline(size_t frameCount, size_t bezierCount, int transformConstraintIndex)
-	: CurveTimeline(frameCount, TransformConstraintTimeline::ENTRIES, bezierCount), ConstraintTimeline(), _constraintIndex(transformConstraintIndex) {
+TransformConstraintTimeline::TransformConstraintTimeline(size_t frameCount, size_t bezierCount,
+														 int transformConstraintIndex) : CurveTimeline(frameCount,
+																									   TransformConstraintTimeline::ENTRIES,
+																									   bezierCount),
+																						 _constraintIndex(
+																								 transformConstraintIndex) {
 	PropertyId ids[] = {((PropertyId) Property_TransformConstraint << 32) | transformConstraintIndex};
 	setPropertyIds(ids, 1);
-	_additive = true;
 }
 
-TransformConstraintTimeline::~TransformConstraintTimeline() {
-}
-
-void TransformConstraintTimeline::apply(Skeleton &skeleton, float lastTime, float time, Array<Event *> *events, float alpha, MixFrom from, bool add,
-										bool out, bool appliedPose) {
+void TransformConstraintTimeline::apply(Skeleton &skeleton, float lastTime, float time, Vector<Event *> *pEvents,
+										float alpha, MixBlend blend, MixDirection direction) {
 	SP_UNUSED(lastTime);
-	SP_UNUSED(events);
-	SP_UNUSED(out);
+	SP_UNUSED(pEvents);
+	SP_UNUSED(direction);
 
-	TransformConstraint *constraint = (TransformConstraint *) skeleton._constraints[_constraintIndex];
-	if (!constraint->isActive()) return;
-	TransformConstraintPose &pose = appliedPose ? *constraint->_appliedPose : constraint->_pose;
+	TransformConstraint *constraintP = skeleton._transformConstraints[_constraintIndex];
+	TransformConstraint &constraint = *constraintP;
+	if (!constraint.isActive()) return;
 
+	TransformConstraintData &data = constraint._data;
 	if (time < _frames[0]) {
-		TransformConstraintPose &setup = constraint->_data._setupPose;
-		switch (from) {
-			case MixFrom_Setup:
-				pose._mixRotate = setup._mixRotate;
-				pose._mixX = setup._mixX;
-				pose._mixY = setup._mixY;
-				pose._mixScaleX = setup._mixScaleX;
-				pose._mixScaleY = setup._mixScaleY;
-				pose._mixShearY = setup._mixShearY;
-				break;
-			case MixFrom_First:
-				pose._mixRotate += (setup._mixRotate - pose._mixRotate) * alpha;
-				pose._mixX += (setup._mixX - pose._mixX) * alpha;
-				pose._mixY += (setup._mixY - pose._mixY) * alpha;
-				pose._mixScaleX += (setup._mixScaleX - pose._mixScaleX) * alpha;
-				pose._mixScaleY += (setup._mixScaleY - pose._mixScaleY) * alpha;
-				pose._mixShearY += (setup._mixShearY - pose._mixShearY) * alpha;
-				break;
-			case MixFrom_Current:
-				break;
+		switch (blend) {
+			case MixBlend_Setup:
+				constraint._mixRotate = data._mixRotate;
+				constraint._mixX = data._mixX;
+				constraint._mixY = data._mixY;
+				constraint._mixScaleX = data._mixScaleX;
+				constraint._mixScaleY = data._mixScaleY;
+				constraint._mixShearY = data._mixShearY;
+				return;
+			case MixBlend_First:
+				constraint._mixRotate += (data._mixRotate - constraint._mixRotate) * alpha;
+				constraint._mixX += (data._mixX - constraint._mixX) * alpha;
+				constraint._mixY += (data._mixY - constraint._mixY) * alpha;
+				constraint._mixScaleX += (data._mixScaleX - constraint._mixScaleX) * alpha;
+				constraint._mixScaleY += (data._mixScaleY - constraint._mixScaleY) * alpha;
+				constraint._mixShearY += (data._mixShearY - constraint._mixShearY) * alpha;
+				return;
+			default:
+				return;
 		}
-		return;
 	}
 
 	float rotate, x, y, scaleX, scaleY, shearY;
-	int i = Animation::search(_frames, time, ENTRIES);
-	int curveType = (int) _curves[i / ENTRIES];
+	int i = Animation::search(_frames, time, TransformConstraintTimeline::ENTRIES);
+	int curveType = (int) _curves[i / TransformConstraintTimeline::ENTRIES];
 	switch (curveType) {
-		case LINEAR: {
+		case TransformConstraintTimeline::LINEAR: {
 			float before = _frames[i];
 			rotate = _frames[i + ROTATE];
 			x = _frames[i + X];
@@ -110,7 +108,7 @@ void TransformConstraintTimeline::apply(Skeleton &skeleton, float lastTime, floa
 			shearY += (_frames[i + ENTRIES + SHEARY] - shearY) * t;
 			break;
 		}
-		case STEPPED: {
+		case TransformConstraintTimeline::STEPPED: {
 			rotate = _frames[i + ROTATE];
 			x = _frames[i + X];
 			y = _frames[i + Y];
@@ -129,26 +127,25 @@ void TransformConstraintTimeline::apply(Skeleton &skeleton, float lastTime, floa
 		}
 	}
 
-	TransformConstraintPose &base = from == MixFrom_Setup ? constraint->_data._setupPose : pose;
-	if (add) {
-		pose._mixRotate = base._mixRotate + rotate * alpha;
-		pose._mixX = base._mixX + x * alpha;
-		pose._mixY = base._mixY + y * alpha;
-		pose._mixScaleX = base._mixScaleX + scaleX * alpha;
-		pose._mixScaleY = base._mixScaleY + scaleY * alpha;
-		pose._mixShearY = base._mixShearY + shearY * alpha;
+	if (blend == MixBlend_Setup) {
+		constraint._mixRotate = data._mixRotate + (rotate - data._mixRotate) * alpha;
+		constraint._mixX = data._mixX + (x - data._mixX) * alpha;
+		constraint._mixY = data._mixY + (y - data._mixY) * alpha;
+		constraint._mixScaleX = data._mixScaleX + (scaleX - data._mixScaleX) * alpha;
+		constraint._mixScaleY = data._mixScaleY + (scaleY - data._mixScaleY) * alpha;
+		constraint._mixShearY = data._mixShearY + (shearY - data._mixShearY) * alpha;
 	} else {
-		pose._mixRotate = base._mixRotate + (rotate - base._mixRotate) * alpha;
-		pose._mixX = base._mixX + (x - base._mixX) * alpha;
-		pose._mixY = base._mixY + (y - base._mixY) * alpha;
-		pose._mixScaleX = base._mixScaleX + (scaleX - base._mixScaleX) * alpha;
-		pose._mixScaleY = base._mixScaleY + (scaleY - base._mixScaleY) * alpha;
-		pose._mixShearY = base._mixShearY + (shearY - base._mixShearY) * alpha;
+		constraint._mixRotate += (rotate - constraint._mixRotate) * alpha;
+		constraint._mixX += (x - constraint._mixX) * alpha;
+		constraint._mixY += (y - constraint._mixY) * alpha;
+		constraint._mixScaleX += (scaleX - constraint._mixScaleX) * alpha;
+		constraint._mixScaleY += (scaleY - constraint._mixScaleY) * alpha;
+		constraint._mixShearY += (shearY - constraint._mixShearY) * alpha;
 	}
 }
 
-void TransformConstraintTimeline::setFrame(int frame, float time, float mixRotate, float mixX, float mixY, float mixScaleX, float mixScaleY,
-										   float mixShearY) {
+void TransformConstraintTimeline::setFrame(size_t frame, float time, float mixRotate, float mixX, float mixY,
+										   float mixScaleX, float mixScaleY, float mixShearY) {
 	frame *= ENTRIES;
 	_frames[frame] = time;
 	_frames[frame + ROTATE] = mixRotate;

@@ -37,7 +37,6 @@ THE SOFTWARE.
 #include <spine/Json.h>
 #include <spine/Extension.h>
 #include <spine/SpineString.h>
-#include <spine/Array.h>
 
 #include <assert.h>
 #include <math.h>
@@ -90,7 +89,7 @@ int Json::getInt(Json *value, const char *name, int defaultValue) {
 	return value ? value->_valueInt : defaultValue;
 }
 
-bool Json::getBoolean(Json *value, const char *name, bool defaultValue) {
+bool Json::getBoolean(spine::Json *value, const char *name, bool defaultValue) {
 	value = getItem(value, name);
 	if (value) {
 		if (value->_valueString) return strcmp(value->_valueString, "true") == 0;
@@ -108,12 +107,17 @@ const char *Json::getError() {
 	return _error;
 }
 
-Json::Json(const char *value)
-	: _next(NULL),
+Json::Json(const char *value) : _next(NULL),
 #if SPINE_JSON_HAVE_PREV
-	  _prev(NULL),
+								_prev(NULL),
 #endif
-	  _child(NULL), _type(0), _size(0), _valueString(NULL), _valueInt(0), _valueFloat(0), _name(NULL) {
+								_child(NULL),
+								_type(0),
+								_size(0),
+								_valueString(NULL),
+								_valueInt(0),
+								_valueFloat(0),
+								_name(NULL) {
 	if (value) {
 		value = parseValue(this, skip(value));
 
@@ -122,8 +126,8 @@ Json::Json(const char *value)
 }
 
 Json::~Json() {
-	Json *curr = NULL;
-	Json *next = _child;
+	spine::Json *curr = NULL;
+	spine::Json *next = _child;
 	do {
 		curr = next;
 		if (curr) {

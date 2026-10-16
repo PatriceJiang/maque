@@ -38,31 +38,40 @@ using namespace spine;
 
 RTTI_IMPL(VertexAttachment, Attachment)
 
-VertexAttachment::VertexAttachment(const String &name) : Attachment(name), _worldVerticesLength(0), _id(getNextID()) {
+VertexAttachment::VertexAttachment(const String &name) : Attachment(name), _worldVerticesLength(0),
+														 _timelineAttachment(this), _id(getNextID()) {
 }
 
 VertexAttachment::~VertexAttachment() {
 }
 
-
-void VertexAttachment::computeWorldVertices(Skeleton &skeleton, Slot &slot, size_t start, size_t count, Array<float> &worldVertices, size_t offset,
-											size_t stride) {
-	computeWorldVertices(skeleton, slot, start, count, worldVertices.buffer(), offset, stride);
+void VertexAttachment::computeWorldVertices(Slot &slot, Vector<float> &worldVertices) {
+	computeWorldVertices(slot, 0, _worldVerticesLength, worldVertices, 0);
 }
 
-void VertexAttachment::computeWorldVertices(Skeleton &skeleton, Slot &slot, size_t start, size_t count, float *worldVertices, size_t offset,
+void VertexAttachment::computeWorldVertices(Slot &slot, float *worldVertices) {
+	computeWorldVertices(slot, 0, _worldVerticesLength, worldVertices, 0);
+}
+
+void VertexAttachment::computeWorldVertices(Slot &slot, size_t start, size_t count, Vector<float> &worldVertices,
+											size_t offset, size_t stride) {
+	computeWorldVertices(slot, start, count, worldVertices.buffer(), offset, stride);
+}
+
+void VertexAttachment::computeWorldVertices(Slot &slot, size_t start, size_t count, float *worldVertices, size_t offset,
 											size_t stride) {
 	count = offset + (count >> 1) * stride;
-	Array<float> *deformArray = &slot.getAppliedPose().getDeform();
-	Array<float> *vertices = &_vertices;
-	Array<int> &bones = _bones;
+	Skeleton &skeleton = slot._bone._skeleton;
+	Vector<float> *deformArray = &slot.getDeform();
+	Vector<float> *vertices = &_vertices;
+	Vector<int> &bones = _bones;
 	if (bones.size() == 0) {
 		if (deformArray->size() > 0) vertices = deformArray;
 
-		BonePose &bone = slot.getBone().getAppliedPose();
-		float x = bone.getWorldX();
-		float y = bone.getWorldY();
-		float a = bone.getA(), b = bone.getB(), c = bone.getC(), d = bone.getD();
+		Bone &bone = slot._bone;
+		float x = bone._worldX;
+		float y = bone._worldY;
+		float a = bone._a, b = bone._b, c = bone._c, d = bone._d;
 		for (size_t vv = start, w = offset; w < count; vv += 2, w += stride) {
 			float vx = (*vertices)[vv];
 			float vy = (*vertices)[vv + 1];
@@ -79,7 +88,7 @@ void VertexAttachment::computeWorldVertices(Skeleton &skeleton, Slot &slot, size
 		skip += n;
 	}
 
-	Array<Bone *> &skeletonBones = skeleton.getBones();
+	Vector<Bone *> &skeletonBones = skeleton.getBones();
 	if (deformArray->size() == 0) {
 		for (size_t w = offset, b = skip * 3; w < count; w += stride) {
 			float wx = 0, wy = 0;
@@ -87,12 +96,12 @@ void VertexAttachment::computeWorldVertices(Skeleton &skeleton, Slot &slot, size
 			n += v;
 			for (; v < n; v++, b += 3) {
 				Bone *boneP = skeletonBones[bones[v]];
-				BonePose &bonePose = boneP->getAppliedPose();
+				Bone &bone = *boneP;
 				float vx = (*vertices)[b];
 				float vy = (*vertices)[b + 1];
 				float weight = (*vertices)[b + 2];
-				wx += (vx * bonePose.getA() + vy * bonePose.getB() + bonePose.getWorldX()) * weight;
-				wy += (vx * bonePose.getC() + vy * bonePose.getD() + bonePose.getWorldY()) * weight;
+				wx += (vx * bone._a + vy * bone._b + bone._worldX) * weight;
+				wy += (vx * bone._c + vy * bone._d + bone._worldY) * weight;
 			}
 			worldVertices[w] = wx;
 			worldVertices[w + 1] = wy;
@@ -104,12 +113,12 @@ void VertexAttachment::computeWorldVertices(Skeleton &skeleton, Slot &slot, size
 			n += v;
 			for (; v < n; v++, b += 3, f += 2) {
 				Bone *boneP = skeletonBones[bones[v]];
-				BonePose &bonePose = boneP->getAppliedPose();
+				Bone &bone = *boneP;
 				float vx = (*vertices)[b] + (*deformArray)[f];
 				float vy = (*vertices)[b + 1] + (*deformArray)[f + 1];
 				float weight = (*vertices)[b + 2];
-				wx += (vx * bonePose.getA() + vy * bonePose.getB() + bonePose.getWorldX()) * weight;
-				wy += (vx * bonePose.getC() + vy * bonePose.getD() + bonePose.getWorldY()) * weight;
+				wx += (vx * bone._a + vy * bone._b + bone._worldX) * weight;
+				wy += (vx * bone._c + vy * bone._d + bone._worldY) * weight;
 			}
 			worldVertices[w] = wx;
 			worldVertices[w + 1] = wy;
@@ -121,20 +130,12 @@ int VertexAttachment::getId() {
 	return _id;
 }
 
-Array<int> &VertexAttachment::getBones() {
+Vector<int> &VertexAttachment::getBones() {
 	return _bones;
 }
 
-void VertexAttachment::setBones(Array<int> &bones) {
-	_bones.clearAndAddAll(bones);
-}
-
-Array<float> &VertexAttachment::getVertices() {
+Vector<float> &VertexAttachment::getVertices() {
 	return _vertices;
-}
-
-void VertexAttachment::setVertices(Array<float> &vertices) {
-	_vertices.clearAndAddAll(vertices);
 }
 
 size_t VertexAttachment::getWorldVerticesLength() {
@@ -146,11 +147,11 @@ void VertexAttachment::setWorldVerticesLength(size_t inValue) {
 }
 
 Attachment *VertexAttachment::getTimelineAttachment() {
-	return Attachment::getTimelineAttachment();
+	return _timelineAttachment;
 }
 
 void VertexAttachment::setTimelineAttachment(Attachment *attachment) {
-	Attachment::setTimelineAttachment(attachment);
+	_timelineAttachment = attachment;
 }
 
 int VertexAttachment::getNextID() {
@@ -158,10 +159,9 @@ int VertexAttachment::getNextID() {
 	return nextID++;
 }
 
-void VertexAttachment::copyTo(VertexAttachment &other) {
-	other._bones.clearAndAddAll(this->_bones);
-	other._vertices.clearAndAddAll(this->_vertices);
-	other._worldVerticesLength = this->_worldVerticesLength;
-	other.setTimelineAttachment(this->getTimelineAttachment());
-	other.setTimelineSlots(this->getTimelineSlots());
+void VertexAttachment::copyTo(VertexAttachment *other) {
+	other->_bones.clearAndAddAll(this->_bones);
+	other->_vertices.clearAndAddAll(this->_vertices);
+	other->_worldVerticesLength = this->_worldVerticesLength;
+	other->_timelineAttachment = this->_timelineAttachment;
 }

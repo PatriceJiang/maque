@@ -43,12 +43,13 @@ SkeletonBounds::SkeletonBounds() : _minX(0), _minY(0), _maxX(0), _maxY(0) {
 }
 
 SkeletonBounds::~SkeletonBounds() {
-	for (size_t i = 0, n = _polygons.size(); i < n; i++) _polygonPool.free(_polygons[i]);
+	for (size_t i = 0, n = _polygons.size(); i < n; i++)
+		_polygonPool.free(_polygons[i]);
 	_polygons.clear();
 }
 
 void SkeletonBounds::update(Skeleton &skeleton, bool updateAabb) {
-	Array<Slot *> &slots = skeleton.getSlots();
+	Vector<Slot *> &slots = skeleton.getSlots();
 	size_t slotCount = slots.size();
 
 	_boundingBoxes.clear();
@@ -62,12 +63,12 @@ void SkeletonBounds::update(Skeleton &skeleton, bool updateAabb) {
 		Slot *slot = slots[i];
 		if (!slot->getBone().isActive()) continue;
 
-		Attachment *attachment = slot->_appliedPose->getAttachment();
+		Attachment *attachment = slot->getAttachment();
 		if (attachment == NULL || !attachment->getRTTI().instanceOf(BoundingBoxAttachment::rtti)) continue;
 		BoundingBoxAttachment *boundingBox = static_cast<BoundingBoxAttachment *>(attachment);
 		_boundingBoxes.add(boundingBox);
 
-		Polygon *polygonP = _polygonPool.obtain();
+		spine::Polygon *polygonP = _polygonPool.obtain();
 		_polygons.add(polygonP);
 
 		Polygon &polygon = *polygonP;
@@ -77,7 +78,7 @@ void SkeletonBounds::update(Skeleton &skeleton, bool updateAabb) {
 		if (polygon._vertices.size() < count) {
 			polygon._vertices.setSize(count, 0);
 		}
-		boundingBox->computeWorldVertices(skeleton, *slot, 0, count, polygon._vertices, 0, 2);
+		boundingBox->computeWorldVertices(*slot, polygon._vertices);
 	}
 
 	if (updateAabb)
@@ -90,17 +91,18 @@ void SkeletonBounds::update(Skeleton &skeleton, bool updateAabb) {
 	}
 }
 
-bool SkeletonBounds::aabbContainsPoint(float x, float y) {
+bool SkeletonBounds::aabbcontainsPoint(float x, float y) {
 	return x >= _minX && x <= _maxX && y >= _minY && y <= _maxY;
 }
 
-bool SkeletonBounds::aabbIntersectsSegment(float x1, float y1, float x2, float y2) {
+bool SkeletonBounds::aabbintersectsSegment(float x1, float y1, float x2, float y2) {
 	float minX = _minX;
 	float minY = _minY;
 	float maxX = _maxX;
 	float maxY = _maxY;
 
-	if ((x1 <= minX && x2 <= minX) || (y1 <= minY && y2 <= minY) || (x1 >= maxX && x2 >= maxX) || (y1 >= maxY && y2 >= maxY)) {
+	if ((x1 <= minX && x2 <= minX) || (y1 <= minY && y2 <= minY) || (x1 >= maxX && x2 >= maxX) ||
+		(y1 >= maxY && y2 >= maxY)) {
 		return false;
 	}
 
@@ -120,9 +122,9 @@ bool SkeletonBounds::aabbIntersectsSkeleton(SkeletonBounds &bounds) {
 	return _minX < bounds._maxX && _maxX > bounds._minX && _minY < bounds._maxY && _maxY > bounds._minY;
 }
 
-bool SkeletonBounds::containsPoint(Polygon &polygon, float x, float y) {
-	Array<float> &vertices = polygon._vertices;
-	int nn = polygon._count;
+bool SkeletonBounds::containsPoint(spine::Polygon *polygon, float x, float y) {
+	Vector<float> &vertices = polygon->_vertices;
+	int nn = polygon->_count;
 
 	int prevIndex = nn - 2;
 	bool inside = false;
@@ -142,19 +144,19 @@ bool SkeletonBounds::containsPoint(Polygon &polygon, float x, float y) {
 
 BoundingBoxAttachment *SkeletonBounds::containsPoint(float x, float y) {
 	for (size_t i = 0, n = _polygons.size(); i < n; ++i)
-		if (containsPoint(*_polygons[i], x, y)) return _boundingBoxes[i];
+		if (containsPoint(_polygons[i], x, y)) return _boundingBoxes[i];
 	return NULL;
 }
 
 BoundingBoxAttachment *SkeletonBounds::intersectsSegment(float x1, float y1, float x2, float y2) {
 	for (size_t i = 0, n = _polygons.size(); i < n; ++i)
-		if (intersectsSegment(*_polygons[i], x1, y1, x2, y2)) return _boundingBoxes[i];
+		if (intersectsSegment(_polygons[i], x1, y1, x2, y2)) return _boundingBoxes[i];
 	return NULL;
 }
 
-bool SkeletonBounds::intersectsSegment(Polygon &polygon, float x1, float y1, float x2, float y2) {
-	Array<float> &vertices = polygon._vertices;
-	size_t nn = polygon._count;
+bool SkeletonBounds::intersectsSegment(spine::Polygon *polygon, float x1, float y1, float x2, float y2) {
+	Vector<float> &vertices = polygon->_vertices;
+	size_t nn = polygon->_count;
 
 	float width12 = x1 - x2, height12 = y1 - y2;
 	float det1 = x1 * y2 - y1 * x2;
@@ -183,33 +185,17 @@ spine::Polygon *SkeletonBounds::getPolygon(BoundingBoxAttachment *attachment) {
 	return index == -1 ? NULL : _polygons[index];
 }
 
-BoundingBoxAttachment *SkeletonBounds::getBoundingBox(spine::Polygon *polygon) {
+BoundingBoxAttachment *SkeletonBounds::getBoundingBox(Polygon *polygon) {
 	int index = _polygons.indexOf(polygon);
 	return index == -1 ? NULL : _boundingBoxes[index];
 }
 
-Array<spine::Polygon *> &SkeletonBounds::getPolygons() {
+Vector<spine::Polygon *> &SkeletonBounds::getPolygons() {
 	return _polygons;
 }
 
-Array<BoundingBoxAttachment *> &SkeletonBounds::getBoundingBoxes() {
+Vector<BoundingBoxAttachment *> &SkeletonBounds::getBoundingBoxes() {
 	return _boundingBoxes;
-}
-
-float SkeletonBounds::getMinX() {
-	return _minX;
-}
-
-float SkeletonBounds::getMinY() {
-	return _minY;
-}
-
-float SkeletonBounds::getMaxX() {
-	return _maxX;
-}
-
-float SkeletonBounds::getMaxY() {
-	return _maxY;
 }
 
 float SkeletonBounds::getWidth() {
@@ -227,8 +213,8 @@ void SkeletonBounds::aabbCompute() {
 	float maxY = FLT_MIN;
 
 	for (size_t i = 0, n = _polygons.size(); i < n; ++i) {
-		Polygon *polygon = _polygons[i];
-		Array<float> &vertices = polygon->_vertices;
+		spine::Polygon *polygon = _polygons[i];
+		Vector<float> &vertices = polygon->_vertices;
 		for (int ii = 0, nn = polygon->_count; ii < nn; ii += 2) {
 			float x = vertices[ii];
 			float y = vertices[ii + 1];

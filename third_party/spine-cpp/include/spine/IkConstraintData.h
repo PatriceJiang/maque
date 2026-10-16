@@ -30,18 +30,15 @@
 #ifndef Spine_IkConstraintData_h
 #define Spine_IkConstraintData_h
 
-#include <spine/Array.h>
+#include <spine/Vector.h>
 #include <spine/SpineObject.h>
 #include <spine/SpineString.h>
 #include <spine/ConstraintData.h>
-#include <spine/PosedData.h>
-#include <spine/IkConstraintPose.h>
 
 namespace spine {
 	class BoneData;
-	class IkConstraint;
 
-	class SP_API IkConstraintData : public ConstraintDataGeneric<IkConstraint, IkConstraintPose> {
+	class SP_API IkConstraintData : public ConstraintData {
 		friend class SkeletonBinary;
 
 		friend class SkeletonJson;
@@ -52,31 +49,53 @@ namespace spine {
 
 		friend class IkConstraintTimeline;
 
+	public:
 		RTTI_DECL
 
-	public:
 		explicit IkConstraintData(const String &name);
 
-		virtual Constraint &create(Skeleton &skeleton) override;
-
 		/// The bones that are constrained by this IK Constraint.
-		Array<BoneData *> &getBones();
+		Vector<BoneData *> &getBones();
 
 		/// The bone that is the IK target.
-		BoneData &getTarget();
+		BoneData *getTarget();
 
-		void setTarget(BoneData &inValue);
+		void setTarget(BoneData *inValue);
 
-		/// Determines how BonePose::getScaleY() changes when IkConstraintPose::getCompress() or IkConstraintPose::getStretch()
-		/// sets BonePose::getScaleX().
-		ScaleYMode getScaleYMode();
+		/// Controls the bend direction of the IK bones, either 1 or -1.
+		int getBendDirection();
 
-		void setScaleYMode(ScaleYMode scaleYMode);
+		void setBendDirection(int inValue);
+
+		bool getCompress();
+
+		void setCompress(bool inValue);
+
+		bool getStretch();
+
+		void setStretch(bool inValue);
+
+		bool getUniform();
+
+		void setUniform(bool inValue);
+
+		float getMix();
+
+		void setMix(float inValue);
+
+		float getSoftness();
+
+		void setSoftness(float inValue);
 
 	private:
-		Array<BoneData *> _bones;
+		Vector<BoneData *> _bones;
 		BoneData *_target;
-		ScaleYMode _scaleYMode;
+		int _bendDirection;
+		bool _compress;
+		bool _stretch;
+		bool _uniform;
+		float _mix;
+		float _softness;
 	};
 }
 

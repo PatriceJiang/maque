@@ -32,36 +32,37 @@
 #include <spine/ClippingAttachment.h>
 #include <spine/Slot.h>
 
-#include <cstring>
-
 using namespace spine;
 
-SkeletonClipping::SkeletonClipping() : _clipAttachment(NULL), _inverse(false) {
-	_clippingPolygons.ensureCapacity(1);
+SkeletonClipping::SkeletonClipping() : _clipAttachment(NULL) {
+	_clipOutput.ensureCapacity(128);
+	_clippedVertices.ensureCapacity(128);
+	_clippedTriangles.ensureCapacity(128);
+	_clippedUVs.ensureCapacity(128);
 }
 
-size_t SkeletonClipping::clipStart(Skeleton &skeleton, Slot &slot, ClippingAttachment *clip) {
-	if (_clipAttachment != NULL) return 0;
-
-	int n = (int) clip->getWorldVerticesLength();
-	if (n < 6) return 0;
-	_clipAttachment = clip;
-	_inverse = clip->getInverse();
-	_clippingPolygons.clear();
-
-	clip->computeWorldVertices(skeleton, slot, 0, n, _clippingPolygon.setSize(n, 0).buffer(), 0, 2);
-	bool convex = makeClockwise(_clippingPolygon);
-	if (convex || _inverse || clip->getConvex()) {
-		if (!convex) makeConvex(_clippingPolygon);
-		_clippingPolygon.add(_clippingPolygon[0]);
-		_clippingPolygon.add(_clippingPolygon[1]);
-		_clippingPolygons.add(&_clippingPolygon);
-	} else {
-		Array<Array<float> *> &polygons = _triangulator.decompose(_clippingPolygon, _triangulator.triangulate(_clippingPolygon));
-		for (size_t i = 0, n2 = polygons.size(); i < n2; ++i) _clippingPolygons.add(polygons[i]);
+size_t SkeletonClipping::clipStart(Slot &slot, ClippingAttachment *clip) {
+	if (_clipAttachment != NULL) {
+		return 0;
 	}
 
-	return _clippingPolygons.size();
+	_clipAttachment = clip;
+
+	int n = (int) clip->getWorldVerticesLength();
+	_clippingPolygon.setSize(n, 0);
+	clip->computeWorldVertices(slot, 0, n, _clippingPolygon, 0, 2);
+	makeClockwise(_clippingPolygon);
+	_clippingPolygons = &_triangulator.decompose(_clippingPolygon, _triangulator.triangulate(_clippingPolygon));
+
+	for (size_t i = 0; i < _clippingPolygons->size(); ++i) {
+		Vector<float> *polygonP = (*_clippingPolygons)[i];
+		Vector<float> &polygon = *polygonP;
+		makeClockwise(polygon);
+		polygon.add(polygon[0]);
+		polygon.add(polygon[1]);
+	}
+
+	return (*_clippingPolygons).size();
 }
 
 void SkeletonClipping::clipEnd(Slot &slot) {
@@ -72,529 +73,325 @@ void SkeletonClipping::clipEnd(Slot &slot) {
 
 void SkeletonClipping::clipEnd() {
 	if (_clipAttachment == NULL) return;
+
 	_clipAttachment = NULL;
-	_clippingPolygons.clear();
-}
-
-bool SkeletonClipping::clipTriangles(float *vertices, unsigned short *triangles, size_t trianglesLength) {
-	Array<float> &clippedVertices = _clippedVertices;
-	clippedVertices.clear();
-	Array<unsigned short> &clippedTriangles = _clippedTriangles;
-	clippedTriangles.clear();
-	unsigned short index = 0;
-
-	if (_inverse) {
-		Array<float> *polygon = _clippingPolygons[0];
-		for (size_t i = 0; i < trianglesLength; i += 3) {
-			int t = triangles[i] << 1;
-			float x1 = vertices[t], y1 = vertices[t + 1];
-			t = triangles[i + 1] << 1;
-			float x2 = vertices[t], y2 = vertices[t + 1];
-			t = triangles[i + 2] << 1;
-			float x3 = vertices[t], y3 = vertices[t + 1];
-			clipInverse(x1, y1, x2, y2, x3, y3, polygon);
-
-			float *iv = _inverseVertices.buffer();
-			for (size_t offset = 0, nn = _inverseVertices.size(); offset < nn;) {
-				int polygonSize = (int) iv[offset++];
-				int vertexCount = polygonSize >> 1;
-				size_t s = clippedVertices.size();
-
-				float *cv = clippedVertices.setSize(s + polygonSize, 0).buffer();
-				memcpy(cv + s, iv + offset, sizeof(float) * polygonSize);
-
-				s = clippedTriangles.size();
-				unsigned short *ct = clippedTriangles.setSize(s + 3 * (vertexCount - 2), 0).buffer();
-				for (int ii = 1; ii < vertexCount - 1; ii++, s += 3) {
-					ct[s] = index;
-					ct[s + 1] = (unsigned short) (index + ii);
-					ct[s + 2] = (unsigned short) (index + ii + 1);
-				}
-				index += (unsigned short) vertexCount;
-				offset += polygonSize;
-			}
-		}
-		return true;
-	}
-
-	Array<float> &clipOutput = _clipOutput;
-	Array<float> **polygons = _clippingPolygons.buffer();
-	int polygonsCount = (int) _clippingPolygons.size();
-	bool clipped = false;
-	for (size_t i = 0; i < trianglesLength; i += 3) {
-		int t = triangles[i] << 1;
-		float x1 = vertices[t], y1 = vertices[t + 1];
-		t = triangles[i + 1] << 1;
-		float x2 = vertices[t], y2 = vertices[t + 1];
-		t = triangles[i + 2] << 1;
-		float x3 = vertices[t], y3 = vertices[t + 1];
-		for (int p = 0; p < polygonsCount; p++) {
-			size_t s = clippedVertices.size();
-			if (clip(x1, y1, x2, y2, x3, y3, polygons[p])) {
-				int clipOutputLength = (int) clipOutput.size();
-				if (clipOutputLength == 0) continue;
-				clipped = true;
-				int clipOutputCount = clipOutputLength >> 1;
-
-				float *cv = clippedVertices.setSize(s + clipOutputLength, 0).buffer();
-				memcpy(cv + s, clipOutput.buffer(), sizeof(float) * clipOutputLength);
-
-				s = clippedTriangles.size();
-				unsigned short *ct = clippedTriangles.setSize(s + 3 * (clipOutputCount - 2), 0).buffer();
-				for (int ii = 1, nn = clipOutputCount - 1; ii < nn; ii++, s += 3) {
-					ct[s] = index;
-					ct[s + 1] = (unsigned short) (index + ii);
-					ct[s + 2] = (unsigned short) (index + ii + 1);
-				}
-				index += (unsigned short) clipOutputCount;
-			} else {
-				float *cv = clippedVertices.setSize(s + 6, 0).buffer();
-				cv[s] = x1;
-				cv[s + 1] = y1;
-				cv[s + 2] = x2;
-				cv[s + 3] = y2;
-				cv[s + 4] = x3;
-				cv[s + 5] = y3;
-
-				s = clippedTriangles.size();
-				unsigned short *ct = clippedTriangles.setSize(s + 3, 0).buffer();
-				ct[s] = index;
-				ct[s + 1] = (unsigned short) (index + 1);
-				ct[s + 2] = (unsigned short) (index + 2);
-				index += 3;
-				break;
-			}
-		}
-	}
-	return clipped;
-}
-
-bool SkeletonClipping::clipTriangles(Array<float> &vertices, Array<unsigned short> &triangles, Array<float> &uvs, size_t stride) {
-	return clipTriangles(vertices.buffer(), triangles.buffer(), triangles.size(), uvs.buffer(), stride);
-}
-
-bool SkeletonClipping::clipTriangles(float *vertices, unsigned short *triangles, size_t trianglesLength, float *uvs, size_t stride) {
-	Array<float> &clippedVertices = _clippedVertices;
-	clippedVertices.clear();
-	Array<unsigned short> &clippedTriangles = _clippedTriangles;
-	clippedTriangles.clear();
+	_clippingPolygons = NULL;
+	_clippedVertices.clear();
 	_clippedUVs.clear();
-	unsigned short index = 0;
+	_clippedTriangles.clear();
+	_clippingPolygon.clear();
+}
 
-	if (_inverse) {
-		Array<float> *polygon = _clippingPolygons[0];
-		for (size_t i = 0; i < trianglesLength; i += 3) {
-			int t0 = triangles[i], t1 = triangles[i + 1], t2 = triangles[i + 2];
-			float x1 = vertices[t0 * stride], y1 = vertices[t0 * stride + 1];
-			float x2 = vertices[t1 * stride], y2 = vertices[t1 * stride + 1];
-			float x3 = vertices[t2 * stride], y3 = vertices[t2 * stride + 1];
-			clipInverse(x1, y1, x2, y2, x3, y3, polygon);
-			size_t nn = _inverseVertices.size();
-			if (nn == 0) continue;
+void SkeletonClipping::clipTriangles(float *vertices, unsigned short *triangles,
+									 size_t trianglesLength) {
+	Vector<float> &clipOutput = _clipOutput;
+	Vector<float> &clippedVertices = _clippedVertices;
+	Vector<unsigned short> &clippedTriangles = _clippedTriangles;
+	Vector<Vector<float> *> &polygons = *_clippingPolygons;
+	size_t polygonsCount = (*_clippingPolygons).size();
 
-			float u1 = uvs[t0 << 1], v1 = uvs[(t0 << 1) + 1];
-			float u2 = uvs[t1 << 1], v2 = uvs[(t1 << 1) + 1];
-			float u3 = uvs[t2 << 1], v3 = uvs[(t2 << 1) + 1];
-			float d0 = y2 - y3, d1 = x3 - x2, d2 = x1 - x3, d4 = y3 - y1, d = 1 / (d0 * d2 + d1 * (y1 - y3));
-			float *iv = _inverseVertices.buffer();
-			for (size_t offset = 0; offset < nn;) {
-				int polygonSize = (int) iv[offset++];
-				int vertexCount = polygonSize >> 1;
+	size_t index = 0;
+	clippedVertices.clear();
+	_clippedUVs.clear();
+	clippedTriangles.clear();
 
-				size_t s = clippedVertices.size();
-				float *cv = clippedVertices.setSize(s + polygonSize, 0).buffer();
-				float *cu = _clippedUVs.setSize(s + polygonSize, 0).buffer();
-				for (int ii = 0; ii < polygonSize; ii += 2, s += 2) {
-					float x = iv[offset + ii], y = iv[offset + ii + 1];
-					cv[s] = x;
-					cv[s + 1] = y;
-					float c0 = x - x3, c1 = y - y3, a = (d0 * c0 + d1 * c1) * d, b = (d4 * c0 + d2 * c1) * d, c = 1 - a - b;
-					cu[s] = u1 * a + u2 * b + u3 * c;
-					cu[s + 1] = v1 * a + v2 * b + v3 * c;
-				}
+	int stride = 2;
+	size_t i = 0;
+continue_outer:
+	for (; i < trianglesLength; i += 3) {
+		int vertexOffset = triangles[i] * stride;
+		float x1 = vertices[vertexOffset], y1 = vertices[vertexOffset + 1];
 
-				s = clippedTriangles.size();
-				unsigned short *ct = clippedTriangles.setSize(s + 3 * (vertexCount - 2), 0).buffer();
-				for (int ii = 1; ii < vertexCount - 1; ii++, s += 3) {
-					ct[s] = index;
-					ct[s + 1] = (unsigned short) (index + ii);
-					ct[s + 2] = (unsigned short) (index + ii + 1);
-				}
-				index += (unsigned short) vertexCount;
-				offset += polygonSize;
-			}
-		}
-		return true;
-	}
+		vertexOffset = triangles[i + 1] * stride;
+		float x2 = vertices[vertexOffset], y2 = vertices[vertexOffset + 1];
 
-	Array<float> &clipOutput = _clipOutput;
-	Array<float> **polygons = _clippingPolygons.buffer();
-	int polygonsCount = (int) _clippingPolygons.size();
-	bool clipped = false;
-	for (size_t i = 0; i < trianglesLength; i += 3) {
-		int t = triangles[i];
-		float x1 = vertices[t * stride], y1 = vertices[t * stride + 1];
-		float u1 = uvs[t << 1], v1 = uvs[(t << 1) + 1];
-		t = triangles[i + 1];
-		float x2 = vertices[t * stride], y2 = vertices[t * stride + 1];
-		float u2 = uvs[t << 1], v2 = uvs[(t << 1) + 1];
-		t = triangles[i + 2];
-		float x3 = vertices[t * stride], y3 = vertices[t * stride + 1];
-		float u3 = uvs[t << 1], v3 = uvs[(t << 1) + 1];
-		float d0 = 0, d1 = 0, d2 = 0, d4 = 0, d = 0;
-		for (int p = 0; p < polygonsCount; p++) {
+		vertexOffset = triangles[i + 2] * stride;
+		float x3 = vertices[vertexOffset], y3 = vertices[vertexOffset + 1];
+
+		for (size_t p = 0; p < polygonsCount; p++) {
 			size_t s = clippedVertices.size();
-			if (clip(x1, y1, x2, y2, x3, y3, polygons[p])) {
-				int clipOutputLength = (int) clipOutput.size();
+			if (clip(x1, y1, x2, y2, x3, y3, &(*polygons[p]), &clipOutput)) {
+				size_t clipOutputLength = clipOutput.size();
 				if (clipOutputLength == 0) continue;
-				clipped = true;
-				int clipOutputCount = clipOutputLength >> 1;
-				if (d == 0) {
-					d0 = y2 - y3;
-					d1 = x3 - x2;
-					d2 = x1 - x3;
-					d4 = y3 - y1;
-					d = 1 / (d0 * d2 - d1 * d4);
-				}
 
-				float *cv = clippedVertices.setSize(s + clipOutputCount * 2, 0).buffer();
-				float *cu = _clippedUVs.setSize(s + clipOutputCount * 2, 0).buffer();
-				for (int ii = 0; ii < clipOutputLength; ii += 2, s += 2) {
+				size_t clipOutputCount = clipOutputLength >> 1;
+				clippedVertices.setSize(s + clipOutputCount * 2, 0);
+				for (size_t ii = 0; ii < clipOutputLength; ii += 2) {
 					float x = clipOutput[ii], y = clipOutput[ii + 1];
-					cv[s] = x;
-					cv[s + 1] = y;
-					float c0 = x - x3, c1 = y - y3, a = (d0 * c0 + d1 * c1) * d, b = (d4 * c0 + d2 * c1) * d, c = 1 - a - b;
-					cu[s] = u1 * a + u2 * b + u3 * c;
-					cu[s + 1] = v1 * a + v2 * b + v3 * c;
+					clippedVertices[s] = x;
+					clippedVertices[s + 1] = y;
+					s += 2;
 				}
 
 				s = clippedTriangles.size();
-				unsigned short *ct = clippedTriangles.setSize(s + 3 * (clipOutputCount - 2), 0).buffer();
+				clippedTriangles.setSize(s + 3 * (clipOutputCount - 2), 0);
 				clipOutputCount--;
-				for (int ii = 1; ii < clipOutputCount; ii++, s += 3) {
-					ct[s] = index;
-					ct[s + 1] = (unsigned short) (index + ii);
-					ct[s + 2] = (unsigned short) (index + ii + 1);
+				for (size_t ii = 1; ii < clipOutputCount; ii++) {
+					clippedTriangles[s] = (unsigned short) (index);
+					clippedTriangles[s + 1] = (unsigned short) (index + ii);
+					clippedTriangles[s + 2] = (unsigned short) (index + ii + 1);
+					s += 3;
 				}
-				index += (unsigned short) (clipOutputCount + 1);
+				index += clipOutputCount + 1;
 			} else {
-				float *cv = clippedVertices.setSize(s + 6, 0).buffer();
-				cv[s] = x1;
-				cv[s + 1] = y1;
-				cv[s + 2] = x2;
-				cv[s + 3] = y2;
-				cv[s + 4] = x3;
-				cv[s + 5] = y3;
-
-				float *cu = _clippedUVs.setSize(s + 6, 0).buffer();
-				cu[s] = u1;
-				cu[s + 1] = v1;
-				cu[s + 2] = u2;
-				cu[s + 3] = v2;
-				cu[s + 4] = u3;
-				cu[s + 5] = v3;
+				clippedVertices.setSize(s + 3 * 2, 0);
+				clippedVertices[s] = x1;
+				clippedVertices[s + 1] = y1;
+				clippedVertices[s + 2] = x2;
+				clippedVertices[s + 3] = y2;
+				clippedVertices[s + 4] = x3;
+				clippedVertices[s + 5] = y3;
 
 				s = clippedTriangles.size();
-				unsigned short *ct = clippedTriangles.setSize(s + 3, 0).buffer();
-				ct[s] = index;
-				ct[s + 1] = (unsigned short) (index + 1);
-				ct[s + 2] = (unsigned short) (index + 2);
+				clippedTriangles.setSize(s + 3, 0);
+				clippedTriangles[s] = (unsigned short) index;
+				clippedTriangles[s + 1] = (unsigned short) (index + 1);
+				clippedTriangles[s + 2] = (unsigned short) (index + 2);
 				index += 3;
-				break;
+				i += 3;
+				goto continue_outer;
 			}
 		}
 	}
-	return clipped;
+}
+
+void SkeletonClipping::clipTriangles(Vector<float> &vertices, Vector<unsigned short> &triangles, Vector<float> &uvs,
+									 size_t stride) {
+	clipTriangles(vertices.buffer(), triangles.buffer(), triangles.size(), uvs.buffer(), stride);
+}
+
+void SkeletonClipping::clipTriangles(float *vertices, unsigned short *triangles,
+									 size_t trianglesLength, float *uvs, size_t stride) {
+	Vector<float> &clipOutput = _clipOutput;
+	Vector<float> &clippedVertices = _clippedVertices;
+	Vector<unsigned short> &clippedTriangles = _clippedTriangles;
+	Vector<Vector<float> *> &polygons = *_clippingPolygons;
+	size_t polygonsCount = (*_clippingPolygons).size();
+
+	size_t index = 0;
+	clippedVertices.clear();
+	_clippedUVs.clear();
+	clippedTriangles.clear();
+
+	size_t i = 0;
+continue_outer:
+	for (; i < trianglesLength; i += 3) {
+		int vertexOffset = triangles[i] * (int) stride;
+		float x1 = vertices[vertexOffset], y1 = vertices[vertexOffset + 1];
+		float u1 = uvs[vertexOffset], v1 = uvs[vertexOffset + 1];
+
+		vertexOffset = triangles[i + 1] * (int) stride;
+		float x2 = vertices[vertexOffset], y2 = vertices[vertexOffset + 1];
+		float u2 = uvs[vertexOffset], v2 = uvs[vertexOffset + 1];
+
+		vertexOffset = triangles[i + 2] * (int) stride;
+		float x3 = vertices[vertexOffset], y3 = vertices[vertexOffset + 1];
+		float u3 = uvs[vertexOffset], v3 = uvs[vertexOffset + 1];
+
+		for (size_t p = 0; p < polygonsCount; p++) {
+			size_t s = clippedVertices.size();
+			if (clip(x1, y1, x2, y2, x3, y3, &(*polygons[p]), &clipOutput)) {
+				size_t clipOutputLength = clipOutput.size();
+				if (clipOutputLength == 0) continue;
+				float d0 = y2 - y3, d1 = x3 - x2, d2 = x1 - x3, d4 = y3 - y1;
+				float d = 1 / (d0 * d2 + d1 * (y1 - y3));
+
+				size_t clipOutputCount = clipOutputLength >> 1;
+				clippedVertices.setSize(s + clipOutputCount * 2, 0);
+				_clippedUVs.setSize(s + clipOutputCount * 2, 0);
+				for (size_t ii = 0; ii < clipOutputLength; ii += 2) {
+					float x = clipOutput[ii], y = clipOutput[ii + 1];
+					clippedVertices[s] = x;
+					clippedVertices[s + 1] = y;
+					float c0 = x - x3, c1 = y - y3;
+					float a = (d0 * c0 + d1 * c1) * d;
+					float b = (d4 * c0 + d2 * c1) * d;
+					float c = 1 - a - b;
+					_clippedUVs[s] = u1 * a + u2 * b + u3 * c;
+					_clippedUVs[s + 1] = v1 * a + v2 * b + v3 * c;
+					s += 2;
+				}
+
+				s = clippedTriangles.size();
+				clippedTriangles.setSize(s + 3 * (clipOutputCount - 2), 0);
+				clipOutputCount--;
+				for (size_t ii = 1; ii < clipOutputCount; ii++) {
+					clippedTriangles[s] = (unsigned short) (index);
+					clippedTriangles[s + 1] = (unsigned short) (index + ii);
+					clippedTriangles[s + 2] = (unsigned short) (index + ii + 1);
+					s += 3;
+				}
+				index += clipOutputCount + 1;
+			} else {
+				clippedVertices.setSize(s + 3 * 2, 0);
+				_clippedUVs.setSize(s + 3 * 2, 0);
+				clippedVertices[s] = x1;
+				clippedVertices[s + 1] = y1;
+				clippedVertices[s + 2] = x2;
+				clippedVertices[s + 3] = y2;
+				clippedVertices[s + 4] = x3;
+				clippedVertices[s + 5] = y3;
+
+				_clippedUVs[s] = u1;
+				_clippedUVs[s + 1] = v1;
+				_clippedUVs[s + 2] = u2;
+				_clippedUVs[s + 3] = v2;
+				_clippedUVs[s + 4] = u3;
+				_clippedUVs[s + 5] = v3;
+
+				s = clippedTriangles.size();
+				clippedTriangles.setSize(s + 3, 0);
+				clippedTriangles[s] = (unsigned short) index;
+				clippedTriangles[s + 1] = (unsigned short) (index + 1);
+				clippedTriangles[s + 2] = (unsigned short) (index + 2);
+				index += 3;
+				i += 3;
+				goto continue_outer;
+			}
+		}
+	}
 }
 
 bool SkeletonClipping::isClipping() {
 	return _clipAttachment != NULL;
 }
 
-Array<float> &SkeletonClipping::getClippedVertices() {
+Vector<float> &SkeletonClipping::getClippedVertices() {
 	return _clippedVertices;
 }
 
-Array<unsigned short> &SkeletonClipping::getClippedTriangles() {
+Vector<unsigned short> &SkeletonClipping::getClippedTriangles() {
 	return _clippedTriangles;
 }
 
-Array<float> &SkeletonClipping::getClippedUVs() {
+Vector<float> &SkeletonClipping::getClippedUVs() {
 	return _clippedUVs;
 }
 
-bool SkeletonClipping::clip(float x1, float y1, float x2, float y2, float x3, float y3, Array<float> *polygon) {
-	Array<float> &originalOutput = _clipOutput;
+bool SkeletonClipping::clip(float x1, float y1, float x2, float y2, float x3, float y3, Vector<float> *clippingArea,
+							Vector<float> *output) {
+	Vector<float> *originalOutput = output;
 	bool clipped = false;
 
-	Array<float> *input;
-	Array<float> *output;
-	if (polygon->size() % 4 >= 2) {
-		input = &_clipOutput;
+	// Avoid copy at the end.
+	Vector<float> *input;
+	if (clippingArea->size() % 4 >= 2) {
+		input = output;
 		output = &_scratch;
-	} else {
+	} else
 		input = &_scratch;
-		output = &_clipOutput;
-	}
 
-	float *v = polygon->buffer();
-	float *iv = input->setSize(8, 0).buffer();
-	iv[0] = x1;
-	iv[1] = y1;
-	iv[2] = x2;
-	iv[3] = y2;
-	iv[4] = x3;
-	iv[5] = y3;
-	iv[6] = x1;
-	iv[7] = y1;
+	input->clear();
+	input->add(x1);
+	input->add(y1);
+	input->add(x2);
+	input->add(y2);
+	input->add(x3);
+	input->add(y3);
+	input->add(x1);
+	input->add(y1);
 	output->clear();
 
-	int last = (int) polygon->size() - 4;
-	for (int i = 0;; i += 2) {
-		float edgeX = v[i], edgeY = v[i + 1], ex = edgeX - v[i + 2], ey = edgeY - v[i + 3];
+	size_t clippingVerticesLast = clippingArea->size() - 4;
+	Vector<float> &clippingVertices = *clippingArea;
+	for (size_t i = 0;; i += 2) {
+		float edgeX = clippingVertices[i], edgeY = clippingVertices[i + 1];
+		float ex = edgeX - clippingVertices[i + 2], ey = edgeY - clippingVertices[i + 3];
+
 		size_t outputStart = output->size();
-		iv = input->buffer();
-		x1 = iv[0];
-		y1 = iv[1];
-		float s1 = ey * (edgeX - x1) - ex * (edgeY - y1);
-		for (size_t ii = 2, nn = input->size() - 2; ii <= nn; ii += 2) {
-			x2 = iv[ii];
-			y2 = iv[ii + 1];
-			float s2 = ey * (edgeX - x2) - ex * (edgeY - y2);
+		Vector<float> &inputVertices = *input;
+		for (size_t ii = 0, nn = input->size() - 2; ii < nn;) {
+			float inputX = inputVertices[ii], inputY = inputVertices[ii + 1];
+			ii += 2;
+			float inputX2 = inputVertices[ii], inputY2 = inputVertices[ii + 1];
+			float s2 = ey * (edgeX - inputX2) > ex * (edgeY - inputY2);
+			float s1 = ey * (edgeX - inputX) - ex * (edgeY - inputY);
 			if (s1 > 0) {
-				if (s2 > 0) {
-					output->add(x2);
-					output->add(y2);
-				} else {
-					float ix = x2 - x1, iy = y2 - y1, t = s1 / (ix * ey - iy * ex);
-					if (t >= 0 && t <= 1) {
-						output->add(x1 + ix * t);
-						output->add(y1 + iy * t);
-						clipped = true;
-					} else {
-						output->add(x2);
-						output->add(y2);
-					}
+				if (s2) {// v1 inside, v2 inside
+					output->add(inputX2);
+					output->add(inputY2);
+					continue;
 				}
-			} else if (s2 > 0) {
-				float ix = x2 - x1, iy = y2 - y1, t = s1 / (ix * ey - iy * ex);
+				// v1 inside, v2 outside
+				float ix = inputX2 - inputX, iy = inputY2 - inputY, t = s1 / (ix * ey - iy * ex);
 				if (t >= 0 && t <= 1) {
-					output->add(x1 + ix * t);
-					output->add(y1 + iy * t);
-					output->add(x2);
-					output->add(y2);
-					clipped = true;
+					output->add(inputX + ix * t);
+					output->add(inputY + iy * t);
 				} else {
-					output->add(x2);
-					output->add(y2);
+					output->add(inputX2);
+					output->add(inputY2);
 				}
-			} else {
-				clipped = true;
+			} else if (s2) {// v1 outside, v2 inside
+				float ix = inputX2 - inputX, iy = inputY2 - inputY, t = s1 / (ix * ey - iy * ex);
+				if (t >= 0 && t <= 1) {
+					output->add(inputX + ix * t);
+					output->add(inputY + iy * t);
+					output->add(inputX2);
+					output->add(inputY2);
+				} else {
+					output->add(inputX2);
+					output->add(inputY2);
+					continue;
+				}
 			}
-			x1 = x2;
-			y1 = y2;
-			s1 = s2;
+			clipped = true;
 		}
+
+
 		if (outputStart == output->size()) {
-			originalOutput.clear();
+			// All edges outside.
+			originalOutput->clear();
 			return true;
 		}
 
 		output->add((*output)[0]);
 		output->add((*output)[1]);
 
-		if (i == last) break;
-		Array<float> *temp = output;
+		if (i == clippingVerticesLast) {
+			break;
+		}
+		Vector<float> *temp = output;
 		output = input;
 		output->clear();
 		input = temp;
 	}
 
-	if (&originalOutput != output) {
-		originalOutput.clear();
-		for (size_t i = 0, n = output->size() - 2; i < n; ++i) originalOutput.add((*output)[i]);
-	} else {
-		originalOutput.setSize(originalOutput.size() - 2, 0);
-	}
+	if (originalOutput != output) {
+		originalOutput->clear();
+		for (size_t i = 0, n = output->size() - 2; i < n; ++i)
+			originalOutput->add((*output)[i]);
+	} else
+		originalOutput->setSize(originalOutput->size() - 2, 0);
 
+	if (originalOutput->size() < 6) {
+		originalOutput->clear();
+		return false;
+	}
 	return clipped;
 }
 
-void SkeletonClipping::clipInverse(float x1, float y1, float x2, float y2, float x3, float y3, Array<float> *polygon) {
-	_inverseVertices.clear();
-	_inverseVertices.ensureCapacity(polygon->size() * 3);
-	int last = (int) polygon->size() - 4;
+void SkeletonClipping::makeClockwise(Vector<float> &polygon) {
+	size_t verticeslength = polygon.size();
 
-	Array<float> *input;
-	Array<float> *output;
-	if (polygon->size() % 4 >= 2) {
-		input = &_clipOutput;
-		output = &_scratch;
-	} else {
-		input = &_scratch;
-		output = &_clipOutput;
+	float area = polygon[verticeslength - 2] * polygon[1] - polygon[0] * polygon[verticeslength - 1];
+	float p1x, p1y, p2x, p2y;
+
+	for (size_t i = 0, n = verticeslength - 3; i < n; i += 2) {
+		p1x = polygon[i];
+		p1y = polygon[i + 1];
+		p2x = polygon[i + 2];
+		p2y = polygon[i + 3];
+		area += p1x * p2y - p2x * p1y;
 	}
 
-	float *v = polygon->buffer();
-	float *iv = input->setSize(8, 0).buffer();
-	iv[0] = x1;
-	iv[1] = y1;
-	iv[2] = x2;
-	iv[3] = y2;
-	iv[4] = x3;
-	iv[5] = y3;
-	iv[6] = x1;
-	iv[7] = y1;
-	output->clear();
+	if (area < 0) return;
 
-	for (int i = 0;; i += 2) {
-		float edgeX = v[i], edgeY = v[i + 1], ex = edgeX - v[i + 2], ey = edgeY - v[i + 3];
-		size_t outputStart = output->size(), fragmentStart = _inverseVertices.size();
-		_inverseVertices.add(0);
-		iv = input->buffer();
-		x1 = iv[0];
-		y1 = iv[1];
-		float s1 = ey * (edgeX - x1) - ex * (edgeY - y1);
-		for (size_t ii = 2, nn = input->size() - 2; ii <= nn; ii += 2) {
-			x2 = iv[ii];
-			y2 = iv[ii + 1];
-			float s2 = ey * (edgeX - x2) - ex * (edgeY - y2);
-			if (s1 > 0) {
-				if (s2 > 0) {
-					output->add(x2);
-					output->add(y2);
-				} else {
-					float ix = x2 - x1, iy = y2 - y1, t = s1 / (ix * ey - iy * ex);
-					if (t >= 0 && t <= 1) {
-						float cx = x1 + ix * t, cy = y1 + iy * t;
-						output->add(cx);
-						output->add(cy);
-						_inverseVertices.add(cx);
-						_inverseVertices.add(cy);
-						_inverseVertices.add(x2);
-						_inverseVertices.add(y2);
-					} else {
-						output->add(x2);
-						output->add(y2);
-					}
-				}
-			} else if (s2 > 0) {
-				float ix = x2 - x1, iy = y2 - y1, t = s1 / (ix * ey - iy * ex);
-				if (t >= 0 && t <= 1) {
-					float cx = x1 + ix * t, cy = y1 + iy * t;
-					_inverseVertices.add(cx);
-					_inverseVertices.add(cy);
-					output->add(cx);
-					output->add(cy);
-					output->add(x2);
-					output->add(y2);
-				} else {
-					output->add(x2);
-					output->add(y2);
-				}
-			} else {
-				_inverseVertices.add(x2);
-				_inverseVertices.add(y2);
-			}
-			x1 = x2;
-			y1 = y2;
-			s1 = s2;
-		}
-
-		int fragmentSize = (int) _inverseVertices.size() - (int) fragmentStart - 1;
-		if (fragmentSize >= 6)
-			_inverseVertices[fragmentStart] = (float) fragmentSize;
-		else
-			_inverseVertices.setSize(fragmentStart, 0);
-
-		if (outputStart == output->size()) break;
-
-		output->add((*output)[0]);
-		output->add((*output)[1]);
-
-		if (i == last) break;
-		Array<float> *temp = output;
-		output = input;
-		output->clear();
-		input = temp;
+	for (size_t i = 0, lastX = verticeslength - 2, n = verticeslength >> 1; i < n; i += 2) {
+		float x = polygon[i], y = polygon[i + 1];
+		int other = (int) (lastX - i);
+		polygon[i] = polygon[other];
+		polygon[i + 1] = polygon[other + 1];
+		polygon[other] = x;
+		polygon[other + 1] = y;
 	}
-}
-
-bool SkeletonClipping::makeClockwise(Array<float> &polygon) {
-	float *v = polygon.buffer();
-	int n = (int) polygon.size();
-	bool noCW = true, noCCW = true;
-	float area = 0, prevX = v[n - 2], prevY = v[n - 1], currX = v[0], currY = v[1];
-	for (int i = 2; i < n; i += 2) {
-		float nextX = v[i], nextY = v[i + 1];
-		area += currX * nextY - nextX * currY;
-		float cross = (currX - prevX) * (nextY - currY) - (currY - prevY) * (nextX - currX);
-		noCCW &= cross <= 0;
-		noCW &= cross >= 0;
-		prevX = currX;
-		prevY = currY;
-		currX = nextX;
-		currY = nextY;
-	}
-	area += currX * v[1] - v[0] * currY;
-	float cross = (currX - prevX) * (v[1] - currY) - (currY - prevY) * (v[0] - currX);
-	noCCW &= cross <= 0;
-	noCW &= cross >= 0;
-	if (area >= 0) {
-		for (int i = 0, lastX = n - 2, half = n >> 1; i < half; i += 2) {
-			float x = v[i], y = v[i + 1];
-			int other = lastX - i;
-			v[i] = v[other];
-			v[i + 1] = v[other + 1];
-			v[other] = x;
-			v[other + 1] = y;
-		}
-		return noCW;
-	}
-	return noCCW;
-}
-
-void SkeletonClipping::makeConvex(Array<float> &polygon) {
-	int n = (int) polygon.size();
-	float *v = polygon.buffer();
-	float *sorted = _clipOutput.setSize(n, 0).buffer();
-	for (int i = 0; i < n; i++) sorted[i] = v[i];
-	for (int i = 2; i < n; i += 2) {
-		float x = sorted[i], y = sorted[i + 1];
-		int p = i - 2;
-		for (; p >= 0 && (sorted[p] > x || (sorted[p] == x && sorted[p + 1] > y)); p -= 2) {
-			sorted[p + 2] = sorted[p];
-			sorted[p + 3] = sorted[p + 1];
-		}
-		sorted[p + 2] = x;
-		sorted[p + 3] = y;
-	}
-	v[0] = sorted[0];
-	v[1] = sorted[1];
-	v[2] = sorted[2];
-	v[3] = sorted[3];
-	int s = 4;
-	for (int i = 4; i < n; i += 2, s += 2) {
-		float x = sorted[i], y = sorted[i + 1];
-		while ((v[s - 2] - v[s - 4]) * (y - v[s - 3]) - (v[s - 1] - v[s - 3]) * (x - v[s - 4]) >= 0) {
-			s -= 2;
-			if (s == 2) break;
-		}
-		v[s] = x;
-		v[s + 1] = y;
-	}
-	v[s] = sorted[n - 4];
-	v[s + 1] = sorted[n - 3];
-	int t = s;
-	s += 2;
-	for (int i = n - 6; i >= 0; i -= 2, s += 2) {
-		float x = sorted[i], y = sorted[i + 1];
-		while ((v[s - 2] - v[s - 4]) * (y - v[s - 3]) - (v[s - 1] - v[s - 3]) * (x - v[s - 4]) >= 0) {
-			s -= 2;
-			if (s == t) break;
-		}
-		v[s] = x;
-		v[s + 1] = y;
-	}
-	polygon.setSize(s - 2, 0);
 }

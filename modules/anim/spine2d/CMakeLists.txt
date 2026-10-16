@@ -7,6 +7,7 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/third_party/spine-cpp" "${CMAKE_BINARY_DIR
 
 add_library(maque_spine2d STATIC
     src/spine2d.cpp
+    src/spine_extension.cpp   # spine 要求宿主实现的扩展点（getDefaultExtension）
 )
 add_library(maque::spine2d ALIAS maque_spine2d)
 

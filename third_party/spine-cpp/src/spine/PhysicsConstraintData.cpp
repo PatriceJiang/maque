@@ -28,148 +28,196 @@
  *****************************************************************************/
 
 #include <spine/PhysicsConstraintData.h>
-#include <spine/PhysicsConstraint.h>
+
 #include <spine/BoneData.h>
-#include <spine/Skeleton.h>
+
+#include <assert.h>
 
 using namespace spine;
 
 RTTI_IMPL(PhysicsConstraintData, ConstraintData)
 
-PhysicsConstraintData::PhysicsConstraintData(const String &name)
-	: ConstraintDataGeneric<PhysicsConstraint, PhysicsConstraintPose>(name), _bone(NULL), _x(0), _y(0), _rotate(0), _scaleX(0), _shearX(0), _limit(0),
-	  _step(0), _scaleYMode(ScaleYMode_None), _inertiaGlobal(false), _strengthGlobal(false), _dampingGlobal(false), _massGlobal(false),
-	  _windGlobal(false), _gravityGlobal(false), _mixGlobal(false) {
+PhysicsConstraintData::PhysicsConstraintData(const String &name) : ConstraintData(name),
+																   _bone(nullptr),
+																   _x(0), _y(0), _rotate(0), _scaleX(0), _shearX(0), _limit(0),
+																   _step(0), _inertia(0), _strength(0), _damping(0), _massInverse(0), _wind(0), _gravity(0), _mix(0),
+																   _inertiaGlobal(false), _strengthGlobal(false), _dampingGlobal(false), _massGlobal(false),
+																   _windGlobal(false), _gravityGlobal(false), _mixGlobal(false) {
 }
 
-BoneData &PhysicsConstraintData::getBone() {
-	return *_bone;
+
+void PhysicsConstraintData::setBone(BoneData *bone) {
+	_bone = bone;
 }
 
-void PhysicsConstraintData::setBone(BoneData &bone) {
-	_bone = &bone;
-}
-
-float PhysicsConstraintData::getStep() {
-	return _step;
-}
-
-void PhysicsConstraintData::setStep(float step) {
-	_step = step;
-}
-
-float PhysicsConstraintData::getX() {
-	return _x;
+BoneData *PhysicsConstraintData::getBone() const {
+	return _bone;
 }
 
 void PhysicsConstraintData::setX(float x) {
 	_x = x;
 }
 
-float PhysicsConstraintData::getY() {
-	return _y;
+float PhysicsConstraintData::getX() const {
+	return _x;
 }
 
 void PhysicsConstraintData::setY(float y) {
 	_y = y;
 }
 
-float PhysicsConstraintData::getRotate() {
-	return _rotate;
+float PhysicsConstraintData::getY() const {
+	return _y;
 }
 
 void PhysicsConstraintData::setRotate(float rotate) {
 	_rotate = rotate;
 }
 
-float PhysicsConstraintData::getScaleX() {
-	return _scaleX;
+float PhysicsConstraintData::getRotate() const {
+	return _rotate;
 }
 
 void PhysicsConstraintData::setScaleX(float scaleX) {
 	_scaleX = scaleX;
 }
 
-float PhysicsConstraintData::getShearX() {
-	return _shearX;
+float PhysicsConstraintData::getScaleX() const {
+	return _scaleX;
 }
 
 void PhysicsConstraintData::setShearX(float shearX) {
 	_shearX = shearX;
 }
 
-float PhysicsConstraintData::getLimit() {
-	return _limit;
+float PhysicsConstraintData::getShearX() const {
+	return _shearX;
 }
 
 void PhysicsConstraintData::setLimit(float limit) {
 	_limit = limit;
 }
 
-ScaleYMode PhysicsConstraintData::getScaleYMode() {
-	return _scaleYMode;
+float PhysicsConstraintData::getLimit() const {
+	return _limit;
 }
 
-void PhysicsConstraintData::setScaleYMode(ScaleYMode scaleYMode) {
-	_scaleYMode = scaleYMode;
+void PhysicsConstraintData::setStep(float step) {
+	_step = step;
 }
 
-bool PhysicsConstraintData::getInertiaGlobal() {
-	return _inertiaGlobal;
+float PhysicsConstraintData::getStep() const {
+	return _step;
+}
+
+void PhysicsConstraintData::setInertia(float inertia) {
+	_inertia = inertia;
+}
+
+float PhysicsConstraintData::getInertia() const {
+	return _inertia;
+}
+
+void PhysicsConstraintData::setStrength(float strength) {
+	_strength = strength;
+}
+
+float PhysicsConstraintData::getStrength() const {
+	return _strength;
+}
+
+void PhysicsConstraintData::setDamping(float damping) {
+	_damping = damping;
+}
+
+float PhysicsConstraintData::getDamping() const {
+	return _damping;
+}
+
+void PhysicsConstraintData::setMassInverse(float massInverse) {
+	_massInverse = massInverse;
+}
+
+float PhysicsConstraintData::getMassInverse() const {
+	return _massInverse;
+}
+
+void PhysicsConstraintData::setWind(float wind) {
+	_wind = wind;
+}
+
+float PhysicsConstraintData::getWind() const {
+	return _wind;
+}
+
+void PhysicsConstraintData::setGravity(float gravity) {
+	_gravity = gravity;
+}
+
+float PhysicsConstraintData::getGravity() const {
+	return _gravity;
+}
+
+void PhysicsConstraintData::setMix(float mix) {
+	_mix = mix;
+}
+
+float PhysicsConstraintData::getMix() const {
+	return _mix;
 }
 
 void PhysicsConstraintData::setInertiaGlobal(bool inertiaGlobal) {
 	_inertiaGlobal = inertiaGlobal;
 }
 
-bool PhysicsConstraintData::getStrengthGlobal() {
-	return _strengthGlobal;
+bool PhysicsConstraintData::isInertiaGlobal() const {
+	return _inertiaGlobal;
 }
 
 void PhysicsConstraintData::setStrengthGlobal(bool strengthGlobal) {
 	_strengthGlobal = strengthGlobal;
 }
 
-bool PhysicsConstraintData::getDampingGlobal() {
-	return _dampingGlobal;
+bool PhysicsConstraintData::isStrengthGlobal() const {
+	return _strengthGlobal;
 }
 
 void PhysicsConstraintData::setDampingGlobal(bool dampingGlobal) {
 	_dampingGlobal = dampingGlobal;
 }
 
-bool PhysicsConstraintData::getMassGlobal() {
-	return _massGlobal;
+bool PhysicsConstraintData::isDampingGlobal() const {
+	return _dampingGlobal;
 }
 
 void PhysicsConstraintData::setMassGlobal(bool massGlobal) {
 	_massGlobal = massGlobal;
 }
 
-bool PhysicsConstraintData::getWindGlobal() {
-	return _windGlobal;
+bool PhysicsConstraintData::isMassGlobal() const {
+	return _massGlobal;
 }
 
 void PhysicsConstraintData::setWindGlobal(bool windGlobal) {
 	_windGlobal = windGlobal;
 }
 
-bool PhysicsConstraintData::getGravityGlobal() {
-	return _gravityGlobal;
+bool PhysicsConstraintData::isWindGlobal() const {
+	return _windGlobal;
 }
 
 void PhysicsConstraintData::setGravityGlobal(bool gravityGlobal) {
 	_gravityGlobal = gravityGlobal;
 }
 
-bool PhysicsConstraintData::getMixGlobal() {
-	return _mixGlobal;
+bool PhysicsConstraintData::isGravityGlobal() const {
+	return _gravityGlobal;
 }
 
 void PhysicsConstraintData::setMixGlobal(bool mixGlobal) {
 	_mixGlobal = mixGlobal;
 }
 
-Constraint &PhysicsConstraintData::create(Skeleton &skeleton) {
-	return *(new (__FILE__, __LINE__) PhysicsConstraint(*this, skeleton));
+bool PhysicsConstraintData::isMixGlobal() const {
+	return _mixGlobal;
 }

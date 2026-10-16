@@ -29,17 +29,31 @@
 
 #include <spine/RotateTimeline.h>
 
-#include <spine/BonePose.h>
+#include <spine/Event.h>
+#include <spine/Skeleton.h>
+
+#include <spine/Animation.h>
+#include <spine/Bone.h>
+#include <spine/BoneData.h>
+#include <spine/Property.h>
 
 using namespace spine;
 
-RTTI_IMPL(RotateTimeline, BoneTimeline1)
+RTTI_IMPL(RotateTimeline, CurveTimeline1)
 
-RotateTimeline::RotateTimeline(size_t frameCount, size_t bezierCount, int boneIndex)
-	: BoneTimeline1(frameCount, bezierCount, boneIndex, Property_Rotate) {
+RotateTimeline::RotateTimeline(size_t frameCount, size_t bezierCount, int boneIndex) : CurveTimeline1(frameCount,
+																									  bezierCount),
+																					   _boneIndex(boneIndex) {
+	PropertyId ids[] = {((PropertyId) Property_Rotate << 32) | boneIndex};
+	setPropertyIds(ids, 1);
 }
 
-void RotateTimeline::_apply(BonePose &pose, BonePose &setup, float time, float alpha, MixFrom from, bool add, bool out) {
-	SP_UNUSED(out);
-	pose._rotation = getRelativeValue(time, alpha, from, add, pose._rotation, setup._rotation);
+void RotateTimeline::apply(Skeleton &skeleton, float lastTime, float time, Vector<Event *> *pEvents, float alpha,
+						   MixBlend blend, MixDirection direction) {
+	SP_UNUSED(lastTime);
+	SP_UNUSED(pEvents);
+	SP_UNUSED(direction);
+
+	Bone *bone = skeleton._bones[_boneIndex];
+	if (bone->isActive()) bone->_rotation = getRelativeValue(time, alpha, blend, bone->_rotation, bone->getData()._rotation);
 }

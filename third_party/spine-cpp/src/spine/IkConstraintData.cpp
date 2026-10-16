@@ -28,38 +28,80 @@
  *****************************************************************************/
 
 #include <spine/IkConstraintData.h>
-#include <spine/IkConstraint.h>
+
 #include <spine/BoneData.h>
-#include <spine/Skeleton.h>
 
 using namespace spine;
 
 RTTI_IMPL(IkConstraintData, ConstraintData)
 
-IkConstraintData::IkConstraintData(const String &name)
-	: ConstraintDataGeneric<IkConstraint, IkConstraintPose>(name), _target(NULL), _scaleYMode(ScaleYMode_None) {
+IkConstraintData::IkConstraintData(const String &name) : ConstraintData(name),
+														 _target(NULL),
+														 _bendDirection(0),
+														 _compress(false),
+														 _stretch(false),
+														 _uniform(false),
+														 _mix(0),
+														 _softness(0) {
 }
 
-Array<BoneData *> &IkConstraintData::getBones() {
+Vector<BoneData *> &IkConstraintData::getBones() {
 	return _bones;
 }
 
-BoneData &IkConstraintData::getTarget() {
-	return *_target;
+BoneData *IkConstraintData::getTarget() {
+	return _target;
 }
 
-void IkConstraintData::setTarget(BoneData &inValue) {
-	_target = &inValue;
+void IkConstraintData::setTarget(BoneData *inValue) {
+	_target = inValue;
 }
 
-ScaleYMode IkConstraintData::getScaleYMode() {
-	return _scaleYMode;
+int IkConstraintData::getBendDirection() {
+	return _bendDirection;
 }
 
-void IkConstraintData::setScaleYMode(ScaleYMode scaleYMode) {
-	_scaleYMode = scaleYMode;
+void IkConstraintData::setBendDirection(int inValue) {
+	_bendDirection = inValue;
 }
 
-Constraint &IkConstraintData::create(Skeleton &skeleton) {
-	return *(new (__FILE__, __LINE__) IkConstraint(*this, skeleton));
+float IkConstraintData::getMix() {
+	return _mix;
+}
+
+void IkConstraintData::setMix(float inValue) {
+	_mix = inValue;
+}
+
+bool IkConstraintData::getStretch() {
+	return _stretch;
+}
+
+void IkConstraintData::setStretch(bool inValue) {
+	_stretch = inValue;
+}
+
+bool IkConstraintData::getCompress() {
+	return _compress;
+}
+
+void IkConstraintData::setCompress(bool inValue) {
+	_compress = inValue;
+}
+
+
+bool IkConstraintData::getUniform() {
+	return _uniform;
+}
+
+void IkConstraintData::setUniform(bool inValue) {
+	_uniform = inValue;
+}
+
+float IkConstraintData::getSoftness() {
+	return _softness;
+}
+
+void IkConstraintData::setSoftness(float inValue) {
+	_softness = inValue;
 }
