@@ -1,0 +1,8 @@
+{
+  "name": "Bullet",
+  "entities": [
+    { "name": "Shell", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+        { "type": "scn.Sprite", "radius": 3.0, "r": 1.0, "g": 0.6, "b": 0.1 } ] }
+  ]
+}

@@ -66,6 +66,15 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/prefab_e2e")
 endif()
 
+# Prefab **嵌套**实例化（docs/12 §5/§7）：prefab 里再引用 prefab。
+# prefab_e2e 只覆盖单层展开；嵌套是"重复对象做成独立资源"（如坦克的炮塔挂子弹）的刚需。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME nested_prefab_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/nested_prefab_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/prefab/nested.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/nested_prefab_e2e")
+endif()
+
 # 崩溃/异常上下文（docs/09 §5、docs/10 §7）：脚本异常 → 结构化报告（seed/帧号/检查点/重放）
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME crash_context_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/crash_context_e2e.sh"

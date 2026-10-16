@@ -1,0 +1,14 @@
+{
+  "name": "Turret",
+  "entities": [
+    { "name": "Base", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+        { "type": "scn.Sprite", "width": 20.0, "height": 20.0, "r": 0.3, "g": 0.8, "b": 0.3 } ] },
+    { "name": "Barrel", "components": [
+        { "type": "scn.Transform2D", "x": 14.0, "y": 0.0 },
+        { "type": "scn.Sprite", "width": 24.0, "height": 6.0, "r": 0.9, "g": 0.9, "b": 0.9 } ] },
+    { "name": "Loaded", "components": [
+        { "type": "scn.Transform2D", "x": 26.0, "y": 0.0 },
+        { "type": "scn.PrefabInstance", "source": "bullet.prefab.json" } ] }
+  ]
+}
