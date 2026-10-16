@@ -65,6 +65,7 @@ int mq_sim_loop(mq_sim* sim);
 int mq_sim_loaded(mq_sim* sim);
 /* 最后事件帧号（场景时长参考） */
 uint64_t mq_sim_last_frame(mq_sim* sim);
+uint32_t mq_sim_normalize_key(uint32_t key);
 
 #ifdef __cplusplus
 }

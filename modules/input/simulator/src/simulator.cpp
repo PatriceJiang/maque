@@ -21,6 +21,8 @@
 #include "sim/mq_sim.h"
 
 #include "abi/persist.h"
+/* MQ_KEY_* 规范键码（与平台边界 key_from_sdl 同一套值域）——归一化用 */
+#include "abi/platform.h"
 
 #include <algorithm>
 #include <cstring>
@@ -258,4 +260,37 @@ extern "C" int mq_sim_due(mq_sim* sim, uint64_t frame, mq_sim_event* out,
     }
     if (out_count) *out_count = count;
     return (out && count > cap) ? 2 : 0;
+}
+
+/* 键码归一化：把"常见键盘输入法"映射到引擎的规范键空间。
+ *
+ * 背景（真实缺陷）：设备事件在平台边界经 `key_from_sdl` 归一化 —— 空格 → MQ_KEY_SPACE(2)、
+ * 字母 → **大写** ASCII（'w' → 87）；而 .sim.json 是人手写的，用 SDL 风格码
+ *（空格 32、'w' 119）。两条路径不归一化就会出现"同一串按键含义不同"，
+ * 脚本只好写"两套码都接受"的防御代码，回放/热更/CI 因此不可靠。
+ *
+ * 语义（**与 platform 侧同一套映射**，一致才有意义）：
+ *   · 已是规范值（MQ_KEY_* 各值、大写 ASCII）→ 原样返回；
+ *   · SDL 风格 → 转换（32→SPACE、97..122→大写、方向键/回车/退格等 → MQ_KEY_*）；
+ *   · 其它可打印 ASCII（33..126）→ 原样；其余 → MQ_KEY_UNKNOWN。 */
+uint32_t mq_sim_normalize_key(uint32_t key) {
+    switch (key) {
+    case 27u:  return MQ_KEY_ESCAPE;      /* ESC 在两边同值，写作显式分支便于阅读 */
+    case 32u:  return MQ_KEY_SPACE;       /* SDL 空格 32 → 规范 2 */
+    case 13u:  return MQ_KEY_ENTER;       /* SDL 回车 13 → 规范 3 */
+    case 9u:   return MQ_KEY_TAB;         /* SDL Tab 9 → 规范 4 */
+    case 8u:   return MQ_KEY_BACKSPACE;   /* SDL 退格 8 → 规范 5 */
+    default: break;
+    }
+    switch (key) {                        /* SDL 方向键是大数值（0x40000000 起） */
+    case 0x40000050u: return MQ_KEY_LEFT;
+    case 0x4000004Fu: return MQ_KEY_RIGHT;
+    case 0x40000052u: return MQ_KEY_UP;
+    case 0x40000051u: return MQ_KEY_DOWN;
+    default: break;
+    }
+    if (key >= 'a' && key <= 'z') return key - 32u;   /* 小写字母 → 大写 ASCII */
+    if (key >= 1u && key <= MQ_KEY_TEXT) return key;  /* 已是 MQ_KEY_* 规范值 */
+    if (key >= 32u && key < 127u) return key;         /* 其它可打印 ASCII 原样 */
+    return MQ_KEY_UNKNOWN;
 }

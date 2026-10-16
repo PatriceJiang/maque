@@ -2626,7 +2626,11 @@ void Engine::sim_feed(uint64_t frame) {
             ev.pointer_id = 0;
             ev.pointer_type = 0;                     // 鼠标
             ev.button = se.button;
-            ev.key = se.key;
+            /* 键码统一到引擎规范键空间（MQ_KEY_* + 大写 ASCII）。
+             * 为什么必须做：真实设备事件在平台边界经 key_from_sdl 归一化，而 .sim.json 里
+             * 人手写的是 SDL 风格码（空格 32、'w' 119）。不归一化则"同一串按键走设备路径与
+             * 走注入路径含义不同" —— 脚本被迫写两套码的防御分支，回放/热更/CI 都不可靠。 */
+            ev.key = mq_sim_normalize_key(se.key);
             ev.x = se.x; ev.y = se.y;
             ev.dx = se.dx; ev.dy = se.dy;
             ev.scroll_x = se.dx; ev.scroll_y = se.dy;

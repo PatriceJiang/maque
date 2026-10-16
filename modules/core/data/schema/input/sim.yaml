@@ -56,3 +56,10 @@
       - { fn: mq_sim_loop,     returns: int, args: [ { name: sim, type: "mq_sim*" } ], doc: "是否循环回放" }
       - { fn: mq_sim_loaded,   returns: int, args: [ { name: sim, type: "mq_sim*" } ] }
       - { fn: mq_sim_last_frame, returns: "uint64_t", args: [ { name: sim, type: "mq_sim*" } ], doc: "最后事件帧号（场景时长参考）" }
+      # 键码归一化：把"常见键盘输入法"映射到引擎的规范键空间（MQ_KEY_* + 大写 ASCII）。
+      # 为什么需要它：真实设备事件在平台边界经 key_from_sdl 归一化（空格 → MQ_KEY_SPACE=2、
+      # 字母 → 大写 ASCII），而 .sim.json 里人手写的是 SDL 风格码（空格 32、'w' 119）。
+      # 不归一化就会出现"同一串按键走设备路径与走注入路径含义不同" → 回放/热更/CI 都不可靠。
+      # 语义（与 platform 侧同一套映射）：MQ_KEY_* 原值与大写 ASCII 原样返回；SDL 风格
+      # （32/97..122/方向键/回车等）转换；其余可打印 ASCII 原样；其它 → MQ_KEY_UNKNOWN。
+      - { fn: mq_sim_normalize_key, returns: "uint32_t", args: [ { name: key, type: "uint32_t" } ] }

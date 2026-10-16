@@ -280,8 +280,10 @@ function on_pointer_down(target, x, y) {
 }
 
 function on_key_down(target, key) {
-    /* 只认空格(32)与上箭头(1073741906，SDL 的 Up)，避免按任意键都拍翅 */
-    if (key !== 32 && key !== 1073741906) return;
+    /* 键码是**引擎规范键空间**（MQ_KEY_* + 大写 ASCII）：真实设备事件在平台边界经
+     * key_from_sdl 归一化，模拟注入经 mq_sim_normalize_key 归一化 —— 两条路径同一套码。
+     * 空格 = MQ_KEY_SPACE = 2（**不是** SDL 的 32）。上箭头未在规范枚举里，保留 SDL 码兼容。 */
+    if (key !== 2 && key !== 1073741906) return;
     if (state === 'dead') { if (deadTimer > 0.4) restart(); return; }
     flap();
 }
