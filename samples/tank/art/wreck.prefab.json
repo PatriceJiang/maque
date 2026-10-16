@@ -1,0 +1,8 @@
+{
+  "name": "Wreck",
+  "entities": [
+    { "name": "wreck", "components": [
+        { "type": "scn.Transform2D", "x": -9999.0, "y": -9999.0 },
+        { "type": "scn.Sprite", "width": 44.0, "height": 36.0, "material": "/art/wreck.mat.json" } ] }
+  ]
+}

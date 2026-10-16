@@ -1538,20 +1538,78 @@ bool Scene::deserialize(Engine& eng, const std::string& text) {
  * docs/12 §7：**禁止循环实例化** —— 用 chain（当前展开链上的 prefab 路径）+ 深度上限检测，
  * 命中则报结构化错误并跳过该实例（绝不递归到栈溢出）。 */
 static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
+                       std::vector<std::string>* chain, int depth);
+
+/* 载入并展开一个 prefab：把它的根实体挂到 `parent` 下（-1 = 场景根）。
+ * 供两处使用：
+ *   · `scn.PrefabInstance` 组件 → 展开为**该实体的子实体**（包一层壳，便于整体变换/显隐）；
+ *   · 实体的 `source` 简写 → **平级展开**（prefab 的根直接成为兄弟，不套壳）。
+ * `name_prefix` 非空时给展开出的**根实体**名加前缀 —— 同一个 prefab 实例多次时，
+ * 名字必须能区分，否则场景里会出现一堆同名实体（脚本按名查找就只会命中第一个）。
+ * `chain` 为当前展开链（循环引用检测，docs/12 §7）；`depth` 限制递归层数。 */
+static void expand_prefab(Engine& eng, Scene& sc, const std::string& src, int parent,
+                          std::vector<std::string>* chain, int depth,
+                          const std::string& name_prefix = std::string()) {
+    if (chain) {
+        for (const auto& c : *chain)
+            if (c == src) {
+                std::print(stderr, "runtime: cyclic prefab reference '{}' — skipped\n", src);
+                mq_obs_event(eng.obs, "runtime", 3, "prefab_cycle");
+                return;
+            }
+    }
+    void* pd = nullptr; size_t pn = 0;
+    const std::string ppath = "/" + src;
+    if (mq_vfs_read(eng.vfs, ppath.c_str(), &pd, &pn) != MQ_VFS_OK) {
+        std::print(stderr, "runtime: prefab not found '{}'\n", src);
+        return;
+    }
+    std::string ptext((char*)pd, pn);
+    mq_vfs_free(pd);
+    mq_json* pdom = mq_json_parse(ptext.c_str(), ptext.size());
+    if (!pdom) return;
+    std::vector<std::string> child_chain = chain ? *chain : std::vector<std::string>{};
+    child_chain.push_back(src);
+    const mq_json* pents = mq_json_get(pdom, "entities");
+    const uint32_t pcount = mq_json_len(pents);
+    for (uint32_t i = 0; i < pcount; ++i) {
+        int child = load_entity(eng, sc, mq_json_at(pents, i), parent, &child_chain, depth + 1);
+        if (child >= 0 && !name_prefix.empty())
+            if (Entity* ce = sc.at(child); ce && !ce->name.empty()) ce->name = name_prefix + ce->name;
+    }
+    mq_json_free(pdom);
+    std::print("runtime: prefab '{}' instantiated under entity {}\n", src, parent);
+}
+
+static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
                        std::vector<std::string>* chain = nullptr, int depth = 0) {
     if (depth > 64) {
         std::print(stderr, "runtime: prefab nesting too deep (>64), aborted at depth {}\n", depth);
         return -1;
     }
+    const char* nm = mq_json_str(mq_json_get(e, "name"), nullptr);
+    const mq_json* comps = mq_json_get(e, "components");
+    uint32_t cn = mq_json_len(comps);
+    const mq_json* ch = mq_json_get(e, "children");
+    uint32_t kn = mq_json_len(ch);
+    const char* inline_src = mq_json_str(mq_json_get(e, "source"), nullptr);
+
+    /* **平级展开**（`source` 简写，且自身无组件/无子节点）：纯展开指令，**不 spawn 壳实体**。
+     * 用于"重复的平级对象"——坦克的 20 个履带印、5 个残骸本来是各自独立的根级实体，
+     * 用 PrefabInstance 会多套一层壳（改变层级与 entity_find 语义，还白增 25 个空实体）。
+     * 带 components/children 时仍走下面的"壳 + 子实体"路径（那种情况需要一个实体挂它们）。 */
+    if (inline_src && *inline_src && cn == 0 && kn == 0) {
+        const char* pfx = mq_json_str(mq_json_get(e, "name_prefix"), nullptr);
+        expand_prefab(eng, sc, inline_src, parent, chain, depth, pfx ? pfx : "");
+        return parent;                                  // 未创建实体 → 返回父（调用方按 <0 判错）
+    }
+
     int idx = sc.spawn();
     if (idx < 0) return -1;
     Entity* ent = sc.at(idx);
     ent->parent = parent;
-    const char* nm = mq_json_str(mq_json_get(e, "name"), nullptr);
     if (nm) ent->name = nm;
 
-    const mq_json* comps = mq_json_get(e, "components");
-    uint32_t cn = mq_json_len(comps);
     for (uint32_t i = 0; i < cn; ++i) {
         const mq_json* c = mq_json_at(comps, i);
         const char* tname = mq_json_str(mq_json_get(c, "type"), nullptr);
@@ -1573,37 +1631,19 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
         bool detached = false;
         if (const mq_field_desc* fd = mq_reflect_field(d, "detached")) detached = *(const bool*)(blob.data() + fd->offset);
         if (detached) continue;
-        if (chain) {
-            bool cycle = false;
-            for (const auto& c : *chain) if (c == *src) { cycle = true; break; }
-            if (cycle) {
-                std::print(stderr, "runtime: cyclic prefab reference '{}' (entity {}) — skipped\n", *src, idx);
-                mq_obs_event(eng.obs, "runtime", 3, "prefab_cycle");
-                continue;
-            }
-        }
-        void* pd = nullptr; size_t pn = 0;
-        const std::string ppath = "/" + *src;
-        if (mq_vfs_read(eng.vfs, ppath.c_str(), &pd, &pn) != MQ_VFS_OK) {
-            std::print(stderr, "runtime: prefab not found '{}'\n", *src);
-            continue;
-        }
-        std::string ptext((char*)pd, pn);
-        mq_vfs_free(pd);
-        mq_json* pdom = mq_json_parse(ptext.c_str(), ptext.size());
-        if (pdom) {
-            std::vector<std::string> child_chain = chain ? *chain : std::vector<std::string>{};
-            child_chain.push_back(*src);
-            const mq_json* pents = mq_json_get(pdom, "entities");
-            const uint32_t pcount = mq_json_len(pents);
-            for (uint32_t i = 0; i < pcount; ++i)
-                load_entity(eng, sc, mq_json_at(pents, i), idx, &child_chain, depth + 1);
-            mq_json_free(pdom);
-            std::print("runtime: prefab '{}' instantiated under entity {}\n", *src, idx);
-        }
+        expand_prefab(eng, sc, *src, idx, chain, depth);
     }
-    const mq_json* ch = mq_json_get(e, "children");
-    uint32_t kn = mq_json_len(ch);
+
+    /* 实体的 `source` 简写（平级展开）：prefab 的**根实体直接成为本实体的兄弟**，不套壳。
+     * `source` 与自身组件同时出现属于**误用**（组件会挂在一个多余的空壳上）：
+     * 这里明确警告，但仍保留壳（否则那些组件无处安放）。 */
+    if (inline_src && *inline_src) {
+        std::print(stderr, "runtime: entity '{}' 同时给了 source 与 components/children —— "
+                           "source 本意是平级展开、不套壳；此处为了容纳组件仍创建了壳实体\n",
+                   nm ? nm : "?");
+        const char* pfx = mq_json_str(mq_json_get(e, "name_prefix"), nullptr);
+        expand_prefab(eng, sc, inline_src, idx, chain, depth, pfx ? pfx : "");
+    }
     for (uint32_t i = 0; i < kn; ++i) load_entity(eng, sc, mq_json_at(ch, i), idx, chain, depth);
     return idx;
 }

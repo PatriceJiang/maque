@@ -1,0 +1,8 @@
+{
+  "name": "Track",
+  "entities": [
+    { "name": "track", "components": [
+        { "type": "scn.Transform2D", "x": -9999.0, "y": -9999.0 },
+        { "type": "scn.Sprite", "width": 6.0, "height": 16.0, "r": 0.17, "g": 0.15, "b": 0.13 } ] }
+  ]
+}

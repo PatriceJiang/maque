@@ -75,6 +75,15 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/nested_prefab_e2e")
 endif()
 
+# Prefab **平级展开**（实体级 `source` 简写）：纯展开指令、不套壳 —— 用于"平级重复对象"
+# （坦克的 20 个履带印/5 个残骸就是这种形态；用 PrefabInstance 组件会改层级并白增空壳实体）。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME inline_prefab_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/inline_prefab_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/prefab/inline.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/inline_prefab_e2e")
+endif()
+
 # 崩溃/异常上下文（docs/09 §5、docs/10 §7）：脚本异常 → 结构化报告（seed/帧号/检查点/重放）
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME crash_context_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/crash_context_e2e.sh"

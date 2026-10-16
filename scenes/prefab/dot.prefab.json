@@ -1,0 +1,8 @@
+{
+  "name": "Dot",
+  "entities": [
+    { "name": "dot", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+        { "type": "scn.Sprite", "radius": 5.0, "r": 0.9, "g": 0.9, "b": 0.2 } ] }
+  ]
+}
