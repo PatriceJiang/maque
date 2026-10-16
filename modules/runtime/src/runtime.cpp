@@ -46,6 +46,8 @@
 #include <cstring>
 #include <cstdint>
 #include <cmath>
+#include <chrono>
+#include <thread>
 #include <utility>
 #include <functional>
 #include <csignal>
@@ -204,6 +206,11 @@ struct Engine {
     uint64_t            last_checksum = 0;
     std::vector<std::pair<uint64_t, uint64_t>> trail;       // (frame, checksum) —— 失步定位
     bool                window = false;                     // 是否真窗口（有显示环境）
+    /* 墙钟限速（仅真窗口路径）：固定步长的缺省语义是"跑完一帧 = dt 秒游戏时间"，
+     * 若完全不等待，游戏速度就变成"机器多快就多快"（实测窗口下 2.7 倍速）。
+     * 两个方向都要处理：机器比实时快 → sleep 压到 1x；机器比实时慢（渲染重）→ 一轮补几步。 */
+    bool                pace_wall_clock = false;            // 真窗口且非自动化时置 true
+    double              pace_accum = 0.0;                   // 已累计但尚未消费的墙钟秒数
     bool                trace_hits = false;                 // MAQUE_HITS=1：命中轨迹打印（调试）
     int                 hover = -1;                         // 悬停实体（上帧命中）
     int                 capture = -1;                       // 指针捕获（拖拽中）
@@ -1381,6 +1388,33 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
 
     mq_obs_event(obs, "runtime", 1, "loop_start");
     frame = 0;
+
+    /* 墙钟限速（见 pace_wall_clock 注释）：只在"真窗口 + 非自动化"时启用。
+     * 判定为自动化、因此**不限速**（保持"尽快出结果"的既有语义）的情形：
+     *   · 无窗口（headless / MAQUE_WINDOW=0x0 / 无显示环境）
+     *   · --shot / MAQUE_SHOT（只求一张图，帧数与时间无关）
+     *   · 录制/回放（docs/10 §3/§5：要求逐帧复现，不该受墙钟影响）
+     * 注意 `MAQUE_MAX_FRAMES`/`MAQUE_STOP_FRAME` **不算**自动化信号 —— 它们只是"跑多少帧"
+     * 的上限，与"要不要按真实时间跑"无关（无头跑它们本来就是全速的）。 */
+    const bool shot_mode = std::getenv("MAQUE_SHOT") != nullptr;
+    const bool recorded = std::getenv("MAQUE_RECORD") != nullptr || !replay_trail.empty();
+    pace_wall_clock = window && !shot_mode && !recorded;
+    if (const char* pc = std::getenv("MAQUE_PACE")) {          // 显式覆盖：0/off 关闭，1/on 强制开启
+        const std::string v(pc);
+        if (v == "0" || v == "off") pace_wall_clock = false;
+        else if (v == "1" || v == "on") pace_wall_clock = true;
+    }
+    pace_accum = 0.0;
+    /* 墙钟限速用"下一个应执行的时刻"模型（比累加器直观且不会双重计时）：
+     * 每步把目标时刻推后 dt，然后睡到该时刻。若落后太多（掉帧），重新锚定到"现在 + dt"，
+     * 丢弃积压 —— 宁可让游戏时间变慢，也不要越睡越久追不上（死亡螺旋）。 */
+    auto pace_next = std::chrono::steady_clock::now();
+    auto pace_last = pace_next;
+    const auto pace_start = pace_next;
+    double pace_sleep = 0.0;
+    uint64_t pace_reanchor = 0;
+    uint64_t pace_steps = 0;
+
     for (; frame < cap && !quit; ) {
         if (stop_frame && frame > stop_frame) break;
         if (g_quit_requested) {                          // SIGTERM/SIGINT → 优雅退出（正常收尾 + 清理端点）
@@ -1388,7 +1422,42 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
             mq_obs_event(obs, "runtime", 1, "terminated");
             break;
         }
-        step_frame();
+        /* 墙钟 → 固定步数（docs/10 D1 的确定性不变：**步长仍恒为 1/60**，变的只是
+         * "这一轮屏幕刷新要跑几步"）。两个方向都要处理：
+         *   · 机器比实时快 → 只跑 1 步会让动画跟着快（实测 2.7x）→ 用 sleep 压到 1x；
+         *   · 机器比实时慢（渲染每帧 ~29ms 实测）→ 只跑 1 步会让动画跟着慢（实测 0.58x）
+         *     → 这一轮多补几步，让**游戏时间始终跟墙钟走**。
+         * 上限 8 步：超出的部分直接丢弃（宁可让游戏时间变慢，也不要越补越久追不上）。 */
+        int steps_this_frame = 1;
+        if (pace_wall_clock) {
+            constexpr auto kStep = std::chrono::milliseconds(1000 / 60);
+            const auto now = std::chrono::steady_clock::now();
+            pace_accum += std::chrono::duration<double>(now - pace_last).count();
+            pace_last = now;
+            if (pace_accum > 8.0 / 60.0) { pace_accum = 8.0 / 60.0; ++pace_reanchor; }
+            steps_this_frame = static_cast<int>(pace_accum / (1.0 / 60.0));
+            if (steps_this_frame < 1) steps_this_frame = 1;
+            if (steps_this_frame > 8) steps_this_frame = 8;
+            pace_accum -= steps_this_frame * (1.0 / 60.0);
+            if (pace_accum < 0.0) pace_accum = 0.0;
+        }
+        for (int s = 0; s < steps_this_frame && frame < cap && !quit; ++s) {
+            if (stop_frame && frame > stop_frame) break;
+            step_frame();
+            ++pace_steps;
+        }
+        if (pace_wall_clock) {
+            /* 还有余量说明比实时快 → 睡到下一帧的时间点（下轮重算，避免睡多）。 */
+            constexpr auto kStep = std::chrono::milliseconds(1000 / 60);
+            const auto now = std::chrono::steady_clock::now();
+            if (pace_next > now) {
+                const auto d = pace_next - now;
+                pace_sleep += std::chrono::duration<double>(d).count();
+                std::this_thread::sleep_for(d);
+            }
+            pace_next = std::chrono::steady_clock::now() + kStep;
+            pace_last = std::chrono::steady_clock::now();
+        }
         if (g_signal_hit) {                              // 收到终止信号 → 落盘上下文后退出
             write_crash_context(g_signal_name ? g_signal_name : "signal");
             mq_obs_event(obs, "runtime", 3, g_signal_name ? g_signal_name : "signal");
@@ -1409,6 +1478,13 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
         else std::print("runtime: DESYNC — replay trail {} != recorded {}\n", tb, replay_trail);
     }
     mq_obs_gauge_set(obs, "frames_total", (double)frame);
+    if (const char* pt = std::getenv("MAQUE_TRACE_PACE")) {
+        (void)pt;
+        const double wall = std::chrono::duration<double>(std::chrono::steady_clock::now() - pace_start).count();
+        std::print("[pace] frames={} 墙钟={:.3f}s 仿真={:.3f}s 速率={:.2f}x wall_clock={} 睡觉={:.3f}s 重锚定={} 次\n",
+                   (long long)frame, wall, (double)frame / 60.0, wall > 0 ? (frame / 60.0) / wall : 0.0,
+                   pace_wall_clock ? 1 : 0, pace_sleep, (long long)pace_reanchor);
+    }
     mq_obs_event(obs, "runtime", 1, quit ? "quit" : "timeout");
     std::print("runtime: '{}' exited after {} frames (quit={}) world_trail=0x{:016x}\n",
                name, frame, quit ? 1 : 0, world_trail());

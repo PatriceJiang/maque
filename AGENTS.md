@@ -135,6 +135,14 @@ tools\win\build.cmd -Sanitize address -RunTests
   **可按 shader 剔除**（默认全部）：`cmake -S . -B build -DMAQUE_SHADER_TEXTURED=OFF`
   → 不生成/不链接/不进二进制（gfx 取不到时打印原因并跳过该批次）；手动重打包 `--target maque_shaders`。
   测试：`ctest -R builtin_shaders`（注册表 = 开关 + 解压文本与磁盘资产逐字节一致）。
+- **墙钟限速（游戏速度 = 真实时间）**：主循环是固定步长（`dt = 1/60`），
+  **真窗口**下按墙钟推进游戏时间 —— 机器比实时快就 `sleep` 压到 1x，
+  比实时慢（渲染重，实测每帧 ~29 ms）就一轮补几步（上限 8 步，超出丢弃 → 变慢而不卡死）。
+  以下情形**不限速**（保持"尽快出结果"，测试/CI 依赖它）：无窗口（`MAQUE_HEADLESS=1` 等）、
+  `--shot`/`MAQUE_SHOT`、录制/回放。显式覆盖 `MAQUE_PACE=0|off` / `1|on`；
+  诊断 `MAQUE_TRACE_PACE=1` 打印"墙钟 / 仿真 / 速率 / 睡觉 / 重锚定次数"。
+  （历史坑：完全不限速时动画跟着机器速度跑，实测窗口下 **2.7 倍速**；
+  只 sleep 不补步时，渲染慢的机器上又变成 **0.58 倍速**。）
 - **两类图元：textured（实例化矩形/圆）与 mesh（任意三角网格）**：
   - `textured`：一个实例 = 一个矩形/圆，逐实例一次变换 —— 精灵/字形/UI 用。
   - `mesh`：**逐顶点** pos/uv/color + 索引缓冲 —— 骨骼动画（Spine）那种"一帧一变形的网格"用。
