@@ -1,0 +1,1 @@
+{"title":"键值存储（Lua）","script":"storage.lua","width":320,"height":240,"seed":7,"entities":[{"name":"Info","components":[{"type":"scn.Label","x":10.0,"y":220.0,"text":"storage …","font_size":12.0}]},{"name":"Keys","components":[{"type":"scn.Label","x":10.0,"y":200.0,"text":"","font_size":11.0}]}]}

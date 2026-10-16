@@ -2,10 +2,10 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 242,
-  "api_count": 116,
-  "control_count": 37,
+  "api_count": 122,
+  "control_count": 43,
   "callback_count": 10,
-  "module_count": 23,
+  "module_count": 24,
   "types": [
     {
       "name": "anim.AnimatedSprite",
@@ -15051,6 +15051,7 @@
       "name": "math.clamp",
       "namespace": "math",
       "fn": "clamp",
+      "global": false,
       "args": [
         {
           "name": "value",
@@ -15073,6 +15074,7 @@
       "name": "math.lerp",
       "namespace": "math",
       "fn": "lerp",
+      "global": false,
       "args": [
         {
           "name": "a",
@@ -15095,6 +15097,7 @@
       "name": "math.saturate",
       "namespace": "math",
       "fn": "saturate",
+      "global": false,
       "args": [
         {
           "name": "x",
@@ -15106,9 +15109,94 @@
       "manual": "math.custom.h"
     },
     {
+      "name": "storage.get",
+      "namespace": "storage",
+      "fn": "get",
+      "global": false,
+      "args": [
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "storage.set",
+      "namespace": "storage",
+      "fn": "set",
+      "global": false,
+      "args": [
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "storage.remove",
+      "namespace": "storage",
+      "fn": "remove",
+      "global": false,
+      "args": [
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "storage.exists",
+      "namespace": "storage",
+      "fn": "exists",
+      "global": false,
+      "args": [
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "storage.keys",
+      "namespace": "storage",
+      "fn": "keys",
+      "global": false,
+      "args": [],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "storage.info",
+      "namespace": "storage",
+      "fn": "info",
+      "global": false,
+      "args": [],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
       "name": "host.screen_w",
       "namespace": "host",
       "fn": "screen_w",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15118,6 +15206,7 @@
       "name": "host.screen_h",
       "namespace": "host",
       "fn": "screen_h",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15127,6 +15216,7 @@
       "name": "host.rng",
       "namespace": "host",
       "fn": "rng",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15136,6 +15226,7 @@
       "name": "host.quit",
       "namespace": "host",
       "fn": "quit",
+      "global": true,
       "args": [],
       "returns": "void",
       "ctx": true,
@@ -15145,6 +15236,7 @@
       "name": "host.clear",
       "namespace": "host",
       "fn": "clear",
+      "global": true,
       "args": [
         {
           "name": "r",
@@ -15167,6 +15259,7 @@
       "name": "host.log",
       "namespace": "host",
       "fn": "log",
+      "global": true,
       "args": [
         {
           "name": "msg",
@@ -15181,6 +15274,7 @@
       "name": "host.cfg",
       "namespace": "host",
       "fn": "cfg",
+      "global": true,
       "args": [
         {
           "name": "path",
@@ -15195,6 +15289,7 @@
       "name": "host.load_texture",
       "namespace": "host",
       "fn": "load_texture",
+      "global": true,
       "args": [
         {
           "name": "path",
@@ -15209,6 +15304,7 @@
       "name": "host.entity_spawn",
       "namespace": "host",
       "fn": "entity_spawn",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15218,6 +15314,7 @@
       "name": "host.entity_set_pos",
       "namespace": "host",
       "fn": "entity_set_pos",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15240,6 +15337,7 @@
       "name": "host.entity_x",
       "namespace": "host",
       "fn": "entity_x",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15254,6 +15352,7 @@
       "name": "host.entity_y",
       "namespace": "host",
       "fn": "entity_y",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15268,6 +15367,7 @@
       "name": "host.entity_count",
       "namespace": "host",
       "fn": "entity_count",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15277,6 +15377,7 @@
       "name": "host.entity_destroy",
       "namespace": "host",
       "fn": "entity_destroy",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15291,6 +15392,7 @@
       "name": "host.entity_name",
       "namespace": "host",
       "fn": "entity_name",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15305,6 +15407,7 @@
       "name": "host.entity_find",
       "namespace": "host",
       "fn": "entity_find",
+      "global": true,
       "args": [
         {
           "name": "name",
@@ -15319,6 +15422,7 @@
       "name": "host.entity_valid",
       "namespace": "host",
       "fn": "entity_valid",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15333,6 +15437,7 @@
       "name": "host.input_x",
       "namespace": "host",
       "fn": "input_x",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15342,6 +15447,7 @@
       "name": "host.input_y",
       "namespace": "host",
       "fn": "input_y",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15351,6 +15457,7 @@
       "name": "host.input_target",
       "namespace": "host",
       "fn": "input_target",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15360,6 +15467,7 @@
       "name": "host.input_down",
       "namespace": "host",
       "fn": "input_down",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15369,6 +15477,7 @@
       "name": "host.input_key",
       "namespace": "host",
       "fn": "input_key",
+      "global": true,
       "args": [
         {
           "name": "code",
@@ -15383,6 +15492,7 @@
       "name": "host.input_focus",
       "namespace": "host",
       "fn": "input_focus",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15392,6 +15502,7 @@
       "name": "host.input_set_focus",
       "namespace": "host",
       "fn": "input_set_focus",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15406,6 +15517,7 @@
       "name": "host.ui_hit",
       "namespace": "host",
       "fn": "ui_hit",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15415,6 +15527,7 @@
       "name": "host.ui_hover",
       "namespace": "host",
       "fn": "ui_hover",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -15424,6 +15537,7 @@
       "name": "host.ui_pressed",
       "namespace": "host",
       "fn": "ui_pressed",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15438,6 +15552,7 @@
       "name": "host.entity_z",
       "namespace": "host",
       "fn": "entity_z",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15452,6 +15567,7 @@
       "name": "host.entity_set_z",
       "namespace": "host",
       "fn": "entity_set_z",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15470,6 +15586,7 @@
       "name": "host.spawn_ball",
       "namespace": "host",
       "fn": "spawn_ball",
+      "global": true,
       "args": [
         {
           "name": "x",
@@ -15500,6 +15617,7 @@
       "name": "host.bounce_step",
       "namespace": "host",
       "fn": "bounce_step",
+      "global": true,
       "args": [
         {
           "name": "dt",
@@ -15514,6 +15632,7 @@
       "name": "host.physics_step",
       "namespace": "host",
       "fn": "physics_step",
+      "global": true,
       "args": [],
       "returns": "void",
       "ctx": true,
@@ -15523,6 +15642,7 @@
       "name": "host.ball_clear",
       "namespace": "host",
       "fn": "ball_clear",
+      "global": true,
       "args": [],
       "returns": "void",
       "ctx": true,
@@ -15532,6 +15652,7 @@
       "name": "host.set_label",
       "namespace": "host",
       "fn": "set_label",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15550,6 +15671,7 @@
       "name": "host.ui_hit_at",
       "namespace": "host",
       "fn": "ui_hit_at",
+      "global": true,
       "args": [
         {
           "name": "x",
@@ -15568,6 +15690,7 @@
       "name": "host.nav_setup",
       "namespace": "host",
       "fn": "nav_setup",
+      "global": true,
       "args": [
         {
           "name": "cols",
@@ -15590,6 +15713,7 @@
       "name": "host.nav_block",
       "namespace": "host",
       "fn": "nav_block",
+      "global": true,
       "args": [
         {
           "name": "cx",
@@ -15616,6 +15740,7 @@
       "name": "host.nav_goto",
       "namespace": "host",
       "fn": "nav_goto",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15638,6 +15763,7 @@
       "name": "host.nav_path_len",
       "namespace": "host",
       "fn": "nav_path_len",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15652,6 +15778,7 @@
       "name": "host.nav_tick",
       "namespace": "host",
       "fn": "nav_tick",
+      "global": true,
       "args": [],
       "returns": "void",
       "ctx": true,
@@ -15661,6 +15788,7 @@
       "name": "host.node_set_parent",
       "namespace": "host",
       "fn": "node_set_parent",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15679,6 +15807,7 @@
       "name": "host.node_parent",
       "namespace": "host",
       "fn": "node_parent",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15693,6 +15822,7 @@
       "name": "host.node_child_count",
       "namespace": "host",
       "fn": "node_child_count",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15707,6 +15837,7 @@
       "name": "host.node_child_at",
       "namespace": "host",
       "fn": "node_child_at",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15725,6 +15856,7 @@
       "name": "host.node_find_child",
       "namespace": "host",
       "fn": "node_find_child",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15743,6 +15875,7 @@
       "name": "host.node_set_name",
       "namespace": "host",
       "fn": "node_set_name",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15761,6 +15894,7 @@
       "name": "host.node_set_active",
       "namespace": "host",
       "fn": "node_set_active",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15779,6 +15913,7 @@
       "name": "host.node_active",
       "namespace": "host",
       "fn": "node_active",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15793,6 +15928,7 @@
       "name": "host.node_set_scale",
       "namespace": "host",
       "fn": "node_set_scale",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15811,6 +15947,7 @@
       "name": "host.node_scale",
       "namespace": "host",
       "fn": "node_scale",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15825,6 +15962,7 @@
       "name": "host.node_set_angle",
       "namespace": "host",
       "fn": "node_set_angle",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15843,6 +15981,7 @@
       "name": "host.node_angle",
       "namespace": "host",
       "fn": "node_angle",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15857,6 +15996,7 @@
       "name": "host.node_set_opacity",
       "namespace": "host",
       "fn": "node_set_opacity",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15875,6 +16015,7 @@
       "name": "host.node_opacity",
       "namespace": "host",
       "fn": "node_opacity",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15889,6 +16030,7 @@
       "name": "host.node_set_z_index",
       "namespace": "host",
       "fn": "node_set_z_index",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15907,6 +16049,7 @@
       "name": "host.node_z_index",
       "namespace": "host",
       "fn": "node_z_index",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15921,6 +16064,7 @@
       "name": "host.node_width",
       "namespace": "host",
       "fn": "node_width",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15935,6 +16079,7 @@
       "name": "host.node_height",
       "namespace": "host",
       "fn": "node_height",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15949,6 +16094,7 @@
       "name": "host.node_set_position",
       "namespace": "host",
       "fn": "node_set_position",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15971,6 +16117,7 @@
       "name": "host.node_position_x",
       "namespace": "host",
       "fn": "node_position_x",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15985,6 +16132,7 @@
       "name": "host.node_position_y",
       "namespace": "host",
       "fn": "node_position_y",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -15999,6 +16147,7 @@
       "name": "host.node_set_content_size",
       "namespace": "host",
       "fn": "node_set_content_size",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16021,6 +16170,7 @@
       "name": "host.node_set_anchor",
       "namespace": "host",
       "fn": "node_set_anchor",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16043,6 +16193,7 @@
       "name": "host.node_has_component",
       "namespace": "host",
       "fn": "node_has_component",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16061,6 +16212,7 @@
       "name": "host.node_add_component",
       "namespace": "host",
       "fn": "node_add_component",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16079,6 +16231,7 @@
       "name": "host.node_remove_component",
       "namespace": "host",
       "fn": "node_remove_component",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16097,6 +16250,7 @@
       "name": "host.node_component_count",
       "namespace": "host",
       "fn": "node_component_count",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16111,6 +16265,7 @@
       "name": "host.node_component_at",
       "namespace": "host",
       "fn": "node_component_at",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16129,6 +16284,7 @@
       "name": "host.node_child_with_component",
       "namespace": "host",
       "fn": "node_child_with_component",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16147,6 +16303,7 @@
       "name": "host.node_get_number",
       "namespace": "host",
       "fn": "node_get_number",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16169,6 +16326,7 @@
       "name": "host.node_set_number",
       "namespace": "host",
       "fn": "node_set_number",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16195,6 +16353,7 @@
       "name": "host.node_get_bool",
       "namespace": "host",
       "fn": "node_get_bool",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16217,6 +16376,7 @@
       "name": "host.node_set_bool",
       "namespace": "host",
       "fn": "node_set_bool",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16243,6 +16403,7 @@
       "name": "host.node_get_string",
       "namespace": "host",
       "fn": "node_get_string",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16265,6 +16426,7 @@
       "name": "host.node_set_string",
       "namespace": "host",
       "fn": "node_set_string",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16291,6 +16453,7 @@
       "name": "host.node_on",
       "namespace": "host",
       "fn": "node_on",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16313,6 +16476,7 @@
       "name": "host.node_off",
       "namespace": "host",
       "fn": "node_off",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16331,6 +16495,7 @@
       "name": "host.node_emit",
       "namespace": "host",
       "fn": "node_emit",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16349,6 +16514,7 @@
       "name": "host.node_emit_number",
       "namespace": "host",
       "fn": "node_emit_number",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16371,6 +16537,7 @@
       "name": "host.ui_set_value",
       "namespace": "host",
       "fn": "ui_set_value",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16389,6 +16556,7 @@
       "name": "host.ui_get_value",
       "namespace": "host",
       "fn": "ui_get_value",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16403,6 +16571,7 @@
       "name": "host.ui_set_checked",
       "namespace": "host",
       "fn": "ui_set_checked",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16421,6 +16590,7 @@
       "name": "host.ui_get_checked",
       "namespace": "host",
       "fn": "ui_get_checked",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16435,6 +16605,7 @@
       "name": "host.window_w",
       "namespace": "host",
       "fn": "window_w",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16444,6 +16615,7 @@
       "name": "host.window_h",
       "namespace": "host",
       "fn": "window_h",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16453,6 +16625,7 @@
       "name": "host.canvas_scale",
       "namespace": "host",
       "fn": "canvas_scale",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16462,6 +16635,7 @@
       "name": "host.canvas_scale_x",
       "namespace": "host",
       "fn": "canvas_scale_x",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16471,6 +16645,7 @@
       "name": "host.canvas_scale_y",
       "namespace": "host",
       "fn": "canvas_scale_y",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16480,6 +16655,7 @@
       "name": "host.canvas_offset_x",
       "namespace": "host",
       "fn": "canvas_offset_x",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16489,6 +16665,7 @@
       "name": "host.canvas_offset_y",
       "namespace": "host",
       "fn": "canvas_offset_y",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16498,6 +16675,7 @@
       "name": "host.canvas_device_scale",
       "namespace": "host",
       "fn": "canvas_device_scale",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16507,6 +16685,7 @@
       "name": "host.canvas_safe_area",
       "namespace": "host",
       "fn": "canvas_safe_area",
+      "global": true,
       "args": [
         {
           "name": "edge",
@@ -16521,6 +16700,7 @@
       "name": "host.ui_set_text",
       "namespace": "host",
       "fn": "ui_set_text",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16539,6 +16719,7 @@
       "name": "host.ui_get_text",
       "namespace": "host",
       "fn": "ui_get_text",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16553,6 +16734,7 @@
       "name": "host.ui_text_width",
       "namespace": "host",
       "fn": "ui_text_width",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16567,6 +16749,7 @@
       "name": "host.ui_text_height",
       "namespace": "host",
       "fn": "ui_text_height",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16581,6 +16764,7 @@
       "name": "host.ui_text_lines",
       "namespace": "host",
       "fn": "ui_text_lines",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16595,6 +16779,7 @@
       "name": "host.director_pause",
       "namespace": "host",
       "fn": "director_pause",
+      "global": true,
       "args": [],
       "returns": "void",
       "ctx": true,
@@ -16604,6 +16789,7 @@
       "name": "host.director_resume",
       "namespace": "host",
       "fn": "director_resume",
+      "global": true,
       "args": [],
       "returns": "void",
       "ctx": true,
@@ -16613,6 +16799,7 @@
       "name": "host.director_paused",
       "namespace": "host",
       "fn": "director_paused",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16622,6 +16809,7 @@
       "name": "host.director_frame",
       "namespace": "host",
       "fn": "director_frame",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16631,6 +16819,7 @@
       "name": "host.director_load_scene",
       "namespace": "host",
       "fn": "director_load_scene",
+      "global": true,
       "args": [
         {
           "name": "path",
@@ -16645,6 +16834,7 @@
       "name": "host.tween_start",
       "namespace": "host",
       "fn": "tween_start",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16675,6 +16865,7 @@
       "name": "host.tween_stop",
       "namespace": "host",
       "fn": "tween_stop",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16689,6 +16880,7 @@
       "name": "host.tween_count",
       "namespace": "host",
       "fn": "tween_count",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16703,6 +16895,7 @@
       "name": "host.tween_progress",
       "namespace": "host",
       "fn": "tween_progress",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16717,6 +16910,7 @@
       "name": "host.schedule_once",
       "namespace": "host",
       "fn": "schedule_once",
+      "global": true,
       "args": [
         {
           "name": "handler",
@@ -16735,6 +16929,7 @@
       "name": "host.schedule",
       "namespace": "host",
       "fn": "schedule",
+      "global": true,
       "args": [
         {
           "name": "handler",
@@ -16753,6 +16948,7 @@
       "name": "host.unschedule",
       "namespace": "host",
       "fn": "unschedule",
+      "global": true,
       "args": [
         {
           "name": "handler",
@@ -16767,6 +16963,7 @@
       "name": "host.schedule_count",
       "namespace": "host",
       "fn": "schedule_count",
+      "global": true,
       "args": [],
       "returns": "float",
       "ctx": true,
@@ -16776,6 +16973,7 @@
       "name": "host.node_destroy",
       "namespace": "host",
       "fn": "node_destroy",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16790,6 +16988,7 @@
       "name": "host.node_valid",
       "namespace": "host",
       "fn": "node_valid",
+      "global": true,
       "args": [
         {
           "name": "id",
@@ -16804,6 +17003,7 @@
       "name": "host.node_find_path",
       "namespace": "host",
       "fn": "node_find_path",
+      "global": true,
       "args": [
         {
           "name": "root",
@@ -16990,6 +17190,16 @@
       ]
     },
     {
+      "method": "Scene.expand_prefabs",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "dry_run",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "method": "Scene.bake",
       "namespace": "control",
       "args": [
@@ -17038,6 +17248,50 @@
       "method": "Director.status",
       "namespace": "control",
       "args": []
+    },
+    {
+      "method": "Storage.info",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Storage.list",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Storage.get",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "method": "Storage.put",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "method": "Storage.remove",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ]
     },
     {
       "method": "World.checksum",
@@ -18807,6 +19061,244 @@
       ]
     },
     {
+      "module": "storage",
+      "abi_name": "maque.storage",
+      "version": 1,
+      "language": "c",
+      "header": "abi/storage.h",
+      "fns": [
+        {
+          "name": "mq_storage_create",
+          "returns": "mq_storage*",
+          "args": [
+            {
+              "name": "spec",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "uid",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "session",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_mode",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_root",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_ns",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_put",
+          "returns": "int",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            },
+            {
+              "name": "key",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "data",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "size_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_get",
+          "returns": "int",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            },
+            {
+              "name": "key",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "void**",
+              "doc": null
+            },
+            {
+              "name": "out_size",
+              "type": "size_t*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_free",
+          "returns": "void",
+          "args": [
+            {
+              "name": "p",
+              "type": "void*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_remove",
+          "returns": "int",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            },
+            {
+              "name": "key",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_exists",
+          "returns": "int",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            },
+            {
+              "name": "key",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_storage_keys",
+          "returns": "int",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_storage*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "char*",
+              "doc": null
+            },
+            {
+              "name": "cap",
+              "type": "size_t",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "structs": [],
+      "enums": [
+        {
+          "name": null,
+          "values": [
+            {
+              "name": "MQ_STORAGE_OK",
+              "value": 0,
+              "doc": "成功"
+            },
+            {
+              "name": "MQ_STORAGE_ERR_ARG",
+              "value": 1,
+              "doc": "空指针 / 非法键（空、绝对路径、.. 段）"
+            },
+            {
+              "name": "MQ_STORAGE_ERR_MODE",
+              "value": 2,
+              "doc": "未知模式（spec 的 scheme 不认识）"
+            },
+            {
+              "name": "MQ_STORAGE_ERR_NOTFOUND",
+              "value": 3,
+              "doc": "键不存在"
+            },
+            {
+              "name": "MQ_STORAGE_ERR_NOMEM",
+              "value": 4,
+              "doc": "内存不足"
+            },
+            {
+              "name": "MQ_STORAGE_ERR_IO",
+              "value": 5,
+              "doc": "磁盘 / 网络 IO"
+            },
+            {
+              "name": "MQ_STORAGE_ERR_PROTO",
+              "value": 6,
+              "doc": "服务端 / 协议错误（HTTP 状态码、帧格式…）"
+            },
+            {
+              "name": "MQ_STORAGE_ERR_UNSUPPORTED",
+              "value": 7,
+              "doc": "构建期裁剪（未链接 libcurl / libwebsockets）"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "module": "net",
       "abi_name": "maque.net",
       "version": 1,
@@ -19975,6 +20467,37 @@
             {
               "name": "p",
               "type": "void*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_image_write_png",
+          "returns": "int",
+          "args": [
+            {
+              "name": "path",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "w",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "h",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "rgba",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "stride",
+              "type": "uint32_t",
               "doc": null
             }
           ]
@@ -24919,6 +25442,13 @@
       "imports": []
     },
     {
+      "path": "io/storage.yaml",
+      "namespaces": [
+        "storage"
+      ],
+      "imports": []
+    },
+    {
       "path": "net.yaml",
       "namespaces": [
         "net"
@@ -25123,6 +25653,7 @@
         "core/reflect.yaml",
         "io/vfs.yaml",
         "io/watcher.yaml",
+        "io/storage.yaml",
         "net.yaml",
         "platform.yaml",
         "data/persist.yaml",

@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **116** 个 · 控制面方法 **37** 个 · 事件回调 **10** 个 · 模块 C ABI **23** 个 · 插件接口 **1** 个。
+统计：脚本 API **122** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **24** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -26,6 +26,17 @@
 | `math.clamp` | value: float, lo: float, hi: float | float |  |
 | `math.lerp` | a: float, b: float, t: float | float |  |
 | `math.saturate` | x: float | float | MANUAL → `math.custom.h` |
+
+### storage · `io/storage.yaml`
+
+| 函数 | 参数 | 返回 | 说明 |
+|------|------|------|------|
+| `storage.get` | key: string | string | ctx |
+| `storage.set` | key: string, value: string | float | ctx |
+| `storage.remove` | key: string | float | ctx |
+| `storage.exists` | key: string | float | ctx |
+| `storage.keys` | — | string | ctx |
+| `storage.info` | — | string | ctx |
 
 ### host（全局，无前缀） · `runtime/host.yaml`
 
@@ -165,6 +176,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Scene.set` | id: float, path: string, value: json, dry_run: bool | number, string, object, boolean |
 | `Scene.spawn` | name: string, parent: float, component: string, dry_run: bool | string, number, string, boolean |
 | `Scene.destroy` | id: float, dry_run: bool | number, boolean |
+| `Scene.expand_prefabs` | dry_run: bool | boolean |
 | `Scene.bake` | dry_run: bool | boolean |
 | `Scene.save` | path: string | string |
 | `Runtime.step` | frames: float | number |
@@ -172,6 +184,11 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Director.pause` | — | — |
 | `Director.resume` | — | — |
 | `Director.status` | — | — |
+| `Storage.info` | — | — |
+| `Storage.list` | — | — |
+| `Storage.get` | key: string | string |
+| `Storage.put` | key: string, value: string | string, string |
+| `Storage.remove` | key: string | string |
 | `World.checksum` | — | — |
 | `World.trail` | — | — |
 | `World.snapshot` | — | — |
@@ -379,6 +396,30 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_watcher_get_stamp` | uint64_t | w: mq_watcher*, path: const char* |
 | `mq_watcher_stat` | uint64_t | path: const char* |
 
+### storage — `maque.storage` v1
+
+头文件：`build/modules/core/data/generated/abi/storage.h` · 宏：`MQ_STORAGE_ABI_VERSION` / `_IFACE_NAME`
+
+键值存储：模式（file/mem/http(s)/ws(s)）可配 + (uid,session) 命名空间 + 固定读写协议
+
+枚举：
+
+- (匿名)：MQ_STORAGE_OK=0, MQ_STORAGE_ERR_ARG=1, MQ_STORAGE_ERR_MODE=2, MQ_STORAGE_ERR_NOTFOUND=3, MQ_STORAGE_ERR_NOMEM=4, MQ_STORAGE_ERR_IO=5, MQ_STORAGE_ERR_PROTO=6, MQ_STORAGE_ERR_UNSUPPORTED=7
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_storage_create` | mq_storage* | spec: const char*, uid: const char*, session: const char* |
+| `mq_storage_destroy` | void | s: mq_storage* |
+| `mq_storage_mode` | const char* | s: mq_storage* |
+| `mq_storage_root` | const char* | s: mq_storage* |
+| `mq_storage_ns` | const char* | s: mq_storage* |
+| `mq_storage_put` | int | s: mq_storage*, key: const char*, data: const void*, size: size_t |
+| `mq_storage_get` | int | s: mq_storage*, key: const char*, out: void**, out_size: size_t* |
+| `mq_storage_free` | void | p: void* |
+| `mq_storage_remove` | int | s: mq_storage*, key: const char* |
+| `mq_storage_exists` | int | s: mq_storage*, key: const char* |
+| `mq_storage_keys` | int | s: mq_storage*, out: char*, cap: size_t |
+
 ### net — `maque.net` v1
 
 头文件：`build/modules/core/data/generated/abi/net.h` · 宏：`MQ_NET_ABI_VERSION` / `_IFACE_NAME`
@@ -468,12 +509,13 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 头文件：`build/modules/core/data/generated/abi/image.h` · 宏：`MQ_IMAGE_ABI_VERSION` / `_IFACE_NAME`
 
-图像解码（Wuffs）：PNG/JPEG/GIF/BMP → RGBA8(非预乘)
+图像编解码：解码（Wuffs）PNG/JPEG/GIF/BMP → RGBA8(非预乘)；编码 PNG（截图/预览）
 
 | 函数 | 返回 | 参数 |
 |------|------|------|
 | `mq_image_decode` | int | data: const void*, size: size_t, out_rgba: uint8_t**, out_w: uint32_t*, out_h: uint32_t*, err: char*, err_cap: size_t |
 | `mq_image_free` | void | p: void* |
+| `mq_image_write_png` | int | path: const char*, w: uint32_t, h: uint32_t, rgba: const void*, stride: uint32_t |
 
 ### script — `maque.script` v1
 

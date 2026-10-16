@@ -16,6 +16,7 @@
     - core/reflect.yaml
     - io/vfs.yaml
     - io/watcher.yaml
+    - io/storage.yaml
     - net.yaml
     - platform.yaml
     - data/persist.yaml

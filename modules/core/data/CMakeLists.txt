@@ -32,6 +32,7 @@ set(MAQUE_GEN_FILES
     "${MAQUE_GEN_DIR}/maque_events.h"
     "${MAQUE_GEN_DIR}/maque_events_gen.cpp"
     "${MAQUE_GEN_DIR}/abi/vfs.h"
+    "${MAQUE_GEN_DIR}/abi/storage.h"
     "${MAQUE_GEN_DIR}/abi/asset.h"
     "${MAQUE_GEN_DIR}/abi/nav.h"
     "${MAQUE_GEN_DIR}/abi/physics.h"
@@ -84,6 +85,23 @@ if(NODE_EXECUTABLE)
         COMMENT "maque: 从 schema/ 生成（类型/描述符/API/绑定/控制面/事件/ABI/文档）"
         VERBATIM)
 
+    # 脚本绑定探针（bindings_e2e 用）：从生成物 maque_schema.json（单一真相）生成 JS/Lua 两份探针。
+    # 该文件之前因「ANSI 重写」损坏被回退，这里按原意恢复。
+    if(NOT MAQUE_BINDING_PROBE_DIR)
+        set(MAQUE_BINDING_PROBE_DIR "${CMAKE_BINARY_DIR}/generated/binding_probe")
+    endif()
+    file(MAKE_DIRECTORY "${MAQUE_BINDING_PROBE_DIR}")
+    execute_process(
+        COMMAND "${NODE_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/gen_binding_probe.js"
+                --schema-json "${MAQUE_GEN_DIR}/maque_schema.json" --out "${MAQUE_BINDING_PROBE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        RESULT_VARIABLE MAQUE_PROBE_RC
+        OUTPUT_VARIABLE MAQUE_PROBE_OUT
+        ERROR_VARIABLE MAQUE_PROBE_ERR)
+    if(NOT MAQUE_PROBE_RC EQUAL 0)
+        message(FATAL_ERROR "maque: 绑定探针生成失败\n${MAQUE_PROBE_ERR}${MAQUE_PROBE_OUT}")
+    endif()
+
     # schema 目录 / import 机制单测（loadSchema / parseSchemaTree / checkSchemaImports）
     add_test(NAME schema_imports
              COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/schema_import_test.js")
@@ -93,7 +111,7 @@ if(NODE_EXECUTABLE)
              COMMAND "${CMAKE_COMMAND}" -E env
                      "MAQUE_SCHEMA=${MAQUE_SCHEMA}" "MAQUE_PARSER=${MAQUE_PARSER}"
                      "MAQUE_TRACKED=${MAQUE_GEN_DIR}"
-                     bash "${CMAKE_SOURCE_DIR}/tests/codegen_drift.sh")
+                     "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/codegen_drift.sh")
 
     set_property(GLOBAL PROPERTY MAQUE_GEN_DIR "${MAQUE_GEN_DIR}")
 

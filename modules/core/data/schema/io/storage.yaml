@@ -1,0 +1,46 @@
+# storage —— modules/io/storage
+# 键值存储（浏览器 localStorage 类比）：**模式可配**（file/mem/http(s)/ws(s)）+ (uid, session) 命名空间 +
+# 固定读写协议（键空间 <uid>/<session>/<key>：get/put/remove/keys 语义在四种传输上一致）。
+- namespace: storage
+  version: 1
+  module_abi:
+    module: storage
+    abi_name: "maque.storage"
+    summary: "键值存储：模式（file/mem/http(s)/ws(s)）可配 + (uid,session) 命名空间 + 固定读写协议"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_storage ]
+    enums:
+      - doc: "错误码（结构化；docs/11 §4）。"
+        values:
+          - { name: MQ_STORAGE_OK,              value: 0, doc: "成功" }
+          - { name: MQ_STORAGE_ERR_ARG,         value: 1, doc: "空指针 / 非法键（空、绝对路径、.. 段）" }
+          - { name: MQ_STORAGE_ERR_MODE,        value: 2, doc: "未知模式（spec 的 scheme 不认识）" }
+          - { name: MQ_STORAGE_ERR_NOTFOUND,    value: 3, doc: "键不存在" }
+          - { name: MQ_STORAGE_ERR_NOMEM,       value: 4, doc: "内存不足" }
+          - { name: MQ_STORAGE_ERR_IO,          value: 5, doc: "磁盘 / 网络 IO" }
+          - { name: MQ_STORAGE_ERR_PROTO,       value: 6, doc: "服务端 / 协议错误（HTTP 状态码、帧格式…）" }
+          - { name: MQ_STORAGE_ERR_UNSUPPORTED, value: 7, doc: "构建期裁剪（未链接 libcurl / libwebsockets）" }
+    fns:
+      - { fn: mq_storage_create,  returns: "mq_storage*", args: [ { name: spec, type: "const char*" }, { name: uid, type: "const char*" }, { name: session, type: "const char*" } ],
+          doc: "spec = <scheme>://<target>（file/mem/http(s)/ws(s)）；uid/session 为空用默认（\"default\"/\"main\"）；NULL spec → mem://" }
+      - { fn: mq_storage_destroy, returns: void,      args: [ { name: s, type: "mq_storage*" } ] }
+      - { fn: mq_storage_mode,    returns: "const char*", args: [ { name: s, type: "mq_storage*" } ], doc: "生效模式名（file/mem/http/ws；NULL 实例 → \"\"）——观测用" }
+      - { fn: mq_storage_root,    returns: "const char*", args: [ { name: s, type: "mq_storage*" } ], doc: "生效根（file 绝对目录 / mem 命名空间 / URL 基址）——观测用" }
+      - { fn: mq_storage_ns,      returns: "const char*", args: [ { name: s, type: "mq_storage*" } ], doc: "命名空间 \"<uid>/<session>\"（键空间前缀）" }
+      - { fn: mq_storage_put,     returns: int,       args: [ { name: s, type: "mq_storage*" }, { name: key, type: "const char*" }, { name: data, type: "const void*" }, { name: size, type: "size_t" } ],
+          doc: "写键（file 原子写 tmp+rename；http PUT；ws JSON 帧）" }
+      - { fn: mq_storage_get,     returns: int,       args: [ { name: s, type: "mq_storage*" }, { name: key, type: "const char*" }, { name: out, type: "void**" }, { name: out_size, type: "size_t*" } ],
+          doc: "读键（malloc + '\\0' 结尾，调用方 mq_storage_free）；不存在 → MQ_STORAGE_ERR_NOTFOUND" }
+      - { fn: mq_storage_free,    returns: void,      args: [ { name: p, type: "void*" } ] }
+      - { fn: mq_storage_remove,  returns: int,       args: [ { name: s, type: "mq_storage*" }, { name: key, type: "const char*" } ] }
+      - { fn: mq_storage_exists,  returns: int,       args: [ { name: s, type: "mq_storage*" }, { name: key, type: "const char*" } ], doc: "1 = 存在（不取内容）" }
+      - { fn: mq_storage_keys,    returns: int,       args: [ { name: s, type: "mq_storage*" }, { name: out, type: "char*" }, { name: cap, type: "size_t" } ],
+          doc: "键列表（JSON 数组，UTF-8，截断安全）；file/mem 本地枚举，http/ws 由服务端返回" }
+  # 脚本面（docs/14）：storage.get/set/remove/exists/keys/info —— ctx:true → 运行时实现
+  api_list:
+    - { fn: get,    ctx: true, args: [ { name: key, type: string } ], returns: string, doc: "读键；不存在返回空串（用 exists 区分）" }
+    - { fn: set,    ctx: true, args: [ { name: key, type: string }, { name: value, type: string } ], returns: float, doc: "写键；返回 1/0" }
+    - { fn: remove, ctx: true, args: [ { name: key, type: string } ], returns: float, doc: "删键；返回 1/0" }
+    - { fn: exists, ctx: true, args: [ { name: key, type: string } ], returns: float, doc: "键是否存在" }
+    - { fn: keys,   ctx: true, returns: string, doc: "键列表（JSON 数组字符串）" }
+    - { fn: info,   ctx: true, returns: string, doc: "自省：JSON {mode, root, ns}（AI/调试）" }

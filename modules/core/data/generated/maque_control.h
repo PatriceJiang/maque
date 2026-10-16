@@ -38,6 +38,8 @@ int mq_control_Scene_set(void* user, const mq_json* params, char* out, size_t ou
 int mq_control_Scene_spawn(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.destroy(id: float, dry_run: bool) */
 int mq_control_Scene_destroy(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.expand_prefabs(dry_run: bool) */
+int mq_control_Scene_expand_prefabs(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.bake(dry_run: bool) */
 int mq_control_Scene_bake(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.save(path: string) */
@@ -52,6 +54,16 @@ int mq_control_Director_pause(void* user, const mq_json* params, char* out, size
 int mq_control_Director_resume(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Director.status() */
 int mq_control_Director_status(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Storage.info() */
+int mq_control_Storage_info(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Storage.list() */
+int mq_control_Storage_list(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Storage.get(key: string) */
+int mq_control_Storage_get(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Storage.put(key: string, value: string) */
+int mq_control_Storage_put(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Storage.remove(key: string) */
+int mq_control_Storage_remove(void* user, const mq_json* params, char* out, size_t out_cap);
 /* World.checksum() */
 int mq_control_World_checksum(void* user, const mq_json* params, char* out, size_t out_cap);
 /* World.trail() */

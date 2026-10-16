@@ -15,6 +15,24 @@ int b_math_lerp(void* user, int, const double* a, double* ret) {
 int b_math_saturate(void* user, int, const double* a, double* ret) {
   *ret = (double)math::saturate((float)a[0]); return 0;
 }
+int b_storage_get(void* user, int, const double* a, int, const char** s, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", storage::get(user, s[0])); return 0;
+}  /* kinds=s */
+int b_storage_set(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)storage::set(user, s[0], s[1]); return 0;
+}  /* kinds=ss */
+int b_storage_remove(void* user, const char* s, double* ret) {
+  *ret = (double)storage::remove(user, s); return 0;
+}
+int b_storage_exists(void* user, const char* s, double* ret) {
+  *ret = (double)storage::exists(user, s); return 0;
+}
+int b_storage_keys(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", storage::keys(user)); return 0;
+}
+int b_storage_info(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", storage::info(user)); return 0;
+}
 int b_host_screen_w(void* user, int, const double* a, double* ret) {
   *ret = (double)host::screen_w(user); return 0;
 }
@@ -360,6 +378,12 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "math.clamp", b_math_clamp, nullptr);
   mq_script_register_num(vm, "math.lerp", b_math_lerp, nullptr);
   mq_script_register_num(vm, "math.saturate", b_math_saturate, nullptr);
+  mq_script_register_multi_ret_str(vm, "storage.get", "s", b_storage_get, ctx);
+  mq_script_register_multi(vm, "storage.set", "ss", b_storage_set, ctx);
+  mq_script_register_str(vm, "storage.remove", b_storage_remove, ctx);
+  mq_script_register_str(vm, "storage.exists", b_storage_exists, ctx);
+  mq_script_register_ret_str(vm, "storage.keys", b_storage_keys, ctx);
+  mq_script_register_ret_str(vm, "storage.info", b_storage_info, ctx);
   mq_script_register_num(vm, "screen_w", b_host_screen_w, ctx);
   mq_script_register_num(vm, "screen_h", b_host_screen_h, ctx);
   mq_script_register_num(vm, "rng", b_host_rng, ctx);

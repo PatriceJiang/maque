@@ -1486,6 +1486,8 @@ function genJson(namespaces, tree) {
     for (const a of ns.apis || []) {
       apis.push({
         name: `${ns.name}.${a.name}`, namespace: ns.name, fn: a.name,
+        // global：脚本里的**可调用名**（global 命名空间无前缀，如 host.log → log）
+        global: !!ns.global,
         args: a.args, returns: a.returns, ctx: a.ctx,
         manual: a.manual ? String(a.manual) : null,
       })
@@ -1956,14 +1958,16 @@ function genBindingsSource(namespaces) {
   for (const ns of namespaces) {
     for (const fn of ns.apis || []) {
       const args = fn.args || []
-      const strBinding = args.length === 1 && args[0].type === 'string'
+      const retStr = fn.returns === 'string'
+      /* 返回字符串的 api 只能走 ret_str / multi_ret_str（str/mixed 的返回是 double）——
+       * 含字符串参数的（如 storage.get(key) → string）必须落到 multi_ret_str，否则会被静默丢弃。 */
+      const strBinding = !retStr && args.length === 1 && args[0].type === 'string'
       // 数值 + 单个尾部字符串（如 set_label(id, text)）也支持：字符串作为 s 参数传入
       const strArg = args.filter((a) => a.type === 'string')
-      const mixedBinding = !strBinding && strArg.length === 1 &&
+      const mixedBinding = !strBinding && !retStr && strArg.length === 1 &&
                            args[args.length - 1].type === 'string' &&
                            args.every((a) => a.type === 'string' || API_SCALARS.has(a.type))
       const numBinding = args.every((a) => API_SCALARS.has(a.type))
-      const retStr = fn.returns === 'string'
       /* multi：任意数量/位置的 string（如 node_set_number(id, comp, field, value)）。
        * 生成 'n'/'s' 类型串 → mq_script_register_multi 通用编组（docs/21 §6.1）。 */
       const general = args.every((a) => a.type === 'string' || API_SCALARS.has(a.type))
@@ -2617,6 +2621,33 @@ function genTypeDoc(namespaces) {
   return L.join('\n')
 }
 
+// 写入生成物：**内容相同则完全不写**，否则原子写（临时文件 + rename）+ 重试。
+//
+// 为什么需要：
+//   1. Windows 上并行构建会让多个 job 同时跑 codegen（maque_codegen 经 add_dependencies
+//      变成 build-step），两个 node 进程同时写同一个 generated/maque_types.h 会撞文件锁：
+//      "Error: UNKNOWN: unknown error, open '...\maque_types.h'"（实测约 1/3 概率）。
+//   2. 内容没变就不该碰 mtime —— 否则会把依赖这些生成物的目标反复弄脏。
+// 让重新生成变成幂等操作；codegen_drift 的逐字节比对语义不变。
+function writeIfChanged(target, content) {
+  try {
+    if (fs.readFileSync(target, 'utf8') === content) return false
+  } catch { /* 不存在 / 读不到 → 照常写 */ }
+
+  const tmp = `${target}.tmp${process.pid}`
+  fs.writeFileSync(tmp, content)
+  for (let attempt = 0; ; attempt++) {
+    try {
+      fs.renameSync(tmp, target)          // 同目录 rename 原子；Windows 上可覆盖已存在文件
+      return true
+    } catch (err) {
+      if (attempt >= 20) { try { fs.unlinkSync(tmp) } catch {} throw err }
+      // 被其它进程短暂占用（并发 codegen / 杀软）→ 退避重试
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10 + attempt * 10)
+    }
+  }
+}
+
 function main() {
   let args
   try {
@@ -2717,7 +2748,7 @@ function main() {
   for (const [name, content] of files) {
     const target = path.join(outDir, name)
     fs.mkdirSync(path.dirname(target), { recursive: true })
-    fs.writeFileSync(target, content)
+    writeIfChanged(target, content)
   }
 
   console.log(`generated ${types.length} type(s) -> ${outDir}`)

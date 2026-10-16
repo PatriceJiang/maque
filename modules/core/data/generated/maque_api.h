@@ -10,6 +10,15 @@ namespace math {
   float lerp(float a, float b, float t);
 }
 
+namespace storage {
+  const char* get(void* ctx, const char* key);
+  float set(void* ctx, const char* key, const char* value);
+  float remove(void* ctx, const char* key);
+  float exists(void* ctx, const char* key);
+  const char* keys(void* ctx);
+  const char* info(void* ctx);
+}
+
 namespace host {
   float screen_w(void* ctx);
   float screen_h(void* ctx);

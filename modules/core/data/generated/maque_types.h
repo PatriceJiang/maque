@@ -253,6 +253,10 @@ namespace sim {
 
 } // namespace sim
 
+namespace storage {
+
+} // namespace storage
+
 namespace text {
 
 } // namespace text

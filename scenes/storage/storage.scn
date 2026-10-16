@@ -1,0 +1,15 @@
+{
+  "title": "键值存储",
+  "script": "storage.js",
+  "width": 320,
+  "height": 240,
+  "seed": 7,
+  "entities": [
+    { "name": "Info", "components": [
+        { "type": "scn.Label", "x": 10.0, "y": 220.0, "text": "storage …",
+          "font_size": 12.0, "r": 0.7, "g": 1.0, "b": 0.8, "a": 1.0 } ] },
+    { "name": "Keys", "components": [
+        { "type": "scn.Label", "x": 10.0, "y": 200.0, "text": "",
+          "font_size": 11.0, "r": 0.85, "g": 0.85, "b": 0.95, "a": 1.0 } ] }
+  ]
+}
