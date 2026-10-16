@@ -1,0 +1,64 @@
+{
+  "name": "maque-scn",
+  "displayName": "Maque .scn 预览",
+  "description": "用 maque_player 把 .scn 渲染成图片并预览（右键 .scn → 预览场景）",
+  "version": "0.1.0",
+  "publisher": "maque",
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Other"],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onCommand:maque.previewScn",
+    "onCommand:maque.setPlayerPath"
+  ],
+  "contributes": {
+    "commands": [
+      { "command": "maque.previewScn", "title": "预览场景（渲染为图片）", "category": "Maque" },
+      { "command": "maque.setPlayerPath", "title": "指定 maque_player 路径", "category": "Maque" }
+    ],
+    "menus": {
+      "explorer/context": [
+        { "command": "maque.previewScn", "when": "resourceExtname == .scn", "group": "navigation@1" }
+      ],
+      "editor/title": [
+        { "command": "maque.previewScn", "when": "resourceExtname == .scn", "group": "navigation@1" }
+      ],
+      "editor/title/context": [
+        { "command": "maque.previewScn", "when": "resourceExtname == .scn", "group": "navigation@1" }
+      ]
+    },
+    "configuration": {
+      "title": "Maque",
+      "properties": {
+        "maque.playerPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "`maque_player` 可执行文件路径。留空时自动查找：工作区下的 `build/samples/player/maque_player` → `PATH`。"
+        },
+        "maque.shotFrame": {
+          "type": "number",
+          "default": 1,
+          "minimum": 1,
+          "markdownDescription": "渲染到第**几帧**再截图（场景脚本照常运行：物理/动画/文本都会推进到该帧）。"
+        },
+        "maque.shotArgs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "markdownDescription": "传给播放器的额外参数（主机级覆盖见 AGENTS.md：`MAQUE_WINDOW` / `MAQUE_STORAGE` … 可写成 `--shot-size` 之类参数）。"
+        },
+        "maque.env": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "渲染时额外的环境变量，例如 `{\"MAQUE_WINDOW\": \"640x480\", \"MAQUE_STORAGE\": \"mem://\"}`。"
+        }
+      }
+    },
+    "configurationDefaults": {
+      "files.associations": { "*.scn": "json" }
+    }
+  },
+  "scripts": {
+    "lint": "node --check extension.js"
+  }
+}

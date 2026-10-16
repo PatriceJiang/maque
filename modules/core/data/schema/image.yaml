@@ -4,7 +4,7 @@
   module_abi:
     module: image
     abi_name: "maque.image"
-    summary: "图像解码（Wuffs）：PNG/JPEG/GIF/BMP → RGBA8(非预乘)"
+    summary: "图像编解码：解码（Wuffs）PNG/JPEG/GIF/BMP → RGBA8(非预乘)；编码 PNG（截图/预览）"
     includes: [ "<stddef.h>", "<stdint.h>" ]
     fns:
       - { fn: mq_image_decode, returns: int,
@@ -14,3 +14,7 @@
                   { name: err_cap, type: "size_t" } ],
           doc: "失败原因写入 err（可为 NULL）；无模块级错误状态（ADR-0014）" }
       - { fn: mq_image_free, returns: void, args: [ { name: p, type: "void*" } ] }
+      - { fn: mq_image_write_png, returns: int,
+          args: [ { name: path, type: "const char*" }, { name: w, type: "uint32_t" }, { name: h, type: "uint32_t" },
+                  { name: rgba, type: "const void*" }, { name: stride, type: "uint32_t" } ],
+          doc: "写 PNG（RGBA8 非预乘；stride=0 表示 w*4）。zlib 可用则真压缩，否则 stored deflate（合法 PNG）——截图/预览用" }

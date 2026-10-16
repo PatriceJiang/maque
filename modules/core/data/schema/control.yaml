@@ -7,10 +7,11 @@
 - namespace: control
   version: 1
   # 变更类方法（权限单一真相，D2 默认只读）：只读会话对这些方法返回 -32001
-  control_mutating: [ Scene.set, Scene.spawn, Scene.destroy, Scene.bake, Scene.save, Scene.emit,
+  control_mutating: [ Scene.set, Scene.spawn, Scene.destroy, Scene.expand_prefabs, Scene.bake, Scene.save, Scene.emit,
                       Runtime.step, Director.pause, Director.resume, World.restore,
                       Replay.seek, Input.sim_load, Input.sim_stop, Input.inject,
-                      Reload.script, Reload.scene, Reload.files ]
+                      Reload.script, Reload.scene, Reload.files,
+                      Storage.put, Storage.remove ]
   control_list:
     # ---- 自省（A1）----
     - { method: Control.info,  args: [] }
@@ -35,7 +36,10 @@
     - { method: Scene.spawn,   args: [ { name: name, type: string  }, { name: parent, type: float },
                                        { name: component, type: string }, { name: dry_run, type: bool } ] }
     - { method: Scene.destroy, args: [ { name: id, type: float  }, { name: dry_run, type: bool } ] }
-    - { method: Scene.bake,    args: [ { name: dry_run, type: bool  } ] }
+    - { method: Scene.expand_prefabs, args: [ { name: dry_run, type: bool } ],
+        summary: "把场景里的 PrefabInstance 展开并标记 detached=true → 场景自包含（docs/12 §5）" }
+    - { method: Scene.bake,    args: [ { name: dry_run, type: bool  } ],
+        summary: "已弃用别名 → Scene.expand_prefabs（历史名保留，避免打断既有工具）" }
     - { method: Scene.save,    args: [ { name: path, type: string  } ] }
     # ---- 运行与帧（A4）----
     - { method: Runtime.step,  args: [ { name: frames, type: float  } ] }
@@ -43,6 +47,12 @@
     - { method: Director.pause,  args: []  }
     - { method: Director.resume, args: []  }
     - { method: Director.status, args: [] }
+    # ---- 键值存储（docs/25）：读写同一份 (uid,session) 命名空间；变更类需读写会话 ----
+    - { method: Storage.info,   args: [] }
+    - { method: Storage.list,   args: [] }
+    - { method: Storage.get,    args: [ { name: key, type: string } ] }
+    - { method: Storage.put,    args: [ { name: key, type: string }, { name: value, type: string } ] }
+    - { method: Storage.remove, args: [ { name: key, type: string } ] }
     # ---- 确定性（A3、docs/10）----
     - { method: World.checksum, args: [] }
     - { method: World.trail,    args: [] }

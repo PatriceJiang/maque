@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <cstdint>
+#include <cstring>
 
 static const unsigned char kPng2x2[77] = {
 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,2,0,0,0,2,8,6,0,0,0,
@@ -34,6 +35,33 @@ int main() {
     uint8_t* bad = nullptr; uint32_t bw = 0, bh = 0;
     char err2[128] = { 0 };
     CHECK(mq_image_decode("xxxx", 4, &bad, &bw, &bh, err2, sizeof err2) != 0);
+
+    /* ---- PNG 写出 → 用本模块解码器读回（自证编码有效；截图/预览路径）---- */
+    {
+        uint8_t src[2 * 2 * 4] = { 0 };                       // 2x2 RGBA
+        for (int i = 0; i < 4; ++i) {
+            src[i * 4 + 0] = (uint8_t)(40 + i * 50);
+            src[i * 4 + 1] = (uint8_t)(200 - i * 30);
+            src[i * 4 + 2] = 128;
+            src[i * 4 + 3] = 255;
+        }
+        const char* out = "maque_image_write_test.png";
+        CHECK(mq_image_write_png(out, 2, 2, src, 0) == 0);
+        FILE* f = fopen(out, "rb");
+        CHECK(f != nullptr);
+        if (f) {
+            uint8_t buf[4096]; const size_t n = fread(buf, 1, sizeof buf, f); fclose(f);
+            CHECK(n > 40);
+            uint8_t* back = nullptr; uint32_t bw2 = 0, bh2 = 0; char e3[128] = { 0 };
+            CHECK(mq_image_decode(buf, n, &back, &bw2, &bh2, e3, sizeof e3) == 0);
+            CHECK(bw2 == 2 && bh2 == 2);
+            if (back) {
+                CHECK(memcmp(back, src, sizeof src) == 0);    // 逐字节往返（2*2*4）
+                mq_image_free(back);
+            }
+            remove(out);
+        }
+    }
     CHECK(err2[0] != '\0');                       // 失败原因必须写入调用方缓冲（无全局错误态）
 
     if (g_failures == 0) { std::print("image_test: all checks passed\n"); return 0; }
