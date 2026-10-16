@@ -7,6 +7,7 @@ set_target_properties(maque_input PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIR
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_input_test tests/input_test.cpp)
+maque_deploy_asan(maque_input_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_input_test PRIVATE maque::input)
     add_test(NAME input COMMAND maque_input_test)
 endif()

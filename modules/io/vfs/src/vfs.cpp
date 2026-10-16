@@ -1,183 +1,27 @@
-/* VFS 实现（docs/04）：file / mem / zip / builtin / URL(http/https) 后端 + 最长前缀挂载。
- * 确定性：读路径不做隐式异步；URL 挂载带**会话内内容缓存**（同一 URL 只抓一次 → 可复现），
- * 网络 IO 只发生在装载期（模拟帧内不触发，docs/04 §6）。哈希为纯函数（FNV-1a 64）。 */
-#include "core/vfs/mq_vfs.h"
+/* VFS 核心（docs/04）：实例状态 + 挂载表 + 最长前缀匹配 + 按协议分发 + C ABI 入口。
+ *
+ * 协议实现各自独立成目录（见 vfs_internal.h）：file/ · mem/ · zip/ · url/ · builtin/；
+ * 本文件只做"挂载点 → 后端"的路由，不掺协议细节。
+ * 确定性：读路径不做隐式异步；URL 挂载带会话内容缓存（同一 URL 只抓一次）；哈希为纯函数。 */
+#include "vfs_internal.h"
 
-#include <string>
-#include <vector>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
-#include <filesystem>
-#include <mutex>
-#include <unordered_map>
-#include <algorithm>
 
-#ifdef MQ_HAVE_CURL
-#include <curl/curl.h>
-#endif
-
-namespace fs = std::filesystem;
+using namespace maque::vfs;
 
 namespace {
 
-enum class Backend { File, Mem, Zip, Url };
-
-struct Mount {
-    std::string mountpoint;   // 归一化，以 '/' 开头
-    std::string source;       // 本地目录 / mem 名 / zip 路径 / URL 基址（以 '/' 结尾）
-    Backend     backend = Backend::File;
-};
-
-/* zip 归档条目（仅支持 stored/未压缩：docs/04 归档后端最小切片）。 */
-struct ZipEntry { std::string name; size_t offset = 0; size_t size = 0; };
-
-struct Zip {
-    std::string path;
-    std::unordered_map<std::string, ZipEntry> entries;
-};
-
 struct Vfs {
-    std::vector<Mount> mounts;                                     // 后挂载优先（最长前缀）
-    std::unordered_map<std::string, std::vector<uint8_t>> builtins; // builtin: 资源
-    std::unordered_map<std::string, std::vector<uint8_t>> mems;     // mem:// 内容
-    std::vector<Zip> zips;                                          // 已解析归档
-    std::unordered_map<std::string, size_t> zip_index;              // zip 路径 → zips 下标
-    std::unordered_map<std::string, std::vector<uint8_t>> url_cache; // URL → 内容（会话缓存；docs/04 §8）
-    size_t url_cache_bytes = 0;                                     // 缓存占用（预算见 kUrlCacheLimit）
+    std::vector<Mount> mounts;          // 后挂载优先（最长前缀）
+    BlobTable          builtins;        // builtin: 资源（程序化生成）
+    BlobTable          mems;            // mem:// 内容（键 = "命名空间/rel"）
+    ZipStore           zips;            // 已解析归档
+    UrlCache           urls;            // http(s) 会话内容缓存
 };
-
-std::string normalize_mount(const std::string& m) {
-    std::string s = m.empty() ? "/" : m;
-    if (s[0] != '/') s = "/" + s;
-    while (s.size() > 1 && s.back() == '/') s.pop_back();
-    return s;
-}
-
-/* 去掉协议前缀（mem:// 与 zip:// 由 backend 标记；file:// 与 http(s):// 保留语义）。 */
-std::string strip_scheme(const std::string& src, Backend* backend) {
-    const char* kFile = "file://";
-    const char* kMem  = "mem://";
-    const char* kZip  = "zip://";
-    if (src.rfind(kMem, 0) == 0)  { if (backend) *backend = Backend::Mem; return src.substr(6); }
-    if (src.rfind(kZip, 0) == 0)  { if (backend) *backend = Backend::Zip; return src.substr(6); }
-    if (src.rfind(kFile, 0) == 0) return src.substr(7);
-    return src;
-}
-
-bool is_url_source(const std::string& src) {
-    return src.rfind("http://", 0) == 0 || src.rfind("https://", 0) == 0;
-}
-
-/* URL 目录基址归一化：结尾恰好一个 '/'（"https://cdn/x" 与 "https://cdn/x/" 等价）。 */
-std::string normalize_url_base(std::string s) {
-    while (s.size() > 1 && s.back() == '/') s.pop_back();
-    s.push_back('/');
-    return s;
-}
-
-/* 路径穿越防护（docs/04 §9）：拒绝 ".." 段（'/' 与 '\' 都当分隔符）—— 所有后端统一在 VFS 层拦截。
- * 注意：'\' 本身是合法文件名字符（Linux），只有构成 ".." 段时才拒绝。 */
-bool path_is_safe(const std::string& p) {
-    size_t i = 0;
-    while (i <= p.size()) {
-        const size_t j = p.find_first_of("/\\", i);
-        const std::string seg = p.substr(i, j == std::string::npos ? std::string::npos : j - i);
-        if (seg == "..") return false;
-        if (j == std::string::npos) break;
-        i = j + 1;
-    }
-    return true;
-}
-
-/* 相对路径 → URL 片段：逐段 percent-encode（空格/中文/保留字都安全），拒绝穿越段。
- * 与 `curl_easy_escape` 不同，'/' 保留为路径分隔符。 */
-int url_encode_rel(const std::string& rel, std::string& out) {
-    out.clear();
-    size_t i = 0;
-    while (i < rel.size()) {
-        if (rel[i] == '/') { out.push_back('/'); ++i; continue; }
-        const size_t j = rel.find('/', i);
-        const std::string seg = rel.substr(i, j == std::string::npos ? std::string::npos : j - i);
-        if (seg == ".." || seg == ".") return MQ_VFS_ERR_ARG;
-#ifdef MQ_HAVE_CURL
-        char* esc = curl_easy_escape(nullptr, seg.c_str(), (int)seg.size());
-        if (!esc) return MQ_VFS_ERR_NOMEM;
-        out += esc;
-        curl_free(esc);
-#else
-        out += seg;
-#endif
-        i = (j == std::string::npos) ? rel.size() : j;
-    }
-    return MQ_VFS_OK;
-}
-
-/* 解析 zip 中央目录（stored 项）。返回 0 成功。 */
-int parse_zip(const std::string& path, Zip& out) {
-    std::ifstream f(path, std::ios::binary);
-    if (!f) return MQ_VFS_ERR_IO;
-    f.seekg(0, std::ios::end);
-    const std::streamoff total = f.tellg();
-    if (total < 22) return MQ_VFS_ERR_FORMAT;
-    /* 从尾部找 EOCD（签名 0x06054b50）；容忍最多 64KB 注释 */
-    const std::streamoff win = std::min<std::streamoff>(total, 65557);
-    std::vector<char> tail((size_t)win);
-    f.seekg(total - win);
-    f.read(tail.data(), win);
-    std::streamoff eocd = -1;
-    for (std::streamoff i = win - 22; i >= 0; --i) {
-        const unsigned char* p = (const unsigned char*)tail.data() + i;
-        if (p[0] == 0x50 && p[1] == 0x4b && p[2] == 0x05 && p[3] == 0x06) { eocd = i; break; }
-    }
-    if (eocd < 0) return MQ_VFS_ERR_FORMAT;
-    auto u16 = [&](std::streamoff at) -> uint32_t {
-        const unsigned char* p = (const unsigned char*)tail.data() + at;
-        return (uint32_t)p[0] | ((uint32_t)p[1] << 8);
-    };
-    auto u32 = [&](std::streamoff at) -> uint32_t {
-        const unsigned char* p = (const unsigned char*)tail.data() + at;
-        return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
-    };
-    const uint32_t count = u16(eocd + 10);
-    const uint32_t cd_size = u32(eocd + 12);
-    const uint32_t cd_off = u32(eocd + 16);
-    if (cd_off + cd_size > (uint32_t)total) return MQ_VFS_ERR_FORMAT;
-
-    std::vector<char> cd(cd_size);
-    f.seekg(cd_off);
-    f.read(cd.data(), (std::streamsize)cd_size);
-    size_t pos = 0;
-    for (uint32_t i = 0; i < count && pos + 46 <= cd.size(); ++i) {
-        const unsigned char* p = (const unsigned char*)cd.data() + pos;
-        if (!(p[0] == 0x50 && p[1] == 0x4b && p[2] == 0x01 && p[3] == 0x02)) return MQ_VFS_ERR_FORMAT;
-        const uint32_t method = (uint32_t)p[10] | ((uint32_t)p[11] << 8);
-        const uint32_t csize = (uint32_t)p[20] | ((uint32_t)p[21] << 8) | ((uint32_t)p[22] << 16) | ((uint32_t)p[23] << 24);
-        const uint32_t usize = (uint32_t)p[24] | ((uint32_t)p[25] << 8) | ((uint32_t)p[26] << 16) | ((uint32_t)p[27] << 24);
-        const uint32_t name_len = (uint32_t)p[28] | ((uint32_t)p[29] << 8);
-        const uint32_t extra_len = (uint32_t)p[30] | ((uint32_t)p[31] << 8);
-        const uint32_t comment_len = (uint32_t)p[32] | ((uint32_t)p[33] << 8);
-        const uint32_t local_off = (uint32_t)p[42] | ((uint32_t)p[43] << 8) | ((uint32_t)p[44] << 16) | ((uint32_t)p[45] << 24);
-        std::string name(cd.data() + pos + 46, name_len);
-        if (!name.empty() && name.back() != '/' && method == 0 && csize == usize) {
-            /* 读取本地头以获得数据起点（本地 extra 长度可能与中央目录不同） */
-            f.seekg(local_off);
-            unsigned char lh[30] = { 0 };                 // 零初始化：读取失败时不得使用未初始化字节
-            f.read((char*)lh, sizeof lh);
-            if (f.gcount() == (std::streamsize)sizeof lh &&
-                lh[0] == 0x50 && lh[1] == 0x4b && lh[2] == 0x03 && lh[3] == 0x04) {
-                const uint32_t ln = (uint32_t)lh[26] | ((uint32_t)lh[27] << 8);
-                const uint32_t le = (uint32_t)lh[28] | ((uint32_t)lh[29] << 8);
-                out.entries[name] = ZipEntry{ name, (size_t)local_off + 30 + ln + le, usize };
-            }
-        }
-        pos += 46 + name_len + extra_len + comment_len;
-    }
-    return out.entries.empty() ? MQ_VFS_ERR_FORMAT : MQ_VFS_OK;
-}
 
 /* 找到匹配 path（最长前缀）的挂载；返回相对路径。 */
-const Mount* resolve(Vfs* v, const std::string& path, std::string& rel_out) {
+const Mount* resolve(const Vfs* v, const std::string& path, std::string& rel_out) {
     const Mount* best = nullptr;
     size_t best_len = 0;
     for (const auto& m : v->mounts) {
@@ -194,106 +38,6 @@ const Mount* resolve(Vfs* v, const std::string& path, std::string& rel_out) {
     return best;
 }
 
-int read_file_bytes(const std::string& full, void** out, size_t* out_size) {
-    std::ifstream f(full, std::ios::binary);
-    if (!f) return MQ_VFS_ERR_NOTFOUND;
-    f.seekg(0, std::ios::end);
-    const std::streamoff n = f.tellg();
-    f.seekg(0, std::ios::beg);
-    if (n < 0) return MQ_VFS_ERR_IO;
-    char* buf = (char*)std::malloc((size_t)n + 1);
-    if (!buf) return MQ_VFS_ERR_NOMEM;
-    if (n) f.read(buf, n);
-    buf[n] = '\0';
-    if (out) *out = buf; else std::free(buf);
-    if (out_size) *out_size = (size_t)n;
-    return MQ_VFS_OK;
-}
-
-#ifdef MQ_HAVE_CURL
-
-/* 单次链接超时 / 整体超时（秒）。冷路径（装载期）使用，避免服务器无响应时挂死。 */
-constexpr long kConnectTimeoutSec = 10;
-constexpr long kRequestTimeoutSec = 60;
-
-void curl_ensure_init() {
-    static std::once_flag once;
-    std::call_once(once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
-}
-
-size_t curl_write(char* ptr, size_t sz, size_t nm, void* ud) {
-    auto* out = (std::vector<uint8_t>*)ud;
-    out->insert(out->end(), (uint8_t*)ptr, (uint8_t*)ptr + sz * nm);
-    return sz * nm;
-}
-
-/* 抓取 URL → body。HTTP 状态码映射到 VFS 错误码（404/410 → NOTFOUND，其余 4xx/5xx → IO）。 */
-int curl_fetch_bytes(const std::string& url, std::vector<uint8_t>& body) {
-    curl_ensure_init();
-    CURL* c = curl_easy_init();
-    if (!c) return MQ_VFS_ERR_IO;
-    body.clear();
-    curl_easy_setopt(c, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_write);
-    curl_easy_setopt(c, CURLOPT_WRITEDATA, &body);
-    curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(c, CURLOPT_MAXREDIRS, 5L);
-    curl_easy_setopt(c, CURLOPT_NOSIGNAL, 1L);              // 不装信号处理器（可在任意线程用）
-    curl_easy_setopt(c, CURLOPT_ACCEPT_ENCODING, "");       // gzip/deflate/br（若 libcurl 支持）
-    curl_easy_setopt(c, CURLOPT_USERAGENT, "maque-vfs/1");
-    curl_easy_setopt(c, CURLOPT_CONNECTTIMEOUT, kConnectTimeoutSec);
-    curl_easy_setopt(c, CURLOPT_TIMEOUT, kRequestTimeoutSec);
-    const CURLcode rc = curl_easy_perform(c);
-    long status = 0;
-    curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &status);
-    curl_easy_cleanup(c);
-    if (rc != CURLE_OK) return MQ_VFS_ERR_IO;
-    if (status == 404 || status == 410) return MQ_VFS_ERR_NOTFOUND;
-    if (status >= 400) return MQ_VFS_ERR_IO;               // 401/403/5xx：统一按 IO（鉴权面二期）
-    return MQ_VFS_OK;
-}
-
-/* 会话缓存预算：单条目上限 32 MiB、总量上限 256 MiB（超过则不入缓存，直接返回本次结果）。 */
-constexpr size_t kUrlCacheMaxBody = size_t(32) << 20;
-constexpr size_t kUrlCacheLimit   = size_t(256) << 20;
-
-#else   // !MQ_HAVE_CURL
-
-/* 未链接 libcurl：URL 挂载/抓取一律不支持（错误码见 schema/io/vfs.yaml 的 MQ_VFS_ERR_UNSUPPORTED）。 */
-#endif
-
-/* 把内容交给调用方（out 为 nullptr 则只测可达性）：malloc + '\0' 结尾，调用方用 mq_vfs_free 释放。 */
-int deliver(const std::vector<uint8_t>& src, void** out, size_t* out_size) {
-    char* buf = (char*)std::malloc(src.size() + 1);
-    if (!buf) return MQ_VFS_ERR_NOMEM;
-    if (!src.empty()) std::memcpy(buf, src.data(), src.size());
-    buf[src.size()] = '\0';
-    if (out) *out = buf; else std::free(buf);
-    if (out_size) *out_size = src.size();
-    return MQ_VFS_OK;
-}
-
-/* URL 读取（docs/04 §8）：命中会话缓存直接返回副本；否则抓取并按预算入缓存。
- * 缓存使同一 URL 在一次进程内只走一次网络 → 装载期可复现、CI 可缓存。 */
-int url_read(Vfs* v, const std::string& url, void** out, size_t* out_size) {
-#ifdef MQ_HAVE_CURL
-    if (auto hit = v->url_cache.find(url); hit != v->url_cache.end())
-        return deliver(hit->second, out, out_size);
-    std::vector<uint8_t> body;
-    const int rc = curl_fetch_bytes(url, body);
-    if (rc != MQ_VFS_OK) return rc;
-    if (body.size() <= kUrlCacheMaxBody && v->url_cache_bytes + body.size() <= kUrlCacheLimit) {
-        v->url_cache_bytes += body.size();
-        auto it = v->url_cache.emplace(url, std::move(body)).first;
-        return deliver(it->second, out, out_size);
-    }
-    return deliver(body, out, out_size);
-#else
-    (void)v; (void)url; (void)out; (void)out_size;
-    return MQ_VFS_ERR_UNSUPPORTED;
-#endif
-}
-
 } // namespace
 
 extern "C" {
@@ -308,23 +52,18 @@ int mq_vfs_mount(mq_vfs* vfs, const char* mountpoint, const char* source) {
     Backend b = Backend::File;
     std::string src = strip_scheme(source, &b);
     /* http(s):// 目录挂载（docs/04 §4/§5）：source = URL 基址，读取时拼相对路径 */
-    if (b == Backend::File && is_url_source(src)) {
+    if (b == Backend::File && is_url(src)) {
         if (src.size() <= 8) return MQ_VFS_ERR_ARG;        // 只有 scheme，没有主机
 #ifndef MQ_HAVE_CURL
         return MQ_VFS_ERR_UNSUPPORTED;                     // 未链接 libcurl（构建期裁剪）
 #else
         b = Backend::Url;
-        src = normalize_url_base(std::move(src));
+        src = url_normalize_base(std::move(src));
 #endif
     }
     if (b == Backend::Zip) {
-        if (v->zip_index.find(src) == v->zip_index.end()) {
-            Zip z; z.path = src;
-            const int rc = parse_zip(src, z);
-            if (rc != MQ_VFS_OK) return rc;
-            v->zip_index[src] = v->zips.size();
-            v->zips.push_back(std::move(z));
-        }
+        const int rc = zip_open(v->zips, src);
+        if (rc != MQ_VFS_OK) return rc;
     }
     const std::string mp = normalize_mount(mountpoint);
     /* 幂等：同一 (挂载点, 来源) 重复挂载不追加（切场景/重复应用 MAQUE_MOUNT 时不堆积） */
@@ -370,13 +109,9 @@ int mq_vfs_read(mq_vfs* vfs, const char* path, void** out, size_t* out_size) {
     auto* v = reinterpret_cast<Vfs*>(vfs);
 
     // builtin: 内建资源（引擎提供，区分于 assets）
-    if (std::strncmp(path, "builtin:", 8) == 0) {
-        auto it = v->builtins.find(path + 8);
-        if (it == v->builtins.end()) return MQ_VFS_ERR_NOTFOUND;
-        return deliver(it->second, out, out_size);
-    }
+    if (std::strncmp(path, "builtin:", 8) == 0) return builtin_read(v->builtins, path + 8, out, out_size);
     // file:// 直读本地文件（不经挂载）；res:// 为资源根别名（docs/20）
-    if (std::strncmp(path, "file://", 7) == 0) return read_file_bytes(path + 7, out, out_size);
+    if (std::strncmp(path, "file://", 7) == 0) return file_read("", path + 7, out, out_size);
     std::string p = path;
     if (p.rfind("res://", 0) == 0) p = p.substr(5);
 
@@ -385,47 +120,31 @@ int mq_vfs_read(mq_vfs* vfs, const char* path, void** out, size_t* out_size) {
 
     // 直接 URL（http(s)/file）→ 经 libcurl 抓取（浏览器式，docs/04/16）
     if (p.find("://") != std::string::npos && p.rfind("file://", 0) != 0)
-        return url_read(v, p, out, out_size);
+        return url_read(v->urls, p, out, out_size);
 
     std::string rel;
     const Mount* m = resolve(v, p, rel);
     if (!m) return MQ_VFS_ERR_NO_MOUNT;
 
     switch (m->backend) {
-        case Backend::Mem: {
+        case Backend::Mem:
             /* mem 挂载：source 即"内存命名空间"，条目键为 "namespace/rel"（docs/04 内存后端） */
-            const std::string key = m->source + "/" + rel;
-            auto k = v->mems.find(key);
-            if (k == v->mems.end()) return MQ_VFS_ERR_NOTFOUND;
-            return deliver(k->second, out, out_size);
-        }
-        case Backend::Zip: {
-            auto zi = v->zip_index.find(m->source);
-            if (zi == v->zip_index.end()) return MQ_VFS_ERR_NOTFOUND;
-            const Zip& z = v->zips[zi->second];
-            auto e = z.entries.find(rel);
-            if (e == z.entries.end()) return MQ_VFS_ERR_NOTFOUND;
-            std::ifstream f(z.path, std::ios::binary);
-            if (!f) return MQ_VFS_ERR_IO;
-            std::vector<uint8_t> data(e->second.size);
-            f.seekg((std::streamoff)e->second.offset);
-            if (e->second.size) f.read((char*)data.data(), (std::streamsize)e->second.size);
-            return deliver(data, out, out_size);
-        }
+            return mem_read(v->mems, m->source, rel, out, out_size);
+        case Backend::Zip:
+            return zip_read(v->zips, m->source, rel, out, out_size);
         case Backend::Url: {
             /* URL 目录挂载：基址 + 逐段编码的相对路径（docs/04 §4 http(s) 后端） */
             std::string encoded;
             const int rc = url_encode_rel(rel, encoded);
             if (rc != MQ_VFS_OK) return rc;
-            return url_read(v, m->source + encoded, out, out_size);
+            return url_read(v->urls, m->source + encoded, out, out_size);
         }
         case Backend::File:
-        default: {
+        default:
             // mem:// 名字直接命中（无挂载点时的语法糖）
-            auto it = v->mems.find(rel.empty() ? m->source : rel);
-            if (it != v->mems.end()) return deliver(it->second, out, out_size);
-            return read_file_bytes((fs::path(m->source) / rel).string(), out, out_size);
-        }
+            if (int rc = mem_lookup(v->mems, rel.empty() ? m->source : rel, out, out_size); rc != MQ_VFS_ERR_NOTFOUND)
+                return rc;
+            return file_read(m->source, rel, out, out_size);
     }
 }
 

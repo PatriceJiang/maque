@@ -10,6 +10,7 @@ set_target_properties(maque_reflect PROPERTIES
 # 单元测试（独立：只链接 maque::reflect）
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_reflect_test tests/reflect_test.cpp)
+maque_deploy_asan(maque_reflect_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_reflect_test PRIVATE maque::reflect)
     add_test(NAME reflect COMMAND maque_reflect_test)
 endif()

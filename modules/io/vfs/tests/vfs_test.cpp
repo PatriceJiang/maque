@@ -116,14 +116,13 @@ struct HttpServer { bool start() { return false; } };
 #endif
 
 namespace fs = std::filesystem;
+#include "maque_test_fs.h"
+
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
     std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
 
-static void put(const fs::path& p, const std::string& s) {
-    fs::create_directories(p.parent_path());
-    std::ofstream(p) << s;
-}
+static void put(const fs::path& p, const std::string& s) { maque_put_file(p, s); }
 static std::string readall(mq_vfs* v, const char* path) {
     void* d = nullptr; size_t n = 0;
     if (mq_vfs_read(v, path, &d, &n) != MQ_VFS_OK) return "<err>";
@@ -159,8 +158,8 @@ static std::string make_stored_zip(const std::vector<std::pair<std::string, std:
 }
 
 int main() {
-    fs::path root = fs::temp_directory_path() / "maque_vfs_test";
-    fs::remove_all(root);
+    fs::path root;
+    if (!maque_test_setup_dir("vfs", root)) return 77;
     put(root / "base" / "a.txt", "hello");
     put(root / "base" / "sub" / "b.txt", "world");
     put(root / "over" / "sub" / "b.txt", "override");

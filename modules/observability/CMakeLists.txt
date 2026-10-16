@@ -5,6 +5,7 @@ target_include_directories(maque_observability PUBLIC "${CMAKE_CURRENT_SOURCE_DI
 set_target_properties(maque_observability PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_obs_test tests/obs_test.cpp)
+maque_deploy_asan(maque_obs_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_obs_test PRIVATE maque::observability)
     add_test(NAME obs COMMAND maque_obs_test)
 endif()

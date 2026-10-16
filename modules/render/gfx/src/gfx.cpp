@@ -2,11 +2,13 @@
  * 仅导出 mq_module_query；运行时经 maque::module(dlopen) 加载。 */
 #include "maque_ifaces.h"
 #include "core/module/mq_module.h"
+#include "builtin_shaders.h"   // 内建 shader 注册表（配置期由流水线生成）
 
 #include <webgpu/webgpu.h>
 
 #include <cstdio>
 #include <print>
+#include <algorithm>   // std::stable_sort（缺它时 clang 会连带把排序 lambda 报成捕获错误，误导性极强）
 #include <cstring>
 #include <chrono>
 #include <thread>
@@ -17,102 +19,11 @@ namespace maque::gfx {
 
 #define SV(x) WGPUStringView { (x), WGPU_STRLEN }
 
-/* 统一 uniform（48B，与 C++ float[12] 逐字段对应；WGSL uniform 布局规则下无隐式填充）：
- *   size(8) view(8) cam(8) zoom rot pan eye(16) pad(8) */
-static const char* kSolidWGSL = R"(
-struct U {
-  size: vec2f, view: vec2f, cam: vec2f,
-  zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
-};
-@group(0) @binding(0) var<uniform> u: U;
-struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f, half: vec2f, shape: f32, snap: f32 };
-@group(0) @binding(1) var<storage, read> insts: array<Inst>;
-struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f, @location(2) shape: f32 };
-@vertex fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
-  var c = array<vec2f,6>(vec2f(-1.,-1.), vec2f(1.,-1.), vec2f(-1.,1.),
-                         vec2f(-1.,1.), vec2f(1.,-1.), vec2f(1.,1.));
-  let inst = insts[ii];
-  // 图元尺寸：half = (半宽, 半高) 矩形（字形/图集），退化 → radius 的方形/圆形
-  let hw = select(vec2f(inst.radius), inst.half, inst.half.x > 0.0 && inst.half.y > 0.0);
-  var corner = c[vi] * hw;
-  let cs = cos(inst.rot); let sn = sin(inst.rot);
-  corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
-  let cr = cos(-u.rot); let sr = sin(-u.rot);        // 相机旋转（docs/13 §4）：逆旋转到相机空间
-  /* 顶点 = **中心** + 顶点偏移。吸附必须作用在"图元中心"上（且只算一次），
-   * 否则逐顶点吸附会把每个顶点按"自己是中心"平移 → 整个矩形偏移半像素
-   * （1:1 nearest 下表现为部分行/列取错纹素 → 文字发虚/乱码；块状图元看不出来）。 */
-  let center = (inst.pos - u.cam) * u.zoom;
-  var cc = vec2f(center.x * cr - center.y * sr, center.x * sr + center.y * cr);
-  let kc0 = corner * u.zoom;
-  let kc = vec2f(kc0.x * cr - kc0.y * sr, kc0.x * sr + kc0.y * cr);
-  var pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
-  // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素（1 纹素 ↔ 1 像素）
-  if (inst.snap > 0.5) {
-    let tl = floor(pc - hw + vec2f(0.5));
-    pc = tl + hw;
-  }
-  let px = pc + kc;
-  var o: VOut;
-  o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
-  o.uv = c[vi]; o.col = inst.color; o.shape = inst.shape; return o;
-}
-@fragment fn fs(in: VOut) -> @location(0) vec4f {
-  if (in.shape < 0.5 && dot(in.uv, in.uv) > 1.0) { discard; }   // 圆形图元才裁角
-  return in.col;                                    // 直通 alpha（混合在管线做）
-}
-)";
-
-static const char* kTexWGSL = R"(
-struct U {
-  size: vec2f, view: vec2f, cam: vec2f,
-  zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
-};
-@group(0) @binding(0) var<uniform> u: U;
-struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f, half: vec2f, shape: f32, snap: f32 };
-@group(0) @binding(1) var<storage, read> insts: array<Inst>;
-@group(0) @binding(2) var t: texture_2d<f32>;
-@group(0) @binding(3) var smp: sampler;
-struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) col: vec4f, @location(2) shape: f32 };
-@vertex fn vs(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
-  var c = array<vec2f,6>(vec2f(-1.,-1.), vec2f(1.,-1.), vec2f(-1.,1.),
-                         vec2f(-1.,1.), vec2f(1.,-1.), vec2f(1.,1.));
-  let inst = insts[ii];
-  // 图元尺寸：half = (半宽, 半高) 矩形（字形/图集），退化 → radius 的方形/圆形
-  let hw = select(vec2f(inst.radius), inst.half, inst.half.x > 0.0 && inst.half.y > 0.0);
-  var corner = c[vi] * hw;
-  let cs = cos(inst.rot); let sn = sin(inst.rot);
-  corner = vec2f(corner.x * cs - corner.y * sn, corner.x * sn + corner.y * cs);
-  let cr = cos(-u.rot); let sr = sin(-u.rot);        // 相机旋转（docs/13 §4）：逆旋转到相机空间
-  /* 顶点 = **中心** + 顶点偏移。吸附必须作用在"图元中心"上（且只算一次），
-   * 否则逐顶点吸附会把每个顶点按"自己是中心"平移 → 整个矩形偏移半像素
-   * （1:1 nearest 下表现为部分行/列取错纹素 → 文字发虚/乱码；块状图元看不出来）。 */
-  let center = (inst.pos - u.cam) * u.zoom;
-  var cc = vec2f(center.x * cr - center.y * sr, center.x * sr + center.y * cr);
-  let kc0 = corner * u.zoom;
-  let kc = vec2f(kc0.x * cr - kc0.y * sr, kc0.x * sr + kc0.y * cr);
-  var pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
-  // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素（1 纹素 ↔ 1 像素）
-  if (inst.snap > 0.5) {
-    let tl = floor(pc - hw + vec2f(0.5));
-    pc = tl + hw;
-  }
-  let px = pc + kc;
-  var o: VOut;
-  o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
-  // 图集子矩形：uv.x/y = 左上，uv.z/w = 右下；退化（0,0,0,0）→ 整张贴图
-  let t = c[vi] * 0.5 + 0.5;
-  let full = inst.uv.z <= inst.uv.x || inst.uv.w <= inst.uv.y;
-  o.uv = select(vec2f(mix(inst.uv.x, inst.uv.z, t.x), mix(inst.uv.y, inst.uv.w, t.y)), t, full);
-  o.col = inst.color; o.shape = inst.shape; return o;
-}
-@fragment fn fs(in: VOut) -> @location(0) vec4f {
-  let c = textureSample(t, smp, in.uv);
-  if (c.a < 0.01) { discard; }
-  return c * in.col;                                // 直通 alpha（混合在管线做）
-}
-)";
-
-
+/* 内建 shader 来自**资产** assets/builtin/shaders/<name>/（不是内联字面量）：
+ * 配置期由 cmake/shader_pack.cmake + tools/shader_pack.js 打包成压缩源码（zstd），
+ * 这里按名字取（未编入的 shader → NULL，见 MAQUE_SHADER_<NAME>=OFF 的剔除开关）。
+ *   solid    —— 无贴图图元（矩形/圆/方块）
+ *   textured —— 贴图图元（图集子矩形 + 采样器），uniform 布局与 solid 一致（48B） */
 struct Texture { WGPUTexture tex = nullptr; WGPUTextureView view = nullptr; };
 
 struct Device {
@@ -202,8 +113,17 @@ static Device* create_device(std::string* out_backend) {
     target.format = WGPUTextureFormat_RGBA8Unorm; target.writeMask = WGPUColorWriteMask_All;
     target.blend = &blend;
 
-    dv->solidShader = make_shader(dv->device, kSolidWGSL);
-    {
+    /* 内建 shader（按名字查注册表）：某个被剔除（-DMAQUE_SHADER_<NAME>=OFF）或解压失败时
+     * 打印一行说明、跳过该管线 —— 渲染循环对空管线会跳过对应批次（不崩、不静默）。 */
+    const char* solid_wgsl = mq_builtin_shader_text("solid");
+    const char* tex_wgsl = mq_builtin_shader_text("textured");
+    if (!solid_wgsl) std::print(stderr, "gfx: 内建 shader 'solid' 不可用 → 无贴图图元不渲染"
+                                       "（剔除开关 MAQUE_SHADER_SOLID=ON 可编回）\n");
+    if (!tex_wgsl) std::print(stderr, "gfx: 内建 shader 'textured' 不可用 → 贴图图元不渲染"
+                                     "（剔除开关 MAQUE_SHADER_TEXTURED=ON 可编回）\n");
+
+    if (solid_wgsl) dv->solidShader = make_shader(dv->device, solid_wgsl);
+    if (dv->solidShader) {
         WGPUBindGroupLayoutEntry e[2] = {};
         e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 48;
         e[1].binding = 1; e[1].visibility = WGPUShaderStage_Vertex; e[1].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
@@ -217,8 +137,8 @@ static Device* create_device(std::string* out_backend) {
         rp.layout = dv->solidPl; rp.vertex = vert; rp.fragment = &frag; rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
         dv->solidPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
     }
-    dv->texShader = make_shader(dv->device, kTexWGSL);
-    {
+    if (tex_wgsl) dv->texShader = make_shader(dv->device, tex_wgsl);
+    if (dv->texShader) {
         WGPUBindGroupLayoutEntry e[4] = {};
         e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 48;
         e[1].binding = 1; e[1].visibility = WGPUShaderStage_Vertex; e[1].buffer.type = WGPUBufferBindingType_ReadOnlyStorage;
@@ -427,12 +347,29 @@ static int32_t r_render_views(void* self, int32_t TW, int32_t TH,
     for (uint32_t vi = 0; vi < nviews; ++vi) {
         const mq_renderer_view& v = views[vi];
         const float zoom = v.zoom > 0.0F ? v.zoom : 1.0F;
+        /* u.size = **单视图**尺寸，不是整个渲染目标尺寸。
+         * 依据（实测，非推测）：多视图下传入总宽时，view0 的 px 计算会得到 TW/2 而实际画面把内容
+         * 画在 TW/2+SW/2 —— 即 shader 侧的分母/居中项用的是"每个视图自己的宽高"。
+         * 几何自洽：sprite 的 px = (x-cam)*zoom + size/2 + pan + view，而 view 是该视图在目标里的
+         * 像素原点 → 传入单视图尺寸 + 各视图 view 偏移，多视图与单视图才等价。 */
         float uni[12] = { (float)TW, (float)TH, v.vx, v.vy, v.cx, v.cy, zoom, v.rot, v.pan, v.eye, 0.0F, 0.0F };
         WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
         wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, sizeof uni);
         if (ibuf) {
             for (const Batch& b : batches) {
                 const bool textured = b.texture >= 0;
+                /* 该批次的管线不可用（对应内建 shader 被剔除 / 解压失败）→ 跳过该批次。
+                 * 只提示一次，避免逐帧刷屏；不崩、不静默（初始化时已打印原因）。 */
+                if (!(textured ? dv->texPipeline : dv->solidPipeline)) {
+                    static bool warned_solid = false, warned_tex = false;
+                    bool& warned = textured ? warned_tex : warned_solid;
+                    if (!warned) {
+                        warned = true;
+                        std::print(stderr, "gfx: 跳过批次（内建 shader '{}' 未编入；见 MAQUE_SHADER_* 开关）\n",
+                                   textured ? "textured" : "solid");
+                    }
+                    continue;
+                }
                 WGPUBindGroupEntry be[4] = {};
                 be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
                 be[1].binding = 1; be[1].buffer = ibuf;

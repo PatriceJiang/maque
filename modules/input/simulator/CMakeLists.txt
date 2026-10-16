@@ -7,6 +7,7 @@ set_target_properties(maque_sim PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_sim_test tests/sim_test.cpp)
+maque_deploy_asan(maque_sim_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_sim_test PRIVATE maque::sim)
     add_test(NAME sim COMMAND maque_sim_test)
 endif()

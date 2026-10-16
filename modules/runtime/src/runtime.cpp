@@ -4,6 +4,7 @@
  *   实体 = name + 组件；组件语义由 schema 的 roles 声明，引擎**不硬编码任何组件类型**。
  *   宿主 API 由 schema 的 api_list(ctx:true) 生成（绑定/声明），引擎只实现语义。 */
 #include "runtime/mq_runtime.h"
+#include "core/storage/mq_storage.h"   // 键值存储（docs/25）
 #include "runtime/mq_host.h"
 
 #include "core/persist/mq_persist.h"
@@ -48,15 +49,17 @@
 #include <functional>
 #include <csignal>
 #include <algorithm>
-#include <unistd.h>
-#include <fcntl.h>
+#include "core/compat/mq_posix_io.h"   // 崩溃路径的低层 fd I/O（POSIX open/write/pwrite ↔ Windows _open/_write）
 
 namespace {
 
 struct Entity {
     std::string name;
     int parent = -1;
-    float x = 0, y = 0;                                    // 局部坐标（父空间）
+    /* 世界坐标：**每帧由 flatten_world() 从节点树展平写到这里的派生缓存**（不是位置真相！
+     * 位置真相 = Transform 组件里的局部坐标；改位置请经 node/entity API 写组件，
+     * 直接改 world_x/y 会在下一帧被覆盖）。 */
+    float world_x = 0, world_y = 0;
     /* 节点属性（active/scale/angle/opacity）：active/scale/angle/opacity 影响
      * 自身与子树；z_index 参与 UI/绘制稳定排序。全部进快照与校验和（docs/10）。 */
     bool  active = true;
@@ -130,7 +133,8 @@ struct Scene {
     Entity* at(int index);
     void remove(int index);
     int  count() const { return (int)ents.size(); }
-    void compute_world(Engine& eng);
+    /* 每帧从**节点树**展平出世界坐标（写进 Entity::world_x/y）；树是唯一模型，这里是派生缓存。 */
+    void flatten_world(Engine& eng);
     uint64_t checksum(Engine& eng);     // 世界状态校验和（确定性；反射驱动）
     void encode(Engine& eng, SnapshotWriter& w);   // 世界 → 字节（二进制 codec）
     size_t decode(Engine& eng, const uint8_t* in, size_t n);
@@ -182,6 +186,10 @@ struct Engine {
     std::string         scn_vfs_path;                       // 场景在 VFS 中的路径（/x.scn）
     std::string         scn_full_path;                      // 场景的原始路径（崩溃报告/重放用）
     std::string         scn_dir;                            // 场景所在目录（本地路径）
+    mq_storage*         storage = nullptr;                  // 键值存储（docs/25；按场景目录/session 重建）
+    std::string         script_ret;                         // 脚本返回值缓冲（绑定立即复制 → 单线程复用）
+    std::string         shot_path;                          // MAQUE_SHOT：渲染到该帧后写一张图片（""=不写）
+    int                 shot_frame = 1;                     // MAQUE_SHOT_FRAME（默认第 1 帧）
     uint32_t            reloads = 0;
     uint64_t            frame = 0;                          // 模拟帧号（= sim time / dt）
     uint64_t            last_checksum = 0;
@@ -232,6 +240,7 @@ struct Engine {
     int canvas_entity = -1;               // 场景里的 ui.Canvas（-1 = 无 → 用场景尺寸兜底）
     bool canvas_active = false;
     void canvas_setup();                  // 装配期：定位画布实体
+    void storage_setup();                 // 装配期：建键值存储（默认 <场景目录>/.maque；MAQUE_STORAGE/UID/SESSION 覆盖）
     void canvas_resolve();                // 每帧/尺寸变化：重解析 + 写回 transient 字段
     mq_sim* sim = nullptr;
     bool sim_active = false;
@@ -412,7 +421,8 @@ inline void on_fatal_signal(int sig) {
     g_signal_name = sig == SIGSEGV ? "SIGSEGV" : sig == SIGABRT ? "SIGABRT"
                   : sig == SIGFPE ? "SIGFPE" : sig == SIGINT ? "SIGINT" : "signal";
     if (g_crash_fd >= 0 && g_crash_len > 0) {
-        const ssize_t ignored = write(g_crash_fd, g_crash_buf, (size_t)g_crash_len);
+        const maque::compat::ssize_t ignored =
+            maque::compat::write_fd(g_crash_fd, g_crash_buf, (size_t)g_crash_len);
         (void)ignored;
     }
     signal(sig, SIG_DFL);
@@ -603,7 +613,7 @@ void Engine::world_restore(const mq_snapshot* snap) {
             }
         }
     }
-    scene->compute_world(*this);
+    scene->flatten_world(*this);
 }
 
 /* 世界校验和：场景（实体/组件标量）+ 物理求解器状态 + 粒子（都是模拟状态，docs/10 §5）。 */
@@ -711,7 +721,7 @@ void Engine::step_frame() {
         physics_components_step(dt);                     // 组件驱动物理（RigidBody2D）
         flush_pending_destroy();                         // node.destroy()：帧边界统一销毁
         ui_step();                                       // UI 组件语义（layout/progress/slider/check/safearea/scroll）
-        scene->compute_world(*this);
+        scene->flatten_world(*this);
         scene->extract(*this, draws);
     text_flush(draws);            // 文本阶段 2：刷新图集纹理并按最终尺寸计算 UV
     }
@@ -747,6 +757,16 @@ void Engine::step_frame() {
     if (!frames_dir.empty()) {
         char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);
         write_ppm(frames_dir + fn, TW, SHpx, pixels);
+    }
+    /* 截图（--shot / MAQUE_SHOT）：渲染到指定帧后写一张图片并按扩展名选格式，随后退出 */
+    if (!shot_path.empty() && (int)frame == shot_frame) {
+        const bool png = shot_path.size() > 4 && shot_path.compare(shot_path.size() - 4, 4, ".png") == 0;
+        const int rc = png ? mq_image_write_png(shot_path.c_str(), (uint32_t)TW, (uint32_t)SHpx,
+                                                pixels.data(), (uint32_t)TW * 4u)
+                           : (write_ppm(shot_path, TW, SHpx, pixels) ? 0 : 1);
+        if (rc == 0) std::print("runtime: shot '{}' {}x{} frame={}\n", shot_path, TW, SHpx, (int)frame);
+        else std::print(stderr, "runtime: shot 写入失败 '{}'\n", shot_path);
+        quit = true;                                        // 单张截图为一次性任务（CI/预览：一条命令即得图）
     }
     if (ctl_server) {                     // 预览：保留最近一帧（仅在开了端点时）
         frame_pixels = pixels;
@@ -943,7 +963,7 @@ void Engine::particles_step(float dt) {
                 const float mag = speed * (1.0F - spread * (next_rng() / 4294967296.0F));
                 Particle p;
                 p.owner = id;
-                p.x = e->x; p.y = e->y;
+                p.x = e->world_x; p.y = e->world_y;
                 p.vx = std::cos(ang) * mag;
                 p.vy = std::sin(ang) * mag;
                 p.max_life = life > 0 ? life : 1.0F;
@@ -988,11 +1008,11 @@ void Engine::nav_step() {
                 if (need_path || (repath && (goal_x != tx || goal_y != ty))) {
                     std::vector<float> buf(2 * 4096);
                     uint32_t n = 0, need = 0;
-                    const int rc = mq_nav_find_path(nav, e->x, e->y, tx, ty, buf.data(),
+                    const int rc = mq_nav_find_path(nav, e->world_x, e->world_y, tx, ty, buf.data(),
                                                    (uint32_t)buf.size() / 2, &n, &need);
                     if (rc == MQ_NAV_ERR_CAPACITY) {
                         buf.resize(need);
-                        mq_nav_find_path(nav, e->x, e->y, tx, ty, buf.data(), need, &n, &need);
+                        mq_nav_find_path(nav, e->world_x, e->world_y, tx, ty, buf.data(), need, &n, &need);
                     }
                     if (rc == MQ_NAV_OK) {
                         n = mq_nav_smooth(nav, buf.data(), n);
@@ -1008,13 +1028,13 @@ void Engine::nav_step() {
                 }
             }
             if (ap.path.empty()) continue;
-            float x = e->x, y = e->y;
+            float x = e->world_x, y = e->world_y;
             const float dt = 1.0F / 60.0F;
             const int rc = mq_nav_step_towards(nav, &x, &y, ap.path.data(),
                                                (uint32_t)(ap.path.size() / 2), &ap.index,
                                                speed, dt, arrive);
             host::entity_set_pos(this, (float)id, x, y);
-            e->x = x; e->y = y;
+            e->world_x = x; e->world_y = y;
             if (rc == 1 && fstate) *(int32_t*)(blob.data() + fstate->offset) = 2;    // Arrived
         }
     }
@@ -1107,7 +1127,7 @@ bool Engine::reload_scene() {
     fresh->instantiate(*this);
     delete scene;                       // 重建世界（编辑器/AI 场景迭代路径）
     scene = fresh;
-    scene->compute_world(*this);
+    scene->flatten_world(*this);
     ++reloads;
     mq_obs_event(obs, "runtime", 1, "scene_reloaded");
     std::print("runtime: hot reload scene '{}'\n", scn_vfs_path);
@@ -1184,7 +1204,7 @@ void Engine::refresh_crash_buffer() {
     if (g_crash_fd < 0) {
         const char* out = std::getenv("MAQUE_CRASH_REPORT");
         if (!out || !*out) return;
-        g_crash_fd = ::open(out, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        g_crash_fd = maque::compat::open_fd(out, maque::compat::kOpenWriteCreate);
         if (g_crash_fd < 0) return;
     }
     uint64_t cp_frame = 0, cp_sum = 0;
@@ -1202,7 +1222,8 @@ void Engine::refresh_crash_buffer() {
         mq_obs_dump_json(obs));
     g_crash_len = n > 0 ? (n < (int)sizeof g_crash_buf ? n : (int)sizeof g_crash_buf - 1) : 0;
     if (g_crash_fd >= 0 && g_crash_len > 0) {          // 同步落盘（保证即使不崩也有当前快照）
-        const ssize_t ig = pwrite(g_crash_fd, g_crash_buf, (size_t)g_crash_len, 0);
+        const maque::compat::ssize_t ig =
+            maque::compat::pwrite_fd(g_crash_fd, g_crash_buf, (size_t)g_crash_len, 0);
         (void)ig;
     }
 }
@@ -1390,7 +1411,7 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
         mq_persist_apply_json(eng.reflect, d, c, blob.data());
     }
     /* Prefab 实例（docs/12 §5）：按 source 载入 .prefab.json，就地展开为子实体。
-     * detached=true 表示已 bake（内容已是本场景的一部分），不再展开。 */
+     * detached=true 表示**已展开**（内容已是本场景的一部分），不再展开。 */
     for (auto& [tid, blob] : ent->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
         if (!d) continue;
@@ -1552,7 +1573,7 @@ uint64_t Scene::checksum(Engine& eng) {
     std::sort(idx.begin(), idx.end());
     for (int k : idx) {
         Entity& e = ents[k];
-        mix(&k, sizeof k); mix(&e.parent, sizeof e.parent); mix(&e.x, sizeof e.x); mix(&e.y, sizeof e.y);
+        mix(&k, sizeof k); mix(&e.parent, sizeof e.parent); mix(&e.world_x, sizeof e.world_x); mix(&e.world_y, sizeof e.world_y);
         mix(&e.active, sizeof e.active); mix(&e.scale, sizeof e.scale); mix(&e.angle, sizeof e.angle);
         mix(&e.opacity, sizeof e.opacity); mix(&e.z_index, sizeof e.z_index);
         std::vector<uint32_t> tids;
@@ -1588,7 +1609,7 @@ uint64_t Scene::checksum(Engine& eng) {
 /* 组件局部位置：按 role 读；兼容两种声明形态（扁平 x/y 或 math.Transform2D.local.position）。
  * 引擎不认具体组件类型 —— 只看 role 与标准字段路径（docs/12/17）。 */
 static void read_local_pos(Engine& eng, const Entity& e, float* lx, float* ly) {
-    *lx = e.x; *ly = e.y;                      /* 默认：实体自身（无 Transform2D 的纯 UI 节点） */
+    *lx = e.world_x; *ly = e.world_y;                      /* 默认：实体自身（无 Transform2D 的纯 UI 节点） */
     for (auto& [tid, blob] : e.comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
         if (!d || !(d->role & MQ_ROLE_TRANSFORM2D)) continue;
@@ -1611,7 +1632,9 @@ static void read_local_pos(Engine& eng, const Entity& e, float* lx, float* ly) {
 }
 
 /* 世界矩阵自根向叶累积（确定性：父先于子；迭代顺序不影响结果，docs/10 D4）。 */
-void Scene::compute_world(Engine& eng) {
+/* 展平（派生）：局部坐标在 Transform 组件里，世界坐标每帧重算到 Entity::world_x/y。
+ * 顺序确定：根按 id 升序、子节点按 id 升序（栈序反转）→ 与快照/校验和的遍历顺序一致。 */
+void Scene::flatten_world(Engine& eng) {
     std::vector<int> roots;
     for (auto& [idx, e] : ents) if (e.parent < 0 || !at(e.parent)) roots.push_back(idx);
     std::sort(roots.begin(), roots.end());
@@ -1624,8 +1647,8 @@ void Scene::compute_world(Engine& eng) {
         if (!e) continue;
         float lx = 0, ly = 0;
         read_local_pos(eng, *e, &lx, &ly);
-        if (pidx >= 0) { if (Entity* pe = at(pidx)) { e->x = pe->x + lx; e->y = pe->y + ly; } }
-        else { e->x = lx; e->y = ly; }
+        if (pidx >= 0) { if (Entity* pe = at(pidx)) { e->world_x = pe->world_x + lx; e->world_y = pe->world_y + ly; } }
+        else { e->world_x = lx; e->world_y = ly; }
         std::vector<int> kids;
         for (auto& [k, c] : ents) if (c.parent == idx) kids.push_back(k);
         std::sort(kids.begin(), kids.end(), std::greater<int>());   // 栈序 → 最小 id 先处理（稳定）
@@ -1663,7 +1686,7 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 (void)z;
                 // 矩形控件以"中心 + 半径"图元表达（渲染后端当前只有 sprite 图元）
                 mq_renderer_item it{};
-                it.x = e.x + x + w * 0.5F; it.y = (float)eng.H - (e.y + y) - h * 0.5F;
+                it.x = e.world_x + x + w * 0.5F; it.y = (float)eng.H - (e.world_y + y) - h * 0.5F;
                 it.size = w * 0.5F > h * 0.5F ? w * 0.5F : h * 0.5F;
                 it.r = r; it.g = g; it.b = b; it.a = 1.0F;
                 it.texture = -1; it.layer = 1; it.z = z;
@@ -1700,7 +1723,7 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 tex = ti == eng.tex_cache.end() ? -1 : ti->second;
             }
             mq_renderer_item it{};
-            it.x = e.x; it.y = (float)eng.H - e.y; it.size = radius;
+            it.x = e.world_x; it.y = (float)eng.H - e.world_y; it.size = radius;
             /* width/height > 0 → **矩形**图元（瓦片/方块/非方形贴图）；否则 radius 的圆 */
             const bool rect = sw > 0.0F && sh > 0.0F;
             it.half_w = rect ? sw * 0.5F : 0.0F;
@@ -1746,7 +1769,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
             }
             if (interactive && w > 0 && h > 0) {
                 /* 节点位置 = 控件中心（与精灵居中绘制一致）；输入已是世界坐标 → 直接比较 */
-                const float cx = e->x, cy = e->y;
+                const float cx = e->world_x, cy = e->world_y;
                 const float bx = cx - w * 0.5F, by = cy - h * 0.5F;
                 if (px >= bx && px <= bx + w && py >= by && py <= by + h) {
                     if (zsum > best.z || (zsum == best.z && depth > best.depth)) {
@@ -1772,7 +1795,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
         if (!(d->role & MQ_ROLE_UI_BUTTON)) continue;        // 仅可交互控件参与命中
         /* 本地 (x,y) = 世界坐标下的矩形左下角 → 矩形 = [x, x+w] × [y, y+h]（y 向上） */
         const float bw = w > 0 ? w : 64, bh = h > 0 ? h : 24;
-        const float bx = e->x + x, by = e->y + y;
+        const float bx = e->world_x + x, by = e->world_y + y;
         if (px >= bx && px <= bx + bw && py >= by && py <= by + bh) {
             const int score = zsum;
             /* 稳定：z 大者优先；同 z 取树深大者（后绘制者在上） */
@@ -2040,7 +2063,7 @@ void slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base
         if (cd) w = read_num(cd, ctrl->data(), "offset_max", 100.0F);
     }
     if (w <= 0.0F) w = 1.0F;
-    float t = (px - (e->x - w * 0.5F)) / w;
+    float t = (px - (e->world_x - w * 0.5F)) / w;
     t = t < 0.0F ? 0.0F : (t > 1.0F ? 1.0F : t);
     if (read_num(d, base, "invert", 0.0F) != 0.0F) t = 1.0F - t;
     const float lo = read_num(d, base, "min_value", 0.0F);
@@ -2054,7 +2077,12 @@ void slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base
 }
 
 
-/* 文本：装配期选字体（MAQUE_FONT 环境变量 → 常见系统字体 → 内置 5x7 位图字体）。
+/* 文本：装配期选字体
+ *   MAQUE_FONT → **项目字体（scenes/fonts/ 下首个 .ttf，仓库自带含中文）** → 常见系统字体
+ *   → 内置 5x7 位图字体。
+ * AGENTS.md 一直这么写，但实现里缺了"项目字体"这一档：只查 MAQUE_FONT 与 Linux 系统路径，
+ * 于是 Windows（没有 /usr/share/fonts）**恒回退内置 5x7**，中文与 CJK 全丢，
+ * 且依赖真实字宽的排版用例（text_e2e 的折行行数）必然失败。
  * 图集纹理按字号惰性创建并缓存（确定性：同字号同图集，docs/10）。 */
 void Engine::text_setup() {
     if (font) return;
@@ -2063,12 +2091,39 @@ void Engine::text_setup() {
         font = mq_font_load_file(env);
         if (font) font_path = env;
     }
+    /* 项目字体：scenes/fonts/ 下按文件名排序取第一个 .ttf。
+     * 搜索根顺序 = 场景目录 → CWD（与组件级 font 字段的解析规则一致）。 */
+    if (!font) {
+        std::vector<std::filesystem::path> roots;
+        if (!scn_dir.empty()) roots.emplace_back(std::filesystem::path(scn_dir) / "fonts");
+        roots.emplace_back(std::filesystem::path("scenes") / "fonts");
+        roots.emplace_back(std::filesystem::path("fonts"));
+        for (const auto& dir : roots) {
+            std::error_code ec;
+            if (!std::filesystem::is_directory(dir, ec)) continue;
+            std::vector<std::filesystem::path> ttfs;
+            for (std::filesystem::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
+                const auto& p = it->path();
+                if (p.extension() == ".ttf" || p.extension() == ".otf") ttfs.push_back(p);
+            }
+            std::sort(ttfs.begin(), ttfs.end());          // 稳定：同目录多字体时取文件名最小者
+            for (const auto& t : ttfs) {
+                font = mq_font_load_file(t.string().c_str());
+                if (font) { font_path = t.string(); break; }
+            }
+            if (font) break;
+        }
+    }
     if (!font) {
         static const char* kCandidates[] = {
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/lato/Lato-Medium.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
             "/usr/share/fonts/truetype/tuffy/tuffy_bold.ttf",
+            /* Windows 常见系统字体（TTC 也可被 FreeType 打开） */
+            "C:/Windows/Fonts/segoeui.ttf",
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/msyh.ttc",
         };
         for (const char* c : kCandidates) {
             font = mq_font_load_file(c);
@@ -2208,7 +2263,7 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     const int lrc = mq_text_layout(label_font, &st, text.c_str(), glyphs.data(), (uint32_t)glyphs.size(), &n, &m);
     if (std::getenv("MAQUE_TRACE_TEXT"))
         std::print("[text]   layout rc={} glyphs={} pos=({:.0f},{:.0f}) tex={} first=({:.1f},{:.1f},{:.1f}x{:.1f})\n",
-                   lrc, n, e.x, e.y, n ? glyph_texture(label_font, glyphs[0].device_size) : -1,
+                   lrc, n, e.world_x, e.world_y, n ? glyph_texture(label_font, glyphs[0].device_size) : -1,
                    n ? glyphs[0].x : 0.0F, n ? glyphs[0].y : 0.0F,
                    n ? glyphs[0].w : 0.0F, n ? glyphs[0].h : 0.0F);
     if (lrc != MQ_TEXT_OK) return;
@@ -2247,8 +2302,8 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
         q.tw = (int)gl.w; q.th = (int)gl.h;
         q.cp = gl.codepoint;
         /* 锚点 = 位图左上角 (x0,y0)；排版 y 向下、屏幕 y 向下 → 基准翻转后相加 */
-        q.x = e.x + ox + gl.x0 * inv + half_w;
-        q.y = (float)eng.H - (e.y + oy) + gl.y0 * inv + half_h;
+        q.x = e.world_x + ox + gl.x0 * inv + half_w;
+        q.y = (float)eng.H - (e.world_y + oy) + gl.y0 * inv + half_h;
         q.half_w = half_w; q.half_h = half_h;
         q.r = gl.r; q.g = gl.g; q.b = gl.b; q.a = gl.a;
         q.z = 100 + (int)i;
@@ -2329,6 +2384,40 @@ static bool read_sim_scenario(mq_vfs* vfs, const char* path, std::string& out) {
     if (!f) return false;
     out.assign((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     return !out.empty();
+}
+
+/* ---- 键值存储（docs/25）----
+ * 模式与根：MAQUE_STORAGE（spec）> 默认 file://<场景目录>/.maque（远程场景/只读目录由模块退到 XDG 数据目录）；
+ * 命名空间：MAQUE_UID / MAQUE_SESSION（缺省 "default" / "main"）→ 键空间 <uid>/<session>/<key>。
+ * 切场景时按新场景目录重建（旧实例销毁）。 */
+void Engine::storage_setup() {
+    if (storage) { mq_storage_destroy(storage); storage = nullptr; }
+    const char* spec_env = std::getenv("MAQUE_STORAGE");
+    const char* uid = std::getenv("MAQUE_UID");
+    const char* session = std::getenv("MAQUE_SESSION");
+
+    const bool remote = scn_full_path.rfind("http://", 0) == 0 || scn_full_path.rfind("https://", 0) == 0;
+    std::string spec;
+    if (spec_env && *spec_env) spec = spec_env;
+    else if (!remote) {
+        /* 默认：**场景目录**旁的 .maque（跑 `scenes/sokoban/sokoban.scn` → scenes/sokoban/.maque；
+         * 场景就在 CWD 时 → <CWD>/.maque）。远程场景没有可写目录 → 交给模块的 XDG 兜底。 */
+        std::error_code ec;
+        const auto abs = std::filesystem::absolute(std::filesystem::path(scn_dir.empty() ? "." : scn_dir) / ".maque", ec);
+        spec = "file://" + (ec ? (std::filesystem::path(scn_dir.empty() ? "." : scn_dir) / ".maque").string() : abs.string());
+    } else {
+        spec = "file://";                        // 远程场景：模块用 XDG 数据目录兜底（可持久）
+    }
+
+    storage = mq_storage_create(spec.c_str(), uid, session);
+    if (!storage) {
+        std::print(stderr, "runtime: storage 创建失败（spec='{}'）→ 回退 mem://（不落盘）\n", spec);
+        storage = mq_storage_create("mem://", uid, session);
+    }
+    if (storage) {
+        std::print("runtime: storage mode='{}' root='{}' ns='{}'\n",
+                   mq_storage_mode(storage), mq_storage_root(storage), mq_storage_ns(storage));
+    }
 }
 
 /* ---- 画布与分辨率策略（docs/17）----
@@ -2562,21 +2651,21 @@ void Engine::ui_step() {
                         }
                     }
                     /* mode: 0=Free 1=Horizontal 2=Vertical 3=Grid */
-                    /* 位置经 entity_set_pos 写回 Transform2D 组件（否则被 compute_world 覆盖） */
+                    /* 位置经 entity_set_pos 写回 Transform2D 组件（否则被 flatten_world 覆盖） */
                     if ((int)mode == 1) {
-                        host::entity_set_pos(this, (float)k, e->x + pad_l + cursor + kw * 0.5F,
-                                             e->y + pad_t + kh * 0.5F);
+                        host::entity_set_pos(this, (float)k, e->world_x + pad_l + cursor + kw * 0.5F,
+                                             e->world_y + pad_t + kh * 0.5F);
                         cursor += kw + spacing;
                     } else if ((int)mode == 2) {
-                        host::entity_set_pos(this, (float)k, e->x + pad_l + kw * 0.5F,
-                                             e->y + pad_t + cursor + kh * 0.5F);
+                        host::entity_set_pos(this, (float)k, e->world_x + pad_l + kw * 0.5F,
+                                             e->world_y + pad_t + cursor + kh * 0.5F);
                         cursor += kh + spacing;
                     } else if ((int)mode == 3) {
                         const int c = columns > 0 ? columns : 1;
                         const int row = col / c, column = col % c;
                         host::entity_set_pos(this, (float)k,
-                                             e->x + pad_l + (float)column * (kw + spacing) + kw * 0.5F,
-                                             e->y + pad_t + (float)row * (kh + spacing) + kh * 0.5F);
+                                             e->world_x + pad_l + (float)column * (kw + spacing) + kw * 0.5F,
+                                             e->world_y + pad_t + (float)row * (kh + spacing) + kh * 0.5F);
                         ++col;
                     }
                     (void)ke;
@@ -2616,7 +2705,7 @@ void Engine::ui_step() {
                 int target = -1;
                 for (auto& [k, ke] : scene->ents) if (ke.parent == id) { target = k; break; }
                 if (target >= 0) {
-                    host::entity_set_pos(this, (float)target, e->x + il, e->y + it);
+                    host::entity_set_pos(this, (float)target, e->world_x + il, e->world_y + it);
                     if (auto* ctrl = comp_by_role(*this, target, MQ_ROLE_UI_CONTROL)) {
                         const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
                         if (const mq_field_desc* f = mq_reflect_field(cd, "offset_max")) {
@@ -2636,8 +2725,8 @@ void Engine::ui_step() {
                 }
                 for (auto& [k, ke] : scene->ents)
                     if (ke.parent == id) {
-                        const float kx = ke.x;
-                        host::entity_set_pos(this, (float)k, kx, e->y - sv);
+                        const float kx = ke.world_x;
+                        host::entity_set_pos(this, (float)k, kx, e->world_y - sv);
                         break;
                     }
             }
@@ -2742,7 +2831,7 @@ void Engine::physics_components_setup() {
         desc.struct_size = (uint32_t)sizeof desc;
         desc.type = is_static != 0.0 ? MQ_PHYSICS_BODY_STATIC : MQ_PHYSICS_BODY_DYNAMIC;
         desc.shape = radius > 0.0 ? MQ_PHYSICS_SHAPE_BALL : MQ_PHYSICS_SHAPE_CUBOID;
-        desc.x = e->x; desc.y = e->y;
+        desc.x = e->world_x; desc.y = e->world_y;
         desc.radius = (float)radius;
         desc.half_w = (float)hw; desc.half_h = (float)hh;
         desc.mass = 1.0F; desc.restitution = 0.5F; desc.friction = 0.2F;
@@ -2763,10 +2852,10 @@ void Engine::physics_components_step(float) {
     for (auto& [id, body] : physics_role_bodies) {
         Entity* e = scene->at(id);
         if (!e) continue;
-        float x = e->x, y = e->y;
+        float x = e->world_x, y = e->world_y;
         if (mq_physics_get_transform(physics, body, &x, &y) == MQ_PHYSICS_OK) {
-            e->x = x; e->y = y;
-            host::entity_set_pos(this, (float)id, x, y);   // 写回 Transform2D（否则被 compute_world 覆盖）
+            e->world_x = x; e->world_y = y;
+            host::entity_set_pos(this, (float)id, x, y);   // 写回 Transform2D（否则被 flatten_world 覆盖）
         }
     }
 }
@@ -2818,7 +2907,7 @@ void  entity_set_pos(void* ctx, float id, float x, float y) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
             if (d && (d->role & MQ_ROLE_TRANSFORM2D)) { has_tf = true; break; }
         }
-        if (!has_tf) { ent->x = x; ent->y = y; return; }
+        if (!has_tf) { ent->world_x = x; ent->world_y = y; return; }
         // 写回 transform2d 组件（按 role；兼容扁平 x/y 与 math.Transform2D.local.position）
         for (auto& [tid, blob] : ent->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
@@ -2843,11 +2932,11 @@ void  entity_set_pos(void* ctx, float id, float x, float y) {
                 }
             }
         }
-        ent->x = x; ent->y = y;
+        ent->world_x = x; ent->world_y = y;
     }
 }
-float entity_x(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->x : 0.0f; }
-float entity_y(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->y : 0.0f; }
+float entity_x(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->world_x : 0.0f; }
+float entity_y(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->world_y : 0.0f; }
 float entity_count(void* ctx) { return (float)((Engine*)ctx)->scene->count(); }
 void  entity_destroy(void* ctx, float id) { ((Engine*)ctx)->scene->remove((int)id); }
 
@@ -3893,7 +3982,7 @@ extern "C" int mq_control_Scene_entities(void* u, const mq_json*, char* out, siz
     char item[256];
     for (auto& [idx, ent] : e->scene->ents) {
         std::snprintf(item, sizeof item, "%s{\"id\":%d,\"name\":\"%s\",\"parent\":%d,\"x\":%.4f,\"y\":%.4f,\"components\":%zu}",
-                      first ? "" : ",", idx, ent.name.c_str(), ent.parent, ent.x, ent.y, ent.comps.size());
+                      first ? "" : ",", idx, ent.name.c_str(), ent.parent, ent.world_x, ent.world_y, ent.comps.size());
         first = false;
         o += item;
     }
@@ -4025,11 +4114,12 @@ extern "C" int mq_control_Scene_destroy(void* u, const mq_json* params, char* ou
     return 0;
 }
 
-/* Scene.bake：把 PrefabInstance 标记为已展开（detached=true）→ 场景自包含（docs/12 §5）。 */
-extern "C" int mq_control_Scene_bake(void* u, const mq_json* params, char* out, size_t cap) {
+/* Scene.expand_prefabs：把 PrefabInstance 展开（detached=true）→ 场景自包含（docs/12 §5）。
+ * 旧名 Scene.bake 保留为兼容别名（语义完全相同；"bake" 一词不再用于世界展平）。 */
+extern "C" int mq_control_Scene_expand_prefabs(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
-    uint32_t baked = 0;
+    uint32_t expanded = 0;
     for (auto& [idx, ent] : e->scene->ents) {
         for (auto& [tid, blob] : ent.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
@@ -4040,11 +4130,133 @@ extern "C" int mq_control_Scene_bake(void* u, const mq_json* params, char* out, 
             if (!fd) continue;
             if (*(const bool*)(blob.data() + fd->offset)) continue;
             if (!dry) *(bool*)(blob.data() + fd->offset) = true;
-            ++baked;
+            ++expanded;
         }
     }
-    std::snprintf(out, cap, "{\"ok\":true,\"baked\":%u,\"dry_run\":%s}", baked, dry ? "true" : "false");
+    std::snprintf(out, cap, "{\"ok\":true,\"expanded\":%u,\"dry_run\":%s}", expanded, dry ? "true" : "false");
     return 0;
+}
+
+/* 脚本面（schema/io/storage.yaml 的 api_list，ctx:true → 运行时实现；docs/14）
+ * storage.get/set/remove/exists/keys/info —— JS 与 Lua 同一套绑定（DSL 生成，docs/21）。 */
+namespace storage {
+
+/* 返回值放进 Engine 的复用缓冲：生成的绑定会**立即**复制（ret_str → snprintf）→ 单线程安全 */
+const char* get(void* ctx, const char* key) {
+    auto* e = (Engine*)ctx;
+    e->script_ret.clear();
+    if (!e->storage || !key) return "";
+    void* d = nullptr; size_t n = 0;
+    if (mq_storage_get(e->storage, key, &d, &n) != MQ_STORAGE_OK) return "";
+    e->script_ret.assign((const char*)d, n);
+    mq_storage_free(d);
+    return e->script_ret.c_str();
+}
+
+float set(void* ctx, const char* key, const char* value) {
+    auto* e = (Engine*)ctx;
+    if (!e->storage || !key || !value) return 0.0F;
+    return mq_storage_put(e->storage, key, value, std::strlen(value)) == MQ_STORAGE_OK ? 1.0F : 0.0F;
+}
+
+float remove(void* ctx, const char* key) {
+    auto* e = (Engine*)ctx;
+    if (!e->storage || !key) return 0.0F;
+    return mq_storage_remove(e->storage, key) == MQ_STORAGE_OK ? 1.0F : 0.0F;
+}
+
+float exists(void* ctx, const char* key) {
+    auto* e = (Engine*)ctx;
+    return (e->storage && key && mq_storage_exists(e->storage, key)) ? 1.0F : 0.0F;
+}
+
+const char* keys(void* ctx) {
+    auto* e = (Engine*)ctx;
+    e->script_ret.assign(65536, '\0');
+    if (!e->storage || mq_storage_keys(e->storage, e->script_ret.data(), e->script_ret.size()) != MQ_STORAGE_OK) {
+        e->script_ret = "[]";
+        return e->script_ret.c_str();
+    }
+    e->script_ret.resize(std::strlen(e->script_ret.c_str()));
+    return e->script_ret.c_str();
+}
+
+const char* info(void* ctx) {
+    auto* e = (Engine*)ctx;
+    std::string json = "{\"mode\":\"";
+    json += e->storage ? mq_storage_mode(e->storage) : "";
+    json += "\",\"root\":";
+    { std::string q; write_json_string_pub(q, e->storage ? mq_storage_root(e->storage) : ""); json += q; }
+    json += ",\"ns\":";
+    { std::string q; write_json_string_pub(q, e->storage ? mq_storage_ns(e->storage) : ""); json += q; }
+    json += "}";
+    e->script_ret = std::move(json);
+    return e->script_ret.c_str();
+}
+
+} // namespace storage
+
+/* 控制面（docs/11 §3、docs/25）：只读 info/list/get，变更 put/remove（只读会话拒绝）。 */
+extern "C" int mq_control_Storage_info(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    if (!e->storage) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no storage\"}"); return 0; }
+    std::string root;
+    write_json_string_pub(root, mq_storage_root(e->storage));
+    std::string ns;
+    write_json_string_pub(ns, mq_storage_ns(e->storage));
+    std::snprintf(out, cap, "{\"ok\":true,\"mode\":\"%s\",\"root\":%s,\"ns\":%s}",
+                  mq_storage_mode(e->storage), root.c_str(), ns.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Storage_list(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    if (!e->storage) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no storage\"}"); return 0; }
+    std::vector<char> buf(65536, '\0');
+    const int rc = mq_storage_keys(e->storage, buf.data(), buf.size());
+    if (rc != MQ_STORAGE_OK) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"keys failed (%d)\"}", rc); return 0; }
+    std::snprintf(out, cap, "{\"ok\":true,\"keys\":%s}", buf.data());
+    return 0;
+}
+
+extern "C" int mq_control_Storage_get(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const char* key = mq_json_str(mq_json_get(params, "key"), nullptr);
+    if (!e->storage || !key) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing key\"}"); return 0; }
+    void* d = nullptr; size_t n = 0;
+    const int rc = mq_storage_get(e->storage, key, &d, &n);
+    if (rc != MQ_STORAGE_OK) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"notfound\"}"); return 0; }
+    std::string value;
+    write_json_string_pub(value, std::string((char*)d, n));
+    mq_storage_free(d);
+    std::snprintf(out, cap, "{\"ok\":true,\"value\":%s}", value.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Storage_put(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const char* key = mq_json_str(mq_json_get(params, "key"), nullptr);
+    const char* value = mq_json_str(mq_json_get(params, "value"), nullptr);
+    if (!e->storage || !key || !value) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing key/value\"}"); return 0; }
+    const int rc = mq_storage_put(e->storage, key, value, std::strlen(value));
+    std::snprintf(out, cap, "{\"ok\":%s,\"error\":\"%s\"}", rc == MQ_STORAGE_OK ? "true" : "false",
+                  rc == MQ_STORAGE_OK ? "" : "put failed");
+    return 0;
+}
+
+extern "C" int mq_control_Storage_remove(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const char* key = mq_json_str(mq_json_get(params, "key"), nullptr);
+    if (!e->storage || !key) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing key\"}"); return 0; }
+    const int rc = mq_storage_remove(e->storage, key);
+    std::snprintf(out, cap, "{\"ok\":%s,\"error\":\"%s\"}", rc == MQ_STORAGE_OK ? "true" : "false",
+                  rc == MQ_STORAGE_OK ? "" : (rc == MQ_STORAGE_ERR_NOTFOUND ? "notfound" : "remove failed"));
+    return 0;
+}
+
+/* Scene.bake：Scene.expand_prefabs 的兼容别名（已弃用；docs/12 §5 改名） */
+extern "C" int mq_control_Scene_bake(void* u, const mq_json* params, char* out, size_t cap) {
+    return mq_control_Scene_expand_prefabs(u, params, out, cap);
 }
 
 /* Scene.save：把当前世界写回 .scn（编辑器落盘；docs/11 §4）。
@@ -4529,7 +4741,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
         signal(SIGABRT, on_fatal_signal);
         signal(SIGFPE, on_fatal_signal);
         signal(SIGINT, on_fatal_signal);
-        if (g_crash_fd < 0) g_crash_fd = ::open(cr, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (g_crash_fd < 0) g_crash_fd = maque::compat::open_fd(cr, maque::compat::kOpenWriteCreate);
     }
     vfs = mq_vfs_create();
     std::string scn_vfs;
@@ -4553,7 +4765,13 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
 #ifdef MQ_RENDERER_DEFAULT
     if (!plugin) plugin = MQ_RENDERER_DEFAULT;
 #endif
+    /* 平台默认插件文件名：Windows 是 maque_gfx.dll，类 UNIX 是 libmaque_gfx.so。
+     * （写死 .so 会让 Windows 上永远「cannot load renderer plugin」。） */
+#if defined(_WIN32)
+    if (!plugin) plugin = "maque_gfx.dll";
+#else
     if (!plugin) plugin = "libmaque_gfx.so";
+#endif
     host = mq_host_create();
     mq_loaded_module* rmod = nullptr;
     if (mq_host_load(host, plugin, &rmod) != 0 ||
@@ -4579,6 +4797,8 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     mq_input_add_handler(input, runtime_input_handler, this);
     { const char* hs = std::getenv("MAQUE_HITS"); if (hs && *hs && *hs != '0') trace_hits = true; }
     { const char* ko = std::getenv("MAQUE_KEEP_OPEN"); if (ko && *ko && *ko != '0') keep_open = true; }
+    if (const char* sp = std::getenv("MAQUE_SHOT"); sp && *sp) shot_path = sp;
+    if (const char* sf = std::getenv("MAQUE_SHOT_FRAME"); sf && *sf) shot_frame = std::atoi(sf);
     snaps = mq_snapshot_pool_create(8, 1 << 16);
     { const char* cp = std::getenv("MAQUE_CHECKPOINTS"); if (cp && *cp && *cp != '0') cp_active = true; }
     /* 场景/脚本/资源/物理装配统一走 load_scene_into（与 director.loadScene 同一条路径） */
@@ -4618,7 +4838,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     scene = &scene_store;
     if (!scene->deserialize(*this, text)) return false;
     scene->instantiate(*this);
-    scene->compute_world(*this);
+    scene->flatten_world(*this);
 
     W = scene->desc.width > 0 ? scene->desc.width : 320;
     H = scene->desc.height > 0 ? scene->desc.height : 240;
@@ -4664,7 +4884,15 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         v = mq_renderer_view{};
         v.vx = (float)(i * SW); v.vy = 0;
         v.vw = (float)SW; v.vh = (float)SH;
-        v.pan = (float)(i * SW);
+        /* pan 必须留在 0，**不要**再放 i*SW。
+         * shader 里 `pan` 与 `view` 是两个独立的像素平移项：
+         *     pc = … + vec2f(u.size.x*0.5, u.size.y*0.5) + vec2f(u.pan, u.eye) + u.view
+         * 而 `view` 已经是该视图在渲染目标里的像素原点（v.vx）。
+         * 两个都设成 i*SW 会把偏移**叠加两次**：
+         *   · view 0：vx=0 → 看不出问题（但内容仍被视图边界裁掉，表现为"只画一半"）
+         *   · view 1：偏移 320+320=640 → 整幅被推到画布右侧之外 → **完全不绘制**
+         * `pan` 的用途是"整体平移画面"（如跟随相机），不是视图定位；视图定位只由 vx/vy 负责。 */
+        v.pan = 0.0F;
         v.eye = (i - (nviews - 1) * 0.5F) * scene->desc.eye_sep;
         v.cx = W * 0.5F; v.cy = H * 0.5F;
         v.zoom = ss;                          /* 世界 → 目标：按倍率放大（设计分辨率 × ss） */
@@ -4756,6 +4984,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     text_setup();                               // 字体（MAQUE_FONT → 系统字体 → 内置 5x7）
     sim_setup();                                // 输入模拟器（MAQUE_SIM / MAQUE_SIM_CLICK）
     canvas_setup();                             // 画布（分辨率策略，docs/17）
+    storage_setup();                            // 键值存储（docs/25：默认 <场景目录>/.maque）
     if (const char* sa = std::getenv("MAQUE_SAFE_AREA")) {   // "l,t,r,b"（设备像素；测试/刘海屏）
         float l = 0, t = 0, r = 0, b = 0;
         if (std::sscanf(sa, "%f,%f,%f,%f", &l, &t, &r, &b) == 4) {
@@ -4805,6 +5034,7 @@ void Engine::teardown() {
     if (rapi && rself) { rapi->destroy(rself); rself = nullptr; }
     mq_host_destroy(host); host = nullptr;
     mq_vfs_destroy(vfs); vfs = nullptr;
+    if (storage) { mq_storage_destroy(storage); storage = nullptr; }
 }
 
 extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {

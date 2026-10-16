@@ -6,6 +6,7 @@ set_target_properties(maque_canvas PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUI
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_canvas_test tests/canvas_test.cpp)
+maque_deploy_asan(maque_canvas_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_canvas_test PRIVATE maque::canvas)
     add_test(NAME canvas COMMAND maque_canvas_test)
 endif()

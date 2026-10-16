@@ -6,6 +6,7 @@ set_target_properties(maque_handle PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUI
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_handle_test tests/handle_test.cpp)
+maque_deploy_asan(maque_handle_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_handle_test PRIVATE maque::handle)
     add_test(NAME handle COMMAND maque_handle_test)
 endif()

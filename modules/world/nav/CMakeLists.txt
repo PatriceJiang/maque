@@ -7,6 +7,7 @@ target_compile_options(maque_nav PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClan
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_nav_test tests/nav_test.cpp)
+maque_deploy_asan(maque_nav_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_nav_test PRIVATE maque::nav)
     add_test(NAME nav COMMAND maque_nav_test)
 endif()

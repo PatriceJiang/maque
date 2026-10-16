@@ -8,6 +8,7 @@ target_compile_features(maque_math INTERFACE cxx_std_23)
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_math_test tests/math_test.cpp)
+maque_deploy_asan(maque_math_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_math_test PRIVATE maque::math)
     add_test(NAME math COMMAND maque_math_test)
 endif()

@@ -8,6 +8,7 @@ target_compile_options(maque_physics PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,Apple
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_physics_test tests/physics_test.cpp)
+maque_deploy_asan(maque_physics_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_physics_test PRIVATE maque::physics)
     add_test(NAME physics COMMAND maque_physics_test)
 endif()
