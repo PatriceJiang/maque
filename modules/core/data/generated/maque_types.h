@@ -473,6 +473,11 @@ struct SpineSkeleton {
     math::Color color;
     int32_t z_index = 0;
     std::string material = "";
+    int32_t slots_from = -1;
+    int32_t slots_to = -1;
+    float default_mix = 0.0F;
+    float time_scale = 1.0F;
+    bool two_color = false;
     anim::SpineAnimState state;
     uint64_t instance = 0;
 };

@@ -1,0 +1,33 @@
+{
+  "title": "Spine demo: MixAndMatch",
+  "script": "demos.js",
+  "width": 800,
+  "height": 600,
+  "seed": 20241016,
+  "entities": [
+    {
+      "name": "demo.mixandmatch",
+      "components": [
+        { "type": "scn.Transform2D", "x": 400, "y": 100 },
+        { "type": "anim.SpineSkeleton", "skeleton": "/art/mix-and-match-pro.skel", "atlas": "/art/mix-and-match.atlas",
+          "animation": 0, "autoplay": false, "play_mode": "PlayMode::Loop", "speed": 1.0, "z_index": 0 }
+      ]
+    },
+    {
+      "name": "hud",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 576 },
+        { "type": "scn.Label", "font_size": 18, "r": 0.08, "g": 0.08, "b": 0.10,
+          "text": "MixAndMatch (official): runtime skin = base + nose/short + eyelids/girly + eyes/violet + hair/brown + hoodie + jeans + bag + hat; plays dance" }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 12 },
+        { "type": "scn.Label", "font_size": 12, "r": 0.16, "g": 0.16, "b": 0.20,
+          "text": "UP/DOWN anim   SPACE pause   N next demo   CLICK x3 = official cycle" }
+      ]
+    }
+  ]
+}

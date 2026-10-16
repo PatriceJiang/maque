@@ -185,14 +185,16 @@ static Device* create_device(std::string* out_backend) {
         dv->meshBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &mbd);
         WGPUPipelineLayoutDescriptor mpl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT; mpl.bindGroupLayoutCount = 1; mpl.bindGroupLayouts = &dv->meshBgl;
         dv->meshPl = wgpuDeviceCreatePipelineLayout(dv->device, &mpl);
-        /* 顶点布局：交错 stride 32B（pos.xy | uv.xy | color.rgba），与 CPU 侧 MeshVertex 一一对应 */
-        WGPUVertexAttribute mattrs[3] = {};
+        /* 顶点布局：交错 stride 48B（pos.xy | uv.xy | color.rgba | darkColor.rgba），与 CPU 侧 MeshVertex 一一对应。
+         * dark 一路 = 两色着色（TintBlack）：公式与出处见 assets/builtin/shaders/mesh/shader.wgsl 顶部。 */
+        WGPUVertexAttribute mattrs[4] = {};
         mattrs[0].format = WGPUVertexFormat_Float32x2; mattrs[0].offset = 0;  mattrs[0].shaderLocation = 0;
         mattrs[1].format = WGPUVertexFormat_Float32x2; mattrs[1].offset = 8;  mattrs[1].shaderLocation = 1;
         mattrs[2].format = WGPUVertexFormat_Float32x4; mattrs[2].offset = 16; mattrs[2].shaderLocation = 2;
+        mattrs[3].format = WGPUVertexFormat_Float32x4; mattrs[3].offset = 32; mattrs[3].shaderLocation = 3;
         WGPUVertexBufferLayout mvbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
-        mvbl.stepMode = WGPUVertexStepMode_Vertex; mvbl.arrayStride = 32;
-        mvbl.attributeCount = 3; mvbl.attributes = mattrs;
+        mvbl.stepMode = WGPUVertexStepMode_Vertex; mvbl.arrayStride = 48;
+        mvbl.attributeCount = 4; mvbl.attributes = mattrs;
         for (int blend = 0; blend < 4; ++blend) {
             for (int pma = 0; pma < 2; ++pma) {
                 WGPUBlendState mb = WGPU_BLEND_STATE_INIT;
@@ -341,9 +343,13 @@ static int32_t r_has_texture(void* self, int32_t id) {
     return (dv && id >= 0 && id < (int)dv->textures.size()) ? 1 : 0;
 }
 
-/* 网格顶点（与 assets/builtin/shaders/mesh/shader.wgsl 的顶点布局严格一致：stride 32B） */
-struct MeshVertex { float x, y, u, v, r, g, b, a; };
-static_assert(sizeof(MeshVertex) == 32, "MeshVertex 必须与 WGSL 顶点布局一致（stride 32）");
+/* 网格顶点（与 assets/builtin/shaders/mesh/shader.wgsl 的顶点布局严格一致：stride 48B）
+ * col  = light 色（骨骼 × 槽位 × 附件）；col2 = dark 色（两色着色 TintBlack）。
+ * dark 缺省 = (0,0,0,1)：此时着色公式**精确退化**为旧的 `tex * light`，未启用该特性的素材不回归。 */
+struct MeshVertex { float x, y, u, v, r, g, b, a, d0, d1, d2, d3; };
+static_assert(sizeof(MeshVertex) == 48, "MeshVertex 必须与 WGSL 顶点布局一致（stride 48）");
+static_assert(offsetof(MeshVertex, r) == 16, "col 必须在 offset 16（location 2）");
+static_assert(offsetof(MeshVertex, d0) == 32, "dark 必须在 offset 32（location 3）");
 
 /* 一条绘制命令：**图元批次**（实例化 6 顶点）或**网格批次**（索引绘制）。
  * 两者在同一序列里按 (layer, z, 原始序) 排序 → 网格与精灵可以正确互相遮挡。 */
@@ -464,6 +470,15 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 mv.r = m.colors[(size_t)i * 4]; mv.g = m.colors[(size_t)i * 4 + 1];
                 mv.b = m.colors[(size_t)i * 4 + 2]; mv.a = m.colors[(size_t)i * 4 + 3];
             } else { mv.r = mv.g = mv.b = mv.a = 1.0F; }
+            /* 两色着色（TintBlack）：dark 一路。
+             * 语义与默认值取自官方参考实现 third_party/spine-cpp/src/spine/SkeletonRenderer.cpp:217
+             * （`uint32_t darkColor = 0xff000000;` 即 rgba(0,0,0,1) —— "暗色=黑"）。
+             * 调用方不给 dark_colors（例如纯色/非 spine 的网格）时用该默认值，
+             * 着色公式随即退化为 `tex * light`，与加两色着色之前逐字节一致。 */
+            if (m.dark_colors) {
+                mv.d0 = m.dark_colors[(size_t)i * 4]; mv.d1 = m.dark_colors[(size_t)i * 4 + 1];
+                mv.d2 = m.dark_colors[(size_t)i * 4 + 2]; mv.d3 = m.dark_colors[(size_t)i * 4 + 3];
+            } else { mv.d0 = 0.0F; mv.d1 = 0.0F; mv.d2 = 0.0F; mv.d3 = 1.0F; }
             mverts.push_back(mv);
         }
         for (uint32_t t = 0; t < m.index_count; ++t) midx.push_back(m.indices[(size_t)m.first_index + t]);

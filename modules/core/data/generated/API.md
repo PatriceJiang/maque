@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **141** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **25** 个 · 插件接口 **1** 个。
+统计：脚本 API **199** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **25** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -174,6 +174,64 @@
 | `spine_set_time` | id: float, t: float | float | ctx |
 | `spine_pages` | id: float | float | ctx |
 | `spine_page_texture` | id: float, index: float | float | ctx |
+| `spine_set_animation` | id: float, track: float, name: string, loop: float | float | ctx |
+| `spine_add_animation` | id: float, track: float, name: string, loop: float, delay: float | float | ctx |
+| `spine_track_count` | id: float | float | ctx |
+| `spine_track_animation` | id: float, track: float | string | ctx |
+| `spine_queue_count` | id: float, track: float | float | ctx |
+| `spine_clear_track` | id: float, track: float | float | ctx |
+| `spine_track_time` | id: float, track: float | float | ctx |
+| `spine_set_track_time` | id: float, track: float, t: float | float | ctx |
+| `spine_track_time_scale` | id: float, track: float | float | ctx |
+| `spine_set_track_time_scale` | id: float, track: float, scale: float | float | ctx |
+| `spine_time_scale` | id: float | float | ctx |
+| `spine_set_time_scale` | id: float, scale: float | float | ctx |
+| `spine_default_mix` | id: float | float | ctx |
+| `spine_set_default_mix` | id: float, duration: float | float | ctx |
+| `spine_set_mix` | id: float, from: string, to: string, duration: float | float | ctx |
+| `spine_event_count` | id: float | float | ctx |
+| `spine_event_type` | id: float, index: float | float | ctx |
+| `spine_event_track` | id: float, index: float | float | ctx |
+| `spine_event_animation` | id: float, index: float | string | ctx |
+| `spine_event_name` | id: float, index: float | string | ctx |
+| `spine_event_int` | id: float, index: float | float | ctx |
+| `spine_event_float` | id: float, index: float | float | ctx |
+| `spine_event_string` | id: float, index: float | string | ctx |
+| `spine_clear_events` | id: float | float | ctx |
+| `spine_bone_count` | id: float | float | ctx |
+| `spine_bone_name` | id: float, index: float | string | ctx |
+| `spine_bone_find` | id: float, name: string | float | ctx |
+| `spine_bone_value` | id: float, index: float, what: float | float | ctx |
+| `spine_bone_set_position` | id: float, index: float, x: float, y: float | float | ctx |
+| `spine_bone_set_world_position` | id: float, index: float, x: float, y: float | float | ctx |
+| `spine_update_world_transform` | id: float | float | ctx |
+| `spine_slot_count` | id: float | float | ctx |
+| `spine_slot_name` | id: float, index: float | string | ctx |
+| `spine_slot_index` | id: float, name: string | float | ctx |
+| `spine_slot_attachment` | id: float, index: float | string | ctx |
+| `spine_set_slots_range` | id: float, from: float, to: float | float | ctx |
+| `spine_slots_from` | id: float | float | ctx |
+| `spine_slots_to` | id: float | float | ctx |
+| `spine_set_attachment` | id: float, slot_name: string, attachment_name: string, skin_name: string | float | ctx |
+| `spine_skin_find` | id: float, name: string | float | ctx |
+| `spine_skin_create` | id: float, name: string | float | ctx |
+| `spine_skin_add` | id: float, handle: float, source_skin: string | float | ctx |
+| `spine_set_skin_obj` | id: float, handle: float | float | ctx |
+| `spine_skin_compose` | id: float, names: string | float | ctx |
+| `spine_skin_attachment_count` | id: float, handle: float | float | ctx |
+| `spine_set_two_color` | id: float, on: float | float | ctx |
+| `spine_ik_count` | id: float | float | ctx |
+| `spine_ik_name` | id: float, index: float | string | ctx |
+| `spine_set_ik_mix` | id: float, index: float, mix: float | float | ctx |
+| `spine_physics_count` | id: float | float | ctx |
+| `spine_physics_name` | id: float, index: float | string | ctx |
+| `spine_physics_translate` | id: float, x: float, y: float | float | ctx |
+| `spine_physics_reset` | id: float | float | ctx |
+| `spine_sequence_frames` | id: float, slot: float | float | ctx |
+| `spine_sequence_index` | id: float, slot: float | float | ctx |
+| `spine_sequence_path` | id: float, slot: float | string | ctx |
+| `spine_sequence_value` | id: float, slot: float, what: float | float | ctx |
+| `spine_set_sequence_index` | id: float, slot: float, frame: float | float | ctx |
 
 ## 2. 控制面方法（control_list，AI/MCP）
 
@@ -253,7 +311,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 - `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float
 - `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
-- `mesh`：vertices: const float*, uvs: const float*, colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, z: int32_t
+- `mesh`：vertices: const float*, uvs: const float*, colors: const float*, dark_colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, z: int32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -547,12 +605,17 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 枚举：
 
 - (匿名)：MQ_SPINE_OK=0, MQ_SPINE_ERR_ARG=1, MQ_SPINE_ERR_FORMAT=2, MQ_SPINE_ERR_NOTFOUND=3, MQ_SPINE_ERR_PAGE=4, MQ_SPINE_ERR_NOMEM=5
+- `mq_spine_event_type`：MQ_SPINE_EVENT_START=0, MQ_SPINE_EVENT_INTERRUPT=1, MQ_SPINE_EVENT_END=2, MQ_SPINE_EVENT_COMPLETE=3, MQ_SPINE_EVENT_DISPOSE=4, MQ_SPINE_EVENT_EVENT=5
+- `mq_spine_physics`：MQ_SPINE_PHYSICS_NONE=0, MQ_SPINE_PHYSICS_RESET=1, MQ_SPINE_PHYSICS_UPDATE=2, MQ_SPINE_PHYSICS_POSE=3
+- `mq_spine_physics_field`：MQ_SPINE_PHYS_INERTIA=0, MQ_SPINE_PHYS_STRENGTH=1, MQ_SPINE_PHYS_DAMPING=2, MQ_SPINE_PHYS_MASS_INVERSE=3, MQ_SPINE_PHYS_WIND=4, MQ_SPINE_PHYS_GRAVITY=5, MQ_SPINE_PHYS_MIX=6
 
 结构体：
 
 - `mq_spine_page`：name: const char*, width: int, height: int, texture: uint64_t, pma: int
 - `mq_spine_batch`：page: int, blend: int, first_index: uint32_t, index_count: uint32_t
 - `mq_spine_draw`：vertex_count: int, index_count: int, batch_count: int, bounds_x: float, bounds_y: float, bounds_w: float, bounds_h: float
+- `mq_spine_event`：type: int, track: int, animation: const char*, name: const char*, int_value: int, float_value: float, string_value: const char*
+- `mq_spine_sequence_info`：frames: int, index: int, setup_index: int, id: int, path: const char*, u: float, v: float, u2: float, v2: float, width: int, height: int
 
 | 函数 | 返回 | 参数 |
 |------|------|------|
@@ -590,7 +653,58 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_spine_instance_transform_count` | int | inst: mq_spine_instance* |
 | `mq_spine_instance_transform_name` | const char* | inst: mq_spine_instance*, index: int |
 | `mq_spine_instance_transform_position` | int | inst: mq_spine_instance*, index: int, x: float*, y: float* |
-| `mq_spine_instance_draw` | int | inst: mq_spine_instance*, vertices: float*, uvs: float*, colors: float*, indices: uint32_t*, batches: mq_spine_batch*, max_vertices: int, max_indices: int, max_batches: int, out: mq_spine_draw* |
+| `mq_spine_instance_draw` | int | inst: mq_spine_instance*, vertices: float*, uvs: float*, colors: float*, dark_colors: float*, indices: uint32_t*, batches: mq_spine_batch*, max_vertices: int, max_indices: int, max_batches: int, out: mq_spine_draw* |
+| `mq_spine_instance_set_event_cb` | void | inst: mq_spine_instance*, cb: mq_spine_event_cb, user: void* |
+| `mq_spine_instance_event_count` | int | inst: mq_spine_instance* |
+| `mq_spine_instance_event` | int | inst: mq_spine_instance*, index: int, out: mq_spine_event* |
+| `mq_spine_instance_clear_events` | void | inst: mq_spine_instance* |
+| `mq_spine_instance_events_dropped` | int | inst: mq_spine_instance* |
+| `mq_spine_instance_set_animation` | int | inst: mq_spine_instance*, track: int, animation: const char*, loop: int |
+| `mq_spine_instance_add_animation` | int | inst: mq_spine_instance*, track: int, animation: const char*, loop: int, delay: float |
+| `mq_spine_instance_track_count` | int | inst: mq_spine_instance* |
+| `mq_spine_instance_track_animation` | const char* | inst: mq_spine_instance*, track: int |
+| `mq_spine_instance_queue_count` | int | inst: mq_spine_instance*, track: int |
+| `mq_spine_instance_clear_track` | void | inst: mq_spine_instance*, track: int |
+| `mq_spine_instance_set_track_time_scale` | int | inst: mq_spine_instance*, track: int, scale: float |
+| `mq_spine_instance_track_time_scale` | float | inst: mq_spine_instance*, track: int |
+| `mq_spine_instance_set_time_scale` | void | inst: mq_spine_instance*, scale: float |
+| `mq_spine_instance_time_scale` | float | inst: mq_spine_instance* |
+| `mq_spine_instance_set_default_mix` | void | inst: mq_spine_instance*, duration: float |
+| `mq_spine_instance_default_mix` | float | inst: mq_spine_instance* |
+| `mq_spine_instance_set_mix` | int | inst: mq_spine_instance*, from: const char*, to: const char*, duration: float |
+| `mq_spine_data_skin_find` | int | data: mq_spine_data*, name: const char* |
+| `mq_spine_data_skin_at` | mq_spine_skin* | data: mq_spine_data*, index: int |
+| `mq_spine_skin_create` | mq_spine_skin* | name: const char* |
+| `mq_spine_skin_destroy` | void | skin: mq_spine_skin* |
+| `mq_spine_skin_add` | int | dst: mq_spine_skin*, src: mq_spine_skin* |
+| `mq_spine_skin_name` | const char* | skin: mq_spine_skin* |
+| `mq_spine_skin_attachment_count` | int | skin: mq_spine_skin* |
+| `mq_spine_instance_set_skin_obj` | int | inst: mq_spine_instance*, skin: mq_spine_skin* |
+| `mq_spine_instance_set_attachment` | int | inst: mq_spine_instance*, slot_name: const char*, attachment_name: const char*, skin_name: const char* |
+| `mq_spine_instance_slot_count` | int | inst: mq_spine_instance* |
+| `mq_spine_instance_slot_name` | const char* | inst: mq_spine_instance*, index: int |
+| `mq_spine_instance_slot_index` | int | inst: mq_spine_instance*, name: const char* |
+| `mq_spine_instance_set_slots_range` | int | inst: mq_spine_instance*, from: int, to: int |
+| `mq_spine_instance_slots_range` | int | inst: mq_spine_instance*, from: int*, to: int* |
+| `mq_spine_instance_slot_attachment` | const char* | inst: mq_spine_instance*, index: int |
+| `mq_spine_instance_bone_count` | int | inst: mq_spine_instance* |
+| `mq_spine_instance_bone_name` | const char* | inst: mq_spine_instance*, index: int |
+| `mq_spine_instance_bone_find` | int | inst: mq_spine_instance*, name: const char* |
+| `mq_spine_instance_bone_parent` | int | inst: mq_spine_instance*, index: int |
+| `mq_spine_instance_bone_set_position` | int | inst: mq_spine_instance*, index: int, x: float, y: float |
+| `mq_spine_instance_bone_position_at` | int | inst: mq_spine_instance*, index: int, x: float*, y: float* |
+| `mq_spine_instance_bone_world_position` | int | inst: mq_spine_instance*, index: int, x: float*, y: float* |
+| `mq_spine_instance_bone_set_world_position` | int | inst: mq_spine_instance*, index: int, x: float, y: float |
+| `mq_spine_instance_update_world_transform` | int | inst: mq_spine_instance*, physics: int |
+| `mq_spine_instance_step_ex` | int | inst: mq_spine_instance*, dt: float, physics: int |
+| `mq_spine_instance_physics_count` | int | inst: mq_spine_instance* |
+| `mq_spine_instance_physics_name` | const char* | inst: mq_spine_instance*, index: int |
+| `mq_spine_instance_physics_translate` | void | inst: mq_spine_instance*, x: float, y: float |
+| `mq_spine_instance_physics_set_float` | int | inst: mq_spine_instance*, index: int, field: int, value: float |
+| `mq_spine_instance_physics_get_float` | float | inst: mq_spine_instance*, index: int, field: int |
+| `mq_spine_instance_physics_reset` | void | inst: mq_spine_instance* |
+| `mq_spine_attachment_sequence_info` | int | inst: mq_spine_instance*, slot_index: int, out: mq_spine_sequence_info* |
+| `mq_spine_instance_set_sequence_index` | int | inst: mq_spine_instance*, slot_index: int, frame: int |
 
 ### script — `maque.script` v1
 

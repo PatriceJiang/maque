@@ -16,9 +16,12 @@ extern "C" {
 
 typedef struct mq_spine_data mq_spine_data;
 typedef struct mq_spine_instance mq_spine_instance;
+typedef struct mq_spine_skin mq_spine_skin;
 typedef struct mq_spine_page mq_spine_page;
 typedef struct mq_spine_batch mq_spine_batch;
 typedef struct mq_spine_draw mq_spine_draw;
+typedef struct mq_spine_event mq_spine_event;
+typedef struct mq_spine_sequence_info mq_spine_sequence_info;
 
 /* 错误码（结构化；docs/11 §4） */
 enum {
@@ -29,6 +32,35 @@ enum {
     MQ_SPINE_ERR_PAGE = 4,   /* 图集页纹理未回填 */
     MQ_SPINE_ERR_NOMEM = 5
 };
+
+/* 动画事件类型（值与 spine::EventType 相同：start/interrupt/end/complete/dispose/event） */
+typedef enum mq_spine_event_type {
+    MQ_SPINE_EVENT_START = 0,   /* 某轨开始播一个动画 */
+    MQ_SPINE_EVENT_INTERRUPT = 1,   /* 被同轨的新动画打断 */
+    MQ_SPINE_EVENT_END = 2,   /* 轨上动画结束（非循环播完/被清） */
+    MQ_SPINE_EVENT_COMPLETE = 3,   /* 至少播完一轮（循环动画每轮都发） */
+    MQ_SPINE_EVENT_DISPOSE = 4,   /* 轨条目被销毁 */
+    MQ_SPINE_EVENT_EVENT = 5   /* 用户事件（动画里 key 的 event） */
+} mq_spine_event_type;
+
+/* 世界变换/物理的更新时间轴（值与 spine::Physics 相同） */
+typedef enum mq_spine_physics {
+    MQ_SPINE_PHYSICS_NONE = 0,   /* 不更新也不应用物理 */
+    MQ_SPINE_PHYSICS_RESET = 1,   /* 物理重置到当前姿势 */
+    MQ_SPINE_PHYSICS_UPDATE = 2,   /* 更新物理并应用（默认） */
+    MQ_SPINE_PHYSICS_POSE = 3   /* 不更新、只应用已有物理姿势 */
+} mq_spine_physics;
+
+/* PhysicsConstraint 的浮点字段（mq_spine_instance_physics_set_float 的 field） */
+typedef enum mq_spine_physics_field {
+    MQ_SPINE_PHYS_INERTIA = 0,
+    MQ_SPINE_PHYS_STRENGTH = 1,
+    MQ_SPINE_PHYS_DAMPING = 2,
+    MQ_SPINE_PHYS_MASS_INVERSE = 3,
+    MQ_SPINE_PHYS_WIND = 4,
+    MQ_SPINE_PHYS_GRAVITY = 5,
+    MQ_SPINE_PHYS_MIX = 6
+} mq_spine_physics_field;
 
 /* 图集页（一页 = 一张纹理；多页图集如 dragon 有 5 页） */
 typedef struct mq_spine_page {
@@ -58,7 +90,34 @@ typedef struct mq_spine_draw {
     float bounds_h;
 } mq_spine_draw;
 
+/* 一次动画事件（官方 demo 的日志字段：track + 动画名 + 用户事件名 + int/float/string 三个值）。动画名/事件名/字符串值指向骨架数据内部，随 data 存活；无值时字段为 NULL/0。 */
+typedef struct mq_spine_event {
+    int type;   /* mq_spine_event_type */
+    int track;   /* 轨下标（TrackEntry::getTrackIndex） */
+    const char* animation;   /* 所在轨的动画名（NULL = 无） */
+    const char* name;   /* 用户事件名（仅 type=MQ_SPINE_EVENT_EVENT；否则 NULL） */
+    int int_value;   /* 用户事件的 int 值 */
+    float float_value;   /* 用户事件的 float 值 */
+    const char* string_value;   /* 用户事件的 string 值（可为 NULL） */
+} mq_spine_event;
+
+/* 序列帧附件（Sequence）的当前帧信息：一个附件多张图。动画时间轴只推进 slot 的帧下标，真正换图发生在求值（computeWorldVertices）里，所以**必须按当前帧读区域/UV**，否则永远画第 0 帧。 */
+typedef struct mq_spine_sequence_info {
+    int frames;   /* 序列总帧数（Sequence::getRegions().size()） */
+    int index;   /* 当前帧下标（-1 = 用 setup 帧） */
+    int setup_index;   /* setup 帧下标（Sequence::getSetupIndex） */
+    int id;   /* Sequence::getId（同一 Sequence 的稳定标识） */
+    const char* path;   /* 当前帧的路径名（Sequence::getPath；指针在本实例下次调用前有效） */
+    float u;   /* 当前帧区域在整页上的 UV（u/v/u2/v2；逐帧不同） */
+    float v;
+    float u2;
+    float v2;
+    int width;   /* 当前帧区域像素尺寸 */
+    int height;
+} mq_spine_sequence_info;
+
 typedef int (*mq_spine_texture_cb)(void* user, const char* page_name, const void* file_data, size_t size, uint64_t* out_texture);
+typedef void (*mq_spine_event_cb)(void* user, mq_spine_instance* inst, const mq_spine_event* event);
 
 uint32_t mq_spine_abi_version(void);
 mq_spine_data* mq_spine_data_create(const void* skeleton_data, size_t skeleton_size, int skeleton_is_binary, const char* atlas_data, const char* atlas_dir_hint, mq_spine_texture_cb load_texture, void* user);
@@ -94,7 +153,89 @@ int mq_spine_instance_ik_set_mix(mq_spine_instance* inst, int index, float mix);
 int mq_spine_instance_transform_count(mq_spine_instance* inst);
 const char* mq_spine_instance_transform_name(mq_spine_instance* inst, int index);
 int mq_spine_instance_transform_position(mq_spine_instance* inst, int index, float* x, float* y);
-int mq_spine_instance_draw(mq_spine_instance* inst, float* vertices, float* uvs, float* colors, uint32_t* indices, mq_spine_batch* batches, int max_vertices, int max_indices, int max_batches, mq_spine_draw* out);
+/* 导出绘制数据。vertices/uvs 2 分量、colors/dark_colors 4 分量；dark_colors 可为 NULL（不做两色着色）。 */
+int mq_spine_instance_draw(mq_spine_instance* inst, float* vertices, float* uvs, float* colors, float* dark_colors, uint32_t* indices, mq_spine_batch* batches, int max_vertices, int max_indices, int max_batches, mq_spine_draw* out);
+/* 装事件回调（单线程、帧内同步调用；cb=NULL 卸载）。事件同时进实例的事件记录，供 pull 查询。 */
+void mq_spine_instance_set_event_cb(mq_spine_instance* inst, mq_spine_event_cb cb, void* user);
+/* 事件记录条数（**累加**，直到 mq_spine_instance_clear_events；runtime 每帧清一次） */
+int mq_spine_instance_event_count(mq_spine_instance* inst);
+int mq_spine_instance_event(mq_spine_instance* inst, int index, mq_spine_event* out);
+void mq_spine_instance_clear_events(mq_spine_instance* inst);
+/* 因记录容量满而被丢弃的事件数（不静默丢） */
+int mq_spine_instance_events_dropped(mq_spine_instance* inst);
+/* 按轨号设动画（track 任意大；discard 该轨排队项） */
+int mq_spine_instance_set_animation(mq_spine_instance* inst, int track, const char* animation, int loop);
+/* 排队：delay 秒后播（Raptor: track1/gun-grab/false/2） */
+int mq_spine_instance_add_animation(mq_spine_instance* inst, int track, const char* animation, int loop, float delay);
+/* 有轨条目的轨数（= getTracks().size()） */
+int mq_spine_instance_track_count(mq_spine_instance* inst);
+/* 该轨当前动画名（空轨 → NULL） */
+const char* mq_spine_instance_track_animation(mq_spine_instance* inst, int track);
+/* 该轨**排队**（尚未成为当前）的条目数 —— 官方 addAnimation 之后剩几个 */
+int mq_spine_instance_queue_count(mq_spine_instance* inst, int track);
+void mq_spine_instance_clear_track(mq_spine_instance* inst, int track);
+int mq_spine_instance_set_track_time_scale(mq_spine_instance* inst, int track, float scale);
+float mq_spine_instance_track_time_scale(mq_spine_instance* inst, int track);
+/* AnimationState 全局时间缩放（与组件 speed 相乘；官方 Coin/Tank 的 setTimeScale(0.3)） */
+void mq_spine_instance_set_time_scale(mq_spine_instance* inst, float scale);
+float mq_spine_instance_time_scale(mq_spine_instance* inst);
+void mq_spine_instance_set_default_mix(mq_spine_instance* inst, float duration);
+float mq_spine_instance_default_mix(mq_spine_instance* inst);
+/* setMix(from,to,duration)（Batching walk→jump 0.2 / Separator 0.4） */
+int mq_spine_instance_set_mix(mq_spine_instance* inst, const char* from, const char* to, float duration);
+int mq_spine_data_skin_find(mq_spine_data* data, const char* name);
+/* 借用（borrowed）骨架数据里的皮肤句柄；**不要** destroy，data 存活期内有效 */
+mq_spine_skin* mq_spine_data_skin_at(mq_spine_data* data, int index);
+/* 新建空皮肤（调用方拥有 → mq_spine_skin_destroy） */
+mq_spine_skin* mq_spine_skin_create(const char* name);
+/* 销毁 create 出来的皮肤；对借用句柄是安全空操作 */
+void mq_spine_skin_destroy(mq_spine_skin* skin);
+/* Skin::addSkin：把 src 的附件并入 dst（同槽同名后者覆盖） */
+int mq_spine_skin_add(mq_spine_skin* dst, mq_spine_skin* src);
+const char* mq_spine_skin_name(mq_spine_skin* skin);
+/* 皮肤内附件数（合成后应 > 单个源皮肤；用于断言真的合上了） */
+int mq_spine_skin_attachment_count(mq_spine_skin* skin);
+/* 设为当前皮肤（Skin* 版本；随后 setSlotsToSetupPose） */
+int mq_spine_instance_set_skin_obj(mq_spine_instance* inst, mq_spine_skin* skin);
+/* 按皮肤名取附件设到槽（MixAndMatch 的逐附件替换）；attachment_name 为 NULL/"" → 卸下该槽附件 */
+int mq_spine_instance_set_attachment(mq_spine_instance* inst, const char* slot_name, const char* attachment_name, const char* skin_name);
+int mq_spine_instance_slot_count(mq_spine_instance* inst);
+const char* mq_spine_instance_slot_name(mq_spine_instance* inst, int index);
+/* 槽名 → **声明序下标**（= 官方 findSlot(name)->getData().getIndex()；-1 = 无） */
+int mq_spine_instance_slot_index(mq_spine_instance* inst, const char* name);
+/* 只画声明序下标 [from, to] 的槽（inclusive；to<0 = 到末尾；from<0 = 不限制） */
+int mq_spine_instance_set_slots_range(mq_spine_instance* inst, int from, int to);
+int mq_spine_instance_slots_range(mq_spine_instance* inst, int* from, int* to);
+/* 该槽当前附件名（NULL = 空槽） */
+const char* mq_spine_instance_slot_attachment(mq_spine_instance* inst, int index);
+int mq_spine_instance_bone_count(mq_spine_instance* inst);
+const char* mq_spine_instance_bone_name(mq_spine_instance* inst, int index);
+/* 骨骼名 → 序号（-1 = 无） */
+int mq_spine_instance_bone_find(mq_spine_instance* inst, const char* name);
+/* 父骨骼序号（-1 = 根） */
+int mq_spine_instance_bone_parent(mq_spine_instance* inst, int index);
+/* 设**父空间**局部位置（Bone::setX/setY） */
+int mq_spine_instance_bone_set_position(mq_spine_instance* inst, int index, float x, float y);
+/* 读局部位置 */
+int mq_spine_instance_bone_position_at(mq_spine_instance* inst, int index, float* x, float* y);
+int mq_spine_instance_bone_world_position(mq_spine_instance* inst, int index, float* x, float* y);
+/* 设世界位置（内部走父骨骼 worldToLocal，与官方 IK demo 同款） */
+int mq_spine_instance_bone_set_world_position(mq_spine_instance* inst, int index, float x, float y);
+/* 只重算世界变换（**不** apply 动画）——设完骨骼位置后让 IK 链跟随 */
+int mq_spine_instance_update_world_transform(mq_spine_instance* inst, int physics);
+/* step + 指定物理时间轴（Physics_None/Reset/Update/Pose） */
+int mq_spine_instance_step_ex(mq_spine_instance* inst, float dt, int physics);
+int mq_spine_instance_physics_count(mq_spine_instance* inst);
+const char* mq_spine_instance_physics_name(mq_spine_instance* inst, int index);
+/* Skeleton::physicsTranslate：给所有物理约束一个位移冲量（官方 Physics demo） */
+void mq_spine_instance_physics_translate(mq_spine_instance* inst, float x, float y);
+int mq_spine_instance_physics_set_float(mq_spine_instance* inst, int index, int field, float value);
+float mq_spine_instance_physics_get_float(mq_spine_instance* inst, int index, int field);
+void mq_spine_instance_physics_reset(mq_spine_instance* inst);
+/* 取该槽附件的 Sequence 当前帧信息（非 Sequence 附件 → ERR_NOTFOUND） */
+int mq_spine_attachment_sequence_info(mq_spine_instance* inst, int slot_index, mq_spine_sequence_info* out);
+/* 手动设序列帧下标（-1 = setup 帧；验证/定格用） */
+int mq_spine_instance_set_sequence_index(mq_spine_instance* inst, int slot_index, int frame);
 
 #ifdef __cplusplus
 }

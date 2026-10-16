@@ -280,6 +280,11 @@ role: `spine_skeleton`
 | `color` | math.Color | — |  |
 | `z_index` | int32_t | 0 |  |
 | `material` | string |  |  |
+| `slots_from` | int32_t | -1 |  |
+| `slots_to` | int32_t | -1 |  |
+| `default_mix` | float | 0.0F | unit: s, range: 0,10 |
+| `time_scale` | float | 1.0F | range: 0,100 |
+| `two_color` | bool | false |  |
 | `state` | SpineAnimState | — | transient, readonly |
 | `instance` | uint64_t | 0 | transient, readonly |
 

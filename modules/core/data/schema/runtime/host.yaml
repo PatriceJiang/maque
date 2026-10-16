@@ -186,3 +186,108 @@
         doc: "图集页数（多页图集 = 多次绘制批次）" }
     - { fn: spine_page_texture,     ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float,
         doc: "第 index 页的引擎纹理句柄（-1 = 无/越界；用于确认纹理真的上传了）" }
+
+    # ---- Spine 2D 续：多轨 / 混合 / 事件 / 皮肤合成 / 骨骼 / 槽区间 / 物理 / 序列帧 ----
+    # 覆盖官方 11 个 demo 需要的能力（.deps/official/DEMO-SPEC.md）。
+    # 事件投递＝两条路一起走：① 按事件名冒泡到 `node_on(id, "spine_complete", "handler")` 注册的处理函数
+    # （与 docs/14 事件总线同一条路径，单线程、帧内同步，确定性不受影响）；
+    # ② 事件记录可用 spine_event_count/…"pull"出来看细节。
+    # 记录在**帧边界**（脚本 update 之前）清空 → "本帧 step 产生的事件，下一帧脚本能读到"。
+    - { fn: spine_set_animation,    ctx: true, args: [ { name: id, type: float }, { name: track, type: float }, { name: name, type: string }, { name: loop, type: float } ], returns: float,
+        doc: "指定轨播动画（IK: track0=walk、track1=aim）；成功 0，失败 -1" }
+    - { fn: spine_add_animation,    ctx: true, args: [ { name: id, type: float }, { name: track, type: float }, { name: name, type: string }, { name: loop, type: float }, { name: delay, type: float } ], returns: float,
+        doc: "排队：delay 秒后播（Raptor: track1 gun-grab false 2）" }
+    - { fn: spine_track_count,      ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "有轨条目的轨数" }
+    - { fn: spine_track_animation,  ctx: true, args: [ { name: id, type: float }, { name: track, type: float } ], returns: string,
+        doc: "该轨当前动画名（空轨 → \"\"）" }
+    - { fn: spine_queue_count,      ctx: true, args: [ { name: id, type: float }, { name: track, type: float } ], returns: float,
+        doc: "该轨排队中的条目数（addAnimation 之后还剩几个；官方 SkeletonAnimation 的 queue 语义）" }
+    - { fn: spine_clear_track,      ctx: true, args: [ { name: id, type: float }, { name: track, type: float } ], returns: float }
+    - { fn: spine_track_time,       ctx: true, args: [ { name: id, type: float }, { name: track, type: float } ], returns: float,
+        doc: "该轨播放头时间（秒）；多轨各自独立推进" }
+    - { fn: spine_set_track_time,   ctx: true, args: [ { name: id, type: float }, { name: track, type: float }, { name: t, type: float } ], returns: float,
+        doc: "设该轨播放头（设完立刻 step(0) 重算姿势）" }
+    - { fn: spine_track_time_scale, ctx: true, args: [ { name: id, type: float }, { name: track, type: float } ], returns: float }
+    - { fn: spine_set_track_time_scale, ctx: true, args: [ { name: id, type: float }, { name: track, type: float }, { name: scale, type: float } ], returns: float }
+    - { fn: spine_time_scale,       ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "AnimationState 全局时间缩放（官方 Coin/Tank 的 setTimeScale(0.3)）" }
+    - { fn: spine_set_time_scale,   ctx: true, args: [ { name: id, type: float }, { name: scale, type: float } ], returns: float }
+    - { fn: spine_default_mix,      ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_set_default_mix,  ctx: true, args: [ { name: id, type: float }, { name: duration, type: float } ], returns: float,
+        doc: "换动画的默认混合时长（官方 C++ 入口 demo: 0.2）" }
+    - { fn: spine_set_mix,          ctx: true, args: [ { name: id, type: float }, { name: from, type: string }, { name: to, type: string }, { name: duration, type: float } ], returns: float,
+        doc: "setMix(from,to,duration)（Batching walk→jump 0.2；Separator 0.4）" }
+    - { fn: spine_event_count,      ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "上一次帧边界以来发生的事件数（Spineboy: start/complete/event…）" }
+    - { fn: spine_event_type,       ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float,
+        doc: "事件类型：0=start 1=interrupt 2=end 3=complete 4=dispose 5=event（越界 → -1）" }
+    - { fn: spine_event_track,      ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float }
+    - { fn: spine_event_animation,  ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: spine_event_name,       ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string,
+        doc: "用户事件名（仅 type=5；否则 \"\"）" }
+    - { fn: spine_event_int,        ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float }
+    - { fn: spine_event_float,      ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: float }
+    - { fn: spine_event_string,     ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: spine_clear_events,     ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_bone_count,       ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_bone_name,        ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: spine_bone_find,        ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "骨骼名 → 序号（-1 = 无）" }
+    - { fn: spine_bone_value,       ctx: true, args: [ { name: id, type: float }, { name: index, type: float }, { name: what, type: float } ], returns: float,
+        doc: "what: 0=局部x 1=局部y 2=世界x 3=世界y（世界坐标 = 骨架子空间、y 向上）" }
+    - { fn: spine_bone_set_position, ctx: true, args: [ { name: id, type: float }, { name: index, type: float }, { name: x, type: float }, { name: y, type: float } ], returns: float,
+        doc: "设父空间局部位置" }
+    - { fn: spine_bone_set_world_position, ctx: true, args: [ { name: id, type: float }, { name: index, type: float }, { name: x, type: float }, { name: y, type: float } ], returns: float,
+        doc: "设世界位置（内部走父骨骼 worldToLocal，与官方 IK demo 同款）" }
+    - { fn: spine_update_world_transform, ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "只重算世界变换（不 apply 动画）→ 设完骨骼位置后让 IK 链当帧跟随" }
+    - { fn: spine_slot_count,       ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_slot_name,        ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: spine_slot_index,       ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "槽名 → 声明序下标（= 官方 findSlot(name)->getData().getIndex()；-1 = 无）" }
+    - { fn: spine_slot_attachment,  ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string,
+        doc: "该槽当前附件名（\"\" = 空槽）" }
+    - { fn: spine_set_slots_range,  ctx: true, args: [ { name: id, type: float }, { name: from, type: float }, { name: to, type: float } ], returns: float,
+        doc: "只画声明序槽区间 [from,to]（to<0 → 到末尾；from<0 → 不限制）—— Separator demo 的前/后段拆分" }
+    - { fn: spine_slots_from,       ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_slots_to,         ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_set_attachment,   ctx: true, args: [ { name: id, type: float }, { name: slot_name, type: string }, { name: attachment_name, type: string }, { name: skin_name, type: string } ], returns: float,
+        doc: "按皮肤名取附件设到槽（skin_name 空 → 当前皮肤；attachment_name 空 → 卸下）" }
+    - { fn: spine_skin_find,        ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "皮肤名 → 声明序下标（-1 = 无）" }
+    # 皮肤合成三步（官方 MixAndMatch 的 Skin::addSkin 路径）：
+    #   h = spine_skin_create(id, "mix-and-match")
+    #   spine_skin_add(id, h, "skin-base") … 逐个并入
+    #   spine_set_skin_obj(id, h) → 设为当前皮肤
+    - { fn: spine_skin_create,      ctx: true, args: [ { name: id, type: float }, { name: name, type: string } ], returns: float,
+        doc: "新建空皮肤 → 返回**句柄**（>=0；失败 -1）。句柄由引擎持有，切场景/退出时释放" }
+    - { fn: spine_skin_add,         ctx: true, args: [ { name: id, type: float }, { name: handle, type: float }, { name: source_skin, type: string } ], returns: float,
+        doc: "把骨架里名为 source_skin 的皮肤**并入**句柄（Skin::addSkin；同槽同名后者覆盖）；成功 0" }
+    - { fn: spine_set_skin_obj,     ctx: true, args: [ { name: id, type: float }, { name: handle, type: float } ], returns: float,
+        doc: "把句柄指向的皮肤设为当前皮肤（Skin* 版 setSkin + 按 setup 姿势复位槽）" }
+    - { fn: spine_skin_compose,     ctx: true, args: [ { name: id, type: float }, { name: names, type: string } ], returns: float,
+        doc: "一步到位：逗号分隔皮肤名 → 合成新皮肤并设为当前（MixAndMatch: skin-base,nose/short,…）；成功 0" }
+    - { fn: spine_skin_attachment_count, ctx: true, args: [ { name: id, type: float }, { name: handle, type: float } ], returns: float,
+        doc: "皮肤附件数（handle<0 → 最近一次 create/compose 的那一个；用于断言合成真的合上了）" }
+    - { fn: spine_set_two_color,    ctx: true, args: [ { name: id, type: float }, { name: on, type: float } ], returns: float,
+        doc: "官方 setTwoColorTint 的忠实复刻：**本引擎网格恒定走两色着色路径**（暗色通道始终产出；素材无 dark 时是 (0,0,0,1) → 与关闭逐字节等价），故该开关不改变输出，只为让官方 demo 的调用点有落处（值照存进组件字段）" }
+    - { fn: spine_ik_count,         ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_ik_name,          ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: spine_set_ik_mix,       ctx: true, args: [ { name: id, type: float }, { name: index, type: float }, { name: mix, type: float } ], returns: float }
+    - { fn: spine_physics_count,    ctx: true, args: [ { name: id, type: float } ], returns: float,
+        doc: "物理约束个数（celestial-circus 有；普通骨架 0）" }
+    - { fn: spine_physics_name,     ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
+    - { fn: spine_physics_translate, ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float } ], returns: float,
+        doc: "给所有物理约束一个位移冲量（官方 Physics demo）" }
+    - { fn: spine_physics_reset,    ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: spine_sequence_frames,  ctx: true, args: [ { name: id, type: float }, { name: slot, type: float } ], returns: float,
+        doc: "序列帧附件的总帧数（0 = 该槽不是序列帧附件）" }
+    - { fn: spine_sequence_index,   ctx: true, args: [ { name: id, type: float }, { name: slot, type: float } ], returns: float,
+        doc: "当前帧下标（-1 = setup 帧）" }
+    - { fn: spine_sequence_path,    ctx: true, args: [ { name: id, type: float }, { name: slot, type: float } ], returns: string,
+        doc: "当前帧路径名（Sequence::getPath）" }
+    - { fn: spine_sequence_value,   ctx: true, args: [ { name: id, type: float }, { name: slot, type: float }, { name: what, type: float } ], returns: float,
+        doc: "what: 0=u 1=v 2=u2 3=v2 4=width 5=height 6=setup_index（逐帧不同 → 可断言真的换图了）" }
+    - { fn: spine_set_sequence_index, ctx: true, args: [ { name: id, type: float }, { name: slot, type: float }, { name: frame, type: float } ], returns: float,
+        doc: "手动定格序列帧下标（-1 = setup 帧）" }

@@ -63,6 +63,27 @@ if(WGPU_NATIVE_LIB)
         maque_deploy_plugin_deps(maque_text_pixel_test)
         add_test(NAME text_pixel COMMAND maque_text_pixel_test)
 
+        # 两色着色（Tint Black）像素级：mesh 顶点 48B（含 @location(3) dark）+ 官方 GLSL 公式。
+        # 断言"dark 不给 / dark=黑"逐字节相同（不回归）、"非黑 dark"明显不同（有鉴别力）。
+        # 注意：官方 raptor/batching 素材**没有** dark 通道（实测），故本测试用合成纹理 + alien 的 dark 值。
+        add_executable(maque_gfx_twocolor_test tests/twocolor_test.cpp)
+        target_link_libraries(maque_gfx_twocolor_test PRIVATE maque::module maque::schema)
+        target_compile_definitions(maque_gfx_twocolor_test PRIVATE MQ_GFX_PATH="$<TARGET_FILE:maque_gfx>")
+        add_dependencies(maque_gfx_twocolor_test maque_gfx)
+        maque_deploy_plugin_deps(maque_gfx_twocolor_test)
+        add_test(NAME gfx_twocolor COMMAND maque_gfx_twocolor_test)
+
+        # 官方素材 → 像素：用官方 alien-pro.json（唯一 dark 非黑：eyeball light=dfa921ff/dark=c57c1e）
+        # 走 spine2d 取绘制数据 + dark 通道，再进 gfx 渲染并断言字节级像素值。
+        # 需要 spine2d 与 tests/data/spine 的素材；素材缺失时测试自行 SKIP（返回 0）。
+        add_executable(maque_gfx_twocolor_spine_test tests/twocolor_spine_test.cpp)
+        target_link_libraries(maque_gfx_twocolor_spine_test PRIVATE maque::module maque::schema maque::spine2d)
+        target_compile_definitions(maque_gfx_twocolor_spine_test PRIVATE MQ_GFX_PATH="$<TARGET_FILE:maque_gfx>")
+        add_dependencies(maque_gfx_twocolor_spine_test maque_gfx)
+        maque_deploy_plugin_deps(maque_gfx_twocolor_spine_test)
+        add_test(NAME gfx_twocolor_spine
+                 COMMAND maque_gfx_twocolor_spine_test "${CMAKE_SOURCE_DIR}/tests/data/spine")
+
         # 内建 shader 打包：注册表 / 解压缓存 / 与资产逐字节一致（资产 ↔ 打包的漂移检查）
         add_executable(maque_builtin_shader_test tests/builtin_shader_test.cpp)
         target_link_libraries(maque_builtin_shader_test PRIVATE maque::builtin_shaders)

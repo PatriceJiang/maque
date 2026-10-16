@@ -10,6 +10,9 @@ compile_commands.json
 /*-out.txt
 /*-out.log
 /out.txt
+# 临时重定向的 ctest 输出（`ctest > ctest-xxx.txt`；曾误落进工作树）
+/ctest-*.txt
+/ctest-*.log
 
 # wgpu-native binary SDK (headers are committed; binaries are not)
 third_party/wgpu-native/lib/*.so

@@ -43,7 +43,11 @@
       fields:
         - { name: vertices,   type: "const float*" }    # 2 分量/顶点（渲染目标像素空间；y 向下）
         - { name: uvs,        type: "const float*" }    # 2 分量/顶点（归一化）
-        - { name: colors,     type: "const float*" }    # 4 分量/顶点（RGBA，逐顶点）
+        - { name: colors,     type: "const float*" }    # 4 分量/顶点（RGBA，逐顶点）= **light 亮色**
+        # 两色着色（TintBlack）的 **dark 暗色**一路：4 分量/顶点，长度同 colors。
+        # NULL = 未提供 → 用官方默认 0xff000000（rgba(0,0,0,1)），此时着色公式精确退化为
+        # "纹理 × light"（与不支持两色着色的旧行为逐字节一致）。可空，故对既有调用方零破坏。
+        - { name: dark_colors, type: "const float*" }   # 4 分量/顶点（RGBA，逐顶点）= **dark 暗色**（可空）
         - { name: indices,    type: "const uint32_t*" } # 三角形索引（相对 vertices 起点）
         - { name: vertex_count, type: uint32_t }        # 本网格顶点数（2/4 分量按数组类型）
         - { name: first_index, type: uint32_t }         # 本批次在 indices 内的起点

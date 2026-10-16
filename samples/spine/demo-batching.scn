@@ -1,0 +1,1045 @@
+{
+  "title": "Spine demo: Batching (50 skeletons)",
+  "script": "demos.js",
+  "width": 1280,
+  "height": 960,
+  "seed": 20241016,
+  "entities": [
+    {
+      "name": "demo.batching",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch1",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch2",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch3",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch4",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch5",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch6",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch7",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch8",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch9",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch10",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch11",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch12",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch13",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch14",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch15",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch16",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch17",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch18",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch19",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch20",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch21",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch22",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch23",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch24",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch25",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch26",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch27",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch28",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch29",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch30",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch31",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch32",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch33",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch34",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch35",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch36",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch37",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch38",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch39",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch40",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch41",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch42",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch43",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch44",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch45",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch46",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch47",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch48",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "batch49",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 640.0,
+          "y": 20.0
+        },
+        {
+          "type": "anim.SpineSkeleton",
+          "skeleton": "/art/spineboy-pro.json",
+          "atlas": "/art/spineboy.atlas",
+          "animation": 0,
+          "autoplay": false,
+          "play_mode": "PlayMode::Loop",
+          "speed": 1.0,
+          "z_index": 0
+        }
+      ]
+    },
+    {
+      "name": "hud",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 12,
+          "y": 930
+        },
+        {
+          "type": "scn.Label",
+          "text": "Batching (official): 50 spineboy skeletons share one atlas, each walks then jumps after a random delay (engine rng), then runs",
+          "font_size": 24,
+          "r": 0.08,
+          "g": 0.08,
+          "b": 0.1
+        }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 12,
+          "y": 12
+        },
+        {
+          "type": "scn.Label",
+          "text": "UP/DOWN anim   SPACE pause   N next demo   CLICK x3 = official cycle",
+          "font_size": 16,
+          "r": 0.16,
+          "g": 0.16,
+          "b": 0.2
+        }
+      ]
+    }
+  ]
+}

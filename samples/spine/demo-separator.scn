@@ -1,0 +1,48 @@
+{
+  "title": "Spine demo: SkeletonRendererSeparator",
+  "script": "demos.js",
+  "width": 800,
+  "height": 600,
+  "seed": 20241016,
+  "entities": [
+    {
+      "name": "demo.separator",
+      "components": [
+        { "type": "scn.Transform2D", "x": 400, "y": 20 },
+        { "type": "anim.SpineSkeleton", "skeleton": "/art/spineboy-pro.json", "atlas": "/art/spineboy.atlas",
+          "animation": 0, "autoplay": false, "play_mode": "PlayMode::Loop", "speed": 1.0, "z_index": 0 }
+      ]
+    },
+    {
+      "name": "between",
+      "components": [
+        { "type": "scn.Transform2D", "x": 430, "y": 120 },
+        { "type": "scn.Sprite", "width": 40, "height": 200, "r": 1.0, "g": 0.0, "b": 0.0 }
+      ]
+    },
+    {
+      "name": "front",
+      "components": [
+        { "type": "scn.Transform2D", "x": 400, "y": 20 },
+        { "type": "anim.SpineSkeleton", "skeleton": "/art/spineboy-pro.json", "atlas": "/art/spineboy.atlas",
+          "animation": 0, "autoplay": false, "play_mode": "PlayMode::Loop", "speed": 1.0, "z_index": 1 }
+      ]
+    },
+    {
+      "name": "hud",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 576 },
+        { "type": "scn.Label", "font_size": 18, "r": 0.08, "g": 0.08, "b": 0.10,
+          "text": "Separator (official): spineboy split into back slots [rear-upper-arm..rear-shin] / front slots [neck..end] with a red bar between" }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 12 },
+        { "type": "scn.Label", "font_size": 12, "r": 0.16, "g": 0.16, "b": 0.20,
+          "text": "UP/DOWN anim   SPACE pause   N next demo   CLICK x3 = official cycle" }
+      ]
+    }
+  ]
+}

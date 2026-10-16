@@ -1,0 +1,33 @@
+{
+  "title": "Spine demo: spine-sdl (official C++ entry)",
+  "script": "demos.js",
+  "width": 800,
+  "height": 600,
+  "seed": 20241016,
+  "entities": [
+    {
+      "name": "demo.sdl",
+      "components": [
+        { "type": "scn.Transform2D", "x": 400, "y": 100 },
+        { "type": "anim.SpineSkeleton", "skeleton": "/art/spineboy-pro.json", "atlas": "/art/spineboy-pma.atlas",
+          "animation": 0, "autoplay": false, "play_mode": "PlayMode::Loop", "speed": 1.0, "z_index": 0 }
+      ]
+    },
+    {
+      "name": "hud",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 576 },
+        { "type": "scn.Label", "font_size": 18, "r": 0.92, "g": 0.92, "b": 0.92,
+          "text": "spine-sdl main.cpp (official): json scale 0.5, pma atlas, defaultMix 0.2, portal -> run, clear color (94,93,96)" }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 12 },
+        { "type": "scn.Label", "font_size": 12, "r": 0.85, "g": 0.85, "b": 0.88,
+          "text": "UP/DOWN anim   SPACE pause   N next demo   (official window 800x600, y-down coords)" }
+      ]
+    }
+  ]
+}

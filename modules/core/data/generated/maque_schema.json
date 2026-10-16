@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 242,
-  "api_count": 141,
+  "api_count": 199,
   "control_count": 43,
   "callback_count": 10,
   "module_count": 25,
@@ -1528,6 +1528,62 @@
           "name": "material",
           "type": "string",
           "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "slots_from",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "slots_to",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "default_mix",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              10
+            ],
+            "unit": "s"
+          }
+        },
+        {
+          "name": "time_scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              100
+            ]
+          }
+        },
+        {
+          "name": "two_color",
+          "type": "bool",
+          "kind": "bool",
           "type_id": 0,
           "count": 0,
           "offset": null,
@@ -17337,6 +17393,1144 @@
       "returns": "float",
       "ctx": true,
       "manual": null
+    },
+    {
+      "name": "host.spine_set_animation",
+      "namespace": "host",
+      "fn": "spine_set_animation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "loop",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_add_animation",
+      "namespace": "host",
+      "fn": "spine_add_animation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "loop",
+          "type": "float"
+        },
+        {
+          "name": "delay",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_track_count",
+      "namespace": "host",
+      "fn": "spine_track_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_track_animation",
+      "namespace": "host",
+      "fn": "spine_track_animation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_queue_count",
+      "namespace": "host",
+      "fn": "spine_queue_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_clear_track",
+      "namespace": "host",
+      "fn": "spine_clear_track",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_track_time",
+      "namespace": "host",
+      "fn": "spine_track_time",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_track_time",
+      "namespace": "host",
+      "fn": "spine_set_track_time",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        },
+        {
+          "name": "t",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_track_time_scale",
+      "namespace": "host",
+      "fn": "spine_track_time_scale",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_track_time_scale",
+      "namespace": "host",
+      "fn": "spine_set_track_time_scale",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "track",
+          "type": "float"
+        },
+        {
+          "name": "scale",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_time_scale",
+      "namespace": "host",
+      "fn": "spine_time_scale",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_time_scale",
+      "namespace": "host",
+      "fn": "spine_set_time_scale",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "scale",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_default_mix",
+      "namespace": "host",
+      "fn": "spine_default_mix",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_default_mix",
+      "namespace": "host",
+      "fn": "spine_set_default_mix",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "duration",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_mix",
+      "namespace": "host",
+      "fn": "spine_set_mix",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "from",
+          "type": "string"
+        },
+        {
+          "name": "to",
+          "type": "string"
+        },
+        {
+          "name": "duration",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_event_count",
+      "namespace": "host",
+      "fn": "spine_event_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_event_type",
+      "namespace": "host",
+      "fn": "spine_event_type",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_event_track",
+      "namespace": "host",
+      "fn": "spine_event_track",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_event_animation",
+      "namespace": "host",
+      "fn": "spine_event_animation",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_event_name",
+      "namespace": "host",
+      "fn": "spine_event_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_event_int",
+      "namespace": "host",
+      "fn": "spine_event_int",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_event_float",
+      "namespace": "host",
+      "fn": "spine_event_float",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_event_string",
+      "namespace": "host",
+      "fn": "spine_event_string",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_clear_events",
+      "namespace": "host",
+      "fn": "spine_clear_events",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_bone_count",
+      "namespace": "host",
+      "fn": "spine_bone_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_bone_name",
+      "namespace": "host",
+      "fn": "spine_bone_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_bone_find",
+      "namespace": "host",
+      "fn": "spine_bone_find",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_bone_value",
+      "namespace": "host",
+      "fn": "spine_bone_value",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        },
+        {
+          "name": "what",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_bone_set_position",
+      "namespace": "host",
+      "fn": "spine_bone_set_position",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        },
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_bone_set_world_position",
+      "namespace": "host",
+      "fn": "spine_bone_set_world_position",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        },
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_update_world_transform",
+      "namespace": "host",
+      "fn": "spine_update_world_transform",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_slot_count",
+      "namespace": "host",
+      "fn": "spine_slot_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_slot_name",
+      "namespace": "host",
+      "fn": "spine_slot_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_slot_index",
+      "namespace": "host",
+      "fn": "spine_slot_index",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_slot_attachment",
+      "namespace": "host",
+      "fn": "spine_slot_attachment",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_slots_range",
+      "namespace": "host",
+      "fn": "spine_set_slots_range",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "from",
+          "type": "float"
+        },
+        {
+          "name": "to",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_slots_from",
+      "namespace": "host",
+      "fn": "spine_slots_from",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_slots_to",
+      "namespace": "host",
+      "fn": "spine_slots_to",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_attachment",
+      "namespace": "host",
+      "fn": "spine_set_attachment",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "slot_name",
+          "type": "string"
+        },
+        {
+          "name": "attachment_name",
+          "type": "string"
+        },
+        {
+          "name": "skin_name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_skin_find",
+      "namespace": "host",
+      "fn": "spine_skin_find",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_skin_create",
+      "namespace": "host",
+      "fn": "spine_skin_create",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_skin_add",
+      "namespace": "host",
+      "fn": "spine_skin_add",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "handle",
+          "type": "float"
+        },
+        {
+          "name": "source_skin",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_skin_obj",
+      "namespace": "host",
+      "fn": "spine_set_skin_obj",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "handle",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_skin_compose",
+      "namespace": "host",
+      "fn": "spine_skin_compose",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "names",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_skin_attachment_count",
+      "namespace": "host",
+      "fn": "spine_skin_attachment_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "handle",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_two_color",
+      "namespace": "host",
+      "fn": "spine_set_two_color",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "on",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_ik_count",
+      "namespace": "host",
+      "fn": "spine_ik_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_ik_name",
+      "namespace": "host",
+      "fn": "spine_ik_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_ik_mix",
+      "namespace": "host",
+      "fn": "spine_set_ik_mix",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        },
+        {
+          "name": "mix",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_physics_count",
+      "namespace": "host",
+      "fn": "spine_physics_count",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_physics_name",
+      "namespace": "host",
+      "fn": "spine_physics_name",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_physics_translate",
+      "namespace": "host",
+      "fn": "spine_physics_translate",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_physics_reset",
+      "namespace": "host",
+      "fn": "spine_physics_reset",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_sequence_frames",
+      "namespace": "host",
+      "fn": "spine_sequence_frames",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "slot",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_sequence_index",
+      "namespace": "host",
+      "fn": "spine_sequence_index",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "slot",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_sequence_path",
+      "namespace": "host",
+      "fn": "spine_sequence_path",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "slot",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_sequence_value",
+      "namespace": "host",
+      "fn": "spine_sequence_value",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "slot",
+          "type": "float"
+        },
+        {
+          "name": "what",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.spine_set_sequence_index",
+      "namespace": "host",
+      "fn": "spine_set_sequence_index",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "float"
+        },
+        {
+          "name": "slot",
+          "type": "float"
+        },
+        {
+          "name": "frame",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
     }
   ],
   "controls": [
@@ -21521,6 +22715,11 @@
               "doc": null
             },
             {
+              "name": "dark_colors",
+              "type": "float*",
+              "doc": null
+            },
+            {
               "name": "indices",
               "type": "uint32_t*",
               "doc": null
@@ -21548,6 +22747,897 @@
             {
               "name": "out",
               "type": "mq_spine_draw*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_event_cb",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "cb",
+              "type": "mq_spine_event_cb",
+              "doc": null
+            },
+            {
+              "name": "user",
+              "type": "void*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_event_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_event",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_spine_event*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_clear_events",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_events_dropped",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_animation",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "animation",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "loop",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_add_animation",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "animation",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "loop",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "delay",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_track_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_track_animation",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_queue_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_clear_track",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_track_time_scale",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "scale",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_track_time_scale",
+          "returns": "float",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_time_scale",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "scale",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_time_scale",
+          "returns": "float",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_default_mix",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "duration",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_default_mix",
+          "returns": "float",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_mix",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "from",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "to",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "duration",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_skin_find",
+          "returns": "int",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_data_skin_at",
+          "returns": "mq_spine_skin*",
+          "args": [
+            {
+              "name": "data",
+              "type": "mq_spine_data*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_skin_create",
+          "returns": "mq_spine_skin*",
+          "args": [
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_skin_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "skin",
+              "type": "mq_spine_skin*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_skin_add",
+          "returns": "int",
+          "args": [
+            {
+              "name": "dst",
+              "type": "mq_spine_skin*",
+              "doc": null
+            },
+            {
+              "name": "src",
+              "type": "mq_spine_skin*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_skin_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "skin",
+              "type": "mq_spine_skin*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_skin_attachment_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "skin",
+              "type": "mq_spine_skin*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_skin_obj",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "skin",
+              "type": "mq_spine_skin*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_attachment",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "slot_name",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "attachment_name",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "skin_name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_slot_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_slot_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_slot_index",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_slots_range",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "from",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "to",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_slots_range",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "from",
+              "type": "int*",
+              "doc": null
+            },
+            {
+              "name": "to",
+              "type": "int*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_slot_attachment",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_find",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_parent",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_set_position",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_position_at",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_world_position",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_bone_set_world_position",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_update_world_transform",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "physics",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_step_ex",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "dt",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "physics",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_physics_count",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_physics_name",
+          "returns": "const char*",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_physics_translate",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_physics_set_float",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "field",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "value",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_physics_get_float",
+          "returns": "float",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "field",
+              "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_physics_reset",
+          "returns": "void",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_attachment_sequence_info",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "slot_index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_spine_sequence_info*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_instance_set_sequence_index",
+          "returns": "int",
+          "args": [
+            {
+              "name": "inst",
+              "type": "mq_spine_instance*",
+              "doc": null
+            },
+            {
+              "name": "slot_index",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "frame",
+              "type": "int",
               "doc": null
             }
           ]
@@ -21648,6 +23738,106 @@
               "doc": null
             }
           ]
+        },
+        {
+          "name": "mq_spine_event",
+          "fields": [
+            {
+              "name": "type",
+              "type": "int",
+              "doc": "mq_spine_event_type"
+            },
+            {
+              "name": "track",
+              "type": "int",
+              "doc": "轨下标（TrackEntry::getTrackIndex）"
+            },
+            {
+              "name": "animation",
+              "type": "const char*",
+              "doc": "所在轨的动画名（NULL = 无）"
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": "用户事件名（仅 type=MQ_SPINE_EVENT_EVENT；否则 NULL）"
+            },
+            {
+              "name": "int_value",
+              "type": "int",
+              "doc": "用户事件的 int 值"
+            },
+            {
+              "name": "float_value",
+              "type": "float",
+              "doc": "用户事件的 float 值"
+            },
+            {
+              "name": "string_value",
+              "type": "const char*",
+              "doc": "用户事件的 string 值（可为 NULL）"
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_sequence_info",
+          "fields": [
+            {
+              "name": "frames",
+              "type": "int",
+              "doc": "序列总帧数（Sequence::getRegions().size()）"
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "doc": "当前帧下标（-1 = 用 setup 帧）"
+            },
+            {
+              "name": "setup_index",
+              "type": "int",
+              "doc": "setup 帧下标（Sequence::getSetupIndex）"
+            },
+            {
+              "name": "id",
+              "type": "int",
+              "doc": "Sequence::getId（同一 Sequence 的稳定标识）"
+            },
+            {
+              "name": "path",
+              "type": "const char*",
+              "doc": "当前帧的路径名（Sequence::getPath；指针在本实例下次调用前有效）"
+            },
+            {
+              "name": "u",
+              "type": "float",
+              "doc": "当前帧区域在整页上的 UV（u/v/u2/v2；逐帧不同）"
+            },
+            {
+              "name": "v",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "u2",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "v2",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "doc": "当前帧区域像素尺寸"
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "doc": null
+            }
+          ]
         }
       ],
       "enums": [
@@ -21682,6 +23872,106 @@
             {
               "name": "MQ_SPINE_ERR_NOMEM",
               "value": 5,
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_event_type",
+          "values": [
+            {
+              "name": "MQ_SPINE_EVENT_START",
+              "value": 0,
+              "doc": "某轨开始播一个动画"
+            },
+            {
+              "name": "MQ_SPINE_EVENT_INTERRUPT",
+              "value": 1,
+              "doc": "被同轨的新动画打断"
+            },
+            {
+              "name": "MQ_SPINE_EVENT_END",
+              "value": 2,
+              "doc": "轨上动画结束（非循环播完/被清）"
+            },
+            {
+              "name": "MQ_SPINE_EVENT_COMPLETE",
+              "value": 3,
+              "doc": "至少播完一轮（循环动画每轮都发）"
+            },
+            {
+              "name": "MQ_SPINE_EVENT_DISPOSE",
+              "value": 4,
+              "doc": "轨条目被销毁"
+            },
+            {
+              "name": "MQ_SPINE_EVENT_EVENT",
+              "value": 5,
+              "doc": "用户事件（动画里 key 的 event）"
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_physics",
+          "values": [
+            {
+              "name": "MQ_SPINE_PHYSICS_NONE",
+              "value": 0,
+              "doc": "不更新也不应用物理"
+            },
+            {
+              "name": "MQ_SPINE_PHYSICS_RESET",
+              "value": 1,
+              "doc": "物理重置到当前姿势"
+            },
+            {
+              "name": "MQ_SPINE_PHYSICS_UPDATE",
+              "value": 2,
+              "doc": "更新物理并应用（默认）"
+            },
+            {
+              "name": "MQ_SPINE_PHYSICS_POSE",
+              "value": 3,
+              "doc": "不更新、只应用已有物理姿势"
+            }
+          ]
+        },
+        {
+          "name": "mq_spine_physics_field",
+          "values": [
+            {
+              "name": "MQ_SPINE_PHYS_INERTIA",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_SPINE_PHYS_STRENGTH",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_SPINE_PHYS_DAMPING",
+              "value": 2,
+              "doc": null
+            },
+            {
+              "name": "MQ_SPINE_PHYS_MASS_INVERSE",
+              "value": 3,
+              "doc": null
+            },
+            {
+              "name": "MQ_SPINE_PHYS_WIND",
+              "value": 4,
+              "doc": null
+            },
+            {
+              "name": "MQ_SPINE_PHYS_GRAVITY",
+              "value": 5,
+              "doc": null
+            },
+            {
+              "name": "MQ_SPINE_PHYS_MIX",
+              "value": 6,
               "doc": null
             }
           ]

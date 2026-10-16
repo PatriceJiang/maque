@@ -1,9 +1,71 @@
-# 27 · Spine 2D 运行时接入（已完成）
+# 27 · Spine 2D 运行时接入（已完成 + 官方 demo 全量移植）
 
-> 目标：集成官方 **spine-runtime**（`spine-cpp`），并交付**独立**的 `samples/spine/` 工程：
-> 渲染官方素材 + 上/下键切换动画。
-> 状态：**已完成** —— 模块参与默认构建、runtime 已接入渲染管线、sample 可跑、测试全绿。
+> 目标：集成官方 **spine-runtime**（`spine-cpp`），交付**独立**的 `samples/spine/` 工程，
+> 并把**官方全部 demo** 移植进来。
+> 状态：**已完成** —— 模块参与默认构建、runtime 已接入渲染管线、
+> **13 个官方 demo 场景** + 总览全部可跑、测试全绿。
 > 单一真相：`modules/core/data/schema/world/anim.yaml` 的 `module_abi`（设计来源 `docs/assets/06 §2`）。
+
+## 官方 demo 全量移植（`samples/spine/`）
+
+用户要求"我要的是官方 runtime 的 demo"。核查结论：官方 demo 集在
+**`spine-runtimes` 4.2 的 `spine-cocos2dx/example/Classes/*Example.cpp`**（各平台移植共用的官方参考实现，
+11 个），另有官方 C++ runtime 的两个入口 demo（`spine-glfw/example/main.cpp`、`spine-sdl/example/main.cpp`）。
+（`EsotericSoftware/spine-cpp-demos` 仓库**不存在**；`spine-cpp/` 目录只含库本体，不含 demo。）
+
+| 场景 | 素材（官方缩放） | 复刻要点 |
+|---|---|---|
+| `demo-spineboy.scn` | spineboy-pro.json + spineboy.atlas（0.6） | 5 类动画事件 + 用户事件 + 排队 walk→jump→run + `setMix` |
+| `demo-separator.scn` | 同上 | 槽区间分层 back=[19..24]/front=[25..-1] |
+| `demo-goblins.scn` | goblins-pro.json + goblins.atlas（1.5） | `setSkin("goblin")` |
+| `demo-raptor.scn` | raptor-pro.json + raptor.atlas（0.5） | track0 walk + track1 延迟 `gun-grab` |
+| `demo-tank.scn` | tank-pro.skel + tank.atlas（0.5） | `shoot` |
+| `demo-coin.scn` | coin-pro.skel + coin.atlas（1.0） | `animation` |
+| `demo-mixandmatch.scn` | mix-and-match-pro.skel + atlas（0.5） | **运行时合成 9 件皮肤 → 46 附件** + `dance` |
+| `demo-batching.scn` | spineboy-pro.json + atlas（0.6） | **同屏 50 个骨架** |
+| `demo-sequence.scn` | dragon-ess.skel + **dragon-pma.atlas**（1.0，5 页） | **Sequence 序列帧**（wings 各 9 帧） |
+| `demo-ik.scn` | spineboy-pro.json + atlas（0.6） | track0 walk + **track1 aim** + crosshair 骨骼随指针 |
+| `demo-physics.scn` | celestial-circus-pro.skel + atlas（0.2） | **物理约束（30 个）** |
+| `demo-glfw.scn` | spineboy-pro.skel + **spineboy-pma.atlas**（0.3） | 官方 C++ 入口：`defaultMix 0.2`、portal→run |
+| `demo-sdl.scn` | spineboy-pro.json + **spineboy-pma.atlas**（0.5） | 同上（SDl 版底色 (94,93,96)） |
+| `all.scn` | 全部 | **总览**：12 个骨架同屏（一张图证明全都集成） |
+
+测试：`spine_demos`（13 个场景各跑 30 帧）、`spine_all`（出图 + 骨架数==格数 + **逐格**像素断言）。
+**逐格断言是刻意的**——它实测抓到过两次"日志一切正常但画面错"：
+Goblins 漏设皮肤（只剩长矛+盾）与 MixAndMatch 0 顶点（整格空白）。
+
+### 诚实清单（复刻 vs 简化）
+
+- **Separator 实现有差异**：官方是"一个骨架 + 两个渲染节点"，我们是**两个实体各持一个实例**镜像播放
+  （引擎没有"分次绘制同一实例"的 API）→ 观感一致，代价是骨架数据/内存各一份。
+- **调试骨骼绘制**（官方点击第一击）引擎无此能力 → 明确打印 `UNSUPPORTED debugBones`，不假装。
+- 位置微调两处：Tank 官方 `x = width/2 + 400` 超出 800px 画布 → 挪到 560；
+  Batching 官方用设备尺寸，50 个 0.6 缩放于 800x600 糊成一团 → 总览用 1280x960（位置仍按官方百分比公式）。
+- **未用真实指针验证**：headless 无真实指针事件，`on_pointer_move` 驱动的 IK/物理分支只做了代码级 + 日志级核对。
+
+## 已具备的 spine 能力（ABI 33 → 79 个函数）
+
+| 能力 | 说明 |
+|---|---|
+| 动画事件 | push（回调）+ pull（`spine_event_*`）两条面，逐条对拍一致 |
+| 多轨 | 每轨独立动画/时间/时间缩放；混合语义实测（`walk+aim` 280 顶点 vs `walk` 276 + 184 个位移） |
+| 皮肤 | 按名取皮肤、**运行时 `addSkin` 合成**、按名取附件设到槽 |
+| 骨骼 / IK | `bone_find` / 世界位置读写 / IK mix |
+| 槽区间 | 按 `getData().getIndex()`（不随 draw order 漂移），用于 Separator |
+| Sequence | 序列帧（帧下标/路径/UV 逐帧不同） |
+| 物理 | `PhysicsConstraint`；**修了 `skeleton->update(dt)` 缺失**（此前物理永远冻结） |
+| 两色着色 | dark 通道（见下） |
+| 裁剪遮罩 | `SkeletonClipping` |
+| 默认混合 / 时间缩放 | `setDefaultMix` / `setTimeScale` |
+
+### 接入时修掉的真 bug（都带证据）
+
+1. **Sequence 附件此前根本画不出来**：附件的 `_region` 在 `computeWorldVertices`
+   （内部 `Sequence::apply`）之前一直是 NULL → 旧顺序下该槽被整槽跳过；多页序列还会取到上一帧的页。
+   已改为"先求值、后取 region/UV"。
+2. **索引越界自相矛盾**：批次数上限 break 路径上 `vtx += vcount` 漏加 →
+   `out.vertex_count` 小于索引用到的顶点数（下游按 vertex_count 建缓冲会越界读）。
+3. **spine 物理永远冻结**：`mq_spine_instance_step` 未调 `skeleton->update(dt)`。
 
 ## 版本选择（含取舍理由）
 
@@ -98,23 +160,52 @@ ctest --test-dir build-win               # 62 项（唯一偶发是 text_e2e，�
 - **确定性**：同一 `MAQUE_SIM` 跑两次 → `world_trail=0x80c911285900f466` 一致、
   截图 sha256 逐字节一致、切换序列一致。
 
-## 已知限制（如实记录）
+## 已支持 / 仍未支持（如实记录）
 
-- **双色着色（Tint Black）未支持**：spine 4.2 有完整的双色接口
-  （`Slot::getDarkColor()` / `hasDarkColor()` / `SlotData::setHasDarkColor()` / `TwoColorTimeline`，
-  官方参考结构 `SkeletonRenderer::RenderCommand` 里也有一路 `darkColors`），
-  本实现**只取 light 色**（`Slot::getColor()`），没有第二路顶点色、也没有光照插值。
-  要做需：绘制数据多输出一路 dark colors + mesh shader 加 `@location(3)` 与光照参数
-  （顶点 stride 32B → 48B）。
-  ℹ️ **官方 spineboy / dragon 都没开 Tint Black**（实测：`spineboy-pro.json` 的 `skins` 下
-  `dark` 字段出现 **0 次**），所以当前样例渲染**没有可见缺陷**；但用到该特性的素材会画错。
-- **`Sequence`（序列帧附件，4.2 新增）未接**。
+### ✅ 双色着色（Tint Black）已支持
+
+- 绘制数据多输出一路 dark colors（`mq_spine_draw.dark_colors`；`NULL` → 等价 `(0,0,0,1)`）。
+- mesh shader 加 `@location(3) col2`，**顶点 stride 32B → 48B**。
+- **公式取自官方**（不是推导）：`spine-runtimes` 4.2 `spine-glfw/src/spine-glfw.cpp:292-297` 的内嵌 GLSL：
+  ```glsl
+  float alpha = texColor.a * lightColor.a;
+  fragColor.rgb = ((texColor.a - 1.0) * darkColor.a + 1.0 - texColor.rgb) * darkColor.rgb
+                  + texColor.rgb * lightColor.rgb;
+  ```
+  dark 的**取值**语义见 `SkeletonRenderer.cpp:212-221`（`0xff000000` = 未启用 → rgba(0,0,0,1)，alpha 恒 1）。
+- **关键性质**：`dark=(0,0,0,1)` 时该式**精确退化**成旧行为 `rgb = tex.rgb*light.rgb`、`a = tex.a*light.a`
+  → 未启用 TintBlack 的素材（tank / flappy / spineboy）**逐字节不回归**（截图 sha256 实测相同）。
+  这条退化性质是常驻回归防线（`ctest -R gfx_twocolor`）。
+
+⚠️ **一次被纠正的错误前提（留档）**：本任务最初写的是"**Batching 与 Raptor 用到两色着色**"，
+后来**扫了官方 4.2 全部 50 个 JSON 素材**才发现**不成立**：
+
+| 素材 | `dark` 键 | 结论 |
+|---|---|---|
+| `raptor-pro.json` | **0 个** | `setTwoColorTint(true)` 走默认黑 → 开关**像素完全一样** |
+| `spineboy-pro.json`（Batching 实际加载的） | **0 个** | 且两处 `setTwoColorTint(true)` **在上游就是注释掉的** |
+| `alien-pro.json` | 3 槽，`eyeball` light=`dfa921ff` / **dark=`c57c1e`** | ← **唯一有鉴别力的官方素材** |
+| `coin-pro.json` / `tank-pro.json` | dark 全 `000000` | 与默认黑等价 → 零差异 |
+
+**教训**：拿"素材其实没启用的特性"去做像素断言 = 等于没测（同一个坑在裁剪遮罩上已经踩过一次）。
+**先扫素材、再写断言**。
+
+### ❌ 仍未支持 / 未验证
+
 - **multiply / screen 混合回退为 normal**：本机 wgpu-native 的 `WGPUBlendFactor` 没有
   dst-color 类因子，gfx 会打印一行提示。用到这两种模式的素材会偏亮。
-- 组件里的 `phys_timestep` / `update_mode` / `SpineBlend` / `PlayMode` 的 PingPong/ClampForever
-  **未接**（`step` 固定 `Physics_Update`，`play_mode` 只区分 loop/once）。
-- **真实窗口 + 真键盘的 ↑↓ 未验证**：只跑了 `MAQUE_SIM` 注入路径与无头截图；
-  `key_from_sdl` 的归一化只做了代码级核对，没有真实按键实证。
+- **Separator 的"共享骨架"未复刻**：官方是两个渲染节点共享**同一个** Skeleton/AnimationState；
+  我们给的是"槽区间 + 每个实体各自实例"。数值上两段合起来 = 全量，但"共享一份状态"没做。
+- **`spine_set_two_color` 是诚实的空操作**：本引擎网格恒走两色路径，无 dark 的素材 = `(0,0,0,1)`，
+  与关闭逐字节等价。它只把值写进组件字段，**不改变输出**。
+- **`mq_spine_instance_draw` 内部仍会 `updateWorldTransform(Physics_Update)`**（同帧 IK 需要），
+  语义上"绘制导出"会重算一次世界变换 —— **不是纯只读**，已在注释写明。
+- **物理只验证了"约束存在 + 真的推进 + 冲量生效 + 接口安全"**，**没有**与官方 celestial-circus
+  做视觉一致对照，也没有 wind/gravity/inertia 的逐项数值断言。
+- **事件容量溢出路径**（>64 条/帧的 `events_dropped`）未覆盖（计数器实现了，但没构造出溢出场景）。
+- **真实窗口 + 真键盘未验证**：只跑了 `MAQUE_SIM` 注入路径与无头截图；
+  headless 无真实指针事件，`on_pointer_move` 驱动的 IK/物理分支**未被真实指针驱动过**。
+- **无官方截图的逐像素对照**：只做到"数据面 + 逐格像素断言"。
 
 ## 裁剪遮罩（mask）—— 已支持，但要注意它**不是自动生效的**
 
@@ -149,8 +240,10 @@ ctest --test-dir build-win               # 62 项（唯一偶发是 text_e2e，�
 
 ## 后续可做
 
-1. 接**双色着色**（dark color 通道 + mesh shader 光照）——注意官方样例没用到，
-   需要自备开 Tint Black 的素材，否则又会做成"写了但没法证明对"的东西。
-2. 接 `Sequence`（序列帧附件）。
-3. 接 `phys_timestep`/`update_mode`/`PlayMode` 的其余枚举；multiply/screen 混合。
-4. 真实窗口 + 真键盘的端到端验证（补 `MAQUE_CAPTURE` 回读路径）。
+1. 真实窗口 + 真键盘/真指针的端到端验证（补 `MAQUE_CAPTURE` 回读路径）；
+   重点验证 `on_pointer_move` 驱动的 IK 与物理分支。
+2. 补 `PhysicsConstraint` 的 wind/gravity/inertia 逐项数值断言，并与官方 celestial-circus 对照。
+3. 事件容量溢出（`events_dropped`）的单测。
+4. `phys_timestep`/`update_mode`/`PlayMode` 的其余枚举；multiply/screen 混合（受 wgpu-native 因子限制）。
+5. Separator 的"共享骨架"（若真要省一份模拟）。
+

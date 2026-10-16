@@ -44,6 +44,7 @@ typedef struct mq_renderer_mesh {
     const float* vertices;
     const float* uvs;
     const float* colors;
+    const float* dark_colors;
     const uint32_t* indices;
     uint32_t vertex_count;
     uint32_t first_index;

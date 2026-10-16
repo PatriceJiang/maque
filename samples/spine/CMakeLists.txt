@@ -29,4 +29,14 @@ if(MAQUE_BUILD_TESTS)
     add_test(NAME spine_mask COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/spine_e2e.sh"
              mask $<TARGET_FILE:maque_spine> "${CMAKE_CURRENT_SOURCE_DIR}/spine.scn")
     set_tests_properties(spine_mask PROPERTIES SKIP_RETURN_CODE 77 SKIP_REGULAR_EXPRESSION "SKIP")
+
+    # 官方 demo 移植（samples/spine/demo-*.scn）：每个场景跑 30 帧 + 动画清单非空 + 无报错
+    add_test(NAME spine_demos COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/spine_demos_e2e.sh"
+             demos $<TARGET_FILE:maque_spine> "${CMAKE_CURRENT_SOURCE_DIR}")
+    set_tests_properties(spine_demos PROPERTIES SKIP_RETURN_CODE 77 SKIP_REGULAR_EXPRESSION "SKIP")
+
+    # all.scn 总览：出图 + **逐格**像素断言（12 格各自 >300 非背景像素）+ 骨架数 == 格数
+    add_test(NAME spine_all COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/spine_demos_e2e.sh"
+             all $<TARGET_FILE:maque_spine> "${CMAKE_CURRENT_SOURCE_DIR}")
+    set_tests_properties(spine_all PROPERTIES SKIP_RETURN_CODE 77 SKIP_REGULAR_EXPRESSION "SKIP")
 endif()

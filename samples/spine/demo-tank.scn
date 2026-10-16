@@ -1,0 +1,33 @@
+{
+  "title": "Spine demo: Tank",
+  "script": "demos.js",
+  "width": 800,
+  "height": 600,
+  "seed": 20241016,
+  "entities": [
+    {
+      "name": "demo.tank",
+      "components": [
+        { "type": "scn.Transform2D", "x": 560, "y": 20 },
+        { "type": "anim.SpineSkeleton", "skeleton": "/art/tank-pro.skel", "atlas": "/art/tank.atlas",
+          "animation": 0, "autoplay": false, "play_mode": "PlayMode::Loop", "speed": 1.0, "z_index": 0 }
+      ]
+    },
+    {
+      "name": "hud",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 576 },
+        { "type": "scn.Label", "font_size": 18, "r": 0.08, "g": 0.08, "b": 0.10,
+          "text": "Tank (official): play \"shoot\"; official x = width/2 + 400 (off our 800px canvas) -> moved to 560" }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 12 },
+        { "type": "scn.Label", "font_size": 12, "r": 0.16, "g": 0.16, "b": 0.20,
+          "text": "UP/DOWN anim   SPACE pause   N next demo   CLICK x3 = official cycle" }
+      ]
+    }
+  ]
+}

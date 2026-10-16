@@ -429,6 +429,180 @@ int b_host_spine_pages(void* user, int, const double* a, double* ret) {
 int b_host_spine_page_texture(void* user, int, const double* a, double* ret) {
   *ret = (double)host::spine_page_texture(user, (float)a[0], (float)a[1]); return 0;
 }
+int b_host_spine_set_animation(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::spine_set_animation(user, (float)a[0], (float)a[1], s[0], (float)a[2]); return 0;
+}  /* kinds=nnsn */
+int b_host_spine_add_animation(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::spine_add_animation(user, (float)a[0], (float)a[1], s[0], (float)a[2], (float)a[3]); return 0;
+}  /* kinds=nnsnn */
+int b_host_spine_track_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_track_count(user, (float)a[0]); return 0;
+}
+int b_host_spine_track_animation(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_track_animation(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_queue_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_queue_count(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_clear_track(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_clear_track(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_track_time(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_track_time(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_set_track_time(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_track_time(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
+int b_host_spine_track_time_scale(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_track_time_scale(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_set_track_time_scale(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_track_time_scale(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
+int b_host_spine_time_scale(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_time_scale(user, (float)a[0]); return 0;
+}
+int b_host_spine_set_time_scale(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_time_scale(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_default_mix(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_default_mix(user, (float)a[0]); return 0;
+}
+int b_host_spine_set_default_mix(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_default_mix(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_set_mix(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::spine_set_mix(user, (float)a[0], s[0], s[1], (float)a[1]); return 0;
+}  /* kinds=nssn */
+int b_host_spine_event_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_event_count(user, (float)a[0]); return 0;
+}
+int b_host_spine_event_type(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_event_type(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_event_track(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_event_track(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_event_animation(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_event_animation(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_event_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_event_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_event_int(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_event_int(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_event_float(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_event_float(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_event_string(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_event_string(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_clear_events(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_clear_events(user, (float)a[0]); return 0;
+}
+int b_host_spine_bone_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_bone_count(user, (float)a[0]); return 0;
+}
+int b_host_spine_bone_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_bone_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_bone_find(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::spine_bone_find(user, (float)a[0], s); return 0;
+}
+int b_host_spine_bone_value(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_bone_value(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
+int b_host_spine_bone_set_position(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_bone_set_position(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}
+int b_host_spine_bone_set_world_position(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_bone_set_world_position(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}
+int b_host_spine_update_world_transform(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_update_world_transform(user, (float)a[0]); return 0;
+}
+int b_host_spine_slot_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_slot_count(user, (float)a[0]); return 0;
+}
+int b_host_spine_slot_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_slot_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_slot_index(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::spine_slot_index(user, (float)a[0], s); return 0;
+}
+int b_host_spine_slot_attachment(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_slot_attachment(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_set_slots_range(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_slots_range(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
+int b_host_spine_slots_from(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_slots_from(user, (float)a[0]); return 0;
+}
+int b_host_spine_slots_to(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_slots_to(user, (float)a[0]); return 0;
+}
+int b_host_spine_set_attachment(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::spine_set_attachment(user, (float)a[0], s[0], s[1], s[2]); return 0;
+}  /* kinds=nsss */
+int b_host_spine_skin_find(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::spine_skin_find(user, (float)a[0], s); return 0;
+}
+int b_host_spine_skin_create(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::spine_skin_create(user, (float)a[0], s); return 0;
+}
+int b_host_spine_skin_add(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::spine_skin_add(user, (float)a[0], (float)a[1], s); return 0;
+}
+int b_host_spine_set_skin_obj(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_skin_obj(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_skin_compose(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::spine_skin_compose(user, (float)a[0], s); return 0;
+}
+int b_host_spine_skin_attachment_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_skin_attachment_count(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_set_two_color(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_two_color(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_ik_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_ik_count(user, (float)a[0]); return 0;
+}
+int b_host_spine_ik_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_ik_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_set_ik_mix(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_ik_mix(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
+int b_host_spine_physics_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_physics_count(user, (float)a[0]); return 0;
+}
+int b_host_spine_physics_name(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_physics_name(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_physics_translate(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_physics_translate(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
+int b_host_spine_physics_reset(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_physics_reset(user, (float)a[0]); return 0;
+}
+int b_host_spine_sequence_frames(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_sequence_frames(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_sequence_index(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_sequence_index(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_spine_sequence_path(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::spine_sequence_path(user, (float)a[0], (float)a[1])); return 0;
+}
+int b_host_spine_sequence_value(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_sequence_value(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
+int b_host_spine_set_sequence_index(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::spine_set_sequence_index(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
+}
 } // namespace
 
 extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
@@ -573,4 +747,62 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "spine_set_time", b_host_spine_set_time, ctx);
   mq_script_register_num(vm, "spine_pages", b_host_spine_pages, ctx);
   mq_script_register_num(vm, "spine_page_texture", b_host_spine_page_texture, ctx);
+  mq_script_register_multi(vm, "spine_set_animation", "nnsn", b_host_spine_set_animation, ctx);
+  mq_script_register_multi(vm, "spine_add_animation", "nnsnn", b_host_spine_add_animation, ctx);
+  mq_script_register_num(vm, "spine_track_count", b_host_spine_track_count, ctx);
+  mq_script_register_ret_str(vm, "spine_track_animation", b_host_spine_track_animation, ctx);
+  mq_script_register_num(vm, "spine_queue_count", b_host_spine_queue_count, ctx);
+  mq_script_register_num(vm, "spine_clear_track", b_host_spine_clear_track, ctx);
+  mq_script_register_num(vm, "spine_track_time", b_host_spine_track_time, ctx);
+  mq_script_register_num(vm, "spine_set_track_time", b_host_spine_set_track_time, ctx);
+  mq_script_register_num(vm, "spine_track_time_scale", b_host_spine_track_time_scale, ctx);
+  mq_script_register_num(vm, "spine_set_track_time_scale", b_host_spine_set_track_time_scale, ctx);
+  mq_script_register_num(vm, "spine_time_scale", b_host_spine_time_scale, ctx);
+  mq_script_register_num(vm, "spine_set_time_scale", b_host_spine_set_time_scale, ctx);
+  mq_script_register_num(vm, "spine_default_mix", b_host_spine_default_mix, ctx);
+  mq_script_register_num(vm, "spine_set_default_mix", b_host_spine_set_default_mix, ctx);
+  mq_script_register_multi(vm, "spine_set_mix", "nssn", b_host_spine_set_mix, ctx);
+  mq_script_register_num(vm, "spine_event_count", b_host_spine_event_count, ctx);
+  mq_script_register_num(vm, "spine_event_type", b_host_spine_event_type, ctx);
+  mq_script_register_num(vm, "spine_event_track", b_host_spine_event_track, ctx);
+  mq_script_register_ret_str(vm, "spine_event_animation", b_host_spine_event_animation, ctx);
+  mq_script_register_ret_str(vm, "spine_event_name", b_host_spine_event_name, ctx);
+  mq_script_register_num(vm, "spine_event_int", b_host_spine_event_int, ctx);
+  mq_script_register_num(vm, "spine_event_float", b_host_spine_event_float, ctx);
+  mq_script_register_ret_str(vm, "spine_event_string", b_host_spine_event_string, ctx);
+  mq_script_register_num(vm, "spine_clear_events", b_host_spine_clear_events, ctx);
+  mq_script_register_num(vm, "spine_bone_count", b_host_spine_bone_count, ctx);
+  mq_script_register_ret_str(vm, "spine_bone_name", b_host_spine_bone_name, ctx);
+  mq_script_register_mixed(vm, "spine_bone_find", b_host_spine_bone_find, ctx);
+  mq_script_register_num(vm, "spine_bone_value", b_host_spine_bone_value, ctx);
+  mq_script_register_num(vm, "spine_bone_set_position", b_host_spine_bone_set_position, ctx);
+  mq_script_register_num(vm, "spine_bone_set_world_position", b_host_spine_bone_set_world_position, ctx);
+  mq_script_register_num(vm, "spine_update_world_transform", b_host_spine_update_world_transform, ctx);
+  mq_script_register_num(vm, "spine_slot_count", b_host_spine_slot_count, ctx);
+  mq_script_register_ret_str(vm, "spine_slot_name", b_host_spine_slot_name, ctx);
+  mq_script_register_mixed(vm, "spine_slot_index", b_host_spine_slot_index, ctx);
+  mq_script_register_ret_str(vm, "spine_slot_attachment", b_host_spine_slot_attachment, ctx);
+  mq_script_register_num(vm, "spine_set_slots_range", b_host_spine_set_slots_range, ctx);
+  mq_script_register_num(vm, "spine_slots_from", b_host_spine_slots_from, ctx);
+  mq_script_register_num(vm, "spine_slots_to", b_host_spine_slots_to, ctx);
+  mq_script_register_multi(vm, "spine_set_attachment", "nsss", b_host_spine_set_attachment, ctx);
+  mq_script_register_mixed(vm, "spine_skin_find", b_host_spine_skin_find, ctx);
+  mq_script_register_mixed(vm, "spine_skin_create", b_host_spine_skin_create, ctx);
+  mq_script_register_mixed(vm, "spine_skin_add", b_host_spine_skin_add, ctx);
+  mq_script_register_num(vm, "spine_set_skin_obj", b_host_spine_set_skin_obj, ctx);
+  mq_script_register_mixed(vm, "spine_skin_compose", b_host_spine_skin_compose, ctx);
+  mq_script_register_num(vm, "spine_skin_attachment_count", b_host_spine_skin_attachment_count, ctx);
+  mq_script_register_num(vm, "spine_set_two_color", b_host_spine_set_two_color, ctx);
+  mq_script_register_num(vm, "spine_ik_count", b_host_spine_ik_count, ctx);
+  mq_script_register_ret_str(vm, "spine_ik_name", b_host_spine_ik_name, ctx);
+  mq_script_register_num(vm, "spine_set_ik_mix", b_host_spine_set_ik_mix, ctx);
+  mq_script_register_num(vm, "spine_physics_count", b_host_spine_physics_count, ctx);
+  mq_script_register_ret_str(vm, "spine_physics_name", b_host_spine_physics_name, ctx);
+  mq_script_register_num(vm, "spine_physics_translate", b_host_spine_physics_translate, ctx);
+  mq_script_register_num(vm, "spine_physics_reset", b_host_spine_physics_reset, ctx);
+  mq_script_register_num(vm, "spine_sequence_frames", b_host_spine_sequence_frames, ctx);
+  mq_script_register_num(vm, "spine_sequence_index", b_host_spine_sequence_index, ctx);
+  mq_script_register_ret_str(vm, "spine_sequence_path", b_host_spine_sequence_path, ctx);
+  mq_script_register_num(vm, "spine_sequence_value", b_host_spine_sequence_value, ctx);
+  mq_script_register_num(vm, "spine_set_sequence_index", b_host_spine_set_sequence_index, ctx);
 }

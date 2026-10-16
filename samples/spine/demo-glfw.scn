@@ -1,0 +1,33 @@
+{
+  "title": "Spine demo: spine-glfw (official C++ entry)",
+  "script": "demos.js",
+  "width": 800,
+  "height": 600,
+  "seed": 20241016,
+  "entities": [
+    {
+      "name": "demo.glfw",
+      "components": [
+        { "type": "scn.Transform2D", "x": 400, "y": 100 },
+        { "type": "anim.SpineSkeleton", "skeleton": "/art/spineboy-pro.skel", "atlas": "/art/spineboy-pma.atlas",
+          "animation": 0, "autoplay": false, "play_mode": "PlayMode::Loop", "speed": 1.0, "z_index": 0 }
+      ]
+    },
+    {
+      "name": "hud",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 576 },
+        { "type": "scn.Label", "font_size": 18, "r": 0.75, "g": 0.75, "b": 0.78,
+          "text": "spine-glfw main.cpp (official): pma atlas + binary skel, scale 0.3, defaultMix 0.2, portal -> run" }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        { "type": "scn.Transform2D", "x": 12, "y": 12 },
+        { "type": "scn.Label", "font_size": 12, "r": 0.55, "g": 0.55, "b": 0.60,
+          "text": "UP/DOWN anim   SPACE pause   N next demo   (official window 800x600, y-down coords)" }
+      ]
+    }
+  ]
+}

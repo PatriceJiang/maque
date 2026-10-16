@@ -219,6 +219,20 @@
         - { name: color, type: math.Color }
         - { name: z_index, type: int32_t, default: 0 }
         - { name: material, type: string, default: "" }     # 兼容/别名：spine 用它指向 .atlas（见 atlas）
+        # 槽区间（SkeletonRendererSeparator demo：同一骨架拆成"后段/前段"两次渲染，
+        # 中间夹别的节点）。数值 = **槽声明序下标**（= 官方 findSlot(name)->getData().getIndex()），
+        # to < 0 → 到末尾；from < 0 → 不限制（整只画）。区间按 getData().getIndex() 判定，
+        # 不随 draw order timeline 漂移。
+        - { name: slots_from, type: int32_t, default: -1 }
+        - { name: slots_to,   type: int32_t, default: -1 }
+        # AnimationStateData::setDefaultMix：换动画时的默认混合时长（0 = 硬切）。
+        # 官方 C++ 入口 demo（glfw/sdl）用 0.2；Batching/Separator 用 setMix 指定特定动画对。
+        - { name: default_mix, type: float, default: 0.0F, attrs: { unit: s, range: [0, 10] } }
+        # AnimationState 全局时间缩放（与 speed 相乘；官方 Coin/Tank 的 setTimeScale(0.3)）
+        - { name: time_scale, type: float, default: 1.0F, attrs: { range: [0, 100] } }
+        # 官方 setTwoColorTint(on) 的落点：本引擎网格恒定走两色着色路径（暗色通道始终产出，
+        # 素材无 dark 时 = (0,0,0,1) → 与关闭逐字节等价），故这只是"如实记录调用"，不改输出。
+        - { name: two_color, type: bool, default: false }
         - { name: state, type: SpineAnimState, attrs: { transient: true, readonly: true } }
         - { name: instance, type: uint64_t, default: 0, attrs: { transient: true, readonly: true } }
 
@@ -232,7 +246,7 @@
     abi_name: "maque.spine2d"
     summary: "Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 + 绘制数据（docs/assets/06 §2）"
     includes: [ "<stddef.h>", "<stdint.h>" ]
-    opaque: [ mq_spine_data, mq_spine_instance ]
+    opaque: [ mq_spine_data, mq_spine_instance, mq_spine_skin ]
     enums:
       - doc: "错误码（结构化；docs/11 §4）"
         values:
@@ -242,6 +256,32 @@
           - { name: MQ_SPINE_ERR_NOTFOUND, value: 3, doc: "动画名/皮肤名不存在" }
           - { name: MQ_SPINE_ERR_PAGE,     value: 4, doc: "图集页纹理未回填" }
           - { name: MQ_SPINE_ERR_NOMEM,    value: 5 }
+      - doc: "动画事件类型（值与 spine::EventType 相同：start/interrupt/end/complete/dispose/event）"
+        name: mq_spine_event_type
+        values:
+          - { name: MQ_SPINE_EVENT_START,     value: 0, doc: "某轨开始播一个动画" }
+          - { name: MQ_SPINE_EVENT_INTERRUPT, value: 1, doc: "被同轨的新动画打断" }
+          - { name: MQ_SPINE_EVENT_END,       value: 2, doc: "轨上动画结束（非循环播完/被清）" }
+          - { name: MQ_SPINE_EVENT_COMPLETE,  value: 3, doc: "至少播完一轮（循环动画每轮都发）" }
+          - { name: MQ_SPINE_EVENT_DISPOSE,   value: 4, doc: "轨条目被销毁" }
+          - { name: MQ_SPINE_EVENT_EVENT,     value: 5, doc: "用户事件（动画里 key 的 event）" }
+      - doc: "世界变换/物理的更新时间轴（值与 spine::Physics 相同）"
+        name: mq_spine_physics
+        values:
+          - { name: MQ_SPINE_PHYSICS_NONE,   value: 0, doc: "不更新也不应用物理" }
+          - { name: MQ_SPINE_PHYSICS_RESET,  value: 1, doc: "物理重置到当前姿势" }
+          - { name: MQ_SPINE_PHYSICS_UPDATE, value: 2, doc: "更新物理并应用（默认）" }
+          - { name: MQ_SPINE_PHYSICS_POSE,   value: 3, doc: "不更新、只应用已有物理姿势" }
+      - doc: "PhysicsConstraint 的浮点字段（mq_spine_instance_physics_set_float 的 field）"
+        name: mq_spine_physics_field
+        values:
+          - { name: MQ_SPINE_PHYS_INERTIA,      value: 0 }
+          - { name: MQ_SPINE_PHYS_STRENGTH,     value: 1 }
+          - { name: MQ_SPINE_PHYS_DAMPING,      value: 2 }
+          - { name: MQ_SPINE_PHYS_MASS_INVERSE, value: 3 }
+          - { name: MQ_SPINE_PHYS_WIND,         value: 4 }
+          - { name: MQ_SPINE_PHYS_GRAVITY,      value: 5 }
+          - { name: MQ_SPINE_PHYS_MIX,          value: 6 }
     structs:
       - doc: "图集页（一页 = 一张纹理；多页图集如 dragon 有 5 页）"
         name: mq_spine_page
@@ -268,8 +308,33 @@
           - { name: bounds_y, type: float }
           - { name: bounds_w, type: float }
           - { name: bounds_h, type: float }
+      - doc: "一次动画事件（官方 demo 的日志字段：track + 动画名 + 用户事件名 + int/float/string 三个值）。动画名/事件名/字符串值指向骨架数据内部，随 data 存活；无值时字段为 NULL/0。"
+        name: mq_spine_event
+        fields:
+          - { name: type, type: int, doc: "mq_spine_event_type" }
+          - { name: track, type: int, doc: "轨下标（TrackEntry::getTrackIndex）" }
+          - { name: animation, type: "const char*", doc: "所在轨的动画名（NULL = 无）" }
+          - { name: name, type: "const char*", doc: "用户事件名（仅 type=MQ_SPINE_EVENT_EVENT；否则 NULL）" }
+          - { name: int_value, type: int, doc: "用户事件的 int 值" }
+          - { name: float_value, type: float, doc: "用户事件的 float 值" }
+          - { name: string_value, type: "const char*", doc: "用户事件的 string 值（可为 NULL）" }
+      - doc: "序列帧附件（Sequence）的当前帧信息：一个附件多张图。动画时间轴只推进 slot 的帧下标，真正换图发生在求值（computeWorldVertices）里，所以**必须按当前帧读区域/UV**，否则永远画第 0 帧。"
+        name: mq_spine_sequence_info
+        fields:
+          - { name: frames, type: int, doc: "序列总帧数（Sequence::getRegions().size()）" }
+          - { name: index, type: int, doc: "当前帧下标（-1 = 用 setup 帧）" }
+          - { name: setup_index, type: int, doc: "setup 帧下标（Sequence::getSetupIndex）" }
+          - { name: id, type: int, doc: "Sequence::getId（同一 Sequence 的稳定标识）" }
+          - { name: path, type: "const char*", doc: "当前帧的路径名（Sequence::getPath；指针在本实例下次调用前有效）" }
+          - { name: u, type: float, doc: "当前帧区域在整页上的 UV（u/v/u2/v2；逐帧不同）" }
+          - { name: v, type: float }
+          - { name: u2, type: float }
+          - { name: v2, type: float }
+          - { name: width, type: int, doc: "当前帧区域像素尺寸" }
+          - { name: height, type: int }
     typedefs:
       - { name: mq_spine_texture_cb, type: "int (*)(void* user, const char* page_name, const void* file_data, size_t size, uint64_t* out_texture)" }
+      - { name: mq_spine_event_cb, type: "void (*)(void* user, mq_spine_instance* inst, const mq_spine_event* event)" }
     fns:
       - { fn: mq_spine_abi_version, returns: uint32_t, args: [] }
       - { fn: mq_spine_data_create, returns: "mq_spine_data*", args: [ { name: skeleton_data, type: "const void*" }, { name: skeleton_size, type: "size_t" }, { name: skeleton_is_binary, type: int }, { name: atlas_data, type: "const char*" }, { name: atlas_dir_hint, type: "const char*" }, { name: load_texture, type: "mq_spine_texture_cb" }, { name: user, type: "void*" } ] }
@@ -305,4 +370,66 @@
       - { fn: mq_spine_instance_transform_count, returns: int, args: [ { name: inst, type: "mq_spine_instance*" } ] }
       - { fn: mq_spine_instance_transform_name, returns: "const char*", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: "int" } ] }
       - { fn: mq_spine_instance_transform_position, returns: int, args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: "int" }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
-      - { fn: mq_spine_instance_draw, returns: int, args: [ { name: inst, type: "mq_spine_instance*" }, { name: vertices, type: "float*" }, { name: uvs, type: "float*" }, { name: colors, type: "float*" }, { name: indices, type: "uint32_t*" }, { name: batches, type: "mq_spine_batch*" }, { name: max_vertices, type: "int" }, { name: max_indices, type: "int" }, { name: max_batches, type: "int" }, { name: out, type: "mq_spine_draw*" } ] }
+      # dark_colors：两色着色（TintBlack）的逐顶点"暗色"通道（长度同 colors = 顶点数*4）。
+      # 官方 SkeletonRenderer：`slot.hasDarkColor()` 为真 → slot 的暗色，否则不透明黑 (0,0,0,1)。
+      # 材质不需要两色着色时可以传 nullptr（本函数会跳过写入）。
+      - { fn: mq_spine_instance_draw, returns: int, doc: "导出绘制数据。vertices/uvs 2 分量、colors/dark_colors 4 分量；dark_colors 可为 NULL（不做两色着色）。", args: [ { name: inst, type: "mq_spine_instance*" }, { name: vertices, type: "float*" }, { name: uvs, type: "float*" }, { name: colors, type: "float*" }, { name: dark_colors, type: "float*" }, { name: indices, type: "uint32_t*" }, { name: batches, type: "mq_spine_batch*" }, { name: max_vertices, type: "int" }, { name: max_indices, type: "int" }, { name: max_batches, type: "int" }, { name: out, type: "mq_spine_draw*" } ] }
+      # ---- 动画事件（Spineboy demo：start/interrupt/end/complete/dispose + 用户 event）----
+      - { fn: mq_spine_instance_set_event_cb, returns: void, doc: "装事件回调（单线程、帧内同步调用；cb=NULL 卸载）。事件同时进实例的事件记录，供 pull 查询。", args: [ { name: inst, type: "mq_spine_instance*" }, { name: cb, type: "mq_spine_event_cb" }, { name: user, type: "void*" } ] }
+      - { fn: mq_spine_instance_event_count, returns: int, doc: "事件记录条数（**累加**，直到 mq_spine_instance_clear_events；runtime 每帧清一次）", args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      - { fn: mq_spine_instance_event, returns: int, args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: "int" }, { name: out, type: "mq_spine_event*" } ] }
+      - { fn: mq_spine_instance_clear_events, returns: void, args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      - { fn: mq_spine_instance_events_dropped, returns: int, doc: "因记录容量满而被丢弃的事件数（不静默丢）", args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      # ---- 多轨（IK / Raptor / Batching / Separator：track0 + track1 各自独立推进）----
+      - { fn: mq_spine_instance_set_animation, returns: int, doc: "按轨号设动画（track 任意大；discard 该轨排队项）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: track, type: "int" }, { name: animation, type: "const char*" }, { name: loop, type: "int" } ] }
+      - { fn: mq_spine_instance_add_animation, returns: int, doc: "排队：delay 秒后播（Raptor: track1/gun-grab/false/2）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: track, type: "int" }, { name: animation, type: "const char*" }, { name: loop, type: "int" }, { name: delay, type: "float" } ] }
+      - { fn: mq_spine_instance_track_count, returns: int, doc: "有轨条目的轨数（= getTracks().size()）", args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      - { fn: mq_spine_instance_track_animation, returns: "const char*", doc: "该轨当前动画名（空轨 → NULL）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: track, type: "int" } ] }
+      - { fn: mq_spine_instance_queue_count, returns: int, doc: "该轨**排队**（尚未成为当前）的条目数 —— 官方 addAnimation 之后剩几个", args: [ { name: inst, type: "mq_spine_instance*" }, { name: track, type: "int" } ] }
+      - { fn: mq_spine_instance_clear_track, returns: void, args: [ { name: inst, type: "mq_spine_instance*" }, { name: track, type: "int" } ] }
+      - { fn: mq_spine_instance_set_track_time_scale, returns: int, args: [ { name: inst, type: "mq_spine_instance*" }, { name: track, type: "int" }, { name: scale, type: "float" } ] }
+      - { fn: mq_spine_instance_track_time_scale, returns: float, args: [ { name: inst, type: "mq_spine_instance*" }, { name: track, type: "int" } ] }
+      - { fn: mq_spine_instance_set_time_scale, returns: void, doc: "AnimationState 全局时间缩放（与组件 speed 相乘；官方 Coin/Tank 的 setTimeScale(0.3)）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: scale, type: "float" } ] }
+      - { fn: mq_spine_instance_time_scale, returns: float, args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      # ---- 混合（默认混合 + 逐动画对；官方 C++ 入口 demo 的 defaultMix=0.2）----
+      - { fn: mq_spine_instance_set_default_mix, returns: void, args: [ { name: inst, type: "mq_spine_instance*" }, { name: duration, type: "float" } ] }
+      - { fn: mq_spine_instance_default_mix, returns: float, args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      - { fn: mq_spine_instance_set_mix, returns: int, doc: "setMix(from,to,duration)（Batching walk→jump 0.2 / Separator 0.4）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: from, type: "const char*" }, { name: to, type: "const char*" }, { name: duration, type: "float" } ] }
+      # ---- 皮肤（MixAndMatch：运行时合成皮肤；Goblins：按名换皮肤）----
+      - { fn: mq_spine_data_skin_find, returns: int, args: [ { name: data, type: "mq_spine_data*" }, { name: name, type: "const char*" } ] }
+      - { fn: mq_spine_data_skin_at, returns: "mq_spine_skin*", doc: "借用（borrowed）骨架数据里的皮肤句柄；**不要** destroy，data 存活期内有效", args: [ { name: data, type: "mq_spine_data*" }, { name: index, type: int } ] }
+      - { fn: mq_spine_skin_create, returns: "mq_spine_skin*", doc: "新建空皮肤（调用方拥有 → mq_spine_skin_destroy）", args: [ { name: name, type: "const char*" } ] }
+      - { fn: mq_spine_skin_destroy, returns: void, doc: "销毁 create 出来的皮肤；对借用句柄是安全空操作", args: [ { name: skin, type: "mq_spine_skin*" } ] }
+      - { fn: mq_spine_skin_add, returns: int, doc: "Skin::addSkin：把 src 的附件并入 dst（同槽同名后者覆盖）", args: [ { name: dst, type: "mq_spine_skin*" }, { name: src, type: "mq_spine_skin*" } ] }
+      - { fn: mq_spine_skin_name, returns: "const char*", args: [ { name: skin, type: "mq_spine_skin*" } ] }
+      - { fn: mq_spine_skin_attachment_count, returns: int, doc: "皮肤内附件数（合成后应 > 单个源皮肤；用于断言真的合上了）", args: [ { name: skin, type: "mq_spine_skin*" } ] }
+      - { fn: mq_spine_instance_set_skin_obj, returns: int, doc: "设为当前皮肤（Skin* 版本；随后 setSlotsToSetupPose）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: skin, type: "mq_spine_skin*" } ] }
+      - { fn: mq_spine_instance_set_attachment, returns: int, doc: "按皮肤名取附件设到槽（MixAndMatch 的逐附件替换）；attachment_name 为 NULL/\"\" → 卸下该槽附件", args: [ { name: inst, type: "mq_spine_instance*" }, { name: slot_name, type: "const char*" }, { name: attachment_name, type: "const char*" }, { name: skin_name, type: "const char*" } ] }
+      # ---- 槽（SkeletonRendererSeparator：按槽区间分段渲染）----
+      - { fn: mq_spine_instance_slot_count, returns: int, args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      - { fn: mq_spine_instance_slot_name, returns: "const char*", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int } ] }
+      - { fn: mq_spine_instance_slot_index, returns: int, doc: "槽名 → **声明序下标**（= 官方 findSlot(name)->getData().getIndex()；-1 = 无）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: name, type: "const char*" } ] }
+      - { fn: mq_spine_instance_set_slots_range, returns: int, doc: "只画声明序下标 [from, to] 的槽（inclusive；to<0 = 到末尾；from<0 = 不限制）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: from, type: int }, { name: to, type: int } ] }
+      - { fn: mq_spine_instance_slots_range, returns: int, args: [ { name: inst, type: "mq_spine_instance*" }, { name: from, type: "int*" }, { name: to, type: "int*" } ] }
+      - { fn: mq_spine_instance_slot_attachment, returns: "const char*", doc: "该槽当前附件名（NULL = 空槽）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int } ] }
+      # ---- 骨骼（IK demo：把 crosshair 骨骼设到指针位置，IK 链跟随）----
+      - { fn: mq_spine_instance_bone_count, returns: int, args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      - { fn: mq_spine_instance_bone_name, returns: "const char*", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int } ] }
+      - { fn: mq_spine_instance_bone_find, returns: int, doc: "骨骼名 → 序号（-1 = 无）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: name, type: "const char*" } ] }
+      - { fn: mq_spine_instance_bone_parent, returns: int, doc: "父骨骼序号（-1 = 根）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int } ] }
+      - { fn: mq_spine_instance_bone_set_position, returns: int, doc: "设**父空间**局部位置（Bone::setX/setY）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int }, { name: x, type: float }, { name: y, type: float } ] }
+      - { fn: mq_spine_instance_bone_position_at, returns: int, doc: "读局部位置", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
+      - { fn: mq_spine_instance_bone_world_position, returns: int, args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int }, { name: x, type: "float*" }, { name: y, type: "float*" } ] }
+      - { fn: mq_spine_instance_bone_set_world_position, returns: int, doc: "设世界位置（内部走父骨骼 worldToLocal，与官方 IK demo 同款）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int }, { name: x, type: float }, { name: y, type: float } ] }
+      # ---- 姿势重算 / 物理（Physics demo：physicsTranslate；IK：设完骨骼立刻重算）----
+      - { fn: mq_spine_instance_update_world_transform, returns: int, doc: "只重算世界变换（**不** apply 动画）——设完骨骼位置后让 IK 链跟随", args: [ { name: inst, type: "mq_spine_instance*" }, { name: physics, type: int } ] }
+      - { fn: mq_spine_instance_step_ex, returns: int, doc: "step + 指定物理时间轴（Physics_None/Reset/Update/Pose）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: dt, type: float }, { name: physics, type: int } ] }
+      - { fn: mq_spine_instance_physics_count, returns: int, args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      - { fn: mq_spine_instance_physics_name, returns: "const char*", args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int } ] }
+      - { fn: mq_spine_instance_physics_translate, returns: void, doc: "Skeleton::physicsTranslate：给所有物理约束一个位移冲量（官方 Physics demo）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: x, type: float }, { name: y, type: float } ] }
+      - { fn: mq_spine_instance_physics_set_float, returns: int, args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int }, { name: field, type: int }, { name: value, type: float } ] }
+      - { fn: mq_spine_instance_physics_get_float, returns: float, args: [ { name: inst, type: "mq_spine_instance*" }, { name: index, type: int }, { name: field, type: int } ] }
+      - { fn: mq_spine_instance_physics_reset, returns: void, args: [ { name: inst, type: "mq_spine_instance*" } ] }
+      # ---- 序列帧（Sequence demo：dragon-ess 的 flying）----
+      - { fn: mq_spine_attachment_sequence_info, returns: int, doc: "取该槽附件的 Sequence 当前帧信息（非 Sequence 附件 → ERR_NOTFOUND）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: slot_index, type: int }, { name: out, type: "mq_spine_sequence_info*" } ] }
+      - { fn: mq_spine_instance_set_sequence_index, returns: int, doc: "手动设序列帧下标（-1 = setup 帧；验证/定格用）", args: [ { name: inst, type: "mq_spine_instance*" }, { name: slot_index, type: int }, { name: frame, type: int } ] }

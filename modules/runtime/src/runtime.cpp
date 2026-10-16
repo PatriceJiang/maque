@@ -275,6 +275,7 @@ struct Engine {
      * 实例是**派生数据**（不进快照/校验和，docs/10）：唯一真相是组件字段 + 骨架资源。 */
     struct Spine {
         int entity = -1;                       // 实体 id
+        Engine* eng = nullptr;                 // 回指（事件回调要把事件投给脚本总线）
         uint32_t comp = 0;                     // 组件 type_id（定位 blob）
         mq_spine_data* data = nullptr;         // 骨架数据（装配期建，切场景/退出时销毁）
         mq_spine_instance* inst = nullptr;
@@ -285,14 +286,23 @@ struct Engine {
         std::vector<std::string> skin_names;
         struct Page { std::string name; int width = 0, height = 0; uint64_t handle = 0; int pma = 0; };
         std::vector<Page> pages;
-        /* 每帧 CPU 绘制缓冲（复用，避免逐帧分配；容量按骨架规模一次到位） */
-        std::vector<float> verts, uvs, cols, tverts;
+        /* 每帧 CPU 绘制缓冲（复用，避免逐帧分配；容量按骨架规模一次到位）
+         * darks = 两色着色（TintBlack）的逐顶点**暗色**通道（4 分量/顶点，长度同 cols）。
+         * 即使素材没启用 TintBlack 也照传：spine2d 会填官方默认 (0,0,0,1)，着色公式随即
+         * 退化成"纹理 × light"，与不支持两色着色时逐字节一致（见 mesh shader 顶部注释）。 */
+        std::vector<float> verts, uvs, cols, darks, tverts;
         std::vector<uint32_t> idxs;
         std::vector<mq_spine_batch> batches;
         SpineTexCtx tex_ctx;                   // 纹理回调 user（活到 data 销毁）
         mq_spine_draw draw{};
         int last_anim = -1;                    // 上一帧播放的动画下标（检测组件字段变化）
         int z = 0;                             // 本帧排序键（z_index*100000 + 实体 id）
+        /* 运行时**合成**的皮肤（MixAndMatch：skin-base + nose/short + …）。
+         * ABI 约定"分配者释放" → 引擎持有，切场景/退出时统一销毁（见 spine_release）。 */
+        std::vector<mq_spine_skin*> own_skins;
+        mq_spine_skin* composed = nullptr;     // 最近一次 spine_skin_compose 的结果（诊断用）
+        /* 上一帧的事件计数（诊断/脚本 pull 的观测口；事件本体存在实例里） */
+        int events_last = 0;
     };
     std::vector<Spine> spines;
     void spine_setup();                        // 装配期：按 role 找组件 → 建骨架数据/实例
@@ -300,6 +310,8 @@ struct Engine {
     void spine_step(float dt);                 // 帧内：推进 + 出绘制数据 + 变换到屏幕像素
     void spine_extract(std::vector<mq_renderer_mesh>& out);   // 提取期：绘制数据 → 网格图元
     Spine* spine_of(int entity);               // 按实体 id 找实例（脚本 API 用）
+    void spine_clear_events();                 // 帧边界（脚本之后、step 之前）：清事件记录
+    int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
      * 图集**按需增长**（任意 Unicode/CJK）→ 用 generation 判断是否需要重传纹理。 */
     mq_font* font = nullptr;
@@ -777,6 +789,9 @@ void Engine::step_frame() {
         flush_pending_destroy();                         // node.destroy()：帧边界统一销毁
         ui_step();                                       // UI 组件语义（layout/progress/slider/check/safearea/scroll）
         scene->flatten_world(*this);
+        /* Spine 事件记录的清空点：**脚本之后、step 之前**（见 Engine::spine_clear_events 注释：
+         * 放错了会导致 pull 面永远读到 0 条）。 */
+        spine_clear_events();
         spine_step(dt);                                  // Spine：步进 + 出绘制数据（依赖展平后的世界位置）
         scene->extract(*this, draws);
         spine_extract(spine_meshes);                     // Spine：绘制数据 → 网格图元（与图元同序渲染）
@@ -2859,12 +2874,73 @@ Engine::Spine* Engine::spine_of(int entity) {
     return nullptr;
 }
 
+/* 事件回调（spine2d → 引擎）：把 spine 的动画事件**翻译成引擎的脚本事件**。
+ *
+ * 为什么走这条路（而不是让脚本轮询 ABI）：docs/14 的事件总线是引擎唯一的脚本回调路径，
+ * 按**处理器名**路由 → JS/Lua 语言无关、投递顺序确定、错误隔离都在总线里做好了。
+ * 同一份事实还留了 pull 面（spine_event_count/…），push 与 pull 是同一次记录（有单测对拍）。
+ *
+ * 命名约定（与官方 demo 的 5 类事件一一对应，多一个用户事件）：
+ *   start→"spine_start" interrupt→"spine_interrupt" end→"spine_end"
+ *   complete→"spine_complete" dispose→"spine_dispose" event→"spine_event"
+ * 处理器值 = 轨下标；用户事件的细节（名字/int/float/string）用 spine_event_* 取。
+ *
+ * ⚠️ 单线程、帧内同步调用（spine 的 AnimationState 就是这样），无线程、无异步 → 确定性不变（docs/10）。 */
+static void spine_event_cb(void* user, mq_spine_instance* /*inst*/, const mq_spine_event* ev) {
+    auto* sp = static_cast<Engine::Spine*>(user);
+    if (!sp || !sp->eng || !ev) return;
+    Engine& eng = *sp->eng;
+    const char* name = nullptr;
+    switch (ev->type) {
+    case MQ_SPINE_EVENT_START:     name = "spine_start"; break;
+    case MQ_SPINE_EVENT_INTERRUPT: name = "spine_interrupt"; break;
+    case MQ_SPINE_EVENT_END:       name = "spine_end"; break;
+    case MQ_SPINE_EVENT_COMPLETE:  name = "spine_complete"; break;
+    case MQ_SPINE_EVENT_DISPOSE:   name = "spine_dispose"; break;
+    case MQ_SPINE_EVENT_EVENT:     name = "spine_event"; break;
+    default: return;
+    }
+    /* 值语义：用户事件带 int 值（官方 demo 的 "%d event: %s, %d, %f, %s" 里那个 int），
+     * 其余事件带 track —— 都只是"标量提示"，精确字段由 pull 面给（docs/14 载荷只有标量）。 */
+    const float value = (ev->type == MQ_SPINE_EVENT_EVENT) ? (float)ev->int_value : (float)ev->track;
+    /* 重入护栏：脚本处理器里再调 spine_play 会同步触发新事件 → 再投递 → 若处理器又 play，
+     * 就会无限递归到爆栈。正常链式播放只需要 1~2 层，故限深 8；超限只跳过**推送**
+     *（事件本身仍进 pull 记录，数据不丢），并明确报一次。 */
+    if (eng.spine_event_depth >= 8) {
+        static bool warned = false;
+        if (!warned) { warned = true;
+            std::print(stderr, "runtime: spine 事件推送重入超过 8 层 → 后续只记录不推送（脚本处理器疑似自递归）\n"); }
+        return;
+    }
+    ++eng.spine_event_depth;
+    host::node_emit_number(&eng, (float)sp->entity, name, value);
+    --eng.spine_event_depth;
+}
+
 void Engine::spine_release() {
     for (auto& sp : spines) {
         if (sp.inst) { mq_spine_instance_destroy(sp.inst); sp.inst = nullptr; }
         if (sp.data) { mq_spine_data_destroy(sp.data); sp.data = nullptr; }   // 页纹理归引擎（tex_cache），此处不释放
+        /* 运行时合成的皮肤：本引擎是分配者 → 由本引擎释放（ABI 的"分配者释放"约定） */
+        for (mq_spine_skin* sk : sp.own_skins) mq_spine_skin_destroy(sk);
+        sp.own_skins.clear();
+        sp.composed = nullptr;
     }
     spines.clear();
+}
+
+/* 帧边界：清空所有实例的事件记录。
+ * 位置很关键 —— 必须在**脚本 update 之后、spine_step 之前**：
+ *   · spine_step 在本帧脚本之后跑 → 它产生的事件留到下一帧脚本，才 pull 得到；
+ *   · 脚本自己调 spine_play 产生的 start 也在本帧脚本之后才被清 → 下一帧同样 pull 得到。
+ * 若放在脚本 update **之前**清（踩过）：上一帧 step 的事件会在脚本读之前被抹掉，
+ * spine_event_count 永远是 0（push 面照常工作，但 pull 面瞎了）。 */
+void Engine::spine_clear_events() {
+    for (auto& sp : spines) {
+        if (!sp.inst) continue;
+        sp.events_last = mq_spine_instance_event_count(sp.inst);
+        mq_spine_instance_clear_events(sp.inst);
+    }
 }
 
 void Engine::spine_setup() {
@@ -2959,6 +3035,12 @@ void Engine::spine_setup() {
         const int skin_idx = (int)read_num(d, blob.data(), "skin", 0.0F);
         if (skin_idx > 0 && skin_idx < n_skin)
             mq_spine_instance_set_skin(sp.inst, sp.skin_names[(size_t)skin_idx].c_str());
+        /* 混合/时间缩放/槽区间：组件字段 → 实例（脚本可随时覆盖；见 host.yaml 的 spine_* 段） */
+        mq_spine_instance_set_default_mix(sp.inst, read_num(d, blob.data(), "default_mix", 0.0F));
+        mq_spine_instance_set_time_scale(sp.inst, read_num(d, blob.data(), "time_scale", 1.0F));
+        const int sf = (int)read_num(d, blob.data(), "slots_from", -1.0F);
+        const int st = (int)read_num(d, blob.data(), "slots_to", -1.0F);
+        if (sf >= 0) mq_spine_instance_set_slots_range(sp.inst, sf, st);
         const bool autoplay = read_num(d, blob.data(), "autoplay", 1.0F) != 0.0F;
         if (autoplay && n_anim > 0) {
             const bool loop = read_num(d, blob.data(), "play_mode", 1.0F) == 1.0F;   // PlayMode::Loop = 1
@@ -2966,7 +3048,8 @@ void Engine::spine_setup() {
                 sp.last_anim = start_anim;
         }
         /* 绘制缓冲：按"顶点数 ≈ 附件数 × 段数"的规模预留（骨架 4k 顶点足够；不足时下一帧扩容重试） */
-        sp.verts.resize(8192); sp.uvs.resize(8192); sp.cols.resize(16384); sp.tverts.resize(8192);
+        sp.verts.resize(8192); sp.uvs.resize(8192); sp.cols.resize(16384); sp.darks.resize(16384);
+        sp.tverts.resize(8192);
         sp.idxs.resize(32768); sp.batches.resize(512);
         sp.z = (int)read_num(d, blob.data(), "z_index", 0.0F) * 100000 + id;
         /* instance 字段（transient）：给自省/脚本一个"实例存在"的证据（下标 + 1，0 = 无） */
@@ -2982,7 +3065,13 @@ void Engine::spine_setup() {
         }
         spines.push_back(std::move(sp));
     }
-    spines.shrink_to_fit();          // 之后不再增删 → tex_ctx 地址稳定（回调 user 指向它）
+    spines.shrink_to_fit();          // 之后不再增删 → tex_ctx / eng / 事件回调 user 的地址稳定
+    /* 事件回调：**必须在向量定型之后**装（user = &spines[i]，push_back 会让旧地址失效）。
+     * 装完即生效：之后任何 play/addAnimation/step 触发的动画事件都会同步投给脚本总线。 */
+    for (auto& sp : spines) {
+        sp.eng = this;
+        mq_spine_instance_set_event_cb(sp.inst, spine_event_cb, &sp);
+    }
     std::print("runtime: spine instances={}\n", spines.size());
 }
 
@@ -3003,11 +3092,21 @@ void Engine::spine_step(float dt) {
         if (want < 0 || want >= n_anim) want = sp.last_anim;
         const bool loop = read_num(d, blob.data(), "play_mode", 1.0F) == 1.0F;
         if (want != sp.last_anim && want >= 0) {                 // 组件里换了动画 → 真的去播
-            if (mq_spine_instance_play(sp.inst, sp.anim_names[(size_t)want].c_str(), loop ? 1 : 0, 0) == MQ_SPINE_OK)
+            /* 但若该轨**已经在播**这个动画（例如 add_animation 排队到点自己切过去了），
+             * 只同步 last_anim，不要重启（重启会白白打断播放头/触发一次 start+interrupt）。 */
+            const char* cur = mq_spine_instance_track_animation(sp.inst, 0);
+            if (cur && sp.anim_names[(size_t)want] == cur) {
                 sp.last_anim = want;
+            } else if (mq_spine_instance_play(sp.inst, sp.anim_names[(size_t)want].c_str(), loop ? 1 : 0, 0) == MQ_SPINE_OK) {
+                sp.last_anim = want;
+            }
         }
         const float speed = read_num(d, blob.data(), "speed", 1.0F);
-        mq_spine_instance_step(sp.inst, dt * speed);             // 固定步长（确定性，docs/10 D1）
+        /* 物理时间轴：SpinePhysTimestep::NoPhysics(2) → 只应用已有物理姿势（Physics_Pose），
+         * 其余（Inherit/Fixed）→ 正常更新（Physics_Update）。忽略这个字段会让"冻结物理"失效。 */
+        const int phys_mode = (int)read_num(d, blob.data(), "phys_timestep", 0.0F);
+        const int physics = (phys_mode == 2) ? MQ_SPINE_PHYSICS_POSE : MQ_SPINE_PHYSICS_UPDATE;
+        mq_spine_instance_step_ex(sp.inst, dt * speed, physics);  // 固定步长（确定性，docs/10 D1）
 
         /* 变换：模块负责 缩放/翻转（骨架单位 → 屏幕单位），旋转/平移留给提取期（见 spine_extract） */
         float angle = 0.0F, scale = 1.0F, opacity = 1.0F;
@@ -3029,14 +3128,15 @@ void Engine::spine_step(float dt) {
         /* 绘制数据（CPU 侧；只读导出，不改模拟状态） */
         mq_spine_draw out{};
         const int rc = mq_spine_instance_draw(sp.inst, sp.verts.data(), sp.uvs.data(), sp.cols.data(),
-                                              sp.idxs.data(), sp.batches.data(),
+                                              sp.darks.data(), sp.idxs.data(), sp.batches.data(),
                                               (int)(sp.verts.size() / 2), (int)sp.idxs.size(),
                                               (int)sp.batches.size(), &out);
         if (rc != MQ_SPINE_OK) { sp.draw = mq_spine_draw{}; continue; }
         if (out.vertex_count >= (int)(sp.verts.size() / 2) || out.index_count >= (int)sp.idxs.size()) {
             /* 缓冲满 = 几何被截断（会少画附件）→ 翻倍后下一帧重试，并明确报一次 */
             sp.verts.resize(sp.verts.size() * 2); sp.uvs.resize(sp.uvs.size() * 2);
-            sp.cols.resize(sp.cols.size() * 2); sp.tverts.resize(sp.tverts.size() * 2);
+            sp.cols.resize(sp.cols.size() * 2); sp.darks.resize(sp.darks.size() * 2);
+            sp.tverts.resize(sp.tverts.size() * 2);
             sp.idxs.resize(sp.idxs.size() * 2); sp.batches.resize(sp.batches.size() * 2);
             static bool warned = false;
             if (!warned) { warned = true;
@@ -3079,11 +3179,11 @@ void Engine::spine_step(float dt) {
             }
             std::print("[spine] frame={} entity={} verts={} idx={} batches={} local_bbox=({:.1f},{:.1f},{:.1f},{:.1f})"
                        " screen_bbox=({:.1f},{:.1f})-({:.1f},{:.1f}) scale={:.2f} angle={:.1f} origin=({:.1f},{:.1f})"
-                       " pages={} uv_zero={}/{} uv_span=u[{:.4f}..{:.4f}]v[{:.4f}..{:.4f}]\n",
+                       " pages={} uv_zero={}/{} uv_span=u[{:.4f}..{:.4f}]v[{:.4f}..{:.4f}] events={}\n",
                        (long long)frame, sp.entity, out.vertex_count, out.index_count, out.batch_count,
                        out.bounds_x, out.bounds_y, out.bounds_w, out.bounds_h,
                        minx, miny, maxx, maxy, scale, angle, ox, oy, sp.pages.size(),
-                       uv_zero, vc, u0, u1, v0, v1);
+                       uv_zero, vc, u0, u1, v0, v1, sp.events_last);
         }
         /* transient 回写：自省/脚本能读到"正在播什么、播到哪"（不进快照/校验和） */
         if (const mq_field_desc* f = mq_reflect_field(d, "state"); f && f->kind == MQ_TK_STRUCT) {
@@ -3110,6 +3210,7 @@ void Engine::spine_extract(std::vector<mq_renderer_mesh>& out) {
             m.vertices = sp.tverts.data();
             m.uvs = sp.uvs.data();
             m.colors = sp.cols.data();
+            m.dark_colors = sp.darks.data();     // 两色着色（TintBlack）暗色通道；长度同 colors
             m.indices = sp.idxs.data();
             m.vertex_count = (uint32_t)sp.draw.vertex_count;     // 顶点数（少了它 = 渲染器不画，且是静默的）
             m.first_index = sb.first_index;
@@ -4322,6 +4423,435 @@ float spine_page_texture(void* ctx, float id, float index) {
     if (i < 0 || i >= (int)sp->pages.size()) return -1.0F;
     const uint64_t h = sp->pages[(size_t)i].handle;
     return h > 0 ? (float)(h - 1u) : -1.0F;          // 句柄 = gfx 纹理 id + 1
+}
+
+/* ---- Spine 续：多轨 / 混合 / 事件 / 皮肤合成 / 骨骼 / 槽 / 物理 / 序列帧 ----------------
+ * 语义（一致）：成功 0、失败 -1；查询类越界/无实例 → 0 / "" / -1，不崩（脚本无需防御）。
+ * 事件投递=两条路：① pull（spine_event_*）② push（按名冒泡到 node_on 注册的处理函数，
+ * 见 runtime.cpp 顶部 spine_event_cb 的命名约定）。两者是同一次记录（单测对拍过）。 */
+float spine_set_animation(void* ctx, float id, float track, const char* name, float loop) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || !sp->inst || !sp->data || !name || !*name || track < 0.0F) return -1.0F;
+    const int idx = mq_spine_data_animation_index(sp->data, name);
+    if (idx < 0) return -1.0F;
+    if (mq_spine_instance_set_animation(sp->inst, (int)track, name, loop != 0.0F ? 1 : 0) != MQ_SPINE_OK)
+        return -1.0F;
+    /* track 0 与组件字段同步（组件=唯一真相；否则下一帧 spine_step 会按旧值又切回去） */
+    if ((int)track == 0) {
+        sp->last_anim = idx;
+        node_set_number(ctx, id, "anim.SpineSkeleton", "animation", (float)idx);
+        node_set_number(ctx, id, "anim.SpineSkeleton", "play_mode", loop != 0.0F ? 1.0F : 0.0F);
+    }
+    return 0.0F;
+}
+float spine_add_animation(void* ctx, float id, float track, const char* name, float loop, float delay) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || !sp->inst || !sp->data || !name || !*name || track < 0.0F) return -1.0F;
+    if (mq_spine_data_animation_index(sp->data, name) < 0) return -1.0F;
+    return mq_spine_instance_add_animation(sp->inst, (int)track, name, loop != 0.0F ? 1 : 0, delay) == MQ_SPINE_OK
+               ? 0.0F : -1.0F;
+}
+float spine_track_count(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return sp ? (float)mq_spine_instance_track_count(sp->inst) : 0.0F;
+}
+const char* spine_track_animation(void* ctx, float id, float track) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || track < 0.0F) return "";
+    const char* nm = mq_spine_instance_track_animation(sp->inst, (int)track);
+    return nm ? nm : "";
+}
+float spine_queue_count(void* ctx, float id, float track) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || track < 0.0F) return 0.0F;
+    return (float)mq_spine_instance_queue_count(sp->inst, (int)track);
+}
+float spine_clear_track(void* ctx, float id, float track) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || track < 0.0F) return -1.0F;
+    mq_spine_instance_clear_track(sp->inst, (int)track);
+    return 0.0F;
+}
+float spine_track_time(void* ctx, float id, float track) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return (sp && track >= 0.0F) ? mq_spine_instance_time(sp->inst, (int)track) : 0.0F;
+}
+float spine_set_track_time(void* ctx, float id, float track, float t) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || track < 0.0F) return -1.0F;
+    if (mq_spine_instance_set_time(sp->inst, (int)track, t) != MQ_SPINE_OK) return -1.0F;
+    /* 坑（docs/27 §4）：set_time 不重算姿势 → 立刻 step(0) 让本帧就按新时间求值 */
+    mq_spine_instance_step(sp->inst, 0.0F);
+    return 0.0F;
+}
+float spine_track_time_scale(void* ctx, float id, float track) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return (sp && track >= 0.0F) ? mq_spine_instance_track_time_scale(sp->inst, (int)track) : 0.0F;
+}
+float spine_set_track_time_scale(void* ctx, float id, float track, float scale) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || track < 0.0F) return -1.0F;
+    return mq_spine_instance_set_track_time_scale(sp->inst, (int)track, scale) == MQ_SPINE_OK ? 0.0F : -1.0F;
+}
+float spine_time_scale(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return sp ? mq_spine_instance_time_scale(sp->inst) : 0.0F;
+}
+float spine_set_time_scale(void* ctx, float id, float scale) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    mq_spine_instance_set_time_scale(sp->inst, scale);
+    node_set_number(ctx, id, "anim.SpineSkeleton", "time_scale", scale);   // 组件=唯一真相
+    return 0.0F;
+}
+float spine_default_mix(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return sp ? mq_spine_instance_default_mix(sp->inst) : 0.0F;
+}
+float spine_set_default_mix(void* ctx, float id, float duration) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    mq_spine_instance_set_default_mix(sp->inst, duration);
+    node_set_number(ctx, id, "anim.SpineSkeleton", "default_mix", duration);
+    return 0.0F;
+}
+float spine_set_mix(void* ctx, float id, const char* from, const char* to, float duration) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || !from || !to) return -1.0F;
+    return mq_spine_instance_set_mix(sp->inst, from, to, duration) == MQ_SPINE_OK ? 0.0F : -1.0F;
+}
+
+/* 事件 pull：一次取一个字段（脚本只有标量，不做结构体） */
+static const mq_spine_event* spine_event_at(Engine* eng, float id, float index) {
+    Engine::Spine* sp = spine_at(eng, id);
+    if (!sp || index < 0.0F) return nullptr;
+    if (index >= (float)mq_spine_instance_event_count(sp->inst)) return nullptr;
+    /* 事件记录在实例内部（预分配数组）→ 直接下标取；用 ABI 复制到线程局部静态槽返回指针。 */
+    static thread_local mq_spine_event slot;
+    if (mq_spine_instance_event(sp->inst, (int)index, &slot) != MQ_SPINE_OK) return nullptr;
+    return &slot;
+}
+float spine_event_count(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return sp ? (float)mq_spine_instance_event_count(sp->inst) : 0.0F;
+}
+float spine_event_type(void* ctx, float id, float index) {
+    const mq_spine_event* ev = spine_event_at((Engine*)ctx, id, index);
+    return ev ? (float)ev->type : -1.0F;
+}
+float spine_event_track(void* ctx, float id, float index) {
+    const mq_spine_event* ev = spine_event_at((Engine*)ctx, id, index);
+    return ev ? (float)ev->track : -1.0F;
+}
+const char* spine_event_animation(void* ctx, float id, float index) {
+    const mq_spine_event* ev = spine_event_at((Engine*)ctx, id, index);
+    return (ev && ev->animation) ? ev->animation : "";
+}
+const char* spine_event_name(void* ctx, float id, float index) {
+    const mq_spine_event* ev = spine_event_at((Engine*)ctx, id, index);
+    return (ev && ev->name) ? ev->name : "";
+}
+float spine_event_int(void* ctx, float id, float index) {
+    const mq_spine_event* ev = spine_event_at((Engine*)ctx, id, index);
+    return ev ? (float)ev->int_value : 0.0F;
+}
+float spine_event_float(void* ctx, float id, float index) {
+    const mq_spine_event* ev = spine_event_at((Engine*)ctx, id, index);
+    return ev ? ev->float_value : 0.0F;
+}
+const char* spine_event_string(void* ctx, float id, float index) {
+    const mq_spine_event* ev = spine_event_at((Engine*)ctx, id, index);
+    return (ev && ev->string_value) ? ev->string_value : "";
+}
+float spine_clear_events(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    mq_spine_instance_clear_events(sp->inst);
+    return 0.0F;
+}
+
+/* 骨骼（官方 IK demo：把 crosshair 设到指针位置 → IK 链跟随） */
+float spine_bone_count(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return sp ? (float)mq_spine_instance_bone_count(sp->inst) : 0.0F;
+}
+const char* spine_bone_name(void* ctx, float id, float index) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return "";
+    const char* nm = mq_spine_instance_bone_name(sp->inst, (int)index);
+    return nm ? nm : "";
+}
+float spine_bone_find(void* ctx, float id, const char* name) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || !name || !*name) return -1.0F;
+    return (float)mq_spine_instance_bone_find(sp->inst, name);
+}
+float spine_bone_value(void* ctx, float id, float index, float what) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return 0.0F;
+    float x = 0.0F, y = 0.0F;
+    const int i = (int)index, w = (int)what;
+    /* what: 0=局部x 1=局部y 2=世界x 3=世界y（世界坐标 = 骨架子空间，y 向上） */
+    const int rc = (w < 2) ? mq_spine_instance_bone_position_at(sp->inst, i, &x, &y)
+                           : mq_spine_instance_bone_world_position(sp->inst, i, &x, &y);
+    if (rc != MQ_SPINE_OK) return 0.0F;
+    return (w == 0 || w == 2) ? x : y;
+}
+float spine_bone_set_position(void* ctx, float id, float index, float x, float y) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return -1.0F;
+    return mq_spine_instance_bone_set_position(sp->inst, (int)index, x, y) == MQ_SPINE_OK ? 0.0F : -1.0F;
+}
+float spine_bone_set_world_position(void* ctx, float id, float index, float x, float y) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return -1.0F;
+    return mq_spine_instance_bone_set_world_position(sp->inst, (int)index, x, y) == MQ_SPINE_OK ? 0.0F : -1.0F;
+}
+float spine_update_world_transform(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    /* 只重算世界变换（不 apply 动画）→ 设完骨骼位置后让 IK 链**当帧**跟随。
+     * 用 Physics_Update 与主循环一致（物理时间轴不变）。 */
+    return mq_spine_instance_update_world_transform(sp->inst, MQ_SPINE_PHYSICS_UPDATE) == MQ_SPINE_OK ? 0.0F : -1.0F;
+}
+
+/* 槽（官方 Separator demo：同一骨架拆前后两段渲染） */
+float spine_slot_count(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return sp ? (float)mq_spine_instance_slot_count(sp->inst) : 0.0F;
+}
+const char* spine_slot_name(void* ctx, float id, float index) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return "";
+    const char* nm = mq_spine_instance_slot_name(sp->inst, (int)index);
+    return nm ? nm : "";
+}
+float spine_slot_index(void* ctx, float id, const char* name) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || !name || !*name) return -1.0F;
+    return (float)mq_spine_instance_slot_index(sp->inst, name);
+}
+const char* spine_slot_attachment(void* ctx, float id, float index) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return "";
+    const char* nm = mq_spine_instance_slot_attachment(sp->inst, (int)index);
+    return nm ? nm : "";
+}
+float spine_set_slots_range(void* ctx, float id, float from, float to) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    if (mq_spine_instance_set_slots_range(sp->inst, (int)from, (int)to) != MQ_SPINE_OK) return -1.0F;
+    node_set_number(ctx, id, "anim.SpineSkeleton", "slots_from", from);
+    node_set_number(ctx, id, "anim.SpineSkeleton", "slots_to", to);
+    return 0.0F;
+}
+float spine_slots_from(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    int f = -1, t = -1;
+    mq_spine_instance_slots_range(sp->inst, &f, &t);
+    return (float)f;
+}
+float spine_slots_to(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    int f = -1, t = -1;
+    mq_spine_instance_slots_range(sp->inst, &f, &t);
+    return (float)t;
+}
+float spine_set_attachment(void* ctx, float id, const char* slot_name, const char* attachment_name,
+                           const char* skin_name) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || !slot_name || !*slot_name) return -1.0F;
+    return mq_spine_instance_set_attachment(sp->inst, slot_name, attachment_name, skin_name) == MQ_SPINE_OK
+               ? 0.0F : -1.0F;
+}
+float spine_skin_find(void* ctx, float id, const char* name) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || !sp->data || !name || !*name) return -1.0F;
+    return (float)mq_spine_data_skin_find(sp->data, name);
+}
+/* 合成皮肤句柄：脚本侧只有标量 → 用 sp->own_skins 的下标当句柄（>=0；-1 失败）。
+ * 生命周期归引擎（spine_release 统一销毁）→ 脚本不用管释放。 */
+static Engine::Spine* spine_skin_owner(Engine* eng, float id, float handle, mq_spine_skin** out) {
+    Engine::Spine* sp = spine_at(eng, id);
+    if (!sp) return nullptr;
+    if (handle < 0.0F) {
+        *out = sp->composed ? sp->composed : (sp->own_skins.empty() ? nullptr : sp->own_skins.back());
+        return *out ? sp : nullptr;
+    }
+    const int i = (int)handle;
+    if (i >= (int)sp->own_skins.size()) return nullptr;
+    *out = sp->own_skins[(size_t)i];
+    return *out ? sp : nullptr;
+}
+float spine_skin_create(void* ctx, float id, const char* name) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || !name || !*name) return -1.0F;
+    mq_spine_skin* sk = mq_spine_skin_create(name);
+    if (!sk) return -1.0F;
+    sp->own_skins.push_back(sk);
+    return (float)(sp->own_skins.size() - 1);
+}
+float spine_skin_add(void* ctx, float id, float handle, const char* source_skin) {
+    auto* eng = (Engine*)ctx;
+    mq_spine_skin* dst = nullptr;
+    Engine::Spine* sp = spine_skin_owner(eng, id, handle, &dst);
+    if (!sp || !dst || !sp->data || !source_skin || !*source_skin) return -1.0F;
+    const int idx = mq_spine_data_skin_find(sp->data, source_skin);
+    if (idx < 0) {
+        std::print(stderr, "runtime: spine_skin_add: 骨架里没有皮肤 '{}'\n", source_skin);
+        return -1.0F;
+    }
+    mq_spine_skin* src = mq_spine_data_skin_at(sp->data, idx);
+    return mq_spine_skin_add(dst, src) == MQ_SPINE_OK ? 0.0F : -1.0F;
+}
+float spine_set_skin_obj(void* ctx, float id, float handle) {
+    auto* eng = (Engine*)ctx;
+    mq_spine_skin* sk = nullptr;
+    Engine::Spine* sp = spine_skin_owner(eng, id, handle, &sk);
+    if (!sp || !sk) return -1.0F;
+    if (mq_spine_instance_set_skin_obj(sp->inst, sk) != MQ_SPINE_OK) return -1.0F;
+    sp->composed = sk;
+    return 0.0F;
+}
+/* 皮肤合成（官方 MixAndMatch）：names = 逗号分隔的皮肤名（骨架内声明序的皮肤）。
+ * 内部分三步：建皮肤 → 逐个 addSkin → 设为当前；句柄由引擎持有（切场景/退出时释放）。 */
+float spine_skin_compose(void* ctx, float id, const char* names) {
+    auto* eng = (Engine*)ctx;
+    auto* sp = spine_at(eng, id);
+    if (!sp || !sp->data || !names || !*names) return -1.0F;
+    mq_spine_skin* combo = mq_spine_skin_create(names);     // 名字用整串（唯一、可诊断）
+    if (!combo) return -1.0F;
+    int added = 0;
+    std::string seg;
+    auto flush = [&]() -> bool {
+        if (seg.empty()) return true;
+        /* 允许前后空白，写场景时好读 */
+        size_t b = seg.find_first_not_of(" \t");
+        size_t e = seg.find_last_not_of(" \t");
+        if (b == std::string::npos) { seg.clear(); return true; }
+        const std::string nm = seg.substr(b, e - b + 1);
+        seg.clear();
+        const int idx = mq_spine_data_skin_find(sp->data, nm.c_str());
+        if (idx < 0) {
+            std::print(stderr, "runtime: spine_skin_compose: 皮肤 '{}' 不存在（骨架里没有）\n", nm);
+            return false;
+        }
+        mq_spine_skin* src = mq_spine_data_skin_at(sp->data, idx);
+        if (!src || mq_spine_skin_add(combo, src) != MQ_SPINE_OK) return false;
+        ++added;
+        return true;
+    };
+    bool ok = true;
+    for (const char* p = names;; ++p) {
+        if (*p == ',' || *p == '\0') {
+            if (!flush()) { ok = false; break; }
+            if (*p == '\0') break;
+        } else {
+            seg.push_back(*p);
+        }
+    }
+    if (!ok || added == 0) { mq_spine_skin_destroy(combo); return -1.0F; }
+    const int rc = mq_spine_instance_set_skin_obj(sp->inst, combo);
+    if (rc != MQ_SPINE_OK) { mq_spine_skin_destroy(combo); return -1.0F; }
+    sp->own_skins.push_back(combo);
+    sp->composed = combo;
+    std::print("runtime: spine entity {} 合成皮肤 '{}'（{} 个来源，附件 {}）\n",
+               sp->entity, names, added, mq_spine_skin_attachment_count(combo));
+    return 0.0F;
+}
+float spine_skin_attachment_count(void* ctx, float id, float handle) {
+    mq_spine_skin* sk = nullptr;
+    if (!spine_skin_owner((Engine*)ctx, id, handle, &sk)) return -1.0F;   // 没合成过 → -1（区别于 0 个附件）
+    return (float)mq_spine_skin_attachment_count(sk);
+}
+float spine_set_two_color(void* ctx, float id, float on) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    /* 官方 setTwoColorTint(on)：在官方运行时里 = "给渲染器准备逐顶点暗色通道"。
+     * 本引擎的网格着色**恒定**走两色着色路径（暗色通道始终产出、顶点 stride 固定含它），
+     * 素材没有 dark 时填 (0,0,0,1) → 与关闭逐字节等价（见 mesh shader 与 gfx_twocolor 测试）。
+     * 所以这里没有可切换的东西：如实把开关记进组件字段（可自省/可回放），不假装改变输出。 */
+    node_set_number(ctx, id, "anim.SpineSkeleton", "two_color", on != 0.0F ? 1.0F : 0.0F);
+    return 0.0F;
+}
+float spine_ik_count(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return sp ? (float)mq_spine_instance_ik_count(sp->inst) : 0.0F;
+}
+const char* spine_ik_name(void* ctx, float id, float index) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return "";
+    const char* nm = mq_spine_instance_ik_name(sp->inst, (int)index);
+    return nm ? nm : "";
+}
+float spine_set_ik_mix(void* ctx, float id, float index, float mix) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return -1.0F;
+    return mq_spine_instance_ik_set_mix(sp->inst, (int)index, mix) == MQ_SPINE_OK ? 0.0F : -1.0F;
+}
+float spine_physics_count(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    return sp ? (float)mq_spine_instance_physics_count(sp->inst) : 0.0F;
+}
+const char* spine_physics_name(void* ctx, float id, float index) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || index < 0.0F) return "";
+    const char* nm = mq_spine_instance_physics_name(sp->inst, (int)index);
+    return nm ? nm : "";
+}
+float spine_physics_translate(void* ctx, float id, float x, float y) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    mq_spine_instance_physics_translate(sp->inst, x, y);
+    return 0.0F;
+}
+float spine_physics_reset(void* ctx, float id) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp) return -1.0F;
+    mq_spine_instance_physics_reset(sp->inst);
+    return 0.0F;
+}
+/* 序列帧（官方 Sequence demo：dragon-ess 的 flying） */
+static bool spine_seq_info(Engine* eng, float id, float slot, mq_spine_sequence_info* out) {
+    Engine::Spine* sp = spine_at(eng, id);
+    if (!sp || slot < 0.0F) return false;
+    return mq_spine_attachment_sequence_info(sp->inst, (int)slot, out) == MQ_SPINE_OK;
+}
+float spine_sequence_frames(void* ctx, float id, float slot) {
+    mq_spine_sequence_info si{};
+    return spine_seq_info((Engine*)ctx, id, slot, &si) ? (float)si.frames : 0.0F;
+}
+float spine_sequence_index(void* ctx, float id, float slot) {
+    mq_spine_sequence_info si{};
+    return spine_seq_info((Engine*)ctx, id, slot, &si) ? (float)si.index : -1.0F;
+}
+const char* spine_sequence_path(void* ctx, float id, float slot) {
+    static thread_local std::string buf;                    // ABI 的 path 活到下次调用；这里再拷一份
+    mq_spine_sequence_info si{};
+    if (!spine_seq_info((Engine*)ctx, id, slot, &si) || !si.path) return "";
+    buf = si.path;
+    return buf.c_str();
+}
+float spine_sequence_value(void* ctx, float id, float slot, float what) {
+    mq_spine_sequence_info si{};
+    if (!spine_seq_info((Engine*)ctx, id, slot, &si)) return 0.0F;
+    switch ((int)what) {
+    case 0: return si.u;
+    case 1: return si.v;
+    case 2: return si.u2;
+    case 3: return si.v2;
+    case 4: return (float)si.width;
+    case 5: return (float)si.height;
+    case 6: return (float)si.setup_index;
+    default: return 0.0F;
+    }
+}
+float spine_set_sequence_index(void* ctx, float id, float slot, float frame) {
+    auto* sp = spine_at((Engine*)ctx, id);
+    if (!sp || slot < 0.0F) return -1.0F;
+    return mq_spine_instance_set_sequence_index(sp->inst, (int)slot, (int)frame) == MQ_SPINE_OK ? 0.0F : -1.0F;
 }
 
 /* ---- destroy / find(path) ---- */
