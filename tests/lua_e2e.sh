@@ -14,6 +14,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SIM="$ROOT/tests/data/sim/ball_clicks.sim.json"
 
 rm -rf "$WORK"; mkdir -p "$WORK"
+# ⚠️ 必须保留真窗口：`MAQUE_WINDOW=800x600` 提供**窗口→世界坐标映射**，
+# 本测试的点击坐标断言（`at (40,180)` / `at (240,60)`）正是验证这条映射
+# （实测：改成无头后坐标映射不符 → 5/5 稳定失败）。
 unset MAQUE_HEADLESS
 
 fail() { echo "lua_e2e: FAIL $*" >&2; exit 1; }

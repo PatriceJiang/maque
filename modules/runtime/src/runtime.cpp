@@ -1824,6 +1824,22 @@ void accumulate_node_attrs(Engine& eng, int idx, float& angle_deg, float& scale,
     if (opacity > 1.0F) opacity = 1.0F;
 }
 
+/* active 沿父链判定（docs/18：`node_set_active` 影响自身与子树）。
+ * 之前只查了 `e.active` 自身 —— 父节点隐藏后子节点照常绘制（实测）。
+ * 带自环保护：脏数据不应造成死循环。 */
+bool node_active_effective(Engine& eng, int idx) {
+    if (!eng.scene) return true;
+    int guard = 0;
+    for (int cur = idx; cur >= 0 && guard < 4096; ++guard) {
+        Entity* e = eng.scene->at(cur);
+        if (!e) break;
+        if (!e->active) return false;
+        if (e->parent == cur) break;                 // 自环保护
+        cur = e->parent;
+    }
+    return true;
+}
+
 void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
     /* 粒子（docs/15 §4）：只读提取，alpha 随寿命衰减；在实体图元之后按稳定顺序输出 */
     for (auto& p : eng.particles) {
@@ -1870,7 +1886,7 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
              * 实测：node_set_angle 不旋转、node_set_active(0) 不隐藏、node_set_scale /
              * node_set_opacity 对 sprite 无效。渲染项 ABI 本来就有这些字段
              *（rotation/a/half_w/half_h），只是提取时没填。 */
-            if (!e.active) continue;                          // 隐藏（含整棵子树）
+            if (!node_active_effective(eng, idx)) continue;   // 隐藏（含整棵子树）
             float node_angle = 0.0F, node_scale = 1.0F, node_opacity = 1.0F;
             accumulate_node_attrs(eng, idx, node_angle, node_scale, node_opacity);
             float radius = 8, r = 1, g = 1, b = 1, sw = 0, sh = 0;
