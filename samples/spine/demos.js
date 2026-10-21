@@ -624,9 +624,11 @@ function imguiCellBlock(id, index) {
 function imguiPanel() {
     if (!imgui_enabled()) return;
 
-    /* 右上角：不遮住网格主体。headless（--shot）时显示空间 = 目标空间，1:1。 */
-    imgui_set_pos(screen_w() - 316.0, 8.0);
-    imgui_set_size(308.0, 470.0);
+    /* 右上角：不遮住网格主体。显示空间 = 目标/设计空间（1:1）。
+     * 位置/尺寸只在**首次**生效（引擎侧用 FirstUseEver）—— 之后用户拖动/缩放不会被复位。
+     * 尺寸按默认 26px 字号留够宽度（否则按钮文字被截断）。 */
+    imgui_set_pos(screen_w() - 404.0, 8.0);
+    imgui_set_size(396.0, 560.0);
     if (!imgui_begin('Spine demos (ImGui)')) { imgui_end(); return; }
 
     imgui_text('12 skeletons / official 4.2 assets');
@@ -652,7 +654,7 @@ function imguiPanel() {
     imgui_separator();
     imgui_text('Per-skeleton (' + imguiCells().length + ')');
 
-    imgui_begin_child('cells', 292.0, 330.0, 1);
+    imgui_begin_child('cells', 380.0, 410.0, 1);
     const cells = imguiCells();
     for (let i = 0; i < cells.length; ++i) imguiCellBlock(cells[i], i);
     imgui_end_child();

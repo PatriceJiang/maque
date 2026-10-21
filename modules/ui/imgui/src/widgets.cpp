@@ -63,8 +63,12 @@ int mq_imgui_begin_at(const char *title, float x, float y, float w, float h) {
 }
 
 void mq_imgui_end(void) { ImGui::End(); }
-void mq_imgui_set_pos(float x, float y) { ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_Always); }
-void mq_imgui_set_size(float w, float h) { ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_Always); }
+/* 位置/尺寸用 **FirstUseEver**（不是 Always）：
+ * 脚本每帧都会调这两个函数，若用 Always 就把窗口位置/尺寸**每帧强制写回**，
+ * 用户拖动窗口会"弹回原位"、拉伸边框也无效（实测反馈）。
+ * FirstUseEver = 只在某个窗口第一次出现时生效，之后尊重用户拖动/缩放。 */
+void mq_imgui_set_pos(float x, float y) { ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver); }
+void mq_imgui_set_size(float w, float h) { ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_FirstUseEver); }
 void mq_imgui_same_line(void) { ImGui::SameLine(); }
 void mq_imgui_separator(void) { ImGui::Separator(); }
 void mq_imgui_spacing(void) { ImGui::Spacing(); }

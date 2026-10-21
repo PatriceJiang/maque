@@ -3462,7 +3462,9 @@ void Engine::imgui_setup() {
      * **必须给 TTF**：ImGui 默认字体只有 ASCII，中文会渲染成 '?'（实测）。
      * 字号默认 18px（调试面板要能看清），可用 MAQUE_IMGUI_FONT_SIZE 覆盖。 */
     text_setup();                                // 确保 font_path 已解析（幂等）
-    float fs = 18.0F;
+    /* 默认设计字号 26px：窗口默认 800x650 看 1600x1300 场景时是 0.5 倍，
+     * 屏幕上约 13px（可读）；字号按屏幕像素栅格化，所以清晰。 */
+    float fs = 26.0F;
     if (const char* e = std::getenv("MAQUE_IMGUI_FONT_SIZE")) {
         const float v = (float)std::atof(e);
         if (v > 0.0F) fs = v;
@@ -3470,7 +3472,14 @@ void Engine::imgui_setup() {
     /* 字体栅格化倍率：ImGui 显示空间 = 目标/设计空间（见 imgui_frame_begin），
      * 所以字号就是**设计像素**，不需要再乘窗口缩放；窗口比设计小时最终画面整体缩小，
      * 字体仍按设计尺寸栅格化才清晰（缩放交给 GPU）。 */
-    const float ps = 1.0F;
+    /* 字体栅格化倍率 = 窗口/目标比：面板几何在**设计空间**（目标像素），
+     * 但最终要缩放到窗口显示。字按「设计字号」栅格化的话，经过一次降采样会糊；
+     * 按「字号 × 窗口/目标」栅格化，采样时的缩放恰好抵消最后的降采样 → **1:1 落到屏幕像素**，不糊。
+     * 无窗口（headless/截图）时目标就是最终像素 → 1.0。 */
+    float ps = 1.0F;
+    if (window && TW > 0 && win_w > 0) ps = (float)win_w / (float)TW;
+    if (canvas.device_scale > 0.0F) ps *= canvas.device_scale;
+    if (ps <= 0.0F) ps = 1.0F;
     if (mq_imgui_init_with_font(font_path.empty() ? nullptr : font_path.c_str(), fs, ps) != 0) {
         std::print(stderr, "runtime: imgui init failed\n");
         imgui_on = false;
