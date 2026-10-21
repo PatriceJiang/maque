@@ -4,7 +4,7 @@
  *   0 = 只有文本          1 = +按钮/复选框/滑块（无子窗口）
  *   2 = +子窗口（不滚动） 3 = +下拉框
  */
-const PROBE_STAGE = 2;
+const PROBE_STAGE = parseInt(env('PROBE_STAGE') || '2', 10);
 
 function on_start() {
     log('probe: imgui_enabled=' + imgui_enabled());
