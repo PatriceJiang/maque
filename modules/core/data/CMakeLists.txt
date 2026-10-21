@@ -78,12 +78,23 @@ if(NODE_EXECUTABLE)
     target_include_directories(maque_schema PUBLIC "${MAQUE_GEN_DIR}")
     set_target_properties(maque_schema PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 
-    # 便捷：`cmake --build build --target maque_codegen` 手动重生成
-    add_custom_target(maque_codegen
+    # 便捷：`cmake --build build --target maque_codegen` 手动重生成。
+    #
+    # ⚠️ 必须是**有输出的** custom command（stamp 文件），不能是裸 `add_custom_target`：
+    # 裸 custom target 是 phony（永不过期），而 `maque_genbind/gencontrol/genevents` 都
+    # `add_dependencies(... maque_codegen)` 保证"生成物先于编译" → 于是**每次构建**都会
+    # 重跑一遍 node 生成（实测：`[1/2] maque: 从 schema/ 生成…` 每次构建都出现，白花 1s 并刷屏）。
+    # 配置期其实已经生成过了（见上面的 execute_process），构建期只需"schema 变了才补一次"。
+    set(_codegen_stamp "${CMAKE_CURRENT_BINARY_DIR}/maque_codegen.stamp")
+    add_custom_command(
+        OUTPUT "${_codegen_stamp}"
         COMMAND "${NODE_EXECUTABLE}" "${MAQUE_PARSER}" --schema "${MAQUE_SCHEMA}" --out "${MAQUE_GEN_DIR}"
+        COMMAND "${CMAKE_COMMAND}" -E touch "${_codegen_stamp}"
+        DEPENDS ${MAQUE_SCHEMA_FILES} "${MAQUE_SCHEMA}" "${MAQUE_PARSER}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         COMMENT "maque: 从 schema/ 生成（类型/描述符/API/绑定/控制面/事件/ABI/文档）"
         VERBATIM)
+    add_custom_target(maque_codegen DEPENDS "${_codegen_stamp}")
 
     # 脚本绑定探针（bindings_e2e 用）：从生成物 maque_schema.json（单一真相）生成 JS/Lua 两份探针。
     # 该文件之前因「ANSI 重写」损坏被回退，这里按原意恢复。
