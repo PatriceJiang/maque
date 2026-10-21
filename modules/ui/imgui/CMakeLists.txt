@@ -10,9 +10,16 @@
 #   · 引擎核心（modules/runtime）只依赖本模块的 C ABI，不直接依赖 ImGui 头。
 set(_imgui "${CMAKE_SOURCE_DIR}/third_party/imgui")
 
+# 官方 SDL_Renderer 后端（面板直接画到窗口；绕开自研网格转换链）。
+# SDL2 复用 platform 模块同一套 find_path/find_library 结果。
+find_path(_imgui_sdl2_inc SDL.h PATH_SUFFIXES SDL2)
+find_library(_imgui_sdl2_lib NAMES SDL2)
+
 add_library(maque_imgui STATIC
     src/imgui.cpp
     src/widgets.cpp
+    src/backend_sdl.cpp
+    "${_imgui}/backends/imgui_impl_sdlrenderer2.cpp"
     "${_imgui}/imgui.cpp"
     "${_imgui}/imgui_draw.cpp"
     "${_imgui}/imgui_tables.cpp"
@@ -24,7 +31,14 @@ target_include_directories(maque_imgui
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
     # 注：imgui 头对**本模块的测试**也要可见（测试要构造控件跑一帧），所以放在 PUBLIC。
     # 但对外承诺的公开面只有 include/ui/mq_imgui.h —— 别的模块应只 include 它。
-    PUBLIC "${_imgui}")
+    PUBLIC "${_imgui}" "${_imgui}/backends")
+if(_imgui_sdl2_inc AND _imgui_sdl2_lib)
+    target_include_directories(maque_imgui PUBLIC "${_imgui_sdl2_inc}")
+    target_link_libraries(maque_imgui PUBLIC "${_imgui_sdl2_lib}")
+else()
+    message(WARNING "maque: 未找到 SDL2 —— ImGui 官方后端模式不可用（面板仍走网格转换链）")
+endif()
+
 set_target_properties(maque_imgui PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 
 # ImGui 是第三方源码：静默其告警（不改上游代码）

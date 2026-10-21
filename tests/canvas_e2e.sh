@@ -109,7 +109,7 @@ MAQUE_WINDOW=800x600 MAQUE_CONTROL=- MAQUE_VIEWS=1 MAQUE_MAX_FRAMES=40 \
   "$PLAYER" "$SCENE" < "$WORK/req.txt" > "$WORK/fit.log" 2>&1 || true
 "$PY" - "$WORK/fit.log" <<'PY' || exit 1
 import json, re, sys
-text = open(sys.argv[1]).read()
+text = open(sys.argv[1], encoding='utf-8', errors='replace').read()
 res = {}
 for line in text.splitlines():
     line = line.strip()

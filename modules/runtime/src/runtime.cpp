@@ -378,7 +378,8 @@ struct Engine {
     /* 默认 stats 面板用的计量（显示上一帧的值：开帧时就要有数）。 */
     float stat_logic_ms = 0, stat_render_ms = 0, stat_fps = 0;
     int   stat_calls = 0, stat_tris = 0;
-    bool  stat_window_sized = false;   // stats 窗口只在首帧定位/定尺寸（之后可自由拖动）
+    bool  stat_window_sized = false;
+    bool  imgui_backend = false;   // 用官方 SDL_Renderer 后端直接画到窗口（绕开网格导出链）   // stats 窗口只在首帧定位/定尺寸（之后可自由拖动）
     std::chrono::steady_clock::time_point stat_t0{};   // 本帧起点（算逻辑/整帧耗时）
     int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
@@ -994,6 +995,10 @@ void Engine::step_frame() {
         const int dx = (int)(canvas.offset_x + 0.5F), dy = (int)(canvas.offset_y + 0.5F);
         const int dw = (int)(canvas.viewport_w + 0.5F), dh = (int)(canvas.viewport_h + 0.5F);
         mq_platform_present_rect(platform, pixels.data(), TW, SHpx, dx, dy, dw, dh, -1);
+    }
+    /* 官方后端模式：**present 之后**把面板直接画到窗口（在窗口像素空间，不受引擎缩放影响）。 */
+    if (imgui_on && imgui_backend) {
+        mq_imgui_backend_render();
     }
     if (!frames_dir.empty()) {
         char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);
@@ -3584,14 +3589,41 @@ void Engine::imgui_frame_begin(float dt) {
         const bool present_off = pres && (std::strcmp(pres, "off") == 0 || std::strcmp(pres, "0") == 0);
         const bool force_off = e && *e && std::strcmp(e, "0") == 0;
         const bool force_on = e && *e && std::strcmp(e, "0") != 0;
-        if (force_on || (!force_off && window && shot_path.empty() && !present_off)) {
+        /* MAQUE_CAPTURE（窗口表面回读做像素断言）时也不自动开：覆盖层会出现在捕获里。 */
+        const bool capturing = std::getenv("MAQUE_CAPTURE") != nullptr;
+        if (force_on || (!force_off && window && shot_path.empty() && !present_off && !capturing)) {
             imgui_on = true;
             std::print("runtime: imgui on{} (F2 toggles)\n", force_on ? " (MAQUE_IMGUI)" : " (default)");
         }
     }
     if (!imgui_on) return;
-    imgui_setup();
+    /* 加速呈现 + 有窗口：SDL_Renderer 要到首次 present 才创建 → 等它出现再初始化，
+     * 且**先声明 backend 模式**（图集交给官方后端动态烘焙，避免静态 Build 断言）。 */
+    const char* pres_env2 = std::getenv("MAQUE_PRESENT");
+    const bool want_backend = window && platform && pres_env2 &&
+                              std::strcmp(pres_env2, "accelerated") == 0;
+    if (want_backend && !imgui_backend) {
+        void* sdl_ren = mq_platform_sdl_renderer(platform);
+        if (sdl_ren) {
+            if (!imgui_inited) { mq_imgui_set_backend_mode(1); imgui_setup(); }
+            if (imgui_inited && mq_imgui_backend_init(sdl_ren) == 0) {
+                imgui_backend = true;
+                std::print("runtime: imgui uses official SDL_Renderer backend\n");
+            }
+        }
+        if (!imgui_backend) return;      // renderer 还没创建好：本帧不画面板
+    }
+    if (!imgui_inited) imgui_setup();
     if (!imgui_inited) return;
+    /* 官方后端延迟切换：SDL_Renderer 要到首次 present 才创建，setup 时还是 null。
+     * 每帧尝试一次，成功即永久切到官方后端（面板直接画窗口、不经过网格导出链）。 */
+    if (!imgui_backend && window && platform) {
+        void* sdl_ren = mq_platform_sdl_renderer(platform);
+        if (sdl_ren && mq_imgui_backend_init(sdl_ren) == 0) {
+            imgui_backend = true;
+            std::print("runtime: imgui uses official SDL_Renderer backend\n");
+        }
+    }
     const int target_w = TW;
     const int target_h = (int)(H * ss + 0.5F);
     if (target_w <= 0 || target_h <= 0) return;
@@ -3602,7 +3634,7 @@ void Engine::imgui_frame_begin(float dt) {
      * 而 `mq_imgui_font_pixels()` 正是做 Build 的那一步。所以：
      *   ① 首次：取像素（内部 Build）→ 上传纹理 → `SetTexID` 绑定；
      *   ② 之后：图集内容不再变（静态），直接跳过。 */
-    if (imgui_tex < 0 || mq_imgui_font_dirty()) {
+    if (!imgui_backend && (imgui_tex < 0 || mq_imgui_font_dirty())) {
         int fw = 0, fh = 0;
         const uint8_t* px = mq_imgui_font_pixels(&fw, &fh);
         if (px && fw > 0 && fh > 0 && rapi && rself && rapi->create_texture) {
@@ -3672,7 +3704,8 @@ void Engine::imgui_frame_begin(float dt) {
  * 而网格要到渲染时才被消费 —— 拷一份最稳，且避免跨模块生命周期耦合。 */
 void Engine::imgui_extract(std::vector<mq_renderer_mesh>& out) {
     if (!imgui_on || !imgui_inited || !imgui_frame_active) return;
-    imgui_frame_active = false;                  // 一帧只 end 一次（防脚本误关导致状态错乱）
+    imgui_frame_active = false;
+    if (imgui_backend) { (void)out; return; }   // 官方后端：结束后由 mq_imgui_backend_render 画                  // 一帧只 end 一次（防脚本误关导致状态错乱）
     mq_imgui_frame f{};
     if (mq_imgui_end_frame(&f) != 0 || f.cmd_count == 0 || !f.cmds) {
         imgui_last_cmds = 0;

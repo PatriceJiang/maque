@@ -54,6 +54,25 @@ typedef struct mq_imgui_frame {
 
 /* 初始化/关闭。font_size<=0 → 用 ImGui 默认字体。
  * pixel_scale>0 时按该倍率放大字体栅格（HiDPI：窗口比目标大时文字才不糊）。 */
+/* ---- 官方后端模式（SDL_Renderer）----
+ * 用途：把面板交给 ImGui 官方后端**直接画到窗口**，绕开引擎的网格转换链
+ *（那条链在"拖动窗口"等交互下会出现内容与窗口不同步）。官方后端自己处理
+ * 坐标/裁剪/字体纹理/多窗口，行为与 inspector 一致（已验证可用）。
+ *
+ * 时序（宿主）：渲染游戏帧 → present → backend_new_frame → 画控件 → backend_render
+ * 注意：该模式下**不要**再调 mq_imgui_end_frame（它会走自研导出链）。
+ * 无窗口（headless/截图）时不要初始化此后端。 */
+/* 在 mq_imgui_init*() **之前**调用：(1) 让字体图集交给官方后端动态烘焙
+ *（不预烘静态图集，否则会命中 "Build() before RendererHasTextures" 断言）。 */
+void mq_imgui_set_backend_mode(int on);
+int  mq_imgui_backend_init(void *sdl_renderer);   /* 0=成功；renderer 非空 */
+void mq_imgui_backend_shutdown(void);
+/* 开一帧：内部做 NewFrame（显示尺寸由宿主先调 mq_imgui_begin_frame 提供）。 */
+void mq_imgui_backend_new_frame(void);
+/* 结束并渲染：Render + RenderDrawData(官方后端) */
+void mq_imgui_backend_render(void);
+int  mq_imgui_backend_active(void);   /* 1 = 官方后端模式（宿主不要走网格导出） */
+
 int mq_imgui_init(float font_size, float pixel_scale);
 /* 带 TTF 的初始化：**面板要显示中文/CJK 时必须用这个** —— ImGui 默认字体只有 ASCII，
  * 拿默认字体渲染中文会全是 '?'（实测现象）。字形范围用"常用简体中文"（约 2500 字），

@@ -12,6 +12,10 @@
 
 #include "imgui.h"
 
+/* 官方后端模式（backend_sdl.cpp 设置 / init 前由 set_backend_mode 声明）。 */
+bool mq_imgui_g_backend = false;
+bool mq_imgui_g_backend_pref = false;
+
 #include <cmath>
 #include <cstdlib>
 #include <print>
@@ -152,8 +156,11 @@ void mq_imgui_shutdown(void) {
 
 int mq_imgui_ready(void) { return g_ready ? 1 : 0; }
 
+void mq_imgui_set_backend_mode(int on) { mq_imgui_g_backend_pref = on != 0; }
+
 const uint8_t *mq_imgui_font_pixels(int *out_w, int *out_h) {
     if (!g_ready) return nullptr;
+    if (mq_imgui_g_backend_pref || mq_imgui_g_backend) return nullptr;   // 官方后端自管图集
     /* **传统静态图集路径**（不走 RendererHasTextures 的动态图集）：
      * 一次性 `Build()` + `GetTexDataAsRGBA32()` 拿到整张图，宿主上传一次即可。
      *
