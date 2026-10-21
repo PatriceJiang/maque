@@ -3677,7 +3677,7 @@ void Engine::imgui_frame_begin(float dt) {
         /* 位置/尺寸只在**首帧**设一次（之后拖动/缩放不被复位）。尺寸按 4 行内容给够。 */
         if (!stat_window_sized) {
             mq_imgui_set_pos(8.0F, 8.0F);
-            mq_imgui_set_size(320.0F, 210.0F);
+            mq_imgui_set_size(400.0F, 260.0F);
             stat_window_sized = true;
         }
         if (mq_imgui_begin_overlay("stats")) {

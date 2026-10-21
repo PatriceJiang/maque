@@ -242,8 +242,10 @@ int mq_imgui_begin_overlay(const char *title) {
      * 窗口位置更新推迟到下一帧，而文本布局用的是上一帧起点）。
      * 在定位清楚之前，覆盖层固定不动是**正确且可用**的：
      * 它是常驻信息栏，固定左上角即可，也避免挡住游戏内容。 */
-    return ImGui::Begin(title && *title ? title : "overlay", nullptr,
-                        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize) ? 1 : 0;
+    /* 可移动、可缩放（拖动/缩放由 ImGui 处理）。
+     * 之前为规避自研网格链的"拖动错位"曾禁用拖动；现在 accelerated 模式下走官方
+     * SDL_Renderer 后端，拖动/缩放是官方行为，应当放开。 */
+    return ImGui::Begin(title && *title ? title : "overlay", nullptr, 0) ? 1 : 0;
 }
 
 void mq_imgui_push_font_size(float size_px) {
