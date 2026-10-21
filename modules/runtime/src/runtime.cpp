@@ -3576,10 +3576,16 @@ void Engine::imgui_frame_begin(float dt) {
          * 默认开启会改变所有窗口程序的画面与输入命中（stats 面板覆盖左上角），
          * 现有 e2e（imgui_toggle_e2e 期望初始为关、canvas_e2e 依赖像素/命中）
          * 需要一并调整后才能改默认值 —— 见提交说明的待办。 */
+        /* 默认：**真窗口 + 非截图 + 未关呈现** → 开启（所有游戏都有 stats 面板；
+         * stats 是 NoInputs 覆盖层，不挡点击）。MAQUE_IMGUI=0 关；=1 强制开（含 headless）。 */
         const char* e = std::getenv("MAQUE_IMGUI");
-        if (e && *e && std::strcmp(e, "0") != 0) {
+        const char* pres = std::getenv("MAQUE_PRESENT");
+        const bool present_off = pres && (std::strcmp(pres, "off") == 0 || std::strcmp(pres, "0") == 0);
+        const bool force_off = e && *e && std::strcmp(e, "0") == 0;
+        const bool force_on = e && *e && std::strcmp(e, "0") != 0;
+        if (force_on || (!force_off && window && shot_path.empty() && !present_off)) {
             imgui_on = true;
-            std::print("runtime: imgui on (MAQUE_IMGUI)\n");
+            std::print("runtime: imgui on{} (F2 toggles)\n", force_on ? " (MAQUE_IMGUI)" : " (default)");
         }
     }
     if (!imgui_on) return;
@@ -3636,9 +3642,9 @@ void Engine::imgui_frame_begin(float dt) {
      * · 内容压缩成 4 行，避免"窗体偏大"。位置仍用 FirstUseEver（可拖动、不弹回）。 */
     if (mq_imgui_ready()) {
         mq_imgui_set_pos(8.0F, 8.0F);
-        if (mq_imgui_begin("stats")) {
+        if (mq_imgui_begin_overlay("stats")) {
             /* 小一号字：stats 是常驻信息栏，体积该比游戏自己的面板小（20 vs 默认 26 设计像素）。 */
-            mq_imgui_push_font_size(20.0F);
+            mq_imgui_push_font_size(15.0F);
             char line[160];
             std::snprintf(line, sizeof line, "FPS %.0f  (%.1f ms)",
                           stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);

@@ -97,6 +97,9 @@ void  mq_imgui_show_demo(int *open);
  * 用途：默认 stats 面板要**比游戏自己的面板小一号**（ImGui 1.93 没有 SetWindowFontScale，
  * 官方替代是 `PushFont(NULL, size)`）。
  * 注：size 是**设计像素**（与 ImGui 显示空间一致）；传 <=0 表示沿用当前字号。 */
+/* 覆盖层窗口：带 NoInputs（**不吃鼠标/键盘**）+ 可拖动标题栏。
+ * 用于引擎默认 stats 面板 —— 默认开启时不能挡住游戏的点击/命中测试。 */
+int   mq_imgui_begin_overlay(const char *title);
 void  mq_imgui_push_font_size(float size_px);
 void  mq_imgui_pop_font(void);
 

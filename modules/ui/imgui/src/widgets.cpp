@@ -229,6 +229,12 @@ void mq_imgui_tree_pop(void) { ImGui::TreePop(); }
 int mq_imgui_collapsing_header(const char *label) {
     return ImGui::CollapsingHeader(label ? label : "##ch") ? 1 : 0;
 }
+int mq_imgui_begin_overlay(const char *title) {
+    /* 可拖动（有标题栏）但不参与命中：NoInputs 让 ImGui 不把悬停/点击算到它头上。 */
+    return ImGui::Begin(title && *title ? title : "overlay", nullptr,
+                          ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize) ? 1 : 0;
+}
+
 void mq_imgui_push_font_size(float size_px) {
     /* NULL = 沿用当前字体，只改字号（1.92+ 的 per-window/push 字号方式）。 */
     ImGui::PushFont(nullptr, size_px > 0.0F ? size_px : 0.0F);
