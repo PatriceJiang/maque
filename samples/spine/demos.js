@@ -559,4 +559,107 @@ function on_start() {
 
 function update(dt) {
     if (director_frame() % 20 === 0) refreshHud();
+    imguiPanel();
 }
+
+/* ============================================================================
+ * ImGui 调试面板（引擎侧即时模式 UI）
+ * ----------------------------------------------------------------------------
+ * 定位：**开发工具**，不是游戏 UI。游戏内 HUD 是场景里的 ui.* 控件（进快照、可回放）；
+ * 这块面板是视图层 —— 不进快照 / 不进校验和，关掉不影响任何模拟结果。
+ *
+ * 引擎保证：面板在所有引擎图层（含 ui pass 的 layer=1）**之后**、present **之前**提交，
+ * 所以永远画在最上层，且**截图里也有**（--shot 出来的图能看到面板）。
+ *
+ * 开关：引擎侧 `MAQUE_IMGUI=1`；未启用时 `imgui_enabled()` 为 0 → 下面全是空操作。
+ * ========================================================================== */
+const IMGUI_CELLS = 12;
+let imguiPaused = false;
+let imguiShowDemo = false;
+let imguiCellIds = null;      // 惰性缓存：cell0..cell11 里真的有动画的那些
+
+/** 收集总览场景里"真的有骨架动画"的格子（按 cell 序号稳定序） */
+function imguiCells() {
+    if (imguiCellIds) return imguiCellIds;
+    const list = [];
+    for (let i = 0; i < IMGUI_CELLS; ++i) {
+        const id = entity_find('cell' + i);
+        if (id >= 0 && spine_animation_count(id) > 0) list.push(id);
+    }
+    imguiCellIds = list;
+    return list;
+}
+
+/** 一个格子的控制块：动画下拉 + 播放头 + 缩放 */
+function imguiCellBlock(id, index) {
+    const nm = entity_name(id);
+    imgui_push_id(nm);
+    imgui_text_colored(index + 1 + '. ' + nm + '  (' + spine_animation_count(id) + ' anims)',
+                       0.85, 0.88, 0.95, 1.0);
+
+    const n = spine_animation_count(id);
+    const cur = spine_current_animation(id);
+    let curIdx = spine_animation_index(id, cur);
+    if (curIdx < 0) curIdx = 0;
+
+    // 动画名清单（逗号分隔交给引擎侧 split）
+    let names = '';
+    for (let i = 0; i < n; ++i) names += (i ? ',' : '') + spine_animation_name(id, i);
+    const pick = imgui_combo('anim##c', curIdx, names);
+    if ((pick | 0) !== curIdx) spine_play(id, spine_animation_name(id, pick | 0), 1);
+
+    // 播放头：拖动即定格（与确定性回放用的是同一个接口）
+    const t = spine_time(id);
+    const newT = imgui_slider_float('t##c', t, 0.0, 2.0);
+    if (Math.abs(newT - t) > 1e-4) spine_set_time(id, newT);
+
+    // 缩放（影响渲染、不影响模拟）
+    const sc = node_scale(id);
+    const newSc = imgui_drag_float('scale##c', sc, 0.01);
+    if (Math.abs(newSc - sc) > 1e-4) node_set_scale(id, newSc);
+
+    imgui_pop_id();
+}
+
+function imguiPanel() {
+    if (!imgui_enabled()) return;
+
+    /* 右上角：不遮住网格主体。headless（--shot）时显示空间 = 目标空间，1:1。 */
+    imgui_set_pos(screen_w() - 316.0, 8.0);
+    imgui_set_size(308.0, 470.0);
+    if (!imgui_begin('Spine demos (ImGui)')) { imgui_end(); return; }
+
+    imgui_text('12 skeletons / official 4.2 assets');
+    imgui_text_disabled('drawn AFTER the engine UI pass');
+    imgui_separator();
+
+    /* ---- 全局控制 ---- */
+    const paused = director_paused() != 0;
+    if (imgui_checkbox('Pause all', paused) !== (paused ? 1 : 0)) {
+        if (paused) director_resume(); else director_pause();
+    }
+    imgui_same_line();
+    if (imgui_small_button('Reset')) {
+        for (const id of imguiCells()) {
+            node_set_scale(id, 1.0);
+            spine_set_time(id, 0.0);
+        }
+    }
+    imgui_same_line();
+    if (imgui_small_button('ImGui demo')) imguiShowDemo = !imguiShowDemo;
+    if (imguiShowDemo) imgui_show_demo();
+
+    imgui_separator();
+    imgui_text('Per-skeleton (' + imguiCells().length + ')');
+
+    imgui_begin_child('cells', 292.0, 330.0, 1);
+    const cells = imguiCells();
+    for (let i = 0; i < cells.length; ++i) imguiCellBlock(cells[i], i);
+    imgui_end_child();
+
+    imgui_separator();
+    imgui_text_disabled('frame ' + director_frame() + ' / cmds ' + imgui_last_cmd_count());
+
+    imgui_end();
+}
+

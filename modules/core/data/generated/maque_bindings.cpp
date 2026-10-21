@@ -603,6 +603,228 @@ int b_host_spine_sequence_value(void* user, int, const double* a, double* ret) {
 int b_host_spine_set_sequence_index(void* user, int, const double* a, double* ret) {
   *ret = (double)host::spine_set_sequence_index(user, (float)a[0], (float)a[1], (float)a[2]); return 0;
 }
+int b_host_imgui_ready(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_ready(user); return 0;
+}
+int b_host_imgui_enabled(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_enabled(user); return 0;
+}
+int b_host_imgui_set_enabled(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_set_enabled(user, (float)a[0]); return 0;
+}
+int b_host_imgui_begin(void* user, const char* s, double* ret) {
+  *ret = (double)host::imgui_begin(user, s); return 0;
+}
+int b_host_imgui_end(void* user, int, const double* a, double* ret) {
+  host::imgui_end(user); return 0;
+}
+int b_host_imgui_begin_closed(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_begin_closed(user, s[0], (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}  /* kinds=snnnn */
+int b_host_imgui_set_pos(void* user, int, const double* a, double* ret) {
+  host::imgui_set_pos(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_imgui_set_size(void* user, int, const double* a, double* ret) {
+  host::imgui_set_size(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_imgui_same_line(void* user, int, const double* a, double* ret) {
+  host::imgui_same_line(user); return 0;
+}
+int b_host_imgui_separator(void* user, int, const double* a, double* ret) {
+  host::imgui_separator(user); return 0;
+}
+int b_host_imgui_spacing(void* user, int, const double* a, double* ret) {
+  host::imgui_spacing(user); return 0;
+}
+int b_host_imgui_new_line(void* user, int, const double* a, double* ret) {
+  host::imgui_new_line(user); return 0;
+}
+int b_host_imgui_begin_disabled(void* user, int, const double* a, double* ret) {
+  host::imgui_begin_disabled(user, (float)a[0]); return 0;
+}
+int b_host_imgui_end_disabled(void* user, int, const double* a, double* ret) {
+  host::imgui_end_disabled(user); return 0;
+}
+int b_host_imgui_begin_child(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_begin_child(user, s[0], (float)a[0], (float)a[1], (float)a[2]); return 0;
+}  /* kinds=snnn */
+int b_host_imgui_end_child(void* user, int, const double* a, double* ret) {
+  host::imgui_end_child(user); return 0;
+}
+int b_host_imgui_begin_menu_bar(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_begin_menu_bar(user); return 0;
+}
+int b_host_imgui_end_menu_bar(void* user, int, const double* a, double* ret) {
+  host::imgui_end_menu_bar(user); return 0;
+}
+int b_host_imgui_begin_menu(void* user, const char* s, double* ret) {
+  *ret = (double)host::imgui_begin_menu(user, s); return 0;
+}
+int b_host_imgui_end_menu(void* user, int, const double* a, double* ret) {
+  host::imgui_end_menu(user); return 0;
+}
+int b_host_imgui_menu_item(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_menu_item(user, s[0], (float)a[0], (float)a[1]); return 0;
+}  /* kinds=snn */
+int b_host_imgui_begin_tab_bar(void* user, const char* s, double* ret) {
+  *ret = (double)host::imgui_begin_tab_bar(user, s); return 0;
+}
+int b_host_imgui_end_tab_bar(void* user, int, const double* a, double* ret) {
+  host::imgui_end_tab_bar(user); return 0;
+}
+int b_host_imgui_begin_tab_item(void* user, const char* s, double* ret) {
+  *ret = (double)host::imgui_begin_tab_item(user, s); return 0;
+}
+int b_host_imgui_end_tab_item(void* user, int, const double* a, double* ret) {
+  host::imgui_end_tab_item(user); return 0;
+}
+int b_host_imgui_begin_table(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_begin_table(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_end_table(void* user, int, const double* a, double* ret) {
+  host::imgui_end_table(user); return 0;
+}
+int b_host_imgui_table_next_row(void* user, int, const double* a, double* ret) {
+  host::imgui_table_next_row(user); return 0;
+}
+int b_host_imgui_table_next_column(void* user, int, const double* a, double* ret) {
+  host::imgui_table_next_column(user); return 0;
+}
+int b_host_imgui_table_headers_row(void* user, int, const double* a, double* ret) {
+  host::imgui_table_headers_row(user); return 0;
+}
+int b_host_imgui_text(void* user, const char* s, double* ret) {
+  host::imgui_text(user, s); return 0;
+}
+int b_host_imgui_text_wrapped(void* user, const char* s, double* ret) {
+  host::imgui_text_wrapped(user, s); return 0;
+}
+int b_host_imgui_text_disabled(void* user, const char* s, double* ret) {
+  host::imgui_text_disabled(user, s); return 0;
+}
+int b_host_imgui_text_colored(void* user, int, const double* a, int, const char** s, double* ret) {
+  host::imgui_text_colored(user, s[0], (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}  /* kinds=snnnn */
+int b_host_imgui_label_text(void* user, int, const double* a, int, const char** s, double* ret) {
+  host::imgui_label_text(user, s[0], s[1]); return 0;
+}  /* kinds=ss */
+int b_host_imgui_bullet_text(void* user, const char* s, double* ret) {
+  host::imgui_bullet_text(user, s); return 0;
+}
+int b_host_imgui_button(void* user, const char* s, double* ret) {
+  *ret = (double)host::imgui_button(user, s); return 0;
+}
+int b_host_imgui_small_button(void* user, const char* s, double* ret) {
+  *ret = (double)host::imgui_small_button(user, s); return 0;
+}
+int b_host_imgui_invisible_button(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_invisible_button(user, s[0], (float)a[0], (float)a[1]); return 0;
+}  /* kinds=snn */
+int b_host_imgui_arrow_button(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_arrow_button(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_checkbox(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_checkbox(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_radio_button(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_radio_button(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_slider_float(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_slider_float(user, s[0], (float)a[0], (float)a[1], (float)a[2]); return 0;
+}  /* kinds=snnn */
+int b_host_imgui_slider_int(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_slider_int(user, s[0], (float)a[0], (float)a[1], (float)a[2]); return 0;
+}  /* kinds=snnn */
+int b_host_imgui_drag_float(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_drag_float(user, s[0], (float)a[0], (float)a[1]); return 0;
+}  /* kinds=snn */
+int b_host_imgui_drag_int(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_drag_int(user, s[0], (float)a[0], (float)a[1]); return 0;
+}  /* kinds=snn */
+int b_host_imgui_input_float(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_input_float(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_input_int(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_input_int(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_input_text(void* user, int, const double* a, int, const char** s, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::imgui_input_text(user, s[0], s[1])); return 0;
+}  /* kinds=ss */
+int b_host_imgui_combo(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_combo(user, s[0], (float)a[0], s[1]); return 0;
+}  /* kinds=sns */
+int b_host_imgui_list_box(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_list_box(user, s[0], (float)a[0], s[1]); return 0;
+}  /* kinds=sns */
+int b_host_imgui_selectable(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_selectable(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_progress_bar(void* user, int, const double* a, const char* s, double* ret) {
+  host::imgui_progress_bar(user, (float)a[0], (float)a[1], (float)a[2], s); return 0;
+}
+int b_host_imgui_plot_value(void* user, int, const double* a, int, const char** s, double* ret) {
+  host::imgui_plot_value(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_color_edit(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::imgui_color_edit(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_imgui_tree_node(void* user, const char* s, double* ret) {
+  *ret = (double)host::imgui_tree_node(user, s); return 0;
+}
+int b_host_imgui_tree_pop(void* user, int, const double* a, double* ret) {
+  host::imgui_tree_pop(user); return 0;
+}
+int b_host_imgui_collapsing_header(void* user, const char* s, double* ret) {
+  *ret = (double)host::imgui_collapsing_header(user, s); return 0;
+}
+int b_host_imgui_set_next_item_width(void* user, int, const double* a, double* ret) {
+  host::imgui_set_next_item_width(user, (float)a[0]); return 0;
+}
+int b_host_imgui_push_item_width(void* user, int, const double* a, double* ret) {
+  host::imgui_push_item_width(user, (float)a[0]); return 0;
+}
+int b_host_imgui_pop_item_width(void* user, int, const double* a, double* ret) {
+  host::imgui_pop_item_width(user); return 0;
+}
+int b_host_imgui_push_id(void* user, const char* s, double* ret) {
+  host::imgui_push_id(user, s); return 0;
+}
+int b_host_imgui_pop_id(void* user, int, const double* a, double* ret) {
+  host::imgui_pop_id(user); return 0;
+}
+int b_host_imgui_tooltip(void* user, const char* s, double* ret) {
+  host::imgui_tooltip(user, s); return 0;
+}
+int b_host_imgui_is_item_hovered(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_is_item_hovered(user); return 0;
+}
+int b_host_imgui_is_item_active(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_is_item_active(user); return 0;
+}
+int b_host_imgui_is_window_hovered(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_is_window_hovered(user); return 0;
+}
+int b_host_imgui_set_item_default(void* user, int, const double* a, double* ret) {
+  host::imgui_set_item_default(user); return 0;
+}
+int b_host_imgui_show_demo(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_show_demo(user); return 0;
+}
+int b_host_imgui_want_mouse(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_want_mouse(user); return 0;
+}
+int b_host_imgui_want_keyboard(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_want_keyboard(user); return 0;
+}
+int b_host_imgui_hovered(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_hovered(user); return 0;
+}
+int b_host_imgui_frame(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_frame(user); return 0;
+}
+int b_host_imgui_last_cmd_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::imgui_last_cmd_count(user); return 0;
+}
 } // namespace
 
 extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
@@ -805,4 +1027,78 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_ret_str(vm, "spine_sequence_path", b_host_spine_sequence_path, ctx);
   mq_script_register_num(vm, "spine_sequence_value", b_host_spine_sequence_value, ctx);
   mq_script_register_num(vm, "spine_set_sequence_index", b_host_spine_set_sequence_index, ctx);
+  mq_script_register_num(vm, "imgui_ready", b_host_imgui_ready, ctx);
+  mq_script_register_num(vm, "imgui_enabled", b_host_imgui_enabled, ctx);
+  mq_script_register_num(vm, "imgui_set_enabled", b_host_imgui_set_enabled, ctx);
+  mq_script_register_str(vm, "imgui_begin", b_host_imgui_begin, ctx);
+  mq_script_register_num(vm, "imgui_end", b_host_imgui_end, ctx);
+  mq_script_register_multi(vm, "imgui_begin_closed", "snnnn", b_host_imgui_begin_closed, ctx);
+  mq_script_register_num(vm, "imgui_set_pos", b_host_imgui_set_pos, ctx);
+  mq_script_register_num(vm, "imgui_set_size", b_host_imgui_set_size, ctx);
+  mq_script_register_num(vm, "imgui_same_line", b_host_imgui_same_line, ctx);
+  mq_script_register_num(vm, "imgui_separator", b_host_imgui_separator, ctx);
+  mq_script_register_num(vm, "imgui_spacing", b_host_imgui_spacing, ctx);
+  mq_script_register_num(vm, "imgui_new_line", b_host_imgui_new_line, ctx);
+  mq_script_register_num(vm, "imgui_begin_disabled", b_host_imgui_begin_disabled, ctx);
+  mq_script_register_num(vm, "imgui_end_disabled", b_host_imgui_end_disabled, ctx);
+  mq_script_register_multi(vm, "imgui_begin_child", "snnn", b_host_imgui_begin_child, ctx);
+  mq_script_register_num(vm, "imgui_end_child", b_host_imgui_end_child, ctx);
+  mq_script_register_num(vm, "imgui_begin_menu_bar", b_host_imgui_begin_menu_bar, ctx);
+  mq_script_register_num(vm, "imgui_end_menu_bar", b_host_imgui_end_menu_bar, ctx);
+  mq_script_register_str(vm, "imgui_begin_menu", b_host_imgui_begin_menu, ctx);
+  mq_script_register_num(vm, "imgui_end_menu", b_host_imgui_end_menu, ctx);
+  mq_script_register_multi(vm, "imgui_menu_item", "snn", b_host_imgui_menu_item, ctx);
+  mq_script_register_str(vm, "imgui_begin_tab_bar", b_host_imgui_begin_tab_bar, ctx);
+  mq_script_register_num(vm, "imgui_end_tab_bar", b_host_imgui_end_tab_bar, ctx);
+  mq_script_register_str(vm, "imgui_begin_tab_item", b_host_imgui_begin_tab_item, ctx);
+  mq_script_register_num(vm, "imgui_end_tab_item", b_host_imgui_end_tab_item, ctx);
+  mq_script_register_multi(vm, "imgui_begin_table", "sn", b_host_imgui_begin_table, ctx);
+  mq_script_register_num(vm, "imgui_end_table", b_host_imgui_end_table, ctx);
+  mq_script_register_num(vm, "imgui_table_next_row", b_host_imgui_table_next_row, ctx);
+  mq_script_register_num(vm, "imgui_table_next_column", b_host_imgui_table_next_column, ctx);
+  mq_script_register_num(vm, "imgui_table_headers_row", b_host_imgui_table_headers_row, ctx);
+  mq_script_register_str(vm, "imgui_text", b_host_imgui_text, ctx);
+  mq_script_register_str(vm, "imgui_text_wrapped", b_host_imgui_text_wrapped, ctx);
+  mq_script_register_str(vm, "imgui_text_disabled", b_host_imgui_text_disabled, ctx);
+  mq_script_register_multi(vm, "imgui_text_colored", "snnnn", b_host_imgui_text_colored, ctx);
+  mq_script_register_multi(vm, "imgui_label_text", "ss", b_host_imgui_label_text, ctx);
+  mq_script_register_str(vm, "imgui_bullet_text", b_host_imgui_bullet_text, ctx);
+  mq_script_register_str(vm, "imgui_button", b_host_imgui_button, ctx);
+  mq_script_register_str(vm, "imgui_small_button", b_host_imgui_small_button, ctx);
+  mq_script_register_multi(vm, "imgui_invisible_button", "snn", b_host_imgui_invisible_button, ctx);
+  mq_script_register_multi(vm, "imgui_arrow_button", "sn", b_host_imgui_arrow_button, ctx);
+  mq_script_register_multi(vm, "imgui_checkbox", "sn", b_host_imgui_checkbox, ctx);
+  mq_script_register_multi(vm, "imgui_radio_button", "sn", b_host_imgui_radio_button, ctx);
+  mq_script_register_multi(vm, "imgui_slider_float", "snnn", b_host_imgui_slider_float, ctx);
+  mq_script_register_multi(vm, "imgui_slider_int", "snnn", b_host_imgui_slider_int, ctx);
+  mq_script_register_multi(vm, "imgui_drag_float", "snn", b_host_imgui_drag_float, ctx);
+  mq_script_register_multi(vm, "imgui_drag_int", "snn", b_host_imgui_drag_int, ctx);
+  mq_script_register_multi(vm, "imgui_input_float", "sn", b_host_imgui_input_float, ctx);
+  mq_script_register_multi(vm, "imgui_input_int", "sn", b_host_imgui_input_int, ctx);
+  mq_script_register_multi_ret_str(vm, "imgui_input_text", "ss", b_host_imgui_input_text, ctx);
+  mq_script_register_multi(vm, "imgui_combo", "sns", b_host_imgui_combo, ctx);
+  mq_script_register_multi(vm, "imgui_list_box", "sns", b_host_imgui_list_box, ctx);
+  mq_script_register_multi(vm, "imgui_selectable", "sn", b_host_imgui_selectable, ctx);
+  mq_script_register_mixed(vm, "imgui_progress_bar", b_host_imgui_progress_bar, ctx);
+  mq_script_register_multi(vm, "imgui_plot_value", "sn", b_host_imgui_plot_value, ctx);
+  mq_script_register_multi(vm, "imgui_color_edit", "sn", b_host_imgui_color_edit, ctx);
+  mq_script_register_str(vm, "imgui_tree_node", b_host_imgui_tree_node, ctx);
+  mq_script_register_num(vm, "imgui_tree_pop", b_host_imgui_tree_pop, ctx);
+  mq_script_register_str(vm, "imgui_collapsing_header", b_host_imgui_collapsing_header, ctx);
+  mq_script_register_num(vm, "imgui_set_next_item_width", b_host_imgui_set_next_item_width, ctx);
+  mq_script_register_num(vm, "imgui_push_item_width", b_host_imgui_push_item_width, ctx);
+  mq_script_register_num(vm, "imgui_pop_item_width", b_host_imgui_pop_item_width, ctx);
+  mq_script_register_str(vm, "imgui_push_id", b_host_imgui_push_id, ctx);
+  mq_script_register_num(vm, "imgui_pop_id", b_host_imgui_pop_id, ctx);
+  mq_script_register_str(vm, "imgui_tooltip", b_host_imgui_tooltip, ctx);
+  mq_script_register_num(vm, "imgui_is_item_hovered", b_host_imgui_is_item_hovered, ctx);
+  mq_script_register_num(vm, "imgui_is_item_active", b_host_imgui_is_item_active, ctx);
+  mq_script_register_num(vm, "imgui_is_window_hovered", b_host_imgui_is_window_hovered, ctx);
+  mq_script_register_num(vm, "imgui_set_item_default", b_host_imgui_set_item_default, ctx);
+  mq_script_register_num(vm, "imgui_show_demo", b_host_imgui_show_demo, ctx);
+  mq_script_register_num(vm, "imgui_want_mouse", b_host_imgui_want_mouse, ctx);
+  mq_script_register_num(vm, "imgui_want_keyboard", b_host_imgui_want_keyboard, ctx);
+  mq_script_register_num(vm, "imgui_hovered", b_host_imgui_hovered, ctx);
+  mq_script_register_num(vm, "imgui_frame", b_host_imgui_frame, ctx);
+  mq_script_register_num(vm, "imgui_last_cmd_count", b_host_imgui_last_cmd_count, ctx);
 }

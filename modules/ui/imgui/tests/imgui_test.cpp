@@ -65,12 +65,22 @@ int main() {
     /* ① 初始化 + 字体图集（RGBA32） */
     CHECK_EQ(mq_imgui_init(0.0F, 1.0F), 0);
     CHECK_EQ(mq_imgui_ready(), 1);
+    /* ⚠️ ImGui 1.92+ 是**动态字体图集**：图集在 NewFrame() 内部才开始构建
+     *（后端只需设 RendererHasTextures）。所以取像素前必须先跑一帧 ——
+     * 这也正是宿主的正确时序（runtime 在 begin_frame 之后才上传纹理）。 */
+    CHECK_EQ(mq_imgui_begin_frame(800.0F, 600.0F, 800.0F, 600.0F, 1.0F, 0, 0,
+                                 1.0F / 60.0F, 1.0F), 0);
     int fw = 0, fh = 0;
     const uint8_t *fp = mq_imgui_font_pixels(&fw, &fh);
     CHECK(fp != nullptr);
     CHECK(fw > 0 && fh > 0);
     CHECK(mq_imgui_font_generation() >= 1);
     CHECK(mq_imgui_font_texture() == 0);          /* 宿主还没上传 → 句柄为 0 */
+    /* 这一帧没画控件 → 必须把它 end 掉（ImGui 要求 begin/end 严格配对，
+     * 否则下一个 NewFrame 会断言 "Forgot to call Render()"）。 */
+    { mq_imgui_frame boot{};
+      CHECK_EQ(mq_imgui_end_frame(&boot), 0);
+      CHECK_EQ(boot.cmd_count, 0); }
     /* 图集里应有非零像素（否则字形没栅格化出来，面板会是空白） */
     int nonzero = 0;
     for (int i = 0; i < fw * fh; i += 7)

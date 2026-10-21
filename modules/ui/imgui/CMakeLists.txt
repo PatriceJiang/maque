@@ -12,10 +12,12 @@ set(_imgui "${CMAKE_SOURCE_DIR}/third_party/imgui")
 
 add_library(maque_imgui STATIC
     src/imgui.cpp
+    src/widgets.cpp
     "${_imgui}/imgui.cpp"
     "${_imgui}/imgui_draw.cpp"
     "${_imgui}/imgui_tables.cpp"
-    "${_imgui}/imgui_widgets.cpp")
+    "${_imgui}/imgui_widgets.cpp"
+    "${_imgui}/imgui_demo.cpp")   # 内建演示窗口（mq_imgui_show_demo：整套控件自检）
 add_library(maque::imgui ALIAS maque_imgui)
 
 target_include_directories(maque_imgui

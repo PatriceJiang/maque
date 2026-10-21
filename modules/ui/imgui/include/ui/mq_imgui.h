@@ -55,6 +55,11 @@ typedef struct mq_imgui_frame {
 /* 初始化/关闭。font_size<=0 → 用 ImGui 默认字体。
  * pixel_scale>0 时按该倍率放大字体栅格（HiDPI：窗口比目标大时文字才不糊）。 */
 int mq_imgui_init(float font_size, float pixel_scale);
+/* 带 TTF 的初始化：**面板要显示中文/CJK 时必须用这个** —— ImGui 默认字体只有 ASCII，
+ * 拿默认字体渲染中文会全是 '?'（实测现象）。字形范围用"常用简体中文"（约 2500 字），
+ * 覆盖面板文案足够。ttf 为空或加载失败 → 退回默认字体。
+ * font_size 单位是**像素**；pixel_scale 会再乘上去（HiDPI）。 */
+int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_scale);
 void mq_imgui_shutdown(void);
 int mq_imgui_ready(void);
 
@@ -65,11 +70,17 @@ void mq_imgui_set_font_texture(uint64_t handle);
 uint64_t mq_imgui_font_texture(void);
 /* 图集是否重建过（generation 变化 → 宿主需重新上传纹理）。返回当前代数。 */
 uint32_t mq_imgui_font_generation(void);
+/* 字体图集**是否需要（重新）上传**：ImGui 1.92+ 是**动态图集** —— 字形按需烘焙，
+ * 新字形会让 ImTextureData 变成 WantUpdates。宿主每帧开帧后查这个，
+ * 为 1 就把 mq_imgui_font_pixels() 的整张图重新上传（本引擎无 update_texture，
+ * 用 destroy+create 即可；图集不大且只在有新字形时发生）。上传后调
+ * mq_imgui_set_font_texture() 把状态标回 OK。 */
+int mq_imgui_font_dirty(void);
 
 /* 输入（窗口像素坐标）。宿主每帧喂入；未调用的输入保持上一帧状态。 */
 void mq_imgui_input_pointer(float x, float y, int down, float wheel);
 void mq_imgui_input_key(int key, int down);
-void mq_imgui_input_text(const char *utf8);
+void mq_imgui_input_chars(const char *utf8);
 void mq_imgui_input_focus(int focused);
 
 /* 帧：

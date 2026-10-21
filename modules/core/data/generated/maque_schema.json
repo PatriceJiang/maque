@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 242,
-  "api_count": 199,
+  "api_count": 273,
   "control_count": 43,
   "callback_count": 10,
   "module_count": 25,
@@ -18528,6 +18528,1141 @@
           "type": "float"
         }
       ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_ready",
+      "namespace": "host",
+      "fn": "imgui_ready",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_enabled",
+      "namespace": "host",
+      "fn": "imgui_enabled",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_set_enabled",
+      "namespace": "host",
+      "fn": "imgui_set_enabled",
+      "global": true,
+      "args": [
+        {
+          "name": "on",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin",
+      "namespace": "host",
+      "fn": "imgui_begin",
+      "global": true,
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_end",
+      "namespace": "host",
+      "fn": "imgui_end",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin_closed",
+      "namespace": "host",
+      "fn": "imgui_begin_closed",
+      "global": true,
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "w",
+          "type": "float"
+        },
+        {
+          "name": "h",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_set_pos",
+      "namespace": "host",
+      "fn": "imgui_set_pos",
+      "global": true,
+      "args": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_set_size",
+      "namespace": "host",
+      "fn": "imgui_set_size",
+      "global": true,
+      "args": [
+        {
+          "name": "w",
+          "type": "float"
+        },
+        {
+          "name": "h",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_same_line",
+      "namespace": "host",
+      "fn": "imgui_same_line",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_separator",
+      "namespace": "host",
+      "fn": "imgui_separator",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_spacing",
+      "namespace": "host",
+      "fn": "imgui_spacing",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_new_line",
+      "namespace": "host",
+      "fn": "imgui_new_line",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin_disabled",
+      "namespace": "host",
+      "fn": "imgui_begin_disabled",
+      "global": true,
+      "args": [
+        {
+          "name": "disabled",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_end_disabled",
+      "namespace": "host",
+      "fn": "imgui_end_disabled",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin_child",
+      "namespace": "host",
+      "fn": "imgui_begin_child",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "w",
+          "type": "float"
+        },
+        {
+          "name": "h",
+          "type": "float"
+        },
+        {
+          "name": "border",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_end_child",
+      "namespace": "host",
+      "fn": "imgui_end_child",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin_menu_bar",
+      "namespace": "host",
+      "fn": "imgui_begin_menu_bar",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_end_menu_bar",
+      "namespace": "host",
+      "fn": "imgui_end_menu_bar",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin_menu",
+      "namespace": "host",
+      "fn": "imgui_begin_menu",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_end_menu",
+      "namespace": "host",
+      "fn": "imgui_end_menu",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_menu_item",
+      "namespace": "host",
+      "fn": "imgui_menu_item",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "selected",
+          "type": "float"
+        },
+        {
+          "name": "enabled",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin_tab_bar",
+      "namespace": "host",
+      "fn": "imgui_begin_tab_bar",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_end_tab_bar",
+      "namespace": "host",
+      "fn": "imgui_end_tab_bar",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin_tab_item",
+      "namespace": "host",
+      "fn": "imgui_begin_tab_item",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_end_tab_item",
+      "namespace": "host",
+      "fn": "imgui_end_tab_item",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_begin_table",
+      "namespace": "host",
+      "fn": "imgui_begin_table",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "cols",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_end_table",
+      "namespace": "host",
+      "fn": "imgui_end_table",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_table_next_row",
+      "namespace": "host",
+      "fn": "imgui_table_next_row",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_table_next_column",
+      "namespace": "host",
+      "fn": "imgui_table_next_column",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_table_headers_row",
+      "namespace": "host",
+      "fn": "imgui_table_headers_row",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_text",
+      "namespace": "host",
+      "fn": "imgui_text",
+      "global": true,
+      "args": [
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_text_wrapped",
+      "namespace": "host",
+      "fn": "imgui_text_wrapped",
+      "global": true,
+      "args": [
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_text_disabled",
+      "namespace": "host",
+      "fn": "imgui_text_disabled",
+      "global": true,
+      "args": [
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_text_colored",
+      "namespace": "host",
+      "fn": "imgui_text_colored",
+      "global": true,
+      "args": [
+        {
+          "name": "text",
+          "type": "string"
+        },
+        {
+          "name": "r",
+          "type": "float"
+        },
+        {
+          "name": "g",
+          "type": "float"
+        },
+        {
+          "name": "b",
+          "type": "float"
+        },
+        {
+          "name": "a",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_label_text",
+      "namespace": "host",
+      "fn": "imgui_label_text",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_bullet_text",
+      "namespace": "host",
+      "fn": "imgui_bullet_text",
+      "global": true,
+      "args": [
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_button",
+      "namespace": "host",
+      "fn": "imgui_button",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_small_button",
+      "namespace": "host",
+      "fn": "imgui_small_button",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_invisible_button",
+      "namespace": "host",
+      "fn": "imgui_invisible_button",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "w",
+          "type": "float"
+        },
+        {
+          "name": "h",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_arrow_button",
+      "namespace": "host",
+      "fn": "imgui_arrow_button",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "dir",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_checkbox",
+      "namespace": "host",
+      "fn": "imgui_checkbox",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_radio_button",
+      "namespace": "host",
+      "fn": "imgui_radio_button",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "active",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_slider_float",
+      "namespace": "host",
+      "fn": "imgui_slider_float",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        },
+        {
+          "name": "min",
+          "type": "float"
+        },
+        {
+          "name": "max",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_slider_int",
+      "namespace": "host",
+      "fn": "imgui_slider_int",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        },
+        {
+          "name": "min",
+          "type": "float"
+        },
+        {
+          "name": "max",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_drag_float",
+      "namespace": "host",
+      "fn": "imgui_drag_float",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        },
+        {
+          "name": "speed",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_drag_int",
+      "namespace": "host",
+      "fn": "imgui_drag_int",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        },
+        {
+          "name": "speed",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_input_float",
+      "namespace": "host",
+      "fn": "imgui_input_float",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_input_int",
+      "namespace": "host",
+      "fn": "imgui_input_int",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_input_text",
+      "namespace": "host",
+      "fn": "imgui_input_text",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_combo",
+      "namespace": "host",
+      "fn": "imgui_combo",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "current",
+          "type": "float"
+        },
+        {
+          "name": "items",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_list_box",
+      "namespace": "host",
+      "fn": "imgui_list_box",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "current",
+          "type": "float"
+        },
+        {
+          "name": "items",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_selectable",
+      "namespace": "host",
+      "fn": "imgui_selectable",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "selected",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_progress_bar",
+      "namespace": "host",
+      "fn": "imgui_progress_bar",
+      "global": true,
+      "args": [
+        {
+          "name": "fraction",
+          "type": "float"
+        },
+        {
+          "name": "w",
+          "type": "float"
+        },
+        {
+          "name": "h",
+          "type": "float"
+        },
+        {
+          "name": "overlay",
+          "type": "string"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_plot_value",
+      "namespace": "host",
+      "fn": "imgui_plot_value",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_color_edit",
+      "namespace": "host",
+      "fn": "imgui_color_edit",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "packed",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_tree_node",
+      "namespace": "host",
+      "fn": "imgui_tree_node",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_tree_pop",
+      "namespace": "host",
+      "fn": "imgui_tree_pop",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_collapsing_header",
+      "namespace": "host",
+      "fn": "imgui_collapsing_header",
+      "global": true,
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_set_next_item_width",
+      "namespace": "host",
+      "fn": "imgui_set_next_item_width",
+      "global": true,
+      "args": [
+        {
+          "name": "w",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_push_item_width",
+      "namespace": "host",
+      "fn": "imgui_push_item_width",
+      "global": true,
+      "args": [
+        {
+          "name": "w",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_pop_item_width",
+      "namespace": "host",
+      "fn": "imgui_pop_item_width",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_push_id",
+      "namespace": "host",
+      "fn": "imgui_push_id",
+      "global": true,
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_pop_id",
+      "namespace": "host",
+      "fn": "imgui_pop_id",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_tooltip",
+      "namespace": "host",
+      "fn": "imgui_tooltip",
+      "global": true,
+      "args": [
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_is_item_hovered",
+      "namespace": "host",
+      "fn": "imgui_is_item_hovered",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_is_item_active",
+      "namespace": "host",
+      "fn": "imgui_is_item_active",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_is_window_hovered",
+      "namespace": "host",
+      "fn": "imgui_is_window_hovered",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_set_item_default",
+      "namespace": "host",
+      "fn": "imgui_set_item_default",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_show_demo",
+      "namespace": "host",
+      "fn": "imgui_show_demo",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_want_mouse",
+      "namespace": "host",
+      "fn": "imgui_want_mouse",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_want_keyboard",
+      "namespace": "host",
+      "fn": "imgui_want_keyboard",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_hovered",
+      "namespace": "host",
+      "fn": "imgui_hovered",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_frame",
+      "namespace": "host",
+      "fn": "imgui_frame",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "manual": null
+    },
+    {
+      "name": "host.imgui_last_cmd_count",
+      "namespace": "host",
+      "fn": "imgui_last_cmd_count",
+      "global": true,
+      "args": [],
       "returns": "float",
       "ctx": true,
       "manual": null

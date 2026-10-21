@@ -569,7 +569,18 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
                 WGPURenderPassEncoder pass = nullptr;
                 begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
-                wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
+                /* 裁剪矩形：`clip_w/h > 0` 时用网格自带的（ImGui 的 scissor），否则用整个视图。
+                 * 两者取**交集**并夹到视图内，避免越界（WebGPU 要求 scissor 在附件范围内）。 */
+                int sx = v.vx, sy = v.vy, sw = v.vw, sh = v.vh;
+                if (m.clip_w > 0.0F && m.clip_h > 0.0F) {
+                    const int cx = (int)(m.clip_x + 0.5F), cy = (int)(m.clip_y + 0.5F);
+                    const int cw = (int)(m.clip_w + 0.5F), ch = (int)(m.clip_h + 0.5F);
+                    const int x0 = std::max(sx, cx), y0 = std::max(sy, cy);
+                    const int x1 = std::min(sx + sw, cx + cw), y1 = std::min(sy + sh, cy + ch);
+                    sx = x0; sy = y0; sw = std::max(0, x1 - x0); sh = std::max(0, y1 - y0);
+                    if (sw <= 0 || sh <= 0) { wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass); wgpuBindGroupRelease(bgroup); continue; }
+                }
+                wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)sx, (uint32_t)sy, (uint32_t)sw, (uint32_t)sh);
                 wgpuRenderPassEncoderSetPipeline(pass, pipe);
                 wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
                 wgpuRenderPassEncoderSetVertexBuffer(pass, 0, mvbuf, 0, (uint64_t)mverts.size() * sizeof(MeshVertex));

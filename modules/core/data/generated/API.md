@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **199** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **25** 个 · 插件接口 **1** 个。
+统计：脚本 API **273** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **25** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -232,6 +232,80 @@
 | `spine_sequence_path` | id: float, slot: float | string | ctx |
 | `spine_sequence_value` | id: float, slot: float, what: float | float | ctx |
 | `spine_set_sequence_index` | id: float, slot: float, frame: float | float | ctx |
+| `imgui_ready` | — | float | ctx |
+| `imgui_enabled` | — | float | ctx |
+| `imgui_set_enabled` | on: float | float | ctx |
+| `imgui_begin` | title: string | float | ctx |
+| `imgui_end` | — | void | ctx |
+| `imgui_begin_closed` | title: string, x: float, y: float, w: float, h: float | float | ctx |
+| `imgui_set_pos` | x: float, y: float | void | ctx |
+| `imgui_set_size` | w: float, h: float | void | ctx |
+| `imgui_same_line` | — | void | ctx |
+| `imgui_separator` | — | void | ctx |
+| `imgui_spacing` | — | void | ctx |
+| `imgui_new_line` | — | void | ctx |
+| `imgui_begin_disabled` | disabled: float | void | ctx |
+| `imgui_end_disabled` | — | void | ctx |
+| `imgui_begin_child` | id: string, w: float, h: float, border: float | float | ctx |
+| `imgui_end_child` | — | void | ctx |
+| `imgui_begin_menu_bar` | — | float | ctx |
+| `imgui_end_menu_bar` | — | void | ctx |
+| `imgui_begin_menu` | label: string | float | ctx |
+| `imgui_end_menu` | — | void | ctx |
+| `imgui_menu_item` | label: string, selected: float, enabled: float | float | ctx |
+| `imgui_begin_tab_bar` | id: string | float | ctx |
+| `imgui_end_tab_bar` | — | void | ctx |
+| `imgui_begin_tab_item` | label: string | float | ctx |
+| `imgui_end_tab_item` | — | void | ctx |
+| `imgui_begin_table` | id: string, cols: float | float | ctx |
+| `imgui_end_table` | — | void | ctx |
+| `imgui_table_next_row` | — | void | ctx |
+| `imgui_table_next_column` | — | void | ctx |
+| `imgui_table_headers_row` | — | void | ctx |
+| `imgui_text` | text: string | void | ctx |
+| `imgui_text_wrapped` | text: string | void | ctx |
+| `imgui_text_disabled` | text: string | void | ctx |
+| `imgui_text_colored` | text: string, r: float, g: float, b: float, a: float | void | ctx |
+| `imgui_label_text` | label: string, value: string | void | ctx |
+| `imgui_bullet_text` | text: string | void | ctx |
+| `imgui_button` | label: string | float | ctx |
+| `imgui_small_button` | label: string | float | ctx |
+| `imgui_invisible_button` | id: string, w: float, h: float | float | ctx |
+| `imgui_arrow_button` | id: string, dir: float | float | ctx |
+| `imgui_checkbox` | label: string, value: float | float | ctx |
+| `imgui_radio_button` | label: string, active: float | float | ctx |
+| `imgui_slider_float` | label: string, value: float, min: float, max: float | float | ctx |
+| `imgui_slider_int` | label: string, value: float, min: float, max: float | float | ctx |
+| `imgui_drag_float` | label: string, value: float, speed: float | float | ctx |
+| `imgui_drag_int` | label: string, value: float, speed: float | float | ctx |
+| `imgui_input_float` | label: string, value: float | float | ctx |
+| `imgui_input_int` | label: string, value: float | float | ctx |
+| `imgui_input_text` | label: string, text: string | string | ctx |
+| `imgui_combo` | label: string, current: float, items: string | float | ctx |
+| `imgui_list_box` | label: string, current: float, items: string | float | ctx |
+| `imgui_selectable` | label: string, selected: float | float | ctx |
+| `imgui_progress_bar` | fraction: float, w: float, h: float, overlay: string | void | ctx |
+| `imgui_plot_value` | id: string, value: float | void | ctx |
+| `imgui_color_edit` | label: string, packed: float | float | ctx |
+| `imgui_tree_node` | label: string | float | ctx |
+| `imgui_tree_pop` | — | void | ctx |
+| `imgui_collapsing_header` | label: string | float | ctx |
+| `imgui_set_next_item_width` | w: float | void | ctx |
+| `imgui_push_item_width` | w: float | void | ctx |
+| `imgui_pop_item_width` | — | void | ctx |
+| `imgui_push_id` | id: string | void | ctx |
+| `imgui_pop_id` | — | void | ctx |
+| `imgui_tooltip` | text: string | void | ctx |
+| `imgui_is_item_hovered` | — | float | ctx |
+| `imgui_is_item_active` | — | float | ctx |
+| `imgui_is_window_hovered` | — | float | ctx |
+| `imgui_set_item_default` | — | void | ctx |
+| `imgui_show_demo` | — | float | ctx |
+| `imgui_want_mouse` | — | float | ctx |
+| `imgui_want_keyboard` | — | float | ctx |
+| `imgui_hovered` | — | float | ctx |
+| `imgui_frame` | — | float | ctx |
+| `imgui_last_cmd_count` | — | float | ctx |
 
 ## 2. 控制面方法（control_list，AI/MCP）
 
@@ -311,7 +385,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 - `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float
 - `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
-- `mesh`：vertices: const float*, uvs: const float*, colors: const float*, dark_colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, z: int32_t
+- `mesh`：vertices: const float*, uvs: const float*, colors: const float*, dark_colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float, z: int32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|

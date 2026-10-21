@@ -15,6 +15,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <print>
+#include <cstdlib>
+#include <print>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -57,21 +59,16 @@ inline float to_target_x(float x) { return g_scale != 0.0F ? (x - g_off_x) / g_s
 inline float to_target_y(float y) { return g_scale != 0.0F ? (y - g_off_y) / g_scale : y; }
 
 /* 字体图集在 ImGui 1.93 里就是一个 ImTextureData（ImFontAtlas::TexData），
- * 由**后端**负责：看到 WantCreate/WantUpdates 就上传纹理，然后 SetTexID() + SetStatus(OK)。
- * 我们这里只把它标记为"已由宿主接管"（用户纹理本模块不暴露，故不做通用纹理管理）。
+ * 由**后端**负责：上传纹理后 SetTexID() + SetStatus(OK)。
  *
- * 若不走这一步，ImDrawCmd::GetTexID() 会命中 ImGui 的断言
- *（"ImDrawCmd is referring to ImTextureData that wasn't uploaded"）。 */
+ * ⚠️ 关键时序（实测踩坑）：设了 `RendererHasTextures` 之后，图集是 ImGui 在
+ * **NewFrame() 内部**懒构建的（imgui_draw.cpp: ImFontAtlasBuildBeginFrame）。
+ * 所以 init 阶段 `TexData` 还是空的 —— 这里**只设标志**，不认领、不 Build、不加代数；
+ * 真正的认领放到 NewFrame 之后（见 mq_imgui_begin_frame 末尾）。 */
 void adopt_font_texture() {
     ImGuiIO &io = ImGui::GetIO();
     io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
-    g_font_texdata = io.Fonts->TexData;
-    if (!g_font_texdata) return;
-    /* TexID 用宿主回填的句柄；宿主可能在本帧稍后才上传 → 先给一个非零占位值，
-     * 上传完成后由 mq_imgui_set_font_texture() 覆盖。 */
-    g_font_texdata->SetTexID(g_font_tex != 0 ? (ImTextureID)g_font_tex : (ImTextureID)1);
-    g_font_texdata->SetStatus(ImTextureStatus_OK);
-    ++g_font_gen;
+    g_font_texdata = nullptr;      // 等 NewFrame 建好后再认领
 }
 
 } // namespace
@@ -79,6 +76,10 @@ void adopt_font_texture() {
 extern "C" {
 
 int mq_imgui_init(float font_size, float pixel_scale) {
+    return mq_imgui_init_with_font(nullptr, font_size, pixel_scale);
+}
+
+int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_scale) {
     if (g_ready) return 0;
     IMGUI_CHECKVERSION();
     if (!ImGui::CreateContext()) return 1;
@@ -96,7 +97,23 @@ int mq_imgui_init(float font_size, float pixel_scale) {
      *（Alpha8 需要后端自己扩成 RGBA，多一步且易错）。
      * 注：1.93 里这是**公开字段** TexDesiredFormat，不是 Set 方法。 */
     io.Fonts->TexDesiredFormat = ImTextureFormat_RGBA32;
-    if (g_font_size > 0.0F) io.Fonts->AddFontDefault();
+
+    /* 字体：TTF（含 CJK）+ 常用简体中文范围；没有 TTF 才退默认（只有 ASCII → 中文会是 '?'）。 */
+    bool loaded = false;
+    if (ttf_path && *ttf_path && g_font_size > 0.0F) {
+        ImFontConfig cfg;
+        cfg.SizePixels = g_font_size * g_pixel_scale;
+        /* OverrideGlyphOffset 保持默认；范围取"常用简体中文"（约 2500 字）——够面板文案用，
+         * 且图集不会过大（全量 CJK 会到几 MB 图集，没必要）。 */
+        cfg.GlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+        if (io.Fonts->AddFontFromFileTTF(ttf_path, cfg.SizePixels, &cfg)) loaded = true;
+    }
+    if (!loaded) {
+        if (g_font_size > 0.0F) io.Fonts->AddFontDefault();
+    }
+    std::print(stderr, "[imgui] font: path='{}' size={:.1f}px → {}\n",
+               ttf_path && *ttf_path ? ttf_path : "(default)", g_font_size,
+               loaded ? "TTF(含 CJK 范围)" : "内置默认（仅 ASCII）");
     /* 按 ImGui 1.93 官方后端（imgui_impl_*）的模式：设好 RendererHasTextures 后**由 ImGui
      * 自己构建图集**，后端**不**手动调 Fonts->Build()。
      *
@@ -109,7 +126,7 @@ int mq_imgui_init(float font_size, float pixel_scale) {
      *
      * 所以这里只设标志 + 触发一次懒构建（走 ImGui 自己的路径），不手动 Build()。 */
     adopt_font_texture();
-    g_font_texdata = io.Fonts->TexData;      // 可能仍为 null（首帧后才就绪）
+    g_font_texdata = nullptr;                // NewFrame 之后才建好（见上）
     g_ready = true;
     return 0;
 }
@@ -126,19 +143,12 @@ int mq_imgui_ready(void) { return g_ready ? 1 : 0; }
 
 const uint8_t *mq_imgui_font_pixels(int *out_w, int *out_h) {
     if (!g_ready) return nullptr;
-    /* 懒构建：图集在**标志已设之后**才构建（见 mq_imgui_init 的踩坑注释）。
-     * 宿主第一次取像素时触发一次；建好后再取就只是读。 */
-    if (!g_font_texdata) {
-        ImGuiIO &io = ImGui::GetIO();
-        io.Fonts->Build();
-        g_font_texdata = io.Fonts->TexData;
-        if (!g_font_texdata) return nullptr;
-        ++g_font_gen;
-        if (g_font_tex != 0) {
-            g_font_texdata->SetTexID((ImTextureID)g_font_tex);
-            g_font_texdata->SetStatus(ImTextureStatus_OK);
-        }
-    }
+    /* **不**在这里 Build：设了 RendererHasTextures 之后，图集由 ImGui 在
+     * NewFrame() 内部构建（imgui_draw.cpp: ImFontAtlasBuildBeginFrame）。
+     * 手动 Build 会命中 "Build() before RendererHasTextures got set" 断言并早退，
+     * 图集永远停留在未构建状态（实测：512x128 且没有 CJK 字形 → 中文变方块）。
+     * 所以这里只读取"NewFrame 之后认领好的" TexData。 */
+    if (!g_font_texdata || !g_font_texdata->Pixels) return nullptr;
     if (out_w) *out_w = g_font_texdata->Width;
     if (out_h) *out_h = g_font_texdata->Height;
     return (const uint8_t *)g_font_texdata->Pixels;
@@ -150,6 +160,12 @@ void mq_imgui_set_font_texture(uint64_t handle) {
         g_font_texdata->SetTexID((ImTextureID)handle);
         g_font_texdata->SetStatus(ImTextureStatus_OK);
     }
+}
+
+int mq_imgui_font_dirty(void) {
+    if (!g_ready) return 0;
+    if (!g_font_texdata) return 1;                       // 还没认领 → 需要（等 NewFrame 后）
+    return g_font_texdata->Status != ImTextureStatus_OK ? 1 : 0;
 }
 uint64_t mq_imgui_font_texture(void) { return g_font_tex; }
 uint32_t mq_imgui_font_generation(void) { return g_font_gen; }
@@ -167,7 +183,7 @@ void mq_imgui_input_key(int key, int down) {
     if (key >= 0 && key < 512) io.AddKeyEvent((ImGuiKey)key, down != 0);
 }
 
-void mq_imgui_input_text(const char *utf8) {
+void mq_imgui_input_chars(const char *utf8) {
     if (!g_ready || !utf8) return;
     ImGui::GetIO().AddInputCharactersUTF8(utf8);
 }
@@ -195,6 +211,18 @@ int mq_imgui_begin_frame(float show_w, float show_h, float target_w, float targe
     io.AddMouseButtonEvent(0, g_ptr_down);
 
     ImGui::NewFrame();
+
+    /* NewFrame 内部（ImFontAtlasBuildBeginFrame）才会真正构建字体图集 → 这里认领。
+     * 认领后：TexID 用宿主回填的句柄（未回填时给非零占位，避免 GetTexID 断言），
+     * 代数 +1 通知宿主"该上传/重传纹理了"。 */
+    if (io.Fonts->TexData && io.Fonts->TexData != g_font_texdata) {
+        g_font_texdata = io.Fonts->TexData;
+        g_font_texdata->SetTexID(g_font_tex != 0 ? (ImTextureID)g_font_tex : (ImTextureID)1);
+        g_font_texdata->SetStatus(ImTextureStatus_OK);
+        ++g_font_gen;
+        std::print(stderr, "[imgui] font atlas {}x{} (gen={})\n",
+                   g_font_texdata->Width, g_font_texdata->Height, g_font_gen);
+    }
     return 0;
 }
 
@@ -224,20 +252,24 @@ int mq_imgui_end_frame(mq_imgui_frame *out) {
             if (c.UserCallback) continue;                  // 自定义回调本模块不支持（宿主自己处理）
             if (c.ElemCount == 0) continue;
             const uint32_t icount = (uint32_t)c.ElemCount;
+            /* 本命令的顶点区间：ImGui 用 `VtxOffset` 指出它在**整个 list 顶点缓冲**里的起点。
+             * 不处理它就会把别的命令的顶点拷进来 → 画面糊成一片/串行（实测过）。
+             * 同一 list 里 `VtxOffset` 单调递增，所以本命令顶点数 = 上一条的起点差；
+             * 最后一条用 max(索引)+1-VtxOffset 推。 */
+            const uint32_t vstart = c.VtxOffset;
+            const uint32_t vbase = (uint32_t)(g_pos.size() / 2);
 
-            /* 顶点数 = 本命令索引里用到的最大局部索引 + 1 */
-            uint32_t lmax = 0;
+            /* 顶点：ImDrawVert 默认 pos(8B)+uv(8B)+col(4B)=20B；位置是显示坐标
+             * → 映射回目标像素空间（这样面板按窗口像素排版，但落点与引擎图元同空间）。
+             * 顶点数用索引覆盖范围推：max(索引) - VtxOffset + 1（索引相对 list 起点）。 */
+            uint32_t lmax = vstart;
             for (uint32_t i = 0; i < icount; ++i) {
                 const uint32_t v = (uint32_t)idx[c.IdxOffset + i];
                 if (v > lmax) lmax = v;
             }
-            const uint32_t vcount = lmax + 1;
-            const uint32_t vbase = (uint32_t)(g_pos.size() / 2);
-
-            /* 顶点：ImDrawVert 默认 pos(8B)+uv(8B)+col(4B)=20B；位置是显示坐标
-             * → 映射回目标像素空间（这样面板按窗口像素排版，但落点与引擎图元同空间）。 */
+            const uint32_t vcount = lmax - vstart + 1;
             for (uint32_t i = 0; i < vcount; ++i) {
-                const ImDrawVert &v = vtx[i];
+                const ImDrawVert &v = vtx[vstart + i];
                 g_pos.push_back(to_target_x(v.pos.x));
                 g_pos.push_back(to_target_y(v.pos.y));
                 g_uv.push_back(v.uv.x);
@@ -250,7 +282,7 @@ int mq_imgui_end_frame(mq_imgui_frame *out) {
                 g_col.push_back(rr); g_col.push_back(gg); g_col.push_back(bb); g_col.push_back(aa);
             }
             for (uint32_t i = 0; i < icount; ++i)
-                g_idx.push_back((uint32_t)idx[c.IdxOffset + i] + vbase);
+                g_idx.push_back((uint32_t)idx[c.IdxOffset + i] - vstart + vbase);
 
             mq_imgui_cmd cmd{};
             /* 只记偏移；指针在全部几何建好后统一回填（见循环之后）。 */

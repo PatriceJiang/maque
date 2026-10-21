@@ -24,6 +24,8 @@
 #include "sim/mq_sim.h"
 #include "canvas/mq_canvas.h"
 #include "anim/mq_spine2d.h"          // Spine 2D 官方运行时（docs/27）：骨架/实例/绘制数据
+#include "ui/mq_imgui.h"              // 引擎侧 ImGui 调试面板：帧管理/绘制数据导出
+#include "ui/mq_imgui_widgets.h"      // ImGui 控件 C ABI（runtime 不直接依赖 ImGui 头）
 
 #include <fstream>
 #include "core/control/mq_control.h"
@@ -311,6 +313,40 @@ struct Engine {
     void spine_extract(std::vector<mq_renderer_mesh>& out);   // 提取期：绘制数据 → 网格图元
     Spine* spine_of(int entity);               // 按实体 id 找实例（脚本 API 用）
     void spine_clear_events();                 // 帧边界（脚本之后、step 之前）：清事件记录
+
+    /* ---- ImGui 调试面板（引擎侧；docs/27 §ImGui）----
+     * 定位：**开发工具**，不是游戏 UI。游戏内 HUD 用声明式 ui.*（进场景/快照/可回放）；
+     * 面板是视图层：**不进快照、不进校验和、不参与模拟**（docs/10 确定性不受影响）。
+     * 绘制时机：脚本 update 之前 begin、**引擎所有图层（含 ui pass）之后** extract →
+     * 网格以 layer=MQ_IMGUI_LAYER 提交，天然在最上层；且写进同一像素缓冲 → 截图可见。 */
+    bool imgui_on = false;                     // 是否启用（MAQUE_IMGUI=1 / 脚本 imgui_set_enabled）
+    bool imgui_inited = false;
+    int imgui_tex = -1;                        // 字体图集纹理（gfx 纹理 id；-1=未上传）
+    uint32_t imgui_tex_gen = 0;                // 图集代数（变化 → 重传）
+    uint64_t imgui_frames = 0;                 // 已渲染帧数（自省）
+    int imgui_last_cmds = 0;                   // 上一帧导出的命令数（0 = 面板没画东西）
+    std::vector<mq_renderer_mesh> imgui_meshes;
+    /* 几何缓冲：每帧重建。命令里的指针指向这里 → 必须**先算总量再一次分配**，
+     * 不能边 push_back 边取地址（扩容会让先前指针悬空）。 */
+    std::vector<float> imgui_pos, imgui_uv, imgui_col;
+    std::vector<uint32_t> imgui_idx;
+    std::vector<mq_imgui_cmd> imgui_cmds;      // C ABI 导出的命令（拷贝一份，避免跨模块生命周期依赖）
+    /* 脚本侧小状态 */
+    std::unordered_map<std::string, std::string> imgui_text;    // input_text 的按键缓冲
+    std::unordered_map<std::string, std::vector<float>> imgui_plots;   // plot_value 的环形历史
+    std::vector<std::string> imgui_id_stack;                    // push_id 栈
+    bool imgui_demo = false;                                   // show_demo 状态
+    void imgui_setup();                        // 惰性初始化（首帧/首次脚本调用）
+    /* 本帧输入转发：**窗口像素**原始事件（iframe 是 step_frame 的局部量 → 传参进来）。
+     * 只记绝对位置/按键状态（ImGui 的 IO 需要持续状态，不是增量）。 */
+    void imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np,
+                          const mq_platform_key_event* keys, uint32_t nk);
+    void imgui_frame_begin(float dt);          // 开始一帧（脚本 update 之前）
+    void imgui_extract(std::vector<mq_renderer_mesh>& out);   // 结束帧 + 命令 → 网格图元
+    float imgui_ptr_x = 0, imgui_ptr_y = 0;    // 最近指针位置（窗口像素）
+    bool  imgui_ptr_down = false;              // 左键是否按住
+    bool  imgui_env_checked = false;           // 是否已按 MAQUE_IMGUI 决定过初始开关
+    bool  imgui_frame_active = false;          // 本帧已 begin（保证 end 一定配对）
     int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
      * 图集**按需增长**（任意 Unicode/CJK）→ 用 generation 判断是否需要重传纹理。 */
@@ -718,6 +754,9 @@ void Engine::step_frame() {
     if (platform) {
         mq_platform_pump(platform);
         if (window) mq_platform_poll(platform, &iframe);
+        /* ImGui 先吃**窗口像素**事件（它工作在窗口空间）；之后才把同一批转成世界坐标。
+         * 顺序不能反：转成世界坐标后就没有原始窗口坐标了。 */
+        imgui_input_feed(iframe.pointers, iframe.pointer_count, iframe.keys, iframe.key_count);
         /* 设备事件：窗口像素 → 世界坐标（只在此处转换一次；引擎内部一律世界坐标） */
         for (uint32_t i = 0; i < iframe.pointer_count; ++i)
             device_event_to_world(*this, &iframe.pointers[i]);
@@ -741,6 +780,16 @@ void Engine::step_frame() {
     (void)mq_platform_display_changed;   /* 尺寸变化由每帧解析自然覆盖（保留 API 供宿主查询） */
 
     sim_feed(frame);
+    /* ImGui：开始一帧（**必须在脚本 update 之前** —— 脚本里要调 imgui_begin/控件/imgui_end）。
+     * 内部还会按需初始化、上传字体图集纹理，并在 ImGui 要吃输入时清空本帧设备事件（不点穿）。 */
+    imgui_frame_begin(1.0F / 60.0F);
+    /* ③ 不点穿：ImGui 要吃鼠标/键盘 → 清空本帧设备事件，世界输入即被阻断。
+     * 判据来自 ImGui 本帧 NewFrame（上一帧的面板状态），这是 ImGui 的标准用法。
+     * 注：sim 注入走 input 模块内部路径，不受这里影响（CI 仍能驱动玩法）。 */
+    if (imgui_on && imgui_inited) {
+        if (mq_imgui_want_mouse()) iframe.pointer_count = 0;
+        if (mq_imgui_want_keyboard()) iframe.key_count = 0;
+    }
     // ② 输入帧：状态/事件（回放时忽略设备输入，只喂记录）
     if (input) {
         if (!mq_input_replaying(input) && window) mq_input_begin_frame(input, &iframe, frame);
@@ -796,6 +845,10 @@ void Engine::step_frame() {
         scene->extract(*this, draws);
         spine_extract(spine_meshes);                     // Spine：绘制数据 → 网格图元（与图元同序渲染）
     text_flush(draws);            // 文本阶段 2：刷新图集纹理并按最终尺寸计算 UV
+    /* ImGui：结束帧 → 绘制命令转成网格图元。**放在这里**是刻意的：
+     * 引擎所有图层（含 ui pass 的 layer=1）都已提取完 → 面板以 MQ_IMGUI_LAYER 提交，
+     * 天然画在最上层；且与其它图元一起进同一像素缓冲 → 截图里也有面板（可自证）。 */
+    imgui_extract(spine_meshes);
     }
     // ④ 世界校验和 + 周期快照（确定性验证 + 回滚点，docs/10 §4/§5）
     if (scene) {
@@ -3274,6 +3327,183 @@ void Engine::spine_extract(std::vector<mq_renderer_mesh>& out) {
     }
 }
 
+/* ---- ImGui 调试面板（docs/27 §ImGui）------------------------------------------------
+ *
+ * 三个约束决定了这里的写法：
+ *   ① **不进确定性**：面板是视图层 → 不写任何实体/组件、不进快照/校验和（docs/10）。
+ *   ② **画在所有引擎图层之上**：网格 layer = MQ_IMGUI_LAYER（引擎 UI 是 1），
+ *      在**引擎渲染完（含 ui pass）、present 之前**追加 → 截图里也有面板（可自证）。
+ *   ③ **不点穿**：ImGui 想要鼠标/键盘时，清空本帧设备事件，世界输入即被阻断。
+ *
+ * 未启用时（默认）**一次都不碰** ImGui 上下文 —— tank/flappy 等程序零开销。
+ */
+void Engine::imgui_setup() {
+    if (imgui_inited) return;
+    /* 字体：复用文本模块已解析的路径（MAQUE_FONT → scenes/fonts/*.ttf → 系统）。
+     * **必须给 TTF**：ImGui 默认字体只有 ASCII，中文会渲染成 '?'（实测）。
+     * 字号默认 18px（调试面板要能看清），可用 MAQUE_IMGUI_FONT_SIZE 覆盖。 */
+    text_setup();                                // 确保 font_path 已解析（幂等）
+    float fs = 18.0F;
+    if (const char* e = std::getenv("MAQUE_IMGUI_FONT_SIZE")) {
+        const float v = (float)std::atof(e);
+        if (v > 0.0F) fs = v;
+    }
+    /* 字体按"显示/目标"比例放大：窗口比设计分辨率大时，18px 字在屏幕上会糊。 */
+    float ps = 1.0F;
+    if (canvas.scale > 0.0F) {
+        ps = canvas.scale;
+        if (canvas.device_scale > 0.0F) ps *= canvas.device_scale;
+        if (ps <= 0.0F) ps = 1.0F;
+    }
+    if (mq_imgui_init_with_font(font_path.empty() ? nullptr : font_path.c_str(), fs, ps) != 0) {
+        std::print(stderr, "runtime: imgui init failed\n");
+        imgui_on = false;
+        return;
+    }
+    imgui_inited = true;
+    imgui_tex = -1;
+    imgui_tex_gen = 0;
+    std::print("runtime: imgui enabled (layer={}, font={} size={:.0f} scale={:.2f})\n",
+               MQ_IMGUI_LAYER, font_path.empty() ? "(default)" : font_path.c_str(), fs, ps);
+}
+
+/* 把本帧设备事件转发给 ImGui（**窗口像素坐标**；调用点在转成世界坐标**之前**）。
+ * ImGui 的显示空间就是窗口像素 → 不需要换算（画布缩放只影响世界层）。 */
+void Engine::imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np,
+                              const mq_platform_key_event* keys, uint32_t nk) {
+    if (!imgui_on || !imgui_inited) return;
+    float wheel = 0.0F;
+    for (uint32_t i = 0; i < np; ++i) {
+        const mq_platform_pointer_event& p = ptrs[i];
+        imgui_ptr_x = p.x;
+        imgui_ptr_y = p.y;
+        if (p.type == MQ_PLATFORM_POINTER_DOWN && p.button == 0) imgui_ptr_down = true;
+        else if (p.type == MQ_PLATFORM_POINTER_UP && p.button == 0) imgui_ptr_down = false;
+        else if (p.type == MQ_PLATFORM_POINTER_WHEEL) wheel += p.scroll_y != 0.0F ? p.scroll_y : p.dy;
+    }
+    mq_imgui_input_pointer(imgui_ptr_x, imgui_ptr_y, imgui_ptr_down ? 1 : 0, wheel);
+    for (uint32_t i = 0; i < nk; ++i) {
+        const mq_platform_key_event& k = keys[i];
+        mq_imgui_input_key((int)k.key, k.down ? 1 : 0);
+        if (k.down && k.text[0]) mq_imgui_input_chars(k.text);
+    }
+}
+
+void Engine::imgui_frame_begin(float dt) {
+    /* 首次调用时按 MAQUE_IMGUI 决定初始开关（默认**关**：不写脚本的游戏不受影响）。 */
+    if (!imgui_env_checked) {
+        imgui_env_checked = true;
+        const char* e = std::getenv("MAQUE_IMGUI");
+        if (e && *e && std::strcmp(e, "0") != 0) {
+            imgui_on = true;
+            std::print("runtime: imgui requested by MAQUE_IMGUI\n");
+        }
+    }
+    if (!imgui_on) return;
+    imgui_setup();
+    if (!imgui_inited) return;
+    const int target_w = TW;
+    const int target_h = (int)(H * ss + 0.5F);
+    if (target_w <= 0 || target_h <= 0) return;
+
+    /* 映射参数：显示空间 = 窗口像素，目标空间 = 渲染目标像素。
+     * 画布策略给出同一份映射（显示 = 目标*scale + offset）→ 逆变换由模块内部做。 */
+    const float show_w = (float)(win_w > 0 ? win_w : target_w);
+    const float show_h = (float)(win_h > 0 ? win_h : target_h);
+    float scale = canvas.scale > 0.0F ? canvas.scale : 1.0F;
+    float off_x = canvas.offset_x, off_y = canvas.offset_y;
+    if (!window) {                       // 无窗口（headless/截图）：显示空间 = 目标空间，1:1
+        scale = 1.0F; off_x = 0.0F; off_y = 0.0F;
+    }
+    const float dpi = (canvas.device_scale > 0.0F ? canvas.device_scale : 1.0F) * scale;
+    mq_imgui_begin_frame(show_w, show_h, (float)target_w, (float)target_h,
+                        scale, off_x, off_y, dt, dpi);
+    imgui_frame_active = true;
+
+    /* 字体图集纹理：**必须在 mq_imgui_begin_frame 之后**判断 ——
+     * ImGui 1.92+ 是**动态图集**：ImGui 在 NewFrame 内部构建/增量烘焙字形，
+     * 有新字形时把 ImTextureData 标成 WantUpdates（`mq_imgui_font_dirty()`）。
+     * 之前只上传一次 → 后续烘焙的字形查不到 → 中文/生僻字渲染成方块（实测）。
+     * 本引擎没有 update_texture，就 destroy+create；图集小且只在有新字形时发生。 */
+    if (imgui_tex < 0 || mq_imgui_font_dirty()) {
+        int fw = 0, fh = 0;
+        const uint8_t* px = mq_imgui_font_pixels(&fw, &fh);
+        if (px && fw > 0 && fh > 0 && rapi && rself && rapi->create_texture) {
+            if (imgui_tex >= 0 && rapi->destroy_texture) rapi->destroy_texture(rself, imgui_tex);
+            imgui_tex = rapi->create_texture(rself, px, fw, fh);
+            if (imgui_tex >= 0) mq_imgui_set_font_texture((uint64_t)(imgui_tex + 1));
+            if (imgui_tex_gen != mq_imgui_font_generation()) {
+                imgui_tex_gen = mq_imgui_font_generation();
+                std::print("runtime: imgui font atlas {}x{} → texture {}\n", fw, fh, imgui_tex);
+            }
+        }
+    }
+    /* 注：③ "不点穿"（清空本帧设备事件）放在调用点 —— iframe 是 step_frame 的局部量。 */
+}
+
+/* 结束帧并把命令转成引擎网格图元（在 text_flush 之后、渲染之前调用）。
+ * 几何拷进 Engine 自己的缓冲：C ABI 的指针只在"本帧 end_frame → 下帧 begin_frame"有效，
+ * 而网格要到渲染时才被消费 —— 拷一份最稳，且避免跨模块生命周期耦合。 */
+void Engine::imgui_extract(std::vector<mq_renderer_mesh>& out) {
+    if (!imgui_on || !imgui_inited || !imgui_frame_active) return;
+    imgui_frame_active = false;                  // 一帧只 end 一次（防脚本误关导致状态错乱）
+    mq_imgui_frame f{};
+    if (mq_imgui_end_frame(&f) != 0 || f.cmd_count == 0 || !f.cmds) {
+        imgui_last_cmds = 0;
+        return;
+    }
+    imgui_last_cmds = (int)f.cmd_count;
+    ++imgui_frames;
+
+    /* 一次算出总顶点/索引量 → reserve（避免边写边扩容） */
+    size_t nv = 0, ni = 0;
+    for (uint32_t i = 0; i < f.cmd_count; ++i) { nv += f.cmds[i].vertex_count; ni += f.cmds[i].index_count; }
+    imgui_pos.clear(); imgui_uv.clear(); imgui_col.clear(); imgui_idx.clear();
+    imgui_pos.reserve(nv * 2); imgui_uv.reserve(nv * 2); imgui_col.reserve(nv * 4);
+    imgui_idx.reserve(ni);
+    out.reserve(out.size() + f.cmd_count);
+
+    for (uint32_t ci = 0; ci < f.cmd_count; ++ci) {
+        const mq_imgui_cmd& c = f.cmds[ci];
+        if (c.vertex_count == 0 || c.index_count == 0) continue;
+        const uint32_t base = (uint32_t)(imgui_pos.size() / 2);
+        imgui_pos.insert(imgui_pos.end(), c.positions, c.positions + (size_t)c.vertex_count * 2);
+        imgui_uv.insert(imgui_uv.end(), c.uvs, c.uvs + (size_t)c.vertex_count * 2);
+        imgui_col.insert(imgui_col.end(), c.colors, c.colors + (size_t)c.vertex_count * 4);
+        const size_t idx_off = imgui_idx.size();
+        for (uint32_t k = 0; k < c.index_count; ++k) imgui_idx.push_back(c.indices[k] + base);
+
+        /* 纹理：命令里的句柄 = gfx 纹理 id + 1（字体图集）。未上传 → -1（渲染器跳过该批）。 */
+        int tex = -1;
+        if (c.texture > 1) {
+            const int id = (int)(c.texture - 1);
+            if (rapi && rapi->has_texture && rapi->has_texture(rself, id)) tex = id;
+        }
+        mq_renderer_mesh m{};
+        m.vertices = imgui_pos.data() + (size_t)base * 2;
+        m.uvs = imgui_uv.data() + (size_t)base * 2;
+        m.colors = imgui_col.data() + (size_t)base * 4;
+        m.dark_colors = nullptr;                 // 面板不参与 TintBlack（nullptr = 等价默认真黑）
+        m.indices = imgui_idx.data() + idx_off;
+        m.vertex_count = c.vertex_count;
+        m.first_index = 0;                       // 本命令自带独立索引段
+        m.index_count = c.index_count;
+        m.base_vertex = 0;                       // 索引已含全局 base（上面的 +base）
+        m.texture = tex;
+        m.blend = 0;                             // normal（ImGui 默认 alpha 混合）
+        m.pma = 0;                               // 图集是直通 RGBA（非预乘）
+        m.layer = MQ_IMGUI_LAYER;                // ★ 在所有引擎图层之上
+        m.z = (int32_t)ci;                       // 命令序 = ImGui 自身的绘制顺序
+        /* 裁剪矩形：ImGui 的 scissor（子窗口/文本裁剪/滑块内部都靠它）。
+         * 不传会让内容溢出到框外（实测：面板文字糊成一片、子窗口压住上面的行）。 */
+        m.clip_x = c.clip_x;
+        m.clip_y = c.clip_y;
+        m.clip_w = c.clip_w;
+        m.clip_h = c.clip_h;
+        out.push_back(m);
+    }
+}
+
 /* UI 组件语义（role 驱动；引擎不认具体类型名，docs/17）：
  *   · ui_layout：H/V/GRID 自动布局（Layout）
  *   · ui_progress：按 value 调整填充子节点宽度（ProgressBar）
@@ -5089,6 +5319,226 @@ float ui_pressed(void* ctx, float id) {
 }
 
 } // namespace host
+
+/* ---- ImGui 脚本 API ---- */
+/* ImGui 脚本 API 实现（host 命名空间）。
+ *
+ * 分两类：
+ *   ① **Engine 相关**（启用开关/帧计数/输入隔离）→ 读 Engine 成员；
+ *   ② **纯控件** → 一行转发到 `mq_imgui_*` C ABI（模块边界干净：runtime 不 include imgui.h）。
+ *
+ * 所有函数都过同一道闸：未启用/未初始化时返回 0 或 ""，**脚本侧无需防御**
+ *（面板是可选开发工具，关掉后脚本里的 imgui_* 调用变成无害空操作）。
+ */
+namespace host {
+
+/* 统一前置：面板未启用 → 不调 ImGui（避免 ImGui 状态机被半初始化）。
+ * 返回 null 表示"不要把调用透给模块"。 */
+static Engine* imgui_ctx(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    if (!eng || !eng->imgui_on) return nullptr;
+    if (!eng->imgui_inited) eng->imgui_setup();
+    return eng->imgui_inited ? eng : nullptr;
+}
+
+float imgui_ready(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return (eng && eng->imgui_inited) ? 1.0F : 0.0F;
+}
+
+float imgui_enabled(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return (eng && eng->imgui_on) ? 1.0F : 0.0F;
+}
+
+float imgui_set_enabled(void* ctx, float on) {
+    auto* eng = (Engine*)ctx;
+    if (!eng) return 0.0F;
+    const bool want = on != 0.0F;
+    if (!want && eng->imgui_inited) {
+        /* 关掉时释放上下文与纹理：不再占 GPU，且脚本调用变空操作。 */
+        mq_imgui_shutdown();
+        if (eng->imgui_tex >= 0 && eng->rapi && eng->rself && eng->rapi->destroy_texture)
+            eng->rapi->destroy_texture(eng->rself, eng->imgui_tex);
+        eng->imgui_tex = -1;
+        eng->imgui_tex_gen = 0;
+        eng->imgui_inited = false;
+        eng->imgui_meshes.clear();
+        std::print("runtime: imgui disabled\n");
+    }
+    eng->imgui_on = want;
+    if (want) eng->imgui_setup();
+    return eng->imgui_on ? 1.0F : 0.0F;
+}
+
+float imgui_begin(void* ctx, const char* title) {
+    Engine* eng = imgui_ctx(ctx);
+    return eng ? (float)mq_imgui_begin(title) : 0.0F;
+}
+
+void imgui_end(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_end(); }
+
+float imgui_begin_closed(void* ctx, const char* title, float x, float y, float w, float h) {
+    Engine* eng = imgui_ctx(ctx);
+    return eng ? (float)mq_imgui_begin_at(title, x, y, w, h) : 0.0F;
+}
+
+void imgui_set_pos(void* ctx, float x, float y) { if (imgui_ctx(ctx)) mq_imgui_set_pos(x, y); }
+void imgui_set_size(void* ctx, float w, float h) { if (imgui_ctx(ctx)) mq_imgui_set_size(w, h); }
+void imgui_same_line(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_same_line(); }
+void imgui_separator(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_separator(); }
+void imgui_spacing(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_spacing(); }
+void imgui_new_line(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_new_line(); }
+void imgui_begin_disabled(void* ctx, float disabled) { if (imgui_ctx(ctx)) mq_imgui_begin_disabled(disabled != 0.0F); }
+void imgui_end_disabled(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_end_disabled(); }
+float imgui_begin_child(void* ctx, const char* id, float w, float h, float border) {
+    Engine* eng = imgui_ctx(ctx);
+    return eng ? (float)mq_imgui_begin_child(id, w, h, border != 0.0F) : 0.0F;
+}
+void imgui_end_child(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_end_child(); }
+float imgui_begin_menu_bar(void* ctx) { Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_begin_menu_bar() : 0.0F; }
+void imgui_end_menu_bar(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_end_menu_bar(); }
+float imgui_begin_menu(void* ctx, const char* label) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_begin_menu(label) : 0.0F;
+}
+void imgui_end_menu(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_end_menu(); }
+float imgui_menu_item(void* ctx, const char* label, float selected, float enabled) {
+    Engine* e = imgui_ctx(ctx);
+    return e ? (float)mq_imgui_menu_item(label, selected != 0.0F, enabled != 0.0F) : 0.0F;
+}
+float imgui_begin_tab_bar(void* ctx, const char* id) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_begin_tab_bar(id) : 0.0F;
+}
+void imgui_end_tab_bar(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_end_tab_bar(); }
+float imgui_begin_tab_item(void* ctx, const char* label) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_begin_tab_item(label) : 0.0F;
+}
+void imgui_end_tab_item(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_end_tab_item(); }
+float imgui_begin_table(void* ctx, const char* id, float cols) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_begin_table(id, (int)cols) : 0.0F;
+}
+void imgui_end_table(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_end_table(); }
+void imgui_table_next_row(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_table_next_row(); }
+void imgui_table_next_column(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_table_next_column(); }
+void imgui_table_headers_row(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_table_headers_row(); }
+void imgui_text(void* ctx, const char* text) { if (imgui_ctx(ctx)) mq_imgui_text(text); }
+void imgui_text_wrapped(void* ctx, const char* text) { if (imgui_ctx(ctx)) mq_imgui_text_wrapped(text); }
+void imgui_text_disabled(void* ctx, const char* text) { if (imgui_ctx(ctx)) mq_imgui_text_disabled(text); }
+void imgui_text_colored(void* ctx, const char* text, float r, float g, float b, float a) {
+    if (imgui_ctx(ctx)) mq_imgui_text_colored(text, r, g, b, a);
+}
+void imgui_label_text(void* ctx, const char* label, const char* value) {
+    if (imgui_ctx(ctx)) mq_imgui_label_text(label, value);
+}
+void imgui_bullet_text(void* ctx, const char* text) { if (imgui_ctx(ctx)) mq_imgui_bullet_text(text); }
+float imgui_button(void* ctx, const char* label) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_button(label) : 0.0F;
+}
+float imgui_small_button(void* ctx, const char* label) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_small_button(label) : 0.0F;
+}
+float imgui_invisible_button(void* ctx, const char* id, float w, float h) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_invisible_button(id, w, h) : 0.0F;
+}
+float imgui_arrow_button(void* ctx, const char* id, float dir) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_arrow_button(id, (int)dir) : 0.0F;
+}
+float imgui_checkbox(void* ctx, const char* label, float value) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_checkbox(label, value) : value;
+}
+float imgui_radio_button(void* ctx, const char* label, float active) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_radio_button(label, active != 0.0F) : 0.0F;
+}
+float imgui_slider_float(void* ctx, const char* label, float value, float min, float max) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_slider_float(label, value, min, max) : value;
+}
+float imgui_slider_int(void* ctx, const char* label, float value, float min, float max) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_slider_int(label, value, min, max) : value;
+}
+float imgui_drag_float(void* ctx, const char* label, float value, float speed) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_drag_float(label, value, speed) : value;
+}
+float imgui_drag_int(void* ctx, const char* label, float value, float speed) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_drag_int(label, value, speed) : value;
+}
+float imgui_input_float(void* ctx, const char* label, float value) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_input_float(label, value) : value;
+}
+float imgui_input_int(void* ctx, const char* label, float value) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_input_int(label, value) : value;
+}
+const char* imgui_input_text(void* ctx, const char* label, const char* text) {
+    Engine* e = imgui_ctx(ctx);
+    return e ? mq_imgui_input_text(label, text) : (text ? text : "");
+}
+float imgui_combo(void* ctx, const char* label, float current, const char* items) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_combo(label, current, items) : current;
+}
+float imgui_list_box(void* ctx, const char* label, float current, const char* items) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_list_box(label, current, items) : current;
+}
+float imgui_selectable(void* ctx, const char* label, float selected) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_selectable(label, selected != 0.0F) : 0.0F;
+}
+void imgui_progress_bar(void* ctx, float fraction, float w, float h, const char* overlay) {
+    if (imgui_ctx(ctx)) mq_imgui_progress_bar(fraction, w, h, overlay);
+}
+void imgui_plot_value(void* ctx, const char* id, float value) {
+    if (imgui_ctx(ctx)) mq_imgui_plot_value(id, value);
+}
+float imgui_color_edit(void* ctx, const char* label, float packed) {
+    Engine* e = imgui_ctx(ctx); return e ? mq_imgui_color_edit(label, packed) : packed;
+}
+float imgui_tree_node(void* ctx, const char* label) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_tree_node(label) : 0.0F;
+}
+void imgui_tree_pop(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_tree_pop(); }
+float imgui_collapsing_header(void* ctx, const char* label) {
+    Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_collapsing_header(label) : 0.0F;
+}
+void imgui_set_next_item_width(void* ctx, float w) { if (imgui_ctx(ctx)) mq_imgui_set_next_item_width(w); }
+void imgui_push_item_width(void* ctx, float w) { if (imgui_ctx(ctx)) mq_imgui_push_item_width(w); }
+void imgui_pop_item_width(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_pop_item_width(); }
+void imgui_push_id(void* ctx, const char* id) { if (imgui_ctx(ctx)) mq_imgui_push_id(id); }
+void imgui_pop_id(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_pop_id(); }
+void imgui_tooltip(void* ctx, const char* text) { if (imgui_ctx(ctx)) mq_imgui_tooltip(text); }
+float imgui_is_item_hovered(void* ctx) { Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_is_item_hovered() : 0.0F; }
+float imgui_is_item_active(void* ctx) { Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_is_item_active() : 0.0F; }
+float imgui_is_window_hovered(void* ctx) { Engine* e = imgui_ctx(ctx); return e ? (float)mq_imgui_is_window_hovered() : 0.0F; }
+void imgui_set_item_default(void* ctx) { if (imgui_ctx(ctx)) mq_imgui_set_item_default(); }
+
+float imgui_show_demo(void* ctx) {
+    Engine* eng = imgui_ctx(ctx);
+    if (!eng) return 0.0F;
+    int open = eng->imgui_demo ? 1 : 0;
+    mq_imgui_show_demo(&open);
+    eng->imgui_demo = open != 0;
+    return eng->imgui_demo ? 1.0F : 0.0F;
+}
+
+float imgui_want_mouse(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return (eng && eng->imgui_on && eng->imgui_inited) ? (float)mq_imgui_want_mouse() : 0.0F;
+}
+float imgui_want_keyboard(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return (eng && eng->imgui_on && eng->imgui_inited) ? (float)mq_imgui_want_keyboard() : 0.0F;
+}
+float imgui_hovered(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return (eng && eng->imgui_on && eng->imgui_inited) ? (float)mq_imgui_hovered() : 0.0F;
+}
+float imgui_frame(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return eng ? (float)eng->imgui_frames : 0.0F;
+}
+float imgui_last_cmd_count(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return eng ? (float)eng->imgui_last_cmds : 0.0F;
+}
+
+} // namespace host
+
 
 /* ---- 控制平面方法（引擎能力，docs/11） ---- */
 extern "C" int mq_control_Perf_get(void* u, const mq_json*, char* out, size_t cap) {

@@ -57,6 +57,13 @@
         - { name: blend,      type: int32_t }           # 0=normal 1=additive 2=multiply 3=screen
         - { name: pma,        type: int32_t }           # 1 = 纹理是**预乘 alpha**（spine 图集常见）
         - { name: layer,      type: int32_t }
+        # 裁剪矩形（渲染目标像素空间；w<=0 或 h<=0 = 不裁剪，用整个视图）。
+        # 为什么网格需要它：ImGui 这类即时模式 UI 靠 **scissor** 做"子窗口/文本裁剪/滑块内部"，
+        # 没有它内容会溢出到框外（实测：面板文字糊成一片、子窗口压住上面的行）。
+        - { name: clip_x,     type: float }
+        - { name: clip_y,     type: float }
+        - { name: clip_w,     type: float }
+        - { name: clip_h,     type: float }
         - { name: z,          type: int32_t }
   methods:
     - fn: create

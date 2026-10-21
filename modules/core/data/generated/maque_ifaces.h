@@ -54,6 +54,10 @@ typedef struct mq_renderer_mesh {
     int32_t blend;
     int32_t pma;
     int32_t layer;
+    float clip_x;
+    float clip_y;
+    float clip_w;
+    float clip_h;
     int32_t z;
 } mq_renderer_mesh;
 

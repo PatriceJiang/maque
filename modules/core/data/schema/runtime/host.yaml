@@ -291,3 +291,90 @@
         doc: "what: 0=u 1=v 2=u2 3=v2 4=width 5=height 6=setup_index（逐帧不同 → 可断言真的换图了）" }
     - { fn: spine_set_sequence_index, ctx: true, args: [ { name: id, type: float }, { name: slot, type: float }, { name: frame, type: float } ], returns: float,
         doc: "手动定格序列帧下标（-1 = setup 帧）" }
+
+    # ---- ImGui（引擎侧即时模式调试/调参 UI，docs/27 §ImGui）----
+    # 定位：**开发工具**，不是游戏 UI。游戏内 HUD 用声明式的 ui.*（它们进场景/快照/可回放）；
+    # ImGui 面板是视图层：**不进快照、不进校验和**（docs/10 确定性不受影响）。
+    # 生命周期（每帧）：
+    #   1. 引擎在**脚本 update 之前** begin_frame（已转发输入）
+    #   2. 脚本里 imgui_begin(...) … 控件 … imgui_end()
+    #   3. 引擎在**所有引擎图层（含 ui pass）之后、present 之前** end_frame 并提交网格
+    #      → 面板永远画在最上层，且**截图里也有**（可自证）
+    # 输入隔离：ImGui 想要鼠标/键盘时，引擎**阻断世界输入**（不点穿到游戏）；
+    #   脚本也可用 imgui_want_mouse()/imgui_hovered() 自行判断。
+    # 约定：`imgui_begin` 返回 1 表示窗口可见（可见时才该调控件；**end 必须无条件调用**）。
+    # 返回值类控件（slider/drag/input）**直接返回新值**，脚本无需处理指针（更贴合 JS/Lua）。
+    - { fn: imgui_ready,        ctx: true, returns: float, doc: "ImGui 是否已初始化" }
+    - { fn: imgui_enabled,      ctx: true, returns: float, doc: "面板是否启用（MAQUE_IMGUI=0 可关；默认关）" }
+    - { fn: imgui_set_enabled,  ctx: true, args: [ { name: on, type: float } ], returns: float, doc: "运行时开关面板（关掉后不再占 GPU/输入）" }
+    - { fn: imgui_begin,        ctx: true, args: [ { name: title, type: string } ], returns: float, doc: "开窗口 → 1=可见（须配对 imgui_end）" }
+    - { fn: imgui_end,          ctx: true }
+    - { fn: imgui_begin_closed, ctx: true, args: [ { name: title, type: string }, { name: x, type: float }, { name: y, type: float }, { name: w, type: float }, { name: h, type: float } ], returns: float, doc: "指定位置/尺寸且默认打开" }
+    - { fn: imgui_set_pos,      ctx: true, args: [ { name: x, type: float }, { name: y, type: float } ] }
+    - { fn: imgui_set_size,     ctx: true, args: [ { name: w, type: float }, { name: h, type: float } ] }
+    - { fn: imgui_same_line,    ctx: true }
+    - { fn: imgui_separator,    ctx: true }
+    - { fn: imgui_spacing,      ctx: true }
+    - { fn: imgui_new_line,     ctx: true }
+    - { fn: imgui_begin_disabled, ctx: true, args: [ { name: disabled, type: float } ] }
+    - { fn: imgui_end_disabled, ctx: true }
+    - { fn: imgui_begin_child,  ctx: true, args: [ { name: id, type: string }, { name: w, type: float }, { name: h, type: float }, { name: border, type: float } ], returns: float }
+    - { fn: imgui_end_child,    ctx: true }
+    - { fn: imgui_begin_menu_bar, ctx: true, returns: float }
+    - { fn: imgui_end_menu_bar, ctx: true }
+    - { fn: imgui_begin_menu,   ctx: true, args: [ { name: label, type: string } ], returns: float }
+    - { fn: imgui_end_menu,     ctx: true }
+    - { fn: imgui_menu_item,    ctx: true, args: [ { name: label, type: string }, { name: selected, type: float }, { name: enabled, type: float } ], returns: float }
+    - { fn: imgui_begin_tab_bar, ctx: true, args: [ { name: id, type: string } ], returns: float }
+    - { fn: imgui_end_tab_bar,  ctx: true }
+    - { fn: imgui_begin_tab_item, ctx: true, args: [ { name: label, type: string } ], returns: float }
+    - { fn: imgui_end_tab_item, ctx: true }
+    - { fn: imgui_begin_table,  ctx: true, args: [ { name: id, type: string }, { name: cols, type: float } ], returns: float }
+    - { fn: imgui_end_table,    ctx: true }
+    - { fn: imgui_table_next_row, ctx: true }
+    - { fn: imgui_table_next_column, ctx: true }
+    - { fn: imgui_table_headers_row, ctx: true }
+    - { fn: imgui_text,         ctx: true, args: [ { name: text, type: string } ] }
+    - { fn: imgui_text_wrapped, ctx: true, args: [ { name: text, type: string } ] }
+    - { fn: imgui_text_disabled, ctx: true, args: [ { name: text, type: string } ] }
+    - { fn: imgui_text_colored, ctx: true, args: [ { name: text, type: string }, { name: r, type: float }, { name: g, type: float }, { name: b, type: float }, { name: a, type: float } ] }
+    - { fn: imgui_label_text,   ctx: true, args: [ { name: label, type: string }, { name: value, type: string } ] }
+    - { fn: imgui_bullet_text,  ctx: true, args: [ { name: text, type: string } ] }
+    - { fn: imgui_button,       ctx: true, args: [ { name: label, type: string } ], returns: float, doc: "点击 → 1" }
+    - { fn: imgui_small_button, ctx: true, args: [ { name: label, type: string } ], returns: float }
+    - { fn: imgui_invisible_button, ctx: true, args: [ { name: id, type: string }, { name: w, type: float }, { name: h, type: float } ], returns: float }
+    - { fn: imgui_arrow_button, ctx: true, args: [ { name: id, type: string }, { name: dir, type: float } ], returns: float }
+    - { fn: imgui_checkbox,     ctx: true, args: [ { name: label, type: string }, { name: value, type: float } ], returns: float, doc: "返回新值（0/1）" }
+    - { fn: imgui_radio_button, ctx: true, args: [ { name: label, type: string }, { name: active, type: float } ], returns: float, doc: "点了且变为选中 → 1" }
+    - { fn: imgui_slider_float, ctx: true, args: [ { name: label, type: string }, { name: value, type: float }, { name: min, type: float }, { name: max, type: float } ], returns: float, doc: "返回新值" }
+    - { fn: imgui_slider_int,   ctx: true, args: [ { name: label, type: string }, { name: value, type: float }, { name: min, type: float }, { name: max, type: float } ], returns: float, doc: "返回新值（整数按 float 传）" }
+    - { fn: imgui_drag_float,   ctx: true, args: [ { name: label, type: string }, { name: value, type: float }, { name: speed, type: float } ], returns: float, doc: "返回新值" }
+    - { fn: imgui_drag_int,     ctx: true, args: [ { name: label, type: string }, { name: value, type: float }, { name: speed, type: float } ], returns: float }
+    - { fn: imgui_input_float,  ctx: true, args: [ { name: label, type: string }, { name: value, type: float } ], returns: float, doc: "返回新值（可键入）" }
+    - { fn: imgui_input_int,    ctx: true, args: [ { name: label, type: string }, { name: value, type: float } ], returns: float }
+    - { fn: imgui_input_text,   ctx: true, args: [ { name: label, type: string }, { name: text, type: string } ], returns: string, doc: "返回当前文本（引擎按 label 维持缓冲）" }
+    - { fn: imgui_combo,        ctx: true, args: [ { name: label, type: string }, { name: current, type: float }, { name: items, type: string } ], returns: float, doc: "items 是逗号分隔串；返回选中下标" }
+    - { fn: imgui_list_box,     ctx: true, args: [ { name: label, type: string }, { name: current, type: float }, { name: items, type: string } ], returns: float }
+    - { fn: imgui_selectable,   ctx: true, args: [ { name: label, type: string }, { name: selected, type: float } ], returns: float }
+    - { fn: imgui_progress_bar, ctx: true, args: [ { name: fraction, type: float }, { name: w, type: float }, { name: h, type: float }, { name: overlay, type: string } ] }
+    - { fn: imgui_plot_value,   ctx: true, args: [ { name: id, type: string }, { name: value, type: float } ], doc: "把值推进该 id 的环形历史并画折线图（脚本不必自己存数组）" }
+    - { fn: imgui_color_edit,   ctx: true, args: [ { name: label, type: string }, { name: packed, type: float } ], returns: float, doc: "packed = r*65536+g*256+b（0..255）；返回新 packed" }
+    - { fn: imgui_tree_node,    ctx: true, args: [ { name: label, type: string } ], returns: float, doc: "展开 → 1（须配 imgui_tree_pop）" }
+    - { fn: imgui_tree_pop,     ctx: true }
+    - { fn: imgui_collapsing_header, ctx: true, args: [ { name: label, type: string } ], returns: float, doc: "展开 → 1" }
+    - { fn: imgui_set_next_item_width, ctx: true, args: [ { name: w, type: float } ] }
+    - { fn: imgui_push_item_width, ctx: true, args: [ { name: w, type: float } ] }
+    - { fn: imgui_pop_item_width, ctx: true }
+    - { fn: imgui_push_id,      ctx: true, args: [ { name: id, type: string } ] }
+    - { fn: imgui_pop_id,       ctx: true }
+    - { fn: imgui_tooltip,      ctx: true, args: [ { name: text, type: string } ], doc: "悬停在本项时显示文本" }
+    - { fn: imgui_is_item_hovered, ctx: true, returns: float }
+    - { fn: imgui_is_item_active,  ctx: true, returns: float }
+    - { fn: imgui_is_window_hovered, ctx: true, returns: float }
+    - { fn: imgui_set_item_default, ctx: true }
+    - { fn: imgui_show_demo,    ctx: true, returns: float, doc: "内建 ImGui 演示窗口（自检用）" }
+    - { fn: imgui_want_mouse,   ctx: true, returns: float, doc: "1 = ImGui 要吃鼠标 → 世界输入应被阻断" }
+    - { fn: imgui_want_keyboard, ctx: true, returns: float }
+    - { fn: imgui_hovered,      ctx: true, returns: float, doc: "指针是否落在面板上" }
+    - { fn: imgui_frame,        ctx: true, returns: float, doc: "面板已渲染的帧数（自省：证明真的在跑）" }
+    - { fn: imgui_last_cmd_count, ctx: true, returns: float, doc: "上一帧导出的绘制命令数（0 = 面板没画东西）" }
