@@ -231,8 +231,11 @@ int mq_imgui_collapsing_header(const char *label) {
 }
 int mq_imgui_begin_overlay(const char *title) {
     /* 可拖动（有标题栏）但不参与命中：NoInputs 让 ImGui 不把悬停/点击算到它头上。 */
+    /* 可拖动（标题栏）+ 自适应内容。
+     * 注意：**不能加 NoInputs** —— 它会连标题栏拖动一起禁掉（实测"无法拖动"），
+     * 也会让内容绘制异常。需要"不挡游戏点击"时应改用 ImGui 的 hover 判定，而不是 NoInputs。 */
     return ImGui::Begin(title && *title ? title : "overlay", nullptr,
-                          ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize) ? 1 : 0;
+                        ImGuiWindowFlags_AlwaysAutoResize) ? 1 : 0;
 }
 
 void mq_imgui_push_font_size(float size_px) {

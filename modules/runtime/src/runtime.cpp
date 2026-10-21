@@ -3643,8 +3643,6 @@ void Engine::imgui_frame_begin(float dt) {
     if (mq_imgui_ready()) {
         mq_imgui_set_pos(8.0F, 8.0F);
         if (mq_imgui_begin_overlay("stats")) {
-            /* 小一号字：stats 是常驻信息栏，体积该比游戏自己的面板小（20 vs 默认 26 设计像素）。 */
-            mq_imgui_push_font_size(15.0F);
             char line[160];
             std::snprintf(line, sizeof line, "FPS %.0f  (%.1f ms)",
                           stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);
@@ -3656,7 +3654,6 @@ void Engine::imgui_frame_begin(float dt) {
             std::snprintf(line, sizeof line, "frame %llu  target %dx%d",
                           (unsigned long long)frame, target_w, target_h);
             mq_imgui_text(line);
-            mq_imgui_pop_font();
         }
         mq_imgui_end();
     }
