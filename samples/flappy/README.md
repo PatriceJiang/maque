@@ -15,10 +15,10 @@ samples/flappy/
 ```bash
 # 从仓库根目录跑（场景目录会被挂到 VFS 的 /，所以素材按 /art/xxx 引用）
 maque_player samples/flappy/flappy.scn          # 用通用宿主
-maque_flappy samples/flappy/flappy.scn          # 用本工程宿主（等价）
+maque_player samples/flappy/flappy.scn          # 用本工程宿主（等价）
 
 # 无头冒烟 + 截图（CI/无显示器）
-MAQUE_HEADLESS=1 maque_flappy --shot /tmp/f.png --shot-frame 120 samples/flappy/flappy.scn
+MAQUE_HEADLESS=1 maque_player --shot /tmp/f.png --shot-frame 120 samples/flappy/flappy.scn
 ```
 
 窗口、缩放、输入模拟等运行期开关见仓库根 `AGENTS.md`。

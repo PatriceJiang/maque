@@ -24,6 +24,16 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
       "MAQUE_CONTROL='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"Perf.get\"}' $<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -q '\"metrics\"'")
 endif()
 
+# 截图端到端：单张 PNG/PPM + 确定性 + **批量截图**（--shot-seq / --shot-frames /
+# --shot-every / --shot-count）+ `--frames` 退出码语义（到上限 = 正常结束，返回 0）。
+# 注：tests/shot_e2e.sh 一直存在但**此前从未注册成测试** —— 截图路径等于没有回归，这轮补上。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME shot_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/shot_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes"
+             "${CMAKE_CURRENT_BINARY_DIR}/shot_e2e")
+endif()
+
 # 输入/UI/快照/回放端到端（docs/10 §3/§5、docs/19 §9）：注入 → 分发 → 生成 → 回放一致
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME ui_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_e2e.sh"

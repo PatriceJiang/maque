@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # 官方 spine demo 移植的端到端测试（samples/spine）
 #
-#   demos <maque_spine> <scene_dir>   逐个 demo 场景跑 N 帧：进入 ready + 动画清单非空 + 无报错
-#   all   <maque_spine> <scene_dir>   all.scn 总览：出图 + **逐格像素断言** + 骨架数 == 期望
+#   demos <maque_player> <scene_dir>   逐个 demo 场景跑 N 帧：进入 ready + 动画清单非空 + 无报错
+#   all   <maque_player> <scene_dir>   all.scn 总览：出图 + **逐格像素断言** + 骨架数 == 期望
 #
 # 约定（与其它 e2e 一致）：exit 77 = 跳过（环境不满足），由 CTest 的 SKIP_RETURN_CODE 识别。
 #
@@ -13,7 +13,7 @@ set -u
 
 MODE="${1:-}"; BIN="${2:-}"; DIR="${3:-}"
 if [ -z "$MODE" ] || [ -z "$BIN" ] || [ -z "$DIR" ]; then
-    echo "usage: spine_demos_e2e.sh <demos|all> <maque_spine> <scene_dir>" >&2
+    echo "usage: spine_demos_e2e.sh <demos|all> <maque_player> <scene_dir>" >&2
     exit 2
 fi
 

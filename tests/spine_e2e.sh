@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # spine 端到端测试（samples/spine）
 #
-#   smoke  <maque_spine> <spine.scn>   装配（骨架/图集/页纹理）+ 跑帧不崩 + 动画清单非空
-#   play   <maque_spine> <spine.scn>   MAQUE_SIM 注入 ↑/↓/空格（**原始码**）→ 断言动画按注入顺序切换，
+#   smoke  <maque_player> <spine.scn>   装配（骨架/图集/页纹理）+ 跑帧不崩 + 动画清单非空
+#   play   <maque_player> <spine.scn>   MAQUE_SIM 注入 ↑/↓/空格（**原始码**）→ 断言动画按注入顺序切换，
 #                                      且脚本读回的"引擎当前动画"与请求一致；最后用两条不同动画的截图对比
-#   dragon <maque_spine> <dragon.scn>  多页图集（5 页）：逐页纹理句柄非 -1 + 引擎页表 pma 标记 + 多批次
+#   dragon <maque_player> <dragon.scn>  多页图集（5 页）：逐页纹理句柄非 -1 + 引擎页表 pma 标记 + 多批次
 #
 # 约定（与其它 e2e 一致）：exit 77 = 跳过（环境不满足），由 CTest 的 SKIP_RETURN_CODE 识别。
 set -u
 
 MODE="${1:-}"; BIN="${2:-}"; SCN="${3:-}"
 if [ -z "$MODE" ] || [ -z "$BIN" ] || [ -z "$SCN" ]; then
-    echo "usage: spine_e2e.sh <smoke|play|dragon> <maque_spine> <scene.scn>" >&2
+    echo "usage: spine_e2e.sh <smoke|play|dragon> <maque_player> <scene.scn>" >&2
     exit 2
 fi
 

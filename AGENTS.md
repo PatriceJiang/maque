@@ -123,10 +123,19 @@ tools\win\build.cmd -Sanitize address -RunTests
   `MAQUE_SESSION`（默认持久档 `main`；给运行期 id 即临时档）；`MAQUE_STORAGE` 覆盖模式。
   控制面：`Storage.info/list/get`（只读）· `Storage.put/remove`（变更类）。样例 `scenes/storage/`（JS 与 Lua 同逻辑）；
   测试：`ctest -R storage`（四模式单测，http/ws 用测试内建服务端）。
+- **只有一个宿主：`samples/player`**。`samples/**` 里的游戏（flappy/tank/spine/scenes/**）**都没有自己的
+  `main.cpp`**，一律用 `maque_player <场景>` 打开 —— 之前每个 sample 各带一份 main、彼此只差默认场景名，
+  属于纯复制（已删除）。需要"默认场景/默认参数"就在脚本或 CI 命令里写，不要新增宿主。
 - **场景 → 图片（截图/预览）**：`./build/samples/player/maque_player --shot <out.png|.ppm> [--shot-frame N] <scene.scn>`
   （`MAQUE_SHOT` / `MAQUE_SHOT_FRAME` 同义；默认第 1 帧；**截图后即退出**，一条命令得一张图）。
+  **批量截图**（动画/物理"随时间变化"，只拍首帧看不出对错）：
+  - `--shot-seq <tmpl> --shot-frames 1,30,60`：tmpl 里 `{}` → 帧号（无 `{}` 则插到扩展名前）；
+    拍完最大帧即退出。等价环境变量 `MAQUE_SHOT_SEQ` / `MAQUE_SHOT_FRAMES`。
+  - `--shot-every 20 --shot-count 4`：每 20 帧一张、共 4 张后退出（`MAQUE_SHOT_EVERY`/`MAQUE_SHOT_COUNT`）。
+  - `--frames N`：最多跑 N 帧（`MAQUE_MAX_FRAMES`）。**到上限属于正常结束（退出码 0）**，
+    不是失败 —— 之前返回 1，在脚本里看起来像出错。
   PNG 由 image 模块写出（zlib 可用则真压缩，否则 stored deflate）；尺寸 = 渲染目标（设计分辨率 × 视图 × `MAQUE_SS`）。
-  测试：`ctest -R shot_e2e`（PNG 有效性/确定性/PPM/错误路径）。VSCode 预览插件：`editors/vscode/`（`install.sh` 装到本地扩展目录；
+  测试：`ctest -R shot_e2e`（PNG 有效性/确定性/PPM/错误路径/**批量截图**/`--frames` 退出码）。VSCode 预览插件：`editors/vscode/`（`install.sh` 装到本地扩展目录；
   文档在该目录 README）。绑定面一致性：`ctest -R bindings_e2e`（schema → JS/Lua 探针，逐条检查可调用性）。
 - **内建 shader（assets/builtin/shaders/）**：**一个 shader 一个目录**（目录名 = shader 名，
   目录内 `*.wgsl` 按文件名排序拼接），源码是唯一真相；配置期由 `cmake/shader_pack.cmake` +

@@ -23,15 +23,15 @@ samples/spine/
 
 ```bash
 # 从仓库根目录跑（场景目录被挂到 VFS 的 /，素材按 /art/... 引用）
-./build-win/samples/spine/maque_spine samples/spine/spine.scn
-./build-win/samples/spine/maque_spine samples/spine/dragon.scn
+./build-win/samples/spine/maque_player samples/spine/spine.scn
+./build-win/samples/spine/maque_player samples/spine/dragon.scn
 
 # 无头截图（CI/无显示器）：第 N 帧一张图
-MAQUE_HEADLESS=1 MAQUE_PRESENT=off ./build-win/samples/spine/maque_spine \
+MAQUE_HEADLESS=1 MAQUE_PRESENT=off ./build-win/samples/spine/maque_player \
     --shot /tmp/spineboy.png --shot-frame 40 samples/spine/spine.scn
 
 # 指定起始动画 / 定格时间（截图回归用）
-MAQUE_SPINE_ANIM=run MAQUE_SPINE_TIME=0.5 ./build-win/samples/spine/maque_spine \
+MAQUE_SPINE_ANIM=run MAQUE_SPINE_TIME=0.5 ./build-win/samples/spine/maque_player \
     --shot /tmp/run.png --shot-frame 40 samples/spine/spine.scn
 ```
 
@@ -78,11 +78,11 @@ MAQUE_SPINE_ANIM=run MAQUE_SPINE_TIME=0.5 ./build-win/samples/spine/maque_spine 
 
 ```bash
 # 每个 demo 一个场景（800x600，灰色背景 = 官方 LayerColor(128,128,128)）
-./build-win/samples/spine/maque_spine samples/spine/demo-spineboy.scn
-./build-win/samples/spine/maque_spine samples/spine/demo-ik.scn
+./build-win/samples/spine/maque_player samples/spine/demo-spineboy.scn
+./build-win/samples/spine/maque_player samples/spine/demo-ik.scn
 ...
 # 总览：12 个骨架同屏（1600x1300）
-./build-win/samples/spine/maque_spine samples/spine/all.scn
+./build-win/samples/spine/maque_player samples/spine/all.scn
 ```
 
 | # | 场景 | 素材（缩放） | 动画清单（实测打印） | 复刻了什么 |
@@ -174,7 +174,7 @@ ctest -R spine    # spine2d + spine_smoke/spine_e2e/spine_dragon/spine_mask + sp
 也可以启动时就打开：
 
 ```bash
-MAQUE_IMGUI=1 MAQUE_WINDOW=800x650 ./build-win/samples/spine/maque_spine samples/spine/all.scn
+MAQUE_IMGUI=1 MAQUE_WINDOW=800x650 ./build-win/samples/spine/maque_player samples/spine/all.scn
 ```
 
 | 变量 | 作用 |

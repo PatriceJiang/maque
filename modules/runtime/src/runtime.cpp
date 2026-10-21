@@ -203,6 +203,17 @@ struct Engine {
     std::string         script_ret;                         // 脚本返回值缓冲（绑定立即复制 → 单线程复用）
     std::string         shot_path;                          // MAQUE_SHOT：渲染到该帧后写一张图片（""=不写）
     int                 shot_frame = 1;                     // MAQUE_SHOT_FRAME（默认第 1 帧）
+    /* 批量截图（--shot-seq / --shot-frames / --shot-every / --shot-count）：
+     * 一条命令拍多帧 —— 动画/物理这类"随时间变化"的东西只拍第 1 帧看不出对错。
+     * 模板里的 `{}` 会被替换成帧号（没有 `{}` 就自动插到扩展名前）。 */
+    std::string         shot_seq;                           // MAQUE_SHOT_SEQ：输出路径模板
+    std::vector<int>    shot_list;                          // MAQUE_SHOT_FRAMES：精确帧号（逗号分隔）
+    int                 shot_every = 0;                     // MAQUE_SHOT_EVERY：每 N 帧拍一张
+    int                 shot_count = 0;                     // MAQUE_SHOT_COUNT：最多拍几张（0=不限）
+    int                 shots_taken = 0;                    // 已拍张数
+    int                 shot_last_frame = -1;               // 最后一张的帧号（拍完即退出）
+    /* 批量截图的落地：模板 → 文件名 → 写图；并判断"是不是最后一张"（是则退出）。 */
+    void write_seq_shot(const std::vector<uint8_t>& px, int tw, int th);
     uint32_t            reloads = 0;
     uint64_t            frame = 0;                          // 模拟帧号（= sim time / dt）
     uint64_t            last_checksum = 0;
@@ -380,6 +391,10 @@ struct Engine {
     int glyph_texture(const mq_font* f, float size);   // 取（必要时创建/刷新）字形图集纹理
     void text_setup();                      // 装配期：加载字体（MAQUE_FONT → 项目字体 → 系统 → 内置）
     uint64_t stop_frame = 0;                                // >0 时到该帧停止（CI 固定长度跑）
+    /* `MAQUE_MAX_FRAMES` / `--frames` 到达上限属于**正常结束**（调用方要求的帧数跑完了），
+     * 不能当成失败返回 1 —— 否则 `maque_player --frames 5 scene.scn` 在脚本/CI 里
+     * 看起来像出错。单独记一个标志，退出码口径：quit || frames_capped → 0。 */
+    bool frames_capped = false;
     std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
     std::string name;
     const mq_type_desc* scene_type = nullptr;
@@ -920,6 +935,15 @@ void Engine::step_frame() {
         if (rc == 0) std::print("runtime: shot '{}' {}x{} frame={}\n", shot_path, TW, SHpx, (int)frame);
         else std::print(stderr, "runtime: shot 写入失败 '{}'\n", shot_path);
         quit = true;                                        // 单张截图为一次性任务（CI/预览：一条命令即得图）
+    }
+    /* 批量截图（--shot-seq）：按帧号列表 or 每 N 帧拍一张。写完**最后一张**才退出 ——
+     * 这样一条命令就能拿到"第 1/30/60 帧"三张图，用来验证动画推进、物理轨迹、UI 变化。 */
+    if (!shot_seq.empty() && !shot_list.empty()) {
+        const bool due = std::find(shot_list.begin(), shot_list.end(), (int)frame) != shot_list.end();
+        if (due) write_seq_shot(pixels, TW, SHpx);
+    } else if (!shot_seq.empty() && shot_every > 0) {
+        /* 从第 shot_every 帧开始，每 shot_every 帧一张（第 0 帧通常还没布局完）。 */
+        if ((int)frame > 0 && (int)frame % shot_every == 0) write_seq_shot(pixels, TW, SHpx);
     }
     if (ctl_server) {                     // 预览：保留最近一帧（仅在开了端点时）
         frame_pixels = pixels;
@@ -1548,6 +1572,9 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
             break;
         }
     }
+
+    /* 循环是因为"到帧数上限"退出的 → 记下来（退出码按成功算，见 frames_capped 注释）。 */
+    if (!quit && (frame >= cap || (stop_frame && frame > stop_frame))) frames_capped = true;
 
     finalize_run();
 
@@ -3343,9 +3370,42 @@ void Engine::spine_extract(std::vector<mq_renderer_mesh>& out) {
     }
 }
 
+/* 批量截图落地：模板 → 文件名 → 写图；并判断"是不是最后一张"（是则退出）。
+ * 模板里的 `{}` 换成帧号；没有 `{}` 就自动插到扩展名前（`out.png` → `out_0042.png`）。
+ * 格式仍按扩展名（.png → PNG，其余 → PPM）。 */
+void Engine::write_seq_shot(const std::vector<uint8_t>& px, int tw, int th) {
+    std::string path = shot_seq;
+    char num[32];
+    std::snprintf(num, sizeof num, "%d", (int)frame);
+    const size_t brace = path.find("{}");
+    if (brace != std::string::npos) {
+        path.replace(brace, 2, num);
+    } else {
+        const size_t dot = path.find_last_of('.');
+        char pad[32];
+        std::snprintf(pad, sizeof pad, "_%04d", (int)frame);
+        if (dot == std::string::npos) path += pad;
+        else path.insert(dot, pad);
+    }
+    const bool png = path.size() > 4 && path.compare(path.size() - 4, 4, ".png") == 0;
+    const int rc = png ? mq_image_write_png(path.c_str(), (uint32_t)tw, (uint32_t)th,
+                                            px.data(), (uint32_t)tw * 4u)
+                       : (write_ppm(path, tw, th, px) ? 0 : 1);
+    if (rc == 0) std::print("runtime: shot[{}] '{}' {}x{} frame={}\n",
+                            shots_taken + 1, path, tw, th, (int)frame);
+    else std::print(stderr, "runtime: shot 写入失败 '{}'\n", path);
+    ++shots_taken;
+    /* 收尾条件：显式帧号列表 → 拍完最大帧即退；every 模式 → 拍够 count（count=0 → 由
+     * MAQUE_MAX_FRAMES 控制，不自己退）。 */
+    if (!shot_list.empty()) {
+        const int last = *std::max_element(shot_list.begin(), shot_list.end());
+        if ((int)frame >= last) quit = true;
+    } else if (shot_count > 0 && shots_taken >= shot_count) {
+        quit = true;
+    }
+}
+
 /* ---- ImGui 调试面板（docs/27 §ImGui）------------------------------------------------
- *
- * 三个约束决定了这里的写法：
  *   ① **不进确定性**：面板是视图层 → 不写任何实体/组件、不进快照/校验和（docs/10）。
  *   ② **画在所有引擎图层之上**：网格 layer = MQ_IMGUI_LAYER（引擎 UI 是 1），
  *      在**引擎渲染完（含 ui pass）、present 之前**追加 → 截图里也有面板（可自证）。
@@ -6639,6 +6699,22 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     { const char* ko = std::getenv("MAQUE_KEEP_OPEN"); if (ko && *ko && *ko != '0') keep_open = true; }
     if (const char* sp = std::getenv("MAQUE_SHOT"); sp && *sp) shot_path = sp;
     if (const char* sf = std::getenv("MAQUE_SHOT_FRAME"); sf && *sf) shot_frame = std::atoi(sf);
+    /* 批量截图：一条命令拍多帧（动画/物理只拍首帧看不出对错）。 
+     *   MAQUE_SHOT_SEQ   输出模板（`{}` → 帧号；无 `{}` 则插在扩展名前）
+     *   MAQUE_SHOT_FRAMES 精确帧号，逗号分隔（如 "1,30,60"）
+     *   MAQUE_SHOT_EVERY  每 N 帧拍一张；MAQUE_SHOT_COUNT 最多几张（默认到 shot_last 为止） */
+    if (const char* sq = std::getenv("MAQUE_SHOT_SEQ"); sq && *sq) shot_seq = sq;
+    if (const char* sl = std::getenv("MAQUE_SHOT_FRAMES"); sl && *sl) {
+        std::string s(sl), cur;
+        for (size_t i = 0; i <= s.size(); ++i) {
+            if (i == s.size() || s[i] == ',') {
+                if (!cur.empty()) shot_list.push_back(std::atoi(cur.c_str()));
+                cur.clear();
+            } else if (s[i] != ' ') cur.push_back(s[i]);
+        }
+    }
+    if (const char* se = std::getenv("MAQUE_SHOT_EVERY"); se && *se) shot_every = std::atoi(se);
+    if (const char* scn = std::getenv("MAQUE_SHOT_COUNT"); scn && *scn) shot_count = std::atoi(scn);
     snaps = mq_snapshot_pool_create(8, 1 << 16);
     { const char* cp = std::getenv("MAQUE_CHECKPOINTS"); if (cp && *cp && *cp != '0') cp_active = true; }
     /* 场景/脚本/资源/物理装配统一走 load_scene_into（与 director.loadScene 同一条路径） */
@@ -6930,7 +7006,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (std::getenv("MAQUE_RECORD")) mq_input_record_begin(eng->input);
 
     eng->main_loop(frames_dir ? frames_dir : "", std::filesystem::path(scn_path).filename().string());
-    const bool quit = eng->quit;
+    const bool quit = eng->quit || eng->frames_capped;
     eng->teardown();
     delete eng;
     return quit ? 0 : 1;

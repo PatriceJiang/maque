@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # flappy 端到端测试（samples/flappy）
 #
-#   smoke <maque_flappy> <scene.scn>   场景/脚本/素材能加载，跑若干帧不崩
-#   play  <maque_flappy> <scene.scn>   玩法：确定性回放 + 拍翅不撞 + 撞管判死 + 计分
+#   smoke <maque_player> <scene.scn>   场景/脚本/素材能加载，跑若干帧不崩
+#   play  <maque_player> <scene.scn>   玩法：确定性回放 + 拍翅不撞 + 撞管判死 + 计分
 #
 # 约定（与其它 e2e 一致）：exit 77 = 跳过（环境不满足），由 CTest 的 SKIP_RETURN_CODE 识别。
 set -u
 
 MODE="${1:-}"; BIN="${2:-}"; SCN="${3:-}"
 if [ -z "$MODE" ] || [ -z "$BIN" ] || [ -z "$SCN" ]; then
-    echo "usage: flappy_e2e.sh <smoke|play> <maque_flappy> <scene.scn>" >&2
+    echo "usage: flappy_e2e.sh <smoke|play> <maque_player> <scene.scn>" >&2
     exit 2
 fi
 

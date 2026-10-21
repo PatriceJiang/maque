@@ -44,7 +44,7 @@
 ### 4. 宿主资源部署（Windows）
 
 `maque_deploy_plugin_deps()` 把 ASan 运行时与 `wgpu_native.dll` 复制到游戏宿主 exe 旁，
-`maque_flappy` 因此可以独立运行（细节见根 `AGENTS.md` 的 Windows 一节）。
+`maque_player` 因此可以独立运行（细节见根 `AGENTS.md` 的 Windows 一节）。
 
 ## 修的真实缺陷
 

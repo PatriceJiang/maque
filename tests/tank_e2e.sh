@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # tank 端到端测试（samples/tank）
 #
-#   smoke <maque_tank> <scene.scn>   场景/脚本/素材能加载，跑 60 帧不崩
-#   play  <maque_tank> <scene.scn>   玩法：autoplay 900 帧（开火→命中→扣血→击毁→计分）
+#   smoke <maque_player> <scene.scn>   场景/脚本/素材能加载，跑 60 帧不崩
+#   play  <maque_player> <scene.scn>   玩法：autoplay 900 帧（开火→命中→扣血→击毁→计分）
 #                                    + 同一输入两次运行 world_trail 一致（确定性）
 #                                    + MAQUE_TANK_KILL_AT 钩子确实扣血/击毁（判定没失效）
-#   kill  <maque_tank> <scene.scn>   判定鉴别力单测：KILL_AT 强制瞄准开火 → 必须扣血→击毁→加分，
+#   kill  <maque_player> <scene.scn>   判定鉴别力单测：KILL_AT 强制瞄准开火 → 必须扣血→击毁→加分，
 #                                    且同一输入两次运行的击杀帧逐位一致
 #
 # 约定（与其它 e2e 一致）：exit 77 = 跳过（环境不满足），由 CTest 的 SKIP_RETURN_CODE 识别。
@@ -13,7 +13,7 @@ set -u
 
 MODE="${1:-}"; BIN="${2:-}"; SCN="${3:-}"
 if [ -z "$MODE" ] || [ -z "$BIN" ] || [ -z "$SCN" ]; then
-    echo "usage: tank_e2e.sh <smoke|play|kill> <maque_tank> <scene.scn>" >&2
+    echo "usage: tank_e2e.sh <smoke|play|kill> <maque_player> <scene.scn>" >&2
     exit 2
 fi
 

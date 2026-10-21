@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
-# scn → 图片（截图/预览）端到端：`maque_player --shot <out> [--shot-frame N]`。
+# scn → 图片（截图/预览）端到端：`maque_player --shot ...`。
 #   ① PNG 有效（签名/CRC/IHDR/IDAT 可解压）且内容非空白
 #   ② 确定性：同帧两次 → 逐字节一致；不同帧 → 不同
 #   ③ .ppm 走原样写出（P6 头 + 精确字节数）
-#   ④ 截图后即退出（quit=1，帧号 = shot-frame + 1）—— 一条命令得到一张图
+#   ④ 截图后即退出（quit=1）—— 一条命令得到图
 #   ⑤ 目标不可写 → 明确报错
+#   ⑥ **批量截图**（--shot-seq + --shot-frames）：一条命令拿多帧，帧号不同画面不同
+#   ⑦ **定时批量**（--shot-every + --shot-count）：拍够张数即退出，退出码 0
+#   ⑧ `--frames N` 到上限属于**正常结束**（退出码 0，不是失败）
 set -u
-. "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
-[ -f "${MAQUE_REPO_ROOT:-}/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径调用时兜底（MAQUE_REPO_ROOT 可能未设，故用 :- 兜住 set -u）
-. "$(dirname "set -u")/maque_python.sh"                 # 本仓库内直接跑（tests/ 下的脚本）
-[ -f "$MAQUE_REPO_ROOT/tests/maque_python.sh" ] && . "$MAQUE_REPO_ROOT/tests/maque_python.sh"   # 经构建树路径 ${BASH_SOURCE[0]} 调用时兜底
 PLAYER="$1"; SCENES="$2"; WORK="$3"
 
-[ "$HAVE_PY" = 1 ] || { echo "shot_e2e: skip（无 "$PY"，无法校验 PNG）"; exit 77; }
-
-rm -rf "$WORK"; mkdir -p "$WORK"
 export MAQUE_PRESENT=off        # 纯离屏（无需窗口/显示）
 
 fail() { echo "shot_e2e: FAIL $*" >&2; exit 1; }
+
+# PNG 校验（内联 python：不做额外依赖）
+PY=python
+command -v python >/dev/null 2>&1 || { echo "shot_e2e: skip（无 python，无法校验 PNG）"; exit 77; }
+
+rm -rf "$WORK"; mkdir -p "$WORK"
 
 shot() {   # shot <out> <frame> <scene> → 日志
     timeout 60 "$PLAYER" --shot "$1" --shot-frame "$2" "$3" 2>&1
@@ -66,4 +68,33 @@ printf '%s\n' "$LOG" | grep -q "exited after 61 frames (quit=1)" || fail "截图
 LOG=$(shot "$WORK/no-such-dir/x.png" 5 "$SCENES/ball.scn")
 printf '%s\n' "$LOG" | grep -q "shot 写入失败" || fail "不可写路径未报错"
 
-echo "shot_e2e: ok（PNG 有效/确定性/PPM/退出/错误路径）"
+# ---- ⑥ 批量截图（--shot-seq + --shot-frames）：一条命令多帧 ----
+# 价值：动画/物理这类"随时间变化"的东西，只拍第 1 帧看不出对错。
+SEQ="$WORK/multi"
+mkdir -p "$SEQ"
+LOG=$(timeout 60 "$PLAYER" --shot-seq "$SEQ/f{}.png" --shot-frames 1,30,60 "$SCENES/ball.scn" 2>&1)
+for N in 1 30 60; do
+    [ -s "$SEQ/f$N.png" ] || fail "批量截图缺帧 $N（$LOG）"
+    printf '%s\n' "$LOG" | grep -q "frame=$N" || fail "批量截图未报告帧 $N（$LOG）"
+done
+cmp -s "$SEQ/f1.png" "$SEQ/f30.png" && fail "批量截图 f1 == f30（帧号没生效）"
+cmp -s "$SEQ/f30.png" "$SEQ/f60.png" && fail "批量截图 f30 == f60（帧号没生效）"
+# 拍完最后一张即退出（不是靠 timeout 拖到 3600 帧上限）
+printf '%s\n' "$LOG" | grep -q "exited after 61 frames" || fail "批量截图未在最后一帧退出（$LOG）"
+
+# ---- ⑦ 定时批量（--shot-every + --shot-count）：拍够即退、退出码 0 ----
+rm -rf "$SEQ/every"; mkdir -p "$SEQ/every"
+timeout 60 "$PLAYER" --shot-seq "$SEQ/every/e.png" --shot-every 20 --shot-count 3 \
+    "$SCENES/ball.scn" >"$SEQ/every.log" 2>&1
+RC=$?
+[ "$RC" = 0 ] || fail "定时批量截图退出码非 0（$RC）"
+CNT=$(find "$SEQ/every" -name 'e_*.png' | wc -l)
+[ "$CNT" = 3 ] || fail "定时批量截图数量应 3，实际 $CNT"
+grep -q "shot\[3\]" "$SEQ/every.log" || fail "定时批量截图未报告第 3 张"
+
+# ---- ⑧ --frames N 到上限 = 正常结束（退出码 0）----
+timeout 60 "$PLAYER" --frames 5 "$SCENES/ball.scn" >/dev/null 2>&1
+RC=$?
+[ "$RC" = 0 ] || fail "--frames 5 退出码应 0（实际 $RC）—— 帧数上限是正常结束，不是失败"
+
+echo "shot_e2e: ok（PNG 有效/确定性/PPM/退出/错误路径/批量截图/定时批量/--frames）"

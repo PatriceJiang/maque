@@ -21,7 +21,7 @@ samples/tank/
 ```bash
 # 从仓库根目录跑（场景目录会被挂到 VFS 的 /，所以素材按 /art/xxx 引用）
 maque_player samples/tank/tank.scn          # 用通用宿主
-maque_tank samples/tank/tank.scn            # 用本工程宿主（等价）
+maque_player samples/tank/tank.scn            # 用本工程宿主（等价）
 
 # 操作：W/S 前进后退、A/D 原地转车体、指针瞄准炮塔、左键按住或空格开火
 ```
@@ -29,9 +29,9 @@ maque_tank samples/tank/tank.scn            # 用本工程宿主（等价）
 无头冒烟 / 截图（CI、无显示器）：
 
 ```bash
-MAQUE_HEADLESS=1 maque_tank --shot /tmp/t.png --shot-frame 3 samples/tank/tank.scn
-MAQUE_TANK_AUTOPLAY=1 maque_tank --shot /tmp/t.png --shot-frame 300 samples/tank/tank.scn
-MAQUE_TANK_AUTOPLAY=1 MAQUE_TANK_TRACE=1 maque_tank --frames 900 samples/tank/tank.scn   # 每 60 帧打一行战况
+MAQUE_HEADLESS=1 maque_player --shot /tmp/t.png --shot-frame 3 samples/tank/tank.scn
+MAQUE_TANK_AUTOPLAY=1 maque_player --shot /tmp/t.png --shot-frame 300 samples/tank/tank.scn
+MAQUE_TANK_AUTOPLAY=1 MAQUE_TANK_TRACE=1 maque_player --frames 900 samples/tank/tank.scn   # 每 60 帧打一行战况
 ```
 
 改玩法不用重编译：`tank.js` 顶部就是全部手感常量；开 `MAQUE_WATCH=1` 还能热重载脚本，
@@ -115,7 +115,7 @@ ctest -R 'tank' --output-on-failure
   ```bash
   MAQUE_HEADLESS=1 MAQUE_INSPECT_RW=1 \
     MAQUE_CONTROL='{"jsonrpc":"2.0","id":1,"method":"Scene.emit","params":{"id":33,"event":"state","value":1}}' \
-    maque_tank samples/tank/tank.scn
+    maque_player samples/tank/tank.scn
   # [game] tank: state state=play score=0 wave=1 alive=5 hp=100 kills=0 frame=0
   # {"jsonrpc":"2.0","id":1,"result":{"ok":true,"event":"state","id":33,"value":1,"handlers":1}}
   ```
@@ -132,7 +132,7 @@ ctest -R 'tank' --output-on-failure
 
 ```bash
 MAQUE_HEADLESS=1 MAQUE_SIM=pointer.sim.json MAQUE_TANK_TRACE=1 \
-  maque_tank --shot out.png --shot-frame 66 samples/tank/tank.scn
+  maque_player --shot out.png --shot-frame 66 samples/tank/tank.scn
 # 实测：trace 里 aim 从 90 → **10**（= atan2(130−90, 540−320) = 10.3°，与指针方向一致），
 # 帧 66 的截图里炮管朝右、一枚黄色炮弹正沿该方向飞出（shot_aim_pointer.png）。
 ```
