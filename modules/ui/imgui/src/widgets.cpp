@@ -234,8 +234,10 @@ int mq_imgui_begin_overlay(const char *title) {
     /* 可拖动（标题栏）+ 自适应内容。
      * 注意：**不能加 NoInputs** —— 它会连标题栏拖动一起禁掉（实测"无法拖动"），
      * 也会让内容绘制异常。需要"不挡游戏点击"时应改用 ImGui 的 hover 判定，而不是 NoInputs。 */
-    return ImGui::Begin(title && *title ? title : "overlay", nullptr,
-                        ImGuiWindowFlags_AlwaysAutoResize) ? 1 : 0;
+    /* 不用 AlwaysAutoResize：它与"每帧定位 + 可拖动"组合时会出现
+     * "窗口动了、内容却留在原处"的错位（实测）。改成由调用方给一次尺寸、
+     * 之后完全交给 ImGui（可拖动、可缩放）。 */
+    return ImGui::Begin(title && *title ? title : "overlay", nullptr, 0) ? 1 : 0;
 }
 
 void mq_imgui_push_font_size(float size_px) {

@@ -378,6 +378,7 @@ struct Engine {
     /* 默认 stats 面板用的计量（显示上一帧的值：开帧时就要有数）。 */
     float stat_logic_ms = 0, stat_render_ms = 0, stat_fps = 0;
     int   stat_calls = 0, stat_tris = 0;
+    bool  stat_window_sized = false;   // stats 窗口只在首帧定位/定尺寸（之后可自由拖动）
     std::chrono::steady_clock::time_point stat_t0{};   // 本帧起点（算逻辑/整帧耗时）
     int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
@@ -3641,7 +3642,12 @@ void Engine::imgui_frame_begin(float dt) {
      *   （窗口尺寸写死、内容行数/字号变化就溢出）；
      * · 内容压缩成 4 行，避免"窗体偏大"。位置仍用 FirstUseEver（可拖动、不弹回）。 */
     if (mq_imgui_ready()) {
-        mq_imgui_set_pos(8.0F, 8.0F);
+        /* 位置/尺寸只在**首帧**设一次（之后拖动/缩放不被复位）。尺寸按 4 行内容给够。 */
+        if (!stat_window_sized) {
+            mq_imgui_set_pos(8.0F, 8.0F);
+            mq_imgui_set_size(320.0F, 210.0F);
+            stat_window_sized = true;
+        }
         if (mq_imgui_begin_overlay("stats")) {
             char line[160];
             std::snprintf(line, sizeof line, "FPS %.0f  (%.1f ms)",
