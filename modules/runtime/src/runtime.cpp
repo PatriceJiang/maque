@@ -6876,10 +6876,22 @@ bool Engine::load_scene_into(const std::string& scn_path) {
      *     文本折行行数全变（实测 shot_e2e / text_e2e 因此失败）。
      *   · 嵌入宿主（`mq_host_create`）**根本没有 platform** → 必须先判空，
      *     否则 `mq_platform_has_window(nullptr)` 直接崩（实测 host_tick/host_multi_instance 0xC0000409）。 */
-    const bool has_real_window = platform != nullptr && mq_platform_has_window(platform) != 0;
+    /* 自动超采样：只在"**确实会有窗口**且不是一次性任务"时跟随窗口像素。
+     * 判据不能用 `platform`（此刻还没创建）也不能只看 `win_w`（默认已是 800x650），
+     * 所以看**意图**：headless / 截图 / 不要呈现 → 按设计分辨率 1:1；
+     * 否则（真窗口）→ 渲染目标 = 窗口像素，呈现时 1:1 不缩放 → 清晰。 */
+    const char* present_env = std::getenv("MAQUE_PRESENT");
+    const bool window_intent = !std::getenv("MAQUE_HEADLESS") && !std::getenv("MAQUE_SHOT") &&
+                               !(present_env && (std::strcmp(present_env, "off") == 0 || std::strcmp(present_env, "0") == 0));
+    const bool has_real_window = window_intent && win_w > 0;
     if (rs <= 0.0F && has_real_window && win_w > 0) rs = (float)win_w / (float)(W > 0 ? W : 1);
     if (rs <= 0.0F) rs = 1.0F;
-    ss = rs > 4.0F ? 4.0F : (rs < 1.0F ? 1.0F : rs);
+    /* 渲染倍率允许 **< 1**（下限 0.25）：窗口比场景小的时候（如默认窗口 800x650 看
+     * 1600x1300 的 all.scn），按 窗口/场景 倍率渲染 → 渲染目标正好等于窗口像素，
+     * 呈现时 **1:1 不缩放** → 清晰。
+     * 之前下限是 1.0：目标恒为设计分辨率，再被缩小一半显示 → 整帧糊（用户实测反馈）。
+     * ⚠️ 无窗口/headless 时 rs 恒为 1.0（上面已处理），截图尺寸与文本折行不受影响。 */
+    ss = rs > 4.0F ? 4.0F : (rs < 0.25F ? 0.25F : rs);
     const int SW = (int)(W * ss + 0.5F), SH = (int)(H * ss + 0.5F);
     TW = SW * nviews;
     views.assign((size_t)nviews, mq_renderer_view{});
