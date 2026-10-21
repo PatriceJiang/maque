@@ -199,10 +199,49 @@ void mq_imgui_input_pointer(float x, float y, int down, float wheel) {
     if (wheel != 0.0F && g_ready) ImGui::GetIO().AddMouseWheelEvent(0.0F, wheel);
 }
 
+/* 引擎规范键码（MQ_KEY_* / 大写 ASCII / F1..F12=1001..1012）→ ImGuiKey。
+ * ⚠️ 两套码空间**完全不同**，绝对不能直接强转：
+ *   · 引擎的 SPACE=2，而 ImGuiKey 2 是别的键；
+ *   · 引擎的 'A'=32，ImGuiKey 32 也不是字母 A；
+ *   · F 键在引擎里是 1001..1012，超出 ImGui 的合法 key 范围 →
+ *     直接 `AddKeyEvent((ImGuiKey)1002, ...)` 会写越界（实测：按 F2 崩）。
+ * 返回 ImGuiKey_None 表示"不映射"（不喂给 ImGui）。 */
+static ImGuiKey to_imgui_key(int key) {
+    switch (key) {
+        case 1:  return ImGuiKey_Escape;       /* MQ_KEY_ESCAPE */
+        case 2:  return ImGuiKey_Space;        /* MQ_KEY_SPACE */
+        case 3:  return ImGuiKey_Enter;        /* MQ_KEY_ENTER */
+        case 4:  return ImGuiKey_Tab;          /* MQ_KEY_TAB */
+        case 5:  return ImGuiKey_Backspace;    /* MQ_KEY_BACKSPACE */
+        case 6:  return ImGuiKey_LeftArrow;    /* MQ_KEY_LEFT */
+        case 7:  return ImGuiKey_RightArrow;   /* MQ_KEY_RIGHT */
+        case 8:  return ImGuiKey_UpArrow;      /* MQ_KEY_UP */
+        case 9:  return ImGuiKey_DownArrow;    /* MQ_KEY_DOWN */
+        case 1001: return ImGuiKey_F1;  case 1002: return ImGuiKey_F2;
+        case 1003: return ImGuiKey_F3;  case 1004: return ImGuiKey_F4;
+        case 1005: return ImGuiKey_F5;  case 1006: return ImGuiKey_F6;
+        case 1007: return ImGuiKey_F7;  case 1008: return ImGuiKey_F8;
+        case 1009: return ImGuiKey_F9;  case 1010: return ImGuiKey_F10;
+        case 1011: return ImGuiKey_F11; case 1012: return ImGuiKey_F12;
+        default: break;
+    }
+    /* 'A'..'Z' / '0'..'9' 等可打印 ASCII → ImGuiKey_A.. / ImGuiKey_0.. */
+    if (key == 32) return ImGuiKey_Space;
+    if (key >= 'A' && key <= 'Z') return (ImGuiKey)(ImGuiKey_A + (key - 'A'));
+    if (key >= '0' && key <= '9') return (ImGuiKey)(ImGuiKey_0 + (key - '0'));
+    if (key == '-') return ImGuiKey_Minus;
+    if (key == '=') return ImGuiKey_Equal;
+    if (key == ',') return ImGuiKey_Comma;
+    if (key == '.') return ImGuiKey_Period;
+    if (key == '/') return ImGuiKey_Slash;
+    return ImGuiKey_None;                       /* 不认识的键：不喂给 ImGui（安全） */
+}
+
 void mq_imgui_input_key(int key, int down) {
     if (!g_ready) return;
-    ImGuiIO &io = ImGui::GetIO();
-    if (key >= 0 && key < 512) io.AddKeyEvent((ImGuiKey)key, down != 0);
+    const ImGuiKey k = to_imgui_key(key);
+    if (k == ImGuiKey_None) return;
+    ImGui::GetIO().AddKeyEvent(k, down != 0);
 }
 
 void mq_imgui_input_chars(const char *utf8) {

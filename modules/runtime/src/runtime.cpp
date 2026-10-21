@@ -769,6 +769,10 @@ void Engine::step_frame() {
     iframe.pointers = iframe_pointers; iframe.pointer_cap = kMaxPointers;
     iframe.keys = iframe_keys;         iframe.key_cap = kMaxKeys;
     // ① 采样（设备事件随时入队，固定处理点统一消费，docs/19 §3）
+    /* 帧首清零设备队列：有窗口时 `mq_platform_poll` 会重填，但**无窗口/headless**
+     * 没有平台轮询 → 不清零会让上一帧的事件永远滞留（表现为同一个按键每帧都触发）。 */
+    iframe.pointer_count = 0;
+    iframe.key_count = 0;
     if (platform) {
         mq_platform_pump(platform);
         if (window) mq_platform_poll(platform, &iframe);
@@ -798,13 +802,34 @@ void Engine::step_frame() {
     (void)mq_platform_display_changed;   /* 尺寸变化由每帧解析自然覆盖（保留 API 供宿主查询） */
 
     sim_feed(frame);
+    /* 测试钩子：`MAQUE_SIM_KEY_AT="<帧>:<键码>[,<帧>:<键码>...]"` —— 向**本帧设备事件队列**
+     * 注入一次"按下"事件（走与真实键盘完全相同的路径：iframe → imgui_input_feed → 热键判断）。
+     * headless/CI 没有真实键盘，这是回归"按 F2 开关面板"这条路径的唯一手段。
+     * 例：MAQUE_SIM_KEY_AT="30:1002"（第 30 帧按下 F2）。 */
+    if (const char* sk = std::getenv("MAQUE_SIM_KEY_AT"); sk && *sk) {
+        std::string s(sk), item;
+        for (size_t k = 0; k <= s.size(); ++k) {
+            if (k < s.size() && s[k] != ',') { item.push_back(s[k]); continue; }
+            const size_t colon = item.find(':');
+            if (colon != std::string::npos && iframe.key_count < iframe.key_cap) {
+                const int at = std::atoi(item.substr(0, colon).c_str());
+                const int code = std::atoi(item.c_str() + colon + 1);
+                if ((int)frame == at) {
+                    mq_platform_key_event& ev = iframe.keys[iframe.key_count++];
+                    std::memset(&ev, 0, sizeof ev);
+                    ev.key = (uint32_t)code;
+                    ev.down = 1;
+                }
+            }
+            item.clear();
+        }
+    }
     /* **F2 引擎级热键**：开关 ImGui 调参面板（用户要求"引擎层面监听 F2，收到后打开"）。
      * 放在这里（本帧设备事件已采样、脚本 update 之前）：
      *   · 无论脚本是否写过 imgui_*，都能开/关面板；
      *   · 与 `imgui_enabled()` 一致 —— 未启用时脚本里的 imgui_* 是空操作；
      *   · 只认**按下沿**（iframe.keys 里 down=1 的事件），不做重复触发。
-     * 顺便把 F 键也喂给 ImGui 之外没坏处（面板不会用 F2）。
-     * 注：sim 注入走 input 模块，不经 iframe —— e2e 想测 F2 需走设备路径或下面的环境变量。 */
+     * 注：sim 注入走 input 模块，不经 iframe —— 想测 F2 用上面的 MAQUE_SIM_KEY_AT。 */
     for (uint32_t i = 0; i < iframe.key_count; ++i) {
         if (iframe.keys[i].down && iframe.keys[i].key == MQ_KEY_F2) {
             imgui_toggle();
