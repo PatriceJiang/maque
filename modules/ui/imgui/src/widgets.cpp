@@ -234,10 +234,16 @@ int mq_imgui_begin_overlay(const char *title) {
     /* 可拖动（标题栏）+ 自适应内容。
      * 注意：**不能加 NoInputs** —— 它会连标题栏拖动一起禁掉（实测"无法拖动"），
      * 也会让内容绘制异常。需要"不挡游戏点击"时应改用 ImGui 的 hover 判定，而不是 NoInputs。 */
-    /* 不用 AlwaysAutoResize：它与"每帧定位 + 可拖动"组合时会出现
-     * "窗口动了、内容却留在原处"的错位（实测）。改成由调用方给一次尺寸、
-     * 之后完全交给 ImGui（可拖动、可缩放）。 */
-    return ImGui::Begin(title && *title ? title : "overlay", nullptr, 0) ? 1 : 0;
+    /* 覆盖层**固定位置、不可手动移动/缩放**（NoMove | NoResize）。
+     *
+     * 原因（实测两次）：只要允许用户拖动这个窗口，就会出现"窗口动了、文字没跟着走"的
+     * 错位 —— 我们的绘制数据导出里，窗口位置与内容坐标来自同一份 ImGui draw list，
+     * 本应同步；实测不同步说明拖动路径上还有未定位的时序问题（ImGui 在拖动帧会把
+     * 窗口位置更新推迟到下一帧，而文本布局用的是上一帧起点）。
+     * 在定位清楚之前，覆盖层固定不动是**正确且可用**的：
+     * 它是常驻信息栏，固定左上角即可，也避免挡住游戏内容。 */
+    return ImGui::Begin(title && *title ? title : "overlay", nullptr,
+                        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize) ? 1 : 0;
 }
 
 void mq_imgui_push_font_size(float size_px) {
