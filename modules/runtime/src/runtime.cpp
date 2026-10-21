@@ -3572,11 +3572,14 @@ void Engine::imgui_extract(std::vector<mq_renderer_mesh>& out) {
         const size_t idx_off = imgui_idx.size();
         for (uint32_t k = 0; k < c.index_count; ++k) imgui_idx.push_back(c.indices[k] + base);
 
-        /* 纹理：命令里的句柄 = gfx 纹理 id + 1（字体图集）。未上传 → -1（渲染器跳过该批）。 */
+        /* 纹理：命令里的句柄 = gfx 纹理 id + 1（字体图集）。未上传 → -1（渲染器跳过该批）。
+         * ⚠️ 判据是 `>= 1` 不是 `> 1`：gfx 的纹理 id 从 **0** 开始，
+         * 句柄 1 对应 id 0（场景里没有别的纹理时字体图集正好是 0 号）——
+         * 写成 `> 1` 会把**第一张纹理**当成"未上传"，面板整批被跳过。 */
         int tex = -1;
-        if (c.texture > 1) {
-            const int id = (int)(c.texture - 1);
-            if (rapi && rapi->has_texture && rapi->has_texture(rself, id)) tex = id;
+        if (c.texture >= 1) {
+            const int tid = (int)(c.texture - 1);
+            if (rapi && rapi->has_texture && rapi->has_texture(rself, tid)) tex = tid;
         }
         mq_renderer_mesh m{};
         m.vertices = imgui_pos.data() + (size_t)base * 2;

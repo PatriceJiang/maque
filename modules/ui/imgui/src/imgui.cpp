@@ -24,6 +24,7 @@
 namespace {
 
 bool g_ready = false;
+bool g_trace = false;                  // MAQUE_IMGUI_TRACE=1：打印每帧命令几何（排障用）
 float g_font_size = 0.0F;
 float g_pixel_scale = 1.0F;
 uint64_t g_font_tex = 0;
@@ -81,6 +82,7 @@ int mq_imgui_init(float font_size, float pixel_scale) {
 
 int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_scale) {
     if (g_ready) return 0;
+    g_trace = std::getenv("MAQUE_IMGUI_TRACE") != nullptr;
     IMGUI_CHECKVERSION();
     if (!ImGui::CreateContext()) return 1;
     ImGuiIO &io = ImGui::GetIO();
@@ -213,12 +215,14 @@ int mq_imgui_begin_frame(float show_w, float show_h, float target_w, float targe
     ImGui::NewFrame();
 
     /* NewFrame 内部（ImFontAtlasBuildBeginFrame）才会真正构建字体图集 → 这里认领。
-     * 认领后：TexID 用宿主回填的句柄（未回填时给非零占位，避免 GetTexID 断言），
-     * 代数 +1 通知宿主"该上传/重传纹理了"。 */
+     *
+     * ⚠️ **不要**在这里把状态设成 OK：`mq_imgui_font_dirty()` 就是靠
+     * "Status != OK" 告诉宿主"图集变了、需要（重新）上传纹理"。这里强制 OK 会让宿主
+     * 以为已经是最新 → 新烘焙的字形仍采样**旧纹理**，画面上表现为"短文本正常、长文本和
+     * 控件糊成白条"（实测就是这个问题）。状态由宿主上传完后调
+     * `mq_imgui_set_font_texture()` 标回 OK。 */
     if (io.Fonts->TexData && io.Fonts->TexData != g_font_texdata) {
         g_font_texdata = io.Fonts->TexData;
-        g_font_texdata->SetTexID(g_font_tex != 0 ? (ImTextureID)g_font_tex : (ImTextureID)1);
-        g_font_texdata->SetStatus(ImTextureStatus_OK);
         ++g_font_gen;
         std::print(stderr, "[imgui] font atlas {}x{} (gen={})\n",
                    g_font_texdata->Width, g_font_texdata->Height, g_font_gen);
@@ -252,22 +256,53 @@ int mq_imgui_end_frame(mq_imgui_frame *out) {
             if (c.UserCallback) continue;                  // 自定义回调本模块不支持（宿主自己处理）
             if (c.ElemCount == 0) continue;
             const uint32_t icount = (uint32_t)c.ElemCount;
-            /* 本命令的顶点区间：ImGui 用 `VtxOffset` 指出它在**整个 list 顶点缓冲**里的起点。
-             * 不处理它就会把别的命令的顶点拷进来 → 画面糊成一片/串行（实测过）。
-             * 同一 list 里 `VtxOffset` 单调递增，所以本命令顶点数 = 上一条的起点差；
-             * 最后一条用 max(索引)+1-VtxOffset 推。 */
-            const uint32_t vstart = c.VtxOffset;
+            /* 诊断（MAQUE_IMGUI_TRACE=1）：打印每条命令的真实几何参数。
+             * 面板"糊成一片/白条"的排查全靠它 —— 猜了三轮都没中，数据先摆出来。 */
+            if (g_trace) {
+                uint32_t mn0 = UINT32_MAX, mx0 = 0;
+                float bx0 = 1e9F, by0 = 1e9F, bx1 = -1e9F, by1 = -1e9F;
+                for (uint32_t i = 0; i < icount; ++i) {
+                    const uint32_t v = (uint32_t)idx[c.IdxOffset + i];
+                    mn0 = v < mn0 ? v : mn0;
+                    mx0 = v > mx0 ? v : mx0;
+                }
+                for (uint32_t v = mn0; v <= mx0; ++v) {
+                    const ImDrawVert &dv = vtx[v];
+                    bx0 = dv.pos.x < bx0 ? dv.pos.x : bx0;
+                    by0 = dv.pos.y < by0 ? dv.pos.y : by0;
+                    bx1 = dv.pos.x > bx1 ? dv.pos.x : bx1;
+                    by1 = dv.pos.y > by1 ? dv.pos.y : by1;
+                }
+                std::print(stderr,
+                           "[imgui.cmd] cmd={} elem={} idxRange=[{},{}] nvtx={} bbox=({:.0f},{:.0f})-({:.0f},{:.0f}) "
+                           "clip=({:.0f},{:.0f})-({:.0f},{:.0f}) vtxOff={}\n",
+                           (int)(&c - list->CmdBuffer.Data), icount, mn0, mx0, mx0 - mn0 + 1,
+                           bx0, by0, bx1, by1,
+                           c.ClipRect.x, c.ClipRect.y, c.ClipRect.z, c.ClipRect.w,
+                           (uint32_t)c.VtxOffset);
+            }
+            /* 本命令真正用到的顶点区间 = 索引的 [min, max]（跨整个 list 顶点缓冲的下标）。
+             * 为什么不用 `VtxOffset`：实测该字段在本集成里恒为 0（不设 RendererHasVtxOffset），
+             * 而同一 list 的多条命令会**共享**同一个顶点缓冲，各自只用其中一段 ——
+             * 用 VtxOffset 会把整段缓冲都拷进来（多拷贝不影响正确性但浪费），
+             * 更关键的是下面索引的**基准**必须是这一段，否则索引全错位。
+             *
+             * ⚠️ 索引导出约定：**命令内局部下标（0 基）**，与顶点块一一对应。
+             * 宿主把它拷到自己缓冲的 offset `base` 处，再把索引 + base 即可。
+             * （曾经导出"模块全局下标"，宿主又加了一次自己的 base → 第二条命令索引整体偏移，画面糊成一片。） */
+            uint32_t mn = UINT32_MAX, mx = 0;
+            for (uint32_t i = 0; i < icount; ++i) {
+                const uint32_t v = (uint32_t)idx[c.IdxOffset + i];
+                mn = v < mn ? v : mn;
+                mx = v > mx ? v : mx;
+            }
+            if (mn == UINT32_MAX) continue;                // 理论上不可能（ElemCount>0）
+            const uint32_t vstart = mn;
+            const uint32_t vcount = mx - mn + 1;
             const uint32_t vbase = (uint32_t)(g_pos.size() / 2);
 
             /* 顶点：ImDrawVert 默认 pos(8B)+uv(8B)+col(4B)=20B；位置是显示坐标
-             * → 映射回目标像素空间（这样面板按窗口像素排版，但落点与引擎图元同空间）。
-             * 顶点数用索引覆盖范围推：max(索引) - VtxOffset + 1（索引相对 list 起点）。 */
-            uint32_t lmax = vstart;
-            for (uint32_t i = 0; i < icount; ++i) {
-                const uint32_t v = (uint32_t)idx[c.IdxOffset + i];
-                if (v > lmax) lmax = v;
-            }
-            const uint32_t vcount = lmax - vstart + 1;
+             * → 映射回目标像素空间（这样面板按窗口像素排版，但落点与引擎图元同空间）。 */
             for (uint32_t i = 0; i < vcount; ++i) {
                 const ImDrawVert &v = vtx[vstart + i];
                 g_pos.push_back(to_target_x(v.pos.x));
@@ -281,8 +316,9 @@ int mq_imgui_end_frame(mq_imgui_frame *out) {
                 const float aa = (float)((col >> IM_COL32_A_SHIFT) & 0xFF) / 255.0F;
                 g_col.push_back(rr); g_col.push_back(gg); g_col.push_back(bb); g_col.push_back(aa);
             }
+            /* 索引：转成**命令内局部下标（0 基）** —— 宿主导入时再加它自己的 base。 */
             for (uint32_t i = 0; i < icount; ++i)
-                g_idx.push_back((uint32_t)idx[c.IdxOffset + i] - vstart + vbase);
+                g_idx.push_back((uint32_t)idx[c.IdxOffset + i] - vstart);
 
             mq_imgui_cmd cmd{};
             /* 只记偏移；指针在全部几何建好后统一回填（见循环之后）。 */

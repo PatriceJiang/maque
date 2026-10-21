@@ -1,0 +1,10 @@
+{
+  "title": "ImGui probe",
+  "script": "probe.js",
+  "width": 640,
+  "height": 360,
+  "seed": 1,
+  "entities": [
+    { "name": "probe", "components": [ { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 } ] }
+  ]
+}
