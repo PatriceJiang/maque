@@ -106,6 +106,15 @@
       - { fn: mq_platform_display_changed, returns: int,
           args: [ { name: p, type: "mq_platform*" } ],
           doc: "自上次调用以来窗口是否更换显示器/尺寸变化（画布需重解析）" }
+      # 暴露原生 SDL 句柄：官方 ImGui 后端（imgui_impl_sdl2 / imgui_impl_sdlrenderer2）
+      # 需要真实的 SDL_Window*/SDL_Renderer*，不能由 runtime 自己伪造。
+      # 返回不透明指针；无窗口/未初始化 → NULL（调用方必须判空）。
+      - { fn: mq_platform_sdl_window, returns: "void*",
+          args: [ { name: p, type: "mq_platform*" } ],
+          doc: "原生 SDL_Window*（无窗口时 NULL）" }
+      - { fn: mq_platform_sdl_renderer, returns: "void*",
+          args: [ { name: p, type: "mq_platform*" } ],
+          doc: "原生 SDL_Renderer*（仅 MAQUE_PRESENT=accelerated 时非空）" }
       - { fn: mq_platform_set_safe_area, returns: void,
           args: [ { name: p, type: "mq_platform*" }, { name: l, type: "float" }, { name: t, type: "float" },
                   { name: r, type: "float" }, { name: b, type: "float" } ],

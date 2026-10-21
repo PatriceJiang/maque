@@ -22072,6 +22072,28 @@
           ]
         },
         {
+          "name": "mq_platform_sdl_window",
+          "returns": "void*",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_sdl_renderer",
+          "returns": "void*",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_platform_set_safe_area",
           "returns": "void",
           "args": [

@@ -113,6 +113,10 @@ void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h);
 float mq_platform_content_scale(mq_platform* p);
 /* 自上次调用以来窗口是否更换显示器/尺寸变化（画布需重解析） */
 int mq_platform_display_changed(mq_platform* p);
+/* 原生 SDL_Window*（无窗口时 NULL） */
+void* mq_platform_sdl_window(mq_platform* p);
+/* 原生 SDL_Renderer*（仅 MAQUE_PRESENT=accelerated 时非空） */
+void* mq_platform_sdl_renderer(mq_platform* p);
 /* 安全区内缩（设备像素，刘海/圆角）；画布解析时扣除 */
 void mq_platform_set_safe_area(mq_platform* p, float l, float t, float r, float b);
 /* 把帧按**指定目标矩形**呈现（画布策略决定缩放/留边；filter 0=linear 1=nearest -1=自动） */

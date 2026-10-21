@@ -221,6 +221,10 @@ void mq_platform_destroy(mq_platform* p) {
  *   · 无窗口 / dummy 驱动 / MAQUE_PRESENT=off → 安全空操作（headless/CI 不报错）
  *   · MAQUE_PRESENT=software|accelerated 可强制后端；默认 accelerated → software 回退
  * 呈现失败不致命（视为无窗口），避免把渲染问题升级成"跑不起来"。 */
+/* 原生句柄：给官方 ImGui 后端用（它必须拿到真的 SDL_Window/SDL_Renderer）。 */
+void *mq_platform_sdl_window(mq_platform *p) { return p ? (void *)p->win : nullptr; }
+void *mq_platform_sdl_renderer(mq_platform *p) { return p ? (void *)p->ren : nullptr; }
+
 int mq_platform_present_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h,
                              int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter) {
     if (!p || !rgba || w <= 0 || h <= 0) return 1;
