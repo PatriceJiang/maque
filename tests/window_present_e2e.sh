@@ -31,7 +31,8 @@ MAQUE_CAPTURE="$WORK/win" MAQUE_MAX_FRAMES=6 MAQUE_KEEP_OPEN=1 \
 
 grep -q "window 800x600" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未应用窗口尺寸覆盖" >&2; exit 1; }
 grep -q "platform window=1" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未创建真实窗口" >&2; exit 1; }
-grep -q "present via window surface" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未走呈现路径" >&2; exit 1; }
+# 呈现覆盖两条路径：software（窗口表面）与 accelerated（SDL_Renderer）
+grep -qE "present via (window surface|renderer=)" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未走呈现路径" >&2; exit 1; }
 
 "$PY" - "$WORK/win_0.ppm" <<'PY' || exit 1
 import sys

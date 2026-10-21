@@ -283,7 +283,13 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
         /* 默认 **软件** 呈现：帧本来就在 CPU（渲染插件回读），软件 blit 无需 GL 上下文，
          * 避免与 wgpu(EGL) 争用 —— 多实例/多窗口下 GL 上下文会 BadAccess。
          * MAQUE_PRESENT=accelerated 可切回 GPU blit；=off 关闭呈现。 */
-        p->present_mode = 1;   /* 默认 software（见下）；accelerated 需显式 MAQUE_PRESENT */
+    #ifdef _WIN32
+    /* Windows 默认 accelerated（SDL_Renderer = Direct3D，不走 GL/EGL，不与 wgpu 争用）：
+     * ImGui 官方后端需要真实 SDL_Renderer 才能把调试面板画到窗口。 */
+    p->present_mode = 2;
+#else
+    p->present_mode = 1;
+#endif
         const char* mode = std::getenv("MAQUE_PRESENT");
         if (mode && *mode) {
             if (std::strcmp(mode, "off") == 0) p->present_mode = 0;
