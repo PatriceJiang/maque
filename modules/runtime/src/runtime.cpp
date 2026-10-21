@@ -3533,7 +3533,13 @@ void Engine::imgui_frame_begin(float dt) {
             if (imgui_tex >= 0) mq_imgui_set_font_texture((uint64_t)(imgui_tex + 1));
             /* 每次上传都记：图集是否随字形烘焙在变大（排查"字形错位/缺失"的关键数据）。 */
             std::print(stderr, "[imgui.tex] upload {}x{} gen={} tex={}\n",
-                       fw, fh, (int)mq_imgui_font_generation(), imgui_tex);
+                       fw, fh, (int)mq_imgui_font_generation(), imgui_tex);            /* MAQUE_IMGUI_DUMP_ATLAS=<file.raw>：把**实际传给 GPU 的图集**落盘（RGBA32 原始字节），
+             * 用来区分"图集里没字形"和"采不到字形" —— 前者是字体/烘焙问题，后者是 UV/打包问题。 */
+            if (const char* d = std::getenv("MAQUE_IMGUI_DUMP_ATLAS"); d && *d) {
+                std::ofstream f(d, std::ios::binary);
+                f.write(reinterpret_cast<const char*>(px), (std::streamsize)fw * fh * 4);
+                std::print("runtime: imgui atlas dumped '{}' {}x{}\n", d, fw, fh);
+            }
             if (imgui_tex_gen != mq_imgui_font_generation()) {
                 imgui_tex_gen = mq_imgui_font_generation();
                 std::print("runtime: imgui font atlas {}x{} → texture {}\n", fw, fh, imgui_tex);

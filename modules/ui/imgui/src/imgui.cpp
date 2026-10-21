@@ -151,6 +151,26 @@ const uint8_t *mq_imgui_font_pixels(int *out_w, int *out_h) {
      * 图集永远停留在未构建状态（实测：512x128 且没有 CJK 字形 → 中文变方块）。
      * 所以这里只读取"NewFrame 之后认领好的" TexData。 */
     if (!g_font_texdata || !g_font_texdata->Pixels) return nullptr;
+    /* 像素格式必须是 RGBA32（宿主按 4 字节/像素上传）。若 ImGui 给了 Alpha8，
+     * 直接按 w*h*4 读会把内存读穿 → 图集错乱/白条。这里**强制校验并在需要时转换**。 */
+    if (g_font_texdata->BytesPerPixel != 4) {
+        if (g_trace) {
+            std::print(stderr, "[imgui] atlas format={} bpp={} → 转 RGBA32\n",
+                       (int)g_font_texdata->Format, g_font_texdata->BytesPerPixel);
+        }
+        g_font_rgba.resize((size_t)g_font_texdata->Width * g_font_texdata->Height * 4);
+        const uint8_t *src = (const uint8_t *)g_font_texdata->Pixels;
+        /* Alpha8：字形覆盖率在 alpha，RGB 用白色（后面的乘法混合需要白色底）。 */
+        for (size_t i = 0, n = (size_t)g_font_texdata->Width * g_font_texdata->Height; i < n; ++i) {
+            g_font_rgba[i * 4 + 0] = 255;
+            g_font_rgba[i * 4 + 1] = 255;
+            g_font_rgba[i * 4 + 2] = 255;
+            g_font_rgba[i * 4 + 3] = src[i];
+        }
+        if (out_w) *out_w = g_font_texdata->Width;
+        if (out_h) *out_h = g_font_texdata->Height;
+        return g_font_rgba.data();
+    }
     if (out_w) *out_w = g_font_texdata->Width;
     if (out_h) *out_h = g_font_texdata->Height;
     return (const uint8_t *)g_font_texdata->Pixels;
