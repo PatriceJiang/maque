@@ -34,6 +34,16 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/shot_e2e")
 endif()
 
+# ImGui 面板开关（F2）端到端：沿检测（单次/按住/两次）+ 反复开关不崩 + 面板确实画进像素缓冲。
+# headless 无真实键盘 → 用 MAQUE_SIM_KEY_AT 注入按下事件（与真实键盘同一条路径）。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME imgui_toggle_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/imgui_toggle_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/samples"
+             "${CMAKE_CURRENT_BINARY_DIR}/imgui_toggle_e2e")
+    set_tests_properties(imgui_toggle_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # 输入/UI/快照/回放端到端（docs/10 §3/§5、docs/19 §9）：注入 → 分发 → 生成 → 回放一致
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME ui_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_e2e.sh"

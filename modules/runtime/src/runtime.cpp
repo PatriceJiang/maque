@@ -361,6 +361,7 @@ struct Engine {
     bool  imgui_ptr_down = false;              // 左键是否按住
     bool  imgui_env_checked = false;           // 是否已按 MAQUE_IMGUI 决定过初始开关
     bool  imgui_frame_active = false;          // 本帧已 begin（保证 end 一定配对）
+    bool  imgui_f2_held = false;               // F2 是否按住（热键沿检测：按住只切一次）
     int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
      * 图集**按需增长**（任意 Unicode/CJK）→ 用 generation 判断是否需要重传纹理。 */
@@ -825,16 +826,20 @@ void Engine::step_frame() {
         }
     }
     /* **F2 引擎级热键**：开关 ImGui 调参面板（用户要求"引擎层面监听 F2，收到后打开"）。
-     * 放在这里（本帧设备事件已采样、脚本 update 之前）：
-     *   · 无论脚本是否写过 imgui_*，都能开/关面板；
-     *   · 与 `imgui_enabled()` 一致 —— 未启用时脚本里的 imgui_* 是空操作；
-     *   · 只认**按下沿**（iframe.keys 里 down=1 的事件），不做重复触发。
-     * 注：sim 注入走 input 模块，不经 iframe —— 想测 F2 用上面的 MAQUE_SIM_KEY_AT。 */
-    for (uint32_t i = 0; i < iframe.key_count; ++i) {
-        if (iframe.keys[i].down && iframe.keys[i].key == MQ_KEY_F2) {
-            imgui_toggle();
-            break;
+     * 关键点：
+     *   · **沿检测**（按住不放只切换一次）：SDL 在按住时会持续发 KEYDOWN（`repeat=1`），
+     *     若"见到按下就切换"会变成每帧开关一次（实测日志 ON/OFF 刷屏、反复 init/shutdown）。
+     *     这里维护 `imgui_f2_held`，只在 `未按住 → 按住` 的跳变时 toggle 一次，并忽略 repeat 事件。
+     *   · 放在脚本 update 之前：无论脚本是否写过 imgui_*，都能开/关面板。 */
+    {
+        bool f2_down = false;
+        for (uint32_t i = 0; i < iframe.key_count; ++i) {
+            const mq_platform_key_event& k = iframe.keys[i];
+            if (k.key != MQ_KEY_F2 || k.repeat) continue;      // 忽略键盘自动重复
+            if (k.down) f2_down = true;
         }
+        if (f2_down && !imgui_f2_held) imgui_toggle();          // 只有上升沿才切换
+        imgui_f2_held = f2_down;
     }
     /* ImGui：开始一帧（**必须在脚本 update 之前** —— 脚本里要调 imgui_begin/控件/imgui_end）。
      * 内部还会按需初始化、上传字体图集纹理，并在 ImGui 要吃输入时清空本帧设备事件（不点穿）。 */
