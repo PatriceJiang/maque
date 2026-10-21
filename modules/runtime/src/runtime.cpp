@@ -359,6 +359,19 @@ struct Engine {
     void imgui_extract(std::vector<mq_renderer_mesh>& out);   // 结束帧 + 命令 → 网格图元
     float imgui_ptr_x = 0, imgui_ptr_y = 0;    // 最近指针位置（窗口像素）
     bool  imgui_ptr_down = false;              // 左键是否按住
+    /* 指针的"窗口像素 → 目标/设计像素"换算（ImGui 显示空间 = 目标空间）：
+     * 显示 = 目标*scale + offset → 目标 = (显示 - offset) / scale。
+     * 无窗口时 scale=1/offset=0，等价于直接用。 */
+    float ptr_target_x() const {
+        if (!window) return imgui_ptr_x;
+        const float s = canvas.scale > 0.0F ? canvas.scale : 1.0F;
+        return (imgui_ptr_x - canvas.offset_x) / s;
+    }
+    float ptr_target_y() const {
+        if (!window) return imgui_ptr_y;
+        const float s = canvas.scale > 0.0F ? canvas.scale : 1.0F;
+        return (imgui_ptr_y - canvas.offset_y) / s;
+    }
     bool  imgui_env_checked = false;           // 是否已按 MAQUE_IMGUI 决定过初始开关
     bool  imgui_frame_active = false;          // 本帧已 begin（保证 end 一定配对）
     bool  imgui_f2_held = false;               // F2 是否按住（热键沿检测：按住只切一次）
@@ -3454,13 +3467,10 @@ void Engine::imgui_setup() {
         const float v = (float)std::atof(e);
         if (v > 0.0F) fs = v;
     }
-    /* 字体按"显示/目标"比例放大：窗口比设计分辨率大时，18px 字在屏幕上会糊。 */
-    float ps = 1.0F;
-    if (canvas.scale > 0.0F) {
-        ps = canvas.scale;
-        if (canvas.device_scale > 0.0F) ps *= canvas.device_scale;
-        if (ps <= 0.0F) ps = 1.0F;
-    }
+    /* 字体栅格化倍率：ImGui 显示空间 = 目标/设计空间（见 imgui_frame_begin），
+     * 所以字号就是**设计像素**，不需要再乘窗口缩放；窗口比设计小时最终画面整体缩小，
+     * 字体仍按设计尺寸栅格化才清晰（缩放交给 GPU）。 */
+    const float ps = 1.0F;
     if (mq_imgui_init_with_font(font_path.empty() ? nullptr : font_path.c_str(), fs, ps) != 0) {
         std::print(stderr, "runtime: imgui init failed\n");
         imgui_on = false;
@@ -3510,7 +3520,7 @@ void Engine::imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np
         else if (p.type == MQ_PLATFORM_POINTER_UP && p.button == 0) imgui_ptr_down = false;
         else if (p.type == MQ_PLATFORM_POINTER_WHEEL) wheel += p.scroll_y != 0.0F ? p.scroll_y : p.dy;
     }
-    mq_imgui_input_pointer(imgui_ptr_x, imgui_ptr_y, imgui_ptr_down ? 1 : 0, wheel);
+    mq_imgui_input_pointer(ptr_target_x(), ptr_target_y(), imgui_ptr_down ? 1 : 0, wheel);
     for (uint32_t i = 0; i < nk; ++i) {
         const mq_platform_key_event& k = keys[i];
         mq_imgui_input_key((int)k.key, k.down ? 1 : 0);
@@ -3559,16 +3569,18 @@ void Engine::imgui_frame_begin(float dt) {
         }
     }
 
-    /* 映射参数：显示空间 = 窗口像素，目标空间 = 渲染目标像素。
-     * 画布策略给出同一份映射（显示 = 目标*scale + offset）→ 逆变换由模块内部做。 */
-    const float show_w = (float)(win_w > 0 ? win_w : target_w);
-    const float show_h = (float)(win_h > 0 ? win_h : target_h);
-    float scale = canvas.scale > 0.0F ? canvas.scale : 1.0F;
-    float off_x = canvas.offset_x, off_y = canvas.offset_y;
-    if (!window) {                       // 无窗口（headless/截图）：显示空间 = 目标空间，1:1
-        scale = 1.0F; off_x = 0.0F; off_y = 0.0F;
-    }
-    const float dpi = (canvas.device_scale > 0.0F ? canvas.device_scale : 1.0F) * scale;
+    /* 映射参数：**ImGui 的显示空间直接 = 目标/设计空间**（scale=1、offset=0）。
+     *
+     * 为什么不让显示空间 = 窗口像素：脚本是按 `screen_w()`（设计分辨率）定位面板的
+     *（如 all.scn 1600x1300 把面板放在 x=1284）。若显示空间是窗口像素（默认 800x650），
+     * 面板会落在显示空间外 → ImGui 把它裁成**宽度 0**（实测 clip=(800,32)-(800,477)，
+     * 面板整块消失）。设计空间 = 目标空间时，两种模式（有窗口/headless）行为一致。
+     *
+     * 代价：输入坐标要把"窗口像素"反算到设计坐标（见 imgui_input_feed）。 */
+    const float show_w = (float)target_w;
+    const float show_h = (float)target_h;
+    const float scale = 1.0F, off_x = 0.0F, off_y = 0.0F;
+    const float dpi = 1.0F;
     mq_imgui_begin_frame(show_w, show_h, (float)target_w, (float)target_h,
                         scale, off_x, off_y, dt, dpi);
     imgui_frame_active = true;
