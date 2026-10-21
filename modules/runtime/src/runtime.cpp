@@ -3535,6 +3535,30 @@ void Engine::imgui_frame_begin(float dt) {
     const int target_h = (int)(H * ss + 0.5F);
     if (target_w <= 0 || target_h <= 0) return;
 
+    /* 字体图集（**静态路径**）：必须在 `mq_imgui_begin_frame` **之前** Build + 上传。
+     * 为什么顺序反了就不行：ImGui 的 legacy 后端路径要求"NewFrame 时图集已 Build"
+     * （imgui_draw.cpp: `IM_ASSERT_USER_ERROR(atlas->TexIsBuilt, ...)`），
+     * 而 `mq_imgui_font_pixels()` 正是做 Build 的那一步。所以：
+     *   ① 首次：取像素（内部 Build）→ 上传纹理 → `SetTexID` 绑定；
+     *   ② 之后：图集内容不再变（静态），直接跳过。 */
+    if (imgui_tex < 0 || mq_imgui_font_dirty()) {
+        int fw = 0, fh = 0;
+        const uint8_t* px = mq_imgui_font_pixels(&fw, &fh);
+        if (px && fw > 0 && fh > 0 && rapi && rself && rapi->create_texture) {
+            if (imgui_tex >= 0 && rapi->destroy_texture) rapi->destroy_texture(rself, imgui_tex);
+            imgui_tex = rapi->create_texture(rself, px, fw, fh);
+            if (imgui_tex >= 0) mq_imgui_set_font_texture((uint64_t)(imgui_tex + 1));
+            std::print("runtime: imgui font atlas {}x{} → texture {}\n", fw, fh, imgui_tex);
+            /* MAQUE_IMGUI_DUMP_ATLAS=<file.raw>：把实际传给 GPU 的图集落盘（RGBA32），
+             * 用来区分"图集里没字形"和"采不到字形"。 */
+            if (const char* d = std::getenv("MAQUE_IMGUI_DUMP_ATLAS"); d && *d) {
+                std::ofstream f(d, std::ios::binary);
+                f.write(reinterpret_cast<const char*>(px), (std::streamsize)fw * fh * 4);
+                std::print("runtime: imgui atlas dumped '{}' {}x{}\n", d, fw, fh);
+            }
+        }
+    }
+
     /* 映射参数：显示空间 = 窗口像素，目标空间 = 渲染目标像素。
      * 画布策略给出同一份映射（显示 = 目标*scale + offset）→ 逆变换由模块内部做。 */
     const float show_w = (float)(win_w > 0 ? win_w : target_w);
@@ -3548,34 +3572,6 @@ void Engine::imgui_frame_begin(float dt) {
     mq_imgui_begin_frame(show_w, show_h, (float)target_w, (float)target_h,
                         scale, off_x, off_y, dt, dpi);
     imgui_frame_active = true;
-
-    /* 字体图集纹理：**必须在 mq_imgui_begin_frame 之后**判断 ——
-     * ImGui 1.92+ 是**动态图集**：ImGui 在 NewFrame 内部构建/增量烘焙字形，
-     * 有新字形时把 ImTextureData 标成 WantUpdates（`mq_imgui_font_dirty()`）。
-     * 之前只上传一次 → 后续烘焙的字形查不到 → 中文/生僻字渲染成方块（实测）。
-     * 本引擎没有 update_texture，就 destroy+create；图集小且只在有新字形时发生。 */
-    if (imgui_tex < 0 || mq_imgui_font_dirty()) {
-        int fw = 0, fh = 0;
-        const uint8_t* px = mq_imgui_font_pixels(&fw, &fh);
-        if (px && fw > 0 && fh > 0 && rapi && rself && rapi->create_texture) {
-            if (imgui_tex >= 0 && rapi->destroy_texture) rapi->destroy_texture(rself, imgui_tex);
-            imgui_tex = rapi->create_texture(rself, px, fw, fh);
-            if (imgui_tex >= 0) mq_imgui_set_font_texture((uint64_t)(imgui_tex + 1));
-            /* 每次上传都记：图集是否随字形烘焙在变大（排查"字形错位/缺失"的关键数据）。 */
-            std::print(stderr, "[imgui.tex] upload {}x{} gen={} tex={}\n",
-                       fw, fh, (int)mq_imgui_font_generation(), imgui_tex);            /* MAQUE_IMGUI_DUMP_ATLAS=<file.raw>：把**实际传给 GPU 的图集**落盘（RGBA32 原始字节），
-             * 用来区分"图集里没字形"和"采不到字形" —— 前者是字体/烘焙问题，后者是 UV/打包问题。 */
-            if (const char* d = std::getenv("MAQUE_IMGUI_DUMP_ATLAS"); d && *d) {
-                std::ofstream f(d, std::ios::binary);
-                f.write(reinterpret_cast<const char*>(px), (std::streamsize)fw * fh * 4);
-                std::print("runtime: imgui atlas dumped '{}' {}x{}\n", d, fw, fh);
-            }
-            if (imgui_tex_gen != mq_imgui_font_generation()) {
-                imgui_tex_gen = mq_imgui_font_generation();
-                std::print("runtime: imgui font atlas {}x{} → texture {}\n", fw, fh, imgui_tex);
-            }
-        }
-    }
     /* 注：③ "不点穿"（清空本帧设备事件）放在调用点 —— iframe 是 step_frame 的局部量。 */
 }
 
@@ -3609,7 +3605,9 @@ void Engine::imgui_extract(std::vector<mq_renderer_mesh>& out) {
         imgui_uv.insert(imgui_uv.end(), c.uvs, c.uvs + (size_t)c.vertex_count * 2);
         imgui_col.insert(imgui_col.end(), c.colors, c.colors + (size_t)c.vertex_count * 4);
         const size_t idx_off = imgui_idx.size();
-        for (uint32_t k = 0; k < c.index_count; ++k) imgui_idx.push_back(c.indices[k] + base);
+        /* 引用已是命令内 0 基；**不能**再加 base：gfx 画时会叠 baseVertex（=本网格顶点起点），
+         * 再加一次就是双偏移 → 三角形拿到别的图元顶点（画面拉伸/模糊）。 */
+        for (uint32_t k = 0; k < c.index_count; ++k) imgui_idx.push_back(c.indices[k]);
 
         /* 纹理：命令里的句柄 = gfx 纹理 id + 1（字体图集）。未上传 → -1（渲染器跳过该批）。
          * ⚠️ 判据是 `>= 1` 不是 `> 1`：gfx 的纹理 id 从 **0** 开始，
@@ -3635,8 +3633,7 @@ void Engine::imgui_extract(std::vector<mq_renderer_mesh>& out) {
         m.pma = 0;                               // 图集是直通 RGBA（非预乘）
         m.layer = MQ_IMGUI_LAYER;                // ★ 在所有引擎图层之上
         m.z = (int32_t)ci;                       // 命令序 = ImGui 自身的绘制顺序
-        /* 裁剪矩形：ImGui 的 scissor（子窗口/文本裁剪/滑块内部都靠它）。
-         * 不传会让内容溢出到框外（实测：面板文字糊成一片、子窗口压住上面的行）。 */
+        /* 裁剪矩形：ImGui 的 scissor（子窗口/文本裁剪/滑块内部都靠它）。 */
         m.clip_x = c.clip_x;
         m.clip_y = c.clip_y;
         m.clip_w = c.clip_w;

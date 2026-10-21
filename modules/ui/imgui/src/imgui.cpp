@@ -45,6 +45,8 @@ bool g_focused = true;
 /* 字体图集的 RGBA32 副本（宿主上传用） */
 std::vector<uint8_t> g_font_rgba;
 int g_font_w = 0, g_font_h = 0;
+unsigned char *g_font_px = nullptr;    // ImGui 持有的图集像素（GetTexDataAsRGBA32 返回）
+bool g_font_built = false;             // 静态图集是否已 Build（只会做一次）
 
 /* 导出缓冲（仅本帧有效）。
  * ⚠️ 构建期只存**偏移**，不要存 vector 指针：边 push_back 边取 pointer 会在扩容后悬空
@@ -127,8 +129,15 @@ int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_s
      * 图集像素触发的构建）都会踩这个断言 —— 第一帧里就炸，且 init 的返回值看不出来。
      *
      * 所以这里只设标志 + 触发一次懒构建（走 ImGui 自己的路径），不手动 Build()。 */
-    adopt_font_texture();
-    g_font_texdata = nullptr;                // NewFrame 之后才建好（见上）
+    /* ⚠️ **不再设置 ImGuiBackendFlags_RendererHasTextures**（不走动态图集）。
+     * 我们走传统静态路径：宿主第一次要像素时 `Build()` + `GetTexDataAsRGBA32()`，
+     * 整张图上传一次、`SetTexID()` 绑定，之后不再更新。
+     * 动态图集需要后端完整实现 WantCreate/WantUpdates 状态机，我们试了几轮都对不上时机
+     *（症状：短文本正常、长文本/控件糊成白条）。静态路径简单且可预测。 */
+    g_font_built = false;
+    g_font_px = nullptr;
+    g_font_w = g_font_h = 0;
+    g_font_texdata = nullptr;
     g_ready = true;
     return 0;
 }
@@ -145,49 +154,50 @@ int mq_imgui_ready(void) { return g_ready ? 1 : 0; }
 
 const uint8_t *mq_imgui_font_pixels(int *out_w, int *out_h) {
     if (!g_ready) return nullptr;
-    /* **不**在这里 Build：设了 RendererHasTextures 之后，图集由 ImGui 在
-     * NewFrame() 内部构建（imgui_draw.cpp: ImFontAtlasBuildBeginFrame）。
-     * 手动 Build 会命中 "Build() before RendererHasTextures got set" 断言并早退，
-     * 图集永远停留在未构建状态（实测：512x128 且没有 CJK 字形 → 中文变方块）。
-     * 所以这里只读取"NewFrame 之后认领好的" TexData。 */
-    if (!g_font_texdata || !g_font_texdata->Pixels) return nullptr;
-    /* 像素格式必须是 RGBA32（宿主按 4 字节/像素上传）。若 ImGui 给了 Alpha8，
-     * 直接按 w*h*4 读会把内存读穿 → 图集错乱/白条。这里**强制校验并在需要时转换**。 */
-    if (g_font_texdata->BytesPerPixel != 4) {
-        if (g_trace) {
-            std::print(stderr, "[imgui] atlas format={} bpp={} → 转 RGBA32\n",
-                       (int)g_font_texdata->Format, g_font_texdata->BytesPerPixel);
-        }
-        g_font_rgba.resize((size_t)g_font_texdata->Width * g_font_texdata->Height * 4);
-        const uint8_t *src = (const uint8_t *)g_font_texdata->Pixels;
-        /* Alpha8：字形覆盖率在 alpha，RGB 用白色（后面的乘法混合需要白色底）。 */
-        for (size_t i = 0, n = (size_t)g_font_texdata->Width * g_font_texdata->Height; i < n; ++i) {
-            g_font_rgba[i * 4 + 0] = 255;
-            g_font_rgba[i * 4 + 1] = 255;
-            g_font_rgba[i * 4 + 2] = 255;
-            g_font_rgba[i * 4 + 3] = src[i];
-        }
-        if (out_w) *out_w = g_font_texdata->Width;
-        if (out_h) *out_h = g_font_texdata->Height;
-        return g_font_rgba.data();
+    /* **传统静态图集路径**（不走 RendererHasTextures 的动态图集）：
+     * 一次性 `Build()` + `GetTexDataAsRGBA32()` 拿到整张图，宿主上传一次即可。
+     *
+     * 为什么放弃动态图集：1.92+ 的动态图集要求后端实现完整的
+     * `WantCreate / WantUpdates / WantDestroy` 状态机（见 imgui_impl_sdlrenderer2.cpp），
+     * 我们几次尝试（按代数重传、按 dirty 重传、整张重传）都没能对上它的更新时机，
+     * 表现为"短文本正常、长文本/控件糊成白条"。静态路径行为可预测：
+     * 图集内容在 Build 时一次成型，之后不再变。代价是**只能用 GlyphRanges 里预载的字形**
+     *（面板文案都是固定文案，没问题；引擎自己的文本渲染走 text 模块，不受影响）。 */
+    ImGuiIO &io = ImGui::GetIO();
+    if (!g_font_built) {
+        unsigned char *px = nullptr;
+        int w = 0, h = 0, bpp = 0;
+        io.Fonts->Build();
+        io.Fonts->GetTexDataAsRGBA32(&px, &w, &h, &bpp);
+        if (!px || w <= 0 || h <= 0) return nullptr;
+        g_font_px = px;
+        g_font_w = w;
+        g_font_h = h;
+        g_font_built = true;
+        ++g_font_gen;
+        std::print(stderr, "[imgui] font atlas built (static): {}x{} bpp={}\n", w, h, bpp);
     }
-    if (out_w) *out_w = g_font_texdata->Width;
-    if (out_h) *out_h = g_font_texdata->Height;
-    return (const uint8_t *)g_font_texdata->Pixels;
+    if (out_w) *out_w = g_font_w;
+    if (out_h) *out_h = g_font_h;
+    return (const uint8_t *)g_font_px;
 }
 
 void mq_imgui_set_font_texture(uint64_t handle) {
     g_font_tex = handle;
-    if (g_font_texdata && handle != 0) {
-        g_font_texdata->SetTexID((ImTextureID)handle);
-        g_font_texdata->SetStatus(ImTextureStatus_OK);
+    ImGuiIO &io = ImGui::GetIO();
+    if (handle != 0) {
+        io.Fonts->SetTexID((ImTextureID)handle);      // 传统 API：图集绑定纹理句柄
+        if (io.Fonts->TexData) {
+            io.Fonts->TexData->SetTexID((ImTextureID)handle);
+            io.Fonts->TexData->SetStatus(ImTextureStatus_OK);
+        }
     }
 }
 
 int mq_imgui_font_dirty(void) {
     if (!g_ready) return 0;
-    if (!g_font_texdata) return 1;                       // 还没认领 → 需要（等 NewFrame 后）
-    return g_font_texdata->Status != ImTextureStatus_OK ? 1 : 0;
+    /* 静态图集：只有"还没上传过"算脏（Build 之后内容不再变）。 */
+    return (g_font_tex == 0 || !g_font_built) ? 1 : 0;
 }
 uint64_t mq_imgui_font_texture(void) { return g_font_tex; }
 uint32_t mq_imgui_font_generation(void) { return g_font_gen; }
@@ -273,19 +283,9 @@ int mq_imgui_begin_frame(float show_w, float show_h, float target_w, float targe
 
     ImGui::NewFrame();
 
-    /* NewFrame 内部（ImFontAtlasBuildBeginFrame）才会真正构建字体图集 → 这里认领。
-     *
-     * ⚠️ **不要**在这里把状态设成 OK：`mq_imgui_font_dirty()` 就是靠
-     * "Status != OK" 告诉宿主"图集变了、需要（重新）上传纹理"。这里强制 OK 会让宿主
-     * 以为已经是最新 → 新烘焙的字形仍采样**旧纹理**，画面上表现为"短文本正常、长文本和
-     * 控件糊成白条"（实测就是这个问题）。状态由宿主上传完后调
-     * `mq_imgui_set_font_texture()` 标回 OK。 */
-    if (io.Fonts->TexData && io.Fonts->TexData != g_font_texdata) {
-        g_font_texdata = io.Fonts->TexData;
-        ++g_font_gen;
-        std::print(stderr, "[imgui] font atlas {}x{} (gen={})\n",
-                   g_font_texdata->Width, g_font_texdata->Height, g_font_gen);
-    }
+    /* 静态图集路径：这里**不再认领 TexData / 不递增代数**。
+     * 图集在宿主第一次调 `mq_imgui_font_pixels()` 时一次性 Build 好并上传，
+     * 之后内容不变；`mq_imgui_font_dirty()` 只在"还没上传过"时为 1。 */
     return 0;
 }
 
