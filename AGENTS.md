@@ -88,8 +88,11 @@ tools\win\build.cmd -Sanitize address -RunTests
   clang++ -fsanitize=address t.cpp -o t && ./t                    # Linux
   ```
 
-- **窗口（宿主启动期覆盖）**：`MAQUE_WINDOW=800x600` 设窗口尺寸（世界/渲染目标仍是场景尺寸，
-  窗口内**等比缩放 + 居中留边**显示，输入坐标自动映射回世界坐标）；`MAQUE_TITLE=<标题>`；
+- **窗口（宿主启动期覆盖）**：**默认窗口 800x650**（世界/渲染目标仍是场景尺寸，
+  窗口内**等比缩放 + 居中留边**显示 —— 场景比窗口大就缩小、小就放大，都不裁剪；
+  输入坐标自动映射回世界坐标）。`MAQUE_WINDOW=WxH` 覆盖尺寸，**`0x0` = 不建窗口**（CI/无显示环境）；
+  ⚠️ 渲染倍率 `MAQUE_SS` 未设时只在**确有窗口**时跟随窗口像素（离屏/headless 恒为 1.0 =
+  设计分辨率），否则截图尺寸与文本折行行数会随窗口大小漂移。`MAQUE_TITLE=<标题>`；
   `MAQUE_VIEWS=n`；`MAQUE_PRESENT=off|software|accelerated`（默认 software：纯窗口表面，
   不初始化 GL/EGL，避免与渲染插件的 wgpu(EGL) 争用）；`MAQUE_CAPTURE=<前缀>` 从**窗口表面**
   回读前 3 帧为 PPM（用于真实窗口路径的像素级验证）；`MAQUE_KEEP_OPEN=1` 忽略脚本 `quit()`。

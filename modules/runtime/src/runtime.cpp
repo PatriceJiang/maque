@@ -6805,15 +6805,32 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     /* 启动期覆盖（宿主/CI 用；docs/05、docs/22）：
      *   MAQUE_WINDOW=WxH  窗口与渲染目标尺寸（世界坐标不变，仅改可视区）
      *   MAQUE_VIEWS=n     视图数（1 = 单视图；>1 = 并排多视图/立体） */
-    win_w = W; win_h = H;                       // 默认：窗口 = 世界/目标尺寸
+    /* **默认窗口 800x650**（用户要求）：世界/渲染目标仍是场景尺寸（W×H），
+     * 窗口内等比缩放 + 居中留边显示 —— 场景比窗口大就缩小，小就放大，都不裁剪。
+     * 之前的默认是"窗口 = 场景尺寸"，大场景（如 spine 的 all.scn 1600x1300）
+     * 在 1080p 屏上会超出显示器，必须改成固定小窗口。
+     *
+     * MAQUE_WINDOW=WxH 覆盖；`0x0` 表示**不建窗口**（CI/无显示环境用），
+     * 所以解析成功时原样接受（含 0），不要被"必须 >0"的校验吃掉语义。 */
+    win_w = 800; win_h = 650;
     if (const char* ws = std::getenv("MAQUE_WINDOW")) {
         int ow = 0, oh = 0;
-        if (std::sscanf(ws, "%dx%d", &ow, &oh) == 2 && ow > 0 && oh > 0) {
-            win_w = ow; win_h = oh;             // 只改窗口；世界/目标不变 → 窗口内等比缩放显示
-            std::print("runtime: window {}x{} (world {}x{}, scale {:.2f}x)\n",
-                       win_w, win_h, W, H,
-                       std::min((float)win_w / (float)W, (float)win_h / (float)H));
+        if (std::sscanf(ws, "%dx%d", &ow, &oh) == 2) {
+            win_w = ow; win_h = oh;                 // 只改窗口；世界/目标不变 → 窗口内等比缩放显示
+            if (win_w > 0 && win_h > 0) {
+                std::print("runtime: window {}x{} (world {}x{}, scale {:.2f}x)\n",
+                           win_w, win_h, W, H,
+                           std::min((float)win_w / (float)W, (float)win_h / (float)H));
+            } else {
+                std::print("runtime: window disabled (MAQUE_WINDOW={})\n", ws);
+            }
+        } else {
+            std::print(stderr, "runtime: MAQUE_WINDOW='{}' 格式应为 WxH，已忽略\n", ws);
         }
+    } else {
+        std::print("runtime: window {}x{} (default; world {}x{}, scale {:.2f}x)\n",
+                   win_w, win_h, W, H,
+                   std::min((float)win_w / (float)W, (float)win_h / (float)H));
     }
     if (const char* vs = std::getenv("MAQUE_VIEWS")) {
         const int v = std::atoi(vs);
@@ -6832,7 +6849,17 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             }
         }
     }
-    if (rs <= 0.0F && win_w > 0) rs = (float)win_w / (float)(W > 0 ? W : 1);      // 自动：跟随窗口像素
+    /* 渲染倍率（超采样）：
+     *   · 场景 `render_scale` 显式给了就用它；
+     *   · 否则**跟随真实窗口像素**（窗口/场景比）—— 窗口比设计分辨率大时字才清晰；
+     *   · **没有窗口时保持 1.0**（= 设计分辨率）。判据必须是"真的有窗口"，
+     *     不能只看 `win_w > 0`：`win_w` 现在是**默认 800x650**（不再是场景尺寸），
+     *     离屏/headless 下若仍按它算，渲染目标会被放大成 800x… → 截图尺寸、
+     *     文本折行行数全变（实测 shot_e2e / text_e2e 因此失败）。
+     *   · 嵌入宿主（`mq_host_create`）**根本没有 platform** → 必须先判空，
+     *     否则 `mq_platform_has_window(nullptr)` 直接崩（实测 host_tick/host_multi_instance 0xC0000409）。 */
+    const bool has_real_window = platform != nullptr && mq_platform_has_window(platform) != 0;
+    if (rs <= 0.0F && has_real_window && win_w > 0) rs = (float)win_w / (float)(W > 0 ? W : 1);
     if (rs <= 0.0F) rs = 1.0F;
     ss = rs > 4.0F ? 4.0F : (rs < 1.0F ? 1.0F : rs);
     const int SW = (int)(W * ss + 0.5F), SH = (int)(H * ss + 0.5F);
