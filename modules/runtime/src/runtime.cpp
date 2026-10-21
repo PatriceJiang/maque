@@ -3630,31 +3630,28 @@ void Engine::imgui_frame_begin(float dt) {
     imgui_frame_active = true;
 
     /* ---- 默认 stats 面板：**所有游戏都有**，左上角，无需脚本参与 ----
-     * 数据是上一帧的（开帧时就显示，避免"这一帧还没算完"）。
-     * 位置/尺寸用 FirstUseEver → 用户可以拖动/缩放，不会被复位。 */
+     * 数据是上一帧的（开帧时就显示）。
+     * · **不设尺寸**：让窗口按内容自动收缩 —— 之前固定 268x300，用户拖动后内容被截断
+     *   （窗口尺寸写死、内容行数/字号变化就溢出）；
+     * · 内容压缩成 4 行，避免"窗体偏大"。位置仍用 FirstUseEver（可拖动、不弹回）。 */
     if (mq_imgui_ready()) {
         mq_imgui_set_pos(8.0F, 8.0F);
-        mq_imgui_set_size(268.0F, 300.0F);
         if (mq_imgui_begin("stats")) {
             char line[160];
-            std::snprintf(line, sizeof line, "FPS %.1f  (%.2f ms)", stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);
+            std::snprintf(line, sizeof line, "FPS %.0f  (%.1f ms)",
+                          stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);
             mq_imgui_text(line);
-            std::snprintf(line, sizeof line, "logic   %.2f ms", stat_logic_ms);
+            std::snprintf(line, sizeof line, "logic %.1f ms  render %.1f ms", stat_logic_ms, stat_render_ms);
             mq_imgui_text(line);
-            std::snprintf(line, sizeof line, "render  %.2f ms", stat_render_ms);
+            std::snprintf(line, sizeof line, "draws %d  tris %d", stat_calls, stat_tris);
             mq_imgui_text(line);
-            mq_imgui_separator();
-            std::snprintf(line, sizeof line, "draws   %d", stat_calls);
-            mq_imgui_text(line);
-            std::snprintf(line, sizeof line, "tris    %d", stat_tris);
-            mq_imgui_text(line);
-            std::snprintf(line, sizeof line, "frame   %llu", (unsigned long long)frame);
-            mq_imgui_text(line);
-            std::snprintf(line, sizeof line, "target  %dx%d", target_w, target_h);
+            std::snprintf(line, sizeof line, "frame %llu  target %dx%d",
+                          (unsigned long long)frame, target_w, target_h);
             mq_imgui_text(line);
         }
         mq_imgui_end();
     }
+
     /* 注：③ "不点穿"（清空本帧设备事件）放在调用点 —— iframe 是 step_frame 的局部量。 */
 }
 
