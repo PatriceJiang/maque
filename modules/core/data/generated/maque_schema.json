@@ -22083,6 +22083,17 @@
           ]
         },
         {
+          "name": "mq_platform_ensure_renderer",
+          "returns": "void*",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_platform_sdl_renderer",
           "returns": "void*",
           "args": [

@@ -3515,10 +3515,17 @@ void Engine::imgui_setup() {
     if (window && TW > 0 && win_w > 0) ps = (float)win_w / (float)TW;
     if (canvas.device_scale > 0.0F) ps *= canvas.device_scale;
     if (ps <= 0.0F) ps = 1.0F;
+    /* 官方后端优先：先拿到 SDL_Renderer（提前创建），再声明 backend 模式 → 字体图集交给官方后端。 */
+    void* pre_ren = (window && platform) ? mq_platform_ensure_renderer(platform) : nullptr;
+    if (pre_ren) mq_imgui_set_backend_mode(1);
     if (mq_imgui_init_with_font(font_path.empty() ? nullptr : font_path.c_str(), fs, ps) != 0) {
         std::print(stderr, "runtime: imgui init failed\n");
         imgui_on = false;
         return;
+    }
+    if (pre_ren && mq_imgui_backend_init(pre_ren) == 0) {
+        imgui_backend = true;
+        std::print("runtime: imgui uses official SDL_Renderer backend\n");
     }
     imgui_inited = true;
     imgui_tex = -1;

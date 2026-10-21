@@ -115,6 +115,8 @@ float mq_platform_content_scale(mq_platform* p);
 int mq_platform_display_changed(mq_platform* p);
 /* 原生 SDL_Window*（无窗口时 NULL） */
 void* mq_platform_sdl_window(mq_platform* p);
+/* 立即创建并返回 SDL_Renderer*（供 ImGui 官方后端在首帧前初始化；无窗口/off 返回 NULL） */
+void* mq_platform_ensure_renderer(mq_platform* p);
 /* 原生 SDL_Renderer*（仅 MAQUE_PRESENT=accelerated 时非空） */
 void* mq_platform_sdl_renderer(mq_platform* p);
 /* 安全区内缩（设备像素，刘海/圆角）；画布解析时扣除 */

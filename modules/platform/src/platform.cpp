@@ -225,6 +225,18 @@ void mq_platform_destroy(mq_platform* p) {
 void *mq_platform_sdl_window(mq_platform *p) { return p ? (void *)p->win : nullptr; }
 void *mq_platform_sdl_renderer(mq_platform *p) { return p ? (void *)p->ren : nullptr; }
 
+/* 立即创建 SDL_Renderer：官方 ImGui 后端必须在**第一帧之前**拿到它
+ *（否则会先走静态字体图集，之后切后端会撞 ImGui 的动态图集断言）。 */
+void *mq_platform_ensure_renderer(mq_platform *p) {
+    if (!p || !p->window || !p->win || p->present_mode == 0) return nullptr;
+    if (!p->ren) {
+        if (p->present_mode == 1) p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
+        else p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_ACCELERATED);
+        if (!p->ren) p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
+    }
+    return p->ren;
+}
+
 int mq_platform_present_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h,
                              int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter) {
     if (!p || !rgba || w <= 0 || h <= 0) return 1;
@@ -271,7 +283,7 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
         /* 默认 **软件** 呈现：帧本来就在 CPU（渲染插件回读），软件 blit 无需 GL 上下文，
          * 避免与 wgpu(EGL) 争用 —— 多实例/多窗口下 GL 上下文会 BadAccess。
          * MAQUE_PRESENT=accelerated 可切回 GPU blit；=off 关闭呈现。 */
-        p->present_mode = 1;
+        p->present_mode = 1;   /* 默认 software（见下）；accelerated 需显式 MAQUE_PRESENT */
         const char* mode = std::getenv("MAQUE_PRESENT");
         if (mode && *mode) {
             if (std::strcmp(mode, "off") == 0) p->present_mode = 0;
