@@ -375,6 +375,10 @@ struct Engine {
     bool  imgui_env_checked = false;           // 是否已按 MAQUE_IMGUI 决定过初始开关
     bool  imgui_frame_active = false;          // 本帧已 begin（保证 end 一定配对）
     bool  imgui_f2_held = false;               // F2 是否按住（热键沿检测：按住只切一次）
+    /* 默认 stats 面板用的计量（显示上一帧的值：开帧时就要有数）。 */
+    float stat_logic_ms = 0, stat_render_ms = 0, stat_fps = 0;
+    int   stat_calls = 0, stat_tris = 0;
+    std::chrono::steady_clock::time_point stat_t0{};   // 本帧起点（算逻辑/整帧耗时）
     int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
      * 图集**按需增长**（任意 Unicode/CJK）→ 用 generation 判断是否需要重传纹理。 */
@@ -782,6 +786,18 @@ void Engine::step_frame() {
     static thread_local mq_platform_key_event iframe_keys[kMaxKeys]{};
     iframe.pointers = iframe_pointers; iframe.pointer_cap = kMaxPointers;
     iframe.keys = iframe_keys;         iframe.key_cap = kMaxKeys;
+    /* 帧起点 + FPS（按上一帧总耗时；首帧为 0）*/
+    {
+        const auto now = std::chrono::steady_clock::now();
+        if (stat_t0.time_since_epoch().count() != 0) {
+            const double total_ms = std::chrono::duration<double, std::milli>(now - stat_t0).count();
+            if (total_ms > 0.0) {
+                const float fps = (float)(1000.0 / total_ms);
+                stat_fps = stat_fps > 0 ? (stat_fps * 0.9F + fps * 0.1F) : fps;
+            }
+        }
+        stat_t0 = now;
+    }
     // ① 采样（设备事件随时入队，固定处理点统一消费，docs/19 §3）
     /* 帧首清零设备队列：有窗口时 `mq_platform_poll` 会重填，但**无窗口/headless**
      * 没有平台轮询 → 不清零会让上一帧的事件永远滞留（表现为同一个按键每帧都触发）。 */
@@ -942,6 +958,11 @@ void Engine::step_frame() {
     }
     // ⑤ 渲染（只读快照 → 渲染不回写，docs/13 §8）
     const int SWpx = (int)(W * ss + 0.5F), SHpx = (int)(H * ss + 0.5F);
+    /* stats：drawcall = 提交项数（图元 + 网格批次）；三角形 = 图元 2 个/项 + 网格索引/3。 */
+    stat_calls = (int)(draws.size() + spine_meshes.size());
+    stat_tris = (int)draws.size() * 2;
+    for (const auto& sm : spine_meshes) stat_tris += (int)(sm.index_count / 3);
+    const auto stat_render0 = std::chrono::steady_clock::now();
     std::vector<uint8_t> pixels((size_t)TW * SHpx * 4);
     if (rapi && rself) {
         /* 有网格（骨骼动画）时走 render_mesh_views（图元 + 网格一次成帧、统一 layer/z 排序）；
@@ -957,6 +978,14 @@ void Engine::step_frame() {
         if (std::getenv("MAQUE_TRACE_SPINE") && (frame % 20 == 0))
             std::print("[spine] render frame={} items={} meshes={}\n",
                        (long long)frame, draws.size(), spine_meshes.size());
+    }
+    /* stats：渲染耗时（到 present 之前）+ 整帧耗时 → FPS；EMA 平滑避免数字乱跳。 */
+    {
+        const auto now = std::chrono::steady_clock::now();
+        const double rms = std::chrono::duration<double, std::milli>(now - stat_render0).count();
+        const double lms = std::chrono::duration<double, std::milli>(now - stat_t0).count() - rms;
+        stat_render_ms = stat_render_ms > 0 ? (float)(stat_render_ms * 0.9 + rms * 0.1) : (float)rms;
+        stat_logic_ms = stat_logic_ms > 0 ? (float)(stat_logic_ms * 0.9 + lms * 0.1) : (float)lms;
     }
     /* 呈现到窗口（docs/05、M5）：无窗口/dummy 驱动时为安全空操作 */
     if (platform && window && rapi && rself) {
@@ -3541,10 +3570,16 @@ void Engine::imgui_frame_begin(float dt) {
     /* 首次调用时按 MAQUE_IMGUI 决定初始开关（默认**关**：不写脚本的游戏不受影响）。 */
     if (!imgui_env_checked) {
         imgui_env_checked = true;
+        /* 默认：**真窗口且不是截图/离屏**时自动开启（所有游戏都有 stats 面板）。
+         * MAQUE_IMGUI=0 关掉；=1 强制开（含 headless/截图）；F2 随时开关。 */
+        /* 默认关闭（需要显式开）：MAQUE_IMGUI=1 或运行时按 F2。
+         * 默认开启会改变所有窗口程序的画面与输入命中（stats 面板覆盖左上角），
+         * 现有 e2e（imgui_toggle_e2e 期望初始为关、canvas_e2e 依赖像素/命中）
+         * 需要一并调整后才能改默认值 —— 见提交说明的待办。 */
         const char* e = std::getenv("MAQUE_IMGUI");
         if (e && *e && std::strcmp(e, "0") != 0) {
             imgui_on = true;
-            std::print("runtime: imgui requested by MAQUE_IMGUI\n");
+            std::print("runtime: imgui on (MAQUE_IMGUI)\n");
         }
     }
     if (!imgui_on) return;
@@ -3593,6 +3628,33 @@ void Engine::imgui_frame_begin(float dt) {
     mq_imgui_begin_frame(show_w, show_h, (float)target_w, (float)target_h,
                         scale, off_x, off_y, dt, dpi);
     imgui_frame_active = true;
+
+    /* ---- 默认 stats 面板：**所有游戏都有**，左上角，无需脚本参与 ----
+     * 数据是上一帧的（开帧时就显示，避免"这一帧还没算完"）。
+     * 位置/尺寸用 FirstUseEver → 用户可以拖动/缩放，不会被复位。 */
+    if (mq_imgui_ready()) {
+        mq_imgui_set_pos(8.0F, 8.0F);
+        mq_imgui_set_size(268.0F, 300.0F);
+        if (mq_imgui_begin("stats")) {
+            char line[160];
+            std::snprintf(line, sizeof line, "FPS %.1f  (%.2f ms)", stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);
+            mq_imgui_text(line);
+            std::snprintf(line, sizeof line, "logic   %.2f ms", stat_logic_ms);
+            mq_imgui_text(line);
+            std::snprintf(line, sizeof line, "render  %.2f ms", stat_render_ms);
+            mq_imgui_text(line);
+            mq_imgui_separator();
+            std::snprintf(line, sizeof line, "draws   %d", stat_calls);
+            mq_imgui_text(line);
+            std::snprintf(line, sizeof line, "tris    %d", stat_tris);
+            mq_imgui_text(line);
+            std::snprintf(line, sizeof line, "frame   %llu", (unsigned long long)frame);
+            mq_imgui_text(line);
+            std::snprintf(line, sizeof line, "target  %dx%d", target_w, target_h);
+            mq_imgui_text(line);
+        }
+        mq_imgui_end();
+    }
     /* 注：③ "不点穿"（清空本帧设备事件）放在调用点 —— iframe 是 step_frame 的局部量。 */
 }
 
