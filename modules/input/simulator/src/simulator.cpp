@@ -292,6 +292,20 @@ uint32_t mq_sim_normalize_key(uint32_t key) {
     case 0x4000004Fu: return MQ_KEY_RIGHT;
     case 0x40000052u: return MQ_KEY_UP;
     case 0x40000051u: return MQ_KEY_DOWN;
+    /* 功能键（SDL F1=0x4000003A 起连续 12 个）→ 规范 1001..1012。
+     * 用途之一：e2e 注入 F2 验证"引擎级开关 ImGui 面板"。 */
+    case 0x4000003Au: return MQ_KEY_F1;
+    case 0x4000003Bu: return MQ_KEY_F2;
+    case 0x4000003Cu: return MQ_KEY_F3;
+    case 0x4000003Du: return MQ_KEY_F4;
+    case 0x4000003Eu: return MQ_KEY_F5;
+    case 0x4000003Fu: return MQ_KEY_F6;
+    case 0x40000040u: return MQ_KEY_F7;
+    case 0x40000041u: return MQ_KEY_F8;
+    case 0x40000042u: return MQ_KEY_F9;
+    case 0x40000043u: return MQ_KEY_F10;
+    case 0x40000044u: return MQ_KEY_F11;
+    case 0x40000045u: return MQ_KEY_F12;
     default: break;
     }
     if (key >= 'a' && key <= 'z') return key - 32u;   /* 小写字母 → 大写 ASCII */

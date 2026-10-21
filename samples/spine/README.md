@@ -163,3 +163,46 @@ ctest -R spine    # spine2d + spine_smoke/spine_e2e/spine_dragon/spine_mask + sp
 6. `art/dragon-ess.atlas` 是 `dragon-pma.atlas` 的**同内容副本**：专门用来覆盖"图集缺省解析规则"
    （组件不写 `atlas` 时取与骨架同名的 `.atlas`）——`dragon.scn` 走的就是这条路。
 
+## ImGui 调参面板（`MAQUE_IMGUI` / **F2**）
+
+引擎侧即时模式 UI（`modules/ui/imgui`）。**游戏内 HUD 仍用声明式 `ui.*`**（进场景/快照/可回放）；
+这块面板是**开发工具**：不进快照、不进校验和、关掉不影响任何模拟结果。
+
+### 怎么打开
+
+**运行时按 `F2`**（引擎级热键，runtime 直接监听，不依赖脚本）——再按一次关闭。
+也可以启动时就打开：
+
+```bash
+MAQUE_IMGUI=1 MAQUE_WINDOW=800x650 ./build-win/samples/spine/maque_spine samples/spine/all.scn
+```
+
+| 变量 | 作用 |
+|---|---|
+| `MAQUE_IMGUI=1` | 启动即开面板（不设则默认关，按 F2 可开） |
+| `MAQUE_WINDOW=800x650` | 窗口尺寸（场景仍 1600x1300，画布等比缩放+留边） |
+| `MAQUE_IMGUI_FONT_SIZE=20` | 面板字号（默认 18px；字体复用 `scenes/fonts/` 的中文字体） |
+
+### 绘制位置（为什么能看到）
+
+面板在所有引擎图层（含 `ui` pass 的 `layer=1`）**之后**、present **之前**提交，
+网格 `layer=MQ_IMGUI_LAYER(100)` → 永远在最上层，且**写进同一像素缓冲**
+→ `--shot` 截图里也有面板（这是选"复用引擎网格管线"而非 `imgui_impl_sdlrenderer2` 的主因：
+后者只能画到窗口，截图看不到、无法自证）。
+
+### 输入隔离
+
+ImGui 要吃鼠标/键盘时，引擎**清空本帧设备事件** → 点面板不会同时打到游戏上。
+脚本也可自行判断：`imgui_want_mouse()` / `imgui_hovered()`。
+
+### 面板内容（`all.scn`）
+
+全局：`Pause all` / `Reset` / `ImGui demo`（内建演示窗口，用来验证"整套控件都活着"）。
+逐格：每个 `cell` 的动画下拉、播放头时间（拖动即定格）、缩放。
+
+### ⚠️ 已知缺陷（未修）
+
+面板**能渲染**（标题栏/按钮/复选框/下拉/文字都在），但**内部控件重叠、有白色条带**。
+已排除：scissor 缺失（网格已支持 `clip_*` 并逐网格 `SetScissorRect`）、`VtxOffset`（已按
+draw-list 偏移修正）、字体纹理未上传（已按动态图集 `WantUpdates` 重传）。**根因未定位**，
+所以面板暂时**不能当控件用** —— 见 `docs/27` 的待办。

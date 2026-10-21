@@ -40,6 +40,20 @@ uint32_t key_from_sdl(SDL_Keycode k) {
         case SDLK_RIGHT:     return MQ_KEY_RIGHT;
         case SDLK_UP:        return MQ_KEY_UP;
         case SDLK_DOWN:      return MQ_KEY_DOWN;
+        /* 功能键：规范空间里单独占 1001..1012（ASCII 里没有对应，VK_F1=0x70 会与 'p' 冲突）。
+         * 引擎用 F2 开关 ImGui 调参面板（runtime 侧监听），其余键游戏可用。 */
+        case SDLK_F1:        return MQ_KEY_F1;
+        case SDLK_F2:        return MQ_KEY_F2;
+        case SDLK_F3:        return MQ_KEY_F3;
+        case SDLK_F4:        return MQ_KEY_F4;
+        case SDLK_F5:        return MQ_KEY_F5;
+        case SDLK_F6:        return MQ_KEY_F6;
+        case SDLK_F7:        return MQ_KEY_F7;
+        case SDLK_F8:        return MQ_KEY_F8;
+        case SDLK_F9:        return MQ_KEY_F9;
+        case SDLK_F10:       return MQ_KEY_F10;
+        case SDLK_F11:       return MQ_KEY_F11;
+        case SDLK_F12:       return MQ_KEY_F12;
         default: break;
     }
     if (k >= 'a' && k <= 'z') return (uint32_t)(k - 32);

@@ -337,6 +337,9 @@ struct Engine {
     std::vector<std::string> imgui_id_stack;                    // push_id 栈
     bool imgui_demo = false;                                   // show_demo 状态
     void imgui_setup();                        // 惰性初始化（首帧/首次脚本调用）
+    /* 开关面板（脚本 `imgui_set_enabled` 与**引擎级 F2 热键**共用同一条实现）。 */
+    void imgui_enable(bool on);
+    void imgui_toggle() { imgui_enable(!imgui_on); }
     /* 本帧输入转发：**窗口像素**原始事件（iframe 是 step_frame 的局部量 → 传参进来）。
      * 只记绝对位置/按键状态（ImGui 的 IO 需要持续状态，不是增量）。 */
     void imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np,
@@ -780,6 +783,19 @@ void Engine::step_frame() {
     (void)mq_platform_display_changed;   /* 尺寸变化由每帧解析自然覆盖（保留 API 供宿主查询） */
 
     sim_feed(frame);
+    /* **F2 引擎级热键**：开关 ImGui 调参面板（用户要求"引擎层面监听 F2，收到后打开"）。
+     * 放在这里（本帧设备事件已采样、脚本 update 之前）：
+     *   · 无论脚本是否写过 imgui_*，都能开/关面板；
+     *   · 与 `imgui_enabled()` 一致 —— 未启用时脚本里的 imgui_* 是空操作；
+     *   · 只认**按下沿**（iframe.keys 里 down=1 的事件），不做重复触发。
+     * 顺便把 F 键也喂给 ImGui 之外没坏处（面板不会用 F2）。
+     * 注：sim 注入走 input 模块，不经 iframe —— e2e 想测 F2 需走设备路径或下面的环境变量。 */
+    for (uint32_t i = 0; i < iframe.key_count; ++i) {
+        if (iframe.keys[i].down && iframe.keys[i].key == MQ_KEY_F2) {
+            imgui_toggle();
+            break;
+        }
+    }
     /* ImGui：开始一帧（**必须在脚本 update 之前** —— 脚本里要调 imgui_begin/控件/imgui_end）。
      * 内部还会按需初始化、上传字体图集纹理，并在 ImGui 要吃输入时清空本帧设备事件（不点穿）。 */
     imgui_frame_begin(1.0F / 60.0F);
@@ -3367,6 +3383,29 @@ void Engine::imgui_setup() {
                MQ_IMGUI_LAYER, font_path.empty() ? "(default)" : font_path.c_str(), fs, ps);
 }
 
+/* 开关面板：关掉时释放上下文 + 字体纹理（不占 GPU/输入）；再开会重新初始化。 */
+void Engine::imgui_enable(bool on) {
+    if (on == imgui_on && (on ? imgui_inited : !imgui_inited)) return;   // 幂等
+    if (!on) {
+        if (imgui_inited) {
+            mq_imgui_shutdown();
+            if (imgui_tex >= 0 && rapi && rself && rapi->destroy_texture)
+                rapi->destroy_texture(rself, imgui_tex);
+            imgui_tex = -1;
+            imgui_tex_gen = 0;
+            imgui_inited = false;
+            imgui_frame_active = false;
+            imgui_meshes.clear();
+        }
+        imgui_on = false;
+        std::print("runtime: imgui panel OFF\n");
+        return;
+    }
+    imgui_on = true;
+    imgui_setup();
+    std::print("runtime: imgui panel ON\n");
+}
+
 /* 把本帧设备事件转发给 ImGui（**窗口像素坐标**；调用点在转成世界坐标**之前**）。
  * ImGui 的显示空间就是窗口像素 → 不需要换算（画布缩放只影响世界层）。 */
 void Engine::imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np,
@@ -5354,20 +5393,7 @@ float imgui_enabled(void* ctx) {
 float imgui_set_enabled(void* ctx, float on) {
     auto* eng = (Engine*)ctx;
     if (!eng) return 0.0F;
-    const bool want = on != 0.0F;
-    if (!want && eng->imgui_inited) {
-        /* 关掉时释放上下文与纹理：不再占 GPU，且脚本调用变空操作。 */
-        mq_imgui_shutdown();
-        if (eng->imgui_tex >= 0 && eng->rapi && eng->rself && eng->rapi->destroy_texture)
-            eng->rapi->destroy_texture(eng->rself, eng->imgui_tex);
-        eng->imgui_tex = -1;
-        eng->imgui_tex_gen = 0;
-        eng->imgui_inited = false;
-        eng->imgui_meshes.clear();
-        std::print("runtime: imgui disabled\n");
-    }
-    eng->imgui_on = want;
-    if (want) eng->imgui_setup();
+    eng->imgui_enable(on != 0.0F);          // 与引擎级 F2 热键同一条实现
     return eng->imgui_on ? 1.0F : 0.0F;
 }
 

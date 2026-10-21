@@ -36,6 +36,21 @@
           - { name: MQ_KEY_UP, value: 8 }
           - { name: MQ_KEY_DOWN, value: 9 }
           - { name: MQ_KEY_TEXT, value: 10 }
+          # 功能键 F1..F12：规范键空间里**没有** ASCII 对应（Windows VK_F1=0x70 会与 'p' 撞车），
+          # 所以单独占 1001..1012。引擎自己用 F2 开关 ImGui 调试面板；
+          # 其余留给游戏/脚本（`input_key(MQ_KEY_F1)` 之类）。
+          - { name: MQ_KEY_F1,  value: 1001 }
+          - { name: MQ_KEY_F2,  value: 1002 }
+          - { name: MQ_KEY_F3,  value: 1003 }
+          - { name: MQ_KEY_F4,  value: 1004 }
+          - { name: MQ_KEY_F5,  value: 1005 }
+          - { name: MQ_KEY_F6,  value: 1006 }
+          - { name: MQ_KEY_F7,  value: 1007 }
+          - { name: MQ_KEY_F8,  value: 1008 }
+          - { name: MQ_KEY_F9,  value: 1009 }
+          - { name: MQ_KEY_F10, value: 1010 }
+          - { name: MQ_KEY_F11, value: 1011 }
+          - { name: MQ_KEY_F12, value: 1012 }
           - { name: MQ_KEY_A, value: 32 }
     structs:
       - name: mq_platform_pointer_event

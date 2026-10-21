@@ -43,6 +43,18 @@ enum {
     MQ_KEY_UP = 8,
     MQ_KEY_DOWN = 9,
     MQ_KEY_TEXT = 10,
+    MQ_KEY_F1 = 1001,
+    MQ_KEY_F2 = 1002,
+    MQ_KEY_F3 = 1003,
+    MQ_KEY_F4 = 1004,
+    MQ_KEY_F5 = 1005,
+    MQ_KEY_F6 = 1006,
+    MQ_KEY_F7 = 1007,
+    MQ_KEY_F8 = 1008,
+    MQ_KEY_F9 = 1009,
+    MQ_KEY_F10 = 1010,
+    MQ_KEY_F11 = 1011,
+    MQ_KEY_F12 = 1012,
     MQ_KEY_A = 32
 };
 

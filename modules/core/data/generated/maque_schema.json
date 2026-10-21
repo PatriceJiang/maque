@@ -22580,6 +22580,66 @@
               "doc": null
             },
             {
+              "name": "MQ_KEY_F1",
+              "value": 1001,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F2",
+              "value": 1002,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F3",
+              "value": 1003,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F4",
+              "value": 1004,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F5",
+              "value": 1005,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F6",
+              "value": 1006,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F7",
+              "value": 1007,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F8",
+              "value": 1008,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F9",
+              "value": 1009,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F10",
+              "value": 1010,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F11",
+              "value": 1011,
+              "doc": null
+            },
+            {
+              "name": "MQ_KEY_F12",
+              "value": 1012,
+              "doc": null
+            },
+            {
               "name": "MQ_KEY_A",
               "value": 32,
               "doc": null
