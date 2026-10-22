@@ -86,6 +86,54 @@ if (imgui_enabled()) {
 - `ctest -R imgui_toggle_e2e`：F2 开关的沿检测（单次/按住/两次/反复开关/像素可见）。
 - `ctest -R shot_e2e`：`--shot` 截图路径。
 
+## 现状快照（2026-10-22）
+
+记录当时的实现程度与实测结论，便于后续接手。基线提交见 `git log`（本文件所在提交附近）。
+
+### 已可用（有实测证据）
+
+| 项 | 状态 | 证据 |
+|---|---|---|
+| `modules/ui/imgui` 模块（上下文/帧/控件 C ABI） | ✅ | `ctest -R imgui`（34 项断言：图集非空、命令几何、坐标映射、参数校验） |
+| 74 个 `imgui_*` 脚本函数 | ✅ | schema → codegen → runtime 实现一致；`bindings_e2e` 通过 |
+| 中文字体（TTF + 两档字号 26px/15px） | ✅ | `--shot` 截图里中文正常、stats 用小字号 |
+| 默认 stats 面板（左上角） | ✅ | `--shot` 截图：FPS / logic / render / draws / tris / frame / target 七项 |
+| F2 开关（沿检测） | ✅ | `imgui_toggle_e2e`（单次/按住/两次/反复开关/像素可见） |
+| 输入隔离（面板吃输入时清空本帧设备事件） | ⚠️ 已实现未实测 | 代码路径 + `imgui_want_mouse/keyboard` |
+| 绘制在引擎所有图层之上 | ✅ | 面板网格 layer=100（引擎 UI = 1） |
+
+### 不可用 / 有限制（全部为实测）
+
+| 项 | 现象 | 定位 |
+|---|---|---|
+| **面板拖动** | 拖动后内容不跟随/留残影（阶梯状三角形） | 自研"draw data → mesh 图元"链；覆盖层暂用 `NoMove\|NoResize` 禁用拖动 |
+| **加速呈现 + 官方 SDL_Renderer 后端** | 后端初始化成功、无断言，但面板**不出现在窗口**；加"面板绘制后再 present"仍无效 | 双重 present/renderer 状态冲突，根因未定位 |
+| **默认呈现** | 为规避上一条，Windows 默认仍是 `software`（面板走网格链，可见但不可拖） | platform `present_mode` 默认值 |
+| `PushFont(size)` 改字号 | 静态图集只烘两档；推其它尺寸会取不到字形 → 空白 | 已改为"图集内两档 + push 字体指针" |
+| 弹窗/样式/拖放/剪贴板/IME | 未实现 | 见待办 |
+
+### 关键结论（避免重复踩坑）
+
+1. ImGui 1.92+ 的**动态图集**要求后端实现完整的 `WantCreate/WantUpdates` 状态机；
+   本集成改用**静态图集**（`Build()` + `GetTexDataAsRGBA32()` + `SetTexID`），
+   但因此**不能**再启用官方动态后端（否则命中
+   `Build() before RendererHasTextures` 断言）。
+2. 自研网格链的索引必须是**命令内 0 基**；gfx 绘制时会再加 `baseVertex`，
+   宿主**不能**自己再加偏移（否则三角形拿到别的图元顶点 → 画面糊成一片）。
+3. ImGui 显示空间：网格链模式 = **设计/目标空间**（脚本按 `screen_w()` 定位）；
+   官方后端模式 = **窗口像素空间**（两者不可混用）。
+4. `ImGuiWindowFlags_AlwaysAutoResize` + 每帧 `SetNextWindowPos` + 可拖动
+   → "窗口动了、文字不跟"；要么固定位置，要么只首帧定位一次。
+5. 官方后端必须在**第一帧之前**初始化（renderer 提前创建），否则先走静态图集再切后端会崩。
+
+### 下一步（按优先级）
+
+1. **统一呈现**：游戏帧与面板画到同一 renderer，只 `present` 一次
+   → 同时解决"加速路径面板不可见"与"网格链拖动残影"，然后恢复面板可拖动。
+2. 面板可拖动后，补 e2e：拖动/缩放后像素仍正确。
+3. 样式 API（`push_style_color/var`）、弹窗、拖放、剪贴板/IME。
+4. `MAQUE_STATS=0` 开关 stats 面板。
+
 ## 待办
 
 1. 修"面板可拖动"：统一呈现结构（渲染游戏帧与面板到同一 renderer 后只 present 一次），
