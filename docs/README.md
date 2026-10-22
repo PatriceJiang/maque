@@ -33,6 +33,9 @@
 | [23](23-实现与设计差距审查.md) | 实现与设计差距审查（历史快照 + §0 现况对照） |
 | [24](24-设计遵循度审查.md) | **设计遵循度审查（现况记分：符合/部分/违背/未实现 + 逐条证据）** |
 | [25](25-本地存储与远程存档.md) | 本地/远程**键值存储**（localStorage 类比）：模式可配 + `(uid,session)` 命名空间 |
+| [26](26-用真实游戏驱动引擎（flappy）.md) | 用真实游戏驱动引擎（flappy 全流程示例） |
+| [27](27-Spine运行时接入.md) | Spine 2D 运行时接入（骨骼动画网格 + 官方 13 个 demo） |
+| [28](28-ImGui调试面板.md) | 引擎侧 ImGui 调试面板：默认 stats、74 个脚本控件、F2 开关、**已知限制（不可拖动）** |
 | [api/](api/README.md) | **API 参考（自动生成，随仓库提交）**：脚本 API / 控制面 / 事件 / 插件 vtable / 模块 C ABI / 数据类型 |
 | [assets/00](assets/00-index.md) | 资产系列索引（Effect/Material/Mesh/Texture/Font/AnimationClip/Skeleton/Spine） |
 | [assets/01](assets/01-material.md) | 资产详设：材质（Material / Effect / MaterialInstance） |
