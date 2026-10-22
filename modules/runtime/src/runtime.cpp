@@ -7137,6 +7137,14 @@ bool Engine::load_scene_into(const std::string& scn_path) {
 }
 
 void Engine::teardown() {
+    /* ImGui：先关官方后端再销毁上下文（否则退出时断言 "Forgot to shutdown Renderer backend?"）。 */
+    if (imgui_inited) {
+        mq_imgui_shutdown();
+        if (imgui_tex >= 0 && rapi && rself && rapi->destroy_texture) rapi->destroy_texture(rself, imgui_tex);
+        imgui_tex = -1;
+        imgui_inited = false;
+        imgui_backend = false;
+    }
     /* 控制端点：统一在此销毁（含 UDS socket 文件清理）——正常退出与 MAQUE_CONTROL 路径都经过这里 */
     if (ctl_server) { mq_control_server_destroy(ctl_server); ctl_server = nullptr; }
     /* 释放顺序：先释放"依赖 reflect 的资源"（clips 的字符串成员要经反射析构），再销毁 reflect。 */

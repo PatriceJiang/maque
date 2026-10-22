@@ -148,6 +148,9 @@ int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_s
 
 void mq_imgui_shutdown(void) {
     if (!g_ready) return;
+    /* ⚠️ 必须先关官方后端（它会把自己的 BackendRendererUserData 清掉），
+     * 否则 DestroyContext 时命中断言 "Forgot to shutdown Renderer backend?"（实测退出崩溃）。 */
+    if (mq_imgui_g_backend || mq_imgui_g_backend_pref) mq_imgui_backend_shutdown();
     ImGui::DestroyContext();
     g_ready = false;
     g_font_rgba.clear();
