@@ -112,6 +112,12 @@
       - { fn: mq_platform_sdl_window, returns: "void*",
           args: [ { name: p, type: "mq_platform*" } ],
           doc: "原生 SDL_Window*（无窗口时 NULL）" }
+      - { fn: mq_platform_present_ui, returns: int,
+          args: [ { name: p, type: "mq_platform*" } ],
+          doc: "把 SDL_Renderer 上的额外绘制（ImGui 面板）提交到窗口（再做一次 SDL_RenderPresent）" }
+      - { fn: mq_platform_capture_now, returns: int,
+          args: [ { name: p, type: "mq_platform*" } ],
+          doc: "立即把当前窗口内容按 MAQUE_CAPTURE 写一帧 PPM（用于在面板绘制之后抓图验证）" }
       - { fn: mq_platform_ensure_renderer, returns: "void*",
           args: [ { name: p, type: "mq_platform*" } ],
           doc: "立即创建并返回 SDL_Renderer*（供 ImGui 官方后端在首帧前初始化；无窗口/off 返回 NULL）" }

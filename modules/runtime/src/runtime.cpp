@@ -1001,6 +1001,9 @@ void Engine::step_frame() {
     /* 官方后端模式：**present 之后**把面板直接画到窗口（在窗口像素空间，不受引擎缩放影响）。 */
     if (imgui_on && imgui_backend) {
         mq_imgui_backend_render();
+        /* ⚠️ 面板是在 platform.present 之后画的 → 必须再 present 一次才显示（否则只在后台缓冲）。
+         * present_ui 内部同时处理 MAQUE_CAPTURE 抓图（抓到的图里包含面板）。 */
+        mq_platform_present_ui(platform);
     }
     if (!frames_dir.empty()) {
         char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);

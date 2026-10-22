@@ -606,6 +606,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_platform_content_scale` | float | p: mq_platform* |
 | `mq_platform_display_changed` | int | p: mq_platform* |
 | `mq_platform_sdl_window` | void* | p: mq_platform* |
+| `mq_platform_present_ui` | int | p: mq_platform* |
+| `mq_platform_capture_now` | int | p: mq_platform* |
 | `mq_platform_ensure_renderer` | void* | p: mq_platform* |
 | `mq_platform_sdl_renderer` | void* | p: mq_platform* |
 | `mq_platform_set_safe_area` | void | p: mq_platform*, l: float, t: float, r: float, b: float |

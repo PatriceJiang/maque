@@ -115,6 +115,10 @@ float mq_platform_content_scale(mq_platform* p);
 int mq_platform_display_changed(mq_platform* p);
 /* 原生 SDL_Window*（无窗口时 NULL） */
 void* mq_platform_sdl_window(mq_platform* p);
+/* 把 SDL_Renderer 上的额外绘制（ImGui 面板）提交到窗口（再做一次 SDL_RenderPresent） */
+int mq_platform_present_ui(mq_platform* p);
+/* 立即把当前窗口内容按 MAQUE_CAPTURE 写一帧 PPM（用于在面板绘制之后抓图验证） */
+int mq_platform_capture_now(mq_platform* p);
 /* 立即创建并返回 SDL_Renderer*（供 ImGui 官方后端在首帧前初始化；无窗口/off 返回 NULL） */
 void* mq_platform_ensure_renderer(mq_platform* p);
 /* 原生 SDL_Renderer*（仅 MAQUE_PRESENT=accelerated 时非空） */

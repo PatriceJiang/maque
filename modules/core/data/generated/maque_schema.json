@@ -22083,6 +22083,28 @@
           ]
         },
         {
+          "name": "mq_platform_present_ui",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_capture_now",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_platform_ensure_renderer",
           "returns": "void*",
           "args": [

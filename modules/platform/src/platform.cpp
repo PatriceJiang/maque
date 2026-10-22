@@ -227,6 +227,22 @@ void *mq_platform_sdl_renderer(mq_platform *p) { return p ? (void *)p->ren : nul
 
 /* 立即创建 SDL_Renderer：官方 ImGui 后端必须在**第一帧之前**拿到它
  *（否则会先走静态字体图集，之后切后端会撞 ImGui 的动态图集断言）。 */
+/* 立即抓一帧窗口内容（在 ImGui 面板绘制**之后**调用，才能把面板也抓进去）。 */
+/* 提交 renderer 上的额外绘制（ImGui 面板）：platform 的 present 已经画过游戏帧，
+ * 面板是在那之后画的 → 必须再 present 一次才会显示到窗口。 */
+int mq_platform_present_ui(mq_platform *p) {
+    if (!p || !p->ren || !p->window) return 1;
+    SDL_RenderPresent(p->ren);
+    capture_window(p);
+    return 0;
+}
+
+int mq_platform_capture_now(mq_platform *p) {
+    if (!p || !p->win || !p->window) return 1;
+    capture_window(p);
+    return 0;
+}
+
 void *mq_platform_ensure_renderer(mq_platform *p) {
     if (!p || !p->window || !p->win || p->present_mode == 0) return nullptr;
     if (!p->ren) {
@@ -283,13 +299,12 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
         /* 默认 **软件** 呈现：帧本来就在 CPU（渲染插件回读），软件 blit 无需 GL 上下文，
          * 避免与 wgpu(EGL) 争用 —— 多实例/多窗口下 GL 上下文会 BadAccess。
          * MAQUE_PRESENT=accelerated 可切回 GPU blit；=off 关闭呈现。 */
-    #ifdef _WIN32
-    /* Windows 默认 accelerated（SDL_Renderer = Direct3D，不走 GL/EGL，不与 wgpu 争用）：
-     * ImGui 官方后端需要真实 SDL_Renderer 才能把调试面板画到窗口。 */
-    p->present_mode = 2;
-#else
+        /* 默认 software：帧本来就在 CPU，软件 blit 无需 GL 上下文（多实例/多窗口下 GL 会 BadAccess）。
+     * ⚠️ 实测：accelerated 下官方 ImGui 后端画的面板**显示不出来**（面板在 platform.present
+     * 之后画，需要再 present 一次；加了第二次 present 仍无效，待查 SDL_Renderer 与窗口表面的
+     * 关系）。所以默认保持 software + 自研网格链（面板可见、可验证），
+     * MAQUE_PRESENT=accelerated 可显式切换（该路径待修）。 */
     p->present_mode = 1;
-#endif
         const char* mode = std::getenv("MAQUE_PRESENT");
         if (mode && *mode) {
             if (std::strcmp(mode, "off") == 0) p->present_mode = 0;
