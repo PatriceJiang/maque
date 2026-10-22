@@ -100,6 +100,10 @@ void  mq_imgui_show_demo(int *open);
 /* 覆盖层窗口：带 NoInputs（**不吃鼠标/键盘**）+ 可拖动标题栏。
  * 用于引擎默认 stats 面板 —— 默认开启时不能挡住游戏的点击/命中测试。 */
 int   mq_imgui_begin_overlay(const char *title);
+/* 小字号字体（初始化时若提供了 TTF 会额外烘 15px 一档）：
+ * push 之后绘制的内容用 15px，pop 恢复。用于 stats 这类常驻信息栏。 */
+int   mq_imgui_push_small_font(void);
+void  mq_imgui_pop_small_font(void);
 void  mq_imgui_push_font_size(float size_px);
 void  mq_imgui_pop_font(void);
 

@@ -3696,11 +3696,15 @@ void Engine::imgui_frame_begin(float dt) {
     if (mq_imgui_ready()) {
         /* 位置/尺寸只在**首帧**设一次（之后拖动/缩放不被复位）。尺寸按 4 行内容给够。 */
         if (!stat_window_sized) {
+            /* 尺寸不能超过渲染目标（320x240 的小场景里 400x260 会盖满整个画面）。 */
+            const float w = std::min(400.0F, (float)target_w * 0.8F);
+            const float h = std::min(260.0F, (float)target_h * 0.62F);
             mq_imgui_set_pos(8.0F, 8.0F);
-            mq_imgui_set_size(400.0F, 260.0F);
+            mq_imgui_set_size(w > 80.0F ? w : 80.0F, h > 60.0F ? h : 60.0F);
             stat_window_sized = true;
         }
         if (mq_imgui_begin_overlay("stats")) {
+            mq_imgui_push_small_font();     // stats 用 15px 小字号（图集烘了第二档）
             char line[160];
             std::snprintf(line, sizeof line, "FPS %.0f  (%.1f ms)",
                           stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);
@@ -3712,6 +3716,7 @@ void Engine::imgui_frame_begin(float dt) {
             std::snprintf(line, sizeof line, "frame %llu  target %dx%d",
                           (unsigned long long)frame, target_w, target_h);
             mq_imgui_text(line);
+            mq_imgui_pop_small_font();
         }
         mq_imgui_end();
     }

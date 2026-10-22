@@ -229,6 +229,16 @@ void mq_imgui_tree_pop(void) { ImGui::TreePop(); }
 int mq_imgui_collapsing_header(const char *label) {
     return ImGui::CollapsingHeader(label ? label : "##ch") ? 1 : 0;
 }
+extern "C" ImFont *mq_imgui_small_font(void);   // 定义在 imgui.cpp
+
+int mq_imgui_push_small_font(void) {
+    ImFont *f = mq_imgui_small_font();
+    if (!f) return 0;
+    ImGui::PushFont(f);              // 用该字体自带尺寸（传 0 会断言）
+    return 1;
+}
+void mq_imgui_pop_small_font(void) { ImGui::PopFont(); }
+
 int mq_imgui_begin_overlay(const char *title) {
     /* 可拖动（有标题栏）但不参与命中：NoInputs 让 ImGui 不把悬停/点击算到它头上。 */
     /* 可拖动（标题栏）+ 自适应内容。
@@ -245,7 +255,10 @@ int mq_imgui_begin_overlay(const char *title) {
     /* 可移动、可缩放（拖动/缩放由 ImGui 处理）。
      * 之前为规避自研网格链的"拖动错位"曾禁用拖动；现在 accelerated 模式下走官方
      * SDL_Renderer 后端，拖动/缩放是官方行为，应当放开。 */
-    return ImGui::Begin(title && *title ? title : "overlay", nullptr, 0) ? 1 : 0;
+    /* 网格链模式下拖动会留下残影/错位（截图里那串阶梯状三角形），
+     * 因此在官方后端显示问题修好之前，覆盖层保持固定（NoMove|NoResize）。 */
+    return ImGui::Begin(title && *title ? title : "overlay", nullptr,
+                        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize) ? 1 : 0;
 }
 
 void mq_imgui_push_font_size(float size_px) {

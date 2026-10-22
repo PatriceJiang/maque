@@ -15,6 +15,7 @@
 /* 官方后端模式（backend_sdl.cpp 设置 / init 前由 set_backend_mode 声明）。 */
 bool mq_imgui_g_backend = false;
 bool mq_imgui_g_backend_pref = false;
+static ImFont *g_small_font = nullptr;   // 15px 小字号（stats 用）
 
 #include <cmath>
 #include <cstdlib>
@@ -114,7 +115,14 @@ int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_s
         /* OverrideGlyphOffset 保持默认；范围取"常用简体中文"（约 2500 字）——够面板文案用，
          * 且图集不会过大（全量 CJK 会到几 MB 图集，没必要）。 */
         cfg.GlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-        if (io.Fonts->AddFontFromFileTTF(ttf_path, cfg.SizePixels, &cfg)) loaded = true;
+        if (io.Fonts->AddFontFromFileTTF(ttf_path, cfg.SizePixels, &cfg)) {
+            loaded = true;
+            /* 额外烘一档 15px 小字号（静态图集可以一次烘多种字号）——stats 面板用。 */
+            ImFontConfig small_cfg;
+            small_cfg.SizePixels = 15.0F;
+            small_cfg.GlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+            g_small_font = io.Fonts->AddFontFromFileTTF(ttf_path, 15.0F, &small_cfg);
+        }
     }
     if (!loaded) {
         if (g_font_size > 0.0F) io.Fonts->AddFontDefault();
@@ -158,6 +166,8 @@ void mq_imgui_shutdown(void) {
 }
 
 int mq_imgui_ready(void) { return g_ready ? 1 : 0; }
+
+ImFont *mq_imgui_small_font(void) { return g_small_font; }
 
 void mq_imgui_set_backend_mode(int on) { mq_imgui_g_backend_pref = on != 0; }
 
