@@ -363,11 +363,13 @@ struct Engine {
      * 显示 = 目标*scale + offset → 目标 = (显示 - offset) / scale。
      * 无窗口时 scale=1/offset=0，等价于直接用。 */
     float ptr_target_x() const {
+        if (imgui_backend) return imgui_ptr_x;      // 官方后端：窗口像素空间，直接用
         if (!window) return imgui_ptr_x;
         const float s = canvas.scale > 0.0F ? canvas.scale : 1.0F;
         return (imgui_ptr_x - canvas.offset_x) / s;
     }
     float ptr_target_y() const {
+        if (imgui_backend) return imgui_ptr_y;
         if (!window) return imgui_ptr_y;
         const float s = canvas.scale > 0.0F ? canvas.scale : 1.0F;
         return (imgui_ptr_y - canvas.offset_y) / s;
@@ -3667,8 +3669,16 @@ void Engine::imgui_frame_begin(float dt) {
      * 面板整块消失）。设计空间 = 目标空间时，两种模式（有窗口/headless）行为一致。
      *
      * 代价：输入坐标要把"窗口像素"反算到设计坐标（见 imgui_input_feed）。 */
-    const float show_w = (float)target_w;
-    const float show_h = (float)target_h;
+    /* 显示空间：
+     * · 官方后端模式（accelerated）：ImGui 直接在**窗口像素空间**画（SDL_Renderer），
+     *   所以显示尺寸必须用窗口尺寸；否则面板会画到窗口外（实测：屏幕左边只剩一列被裁的字）。
+     * · 自研网格链模式（software）：显示空间 = 设计/目标空间（脚本按 screen_w() 定位）。 */
+    float show_w = (float)target_w;
+    float show_h = (float)target_h;
+    if (imgui_backend && win_w > 0 && win_h > 0) {
+        show_w = (float)win_w;
+        show_h = (float)win_h;
+    }
     const float scale = 1.0F, off_x = 0.0F, off_y = 0.0F;
     const float dpi = 1.0F;
     mq_imgui_begin_frame(show_w, show_h, (float)target_w, (float)target_h,
