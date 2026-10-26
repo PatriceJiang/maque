@@ -239,6 +239,9 @@
     - struct: MeshRenderer
       fields:
         - { name: mesh, type: "asset_ref<Mesh>", attrs: { ref: Mesh } }
+        # M4c：离线导入资产路径（tools/gltf_import.py 产出的 .mesh.json，VFS 路径）。
+        # 非空时优先于 mesh 句柄（M5 资产管线接入后由 mesh 句柄接管）。
+        - { name: mesh_path, type: string, default: "" }
         - { name: material, type: "asset_ref<Material>", attrs: { ref: Material } }
         - { name: material_overrides, type: "asset_ref<Material>[]", attrs: { ref: Material } }
         - { name: cast_shadow, type: ShadowCastMode, default: "ShadowCastMode::On" }

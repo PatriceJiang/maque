@@ -874,6 +874,7 @@ static const mq_field_desc mq_fields_render_Light[] = {
 
 static const mq_field_desc mq_fields_render_MeshRenderer[] = {
     { "mesh", (uint32_t)offsetof(render::MeshRenderer, mesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "mesh_path", (uint32_t)offsetof(render::MeshRenderer, mesh_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "material", (uint32_t)offsetof(render::MeshRenderer, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "material_overrides", (uint32_t)offsetof(render::MeshRenderer, material_overrides), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "cast_shadow", (uint32_t)offsetof(render::MeshRenderer, cast_shadow), MQ_TK_ENUM, 2098906413u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -4507,7 +4508,7 @@ extern const mq_type_desc mq_type_render_MeshRenderer = {
     956582135u,
     (uint32_t)sizeof(render::MeshRenderer),
     (uint32_t)alignof(render::MeshRenderer),
-    8u,
+    9u,
     mq_fields_render_MeshRenderer,
     4u,
     0u,

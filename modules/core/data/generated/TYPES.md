@@ -1441,6 +1441,7 @@ role: `physics_body`
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
 | `mesh` | asset_ref<Mesh> | — | ref: Mesh |
+| `mesh_path` | string |  |  |
 | `material` | asset_ref<Material> | — | ref: Material |
 | `material_overrides` | asset_ref<Material>[] | — | ref: Material |
 | `cast_shadow` | ShadowCastMode | ShadowCastMode::On |  |

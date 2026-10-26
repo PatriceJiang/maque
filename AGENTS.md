@@ -126,6 +126,10 @@ tools\win\build.cmd -Sanitize address -RunTests
   → `<name>.mesh.json`（48B 顶点布局 + indices + bounds + `asset.PbrMaterial` 材质数组 + 贴图引用）
   与 `textures/*.png`；输出排序键、固定缩进（同一输入逐字节确定），测试 `ctest -R gltf_import_e2e`。
   运行时加载 `.mesh.json` 与阴影/MR·normal 贴图槽在 M4b 后续。
+  **M4c 运行时消费**：`render.MeshRenderer.mesh_path`（如 `"assets/imported/cube.mesh.json"`，
+  相对 VFS/CWD）→ `load_mesh()` 解析并 `create_mesh`（按路径缓存，失败缓存 -1）；为空回退内建 cube。
+  样例 `scenes/pbr/imported.scn`；e2e ④ 校验「importer 输出 = 已入库资产」逐字节一致（漂移）。
+  跑该场景需从仓库根目录启动（`cd <repo> && maque_player scenes/pbr/imported.scn`）。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

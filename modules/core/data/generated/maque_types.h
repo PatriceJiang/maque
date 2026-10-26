@@ -2047,6 +2047,7 @@ struct Light {
 
 struct MeshRenderer {
     maque::AssetRef mesh;
+    std::string mesh_path = "";
     maque::AssetRef material;
     std::vector<maque::AssetRef> material_overrides;
     render::ShadowCastMode cast_shadow = ShadowCastMode::On;

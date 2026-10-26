@@ -314,8 +314,12 @@ per view:
     材质（baseColorFactor/metallic/roughness/emissive/doubleSided/alphaMode → `asset.PbrMaterial`）、
     PNG 贴图搬运；输出 `<name>.mesh.json` 排序键 + 固定缩进（逐字节确定性）；
     e2e `gltf_import_e2e`（夹具 `tests/data/gltf/triangle.gltf`：结构/确定性/`--name`/错误路径）。
-  · 待做：运行时加载 `.mesh.json`（替换内建 cube）、MR/normal/AO 贴图槽采样、
-    方向光 shadow map + PCF、`.material.json` 共享材质引用。
+  · **运行时加载导入网格 ✔（M4c）**：`render.MeshRenderer.mesh_path`（schema 新增 string 字段）→
+    runtime `load_mesh()` 解析 `.mesh.json`（VFS 只读 + 路径缓存）→ `create_mesh`；
+    draw 使用导入网格（为空时回退内建 cube）。样例 `scenes/pbr/imported.scn`
+    （glTF 夹具 `tests/data/gltf/cube.gltf` → 已入库 `assets/imported/cube.mesh.json`）；
+    e2e ④：importer 重新生成与已入库资产**逐字节一致**（漂移检测）+ 场景渲染非空。
+  · 待做：MR/normal/AO 贴图槽采样、方向光 shadow map + PCF、`.material.json` 共享材质引用。
 - **M4 剩余（M4b 之后）**：贴图 mip/sRGB、阴影、透明排序。
 
 ## 7. 验收标准（DoD）

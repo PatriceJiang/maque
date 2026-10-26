@@ -495,10 +495,13 @@ struct Engine {
      * cube_mesh = 内建立方体网格句柄（M2 尚无 mesh 资产管线，M4 换成 glTF mesh 资产）。 */
     bool    has_3d = false;
     int32_t cube_mesh = -1;
+    /* M4c：.mesh.json 资产缓存（路径 → 渲染器网格句柄；-1 = 加载失败，避免每帧重试） */
+    std::unordered_map<std::string, int32_t> mesh_cache;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
+    int32_t load_mesh(const std::string& path);                // M4c：glTF 导入的 .mesh.json → 网格句柄
     bool load_material(const std::string& ref, scn::SpriteMaterial& out);
     void main_loop(const std::string& frames_dir, const std::string& name);
     /* M2 3D：扫描 render.* 组件 + 上传内建 cube；每帧提取 frame3d 数据（只读）。 */
@@ -700,6 +703,63 @@ int Engine::load_texture_ref(const std::string& ref) {
         return id;
     }
     return load_texture(ref);   // assets
+}
+
+/* M4c：加载离线导入的 .mesh.json（tools/gltf_import.py 产出，48B 顶点布局）→ 渲染器网格句柄。
+ * 只读资产文件；按路径缓存（失败也缓存 -1，避免每帧重试/刷日志）。 */
+int32_t Engine::load_mesh(const std::string& path) {
+    auto it = mesh_cache.find(path);
+    if (it != mesh_cache.end()) return it->second;
+    int32_t id = -1;
+    void* data = nullptr;
+    size_t n = 0;
+    if (!vfs || mq_vfs_read(vfs, path.c_str(), &data, &n) != 0) {
+        std::print(stderr, "runtime: mesh not found '{}'\n", path);
+    } else {
+        mq_json* dom = mq_json_parse((const char*)data, n);
+        mq_vfs_free(data);
+        if (!dom) {
+            std::print(stderr, "runtime: mesh json 解析失败 '{}'\n", path);
+        } else {
+            std::vector<float> verts;
+            std::vector<uint32_t> idx;
+            const mq_json* jv = mq_json_get(dom, "vertices");
+            const uint32_t vn = mq_json_len(jv);
+            verts.reserve((size_t)vn * 12);
+            const mq_json* ji = mq_json_get(dom, "indices");
+            const uint32_t in = mq_json_len(ji);
+            idx.reserve(in);
+            bool ok = vn > 0 && in > 0;
+            for (uint32_t i = 0; ok && i < vn; ++i) {
+                const mq_json* row = mq_json_at(jv, i);
+                if (mq_json_len(row) != 12) { ok = false; break; }
+                for (uint32_t k = 0; k < 12; ++k)
+                    verts.push_back((float)mq_json_num(mq_json_at(row, k), 0.0));
+            }
+            for (uint32_t i = 0; ok && i < in; ++i)
+                idx.push_back((uint32_t)mq_json_num(mq_json_at(ji, i), 0.0));
+            if (ok && rapi && rself && rapi->create_mesh) {
+                mq_renderer_mesh_gpu md{};
+                md.vertices = verts.data();
+                md.vertex_bytes = (uint64_t)verts.size() * sizeof(float);
+                md.vertex_stride = 48;
+                md.vertex_layout = 0;
+                md.indices = idx.data();
+                md.index_count = (uint32_t)idx.size();
+                const mq_json* bmin = mq_json_get(dom, "bounds_min");
+                const mq_json* bmax = mq_json_get(dom, "bounds_max");
+                for (uint32_t k = 0; k < 3 && k < mq_json_len(bmin); ++k)
+                    md.bounds_min[k] = (float)mq_json_num(mq_json_at(bmin, k), 0.0);
+                for (uint32_t k = 0; k < 3 && k < mq_json_len(bmax); ++k)
+                    md.bounds_max[k] = (float)mq_json_num(mq_json_at(bmax, k), 0.0);
+                if (rapi->create_mesh(rself, &md, &id) != 0) id = -1;
+            }
+            if (id < 0) std::print(stderr, "runtime: mesh 载入失败 '{}'\n", path);
+            mq_json_free(dom);
+        }
+    }
+    mesh_cache[path] = id;
+    return id;
 }
 
 /* 材质资源：builtin:/ 或 assets（JSON，反射反序列化 scn.SpriteMaterial）。 */
@@ -1077,8 +1137,18 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             }
             const int32_t mat_index = (int32_t)out_mats.size();
             out_mats.push_back(mat);
+            /* M4c：mesh_path 非空时用离线导入网格（glTF → .mesh.json），否则内建 cube */
+            int32_t mesh_id = cube_mesh;
+            if (const std::string* mp = read_str(dmesh, mb->data(), "mesh_path")) {
+                if (!mp->empty()) {
+                    const int32_t loaded = load_mesh(*mp);
+                    if (loaded >= 0) mesh_id = loaded;
+                    if (std::getenv("MAQUE_RENDER3D_INFO"))
+                        std::print("runtime: mesh renderer node={} path='{}' → mesh={}\n", idx, *mp, loaded);
+                }
+            }
             mq_renderer_draw3d dr{};
-            dr.mesh = cube_mesh;
+            dr.mesh = mesh_id;
             dr.material = mat_index;
             m4_from_trs(trs, dr.model);
             dr.layer = 0;

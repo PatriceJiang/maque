@@ -130,4 +130,33 @@ sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: ③ PBR 材质（GGX/tonemap，粗糙度对比）OK"
 fi
+
+# ---- ④ 离线导入资产闭环（M4c）：glTF → .mesh.json（工具）→ render.MeshRenderer.mesh_path → 渲染 ----
+IMPORT_SCN="${SCN%cube.scn}imported.scn"
+if [ -f "$IMPORT_SCN" ]; then
+    ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+    [ -f "$ROOT/assets/imported/cube.mesh.json" ] || fail "缺已入库导入资产 assets/imported/cube.mesh.json"
+    timeout 90 "$PY" "$ROOT/tools/gltf_import.py" "$ROOT/tests/data/gltf/cube.gltf" --out "$WORK/import" \
+        >"$WORK/import.txt" 2>&1 || { cat "$WORK/import.txt"; fail "glTF 导入失败"; }
+    cmp -s "$WORK/import/cube.mesh.json" "$ROOT/assets/imported/cube.mesh.json" \
+        || fail "已入库资产与 importer 输出不一致（导入资产漂移）"
+    ( cd "$ROOT" && timeout 90 env MAQUE_RENDER3D_INFO=1 "$PLAYER" --shot "$WORK/imported.ppm" --frames 2 "$IMPORT_SCN" \
+        >"$WORK/imported.txt" 2>&1 ) || { cat "$WORK/imported.txt"; fail "导入网格场景渲染失败"; }
+    grep -q "mesh renderer node=" "$WORK/imported.txt" || { cat "$WORK/imported.txt"; fail "mesh_path 未走加载路径"; }
+    grep -q "runtime: shot" "$WORK/imported.txt" || { cat "$WORK/imported.txt"; fail "导入网格场景未截图"; }
+    "$PY" - "$WORK/imported.ppm" <<'PY' || exit 1
+import sys
+d = open(sys.argv[1], 'rb').read()
+magic, dims, _max, px = d.split(b'\n', 3)
+assert magic == b'P6', magic
+w, h = map(int, dims.split())
+bg = px[0:3]
+nonbg = sum(1 for i in range(0, len(px), 3)
+            if abs(px[i]-bg[0]) + abs(px[i+1]-bg[1]) + abs(px[i+2]-bg[2]) > 25)
+ratio = nonbg / (w * h)
+print(f'render3d_scene_e2e: imported mesh nonbg={ratio:.3f}')
+sys.exit(0 if ratio > 0.03 else 1)
+PY
+    echo "render3d_scene_e2e: ④ 离线导入网格（glTF→.mesh.json→渲染）OK"
+fi
 echo "render3d_scene_e2e: PASS"

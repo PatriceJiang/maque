@@ -7736,6 +7736,15 @@
           }
         },
         {
+          "name": "mesh_path",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "material",
           "type": "asset_ref<Material>",
           "kind": "asset_ref",
