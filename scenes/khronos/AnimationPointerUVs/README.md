@@ -22,7 +22,7 @@
 | 必需扩展 | `KHR_materials_unlit`、`KHR_lights_punctual` |
 | alpha 模式分布 | BLEND×3、MASK×9、OPAQUE×70 |
 
-**导入产物**：`assets/` 132 个 `.mesh.json`（合计 11.7 MB），`textures/` 10 张；场景 `AnimationPointerUVs.scn`。
+**导入产物**：`assets/` 132 个 `.mesh.json`（合计 11.7 MB），`textures/` 11 张；场景 `AnimationPointerUVs.scn`。
 
 ## 生成 / 运行
 
@@ -42,10 +42,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.471 | 0.470 | 差 -0.002 |
-| 前景平均 RGB | [110.0, 124.2, 111.8] | [105.5, 123.6, 123.7] | RGB 距离 0.022 |
+| 前景平均亮度 | 0.471 | 0.456 | 差 -0.015 |
+| 前景平均 RGB | [110.0, 124.2, 111.8] | [102.5, 120.0, 119.5] | RGB 距离 0.025 |
 | 亮度直方图相似度 | — | — | 0.65（16 桶交集，1=完全一致） |
-| 前景占比 | 40.7% | 12.7% | 覆盖率比 0.312 |
+| 前景占比 | 40.7% | 13.1% | 覆盖率比 0.323 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
@@ -61,7 +61,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
-- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
+- KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
 - KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
 - KHR_animation_pointer 动画未导入
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
@@ -79,7 +79,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
-- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
+- KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
 - KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
 - KHR_animation_pointer 动画未导入
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）

@@ -3,10 +3,10 @@
  "generated_by": "tools/migrate_gltf_models.py",
  "models_root": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models",
  "provenance": {
-  "git_head": "b97500d4cfb148ce4fb2526da0553eb3f1ed4326",
-  "importer_sha256": "463980bc5942e847279a34229b7e4437191a1ade6ab1818feeaaf3e9413f8d27",
-  "migrate_script_sha256": "fd7f0ddc3b72f9d79a0ebca63bfe98f2aeb797dc8d29159ef2d5c5d2a682b309",
-  "player_sha256": "6ec81bdf269086c6abd211014bf28cfa3b2eaf44dc8f035bd4438967703d7552"
+  "git_head": "ade14983f41ac8f56cb7dd0c5df90bafcedb11ee",
+  "importer_sha256": "f5dd488f08a883d3b11954467b21cd95b0a96471ad3d645ac52c3478edca6c9e",
+  "migrate_script_sha256": "73b28a31dffbf71976fa33c2f42cf9b202b326603f7a385373d8ed8e477f1bda",
+  "player_sha256": "d909f9a48662c54c4d52a05093ddb413a9d56e0b06c1e6484ac83a33aa6c131a"
  },
  "records": [
   {
@@ -735,23 +735,23 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.312,
+    "coverage_ratio": 0.323,
     "framing_notes": [],
-    "hist_similarity": 0.6454,
-    "mean_lum_delta": -0.0016,
+    "hist_similarity": 0.6484,
+    "mean_lum_delta": -0.0152,
     "preview_bbox": [
      142,
      132,
      943,
      673
     ],
-    "preview_coverage": 0.127,
+    "preview_coverage": 0.1313,
     "preview_mask": "border-bg",
-    "preview_mean_lum": 0.4697,
+    "preview_mean_lum": 0.456,
     "preview_mean_rgb": [
-     105.5,
-     123.6,
-     123.7
+     102.5,
+     120.0,
+     119.5
     ],
     "preview_size": [
      1280,
@@ -777,7 +777,7 @@
      2322,
      1237
     ],
-    "rgb_delta": 0.0222,
+    "rgb_delta": 0.0253,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -791,16 +791,16 @@
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）",
     "KHR_animation_pointer 动画未导入",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
    "import": {
-    "mesh_bytes": 12309681,
+    "mesh_bytes": 12310491,
     "mesh_files": 132,
     "scene": "AnimationPointerUVs.scn",
-    "texture_files": 10
+    "texture_files": 11
    },
    "import_log_tail": [
     "gltf_import: material 'Material #172' KHR_materials_volume attenuationColor → base_color 色调近似",
@@ -810,12 +810,12 @@
     "gltf_import: material 'Material #178' KHR_materials_volume attenuationColor → base_color 色调近似",
     "gltf_import: material 'Material #177' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 1.83,
+   "import_seconds": 2.66,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "AnimationPointerUVs",
-   "out_size_bytes": 14186681,
+   "out_size_bytes": 14503206,
    "preview_jpg": "scenes\\khronos\\AnimationPointerUVs\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnimationPointerUVs\\preview.png",
    "readme": "scenes\\khronos\\AnimationPointerUVs\\README.md",
@@ -828,7 +828,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'AnimationPointerUVs.scn' exited after 2 frames (quit=1) world_trail=0x813a406a0901f6b2"
    ],
-   "render_seconds": 6.37,
+   "render_seconds": 8.92,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimationPointerUVs\\glTF\\AnimationPointerUVs.gltf",
    "stats": {
     "alpha_modes": {
@@ -3716,7 +3716,7 @@
    "gaps": [
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
    "import": {
     "mesh_bytes": 820649,
@@ -3732,12 +3732,12 @@
     "gltf_import: texture → textures/image8.jpg",
     "gltf_import: OK meshes=11 textures=9"
    ],
-   "import_seconds": 0.19,
+   "import_seconds": 0.25,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ChairDamaskPurplegold",
-   "out_size_bytes": 2548622,
+   "out_size_bytes": 2548685,
    "preview_jpg": "scenes\\khronos\\ChairDamaskPurplegold\\preview.jpg",
    "preview_png": "scenes\\khronos\\ChairDamaskPurplegold\\preview.png",
    "readme": "scenes\\khronos\\ChairDamaskPurplegold\\README.md",
@@ -3750,7 +3750,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'ChairDamaskPurplegold.scn' exited after 2 frames (quit=1) world_trail=0x71b2449f96747c36"
    ],
-   "render_seconds": 1.17,
+   "render_seconds": 1.59,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChairDamaskPurplegold\\glTF\\ChairDamaskPurplegold.gltf",
    "stats": {
     "alpha_modes": {
@@ -6054,8 +6054,8 @@
    "compare": {
     "coverage_ratio": 0.296,
     "framing_notes": [],
-    "hist_similarity": 0.7767,
-    "mean_lum_delta": 0.0103,
+    "hist_similarity": 0.6896,
+    "mean_lum_delta": -0.0143,
     "preview_bbox": [
      275,
      189,
@@ -6064,11 +6064,11 @@
     ],
     "preview_coverage": 0.1996,
     "preview_mask": "border-bg",
-    "preview_mean_lum": 0.3018,
+    "preview_mean_lum": 0.2772,
     "preview_mean_rgb": [
-     148.6,
-     59.2,
-     41.8
+     149.0,
+     51.2,
+     33.1
     ],
     "preview_size": [
      1280,
@@ -6094,31 +6094,32 @@
      1654,
      840
     ],
-    "rgb_delta": 0.0233,
+    "rgb_delta": 0.0456,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
    "import": {
-    "mesh_bytes": 618181,
+    "mesh_bytes": 618269,
     "mesh_files": 2,
     "scene": "CompareSpecular.scn",
-    "texture_files": 1
+    "texture_files": 2
    },
    "import_log_tail": [
     "gltf_import: scene → E:\\Github\\maque\\scenes\\khronos\\CompareSpecular\\CompareSpecular.scn entities=2 lights=0 hidden=0 bounds=[-1.024999976158142, -0.5, -0.5]..[1.024999976158142, 0.5, 0.5]",
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\CompareSpecular\\assets\\CompareSpecular_0_0.mesh.json",
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\CompareSpecular\\assets\\CompareSpecular_1_0.mesh.json",
     "gltf_import: texture → textures/image0.jpg",
-    "gltf_import: OK meshes=2 textures=1"
+    "gltf_import: texture → textures/image1.png",
+    "gltf_import: OK meshes=2 textures=2"
    ],
-   "import_seconds": 0.14,
+   "import_seconds": 0.2,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareSpecular",
-   "out_size_bytes": 675986,
+   "out_size_bytes": 1801856,
    "preview_jpg": "scenes\\khronos\\CompareSpecular\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareSpecular\\preview.png",
    "readme": "scenes\\khronos\\CompareSpecular\\README.md",
@@ -6131,7 +6132,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'CompareSpecular.scn' exited after 2 frames (quit=1) world_trail=0xfb6e03ea99bd823e"
    ],
-   "render_seconds": 0.76,
+   "render_seconds": 1.07,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSpecular\\glTF\\CompareSpecular.gltf",
    "stats": {
     "alpha_modes": {
@@ -8470,7 +8471,7 @@
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
    "import": {
@@ -8487,12 +8488,12 @@
     "gltf_import: texture → textures/image1.png",
     "gltf_import: OK meshes=3 textures=2"
    ],
-   "import_seconds": 0.13,
+   "import_seconds": 0.17,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "GlamVelvetSofa",
-   "out_size_bytes": 3369857,
+   "out_size_bytes": 3369933,
    "preview_jpg": "scenes\\khronos\\GlamVelvetSofa\\preview.jpg",
    "preview_png": "scenes\\khronos\\GlamVelvetSofa\\preview.png",
    "readme": "scenes\\khronos\\GlamVelvetSofa\\README.md",
@@ -8505,7 +8506,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'GlamVelvetSofa.scn' exited after 2 frames (quit=1) world_trail=0x2eaebdbd00639082"
    ],
-   "render_seconds": 0.75,
+   "render_seconds": 0.9,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlamVelvetSofa\\glTF\\GlamVelvetSofa.gltf",
    "stats": {
     "alpha_modes": {
@@ -8988,7 +8989,7 @@
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
    "import": {
     "mesh_bytes": 7776887,
@@ -9004,12 +9005,12 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=23 textures=1"
    ],
-   "import_seconds": 1.0,
+   "import_seconds": 1.45,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "IORTestGrid",
-   "out_size_bytes": 7813206,
+   "out_size_bytes": 7813271,
    "preview_jpg": "scenes\\khronos\\IORTestGrid\\preview.jpg",
    "preview_png": "scenes\\khronos\\IORTestGrid\\preview.png",
    "readme": "scenes\\khronos\\IORTestGrid\\README.md",
@@ -9022,7 +9023,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'IORTestGrid.scn' exited after 2 frames (quit=1) world_trail=0x2e71a2f1390da586"
    ],
-   "render_seconds": 2.97,
+   "render_seconds": 4.23,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IORTestGrid\\glTF\\IORTestGrid.gltf",
    "stats": {
     "alpha_modes": {
@@ -12840,7 +12841,7 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_animation_pointer 动画未导入"
    ],
    "import": {
@@ -12857,12 +12858,12 @@
     "gltf_import: texture → textures/image8.jpg",
     "gltf_import: OK meshes=3 textures=9"
    ],
-   "import_seconds": 0.67,
+   "import_seconds": 0.98,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "PotOfCoalsAnimationPointer",
-   "out_size_bytes": 9638363,
+   "out_size_bytes": 9638419,
    "preview_jpg": "scenes\\khronos\\PotOfCoalsAnimationPointer\\preview.jpg",
    "preview_png": "scenes\\khronos\\PotOfCoalsAnimationPointer\\preview.png",
    "readme": "scenes\\khronos\\PotOfCoalsAnimationPointer\\README.md",
@@ -12875,7 +12876,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'PotOfCoalsAnimationPointer.scn' exited after 2 frames (quit=1) world_trail=0x255cc479a61dfdba"
    ],
-   "render_seconds": 4.06,
+   "render_seconds": 5.37,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoalsAnimationPointer\\glTF\\PotOfCoalsAnimationPointer.gltf",
    "stats": {
     "alpha_modes": {
@@ -14108,7 +14109,7 @@
    "gaps": [
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）"
    ],
    "import": {
@@ -14125,12 +14126,12 @@
     "gltf_import: 贴图 image=1 (webp) → PNG 转码（PIL）",
     "gltf_import: 贴图 image=2 (webp) → PNG 转码（PIL）"
    ],
-   "import_seconds": 3.55,
+   "import_seconds": 4.76,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "SheenWoodLeatherSofa",
-   "out_size_bytes": 27898689,
+   "out_size_bytes": 27898754,
    "preview_jpg": "scenes\\khronos\\SheenWoodLeatherSofa\\preview.jpg",
    "preview_png": "scenes\\khronos\\SheenWoodLeatherSofa\\preview.png",
    "readme": "scenes\\khronos\\SheenWoodLeatherSofa\\README.md",
@@ -14143,7 +14144,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SheenWoodLeatherSofa.scn' exited after 2 frames (quit=1) world_trail=0x4f200c87c9285cb6"
    ],
-   "render_seconds": 5.68,
+   "render_seconds": 7.8,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenWoodLeatherSofa\\glTF\\SheenWoodLeatherSofa.gltf",
    "stats": {
     "alpha_modes": {
@@ -15174,7 +15175,7 @@
    },
    "gaps": [
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
    "import": {
     "mesh_bytes": 5235565,
@@ -15189,12 +15190,12 @@
     "gltf_import: texture → textures/image1.png",
     "gltf_import: OK meshes=1 textures=2"
    ],
-   "import_seconds": 0.69,
+   "import_seconds": 0.97,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "SpecularSilkPouf",
-   "out_size_bytes": 7558680,
+   "out_size_bytes": 7558752,
    "preview_jpg": "scenes\\khronos\\SpecularSilkPouf\\preview.jpg",
    "preview_png": "scenes\\khronos\\SpecularSilkPouf\\preview.png",
    "readme": "scenes\\khronos\\SpecularSilkPouf\\README.md",
@@ -15207,7 +15208,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SpecularSilkPouf.scn' exited after 2 frames (quit=1) world_trail=0xce89c3a237352832"
    ],
-   "render_seconds": 1.79,
+   "render_seconds": 2.4,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularSilkPouf\\glTF\\SpecularSilkPouf.gltf",
    "stats": {
     "alpha_modes": {
@@ -15255,23 +15256,23 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.349,
+    "coverage_ratio": 0.369,
     "framing_notes": [],
-    "hist_similarity": 0.4952,
-    "mean_lum_delta": 0.1317,
+    "hist_similarity": 0.5067,
+    "mean_lum_delta": 0.1083,
     "preview_bbox": [
      229,
      105,
      915,
      666
     ],
-    "preview_coverage": 0.2335,
+    "preview_coverage": 0.247,
     "preview_mask": "border-bg",
-    "preview_mean_lum": 0.6142,
+    "preview_mean_lum": 0.5907,
     "preview_mean_rgb": [
-     156.3,
-     156.5,
-     157.6
+     150.4,
+     150.6,
+     151.4
     ],
     "preview_size": [
      1280,
@@ -15297,32 +15298,32 @@
      1411,
      933
     ],
-    "rgb_delta": 0.1307,
+    "rgb_delta": 0.107,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
    "import": {
-    "mesh_bytes": 2623187,
+    "mesh_bytes": 2623342,
     "mesh_files": 24,
     "scene": "SpecularTest.scn",
-    "texture_files": 1
+    "texture_files": 4
    },
    "import_log_tail": [
-    "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\SpecularTest\\assets\\SpecularTest_20_0.mesh.json",
-    "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\SpecularTest\\assets\\SpecularTest_21_0.mesh.json",
-    "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\SpecularTest\\assets\\SpecularTest_22_0.mesh.json",
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\SpecularTest\\assets\\SpecularTest_23_0.mesh.json",
     "gltf_import: texture → textures/LeftLabels.png",
-    "gltf_import: OK meshes=24 textures=1"
+    "gltf_import: texture → textures/WhiteGrid.png",
+    "gltf_import: texture → textures/YellowGrid.png",
+    "gltf_import: texture → textures/specularTextureGrid.png",
+    "gltf_import: OK meshes=24 textures=4"
    ],
-   "import_seconds": 0.39,
+   "import_seconds": 0.54,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "SpecularTest",
-   "out_size_bytes": 2688225,
+   "out_size_bytes": 2689286,
    "preview_jpg": "scenes\\khronos\\SpecularTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\SpecularTest\\preview.png",
    "readme": "scenes\\khronos\\SpecularTest\\README.md",
@@ -15335,7 +15336,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SpecularTest.scn' exited after 2 frames (quit=1) world_trail=0x29a0739c4d45652a"
    ],
-   "render_seconds": 1.41,
+   "render_seconds": 1.77,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularTest\\glTF\\SpecularTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -16680,7 +16681,7 @@
    "gaps": [
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_materials_retroreflection 未实现"
    ],
    "import": {
@@ -16697,12 +16698,12 @@
     "gltf_import: texture → textures/asphalt_02_rough_1k.jpg",
     "gltf_import: OK meshes=4 textures=4"
    ],
-   "import_seconds": 0.21,
+   "import_seconds": 0.3,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "TrafficCone",
-   "out_size_bytes": 2856787,
+   "out_size_bytes": 2856851,
    "preview_jpg": "scenes\\khronos\\TrafficCone\\preview.jpg",
    "preview_png": "scenes\\khronos\\TrafficCone\\preview.png",
    "readme": "scenes\\khronos\\TrafficCone\\README.md",
@@ -16715,7 +16716,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'TrafficCone.scn' exited after 2 frames (quit=1) world_trail=0x040638aa5b737c52"
    ],
-   "render_seconds": 1.09,
+   "render_seconds": 1.33,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TrafficCone\\glTF\\TrafficCone.gltf",
    "stats": {
     "alpha_modes": {
@@ -18339,5 +18340,5 @@
    ]
   }
  ],
- "total_seconds": 501.8
+ "total_seconds": 16.4
 }

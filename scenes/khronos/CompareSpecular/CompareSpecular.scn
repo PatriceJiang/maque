@@ -165,7 +165,9 @@
             "y": 10.0,
             "z": 10.0
           },
-          "base_color_texture": "textures/image0.jpg"
+          "base_color_texture": "textures/image0.jpg",
+          "specular_texture": "textures/image1.png",
+          "specular_color_texture": "textures/image1.png"
         }
       ]
     }

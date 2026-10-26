@@ -1799,6 +1799,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             for (int ti = 0; ti < 5; ++ti) mat.textures[ti] = -1;   /* -1 = 未给贴图 → 渲染器用 1×1 白 */
             for (int ti = 0; ti < 3; ++ti) mat.textures2[ti] = -1;  /* matcap / gradient / clearcoat-normal */
             for (int ti = 0; ti < 7; ++ti) mat.textures3[ti] = -1;  /* KHR 扩展 7 槽（clearcoat/sheen/iridescence/anisotropy） */
+            for (int ti = 0; ti < 2; ++ti) mat.textures4[ti] = -1;  /* KHR_materials_specular 2 槽（factor/color） */
             for (int ti = 0; ti < 2; ++ti) {
                 mat.uv_scale[ti] = 1.0F; mat.uv_offset[ti] = 0.0F;       /* KHR_texture_transform 缺省 */
                 mat.normal_uv_scale[ti] = 1.0F; mat.normal_uv_offset[ti] = 0.0F;
@@ -2007,6 +2008,23 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     load_ext_tex("iridescence_texture", 4, false);
                     load_ext_tex("iridescence_thickness_texture", 5, false);
                     load_ext_tex("anisotropy_texture", 6, false);
+                }
+                /* KHR_materials_specular 两槽（flags2 bit21/22）：specularTexture.A=specularFactor（线性）、
+                 * specularColorTexture.RGB=specularColorFactor（sRGB）；shader 只作用于电介质 F0。 */
+                {
+                    auto load_spec_tex = [&](const char* field, int slot, bool srgb) {
+                        const std::string* texref = read_str(dmat, base, field);
+                        if (!texref || texref->empty()) return;
+                        const int tid = srgb ? load_texture_srgb(*texref) : load_texture_mips(*texref);
+                        if (tid >= 0) {
+                            mat.textures4[slot] = tid;
+                            mat.flags2 |= 1 << (21 + slot);          /* presence：bit21/22 */
+                        }
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: pbr specular texture {} '{}' -> {}\n", field, *texref, tid);
+                    };
+                    load_spec_tex("specular_texture", 0, false);
+                    load_spec_tex("specular_color_texture", 1, true);
                 }
             }
             if (std::getenv("MAQUE_RENDER3D_INFO"))

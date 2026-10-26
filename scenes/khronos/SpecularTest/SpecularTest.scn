@@ -418,7 +418,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "shading_model": 1
+          "shading_model": 1,
+          "specular_texture": "textures/specularTextureGrid.png"
         }
       ]
     },
@@ -744,7 +745,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "shading_model": 1
+          "shading_model": 1,
+          "specular_color_texture": "textures/WhiteGrid.png"
         }
       ]
     },
@@ -1075,7 +1077,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "shading_model": 1
+          "shading_model": 1,
+          "specular_color_texture": "textures/YellowGrid.png"
         }
       ]
     },

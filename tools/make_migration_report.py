@@ -336,7 +336,8 @@ footer {{ color:var(--dim); font-size:12px; padding:0 32px 40px; }}
      参考图由上游 <code>Models/&lt;Model&gt;/screenshot/</code> 下采样到 ≤{args.max_dim}px 后收录在 <code>ref/</code>；
      预览来自仓库 <code>scenes/khronos/&lt;Model&gt;/preview.jpg</code>。</p>
   <p>⚠️ 对比<b>不是像素级 pass/fail</b>：官方图多为离线渲染（HDRI studio、软阴影、不同机位/背景、部分含透明背景），
-     maque 当前无 HDRI IBL / 真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查；每个模型卡片附自动初判、
+     maque 当前有 opt-in equirect envmap/IBL（`.hdr` RGBE/PNG、真 PMREM GGX 预过滤 + 漫反射 irradiance + 天空；
+     迁移基线默认关）；仍无真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查；每个模型卡片附自动初判、
      已知差距与（部分模型）人工视觉复核结论。迁移方法/踩坑见
      <a href="../../docs/31-gltf-model-migration.md">docs/31-gltf-model-migration.md</a>。</p>
   <div class="stats">
@@ -495,7 +496,8 @@ sort.addEventListener('change', doSort); apply();
 ![总览拼图](overview.jpg)
 
 > ⚠️ **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio、软阴影、不同机位/背景、含透明背景），
-> maque 无 HDRI IBL / 真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查，差异需人工归因
+> maque 有 opt-in PMREM envmap/IBL（真 GGX 预过滤 + 漫反射 irradiance + 天空）/ 扩展材质贴图（含 specular），
+> 但无真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查，差异需人工归因
 > （见各模型 README 的「与官方 screenshot 对比」与「人工视觉复核」；迁移方法与踩坑见
 > [docs/31-gltf-model-migration.md](../../docs/31-gltf-model-migration.md)）。
 

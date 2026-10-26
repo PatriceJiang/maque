@@ -372,8 +372,8 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.127,
-   "coverage_ratio": 0.312,
+   "coverage": 0.1313,
+   "coverage_ratio": 0.323,
    "framing_notes": [],
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
@@ -386,13 +386,13 @@
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）",
     "KHR_animation_pointer 动画未导入",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.6454,
-   "lum": -0.0016,
+   "hist": 0.6484,
+   "lum": -0.0152,
    "model": "AnimationPointerUVs",
    "preview": "scenes/khronos/AnimationPointerUVs/preview.jpg",
    "readme": "../../scenes/khronos/AnimationPointerUVs/README.md",
@@ -406,7 +406,7 @@
     1237
    ],
    "review": "",
-   "rgb": 0.0222,
+   "rgb": 0.0253,
    "scene": "../../scenes/khronos/AnimationPointerUVs/AnimationPointerUVs.scn",
    "stats": {
     "alpha_modes": {
@@ -1889,7 +1889,7 @@
    "gaps": [
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
    "hist": 0.6836,
    "lum": -0.1547,
@@ -3135,10 +3135,10 @@
    "coverage_ratio": 0.296,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
-   "hist": 0.7767,
-   "lum": 0.0103,
+   "hist": 0.6896,
+   "lum": -0.0143,
    "model": "CompareSpecular",
    "preview": "scenes/khronos/CompareSpecular/preview.jpg",
    "readme": "../../scenes/khronos/CompareSpecular/README.md",
@@ -3152,7 +3152,7 @@
     840
    ],
    "review": "",
-   "rgb": 0.0233,
+   "rgb": 0.0456,
    "scene": "../../scenes/khronos/CompareSpecular/CompareSpecular.scn",
    "stats": {
     "alpha_modes": {
@@ -4373,7 +4373,7 @@
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
    "hist": 0.5332,
@@ -4713,7 +4713,7 @@
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
    "hist": 0.5621,
    "lum": 0.0262,
@@ -6637,7 +6637,7 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_animation_pointer 动画未导入"
    ],
    "hist": 0.5317,
@@ -7295,7 +7295,7 @@
    "gaps": [
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）"
    ],
    "hist": 0.6655,
@@ -7836,7 +7836,7 @@
    "framing_notes": [],
    "gaps": [
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
    "hist": 0.6433,
    "lum": -0.0101,
@@ -7900,14 +7900,14 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.2335,
-   "coverage_ratio": 0.349,
+   "coverage": 0.247,
+   "coverage_ratio": 0.369,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
-   "hist": 0.4952,
-   "lum": 0.1317,
+   "hist": 0.5067,
+   "lum": 0.1083,
    "model": "SpecularTest",
    "preview": "scenes/khronos/SpecularTest/preview.jpg",
    "readme": "../../scenes/khronos/SpecularTest/README.md",
@@ -7921,7 +7921,7 @@
     933
    ],
    "review": "",
-   "rgb": 0.1307,
+   "rgb": 0.107,
    "scene": "../../scenes/khronos/SpecularTest/SpecularTest.scn",
    "stats": {
     "alpha_modes": {
@@ -8650,7 +8650,7 @@
    "gaps": [
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
-    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_materials_retroreflection 未实现"
    ],
    "hist": 0.3319,
@@ -9527,7 +9527,7 @@
   "median_coverage": 0.1656,
   "median_hist": 0.4371,
   "median_lum": 0.0879,
-  "median_rgb": 0.121,
+  "median_rgb": 0.1193,
   "models": 149,
   "preview_missing": 0,
   "ref_missing": 0,

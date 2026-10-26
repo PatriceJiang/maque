@@ -174,6 +174,7 @@ typedef struct mq_renderer_pbr_material {
     int32_t textures3[7];
     float uv_rotation;
     float normal_uv_rotation;
+    int32_t textures4[2];
 } mq_renderer_pbr_material;
 
 typedef struct mq_renderer_draw3d {

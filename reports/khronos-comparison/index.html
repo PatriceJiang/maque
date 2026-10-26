@@ -58,7 +58,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
      参考图由上游 <code>Models/&lt;Model&gt;/screenshot/</code> 下采样到 ≤900px 后收录在 <code>ref/</code>；
      预览来自仓库 <code>scenes/khronos/&lt;Model&gt;/preview.jpg</code>。</p>
   <p>⚠️ 对比<b>不是像素级 pass/fail</b>：官方图多为离线渲染（HDRI studio、软阴影、不同机位/背景、部分含透明背景），
-     maque 当前无 HDRI IBL / 真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查；每个模型卡片附自动初判、
+     maque 当前有 opt-in equirect envmap/IBL（`.hdr` RGBE/PNG、真 PMREM GGX 预过滤 + 漫反射 irradiance + 天空；
+     迁移基线默认关）；仍无真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查；每个模型卡片附自动初判、
      已知差距与（部分模型）人工视觉复核结论。迁移方法/踩坑见
      <a href="../../docs/31-gltf-model-migration.md">docs/31-gltf-model-migration.md</a>。</p>
   <div class="stats">
@@ -94,7 +95,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 <tr data-name="animatedcube" data-verdict="good"><td><a href="#model-AnimatedCube">AnimatedCube</a></td><td>gif</td><td>screenshot.gif</td><td>0.725</td><td>0.149</td><td>26.9%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
 <tr data-name="animatedmorphcube" data-verdict="bad"><td><a href="#model-AnimatedMorphCube">AnimatedMorphCube</a></td><td>gif</td><td>screenshot.gif</td><td>0.007</td><td>0.535</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="animatedtriangle" data-verdict="bad"><td><a href="#model-AnimatedTriangle">AnimatedTriangle</a></td><td>gif</td><td>screenshot.gif</td><td>0.005</td><td>0.371</td><td>16.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
-<tr data-name="animationpointeruvs" data-verdict="good"><td><a href="#model-AnimationPointerUVs">AnimationPointerUVs</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.645</td><td>-0.002</td><td>12.7%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>14</td></tr>
+<tr data-name="animationpointeruvs" data-verdict="good"><td><a href="#model-AnimationPointerUVs">AnimationPointerUVs</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.648</td><td>-0.015</td><td>13.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>14</td></tr>
 <tr data-name="anisotropybarnlamp" data-verdict="good"><td><a href="#model-AnisotropyBarnLamp">AnisotropyBarnLamp</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.710</td><td>-0.098</td><td>7.3%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>4</td></tr>
 <tr data-name="anisotropydisctest" data-verdict="bad"><td><a href="#model-AnisotropyDiscTest">AnisotropyDiscTest</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.249</td><td>0.114</td><td>23.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="anisotropyrotationtest" data-verdict="bad"><td><a href="#model-AnisotropyRotationTest">AnisotropyRotationTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.103</td><td>0.507</td><td>13.1%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
@@ -137,7 +138,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 <tr data-name="comparenormal" data-verdict="mid"><td><a href="#model-CompareNormal">CompareNormal</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.472</td><td>0.224</td><td>19.8%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
 <tr data-name="compareroughness" data-verdict="good"><td><a href="#model-CompareRoughness">CompareRoughness</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.647</td><td>0.065</td><td>11.7%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="comparesheen" data-verdict="good"><td><a href="#model-CompareSheen">CompareSheen</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.645</td><td>-0.062</td><td>19.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
-<tr data-name="comparespecular" data-verdict="good"><td><a href="#model-CompareSpecular">CompareSpecular</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.777</td><td>0.010</td><td>20.0%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
+<tr data-name="comparespecular" data-verdict="good"><td><a href="#model-CompareSpecular">CompareSpecular</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.690</td><td>-0.014</td><td>20.0%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
 <tr data-name="comparetransmission" data-verdict="mid"><td><a href="#model-CompareTransmission">CompareTransmission</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.404</td><td>0.080</td><td>19.7%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
 <tr data-name="comparevolume" data-verdict="bad"><td><a href="#model-CompareVolume">CompareVolume</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.351</td><td>0.097</td><td>19.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="corset" data-verdict="mid"><td><a href="#model-Corset">Corset</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.527</td><td>0.073</td><td>8.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
@@ -211,7 +212,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 <tr data-name="simpletexture" data-verdict="good"><td><a href="#model-SimpleTexture">SimpleTexture</a></td><td>screenshot</td><td>screenshot.png</td><td>0.667</td><td>-0.137</td><td>29.5%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="specglossvsmetalrough" data-verdict="bad"><td><a href="#model-SpecGlossVsMetalRough">SpecGlossVsMetalRough</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.148</td><td>0.313</td><td>12.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="specularsilkpouf" data-verdict="good"><td><a href="#model-SpecularSilkPouf">SpecularSilkPouf</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.643</td><td>-0.010</td><td>15.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
-<tr data-name="speculartest" data-verdict="mid"><td><a href="#model-SpecularTest">SpecularTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.495</td><td>0.132</td><td>23.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
+<tr data-name="speculartest" data-verdict="mid"><td><a href="#model-SpecularTest">SpecularTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.507</td><td>0.108</td><td>24.7%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
 <tr data-name="sponza" data-verdict="good"><td><a href="#model-Sponza">Sponza</a></td><td>large</td><td>large.jpg</td><td>0.693</td><td>-0.037</td><td>70.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？</td><td>1</td></tr>
 <tr data-name="stainedglasslamp" data-verdict="good"><td><a href="#model-StainedGlassLamp">StainedGlassLamp</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.648</td><td>0.005</td><td>5.2%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>5</td></tr>
 <tr data-name="sunglasseskhronos" data-verdict="mid"><td><a href="#model-SunglassesKhronos">SunglassesKhronos</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.420</td><td>-0.219</td><td>16.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>3</td></tr>
@@ -336,7 +337,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-AnimationPointerUVs" data-name="animationpointeruvs"
-         data-verdict="good" data-hist="0.6454" data-gaps="14">
+         data-verdict="good" data-hist="0.6484" data-gaps="14">
   <header class="card-head">
     <h2>AnimationPointerUVs</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class="status">ok</span>
@@ -346,7 +347,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/AnimationPointerUVs.jpg" target=_blank><img loading=lazy src="ref/AnimationPointerUVs.jpg" alt="ref AnimationPointerUVs"></a></div><figcaption>官方参考：screenshot_Large.jpg（2322×1237，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/AnimationPointerUVs/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/AnimationPointerUVs/preview.jpg" alt="maque AnimationPointerUVs"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.645</span><span title="前景平均亮度差">亮度差 -0.002</span><span title="前景平均 RGB 距离">RGB 距离 0.022</span><span title="预览前景像素占比">前景占比 12.7%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.648</span><span title="前景平均亮度差">亮度差 -0.015</span><span title="前景平均 RGB 距离">RGB 距离 0.025</span><span title="预览前景像素占比">前景占比 13.1%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
   <details><summary>已知差距 14 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）</li><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现</li><li>… 共 14 项，见该模型 README</li></ul></details>
 </article>
@@ -732,7 +733,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   </div>
   <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.684</span><span title="前景平均亮度差">亮度差 -0.155</span><span title="前景平均 RGB 距离">RGB 距离 0.159</span><span title="预览前景像素占比">前景占比 11.2%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似</li><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似</li><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li></ul></details>
 </article>
 
 <article class="card good" id="model-ChronographWatch" data-name="chronographwatch"
@@ -1024,7 +1025,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-CompareSpecular" data-name="comparespecular"
-         data-verdict="good" data-hist="0.7767" data-gaps="1">
+         data-verdict="good" data-hist="0.6896" data-gaps="1">
   <header class="card-head">
     <h2>CompareSpecular</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class=tag>pbrtest</span><span class="status">ok</span>
@@ -1034,9 +1035,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CompareSpecular.jpg" target=_blank><img loading=lazy src="ref/CompareSpecular.jpg" alt="ref CompareSpecular"></a></div><figcaption>官方参考：screenshot_Large.jpg（1654×840，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CompareSpecular/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CompareSpecular/preview.jpg" alt="maque CompareSpecular"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.777</span><span title="前景平均亮度差">亮度差 0.010</span><span title="前景平均 RGB 距离">RGB 距离 0.023</span><span title="预览前景像素占比">前景占比 20.0%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.690</span><span title="前景平均亮度差">亮度差 -0.014</span><span title="前景平均 RGB 距离">RGB 距离 0.046</span><span title="预览前景像素占比">前景占比 20.0%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 1 项</summary><ul><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li></ul></details>
+  <details><summary>已知差距 1 项</summary><ul><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li></ul></details>
 </article>
 
 <article class="card mid" id="model-CompareTransmission" data-name="comparetransmission"
@@ -1340,7 +1341,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   </div>
   <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.533</span><span title="前景平均亮度差">亮度差 -0.065</span><span title="前景平均 RGB 距离">RGB 距离 0.062</span><span title="预览前景像素占比">前景占比 17.0%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 5 项</summary><ul><li>KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）</li><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似</li><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
+  <details><summary>已知差距 5 项</summary><ul><li>KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）</li><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似</li><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-GlassBrokenWindow" data-name="glassbrokenwindow"
@@ -1420,7 +1421,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   </div>
   <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.562</span><span title="前景平均亮度差">亮度差 0.026</span><span title="前景平均 RGB 距离">RGB 距离 0.043</span><span title="预览前景像素占比">前景占比 16.4%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现</li><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现</li><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li></ul></details>
 </article>
 
 <article class="card mid" id="model-IridescenceAbalone" data-name="iridescenceabalone"
@@ -1900,7 +1901,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   </div>
   <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.532</span><span title="前景平均亮度差">亮度差 -0.019</span><span title="前景平均 RGB 距离">RGB 距离 0.038</span><span title="预览前景像素占比">前景占比 15.0%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 7 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现</li><li>KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似</li><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li><li>… 共 7 项，见该模型 README</li></ul></details>
+  <details><summary>已知差距 7 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现</li><li>KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似</li><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li><li>… 共 7 项，见该模型 README</li></ul></details>
 </article>
 
 <article class="card good" id="model-PrimitiveModeNormalsTest" data-name="primitivemodenormalstest"
@@ -2060,7 +2061,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   </div>
   <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.665</span><span title="前景平均亮度差">亮度差 -0.017</span><span title="前景平均 RGB 距离">RGB 距离 0.019</span><span title="预览前景像素占比">前景占比 25.3%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：沙发几何完整（软垫/靠背/木框形状正确），但所有部件呈纯白无贴图，官方为深色木质+金棕色织物。README 已记录“WebP 贴图无解码器”，本模型是 148 个里唯一使用 EXT_texture_webp 的模型，属明确可定位的贴图缺失问题（补 WebP 解码即可恢复）。<br>- 差异主因：导入问题：EXT_texture_webp 贴图无解码器 → 全部贴图缺失（白模）</div><details><summary>已知差距 4 项</summary><ul><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似</li><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li><li>WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：沙发几何完整（软垫/靠背/木框形状正确），但所有部件呈纯白无贴图，官方为深色木质+金棕色织物。README 已记录“WebP 贴图无解码器”，本模型是 148 个里唯一使用 EXT_texture_webp 的模型，属明确可定位的贴图缺失问题（补 WebP 解码即可恢复）。<br>- 差异主因：导入问题：EXT_texture_webp 贴图无解码器 → 全部贴图缺失（白模）</div><details><summary>已知差距 4 项</summary><ul><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li><li>KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似</li><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li><li>WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）</li></ul></details>
 </article>
 
 <article class="card mid" id="model-SimpleInstancing" data-name="simpleinstancing"
@@ -2204,11 +2205,11 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   </div>
   <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.643</span><span title="前景平均亮度差">亮度差 -0.010</span><span title="前景平均 RGB 距离">RGB 距离 0.094</span><span title="预览前景像素占比">前景占比 15.8%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似</li><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似</li><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li></ul></details>
 </article>
 
 <article class="card mid" id="model-SpecularTest" data-name="speculartest"
-         data-verdict="mid" data-hist="0.4952" data-gaps="1">
+         data-verdict="mid" data-hist="0.5067" data-gaps="1">
   <header class="card-head">
     <h2>SpecularTest</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2218,9 +2219,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/SpecularTest.jpg" target=_blank><img loading=lazy src="ref/SpecularTest.jpg" alt="ref SpecularTest"></a></div><figcaption>官方参考：screenshot-large.png（1411×933，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/SpecularTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/SpecularTest/preview.jpg" alt="maque SpecularTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.495</span><span title="前景平均亮度差">亮度差 0.132</span><span title="前景平均 RGB 距离">RGB 距离 0.131</span><span title="预览前景像素占比">前景占比 23.4%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.507</span><span title="前景平均亮度差">亮度差 0.108</span><span title="前景平均 RGB 距离">RGB 距离 0.107</span><span title="预览前景像素占比">前景占比 24.7%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 1 项</summary><ul><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li></ul></details>
+  <details><summary>已知差距 1 项</summary><ul><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li></ul></details>
 </article>
 
 <article class="card good" id="model-Sponza" data-name="sponza"
@@ -2412,7 +2413,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   </div>
   <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.332</span><span title="前景平均亮度差">亮度差 0.102</span><span title="前景平均 RGB 距离">RGB 距离 0.165</span><span title="预览前景像素占比">前景占比 17.6%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 4 项</summary><ul><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）</li><li>KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现</li><li>KHR_materials_retroreflection 未实现</li></ul></details>
+  <details><summary>已知差距 4 项</summary><ul><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）</li><li>KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）</li><li>KHR_materials_retroreflection 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-TransmissionOrderTest" data-name="transmissionordertest"

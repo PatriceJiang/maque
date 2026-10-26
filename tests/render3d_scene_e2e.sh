@@ -383,4 +383,39 @@ sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: (10) PMREM（GGX 预过滤 + irradiance + 天空）OK"
 fi
+# ---- (11) KHR_materials_specular 贴图：specularColorTexture 真正参与电介质 F0 ----
+SPEC_SCN="$ROOT/scenes/pbr/material_specular.scn"
+SPEC_BASE_SCN="$ROOT/scenes/pbr/material_specular_base.scn"
+if [ -f "$SPEC_SCN" ] && [ -f "$SPEC_BASE_SCN" ]; then
+    ( cd "$ROOT" && timeout 120 env MAQUE_RENDER3D_INFO=1 "$PLAYER" --shot "$WORK/spec_tex.ppm" --frames 2 scenes/pbr/material_specular.scn \
+        >"$WORK/spec_tex.txt" 2>&1 ) || { cat "$WORK/spec_tex.txt"; fail "specular 贴图场景渲染失败"; }
+    ( cd "$ROOT" && timeout 120 env MAQUE_RENDER3D_INFO=1 "$PLAYER" --shot "$WORK/spec_off.ppm" --frames 2 scenes/pbr/material_specular_base.scn \
+        >"$WORK/spec_off.txt" 2>&1 ) || { cat "$WORK/spec_off.txt"; fail "specular 对照场景渲染失败"; }
+    grep -q "pbr specular texture specular_color_texture.*-> [0-9]" "$WORK/spec_tex.txt" \
+        || { cat "$WORK/spec_tex.txt"; fail "specular_color_texture 未加载（runtime 映射缺失）"; }
+    grep -q "pbr specular texture" "$WORK/spec_off.txt" && fail "对照场景不应加载 specular 贴图"
+    "$PY" - "$WORK/spec_tex.ppm" "$WORK/spec_off.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); m, dims, _x, px = d.split(b'\n', 3)
+    assert m == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, [(px[i], px[i+1], px[i+2]) for i in range(0, len(px), 3)]
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+def diff_n(x0, x1, y0, y1):
+    n = 0
+    for y in range(int(h * y0), int(h * y1)):
+        for x in range(int(w * x0), int(w * x1)):
+            i = y * w + x
+            if sum(abs(a[i][k] - b[i][k]) for k in range(3)) > 12:
+                n += 1
+    return n
+right = diff_n(.62, .82, .25, .80)    # 有 specularColorTexture 的立方体
+left = diff_n(.18, .38, .25, .80)     # 相同参数但无贴图的对照立方体
+print(f'render3d_scene_e2e: specular tex diff right={right} left={left}')
+# checker 贴图按 UV 调制 specularColorFactor → 右侧大片像素亮度变化；左侧无贴图应几乎不变。
+sys.exit(0 if right > 1000 and left < 50 else 1)
+PY
+    echo "render3d_scene_e2e: (11) KHR_materials_specular 贴图 OK"
+fi
 echo "render3d_scene_e2e: PASS"

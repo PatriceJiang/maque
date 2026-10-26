@@ -7,11 +7,12 @@
   let v = normalize(cam.eye.xyz - s.w);
   let n_dot_v = max(dot(s.n, v), 1e-4);
   let ep = surface_ext_params(uv_base(in.uv));
-  /* F0：IOR + specularIntensity/specularColor（KHR_materials_specular / ior） */
+  /* F0：IOR + specularIntensity/specularColor（KHR_materials_specular / ior）。
+   * glTF 规范：specular 扩展只调制电介质 F0；金属 F0 = baseColor（不受影响）。 */
   let ior = clamp(dr.phys0.y, 1.0, 2.5);
   let f0_d = pow((ior - 1.0) / (ior + 1.0), 2.0);
-  var f0 = mix(vec3f(f0_d) * dr.phys0.x * clamp(dr.specular.rgb, vec3f(0.0), vec3f(1.0)),
-               s.base, s.metallic);
+  let f0_dielectric = vec3f(f0_d) * ep.specular_factor * ep.specular_color;
+  var f0 = mix(f0_dielectric, s.base, s.metallic);
   /* iridescence：薄膜干涉色调制 F0（有厚度贴图用贴图 G，否则视角近似） */
   if (ep.iridescence > 0.001) {
     var thick = mix(dr.phys2.x, dr.phys2.y, 0.5 + 0.5 * n_dot_v);

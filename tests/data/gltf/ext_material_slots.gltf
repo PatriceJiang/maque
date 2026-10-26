@@ -7,6 +7,7 @@
     "KHR_materials_clearcoat",
     "KHR_materials_sheen",
     "KHR_materials_iridescence",
+    "KHR_materials_specular",
     "KHR_materials_anisotropy"
   ],
   "scene": 0,
@@ -83,6 +84,20 @@
           },
           "iridescenceThicknessTexture": {
             "index": 2
+          }
+        },
+        "KHR_materials_specular": {
+          "specularFactor": 0.65,
+          "specularColorFactor": [
+            0.9,
+            0.95,
+            1.0
+          ],
+          "specularTexture": {
+            "index": 2
+          },
+          "specularColorTexture": {
+            "index": 0
           }
         },
         "KHR_materials_anisotropy": {

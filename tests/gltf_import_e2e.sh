@@ -28,7 +28,7 @@
 #         iridescenceTexture→iridescence_texture、iridescenceThicknessTexture→
 #         iridescence_thickness_texture、anisotropyTexture→anisotropy_texture 全部映射；
 #       · 复用 sampler 后缀（clamp/clamp+nearest、mirror/repeat、默认无后缀）；
-#         specularTexture/specularColorTexture 仍未支持（gap 文案在迁移脚本，Lead 更新）。
+#         specularTexture/specularColorTexture 映射到 specular_texture/specular_color_texture（2 槽）。
 #   KHR_lights_punctual + KHR_node_visibility（plans/20，task-14）：
 #     夹具 tests/data/gltf/lights_visibility.gltf（3 方向光 + 3 点光 + 3 聚光 = 9 盏；
 #     隐藏节点子树含 mesh 与灯光）：
@@ -217,6 +217,9 @@ assert mat["sheen_roughness_texture"] == "textures/image0.png", mat["sheen_rough
 assert mat["iridescence_texture"] == "textures/image0.png#wrap=clamp,clamp&filter=nearest", mat["iridescence_texture"]
 assert mat["iridescence_thickness_texture"] == "textures/image0.png", mat["iridescence_thickness_texture"]
 assert mat["anisotropy_texture"] == "textures/image0.png#wrap=mirror,repeat", mat["anisotropy_texture"]
+# KHR_materials_specular 两槽（specularTexture 用默认 sampler 无后缀；specularColorTexture 用 clamp+nearest）
+assert mat["specular_texture"] == "textures/image0.png", mat["specular_texture"]
+assert mat["specular_color_texture"] == "textures/image0.png#wrap=clamp,clamp&filter=nearest", mat["specular_color_texture"]
 # 既有 clearcoat normal 槽仍工作（mirror sampler + scale）
 assert mat["clearcoat_normal_texture"] == "textures/image0.png#wrap=mirror,repeat", mat["clearcoat_normal_texture"]
 assert abs(mat["clearcoat_normal_scale"] - 0.8) < 1e-9
@@ -225,6 +228,9 @@ assert mat["shading_model"] == 1, mat.get("shading_model")
 assert mat["clearcoat"] == 1.0 and abs(mat["clearcoat_roughness"] - 0.2) < 1e-9
 assert mat["sheen_color"] == {"x": 0.8, "y": 0.2, "z": 0.1}
 assert mat["anisotropy"] == 1.0 and mat["iridescence"] == 1.0
+# KHR_materials_specular 因子（旧 extensions.gltf 已有 0.7 的断言；这里补 0.65/color）
+assert abs(mat["specular_intensity"] - 0.65) < 1e-9, mat.get("specular_intensity")
+assert mat["specular"] == {"x": 0.9, "y": 0.95, "z": 1.0}, mat.get("specular")
 # 网格仍是旧布局（无 COLOR_0/uv1 贴图）
 assert m["vertex_layout"] == 0 and m["vertex_stride"] == 48, (m["vertex_layout"], m["vertex_stride"])
 print("gltf_import_e2e: 扩展贴图槽 OK")

@@ -317,6 +317,10 @@
         - { name: iridescence_texture, type: string, default: "" }
         - { name: iridescence_thickness_texture, type: string, default: "" }
         - { name: anisotropy_texture, type: string, default: "" }
+        # KHR_materials_specular 贴图槽（尾部追加）：specular_texture.A = specularFactor、
+        # specular_color_texture.RGB = specularColorFactor（sRGB）。glTF 语义：仅对电介质 F0 生效。
+        - { name: specular_texture, type: string, default: "" }
+        - { name: specular_color_texture, type: string, default: "" }
         # KHR_texture_transform.rotation（弧度；glTF 约定 UV' = T * R * S * uv）：
         # 基础贴图组（base/MR/AO/emissive/扩展贴图）与法线贴图组各一个旋转角。
         - { name: uv_rotation, type: float, default: 0.0F }

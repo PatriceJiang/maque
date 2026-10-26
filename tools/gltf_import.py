@@ -18,9 +18,9 @@
     其它编码（KTX2/BasisU/WebP）跳过并告警
   · 材质扩展：KHR_materials_{unlit,clearcoat,sheen,iridescence,specular,ior,anisotropy,
     emissive_strength} → asset.PbrMaterial（只写非默认值）；transmission → alpha BLEND 近似。
-  · KHR 扩展材质贴图槽（plans/20 第 2 轮）：clearcoat / clearcoat_roughness / sheen_color /
-    sheen_roughness / iridescence / iridescence_thickness / anisotropy 7 槽 → 字符串字段；
-    specularTexture/specularColorTexture 仍无对应槽。UV 近似复用 uv_scale/uv_offset
+  · KHR 扩展材质贴图槽（plans/20 第 2 轮 + specular）：clearcoat / clearcoat_roughness / sheen_color /
+    sheen_roughness / iridescence / iridescence_thickness / anisotropy 7 槽 + specular /
+    specular_color 2 槽 → 字符串字段。UV 近似复用 uv_scale/uv_offset
     （TEXCOORD_0；不支持这些槽的逐槽 texCoord/transform）。
   · glTF sampler 非默认时贴图路径追加 `#wrap=U,V&filter=nearest`（runtime 据此建 sampler）。
   · KHR_lights_punctual：`--scene` 时导入为 render.Light 实体（≤8 盏、方向光优先；node 世界变换 →
@@ -485,8 +485,7 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
         mark_uv1("clearcoat_normal", cn)
     # KHR 扩展材质贴图槽（plans/20 第 2 轮）：7 个 glTF textureInfo → 字符串字段（仅非空时写；
     # 无这些扩展/无贴图的材质输出逐字节不变）。复用 tex_slot（sampler 后缀/同名去重/URL 解码）。
-    # UV 近似：引擎对这些槽复用 uv_scale/uv_offset（TEXCOORD_0）——不支持逐槽 texCoord/transform；
-    # specularTexture/specularColorTexture 仍无对应槽（known_gaps 文案在 migrate 脚本，Lead 更新）。
+    # UV 近似：引擎对这些槽复用 uv_scale/uv_offset（TEXCOORD_0）——不支持逐槽 texCoord/transform。
     ext_tex_slots = []
     if "KHR_materials_clearcoat" in exts:
         cc2 = exts["KHR_materials_clearcoat"] or {}
@@ -500,6 +499,10 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
         ir2 = exts["KHR_materials_iridescence"] or {}
         ext_tex_slots += [("iridescence_texture", ir2.get("iridescenceTexture")),
                           ("iridescence_thickness_texture", ir2.get("iridescenceThicknessTexture"))]
+    if "KHR_materials_specular" in exts:
+        sp2 = exts["KHR_materials_specular"] or {}
+        ext_tex_slots += [("specular_texture", sp2.get("specularTexture")),
+                          ("specular_color_texture", sp2.get("specularColorTexture"))]
     if "KHR_materials_anisotropy" in exts:
         an2 = exts["KHR_materials_anisotropy"] or {}
         ext_tex_slots += [("anisotropy_texture", an2.get("anisotropyTexture"))]

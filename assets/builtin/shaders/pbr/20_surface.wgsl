@@ -118,7 +118,7 @@ fn clearcoat_normal_uv(in: VOut) -> vec2f {
   return uv_pick(nuv0, nuv1, 7);
 }
 
-/* ---- KHR 扩展材质贴图槽（binding 10..16；presence = flags2 bit12..18）----
+/* ---- KHR 扩展材质贴图槽（binding 10..18；presence = flags2 bit12..18 / bit21..22）----
  * glTF 语义（通道）：
  *   clearcoatTexture.R × clearcoatFactor
  *   clearcoatRoughnessTexture.G × clearcoatRoughnessFactor
@@ -127,6 +127,7 @@ fn clearcoat_normal_uv(in: VOut) -> vec2f {
  *   iridescenceTexture.R × iridescenceFactor
  *   iridescenceThicknessTexture.G → mix(thicknessMin, thicknessMax, G)
  *   anisotropyTexture.B × anisotropyStrength（方向 RG 暂不参与近似 BRDF）
+ *   specularTexture.A × specularFactor、specularColorTexture.RGB × specularColorFactor（sRGB）
  * 缺贴图时绑 white：乘 1 不改变因子；厚度用 presence 决定是否 mix（避免 white G=1 恒取 max）。 */
 struct ExtParams {
   clearcoat: vec2f,        // x=factor y=roughness
@@ -135,10 +136,17 @@ struct ExtParams {
   iridescence: f32,
   iridescence_thickness: f32,   // <0 = 无厚度贴图（调用方走视角近似）
   anisotropy: f32,
+  specular_factor: f32,         // specularIntensity × specularTexture.A
+  specular_color: vec3f,        // specularColorFactor × specularColorTexture.RGB
 };
 
 fn ext_tex_present(bit: u32) -> bool {
   return ((u32(flags2_bits()) >> (12u + bit)) & 1u) != 0u;
+}
+
+/* KHR_materials_specular 两槽 presence（bit21/22） */
+fn spec_tex_present(bit: u32) -> bool {
+  return ((u32(flags2_bits()) >> (21u + bit)) & 1u) != 0u;
 }
 
 fn surface_ext_params(uv: vec2f) -> ExtParams {
@@ -159,10 +167,17 @@ fn surface_ext_params(uv: vec2f) -> ExtParams {
   }
   e.anisotropy = dr.phys2.z;
   if (ext_tex_present(6u)) { e.anisotropy *= textureSample(anisotropy_tex, albedo_smp, uv).b; }
+  /* KHR_materials_specular：factor/color 因子来自 uniform，贴图按通道调制（white 时乘 1）。 */
+  e.specular_factor = dr.phys0.x;
+  e.specular_color = max(dr.specular.rgb, vec3f(0.0));   /* factor 可 >1（CompareSpecular 用 10×） */
+  if (spec_tex_present(0u)) { e.specular_factor *= textureSample(specular_tex, albedo_smp, uv).a; }
+  if (spec_tex_present(1u)) { e.specular_color *= textureSample(specular_color_tex, albedo_smp, uv).rgb; }
   e.clearcoat = clamp(e.clearcoat, vec2f(0.0), vec2f(1.0));
   e.sheen_roughness = clamp(e.sheen_roughness, 0.0, 1.0);
   e.iridescence = clamp(e.iridescence, 0.0, 1.0);
   e.anisotropy = clamp(e.anisotropy, 0.0, 1.0);
+  e.specular_factor = clamp(e.specular_factor, 0.0, 1.0);
+  e.specular_color = max(e.specular_color, vec3f(0.0));   /* glTF 允许 >1（CompareSpecular 用 10× 做对照） */
   return e;
 }
 

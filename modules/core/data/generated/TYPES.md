@@ -632,6 +632,8 @@ role: `pbr_material`
 | `iridescence_texture` | string |  |  |
 | `iridescence_thickness_texture` | string |  |  |
 | `anisotropy_texture` | string |  |  |
+| `specular_texture` | string |  |  |
+| `specular_color_texture` | string |  |  |
 | `uv_rotation` | float | 0.0F |  |
 | `normal_uv_rotation` | float | 0.0F |  |
 | `alpha_mask_in_blend` | bool | false |  |

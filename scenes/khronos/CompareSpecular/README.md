@@ -22,7 +22,7 @@
 | 使用扩展 | `KHR_materials_specular` |
 | alpha 模式分布 | OPAQUE×2 |
 
-**导入产物**：`assets/` 2 个 `.mesh.json`（合计 603.7 KB），`textures/` 1 张；场景 `CompareSpecular.scn`。
+**导入产物**：`assets/` 2 个 `.mesh.json`（合计 603.8 KB），`textures/` 2 张；场景 `CompareSpecular.scn`。
 
 ## 生成 / 运行
 
@@ -42,21 +42,21 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.291 | 0.302 | 差 +0.010 |
-| 前景平均 RGB | [134.2, 59.7, 44.6] | [148.6, 59.2, 41.8] | RGB 距离 0.023 |
-| 亮度直方图相似度 | — | — | 0.78（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.291 | 0.277 | 差 -0.014 |
+| 前景平均 RGB | [134.2, 59.7, 44.6] | [149.0, 51.2, 33.1] | RGB 距离 0.046 |
+| 亮度直方图相似度 | — | — | 0.69（16 桶交集，1=完全一致） |
 | 前景占比 | 67.5% | 20.0% | 覆盖率比 0.296 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
+- KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
+- KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
 
 ## 踩过的坑 / 注意
 

@@ -5,7 +5,7 @@
 
 - 模型：**149**（149 个有自动对比；86 个参考图使用 large 版，13 个为 GIF 首帧）
 - 指标中位数：直方图相似度 **0.437**、前景平均亮度差 **+0.088**、
-  前景 RGB 距离 **0.121**、预览前景占比 **16.6%**
+  前景 RGB 距离 **0.119**、预览前景占比 **16.6%**
 - 自动初判：较接近 **39** / 中等 **43** / 差异较大 **67**
 - 参考图下采样：≤900px、JPEG q82，存于 `ref/`；预览来自 `scenes/khronos/<Model>/preview.jpg`
 - 复现：`python tools/make_migration_report.py`；表格数据：[comparison.csv](comparison.csv)、[comparison.json](comparison.json)
@@ -13,7 +13,8 @@
 ![总览拼图](overview.jpg)
 
 > ⚠️ **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio、软阴影、不同机位/背景、含透明背景），
-> maque 无 HDRI IBL / 真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查，差异需人工归因
+> maque 有 opt-in PMREM envmap/IBL（真 GGX 预过滤 + 漫反射 irradiance + 天空）/ 扩展材质贴图（含 specular），
+> 但无真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查，差异需人工归因
 > （见各模型 README 的「与官方 screenshot 对比」与「人工视觉复核」；迁移方法与踩坑见
 > [docs/31-gltf-model-migration.md](../../docs/31-gltf-model-migration.md)）。
 
@@ -49,8 +50,8 @@
 | [CompareAmbientOcclusion](#model-CompareAmbientOcclusion) | screenshot_Large.jpg（large） | 0.808 | 0.035 | 17.4% | 主体亮度/色调分布较接近（机位/背景可能不同） | 0 |
 | [ClearcoatWicker](#model-ClearcoatWicker) | screenshot_large.jpg（large） | 0.807 | 0.088 | 13.6% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
 | [IridescenceMetallicSpheres](#model-IridescenceMetallicSpheres) | screenshot_large.jpg（large） | 0.798 | 0.078 | 16.2% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
-| [CompareSpecular](#model-CompareSpecular) | screenshot_Large.jpg（large） | 0.777 | 0.010 | 20.0% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
 | [DispersionTest](#model-DispersionTest) | screenshot-large.png（large） | 0.759 | 0.063 | 13.9% | 主体亮度/色调分布较接近（机位/背景可能不同） | 2 |
+| [SheenChair](#model-SheenChair) | screenshot-large.jpg（large） | 0.740 | -0.118 | 11.1% | 主体亮度/色调分布较接近（机位/背景可能不同） | 3 |
 
 ## 全部模型
 

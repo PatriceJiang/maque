@@ -71,6 +71,9 @@ struct Draw {
 @group(1) @binding(14) var iridescence_tex: texture_2d<f32>;          // R = iridescence factor
 @group(1) @binding(15) var iridescence_thickness_tex: texture_2d<f32>; // G = thickness 0..1
 @group(1) @binding(16) var anisotropy_tex: texture_2d<f32>;           // B = anisotropy strength
+// KHR_materials_specular 两槽（binding 17/18；presence = flags2 bit21/22）
+@group(1) @binding(17) var specular_tex: texture_2d<f32>;              // A = specularFactor
+@group(1) @binding(18) var specular_color_tex: texture_2d<f32>;        // RGB（sRGB）= specularColorFactor
 
 struct VOut {
   @builtin(position) p: vec4f,

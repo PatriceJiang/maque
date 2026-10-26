@@ -192,7 +192,10 @@
         # gfx pack 到 Draw 的 specular.w / sheen_color.w（GPU 端不额外扩 uniform 结构）。
         - { name: uv_rotation,              type: float }
         - { name: normal_uv_rotation,       type: float }
-        # 注：specularTexture/specularColorTexture 仍未接入（见 docs/31 §5.3）。
+        # KHR_materials_specular 两槽（尾部追加）：specular_texture.A = specularFactor、
+        # specular_color_texture.RGB（sRGB）= specularColorFactor；-1=无。
+        # 存在时 runtime 置 flags2 bit21/22；gfx 在 group1 binding 17/18 绑定。
+        - { name: textures4,                type: "int32_t[2]" }
     - record: draw3d
       fields:
         - { name: mesh,          type: int32_t }

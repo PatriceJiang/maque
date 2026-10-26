@@ -3492,7 +3492,9 @@
             "y": 10.0,
             "z": 10.0
           },
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },
@@ -3549,7 +3551,9 @@
             "y": 10.0,
             "z": 10.0
           },
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },
@@ -3606,7 +3610,9 @@
             "y": 10.0,
             "z": 10.0
           },
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },
@@ -5666,7 +5672,9 @@
             "x": 10.0,
             "y": 10.0,
             "z": 10.0
-          }
+          },
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },
@@ -5722,7 +5730,9 @@
             "x": 10.0,
             "y": 10.0,
             "z": 10.0
-          }
+          },
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },
@@ -5778,7 +5788,9 @@
             "x": 10.0,
             "y": 10.0,
             "z": 10.0
-          }
+          },
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },
@@ -6218,7 +6230,9 @@
             "x": 10.0,
             "y": 10.0,
             "z": 10.0
-          }
+          },
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },
@@ -6274,7 +6288,9 @@
             "x": 10.0,
             "y": 10.0,
             "z": 10.0
-          }
+          },
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },
@@ -6330,7 +6346,9 @@
             "x": 10.0,
             "y": 10.0,
             "z": 10.0
-          }
+          },
+          "specular_texture": "textures/image11.png",
+          "specular_color_texture": "textures/image11.png"
         }
       ]
     },

@@ -1,0 +1,151 @@
+{
+ "title": "material_specular_base",
+ "width": 640,
+ "height": 360,
+ "views": 1,
+ "entities": [
+  {
+   "name": "camera",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {
+       "x": 0.0,
+       "y": 0.5,
+       "z": 4.2
+      },
+      "rotation": {
+       "x": -0.12,
+       "y": 0.0,
+       "z": 0.0
+      }
+     }
+    },
+    {
+     "type": "render.Camera3D",
+     "fov_y": 50.0,
+     "near": 0.1,
+     "far": 100.0,
+     "clear_color": {
+      "r": 0.04,
+      "g": 0.045,
+      "b": 0.06,
+      "a": 1.0
+     }
+    }
+   ]
+  },
+  {
+   "name": "sun",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "rotation": {
+       "x": 0.35,
+       "y": 0.25,
+       "z": 0.0
+      }
+     }
+    },
+    {
+     "type": 0,
+     "intensity": 3.0,
+     "color": {
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0,
+      "a": 1.0
+     }
+    }
+   ]
+  },
+  {
+   "name": "ref_plain",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {
+       "x": -1.05,
+       "y": 0.0,
+       "z": 0.0
+      },
+      "rotation": {
+       "x": 0.18,
+       "y": 0.35,
+       "z": 0.0
+      }
+     }
+    },
+    {
+     "type": "render.MeshRenderer"
+    },
+    {
+     "type": "asset.PbrMaterial",
+     "name": "plain",
+     "shading_model": "MaterialShadingModel::Physical",
+     "base_color": {
+      "r": 0.05,
+      "g": 0.05,
+      "b": 0.05,
+      "a": 1.0
+     },
+     "metallic": 0.0,
+     "roughness": 0.18,
+     "ior": 1.5,
+     "specular": {
+      "x": 4.0,
+      "y": 4.0,
+      "z": 4.0
+     },
+     "specular_intensity": 1.0
+    }
+   ]
+  },
+  {
+   "name": "ref_specular_tex",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {
+       "x": 1.05,
+       "y": 0.0,
+       "z": 0.0
+      },
+      "rotation": {
+       "x": 0.18,
+       "y": 0.35,
+       "z": 0.0
+      }
+     }
+    },
+    {
+     "type": "render.MeshRenderer"
+    },
+    {
+     "type": "asset.PbrMaterial",
+     "name": "spec_tex_off",
+     "shading_model": "MaterialShadingModel::Physical",
+     "base_color": {
+      "r": 0.05,
+      "g": 0.05,
+      "b": 0.05,
+      "a": 1.0
+     },
+     "metallic": 0.0,
+     "roughness": 0.18,
+     "ior": 1.5,
+     "specular": {
+      "x": 4.0,
+      "y": 4.0,
+      "z": 4.0
+     },
+     "specular_intensity": 1.0
+    }
+   ]
+  }
+ ]
+}

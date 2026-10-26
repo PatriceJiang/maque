@@ -3543,6 +3543,24 @@
           "attrs": {}
         },
         {
+          "name": "specular_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "specular_color_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "uv_rotation",
           "type": "float",
           "kind": "f32",

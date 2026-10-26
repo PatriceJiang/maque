@@ -319,7 +319,7 @@ def known_gaps(stats):
     if "KHR_materials_iridescence" in used:
         gaps.append("KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）")
     if "KHR_materials_specular" in used:
-        gaps.append("KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现")
+        gaps.append("KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）")
     if "KHR_materials_anisotropy" in used:
         gaps.append("KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）")
     if "KHR_materials_variants" in used:
