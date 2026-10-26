@@ -19,8 +19,8 @@
 | 批量 | `python tools/migrate_gltf_models.py`：选主变体 → 导入 → headless 截图 → 定量对比 → 写逐模型 README → 重写总索引 + `manifest.json`；单模型失败不中断整批 |
 | 本批结果 | **148/148 成功**（149 − 手调 ToyCar）；0 blocked、0 failed；整批 472.3s（≈7.9 min，平均 3.2s/模型）；派生资产 ≈983 MB（不入库）；差异分布与 Top 见 §10 |
 | 入库策略 | 入库：`.scn`、`preview.jpg`（800×450）、`README.md`、`compare.json`、`manifest.json`；**不入库**：`assets/`、`textures/`、`preview.png`（派生资产，从 `.deps` 一条命令重生成；入库体积 ≈18.4 MB，约为派生资产的 1.9%） |
-| 对比 | 与官方 `screenshot/` **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio/软阴影/不同机位/透明背景），maque 无 HDRI IBL、真实 transmission、软阴影、动画骨骼。自动指标只用于**筛查**，最终以人工看 preview + 参考图并记录差异归因为准 |
-| 当前主要差距 | 扩展材质贴图槽（clearcoat/sheen/iridescence/specular/anisotropy 的 texture）、真实 transmission/volume（现为 alpha 近似）、动画/骨骼/morph、KTX2/meshopt、KHR_lights_punctual、node_visibility/instancing、IBL/HDRI 与 MSAA —— 详见 §5 与 §11 |
+| 对比 | 与官方 `screenshot/` **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio/软阴影/不同机位/透明背景），maque 有 equirect envmap/IBL（PNG，mip 近似预过滤），但无 HDR/EXR、天空背景、真实 transmission、软阴影、动画骨骼。自动指标只用于**筛查**，最终以人工看 preview + 参考图并记录差异归因为准 |
+| 当前主要差距 | 真实 transmission/volume（现为 alpha 近似）、动画/骨骼/morph、KTX2/meshopt、HDR/EXR 环境贴图与真实 PMREM/天空背景、MSAA、specular 贴图 —— 详见 §5 与 §11 |
 | 确定性 | 同一输入两次导入**逐字节一致**；同机同构建、同场景同帧两次 `--shot` 的 PNG **SHA256 相同**（已实测）；流水线固定 `--compact`（与默认输出有 6 位小数舍入差异） |
 | 一键复现 | 见 §3；干净 clone 后恢复派生资产的唯一命令：`python tools/migrate_gltf_models.py --force`（会重写 `.scn`，手调模型须排除） |
 | 逐模型对比报告 | `reports/khronos-comparison/index.html`（149 个模型官方参考图 **large 优先** vs 迁移预览，左右对比 + 指标 + 差距 + 人工复核；`python tools/make_migration_report.py` 可重生成） |
@@ -466,7 +466,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | `KHR_lights_punctual`（**12 个模型**） | ✅ 导入为 `render.Light`（directional/point/spot，≤8 盏、方向光优先；spot 内/外锥角、range 保留）；强度为**观感归一化**（directional=2.6×intensity；point/spot 按模型尺度换算，非 cd/lux 物理值）；有灯光时不再追加默认太阳 | 自带布光能还原主体明暗/彩色灯；与官方离线渲染的精确强度/软阴影仍有差异 | 手调 `.scn` 可改 Light 因子；后续接物理单位换算/光追阴影 |
 | `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
 | 动画（**26 个模型 / 38 个动画**）/ 骨骼蒙皮（7 个模型 / 90 个 skin）/ morph（4 个模型 / 6 个 primitive） | ❌ 不导入（静态渲染；角色为 bind/T-pose；morph 默认权重不生效）；`KHR_animation_pointer`（5）同样不导入 | 动画模型与参考图姿势/形变不同 | README 标注"静态迁移"；动画属独立大项（§11） |
-| 场景根 `env_*` | ⚠️ 自动场景**不写**（用引擎默认环境）；手调可用（§6.3） | 默认环境与官方 HDRI studio 不同 | 手调或后续接 HDRI/PMREM |
+| 场景根 `env_*` / `env_texture` | ✅ **equirect envmap + IBL（opt-in）**：`env_texture` 写 PNG/JPEG（`builtin:/textures/studio_env` 或 VFS/远程）时启用；shader 按方向采样、roughness→mip 近似预过滤（镜面反射用 env，漫反射保留 analytic 以免平铺资产过亮）。**默认关**（保持迁移基线）；`MAQUE_ENV_IBL=1` 强制内建 studio env、`=0` 强制关 | 反射/环境光接近 HDRI studio（如 ToyCar 样板、`scenes/pbr/env_ibl.scn`）；无 HDR/EXR 解码、无天空背景、无真正 PMREM/cubemap | 后续：HDR/EXR 解码、cubemap、天空背景、PMREM（§11） |
 | 地面/背景板/阴影接收体 | ❌ 自动场景无 | "模型飘在空中"，接触阴影缺失 | 需要时手加地面 + `material_shadow.scn` 范式（§6.4 ⑤） |
 
 ---
@@ -542,7 +542,7 @@ far  = max(dist * 10, (dist + radius) * 8)
 | 环境 | **不写 `env_*`** → 用场景默认 | `env_color=(0.27,0.28,0.31)`、`env_intensity=1.6`、`env_sky/ground=0`（0=由 env_color 派生）、`env_highlight=1.0`、`env_rotation=0` |
 | 背景 | `clear_color=(0.13,0.13,0.14,1)`（深灰） | 与官方参考（多为浅灰/白棚拍）不同 → 对比时计入归因 |
 | 阴影 | 方向光阴影自动生效（1024² + 3×3 PCF） | 仅对可见 mesh 生效；`MAQUE_SHADOW=0` 可对照 |
-| IBL | analytic studio IBL（天空-地面渐变 + 软光箱 + Karis env BRDF） | **无 HDRI/PMREM**——这是与官方参考观感差距的最大单一因素 |
+| IBL | **equirect envmap IBL（opt-in）**：`env_texture` 或 `MAQUE_ENV_IBL=1` 启用；roughness→mip 近似预过滤 + Karis env BRDF；镜面反射用 env、漫反射仍 analytic。默认 analytic studio IBL | 有环境反射/更接近影棚；仍无 HDR/EXR、天空背景、真正 PMREM |
 
 ### 6.4 手调教程（preview 不理想时）
 
@@ -602,7 +602,7 @@ far  = max(dist * 10, (dist + radius) * 8)
 | `render.Camera3D.clear_color` | 同上 | RGBA 0–1 | 背景色 |
 | `scene.Transform3D.local.position/rotation/scale` | 任意实体 | 单位/弧度 | rotation Euler(Rz·Ry·Rx) |
 | `render.Light.intensity/color/type/range` | 灯实体 | 1 / RGBA / 0,1,2 / m | >8 盏截断（按优先级） |
-| `env_color/env_intensity/env_sky_color/env_ground_color/env_highlight/env_rotation` | **场景根** | RGBA / 1 / 度 | 0 色 = 派生；`env_rotation` 度 |
+| `env_color/env_intensity/env_sky_color/env_ground_color/env_highlight/env_rotation/env_texture` | **场景根** | RGBA / 1 / 度 / 路径 | `env_texture` 空 = 默认 analytic IBL；写 `builtin:/textures/studio_env` 或 VFS/远程 PNG/JPEG 启用 env；`MAQUE_ENV_IBL=1` 强制内建 env |
 | `asset.PbrMaterial.env_intensity/opacity/side/clearcoat/...` | 网格实体 | 见 `plans/19 §4` | `side` 必须显式写 |
 
 ### 6.6 手动机位与相机 CLI（自动机位不适配时）
@@ -821,6 +821,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | **volume/diffuse_transmission 无观感** | 有色玻璃/乳浊材质与参考差异大 | volume：`base_color ×= attenuationColor`；diffuse transmission：alpha BLEND 近似（阈值/常量见 importer 注释） |
 | **transmission 近似把 MASK 改成 BLEND 后丢了 alpha 镂空** | `StainedGlassLamp` 彩绘玻璃/`GlassBrokenWindow` 裂纹/`TransmissionTest` Mask 行：整片玻璃变均匀半透明，镂空图案消失 | importer 记录原 alphaMode，改 BLEND 时置 `alpha_mask_in_blend`；runtime 映射 flags2 bit19；shader 在混合管线里按**未乘 opacity** 的 alpha 做 cutoff discard（20 个材质/5 个模型重导） |
 | **玻璃近似太"幽灵"（无边缘反光/单层无厚度）** | CompareTransmission/GlassVaseFlowers/ABeautifulGame 等玻璃中心过透、边缘与背景融合 | 材质新增 `transmission_factor`；shader 按 Fresnel 提高掠射角 alpha；gfx 对 transmission 近似材质画两遍（cull front 背面 → cull back 正面）；37 个 transmission 相关模型重导重渲 |
+| **envmap/IBL 完全没有** | 金属/车漆/玻璃反射平淡（报告最大观感差距）；`texture_desc.kind=1/2` 直接 -3，`sky_mode` 2/3 预留，shader 只有 analytic env | 实现 **equirect envmap IBL（opt-in）**：runtime 内建 `builtin:/textures/studio_env`（512×256 sRGB + mip 链，程序化 studio 软光箱）+ 场景 `env_texture`（PNG/JPEG，VFS/远程）；gfx group0 新增 env 纹理/采样器绑定（请求适配器更高 sampled texture 上限）；shader 镜面反射按方向采样、roughness→mip（漫反射保留 analytic）；ToyCar 样板与 `scenes/pbr/env_ibl.scn` 已启用；`MAQUE_ENV_IBL=1` 强制内建 env。默认关闭的原因：部分测试图（如纯色纹理/图表）参考图是平光渲染，env 反射会显著改变直方图指标；对金属/玻璃等真实资产观感更好 |
 
 ---
 
@@ -948,6 +949,11 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > 按 T·R·S 旋转 UV）、`EXT_mesh_gpu_instancing`（导入期展开实例，SimpleInstancing 125 实体）、
 > `KHR_materials_diffuse_transmission`（alpha BLEND 近似）、`KHR_materials_volume`（薄壁 attenuationColor
 > 色调近似）；21 个模型预览更新。数据用最终第 10 轮。
+> **第 11 轮（渲染观感）** ①transmission 近似增强：Fresnel 视角 alpha + 双面玻璃两遍绘制（37 个模型）；
+> ②envmap/IBL：equirect 环境贴图（PNG/JPEG、`builtin:/textures/studio_env`、`MAQUE_ENV_IBL=1`）、
+> gfx group0 env 绑定、shader roughness→mip 镜面 IBL（漫反射保留 analytic）、`scenes/pbr/env_ibl.scn` 示例、
+> ToyCar 样板启用 env。**默认关**（避免纯色/图表测试资产被反射改变直方图），需要时按场景/环境变量开启。
+> 数据（148 模型基线）与第 10 轮一致；ToyCar 因 env 预览更新。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -1080,7 +1086,7 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 
 | 优先级 | 事项 | 影响面（本批样本） | 落点/备注 |
 |---|---|---|---|
-| P1 | **HDRI/PMREM IBL**（或更精确的 studio 环境） | 几乎全部模型的观感差距最大单一因素 | 需 image 模块解 HDR + 环境预滤波；替代 analytic studio IBL |
+| P2 | **HDR/EXR 环境贴图 + 真正 PMREM / 天空背景 / cubemap** | 全部（当前 opt-in equirect PNG + mip 近似 IBL） | 现有：PNG/JPEG equirect env（`env_texture`、`builtin:/textures/studio_env`、`MAQUE_ENV_IBL=1`）+ roughness→mip + Karis BRDF；剩余：HDR/EXR 解码、真正 PMREM 预过滤、sky background pass、cubemap kind=1、默认开启前的光照标定 |
 | P3 | **specularTexture/specularColorTexture**（其余扩展贴图槽已接） | specular 10 个模型中的贴图子集 | 同 textures3 路径再补 2 槽（受 WebGPU 每 stage 16 sampled texture 上限约束，需先腾槽） |
 | P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | 现有近似：alpha BLEND + volume 薄壁色调 + diffuse BLEND；完整版需 backbuffer 折射 pass + 厚度/吸收/散射模型 |
 | P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 需要动画运行时 + skinning + morph；属独立大项（`plans/12`），迁移可先静态 |

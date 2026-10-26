@@ -1275,6 +1275,7 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
     { "env_ground_color", (uint32_t)offsetof(scn::Scene, env_ground_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "env_highlight", (uint32_t)offsetof(scn::Scene, env_highlight), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "env_rotation", (uint32_t)offsetof(scn::Scene, env_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "env_texture", (uint32_t)offsetof(scn::Scene, env_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "gravity_y", (uint32_t)offsetof(scn::Scene, gravity_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "restitution", (uint32_t)offsetof(scn::Scene, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
@@ -5187,7 +5188,7 @@ extern const mq_type_desc mq_type_scn_Scene = {
     410509289u,
     (uint32_t)sizeof(scn::Scene),
     (uint32_t)alignof(scn::Scene),
-    16u,
+    17u,
     mq_fields_scn_Scene,
     4u,
     0u,

@@ -902,6 +902,81 @@ int Engine::load_texture_mips(const std::string& path) {
 
 /* builtin:/ → 引擎内建（此处程序化生成）；否则 assets（VFS）。
  * ref 可带 sampler 后缀（`...` 见 parse_tex_path）；缓存 key 用完整字符串。 */
+
+/* 内建 equirect studio 环境贴图（512x256 + 完整 mip 链，RGBA8 sRGB）：
+ * 天空-地面渐变 + 4 个软光箱（方向与 analytic studio IBL 一致），供 envmap/IBL 采样；
+ * 同一进程按路径缓存（load_texture_ref 的 tex_cache）。 */
+static void make_studio_env_pixels(std::vector<uint8_t>& out, int& w, int& h, int& mips) {
+    w = 512; h = 256;
+    constexpr float kPi = 3.14159265f;
+    struct Box { float dx, dy, dz; float r, g, b; float amp; float sharp; };
+    static const Box boxes[4] = {
+        { -0.55f, 0.78f, 0.55f, 1.00f, 0.97f, 0.92f, 4.2f, 18.0f },  /* key softbox */
+        { -0.30f, 0.84f, 0.62f, 1.00f, 0.98f, 0.95f, 2.0f, 22.0f },  /* fill */
+        {  0.80f, 0.30f, 0.45f, 0.85f, 0.92f, 1.00f, 1.3f, 10.0f },  /* cool rim */
+        {  0.05f, 0.25f, -0.95f,0.92f, 0.95f, 1.00f, 0.8f, 12.0f }, /* back */
+    };
+    auto norm = [](float x, float y, float z, float& ox, float& oy, float& oz) {
+        const float l = std::sqrt(x * x + y * y + z * z) + 1e-8f;
+        ox = x / l; oy = y / l; oz = z / l;
+    };
+    std::vector<uint8_t> base((size_t)w * h * 4);
+    for (int y = 0; y < h; ++y) {
+        const float lat = kPi * (0.5f - (float(y) + 0.5f) / (float)h);
+        const float cl = std::cos(lat), sl = std::sin(lat);
+        for (int x = 0; x < w; ++x) {
+            const float lon = kPi * 2.0f * ((float(x) + 0.5f) / (float)w) - kPi;
+            const float dx = cl * std::cos(lon), dy = sl, dz = cl * std::sin(lon);
+            /* 半球渐变：地面暖灰、天空冷灰、地平线略亮 */
+            const float t = std::clamp(dy * 0.5f + 0.5f, 0.0f, 1.0f);
+            float r = 0.16f + (0.48f - 0.16f) * t;
+            float g = 0.15f + (0.52f - 0.15f) * t;
+            float b = 0.14f + (0.60f - 0.14f) * t;
+            const float horizon = std::exp(-std::fabs(dy) * 8.0f);
+            r += horizon * 0.10f; g += horizon * 0.10f; b += horizon * 0.11f;
+            /* 软光箱（方向余弦的锐利幂） */
+            for (const Box& bx : boxes) {
+                float nx, ny, nz; norm(bx.dx, bx.dy, bx.dz, nx, ny, nz);
+                const float c = std::max(0.0f, dx * nx + dy * ny + dz * nz);
+                const float spot = std::pow(c, bx.sharp) * bx.amp;
+                r += bx.r * spot; g += bx.g * spot; b += bx.b * spot;
+            }
+            uint8_t* px = &base[((size_t)y * w + x) * 4];
+            px[0] = (uint8_t)std::clamp((int)(r * 255.0f + 0.5f), 0, 255);
+            px[1] = (uint8_t)std::clamp((int)(g * 255.0f + 0.5f), 0, 255);
+            px[2] = (uint8_t)std::clamp((int)(b * 255.0f + 0.5f), 0, 255);
+            px[3] = 255;
+        }
+    }
+    /* 生成 mip 链（2x2 box filter；经度方向 wrap、纬度方向 clamp） */
+    out = base;
+    int cw = w, ch = h;
+    mips = 1;
+    while (cw > 1 || ch > 1) {
+        const int nw = std::max(1, cw >> 1);
+        const int nh = std::max(1, ch >> 1);
+        std::vector<uint8_t> next((size_t)nw * nh * 4);
+        for (int y = 0; y < nh; ++y) {
+            for (int x = 0; x < nw; ++x) {
+                int acc[4] = { 0, 0, 0, 0 };
+                for (int oy = 0; oy < 2; ++oy) {
+                    for (int ox = 0; ox < 2; ++ox) {
+                        int sx = (x * 2 + ox) % cw;
+                        int sy = std::min(ch - 1, y * 2 + oy);
+                        const uint8_t* q = &out[(((size_t)sy * cw) + sx) * 4];
+                        for (int k = 0; k < 4; ++k) acc[k] += q[k];
+                    }
+                }
+                uint8_t* q = &next[(((size_t)y * nw) + x) * 4];
+                for (int k = 0; k < 4; ++k) q[k] = (uint8_t)((acc[k] + 2) / 4);
+            }
+        }
+        out.insert(out.end(), next.begin(), next.end());
+        cw = nw; ch = nh; ++mips;
+        if (mips >= 12) break;
+    }
+}
+
 int Engine::load_texture_ref(const std::string& ref) {
     const TexPathParams tp = parse_tex_path(ref);
     if (tp.vfs.rfind("builtin:", 0) == 0) {
@@ -909,6 +984,9 @@ int Engine::load_texture_ref(const std::string& ref) {
         if (it != tex_cache.end()) return it->second;
         int w = 1, h = 1;
         std::vector<uint8_t> px;
+        int builtin_mips = 1;
+        int builtin_format = 0;             /* 0=RGBA8Unorm 1=RGBA8UnormSrgb */
+        int builtin_wrap_u = -1, builtin_wrap_v = -1;
         if (tp.vfs == "builtin:/textures/checker") {
             w = h = 16; px.resize((size_t)w * h * 4);
             for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
@@ -948,15 +1026,23 @@ int Engine::load_texture_ref(const std::string& ref) {
                 c[2] = (uint8_t)std::clamp((int)(b * 255.0F + 0.5F), 0, 255);
                 c[3] = (uint8_t)(a * 255.0F);
             }
+        } else if (tp.vfs == "builtin:/textures/studio_env") {
+            builtin_format = 1;              /* 环境贴图按 sRGB 采样 */
+            builtin_wrap_u = 0;              /* 经度 wrap */
+            builtin_wrap_v = 1;              /* 纬度 clamp */
+            int env_w = 512, env_h = 256, env_mips = 1;
+            make_studio_env_pixels(px, env_w, env_h, env_mips);
+            w = env_w; h = env_h; builtin_mips = env_mips;
         } else { px = { 255, 255, 255, 255 }; }
         int id = -1;
         if (rapi && rself && rapi->create_texture2) {
             /* builtin 查表纹理默认 clamp（matcap 球/渐变在边界外不能 wrap）；路径后缀可覆盖。 */
-            const int wrap_u = tp.wrap_set ? tp.wrap_u : 1;
-            const int wrap_v = tp.wrap_set ? tp.wrap_v : 1;
+            const int wrap_u = tp.wrap_set ? tp.wrap_u : (builtin_wrap_u >= 0 ? builtin_wrap_u : 1);
+            const int wrap_v = tp.wrap_set ? tp.wrap_v : (builtin_wrap_v >= 0 ? builtin_wrap_v : 1);
             const int filter = tp.filter_set ? tp.filter : 1;
             mq_renderer_texture_desc td{};
-            td.width = w; td.height = h; td.pixel_format = 0; td.kind = 0; td.mip_levels = 1;
+            td.width = w; td.height = h; td.pixel_format = builtin_format; td.kind = 0;
+            td.mip_levels = builtin_mips;
             td.filter = filter; td.wrap_u = wrap_u; td.wrap_v = wrap_v;
             td.data = px.data(); td.data_size = px.size();
             if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
@@ -1989,6 +2075,26 @@ void Engine::step_frame() {
         fr.env.intensity = env_int;
         fr.env.env_highlight = env_hi;
         fr.env.env_rotation = env_rot_deg * 3.14159265F / 180.0F;
+    /* envmap/IBL：显式 scene.env_texture 才启用（默认保留 analytic studio IBL 基线）；
+     * MAQUE_ENV_IBL=1 强制用内建 studio_env，MAQUE_ENV_IBL=0 强制关闭。 */
+    int env_tex_id = -1;
+    std::string env_path = scene->desc.env_texture;
+    const char* env_force = std::getenv("MAQUE_ENV_IBL");
+    if (env_force && env_force[0] == '1') env_path = "builtin:/textures/studio_env";
+    if (env_force && env_force[0] == '0') env_path.clear();
+    if (!env_path.empty()) {
+        if (env_path.rfind("builtin:", 0) == 0) {
+            env_tex_id = load_texture_ref(env_path);
+        } else {
+            env_tex_id = load_texture_srgb(env_path);
+        }
+        if (env_tex_id < 0) {
+            std::print(stderr, "runtime: env_texture '{}' 加载失败，回退 analytic IBL\n", env_path);
+            env_tex_id = -1;
+        }
+    }
+    fr.env.env_texture = env_tex_id;
+    fr.env.sky_mode = (env_tex_id >= 0) ? 3 : 1;
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
         fr.out_size = (uint32_t)pixels.size();

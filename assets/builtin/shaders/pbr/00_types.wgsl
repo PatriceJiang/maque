@@ -25,10 +25,13 @@ struct Camera {
   view: mat4x4f,        // 视矩阵（matcap 用 view-space 法线）
   env2: vec4f,          // xyz=天空色（已乘环境强度）w=软光箱强度
   env3: vec4f,          // xyz=地面色（已乘环境强度）w=环境旋转（弧度）
+  env_info: vec4f,      // x=env intensity y=has_env_texture z/w=reserved
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
 @group(0) @binding(1) var shadow_map: texture_depth_2d;
 @group(0) @binding(2) var shadow_smp: sampler_comparison;
+@group(0) @binding(3) var env_tex: texture_2d<f32>;
+@group(0) @binding(4) var env_smp: sampler;
 
 struct Draw {
   model: mat4x4f,

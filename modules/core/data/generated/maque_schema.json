@@ -11357,6 +11357,15 @@
           "attrs": {}
         },
         {
+          "name": "env_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "gravity_y",
           "type": "float",
           "kind": "f32",

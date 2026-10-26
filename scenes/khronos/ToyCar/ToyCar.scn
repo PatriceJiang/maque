@@ -173,11 +173,21 @@
      "base_color_texture": "textures/image6.png",
      "normal_texture": "textures/image4.png",
      "occlusion_texture": "textures/image5.png",
-     "uv_scale": { "x": 3.0, "y": 3.0 },
-     "normal_uv_scale": { "x": 3.0, "y": 3.0 },
+     "uv_scale": {
+      "x": 3.0,
+      "y": 3.0
+     },
+     "normal_uv_scale": {
+      "x": 3.0,
+      "y": 3.0
+     },
      "sheen": 0.9,
      "sheen_roughness": 0.45,
-     "sheen_color": {"x": 0.9, "y": 0.28, "z": 0.22},
+     "sheen_color": {
+      "x": 0.9,
+      "y": 0.28,
+      "z": 0.22
+     },
      "env_intensity": 1.0
     }
    ]
@@ -245,8 +255,19 @@
   "a": 1.0
  },
  "env_intensity": 1.25,
- "env_sky_color": { "r": 0.50, "g": 0.53, "b": 0.60, "a": 1.0 },
- "env_ground_color": { "r": 0.18, "g": 0.16, "b": 0.15, "a": 1.0 },
+ "env_sky_color": {
+  "r": 0.5,
+  "g": 0.53,
+  "b": 0.6,
+  "a": 1.0
+ },
+ "env_ground_color": {
+  "r": 0.18,
+  "g": 0.16,
+  "b": 0.15,
+  "a": 1.0
+ },
  "env_highlight": 3.2,
- "env_rotation": 30.0
+ "env_rotation": 30.0,
+ "env_texture": "builtin:/textures/studio_env"
 }

@@ -143,7 +143,24 @@ fn env_softbox(d: vec3f, center: vec3f, sharp: f32) -> f32 {
 }
 
 /* 环境镜面辐（roughness 越大越模糊；软光箱随粗糙度衰减）。 */
+/* ---- equirect env map IBL: sample env texture by direction + roughness->mip ---- */
+fn env_equirect_uv(d: vec3f) -> vec2f {
+  let dir = normalize(d);
+  let u = atan2(dir.z, dir.x) / (2.0 * 3.14159265) + 0.5;
+  let v = acos(clamp(dir.y, -1.0, 1.0)) / 3.14159265;
+  return vec2f(u, v);
+}
+
+fn env_sample(d: vec3f, rough: f32) -> vec3f {
+  let levels = f32(textureNumLevels(env_tex));
+  let lod = clamp(rough, 0.0, 1.0) * max(levels - 1.0, 0.0);
+  let uv = env_equirect_uv(env_rotate_y(d, cam.env3.w));
+  return textureSampleLevel(env_tex, env_smp, uv, lod).rgb;
+}
+
+
 fn env_radiance(d0: vec3f, rough: f32) -> vec3f {
+  if (cam.env_info.y > 0.5) { return env_sample(d0, rough) * cam.env_info.x; }
   let blur = rough * rough;
   let d = normalize(mix(d0, vec3f(0.0, 1.0, 0.0), blur * 0.55));
   let r = env_rotate_y(d, cam.env3.w);
@@ -159,6 +176,8 @@ fn env_radiance(d0: vec3f, rough: f32) -> vec3f {
 
 /* 环境漫反射辐照度（半球积分近似 + 主光箱少量贡献）。 */
 fn env_irradiance(n: vec3f) -> vec3f {
+  /* 经验取舍：漫反射继续用 analytic studio IBL（与旧基线一致，避免平铺 diffuse 资产过亮/直方图回归），
+   * envmap 只增强镜面反射（env_radiance）；等做真正 PMREM 预过滤后可替换。 */
   let t = n.y * 0.5 + 0.5;
   var c = mix(cam.env3.rgb, cam.env2.rgb, t);
   let r = env_rotate_y(n, cam.env3.w);

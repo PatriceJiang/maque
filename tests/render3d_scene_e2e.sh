@@ -19,7 +19,7 @@ fi
 fail() { echo "render3d_scene_e2e: FAIL $*" >&2; exit 1; }
 rm -rf "$WORK"; mkdir -p "$WORK"
 unset MAQUE_HEADLESS MAQUE_PRESENT MAQUE_CAPTURE MAQUE_CAPTURE_WGPU MAQUE_CAPTURE_FRAMES \
-      MAQUE_MAX_FRAMES MAQUE_IMGUI MAQUE_SHOT MAQUE_SHOT_SEQ 2>/dev/null || true
+      MAQUE_MAX_FRAMES MAQUE_IMGUI MAQUE_SHOT MAQUE_SHOT_SEQ MAQUE_ENV_IBL 2>/dev/null || true
 
 # ---- ① 离屏 3D 渲染（--shot）----
 timeout 90 "$PLAYER" --shot "$WORK/scene.ppm" --frames 2 "$SCN" >"$WORK/out.txt" 2>&1 \
@@ -297,5 +297,24 @@ ok = (darker > 300 and darker < w * h // 4)
 sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: ⑨ 方向光阴影（shadow map + PCF）OK"
+fi
+# ---- (8) envmap/IBL: MAQUE_ENV_IBL=1 builtin env must differ from analytic default ----
+if [ -f "$SCN" ]; then
+    ( cd "$ROOT" && timeout 90 env MAQUE_ENV_IBL=1 "$PLAYER" --shot "$WORK/env_on.ppm" --frames 2 "$SCN"         >"$WORK/env_on.txt" 2>&1 ) || { cat "$WORK/env_on.txt"; fail "envmap/IBL forced render failed"; }
+    cmp -s "$WORK/scene.ppm" "$WORK/env_on.ppm" && fail "envmap/IBL switch has no effect (env not active)"
+    "$PY" - "$WORK/scene.ppm" "$WORK/env_on.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); m, dims, _x, px = d.split(b'\n', 3)
+    assert m == b'P6'
+    w, h = map(int, dims.split()); return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+def lum(px, i):
+    return 0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2]
+diff = sum(abs(a[i]-b[i]) for i in range(0, len(a), 3))
+print(f'render3d_scene_e2e: envmap mean_abs_diff={diff / (w*h):.3f}')
+sys.exit(0 if diff / (w*h) > 0.02 else 1)
+PY
+    echo "render3d_scene_e2e: (8) envmap/IBL OK"
 fi
 echo "render3d_scene_e2e: PASS"

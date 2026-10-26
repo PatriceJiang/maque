@@ -3,10 +3,10 @@
  "generated_by": "tools/migrate_gltf_models.py",
  "models_root": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models",
  "provenance": {
-  "git_head": "eb4acc8f41805ec475287919c2dc6b7912ef5bc8",
+  "git_head": "b97500d4cfb148ce4fb2526da0553eb3f1ed4326",
   "importer_sha256": "463980bc5942e847279a34229b7e4437191a1ade6ab1818feeaaf3e9413f8d27",
   "migrate_script_sha256": "fd7f0ddc3b72f9d79a0ebca63bfe98f2aeb797dc8d29159ef2d5c5d2a682b309",
-  "player_sha256": "ff6e7fdb98f4a2acef6a04d1115c8691a578f137c02d429d7afb269eb91551e5"
+  "player_sha256": "6ec81bdf269086c6abd211014bf28cfa3b2eaf44dc8f035bd4438967703d7552"
  },
  "records": [
   {
@@ -74,12 +74,12 @@
     "gltf_import: texture → textures/Queen_white_normal.jpg",
     "gltf_import: OK meshes=15 textures=33"
    ],
-   "import_seconds": 6.47,
+   "import_seconds": 6.52,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ABeautifulGame",
-   "out_size_bytes": 64158383,
+   "out_size_bytes": 64158381,
    "preview_jpg": "scenes\\khronos\\ABeautifulGame\\preview.jpg",
    "preview_png": "scenes\\khronos\\ABeautifulGame\\preview.png",
    "readme": "scenes\\khronos\\ABeautifulGame\\README.md",
@@ -92,7 +92,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'ABeautifulGame.scn' exited after 2 frames (quit=1) world_trail=0x19e431046a78664a"
    ],
-   "render_seconds": 24.98,
+   "render_seconds": 25.36,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ABeautifulGame\\glTF\\ABeautifulGame.gltf",
    "stats": {
     "alpha_modes": {
@@ -200,7 +200,7 @@
     "gltf_import: texture → textures/image3.png",
     "gltf_import: OK meshes=9 textures=4"
    ],
-   "import_seconds": 0.1,
+   "import_seconds": 0.09,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -216,9 +216,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\AlphaBlendModeTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'AlphaBlendModeTest.scn' exited after 2 frames (quit=1) world_trail=0xf0e77a09e23a8aea"
+    "runtime: 'AlphaBlendModeTest.scn' exited after 2 frames (quit=1) world_trail=0x262e9db8a22f1bb2"
    ],
-   "render_seconds": 2.19,
+   "render_seconds": 1.99,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AlphaBlendModeTest\\glTF\\AlphaBlendModeTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -331,7 +331,7 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "AnimatedColorsCube",
-   "out_size_bytes": 16509,
+   "out_size_bytes": 16520,
    "preview_jpg": "scenes\\khronos\\AnimatedColorsCube\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnimatedColorsCube\\preview.png",
    "readme": "scenes\\khronos\\AnimatedColorsCube\\README.md",
@@ -342,9 +342,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\AnimatedColorsCube\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'AnimatedColorsCube.scn' exited after 2 frames (quit=1) world_trail=0x593b7c409a68e3de"
+    "runtime: 'AnimatedColorsCube.scn' exited after 2 frames (quit=1) world_trail=0x121d1781f41949fe"
    ],
-   "render_seconds": 0.52,
+   "render_seconds": 0.45,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimatedColorsCube\\glTF\\AnimatedColorsCube.gltf",
    "stats": {
     "alpha_modes": {
@@ -444,7 +444,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=1 textures=1"
    ],
-   "import_seconds": 0.09,
+   "import_seconds": 0.08,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -460,9 +460,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\AnimatedCube\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'AnimatedCube.scn' exited after 2 frames (quit=1) world_trail=0x1f4a832d6d56a632"
+    "runtime: 'AnimatedCube.scn' exited after 2 frames (quit=1) world_trail=0xbbb592828b1683ba"
    ],
-   "render_seconds": 0.54,
+   "render_seconds": 0.51,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimatedCube\\glTF\\AnimatedCube.gltf",
    "stats": {
     "alpha_modes": {
@@ -564,7 +564,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\AnimatedMorphCube\\assets\\AnimatedMorphCube.mesh.json",
     "gltf_import: OK meshes=1 textures=0"
    ],
-   "import_seconds": 0.09,
+   "import_seconds": 0.08,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -580,9 +580,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\AnimatedMorphCube\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'AnimatedMorphCube.scn' exited after 2 frames (quit=1) world_trail=0xdee6036a71f76586"
+    "runtime: 'AnimatedMorphCube.scn' exited after 2 frames (quit=1) world_trail=0x0796b58fc41afd8a"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimatedMorphCube\\glTF\\AnimatedMorphCube.gltf",
    "stats": {
     "alpha_modes": {
@@ -698,7 +698,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'AnimatedTriangle.scn' exited after 2 frames (quit=1) world_trail=0x268f4d0507bd3692"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.48,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimatedTriangle\\glTF\\AnimatedTriangle.gltf",
    "stats": {
     "alpha_modes": {},
@@ -810,12 +810,12 @@
     "gltf_import: material 'Material #178' KHR_materials_volume attenuationColor → base_color 色调近似",
     "gltf_import: material 'Material #177' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 1.85,
+   "import_seconds": 1.83,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "AnimationPointerUVs",
-   "out_size_bytes": 14186682,
+   "out_size_bytes": 14186681,
    "preview_jpg": "scenes\\khronos\\AnimationPointerUVs\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnimationPointerUVs\\preview.png",
    "readme": "scenes\\khronos\\AnimationPointerUVs\\README.md",
@@ -828,7 +828,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'AnimationPointerUVs.scn' exited after 2 frames (quit=1) world_trail=0x813a406a0901f6b2"
    ],
-   "render_seconds": 6.43,
+   "render_seconds": 6.37,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimationPointerUVs\\glTF\\AnimationPointerUVs.gltf",
    "stats": {
     "alpha_modes": {
@@ -953,12 +953,12 @@
     "gltf_import: texture → textures/image3.png",
     "gltf_import: OK meshes=3 textures=4"
    ],
-   "import_seconds": 0.18,
+   "import_seconds": 0.2,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "AnisotropyBarnLamp",
-   "out_size_bytes": 8265105,
+   "out_size_bytes": 8265107,
    "preview_jpg": "scenes\\khronos\\AnisotropyBarnLamp\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnisotropyBarnLamp\\preview.png",
    "readme": "scenes\\khronos\\AnisotropyBarnLamp\\README.md",
@@ -971,7 +971,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'AnisotropyBarnLamp.scn' exited after 2 frames (quit=1) world_trail=0xae294c94e50e5c7a"
    ],
-   "render_seconds": 1.86,
+   "render_seconds": 1.82,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyBarnLamp\\glTF\\AnisotropyBarnLamp.gltf",
    "stats": {
     "alpha_modes": {
@@ -1097,9 +1097,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\AnisotropyDiscTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'AnisotropyDiscTest.scn' exited after 2 frames (quit=1) world_trail=0xa95b8071ae78bf02"
+    "runtime: 'AnisotropyDiscTest.scn' exited after 2 frames (quit=1) world_trail=0x175af7c990456282"
    ],
-   "render_seconds": 0.7,
+   "render_seconds": 0.66,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyDiscTest\\glTF\\AnisotropyDiscTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -1205,7 +1205,7 @@
     "gltf_import: texture → textures/Heights_1d_Normals_v2.png",
     "gltf_import: OK meshes=6 textures=6"
    ],
-   "import_seconds": 0.17,
+   "import_seconds": 0.15,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -1221,9 +1221,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\AnisotropyRotationTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'AnisotropyRotationTest.scn' exited after 2 frames (quit=1) world_trail=0x3f0146c5ad135886"
+    "runtime: 'AnisotropyRotationTest.scn' exited after 2 frames (quit=1) world_trail=0x244d8c92d37a0256"
    ],
-   "render_seconds": 0.91,
+   "render_seconds": 0.88,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyRotationTest\\glTF\\AnisotropyRotationTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -1329,7 +1329,7 @@
     "gltf_import: texture → textures/AnisotropySpheresLabels.png",
     "gltf_import: OK meshes=50 textures=1"
    ],
-   "import_seconds": 0.81,
+   "import_seconds": 0.8,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -1345,9 +1345,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\AnisotropyStrengthTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'AnisotropyStrengthTest.scn' exited after 2 frames (quit=1) world_trail=0x54c01d57afc10892"
+    "runtime: 'AnisotropyStrengthTest.scn' exited after 2 frames (quit=1) world_trail=0xdbd94ee72f169c26"
    ],
-   "render_seconds": 2.68,
+   "render_seconds": 2.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyStrengthTest\\glTF\\AnisotropyStrengthTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -1453,7 +1453,7 @@
     "gltf_import: texture → textures/camera_tripod_Roughness.png",
     "gltf_import: OK meshes=2 textures=6"
    ],
-   "import_seconds": 0.38,
+   "import_seconds": 0.34,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）；预览主体占比过小（<5%）→ 机位过远？",
     "构图告警：预览主体占比过小（<5%）→ 机位过远？"
@@ -1470,9 +1470,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\AntiqueCamera\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'AntiqueCamera.scn' exited after 2 frames (quit=1) world_trail=0x9a6ec671ead08132"
+    "runtime: 'AntiqueCamera.scn' exited after 2 frames (quit=1) world_trail=0x236bdb8dc19ec31e"
    ],
-   "render_seconds": 2.93,
+   "render_seconds": 2.79,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AntiqueCamera\\glTF\\AntiqueCamera.gltf",
    "stats": {
     "alpha_modes": {
@@ -1578,7 +1578,7 @@
     "gltf_import: material 'R5_Attenuation_0.50' KHR_materials_volume attenuationColor → base_color 色调近似",
     "gltf_import: material 'R5_Attenuation_0.25' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 0.1,
+   "import_seconds": 0.09,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -1717,9 +1717,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Avocado\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Avocado.scn' exited after 2 frames (quit=1) world_trail=0x9a42d11247b5f0c6"
+    "runtime: 'Avocado.scn' exited after 2 frames (quit=1) world_trail=0x9ce6f1229b0a5382"
    ],
-   "render_seconds": 1.35,
+   "render_seconds": 1.26,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Avocado\\glTF\\Avocado.gltf",
    "stats": {
     "alpha_modes": {
@@ -1837,9 +1837,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\BarramundiFish\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'BarramundiFish.scn' exited after 2 frames (quit=1) world_trail=0x634358d5b011a43e"
+    "runtime: 'BarramundiFish.scn' exited after 2 frames (quit=1) world_trail=0x02398fb7f043ae1e"
    ],
-   "render_seconds": 1.64,
+   "render_seconds": 1.52,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BarramundiFish\\glTF\\BarramundiFish.gltf",
    "stats": {
     "alpha_modes": {
@@ -1957,9 +1957,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\BoomBox\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'BoomBox.scn' exited after 2 frames (quit=1) world_trail=0x940ea5d7aa1b984a"
+    "runtime: 'BoomBox.scn' exited after 2 frames (quit=1) world_trail=0xd685036c00f39c26"
    ],
-   "render_seconds": 1.72,
+   "render_seconds": 1.56,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoomBox\\glTF\\BoomBox.gltf",
    "stats": {
     "alpha_modes": {
@@ -2061,12 +2061,12 @@
     "gltf_import: texture → textures/image4.png",
     "gltf_import: OK meshes=5 textures=5"
    ],
-   "import_seconds": 0.24,
+   "import_seconds": 0.22,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "BoomBoxWithAxes",
-   "out_size_bytes": 10212649,
+   "out_size_bytes": 10212648,
    "preview_jpg": "scenes\\khronos\\BoomBoxWithAxes\\preview.jpg",
    "preview_png": "scenes\\khronos\\BoomBoxWithAxes\\preview.png",
    "readme": "scenes\\khronos\\BoomBoxWithAxes\\README.md",
@@ -2077,9 +2077,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\BoomBoxWithAxes\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'BoomBoxWithAxes.scn' exited after 2 frames (quit=1) world_trail=0xe772d1a5109e7f92"
+    "runtime: 'BoomBoxWithAxes.scn' exited after 2 frames (quit=1) world_trail=0x3dd20aa876acbd56"
    ],
-   "render_seconds": 1.88,
+   "render_seconds": 1.77,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoomBoxWithAxes\\glTF\\BoomBoxWithAxes.gltf",
    "stats": {
     "alpha_modes": {
@@ -2189,14 +2189,14 @@
    "readme": "scenes\\khronos\\Box\\README.md",
    "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Box\\screenshot\\screenshot.png",
    "render_log_tail": [
+    "runtime: storage mode='file' root='E:\\Github\\maque\\scenes\\khronos\\Box\\.maque' ns='default/main'",
     "runtime: 3d scene cams=1 meshes=1 lights=1 cube_mesh=0",
     "runtime: platform window=0 input=on",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Box\\preview.png' 1280x720 frame=1",
-    "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Box.scn' exited after 2 frames (quit=1) world_trail=0x5a01143cf3e21cb6"
+    "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}"
    ],
-   "render_seconds": 0.51,
+   "render_seconds": 0.42,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Box\\glTF\\Box.gltf",
    "stats": {
     "alpha_modes": {
@@ -2310,9 +2310,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Box With Spaces\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Box With Spaces.scn' exited after 2 frames (quit=1) world_trail=0xe9f661e4731cf892"
+    "runtime: 'Box With Spaces.scn' exited after 2 frames (quit=1) world_trail=0x4bc912bc676d8e86"
    ],
-   "render_seconds": 0.7,
+   "render_seconds": 0.66,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Box With Spaces\\glTF\\Box With Spaces.gltf",
    "stats": {
     "alpha_modes": {
@@ -2414,7 +2414,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\BoxAnimated\\assets\\BoxAnimated_1_0.mesh.json",
     "gltf_import: OK meshes=2 textures=0"
    ],
-   "import_seconds": 0.1,
+   "import_seconds": 0.08,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -2430,9 +2430,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\BoxAnimated\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'BoxAnimated.scn' exited after 2 frames (quit=1) world_trail=0x63cd324e3a0642f6"
+    "runtime: 'BoxAnimated.scn' exited after 2 frames (quit=1) world_trail=0x53b1cbba606f4a26"
    ],
-   "render_seconds": 0.51,
+   "render_seconds": 0.56,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoxAnimated\\glTF\\BoxAnimated.gltf",
    "stats": {
     "alpha_modes": {
@@ -2543,9 +2543,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\BoxInterleaved\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'BoxInterleaved.scn' exited after 2 frames (quit=1) world_trail=0xfc959586107523be"
+    "runtime: 'BoxInterleaved.scn' exited after 2 frames (quit=1) world_trail=0x904e71f9f91f919e"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoxInterleaved\\glTF\\BoxInterleaved.gltf",
    "stats": {
     "alpha_modes": {
@@ -2657,9 +2657,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\BoxTextured\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'BoxTextured.scn' exited after 2 frames (quit=1) world_trail=0x5a01143cf3e21cb6"
+    "runtime: 'BoxTextured.scn' exited after 2 frames (quit=1) world_trail=0x23ec689fafc7c0ea"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.48,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoxTextured\\glTF\\BoxTextured.gltf",
    "stats": {
     "alpha_modes": {
@@ -2776,9 +2776,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\BoxTexturedNonPowerOfTwo\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'BoxTexturedNonPowerOfTwo.scn' exited after 2 frames (quit=1) world_trail=0x5a01143cf3e21cb6"
+    "runtime: 'BoxTexturedNonPowerOfTwo.scn' exited after 2 frames (quit=1) world_trail=0x23ec689fafc7c0ea"
    ],
-   "render_seconds": 0.51,
+   "render_seconds": 0.48,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoxTexturedNonPowerOfTwo\\glTF\\BoxTexturedNonPowerOfTwo.gltf",
    "stats": {
     "alpha_modes": {
@@ -2896,7 +2896,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'BoxVertexColors.scn' exited after 2 frames (quit=1) world_trail=0x14abe10003c988b6"
    ],
-   "render_seconds": 0.51,
+   "render_seconds": 0.53,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoxVertexColors\\glTF\\BoxVertexColors.gltf",
    "stats": {
     "alpha_modes": {},
@@ -2995,7 +2995,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\BrainStem\\assets\\BrainStem_0_58.mesh.json",
     "gltf_import: OK meshes=59 textures=0"
    ],
-   "import_seconds": 0.57,
+   "import_seconds": 0.51,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -3011,9 +3011,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\BrainStem\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'BrainStem.scn' exited after 2 frames (quit=1) world_trail=0x6b169d79e0c1ac82"
+    "runtime: 'BrainStem.scn' exited after 2 frames (quit=1) world_trail=0x3cdf4d5a042d5d7a"
    ],
-   "render_seconds": 2.11,
+   "render_seconds": 1.97,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BrainStem\\glTF\\BrainStem.gltf",
    "stats": {
     "alpha_modes": {
@@ -3129,7 +3129,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'Cameras.scn' exited after 2 frames (quit=1) world_trail=0xe6c3cae2f19e071e"
    ],
-   "render_seconds": 0.47,
+   "render_seconds": 0.48,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Cameras\\glTF\\Cameras.gltf",
    "stats": {
     "alpha_modes": {},
@@ -3231,7 +3231,7 @@
     "gltf_import: texture → textures/image9.png",
     "gltf_import: OK meshes=109 textures=13"
    ],
-   "import_seconds": 2.66,
+   "import_seconds": 2.74,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -3249,7 +3249,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'CarConcept.scn' exited after 2 frames (quit=1) world_trail=0xec9c1deaa06a1efa"
    ],
-   "render_seconds": 7.23,
+   "render_seconds": 7.19,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CarConcept\\glTF\\CarConcept.gltf",
    "stats": {
     "alpha_modes": {
@@ -3367,7 +3367,7 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CarbonFibre",
-   "out_size_bytes": 585970,
+   "out_size_bytes": 585959,
    "preview_jpg": "scenes\\khronos\\CarbonFibre\\preview.jpg",
    "preview_png": "scenes\\khronos\\CarbonFibre\\preview.png",
    "readme": "scenes\\khronos\\CarbonFibre\\README.md",
@@ -3378,9 +3378,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CarbonFibre\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CarbonFibre.scn' exited after 2 frames (quit=1) world_trail=0x72f250de2ddbef7a"
+    "runtime: 'CarbonFibre.scn' exited after 2 frames (quit=1) world_trail=0xbf7dabbd503a4f02"
    ],
-   "render_seconds": 0.61,
+   "render_seconds": 0.6,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CarbonFibre\\glTF\\CarbonFibre.gltf",
    "stats": {
     "alpha_modes": {
@@ -3500,9 +3500,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CesiumMan\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CesiumMan.scn' exited after 2 frames (quit=1) world_trail=0x33af519f872c2702"
+    "runtime: 'CesiumMan.scn' exited after 2 frames (quit=1) world_trail=0x191e245b6350277a"
    ],
-   "render_seconds": 0.74,
+   "render_seconds": 0.72,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CesiumMan\\glTF\\CesiumMan.gltf",
    "stats": {
     "alpha_modes": {
@@ -3607,7 +3607,7 @@
     "gltf_import: texture → textures/CesiumMilkTruck.jpg",
     "gltf_import: OK meshes=4 textures=1"
    ],
-   "import_seconds": 0.14,
+   "import_seconds": 0.12,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -3623,9 +3623,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CesiumMilkTruck\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CesiumMilkTruck.scn' exited after 2 frames (quit=1) world_trail=0x3daa070e3c9a5b42"
+    "runtime: 'CesiumMilkTruck.scn' exited after 2 frames (quit=1) world_trail=0x46149ada56f60006"
    ],
-   "render_seconds": 0.99,
+   "render_seconds": 0.94,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CesiumMilkTruck\\glTF\\CesiumMilkTruck.gltf",
    "stats": {
     "alpha_modes": {
@@ -3732,12 +3732,12 @@
     "gltf_import: texture → textures/image8.jpg",
     "gltf_import: OK meshes=11 textures=9"
    ],
-   "import_seconds": 0.22,
+   "import_seconds": 0.19,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ChairDamaskPurplegold",
-   "out_size_bytes": 2548568,
+   "out_size_bytes": 2548622,
    "preview_jpg": "scenes\\khronos\\ChairDamaskPurplegold\\preview.jpg",
    "preview_png": "scenes\\khronos\\ChairDamaskPurplegold\\preview.png",
    "readme": "scenes\\khronos\\ChairDamaskPurplegold\\README.md",
@@ -3748,9 +3748,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\ChairDamaskPurplegold\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'ChairDamaskPurplegold.scn' exited after 2 frames (quit=1) world_trail=0x7239136e5cf24a86"
+    "runtime: 'ChairDamaskPurplegold.scn' exited after 2 frames (quit=1) world_trail=0x71b2449f96747c36"
    ],
-   "render_seconds": 1.19,
+   "render_seconds": 1.17,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChairDamaskPurplegold\\glTF\\ChairDamaskPurplegold.gltf",
    "stats": {
     "alpha_modes": {
@@ -3862,12 +3862,12 @@
     "gltf_import: texture → textures/image7.png",
     "gltf_import: OK meshes=19 textures=8"
    ],
-   "import_seconds": 1.43,
+   "import_seconds": 1.45,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ChronographWatch",
-   "out_size_bytes": 14675649,
+   "out_size_bytes": 14675650,
    "preview_jpg": "scenes\\khronos\\ChronographWatch\\preview.jpg",
    "preview_png": "scenes\\khronos\\ChronographWatch\\preview.png",
    "readme": "scenes\\khronos\\ChronographWatch\\README.md",
@@ -3880,7 +3880,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'ChronographWatch.scn' exited after 2 frames (quit=1) world_trail=0x4645572812d907de"
    ],
-   "render_seconds": 4.32,
+   "render_seconds": 4.28,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChronographWatch\\glTF\\ChronographWatch.gltf",
    "stats": {
     "alpha_modes": {
@@ -3989,12 +3989,12 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=1 textures=1"
    ],
-   "import_seconds": 0.11,
+   "import_seconds": 0.1,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ClearCoatCarPaint",
-   "out_size_bytes": 243650,
+   "out_size_bytes": 243704,
    "preview_jpg": "scenes\\khronos\\ClearCoatCarPaint\\preview.jpg",
    "preview_png": "scenes\\khronos\\ClearCoatCarPaint\\preview.png",
    "readme": "scenes\\khronos\\ClearCoatCarPaint\\README.md",
@@ -4005,7 +4005,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\ClearCoatCarPaint\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'ClearCoatCarPaint.scn' exited after 2 frames (quit=1) world_trail=0x189b675b55c3db3e"
+    "runtime: 'ClearCoatCarPaint.scn' exited after 2 frames (quit=1) world_trail=0x223873a63a7f3fde"
    ],
    "render_seconds": 0.55,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearCoatCarPaint\\glTF\\ClearCoatCarPaint.gltf",
@@ -4117,7 +4117,7 @@
     "gltf_import: texture → textures/RoughnessStripes.png",
     "gltf_import: OK meshes=27 textures=6"
    ],
-   "import_seconds": 0.39,
+   "import_seconds": 0.34,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -4133,9 +4133,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\ClearCoatTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'ClearCoatTest.scn' exited after 2 frames (quit=1) world_trail=0x8be38688d4a16586"
+    "runtime: 'ClearCoatTest.scn' exited after 2 frames (quit=1) world_trail=0x044a11880a1b2142"
    ],
-   "render_seconds": 1.52,
+   "render_seconds": 1.38,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearCoatTest\\glTF\\ClearCoatTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -4248,7 +4248,7 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ClearcoatWicker",
-   "out_size_bytes": 1425969,
+   "out_size_bytes": 1425970,
    "preview_jpg": "scenes\\khronos\\ClearcoatWicker\\preview.jpg",
    "preview_png": "scenes\\khronos\\ClearcoatWicker\\preview.png",
    "readme": "scenes\\khronos\\ClearcoatWicker\\README.md",
@@ -4259,9 +4259,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\ClearcoatWicker\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'ClearcoatWicker.scn' exited after 2 frames (quit=1) world_trail=0xc02f3135c8031b52"
+    "runtime: 'ClearcoatWicker.scn' exited after 2 frames (quit=1) world_trail=0xacd039af836b4fc6"
    ],
-   "render_seconds": 0.66,
+   "render_seconds": 0.64,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearcoatWicker\\glTF\\ClearcoatWicker.gltf",
    "stats": {
     "alpha_modes": {
@@ -4369,12 +4369,12 @@
     "gltf_import: texture → textures/image9.jpg",
     "gltf_import: OK meshes=8 textures=10"
    ],
-   "import_seconds": 1.85,
+   "import_seconds": 1.83,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CommercialRefrigerator",
-   "out_size_bytes": 16446673,
+   "out_size_bytes": 16446672,
    "preview_jpg": "scenes\\khronos\\CommercialRefrigerator\\preview.jpg",
    "preview_png": "scenes\\khronos\\CommercialRefrigerator\\preview.png",
    "readme": "scenes\\khronos\\CommercialRefrigerator\\README.md",
@@ -4387,7 +4387,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'CommercialRefrigerator.scn' exited after 2 frames (quit=1) world_trail=0x7629afa7978204fe"
    ],
-   "render_seconds": 5.53,
+   "render_seconds": 5.66,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CommercialRefrigerator\\glTF\\CommercialRefrigerator.gltf",
    "stats": {
     "alpha_modes": {
@@ -4496,12 +4496,12 @@
     "gltf_import: texture → textures/image5.jpg",
     "gltf_import: OK meshes=6 textures=6"
    ],
-   "import_seconds": 0.1,
+   "import_seconds": 0.09,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CompareAlphaCoverage",
-   "out_size_bytes": 3885696,
+   "out_size_bytes": 3885684,
    "preview_jpg": "scenes\\khronos\\CompareAlphaCoverage\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareAlphaCoverage\\preview.png",
    "readme": "scenes\\khronos\\CompareAlphaCoverage\\README.md",
@@ -4512,9 +4512,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareAlphaCoverage\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareAlphaCoverage.scn' exited after 2 frames (quit=1) world_trail=0x7db881a37a8da31e"
+    "runtime: 'CompareAlphaCoverage.scn' exited after 2 frames (quit=1) world_trail=0xe236c8eba5a27f7a"
    ],
-   "render_seconds": 0.9,
+   "render_seconds": 0.84,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAlphaCoverage\\glTF\\CompareAlphaCoverage.gltf",
    "stats": {
     "alpha_modes": {
@@ -4620,7 +4620,7 @@
     "gltf_import: texture → textures/image2.jpg",
     "gltf_import: OK meshes=6 textures=3"
    ],
-   "import_seconds": 1.38,
+   "import_seconds": 1.25,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -4636,9 +4636,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareAmbientOcclusion\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareAmbientOcclusion.scn' exited after 2 frames (quit=1) world_trail=0x54515de925d7e952"
+    "runtime: 'CompareAmbientOcclusion.scn' exited after 2 frames (quit=1) world_trail=0xe722c7c7485388e6"
    ],
-   "render_seconds": 3.87,
+   "render_seconds": 3.57,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAmbientOcclusion\\glTF\\CompareAmbientOcclusion.gltf",
    "stats": {
     "alpha_modes": {
@@ -4744,12 +4744,12 @@
     "gltf_import: texture → textures/image4.png",
     "gltf_import: OK meshes=4 textures=5"
    ],
-   "import_seconds": 0.39,
+   "import_seconds": 0.34,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareAnisotropy",
-   "out_size_bytes": 2484327,
+   "out_size_bytes": 2484389,
    "preview_jpg": "scenes\\khronos\\CompareAnisotropy\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareAnisotropy\\preview.png",
    "readme": "scenes\\khronos\\CompareAnisotropy\\README.md",
@@ -4760,9 +4760,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareAnisotropy\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareAnisotropy.scn' exited after 2 frames (quit=1) world_trail=0x35e7c27b264d0d3e"
+    "runtime: 'CompareAnisotropy.scn' exited after 2 frames (quit=1) world_trail=0xd65792bbf385a132"
    ],
-   "render_seconds": 1.4,
+   "render_seconds": 1.33,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAnisotropy\\glTF\\CompareAnisotropy.gltf",
    "stats": {
     "alpha_modes": {
@@ -4871,12 +4871,12 @@
     "gltf_import: texture → textures/image1.png",
     "gltf_import: OK meshes=3 textures=2"
    ],
-   "import_seconds": 0.49,
+   "import_seconds": 0.42,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareBaseColor",
-   "out_size_bytes": 3287502,
+   "out_size_bytes": 3287556,
    "preview_jpg": "scenes\\khronos\\CompareBaseColor\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareBaseColor\\preview.png",
    "readme": "scenes\\khronos\\CompareBaseColor\\README.md",
@@ -4887,9 +4887,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareBaseColor\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareBaseColor.scn' exited after 2 frames (quit=1) world_trail=0xc6ead55246894852"
+    "runtime: 'CompareBaseColor.scn' exited after 2 frames (quit=1) world_trail=0x3b2aa56870752c4a"
    ],
-   "render_seconds": 1.5,
+   "render_seconds": 1.38,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareBaseColor\\glTF\\CompareBaseColor.gltf",
    "stats": {
     "alpha_modes": {
@@ -4995,7 +4995,7 @@
     "gltf_import: texture → textures/image1.jpg",
     "gltf_import: OK meshes=3 textures=2"
    ],
-   "import_seconds": 0.12,
+   "import_seconds": 0.11,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -5011,9 +5011,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareClearcoat\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareClearcoat.scn' exited after 2 frames (quit=1) world_trail=0x53be2905df0178fe"
+    "runtime: 'CompareClearcoat.scn' exited after 2 frames (quit=1) world_trail=0xb8f92bf9fede1f7a"
    ],
-   "render_seconds": 0.88,
+   "render_seconds": 0.79,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareClearcoat\\glTF\\CompareClearcoat.gltf",
    "stats": {
     "alpha_modes": {
@@ -5122,12 +5122,12 @@
     "gltf_import: texture → textures/image1.jpg",
     "gltf_import: OK meshes=3 textures=1"
    ],
-   "import_seconds": 0.08,
+   "import_seconds": 0.09,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareDispersion",
-   "out_size_bytes": 27104,
+   "out_size_bytes": 27093,
    "preview_jpg": "scenes\\khronos\\CompareDispersion\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareDispersion\\preview.png",
    "readme": "scenes\\khronos\\CompareDispersion\\README.md",
@@ -5140,7 +5140,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'CompareDispersion.scn' exited after 2 frames (quit=1) world_trail=0xf09bd69f62d83f32"
    ],
-   "render_seconds": 0.53,
+   "render_seconds": 0.5,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareDispersion\\glTF\\CompareDispersion.gltf",
    "stats": {
     "alpha_modes": {
@@ -5252,7 +5252,7 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareEmissiveStrength",
-   "out_size_bytes": 208303,
+   "out_size_bytes": 208305,
    "preview_jpg": "scenes\\khronos\\CompareEmissiveStrength\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareEmissiveStrength\\preview.png",
    "readme": "scenes\\khronos\\CompareEmissiveStrength\\README.md",
@@ -5263,9 +5263,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareEmissiveStrength\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareEmissiveStrength.scn' exited after 2 frames (quit=1) world_trail=0xba7f07f7da1313fe"
+    "runtime: 'CompareEmissiveStrength.scn' exited after 2 frames (quit=1) world_trail=0x0c272eaae052371e"
    ],
-   "render_seconds": 0.68,
+   "render_seconds": 0.66,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareEmissiveStrength\\glTF\\CompareEmissiveStrength.gltf",
    "stats": {
     "alpha_modes": {
@@ -5392,7 +5392,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'CompareIor.scn' exited after 2 frames (quit=1) world_trail=0x1e11284ca93a09fe"
    ],
-   "render_seconds": 0.74,
+   "render_seconds": 0.75,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareIor\\glTF\\CompareIor.gltf",
    "stats": {
     "alpha_modes": {
@@ -5507,7 +5507,7 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareIridescence",
-   "out_size_bytes": 311899,
+   "out_size_bytes": 311900,
    "preview_jpg": "scenes\\khronos\\CompareIridescence\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareIridescence\\preview.png",
    "readme": "scenes\\khronos\\CompareIridescence\\README.md",
@@ -5518,9 +5518,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareIridescence\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareIridescence.scn' exited after 2 frames (quit=1) world_trail=0xd5d1e5ab872ead42"
+    "runtime: 'CompareIridescence.scn' exited after 2 frames (quit=1) world_trail=0x674f6417e42c3832"
    ],
-   "render_seconds": 0.92,
+   "render_seconds": 0.87,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareIridescence\\glTF\\CompareIridescence.gltf",
    "stats": {
     "alpha_modes": {
@@ -5641,9 +5641,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareMetallic\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareMetallic.scn' exited after 2 frames (quit=1) world_trail=0xa071e8b087057c1e"
+    "runtime: 'CompareMetallic.scn' exited after 2 frames (quit=1) world_trail=0xf63fa353e1adde5e"
    ],
-   "render_seconds": 0.81,
+   "render_seconds": 0.74,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareMetallic\\glTF\\CompareMetallic.gltf",
    "stats": {
     "alpha_modes": {
@@ -5745,12 +5745,12 @@
     "gltf_import: texture → textures/image0.jpg",
     "gltf_import: OK meshes=2 textures=1"
    ],
-   "import_seconds": 0.13,
+   "import_seconds": 0.14,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareNormal",
-   "out_size_bytes": 456910,
+   "out_size_bytes": 456921,
    "preview_jpg": "scenes\\khronos\\CompareNormal\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareNormal\\preview.png",
    "readme": "scenes\\khronos\\CompareNormal\\README.md",
@@ -5761,9 +5761,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareNormal\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareNormal.scn' exited after 2 frames (quit=1) world_trail=0xf8506715062f1836"
+    "runtime: 'CompareNormal.scn' exited after 2 frames (quit=1) world_trail=0xa087927e89a6ea02"
    ],
-   "render_seconds": 0.64,
+   "render_seconds": 0.59,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareNormal\\glTF\\CompareNormal.gltf",
    "stats": {
     "alpha_modes": {
@@ -5866,7 +5866,7 @@
     "gltf_import: texture → textures/image1.jpg",
     "gltf_import: OK meshes=2 textures=2"
    ],
-   "import_seconds": 0.11,
+   "import_seconds": 0.1,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -5882,9 +5882,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareRoughness\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareRoughness.scn' exited after 2 frames (quit=1) world_trail=0xcea79674586a02fe"
+    "runtime: 'CompareRoughness.scn' exited after 2 frames (quit=1) world_trail=0x9db8ae522d5529de"
    ],
-   "render_seconds": 0.8,
+   "render_seconds": 0.75,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareRoughness\\glTF\\CompareRoughness.gltf",
    "stats": {
     "alpha_modes": {
@@ -5994,7 +5994,7 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareSheen",
-   "out_size_bytes": 981063,
+   "out_size_bytes": 981055,
    "preview_jpg": "scenes\\khronos\\CompareSheen\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareSheen\\preview.png",
    "readme": "scenes\\khronos\\CompareSheen\\README.md",
@@ -6005,9 +6005,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareSheen\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareSheen.scn' exited after 2 frames (quit=1) world_trail=0xf4388ad64bb8350a"
+    "runtime: 'CompareSheen.scn' exited after 2 frames (quit=1) world_trail=0x875c282ff6e8e552"
    ],
-   "render_seconds": 0.91,
+   "render_seconds": 0.84,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSheen\\glTF\\CompareSheen.gltf",
    "stats": {
     "alpha_modes": {
@@ -6113,7 +6113,7 @@
     "gltf_import: texture → textures/image0.jpg",
     "gltf_import: OK meshes=2 textures=1"
    ],
-   "import_seconds": 0.17,
+   "import_seconds": 0.14,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -6129,9 +6129,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CompareSpecular\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CompareSpecular.scn' exited after 2 frames (quit=1) world_trail=0x814be14e8654db3e"
+    "runtime: 'CompareSpecular.scn' exited after 2 frames (quit=1) world_trail=0xfb6e03ea99bd823e"
    ],
-   "render_seconds": 0.81,
+   "render_seconds": 0.76,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSpecular\\glTF\\CompareSpecular.gltf",
    "stats": {
     "alpha_modes": {
@@ -6239,7 +6239,7 @@
     "gltf_import: texture → textures/image3.jpg",
     "gltf_import: OK meshes=5 textures=4"
    ],
-   "import_seconds": 0.16,
+   "import_seconds": 0.17,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -6367,7 +6367,7 @@
     "gltf_import: OK meshes=5 textures=3",
     "gltf_import: material 'glTF Volume' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 0.18,
+   "import_seconds": 0.17,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -6385,7 +6385,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'CompareVolume.scn' exited after 2 frames (quit=1) world_trail=0x62cbf4399eaa224a"
    ],
-   "render_seconds": 1.02,
+   "render_seconds": 0.96,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareVolume\\glTF\\CompareVolume.gltf",
    "stats": {
     "alpha_modes": {
@@ -6492,12 +6492,12 @@
     "gltf_import: texture → textures/image2.png",
     "gltf_import: OK meshes=1 textures=3"
    ],
-   "import_seconds": 0.25,
+   "import_seconds": 0.24,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "Corset",
-   "out_size_bytes": 14162103,
+   "out_size_bytes": 14162104,
    "preview_jpg": "scenes\\khronos\\Corset\\preview.jpg",
    "preview_png": "scenes\\khronos\\Corset\\preview.png",
    "readme": "scenes\\khronos\\Corset\\README.md",
@@ -6508,9 +6508,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Corset\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Corset.scn' exited after 2 frames (quit=1) world_trail=0xd13b870b76497f3e"
+    "runtime: 'Corset.scn' exited after 2 frames (quit=1) world_trail=0xb3568d71cc1863de"
    ],
-   "render_seconds": 1.9,
+   "render_seconds": 1.81,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Corset\\glTF\\Corset.gltf",
    "stats": {
     "alpha_modes": {
@@ -6610,7 +6610,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=1 textures=1"
    ],
-   "import_seconds": 0.09,
+   "import_seconds": 0.08,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -6626,9 +6626,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Cube\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Cube.scn' exited after 2 frames (quit=1) world_trail=0x1f4a832d6d56a632"
+    "runtime: 'Cube.scn' exited after 2 frames (quit=1) world_trail=0xbbb592828b1683ba"
    ],
-   "render_seconds": 0.58,
+   "render_seconds": 0.51,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Cube\\glTF\\Cube.gltf",
    "stats": {
     "alpha_modes": {
@@ -6734,7 +6734,7 @@
     "gltf_import: OK meshes=3 textures=0",
     "gltf_import: KHR_node_visibility=false 跳过 1 个隐藏节点（含整棵子树）"
    ],
-   "import_seconds": 0.09,
+   "import_seconds": 0.08,
    "issues": [
     "gltf_import: KHR_node_visibility=false 跳过 1 个隐藏节点（含整棵子树）",
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
@@ -6751,9 +6751,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\CubeVisibility\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'CubeVisibility.scn' exited after 2 frames (quit=1) world_trail=0x094cafd026d3ab52"
+    "runtime: 'CubeVisibility.scn' exited after 2 frames (quit=1) world_trail=0x6d4d0d6295eedc82"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CubeVisibility\\glTF\\CubeVisibility.gltf",
    "stats": {
     "alpha_modes": {
@@ -6855,12 +6855,12 @@
     "gltf_import: texture → textures/image4.jpg",
     "gltf_import: OK meshes=1 textures=5"
    ],
-   "import_seconds": 0.29,
+   "import_seconds": 0.28,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "DamagedHelmet",
-   "out_size_bytes": 4790231,
+   "out_size_bytes": 4790230,
    "preview_jpg": "scenes\\khronos\\DamagedHelmet\\preview.jpg",
    "preview_png": "scenes\\khronos\\DamagedHelmet\\preview.png",
    "readme": "scenes\\khronos\\DamagedHelmet\\README.md",
@@ -6871,9 +6871,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\DamagedHelmet\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'DamagedHelmet.scn' exited after 2 frames (quit=1) world_trail=0x0435787113388c56"
+    "runtime: 'DamagedHelmet.scn' exited after 2 frames (quit=1) world_trail=0x8d40b09662807cb2"
    ],
-   "render_seconds": 2.47,
+   "render_seconds": 2.27,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DamagedHelmet\\glTF\\DamagedHelmet.gltf",
    "stats": {
     "alpha_modes": {
@@ -6983,7 +6983,7 @@
     "gltf_import: texture → textures/image6.jpg",
     "gltf_import: OK meshes=9 textures=6"
    ],
-   "import_seconds": 0.73,
+   "import_seconds": 0.76,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -7001,7 +7001,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'DiffuseTransmissionPlant.scn' exited after 2 frames (quit=1) world_trail=0x1faba8d224e02b86"
    ],
-   "render_seconds": 2.52,
+   "render_seconds": 2.48,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionPlant\\glTF\\DiffuseTransmissionPlant.gltf",
    "stats": {
     "alpha_modes": {
@@ -7129,7 +7129,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'DiffuseTransmissionTeacup.scn' exited after 2 frames (quit=1) world_trail=0x61c4bb0a3f9155b2"
    ],
-   "render_seconds": 3.26,
+   "render_seconds": 3.3,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTeacup\\glTF\\DiffuseTransmissionTeacup.gltf",
    "stats": {
     "alpha_modes": {
@@ -7237,7 +7237,7 @@
     "gltf_import: texture → textures/image2.png",
     "gltf_import: OK meshes=33 textures=3"
    ],
-   "import_seconds": 0.18,
+   "import_seconds": 0.15,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -7255,7 +7255,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'DiffuseTransmissionTest.scn' exited after 2 frames (quit=1) world_trail=0xfa964a56010b843e"
    ],
-   "render_seconds": 0.88,
+   "render_seconds": 0.82,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTest\\glTF\\DiffuseTransmissionTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -7368,7 +7368,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\DirectionalLight\\assets\\DirectionalLight_2_0.mesh.json",
     "gltf_import: OK meshes=3 textures=0"
    ],
-   "import_seconds": 0.3,
+   "import_seconds": 0.27,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -7384,9 +7384,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\DirectionalLight\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'DirectionalLight.scn' exited after 2 frames (quit=1) world_trail=0x8ee44fcdafea2efe"
+    "runtime: 'DirectionalLight.scn' exited after 2 frames (quit=1) world_trail=0x8bb9cb2341520bba"
    ],
-   "render_seconds": 1.03,
+   "render_seconds": 0.95,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DirectionalLight\\glTF\\DirectionalLight.gltf",
    "stats": {
     "alpha_modes": {
@@ -7490,7 +7490,7 @@
     "gltf_import: texture → textures/Dispersion_Labels2.png",
     "gltf_import: OK meshes=27 textures=2"
    ],
-   "import_seconds": 0.87,
+   "import_seconds": 0.83,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -7508,7 +7508,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'DispersionTest.scn' exited after 2 frames (quit=1) world_trail=0xc2136d2707cb739e"
    ],
-   "render_seconds": 2.41,
+   "render_seconds": 2.42,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DispersionTest\\glTF\\DispersionTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -7619,7 +7619,7 @@
     "gltf_import: OK meshes=2 textures=1",
     "gltf_import: material 'Dragon with Attenuation' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 1.91,
+   "import_seconds": 1.95,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -7637,7 +7637,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'DragonAttenuation.scn' exited after 2 frames (quit=1) world_trail=0xf300241d3c22343a"
    ],
-   "render_seconds": 4.48,
+   "render_seconds": 4.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DragonAttenuation\\glTF\\DragonAttenuation.gltf",
    "stats": {
     "alpha_modes": {
@@ -7746,7 +7746,7 @@
     "gltf_import: OK meshes=2 textures=1",
     "gltf_import: material 'Dragon with Attenuation' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 1.93,
+   "import_seconds": 1.9,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -7764,7 +7764,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'DragonDispersion.scn' exited after 2 frames (quit=1) world_trail=0x4efc253ad5b5d9c6"
    ],
-   "render_seconds": 4.18,
+   "render_seconds": 4.19,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DragonDispersion\\glTF\\DragonDispersion.gltf",
    "stats": {
     "alpha_modes": {
@@ -7871,7 +7871,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=1 textures=1"
    ],
-   "import_seconds": 0.12,
+   "import_seconds": 0.11,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -7887,7 +7887,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Duck\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Duck.scn' exited after 2 frames (quit=1) world_trail=0x574474fd6aab583a"
+    "runtime: 'Duck.scn' exited after 2 frames (quit=1) world_trail=0x6bf0b3b0ae724452"
    ],
    "render_seconds": 0.58,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Duck\\glTF\\Duck.gltf",
@@ -7991,7 +7991,7 @@
     "gltf_import: texture → textures/PlainGrid.png",
     "gltf_import: OK meshes=6 textures=1"
    ],
-   "import_seconds": 0.09,
+   "import_seconds": 0.1,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -8007,9 +8007,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\EmissiveStrengthTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'EmissiveStrengthTest.scn' exited after 2 frames (quit=1) world_trail=0x55b70620f2d3f126"
+    "runtime: 'EmissiveStrengthTest.scn' exited after 2 frames (quit=1) world_trail=0x202ab00e317c2c56"
    ],
-   "render_seconds": 0.58,
+   "render_seconds": 0.56,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EmissiveStrengthTest\\glTF\\EmissiveStrengthTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -8115,7 +8115,7 @@
     "gltf_import: texture → textures/tmp_image_pie_dc1e_1a22_fbf9roughness_map_roughness_tmp_image_pie_dc1e_1a22_fbf9metal_map_metallic_0.png",
     "gltf_import: OK meshes=3 textures=2"
    ],
-   "import_seconds": 0.29,
+   "import_seconds": 0.25,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -8131,9 +8131,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\EnvironmentTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'EnvironmentTest.scn' exited after 2 frames (quit=1) world_trail=0xed08040aed49a7d6"
+    "runtime: 'EnvironmentTest.scn' exited after 2 frames (quit=1) world_trail=0x5fd6b0319c9600b2"
    ],
-   "render_seconds": 0.99,
+   "render_seconds": 0.93,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EnvironmentTest\\glTF\\EnvironmentTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -8237,7 +8237,7 @@
     "gltf_import: texture → textures/image9.png",
     "gltf_import: OK meshes=6 textures=15"
    ],
-   "import_seconds": 0.84,
+   "import_seconds": 0.85,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -8255,7 +8255,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'FlightHelmet.scn' exited after 2 frames (quit=1) world_trail=0xfcb47c86c5a3379e"
    ],
-   "render_seconds": 6.63,
+   "render_seconds": 6.67,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\FlightHelmet\\glTF\\FlightHelmet.gltf",
    "stats": {
     "alpha_modes": {
@@ -8360,7 +8360,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=1 textures=1"
    ],
-   "import_seconds": 0.11,
+   "import_seconds": 0.1,
    "issues": [
     "1 个 primitive 无 NORMAL（导入器按索引重建法线）",
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
@@ -8377,9 +8377,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Fox\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Fox.scn' exited after 2 frames (quit=1) world_trail=0x7f3d3fd933f0863e"
+    "runtime: 'Fox.scn' exited after 2 frames (quit=1) world_trail=0x349934cf026f8a1e"
    ],
-   "render_seconds": 0.64,
+   "render_seconds": 0.62,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Fox\\glTF\\Fox.gltf",
    "stats": {
     "alpha_modes": {
@@ -8487,12 +8487,12 @@
     "gltf_import: texture → textures/image1.png",
     "gltf_import: OK meshes=3 textures=2"
    ],
-   "import_seconds": 0.14,
+   "import_seconds": 0.13,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "GlamVelvetSofa",
-   "out_size_bytes": 3369804,
+   "out_size_bytes": 3369857,
    "preview_jpg": "scenes\\khronos\\GlamVelvetSofa\\preview.jpg",
    "preview_png": "scenes\\khronos\\GlamVelvetSofa\\preview.png",
    "readme": "scenes\\khronos\\GlamVelvetSofa\\README.md",
@@ -8503,9 +8503,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\GlamVelvetSofa\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'GlamVelvetSofa.scn' exited after 2 frames (quit=1) world_trail=0xb25322828f389d8a"
+    "runtime: 'GlamVelvetSofa.scn' exited after 2 frames (quit=1) world_trail=0x2eaebdbd00639082"
    ],
-   "render_seconds": 0.8,
+   "render_seconds": 0.75,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlamVelvetSofa\\glTF\\GlamVelvetSofa.gltf",
    "stats": {
     "alpha_modes": {
@@ -8636,7 +8636,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'GlassBrokenWindow.scn' exited after 2 frames (quit=1) world_trail=0x9312b2397781197a"
    ],
-   "render_seconds": 0.88,
+   "render_seconds": 0.84,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassBrokenWindow\\glTF\\GlassBrokenWindow.gltf",
    "stats": {
     "alpha_modes": {
@@ -8763,7 +8763,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'GlassHurricaneCandleHolder.scn' exited after 2 frames (quit=1) world_trail=0x52c40bc8d532e27a"
    ],
-   "render_seconds": 1.0,
+   "render_seconds": 1.01,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassHurricaneCandleHolder\\glTF\\GlassHurricaneCandleHolder.gltf",
    "stats": {
     "alpha_modes": {
@@ -8874,7 +8874,7 @@
     "gltf_import: texture → textures/image2.jpg",
     "gltf_import: OK meshes=3 textures=3"
    ],
-   "import_seconds": 0.17,
+   "import_seconds": 0.16,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -9004,12 +9004,12 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=23 textures=1"
    ],
-   "import_seconds": 1.01,
+   "import_seconds": 1.0,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "IORTestGrid",
-   "out_size_bytes": 7813207,
+   "out_size_bytes": 7813206,
    "preview_jpg": "scenes\\khronos\\IORTestGrid\\preview.jpg",
    "preview_png": "scenes\\khronos\\IORTestGrid\\preview.png",
    "readme": "scenes\\khronos\\IORTestGrid\\README.md",
@@ -9129,7 +9129,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=2 textures=1"
    ],
-   "import_seconds": 0.09,
+   "import_seconds": 0.08,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -9145,9 +9145,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\InterpolationTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'InterpolationTest.scn' exited after 2 frames (quit=1) world_trail=0xd0455742e69e097a"
+    "runtime: 'InterpolationTest.scn' exited after 2 frames (quit=1) world_trail=0xc83f31d94ddcdb3a"
    ],
-   "render_seconds": 0.53,
+   "render_seconds": 0.5,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\InterpolationTest\\glTF\\InterpolationTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -9251,12 +9251,12 @@
     "gltf_import: texture → textures/image3.jpg",
     "gltf_import: OK meshes=1 textures=4"
    ],
-   "import_seconds": 0.13,
+   "import_seconds": 0.14,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "IridescenceAbalone",
-   "out_size_bytes": 9518764,
+   "out_size_bytes": 9518772,
    "preview_jpg": "scenes\\khronos\\IridescenceAbalone\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescenceAbalone\\preview.png",
    "readme": "scenes\\khronos\\IridescenceAbalone\\README.md",
@@ -9267,9 +9267,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\IridescenceAbalone\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'IridescenceAbalone.scn' exited after 2 frames (quit=1) world_trail=0x9b859ecaf40a658a"
+    "runtime: 'IridescenceAbalone.scn' exited after 2 frames (quit=1) world_trail=0x1066bb3d33768f76"
    ],
-   "render_seconds": 1.85,
+   "render_seconds": 1.73,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceAbalone\\glTF\\IridescenceAbalone.gltf",
    "stats": {
     "alpha_modes": {
@@ -9375,7 +9375,7 @@
     "gltf_import: texture → textures/guides.png",
     "gltf_import: OK meshes=346 textures=1"
    ],
-   "import_seconds": 5.13,
+   "import_seconds": 4.6,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -9391,9 +9391,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\IridescenceDielectricSpheres\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'IridescenceDielectricSpheres.scn' exited after 2 frames (quit=1) world_trail=0x8eee416c46b008b2"
+    "runtime: 'IridescenceDielectricSpheres.scn' exited after 2 frames (quit=1) world_trail=0x27b07e70fb33a3d6"
    ],
-   "render_seconds": 14.53,
+   "render_seconds": 13.2,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceDielectricSpheres\\glTF\\IridescenceDielectricSpheres.gltf",
    "stats": {
     "alpha_modes": {
@@ -9503,7 +9503,7 @@
     "gltf_import: texture → textures/image2.png",
     "gltf_import: OK meshes=3 textures=3"
    ],
-   "import_seconds": 0.23,
+   "import_seconds": 0.24,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -9521,7 +9521,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'IridescenceLamp.scn' exited after 2 frames (quit=1) world_trail=0x4ecbb096ddcaba4a"
    ],
-   "render_seconds": 1.44,
+   "render_seconds": 1.43,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceLamp\\glTF\\IridescenceLamp.gltf",
    "stats": {
     "alpha_modes": {
@@ -9630,12 +9630,12 @@
     "gltf_import: texture → textures/guides.png",
     "gltf_import: OK meshes=346 textures=1"
    ],
-   "import_seconds": 5.16,
+   "import_seconds": 4.56,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "IridescenceMetallicSpheres",
-   "out_size_bytes": 34106927,
+   "out_size_bytes": 34106928,
    "preview_jpg": "scenes\\khronos\\IridescenceMetallicSpheres\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescenceMetallicSpheres\\preview.png",
    "readme": "scenes\\khronos\\IridescenceMetallicSpheres\\README.md",
@@ -9646,9 +9646,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\IridescenceMetallicSpheres\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'IridescenceMetallicSpheres.scn' exited after 2 frames (quit=1) world_trail=0x7bccb216a19f472a"
+    "runtime: 'IridescenceMetallicSpheres.scn' exited after 2 frames (quit=1) world_trail=0xa5607dce5c8a4dc2"
    ],
-   "render_seconds": 14.39,
+   "render_seconds": 13.28,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceMetallicSpheres\\glTF\\IridescenceMetallicSpheres.gltf",
    "stats": {
     "alpha_modes": {
@@ -9759,7 +9759,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=3 textures=1"
    ],
-   "import_seconds": 0.2,
+   "import_seconds": 0.22,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -9777,7 +9777,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'IridescenceSuzanne.scn' exited after 2 frames (quit=1) world_trail=0x3b2108209c4e3fc6"
    ],
-   "render_seconds": 0.86,
+   "render_seconds": 0.85,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceSuzanne\\glTF\\IridescenceSuzanne.gltf",
    "stats": {
     "alpha_modes": {
@@ -9892,12 +9892,12 @@
     "gltf_import: texture → textures/image9.png",
     "gltf_import: OK meshes=4 textures=10"
    ],
-   "import_seconds": 0.29,
+   "import_seconds": 0.34,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "IridescentDishWithOlives",
-   "out_size_bytes": 6561038,
+   "out_size_bytes": 6561050,
    "preview_jpg": "scenes\\khronos\\IridescentDishWithOlives\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescentDishWithOlives\\preview.png",
    "readme": "scenes\\khronos\\IridescentDishWithOlives\\README.md",
@@ -9910,7 +9910,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'IridescentDishWithOlives.scn' exited after 2 frames (quit=1) world_trail=0xb161a3e07e8b9d3e"
    ],
-   "render_seconds": 2.02,
+   "render_seconds": 2.01,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescentDishWithOlives\\glTF\\IridescentDishWithOlives.gltf",
    "stats": {
     "alpha_modes": {
@@ -10024,7 +10024,7 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "Lantern",
-   "out_size_bytes": 9778565,
+   "out_size_bytes": 9778567,
    "preview_jpg": "scenes\\khronos\\Lantern\\preview.jpg",
    "preview_png": "scenes\\khronos\\Lantern\\preview.png",
    "readme": "scenes\\khronos\\Lantern\\README.md",
@@ -10035,9 +10035,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Lantern\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Lantern.scn' exited after 2 frames (quit=1) world_trail=0x7da46a8b31236142"
+    "runtime: 'Lantern.scn' exited after 2 frames (quit=1) world_trail=0x33c162ab4ac3282a"
    ],
-   "render_seconds": 1.87,
+   "render_seconds": 1.78,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Lantern\\glTF\\Lantern.gltf",
    "stats": {
     "alpha_modes": {
@@ -10161,7 +10161,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'LightVisibility.scn' exited after 2 frames (quit=1) world_trail=0xe2ddb94384473356"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.46,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\LightVisibility\\glTF\\LightVisibility.gltf",
    "stats": {
     "alpha_modes": {},
@@ -10266,7 +10266,7 @@
     "gltf_import: texture → textures/image5.png",
     "gltf_import: OK meshes=3 textures=6"
    ],
-   "import_seconds": 0.14,
+   "import_seconds": 0.15,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -10284,7 +10284,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'LightsPunctualLamp.scn' exited after 2 frames (quit=1) world_trail=0xae22212730eb03d2"
    ],
-   "render_seconds": 1.7,
+   "render_seconds": 1.71,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\LightsPunctualLamp\\glTF\\LightsPunctualLamp.gltf",
    "stats": {
     "alpha_modes": {
@@ -10393,7 +10393,7 @@
     "gltf_import: texture → textures/image3.jpg",
     "gltf_import: OK meshes=1 textures=3"
    ],
-   "import_seconds": 0.38,
+   "import_seconds": 0.39,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -10411,7 +10411,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'MandarinOrange.scn' exited after 2 frames (quit=1) world_trail=0x3c1f848478993b4a"
    ],
-   "render_seconds": 1.85,
+   "render_seconds": 1.83,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MandarinOrange\\glTF\\MandarinOrange.gltf",
    "stats": {
     "alpha_modes": {
@@ -10518,7 +10518,7 @@
     "gltf_import: texture → textures/image2.jpg",
     "gltf_import: OK meshes=1 textures=3"
    ],
-   "import_seconds": 0.29,
+   "import_seconds": 0.28,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -10534,9 +10534,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\MaterialsVariantsShoe\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'MaterialsVariantsShoe.scn' exited after 2 frames (quit=1) world_trail=0x07cb8af3fdddc036"
+    "runtime: 'MaterialsVariantsShoe.scn' exited after 2 frames (quit=1) world_trail=0x56b9531b7d67466a"
    ],
-   "render_seconds": 1.88,
+   "render_seconds": 1.68,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MaterialsVariantsShoe\\glTF\\MaterialsVariantsShoe.gltf",
    "stats": {
     "alpha_modes": {
@@ -10669,7 +10669,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'MeshPrimitiveModes.scn' exited after 2 frames (quit=1) world_trail=0xcd3ca4a65649b3d2"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.48,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MeshPrimitiveModes\\glTF\\MeshPrimitiveModes.gltf",
    "stats": {
     "alpha_modes": {},
@@ -10769,7 +10769,7 @@
     "gltf_import: texture → textures/image9.png",
     "gltf_import: OK meshes=35 textures=10"
    ],
-   "import_seconds": 0.11,
+   "import_seconds": 0.1,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -10785,9 +10785,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\MeshoptCubeTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'MeshoptCubeTest.scn' exited after 2 frames (quit=1) world_trail=0xe3f5c165a2cf24ba"
+    "runtime: 'MeshoptCubeTest.scn' exited after 2 frames (quit=1) world_trail=0x8d2dc660e771ccc2"
    ],
-   "render_seconds": 0.73,
+   "render_seconds": 0.7,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MeshoptCubeTest\\glTF\\MeshoptCubeTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -10894,12 +10894,12 @@
     "gltf_import: texture → textures/image1.png",
     "gltf_import: OK meshes=5 textures=2"
    ],
-   "import_seconds": 4.85,
+   "import_seconds": 4.42,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "MetalRoughSpheres",
-   "out_size_bytes": 32126032,
+   "out_size_bytes": 32126024,
    "preview_jpg": "scenes\\khronos\\MetalRoughSpheres\\preview.jpg",
    "preview_png": "scenes\\khronos\\MetalRoughSpheres\\preview.png",
    "readme": "scenes\\khronos\\MetalRoughSpheres\\README.md",
@@ -10910,9 +10910,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\MetalRoughSpheres\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'MetalRoughSpheres.scn' exited after 2 frames (quit=1) world_trail=0x1ed044bb90d9f1b2"
+    "runtime: 'MetalRoughSpheres.scn' exited after 2 frames (quit=1) world_trail=0x3b6d27bbca5e81e6"
    ],
-   "render_seconds": 8.86,
+   "render_seconds": 7.97,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MetalRoughSpheres\\glTF\\MetalRoughSpheres.gltf",
    "stats": {
     "alpha_modes": {
@@ -11014,7 +11014,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\MetalRoughSpheresNoTextures\\assets\\MetalRoughSpheresNoTextures_101_4.mesh.json",
     "gltf_import: OK meshes=123 textures=0"
    ],
-   "import_seconds": 8.81,
+   "import_seconds": 8.02,
    "issues": [
     "大模型：528,291 顶点（加载/渲染较慢）",
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
@@ -11031,9 +11031,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\MetalRoughSpheresNoTextures\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'MetalRoughSpheresNoTextures.scn' exited after 2 frames (quit=1) world_trail=0x0c4d910b2555fc56"
+    "runtime: 'MetalRoughSpheresNoTextures.scn' exited after 2 frames (quit=1) world_trail=0xeea9cb9893cfeb26"
    ],
-   "render_seconds": 18.27,
+   "render_seconds": 16.31,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MetalRoughSpheresNoTextures\\glTF\\MetalRoughSpheresNoTextures.gltf",
    "stats": {
     "alpha_modes": {
@@ -11148,7 +11148,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\MorphPrimitivesTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'MorphPrimitivesTest.scn' exited after 2 frames (quit=1) world_trail=0xd09b557e76c6f03e"
+    "runtime: 'MorphPrimitivesTest.scn' exited after 2 frames (quit=1) world_trail=0x61bfa0e20818775e"
    ],
    "render_seconds": 0.52,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MorphPrimitivesTest\\glTF\\MorphPrimitivesTest.gltf",
@@ -11255,12 +11255,12 @@
     "gltf_import: texture → textures/TinyGrid.png",
     "gltf_import: OK meshes=2 textures=3"
    ],
-   "import_seconds": 0.11,
+   "import_seconds": 0.1,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "MorphStressTest",
-   "out_size_bytes": 353414,
+   "out_size_bytes": 353422,
    "preview_jpg": "scenes\\khronos\\MorphStressTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\MorphStressTest\\preview.png",
    "readme": "scenes\\khronos\\MorphStressTest\\README.md",
@@ -11271,9 +11271,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\MorphStressTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'MorphStressTest.scn' exited after 2 frames (quit=1) world_trail=0x7314c5c4317b62fe"
+    "runtime: 'MorphStressTest.scn' exited after 2 frames (quit=1) world_trail=0x38d8a63390ab6f3a"
    ],
-   "render_seconds": 0.61,
+   "render_seconds": 0.63,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MorphStressTest\\glTF\\MorphStressTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -11380,12 +11380,12 @@
     "gltf_import: texture → textures/image4.jpg",
     "gltf_import: OK meshes=3 textures=5"
    ],
-   "import_seconds": 0.32,
+   "import_seconds": 0.31,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "MosquitoInAmber",
-   "out_size_bytes": 25091651,
+   "out_size_bytes": 25091652,
    "preview_jpg": "scenes\\khronos\\MosquitoInAmber\\preview.jpg",
    "preview_png": "scenes\\khronos\\MosquitoInAmber\\preview.png",
    "readme": "scenes\\khronos\\MosquitoInAmber\\README.md",
@@ -11398,7 +11398,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'MosquitoInAmber.scn' exited after 2 frames (quit=1) world_trail=0xe6ae58caafd63c7a"
    ],
-   "render_seconds": 4.2,
+   "render_seconds": 4.24,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MosquitoInAmber\\glTF\\MosquitoInAmber.gltf",
    "stats": {
     "alpha_modes": {
@@ -11524,9 +11524,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\MultiUVTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'MultiUVTest.scn' exited after 2 frames (quit=1) world_trail=0x897c9fd3412cf68a"
+    "runtime: 'MultiUVTest.scn' exited after 2 frames (quit=1) world_trail=0x2d396d22b7a02376"
    ],
-   "render_seconds": 0.63,
+   "render_seconds": 0.59,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MultiUVTest\\glTF\\MultiUVTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -11647,7 +11647,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'MultipleScenes.scn' exited after 2 frames (quit=1) world_trail=0x268f4d0507bd3692"
    ],
-   "render_seconds": 0.49,
+   "render_seconds": 0.46,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MultipleScenes\\glTF\\MultipleScenes.gltf",
    "stats": {
     "alpha_modes": {},
@@ -11759,9 +11759,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\NegativeScaleTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'NegativeScaleTest.scn' exited after 2 frames (quit=1) world_trail=0xe9e258213d590dde"
+    "runtime: 'NegativeScaleTest.scn' exited after 2 frames (quit=1) world_trail=0x6081bd0419b6bf3a"
    ],
-   "render_seconds": 0.69,
+   "render_seconds": 0.66,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NegativeScaleTest\\glTF\\NegativeScaleTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -11866,13 +11866,13 @@
     "gltf_import: texture → textures/asteroid_tex_0099.png",
     "gltf_import: OK meshes=10000 textures=100"
    ],
-   "import_seconds": 23.2,
+   "import_seconds": 18.51,
    "issues": [
     "大模型：731,850 顶点（加载/渲染较慢）",
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "NodePerformanceTest",
-   "out_size_bytes": 88016198,
+   "out_size_bytes": 88016197,
    "preview_jpg": "scenes\\khronos\\NodePerformanceTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\NodePerformanceTest\\preview.png",
    "readme": "scenes\\khronos\\NodePerformanceTest\\README.md",
@@ -11883,9 +11883,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\NodePerformanceTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'NodePerformanceTest.scn' exited after 2 frames (quit=1) world_trail=0x15e808e1703082fe"
+    "runtime: 'NodePerformanceTest.scn' exited after 2 frames (quit=1) world_trail=0x12fbcc0288b934fe"
    ],
-   "render_seconds": 82.5,
+   "render_seconds": 79.74,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NodePerformanceTest\\glTF\\NodePerformanceTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -12009,9 +12009,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\NodeVisibilityTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'NodeVisibilityTest.scn' exited after 2 frames (quit=1) world_trail=0xe74970988de8aa92"
+    "runtime: 'NodeVisibilityTest.scn' exited after 2 frames (quit=1) world_trail=0x55e3f0219a3dd342"
    ],
-   "render_seconds": 0.52,
+   "render_seconds": 0.49,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NodeVisibilityTest\\glTF\\NodeVisibilityTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -12130,9 +12130,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\NormalTangentMirrorTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'NormalTangentMirrorTest.scn' exited after 2 frames (quit=1) world_trail=0x8fe5408da2bc8432"
+    "runtime: 'NormalTangentMirrorTest.scn' exited after 2 frames (quit=1) world_trail=0xf9374e5438ef9dba"
    ],
-   "render_seconds": 1.37,
+   "render_seconds": 1.21,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NormalTangentMirrorTest\\glTF\\NormalTangentMirrorTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -12234,7 +12234,7 @@
     "gltf_import: texture → textures/image2.png",
     "gltf_import: OK meshes=1 textures=3"
    ],
-   "import_seconds": 0.15,
+   "import_seconds": 0.13,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -12250,9 +12250,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\NormalTangentTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'NormalTangentTest.scn' exited after 2 frames (quit=1) world_trail=0x2f6d136f50fa3656"
+    "runtime: 'NormalTangentTest.scn' exited after 2 frames (quit=1) world_trail=0xa7d867415de66c92"
    ],
-   "render_seconds": 1.53,
+   "render_seconds": 1.46,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NormalTangentTest\\glTF\\NormalTangentTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -12354,7 +12354,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\OrientationTest\\assets\\OrientationTest_12_0.mesh.json",
     "gltf_import: OK meshes=13 textures=0"
    ],
-   "import_seconds": 0.1,
+   "import_seconds": 0.09,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -12370,9 +12370,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\OrientationTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'OrientationTest.scn' exited after 2 frames (quit=1) world_trail=0x03ac05a9c84bffc2"
+    "runtime: 'OrientationTest.scn' exited after 2 frames (quit=1) world_trail=0x015e06912c84e456"
    ],
-   "render_seconds": 0.59,
+   "render_seconds": 0.58,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\OrientationTest\\glTF\\OrientationTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -12473,7 +12473,7 @@
     "gltf_import: texture → textures/material0_occlusion_16.png",
     "gltf_import: OK meshes=6 textures=19"
    ],
-   "import_seconds": 1.39,
+   "import_seconds": 1.26,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -12489,9 +12489,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\PlaysetLightTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'PlaysetLightTest.scn' exited after 2 frames (quit=1) world_trail=0x4a84c56a4c291726"
+    "runtime: 'PlaysetLightTest.scn' exited after 2 frames (quit=1) world_trail=0x6be801a73857dbea"
    ],
-   "render_seconds": 6.02,
+   "render_seconds": 5.46,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PlaysetLightTest\\glTF\\PlaysetLightTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -12601,7 +12601,7 @@
     "gltf_import: texture → textures/LampColorNames.png",
     "gltf_import: OK meshes=3 textures=1"
    ],
-   "import_seconds": 0.1,
+   "import_seconds": 0.09,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -12617,9 +12617,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\PointLightIntensityTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'PointLightIntensityTest.scn' exited after 2 frames (quit=1) world_trail=0x7eb877590c8f6d4a"
+    "runtime: 'PointLightIntensityTest.scn' exited after 2 frames (quit=1) world_trail=0xd7213f3781fe5c06"
    ],
-   "render_seconds": 0.57,
+   "render_seconds": 0.54,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PointLightIntensityTest\\glTF\\PointLightIntensityTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -12726,12 +12726,12 @@
     "gltf_import: texture → textures/image7.jpg",
     "gltf_import: OK meshes=2 textures=8"
    ],
-   "import_seconds": 0.75,
+   "import_seconds": 0.67,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "PotOfCoals",
-   "out_size_bytes": 7994838,
+   "out_size_bytes": 7994846,
    "preview_jpg": "scenes\\khronos\\PotOfCoals\\preview.jpg",
    "preview_png": "scenes\\khronos\\PotOfCoals\\preview.png",
    "readme": "scenes\\khronos\\PotOfCoals\\README.md",
@@ -12742,9 +12742,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\PotOfCoals\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'PotOfCoals.scn' exited after 2 frames (quit=1) world_trail=0xf2e64ebc8863059e"
+    "runtime: 'PotOfCoals.scn' exited after 2 frames (quit=1) world_trail=0xf11e0ebe5bd4d99e"
    ],
-   "render_seconds": 4.05,
+   "render_seconds": 3.7,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoals\\glTF\\PotOfCoals.gltf",
    "stats": {
     "alpha_modes": {
@@ -12857,12 +12857,12 @@
     "gltf_import: texture → textures/image8.jpg",
     "gltf_import: OK meshes=3 textures=9"
    ],
-   "import_seconds": 0.69,
+   "import_seconds": 0.67,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "PotOfCoalsAnimationPointer",
-   "out_size_bytes": 9638355,
+   "out_size_bytes": 9638363,
    "preview_jpg": "scenes\\khronos\\PotOfCoalsAnimationPointer\\preview.jpg",
    "preview_png": "scenes\\khronos\\PotOfCoalsAnimationPointer\\preview.png",
    "readme": "scenes\\khronos\\PotOfCoalsAnimationPointer\\README.md",
@@ -12875,7 +12875,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'PotOfCoalsAnimationPointer.scn' exited after 2 frames (quit=1) world_trail=0x255cc479a61dfdba"
    ],
-   "render_seconds": 3.96,
+   "render_seconds": 4.06,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoalsAnimationPointer\\glTF\\PotOfCoalsAnimationPointer.gltf",
    "stats": {
     "alpha_modes": {
@@ -12993,7 +12993,7 @@
     "gltf_import: 跳过非三角 primitive mesh=21 prim=0 mode=0",
     "gltf_import: 跳过非三角 primitive mesh=22 prim=0 mode=3"
    ],
-   "import_seconds": 0.12,
+   "import_seconds": 0.11,
    "issues": [
     "gltf_import: 跳过非三角 primitive mesh=0 prim=0 mode=0",
     "gltf_import: 跳过非三角 primitive mesh=1 prim=0 mode=3",
@@ -13028,9 +13028,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\PrimitiveModeNormalsTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'PrimitiveModeNormalsTest.scn' exited after 2 frames (quit=1) world_trail=0xaada41bc28eb21de"
+    "runtime: 'PrimitiveModeNormalsTest.scn' exited after 2 frames (quit=1) world_trail=0xb47bf6fe4e5a459e"
    ],
-   "render_seconds": 0.72,
+   "render_seconds": 0.66,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PrimitiveModeNormalsTest\\glTF\\PrimitiveModeNormalsTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -13151,9 +13151,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\RecursiveSkeletons\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'RecursiveSkeletons.scn' exited after 2 frames (quit=1) world_trail=0xeefefeb36438a2e6"
+    "runtime: 'RecursiveSkeletons.scn' exited after 2 frames (quit=1) world_trail=0xe946b74031d264e6"
    ],
-   "render_seconds": 0.55,
+   "render_seconds": 0.49,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\RecursiveSkeletons\\glTF\\RecursiveSkeletons.gltf",
    "stats": {
     "alpha_modes": {
@@ -13268,9 +13268,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\RiggedFigure\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'RiggedFigure.scn' exited after 2 frames (quit=1) world_trail=0xc9ee94221c349cc2"
+    "runtime: 'RiggedFigure.scn' exited after 2 frames (quit=1) world_trail=0xb7ebbe338a1dccfa"
    ],
-   "render_seconds": 0.49,
+   "render_seconds": 0.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\RiggedFigure\\glTF\\RiggedFigure.gltf",
    "stats": {
     "alpha_modes": {
@@ -13384,9 +13384,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\RiggedSimple\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'RiggedSimple.scn' exited after 2 frames (quit=1) world_trail=0x98577f7d2cb0f14a"
+    "runtime: 'RiggedSimple.scn' exited after 2 frames (quit=1) world_trail=0x7afb4db1c2cec926"
    ],
-   "render_seconds": 0.52,
+   "render_seconds": 0.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\RiggedSimple\\glTF\\RiggedSimple.gltf",
    "stats": {
     "alpha_modes": {
@@ -13486,7 +13486,7 @@
     "gltf_import: OK meshes=1 textures=1",
     "gltf_import: material 'subsurface_material' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 1.63,
+   "import_seconds": 1.6,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -13504,7 +13504,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'ScatteringSkull.scn' exited after 2 frames (quit=1) world_trail=0x0db8378c26d33c36"
    ],
-   "render_seconds": 3.42,
+   "render_seconds": 3.44,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ScatteringSkull\\glTF\\ScatteringSkull.gltf",
    "stats": {
     "alpha_modes": {
@@ -13612,12 +13612,12 @@
     "gltf_import: texture → textures/image3.png",
     "gltf_import: OK meshes=1 textures=4"
    ],
-   "import_seconds": 0.97,
+   "import_seconds": 0.88,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "SciFiHelmet",
-   "out_size_bytes": 33505316,
+   "out_size_bytes": 33505324,
    "preview_jpg": "scenes\\khronos\\SciFiHelmet\\preview.jpg",
    "preview_png": "scenes\\khronos\\SciFiHelmet\\preview.png",
    "readme": "scenes\\khronos\\SciFiHelmet\\README.md",
@@ -13628,9 +13628,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SciFiHelmet\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SciFiHelmet.scn' exited after 2 frames (quit=1) world_trail=0x4dd1855813886d9e"
+    "runtime: 'SciFiHelmet.scn' exited after 2 frames (quit=1) world_trail=0x2efb14f52ae0dbbe"
    ],
-   "render_seconds": 3.97,
+   "render_seconds": 3.61,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SciFiHelmet\\glTF\\SciFiHelmet.gltf",
    "stats": {
     "alpha_modes": {
@@ -13736,12 +13736,12 @@
     "gltf_import: texture → textures/image5.png",
     "gltf_import: OK meshes=4 textures=6"
    ],
-   "import_seconds": 0.48,
+   "import_seconds": 0.42,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "SheenChair",
-   "out_size_bytes": 5959935,
+   "out_size_bytes": 5959989,
    "preview_jpg": "scenes\\khronos\\SheenChair\\preview.jpg",
    "preview_png": "scenes\\khronos\\SheenChair\\preview.png",
    "readme": "scenes\\khronos\\SheenChair\\README.md",
@@ -13752,9 +13752,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SheenChair\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SheenChair.scn' exited after 2 frames (quit=1) world_trail=0x5ffd048205f9ec7a"
+    "runtime: 'SheenChair.scn' exited after 2 frames (quit=1) world_trail=0x39207706b08ffd9e"
    ],
-   "render_seconds": 1.69,
+   "render_seconds": 1.46,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenChair\\glTF\\SheenChair.gltf",
    "stats": {
     "alpha_modes": {
@@ -13868,12 +13868,12 @@
     "gltf_import: texture → textures/image4.jpg",
     "gltf_import: OK meshes=1 textures=5"
    ],
-   "import_seconds": 0.98,
+   "import_seconds": 0.95,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "SheenCloth",
-   "out_size_bytes": 8010114,
+   "out_size_bytes": 8010168,
    "preview_jpg": "scenes\\khronos\\SheenCloth\\preview.jpg",
    "preview_png": "scenes\\khronos\\SheenCloth\\preview.png",
    "readme": "scenes\\khronos\\SheenCloth\\README.md",
@@ -13884,9 +13884,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SheenCloth\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SheenCloth.scn' exited after 2 frames (quit=1) world_trail=0x508d5491072cb6fe"
+    "runtime: 'SheenCloth.scn' exited after 2 frames (quit=1) world_trail=0xf3b9272654b58a1e"
    ],
-   "render_seconds": 2.46,
+   "render_seconds": 2.27,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenCloth\\glTF\\SheenCloth.gltf",
    "stats": {
     "alpha_modes": {
@@ -13997,7 +13997,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=20 textures=1"
    ],
-   "import_seconds": 0.87,
+   "import_seconds": 0.69,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -14013,9 +14013,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SheenTestGrid\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SheenTestGrid.scn' exited after 2 frames (quit=1) world_trail=0xad0f77ea57b4efde"
+    "runtime: 'SheenTestGrid.scn' exited after 2 frames (quit=1) world_trail=0x2bad3ee4ee18e73e"
    ],
-   "render_seconds": 2.47,
+   "render_seconds": 2.26,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenTestGrid\\glTF\\SheenTestGrid.gltf",
    "stats": {
     "alpha_modes": {
@@ -14125,12 +14125,12 @@
     "gltf_import: 贴图 image=1 (webp) → PNG 转码（PIL）",
     "gltf_import: 贴图 image=2 (webp) → PNG 转码（PIL）"
    ],
-   "import_seconds": 3.9,
+   "import_seconds": 3.55,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "SheenWoodLeatherSofa",
-   "out_size_bytes": 27898636,
+   "out_size_bytes": 27898689,
    "preview_jpg": "scenes\\khronos\\SheenWoodLeatherSofa\\preview.jpg",
    "preview_png": "scenes\\khronos\\SheenWoodLeatherSofa\\preview.png",
    "readme": "scenes\\khronos\\SheenWoodLeatherSofa\\README.md",
@@ -14141,9 +14141,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SheenWoodLeatherSofa\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SheenWoodLeatherSofa.scn' exited after 2 frames (quit=1) world_trail=0x924dfbb15868a702"
+    "runtime: 'SheenWoodLeatherSofa.scn' exited after 2 frames (quit=1) world_trail=0x4f200c87c9285cb6"
    ],
-   "render_seconds": 6.15,
+   "render_seconds": 5.68,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenWoodLeatherSofa\\glTF\\SheenWoodLeatherSofa.gltf",
    "stats": {
     "alpha_modes": {
@@ -14260,7 +14260,7 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "SimpleInstancing",
-   "out_size_bytes": 90889,
+   "out_size_bytes": 90899,
    "preview_jpg": "scenes\\khronos\\SimpleInstancing\\preview.jpg",
    "preview_png": "scenes\\khronos\\SimpleInstancing\\preview.png",
    "readme": "scenes\\khronos\\SimpleInstancing\\README.md",
@@ -14273,7 +14273,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SimpleInstancing.scn' exited after 2 frames (quit=1) world_trail=0x691ed25a047168fe"
    ],
-   "render_seconds": 0.57,
+   "render_seconds": 0.52,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleInstancing\\glTF\\SimpleInstancing.gltf",
    "stats": {
     "alpha_modes": {},
@@ -14368,7 +14368,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\SimpleMaterial\\assets\\SimpleMaterial.mesh.json",
     "gltf_import: OK meshes=1 textures=0"
    ],
-   "import_seconds": 0.08,
+   "import_seconds": 0.09,
    "issues": [
     "1 个 primitive 无 NORMAL（导入器按索引重建法线）",
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
@@ -14385,9 +14385,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SimpleMaterial\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SimpleMaterial.scn' exited after 2 frames (quit=1) world_trail=0x13cba780265a4d86"
+    "runtime: 'SimpleMaterial.scn' exited after 2 frames (quit=1) world_trail=0xf511281d1a7f6d8a"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.48,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleMaterial\\glTF\\SimpleMaterial.gltf",
    "stats": {
     "alpha_modes": {
@@ -14501,7 +14501,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SimpleMeshes.scn' exited after 2 frames (quit=1) world_trail=0x416ef997f08bd03a"
    ],
-   "render_seconds": 0.49,
+   "render_seconds": 0.45,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleMeshes\\glTF\\SimpleMeshes.gltf",
    "stats": {
     "alpha_modes": {},
@@ -14598,7 +14598,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\SimpleMorph\\assets\\SimpleMorph.mesh.json",
     "gltf_import: OK meshes=1 textures=0"
    ],
-   "import_seconds": 0.09,
+   "import_seconds": 0.08,
    "issues": [
     "1 个 primitive 无 NORMAL（导入器按索引重建法线）",
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
@@ -14617,7 +14617,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SimpleMorph.scn' exited after 2 frames (quit=1) world_trail=0xd81747f1f82cafb2"
    ],
-   "render_seconds": 0.53,
+   "render_seconds": 0.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleMorph\\glTF\\SimpleMorph.gltf",
    "stats": {
     "alpha_modes": {},
@@ -14732,7 +14732,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SimpleSkin.scn' exited after 2 frames (quit=1) world_trail=0x033e732b393c6cc2"
    ],
-   "render_seconds": 0.48,
+   "render_seconds": 0.46,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleSkin\\glTF\\SimpleSkin.gltf",
    "stats": {
     "alpha_modes": {},
@@ -14845,7 +14845,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SimpleSparseAccessor.scn' exited after 2 frames (quit=1) world_trail=0x8c25e24020a97342"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleSparseAccessor\\glTF\\SimpleSparseAccessor.gltf",
    "stats": {
     "alpha_modes": {},
@@ -14956,9 +14956,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SimpleTexture\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SimpleTexture.scn' exited after 2 frames (quit=1) world_trail=0x96ab1e699e09092a"
+    "runtime: 'SimpleTexture.scn' exited after 2 frames (quit=1) world_trail=0x7eec8ca7627150c6"
    ],
-   "render_seconds": 0.52,
+   "render_seconds": 0.49,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleTexture\\glTF\\SimpleTexture.gltf",
    "stats": {
     "alpha_modes": {
@@ -15079,9 +15079,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SpecGlossVsMetalRough\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SpecGlossVsMetalRough.scn' exited after 2 frames (quit=1) world_trail=0x1dcc4c02b1131082"
+    "runtime: 'SpecGlossVsMetalRough.scn' exited after 2 frames (quit=1) world_trail=0xfdfc2b3f82ee43d2"
    ],
-   "render_seconds": 1.85,
+   "render_seconds": 1.62,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecGlossVsMetalRough\\glTF\\SpecGlossVsMetalRough.gltf",
    "stats": {
     "alpha_modes": {
@@ -15189,12 +15189,12 @@
     "gltf_import: texture → textures/image1.png",
     "gltf_import: OK meshes=1 textures=2"
    ],
-   "import_seconds": 0.72,
+   "import_seconds": 0.69,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "SpecularSilkPouf",
-   "out_size_bytes": 7558687,
+   "out_size_bytes": 7558680,
    "preview_jpg": "scenes\\khronos\\SpecularSilkPouf\\preview.jpg",
    "preview_png": "scenes\\khronos\\SpecularSilkPouf\\preview.png",
    "readme": "scenes\\khronos\\SpecularSilkPouf\\README.md",
@@ -15205,9 +15205,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SpecularSilkPouf\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SpecularSilkPouf.scn' exited after 2 frames (quit=1) world_trail=0x46fbcaa1254a083a"
+    "runtime: 'SpecularSilkPouf.scn' exited after 2 frames (quit=1) world_trail=0xce89c3a237352832"
    ],
-   "render_seconds": 1.93,
+   "render_seconds": 1.79,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularSilkPouf\\glTF\\SpecularSilkPouf.gltf",
    "stats": {
     "alpha_modes": {
@@ -15317,7 +15317,7 @@
     "gltf_import: texture → textures/LeftLabels.png",
     "gltf_import: OK meshes=24 textures=1"
    ],
-   "import_seconds": 0.42,
+   "import_seconds": 0.39,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -15333,9 +15333,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\SpecularTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'SpecularTest.scn' exited after 2 frames (quit=1) world_trail=0xa4b8ed7897d7d206"
+    "runtime: 'SpecularTest.scn' exited after 2 frames (quit=1) world_trail=0x29a0739c4d45652a"
    ],
-   "render_seconds": 1.53,
+   "render_seconds": 1.41,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularTest\\glTF\\SpecularTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -15444,7 +15444,7 @@
     "gltf_import: texture → textures/image9.jpg",
     "gltf_import: OK meshes=103 textures=69"
    ],
-   "import_seconds": 3.21,
+   "import_seconds": 2.94,
    "issues": [
     "手动机位：手动机位：主厅内部沿 -X 看（官方参考图为内部视角）",
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？",
@@ -15462,9 +15462,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Sponza\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Sponza.scn' exited after 2 frames (quit=1) world_trail=0xf5a67490d25994fe"
+    "runtime: 'Sponza.scn' exited after 2 frames (quit=1) world_trail=0xf95525c053e6cf1e"
    ],
-   "render_seconds": 13.67,
+   "render_seconds": 12.75,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Sponza\\glTF\\Sponza.gltf",
    "stats": {
     "alpha_modes": {
@@ -15573,12 +15573,12 @@
     "gltf_import: texture → textures/image9.png",
     "gltf_import: OK meshes=8 textures=19"
    ],
-   "import_seconds": 0.71,
+   "import_seconds": 0.68,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "StainedGlassLamp",
-   "out_size_bytes": 37587860,
+   "out_size_bytes": 37587696,
    "preview_jpg": "scenes\\khronos\\StainedGlassLamp\\preview.jpg",
    "preview_png": "scenes\\khronos\\StainedGlassLamp\\preview.png",
    "readme": "scenes\\khronos\\StainedGlassLamp\\README.md",
@@ -15591,7 +15591,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'StainedGlassLamp.scn' exited after 2 frames (quit=1) world_trail=0x90badb774e503fba"
    ],
-   "render_seconds": 5.82,
+   "render_seconds": 5.81,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\StainedGlassLamp\\glTF\\StainedGlassLamp.gltf",
    "stats": {
     "alpha_modes": {
@@ -15704,12 +15704,12 @@
     "gltf_import: OK meshes=8 textures=1",
     "gltf_import: material 'nose_pads' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 0.16,
+   "import_seconds": 0.17,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "SunglassesKhronos",
-   "out_size_bytes": 879933,
+   "out_size_bytes": 879934,
    "preview_jpg": "scenes\\khronos\\SunglassesKhronos\\preview.jpg",
    "preview_png": "scenes\\khronos\\SunglassesKhronos\\preview.png",
    "readme": "scenes\\khronos\\SunglassesKhronos\\README.md",
@@ -15722,7 +15722,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'SunglassesKhronos.scn' exited after 2 frames (quit=1) world_trail=0xd77a1bec27664b6a"
    ],
-   "render_seconds": 0.8,
+   "render_seconds": 0.77,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SunglassesKhronos\\glTF\\SunglassesKhronos.gltf",
    "stats": {
     "alpha_modes": {
@@ -15828,12 +15828,12 @@
     "gltf_import: texture → textures/image1.png",
     "gltf_import: OK meshes=1 textures=2"
    ],
-   "import_seconds": 0.23,
+   "import_seconds": 0.21,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "Suzanne",
-   "out_size_bytes": 2334012,
+   "out_size_bytes": 2334021,
    "preview_jpg": "scenes\\khronos\\Suzanne\\preview.jpg",
    "preview_png": "scenes\\khronos\\Suzanne\\preview.png",
    "readme": "scenes\\khronos\\Suzanne\\README.md",
@@ -15844,9 +15844,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Suzanne\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Suzanne.scn' exited after 2 frames (quit=1) world_trail=0x2217b3f0a5b1b1de"
+    "runtime: 'Suzanne.scn' exited after 2 frames (quit=1) world_trail=0x1a05874f88f1383e"
    ],
-   "render_seconds": 0.95,
+   "render_seconds": 0.9,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Suzanne\\glTF\\Suzanne.gltf",
    "stats": {
     "alpha_modes": {
@@ -15948,7 +15948,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=5 textures=1"
    ],
-   "import_seconds": 0.1,
+   "import_seconds": 0.09,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -15964,9 +15964,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TextureCoordinateTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TextureCoordinateTest.scn' exited after 2 frames (quit=1) world_trail=0x45812c1d1352ba4a"
+    "runtime: 'TextureCoordinateTest.scn' exited after 2 frames (quit=1) world_trail=0x2d0b095d5bee35e6"
    ],
-   "render_seconds": 0.56,
+   "render_seconds": 0.54,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureCoordinateTest\\glTF\\TextureCoordinateTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -16076,7 +16076,7 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "TextureEncodingTest",
-   "out_size_bytes": 288187,
+   "out_size_bytes": 288176,
    "preview_jpg": "scenes\\khronos\\TextureEncodingTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TextureEncodingTest\\preview.png",
    "readme": "scenes\\khronos\\TextureEncodingTest\\README.md",
@@ -16087,9 +16087,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TextureEncodingTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TextureEncodingTest.scn' exited after 2 frames (quit=1) world_trail=0x4aefa4b5c4fb46b2"
+    "runtime: 'TextureEncodingTest.scn' exited after 2 frames (quit=1) world_trail=0x58af564680ea4bd2"
    ],
-   "render_seconds": 0.74,
+   "render_seconds": 0.71,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureEncodingTest\\glTF\\TextureEncodingTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -16200,7 +16200,7 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "TextureLinearInterpolationTest",
-   "out_size_bytes": 51873,
+   "out_size_bytes": 51884,
    "preview_jpg": "scenes\\khronos\\TextureLinearInterpolationTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TextureLinearInterpolationTest\\preview.png",
    "readme": "scenes\\khronos\\TextureLinearInterpolationTest\\README.md",
@@ -16211,9 +16211,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TextureLinearInterpolationTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TextureLinearInterpolationTest.scn' exited after 2 frames (quit=1) world_trail=0x367e8f45ba2be77a"
+    "runtime: 'TextureLinearInterpolationTest.scn' exited after 2 frames (quit=1) world_trail=0x3c6ac7d50d0d9bfe"
    ],
-   "render_seconds": 0.54,
+   "render_seconds": 0.51,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureLinearInterpolationTest\\glTF\\TextureLinearInterpolationTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -16321,7 +16321,7 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "TextureSettingsTest",
-   "out_size_bytes": 60615,
+   "out_size_bytes": 60617,
    "preview_jpg": "scenes\\khronos\\TextureSettingsTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TextureSettingsTest\\preview.png",
    "readme": "scenes\\khronos\\TextureSettingsTest\\README.md",
@@ -16332,9 +16332,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TextureSettingsTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TextureSettingsTest.scn' exited after 2 frames (quit=1) world_trail=0xda959d30f3fc48ea"
+    "runtime: 'TextureSettingsTest.scn' exited after 2 frames (quit=1) world_trail=0x87e6f6b506d4dc52"
    ],
-   "render_seconds": 0.68,
+   "render_seconds": 0.65,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureSettingsTest\\glTF\\TextureSettingsTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -16439,12 +16439,12 @@
     "gltf_import: texture → textures/TestMap_Normal.png",
     "gltf_import: OK meshes=29 textures=4"
    ],
-   "import_seconds": 0.14,
+   "import_seconds": 0.13,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "TextureTransformMultiTest",
-   "out_size_bytes": 586574,
+   "out_size_bytes": 586629,
    "preview_jpg": "scenes\\khronos\\TextureTransformMultiTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TextureTransformMultiTest\\preview.png",
    "readme": "scenes\\khronos\\TextureTransformMultiTest\\README.md",
@@ -16455,9 +16455,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TextureTransformMultiTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TextureTransformMultiTest.scn' exited after 2 frames (quit=1) world_trail=0x1d9473be02d29dde"
+    "runtime: 'TextureTransformMultiTest.scn' exited after 2 frames (quit=1) world_trail=0xf3d3f5a6f8aea13a"
    ],
-   "render_seconds": 0.85,
+   "render_seconds": 0.8,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureTransformMultiTest\\glTF\\TextureTransformMultiTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -16575,7 +16575,7 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "TextureTransformTest",
-   "out_size_bytes": 47152,
+   "out_size_bytes": 47197,
    "preview_jpg": "scenes\\khronos\\TextureTransformTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TextureTransformTest\\preview.png",
    "readme": "scenes\\khronos\\TextureTransformTest\\README.md",
@@ -16586,9 +16586,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TextureTransformTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TextureTransformTest.scn' exited after 2 frames (quit=1) world_trail=0x565df8fa4b8e41b2"
+    "runtime: 'TextureTransformTest.scn' exited after 2 frames (quit=1) world_trail=0xdd01b48dbc3f26e6"
    ],
-   "render_seconds": 0.55,
+   "render_seconds": 0.53,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureTransformTest\\glTF\\TextureTransformTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -16697,7 +16697,7 @@
     "gltf_import: texture → textures/asphalt_02_rough_1k.jpg",
     "gltf_import: OK meshes=4 textures=4"
    ],
-   "import_seconds": 0.24,
+   "import_seconds": 0.21,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -16713,9 +16713,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TrafficCone\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TrafficCone.scn' exited after 2 frames (quit=1) world_trail=0x9e06004616804732"
+    "runtime: 'TrafficCone.scn' exited after 2 frames (quit=1) world_trail=0x040638aa5b737c52"
    ],
-   "render_seconds": 1.16,
+   "render_seconds": 1.09,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TrafficCone\\glTF\\TrafficCone.gltf",
    "stats": {
     "alpha_modes": {
@@ -16826,7 +16826,7 @@
     "gltf_import: OK meshes=10 textures=3",
     "gltf_import: material 'Blue Glass Material' KHR_materials_volume attenuationColor → base_color 色调近似"
    ],
-   "import_seconds": 0.77,
+   "import_seconds": 0.8,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -16844,7 +16844,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'TransmissionOrderTest.scn' exited after 2 frames (quit=1) world_trail=0x0ec6d65dbf127ee6"
    ],
-   "render_seconds": 2.47,
+   "render_seconds": 2.52,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionOrderTest\\glTF\\TransmissionOrderTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -16954,7 +16954,7 @@
     "gltf_import: texture → textures/SmoothVsRough.png",
     "gltf_import: OK meshes=9 textures=5"
    ],
-   "import_seconds": 0.68,
+   "import_seconds": 0.69,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -16972,7 +16972,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'TransmissionRoughnessTest.scn' exited after 2 frames (quit=1) world_trail=0x7034e0e66a200dc6"
    ],
-   "render_seconds": 1.89,
+   "render_seconds": 1.87,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionRoughnessTest\\glTF\\TransmissionRoughnessTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -17082,7 +17082,7 @@
     "gltf_import: texture → textures/texture6807.png",
     "gltf_import: OK meshes=22 textures=8"
    ],
-   "import_seconds": 0.96,
+   "import_seconds": 0.99,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -17100,7 +17100,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'TransmissionTest.scn' exited after 2 frames (quit=1) world_trail=0x0fe196e015d4281e"
    ],
-   "render_seconds": 2.94,
+   "render_seconds": 3.01,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionTest\\glTF\\TransmissionTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -17209,7 +17209,7 @@
     "gltf_import: texture → textures/image0.png",
     "gltf_import: OK meshes=14 textures=1"
    ],
-   "import_seconds": 0.48,
+   "import_seconds": 0.49,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -17227,7 +17227,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'TransmissionThinwallTestGrid.scn' exited after 2 frames (quit=1) world_trail=0x9106f1b178abfef6"
    ],
-   "render_seconds": 1.63,
+   "render_seconds": 1.64,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionThinwallTestGrid\\glTF\\TransmissionThinwallTestGrid.gltf",
    "stats": {
     "alpha_modes": {
@@ -17348,7 +17348,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'Triangle.scn' exited after 2 frames (quit=1) world_trail=0x268f4d0507bd3692"
    ],
-   "render_seconds": 0.49,
+   "render_seconds": 0.47,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Triangle\\glTF\\Triangle.gltf",
    "stats": {
     "alpha_modes": {},
@@ -17557,7 +17557,7 @@
     "gltf_import: texture → textures/image2.png",
     "gltf_import: OK meshes=1 textures=3"
    ],
-   "import_seconds": 0.09,
+   "import_seconds": 0.08,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -17573,9 +17573,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TwoSidedPlane\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TwoSidedPlane.scn' exited after 2 frames (quit=1) world_trail=0xd272e8c461c57c36"
+    "runtime: 'TwoSidedPlane.scn' exited after 2 frames (quit=1) world_trail=0x7250c3fa71d35a6a"
    ],
-   "render_seconds": 0.55,
+   "render_seconds": 0.5,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TwoSidedPlane\\glTF\\TwoSidedPlane.gltf",
    "stats": {
     "alpha_modes": {
@@ -17697,7 +17697,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'USDShaderBallForGltf.scn' exited after 2 frames (quit=1) world_trail=0x29a0f4f75a1e682a"
    ],
-   "render_seconds": 1.03,
+   "render_seconds": 1.06,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\USDShaderBallForGltf\\glTF\\USDShaderBallForGltf.gltf",
    "stats": {
     "alpha_modes": {
@@ -17816,9 +17816,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\UnlitTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'UnlitTest.scn' exited after 2 frames (quit=1) world_trail=0x68a1ea12dbf8ccfa"
+    "runtime: 'UnlitTest.scn' exited after 2 frames (quit=1) world_trail=0x1df9b16c0ab17e3e"
    ],
-   "render_seconds": 0.5,
+   "render_seconds": 0.49,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\UnlitTest\\glTF\\UnlitTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -17936,9 +17936,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\VertexColorTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'VertexColorTest.scn' exited after 2 frames (quit=1) world_trail=0xbb675b2e4cda011e"
+    "runtime: 'VertexColorTest.scn' exited after 2 frames (quit=1) world_trail=0x2020ca2a02d99bde"
    ],
-   "render_seconds": 0.52,
+   "render_seconds": 0.5,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\VertexColorTest\\glTF\\VertexColorTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -18043,7 +18043,7 @@
     "gltf_import: texture → textures/image9.jpg",
     "gltf_import: OK meshes=167 textures=20"
    ],
-   "import_seconds": 0.47,
+   "import_seconds": 0.42,
    "issues": [
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
@@ -18059,9 +18059,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\VirtualCity\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'VirtualCity.scn' exited after 2 frames (quit=1) world_trail=0x47ee90b68ab6803e"
+    "runtime: 'VirtualCity.scn' exited after 2 frames (quit=1) world_trail=0x683c0b68bd5315de"
    ],
-   "render_seconds": 2.61,
+   "render_seconds": 2.38,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\VirtualCity\\glTF\\VirtualCity.gltf",
    "stats": {
     "alpha_modes": {
@@ -18169,7 +18169,7 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "WaterBottle",
-   "out_size_bytes": 9114805,
+   "out_size_bytes": 9114809,
    "preview_jpg": "scenes\\khronos\\WaterBottle\\preview.jpg",
    "preview_png": "scenes\\khronos\\WaterBottle\\preview.png",
    "readme": "scenes\\khronos\\WaterBottle\\README.md",
@@ -18180,9 +18180,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\WaterBottle\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'WaterBottle.scn' exited after 2 frames (quit=1) world_trail=0x5520af5d89b86bd6"
+    "runtime: 'WaterBottle.scn' exited after 2 frames (quit=1) world_trail=0xecac2ebbfc7972b2"
    ],
-   "render_seconds": 1.6,
+   "render_seconds": 1.52,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\WaterBottle\\glTF\\WaterBottle.gltf",
    "stats": {
     "alpha_modes": {
@@ -18282,7 +18282,7 @@
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\XmpMetadataRoundedCube\\assets\\XmpMetadataRoundedCube.mesh.json",
     "gltf_import: OK meshes=1 textures=0"
    ],
-   "import_seconds": 0.13,
+   "import_seconds": 0.12,
    "issues": [
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
@@ -18298,9 +18298,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\XmpMetadataRoundedCube\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'XmpMetadataRoundedCube.scn' exited after 2 frames (quit=1) world_trail=0x1bdbf2f72303a2fe"
+    "runtime: 'XmpMetadataRoundedCube.scn' exited after 2 frames (quit=1) world_trail=0x5c99568f28dee8fe"
    ],
-   "render_seconds": 0.56,
+   "render_seconds": 0.55,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\XmpMetadataRoundedCube\\glTF\\XmpMetadataRoundedCube.gltf",
    "stats": {
     "alpha_modes": {
@@ -18339,5 +18339,5 @@
    ]
   }
  ],
- "total_seconds": 160.3
+ "total_seconds": 501.8
 }

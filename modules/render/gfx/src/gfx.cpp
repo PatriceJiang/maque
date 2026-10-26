@@ -303,15 +303,20 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         dv->p3dShader = make_shader(dv->device, wgsl);
         if (!dv->p3dShader) return;
         {
-            WGPUBindGroupLayoutEntry e[3] = {};
+            WGPUBindGroupLayoutEntry e[5] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 816;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 832;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
             e[1].texture.sampleType = WGPUTextureSampleType_Depth;
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
             e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment;
             e[2].sampler.type = WGPUSamplerBindingType_Comparison;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 3; bd.entries = e;
+            e[3].binding = 3; e[3].visibility = WGPUShaderStage_Fragment;      /* equirect env map */
+            e[3].texture.sampleType = WGPUTextureSampleType_Float;
+            e[3].texture.viewDimension = WGPUTextureViewDimension_2D;
+            e[4].binding = 4; e[4].visibility = WGPUShaderStage_Fragment;      /* env sampler */
+            e[4].sampler.type = WGPUSamplerBindingType_Filtering;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 5; bd.entries = e;
             dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         /* ---- 阴影资源（plans/18 §4.2 / R2/R19 修复）----
@@ -610,6 +615,12 @@ static Device* create_device(std::string* out_backend) {
 
     WGPUDeviceDescriptor ddesc = WGPU_DEVICE_DESCRIPTOR_INIT;
     ddesc.uncapturedErrorCallbackInfo.callback = on_uncaptured;
+    /* envmap/IBL：group0 需要额外 1 张环境贴图，采样纹理总数变成 17（旧上限 16）。
+     * 向适配器请求其支持的上限；桌面 GPU 通常 ≥128。若适配器不支持则保留默认（env 绑定仍会创建但可能校验失败）。 */
+    WGPULimits adapter_limits = WGPU_LIMITS_INIT;
+    if (wgpuAdapterGetLimits(dv->adapter, &adapter_limits) == WGPUStatus_Success) {
+        ddesc.requiredLimits = &adapter_limits;
+    }
     WGPURequestDeviceCallbackInfo dci = WGPU_REQUEST_DEVICE_CALLBACK_INFO_INIT;
     dci.mode = WGPUCallbackMode_AllowProcessEvents; dci.callback = req_device_cb; dci.userdata1 = &dv->device;
     wgpuAdapterRequestDevice(dv->adapter, &ddesc, dci);
@@ -1605,7 +1616,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         const mq_renderer_view3d& v = f->views[vi];
         float vp[16];
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
-        float cam[204] = {};
+        float cam[208] = {};
         std::memcpy(cam, vp, sizeof vp);
         cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = v.exposure;
         cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
@@ -1631,6 +1642,10 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         cam[201] = f->env.env_ground_color[1] * f->env.intensity;
         cam[202] = f->env.env_ground_color[2] * f->env.intensity;
         cam[203] = f->env.env_rotation;
+        /* env_info：x=env_intensity y=has_env_texture z/w=预留（equirect IBL 用） */
+        cam[204] = f->env.intensity;
+        cam[205] = (f->env.env_texture >= 0) ? 1.0F : 0.0F;
+        cam[206] = 0.0F; cam[207] = 0.0F;
         /* 光照数组（8 盏）：按 light_order 重排后的顺序（方向光在前，保证 0 号是方向光/阴影灯）。
          * 每盏 16 float = pos(4, w=类型) + dir(4) + color(4) + params(4)。 */
         for (uint32_t li = 0; li < 8; ++li) {
@@ -1654,24 +1669,34 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         ubd.size = sizeof cam;
         WGPUBuffer cbuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
         wgpuQueueWriteBuffer(dv->queue, cbuf, 0, cam, sizeof cam);
-        WGPUBindGroupEntry cbe[3] = {};
+        WGPUBindGroupEntry cbe[5] = {};
         cbe[0].binding = 0; cbe[0].buffer = cbuf; cbe[0].size = sizeof cam;
         /* 主 pass 采样阴影图；阴影未启用时绑 1×1 dummy depth（z=0 → shader 不采样）。
          * binding2 必须是 Comparison sampler（BGL 如此声明），绝不拿 filtering sampler 兜底（R19）。 */
         cbe[1].binding = 1; cbe[1].textureView = shadow_ready ? dv->shadowView : dv->dummyDepthView;
         cbe[2].binding = 2; cbe[2].sampler = dv->shadowSampler;
+        cbe[3].binding = 3;
+        cbe[3].textureView = (f->env.env_texture >= 0 && (size_t)f->env.env_texture < dv->textures.size() &&
+                              dv->textures[(size_t)f->env.env_texture] && dv->textures[(size_t)f->env.env_texture]->view)
+                                 ? dv->textures[(size_t)f->env.env_texture]->view : dv->whiteTexView;
+        cbe[4].binding = 4;
+        cbe[4].sampler = (f->env.env_texture >= 0 && (size_t)f->env.env_texture < dv->textures.size() &&
+                          dv->textures[(size_t)f->env.env_texture] && dv->textures[(size_t)f->env.env_texture]->sampler)
+                             ? dv->textures[(size_t)f->env.env_texture]->sampler : dv->sampler;
         WGPUBindGroupDescriptor cbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-        cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 3; cbgd.entries = cbe;
+        cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 5; cbgd.entries = cbe;
         WGPUBindGroup camBg = wgpuDeviceCreateBindGroup(dv->device, &cbgd);
         /* 阴影深度 pass（仅首视图）：用同一个 816B 相机块（light_vp 在 float 160 起）；group0 绑 dummy depth
          * 避免与本 pass 写入的 shadowView 同纹理读写。 */
         if (shadow_ready && vi == 0) {
-            WGPUBindGroupEntry sbe[3] = {};
+            WGPUBindGroupEntry sbe[5] = {};
             sbe[0].binding = 0; sbe[0].buffer = cbuf; sbe[0].size = sizeof cam;
             sbe[1].binding = 1; sbe[1].textureView = dv->dummyDepthView;
             sbe[2].binding = 2; sbe[2].sampler = dv->shadowSampler;
+            sbe[3].binding = 3; sbe[3].textureView = dv->whiteTexView;
+            sbe[4].binding = 4; sbe[4].sampler = dv->sampler;
             WGPUBindGroupDescriptor sbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            sbgd.layout = dv->p3dCamBgl; sbgd.entryCount = 3; sbgd.entries = sbe;
+            sbgd.layout = dv->p3dCamBgl; sbgd.entryCount = 5; sbgd.entries = sbe;
             WGPUBindGroup sbg = wgpuDeviceCreateBindGroup(dv->device, &sbgd);
             WGPUCommandEncoder senc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
             WGPURenderPassDepthStencilAttachment sda = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;

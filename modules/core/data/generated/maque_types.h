@@ -2393,6 +2393,7 @@ struct Scene {
     math::Color env_ground_color = {0.0F, 0.0F, 0.0F, 1.0F};
     float env_highlight = 1.0F;
     float env_rotation = 0.0F;
+    std::string env_texture = "";
     float gravity_y = -900.0F;
     float restitution = 0.86F;
 };
