@@ -138,6 +138,12 @@
         # 3D 影棚环境光（默认 = 引擎此前硬编码值；只影响 3D）
         - { name: env_color, type: math.Color, default: "{0.27F, 0.28F, 0.31F, 1.0F}" }
         - { name: env_intensity, type: float, default: 1.6F }
+        # 3D 环境反射/天空（plans/19 PBR 正确性）：analytic studio IBL。
+        # 颜色全 0 = 由 env_color 派生（旧场景不改也能得到半球环境）；env_rotation 单位度。
+        - { name: env_sky_color, type: math.Color, default: "{0.0F, 0.0F, 0.0F, 1.0F}" }
+        - { name: env_ground_color, type: math.Color, default: "{0.0F, 0.0F, 0.0F, 1.0F}" }
+        - { name: env_highlight, type: float, default: 1.0F }
+        - { name: env_rotation, type: float, default: 0.0F }
         - { name: gravity_y,   type: float, default: -900.0F }  # 重力加速度的 y 分量（像素/秒²，世界 y 向上）
         - { name: restitution, type: float, default: 0.86F }    # 弹性（0..1）
         # entities 不在此：节点树通用（name/children/components），组件按 type 反射反序列化      # 引擎 RNG 种子（确定性）

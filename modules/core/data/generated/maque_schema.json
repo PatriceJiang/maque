@@ -3433,6 +3433,42 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "uv_scale",
+          "type": "math.Vec2",
+          "kind": "struct",
+          "type_id": 1876288095,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "uv_offset",
+          "type": "math.Vec2",
+          "kind": "struct",
+          "type_id": 1876288095,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "normal_uv_scale",
+          "type": "math.Vec2",
+          "kind": "struct",
+          "type_id": 1876288095,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "normal_uv_offset",
+          "type": "math.Vec2",
+          "kind": "struct",
+          "type_id": 1876288095,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },
@@ -11169,6 +11205,42 @@
         },
         {
           "name": "env_intensity",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_sky_color",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_ground_color",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_highlight",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_rotation",
           "type": "float",
           "kind": "f32",
           "type_id": 0,

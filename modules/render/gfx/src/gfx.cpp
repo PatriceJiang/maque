@@ -25,8 +25,8 @@ namespace maque::gfx {
 static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32");
 static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
-static_assert(sizeof(mq_renderer_pbr_material) == 220, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型）");
-static_assert(sizeof(mq_renderer_environment) == 48, "mq_renderer_environment 布局漂移");
+static_assert(sizeof(mq_renderer_pbr_material) == 236, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换）");
+static_assert(sizeof(mq_renderer_environment) == 88, "mq_renderer_environment 布局漂移（+analytic studio IBL 参数）");
 static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
 static_assert(sizeof(mq_renderer_draw3d) == 96, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64）");
 static_assert(offsetof(mq_renderer_draw3d, model) == 8, "draw3d.model 必须在 offset 8");
@@ -292,7 +292,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         {
             WGPUBindGroupLayoutEntry e[3] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 784;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 816;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
             e[1].texture.sampleType = WGPUTextureSampleType_Depth;
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
@@ -333,7 +333,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             /* group1：材质 uniform（256B）+ 8 张贴图 + sampler（plans/19 材质模型扩展） */
             WGPUBindGroupLayoutEntry e[10] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 256;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 288;
             for (int ti = 1; ti <= 9; ++ti) {
                 if (ti == 2) continue;                       /* binding2 = sampler */
                 e[ti].binding = (uint32_t)ti;
@@ -1196,7 +1196,7 @@ static void mat4_ortho(float zn, float zf, float half, float* m) {
 }
 /* 材质 uniform 打包（plans/19）：64 floats / 256B，与 pbr shader 的 Draw 结构逐项对应。
  * 阴影 pass 与主 pass 共用同一函数，避免两处字段漂移。 */
-static constexpr int kMatUniformFloats = 64;
+static constexpr int kMatUniformFloats = 72;
 static void pack_draw_uniform(float* du, const float model[16], const mq_renderer_pbr_material* mat) {
     std::memset(du, 0, sizeof(float) * (size_t)kMatUniformFloats);
     std::memcpy(du, model, sizeof(float) * 16);                    /* 0..15：模型矩阵 */
@@ -1215,6 +1215,8 @@ static void pack_draw_uniform(float* du, const float model[16], const mq_rendere
         du[48] = 100.0F; du[49] = 400.0F; du[50] = 0.0F; du[51] = 0.0F;
         du[52] = 0.0F; du[53] = 1.0F; du[54] = 1.0F; du[55] = 3.0F;
         du[56] = du[57] = du[58] = 1.0F;                           /* specular */
+        du[64] = du[65] = 1.0F; du[66] = du[67] = 0.0F;             /* uv scale/offset */
+        du[68] = du[69] = 1.0F; du[70] = du[71] = 0.0F;             /* normal uv scale/offset */
         return;
     }
     du[16] = mat->base_color[0]; du[17] = mat->base_color[1];
@@ -1237,6 +1239,10 @@ static void pack_draw_uniform(float* du, const float model[16], const mq_rendere
     du[54] = mat->clearcoat_normal_scale; du[55] = (float)mat->toon_steps;
     du[56] = mat->specular[0]; du[57] = mat->specular[1]; du[58] = mat->specular[2];
     du[60] = mat->sheen_color[0]; du[61] = mat->sheen_color[1]; du[62] = mat->sheen_color[2];
+    du[64] = mat->uv_scale[0]; du[65] = mat->uv_scale[1];
+    du[66] = mat->uv_offset[0]; du[67] = mat->uv_offset[1];
+    du[68] = mat->normal_uv_scale[0]; du[69] = mat->normal_uv_scale[1];
+    du[70] = mat->normal_uv_offset[0]; du[71] = mat->normal_uv_offset[1];
 }
 
 /* 材质贴图句柄 → 纹理 view（非法/未给 → fallback 缺省纹理） */
@@ -1300,7 +1306,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         const mq_renderer_view3d& v = f->views[vi];
         float vp[16];
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
-        float cam[196] = {};
+        float cam[204] = {};
         std::memcpy(cam, vp, sizeof vp);
         cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = v.exposure;
         cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
@@ -1334,6 +1340,15 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         }
         /* 视矩阵（matcap 用 view-space 法线；plans/19）：camera uniform 尾部 16 floats */
         std::memcpy(cam + 180, v.view, sizeof(float) * 16);
+        /* analytic studio IBL（plans/19）：天空/地面色（已乘环境强度）+ 软光箱强度 + 旋转（弧度） */
+        cam[196] = f->env.env_sky_color[0] * f->env.intensity;
+        cam[197] = f->env.env_sky_color[1] * f->env.intensity;
+        cam[198] = f->env.env_sky_color[2] * f->env.intensity;
+        cam[199] = f->env.env_highlight;
+        cam[200] = f->env.env_ground_color[0] * f->env.intensity;
+        cam[201] = f->env.env_ground_color[1] * f->env.intensity;
+        cam[202] = f->env.env_ground_color[2] * f->env.intensity;
+        cam[203] = f->env.env_rotation;
         /* 光照数组（8 盏）：每盏 16 float = pos(4, w=类型) + dir(4) + color(4) + params(4) */
         for (uint32_t li = 0; li < 8; ++li) {
             float* dst = cam + 32 + li * 16;

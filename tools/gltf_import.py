@@ -219,7 +219,8 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
     slot = tex_slot(mr_tex)
     if slot:
         m["metallic_roughness_texture"] = slot
-    slot = tex_slot(mat.get("normalTexture"))
+    normal_tex = mat.get("normalTexture")
+    slot = tex_slot(normal_tex)
     if slot:
         m["normal_texture"] = slot
     slot = tex_slot(mat.get("occlusionTexture"))
@@ -228,6 +229,27 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
     slot = tex_slot(mat.get("emissiveTexture"))
     if slot:
         m["emissive_texture"] = slot
+    # KHR_texture_transform（plans/19 PBR 正确性）：基础贴图一组 UV，法线单独一组。
+    # 只写非默认值（旧无变换资产逐字节不变）；rotation 暂不支持（引擎 UV 变换无旋转项）。
+    def tex_transform(tinfo):
+        t = ((tinfo or {}).get("extensions") or {}).get("KHR_texture_transform")
+        return t if isinstance(t, dict) else None
+
+    def put_uv(prefix, tr):
+        if not tr:
+            return
+        sc = [float(x) for x in tr.get("scale", [1.0, 1.0])]
+        of = [float(x) for x in tr.get("offset", [0.0, 0.0])]
+        if sc != [1.0, 1.0]:
+            m[prefix + "_scale"] = {"x": sc[0], "y": sc[1]}
+        if of != [0.0, 0.0]:
+            m[prefix + "_offset"] = {"x": of[0], "y": of[1]}
+        if abs(float(tr.get("rotation", 0.0))) > 1e-9:
+            print(f"gltf_import: material '{m.get('name', '')}' 的 KHR_texture_transform.rotation "
+                  f"暂不支持（忽略）", file=sys.stderr)
+
+    put_uv("uv", tex_transform(pbr_tex))
+    put_uv("normal_uv", tex_transform(normal_tex))
     # clearcoat 法线贴图：引擎有独立槽（clearcoat_normal_texture + scale）；clearcoatTexture /
     # clearcoatRoughnessTexture 无对应槽，忽略（与迁移前一致，不搬运其 PNG）。
     if "KHR_materials_clearcoat" in exts:

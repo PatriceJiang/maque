@@ -509,6 +509,7 @@ struct Engine {
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
     int32_t load_mesh(const std::string& path);                // M4c：glTF 导入的 .mesh.json → 网格句柄
     int load_texture_srgb(const std::string& path);            // M4g：albedo 贴图按 sRGB 采样（RGBA8_SRGB）
+    int load_texture_mips(const std::string& path);            // plans/19：线性数据贴图 + CPU mip 链（抗锯齿）
     bool load_material(const std::string& ref, scn::SpriteMaterial& out);
     void main_loop(const std::string& frames_dir, const std::string& name);
     /* M2 3D：扫描 render.* 组件 + 上传内建 cube；每帧提取 frame3d 数据（只读）。 */
@@ -690,8 +691,45 @@ int Engine::load_texture(const std::string& path) {
     return id;
 }
 
+/* plans/19：CPU box-filter mip 链（RGBA8，各层连续存放）。
+ * 无 mip 时高频贴图（布纹/车漆细节）在远处会强烈闪烁/摩尔纹——PBR 正确性的重要一环。 */
+static std::vector<uint8_t> build_mip_chain(const uint8_t* src, int w0, int h0, int& levels) {
+    levels = 0;
+    std::vector<uint8_t> out;
+    if (!src || w0 <= 0 || h0 <= 0) return out;
+    out.assign(src, src + (size_t)w0 * (size_t)h0 * 4u);
+    levels = 1;
+    int w = w0, h = h0;
+    size_t prev_off = 0;
+    while (w > 1 || h > 1) {
+        const int nw = std::max(1, w / 2), nh = std::max(1, h / 2);
+        const size_t dst_off = out.size();
+        out.resize(dst_off + (size_t)nw * (size_t)nh * 4u);
+        for (int y = 0; y < nh; ++y) {
+            for (int x = 0; x < nw; ++x) {
+                int acc[4] = { 0, 0, 0, 0 };
+                for (int dy = 0; dy < 2; ++dy) {
+                    for (int dx = 0; dx < 2; ++dx) {
+                        const int sx = std::min(w - 1, x * 2 + dx);
+                        const int sy = std::min(h - 1, y * 2 + dy);
+                        const uint8_t* p = &out[prev_off + ((size_t)sy * (size_t)w + (size_t)sx) * 4u];
+                        for (int c = 0; c < 4; ++c) acc[c] += p[c];
+                    }
+                }
+                uint8_t* q = &out[dst_off + ((size_t)y * (size_t)nw + (size_t)x) * 4u];
+                for (int c = 0; c < 4; ++c) q[c] = (uint8_t)((acc[c] + 2) / 4);
+            }
+        }
+        prev_off = dst_off;
+        w = nw;
+        h = nh;
+        ++levels;
+    }
+    return out;
+}
+
 /* M4g：PBR albedo 贴图必须按 sRGB 采样（文件存 sRGB、shader 需要线性）——
- * create_texture2 的 RGBA8_SRGB；MR/AO/normal 是线性数据，仍走 load_texture_ref（RGBA8Unorm）。 */
+ * create_texture2 的 RGBA8_SRGB；MR/AO/normal 是线性数据，仍走 load_texture_mips（RGBA8Unorm）。 */
 int Engine::load_texture_srgb(const std::string& path) {
     /* builtin: 是程序化纹理（checker 等），沿用既有 UNorm 路径，不做 sRGB 解码 */
     if (path.rfind("builtin:", 0) == 0) return load_texture_ref(path);
@@ -709,17 +747,53 @@ int Engine::load_texture_srgb(const std::string& path) {
     mq_vfs_free(data);
     if (rc != 0) { std::print("runtime: srgb decode failed '{}': {}\n", path, err); return -1; }
     int32_t id = -1;
-    if (rapi && rself && rapi->create_texture2) {
+    if (rapi && rself && rapi->create_texture2 && w > 0 && h > 0) {
+        int levels = 1;
+        std::vector<uint8_t> mips = build_mip_chain(rgba, (int)w, (int)h, levels);
         mq_renderer_texture_desc td{};
         td.width = (int32_t)w; td.height = (int32_t)h;
         td.pixel_format = 1;                  /* 1 = RGBA8_SRGB */
-        td.kind = 0; td.mip_levels = 1;
+        td.kind = 0; td.mip_levels = levels;
         td.filter = 1; td.wrap_u = 0; td.wrap_v = 0;
-        td.data = rgba; td.data_size = (uint64_t)w * h * 4;
+        td.data = mips.data(); td.data_size = (uint64_t)mips.size();
         if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
     }
     mq_image_free(rgba);
     if (id < 0) std::print("runtime: srgb texture upload failed '{}'\n", path);
+    tex_cache[key] = id;
+    return id;
+}
+
+/* plans/19：线性数据贴图（MR/AO/normal/clearcoat normal）+ CPU mip 链；采样 RGBA8Unorm。 */
+int Engine::load_texture_mips(const std::string& path) {
+    if (path.rfind("builtin:", 0) == 0) return load_texture_ref(path);
+    const std::string key = "mip:" + path;
+    auto it = tex_cache.find(key);
+    if (it != tex_cache.end()) return it->second;
+    void* data = nullptr; size_t n = 0;
+    if (!vfs || mq_vfs_read(vfs, path.c_str(), &data, &n) != 0) {
+        std::print("runtime: texture not found '{}'\n", path);
+        return -1;
+    }
+    uint8_t* rgba = nullptr; uint32_t w = 0, h = 0;
+    char err[128] = { 0 };
+    int rc = mq_image_decode(data, n, &rgba, &w, &h, err, sizeof err);
+    mq_vfs_free(data);
+    if (rc != 0) { std::print("runtime: decode failed '{}': {}\n", path, err); return -1; }
+    int32_t id = -1;
+    if (rapi && rself && rapi->create_texture2 && w > 0 && h > 0) {
+        int levels = 1;
+        std::vector<uint8_t> mips = build_mip_chain(rgba, (int)w, (int)h, levels);
+        mq_renderer_texture_desc td{};
+        td.width = (int32_t)w; td.height = (int32_t)h;
+        td.pixel_format = 0;                  /* 0 = RGBA8（线性数据） */
+        td.kind = 0; td.mip_levels = levels;
+        td.filter = 1; td.wrap_u = 0; td.wrap_v = 0;
+        td.data = mips.data(); td.data_size = (uint64_t)mips.size();
+        if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
+    }
+    mq_image_free(rgba);
+    if (id < 0) id = load_texture(path);      /* create_texture2 不可用时退回无 mip 路径 */
     tex_cache[key] = id;
     return id;
 }
@@ -1189,6 +1263,10 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             mq_renderer_pbr_material mat{};
             for (int ti = 0; ti < 5; ++ti) mat.textures[ti] = -1;   /* -1 = 未给贴图 → 渲染器用 1×1 白 */
             for (int ti = 0; ti < 3; ++ti) mat.textures2[ti] = -1;  /* matcap / gradient / clearcoat-normal */
+            for (int ti = 0; ti < 2; ++ti) {
+                mat.uv_scale[ti] = 1.0F; mat.uv_offset[ti] = 0.0F;       /* KHR_texture_transform 缺省 */
+                mat.normal_uv_scale[ti] = 1.0F; mat.normal_uv_offset[ti] = 0.0F;
+            }
             mat.shading_model = 0;                                  /* Standard（与旧 PbrMaterial 语义一致） */
             mat.side = 2;                                           /* Double：兼容旧 cullMode=None */
             mat.opacity = 1.0F;
@@ -1259,6 +1337,27 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 mat.toon_steps = (int32_t)read_num(dmat, base, "toon_steps", 3.0F);
                 mat.depth_packing = (int32_t)read_num(dmat, base, "depth_packing", 0.0F);
                 if (read_num(dmat, base, "flat_shading", 0.0F) >= 0.5F) mat.flags2 |= 1;
+                /* KHR_texture_transform（plans/19）：基础贴图用 uv_scale/uv_offset，法线单独一组 */
+                if (const mq_field_desc* f = mq_reflect_field(dmat, "uv_scale")) {
+                    math::Vec2 v{ 1.0F, 1.0F };
+                    std::memcpy(&v, base + f->offset, sizeof v);
+                    mat.uv_scale[0] = v.x; mat.uv_scale[1] = v.y;
+                }
+                if (const mq_field_desc* f = mq_reflect_field(dmat, "uv_offset")) {
+                    math::Vec2 v{ 0.0F, 0.0F };
+                    std::memcpy(&v, base + f->offset, sizeof v);
+                    mat.uv_offset[0] = v.x; mat.uv_offset[1] = v.y;
+                }
+                if (const mq_field_desc* f = mq_reflect_field(dmat, "normal_uv_scale")) {
+                    math::Vec2 v{ 1.0F, 1.0F };
+                    std::memcpy(&v, base + f->offset, sizeof v);
+                    mat.normal_uv_scale[0] = v.x; mat.normal_uv_scale[1] = v.y;
+                }
+                if (const mq_field_desc* f = mq_reflect_field(dmat, "normal_uv_offset")) {
+                    math::Vec2 v{ 0.0F, 0.0F };
+                    std::memcpy(&v, base + f->offset, sizeof v);
+                    mat.normal_uv_offset[0] = v.x; mat.normal_uv_offset[1] = v.y;
+                }
                 /* M4：PBR 贴图槽（albedo / metallic-roughness / occlusion）；normal 在 M5（需要切线空间） */
                 if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {
                     if (!texref->empty()) {
@@ -1270,7 +1369,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "metallic_roughness_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_ref(*texref);
+                        const int tid = load_texture_mips(*texref);
                         if (tid >= 0) mat.textures[1] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr mr texture '{}' -> {}\n", *texref, tid);
@@ -1278,7 +1377,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "occlusion_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_ref(*texref);
+                        const int tid = load_texture_mips(*texref);
                         if (tid >= 0) mat.textures[2] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr ao texture '{}' -> {}\n", *texref, tid);
@@ -1286,7 +1385,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "normal_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_ref(*texref);
+                        const int tid = load_texture_mips(*texref);
                         if (tid >= 0) mat.textures[3] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr normal texture '{}' -> {}\n", *texref, tid);
@@ -1294,7 +1393,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "emissive_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_ref(*texref);
+                        const int tid = load_texture_srgb(*texref);
                         if (tid >= 0) mat.textures[4] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr emissive texture '{}' -> {}\n", *texref, tid);
@@ -1319,7 +1418,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "clearcoat_normal_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_ref(*texref);
+                        const int tid = load_texture_mips(*texref);
                         if (tid >= 0) { mat.textures2[2] = tid; mat.flags2 |= 8; }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: clearcoat normal texture '{}' -> {}\n", *texref, tid);
@@ -1685,18 +1784,43 @@ void Engine::step_frame() {
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
         fr.env.sky_mode = 1;
-        /* 影棚环境光（中性偏冷、比早先 0.18/0.20/0.24 ×1.0 更亮，作为环境漫反射/镜面近似） */
-        /* 环境光由场景控制（scn.Scene.env_color / env_intensity；默认 = 引擎此前硬编码值） */
+        /* 环境光：scn.Scene.env_color/env_intensity + analytic studio IBL 参数（plans/19）。
+         * env_sky_color/env_ground_color 全 0 = 由 env_color 派生（旧场景不改也有半球环境）。 */
+        float env_col[3] = { 0.27F, 0.28F, 0.31F };
+        float env_int = 1.6F;
+        float sky_col[3] = { 0.0F, 0.0F, 0.0F };
+        float ground_col[3] = { 0.0F, 0.0F, 0.0F };
+        float env_hi = 1.0F;
+        float env_rot_deg = 0.0F;
         if (scene) {
-            fr.env.env_color[0] = scene->desc.env_color.r;
-            fr.env.env_color[1] = scene->desc.env_color.g;
-            fr.env.env_color[2] = scene->desc.env_color.b;
-            fr.env.intensity = scene->desc.env_intensity;
-        } else {
-            fr.env.env_color[0] = 0.27F; fr.env.env_color[1] = 0.28F;
-            fr.env.env_color[2] = 0.31F; fr.env.intensity = 1.6F;
+            env_col[0] = scene->desc.env_color.r;
+            env_col[1] = scene->desc.env_color.g;
+            env_col[2] = scene->desc.env_color.b;
+            env_int = scene->desc.env_intensity;
+            sky_col[0] = scene->desc.env_sky_color.r;
+            sky_col[1] = scene->desc.env_sky_color.g;
+            sky_col[2] = scene->desc.env_sky_color.b;
+            ground_col[0] = scene->desc.env_ground_color.r;
+            ground_col[1] = scene->desc.env_ground_color.g;
+            ground_col[2] = scene->desc.env_ground_color.b;
+            env_hi = scene->desc.env_highlight;
+            env_rot_deg = scene->desc.env_rotation;
         }
+        const bool sky_zero = (sky_col[0] == 0.0F && sky_col[1] == 0.0F && sky_col[2] == 0.0F);
+        const bool ground_zero = (ground_col[0] == 0.0F && ground_col[1] == 0.0F && ground_col[2] == 0.0F);
+        for (int i = 0; i < 3; ++i) {
+            if (sky_zero) sky_col[i] = env_col[i] * 1.15F;
+            if (ground_zero) ground_col[i] = env_col[i] * 0.45F;
+            fr.env.env_color[i] = env_col[i];
+            fr.env.env_sky_color[i] = sky_col[i];
+            fr.env.env_ground_color[i] = ground_col[i];
+        }
+        fr.env.env_sky_color[3] = 1.0F;
+        fr.env.env_ground_color[3] = 1.0F;
         fr.env.env_color[3] = 1.0F;
+        fr.env.intensity = env_int;
+        fr.env.env_highlight = env_hi;
+        fr.env.env_rotation = env_rot_deg * 3.14159265F / 180.0F;
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
         fr.out_size = (uint32_t)pixels.size();

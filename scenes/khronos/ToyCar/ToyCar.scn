@@ -11,9 +11,9 @@
      "type": "scene.Transform3D",
      "local": {
       "position": {
-       "x": -0.04265100707228857,
-       "y": 0.01854480451448513,
-       "z": 0.0776604041689142
+       "x": -0.0215,
+       "y": 0.0094,
+       "z": 0.0392
       },
       "rotation": {
        "x": -0.22359477967934147,
@@ -28,9 +28,9 @@
      "near": 0.001,
      "far": 11.094343946416869,
      "clear_color": {
-      "r": 0.2,
-      "g": 0.2,
-      "b": 0.225,
+      "r": 0.56,
+      "g": 0.55,
+      "b": 0.54,
       "a": 1.0
      }
     }
@@ -91,6 +91,7 @@
     {
      "type": "asset.PbrMaterial",
      "name": "ToyCar",
+     "shading_model": 1,
      "base_color": {
       "r": 1.0,
       "g": 1.0,
@@ -113,7 +114,10 @@
      "occlusion_texture": "textures/image3.png",
      "emissive_texture": "textures/image1.png",
      "clearcoat": 1.0,
-     "clearcoat_roughness": 0.06
+     "clearcoat_roughness": 0.05,
+     "specular_intensity": 1.0,
+     "ior": 1.5,
+     "env_intensity": 1.0
     }
    ]
   },
@@ -147,10 +151,11 @@
     {
      "type": "asset.PbrMaterial",
      "name": "Fabric",
+     "shading_model": 1,
      "base_color": {
-      "r": 0.15,
-      "g": 0.15,
-      "b": 0.15,
+      "r": 0.9,
+      "g": 0.9,
+      "b": 0.9,
       "a": 1
      },
      "metallic": 0.0,
@@ -165,7 +170,13 @@
      "alpha_cutoff": 0.5,
      "base_color_texture": "textures/image6.png",
      "normal_texture": "textures/image4.png",
-     "occlusion_texture": "textures/image5.png"
+     "occlusion_texture": "textures/image5.png",
+     "uv_scale": { "x": 3.0, "y": 3.0 },
+     "normal_uv_scale": { "x": 3.0, "y": 3.0 },
+     "sheen": 0.9,
+     "sheen_roughness": 0.45,
+     "sheen_color": {"x": 0.9, "y": 0.28, "z": 0.22},
+     "env_intensity": 1.0
     }
    ]
   },
@@ -199,31 +210,40 @@
     {
      "type": "asset.PbrMaterial",
      "name": "Glass",
+     "shading_model": 1,
      "base_color": {
-      "r": 0.3,
+      "r": 0.55,
       "g": 0.8,
-      "b": 0.3,
+      "b": 0.62,
       "a": 1
      },
      "metallic": 0.0,
-     "roughness": 0.0,
+     "roughness": 0.04,
      "emissive": {
       "x": 0.0,
       "y": 0.0,
       "z": 0.0
      },
      "double_sided": false,
-     "alpha_mode": 0,
-     "alpha_cutoff": 0.5
+     "alpha_mode": 2,
+     "opacity": 0.35,
+     "alpha_cutoff": 0.5,
+     "specular_intensity": 1.0,
+     "ior": 1.5,
+     "env_intensity": 1.2
     }
    ]
   }
  ],
  "env_color": {
-  "r": 0.33,
-  "g": 0.33,
-  "b": 0.36,
+  "r": 0.42,
+  "g": 0.44,
+  "b": 0.48,
   "a": 1.0
  },
- "env_intensity": 2.0
+ "env_intensity": 1.25,
+ "env_sky_color": { "r": 0.50, "g": 0.53, "b": 0.60, "a": 1.0 },
+ "env_ground_color": { "r": 0.18, "g": 0.16, "b": 0.15, "a": 1.0 },
+ "env_highlight": 3.2,
+ "env_rotation": 30.0
 }

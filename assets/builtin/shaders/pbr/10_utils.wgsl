@@ -78,15 +78,23 @@ fn view_normal(n: vec3f) -> vec3f {
   return normalize((cam.view * vec4f(n, 0.0)).xyz);
 }
 
-/* ACES + exposure + gamma：Standard/Physical/Basic/Lambert/Phong/Toon/Matcap 用。 */
-fn tone_output(color: vec3f, alpha: f32) -> vec4f {
-  let c = aces_tonemap(color * cam.eye.w);
-  return vec4f(pow(c, vec3f(1.0 / 2.2)), alpha);
+/* 精确 sRGB OETF（three.js 输出色彩空间转换；旧版用 pow(1/2.2) 近似）。 */
+fn srgb_encode(c: vec3f) -> vec3f {
+  let x = clamp(c, vec3f(0.0), vec3f(1.0));
+  let lo = x * 12.92;
+  let hi = 1.055 * pow(x, vec3f(1.0 / 2.4)) - 0.055;
+  return select(hi, lo, x <= vec3f(0.0031308));
 }
 
-/* 直接 gamma（不做 tonemap）：Normal/Depth/Shadow 保持可预测的可视化数值。 */
+/* ACES + exposure + sRGB：Standard/Physical/Basic/Lambert/Phong/Toon/Matcap 用。 */
+fn tone_output(color: vec3f, alpha: f32) -> vec4f {
+  let c = aces_tonemap(color * cam.eye.w);
+  return vec4f(srgb_encode(c), alpha);
+}
+
+/* 直接 sRGB（不做 tonemap）：Normal/Shadow 保持可预测的可视化数值。 */
 fn output_direct(color: vec3f, alpha: f32) -> vec4f {
-  return vec4f(pow(clamp(color, vec3f(0.0), vec3f(1.0)), vec3f(1.0 / 2.2)), alpha);
+  return vec4f(srgb_encode(color), alpha);
 }
 
 /* 深度打包（MeshDepthMaterial.depthPacking = RGBA；与 three.js packDepthToRGBA 同思路）。 */
@@ -102,4 +110,58 @@ fn iridescence_tint(thickness_nm: f32, cos_theta: f32) -> vec3f {
   return vec3f(0.5 + 0.5 * cos(phase),
                0.5 + 0.5 * cos(phase + 2.0943951),
                0.5 + 0.5 * cos(phase + 4.1887902));
+}
+
+/* ---- analytic studio IBL（plans/19 PBR 正确性）----
+ * 引擎暂无 HDRI/PMREM 管线，这里用「天空-地面渐变 + 3 个软光箱」解析近似：
+ * 漫反射用半球辐照度，镜面用反射方向采样并按 roughness 模糊 + Karis env BRDF 近似。
+ * 数据来自 scn.Scene.env_sky_color/env_ground_color/env_highlight/env_rotation（gfx 已乘强度）。
+ */
+fn env_avg_sky_ground(d: vec3f) -> vec3f {
+  let t = smoothstep(-0.10, 0.55, d.y);
+  return mix(cam.env3.rgb, cam.env2.rgb, t);
+}
+
+fn env_rotate_y(d: vec3f, a: f32) -> vec3f {
+  let c = cos(a);
+  let s = sin(a);
+  return vec3f(c * d.x + s * d.z, d.y, -s * d.x + c * d.z);
+}
+
+fn env_softbox(d: vec3f, center: vec3f, sharp: f32) -> f32 {
+  return pow(clamp(dot(d, center), 0.0, 1.0), sharp);
+}
+
+/* 环境镜面辐（roughness 越大越模糊；软光箱随粗糙度衰减）。 */
+fn env_radiance(d0: vec3f, rough: f32) -> vec3f {
+  let blur = rough * rough;
+  let d = normalize(mix(d0, vec3f(0.0, 1.0, 0.0), blur * 0.55));
+  let r = env_rotate_y(d, cam.env3.w);
+  var c = env_avg_sky_ground(r);
+  let sharp = mix(140.0, 6.0, rough);
+  let amp = cam.env2.w * (1.0 - 0.8 * rough);
+  c += env_softbox(r, normalize(vec3f(-0.55, 0.78, 0.55)), sharp) * vec3f(1.0, 0.97, 0.92) * amp * 3.6;
+  c += env_softbox(r, normalize(vec3f(-0.30, 0.84, 0.62)), sharp * 0.8) * vec3f(1.0, 0.98, 0.95) * amp * 1.8;
+  c += env_softbox(r, normalize(vec3f(0.80, 0.30, 0.45)), sharp * 0.55) * vec3f(0.85, 0.92, 1.0) * amp * 1.4;
+  c += env_softbox(r, normalize(vec3f(0.05, 0.25, -0.95)), sharp * 0.7) * vec3f(0.92, 0.95, 1.0) * amp * 1.0;
+  return c;
+}
+
+/* 环境漫反射辐照度（半球积分近似 + 主光箱少量贡献）。 */
+fn env_irradiance(n: vec3f) -> vec3f {
+  let t = n.y * 0.5 + 0.5;
+  var c = mix(cam.env3.rgb, cam.env2.rgb, t);
+  let r = env_rotate_y(n, cam.env3.w);
+  c += env_softbox(r, normalize(vec3f(-0.55, 0.78, 0.55)), 3.0) * cam.env2.w * 0.35 * vec3f(1.0, 0.97, 0.92);
+  return c;
+}
+
+/* Karis 解析 env BRDF（UE4 近似）：镜面环境项 = env * (f0*A + B)。 */
+fn env_brdf_approx(f0: vec3f, rough: f32, n_dot_v: f32) -> vec3f {
+  let c0 = vec4f(-1.0, -0.0275, -0.572, 0.022);
+  let c1 = vec4f(1.0, 0.0425, 1.04, -0.04);
+  let r = rough * c0 + c1;
+  let a004 = min(r.x * r.x, exp2(-9.28 * n_dot_v)) * r.x + r.y;
+  let ab = vec2f(-1.04, 1.04) * a004 + r.zw;
+  return f0 * ab.x + ab.y;
 }

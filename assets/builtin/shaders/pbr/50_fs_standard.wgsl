@@ -5,7 +5,7 @@
   let f0 = mix(vec3f(0.04), s.base, s.metallic);
   var n_cc = s.n;
   if ((flags2_bits() & 8) != 0) {
-    n_cc = sample_clearcoat_normal(normalize(in.n), in.w, in.uv);
+    n_cc = sample_clearcoat_normal(normalize(in.n), in.w, in.uv * dr.uv_normal.xy + dr.uv_normal.zw);
   }
   var color = light_standard(s, f0, n_cc, dr.clearcoat.x, dr.clearcoat.y, dr.phys0.w);
   color = color + s.emissive;

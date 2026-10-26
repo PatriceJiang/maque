@@ -1769,6 +1769,10 @@ struct PbrMaterial {
     std::string matcap_texture = "";
     std::string gradient_texture = "";
     std::string clearcoat_normal_texture = "";
+    math::Vec2 uv_scale = {1.0F, 1.0F};
+    math::Vec2 uv_offset = {0.0F, 0.0F};
+    math::Vec2 normal_uv_scale = {1.0F, 1.0F};
+    math::Vec2 normal_uv_offset = {0.0F, 0.0F};
 };
 
 struct SkeletonData {
@@ -2373,6 +2377,10 @@ struct Scene {
     float eye_sep = 0.0F;
     math::Color env_color = {0.27F, 0.28F, 0.31F, 1.0F};
     float env_intensity = 1.6F;
+    math::Color env_sky_color = {0.0F, 0.0F, 0.0F, 1.0F};
+    math::Color env_ground_color = {0.0F, 0.0F, 0.0F, 1.0F};
+    float env_highlight = 1.0F;
+    float env_rotation = 0.0F;
     float gravity_y = -900.0F;
     float restitution = 0.86F;
 };

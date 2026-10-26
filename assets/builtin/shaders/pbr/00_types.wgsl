@@ -23,6 +23,8 @@ struct Camera {
   light_vp: mat4x4f,    // 方向光阴影 view*proj
   shadow_params: vec4f, // x=bias y=1/1024 z=enabled
   view: mat4x4f,        // 视矩阵（matcap 用 view-space 法线）
+  env2: vec4f,          // xyz=天空色（已乘环境强度）w=软光箱强度
+  env3: vec4f,          // xyz=地面色（已乘环境强度）w=环境旋转（弧度）
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
 @group(0) @binding(1) var shadow_map: texture_depth_2d;
@@ -43,6 +45,8 @@ struct Draw {
   misc: vec4f,         // x=depth_packing y=normal_scale_y z=clearcoat_normal_scale w=toon_steps
   specular: vec4f,     // rgb = specular color（Phong/Physical）
   sheen_color: vec4f,  // rgb = sheen color（Physical）
+  uv: vec4f,           // xy = uv_scale, zw = uv_offset（albedo/MR/AO/emissive，KHR_texture_transform）
+  uv_normal: vec4f,    // xy = 法线贴图 uv_scale, zw = uv_offset
 };
 @group(1) @binding(0) var<uniform> dr: Draw;
 @group(1) @binding(1) var albedo_tex: texture_2d<f32>;

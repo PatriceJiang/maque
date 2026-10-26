@@ -168,6 +168,8 @@ typedef struct mq_renderer_pbr_material {
     int32_t toon_steps;
     int32_t depth_packing;
     int32_t textures2[3];
+    float normal_uv_scale[2];
+    float normal_uv_offset[2];
 } mq_renderer_pbr_material;
 
 typedef struct mq_renderer_draw3d {
@@ -188,6 +190,10 @@ typedef struct mq_renderer_environment {
     float env_color[4];
     int32_t env_texture;
     float intensity;
+    float env_sky_color[4];
+    float env_ground_color[4];
+    float env_highlight;
+    float env_rotation;
 } mq_renderer_environment;
 
 typedef struct mq_renderer_post {

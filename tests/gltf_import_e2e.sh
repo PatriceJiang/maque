@@ -125,6 +125,11 @@ for k in ("clearcoat", "clearcoat_roughness", "clearcoat_normal_texture", "clear
 # 贴图搬运：内嵌 1x1 PNG 原样落盘
 png = open(d + "/textures/image0.png", "rb").read()
 assert png[:8] == b"\x89PNG\r\n\x1a\n", png[:8]
+# KHR_texture_transform（plans/19）：unlit 的 baseColorTexture scale=[2,3] offset=[0.125,0.25]
+assert u.get("uv_scale") == {"x": 2.0, "y": 3.0}, u.get("uv_scale")
+assert u.get("uv_offset") == {"x": 0.125, "y": 0.25}, u.get("uv_offset")
+# 无变换的 physical 材质不写 uv 字段（非默认才写）
+assert "uv_scale" not in mat and "normal_uv_scale" not in mat
 print("gltf_import_e2e: 扩展材质映射 OK")
 PY
 [ $? -eq 0 ] || exit 1

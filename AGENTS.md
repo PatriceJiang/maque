@@ -136,7 +136,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   **清漆层（M5e）**：`asset.PbrMaterial.clearcoat/clearcoat_roughness`（KHR_materials_clearcoat 对齐）——
   独立 F0=0.04 的窄高光（roughness 独立于底材），方向光逐灯叠加。
   **阴影（M5c）**：方向光 **1024² shadow map + 3×3 PCF**（`MAQUE_SHADOW=0` 可关闭用于对照）；
-  shadow map 仅作深度附件、采样用独立 view（camera uniform 784B：+light_vp/shadow_params +view 矩阵）。
+  shadow map 仅作深度附件、采样用独立 view（camera uniform 当前 816B：+light_vp/shadow_params+view+env IBL）。
   样例 `scenes/pbr/shadows.scn`，e2e ⑨ 用开/关同场景像素差断言。
   **多光源（M5b）**：`render.Light.type` 支持 **Directional(0)/Point(1)/Spot(2)**，最多 8 盏同时生效（点光/聚光带范围衰减与锥角平滑衰减；相机 uniform 640B：8×{pos,dir,color,params}）；样例 `scenes/pbr/lights.scn`，e2e ⑧ 断言红点光/绿聚光的投影差异。
   **M4d 贴图槽**：`base_color_texture` / `metallic_roughness_texture`（G=roughness、B=metallic）/
@@ -149,8 +149,12 @@ tools\win\build.cmd -Sanitize address -RunTests
   追加字段：`opacity`/`side`/`flat_shading`/`emissive_intensity`/`env_intensity`/`normal_scale_y`/`specular`/
   `shininess`/`specular_intensity`/`ior`/`sheen`(+color/roughness)/`iridescence`(+ior/thickness)/
   `anisotropy`(+rotation)/`clearcoat_normal_scale`/`toon_steps`/`depth_packing` + 3 个贴图路径
-  （`matcap_texture`/`gradient_texture`/`clearcoat_normal_texture`）。材质 uniform **256B（64 floats）**，
-  camera uniform **784B（+view 矩阵，matcap 用 view-space 法线）**；贴图槽 8 张。
+  （`matcap_texture`/`gradient_texture`/`clearcoat_normal_texture`）+ KHR_texture_transform
+  （`uv_scale`/`uv_offset`、`normal_uv_scale`/`normal_uv_offset`）。材质 uniform **288B（72 floats）**，
+  camera uniform **816B（+view 矩阵 + analytic studio IBL 参数）**；贴图槽 8 张。
+  **环境光照**：无 HDRI/PMREM 时用 analytic studio IBL（天空-地面渐变 + 软光箱 + Karis env BRDF），
+  场景用 `scn.Scene.env_sky_color/env_ground_color/env_highlight/env_rotation`（0 色 = 由 env_color 派生）调控；
+  输出用精确 sRGB OETF；PBR 贴图运行时生成 CPU mip 链（抗闪/摩尔纹）。
   内置程序化纹理 `builtin:/textures/toon_ramp`、`builtin:/textures/matcap_studio`。
   样例 `scenes/pbr/material_models.scn`（9 个网格模型）、`material_shadow.scn`（shadow catcher）、
   `material_physical.scn`；测试 `ctest -R 'material_.*_e2e'`。glTF importer 支持

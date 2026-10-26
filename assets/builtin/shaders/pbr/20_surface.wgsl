@@ -32,20 +32,23 @@ fn surface_common(in: VOut) -> Surface {
   var s: Surface;
   s.uv = in.uv;
   s.w = in.w;
-  let alb_s = textureSample(albedo_tex, albedo_smp, in.uv);
+  /* KHR_texture_transform：基础贴图一组 UV、法线贴图单独一组（glTF 允许各贴图不同） */
+  let uv = in.uv * dr.uv.xy + dr.uv.zw;
+  let uv_n = in.uv * dr.uv_normal.xy + dr.uv_normal.zw;
+  let alb_s = textureSample(albedo_tex, albedo_smp, uv);
   s.base = dr.base_color.rgb * alb_s.rgb;
   s.alpha = clamp(dr.base_color.a * dr.model_params.w * alb_s.a, 0.0, 1.0);
-  let mr_s = textureSample(mr_tex, albedo_smp, in.uv);
+  let mr_s = textureSample(mr_tex, albedo_smp, uv);
   s.metallic = clamp(dr.mrp.x * mr_s.b, 0.0, 1.0);
   s.rough = clamp(dr.mrp.y * mr_s.g, 0.02, 1.0);
-  s.ao = clamp(dr.mrp.w * textureSample(ao_tex, albedo_smp, in.uv).r, 0.0, 1.0);
-  s.emissive = dr.emissive.rgb * dr.emissive.w * textureSample(emissive_tex, albedo_smp, in.uv).rgb;
+  s.ao = clamp(dr.mrp.w * textureSample(ao_tex, albedo_smp, uv).r, 0.0, 1.0);
+  s.emissive = dr.emissive.rgb * dr.emissive.w * textureSample(emissive_tex, albedo_smp, uv).rgb;
 
   var n_geo = normalize(in.n);
   if ((flags2_bits() & 1) != 0) {
     n_geo = flat_normal(in.w);
   }
-  s.n = sample_surface_normal(n_geo, in.w, in.uv);
+  s.n = sample_surface_normal(n_geo, in.w, uv_n);
   return s;
 }
 

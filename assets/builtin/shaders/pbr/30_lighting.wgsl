@@ -58,8 +58,19 @@ fn light_standard(s: Surface, f0: vec3f, n_cc: vec3f, cc_factor: f32, cc_roughne
     }
     color = color + (kdl * s.base / PI + sp + cc) * L.color.rgb * ndl * atten * shade;
   }
-  let spec_amb = mix(vec3f(0.04), s.base, s.metallic) * cam.ambient.rgb * (1.0 - s.rough) * 0.35 * env_intensity;
-  color = color + cam.ambient.rgb * s.base * s.ao * (1.0 - s.metallic) * env_intensity + spec_amb * s.ao;
+  /* analytic studio IBL：漫反射半球 + 镜面环境（Karis env BRDF）+ 清漆环境反射（plans/19）。 */
+  let env_i = env_irradiance(s.n);
+  let env_f = env_brdf_approx(f0, s.rough, n_dot_v);
+  let refl = reflect(-v, s.n);
+  var env_c = env_i * s.base * (1.0 - s.metallic) * s.ao
+            + env_radiance(refl, s.rough) * env_f * mix(1.0, s.ao, 0.7);
+  let cc_f = clamp(cc_factor, 0.0, 1.0);
+  if (cc_f > 0.001) {
+    let cc_r = clamp(cc_roughness, 0.02, 1.0);
+    let refl_cc = reflect(-v, normalize(n_cc));
+    env_c = env_c + env_radiance(refl_cc, cc_r) * env_brdf_approx(vec3f(0.04), cc_r, n_dot_v) * cc_f;
+  }
+  color = color + env_c * env_intensity;
   return color;
 }
 
@@ -97,7 +108,7 @@ fn light_lambert(s: Surface, env_intensity: f32) -> vec3f {
     }
     color = color + (s.base / PI) * L.color.rgb * ndl * atten * shade;
   }
-  color = color + cam.ambient.rgb * s.base * s.ao * env_intensity;
+  color = color + env_irradiance(s.n) * s.base * s.ao * env_intensity;
   return color;
 }
 
@@ -139,8 +150,10 @@ fn light_phong(s: Surface, spec_color: vec3f, shininess: f32, env_intensity: f32
     let spec = spec_color * pow(max(dot(s.n, hv), 0.0), sh) * (sh + 8.0) / (8.0 * PI);
     color = color + (s.base / PI + spec) * L.color.rgb * ndl * atten * shade;
   }
-  let spec_amb = spec_color * cam.ambient.rgb * 0.2 * env_intensity;
-  color = color + cam.ambient.rgb * s.base * s.ao * env_intensity + spec_amb * s.ao;
+  let n_dot_v = max(dot(s.n, v), 1e-4);
+  let refl = reflect(-v, s.n);
+  let spec_env = env_radiance(refl, 0.3) * env_brdf_approx(spec_color, 0.3, n_dot_v);
+  color = color + env_irradiance(s.n) * s.base * s.ao * env_intensity + spec_env * env_intensity * 0.35;
   return color;
 }
 
@@ -183,6 +196,6 @@ fn light_toon(s: Surface, steps: i32, has_gradient: bool, env_intensity: f32) ->
     }
     color = color + (s.base / PI) * L.color.rgb * lit * atten * shade;
   }
-  color = color + cam.ambient.rgb * s.base * s.ao * env_intensity * 0.7;
+  color = color + env_irradiance(s.n) * s.base * s.ao * env_intensity * 0.6;
   return color;
 }

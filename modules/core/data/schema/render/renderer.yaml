@@ -178,6 +178,9 @@
         - { name: toon_steps,               type: int32_t }
         - { name: depth_packing,            type: int32_t }
         - { name: textures2,                type: "int32_t[3]" } # matcap / gradient / clearcoat_normal（-1=无）
+        # KHR_texture_transform（plans/19）：法线贴图单独一组 UV 变换（其余贴图复用旧 uv_scale/uv_offset）
+        - { name: normal_uv_scale,          type: "float[2]" }
+        - { name: normal_uv_offset,         type: "float[2]" }
     - record: draw3d
       fields:
         - { name: mesh,          type: int32_t }
@@ -196,6 +199,11 @@
         - { name: env_color,   type: "float[4]" }
         - { name: env_texture, type: int32_t }
         - { name: intensity,   type: float }
+        # plans/19：analytic studio IBL（天空/地面渐变 + 软光箱高光；env_rotation 弧度，runtime 从场景度转换）
+        - { name: env_sky_color,    type: "float[4]" }
+        - { name: env_ground_color, type: "float[4]" }
+        - { name: env_highlight,    type: float }
+        - { name: env_rotation,     type: float }
     - record: post
       fields:
         - { name: exposure, type: float }

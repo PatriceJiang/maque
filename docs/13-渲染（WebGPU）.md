@@ -153,6 +153,12 @@
 fragment 入口消费。
 
 - gfx 按 `(shading_model, blend, side)` 懒创建管线；`side` 映射 cullMode（缺省 Double 兼容旧行为）。
-- 材质 uniform 256B（64 floats，plans/19 单一定义 + gfx 统一打包）；camera uniform 784B（含 view 矩阵，供 matcap）。
+- 材质 uniform 288B（72 floats，plans/19 单一定义 + gfx 统一打包）；camera uniform 816B（含 view 矩阵与
+  analytic studio IBL 参数）。
+- **环境光照**：无 HDRI/PMREM 管线时用解析近似 —— 天空/地面渐变 + 软光箱 + Karis env BRDF（漫反射用半球
+  辐照度、镜面按 roughness 模糊后采样）；clearcoat 参与环境反射。场景通过 `scn.Scene.env_sky_color/
+  env_ground_color/env_highlight/env_rotation` 控制（颜色全 0 = 由 `env_color` 派生）。
+- 贴图 UV 变换：`uv_scale/uv_offset`（albedo/MR/AO/emissive）+ `normal_uv_scale/normal_uv_offset`
+  （法线，KHR_texture_transform 各贴图可不同）；PBR 贴图运行时生成 CPU mip 链（避免远处高频闪烁）。
 - 无贴图时的缺省绑定：颜色/参数用 1×1 白，法线用 1×1 中性法线 (0.5,0.5,1)（避免法线扰动）。
 - 详细字段/映射/非目标见 plans/19-threejs-materials.md；glTF 扩展由 `tools/gltf_import.py` 导入。

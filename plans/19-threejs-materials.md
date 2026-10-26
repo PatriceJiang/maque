@@ -48,12 +48,14 @@ Node 变体在 maque 中与对应基础模型等价（Node 是 three.js 的构�
    一个模块 10 个 fragment 入口；gfx 按 `shading_model` 选 entry point。
 3. **管线**：gfx 按 `(shading_model, blend, side)` 懒创建管线缓存（≤10×2×3）；`side` 决定 cullMode
    （Front 剔背面 / Back 剔正面 / Double 不剔）。缺省 `side=Double` 与引擎此前 `cullMode=None` 一致。
-4. **材质 uniform**：`Draw` 扩到 64 floats / 256B（新增 model_params/phys0/phys1/phys2/misc/specular/sheen_color），
+4. **材质 uniform**：`Draw` 扩到 **72 floats / 288B**（新增 model_params/phys0/phys1/phys2/misc/specular/sheen_color
+   与 UV 变换 `uv`/`uv_normal` 两组），
    gfx 用单一 `pack_draw_uniform()` 打包（主 pass 与阴影 pass 共用，防字段漂移）。
 5. **贴图槽**：`group1` 扩到 10 项：uniform + 8 贴图 + sampler。新增
    `matcap_texture`（sRGB）/`gradient_texture`/`clearcoat_normal_texture`；缺省法线贴图绑 1×1 中性法线
    `(0.5,0.5,1)`（修复旧版绑纯白导致法线扰动的隐患）。
-6. **camera uniform**：720→784B，尾部追加 `view` 矩阵（matcap 需要 view-space 法线）。
+6. **camera uniform**：720→**816B**：尾部追加 `view` 矩阵（matcap 的 view-space 法线）与 analytic studio IBL 参数
+   （`env2` 天空色/软光箱强度、`env3` 地面色/环境旋转）。
 7. **贴图路径**：沿用稳定 VFS 路径字符串（`builtin:/...` 或资产相对路径）；内置程序化纹理
    `builtin:/textures/toon_ramp`（256×1 四档灰阶）、`builtin:/textures/matcap_studio`（256×256 冷色相影棚球）。
 8. **glTF 导入**：新增 KHR 扩展映射（见 §5），只写非默认字段 → 旧 `.mesh.json` 逐字节不变。
@@ -82,6 +84,8 @@ Node 变体在 maque 中与对应基础模型等价（Node 是 three.js 的构�
 | `matcap_texture` | string | "" | Matcap 贴图路径 |
 | `gradient_texture` | string | "" | Toon 渐变图路径 |
 | `clearcoat_normal_texture` | string | "" | 清漆法线贴图路径 |
+| `uv_scale` / `uv_offset` | math.Vec2 | (1,1)/(0,0) | 基础贴图 UV 变换（KHR_texture_transform） |
+| `normal_uv_scale` / `normal_uv_offset` | math.Vec2 | (1,1)/(0,0) | 法线贴图独立 UV 变换 |
 
 renderer 记录 `pbr_material` 同步追加扁平字段 + `textures2[3]`（matcap/gradient/clearcoat-normal GPU 句柄，-1=无）
 + `flags2`（bit0 flat_shading / bit1 has_matcap / bit2 has_gradient / bit3 has_clearcoat_normal）。
@@ -106,7 +110,7 @@ renderer 记录 `pbr_material` 同步追加扁平字段 + `textures2[3]`（matca
 | # | 内容 | 状态 |
 |---|---|---|
 | M0 | 计划冻结 + 基线（81/81 ctest、materials/ToyCar 基线截图哈希） | ✅ |
-| M1 | schema/ABI 字段 + camera 784B + 材质 uniform 256B + 管线缓存 + runtime 提取 + shader 拆分/10 入口 + 内置纹理 | ✅ |
+| M1 | schema/ABI 字段 + camera 816B + 材质 uniform 288B + 管线缓存 + runtime 提取 + shader 拆分/10 入口 + 内置纹理 | ✅ |
 | M2 | 非 PBR 模型场景/断言：Basic/Lambert/Phong/Toon/Normal/Matcap/Depth/Shadow + `material_models.scn` | ✅ |
 | M3 | Physical 扩展 + glTF 扩展导入 + `material_physical.scn` / `material_shadow.scn` 断言 | ✅ |
 | M4 | Points/Line/Sprite 图元材质 | ⏸ 未批准（需渲染器 topology/billboard 支持，另立计划） |
@@ -124,6 +128,24 @@ renderer 记录 `pbr_material` 同步追加扁平字段 + `textures2[3]`（matca
    `render3d_scene_e2e` ⑨ 改为双边界（有真实投影 ≤ 25% 像素），防止"整视锥误遮挡"回归。
 3. 上述两项会小幅改变旧场景观感（materials 6.9%、ToyCar 7.1% 像素，均已定位为上述修复）；
    M1 终态基线见 `build-win/baseline-m1/`（构建产物，不入库）。
+
+### 6.2 PBR 正确性增强（M1 后两轮）
+
+1. **analytic studio IBL**（修"PBR 观感与 three.js 差异大"的主因）：引擎暂无 HDRI/PMREM 管线，
+   在 shader 内用「天空-地面渐变 + 4 个软光箱」解析近似环境：
+   - 漫反射：半球辐照度 `env_irradiance(n)`（+ 主光箱少量贡献）；
+   - 镜面：对反射方向按 roughness 模糊后采样环境 + **Karis analytic env BRDF**，替换旧版
+     `ambient*(1-rough)*0.35` 的廉价近似；clearcoat 也参与环境反射；
+   - 场景控制（`scn.Scene` 追加）：`env_sky_color`/`env_ground_color`（0 = 由 `env_color` 派生）、
+     `env_highlight`（软光箱强度）、`env_rotation`（度）。
+2. **精确 sRGB 输出**：输出编码从 `pow(1/2.2)` 近似改为精确 sRGB OETF；emissive 贴图按 sRGB 解码。
+3. **mipmap**：PBR 贴图（albedo/MR/AO/normal/clearcoat-normal）运行时生成 CPU box-filter mip 链
+   （以前全部 `mip_levels=1` → 布纹/车漆细节在远处严重闪烁、摩尔纹）。
+4. **KHR_texture_transform**：glTF 贴图 UV 变换落地（`asset.PbrMaterial` 追加
+   `uv_scale/uv_offset` + `normal_uv_scale/normal_uv_offset`；法线贴图单独一组，因 glTF 各贴图可不同）；
+   ToyCar 布料的 baseColor/normal 都是 3× tiling —— 之前没乘积导致"布纹斑点巨大、观感错误"。
+5. ToyCar 场景按参考图重调：Physical 材质、玻璃改 Blend 透明（可见内饰）、布料 sheen + 正确 UV、
+   studio 环境色/软光箱、相机取景。参考：Khronos glTF-Sample-Assets `Models/ToyCar/screenshot/screenshot_large.jpg`。
 
 ## 7. 验收（DoD）
 

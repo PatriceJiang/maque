@@ -110,26 +110,24 @@ w, h = map(int, dims.split())
 def lum(i):
     return 0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2]
 def stats(lo, hi):
-    s = n = hot = 0
-    for y in range(h):
-        for x in range(lo, hi):
-            v = lum((y*w+x)*3)
-            if v > 30:
-                s += v
-                n += 1
-                if v > 110:
-                    hot += 1
-    return s / max(1, n), n, hot
-lm, ln, lhot = stats(0, w // 2)
-rm, rn, rhot = stats(w // 2, w)
+    vals = [lum((y*w+x)*3) for y in range(h) for x in range(lo, hi)]
+    vals = [v for v in vals if v > 30]
+    if not vals:
+        return 0.0, 0, 0.0, 0.0
+    mean = sum(vals) / len(vals)
+    sd = (sum((v-mean)**2 for v in vals) / len(vals)) ** 0.5
+    hot = sum(1 for v in vals if v > 110) / len(vals)
+    return mean, len(vals), sd, hot
+lm, ln, lsd, lhot = stats(0, w // 2)
+rm, rn, rsd, rhot = stats(w // 2, w)
 bg = px[0:3]
 nonbg = sum(1 for i in range(0, len(px), 3)
             if abs(px[i]-bg[0]) + abs(px[i+1]-bg[1]) + abs(px[i+2]-bg[2]) > 25)
-print(f'render3d_scene_e2e: PBR smooth_mean={lm:.1f} rough_mean={rm:.1f} hot={lhot}/{rhot} nonbg={nonbg/(w*h):.3f}')
-# 粗糙度对比：光滑金属只有窄高光（几乎没有 >110 热像素），粗糙金属把能量摊开到整面（大量热像素）。
-# 注：M1 修复"无 normal_map 时把 1×1 白纹理当法线贴图"的缺省错误后，旧的平均亮度差断言不再成立；
-#     这里改用高光能量分布（热像素数）断言，仍能区分"粗糙度被忽略"的回归。
-ok = (ln > 500 and rn > 500 and lhot < 20 and rhot > 50 and nonbg / (w*h) > 0.05)
+print(f'render3d_scene_e2e: PBR smooth_mean={lm:.1f} rough_mean={rm:.1f} '
+      f'hot={lhot:.2f}/{rhot:.2f} sd={lsd:.1f}/{rsd:.1f} nonbg={nonbg/(w*h):.3f}')
+# analytic studio IBL（plans/19）下：光滑金属 = 锐利环境反射（高对比/低平均），粗糙金属 = 能量摊平
+# （高平均/低对比/几乎全部越过中亮阈值）。注：M1 修复法线缺省 + 阴影数学后旧断言已两次更新。
+ok = (ln > 500 and rn > 500 and rm > lm + 15 and rhot > 0.9 and rsd < lsd and nonbg / (w*h) > 0.05)
 sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: ③ PBR 材质（GGX/tonemap，粗糙度对比）OK"

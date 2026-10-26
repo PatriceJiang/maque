@@ -11,7 +11,8 @@
     "KHR_materials_specular",
     "KHR_materials_ior",
     "KHR_materials_anisotropy",
-    "KHR_materials_emissive_strength"
+    "KHR_materials_emissive_strength",
+    "KHR_texture_transform"
   ],
   "scene": 0,
   "scenes": [
@@ -137,7 +138,22 @@
           1.0
         ],
         "metallicFactor": 0.0,
-        "roughnessFactor": 1.0
+        "roughnessFactor": 1.0,
+        "baseColorTexture": {
+          "index": 0,
+          "extensions": {
+            "KHR_texture_transform": {
+              "offset": [
+                0.125,
+                0.25
+              ],
+              "scale": [
+                2.0,
+                3.0
+              ]
+            }
+          }
+        }
       },
       "extensions": {
         "KHR_materials_unlit": {}

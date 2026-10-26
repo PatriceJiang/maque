@@ -1,10 +1,14 @@
 {
   "title": "pbr_material_models",
-  "width": 640,
-  "height": 360,
+  "width": 1280,
+  "height": 720,
   "views": 1,
   "env_color": { "r": 0.24, "g": 0.26, "b": 0.32, "a": 1.0 },
   "env_intensity": 1.0,
+  "env_sky_color": { "r": 0.55, "g": 0.58, "b": 0.66, "a": 1.0 },
+  "env_ground_color": { "r": 0.10, "g": 0.09, "b": 0.085, "a": 1.0 },
+  "env_highlight": 1.6,
+  "env_rotation": 20.0,
   "entities": [
     {
       "name": "camera",
@@ -12,7 +16,7 @@
         { "type": "scene.Transform3D", "local": {
             "position": { "x": 0.0, "y": 0.0, "z": 6.3 } } },
         { "type": "render.Camera3D", "fov_y": 55.0, "near": 0.1, "far": 100.0,
-          "clear_color": { "r": 0.42, "g": 0.43, "b": 0.47, "a": 1.0 } }
+          "clear_color": { "r": 0.14, "g": 0.15, "b": 0.18, "a": 1.0 } }
       ]
     },
     {
@@ -33,7 +37,7 @@
         { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
         { "type": "asset.PbrMaterial", "shading_model": 0,
           "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 },
-          "metallic": 0.15, "roughness": 0.5 }
+          "metallic": 0.9, "roughness": 0.25 }
       ]
     },
     {
@@ -45,7 +49,7 @@
         { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
         { "type": "asset.PbrMaterial", "shading_model": 1,
           "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 },
-          "metallic": 0.15, "roughness": 0.5,
+          "metallic": 0.2, "roughness": 0.3,
           "clearcoat": 1.0, "clearcoat_roughness": 0.05,
           "sheen": 1.0, "sheen_roughness": 0.35,
           "sheen_color": { "x": 0.25, "y": 0.45, "z": 1.0 },

@@ -297,6 +297,12 @@
         - { name: matcap_texture, type: string, default: "" }
         - { name: gradient_texture, type: string, default: "" }
         - { name: clearcoat_normal_texture, type: string, default: "" }
+        # 贴图 UV 变换（KHR_texture_transform，plans/19 PBR 正确性）：
+        # uv_scale/uv_offset 用于 albedo/MR/AO/emissive；normal 单独一组（glTF 各贴图可不同）。
+        - { name: uv_scale, type: math.Vec2, default: "{1.0F, 1.0F}" }
+        - { name: uv_offset, type: math.Vec2, default: "{0.0F, 0.0F}" }
+        - { name: normal_uv_scale, type: math.Vec2, default: "{1.0F, 1.0F}" }
+        - { name: normal_uv_offset, type: math.Vec2, default: "{0.0F, 0.0F}" }
     - struct: Scene
       fields:
         - { name: name, type: string }

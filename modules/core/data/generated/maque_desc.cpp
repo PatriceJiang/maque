@@ -411,6 +411,10 @@ static const mq_field_desc mq_fields_asset_PbrMaterial[] = {
     { "matcap_texture", (uint32_t)offsetof(asset::PbrMaterial, matcap_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "gradient_texture", (uint32_t)offsetof(asset::PbrMaterial, gradient_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "clearcoat_normal_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_normal_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "uv_scale", (uint32_t)offsetof(asset::PbrMaterial, uv_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "uv_offset", (uint32_t)offsetof(asset::PbrMaterial, uv_offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "normal_uv_scale", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "normal_uv_offset", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_asset_Prefab[] = {
@@ -1255,6 +1259,10 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
     { "eye_sep", (uint32_t)offsetof(scn::Scene, eye_sep), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "env_color", (uint32_t)offsetof(scn::Scene, env_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "env_intensity", (uint32_t)offsetof(scn::Scene, env_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "env_sky_color", (uint32_t)offsetof(scn::Scene, env_sky_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "env_ground_color", (uint32_t)offsetof(scn::Scene, env_ground_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "env_highlight", (uint32_t)offsetof(scn::Scene, env_highlight), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "env_rotation", (uint32_t)offsetof(scn::Scene, env_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "gravity_y", (uint32_t)offsetof(scn::Scene, gravity_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "restitution", (uint32_t)offsetof(scn::Scene, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
@@ -3431,7 +3439,7 @@ extern const mq_type_desc mq_type_asset_PbrMaterial = {
     460266568u,
     (uint32_t)sizeof(asset::PbrMaterial),
     (uint32_t)alignof(asset::PbrMaterial),
-    43u,
+    47u,
     mq_fields_asset_PbrMaterial,
     4u,
     0u,
@@ -5167,7 +5175,7 @@ extern const mq_type_desc mq_type_scn_Scene = {
     410509289u,
     (uint32_t)sizeof(scn::Scene),
     (uint32_t)alignof(scn::Scene),
-    12u,
+    16u,
     mq_fields_scn_Scene,
     4u,
     0u,
