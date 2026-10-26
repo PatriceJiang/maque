@@ -3,7 +3,7 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **242** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **244** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
 ## anim（29） · `world/anim.yaml`
 
@@ -309,7 +309,7 @@ role: `spine_skeleton`
 | `Process` | 0 |
 | `Physics` | 1 |
 
-## asset（41） · `asset.yaml`
+## asset（43） · `asset.yaml`
 
 ### asset.AnimationClip — struct (变长（含动态成员）)
 
@@ -532,6 +532,36 @@ role: `spine_skeleton`
 | `Mat4` | 8 |
 | `Texture` | 9 |
 | `Sampler` | 10 |
+
+### asset.PbrAlphaMode — enum
+
+| 值 | 数值 |
+|----|------|
+| `Opaque` | 0 |
+| `Mask` | 1 |
+| `Blend` | 2 |
+
+### asset.PbrMaterial — struct (变长（含动态成员）)
+
+role: `pbr_material`
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `name` | string |  |  |
+| `base_color` | math.Color | {1.0F, 1.0F, 1.0F, 1.0F} | unit: linear |
+| `metallic` | float | 0.0F | range: 0,1 |
+| `roughness` | float | 0.5F | range: 0.02,1 |
+| `emissive` | math.Vec3 | {0.0F, 0.0F, 0.0F} |  |
+| `normal_scale` | float | 1.0F |  |
+| `occlusion_strength` | float | 1.0F | range: 0,1 |
+| `alpha_mode` | PbrAlphaMode | PbrAlphaMode::Opaque |  |
+| `alpha_cutoff` | float | 0.5F | range: 0,1 |
+| `double_sided` | bool | false |  |
+| `base_color_texture` | string |  |  |
+| `metallic_roughness_texture` | string |  |  |
+| `normal_texture` | string |  |  |
+| `occlusion_texture` | string |  |  |
+| `emissive_texture` | string |  |  |
 
 ### asset.PixelFormat — enum
 

@@ -974,20 +974,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     for (auto& kv : scene->ents) ids.push_back(kv.first);
     std::sort(ids.begin(), ids.end());
 
-    /* 材质：M2 固定基色（M3 由 PbrMaterial 资产替换） */
-    static const float kColors[3][3] = {
-        { 0.92F, 0.52F, 0.22F }, { 0.30F, 0.72F, 0.95F }, { 0.72F, 0.35F, 0.88F },
-    };
-    for (int i = 0; i < 3; ++i) {
-        mq_renderer_pbr_material m{};
-        m.base_color[0] = kColors[i][0];
-        m.base_color[1] = kColors[i][1];
-        m.base_color[2] = kColors[i][2];
-        m.base_color[3] = 1.0F;
-        m.roughness = 0.6F;
-        out_mats.push_back(m);
-    }
-
+    /* 材质：M3 从**同节点的 asset.PbrMaterial 组件**读取（M4 换成共享 .material.json 资产）；
+     * 无材质组件的节点用默认灰（金属度 0 / 粗糙度 0.6）。 */
     math::Transform3D cam_trs{};
     cam_trs.position = math::Vec3{ 0.0F, 1.6F, 5.0F };
     cam_trs.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
@@ -995,7 +983,6 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     float cam_priority = -1.0e9F;
     float fov_y = 60.0F, near_z = 0.1F, far_z = 100.0F, exposure = 1.0F;
     math::Color clear{ 0.06F, 0.06F, 0.09F, 1.0F };
-    int draw_index = 0;
 
     for (int idx : ids) {
         auto it = scene->ents.find(idx);
@@ -1048,14 +1035,43 @@ void Engine::extract_3d(int32_t tw, int32_t th,
         auto* mb = comp_by_name(*this, idx, "render.MeshRenderer", &dmesh);
         if (mb && dmesh && cube_mesh >= 0) {
             if (read_num(dmesh, mb->data(), "visible", 1.0F) < 0.5F) continue;
+            /* M3 材质：同节点的 asset.PbrMaterial 组件（M4 起由共享 .material.json 资产引用） */
+            mq_renderer_pbr_material mat{};
+            mat.base_color[0] = mat.base_color[1] = mat.base_color[2] = mat.base_color[3] = 1.0F;
+            mat.metallic = 0.0F;
+            mat.roughness = 0.6F;
+            mat.normal_scale = 1.0F;
+            mat.occlusion_strength = 1.0F;
+            const mq_type_desc* dmat = nullptr;
+            auto* matb = comp_by_name(*this, idx, "asset.PbrMaterial", &dmat);
+            if (matb && dmat) {
+                const uint8_t* base = matb->data();
+                math::Color bc{ 1.0F, 1.0F, 1.0F, 1.0F };
+                if (const mq_field_desc* f = mq_reflect_field(dmat, "base_color"))
+                    std::memcpy(&bc, base + f->offset, sizeof bc);
+                mat.base_color[0] = bc.r; mat.base_color[1] = bc.g;
+                mat.base_color[2] = bc.b; mat.base_color[3] = bc.a;
+                math::Vec3 em{ 0.0F, 0.0F, 0.0F };
+                if (const mq_field_desc* f = mq_reflect_field(dmat, "emissive"))
+                    std::memcpy(&em, base + f->offset, sizeof em);
+                mat.emissive[0] = em.x; mat.emissive[1] = em.y; mat.emissive[2] = em.z;
+                mat.metallic = read_num(dmat, base, "metallic", 0.0F);
+                mat.roughness = read_num(dmat, base, "roughness", 0.5F);
+                mat.normal_scale = read_num(dmat, base, "normal_scale", 1.0F);
+                mat.occlusion_strength = read_num(dmat, base, "occlusion_strength", 1.0F);
+                mat.alpha_cutoff = read_num(dmat, base, "alpha_cutoff", 0.5F);
+                mat.alpha_mode = (int32_t)read_num(dmat, base, "alpha_mode", 0.0F);
+                mat.flags = read_num(dmat, base, "double_sided", 0.0F) >= 0.5F ? 1 : 0;
+            }
+            const int32_t mat_index = (int32_t)out_mats.size();
+            out_mats.push_back(mat);
             mq_renderer_draw3d dr{};
             dr.mesh = cube_mesh;
-            dr.material = draw_index % 3;
+            dr.material = mat_index;
             m4_from_trs(trs, dr.model);
             dr.layer = 0;
             dr.sort_key = (uint64_t)idx;
             out_draws.push_back(dr);
-            ++draw_index;
         }
     }
 

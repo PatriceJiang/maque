@@ -236,18 +236,18 @@ static bool ensure_depth(Device* dv, int32_t w, int32_t h) {
     return dv->depthView != nullptr;
 }
 
-/* unlit3d 管线：按**目标颜色格式**创建（swapchain/离屏各一），depth32 + Lambert。 */
+/* pbr 管线：按**目标颜色格式**创建（swapchain/离屏各一），depth32 + Cook-Torrance。 */
 static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
     if (!dv) return;
     if (dv->p3dFormat == format && dv->p3dPipeline) return;
     if (dv->p3dPipeline) { wgpuRenderPipelineRelease(dv->p3dPipeline); dv->p3dPipeline = nullptr; }
     if (!dv->p3dShader) {
-        const char* wgsl = mq_builtin_shader_text("unlit3d");
+        const char* wgsl = mq_builtin_shader_text("pbr");
         if (!wgsl) {
             static bool warned = false;
             if (!warned) {
                 warned = true;
-                std::print(stderr, "gfx: 内建 shader 'unlit3d' 不可用 → 3D 网格不渲染（MAQUE_SHADER_UNLIT3D=ON 可编回）\n");
+                std::print(stderr, "gfx: 内建 shader 'pbr' 不可用 → 3D 网格不渲染（MAQUE_SHADER_PBR=ON 可编回）\n");
             }
             return;
         }
@@ -263,7 +263,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         {
             WGPUBindGroupLayoutEntry e{};
             e.binding = 0; e.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 80;
+            e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 112;
             WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 1; bd.entries = &e;
             dv->p3dDrawBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
@@ -1035,7 +1035,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
         float cam[32] = {};
         std::memcpy(cam, vp, sizeof vp);
-        cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = 0.0F;
+        cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = v.exposure;
         cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
         cam[24] = lcol[0]; cam[25] = lcol[1]; cam[26] = lcol[2]; cam[27] = 0.0F;
         cam[28] = f->env.env_color[0] * f->env.intensity;
@@ -1074,16 +1074,22 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
             MeshGpu* m = dv->meshes[(size_t)d.mesh];
             if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
-            float du[20] = {};
-            std::memcpy(du, d.model, sizeof d.model);
+            float du[28] = {};
+            std::memcpy(du, d.model, sizeof d.model);              /* 0..15：模型矩阵 */
             const mq_renderer_pbr_material* mat =
                 (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
                     ? &f->materials[d.material] : nullptr;
             if (mat) {
                 du[16] = mat->base_color[0]; du[17] = mat->base_color[1];
                 du[18] = mat->base_color[2]; du[19] = mat->base_color[3];
+                du[20] = mat->emissive[0]; du[21] = mat->emissive[1]; du[22] = mat->emissive[2];
+                du[24] = mat->metallic;
+                du[25] = mat->roughness;
+                du[26] = mat->normal_scale;
+                du[27] = mat->occlusion_strength;
             } else {
                 du[16] = du[17] = du[18] = du[19] = 1.0F;
+                du[25] = 0.6F; du[26] = 1.0F; du[27] = 1.0F;
             }
             WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
             dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;

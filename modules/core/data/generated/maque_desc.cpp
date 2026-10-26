@@ -367,6 +367,24 @@ static const mq_field_desc mq_fields_asset_NavMeshData[] = {
     { "cell_size", (uint32_t)offsetof(asset::NavMeshData, cell_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
+static const mq_field_desc mq_fields_asset_PbrMaterial[] = {
+    { "name", (uint32_t)offsetof(asset::PbrMaterial, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "base_color", (uint32_t)offsetof(asset::PbrMaterial, base_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "metallic", (uint32_t)offsetof(asset::PbrMaterial, metallic), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "roughness", (uint32_t)offsetof(asset::PbrMaterial, roughness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "emissive", (uint32_t)offsetof(asset::PbrMaterial, emissive), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "normal_scale", (uint32_t)offsetof(asset::PbrMaterial, normal_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "occlusion_strength", (uint32_t)offsetof(asset::PbrMaterial, occlusion_strength), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "alpha_mode", (uint32_t)offsetof(asset::PbrMaterial, alpha_mode), MQ_TK_ENUM, 1857555100u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "alpha_cutoff", (uint32_t)offsetof(asset::PbrMaterial, alpha_cutoff), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "double_sided", (uint32_t)offsetof(asset::PbrMaterial, double_sided), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "base_color_texture", (uint32_t)offsetof(asset::PbrMaterial, base_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "metallic_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, metallic_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "normal_texture", (uint32_t)offsetof(asset::PbrMaterial, normal_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "occlusion_texture", (uint32_t)offsetof(asset::PbrMaterial, occlusion_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "emissive_texture", (uint32_t)offsetof(asset::PbrMaterial, emissive_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+};
+
 static const mq_field_desc mq_fields_asset_Prefab[] = {
     { "name", (uint32_t)offsetof(asset::Prefab, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "root", (uint32_t)offsetof(asset::Prefab, root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -1715,6 +1733,12 @@ static const mq_enum_value mq_values_asset_ParamType[] = {
     { "Sampler", (int64_t)10 },
 };
 
+static const mq_enum_value mq_values_asset_PbrAlphaMode[] = {
+    { "Opaque", (int64_t)0 },
+    { "Mask", (int64_t)1 },
+    { "Blend", (int64_t)2 },
+};
+
 static const mq_enum_value mq_values_asset_PixelFormat[] = {
     { "RGBA8", (int64_t)0 },
     { "RGBA8_SRGB", (int64_t)1 },
@@ -2380,6 +2404,8 @@ static void mq_defaults_asset_MaterialParam(void* p) { new (p) asset::MaterialPa
 static void mq_defaults_asset_Mesh(void* p) { new (p) asset::Mesh{}; }
 static void mq_defaults_asset_NavMeshData(void* p) { new (p) asset::NavMeshData{}; }
 static void mq_defaults_asset_ParamType(void* p) { new (p) asset::ParamType{}; }
+static void mq_defaults_asset_PbrAlphaMode(void* p) { new (p) asset::PbrAlphaMode{}; }
+static void mq_defaults_asset_PbrMaterial(void* p) { new (p) asset::PbrMaterial{}; }
 static void mq_defaults_asset_PixelFormat(void* p) { new (p) asset::PixelFormat{}; }
 static void mq_defaults_asset_Prefab(void* p) { new (p) asset::Prefab{}; }
 static void mq_defaults_asset_RenderTarget(void* p) { new (p) asset::RenderTarget{}; }
@@ -3284,6 +3310,34 @@ extern const mq_type_desc mq_type_asset_ParamType = {
     mq_values_asset_ParamType,
     11u,
     mq_defaults_asset_ParamType,
+};
+
+extern const mq_type_desc mq_type_asset_PbrAlphaMode = {
+    "asset.PbrAlphaMode",
+    1857555100u,
+    (uint32_t)sizeof(asset::PbrAlphaMode),
+    (uint32_t)alignof(asset::PbrAlphaMode),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_asset_PbrAlphaMode,
+    3u,
+    mq_defaults_asset_PbrAlphaMode,
+};
+
+extern const mq_type_desc mq_type_asset_PbrMaterial = {
+    "asset.PbrMaterial",
+    460266568u,
+    (uint32_t)sizeof(asset::PbrMaterial),
+    (uint32_t)alignof(asset::PbrMaterial),
+    15u,
+    mq_fields_asset_PbrMaterial,
+    4u,
+    0u,
+    0,
+    0u,
+    mq_defaults_asset_PbrMaterial,
 };
 
 extern const mq_type_desc mq_type_asset_PixelFormat = {
@@ -6012,6 +6066,8 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_asset_Mesh,
     &mq_type_asset_NavMeshData,
     &mq_type_asset_ParamType,
+    &mq_type_asset_PbrAlphaMode,
+    &mq_type_asset_PbrMaterial,
     &mq_type_asset_PixelFormat,
     &mq_type_asset_Prefab,
     &mq_type_asset_RenderTarget,
@@ -6205,7 +6261,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 242u;
+const uint32_t mq_schema_type_count = 244u;
 
 #ifdef __cplusplus
 } // extern "C"

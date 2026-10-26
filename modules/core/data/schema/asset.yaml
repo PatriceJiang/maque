@@ -217,6 +217,32 @@
         - { name: name, type: string }
         - { name: parent, type: "asset_ref<Material>", attrs: { ref: Material } }
         - { name: overrides, type: "MaterialParam[]" }
+    # PBR 材质（plans/18-pbr-3d.md）：typed metallic-roughness（glTF 对齐），
+    # 固定 5 个贴图槽；以**节点组件**形式挂载（M3），M4 起由 .material.json 资产共享引用。
+    - enum: PbrAlphaMode
+      values:
+        - { name: Opaque, value: 0 }
+        - { name: Mask, value: 1 }
+        - { name: Blend, value: 2 }
+    - struct: PbrMaterial
+      roles: [pbr_material]
+      fields:
+        - { name: name, type: string, default: "" }
+        - { name: base_color, type: math.Color, default: "{1.0F, 1.0F, 1.0F, 1.0F}", attrs: { unit: linear } }
+        - { name: metallic, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: roughness, type: float, default: 0.5F, attrs: { range: [0.02, 1] } }
+        - { name: emissive, type: math.Vec3, default: "{0.0F, 0.0F, 0.0F}" }
+        - { name: normal_scale, type: float, default: 1.0F }
+        - { name: occlusion_strength, type: float, default: 1.0F, attrs: { range: [0, 1] } }
+        - { name: alpha_mode, type: PbrAlphaMode, default: "PbrAlphaMode::Opaque" }
+        - { name: alpha_cutoff, type: float, default: 0.5F, attrs: { range: [0, 1] } }
+        - { name: double_sided, type: bool, default: false }
+        # 贴图用稳定 VFS 路径字符串（M3 节点组件形态；M4 的 .material.json 资产同样写路径）
+        - { name: base_color_texture, type: string, default: "" }
+        - { name: metallic_roughness_texture, type: string, default: "" }
+        - { name: normal_texture, type: string, default: "" }
+        - { name: occlusion_texture, type: string, default: "" }
+        - { name: emissive_texture, type: string, default: "" }
     - struct: Scene
       fields:
         - { name: name, type: string }

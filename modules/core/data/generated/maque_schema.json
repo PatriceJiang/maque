@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 242,
+  "type_count": 244,
   "api_count": 284,
   "control_count": 49,
   "callback_count": 10,
@@ -2844,6 +2844,206 @@
         }
       ],
       "fields": []
+    },
+    {
+      "name": "asset.PbrAlphaMode",
+      "namespace": "asset",
+      "kind": "enum",
+      "type_id": 1857555100,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "asset.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Opaque",
+          "value": 0
+        },
+        {
+          "name": "Mask",
+          "value": 1
+        },
+        {
+          "name": "Blend",
+          "value": 2
+        }
+      ],
+      "fields": []
+    },
+    {
+      "name": "asset.PbrMaterial",
+      "namespace": "asset",
+      "kind": "struct",
+      "type_id": 460266568,
+      "size": null,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
+      "source": "asset.yaml",
+      "roles": [
+        "pbr_material"
+      ],
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "base_color",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "linear"
+          }
+        },
+        {
+          "name": "metallic",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "roughness",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0.02,
+              1
+            ]
+          }
+        },
+        {
+          "name": "emissive",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "normal_scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "occlusion_strength",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "alpha_mode",
+          "type": "PbrAlphaMode",
+          "kind": "enum",
+          "type_id": 1857555100,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "alpha_cutoff",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "double_sided",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "base_color_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "metallic_roughness_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "normal_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "occlusion_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "emissive_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        }
+      ]
     },
     {
       "name": "asset.PixelFormat",

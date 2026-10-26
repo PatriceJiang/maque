@@ -1551,6 +1551,12 @@ enum class ParamType : int32_t {
     Sampler = 10,
 };
 
+enum class PbrAlphaMode : int32_t {
+    Opaque = 0,
+    Mask   = 1,
+    Blend  = 2,
+};
+
 enum class PixelFormat : int32_t {
     RGBA8      = 0,
     RGBA8_SRGB = 1,
@@ -1693,6 +1699,24 @@ struct Mesh {
     asset::Topology topology = Topology::TriangleList;
     std::vector<asset::SubMesh> submeshes;
     math::Aabb bounds;
+};
+
+struct PbrMaterial {
+    std::string name = "";
+    math::Color base_color = {1.0F, 1.0F, 1.0F, 1.0F};
+    float metallic = 0.0F;
+    float roughness = 0.5F;
+    math::Vec3 emissive = {0.0F, 0.0F, 0.0F};
+    float normal_scale = 1.0F;
+    float occlusion_strength = 1.0F;
+    asset::PbrAlphaMode alpha_mode = PbrAlphaMode::Opaque;
+    float alpha_cutoff = 0.5F;
+    bool double_sided = false;
+    std::string base_color_texture = "";
+    std::string metallic_roughness_texture = "";
+    std::string normal_texture = "";
+    std::string occlusion_texture = "";
+    std::string emissive_texture = "";
 };
 
 struct SkeletonData {

@@ -297,7 +297,11 @@ per view:
   3D + 2D 覆盖层同帧（3D 先跑、2D `clear_first=false` 叠加，2D 像素路径不变）；
   `scenes/pbr/cube.scn`（3 个 cube + 方向光 + 透视相机）；新增 `render3d_scene_e2e`
   （离屏 3D 结构断言 + 3D 直呈抓帧）。
-- **M3 起**：PBR 材质（GGX/tonemap/贴图）与资产导入（未开始）。
+- **M3 ✅**：PBR 材质系统——`pbr` shader（metallic-roughness + Cook-Torrance GGX + ACES tonemap +
+  gamma）；schema 新增 `asset.PbrMaterial`（typed 字段 + `PbrAlphaMode` + 5 贴图路径槽，角色 `pbr_material`）；
+  runtime 从**同节点 `asset.PbrMaterial` 组件**取材质（基色/金属度/粗糙度/自发光/AO），无组件用默认灰；
+  `scenes/pbr/materials.scn`（光滑 0.12 vs 粗糙 0.9 金属）+ e2e 粗糙度能量分布断言。
+- **M4 起**：贴图（sRGB/mip/法线）、阴影、环境/glTF 资产导入（未开始）。
 
 ## 7. 验收标准（DoD）
 
