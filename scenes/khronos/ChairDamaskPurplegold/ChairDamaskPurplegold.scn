@@ -1,0 +1,799 @@
+{
+  "title": "ChairDamaskPurplegold",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.7307671587071843,
+              "y": 0.6774158025525544,
+              "z": 1.2865435340659024
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.030103229290029957,
+          "far": 16.917432930511374,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_legs-frame_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "wood",
+          "base_color": {
+            "r": 0.247,
+            "g": 0.109,
+            "b": 0.035,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image2.jpg",
+          "metallic_roughness_texture": "textures/image3.jpg",
+          "normal_texture": "textures/image0.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_legs-hardware_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "metal",
+          "base_color": {
+            "r": 0.25,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image4.jpg",
+          "occlusion_texture": "textures/image1.jpg"
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_back-panel_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "wood",
+          "base_color": {
+            "r": 0.247,
+            "g": 0.109,
+            "b": 0.035,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image2.jpg",
+          "metallic_roughness_texture": "textures/image3.jpg",
+          "normal_texture": "textures/image0.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_back-fabric_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "fabric",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.2,
+            "y": 0.0,
+            "z": 1.0
+          },
+          "specular": {
+            "x": 1.0,
+            "y": 0.25,
+            "z": 2.0
+          },
+          "base_color_texture": "textures/image6.jpg",
+          "metallic_roughness_texture": "textures/image7.jpg",
+          "normal_texture": "textures/image5.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_back-buttons_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "fabric",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.2,
+            "y": 0.0,
+            "z": 1.0
+          },
+          "specular": {
+            "x": 1.0,
+            "y": 0.25,
+            "z": 2.0
+          },
+          "base_color_texture": "textures/image6.jpg",
+          "metallic_roughness_texture": "textures/image7.jpg",
+          "normal_texture": "textures/image5.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_back-welt_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "fabric",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.2,
+            "y": 0.0,
+            "z": 1.0
+          },
+          "specular": {
+            "x": 1.0,
+            "y": 0.25,
+            "z": 2.0
+          },
+          "base_color_texture": "textures/image6.jpg",
+          "metallic_roughness_texture": "textures/image7.jpg",
+          "normal_texture": "textures/image5.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_seat-panel_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0006629925,
+              "y": 0.239079013,
+              "z": 0.0596007444
+            },
+            "rotation": {
+              "x": -0.08726645503704705,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000854001,
+              "z": 1.0000000000854001
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "wood",
+          "base_color": {
+            "r": 0.247,
+            "g": 0.109,
+            "b": 0.035,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image2.jpg",
+          "metallic_roughness_texture": "textures/image3.jpg",
+          "normal_texture": "textures/image0.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_seat-label_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0006629925,
+              "y": 0.2362200009912568,
+              "z": 0.059600753962975726
+            },
+            "rotation": {
+              "x": -0.08726645503704705,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000854001,
+              "z": 1.0000000000854001
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "label",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image8.jpg",
+          "occlusion_texture": "textures/image1.jpg"
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_seat-fabric_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -2.4050989338997297e-08,
+              "z": 4.872957370949393e-09
+            },
+            "rotation": {
+              "x": -6.217669447693658e-09,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000001697715,
+              "z": 1.0000000001697715
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "fabric",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.2,
+            "y": 0.0,
+            "z": 1.0
+          },
+          "specular": {
+            "x": 1.0,
+            "y": 0.25,
+            "z": 2.0
+          },
+          "base_color_texture": "textures/image6.jpg",
+          "metallic_roughness_texture": "textures/image7.jpg",
+          "normal_texture": "textures/image5.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_seat-buttons_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -2.4050989338997297e-08,
+              "z": 4.872957370949393e-09
+            },
+            "rotation": {
+              "x": -6.217669447693658e-09,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000001697715,
+              "z": 1.0000000001697715
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "fabric",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.2,
+            "y": 0.0,
+            "z": 1.0
+          },
+          "specular": {
+            "x": 1.0,
+            "y": 0.25,
+            "z": 2.0
+          },
+          "base_color_texture": "textures/image6.jpg",
+          "metallic_roughness_texture": "textures/image7.jpg",
+          "normal_texture": "textures/image5.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "oval-tufted-chair_seat-welt_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -9.149828136467504e-09,
+              "z": 4.872957389321199e-09
+            },
+            "rotation": {
+              "x": 1.2329111523063423e-09,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000001697715,
+              "z": 1.0000000001697715
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ChairDamaskPurplegold_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "fabric",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.2,
+            "y": 0.0,
+            "z": 1.0
+          },
+          "specular": {
+            "x": 1.0,
+            "y": 0.25,
+            "z": 2.0
+          },
+          "base_color_texture": "textures/image6.jpg",
+          "metallic_roughness_texture": "textures/image7.jpg",
+          "normal_texture": "textures/image5.jpg",
+          "occlusion_texture": "textures/image1.jpg",
+          "uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          },
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    }
+  ]
+}

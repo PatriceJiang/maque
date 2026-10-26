@@ -1,0 +1,119 @@
+{
+  "title": "SciFiHelmet",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.8950222371536123,
+              "y": 1.3251442588790818,
+              "z": 5.06778071768535
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.11938236029499433,
+          "far": 65.6742531339753,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "SciFiHelmet_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SciFiHelmet.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "SciFiHelmet",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image3.png"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "title": "CesiumMan",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.1661734550366618,
+              "y": 1.2870697956142299,
+              "z": 2.0663814993493475
+            },
+            "rotation": {
+              "x": -0.22326312094374037,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.04808962327991404,
+          "far": 26.891096777985076,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cesium_Man_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -1.5707963267948966,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000000009,
+              "y": 1.0000000000000009,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CesiumMan.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Cesium_Man-effect",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.jpg"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "reference": "screenshot.jpg",
+  "reference_size": [
+    150,
+    85
+  ],
+  "reference_has_alpha": false,
+  "preview_size": [
+    1280,
+    720
+  ],
+  "ref_mask": "border-bg",
+  "preview_mask": "border-bg",
+  "ref_mean_lum": 0.3679,
+  "preview_mean_lum": 0.534,
+  "mean_lum_delta": 0.1661,
+  "hist_similarity": 0.0956,
+  "rgb_delta": 0.1857,
+  "ref_coverage": 0.4165,
+  "preview_coverage": 0.1768,
+  "coverage_ratio": 0.424,
+  "ref_bbox": [
+    0,
+    0,
+    149,
+    84
+  ],
+  "preview_bbox": [
+    257,
+    283,
+    1135,
+    677
+  ],
+  "ref_mean_rgb": [
+    158.0,
+    79.1,
+    50.4
+  ],
+  "preview_mean_rgb": [
+    144.5,
+    135.1,
+    122.9
+  ],
+  "framing_notes": [],
+  "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+}

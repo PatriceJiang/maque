@@ -1,0 +1,6132 @@
+{
+  "title": "CarConcept",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.6659467140508455,
+              "y": 1.7125790538802468,
+              "z": 4.896110387364893
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.109720814956322,
+          "far": 65.0826930396327,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyUnderside_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Mechanical",
+          "base_color": {
+            "r": 0.05112205445766449,
+            "g": 0.05112205445766449,
+            "b": 0.05112205445766449,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "BodyWindshield_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Glass",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "BodyWindshieldGasket_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyWindshieldWipers_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6815395355224609,
+              "y": 0.8494512438774109,
+              "z": 1.427220721244812
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyWindshieldWipersBase_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "Engine_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.13999998569488523,
+              "z": 2.0756940841674805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Mechanical",
+          "base_color": {
+            "r": 0.05112205445766449,
+            "g": 0.05112205445766449,
+            "b": 0.05112205445766449,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "InteriorCage_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorDashMid_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 1",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDashSides_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorFloor_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorFloormats_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Floormat",
+          "base_color": {
+            "r": 0.0012017396511510017,
+            "g": 0.0012017396511510017,
+            "b": 0.0012017396511510017,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 2.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorMid_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_85_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Panel Sides",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "normal_scale": 0.0,
+          "normal_scale_y": 0.0,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "InteriorMid_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_85_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Panel Sides",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "normal_scale": 0.0,
+          "normal_scale_y": 0.0,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "InteriorPedalAccel_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.07489284873008728,
+              "y": 0.12920790910720825,
+              "z": 1.4588344097137451
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Floormat",
+          "base_color": {
+            "r": 0.0012017396511510017,
+            "g": 0.0012017396511510017,
+            "b": 0.0012017396511510017,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 2.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorPedalAccelArm_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.07625855505466461,
+              "y": 0.12920790910720825,
+              "z": 1.4588344097137451
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Hardware",
+          "base_color": {
+            "r": 0.2715774476528168,
+            "g": 0.2715774476528168,
+            "b": 0.2715774476528168,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorPedalBrake_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.07622051239013672,
+              "y": 0.20979906618595123,
+              "z": 1.52258038520813
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Floormat",
+          "base_color": {
+            "r": 0.0012017396511510017,
+            "g": 0.0012017396511510017,
+            "b": 0.0012017396511510017,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 2.0,
+            "y": 3.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorPedalBrakeArm_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0762585699558258,
+              "y": 0.12869864702224731,
+              "z": 1.427202582359314
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Hardware",
+          "base_color": {
+            "r": 0.2715774476528168,
+            "g": 0.2715774476528168,
+            "b": 0.2715774476528168,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorPillar_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSeatsColor1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.5086424946784973,
+              "y": -0.15975713729858398,
+              "z": 0.133467435836792
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorSeatsColor2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.19285500049591064,
+              "z": 0.8046443462371826
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 2",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image5.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorSeatsFrame1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -4.521004249095274e-25,
+              "y": -0.1804433166980743,
+              "z": -0.6064264178276062
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSeatsFrame2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.19285500049591064,
+              "z": 0.8046443462371826
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringBase_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 9.313225746154783e-10,
+              "y": 0.6415594220161438,
+              "z": 0.9291374683380128
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_20_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringCylinder_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.000921505969017744,
+              "y": 0.5512652397155762,
+              "z": 1.1625407934188845
+            },
+            "rotation": {
+              "x": -1.2041950636299583,
+              "y": -0.095751167705379,
+              "z": 0.24403552507588064
+            },
+            "scale": {
+              "x": 1.0000000411650092,
+              "y": 1.0000000504219877,
+              "z": 0.9999999629146175
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_21_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringEmblem_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0014876172524340703,
+              "y": 0.6417412515937713,
+              "z": 0.9292102609840358
+            },
+            "rotation": {
+              "x": -1.582546785961561,
+              "y": -0.09575116236413893,
+              "z": 0.2440355111008751
+            },
+            "scale": {
+              "x": 1.000000160374304,
+              "y": 1.0000000442209283,
+              "z": 0.9999998597577466
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_22_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Hardware",
+          "base_color": {
+            "r": 0.2715774476528168,
+            "g": 0.2715774476528168,
+            "b": 0.2715774476528168,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringWheel04_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0010864566975268275,
+              "y": 0.6235876942099452,
+              "z": 0.9789323003079746
+            },
+            "rotation": {
+              "x": -1.582546785961561,
+              "y": -0.09575116236413893,
+              "z": 0.2440355111008751
+            },
+            "scale": {
+              "x": 1.000000160374304,
+              "y": 1.0000000442209283,
+              "z": 0.9999998597577466
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_23_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringWheel01_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0014876172524340703,
+              "y": 0.6417412515937713,
+              "z": 0.9292102609840358
+            },
+            "rotation": {
+              "x": -1.582546785961561,
+              "y": -0.09575116236413893,
+              "z": 0.2440355111008751
+            },
+            "scale": {
+              "x": 1.000000160374304,
+              "y": 1.0000000442209283,
+              "z": 0.9999998597577466
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_24_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringWheel02_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0014876172524340703,
+              "y": 0.6417412515937713,
+              "z": 0.9292102609840358
+            },
+            "rotation": {
+              "x": -1.582546785961561,
+              "y": -0.09575116236413893,
+              "z": 0.2440355111008751
+            },
+            "scale": {
+              "x": 1.000000160374304,
+              "y": 1.0000000442209283,
+              "z": 0.9999998597577466
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_25_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 1",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringWheel03_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0014876172524340703,
+              "y": 0.6417412515937713,
+              "z": 0.9292102609840358
+            },
+            "rotation": {
+              "x": -1.582546785961561,
+              "y": -0.09575116236413893,
+              "z": 0.2440355111008751
+            },
+            "scale": {
+              "x": 1.000000160374304,
+              "y": 1.0000000442209283,
+              "z": 0.9999998597577466
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_26_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 1",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringDash_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.005831281654536724,
+              "y": 0.6130815744400024,
+              "z": 1.0221848487854004
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_27_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Dashboard",
+          "base_color": {
+            "r": 0.0012017396511510017,
+            "g": 0.0012017396511510017,
+            "b": 0.0012017396511510017,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 0.259027361869812,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_intensity": 3.0,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image6.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringDashColumn_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.005831281654536724,
+              "y": 0.6130815744400024,
+              "z": 1.0221848487854004
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_28_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringHandleL_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.07221660017967224,
+              "y": 0.5295243263244629,
+              "z": 1.1995973587036133
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_29_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Hardware",
+          "base_color": {
+            "r": 0.2715774476528168,
+            "g": 0.2715774476528168,
+            "b": 0.2715774476528168,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorSteeringHandleR_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.07025431096553802,
+              "y": 0.5295243263244629,
+              "z": 1.1995973587036133
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_30_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Hardware",
+          "base_color": {
+            "r": 0.2715774476528168,
+            "g": 0.2715774476528168,
+            "b": 0.2715774476528168,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "License Plate_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.25537848472595215,
+              "z": -1.8854050636291504
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_31_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "License",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image3.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "BodyRoofPanel_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_32_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyRearPanelsColor1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.4230137765407562,
+              "z": -1.9285271167755127
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_33_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 1 Carmine",
+          "base_color": {
+            "r": 0.666,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorRearHatch_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.0067292749881744385,
+              "z": -0.0014882087707519531
+            },
+            "rotation": {
+              "x": -1.5707968036320548,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000001137,
+              "z": 1.0000000000001137
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_34_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorRearPanels_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.0067292749881744385,
+              "z": -0.0014882087707519531
+            },
+            "rotation": {
+              "x": -1.5707968036320548,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000001137,
+              "z": 1.0000000000001137
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_86_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Mechanical",
+          "base_color": {
+            "r": 0.05112205445766449,
+            "g": 0.05112205445766449,
+            "b": 0.05112205445766449,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "InteriorRearPanels_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.0067292749881744385,
+              "z": -0.0014882087707519531
+            },
+            "rotation": {
+              "x": -1.5707968036320548,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000001137,
+              "z": 1.0000000000001137
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_86_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 1",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyWindowsRearSides_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.0067292749881744385,
+              "z": -0.0014882087707519531
+            },
+            "rotation": {
+              "x": -1.5707968036320548,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000001137,
+              "z": 1.0000000000001137
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_35_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Glass",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "BodyTurnsignalsRear_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.006729632616043091,
+              "z": -0.0014874935150146484
+            },
+            "rotation": {
+              "x": -1.5707968036320548,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000001137,
+              "z": 1.0000000000001137
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_36_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Signallight",
+          "base_color": {
+            "r": 0.0012017396511510017,
+            "g": 0.0012017396511510017,
+            "b": 0.0012017396511510017,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.8,
+            "y": 0.35,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_intensity": 2.0
+        }
+      ]
+    },
+    {
+      "name": "BodyTaillightsPanels_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.006729632616043091,
+              "z": -0.0014874935150146484
+            },
+            "rotation": {
+              "x": -1.5707968036320548,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000001137,
+              "z": 1.0000000000001137
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_37_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyTaillights_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.006729632616043091,
+              "z": -0.0014874935150146484
+            },
+            "rotation": {
+              "x": -1.5707968036320548,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000001137,
+              "z": 1.0000000000001137
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_38_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Brakelight",
+          "base_color": {
+            "r": 0.0012017396511510017,
+            "g": 0.0012017396511510017,
+            "b": 0.0012017396511510017,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.7,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_intensity": 2.0
+        }
+      ]
+    },
+    {
+      "name": "BodyRearwindow_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.0067292749881744385,
+              "z": -0.0014882087707519531
+            },
+            "rotation": {
+              "x": -1.5707968036320548,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000001137,
+              "z": 1.0000000000001137
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_39_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Glass",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "BodyPillars_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_40_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 1 Carmine",
+          "base_color": {
+            "r": 0.666,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyPanelsColor2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_41_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyHood_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.0882532652800592e-09,
+              "y": 0.17601461708545685,
+              "z": 2.3793885707855225
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_42_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 1 Carmine",
+          "base_color": {
+            "r": 0.666,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyHoodInterior01_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.01245598495006564,
+              "z": 0.0009543895721435547
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_43_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyHoodInterior02_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.01245598495006564,
+              "z": 0.0009543895721435547
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_44_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyHoodTopgrill_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.01245598495006564,
+              "z": 0.0009543895721435547
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_45_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyHoodUnder_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.01245598495006564,
+              "z": 0.0009543895721435547
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_46_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyHeadlights_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.01245598495006564,
+              "z": 0.0009543895721435547
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_47_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Headlight",
+          "base_color": {
+            "r": 0.0012017396511510017,
+            "g": 0.0012017396511510017,
+            "b": 0.0012017396511510017,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.54179847240448,
+            "y": 0.737204909324646,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_intensity": 10.0
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRColor1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.0871999263763428,
+              "y": 0.6429661512374878,
+              "z": 0.997542679309845
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_48_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 1 Carmine",
+          "base_color": {
+            "r": 0.666,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRColor2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_49_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRHandle01_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_50_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRHandle02_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_51_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRMirror_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_52_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Mirror",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRMirrorColor1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_53_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 1 Carmine",
+          "base_color": {
+            "r": 0.666,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRMirrorColor2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_54_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRWindow_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_55_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Glass",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorRWindowGasket_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_56_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorR01_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_87_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Mechanical",
+          "base_color": {
+            "r": 0.05112205445766449,
+            "g": 0.05112205445766449,
+            "b": 0.05112205445766449,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorR01_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_87_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 1",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorR02_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_57_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 1",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorR03_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_58_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorR04_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_59_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorR05_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_60_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorR06_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0034754276275636986,
+              "y": 0.0,
+              "z": 0.0038003921508790173
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 8.940696716308571e-08,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.000000000000004,
+              "y": 1.000000000000004,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_61_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Hardware",
+          "base_color": {
+            "r": 0.2715774476528168,
+            "g": 0.2715774476528168,
+            "b": 0.2715774476528168,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLColor1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.0886822938919067,
+              "y": 0.6430185437202454,
+              "z": 0.9975706934928894
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_62_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 1 Carmine",
+          "base_color": {
+            "r": 0.666,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorL04_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_63_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorL01_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_88_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Mechanical",
+          "base_color": {
+            "r": 0.05112205445766449,
+            "g": 0.05112205445766449,
+            "b": 0.05112205445766449,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorL01_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_88_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 1",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorL02_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_64_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 1",
+          "base_color": {
+            "r": 0.003697239328175783,
+            "g": 0.003697239328175783,
+            "b": 0.003697239328175783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorL03_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_65_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorL05_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_66_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Interior 3 Carmine",
+          "base_color": {
+            "r": 0.21576441824436188,
+            "g": 0.005,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 200.0,
+            "y": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "InteriorDoorL06_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_67_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Hardware",
+          "base_color": {
+            "r": 0.2715774476528168,
+            "g": 0.2715774476528168,
+            "b": 0.2715774476528168,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLColor2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_68_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLHandle01_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_69_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLHandle02_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_70_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLMirror_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_71_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Mirror",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLMirrorColor1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_72_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 1 Carmine",
+          "base_color": {
+            "r": 0.666,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLWindowGasket_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_73_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "",
+          "base_color": {
+            "r": 0.002932318253442645,
+            "g": 0.002932318253442645,
+            "b": 0.002932318253442645,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLWindow_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_74_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Glass",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "BodyDoorLMirrorColor2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0034755468368530273,
+              "y": 0.0,
+              "z": 0.003805696964263805
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -4.7683715820308884e-07,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000000001137,
+              "y": 1.0000000000001137,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_75_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Paint 2 Carmine",
+          "base_color": {
+            "r": 0.03775528281927109,
+            "g": 0.03775528281927109,
+            "b": 0.03775528281927109,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 0.25,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image7.png",
+          "normal_scale": 0.30000001192092896,
+          "normal_scale_y": 0.30000001192092896,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.0,
+          "normal_uv_scale": {
+            "x": 30.0,
+            "y": 30.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "WheelFrontLRim_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9744573901923427,
+              "y": 0.3837777227185608,
+              "z": 1.4850451573729515
+            },
+            "rotation": {
+              "x": 0.5235988317627063,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 1.0000000164336835,
+              "z": 1.0000000264370303
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_90_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Rim2",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.049,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelFrontLRim_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9744573901923427,
+              "y": 0.3837777227185608,
+              "z": 1.4850451573729515
+            },
+            "rotation": {
+              "x": 0.5235988317627063,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 1.0000000164336835,
+              "z": 1.0000000264370303
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_90_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Rim1",
+          "base_color": {
+            "r": 0.000992374261841178,
+            "g": 0.000992374261841178,
+            "b": 0.000992374261841178,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelFrontLBrakePad_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9744572353349358,
+              "y": 0.38377754390460517,
+              "z": 1.485045425593853
+            },
+            "rotation": {
+              "x": 0.5235988317627063,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 1.0000000164336835,
+              "z": 1.0000000264370303
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_76_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Brake",
+          "base_color": {
+            "r": 0.6523702144622803,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.2,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelFrontLBrakeDisc_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9744572353349358,
+              "y": 0.38377754390460517,
+              "z": 1.485045425593853
+            },
+            "rotation": {
+              "x": 0.5235988317627063,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 1.0000000164336835,
+              "z": 1.0000000264370303
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_77_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Disc",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.73,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image8.png",
+          "normal_texture": "textures/image9.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "uv_scale": {
+            "x": 20.0,
+            "y": 10.0
+          },
+          "normal_uv_scale": {
+            "x": 20.0,
+            "y": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "node84_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9754931926727296,
+              "y": 0.3837590217590332,
+              "z": 1.4856805801391602
+            },
+            "rotation": {
+              "x": 0.5235988317627063,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 1.0000000164336835,
+              "z": 1.0000000264370303
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_89_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Tireside",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image10.png",
+          "normal_texture": "textures/image11.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "node84_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9754931926727296,
+              "y": 0.3837590217590332,
+              "z": 1.4856805801391602
+            },
+            "rotation": {
+              "x": 0.5235988317627063,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 1.0000000164336835,
+              "z": 1.0000000264370303
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_89_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Tiretread",
+          "base_color": {
+            "r": 0.009021492674946783,
+            "g": 0.009021492674946783,
+            "b": 0.009021492674946783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.6,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image12.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 1.0,
+            "y": 4.0
+          },
+          "normal_uv_offset": {
+            "x": 0.0,
+            "y": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "WheelFrontRRim_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9774297656777424,
+              "y": 0.38275312763189007,
+              "z": 1.4846943150029688
+            },
+            "rotation": {
+              "x": -0.7853981633974483,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 0.9999998472409679,
+              "z": 0.9999998472409679
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_92_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Rim2",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.049,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelFrontRRim_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9774297656777424,
+              "y": 0.38275312763189007,
+              "z": 1.4846943150029688
+            },
+            "rotation": {
+              "x": -0.7853981633974483,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 0.9999998472409679,
+              "z": 0.9999998472409679
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_92_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Rim1",
+          "base_color": {
+            "r": 0.000992374261841178,
+            "g": 0.000992374261841178,
+            "b": 0.000992374261841178,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelFrontRBrakePad_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9774297330031825,
+              "y": 0.38275312763189007,
+              "z": 1.4846941391996893
+            },
+            "rotation": {
+              "x": -0.7853981633974483,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 0.9999998472409679,
+              "z": 0.9999998472409679
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_78_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Brake",
+          "base_color": {
+            "r": 0.6523702144622803,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.2,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelFrontRBrakeDisc_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9774297330031825,
+              "y": 0.38275312763189007,
+              "z": 1.4846941391996893
+            },
+            "rotation": {
+              "x": -0.7853981633974483,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 0.9999998472409679,
+              "z": 0.9999998472409679
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_79_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Disc",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.73,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image8.png",
+          "normal_texture": "textures/image9.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "uv_scale": {
+            "x": 20.0,
+            "y": 10.0
+          },
+          "normal_uv_scale": {
+            "x": 20.0,
+            "y": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "node89_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9766749143600464,
+              "y": 0.3837589621543884,
+              "z": 1.4839684963226318
+            },
+            "rotation": {
+              "x": -0.7853981633974483,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 0.999999966450252,
+              "z": 0.999999966450252
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_91_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Tireside",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image10.png",
+          "normal_texture": "textures/image11.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "node89_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9766749143600464,
+              "y": 0.3837589621543884,
+              "z": 1.4839684963226318
+            },
+            "rotation": {
+              "x": -0.7853981633974483,
+              "y": -0.5235987833701112,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999865388264,
+              "y": 0.999999966450252,
+              "z": 0.999999966450252
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_91_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Tiretread",
+          "base_color": {
+            "r": 0.009021492674946783,
+            "g": 0.009021492674946783,
+            "b": 0.009021492674946783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.6,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image12.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 1.0,
+            "y": 4.0
+          },
+          "normal_uv_offset": {
+            "x": 0.0,
+            "y": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "WheelRearLBrakeDisc_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9825133085250853,
+              "y": 0.3838116115963146,
+              "z": -1.3140815197775806
+            },
+            "rotation": {
+              "x": 2.7925268196873687,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999297904882,
+              "z": 0.9999999297904882
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_80_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Disc",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.73,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image8.png",
+          "normal_texture": "textures/image9.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "uv_scale": {
+            "x": 20.0,
+            "y": 10.0
+          },
+          "normal_uv_scale": {
+            "x": 20.0,
+            "y": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "WheelRearLBrakePad_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9825133085250853,
+              "y": 0.3838116115963146,
+              "z": -1.3140815197775806
+            },
+            "rotation": {
+              "x": 2.7925268196873687,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999297904882,
+              "z": 0.9999999297904882
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_81_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Brake",
+          "base_color": {
+            "r": 0.6523702144622803,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.2,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelRearLRim_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9825133085250853,
+              "y": 0.3838116115963146,
+              "z": -1.3140815197775806
+            },
+            "rotation": {
+              "x": 2.7925268196873687,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999297904882,
+              "z": 0.9999999297904882
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_94_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Rim2",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.049,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelRearLRim_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.9825133085250853,
+              "y": 0.3838116115963146,
+              "z": -1.3140815197775806
+            },
+            "rotation": {
+              "x": 2.7925268196873687,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999297904882,
+              "z": 0.9999999297904882
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_94_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Rim1",
+          "base_color": {
+            "r": 0.000992374261841178,
+            "g": 0.000992374261841178,
+            "b": 0.000992374261841178,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "node94_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.982513666152954,
+              "y": 0.3837589621543884,
+              "z": -1.3140623569488523
+            },
+            "rotation": {
+              "x": 2.7925268196873687,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999893951323,
+              "z": 0.9999999893951323
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_93_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Tireside",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image10.png",
+          "normal_texture": "textures/image11.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "node94_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.982513666152954,
+              "y": 0.3837589621543884,
+              "z": -1.3140623569488523
+            },
+            "rotation": {
+              "x": 2.7925268196873687,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999893951323,
+              "z": 0.9999999893951323
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_93_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Tiretread",
+          "base_color": {
+            "r": 0.009021492674946783,
+            "g": 0.009021492674946783,
+            "b": 0.009021492674946783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.6,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image12.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 1.0,
+            "y": 4.0
+          },
+          "normal_uv_offset": {
+            "x": 0.0,
+            "y": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "WheelRearRBrakeDisc_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9825141429901123,
+              "y": 0.3838020748654891,
+              "z": -1.314032169103285
+            },
+            "rotation": {
+              "x": -2.5307274113149667,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.000000018580481,
+              "z": 1.000000018580481
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_82_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Disc",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.73,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image8.png",
+          "normal_texture": "textures/image9.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "uv_scale": {
+            "x": 20.0,
+            "y": 10.0
+          },
+          "normal_uv_scale": {
+            "x": 20.0,
+            "y": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "WheelRearRBrakePad_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9825141429901123,
+              "y": 0.3838020748654891,
+              "z": -1.314032169103285
+            },
+            "rotation": {
+              "x": -2.5307274113149667,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.000000018580481,
+              "z": 1.000000018580481
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_83_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Brake",
+          "base_color": {
+            "r": 0.6523702144622803,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.2,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelRearRRim_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9825141429901123,
+              "y": 0.3838017770516249,
+              "z": -1.314032523162474
+            },
+            "rotation": {
+              "x": -2.5307274113149667,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.000000018580481,
+              "z": 1.000000018580481
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_96_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Rim2",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.049,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WheelRearRRim_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9825141429901123,
+              "y": 0.3838017770516249,
+              "z": -1.314032523162474
+            },
+            "rotation": {
+              "x": -2.5307274113149667,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.000000018580481,
+              "z": 1.000000018580481
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_96_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Rim1",
+          "base_color": {
+            "r": 0.000992374261841178,
+            "g": 0.000992374261841178,
+            "b": 0.000992374261841178,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "node99_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.981704831123352,
+              "y": 0.3837589621543884,
+              "z": -1.3140623569488523
+            },
+            "rotation": {
+              "x": -2.5307274113149667,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.000000018580481,
+              "z": 1.000000018580481
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_95_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Tireside",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image10.png",
+          "normal_texture": "textures/image11.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    },
+    {
+      "name": "node99_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.981704831123352,
+              "y": 0.3837589621543884,
+              "z": -1.3140623569488523
+            },
+            "rotation": {
+              "x": -2.5307274113149667,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.000000018580481,
+              "z": 1.000000018580481
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_95_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Tiretread",
+          "base_color": {
+            "r": 0.009021492674946783,
+            "g": 0.009021492674946783,
+            "b": 0.009021492674946783,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.6,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image12.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85,
+          "normal_uv_scale": {
+            "x": 1.0,
+            "y": 4.0
+          },
+          "normal_uv_offset": {
+            "x": 0.0,
+            "y": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "Axles_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.00016111135482788086,
+              "y": 0.38386812806129456,
+              "z": 0.09066951274871826
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CarConcept_84_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Mechanical",
+          "base_color": {
+            "r": 0.05112205445766449,
+            "g": 0.05112205445766449,
+            "b": 0.05112205445766449,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "occlusion_strength": 0.85
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "title": "SpecularSilkPouf",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.42389984524857877,
+              "y": 0.2929208169888761,
+              "z": 0.7420432342598833
+            },
+            "rotation": {
+              "x": -0.22326312094374035,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.017480405989632117,
+          "far": 10.532318714814597,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "SpecularSilkPouf_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.00012642154693603516,
+              "y": -0.00018661046028137208,
+              "z": -0.00014188814163208007
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.0254,
+              "y": 0.0254,
+              "z": 0.0254
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SpecularSilkPouf.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "shot silk",
+          "base_color": {
+            "r": 0.025,
+            "g": 0.03,
+            "b": 0.075,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.65,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.025,
+            "y": 0.03,
+            "z": 0.075
+          },
+          "sheen_roughness": 0.6,
+          "specular_intensity": 0.5,
+          "specular": {
+            "x": 10.0,
+            "y": 0.6,
+            "z": 0.0
+          },
+          "normal_texture": "textures/image1.png",
+          "normal_scale": 0.2,
+          "normal_scale_y": 0.2,
+          "occlusion_texture": "textures/image0.png"
+        }
+      ]
+    }
+  ]
+}

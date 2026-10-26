@@ -38,6 +38,7 @@
 | [28](28-ImGui调试面板.md) | 引擎侧 ImGui 调试面板：stats 面板（**默认不显示，F2 / `MAQUE_IMGUI=1` 打开**；可拖动、屏幕分辨率固定大小）、74 个脚本控件、统一 renderer 呈现（游戏帧 + 面板同屏、单次 present） |
 | [29](29-Tracy性能分析.md) | Tracy 性能分析：**手动启动零开销**（F3 / `MAQUE_TRACY=1`）、按模块上色 zone（核心循环/事件派发/脚本入口/各子系统）、frametime·logic·render·present·CPU·内存曲线、`tracy-capture` 无 GUI 抓取与 CI |
 | [30](30-音频集成方案.md) | 音频集成方案：**SDL2 设备 + 自研离线混音器**、WAV/OGG/MP3 解码、无锁音频线程、模拟时间 playhead、WASM/桌面跨平台矩阵与分期 |
+| [31](31-gltf-model-migration.md) | **Khronos glTF 模型批量迁移经验**：149 个 glTF-Sample-Assets 模型的导入流水线、产物入库策略、特性支持矩阵与差距、自动机位/灯光/env 手调、参考图对比方法与归因、踩坑清单与排查手册、`scenes/khronos/` 统计 |
 | [api/](api/README.md) | **API 参考（自动生成，随仓库提交）**：脚本 API / 控制面 / 事件 / 插件 vtable / 模块 C ABI / 数据类型 |
 | [assets/00](assets/00-index.md) | 资产系列索引（Effect/Material/Mesh/Texture/Font/AnimationClip/Skeleton/Spine） |
 | [assets/01](assets/01-material.md) | 资产详设：材质（Material / Effect / MaterialInstance） |

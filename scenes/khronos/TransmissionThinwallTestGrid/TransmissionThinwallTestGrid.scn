@@ -1,0 +1,782 @@
+{
+  "title": "TransmissionThinwallTestGrid",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -10.812921050921085,
+              "y": 8.534588172610214,
+              "z": 16.254007294571313
+            },
+            "rotation": {
+              "x": -0.22326312094374035,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.37758058386303733,
+          "far": 234.33580306715436,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "CheckerBackdrop_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Backdrop",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "ThinWall_IOR1.00_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.300614595413208,
+              "y": 4.400000095367432,
+              "z": 0.35051628947257996
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ThinWall_IOR1.00",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.0
+        }
+      ]
+    },
+    {
+      "name": "ThinWall_IOR1.33_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.1006138324737549,
+              "y": 4.400000095367432,
+              "z": 0.35051625967025757
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ThinWall_IOR1.33",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.33
+        }
+      ]
+    },
+    {
+      "name": "ThinWall_IOR1.50_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.0993871688842773,
+              "y": 4.400000095367432,
+              "z": 0.3505162000656128
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ThinWall_IOR1.50",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "ThinWall_IOR1.76_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.2993879318237305,
+              "y": 4.400000095367432,
+              "z": 0.3505161702632904
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ThinWall_IOR1.76",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.75999
+        }
+      ]
+    },
+    {
+      "name": "Volume_IOR1.00_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.300614833831787,
+              "y": 2.200000286102295,
+              "z": 0.350516140460968
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Volume_IOR1.00",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Volume_IOR1.33_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.100614070892334,
+              "y": 2.200000286102295,
+              "z": 0.35051611065864563
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Volume_IOR1.33",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.33
+        }
+      ]
+    },
+    {
+      "name": "Volume_IOR1.50_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.0993868112564087,
+              "y": 2.200000286102295,
+              "z": 0.35051608085632324
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Volume_IOR1.50",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Volume_IOR1.76_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.2993876934051514,
+              "y": 2.200000286102295,
+              "z": 0.35051602125167847
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Volume_IOR1.76",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.75999
+        }
+      ]
+    },
+    {
+      "name": "TextBackdrop_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text Backdrop",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "TextXaxis_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 1.9073486328125e-06,
+              "z": 1.1368683772161603e-13
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999998807907104,
+              "z": 0.9999998807907104
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "TextYaxis_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 9.5367431640625e-07,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999998807907104,
+              "z": 0.9999998807907104
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "ThinWall_IOR2.42_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.529480457305908,
+              "y": 4.400000095367432,
+              "z": 0.3505161702632904
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ThinWall_IOR2.42",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 2.42
+        }
+      ]
+    },
+    {
+      "name": "Volume_IOR2.42_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.529480457305908,
+              "y": 2.200000286102295,
+              "z": 0.35051602125167847
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionThinwallTestGrid_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Volume_IOR2.42",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 2.42
+        }
+      ]
+    }
+  ]
+}

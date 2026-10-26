@@ -1,0 +1,2679 @@
+{
+  "title": "ABeautifulGame",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.46495336269558374,
+              "y": 0.29732191049940837,
+              "z": 0.8139080513990734
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.019173334544147786,
+          "far": 11.716621275705279,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "King_B_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.03142297640442848,
+              "y": 0.0174538753926754,
+              "z": 0.22009074687957764
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "King_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/King_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/King_black_ORM.jpg",
+          "normal_texture": "textures/King_black_normal.jpg",
+          "occlusion_texture": "textures/King_black_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "King_W_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.03176186978816986,
+              "y": 0.01745394617319107,
+              "z": -0.22027580440044403
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "King_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/King_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/King_white_ORM.jpg",
+          "normal_texture": "textures/King_white_normal.jpg",
+          "occlusion_texture": "textures/King_white_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Queen_B_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.030731208622455597,
+              "y": 0.01762339472770691,
+              "z": 0.21983970701694489
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Queen_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Queen_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Queen_black_ORM.jpg",
+          "normal_texture": "textures/Queen_black_normal.jpg",
+          "occlusion_texture": "textures/Queen_black_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Queen_W_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.03090556710958481,
+              "y": 0.01686232164502144,
+              "z": -0.22027580440044403
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Queen_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Queen_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Queen_white_ORM.jpg",
+          "normal_texture": "textures/Queen_white_normal.jpg",
+          "occlusion_texture": "textures/Queen_white_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Chessboard_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Chessboard",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Chessboard_base_color.jpg",
+          "metallic_roughness_texture": "textures/Chessboard_ORM.jpg",
+          "normal_texture": "textures/Chessboard_normal.jpg",
+          "occlusion_texture": "textures/Chessboard_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_W1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.21845926344394684,
+              "y": 0.014926999807357788,
+              "z": -0.15599016845226288
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_W1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.18720926344394684,
+              "y": 0.0,
+              "z": -0.12474016845226288
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_White",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 0.828000009059906,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_W2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.15633293986320496,
+              "y": 0.014926999807357788,
+              "z": -0.15608981251716614
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_W2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.12508293986320496,
+              "y": 0.0,
+              "z": -0.12483981251716614
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_White",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 0.828000009059906,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_W3_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.09358328580856323,
+              "y": 0.014926999807357788,
+              "z": -0.09414908289909363
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_W3_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.06233328580856323,
+              "y": 0.0,
+              "z": -0.06289908289909363
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_White",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 0.828000009059906,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_W4_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.03124999813735485,
+              "y": 0.014926999807357788,
+              "z": -0.03124999813735485
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_W4_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_White",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 0.828000009059906,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_W5_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.031169699504971504,
+              "y": 0.014926999807357788,
+              "z": -0.1564261019229889
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_W5_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.062419697642326355,
+              "y": 0.0,
+              "z": -0.1251761019229889
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_White",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 0.828000009059906,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_W6_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.09379050135612488,
+              "y": 0.014926999807357788,
+              "z": -0.1562434285879135
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_W6_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.12504050135612488,
+              "y": 0.0,
+              "z": -0.12499342858791351
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_White",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 0.828000009059906,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_W7_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.1564229130744934,
+              "y": 0.014927003532648087,
+              "z": -0.1564216911792755
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_W7_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.1876729130744934,
+              "y": 3.725290298461914e-09,
+              "z": -0.1251716911792755
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_White",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 0.828000009059906,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_W8_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.21923202276229858,
+              "y": 0.014927007257938385,
+              "z": -0.15629565715789795
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_W8_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.2504820227622986,
+              "y": 7.450580596923828e-09,
+              "z": -0.12504565715789795
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_White",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 0.828000009059906,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_B1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.21923202276229858,
+              "y": 0.014927007257938385,
+              "z": 0.15638446807861328
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_B1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.2504820227622986,
+              "y": 7.450580596923828e-09,
+              "z": 0.18763446807861328
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_Black",
+          "base_color": {
+            "r": 0.2994999885559082,
+            "g": 0.5,
+            "b": 0.44999998807907104,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_B2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.15673714876174927,
+              "y": 0.014927007257938385,
+              "z": 0.15617261826992035
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_B2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.18798714876174927,
+              "y": 7.450580596923828e-09,
+              "z": 0.18742261826992035
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_Black",
+          "base_color": {
+            "r": 0.2994999885559082,
+            "g": 0.5,
+            "b": 0.44999998807907104,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_B3_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.09381857514381409,
+              "y": 0.014927007257938385,
+              "z": 0.1562785506248474
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_B3_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.1250685751438141,
+              "y": 7.450580596923828e-09,
+              "z": 0.1875285506248474
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_Black",
+          "base_color": {
+            "r": 0.2994999885559082,
+            "g": 0.5,
+            "b": 0.44999998807907104,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_B4_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.03132370114326477,
+              "y": 0.014927007257938385,
+              "z": 0.09357181191444397
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_B4_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.06257370114326477,
+              "y": 7.450580596923828e-09,
+              "z": 0.12482181191444397
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_Black",
+          "base_color": {
+            "r": 0.2994999885559082,
+            "g": 0.5,
+            "b": 0.44999998807907104,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_B5_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.031245321035385132,
+              "y": 0.014927007257938385,
+              "z": 0.15634210407733917
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_B5_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -4.677101969718933e-06,
+              "y": 7.450580596923828e-09,
+              "z": 0.18759210407733917
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_Black",
+          "base_color": {
+            "r": 0.2994999885559082,
+            "g": 0.5,
+            "b": 0.44999998807907104,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_B6_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.09381434321403503,
+              "y": 0.014927007257938385,
+              "z": 0.15609847009181976
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_B6_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.06256434321403503,
+              "y": 7.450580596923828e-09,
+              "z": 0.18734847009181976
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_Black",
+          "base_color": {
+            "r": 0.2994999885559082,
+            "g": 0.5,
+            "b": 0.44999998807907104,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_B7_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.15611860156059265,
+              "y": 0.014927007257938385,
+              "z": 0.15625736117362976
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_B7_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.12486860156059265,
+              "y": 7.450580596923828e-09,
+              "z": 0.18750736117362976
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_Black",
+          "base_color": {
+            "r": 0.2994999885559082,
+            "g": 0.5,
+            "b": 0.44999998807907104,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Body_B8_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.21876174211502075,
+              "y": 0.014927007257938385,
+              "z": 0.15628913044929504
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Body_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Pawn_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg",
+          "occlusion_texture": "textures/Pawn_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Pawn_Top_B8_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.18751174211502075,
+              "y": 7.450580596923828e-09,
+              "z": 0.18753913044929504
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Pawn_Top_Black",
+          "base_color": {
+            "r": 0.2994999885559082,
+            "g": 0.5,
+            "b": 0.44999998807907104,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
+          "normal_texture": "textures/Pawn_normal.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Castle_B1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.21881157159805298,
+              "y": 0.01800301857292652,
+              "z": 0.21959251165390015
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Castle_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Castle_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Castle_ORM.jpg",
+          "normal_texture": "textures/Castle_normal.jpg",
+          "occlusion_texture": "textures/Castle_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Castle_B2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.22001203894615173,
+              "y": 0.01800301857292652,
+              "z": 0.2196142077445984
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Castle_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Castle_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Castle_ORM.jpg",
+          "normal_texture": "textures/Castle_normal.jpg",
+          "occlusion_texture": "textures/Castle_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Castle_W1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.21969175338745117,
+              "y": 0.016820574179291725,
+              "z": -0.21970760822296143
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Castle_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Castle_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Castle_ORM.jpg",
+          "normal_texture": "textures/Castle_normal.jpg",
+          "occlusion_texture": "textures/Castle_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Castle_W2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.21860846877098083,
+              "y": 0.01710103079676628,
+              "z": -0.22002007067203522
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Castle_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Castle_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Castle_ORM.jpg",
+          "normal_texture": "textures/Castle_normal.jpg",
+          "occlusion_texture": "textures/Castle_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Knight_B1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.15675804018974304,
+              "y": 0.01697981357574463,
+              "z": 0.22001084685325623
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Knight_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Knight_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Knight_ORM.jpg",
+          "normal_texture": "textures/Knight_normal.jpg",
+          "occlusion_texture": "textures/Knight_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Knight_B2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.1584867238998413,
+              "y": 0.01697981357574463,
+              "z": 0.2197423279285431
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Knight_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Knight_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Knight_ORM.jpg",
+          "normal_texture": "textures/Knight_normal.jpg",
+          "occlusion_texture": "textures/Knight_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Knight_W1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.15809699892997742,
+              "y": 0.016979999840259552,
+              "z": -0.22098299860954285
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": -8.742277657347563e-08,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000000000038,
+              "y": 1.0,
+              "z": 1.0000000000000038
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Knight_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Knight_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Knight_ORM.jpg",
+          "normal_texture": "textures/Knight_normal.jpg",
+          "occlusion_texture": "textures/Knight_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Knight_W2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.15665100514888763,
+              "y": 0.016979999840259552,
+              "z": -0.22008299827575684
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": -8.742277657347563e-08,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000000000038,
+              "y": 1.0,
+              "z": 1.0000000000000038
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Knight_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Knight_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Knight_ORM.jpg",
+          "normal_texture": "textures/Knight_normal.jpg",
+          "occlusion_texture": "textures/Knight_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Bishop_B1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.09403245151042938,
+              "y": 0.01697981357574463,
+              "z": 0.21908524632453918
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Bishop_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Bishop_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Bishop_black_ORM.jpg",
+          "normal_texture": "textures/Bishop_black_normal.jpg",
+          "occlusion_texture": "textures/Bishop_black_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Bishop_B2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.08951026201248169,
+              "y": 0.01697981357574463,
+              "z": 0.21954728662967682
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Bishop_Black",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Bishop_black_base_color.jpg",
+          "metallic_roughness_texture": "textures/Bishop_black_ORM.jpg",
+          "normal_texture": "textures/Bishop_black_normal.jpg",
+          "occlusion_texture": "textures/Bishop_black_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Bishop_W1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.090296670794487,
+              "y": 0.01697981357574463,
+              "z": -0.2176361083984375
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Bishop_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Bishop_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Bishop_white_ORM.jpg",
+          "normal_texture": "textures/Bishop_white_normal.jpg",
+          "occlusion_texture": "textures/Bishop_white_ORM.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Bishop_W2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.09416553378105164,
+              "y": 0.01697981357574463,
+              "z": -0.22063007950782776
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ABeautifulGame_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Bishop_White",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Bishop_white_base_color.jpg",
+          "metallic_roughness_texture": "textures/Bishop_white_ORM.jpg",
+          "normal_texture": "textures/Bishop_white_normal.jpg",
+          "occlusion_texture": "textures/Bishop_white_ORM.jpg"
+        }
+      ]
+    }
+  ]
+}

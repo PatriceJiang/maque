@@ -1,0 +1,236 @@
+{
+  "title": "CompareBaseColor",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.4762351715497284,
+              "y": 0.6757199719646396,
+              "z": 2.5841724961767394
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.06087567717730839,
+          "far": 38.32300820829522,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sphere001_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.100000023841858,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareBaseColor_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "baseColor plain dielectric",
+          "base_color": {
+            "r": 0.23882800340652466,
+            "g": 0.10615606606006622,
+            "b": 0.0477757565677166,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Sphere002_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareBaseColor_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "baseColor texture dielectric",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image1.png",
+          "emissive_texture": "textures/image0.png",
+          "uv_scale": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "uv_offset": {
+            "x": 0.25,
+            "y": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sphere003_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.100000023841858,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareBaseColor_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "baseColor texture dielectric",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.25,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image1.png",
+          "emissive_texture": "textures/image0.png",
+          "uv_scale": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "uv_offset": {
+            "x": 0.25,
+            "y": 0.25
+          }
+        }
+      ]
+    }
+  ]
+}

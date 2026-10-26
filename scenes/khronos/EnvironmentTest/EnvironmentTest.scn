@@ -1,0 +1,218 @@
+{
+  "title": "EnvironmentTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -9.92902392383652,
+              "y": 8.071796659924415,
+              "z": 15.310641537060139
+            },
+            "rotation": {
+              "x": -0.22326312094374035,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.3864996286750401,
+          "far": 242.50802852428524,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Metallic0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.5564079284667969,
+              "y": 4.774584770202637,
+              "z": -1.0962677001953125
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/EnvironmentTest_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "MetallicSpheresMat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/tmp_image_pie_dc1e_1a22_fbf9roughness_map_roughness_tmp_image_pie_dc1e_1a22_fbf9metal_map_metallic_0.png"
+        }
+      ]
+    },
+    {
+      "name": "Dielectric0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.5564079284667969,
+              "y": 4.774584770202637,
+              "z": -1.0962677001953125
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/EnvironmentTest_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "DielectricSpheresMat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/tmp_image_pie_b20b_ebb4_317droughness_map2_roughness_tmp_image_pie_b20b_ebb4_317dmetal_map2_metallic_1.png"
+        }
+      ]
+    },
+    {
+      "name": "Dielectric0-Black_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.5564079284667969,
+              "y": 2.7887167930603027,
+              "z": -1.0962677001953125
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/EnvironmentTest_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "DielectricSpheresMat",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/tmp_image_pie_b20b_ebb4_317droughness_map2_roughness_tmp_image_pie_b20b_ebb4_317dmetal_map2_metallic_1.png"
+        }
+      ]
+    }
+  ]
+}

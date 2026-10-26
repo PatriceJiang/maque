@@ -1,0 +1,274 @@
+{
+  "title": "SpecGlossVsMetalRough",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.27424370538340254,
+              "y": 0.15524267209700376,
+              "z": 0.48006793845218404
+            },
+            "rotation": {
+              "x": -0.2232631209437403,
+              "y": -0.5190192589890529,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.011309020929380072,
+          "far": 6.357832043374439,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "WaterBottle_SpecGloss_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.08,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": -0.0,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SpecGlossVsMetalRough_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BottleMat_SpecGloss",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image4.png",
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "WaterBottle_MR_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.08,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": -0.0,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SpecGlossVsMetalRough_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BottleMat_MR",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image4.png",
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "MetalRoughLabel_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.08,
+              "y": 0.18,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SpecGlossVsMetalRough_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Label Material MetalRough",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image7.png"
+        }
+      ]
+    },
+    {
+      "name": "SpecGlossLabel_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.08,
+              "y": 0.18,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SpecGlossVsMetalRough_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Label Material SpecGloss",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    }
+  ]
+}

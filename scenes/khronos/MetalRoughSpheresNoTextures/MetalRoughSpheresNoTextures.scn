@@ -1,0 +1,5690 @@
+{
+  "title": "MetalRoughSpheresNoTextures",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.00405365470898911,
+              "y": 0.005868028827346773,
+              "z": 0.010455631569041635
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.0002816403196476239,
+          "far": 0.15733847484301028,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "m0%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_0",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m0%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_1",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m0%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_2",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m0%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_3",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m0%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_4",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m0%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_5",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m0%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_6",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m16%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_7",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m16%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_8",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m16%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_9",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m16%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_10",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m16%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_11",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m16%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_12",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m16%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_13",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m33%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.002,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_14",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m33%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.002,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_15",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m33%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.002,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_16",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m33%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.002,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_17",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m33%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.002,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_18",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m33%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.002,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_19",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m33%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.002,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_20_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_20",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m50%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.003,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_21_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_21",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m50%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.003,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_22_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_22",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m50%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.003,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_23_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_23",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m50%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.003,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_24_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_24",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m50%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.003,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_25_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_25",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m50%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.003,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_26_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_26",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m50%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.003,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_27_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_27",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m66%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.004,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_28_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_28",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m66%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.004,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_29_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_29",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m66%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.004,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_30_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_30",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m66%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.004,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_31_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_31",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m66%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.004,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_32_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_32",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m66%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.004,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_33_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_33",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m66%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.004,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_34_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_34",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m83%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_35_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_35",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m83%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_36_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_36",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m83%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_37_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_37",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m83%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_38_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_38",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m83%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_39_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_39",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m83%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_40_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_40",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m83%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_41_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_41",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m100%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.006,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_42_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_42",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m100%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.006,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_43_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_43",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m100%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.006,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_44_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_44",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m100%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.006,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_45_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_45",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m100%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.006,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_46_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_46",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m100%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.006,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_47_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_47",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "m100%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.006,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_48_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_48",
+          "base_color": {
+            "r": 0.6038269996643066,
+            "g": 0.6038269996643066,
+            "b": 0.6038269996643066,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m0%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_49_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_49",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m0%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_50_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_50",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m0%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.0,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_51_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_51",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m0%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.0,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_52_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_52",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m0%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.0,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_53_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_53",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m0%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.0,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_54_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_54",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m0%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.0,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_55_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_55",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m16%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.001,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_56_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_56",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m16%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.001,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_57_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_57",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m16%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.001,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_58_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_58",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m16%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.001,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_59_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_59",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m16%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.001,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_60_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_60",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m16%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.001,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_61_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_61",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m16%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.001,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_62_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_62",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.1666666716337204,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m33%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.002,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_63_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_63",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m33%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.002,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_64_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_64",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m33%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.002,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_65_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_65",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m33%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.002,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_66_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_66",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m33%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.002,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_67_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_67",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m33%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.002,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_68_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_68",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m33%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.002,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_69_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_69",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.3333333432674408,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m50%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.003,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_70_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_70",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m50%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.003,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_71_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_71",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m50%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.003,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_72_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_72",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m50%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.003,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_73_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_73",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m50%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.003,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_74_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_74",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m50%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.003,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_75_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_75",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m50%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.003,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_76_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_76",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.5,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m66%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.004,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_77_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_77",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m66%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.004,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_78_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_78",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m66%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.004,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_79_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_79",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m66%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.004,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_80_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_80",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m66%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.004,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_81_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_81",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m66%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.004,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_82_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_82",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m66%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.004,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_83_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_83",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.6666666865348816,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m83%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.005,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_84_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_84",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m83%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.005,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_85_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_85",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m83%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.005,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_86_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_86",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m83%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.005,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_87_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_87",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m83%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.005,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_88_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_88",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m83%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.005,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_89_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_89",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m83%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.005,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_90_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_90",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 0.8333333134651184,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m100%_r0%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.006,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_91_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_91",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m100%_r16%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.001,
+              "y": 0.006,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_92_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_92",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.1666666716337204,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m100%_r33%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.002,
+              "y": 0.006,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_93_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_93",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.3333333432674408,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m100%_r50%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.003,
+              "y": 0.006,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_94_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_94",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m100%_r66%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.004,
+              "y": 0.006,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_95_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_95",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.6666666865348816,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m100%_r83%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.005,
+              "y": 0.006,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_96_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_96",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.8333333134651184,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "g_m100%_r100%_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006,
+              "y": 0.006,
+              "z": -0.003
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_97_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "mat_97",
+          "base_color": {
+            "r": 0.6038274168968201,
+            "g": 0.4396572411060333,
+            "b": 0.01228648703545332,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Metal_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": 0.006500000000000001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_98_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Metal_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": 0.006500000000000001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_98_1.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Metal_2",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": 0.006500000000000001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_98_2.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Metal_3",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": 0.006500000000000001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_98_3.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Metal_4",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": 0.006500000000000001,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_98_4.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_1.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_2",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_2.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_3",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_3.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_4",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_4.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_5",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_5.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_6",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_6.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_7",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_7.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Non-metal_8",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": -1.5707963267948966
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_99_8.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Smooth_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_100_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Smooth_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_100_1.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Smooth_2",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_100_2.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Smooth_3",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_100_3.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Smooth_4",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_100_4.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Smooth_5",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0005,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_100_5.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Rough_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006500000000000001,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_101_0.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Rough_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006500000000000001,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_101_1.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Rough_2",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006500000000000001,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_101_2.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Rough_3",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006500000000000001,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_101_3.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "Rough_4",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.006500000000000001,
+              "y": -0.0005,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MetalRoughSpheresNoTextures_101_4.mesh.json"
+        }
+      ]
+    }
+  ]
+}

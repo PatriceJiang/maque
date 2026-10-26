@@ -1,0 +1,46 @@
+{
+  "reference": "screenshot.jpg",
+  "reference_size": [
+    180,
+    135
+  ],
+  "reference_has_alpha": false,
+  "preview_size": [
+    1280,
+    720
+  ],
+  "ref_mask": "border-bg",
+  "preview_mask": "border-bg",
+  "ref_mean_lum": 0.2974,
+  "preview_mean_lum": 0.3267,
+  "mean_lum_delta": 0.0293,
+  "hist_similarity": 0.4293,
+  "rgb_delta": 0.049,
+  "ref_coverage": 0.7219,
+  "preview_coverage": 0.052,
+  "coverage_ratio": 0.072,
+  "ref_bbox": [
+    0,
+    0,
+    179,
+    134
+  ],
+  "preview_bbox": [
+    341,
+    164,
+    844,
+    585
+  ],
+  "ref_mean_rgb": [
+    80.5,
+    76.0,
+    60.7
+  ],
+  "preview_mean_rgb": [
+    83.5,
+    82.7,
+    88.4
+  ],
+  "framing_notes": [],
+  "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+}

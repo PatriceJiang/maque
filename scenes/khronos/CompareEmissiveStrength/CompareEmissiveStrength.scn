@@ -1,0 +1,168 @@
+{
+  "title": "CompareEmissiveStrength",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.4920343861075873,
+              "y": 0.682951822094607,
+              "z": 2.611829265578024
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.5190192589890529,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.06152719117969433,
+          "far": 36.823179079832094,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "GeoSphere001_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.550000011920929,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707964340999891,
+              "y": 0.785398197435545,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000222236147,
+              "y": 1.0000000758761687,
+              "z": 1.0000000758761687
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareEmissiveStrength_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "glTF Logo Emissive",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/image0.jpg"
+        }
+      ]
+    },
+    {
+      "name": "GeoSphere002_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.550000011920929,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707964340999891,
+              "y": 0.785398197435545,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000222236147,
+              "y": 1.0000000758761687,
+              "z": 1.0000000758761687
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareEmissiveStrength_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "glTF Logo Emissive Strength",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_intensity": 3.0,
+          "emissive_texture": "textures/image0.jpg"
+        }
+      ]
+    }
+  ]
+}

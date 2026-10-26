@@ -1,0 +1,371 @@
+{
+  "title": "CompareAmbientOcclusion",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.4543510637201363,
+              "y": 0.28430468635309614,
+              "z": 0.8297969969172021
+            },
+            "rotation": {
+              "x": -0.22326312094374035,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.018718170593356325,
+          "far": 10.785907397638082,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BasketRight_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.1599999964237213,
+              "y": -0.007346853613853455,
+              "z": -0.005586136132478714
+            },
+            "rotation": {
+              "x": -1.0471975434247853,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999865388264,
+              "z": 0.9999999865388264
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareAmbientOcclusion_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Basket with Occlusion",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/image2.jpg"
+        }
+      ]
+    },
+    {
+      "name": "FruitRight_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.1599999964237213,
+              "y": -0.007346853613853455,
+              "z": -0.0055861324071884155
+            },
+            "rotation": {
+              "x": -1.0471975434247853,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999865388264,
+              "z": 0.9999999865388264
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareAmbientOcclusion_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Fruit with Occlusion",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.jpg",
+          "metallic_roughness_texture": "textures/image1.jpg",
+          "occlusion_texture": "textures/image1.jpg"
+        }
+      ]
+    },
+    {
+      "name": "LogoRight_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.157135009765625,
+              "y": -0.04681558161973953,
+              "z": 0.17818716168403623
+            },
+            "rotation": {
+              "x": 0.6981317923993078,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.000696652103215456,
+              "y": 0.0006966521064038216,
+              "z": 0.0006966521064038216
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareAmbientOcclusion_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Logo",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "BasketLeft_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.1599999964237213,
+              "y": -0.007346853613853455,
+              "z": -0.005586136132478714
+            },
+            "rotation": {
+              "x": -1.0471975434247853,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999865388264,
+              "z": 0.9999999865388264
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareAmbientOcclusion_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Basket without Occlusion",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "FruitLeft_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.1599999964237213,
+              "y": -0.007346853613853455,
+              "z": -0.0055861324071884155
+            },
+            "rotation": {
+              "x": -1.0471975434247853,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999865388264,
+              "z": 0.9999999865388264
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareAmbientOcclusion_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Fruit without Occlusion",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.jpg",
+          "metallic_roughness_texture": "textures/image1.jpg"
+        }
+      ]
+    },
+    {
+      "name": "LogoLeft_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16287654638290405,
+              "y": -0.04681558161973953,
+              "z": 0.17818716168403623
+            },
+            "rotation": {
+              "x": 0.6981317923993078,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.000696652103215456,
+              "y": 0.0006966521064038216,
+              "z": 0.0006966521064038216
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/CompareAmbientOcclusion_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Logo",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    }
+  ]
+}

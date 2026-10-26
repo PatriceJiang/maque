@@ -1,0 +1,284 @@
+{
+  "title": "TrafficCone",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.5329778445630382,
+              "y": 0.9603622190347805,
+              "z": 2.6928020001131143
+            },
+            "rotation": {
+              "x": -0.2232631209437404,
+              "y": -0.5190192589890531,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.06321559350871184,
+          "far": 38.86478258655858,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cone Normal_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.30000001192092896,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.570796629741176,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714758,
+              "z": 0.9999999657714758
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TrafficCone_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ConeBaseMat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.3499999940395355,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 4.0,
+            "y": 4.0,
+            "z": 4.0
+          },
+          "base_color_texture": "textures/ConeBaseMat_baseColor.png",
+          "metallic_roughness_texture": "textures/ConeBaseMat_metallicRoughness.png"
+        }
+      ]
+    },
+    {
+      "name": "Cone Retroreflection_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.30000001192092896,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.570796629741176,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714758,
+              "z": 0.9999999657714758
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TrafficCone_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ConeMatRetro",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.3499999940395355,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 4.0,
+            "y": 4.0,
+            "z": 4.0
+          },
+          "base_color_texture": "textures/ConeBaseMat_baseColor.png",
+          "metallic_roughness_texture": "textures/ConeBaseMat_metallicRoughness.png"
+        }
+      ]
+    },
+    {
+      "name": "GroundPlane_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -0.0009765625,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TrafficCone_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Plane Material",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.009999999776482582,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/asphalt_02_diff_1k.jpg",
+          "metallic_roughness_texture": "textures/asphalt_02_rough_1k.jpg"
+        }
+      ]
+    },
+    {
+      "name": "Bulb_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.3700000047683716,
+              "z": 1.2000000476837158
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TrafficCone_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BulbMaterial",
+          "base_color": {
+            "r": 0.8962642550468445,
+            "g": 0.65837562084198,
+            "b": 0.07036028802394867,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    }
+  ]
+}

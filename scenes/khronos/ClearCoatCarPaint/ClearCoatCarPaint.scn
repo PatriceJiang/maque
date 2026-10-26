@@ -1,0 +1,125 @@
+{
+  "title": "ClearCoatCarPaint",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.0670488382105137,
+              "y": 0.9884223101062772,
+              "z": 1.8678854920427341
+            },
+            "rotation": {
+              "x": -0.2232631209437403,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.044002013946825305,
+          "far": 24.484571093431317,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sphere_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatCarPaint.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Clear Coat Car Paint",
+          "base_color": {
+            "r": 0.7,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.3,
+          "roughness": 0.4,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.0,
+          "normal_texture": "textures/image0.png",
+          "normal_scale": 0.2,
+          "normal_scale_y": 0.2,
+          "normal_uv_scale": {
+            "x": 3.0,
+            "y": 3.0
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -28,3 +28,9 @@ Testing/
 
 # Windows 第三方原生依赖（下载/构建产物，不入库）
 /.deps/
+
+# Khronos 模型批量迁移：派生资产（mesh.json / 贴图）与 1280x720 原图体积大，不入库；
+# 由 tools/migrate_gltf_models.py 从 .deps/gltf-assets 重新生成（见 scenes/khronos/README.md）。
+/scenes/khronos/*/assets/
+/scenes/khronos/*/textures/
+/scenes/khronos/*/preview.png

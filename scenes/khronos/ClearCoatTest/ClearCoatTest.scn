@@ -1,0 +1,1447 @@
+{
+  "title": "ClearCoatTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -11.852889889470529,
+              "y": 4.753238583688838,
+              "z": 17.516991632767724
+            },
+            "rotation": {
+              "x": -0.22326312094374035,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.4009892028628261,
+          "far": 227.60593166720497,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BaseLayerSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.0999999046325684,
+              "y": 5.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Simple_Base",
+          "base_color": {
+            "r": 0.5,
+            "g": 0.019999999552965164,
+            "b": 0.009999999776482582,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "ClearCoatSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 5.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Simple_Coated",
+          "base_color": {
+            "r": 0.5,
+            "g": 0.019999999552965164,
+            "b": 0.009999999776482582,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0
+        }
+      ]
+    },
+    {
+      "name": "CoatOnlySample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0999999046325684,
+              "y": 5.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Simple_Coating",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.029999999329447746,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "R1_BaseLayerSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.0999999046325684,
+              "y": 3.1500000953674316,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Partial_Base",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "R1_ClearCoatSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 3.1500000953674316,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Partial_Coated",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0
+        }
+      ]
+    },
+    {
+      "name": "R1_CoatOnlySample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0999999046325684,
+              "y": 3.1500000953674316,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Partial_Coating",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.029999999329447746,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/PartialCoating_Alpha.png"
+        }
+      ]
+    },
+    {
+      "name": "R2_BaseLayerSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.0999999046325684,
+              "y": 1.0499999523162842,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "RoughVariations_Base",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.6000000238418579,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "R2_ClearCoatSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 1.0499999523162842,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "RoughVariations_Coated",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.6000000238418579,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "R2_CoatOnlySample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0999999046325684,
+              "y": 1.0499999523162842,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "RoughVariations_Coating",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/RoughnessStripes.png"
+        }
+      ]
+    },
+    {
+      "name": "R3_BaseLayerSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.0999999046325684,
+              "y": -1.0499999523162842,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BaseNorm_Base",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/RibsNormal.png"
+        }
+      ]
+    },
+    {
+      "name": "R3_ClearCoatSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -1.0499999523162842,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BaseNorm_Coated",
+          "base_color": {
+            "r": 0.012848637998104095,
+            "g": 0.021861059591174126,
+            "b": 0.11068868637084961,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "normal_texture": "textures/RibsNormal.png"
+        }
+      ]
+    },
+    {
+      "name": "R3_CoatOnlySample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0999999046325684,
+              "y": -1.0499999523162842,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BaseNorm_Coating",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.029999999329447746,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "R4_BaseLayerSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.0999999046325684,
+              "y": -5.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "CoatNorm_Base",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "R4_ClearCoatSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -5.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "CoatNorm_Coated",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_normal_texture": "textures/PlasticWrap_normals.jpg"
+        }
+      ]
+    },
+    {
+      "name": "R4_CoatOnlySample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0999999046325684,
+              "y": -5.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "CoatNorm_Coating",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.029999999329447746,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/PlasticWrap_normals.jpg"
+        }
+      ]
+    },
+    {
+      "name": "R5_BaseLayerSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.0999999046325684,
+              "y": -3.1500000953674316,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "SharedNorm_Base",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/RibsNormal.png"
+        }
+      ]
+    },
+    {
+      "name": "R5_ClearCoatSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -3.1500000953674316,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "SharedNorm_Coated",
+          "base_color": {
+            "r": 0.012983020395040512,
+            "g": 0.022173883393406868,
+            "b": 0.10946174710988998,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.4399999976158142,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "normal_texture": "textures/RibsNormal.png",
+          "clearcoat_normal_texture": "textures/RibsNormal.png"
+        }
+      ]
+    },
+    {
+      "name": "R5_CoatOnlySample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0999999046325684,
+              "y": -3.1500000953674316,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "SharedNorm_Coating",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.029999999329447746,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/RibsNormal.png"
+        }
+      ]
+    },
+    {
+      "name": "X2_Label_CoatingOnly_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.0712804794311523,
+              "y": 6.619500160217285,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    },
+    {
+      "name": "Y0_Label_SimpleCoating_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -5.3578033447265625,
+              "y": 5.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    },
+    {
+      "name": "Y1_Label_PartialCoating_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -5.3578033447265625,
+              "y": 3.1673200130462646,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_20_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    },
+    {
+      "name": "Y2_Label_Roughness_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -5.3578033447265625,
+              "y": 1.1383899450302124,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_21_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    },
+    {
+      "name": "Y3_Label_BaseNormals_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -5.3578033447265625,
+              "y": -1.099429965019226,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_22_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    },
+    {
+      "name": "Y4_Label_CoatNormals_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -5.3578033447265625,
+              "y": -5.252500057220459,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_23_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    },
+    {
+      "name": "Y5_Label_SharedNormals_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -5.3578033447265625,
+              "y": -3.1963000297546387,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_24_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    },
+    {
+      "name": "X0_Label_BaseLayer_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.087031602859497,
+              "y": 6.616230010986328,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_25_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    },
+    {
+      "name": "X1_Label_Coated_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 6.614150047302246,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ClearCoatTest_26_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/ClearCoatLabels.png"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,386 @@
+{
+  "title": "PlaysetLightTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9044592009843964,
+              "y": 0.570949696056479,
+              "z": 1.5610978639408781
+            },
+            "rotation": {
+              "x": -0.2232631209437403,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.0371542321220937,
+          "far": 22.616295022105312,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "abacus_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.4518204927444458,
+              "y": 0.004607812035828829,
+              "z": -0.487223744392395
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.5869780708751313,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.999999998659609,
+              "y": 1.0,
+              "z": 0.999999998659609
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/PlaysetLightTest_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material_0.001",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Image_0.png",
+          "metallic_roughness_texture": "textures/Image_2.png",
+          "normal_texture": "textures/Image_1.png",
+          "occlusion_texture": "textures/Image_3.png"
+        }
+      ]
+    },
+    {
+      "name": "ball_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.005720794200897217,
+              "y": 0.0,
+              "z": 0.5211869478225708
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/PlaysetLightTest_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material_0.002",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/material0_basecolor.png",
+          "metallic_roughness_texture": "textures/material0_metallic_roughness.png",
+          "normal_texture": "textures/material0_normal.png",
+          "occlusion_texture": "textures/material0_occlusion.png"
+        }
+      ]
+    },
+    {
+      "name": "carpet_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/PlaysetLightTest_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "SimplygonCastMaterial.002",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/Basecolor_0.jpg",
+          "metallic_roughness_texture": "textures/Metalness_0.jpg",
+          "normal_texture": "textures/Normals_0.jpg",
+          "occlusion_texture": "textures/Metalness_0.jpg"
+        }
+      ]
+    },
+    {
+      "name": "giraffe_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.08564350754022598,
+              "y": 0.026569407433271408,
+              "z": -0.05498848482966423
+            },
+            "rotation": {
+              "x": 0.5221748328585394,
+              "y": -0.2755945422637475,
+              "z": -1.6869859996119454
+            },
+            "scale": {
+              "x": 0.9999999978511012,
+              "y": 0.9999999981331279,
+              "z": 0.9999999996791383
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/PlaysetLightTest_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material_0",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/material0_basecolor_13.png",
+          "metallic_roughness_texture": "textures/material0_metallic_roughness_14.png",
+          "normal_texture": "textures/material0_normal_11.png",
+          "occlusion_texture": "textures/material0_occlusion_12.png"
+        }
+      ]
+    },
+    {
+      "name": "lamp_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.5848581790924072,
+              "y": 0.003981150221079588,
+              "z": -0.6097322702407837
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.7817262852700815,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000655620793,
+              "y": 1.0,
+              "z": 1.0000000655620793
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/PlaysetLightTest_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material_0.3065",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/material0_basecolor_17.png",
+          "metallic_roughness_texture": "textures/material0_metallic_roughness_18.png",
+          "normal_texture": "textures/material0_normal_15.png",
+          "occlusion_texture": "textures/material0_occlusion_16.png"
+        }
+      ]
+    },
+    {
+      "name": "lamp_emissive_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.5848581790924072,
+              "y": 0.003981150221079588,
+              "z": -0.6097322702407837
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.7817262852700815,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000655620793,
+              "y": 1.0,
+              "z": 1.0000000655620793
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/PlaysetLightTest_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "emissive",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_intensity": 1500.0
+        }
+      ]
+    }
+  ]
+}

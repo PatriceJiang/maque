@@ -1,0 +1,272 @@
+{
+  "title": "USDShaderBallForGltf",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0921375924241836,
+              "y": 0.08319593752368346,
+              "z": 0.16127895746965076
+            },
+            "rotation": {
+              "x": -0.22326312094374026,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.0037993485407036933,
+          "far": 2.1218372193361743,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "base_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.629206805909003e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.009999999776482582,
+              "y": 0.009999999776482716,
+              "z": 0.009999999776482716
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/USDShaderBallForGltf_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "core",
+          "base_color": {
+            "r": 0.18,
+            "g": 0.18,
+            "b": 0.18,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/core_ao.png",
+          "occlusion_strength": 0.5
+        }
+      ]
+    },
+    {
+      "name": "core_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.629206805909003e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.009999999776482582,
+              "y": 0.009999999776482716,
+              "z": 0.009999999776482716
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/USDShaderBallForGltf_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "core",
+          "base_color": {
+            "r": 0.18,
+            "g": 0.18,
+            "b": 0.18,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/core_ao.png",
+          "occlusion_strength": 0.5
+        }
+      ]
+    },
+    {
+      "name": "material_surface_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.629206805909003e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.009999999776482582,
+              "y": 0.009999999776482716,
+              "z": 0.009999999776482716
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/USDShaderBallForGltf_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "material_surface",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/material_ao.png",
+          "occlusion_strength": 0.5
+        }
+      ]
+    },
+    {
+      "name": "sss_bars_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.629206805909003e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.009999999776482582,
+              "y": 0.009999999776482716,
+              "z": 0.009999999776482716
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/USDShaderBallForGltf_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sss_bars",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/sss_bars.png"
+        }
+      ]
+    }
+  ]
+}

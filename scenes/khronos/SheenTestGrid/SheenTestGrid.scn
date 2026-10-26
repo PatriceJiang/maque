@@ -1,0 +1,1174 @@
+{
+  "title": "SheenTestGrid",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.7501635704955183,
+              "y": 0.2649463266945705,
+              "z": 1.0164837907992323
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.023679581518110636,
+          "far": 13.953962375166604,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "CheckerBackdrop_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Backdrop",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0_sheenRough0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503073275089264,
+              "y": 0.2199999988079071,
+              "z": 0.017525814473628998
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0_sheenRough0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_roughness": 0.0
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0.33_sheenRough0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.055030688643455505,
+              "y": 0.2199999988079071,
+              "z": 0.01752581261098385
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0.33_sheenRough0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 0.33,
+            "z": 0.33
+          },
+          "sheen_roughness": 0.0
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0.66_sheenRough0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.05496935546398163,
+              "y": 0.2199999988079071,
+              "z": 0.0175258107483387
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0.66_sheenRough0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 0.66,
+            "z": 0.66
+          },
+          "sheen_roughness": 0.0
+        }
+      ]
+    },
+    {
+      "name": "sheenColor1_sheenRough0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.16496939957141876,
+              "y": 0.2199999988079071,
+              "z": 0.01752580888569355
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor1_sheenRough0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.0
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0_sheenRough0.33_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503074765205383,
+              "y": 0.11000001430511475,
+              "z": 0.0175258070230484
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0_sheenRough0.33",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_roughness": 0.33
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0.33_sheenRough0.33_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0550307035446167,
+              "y": 0.11000001430511475,
+              "z": 0.01752580516040325
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0.33_sheenRough0.33",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 0.33,
+            "z": 0.33
+          },
+          "sheen_roughness": 0.33
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0.66_sheenRough0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.054969340562820435,
+              "y": 0.11000001430511475,
+              "z": 0.017525803297758102
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0.66_sheenRough0.33",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 0.66,
+            "z": 0.66
+          },
+          "sheen_roughness": 0.33
+        }
+      ]
+    },
+    {
+      "name": "sheenColor1_sheenRough0.33_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.16496938467025757,
+              "y": 0.11000001430511475,
+              "z": 0.017525801435112953
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor1_sheenRough0.33",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.33
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0_sheenRough0.66_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503076255321503,
+              "y": 2.9802322387695312e-08,
+              "z": 0.017525799572467804
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0_sheenRough0.66",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_roughness": 0.66
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0.33_sheenRough0.66_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.05503071844577789,
+              "y": 2.9802322387695312e-08,
+              "z": 0.017525797709822655
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0.33_sheenRough0.66",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 0.33,
+            "z": 0.33
+          },
+          "sheen_roughness": 0.66
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0.66_sheenRough0.66_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.05496932566165924,
+              "y": 2.9802322387695312e-08,
+              "z": 0.017525795847177505
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0.66_sheenRough0.66",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 0.66,
+            "z": 0.66
+          },
+          "sheen_roughness": 0.66
+        }
+      ]
+    },
+    {
+      "name": "sheenColor1_sheenRough0.66_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.16496936976909637,
+              "y": 2.9802322387695312e-08,
+              "z": 0.017525793984532356
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor1_sheenRough0.66",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.66
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0_sheenRough1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503077745437622,
+              "y": -0.10999995470046997,
+              "z": 0.017525792121887207
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0_sheenRough1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0.33_sheenRough1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.05503073334693909,
+              "y": -0.10999995470046997,
+              "z": 0.017525790259242058
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0.33_sheenRough1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 0.33,
+            "z": 0.33
+          },
+          "sheen_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "sheenColor0.66_sheenRough1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.05496931076049805,
+              "y": -0.10999995470046997,
+              "z": 0.01752578839659691
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor0.66_sheenRough1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 0.66,
+            "z": 0.66
+          },
+          "sheen_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "sheenColor1_sheenRough1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.16496935486793518,
+              "y": -0.10999995470046997,
+              "z": 0.01752578653395176
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "sheenColor1_sheenRough1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 0.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "TextBackdrop_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text Backdrop",
+          "base_color": {
+            "r": 0.5,
+            "g": 0.5,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "TextXaxis_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -5.960464477539063e-08,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999998465621733,
+              "z": 0.9999998465621733
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "TextYaxis_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 2.9802322387695312e-08,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999998465621733,
+              "z": 0.9999998465621733
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SheenTestGrid_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    }
+  ]
+}

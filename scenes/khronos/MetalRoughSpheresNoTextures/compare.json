@@ -1,0 +1,46 @@
+{
+  "reference": "screenshot.png",
+  "reference_size": [
+    256,
+    256
+  ],
+  "reference_has_alpha": false,
+  "preview_size": [
+    1280,
+    720
+  ],
+  "ref_mask": "border-bg",
+  "preview_mask": "border-bg",
+  "ref_mean_lum": 0.4755,
+  "preview_mean_lum": 0.665,
+  "mean_lum_delta": 0.1895,
+  "hist_similarity": 0.6801,
+  "rgb_delta": 0.18,
+  "ref_coverage": 0.4986,
+  "preview_coverage": 0.1373,
+  "coverage_ratio": 0.275,
+  "ref_bbox": [
+    3,
+    4,
+    250,
+    254
+  ],
+  "preview_bbox": [
+    411,
+    108,
+    887,
+    661
+  ],
+  "ref_mean_rgb": [
+    124.3,
+    122.5,
+    100.0
+  ],
+  "preview_mean_rgb": [
+    175.0,
+    171.1,
+    138.4
+  ],
+  "framing_notes": [],
+  "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
+}

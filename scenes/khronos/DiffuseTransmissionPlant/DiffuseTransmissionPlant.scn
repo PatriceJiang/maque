@@ -1,0 +1,541 @@
+{
+  "title": "DiffuseTransmissionPlant",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.8665179661546701,
+              "y": 0.7961823186165825,
+              "z": 1.3445673720462246
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.5190192589890529,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.033832430667011006,
+          "far": 18.64196048730637,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "pot_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.371138828673795e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999999,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "base",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image2.jpg",
+          "normal_texture": "textures/image3.jpg",
+          "occlusion_texture": "textures/image6.jpg",
+          "emissive_texture": "textures/image4.jpg"
+        }
+      ]
+    },
+    {
+      "name": "leaves_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.002903828397393226,
+              "y": 0.30528968572616577,
+              "z": 0.0006859108689241111
+            },
+            "rotation": {
+              "x": 4.371138828673795e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999999,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "leaves",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "normal_texture": "textures/image1.jpg"
+        }
+      ]
+    },
+    {
+      "name": "dirt_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.12862031161785126,
+              "y": 0.31752803921699524,
+              "z": -0.13355804979801178
+            },
+            "rotation": {
+              "x": 4.371138828673795e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999999999999,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "base",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image2.jpg",
+          "normal_texture": "textures/image3.jpg",
+          "occlusion_texture": "textures/image6.jpg",
+          "emissive_texture": "textures/image4.jpg"
+        }
+      ]
+    },
+    {
+      "name": "firefly1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.04120130464434624,
+              "y": 0.3862422108650207,
+              "z": -0.08749894052743912
+            },
+            "rotation": {
+              "x": 0.03602583873492023,
+              "y": -0.2872830596714121,
+              "z": -1.5752446917096552
+            },
+            "scale": {
+              "x": 1.0000001120783846,
+              "y": 0.9999999917501445,
+              "z": 0.9999999450385705
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "base",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image2.jpg",
+          "normal_texture": "textures/image3.jpg",
+          "occlusion_texture": "textures/image6.jpg",
+          "emissive_texture": "textures/image4.jpg"
+        }
+      ]
+    },
+    {
+      "name": "firefly1_wing_right_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.04118217068022892,
+              "y": 0.3907671798773817,
+              "z": -0.07651000851190293
+            },
+            "rotation": {
+              "x": -0.413882826567085,
+              "y": -0.8759729753157485,
+              "z": -1.2961227363551042
+            },
+            "scale": {
+              "x": 1.0000001658183744,
+              "y": 0.9999999994810301,
+              "z": 1.0000001405799974
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "wings",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "normal_texture": "textures/image1.jpg"
+        }
+      ]
+    },
+    {
+      "name": "firefly1_wing_left_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.04040046797265161,
+              "y": 0.39039831724159324,
+              "z": -0.07675597160137448
+            },
+            "rotation": {
+              "x": 0.5289139509472478,
+              "y": -0.8552398170706341,
+              "z": -1.8379888498509098
+            },
+            "scale": {
+              "x": 1.0000001842931459,
+              "y": 1.0000002199201308,
+              "z": 1.0000002805054664
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "wings",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "normal_texture": "textures/image1.jpg"
+        }
+      ]
+    },
+    {
+      "name": "firefly2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.13378867506980896,
+              "y": 0.37315475940704346,
+              "z": 0.015954697504639626
+            },
+            "rotation": {
+              "x": 0.9386984899441166,
+              "y": -0.1180419834765714,
+              "z": -1.6952069594047061
+            },
+            "scale": {
+              "x": 1.000000229738199,
+              "y": 1.0000002308525024,
+              "z": 0.9999998775969061
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "base",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.75,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image2.jpg",
+          "normal_texture": "textures/image3.jpg",
+          "occlusion_texture": "textures/image6.jpg",
+          "emissive_texture": "textures/image4.jpg"
+        }
+      ]
+    },
+    {
+      "name": "firefly2_wing_left_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.14110654594788855,
+              "y": 0.37553140184635536,
+              "z": 0.020203813683570035
+            },
+            "rotation": {
+              "x": 1.2879705691665073,
+              "y": -0.32255874377865934,
+              "z": -2.1527371883633672
+            },
+            "scale": {
+              "x": 1.0000001576719655,
+              "y": 1.0000003340571368,
+              "z": 0.9999999214735007
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "wings",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "normal_texture": "textures/image1.jpg"
+        }
+      ]
+    },
+    {
+      "name": "firefly2_wing_right_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.14114514325153593,
+              "y": 0.37553895330387593,
+              "z": 0.020146137602153134
+            },
+            "rotation": {
+              "x": 0.7716541660887735,
+              "y": -0.22064280891768154,
+              "z": -2.2162462750296514
+            },
+            "scale": {
+              "x": 1.0000001611088654,
+              "y": 1.0000003408746048,
+              "z": 0.9999999168064881
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "wings",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "normal_texture": "textures/image1.jpg"
+        }
+      ]
+    }
+  ]
+}

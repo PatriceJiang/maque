@@ -1,0 +1,1615 @@
+{
+  "title": "TextureTransformMultiTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.7498923928763135,
+              "y": 0.6009816845364787,
+              "z": 3.0682394933078325
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.07216051104644593,
+          "far": 41.362911937887105,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "BaseColorUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": 0.75,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BaseColorTest0Mat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/TestMap.png",
+          "uv_scale": {
+            "x": 0.3499999940395355,
+            "y": 0.3499999940395355
+          },
+          "uv_offset": {
+            "x": 0.7049999535083774,
+            "y": 0.28500004152502995
+          }
+        }
+      ]
+    },
+    {
+      "name": "BaseColorUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": 0.75,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BaseColorTest1Mat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/TestMap.png",
+          "uv_scale": {
+            "x": 0.3499999940395355,
+            "y": 0.3499999940395355
+          },
+          "uv_offset": {
+            "x": 0.7049999535083774,
+            "y": 0.28500004152502995
+          }
+        }
+      ]
+    },
+    {
+      "name": "BaseColorSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": 0.75,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BaseColorSampleMat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "Background_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -0.02500000037252903
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BackgroundMat",
+          "base_color": {
+            "r": 0.007408552337437868,
+            "g": 0.07486194372177124,
+            "b": 0.4639684557914734,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Labels_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/TTMT_Labels.png"
+        }
+      ]
+    },
+    {
+      "name": "EmissionUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": 0.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "EmissionTest0Mat",
+          "base_color": {
+            "r": 0,
+            "g": 0.15000000596046448,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "EmissionUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": 0.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "EmissionTest1Mat",
+          "base_color": {
+            "r": 0,
+            "g": 0.15000000596046448,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "EmissionSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": 0.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "EmissionSampleMat",
+          "base_color": {
+            "r": 0,
+            "g": 0.15000000596046448,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "NormalUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": 0.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "NormalTest0Mat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.10000000149011612,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/TestMap_Normal.png",
+          "normal_uv_scale": {
+            "x": 0.3499999940395355,
+            "y": 0.3499999940395355
+          },
+          "normal_uv_offset": {
+            "x": 0.7049999535083774,
+            "y": 0.28500004152502995
+          }
+        }
+      ]
+    },
+    {
+      "name": "NormalUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": 0.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "NormalTest1Mat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.10000000149011612,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/TestMap_Normal.png",
+          "normal_uv_scale": {
+            "x": 0.3499999940395355,
+            "y": 0.3499999940395355
+          },
+          "normal_uv_offset": {
+            "x": 0.7049999535083774,
+            "y": 0.28500004152502995
+          }
+        }
+      ]
+    },
+    {
+      "name": "NormalSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": 0.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "NormalSampleMat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.10000000149011612,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "normal_texture": "textures/TestMap_Normal.png"
+        }
+      ]
+    },
+    {
+      "name": "MetalRoughUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "MetalRoughTest0Mat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "MetalRoughUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "MetalRoughTest1Mat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "MetalRoughSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "MetalRoughSampleMat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "OcclusionUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": -0.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "OcclusionTest0Mat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "OcclusionUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": -0.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "OcclusionTest1Mat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "OcclusionSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": -0.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "OcclusionSampleMat",
+          "base_color": {
+            "r": 0.800000011920929,
+            "g": 0.800000011920929,
+            "b": 0.800000011920929,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "occlusion_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "UnlitUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": -0.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "UnlitTest0Mat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2,
+          "base_color_texture": "textures/TestMap.png",
+          "uv_scale": {
+            "x": 0.3499999940395355,
+            "y": 0.3499999940395355
+          },
+          "uv_offset": {
+            "x": 0.7049999535083774,
+            "y": 0.28500004152502995
+          }
+        }
+      ]
+    },
+    {
+      "name": "UnlitUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": -0.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "UnlitTest1Mat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2,
+          "base_color_texture": "textures/TestMap.png",
+          "uv_scale": {
+            "x": 0.3499999940395355,
+            "y": 0.3499999940395355
+          },
+          "uv_offset": {
+            "x": 0.7049999535083774,
+            "y": 0.28500004152502995
+          }
+        }
+      ]
+    },
+    {
+      "name": "UnlitSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": -0.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "UnlitSampleMat",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2,
+          "base_color_texture": "textures/TestMap.png"
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": -0.75,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_20_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatTest0Mat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.029999999329447746
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": -0.75,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_21_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatTest1Mat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.029999999329447746
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": -0.75,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_22_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatSampleMat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.029999999329447746
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatRoughUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": -1.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_23_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatRoughTest0Mat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatRoughUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": -1.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_24_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatRoughTest1Mat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatRoughSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": -1.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_25_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatRoughSampleMat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatNormalUV0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10000000149011612,
+              "y": -1.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_26_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatNormalTest0Mat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.029999999329447746,
+          "clearcoat_normal_texture": "textures/TestMap_Normal.png"
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatNormalUV1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.3499999940395355,
+              "y": -1.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_27_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatNormalTest1Mat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.029999999329447746,
+          "clearcoat_normal_texture": "textures/TestMap_Normal.png"
+        }
+      ]
+    },
+    {
+      "name": "ClearcoatNormalSample_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6000000238418579,
+              "y": -1.25,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TextureTransformMultiTest_28_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ClearcoatNormalSampleMat",
+          "base_color": {
+            "r": 0.0040703266859054565,
+            "g": 0.030168700963258743,
+            "b": 0.16859287023544312,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 0.029999999329447746,
+          "clearcoat_normal_texture": "textures/TestMap_Normal.png"
+        }
+      ]
+    }
+  ]
+}

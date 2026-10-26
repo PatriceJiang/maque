@@ -1,0 +1,1735 @@
+{
+  "title": "DiffuseTransmissionTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.444282605385733,
+              "y": 0.5521820800206747,
+              "z": 7.850806994889905
+            },
+            "rotation": {
+              "x": -0.22326312094374035,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.19083173799907843,
+          "far": 115.38165450907461,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plane001_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Factor 0.0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "TextTop_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.4003283977508545,
+              "y": 0.8563483953475952,
+              "z": 3.2747291101031806e-08
+            },
+            "rotation": {
+              "x": 1.629206849429451e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000133,
+              "z": 1.0000000000000133
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "TextSide_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.7469620704650879,
+              "y": 0.22121655941009521,
+              "z": 3.2747291101031806e-08
+            },
+            "rotation": {
+              "x": 1.629206849429451e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000133,
+              "z": 1.0000000000000133
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Plane002_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.204230546951294,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Factor 0.25",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane003_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.408461093902588,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Factor 0.5",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane004_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.612691640853882,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Factor 0.75",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane005_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.816922187805176,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Factor 1.0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane006_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -1.2142739295959473,
+              "z": -5.3077599204698345e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorFactor 0.0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane007_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.204230546951294,
+              "y": -1.2142739295959473,
+              "z": -5.3077599204698345e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorFactor 0.25",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane008_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.408461093902588,
+              "y": -1.2142739295959473,
+              "z": -5.3077599204698345e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorFactor 0.5",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane009_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.612691640853882,
+              "y": -1.2142739295959473,
+              "z": -5.3077599204698345e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorFactor 0.75",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane010_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.816922187805176,
+              "y": -1.2142739295959473,
+              "z": -5.3077599204698345e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorFactor 1.0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane011_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -2.4285478591918945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Texture 0.0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane012_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.204230546951294,
+              "y": -2.4285478591918945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Texture 0.25",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane013_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.408461093902588,
+              "y": -2.4285478591918945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Texture 0.5",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane014_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.612691640853882,
+              "y": -2.4285478591918945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Texture 0.75",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane015_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.816922187805176,
+              "y": -2.4285478591918945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Texture 1.0",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Plane016_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -3.6499834060668945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorTexture 0.0",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image1.png"
+        }
+      ]
+    },
+    {
+      "name": "Plane017_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.204230546951294,
+              "y": -3.6499834060668945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorTexture 0.25",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image1.png"
+        }
+      ]
+    },
+    {
+      "name": "Plane018_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.408461093902588,
+              "y": -3.6499834060668945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorTexture 0.5",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image1.png"
+        }
+      ]
+    },
+    {
+      "name": "Plane019_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.612691640853882,
+              "y": -3.6499834060668945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_20_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorTexture 0.75",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image1.png"
+        }
+      ]
+    },
+    {
+      "name": "Plane020_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.816922187805176,
+              "y": -3.6499834060668945,
+              "z": -1.0615519840939669e-07
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_21_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorTexture 1.0",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image1.png"
+        }
+      ]
+    },
+    {
+      "name": "Plane021_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9469620585441589,
+              "y": -2.5241410732269287,
+              "z": -9.304177694957616e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_22_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "TextureUnlit",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Plane022_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9469620585441589,
+              "y": -3.7455766201019287,
+              "z": -9.304028480983106e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_23_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorTextureUnlit",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2,
+          "base_color_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Plane023_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.4653472900390625,
+              "y": -3.7455766201019287,
+              "z": -9.304028480983106e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_24_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "baseColorTextureUnlit",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2,
+          "base_color_texture": "textures/image1.png"
+        }
+      ]
+    },
+    {
+      "name": "Plane024_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9469620585441589,
+              "y": -1.309867262840271,
+              "z": -3.9964177744877816e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_25_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ColorFactorUnlit",
+          "base_color": {
+            "r": 1.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Plane025_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9469620585441589,
+              "y": -0.09559327363967896,
+              "z": 1.3113421459820529e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_26_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "FactorUnlit",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "BehindPlanes_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.408461093902588,
+              "y": 0.0,
+              "z": -0.5
+            },
+            "rotation": {
+              "x": 1.629206849429451e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000133,
+              "z": 1.0000000000000133
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_27_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Behind",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.0,
+            "b": 0.21204441785812378,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "TextIngredients_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.1865673065185547,
+              "y": -0.36966466903686523,
+              "z": 3.2747291101031806e-08
+            },
+            "rotation": {
+              "x": 1.629206849429451e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000133,
+              "z": 1.0000000000000133
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_28_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Plane026_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.4653472900390625,
+              "y": -2.5241410732269287,
+              "z": -9.304177694957616e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_29_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "baseColor",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Plane027_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.4653472900390625,
+              "y": -1.309867262840271,
+              "z": -3.9964177744877816e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_30_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "baseColor",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Plane028_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.4653472900390625,
+              "y": -0.09559327363967896,
+              "z": 1.3113421459820529e-08
+            },
+            "rotation": {
+              "x": 4.37113882867379e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_31_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "baseColor",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "TextBehind_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.408461093902588,
+              "y": 0.0,
+              "z": -0.5
+            },
+            "rotation": {
+              "x": 1.629206849429451e-07,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000133,
+              "z": 1.0000000000000133
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionTest_32_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "textbehind",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 0.25
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    }
+  ]
+}

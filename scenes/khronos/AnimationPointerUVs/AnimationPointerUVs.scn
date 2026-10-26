@@ -1,0 +1,7006 @@
+{
+  "title": "AnimationPointerUVs",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -9.194172724956033,
+              "y": 4.797359449552786,
+              "z": 16.261662089928954
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.3838011450322534,
+          "far": 237.4551574780779,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box001_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -8.665282249450684,
+              "y": 3.207383394241333,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #60",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "uv_offset": {
+            "x": -0.239,
+            "y": 0.238
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box002_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.542494297027588,
+              "y": 3.207383394241333,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #61",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "uv_scale": {
+            "x": 1.477,
+            "y": 1.477
+          },
+          "uv_offset": {
+            "x": -0.239,
+            "y": 0.238
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box003_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -6.41970682144165,
+              "y": 3.207383394241333,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #62",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image2.png",
+          "uv_offset": {
+            "x": -0.219,
+            "y": 0.148
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box004_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -8.665282249450684,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #94",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Box005_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.542494297027588,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #95",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Box006_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -6.41970682144165,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #96",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Box013_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -8.665282249450684,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #88",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Box014_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.542494297027588,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #89",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Box015_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -6.41970682144165,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #90",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Box016_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -8.665282249450684,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #57",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "Box017_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.542494297027588,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #58",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "Box018_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -6.41970682144165,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #59",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "emissive_texture": "textures/image3.png"
+        }
+      ]
+    },
+    {
+      "name": "Box025_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -4.901121616363525,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #120",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0,
+          "normal_texture": "textures/image4.png",
+          "clearcoat_normal_texture": "textures/image6.png"
+        }
+      ]
+    },
+    {
+      "name": "Box026_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.778334379196167,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #123",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0,
+          "normal_texture": "textures/image4.png",
+          "clearcoat_normal_texture": "textures/image6.png"
+        }
+      ]
+    },
+    {
+      "name": "Box027_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.6555469036102295,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #124",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0,
+          "normal_texture": "textures/image4.png",
+          "clearcoat_normal_texture": "textures/image6.png"
+        }
+      ]
+    },
+    {
+      "name": "Box052_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -4.901121616363525,
+              "y": 3.207383394241333,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #99",
+          "base_color": {
+            "r": 0.10615606606006622,
+            "g": 0.9489650726318359,
+            "b": 0.7299190163612366,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "anisotropy": 1.0,
+          "normal_texture": "textures/image6.png"
+        }
+      ]
+    },
+    {
+      "name": "Box053_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.778334379196167,
+              "y": 3.207383394241333,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #118",
+          "base_color": {
+            "r": 0.10615606606006622,
+            "g": 0.9489650726318359,
+            "b": 0.7299190163612366,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "anisotropy": 1.0,
+          "normal_texture": "textures/image6.png"
+        }
+      ]
+    },
+    {
+      "name": "Box054_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.6555469036102295,
+              "y": 3.207383394241333,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #119",
+          "base_color": {
+            "r": 0.10615606606006622,
+            "g": 0.9489650726318359,
+            "b": 0.7299190163612366,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "anisotropy": 1.0,
+          "normal_texture": "textures/image6.png"
+        }
+      ]
+    },
+    {
+      "name": "Box055_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -4.901121616363525,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #133",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0,
+          "normal_texture": "textures/image4.png",
+          "clearcoat_normal_texture": "textures/image8.png"
+        }
+      ]
+    },
+    {
+      "name": "Box056_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.778334379196167,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #132",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0,
+          "normal_texture": "textures/image4.png",
+          "clearcoat_normal_texture": "textures/image8.png"
+        }
+      ]
+    },
+    {
+      "name": "Box057_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.6555469036102295,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_20_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #131",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0,
+          "normal_texture": "textures/image4.png",
+          "clearcoat_normal_texture": "textures/image8.png"
+        }
+      ]
+    },
+    {
+      "name": "Text032_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": -1.487799882888794,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_21_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text032_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": -1.487799882888794,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_21_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text033_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_22_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text033_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_22_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text034_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_23_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text034_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_23_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text035_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": 0.005850441288203001,
+              "z": -1.5506520867347717e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_24_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text035_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": 0.005850441288203001,
+              "z": -1.5506520867347717e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_24_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text037_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_25_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text037_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_25_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text038_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_26_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text038_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_26_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text039_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_27_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text039_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_27_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box061_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -8.665282249450684,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_28_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #51",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "normal_texture": "textures/image6.png",
+          "normal_uv_offset": {
+            "x": -0.239,
+            "y": 0.238
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box062_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.542494297027588,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_29_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #52",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "normal_texture": "textures/image6.png",
+          "normal_uv_scale": {
+            "x": 1.477,
+            "y": 1.477
+          },
+          "normal_uv_offset": {
+            "x": -0.239,
+            "y": 0.238
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box063_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -6.41970682144165,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_30_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #53",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png",
+          "normal_texture": "textures/image6.png",
+          "normal_uv_offset": {
+            "x": -0.219,
+            "y": 0.148
+          }
+        }
+      ]
+    },
+    {
+      "name": "Text045_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": -3.0056111812591553,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_31_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text045_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": -3.0056111812591553,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_31_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box064_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -8.665282249450684,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_32_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #91",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Box065_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.542494297027588,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_33_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #92",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Box066_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -6.41970682144165,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_34_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #93",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/image2.png",
+          "occlusion_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "Text046_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": -1.487799882888794,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_35_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text046_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -7.54195499420166,
+              "y": -1.487799882888794,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_35_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box067_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -4.901121616363525,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_36_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #125",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Box068_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.778334379196167,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_37_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #127",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Box069_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.6555469036102295,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_38_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #126",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Text047_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_39_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text047_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_39_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box070_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -4.901121616363525,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_40_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #128",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Box071_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.778334379196167,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_41_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #130",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Box072_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.6555469036102295,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_42_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #129",
+          "base_color": {
+            "r": 0.019999999552965164,
+            "g": 0.019999999552965164,
+            "b": 0.019999999552965164,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "clearcoat": 1.0,
+          "clearcoat_roughness": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Text048_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": 0.005850441288203001,
+              "z": -1.5506520867347717e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_43_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text048_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.7708845138549805,
+              "y": 0.005850441288203001,
+              "z": -1.5506520867347717e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_43_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text031_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.032529592514038086,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_44_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text031_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.032529592514038086,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_44_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box031_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.162766933441162,
+              "y": 3.207383394241333,
+              "z": 2.3850077468523523e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_45_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #135",
+          "base_color": {
+            "r": 0.25,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box032_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.03997945785522461,
+              "y": 3.207383394241333,
+              "z": 2.3850077468523523e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_46_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #134",
+          "base_color": {
+            "r": 0.25,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box033_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.082808017730713,
+              "y": 3.207383394241333,
+              "z": 2.3850077468523523e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_47_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #136",
+          "base_color": {
+            "r": 0.25,
+            "g": 0.25,
+            "b": 0.25,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box034_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5883216857910156,
+              "y": 3.207383394241333,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_48_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #152",
+          "base_color": {
+            "r": 0.2508402466773987,
+            "g": 0.2508402466773987,
+            "b": 0.2508402466773987,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box035_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.711109161376953,
+              "y": 3.207383394241333,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_49_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #154",
+          "base_color": {
+            "r": 0.2508402466773987,
+            "g": 0.2508402466773987,
+            "b": 0.2508402466773987,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box036_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.833896636962891,
+              "y": 3.207383394241333,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_50_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #153",
+          "base_color": {
+            "r": 0.2508402466773987,
+            "g": 0.2508402466773987,
+            "b": 0.2508402466773987,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box037_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5883216857910156,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_51_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #161",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          },
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box038_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.711109161376953,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_52_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #163",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          },
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box039_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.833896636962891,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_53_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #162",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          },
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box040_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 6.373581886291504,
+              "y": 3.207383394241333,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_54_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #170",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box041_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.496369361877441,
+              "y": 3.207383394241333,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_55_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #175",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box042_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 8.619157791137695,
+              "y": 3.207383394241333,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_56_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #171",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Text000_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 5.246249198913574,
+              "z": -0.0005002021789550781
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_57_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box058_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.1371040344238281,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_58_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #145",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box059_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.014316558837890625,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_59_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #144",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Box060_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.1084709167480469,
+              "y": -1.3185874223709106,
+              "z": -1.295261853329066e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_60_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #143",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "Text040_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0068666934967041016,
+              "y": 0.005850442219525576,
+              "z": -1.5506520867347717e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_61_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text040_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0068666934967041016,
+              "y": 0.005850442219525576,
+              "z": -1.5506520867347717e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_61_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text042_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.49467658996582,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_62_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text042_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.49467658996582,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_62_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text043_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": 0.005850442219525576,
+              "z": -1.5506520867347717e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_63_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text043_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": 0.005850442219525576,
+              "z": -1.5506520867347717e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_63_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text044_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_64_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text044_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": 4.534605979919434,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_64_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box073_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.122790813446045,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_65_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #139",
+          "base_color": {
+            "r": 0.125,
+            "g": 0.125,
+            "b": 0.125,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Box074_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.337860107421875e-06,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_66_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #138",
+          "base_color": {
+            "r": 0.12474096566438675,
+            "g": 0.12474096566438675,
+            "b": 0.12474096566438675,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Box075_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.12278413772583,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_67_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #137",
+          "base_color": {
+            "r": 0.12474096566438675,
+            "g": 0.12474096566438675,
+            "b": 0.12474096566438675,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Text049_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0074465274810791016,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_68_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text049_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0074465274810791016,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_68_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box076_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.122790813446045,
+              "y": 0.18354558944702148,
+              "z": -6.386585482687224e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_69_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #141",
+          "base_color": {
+            "r": 0.12474096566438675,
+            "g": 0.12474096566438675,
+            "b": 0.12474096566438675,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Box077_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.337860107421875e-06,
+              "y": 0.18354558944702148,
+              "z": -6.386585482687224e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_70_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #142",
+          "base_color": {
+            "r": 0.12474096566438675,
+            "g": 0.12474096566438675,
+            "b": 0.12474096566438675,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Box078_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.12278413772583,
+              "y": 0.18354558944702148,
+              "z": -6.386585482687224e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_71_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #140",
+          "base_color": {
+            "r": 0.12474096566438675,
+            "g": 0.12474096566438675,
+            "b": 0.12474096566438675,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Text050_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0074465274810791016,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_72_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text050_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0074465274810791016,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_72_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box079_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.1371040344238281,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_73_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #148",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Box080_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.014316558837890625,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_74_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #147",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Box081_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.1084709167480469,
+              "y": -2.8253958225250244,
+              "z": 2.3849953123544765e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_75_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #146",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Text051_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0068666934967041016,
+              "y": -1.487799882888794,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_76_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text051_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0068666934967041016,
+              "y": -1.487799882888794,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_76_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box082_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.1371040344238281,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_77_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #151",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Box083_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.014316558837890625,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_78_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #150",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Box084_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.1084709167480469,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_79_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #149",
+          "base_color": {
+            "r": 0.2195197343826294,
+            "g": 0.2195197343826294,
+            "b": 0.2195197343826294,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "iridescence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Text052_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0068666934967041016,
+              "y": -3.0056111812591553,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_80_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text052_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0068666934967041016,
+              "y": -3.0056111812591553,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_80_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box085_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5883216857910156,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_81_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #158",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75
+        }
+      ]
+    },
+    {
+      "name": "Box086_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.711109161376953,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_82_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #160",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75
+        }
+      ]
+    },
+    {
+      "name": "Box087_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.833896636962891,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_83_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #159",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75
+        }
+      ]
+    },
+    {
+      "name": "Box088_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5883216857910156,
+              "y": -2.8253958225250244,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_84_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #166",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box089_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.711109161376953,
+              "y": -2.8253958225250244,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_85_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #165",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box090_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.833896636962891,
+              "y": -2.8253958225250244,
+              "z": 2.384993535997637e-09
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_86_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #164",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Text053_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": -1.487799882888794,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_87_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text053_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": -1.487799882888794,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_87_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text054_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_88_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text054_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_88_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box091_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5883216857910156,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_89_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #155",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75
+        }
+      ]
+    },
+    {
+      "name": "Box092_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.711109161376953,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_90_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #157",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75
+        }
+      ]
+    },
+    {
+      "name": "Box093_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.833896636962891,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_91_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #156",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "sheen": 1.0,
+          "sheen_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "sheen_roughness": 0.75
+        }
+      ]
+    },
+    {
+      "name": "Box094_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5883216857910156,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_92_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #167",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box095_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.711109161376953,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_93_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #168",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Box096_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 4.833896636962891,
+              "y": -4.332165718078613,
+              "z": -1.2940330407218426e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_94_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #169",
+          "base_color": {
+            "r": 0.00969632901251316,
+            "g": 0.00969632901251316,
+            "b": 0.00969632901251316,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.125,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular": {
+            "x": 10.0,
+            "y": 10.0,
+            "z": 10.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Text055_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": -3.0056111812591553,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_95_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text055_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": -3.0056111812591553,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_95_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text056_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_96_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text056_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 3.709415912628174,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_96_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box097_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 6.373581886291504,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_97_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #172",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Box098_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.496369361877441,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_98_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #174",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Box099_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 8.619157791137695,
+              "y": 1.6971166133880615,
+              "z": 2.659955953276949e-07
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_99_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #173",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Text057_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.49467658996582,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_100_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text057_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.49467658996582,
+              "y": 3.0236408710479736,
+              "z": -2.384185791015625e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_100_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Box100_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 6.373581886291504,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_101_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #176",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Box101_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.496369361877441,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_102_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #178",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Box102_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 8.619157791137695,
+              "y": 0.18354558944702148,
+              "z": -6.38658619322996e-08
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_103_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Material #177",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Text058_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.49467658996582,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_104_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_black",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Text058_1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.49467658996582,
+              "y": 1.5099551677703857,
+              "z": -1.1920928955078125e-07
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_104_1.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "text_green",
+          "base_color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    },
+    {
+      "name": "Plane_VolumeAttenuation_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5190534591674805,
+              "y": 1.4796198606491089,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 4.3711387339425936e-08,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999403953562,
+              "z": 0.9999999403953562
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs_105_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "plane_VolumeAttenuation",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 2
+        }
+      ]
+    }
+  ]
+}

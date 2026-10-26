@@ -1,0 +1,222 @@
+{
+  "title": "MosquitoInAmber",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.104102285969707,
+              "y": 0.04849838145225007,
+              "z": 0.1733849622476475
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.5190192589890531,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.004252447449810833,
+          "far": 2.359719518672054,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "5_amber_lr_PBR_0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 1.5707963267948966,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.1,
+              "y": 0.1,
+              "z": 0.1
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MosquitoInAmber_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "material",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.5,
+          "emissive": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.55,
+          "base_color_texture": "textures/image0.jpg",
+          "metallic_roughness_texture": "textures/image1.png",
+          "normal_texture": "textures/image2.png"
+        }
+      ]
+    },
+    {
+      "name": "6_eclats_eclats_0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 1.5707963267948966,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.1,
+              "y": 0.1,
+              "z": 0.1
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MosquitoInAmber_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "eclats",
+          "base_color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 0.3922348485,
+          "emissive": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "2_mosquito_lr_original.o_material_0_0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707963267948966,
+              "y": 1.5707963267948966,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.1,
+              "y": 0.1,
+              "z": 0.1
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MosquitoInAmber_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "original.o_material_0",
+          "base_color": {
+            "r": 0.7469135802,
+            "g": 0.7469135802,
+            "b": 0.7469135802,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.6790123457,
+          "emissive": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image3.jpg",
+          "normal_texture": "textures/image4.jpg"
+        }
+      ]
+    }
+  ]
+}

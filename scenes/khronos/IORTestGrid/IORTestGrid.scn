@@ -1,0 +1,1262 @@
+{
+  "title": "IORTestGrid",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.6577874078371405,
+              "y": 0.31681791100229456,
+              "z": 1.044198676021781
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.024332464781898322,
+          "far": 13.832946708488894,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Backdrop_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Backdrop",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "IOR2.42_Black_R0_M0_T0_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503073275089264,
+              "y": 0.2199999988079071,
+              "z": 0.017525814473628998
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR2.42_Black_R0_M0_T0_S0.25",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25,
+          "ior": 2.42
+        }
+      ]
+    },
+    {
+      "name": "IOR2.42_Black_R0_M0_T0_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.055030688643455505,
+              "y": 0.2199999988079071,
+              "z": 0.01752581261098385
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR2.42_Black_R0_M0_T0_S1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 2.42
+        }
+      ]
+    },
+    {
+      "name": "IOR2.42_White_R0_M0_T1_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.05496935546398163,
+              "y": 0.2199999988079071,
+              "z": 0.0175258107483387
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR2.42_White_R0_M0_T1_S0.25",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25,
+          "ior": 2.42
+        }
+      ]
+    },
+    {
+      "name": "IOR2.42_White_R0_M0_T1_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.16496939957141876,
+              "y": 0.2199999988079071,
+              "z": 0.01752580888569355
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR2.42_White_R0_M0_T1_S1",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 2.42
+        }
+      ]
+    },
+    {
+      "name": "IOR1.76_Black_R0_M0_T0_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503074765205383,
+              "y": 0.11000001430511475,
+              "z": 0.0175258070230484
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.76_Black_R0_M0_T0_S0.25",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25,
+          "ior": 1.76
+        }
+      ]
+    },
+    {
+      "name": "IOR1.76_Black_R0_M0_T0_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0550307035446167,
+              "y": 0.11000001430511475,
+              "z": 0.01752580516040325
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.76_Black_R0_M0_T0_S1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.76
+        }
+      ]
+    },
+    {
+      "name": "IOR1.76_White_R0_M0_T1_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.054969340562820435,
+              "y": 0.11000001430511475,
+              "z": 0.017525803297758102
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.76_White_R0_M0_T1_S0.25",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25,
+          "ior": 1.76
+        }
+      ]
+    },
+    {
+      "name": "IOR1.76_White_R0_M0_T1_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.16496938467025757,
+              "y": 0.11000001430511475,
+              "z": 0.017525801435112953
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.76_White_R0_M0_T1_S1",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.76
+        }
+      ]
+    },
+    {
+      "name": "IOR1.5_Black_R0_M0_T0_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503076255321503,
+              "y": 2.9802322387695312e-08,
+              "z": 0.017525799572467804
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.5_Black_R0_M0_T0_S0.25",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25
+        }
+      ]
+    },
+    {
+      "name": "IOR1.5_Black_R0_M0_T0_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.05503071844577789,
+              "y": 2.9802322387695312e-08,
+              "z": 0.017525797709822655
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.5_Black_R0_M0_T0_S1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1
+        }
+      ]
+    },
+    {
+      "name": "IOR1.5_White_R0_M0_T1_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.05496932566165924,
+              "y": 2.9802322387695312e-08,
+              "z": 0.017525795847177505
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.5_White_R0_M0_T1_S0.25",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25
+        }
+      ]
+    },
+    {
+      "name": "IOR1.5_White_R0_M0_T1_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.16496936976909637,
+              "y": 2.9802322387695312e-08,
+              "z": 0.017525793984532356
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.5_White_R0_M0_T1_S1",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1
+        }
+      ]
+    },
+    {
+      "name": "IOR1.33_Black_R0_M0_T0_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503077745437622,
+              "y": -0.10999995470046997,
+              "z": 0.017525792121887207
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.33_Black_R0_M0_T0_S0.25",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25,
+          "ior": 1.33
+        }
+      ]
+    },
+    {
+      "name": "IOR1.33_Black_R0_M0_T0_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.05503073334693909,
+              "y": -0.10999995470046997,
+              "z": 0.017525790259242058
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.33_Black_R0_M0_T0_S1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.33
+        }
+      ]
+    },
+    {
+      "name": "IOR1.33_White_R0_M0_T1_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.05496931076049805,
+              "y": -0.10999995470046997,
+              "z": 0.01752578839659691
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.33_White_R0_M0_T1_S0.25",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25,
+          "ior": 1.33
+        }
+      ]
+    },
+    {
+      "name": "IOR1.33_White_R0_M0_T1_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.16496935486793518,
+              "y": -0.10999995470046997,
+              "z": 0.01752578653395176
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.33_White_R0_M0_T1_S1",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.33
+        }
+      ]
+    },
+    {
+      "name": "IOR1.0_Black_R0_M0_T0_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16503079235553741,
+              "y": -0.21999993920326233,
+              "z": 0.01752578467130661
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.0_Black_R0_M0_T0_S0.25",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25,
+          "ior": 1.0
+        }
+      ]
+    },
+    {
+      "name": "IOR1.0_Black_R0_M0_T0_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.05503074824810028,
+              "y": -0.21999993920326233,
+              "z": 0.01752578280866146
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.0_Black_R0_M0_T0_S1",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.0
+        }
+      ]
+    },
+    {
+      "name": "IOR1.0_White_R0_M0_T1_S0.25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.05496929585933685,
+              "y": -0.21999993920326233,
+              "z": 0.01752578094601631
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.0_White_R0_M0_T1_S0.25",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "specular_intensity": 0.25,
+          "ior": 1.0
+        }
+      ]
+    },
+    {
+      "name": "IOR1.0_White_R0_M0_T1_S1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.164969339966774,
+              "y": -0.21999993920326233,
+              "z": 0.017525779083371162
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_20_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "IOR1.0_White_R0_M0_T1_S1",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "shading_model": 1,
+          "ior": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Text_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_21_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text",
+          "base_color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "Text Backdrop_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IORTestGrid_22_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Text Backdrop",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    }
+  ]
+}

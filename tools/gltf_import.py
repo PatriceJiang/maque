@@ -27,6 +27,7 @@ import math
 import os
 import struct
 import sys
+import urllib.parse
 import uuid
 
 COMPONENT = {5120: ("b", 1), 5121: ("B", 1), 5122: ("h", 2),
@@ -74,7 +75,7 @@ def read_buffers(js, bin_chunk, base_dir):
         elif uri.startswith("data:"):
             out.append(base64.b64decode(uri.split(",", 1)[1]))
         else:
-            with open(os.path.join(base_dir, uri), "rb") as f:
+            with open(os.path.join(base_dir, urllib.parse.unquote(uri)), "rb") as f:
                 out.append(f.read())
     return out
 
@@ -121,38 +122,42 @@ def compute_normals(positions, indices):
     return [normalize(v) for v in nrm]
 
 
-def image_encoding(img):
-    """判定 glTF image 的搬运编码：'png' / 'jpeg' / None（不支持，跳过）。
+def sniff_image(data):
+    """按 magic 判断贴图编码（不信任扩展名/mimeType）。返回 'png'/'jpeg'/'gif'/'webp'/'ktx2'/None。"""
+    if len(data) >= 8 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png"
+    if len(data) >= 2 and data[:2] == b"\xff\xd8":
+        return "jpeg"
+    if len(data) >= 6 and data[:6] in (b"GIF87a", b"GIF89a"):
+        return "gif"
+    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "webp"
+    if len(data) >= 12 and data[:12] == b"\xabKTX 20\xbb\r\n\x1a\n":
+        return "ktx2"
+    return None
 
-    判定顺序（确定性）：
-      ① 显式 mimeType：image/png → png；image/jpeg → jpeg；其它 → 不支持；
-      ② mimeType 缺失时看 data: URI 头（data:image/jpeg;... / data:image/png;...）；
-      ③ mimeType 缺失时看 uri 扩展名：.jpg/.jpeg → jpeg，其它 → png
-         （旧版对 mimeType 缺失的图一律按 .png 放行，保持兼容、PNG 资产零漂移）；
-      ④ bufferView 内嵌图缺 mimeType（glTF 规范不允许）→ 沿用旧行为按 png。
-    """
-    mime = img.get("mimeType")
-    if mime is not None:
-        if mime == "image/png":
-            return "png"
-        if mime == "image/jpeg":
-            return "jpeg"
+
+def transcode_to_png(data, name_hint):
+    """WebP/GIF 等引擎无解码器的贴图 → 用 PIL 转 PNG（import 期离线做，确定性）。
+    返回 PNG 字节；PIL 不可用/解码失败返回 None（调用方告警跳过）。"""
+    try:
+        from PIL import Image
+        import io
+    except Exception:  # noqa: BLE001
         return None
-    uri = img.get("uri")
-    if uri and uri.startswith("data:"):
-        head = uri.split(",", 1)[0].lower()
-        if "image/jpeg" in head:
-            return "jpeg"
-        if "image/png" in head:
-            return "png"
+    try:
+        im = Image.open(io.BytesIO(data))
+        if getattr(im, "is_animated", False):
+            im.seek(0)                      # 动画贴图取第一帧
+        im = im.convert("RGBA")
+        out = io.BytesIO()
+        im.save(out, format="PNG")
+        return out.getvalue()
+    except Exception:  # noqa: BLE001
         return None
-    if uri:
-        ext = os.path.splitext(uri.split("?", 1)[0])[1].lower()
-        return "jpeg" if ext in (".jpg", ".jpeg") else "png"
-    return "png"
 
 
-def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
+def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_registry=None):
     pbr = mat.get("pbrMetallicRoughness", {})
     c = pbr.get("baseColorFactor", [1.0, 1.0, 1.0, 1.0])
     e = mat.get("emissiveFactor", [0.0, 0.0, 0.0])
@@ -225,18 +230,18 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
         tex = js["textures"][tinfo["index"]]
         src = tex.get("source")
         if src is None:
+            # EXT_texture_webp / KHR_texture_basisu / EXT_texture_avif：source 放在 texture.extensions 里
+            tex_exts = tex.get("extensions") or {}
+            for key in ("EXT_texture_webp", "KHR_texture_basisu", "EXT_texture_avif"):
+                ext = tex_exts.get(key) or {}
+                if "source" in ext:
+                    src = ext["source"]
+                    break
+        if src is None:
             return ""
         img = js["images"][src]
-        enc = image_encoding(img)
-        if enc is None:
-            print(f"gltf_import: 跳过不支持的贴图 image={src} "
-                  f"（mimeType={img.get('mimeType')}）", file=sys.stderr)
-            return ""
-        ext = ".jpg" if enc == "jpeg" else ".png"
-        name = (img.get("name") or f"image{src}") + ext
-        dest = os.path.join(tex_dir, name)
         if img.get("uri") and not img["uri"].startswith("data:"):
-            with open(os.path.join(base_dir, img["uri"]), "rb") as f:
+            with open(os.path.join(base_dir, urllib.parse.unquote(img["uri"])), "rb") as f:
                 data = f.read()
         elif img.get("uri"):
             data = base64.b64decode(img["uri"].split(",", 1)[1])
@@ -245,11 +250,45 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
             buf = buffers[view["buffer"]]
             off = view.get("byteOffset", 0)
             data = buf[off:off + view["byteLength"]]
+        enc = sniff_image(data)
+        base = img.get("name") or f"image{src}"
+        # glTF image.name 常自带扩展名（如 "CesiumMilkTruck.jpg"）→ 去掉再拼真实扩展，避免 .jpg.jpg
+        for ext0 in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".ktx2", ".avif"):
+            if base.lower().endswith(ext0):
+                base = base[:-len(ext0)]
+                break
         os.makedirs(tex_dir, exist_ok=True)
-        with open(dest, "wb") as f:
-            f.write(data)
-        images_out.add(name)
-        return f"textures/{name}"
+        if name_registry is not None:
+            # 不同 image 用了同名（或都没名字）→ 追加 _<src>，避免互相覆盖造成"串图"
+            cand = base
+            suffix = 0
+            while cand in name_registry and name_registry[cand] != src:
+                suffix += 1
+                cand = f"{base}_{src}" if suffix == 1 else f"{base}_{src}_{suffix}"
+            name_registry[cand] = src
+            base = cand
+        if enc in ("png", "jpeg"):
+            ext = ".jpg" if enc == "jpeg" else ".png"
+            name = base + ext
+            with open(os.path.join(tex_dir, name), "wb") as f:
+                f.write(data)
+            images_out.add(name)
+            return f"textures/{name}"
+        if enc in ("gif", "webp"):
+            # 引擎 image 模块不支持 WebP（wuffs 无解码器）；用 PIL 离线转 PNG（可选依赖）。
+            png = transcode_to_png(data, base)
+            if png is not None:
+                name = base + ".png"
+                with open(os.path.join(tex_dir, name), "wb") as f:
+                    f.write(png)
+                images_out.add(name)
+                print(f"gltf_import: 贴图 image={src} ({enc}) → PNG 转码（PIL）", file=sys.stderr)
+                return f"textures/{name}"
+            print(f"gltf_import: 跳过 {enc} 贴图 image={src}（PIL 不可用），该贴图将缺失", file=sys.stderr)
+            return ""
+        print(f"gltf_import: 跳过不支持的贴图 image={src}（magic={enc}, mimeType={img.get('mimeType')}）",
+              file=sys.stderr)
+        return ""
 
     pbr_tex = pbr.get("baseColorTexture")
     slot = tex_slot(pbr_tex)
@@ -343,16 +382,36 @@ def _node_matrix(node):
 
 
 def _decompose(m):
-    """列主序矩阵 → (position, euler Rz*Ry*Rx 弧度, scale)，与 runtime m4_from_trs 约定一致。"""
+    """列主序矩阵 → (position, euler Rz*Ry*Rx 弧度, scale)，与 runtime m4_from_trs 约定一致。
+
+    两个数值陷阱（迁移时 CesiumMilkTruck 整车翻倒的根因）：
+      1) **万向锁**：|r20|→1（ry=±90°）时 r21/r22、r10/r00 都趋近 0，atan2 比值是浮点噪声 →
+         rx/rz 随机。此时固定 rz=0，用 r01/r11 求 rx（β=+90°）或 -r01/r11（β=-90°）。
+      2) **负行列式（镜像缩放）**：把 sx 取负、旋转列按负 sx 归一化，保证重组后仍是 proper rotation。
+    """
     sx = math.sqrt(m[0] ** 2 + m[1] ** 2 + m[2] ** 2) or 1.0
     sy = math.sqrt(m[4] ** 2 + m[5] ** 2 + m[6] ** 2) or 1.0
     sz = math.sqrt(m[8] ** 2 + m[9] ** 2 + m[10] ** 2) or 1.0
+    det = (m[0] * (m[5] * m[10] - m[6] * m[9])
+           - m[4] * (m[1] * m[10] - m[2] * m[9])
+           + m[8] * (m[1] * m[6] - m[2] * m[5]))
+    if det < 0.0:
+        sx = -sx
     r00, r10, r20 = m[0] / sx, m[1] / sx, m[2] / sx
     r01, r11, r21 = m[4] / sy, m[5] / sy, m[6] / sy
     r02, r12, r22 = m[8] / sz, m[9] / sz, m[10] / sz
-    ry = math.asin(max(-1.0, min(1.0, -r20)))
-    rx = math.atan2(r21, r22)
-    rz = math.atan2(r10, r00)
+    r20 = max(-1.0, min(1.0, r20))
+    if abs(r20) > 1.0 - 1e-6:                  # 万向锁：ry = ±90°
+        ry = math.copysign(math.pi / 2.0, -r20)
+        rz = 0.0
+        if r20 < 0.0:                          # β=+90°
+            rx = math.atan2(r01, r11)
+        else:                                  # β=-90°
+            rx = math.atan2(-r01, r11)
+    else:
+        ry = math.asin(-r20)
+        rx = math.atan2(r21, r22)
+        rz = math.atan2(r10, r00)
     return (m[12], m[13], m[14]), (rx, ry, rz), (sx, sy, sz)
 
 
@@ -385,6 +444,57 @@ def _vec3(x, y, z):
 
 def _vec4(r, g, b, a):
     return {"r": float(r), "g": float(g), "b": float(b), "a": float(a)}
+
+
+def _fit_camera_distance(center, bmin, bmax, dir_unit, fov_y_deg, aspect, margin=0.92):
+    """求让包围盒 8 角点都落进视锥（NDC*|margin|）的相机距离。
+
+    比"包围球半径 / tan(fov/2)"更贴合宽扁/长条模型：包围球对薄板会高估距离 → 画面过小。
+    用相机基（forward=-dir、right、up）+ 角点投影，迭代缩放距离 8 次即可收敛。
+    """
+    fx, fy, fz = -dir_unit[0], -dir_unit[1], -dir_unit[2]          # forward（相机 → 中心）
+    # right = normalize(cross(forward, world_up))；forward 接近 ±Y 时用 X 轴兜底
+    ux, uy, uz = (1.0, 0.0, 0.0) if abs(fy) > 0.99 else (0.0, 1.0, 0.0)
+    rx = fy * uz - fz * uy
+    ry = fz * ux - fx * uz
+    rz = fx * uy - fy * ux
+    rl = math.sqrt(rx * rx + ry * ry + rz * rz) or 1.0
+    rx, ry, rz = rx / rl, ry / rl, rz / rl
+    # up = cross(right, forward)
+    upx = ry * fz - rz * fy
+    upy = rz * fx - rx * fz
+    upz = rx * fy - ry * fx
+    tan_y = math.tan(math.radians(fov_y_deg) * 0.5)
+    tan_x = tan_y * aspect
+    corners = [(bmin[0] if i & 1 else bmax[0],
+                bmin[1] if i & 2 else bmax[1],
+                bmin[2] if i & 4 else bmax[2]) for i in range(8)]
+    radius = math.sqrt(sum(((bmax[i] - bmin[i]) * 0.5) ** 2 for i in range(3)))
+    dist = max(1e-4, radius * 2.0)
+    for _ in range(10):
+        cx = center[0] + dir_unit[0] * dist
+        cy = center[1] + dir_unit[1] * dist
+        cz = center[2] + dir_unit[2] * dist
+        worst = 1e-6
+        for (px, py, pz) in corners:
+            vx, vy, vz = px - cx, py - cy, pz - cz
+            z = vx * fx + vy * fy + vz * fz
+            if z <= 1e-6:
+                worst = max(worst, 1e6)
+                break
+            nx = abs(vx * rx + vy * ry + vz * rz) / (z * tan_x)
+            ny = abs(vx * upx + vy * upy + vz * upz) / (z * tan_y)
+            worst = max(worst, nx, ny)
+        if worst <= margin:
+            # 尝试再靠近一点（避免过远）：按 worst 缩放
+            dist *= max(0.9, worst / margin)
+            if abs(worst / margin - 1.0) < 0.01:
+                break
+            continue
+        dist *= worst / margin
+        if dist > radius * 200.0:
+            break
+    return max(1e-4, dist)
 
 
 def emit_scene(js, out_dir, name, prims_meta, scene_mats=None):
@@ -434,17 +544,24 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None):
     if not entities:
         raise SystemExit("gltf_import: --scene 没有生成任何实体（缺 mesh 节点？）")
     center = [(bounds_min[i] + bounds_max[i]) * 0.5 for i in range(3)]
-    radius = max(1e-3, max(bounds_max[i] - bounds_min[i] for i in range(3)) * 0.5)
-    eye = [center[0] - radius * 1.2, center[1] + radius * 0.55, center[2] + radius * 2.1]
-    cam_near = max(0.001, radius * 0.02)
-    cam_far = max(10.0, radius * 300.0)
+    half = [max(bounds_max[i] - bounds_min[i], 1e-6) * 0.5 for i in range(3)]
+    radius = max(1e-3, math.sqrt(sum(h * h for h in half)))       # 包围球半径（半对角线）
+    # 自动机位：3/4 视角（左上前），距离按包围盒 8 角点投射进视锥拟合（_fit_camera_distance）。
+    # 旧公式固定 -1.2r/+0.55r/+2.1r 对 1 单位立方体太近；只用包围球半径又会对薄板/长条模型过远。
+    fov_y = 45.0
+    aspect = 1280.0 / 720.0
+    dirv = (-0.485, 0.222, 0.849)                                  # 归一化后的 3/4 视角方向
+    dist = _fit_camera_distance(center, bounds_min, bounds_max, dirv, fov_y, aspect)
+    eye = [center[i] + dirv[i] * dist for i in range(3)]
+    cam_near = max(1e-4, dist * 0.02)
+    cam_far = max(dist * 10.0, (dist + radius) * 8.0)
     pitch, yaw = _look_rotation(eye, center)
     lrx, lry = _light_rotation((0.35, -0.85, -0.4))
     cam = {"name": "camera", "components": [
         {"type": "scene.Transform3D", "local": {
             "position": _vec3(*eye), "rotation": _vec3(pitch, yaw, 0.0)}},
-        {"type": "render.Camera3D", "fov_y": 45.0, "near": cam_near, "far": cam_far,
-         "clear_color": _vec4(0.045, 0.05, 0.065, 1.0)},
+        {"type": "render.Camera3D", "fov_y": fov_y, "near": cam_near, "far": cam_far,
+         "clear_color": _vec4(0.13, 0.13, 0.14, 1.0)},
     ]}
     sun = {"name": "sun", "components": [
         {"type": "scene.Transform3D", "local": {"rotation": _vec3(lrx, lry, 0.0)}},
@@ -473,6 +590,7 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False):
     tex_dir = os.path.join(out_dir, "textures")
     name = name or os.path.splitext(os.path.basename(path))[0]
     images = set()
+    tex_name_registry = {}
     meshes_out = []
     prims_meta = []
     for mi, mesh in enumerate(js.get("meshes", [])):
@@ -500,7 +618,7 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False):
             mats = []
             if mat_idx >= 0:
                 mats.append(material_from_gltf(js, js["materials"][mat_idx], images,
-                                               tex_dir, base_dir, buffers))
+                                               tex_dir, base_dir, buffers, tex_name_registry))
             verts = []
             for i in range(n):
                 p, nr, uv = positions[i], normals[i], uvs[i]

@@ -1,0 +1,1188 @@
+{
+  "title": "TransmissionTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.6011734243375393,
+              "y": 0.8088226723426615,
+              "z": 3.0949816487749704
+            },
+            "rotation": {
+              "x": -0.22326312094374026,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.06293242590592216,
+          "far": 36.38673564423994,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cloth Backdrop 01_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.15470129251480103,
+              "y": -0.4015843868255615,
+              "z": -0.06036872789263725
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Cloth Backdrop",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.4934999942779541,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/texture28577.png"
+        }
+      ]
+    },
+    {
+      "name": "RedTransTexture_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10135379433631897,
+              "y": 0.1326718032360077,
+              "z": 0.01683981902897358
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "RedTransTexture",
+          "base_color": {
+            "r": 0.9559729695320129,
+            "g": 0.17788879573345184,
+            "b": 0.09530720859766006,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "YellowTrans_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.36709079146385193,
+              "y": 0.1261221021413803,
+              "z": -0.01051957905292511
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "YellowTrans",
+          "base_color": {
+            "r": 0.8468738198280334,
+            "g": 0.8713662624359131,
+            "b": 0.09305903315544128,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "BlueTransWithMask_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.33557596802711487,
+              "y": 0.13594670593738556,
+              "z": 0.030519530177116394
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_3_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BlueTransWithMask",
+          "base_color": {
+            "r": 0.08650036156177521,
+            "g": 0.46207714080810547,
+            "b": 0.8468738198280334,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/texture214190.png"
+        }
+      ]
+    },
+    {
+      "name": "GreenMask_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.13286849856376648,
+              "y": 0.12939700484275818,
+              "z": 0.003160127904266119
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_4_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "GreenMask",
+          "base_color": {
+            "r": 0.1499594897031784,
+            "g": 0.83077073097229,
+            "b": 0.19120188057422638,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/texture4086.png"
+        }
+      ]
+    },
+    {
+      "name": "RedTransTextureRough_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10135379433631897,
+              "y": -0.09345020353794098,
+              "z": 0.01683981902897358
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_5_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "RedTransTextureRough",
+          "base_color": {
+            "r": 0.9559729695320129,
+            "g": 0.17788879573345184,
+            "b": 0.09530720859766006,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/texture177328.png"
+        }
+      ]
+    },
+    {
+      "name": "YellowTransRough_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.36709079146385193,
+              "y": -0.09999999403953552,
+              "z": -0.01051957905292511
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_6_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "YellowTransRough",
+          "base_color": {
+            "r": 0.8468738198280334,
+            "g": 0.8713662624359131,
+            "b": 0.09305903315544128,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/texture6807.png"
+        }
+      ]
+    },
+    {
+      "name": "BlueTransWithMask_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.33557596802711487,
+              "y": -0.09017530083656311,
+              "z": 0.030519530177116394
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_7_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BlueTransWithMask",
+          "base_color": {
+            "r": 0.08650036156177521,
+            "g": 0.46207714080810547,
+            "b": 0.8468738198280334,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/texture214190.png",
+          "metallic_roughness_texture": "textures/texture177328.png"
+        }
+      ]
+    },
+    {
+      "name": "GreenMaskRough_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.13286849856376648,
+              "y": -0.09672509878873825,
+              "z": 0.003160127904266119
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_8_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "GreenMaskRough",
+          "base_color": {
+            "r": 0.1499594897031784,
+            "g": 0.83077073097229,
+            "b": 0.19120188057422638,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.3199999928474426,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/texture4086.png"
+        }
+      ]
+    },
+    {
+      "name": "RedTransTextureMetal_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10135379433631897,
+              "y": -0.32746508717536926,
+              "z": 0.01683981902897358
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_9_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "RedTransTextureMetal",
+          "base_color": {
+            "r": 0.9559729695320129,
+            "g": 0.17788879573345184,
+            "b": 0.09530720859766006,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/texture175763.png"
+        }
+      ]
+    },
+    {
+      "name": "YellowTransMetal_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.36709079146385193,
+              "y": -0.334014892578125,
+              "z": -0.01051957905292511
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_10_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "YellowTransMetal",
+          "base_color": {
+            "r": 0.8468738198280334,
+            "g": 0.8713662624359131,
+            "b": 0.09305903315544128,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "metallic_roughness_texture": "textures/texture10487.png"
+        }
+      ]
+    },
+    {
+      "name": "GreenMaskMetal_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.13286849856376648,
+              "y": -0.3307400047779083,
+              "z": 0.003160127904266119
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_11_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "GreenMaskMetal",
+          "base_color": {
+            "r": 0.1499594897031784,
+            "g": 0.83077073097229,
+            "b": 0.19120188057422638,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/texture4086.png",
+          "metallic_roughness_texture": "textures/texture175763.png"
+        }
+      ]
+    },
+    {
+      "name": "BlueTransWithMask_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.33557596802711487,
+              "y": -0.3241901993751526,
+              "z": 0.030519530177116394
+            },
+            "rotation": {
+              "x": 3.141592653589793,
+              "y": 0.05235996887458529,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000365047357,
+              "y": 1.0,
+              "z": 1.0000000365047357
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_12_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "BlueTransWithMask",
+          "base_color": {
+            "r": 0.08650036156177521,
+            "g": 0.46207714080810547,
+            "b": 0.8468738198280334,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "side": 2,
+          "alpha_mode": 1,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/texture214190.png",
+          "metallic_roughness_texture": "textures/texture175763.png"
+        }
+      ]
+    },
+    {
+      "name": "X1_Label_WithOpacity_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.15605439245700836,
+              "y": 0.4127219021320343,
+              "z": -0.03671092912554741
+            },
+            "rotation": {
+              "x": -0.0001891702745029847,
+              "y": -7.47299928627846e-08,
+              "z": 7.153702658115326e-05
+            },
+            "scale": {
+              "x": 0.08348584175109863,
+              "y": 0.15573990345001223,
+              "z": 0.1557399034500122
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_13_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    },
+    {
+      "name": "Y3_Label_TransmissionTexture_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.362414687871933,
+              "y": 0.4796152114868164,
+              "z": -0.03672285005450249
+            },
+            "rotation": {
+              "x": -0.00018917046493276688,
+              "y": -1.099418701361657e-07,
+              "z": 7.146257503656299e-05
+            },
+            "scale": {
+              "x": 0.06954946368932724,
+              "y": 0.15573990345001223,
+              "z": 0.15573990345001223
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_14_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    },
+    {
+      "name": "X1_Label_WithOpacity_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.36164841055870056,
+              "y": 0.4127587676048279,
+              "z": -0.03671097755432129
+            },
+            "rotation": {
+              "x": -0.00018917027479297777,
+              "y": -8.283133237276142e-08,
+              "z": 7.154159664885388e-05
+            },
+            "scale": {
+              "x": 0.07980477809906006,
+              "y": 0.15573990345001223,
+              "z": 0.15573990345001223
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_15_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    },
+    {
+      "name": "Y3_Label_TransmissionTexture_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.10603449493646622,
+              "y": 0.4796152114868164,
+              "z": -0.03672285005450249
+            },
+            "rotation": {
+              "x": -0.00018917040720929158,
+              "y": -1.2348961279808177e-07,
+              "z": 7.146415520079592e-05
+            },
+            "scale": {
+              "x": 0.06535045057535172,
+              "y": 0.15573990345001223,
+              "z": 0.15573990345001226
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_16_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    },
+    {
+      "name": "X2_Label_Transmission_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.3994385004043579,
+              "y": 0.47961509227752686,
+              "z": -0.03672334924340248
+            },
+            "rotation": {
+              "x": -0.0001891703317684086,
+              "y": -4.836880591541262e-08,
+              "z": 7.155842995532575e-05
+            },
+            "scale": {
+              "x": 0.09822454303503036,
+              "y": 0.1557399034500122,
+              "z": 0.15573990345001223
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_17_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    },
+    {
+      "name": "X2_Label_Transmission_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.16186389327049255,
+              "y": 0.4796149730682373,
+              "z": -0.03672334924340248
+            },
+            "rotation": {
+              "x": -0.00018917027366991608,
+              "y": -5.141783309903113e-08,
+              "z": 7.156082403379919e-05
+            },
+            "scale": {
+              "x": 0.09625838696956635,
+              "y": 0.15573990345001226,
+              "z": 0.15573990345001223
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_18_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    },
+    {
+      "name": "Y0_Label_MetallicTransmission_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.7017300839145388,
+              "y": -0.2447728688457651,
+              "z": -0.036586781338956334
+            },
+            "rotation": {
+              "x": -0.00018917031475132196,
+              "y": -6.015936180266837e-08,
+              "z": 7.149148195587341e-05
+            },
+            "scale": {
+              "x": 0.0910423127386082,
+              "y": 0.1557399034500122,
+              "z": 0.15573990345001226
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_19_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    },
+    {
+      "name": "Y5_Label_RoughTransmission_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.6870006886800788,
+              "y": 3.6994142860180546e-07,
+              "z": -0.03663242857883275
+            },
+            "rotation": {
+              "x": -0.0001891703001954759,
+              "y": -7.643652147917155e-08,
+              "z": 7.147279424355646e-05
+            },
+            "scale": {
+              "x": 0.08268821885380363,
+              "y": 0.15573990345001223,
+              "z": 0.15573990345001226
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_20_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    },
+    {
+      "name": "X2_Label_Transmission_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.6467384419264199,
+              "y": 0.23588368108994706,
+              "z": -0.03667748411029477
+            },
+            "rotation": {
+              "x": -0.00018917032930908164,
+              "y": -2.6083067237457416e-08,
+              "z": 7.15306402031739e-05
+            },
+            "scale": {
+              "x": 0.11546397759003213,
+              "y": 0.15573990345001223,
+              "z": 0.15573990345001223
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TransmissionTest_21_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "LabelMaterial",
+          "base_color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "metallic": 0.0,
+          "roughness": 0.8999999761581421,
+          "emissive": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "double_sided": false,
+          "side": 0,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "emissive_texture": "textures/texture15366.png"
+        }
+      ]
+    }
+  ]
+}
