@@ -120,6 +120,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   `roughness`、`emissive`、`normal_scale`、`occlusion_strength`、`alpha_mode`、5 个贴图路径槽（M4 接））；
   shader `assets/builtin/shaders/pbr/`（GGX + ACES + gamma，环境项暂用常量环境色）。
   样例 `scenes/pbr/materials.scn`（光滑 vs 粗糙金属，e2e 断言粗糙度能量分布差异）。
+  **M4a 贴图**：`base_color_texture` 写 `builtin:/textures/checker` 或 VFS 图片路径 → 运行时
+  `create_texture` 句柄绑到 draw bind group（无贴图缺省 1×1 白，不改变基色）；uv 走 48B 顶点布局 offset40。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

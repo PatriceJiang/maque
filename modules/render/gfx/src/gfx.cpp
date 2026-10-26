@@ -92,6 +92,9 @@ struct Device {
     WGPUBindGroupLayout p3dDrawBgl = nullptr;
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
+    /* PBR 贴图缺省：1×1 白纹理（材质没给 albedo 贴图时绑定它，基色乘 1） */
+    WGPUTexture whiteTex = nullptr;
+    WGPUTextureView whiteTexView = nullptr;
     /* ---- 3D GPU 资源（plans/18-pbr-3d.md §4.3）---- */
     std::vector<MeshGpu*> meshes;
 };
@@ -261,10 +264,15 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         {
-            WGPUBindGroupLayoutEntry e{};
-            e.binding = 0; e.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 112;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 1; bd.entries = &e;
+            WGPUBindGroupLayoutEntry e[3] = {};
+            e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 112;
+            e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
+            e[1].texture.sampleType = WGPUTextureSampleType_Float;
+            e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
+            e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment;
+            e[2].sampler.type = WGPUSamplerBindingType_Filtering;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 3; bd.entries = e;
             dv->p3dDrawBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         WGPUBindGroupLayout bl[2] = { dv->p3dCamBgl, dv->p3dDrawBgl };
@@ -281,12 +289,13 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
     ds.depthCompare = WGPUCompareFunction_Less;
     WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT;
     frag.module = dv->p3dShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &ct;
-    WGPUVertexAttribute attrs[2] = {};
+    WGPUVertexAttribute attrs[3] = {};
     attrs[0].format = WGPUVertexFormat_Float32x3; attrs[0].offset = 0;  attrs[0].shaderLocation = 0;
     attrs[1].format = WGPUVertexFormat_Float32x3; attrs[1].offset = 12; attrs[1].shaderLocation = 1;
+    attrs[2].format = WGPUVertexFormat_Float32x2; attrs[2].offset = 40; attrs[2].shaderLocation = 2;
     WGPUVertexBufferLayout vbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
     vbl.stepMode = WGPUVertexStepMode_Vertex; vbl.arrayStride = 48;
-    vbl.attributeCount = 2; vbl.attributes = attrs;
+    vbl.attributeCount = 3; vbl.attributes = attrs;
     WGPUVertexState vs = WGPU_VERTEX_STATE_INIT;
     vs.module = dv->p3dShader; vs.entryPoint = SV("vs");
     vs.bufferCount = 1; vs.buffers = &vbl;
@@ -332,6 +341,27 @@ static int32_t readback_rgba8(Device* dv, WGPUTexture tex, int32_t W, int32_t H,
     }
     wgpuBufferRelease(rb);
     return st == WGPUMapAsyncStatus_Success ? 0 : 3;
+}
+
+/* PBR 缺省 albedo：1×1 白纹理（材质没给 albedo 贴图时绑定它，基色乘 1）。 */
+static void create_white_texture(Device* dv) {
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ 1, 1, 1 };
+    td.format = WGPUTextureFormat_RGBA8Unorm;
+    td.mipLevelCount = 1;
+    td.sampleCount = 1;
+    dv->whiteTex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!dv->whiteTex) return;
+    dv->whiteTexView = wgpuTextureCreateView(dv->whiteTex, nullptr);
+    const uint8_t px[4] = { 255, 255, 255, 255 };
+    WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+    dst.texture = dv->whiteTex; dst.aspect = WGPUTextureAspect_All;
+    WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
+    layout.bytesPerRow = 4; layout.rowsPerImage = 1;
+    WGPUExtent3D sz = WGPUExtent3D{ 1, 1, 1 };
+    wgpuQueueWriteTexture(dv->queue, &dst, px, sizeof px, &layout, &sz);
 }
 
 static Device* create_device(std::string* out_backend) {
@@ -423,6 +453,7 @@ static Device* create_device(std::string* out_backend) {
         dv->meshPl = wgpuDeviceCreatePipelineLayout(dv->device, &mpl);
     }
     /* 初始 2D 管线 = **离屏 RGBA8** 目标；窗口直接呈现在 attach_window 时按 swapchain 格式重建。 */
+    create_white_texture(dv);
     create_2d_pipelines(dv, WGPUTextureFormat_RGBA8Unorm);
     return dv;
 }
@@ -447,6 +478,8 @@ static void destroy_device(Device* dv) {
     if (dv->surface) wgpuSurfaceRelease(dv->surface);
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
     if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
+    if (dv->whiteTexView) wgpuTextureViewRelease(dv->whiteTexView);
+    if (dv->whiteTex) wgpuTextureRelease(dv->whiteTex);
     /* M2 3D 资源 */
     if (dv->depthView) wgpuTextureViewRelease(dv->depthView);
     if (dv->depthTex) wgpuTextureRelease(dv->depthTex);
@@ -1096,10 +1129,17 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             dbd.size = sizeof du;
             WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
             wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
-            WGPUBindGroupEntry dbe{};
-            dbe.binding = 0; dbe.buffer = dbuf; dbe.size = sizeof du;
+            WGPUTextureView albedoView = dv->whiteTexView;
+            if (mat && mat->textures[0] >= 0 && (size_t)mat->textures[0] < dv->textures.size()) {
+                Texture* at = dv->textures[(size_t)mat->textures[0]];
+                if (at && at->view) albedoView = at->view;
+            }
+            WGPUBindGroupEntry dbe[3] = {};
+            dbe[0].binding = 0; dbe[0].buffer = dbuf; dbe[0].size = sizeof du;
+            dbe[1].binding = 1; dbe[1].textureView = albedoView;
+            dbe[2].binding = 2; dbe[2].sampler = dv->sampler;
             WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 1; dbgd.entries = &dbe;
+            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 3; dbgd.entries = dbe;
             WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
             wgpuRenderPassEncoderSetBindGroup(pass, 1, drawBg, 0, nullptr);
             wgpuRenderPassEncoderSetVertexBuffer(pass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);

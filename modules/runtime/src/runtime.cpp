@@ -921,9 +921,12 @@ static void build_cube(std::vector<float>& verts, std::vector<uint32_t>& indices
     for (int f = 0; f < 6; ++f) {
         const uint32_t base = (uint32_t)verts.size() / 12;
         for (int i = 0; i < 4; ++i) {
+            /* 每面 4 角 UV：0=(-s,-s) 1=(s,-s) 2=(s,s) 3=(-s,s)（贴图 PBR 用；M5 法线贴图同 UV） */
+            const float u = (i == 0 || i == 3) ? 0.0F : 1.0F;
+            const float v = (i >= 2) ? 1.0F : 0.0F;
             verts.insert(verts.end(), { faces[f].p[i][0], faces[f].p[i][1], faces[f].p[i][2],
                                         faces[f].n[0], faces[f].n[1], faces[f].n[2],
-                                        1.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F });
+                                        1.0F, 0.0F, 0.0F, 1.0F, u, v });
         }
         indices.insert(indices.end(), { base, base + 1, base + 2, base, base + 2, base + 3 });
     }
@@ -1062,6 +1065,15 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 mat.alpha_cutoff = read_num(dmat, base, "alpha_cutoff", 0.5F);
                 mat.alpha_mode = (int32_t)read_num(dmat, base, "alpha_mode", 0.0F);
                 mat.flags = read_num(dmat, base, "double_sided", 0.0F) >= 0.5F ? 1 : 0;
+                /* M4：albedo 贴图（builtin:/ 或 VFS 路径）→ 渲染器纹理句柄；其它 4 槽在 M5 */
+                if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_ref(*texref);
+                        if (tid >= 0) mat.textures[0] = tid;
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: pbr albedo texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
             }
             const int32_t mat_index = (int32_t)out_mats.size();
             out_mats.push_back(mat);

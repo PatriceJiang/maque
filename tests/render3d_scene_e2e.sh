@@ -96,9 +96,11 @@ echo "render3d_scene_e2e: ② 3D wgpu 交换链直接呈现 OK"
 # 期望：光滑金属几乎只剩窄高光+环境项（整体偏暗）；粗糙金属把高光摊开到整面（更亮）。
 MAT_SCN="${SCN%cube.scn}materials.scn"
 if [ -f "$MAT_SCN" ]; then
-    timeout 90 "$PLAYER" --shot "$WORK/mat.ppm" --frames 2 "$MAT_SCN" >"$WORK/mat.txt" 2>&1 \
+    timeout 90 env MAQUE_RENDER3D_INFO=1 "$PLAYER" --shot "$WORK/mat.ppm" --frames 2 "$MAT_SCN" >"$WORK/mat.txt" 2>&1 \
         || { cat "$WORK/mat.txt"; fail "PBR 材质场景渲染失败"; }
     grep -q "3d scene" "$WORK/mat.txt" || { cat "$WORK/mat.txt"; fail "材质场景无 3D 内容"; }
+    # M4：材质 albedo 贴图真的走了渲染器纹理句柄（builtin:/ 或 VFS → create_texture）
+    grep -q "pbr albedo texture" "$WORK/mat.txt" || { cat "$WORK/mat.txt"; fail "albedo 贴图未加载/未绑定"; }
     "$PY" - "$WORK/mat.ppm" <<'PY' || exit 1
 import sys
 d = open(sys.argv[1], 'rb').read()
@@ -122,7 +124,7 @@ bg = px[0:3]
 nonbg = sum(1 for i in range(0, len(px), 3)
             if abs(px[i]-bg[0]) + abs(px[i+1]-bg[1]) + abs(px[i+2]-bg[2]) > 25)
 print(f'render3d_scene_e2e: PBR smooth_mean={lm:.1f} rough_mean={rm:.1f} nonbg={nonbg/(w*h):.3f}')
-# 粗糙度对比：粗糙面把能量摊开 → 平均亮度显著高于光滑面
+# 粗糙度对比：粗糙面把能量摊开 → 平均亮度显著高于光滑面（贴图/采样通路由上面的 grep 断言）
 ok = (ln > 500 and rn > 500 and rm > lm + 15 and nonbg / (w*h) > 0.05)
 sys.exit(0 if ok else 1)
 PY

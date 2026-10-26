@@ -1,24 +1,28 @@
-// pbr —— M3 材质系统（plans/18-pbr-3d.md）：metallic-roughness + Cook-Torrance（GGX）+ ACES tonemap。
-// M4 起接入贴图（albedo/MR/normal/AO/emissive）与 IBL；本版只用基色/金属度/粗糙度/自发光/环境色。
+// pbr —— M4 贴图版 PBR（plans/18-pbr-3d.md）：metallic-roughness + Cook-Torrance（GGX）
+// + albedo 贴图（sRGB 纹理由 create_texture2 的 RGBA8_SRGB 在采样时解码）+ ACES tonemap。
+// 法线/金属粗糙度/AO/自发光贴图与 IBL/阴影在 M5；本版 get 到的是“贴图材质”的最小闭环。
 //
-// 顶点布局（mq_renderer_mesh_gpu layout=0，48B 规范）：location0 pos@0、location1 normal@12
-// （tangent@24 / uv@40 留给 M4 贴图与法线贴图）
+// 顶点布局（mq_renderer_mesh_gpu layout=0，48B 规范）：
+//   location0 pos@0 · location1 normal@12 · location2 uv@40（tangent@24 留给 M5 法线贴图）
 struct Camera {
   vp: mat4x4f,
   eye: vec4f,          // xyz = 相机位置；w = exposure
-  light_dir: vec4f,    // 方向光传播方向（世界空间，单位向量）
+  light_dir: vec4f,
   light_color: vec4f,  // rgb = 颜色 × intensity
-  ambient: vec4f,      // rgb = 环境光（经 env 颜色 × intensity）
+  ambient: vec4f,
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
 
 struct Draw {
   model: mat4x4f,
-  base_color: vec4f,   // 线性空间
+  base_color: vec4f,   // 线性空间（贴图模式下作为 tint）
   emissive: vec4f,
   mrp: vec4f,          // x=metallic y=roughness z=normal_scale w=occlusion
 };
 @group(1) @binding(0) var<uniform> dr: Draw;
+/* 无 albedo 贴图时绑 1×1 白纹理（基色 × 1，不改变观感） */
+@group(1) @binding(1) var albedo_tex: texture_2d<f32>;
+@group(1) @binding(2) var albedo_smp: sampler;
 
 const PI: f32 = 3.14159265;
 
@@ -37,7 +41,6 @@ fn geometry_smith(n_dot_v: f32, n_dot_l: f32, rough: f32) -> f32 {
   let gl = n_dot_l / (n_dot_l * (1.0 - k) + k + 1e-6);
   return gv * gl;
 }
-/* ACES（Narkowicz 拟合）→ 输出 LDR；目标 RGBA8 非 sRGB，故再手写 gamma。 */
 fn aces_tonemap(x: vec3f) -> vec3f {
   let a = 2.51; let b = 0.03; let c = 2.43; let d = 0.59; let e = 0.14;
   return clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3f(0.0), vec3f(1.0));
@@ -47,14 +50,16 @@ struct VOut {
   @builtin(position) p: vec4f,
   @location(0) n: vec3f,
   @location(1) w: vec3f,
+  @location(2) uv: vec2f,
 };
 
-@vertex fn vs(@location(0) pos: vec3f, @location(1) nrm: vec3f) -> VOut {
+@vertex fn vs(@location(0) pos: vec3f, @location(1) nrm: vec3f, @location(2) uv: vec2f) -> VOut {
   var o: VOut;
   let wp = dr.model * vec4f(pos, 1.0);
   o.p = cam.vp * wp;
   o.n = normalize((dr.model * vec4f(nrm, 0.0)).xyz);
   o.w = wp.xyz;
+  o.uv = uv;
   return o;
 }
 
@@ -70,9 +75,9 @@ struct VOut {
   let metallic = clamp(dr.mrp.x, 0.0, 1.0);
   let rough = clamp(dr.mrp.y, 0.02, 1.0);
   let ao = clamp(dr.mrp.w, 0.0, 1.0);
-  let base = dr.base_color.rgb;
+  // albedo：sRGB 纹理采样自动解码为线性（RGBA8UnormSrgb），再乘材质 tint
+  let base = dr.base_color.rgb * textureSample(albedo_tex, albedo_smp, in.uv).rgb;
 
-  // Cook-Torrance：F0 电介质 0.04 / 金属取基色
   let f0 = mix(vec3f(0.04), base, metallic);
   let f = fresnel_schlick(max(dot(h, v), 0.0), f0);
   let d = distribution_ggx(n_dot_h, rough);
@@ -82,9 +87,7 @@ struct VOut {
   let diffuse = kd * base / PI;
 
   var color = (diffuse + spec) * cam.light_color.rgb * n_dot_l;
-  // 环境项（M3：常量环境色近似；M4 换成 IBL）
-  color = color + cam.ambient.rgb * base * ao;
-  color = color + dr.emissive.rgb;
+  color = color + cam.ambient.rgb * base * ao + dr.emissive.rgb;
   color = aces_tonemap(color * cam.eye.w);
   return vec4f(pow(color, vec3f(1.0 / 2.2)), dr.base_color.a);
 }

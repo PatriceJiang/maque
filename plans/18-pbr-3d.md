@@ -301,7 +301,14 @@ per view:
   gamma）；schema 新增 `asset.PbrMaterial`（typed 字段 + `PbrAlphaMode` + 5 贴图路径槽，角色 `pbr_material`）；
   runtime 从**同节点 `asset.PbrMaterial` 组件**取材质（基色/金属度/粗糙度/自发光/AO），无组件用默认灰；
   `scenes/pbr/materials.scn`（光滑 0.12 vs 粗糙 0.9 金属）+ e2e 粗糙度能量分布断言。
-- **M4 起**：贴图（sRGB/mip/法线）、阴影、环境/glTF 资产导入（未开始）。
+- **M4 ✅（贴图子集）**：PBR albedo 贴图通路——gfx draw bind group 增加 `texture_2d` + `sampler`
+  （缺省 1×1 白纹理，材质无贴图时基色不变）；pbr shader 采样 albedo（`RGBA8_SRGB` 采样自动解码）
+  + uv 顶点属性（location2, offset40）；内建 cube 补每面 UV（(0,0)…(1,1)）；
+  runtime 读 `asset.PbrMaterial.base_color_texture`（`builtin:/` 或 VFS 路径 → `create_texture` 句柄）；
+  `scenes/pbr/materials.scn` 左 cube 绑 `builtin:/textures/checker`；e2e 断言贴图真正加载/绑定
+  （`MAQUE_RENDER3D_INFO` 打印 albedo texture 路径 + 句柄）。
+- **M4 剩余**：`create_texture2` 的 sRGB/mip/法线贴图槽、方向光 shadow map + PCF、
+  `tools/gltf_import.py` 离线资产导入、`.material.json` 共享材质、透明排序 —— 拆到 M4b/M5。
 
 ## 7. 验收标准（DoD）
 
