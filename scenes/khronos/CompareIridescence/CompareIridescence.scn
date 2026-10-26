@@ -164,7 +164,8 @@
           "iridescence": 1.0,
           "iridescence_ior": 1.5,
           "base_color_texture": "textures/image0.jpg",
-          "metallic_roughness_texture": "textures/image1.jpg"
+          "metallic_roughness_texture": "textures/image1.jpg",
+          "iridescence_texture": "textures/image2.jpg"
         }
       ]
     }

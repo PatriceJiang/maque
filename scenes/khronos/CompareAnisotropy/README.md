@@ -22,7 +22,7 @@
 | 使用扩展 | `KHR_texture_transform`、`KHR_materials_anisotropy` |
 | alpha 模式分布 | OPAQUE×4 |
 
-**导入产物**：`assets/` 4 个 `.mesh.json`（合计 2.1 MB），`textures/` 4 张；场景 `CompareAnisotropy.scn`。
+**导入产物**：`assets/` 4 个 `.mesh.json`（合计 2.1 MB），`textures/` 5 张；场景 `CompareAnisotropy.scn`。
 
 ## 生成 / 运行
 
@@ -52,13 +52,13 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现
+- KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现
+- KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
 
 ## 踩过的坑 / 注意
 

@@ -23,7 +23,7 @@
 | 使用扩展 | `KHR_materials_clearcoat` |
 | alpha 模式分布 | OPAQUE×2 |
 
-**导入产物**：`assets/` 2 个 `.mesh.json`（合计 5.0 MB），`textures/` 7 张；场景 `PotOfCoals.scn`。
+**导入产物**：`assets/` 2 个 `.mesh.json`（合计 5.0 MB），`textures/` 8 张；场景 `PotOfCoals.scn`。
 
 ## 生成 / 运行
 
@@ -43,21 +43,21 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.426 | 0.391 | 差 -0.035 |
-| 前景平均 RGB | [147.5, 100.8, 74.0] | [130.7, 93.5, 70.5] | RGB 距离 0.036 |
-| 亮度直方图相似度 | — | — | 0.57（16 桶交集，1=完全一致） |
-| 前景占比 | 84.7% | 13.5% | 覆盖率比 0.159 |
+| 前景平均亮度 | 0.426 | 0.315 | 差 -0.111 |
+| 前景平均 RGB | [147.5, 100.8, 74.0] | [108.6, 74.8, 53.2] | RGB 距离 0.112 |
+| 亮度直方图相似度 | — | — | 0.48（16 桶交集，1=完全一致） |
+| 前景占比 | 84.7% | 15.2% | 覆盖率比 0.179 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 
 ## 踩过的坑 / 注意
 

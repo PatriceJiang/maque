@@ -298,7 +298,7 @@ def known_gaps(stats):
     if stats.get("cameras"):
         gaps.append("未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）")
     if stats.get("has_khr_lights"):
-        gaps.append("KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）")
+        gaps.append("KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）")
     if stats.get("non_tri_prims"):
         gaps.append("非三角形 primitive 被跳过（线/点）")
     if stats.get("color0_prims"):
@@ -313,15 +313,15 @@ def known_gaps(stats):
     if "KHR_materials_diffuse_transmission" in used:
         gaps.append("KHR_materials_diffuse_transmission 未实现")
     if "KHR_materials_clearcoat" in used:
-        gaps.append("KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现")
+        gaps.append("KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似")
     if "KHR_materials_sheen" in used:
-        gaps.append("KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现")
+        gaps.append("KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似")
     if "KHR_materials_iridescence" in used:
-        gaps.append("KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现")
+        gaps.append("KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）")
     if "KHR_materials_specular" in used:
-        gaps.append("KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现")
+        gaps.append("KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现")
     if "KHR_materials_anisotropy" in used:
-        gaps.append("KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现")
+        gaps.append("KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）")
     if "KHR_materials_variants" in used:
         gaps.append("KHR_materials_variants：只使用默认材质（不做变体切换）")
     if "KHR_materials_pbrSpecularGlossiness" in used:
@@ -331,7 +331,7 @@ def known_gaps(stats):
     if "EXT_texture_webp" in used or stats.get("image_kinds", {}).get("webp"):
         gaps.append("WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）")
     if "KHR_node_visibility" in used:
-        gaps.append("KHR_node_visibility 未实现（隐藏节点可能仍渲染；节点可见性测试模型会显示\"扩展不支持\"卡）")
+        gaps.append("KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入")
     if "EXT_mesh_gpu_instancing" in used:
         gaps.append("EXT_mesh_gpu_instancing 未实现（实例化网格的多实例会丢失）")
     if "KHR_materials_retroreflection" in used:

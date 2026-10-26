@@ -41,9 +41,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Lig
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.526 | 0.860 | 差 +0.335 |
-| 前景平均 RGB | [118.1, 137.8, 142.3] | [219.0, 219.0, 220.3] | RGB 距离 0.340 |
-| 亮度直方图相似度 | — | — | 0.09（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.526 | 0.800 | 差 +0.274 |
+| 前景平均 RGB | [118.1, 137.8, 142.3] | [192.8, 206.3, 205.1] | RGB 距离 0.269 |
+| 亮度直方图相似度 | — | — | 0.10（16 桶交集，1=完全一致） |
 | 前景占比 | 66.1% | 42.3% | 覆盖率比 0.64 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
@@ -51,21 +51,21 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Lig
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
-- KHR_node_visibility 未实现（隐藏节点可能仍渲染；节点可见性测试模型会显示"扩展不支持"卡）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
+- KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入
 - KHR_animation_pointer 动画未导入
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
-- KHR_node_visibility 未实现（隐藏节点可能仍渲染；节点可见性测试模型会显示"扩展不支持"卡）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
+- KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入
 - KHR_animation_pointer 动画未导入
 
 ## 踩过的坑 / 注意
 
-- 本模型导入/渲染无告警。
+- gltf_import: KHR_node_visibility=false 跳过 1 个隐藏节点（含整棵子树）
 
 <!-- 手动笔记开始（重生成时保留以下内容） -->
 

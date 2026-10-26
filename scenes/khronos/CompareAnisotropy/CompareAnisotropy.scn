@@ -173,7 +173,8 @@
           "anisotropy": 0.5,
           "normal_texture": "textures/image0.jpg",
           "normal_scale": 0.5,
-          "normal_scale_y": 0.5
+          "normal_scale_y": 0.5,
+          "anisotropy_texture": "textures/image4.png"
         }
       ]
     },

@@ -22,7 +22,7 @@
 | 必需扩展 | `KHR_texture_transform` |
 | alpha 模式分布 | OPAQUE×29 |
 
-**导入产物**：`assets/` 29 个 `.mesh.json`（合计 257.0 KB），`textures/` 3 张；场景 `TextureTransformMultiTest.scn`。
+**导入产物**：`assets/` 29 个 `.mesh.json`（合计 257.3 KB），`textures/` 4 张；场景 `TextureTransformMultiTest.scn`。
 
 ## 生成 / 运行
 
@@ -43,7 +43,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Tex
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
 | 前景平均亮度 | 0.423 | 0.490 | 差 +0.067 |
-| 前景平均 RGB | [86.5, 109.4, 157.8] | [101.8, 125.8, 186.1] | RGB 距离 0.079 |
+| 前景平均 RGB | [86.5, 109.4, 157.8] | [101.7, 125.8, 186.0] | RGB 距离 0.078 |
 | 亮度直方图相似度 | — | — | 0.84（16 桶交集，1=完全一致） |
 | 前景占比 | 86.2% | 25.8% | 覆盖率比 0.3 |
 
@@ -52,13 +52,13 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Tex
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 
 ## 踩过的坑 / 注意
 

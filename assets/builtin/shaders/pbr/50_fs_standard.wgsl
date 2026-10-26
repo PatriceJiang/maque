@@ -3,11 +3,12 @@
   var s = surface_common(in, ff);
   surface_alpha_test(s);
   let f0 = mix(vec3f(0.04), s.base, s.metallic);
+  let ep = surface_ext_params(in.uv * dr.uv.xy + dr.uv.zw);
   var n_cc = s.n;
   if ((flags2_bits() & 8) != 0) {
     n_cc = sample_clearcoat_normal(surface_geo_normal(in.n, ff), in.w, clearcoat_normal_uv(in));
   }
-  var color = light_standard(s, f0, n_cc, dr.clearcoat.x, dr.clearcoat.y, dr.phys0.w);
+  var color = light_standard(s, f0, n_cc, ep.clearcoat.x, ep.clearcoat.y, dr.phys0.w);
   color = color + s.emissive;
   return tone_output(color, s.alpha);
 }

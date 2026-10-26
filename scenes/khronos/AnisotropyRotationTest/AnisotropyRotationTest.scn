@@ -217,7 +217,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "anisotropy": 0.5,
-          "base_color_texture": "textures/GridWithMarkers_30deg.png"
+          "base_color_texture": "textures/GridWithMarkers_30deg.png",
+          "anisotropy_texture": "textures/AnisoRotation30_Linear.png"
         }
       ]
     },
@@ -377,7 +378,8 @@
           "shading_model": 1,
           "anisotropy": 0.5,
           "anisotropy_rotation": 0.349065850398866,
-          "base_color_texture": "textures/GridWithMarkers_30deg.png"
+          "base_color_texture": "textures/GridWithMarkers_30deg.png",
+          "anisotropy_texture": "textures/AnisoRotation10_Linear.png"
         }
       ]
     },

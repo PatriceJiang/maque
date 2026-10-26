@@ -115,7 +115,9 @@
           "base_color_texture": "textures/image0.jpg",
           "metallic_roughness_texture": "textures/image3.jpg",
           "normal_texture": "textures/image2.png",
-          "occlusion_texture": "textures/image3.jpg"
+          "occlusion_texture": "textures/image3.jpg",
+          "iridescence_texture": "textures/image1.jpg",
+          "iridescence_thickness_texture": "textures/image1.jpg"
         }
       ]
     }

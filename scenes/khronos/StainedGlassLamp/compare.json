@@ -12,13 +12,13 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.3513,
-  "preview_mean_lum": 0.3169,
-  "mean_lum_delta": -0.0343,
-  "hist_similarity": 0.6754,
-  "rgb_delta": 0.0298,
+  "preview_mean_lum": 0.315,
+  "mean_lum_delta": -0.0363,
+  "hist_similarity": 0.6906,
+  "rgb_delta": 0.032,
   "ref_coverage": 0.3558,
-  "preview_coverage": 0.0491,
-  "coverage_ratio": 0.138,
+  "preview_coverage": 0.0481,
+  "coverage_ratio": 0.135,
   "ref_bbox": [
     11,
     8,
@@ -37,9 +37,9 @@
     75.0
   ],
   "preview_mean_rgb": [
-    88.7,
-    79.1,
-    74.3
+    88.4,
+    78.6,
+    73.4
   ],
   "framing_notes": [
     "预览主体占比过小（<5%）→ 机位过远？"

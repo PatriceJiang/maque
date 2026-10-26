@@ -50,12 +50,12 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 
 ## 踩过的坑 / 注意
 

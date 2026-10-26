@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_materials_anisotropy` |
 | alpha 模式分布 | OPAQUE×12 |
 
-**导入产物**：`assets/` 12 个 `.mesh.json`（合计 264.0 KB），`textures/` 0 张；场景 `AnisotropyDiscTest.scn`。
+**导入产物**：`assets/` 12 个 `.mesh.json`（合计 264.5 KB），`textures/` 1 张；场景 `AnisotropyDiscTest.scn`。
 
 ## 生成 / 运行
 
@@ -41,21 +41,21 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.469 | 0.547 | 差 +0.079 |
-| 前景平均 RGB | [122.7, 119.0, 116.9] | [137.2, 139.6, 146.4] | RGB 距离 0.084 |
-| 亮度直方图相似度 | — | — | 0.22（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.469 | 0.583 | 差 +0.114 |
+| 前景平均 RGB | [122.7, 119.0, 116.9] | [146.8, 148.7, 154.4] | RGB 距离 0.119 |
+| 亮度直方图相似度 | — | — | 0.25（16 桶交集，1=完全一致） |
 | 前景占比 | 68.6% | 23.8% | 覆盖率比 0.347 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现
+- KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现
+- KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
 
 ## 踩过的坑 / 注意
 

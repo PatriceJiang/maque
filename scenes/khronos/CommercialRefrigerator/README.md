@@ -54,14 +54,14 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 
 ## 踩过的坑 / 注意
 

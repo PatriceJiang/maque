@@ -489,7 +489,8 @@
           "metallic_roughness_texture": "textures/image15.png",
           "normal_texture": "textures/image14.png",
           "occlusion_texture": "textures/image15.png",
-          "emissive_texture": "textures/image16.png"
+          "emissive_texture": "textures/image16.png",
+          "clearcoat_texture": "textures/image18.png"
         }
       ]
     }

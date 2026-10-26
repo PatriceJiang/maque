@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_materials_transmission`、`KHR_materials_clearcoat`、`KHR_materials_variants`、`KHR_materials_ior`、`KHR_materials_volume` |
 | alpha 模式分布 | MASK×4、OPAQUE×9 |
 
-**导入产物**：`assets/` 8 个 `.mesh.json`（合计 5.0 MB），`textures/` 18 张；场景 `StainedGlassLamp.scn`。
+**导入产物**：`assets/` 8 个 `.mesh.json`（合计 5.0 MB），`textures/` 19 张；场景 `StainedGlassLamp.scn`。
 
 ## 生成 / 运行
 
@@ -41,10 +41,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sta
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.351 | 0.317 | 差 -0.034 |
-| 前景平均 RGB | [102.8, 87.2, 75.0] | [88.7, 79.1, 74.3] | RGB 距离 0.030 |
-| 亮度直方图相似度 | — | — | 0.68（16 桶交集，1=完全一致） |
-| 前景占比 | 35.6% | 4.9% | 覆盖率比 0.138 |
+| 前景平均亮度 | 0.351 | 0.315 | 差 -0.036 |
+| 前景平均 RGB | [102.8, 87.2, 75.0] | [88.4, 78.6, 73.4] | RGB 距离 0.032 |
+| 亮度直方图相似度 | — | — | 0.69（16 桶交集，1=完全一致） |
+| 前景占比 | 35.6% | 4.8% | 覆盖率比 0.135 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？**
 
@@ -54,7 +54,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sta
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_variants：只使用默认材质（不做变体切换）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
@@ -63,7 +63,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sta
 
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_variants：只使用默认材质（不做变体切换）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 

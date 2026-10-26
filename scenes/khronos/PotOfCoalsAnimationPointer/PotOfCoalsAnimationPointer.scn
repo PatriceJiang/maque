@@ -168,7 +168,8 @@
           "base_color_texture": "textures/image4.jpg",
           "metallic_roughness_texture": "textures/image6.jpg",
           "normal_texture": "textures/image5.png",
-          "occlusion_texture": "textures/image6.jpg"
+          "occlusion_texture": "textures/image6.jpg",
+          "clearcoat_texture": "textures/image7.jpg"
         }
       ]
     },

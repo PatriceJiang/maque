@@ -37,25 +37,36 @@
       ]
     },
     {
-      "name": "sun",
+      "name": "DirectLight_light",
       "components": [
         {
           "type": "scene.Transform3D",
           "local": {
-            "rotation": {
-              "x": -1.0119793728441187,
-              "y": -0.7188299996216244,
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
+            },
+            "rotation": {
+              "x": 3.141592609878405,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000009
             }
           }
         },
         {
           "type": "render.Light",
+          "type": 0,
           "intensity": 2.6,
           "color": {
             "r": 1.0,
-            "g": 0.96,
-            "b": 0.9,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           }
         }

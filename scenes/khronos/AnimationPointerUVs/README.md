@@ -22,7 +22,7 @@
 | 必需扩展 | `KHR_materials_unlit`、`KHR_lights_punctual` |
 | alpha 模式分布 | BLEND×3、MASK×9、OPAQUE×70 |
 
-**导入产物**：`assets/` 132 个 `.mesh.json`（合计 11.7 MB），`textures/` 6 张；场景 `AnimationPointerUVs.scn`。
+**导入产物**：`assets/` 132 个 `.mesh.json`（合计 11.7 MB），`textures/` 10 张；场景 `AnimationPointerUVs.scn`。
 
 ## 生成 / 运行
 
@@ -42,10 +42,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.471 | 0.553 | 差 +0.082 |
-| 前景平均 RGB | [110.0, 124.2, 111.8] | [128.1, 144.9, 140.3] | RGB 距离 0.088 |
-| 亮度直方图相似度 | — | — | 0.67（16 桶交集，1=完全一致） |
-| 前景占比 | 40.7% | 13.2% | 覆盖率比 0.324 |
+| 前景平均亮度 | 0.471 | 0.446 | 差 -0.025 |
+| 前景平均 RGB | [110.0, 124.2, 111.8] | [101.9, 116.8, 117.9] | RGB 距离 0.028 |
+| 亮度直方图相似度 | — | — | 0.62（16 桶交集，1=完全一致） |
+| 前景占比 | 40.7% | 14.5% | 覆盖率比 0.356 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
@@ -53,16 +53,16 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_diffuse_transmission 未实现
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
-- KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
-- KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
-- KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
+- KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
+- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
+- KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
 - KHR_animation_pointer 动画未导入
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
@@ -71,16 +71,16 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_diffuse_transmission 未实现
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
-- KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
-- KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
-- KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
+- KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
+- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
+- KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
 - KHR_animation_pointer 动画未导入
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 

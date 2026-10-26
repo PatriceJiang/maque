@@ -116,7 +116,8 @@
           "metallic_roughness_texture": "textures/image1.png",
           "normal_texture": "textures/image0.png",
           "occlusion_texture": "textures/image1.png",
-          "clearcoat_normal_texture": "textures/image0.png"
+          "clearcoat_normal_texture": "textures/image0.png",
+          "anisotropy_texture": "textures/image3.png"
         }
       ]
     },

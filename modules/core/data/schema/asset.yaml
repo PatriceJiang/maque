@@ -303,9 +303,20 @@
         - { name: uv_offset, type: math.Vec2, default: "{0.0F, 0.0F}" }
         - { name: normal_uv_scale, type: math.Vec2, default: "{1.0F, 1.0F}" }
         - { name: normal_uv_offset, type: math.Vec2, default: "{0.0F, 0.0F}" }
-        # glTF 多 UV 集（TEXCOORD_1）：bit0..8 = base/mr/ao/normal/emissive/matcap/gradient/
+        # glTF 多 UV 集（TEXCOORD_1）：bit0..7 = base/mr/ao/normal/emissive/matcap/gradient/
         # clearcoat_normal 使用第二套 UV。仅非 0 时由 importer 写；需要网格 vertex_layout=1。
         - { name: uv1_mask, type: int32_t, default: 0 }
+        # KHR 扩展材质贴图槽（尾部追加；glTF 逐槽 textureInfo，UV 近似用 uv_scale/uv_offset）：
+        # clearcoatTexture / clearcoatRoughnessTexture / sheenColorTexture / sheenRoughnessTexture /
+        # iridescenceTexture / iridescenceThicknessTexture / anisotropyTexture。
+        # sheen/specular 的 color 贴图走 sRGB；其余为线性（R/G/A 通道语义见 shader）。
+        - { name: clearcoat_texture, type: string, default: "" }
+        - { name: clearcoat_roughness_texture, type: string, default: "" }
+        - { name: sheen_color_texture, type: string, default: "" }
+        - { name: sheen_roughness_texture, type: string, default: "" }
+        - { name: iridescence_texture, type: string, default: "" }
+        - { name: iridescence_thickness_texture, type: string, default: "" }
+        - { name: anisotropy_texture, type: string, default: "" }
     - struct: Scene
       fields:
         - { name: name, type: string }

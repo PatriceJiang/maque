@@ -4,9 +4,9 @@
 > 打开 [index.html](index.html) 查看左右对比（支持搜索/筛选/排序）。
 
 - 模型：**149**（149 个有自动对比；86 个参考图使用 large 版，13 个为 GIF 首帧）
-- 指标中位数：直方图相似度 **0.425**、前景平均亮度差 **+0.079**、
-  前景 RGB 距离 **0.118**、预览前景占比 **16.6%**
-- 自动初判：较接近 **36** / 中等 **42** / 差异较大 **71**
+- 指标中位数：直方图相似度 **0.437**、前景平均亮度差 **+0.084**、
+  前景 RGB 距离 **0.116**、预览前景占比 **16.6%**
+- 自动初判：较接近 **39** / 中等 **41** / 差异较大 **69**
 - 参考图下采样：≤900px、JPEG q82，存于 `ref/`；预览来自 `scenes/khronos/<Model>/preview.jpg`
 - 复现：`python tools/make_migration_report.py`；表格数据：[comparison.csv](comparison.csv)、[comparison.json](comparison.json)
 
@@ -31,7 +31,7 @@
 | [TriangleWithoutIndices](#model-TriangleWithoutIndices) | screenshot.png | 0.013 | 0.367 | 16.6% | 差异较大（需人工确认：机位/缺失特性/导入问题） | 0 |
 | [SimpleMeshes](#model-SimpleMeshes) | screenshot.png | 0.014 | 0.362 | 22.7% | 差异较大（需人工确认：机位/缺失特性/导入问题） | 0 |
 | [SimpleMorph](#model-SimpleMorph) | screenshot.png | 0.031 | 0.115 | 18.5% | 差异较大（需人工确认：机位/缺失特性/导入问题） | 2 |
-| [PlaysetLightTest](#model-PlaysetLightTest) | screenshot_large.jpg（large） | 0.036 | 0.615 | 17.5% | 差异较大（需人工确认：机位/缺失特性/导入问题） | 2 |
+| [PlaysetLightTest](#model-PlaysetLightTest) | screenshot_large.jpg（large） | 0.031 | 0.820 | 17.5% | 差异较大（需人工确认：机位/缺失特性/导入问题） | 2 |
 | [EmissiveStrengthTest](#model-EmissiveStrengthTest) | screenshot_large_plain.jpg（large） | 0.070 | 0.373 | 31.2% | 差异较大（需人工确认：机位/缺失特性/导入问题） | 0 |
 | [SimpleMaterial](#model-SimpleMaterial) | screenshot.png | 0.074 | -0.131 | 16.6% | 差异较大（需人工确认：机位/缺失特性/导入问题） | 0 |
 | [XmpMetadataRoundedCube](#model-XmpMetadataRoundedCube) | screenshot.jpg | 0.076 | 0.336 | 20.6% | 差异较大（需人工确认：机位/缺失特性/导入问题） | 0 |
@@ -44,13 +44,13 @@
 | [UnlitTest](#model-UnlitTest) | screenshot_large.jpg（large） | 0.981 | 0.021 | 28.4% | 主体亮度/色调分布较接近（机位/背景可能不同） | 0 |
 | [FlightHelmet](#model-FlightHelmet) | screenshot.jpg | 0.883 | -0.257 | 9.2% | 中等差异（多为机位/背景/光照/缺失特性） | 1 |
 | [CompareClearcoat](#model-CompareClearcoat) | screenshot_Large.jpg（large） | 0.871 | -0.035 | 22.0% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
-| [TextureTransformMultiTest](#model-TextureTransformMultiTest) | screenshot_large.jpg（large） | 0.837 | 0.067 | 25.8% | 主体亮度/色调分布较接近（机位/背景可能不同） | 2 |
+| [TextureTransformMultiTest](#model-TextureTransformMultiTest) | screenshot_large.jpg（large） | 0.839 | 0.067 | 25.8% | 主体亮度/色调分布较接近（机位/背景可能不同） | 2 |
+| [DiffuseTransmissionPlant](#model-DiffuseTransmissionPlant) | screenshot_Large.jpg（large） | 0.831 | -0.059 | 8.4% | 主体亮度/色调分布较接近（机位/背景可能不同） | 5 |
 | [CompareAmbientOcclusion](#model-CompareAmbientOcclusion) | screenshot_Large.jpg（large） | 0.808 | 0.035 | 17.4% | 主体亮度/色调分布较接近（机位/背景可能不同） | 0 |
 | [ClearcoatWicker](#model-ClearcoatWicker) | screenshot_large.jpg（large） | 0.807 | 0.088 | 13.6% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
 | [IridescenceMetallicSpheres](#model-IridescenceMetallicSpheres) | screenshot_large.jpg（large） | 0.798 | 0.078 | 16.2% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
 | [CompareSpecular](#model-CompareSpecular) | screenshot_Large.jpg（large） | 0.777 | 0.010 | 20.0% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
 | [DispersionTest](#model-DispersionTest) | screenshot-large.png（large） | 0.761 | 0.070 | 13.4% | 主体亮度/色调分布较接近（机位/背景可能不同） | 2 |
-| [SheenChair](#model-SheenChair) | screenshot-large.jpg（large） | 0.741 | -0.118 | 11.1% | 主体亮度/色调分布较接近（机位/背景可能不同） | 3 |
 
 ## 全部模型
 

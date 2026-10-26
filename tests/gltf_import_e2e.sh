@@ -20,9 +20,29 @@
 #       · 无 COLOR_0/uv1 的 primitive 仍 layout=0/12 float（旧资产零漂移）；
 #       · transmission factor=0.5 → alpha_mode=2、opacity=0.575（近似）。
 #   相机 CLI：--camera-position/--camera-target/--camera-fov/--camera-distance-scale（仅 --scene）。
+#   KHR 扩展材质贴图槽（plans/20 第 2 轮，task-13）：
+#     夹具 tests/data/gltf/ext_material_slots.gltf（一个材质同时带 clearcoat/sheen/iridescence/
+#     anisotropy 扩展 + 3 个 texture 复用同一 1x1 PNG、不同 sampler）：
+#       · clearcoatTexture→clearcoat_texture、clearcoatRoughnessTexture→clearcoat_roughness_texture、
+#         sheenColorTexture→sheen_color_texture、sheenRoughnessTexture→sheen_roughness_texture、
+#         iridescenceTexture→iridescence_texture、iridescenceThicknessTexture→
+#         iridescence_thickness_texture、anisotropyTexture→anisotropy_texture 全部映射；
+#       · 复用 sampler 后缀（clamp/clamp+nearest、mirror/repeat、默认无后缀）；
+#         specularTexture/specularColorTexture 仍未支持（gap 文案在迁移脚本，Lead 更新）。
+#   KHR_lights_punctual + KHR_node_visibility（plans/20，task-14）：
+#     夹具 tests/data/gltf/lights_visibility.gltf（3 方向光 + 3 点光 + 3 聚光 = 9 盏；
+#     隐藏节点子树含 mesh 与灯光）：
+#       · → 8 盏上限（方向光优先，第 9 盏聚光被丢弃并 warning）；有灯光时不再追加默认太阳；
+#       · Light 实体 type=0/1/2、position/rotation 用节点世界变换（方向 = 节点 -Z）、
+#         spot 内/外锥角（弧度→度）、point/spot range（缺省 0=无限远）；
+#       · 强度观感归一化：directional=2.6×intensity；point/spot=2.6×(d_ref²+1)×intensity；
+#       · KHR_node_visibility=false 节点及整棵子树（hidden_mesh/hidden_light）不生成实体；
+#       · 无灯光模型仍生成默认太阳（旧行为零漂移）。
 #   可选（MAQUE_TOYCAR_SRC=<含 ToyCar.gltf 的源目录>，源模型不入库）：ToyCar 三个
 #     mesh.json 逐字节一致；未设置时跳过（ToyCar 源模型有 KHR 扩展，更新入库后可用此钩子校验）。
 set -u
+# Windows: Python redirected stdout/stderr defaults to locale (GBK); force UTF-8 for assertions.
+export PYTHONIOENCODING=utf-8
 . "$(dirname "$0")/maque_python.sh" 2>/dev/null || true
 TOOL="$1"
 FIXTURE="$2"
@@ -160,6 +180,145 @@ cmp -s "$WORK/ext/extensions_0_0.mesh.json" "$WORK/ext2/extensions_0_0.mesh.json
 cmp -s "$WORK/ext/extensions_1_0.mesh.json" "$WORK/ext2/extensions_1_0.mesh.json" \
     || fail "扩展夹具两次导入不一致（violates determinism）"
 echo "gltf_import_e2e: 扩展夹具确定性 OK"
+
+# ---- KHR 扩展材质贴图槽（plans/20 第 2 轮）：clearcoat/sheen/iridescence/anisotropy 共 7 槽 ----
+SLOT_FIXTURE="$FIXDIR/ext_material_slots.gltf"
+[ -f "$SLOT_FIXTURE" ] || fail "缺夹具 $SLOT_FIXTURE"
+mkdir -p "$WORK/slots" "$WORK/slots2"
+"$PY" "$TOOL" "$SLOT_FIXTURE" --out "$WORK/slots" >"$WORK/slots.log" 2>&1 \
+    || { cat "$WORK/slots.log"; fail "扩展贴图槽夹具导入失败"; }
+grep -q "gltf_import: OK meshes=1 textures=1" "$WORK/slots.log" \
+    || { cat "$WORK/slots.log"; fail "扩展贴图槽夹具导入统计不符（期望 meshes=1 textures=1）"; }
+[ -f "$WORK/slots/ext_material_slots.mesh.json" ] || fail "缺 ext_material_slots.mesh.json"
+[ -f "$WORK/slots/textures/image0.png" ] || fail "扩展贴图槽夹具贴图未搬运"
+
+"$PY" - "$WORK/slots" <<'PY' || exit 1
+import json, sys
+d = sys.argv[1]
+m = json.load(open(d + "/ext_material_slots.mesh.json", encoding="utf-8"))
+mat = m["materials"][0]
+# 7 个扩展贴图槽全部映射（同一 image、不同 sampler → 后缀不同；默认 sampler 无后缀）
+assert mat["clearcoat_texture"] == "textures/image0.png#wrap=clamp,clamp&filter=nearest", mat["clearcoat_texture"]
+assert mat["clearcoat_roughness_texture"] == "textures/image0.png#wrap=mirror,repeat", mat["clearcoat_roughness_texture"]
+assert mat["sheen_color_texture"] == "textures/image0.png#wrap=clamp,clamp&filter=nearest", mat["sheen_color_texture"]
+assert mat["sheen_roughness_texture"] == "textures/image0.png", mat["sheen_roughness_texture"]
+assert mat["iridescence_texture"] == "textures/image0.png#wrap=clamp,clamp&filter=nearest", mat["iridescence_texture"]
+assert mat["iridescence_thickness_texture"] == "textures/image0.png", mat["iridescence_thickness_texture"]
+assert mat["anisotropy_texture"] == "textures/image0.png#wrap=mirror,repeat", mat["anisotropy_texture"]
+# 既有 clearcoat normal 槽仍工作（mirror sampler + scale）
+assert mat["clearcoat_normal_texture"] == "textures/image0.png#wrap=mirror,repeat", mat["clearcoat_normal_texture"]
+assert abs(mat["clearcoat_normal_scale"] - 0.8) < 1e-9
+# 扩展因子与 Physical 映射不变
+assert mat["shading_model"] == 1, mat.get("shading_model")
+assert mat["clearcoat"] == 1.0 and abs(mat["clearcoat_roughness"] - 0.2) < 1e-9
+assert mat["sheen_color"] == {"x": 0.8, "y": 0.2, "z": 0.1}
+assert mat["anisotropy"] == 1.0 and mat["iridescence"] == 1.0
+# 网格仍是旧布局（无 COLOR_0/uv1 贴图）
+assert m["vertex_layout"] == 0 and m["vertex_stride"] == 48, (m["vertex_layout"], m["vertex_stride"])
+print("gltf_import_e2e: 扩展贴图槽 OK")
+PY
+[ $? -eq 0 ] || exit 1
+
+# 扩展贴图槽确定性：两次导入逐字节一致
+"$PY" "$TOOL" "$SLOT_FIXTURE" --out "$WORK/slots2" >/dev/null 2>&1 || fail "扩展贴图槽第二次导入失败"
+cmp -s "$WORK/slots/ext_material_slots.mesh.json" "$WORK/slots2/ext_material_slots.mesh.json" \
+    || fail "扩展贴图槽两次导入不一致（违反确定性）"
+echo "gltf_import_e2e: 扩展贴图槽确定性 OK"
+
+# ---- KHR_lights_punctual 灯光 + KHR_node_visibility 隐藏节点（--scene，task-14）----
+LIGHT_FIXTURE="$FIXDIR/lights_visibility.gltf"
+[ -f "$LIGHT_FIXTURE" ] || fail "缺夹具 $LIGHT_FIXTURE"
+mkdir -p "$WORK/lights" "$WORK/lights2"
+"$PY" "$TOOL" "$LIGHT_FIXTURE" --out "$WORK/lights" --scene --compact >"$WORK/lights.log" 2>&1 \
+    || { cat "$WORK/lights.log"; fail "灯光/可见性夹具导入失败"; }
+[ -f "$WORK/lights/lights_visibility.scn" ] || fail "缺 lights_visibility.scn"
+grep -Eq "KHR_lights_punctual.*> 8" "$WORK/lights.log" \
+    || { cat "$WORK/lights.log"; fail "灯光上限告警缺失（期望 9>8 丢弃 1 盏）"; }
+
+"$PY" - "$WORK/lights" <<'PY' || exit 1
+import json, math, sys
+d = sys.argv[1]
+scn = json.load(open(d + "/lights_visibility.scn", encoding="utf-8"))
+names = [e["name"] for e in scn["entities"]]
+def comp(e, key):
+    return next((c for c in e["components"] if key in c), None)
+def t3(e):
+    return next(c for c in e["components"] if c.get("type") == "scene.Transform3D")["local"]
+def light(name):
+    return comp(next(x for x in lights if x["name"] == name), "intensity")
+lights = [e for e in scn["entities"] if comp(e, "intensity") is not None]
+meshes = [e for e in scn["entities"] if comp(e, "mesh_path") is not None]
+# 9 盏源灯光 → 8 盏上限（方向光优先，最后 1 盏 spot_c 被丢）；隐藏子树里的 mesh/灯都不生成
+assert len(lights) == 8, len(lights)
+assert [light(e["name"])["type"] for e in lights] == [0, 0, 0, 1, 1, 1, 2, 2], \
+    [light(e["name"])["type"] for e in lights]
+assert len(meshes) == 1 and meshes[0]["name"] == "mesh_node_0", [m["name"] for m in meshes]
+assert all(not n.startswith("hidden") for n in names), names
+assert "sun" not in names, names            # 有 glTF 灯光 → 不再追加默认太阳
+assert "spot_c_light" not in names, names   # 第 9 盏（非方向光）被丢弃
+# 方向 = 节点 -Z（与 runtime L.dir=-R[8..10] 约定一致）：dir_a=+Y、dir_b=-X、dir_c=-Z
+def m4r(rot):
+    cx, sx = math.cos(rot[0]), math.sin(rot[0])
+    cy, sy = math.cos(rot[1]), math.sin(rot[1])
+    cz, sz = math.cos(rot[2]), math.sin(rot[2])
+    return [cy*cz, cy*sz, -sy,
+            sx*sy*cz - cx*sz, sx*sy*sz + cx*cz, sx*cy,
+            cx*sy*cz + sx*sz, cx*sy*sz - sx*cz, cx*cy]
+def dir_of(name):
+    r = t3(next(x for x in lights if x["name"] == name))["rotation"]
+    m = m4r([r["x"], r["y"], r["z"]])
+    return [-m[6], -m[7], -m[8]]
+def close(a, b, eps=1e-6):
+    return all(abs(x-y) < eps for x, y in zip(a, b))
+assert close(dir_of("dir_a_light"), [0.0, 1.0, 0.0]), dir_of("dir_a_light")
+assert close(dir_of("dir_b_light"), [-1.0, 0.0, 0.0]), dir_of("dir_b_light")
+assert close(dir_of("dir_c_light"), [0.0, 0.0, -1.0]), dir_of("dir_c_light")
+# 位置按节点世界变换
+def pos_of(name):
+    p = t3(next(x for x in lights if x["name"] == name))["position"]
+    return [p["x"], p["y"], p["z"]]
+assert close(pos_of("point_a_light"), [1.0, 2.0, 3.0]), pos_of("point_a_light")
+assert close(pos_of("spot_a_light"), [0.0, 1.0, 2.0]), pos_of("spot_a_light")
+# 强度观感归一化：directional=2.6×gltf；point/spot=2.6×(d_ref²+1)×gltf
+# 夹具 mesh 包围盒 (0,0,0)..(1,1,0) → radius=√0.5 → d_ref² = 0.125
+P = 2.6 * (0.125 + 1.0)
+assert abs(light("dir_a_light")["intensity"] - 2.6) < 1e-12, light("dir_a_light")
+assert abs(light("dir_b_light")["intensity"] - 5.2) < 1e-12
+assert abs(light("point_a_light")["intensity"] - P * 2.0) < 1e-9
+assert abs(light("point_b_light")["intensity"] - P * 0.5) < 1e-9
+# range：显式保留；缺省写 0（引擎语义 = 无限远）
+assert light("point_a_light")["range"] == 4.0
+assert light("point_b_light")["range"] == 0.0
+assert light("spot_a_light")["range"] == 6.0
+# spot 内外锥角（glTF 弧度半角 → 引擎度）；缺省 inner=0 / outer=π/4
+sa, sb = light("spot_a_light"), light("spot_b_light")
+assert abs(sa["inner_angle"] - math.degrees(0.3)) < 1e-9 and abs(sa["outer_angle"] - math.degrees(0.6)) < 1e-9
+assert sb["inner_angle"] == 0.0 and abs(sb["outer_angle"] - 45.0) < 1e-9
+print("gltf_import_e2e: 灯光/可见性导入 OK")
+PY
+[ $? -eq 0 ] || exit 1
+
+# 灯光夹具确定性：两次导入逐字节一致（scn + assets）
+"$PY" "$TOOL" "$LIGHT_FIXTURE" --out "$WORK/lights2" --scene --compact >/dev/null 2>&1 \
+    || fail "灯光夹具第二次导入失败"
+cmp -s "$WORK/lights/lights_visibility.scn" "$WORK/lights2/lights_visibility.scn" \
+    || fail "灯光夹具 scn 两次导入不一致（违反确定性）"
+cmp -s "$WORK/lights/assets/lights_visibility.mesh.json" "$WORK/lights2/assets/lights_visibility.mesh.json" \
+    || fail "灯光夹具 mesh 两次导入不一致（违反确定性）"
+echo "gltf_import_e2e: 灯光夹具确定性 OK"
+
+# 无灯光模型仍生成默认太阳（旧行为零漂移；triangle 夹具无 KHR_lights_punctual）
+"$PY" "$TOOL" "$FIXTURE" --out "$WORK/lights/sun_case" --scene >/dev/null 2>&1 \
+    || fail "默认太阳场景生成失败"
+"$PY" - "$WORK/lights/sun_case/triangle.scn" <<'PY' || exit 1
+import json, sys
+scn = json.load(open(sys.argv[1], encoding="utf-8"))
+names = [e["name"] for e in scn["entities"]]
+assert "sun" in names and "camera" in names, names
+assert sum(1 for e in scn["entities"] if any("intensity" in c for c in e["components"])) == 1, names
+print("gltf_import_e2e: 无灯光模型默认太阳 OK")
+PY
+[ $? -eq 0 ] || exit 1
 
 # ---- 顶点布局 v1（COLOR_0 / TEXCOORD_1）+ per-texture sampler + transmission 近似 ----
 V1_FIXTURE="$FIXDIR/vertex_uv1.gltf"

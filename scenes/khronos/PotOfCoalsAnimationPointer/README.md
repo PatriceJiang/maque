@@ -24,7 +24,7 @@
 | 必需扩展 | `KHR_materials_specular`、`KHR_materials_transmission`、`KHR_materials_volume`、`KHR_texture_transform` |
 | alpha 模式分布 | OPAQUE×3 |
 
-**导入产物**：`assets/` 3 个 `.mesh.json`（合计 5.0 MB），`textures/` 8 张；场景 `PotOfCoalsAnimationPointer.scn`。
+**导入产物**：`assets/` 3 个 `.mesh.json`（合计 5.0 MB），`textures/` 9 张；场景 `PotOfCoalsAnimationPointer.scn`。
 
 ## 生成 / 运行
 
@@ -44,10 +44,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.338 | 0.394 | 差 +0.055 |
-| 前景平均 RGB | [103.7, 82.9, 70.6] | [131.3, 94.1, 71.1] | RGB 距离 0.051 |
-| 亮度直方图相似度 | — | — | 0.52（16 桶交集，1=完全一致） |
-| 前景占比 | 91.8% | 13.4% | 覆盖率比 0.146 |
+| 前景平均亮度 | 0.338 | 0.318 | 差 -0.021 |
+| 前景平均 RGB | [103.7, 82.9, 70.6] | [109.2, 75.4, 53.8] | RGB 距离 0.039 |
+| 亮度直方图相似度 | — | — | 0.55（16 桶交集，1=完全一致） |
+| 前景占比 | 91.8% | 15.0% | 覆盖率比 0.164 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
@@ -57,8 +57,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
-- KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
+- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
 - KHR_animation_pointer 动画未导入
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
@@ -68,8 +68,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
-- KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
+- KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
+- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
 - KHR_animation_pointer 动画未导入
 
 ## 踩过的坑 / 注意

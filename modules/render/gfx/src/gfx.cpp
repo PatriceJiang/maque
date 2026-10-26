@@ -25,7 +25,7 @@ namespace maque::gfx {
 static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32");
 static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
-static_assert(sizeof(mq_renderer_pbr_material) == 240, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换 + uv1_mask）");
+static_assert(sizeof(mq_renderer_pbr_material) == 268, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换 + uv1_mask + textures3[7]）");
 static_assert(sizeof(mq_renderer_environment) == 88, "mq_renderer_environment 布局漂移（+analytic studio IBL 参数）");
 static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
 static_assert(sizeof(mq_renderer_draw3d) == 96, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64）");
@@ -352,11 +352,15 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             dv->shadowSampler = wgpuDeviceCreateSampler(dv->device, &smp);
         }
         {
-            /* group1：材质 uniform（288B = 72 floats）+ 8 张贴图 + sampler（plans/19 材质模型扩展） */
-            WGPUBindGroupLayoutEntry e[10] = {};
+            /* group1：材质 uniform（288B = 72 floats）+ **15 张 sampled 贴图** + 1 sampler（plans/19/20）。
+             * 绑定布局：0=uniform，1=albedo，2=sampler，3=mr，4=ao，5=normal，6=emissive，7=matcap，8=gradient，
+             * 9=clearcoat_normal（旧 8 槽），10..16 = KHR 扩展 7 槽（textures3[0..6]）。
+             * 采样器上限：group1 的 15 张 + group0 的 1 张 shadow depth = 16，
+             * 正好等于 WebGPU 默认 maxSampledTexturesPerShaderStage（16）；再加就要裁剪绑定。 */
+            WGPUBindGroupLayoutEntry e[17] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
             e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 288;
-            for (int ti = 1; ti <= 9; ++ti) {
+            for (int ti = 1; ti <= 16; ++ti) {
                 if (ti == 2) continue;                       /* binding2 = sampler */
                 e[ti].binding = (uint32_t)ti;
                 e[ti].visibility = WGPUShaderStage_Fragment;
@@ -365,7 +369,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             }
             e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment;
             e[2].sampler.type = WGPUSamplerBindingType_Filtering;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 10; bd.entries = e;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 17; bd.entries = e;
             dv->p3dDrawBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         WGPUBindGroupLayout bl[2] = { dv->p3dCamBgl, dv->p3dDrawBgl };
@@ -1398,11 +1402,17 @@ static WGPUSampler material_sampler(Device* dv, const mq_renderer_pbr_material* 
             Texture* t = dv->textures[(size_t)h];
             if (t && t->sampler) return t->sampler;
         }
+        for (int i = 0; i < 7; ++i) {                       /* KHR 扩展 7 槽（textures3） */
+            const int32_t h = mat->textures3[i];
+            if (h < 0 || (size_t)h >= dv->textures.size()) continue;
+            Texture* t = dv->textures[(size_t)h];
+            if (t && t->sampler) return t->sampler;
+        }
     }
     return dv ? dv->sampler : nullptr;
 }
 
-static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[10], WGPUBuffer buf, size_t buf_size,
+static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[17], WGPUBuffer buf, size_t buf_size,
                                        const mq_renderer_pbr_material* mat) {
     const WGPUTextureView white = dv->whiteTexView;
     const WGPUTextureView neutral = dv->neutralNormalView ? dv->neutralNormalView : dv->whiteTexView;
@@ -1417,6 +1427,15 @@ static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[10], 
     e[7].binding = 7; e[7].textureView = material_tex_view(dv, mat ? mat->textures2[0] : -1, white);
     e[8].binding = 8; e[8].textureView = material_tex_view(dv, mat ? mat->textures2[1] : -1, white);
     e[9].binding = 9; e[9].textureView = material_tex_view(dv, mat ? mat->textures2[2] : -1, neutral);
+    /* KHR 扩展 7 槽（plans/20）：绑定 10..16 对应 textures3[0..6]。
+     * 缺失槽绑 1×1 白 —— shader 侧用 flags2 presence bit12..18 决定是否采样/参与计算，
+     * 所以白色不会污染旧材质（presence=0 时根本不读数）。
+     * 注：iridescence_thickness 缺失绑 white → 采样 G=1，shader 按 bit17 决定是否 mix。 */
+    for (int i = 0; i < 7; ++i) {
+        WGPUBindGroupEntry& en = e[10 + i];
+        en.binding = (uint32_t)(10 + i);
+        en.textureView = material_tex_view(dv, mat ? mat->textures3[i] : -1, white);
+    }
 }
 
 /* M2：3D pass（depth + unlit3d）渲染进 target；2D 覆盖层由调用方随后
@@ -1687,10 +1706,10 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 dbd.size = sizeof du;
                 WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
                 wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
-                WGPUBindGroupEntry dbe[10] = {};
+                WGPUBindGroupEntry dbe[17] = {};
                 fill_material_bind_entries(dv, dbe, dbuf, sizeof du, smat);
                 WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-                dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 10; dbgd.entries = dbe;
+                dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 17; dbgd.entries = dbe;
                 WGPUBindGroup dbg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
                 wgpuRenderPassEncoderSetBindGroup(spass, 1, dbg, 0, nullptr);
                 wgpuRenderPassEncoderSetVertexBuffer(spass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
@@ -1763,10 +1782,10 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             dbd.size = sizeof du;
             WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
             wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
-            WGPUBindGroupEntry dbe[10] = {};
+            WGPUBindGroupEntry dbe[17] = {};
             fill_material_bind_entries(dv, dbe, dbuf, sizeof du, mat);
             WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 10; dbgd.entries = dbe;
+            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 17; dbgd.entries = dbe;
             WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
             const bool is_blend = mat && mat->alpha_mode == 2;
             const int model = mat ? mat->shading_model : 0;

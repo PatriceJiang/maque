@@ -52,14 +52,14 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
+- KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_variants：只使用默认材质（不做变体切换）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
+- KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_variants：只使用默认材质（不做变体切换）
 
 ## 踩过的坑 / 注意

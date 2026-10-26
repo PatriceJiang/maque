@@ -41,8 +41,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dir
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.309 | 0.678 | 差 +0.368 |
-| 前景平均 RGB | [86.3, 81.7, 29.0] | [171.0, 172.8, 178.0] | RGB 距离 0.424 |
+| 前景平均亮度 | 0.309 | 0.677 | 差 +0.368 |
+| 前景平均 RGB | [86.3, 81.7, 29.0] | [170.9, 172.6, 177.8] | RGB 距离 0.424 |
 | 亮度直方图相似度 | — | — | 0.11（16 桶交集，1=完全一致） |
 | 前景占比 | 14.3% | 18.6% | 覆盖率比 1.302 |
 
@@ -51,13 +51,13 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dir
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 
 ## 踩过的坑 / 注意
 

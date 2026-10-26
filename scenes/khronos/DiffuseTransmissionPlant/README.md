@@ -42,18 +42,18 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dif
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.427 | 0.458 | 差 +0.031 |
-| 前景平均 RGB | [121.0, 107.1, 89.5] | [136.5, 115.1, 74.6] | RGB 距离 0.050 |
-| 亮度直方图相似度 | — | — | 0.59（16 桶交集，1=完全一致） |
-| 前景占比 | 79.6% | 8.5% | 覆盖率比 0.107 |
+| 前景平均亮度 | 0.427 | 0.368 | 差 -0.059 |
+| 前景平均 RGB | [121.0, 107.1, 89.5] | [112.3, 91.9, 57.5] | RGB 距离 0.073 |
+| 亮度直方图相似度 | — | — | 0.83（16 桶交集，1=完全一致） |
+| 前景占比 | 79.6% | 8.4% | 覆盖率比 0.106 |
 
-自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
+自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - KHR_materials_diffuse_transmission 未实现
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
@@ -62,7 +62,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dif
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - KHR_materials_diffuse_transmission 未实现
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 

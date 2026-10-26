@@ -170,7 +170,8 @@
           "opacity": 0.15000000000000002,
           "base_color_texture": "textures/image0.png",
           "metallic_roughness_texture": "textures/image1.png",
-          "occlusion_texture": "textures/image1.png"
+          "occlusion_texture": "textures/image1.png",
+          "iridescence_thickness_texture": "textures/image2.png"
         }
       ]
     },
@@ -228,7 +229,8 @@
           "iridescence_thickness_max": 515.0,
           "base_color_texture": "textures/image0.png",
           "metallic_roughness_texture": "textures/image1.png",
-          "occlusion_texture": "textures/image1.png"
+          "occlusion_texture": "textures/image1.png",
+          "iridescence_thickness_texture": "textures/image2.png"
         }
       ]
     }

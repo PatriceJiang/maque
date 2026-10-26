@@ -11,9 +11,9 @@
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": 1.028872376777942,
-              "y": 2.6909079017634987,
-              "z": 12.213066705169322
+              "x": 1.0811687248842912,
+              "y": 3.166970191908634,
+              "z": 12.116521139214502
             },
             "rotation": {
               "x": -0.22326312094374032,
@@ -25,8 +25,8 @@
         {
           "type": "render.Camera3D",
           "fov_y": 45.0,
-          "near": 0.28746918033905394,
-          "far": 180.103003663609,
+          "near": 0.2853126299016787,
+          "far": 178.6231263505316,
           "clear_color": {
             "r": 0.13,
             "g": 0.13,
@@ -109,57 +109,6 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "base_color_texture": "textures/image0.png"
-        }
-      ]
-    },
-    {
-      "name": "visible:false_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.009999999776482582
-            },
-            "rotation": {
-              "x": 0.0,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/NodeVisibilityTest_1_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png"
         }
       ]
     },
@@ -262,210 +211,6 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "base_color_texture": "textures/image3.png"
-        }
-      ]
-    },
-    {
-      "name": "visible:false_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -1.0,
-              "z": 0.019999999552965164
-            },
-            "rotation": {
-              "x": 0.0,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/NodeVisibilityTest_4_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image4.png"
-        }
-      ]
-    },
-    {
-      "name": "visible:true_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": 0.0,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/NodeVisibilityTest_5_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image5.png"
-        }
-      ]
-    },
-    {
-      "name": "visible:false_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0,
-              "z": 0.009999999776482582
-            },
-            "rotation": {
-              "x": 0.0,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/NodeVisibilityTest_6_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image6.png"
-        }
-      ]
-    },
-    {
-      "name": "visible:false_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0,
-              "z": 0.019999999552965164
-            },
-            "rotation": {
-              "x": 0.0,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/NodeVisibilityTest_7_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image7.png"
         }
       ]
     }

@@ -372,27 +372,27 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1316,
-   "coverage_ratio": 0.324,
+   "coverage": 0.1447,
+   "coverage_ratio": 0.356,
    "framing_notes": [],
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
     "KHR_materials_diffuse_transmission 未实现",
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现",
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现",
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现",
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现",
-    "KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现",
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
+    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）",
     "KHR_animation_pointer 动画未导入",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.6679,
-   "lum": 0.0815,
+   "hist": 0.618,
+   "lum": -0.0252,
    "model": "AnimationPointerUVs",
    "preview": "scenes/khronos/AnimationPointerUVs/preview.jpg",
    "readme": "../../scenes/khronos/AnimationPointerUVs/README.md",
@@ -406,7 +406,7 @@
     1237
    ],
    "review": "",
-   "rgb": 0.0879,
+   "rgb": 0.0282,
    "scene": "../../scenes/khronos/AnimationPointerUVs/AnimationPointerUVs.scn",
    "stats": {
     "alpha_modes": {
@@ -471,11 +471,11 @@
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现",
-    "KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现"
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
+    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
    ],
-   "hist": 0.6927,
-   "lum": -0.1017,
+   "hist": 0.689,
+   "lum": -0.1014,
    "model": "AnisotropyBarnLamp",
    "preview": "scenes/khronos/AnisotropyBarnLamp/preview.jpg",
    "readme": "../../scenes/khronos/AnisotropyBarnLamp/README.md",
@@ -489,7 +489,7 @@
     1202
    ],
    "review": "- 结论：铜质谷仓壁灯完整：墙座、支臂、灯罩、灯泡都在，铜材质与清漆高光可信，朝向合理。与官方近景相比缺少强烈的各向异性拉丝反射，且机位更远，但整体可接受、无导入异常。\n- 差异主因：缺失特性：anisotropy 拉丝高光偏弱、无 HDRI",
-   "rgb": 0.1,
+   "rgb": 0.0998,
    "scene": "../../scenes/khronos/AnisotropyBarnLamp/AnisotropyBarnLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -540,10 +540,10 @@
    "coverage_ratio": 0.347,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现"
+    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
    ],
-   "hist": 0.2232,
-   "lum": 0.0786,
+   "hist": 0.2486,
+   "lum": 0.1144,
    "model": "AnisotropyDiscTest",
    "preview": "scenes/khronos/AnisotropyDiscTest/preview.jpg",
    "readme": "../../scenes/khronos/AnisotropyDiscTest/README.md",
@@ -557,7 +557,7 @@
     656
    ],
    "review": "",
-   "rgb": 0.0844,
+   "rgb": 0.1193,
    "scene": "../../scenes/khronos/AnisotropyDiscTest/AnisotropyDiscTest.scn",
    "stats": {
     "alpha_modes": {
@@ -604,7 +604,7 @@
    "coverage_ratio": 0.421,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现"
+    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
    ],
    "hist": 0.1028,
    "lum": 0.5071,
@@ -668,7 +668,7 @@
    "coverage_ratio": 0.411,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现"
+    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
    ],
    "hist": 0.256,
    "lum": 0.4758,
@@ -1622,7 +1622,7 @@
    "coverage_ratio": 0.096,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现"
+    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
    ],
    "hist": 0.3863,
    "lum": -0.1143,
@@ -1687,8 +1687,8 @@
    "gaps": [
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现",
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现",
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
    "hist": 0.3036,
@@ -1888,8 +1888,8 @@
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现",
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现"
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
    ],
    "hist": 0.6795,
    "lum": -0.1533,
@@ -2028,7 +2028,7 @@
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现"
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
    "hist": 0.7228,
    "lum": -0.0073,
@@ -2096,10 +2096,10 @@
    "coverage_ratio": 0.226,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现"
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
-   "hist": 0.4855,
-   "lum": -0.0151,
+   "hist": 0.482,
+   "lum": -0.0169,
    "model": "ClearCoatTest",
    "preview": "scenes/khronos/ClearCoatTest/preview.jpg",
    "readme": "../../scenes/khronos/ClearCoatTest/README.md",
@@ -2113,7 +2113,7 @@
     844
    ],
    "review": "",
-   "rgb": 0.0174,
+   "rgb": 0.0177,
    "scene": "../../scenes/khronos/ClearCoatTest/ClearCoatTest.scn",
    "stats": {
     "alpha_modes": {
@@ -2162,7 +2162,7 @@
    "coverage_ratio": 0.21,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现"
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
    "hist": 0.8066,
    "lum": 0.0883,
@@ -2228,7 +2228,7 @@
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现"
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
    "hist": 0.7335,
    "lum": 0.074,
@@ -2423,7 +2423,7 @@
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
-    "KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现"
+    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
    ],
    "hist": 0.4875,
    "lum": -0.0392,
@@ -2554,7 +2554,7 @@
    "coverage_ratio": 0.346,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现"
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
    "hist": 0.8714,
    "lum": -0.0348,
@@ -2822,10 +2822,10 @@
    "coverage_ratio": 0.27,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现"
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.7142,
-   "lum": 0.0686,
+   "hist": 0.7111,
+   "lum": 0.0658,
    "model": "CompareIridescence",
    "preview": "scenes/khronos/CompareIridescence/preview.jpg",
    "readme": "../../scenes/khronos/CompareIridescence/README.md",
@@ -2839,7 +2839,7 @@
     762
    ],
    "review": "- 结论：两球对照正常：左球黑色、右球出现薄膜虹彩高光与蓝绿渐变，说明 iridescence 近似生效；但本引擎右球偏青绿/蓝，官方为紫红/橙虹彩，色相与强度有明显差异（近似实现，非贴图问题）。\n- 差异主因：缺失特性：iridescence 为观感近似（色相不准）",
-   "rgb": 0.0617,
+   "rgb": 0.0593,
    "scene": "../../scenes/khronos/CompareIridescence/CompareIridescence.scn",
    "stats": {
     "alpha_modes": {
@@ -3070,7 +3070,7 @@
    "coverage_ratio": 0.296,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现"
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似"
    ],
    "hist": 0.6448,
    "lum": -0.0621,
@@ -3135,7 +3135,7 @@
    "coverage_ratio": 0.296,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现"
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
    ],
    "hist": 0.7767,
    "lum": 0.0103,
@@ -3452,16 +3452,16 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1461,
-   "coverage_ratio": 0.402,
+   "coverage": 0.341,
+   "coverage_ratio": 0.938,
    "framing_notes": [],
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "KHR_node_visibility 未实现（隐藏节点可能仍渲染；节点可见性测试模型会显示\"扩展不支持\"卡）",
+    "KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入",
     "KHR_animation_pointer 动画未导入"
    ],
-   "hist": 0.237,
-   "lum": -0.1518,
+   "hist": 0.3036,
+   "lum": -0.0144,
    "model": "CubeVisibility",
    "preview": "scenes/khronos/CubeVisibility/preview.jpg",
    "readme": "../../scenes/khronos/CubeVisibility/README.md",
@@ -3475,7 +3475,7 @@
     682
    ],
    "review": "",
-   "rgb": 0.2549,
+   "rgb": 0.1699,
    "scene": "../../scenes/khronos/CubeVisibility/CubeVisibility.scn",
    "stats": {
     "alpha_modes": {
@@ -3578,18 +3578,18 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0853,
-   "coverage_ratio": 0.107,
+   "coverage": 0.0841,
+   "coverage_ratio": 0.106,
    "framing_notes": [],
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_materials_diffuse_transmission 未实现",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.5938,
-   "lum": 0.0313,
+   "hist": 0.8307,
+   "lum": -0.0591,
    "model": "DiffuseTransmissionPlant",
    "preview": "scenes/khronos/DiffuseTransmissionPlant/preview.jpg",
    "readme": "../../scenes/khronos/DiffuseTransmissionPlant/README.md",
@@ -3603,7 +3603,7 @@
     1104
    ],
    "review": "",
-   "rgb": 0.0502,
+   "rgb": 0.0732,
    "scene": "../../scenes/khronos/DiffuseTransmissionPlant/DiffuseTransmissionPlant.scn",
    "stats": {
     "alpha_modes": {
@@ -3647,7 +3647,7 @@
     "showcase",
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.1436,
@@ -3719,11 +3719,11 @@
    "coverage_ratio": 0.209,
    "framing_notes": [],
    "gaps": [
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_materials_diffuse_transmission 未实现"
    ],
-   "hist": 0.5624,
-   "lum": 0.0198,
+   "hist": 0.7109,
+   "lum": -0.058,
    "model": "DiffuseTransmissionTest",
    "preview": "scenes/khronos/DiffuseTransmissionTest/preview.jpg",
    "readme": "../../scenes/khronos/DiffuseTransmissionTest/README.md",
@@ -3737,7 +3737,7 @@
     828
    ],
    "review": "",
-   "rgb": 0.1178,
+   "rgb": 0.0838,
    "scene": "../../scenes/khronos/DiffuseTransmissionTest/DiffuseTransmissionTest.scn",
    "stats": {
     "alpha_modes": {
@@ -3784,7 +3784,7 @@
     "written",
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.1863,
@@ -3792,10 +3792,10 @@
    "framing_notes": [],
    "gaps": [
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）"
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）"
    ],
-   "hist": 0.1097,
-   "lum": 0.3685,
+   "hist": 0.1098,
+   "lum": 0.3679,
    "model": "DirectionalLight",
    "preview": "scenes/khronos/DirectionalLight/preview.jpg",
    "readme": "../../scenes/khronos/DirectionalLight/README.md",
@@ -3809,7 +3809,7 @@
     1110
    ],
    "review": "",
-   "rgb": 0.4245,
+   "rgb": 0.424,
    "scene": "../../scenes/khronos/DirectionalLight/DirectionalLight.scn",
    "stats": {
     "alpha_modes": {
@@ -4366,18 +4366,18 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1781,
-   "coverage_ratio": 0.412,
+   "coverage": 0.1646,
+   "coverage_ratio": 0.381,
    "framing_notes": [],
    "gaps": [
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现",
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现",
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
-   "hist": 0.401,
-   "lum": -0.1037,
+   "hist": 0.5397,
+   "lum": -0.0653,
    "model": "GlamVelvetSofa",
    "preview": "scenes/khronos/GlamVelvetSofa/preview.jpg",
    "readme": "../../scenes/khronos/GlamVelvetSofa/README.md",
@@ -4391,7 +4391,7 @@
     409
    ],
    "review": "",
-   "rgb": 0.1036,
+   "rgb": 0.0619,
    "scene": "../../scenes/khronos/GlamVelvetSofa/GlamVelvetSofa.scn",
    "stats": {
     "alpha_modes": {
@@ -4713,7 +4713,7 @@
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现"
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
    ],
    "hist": 0.5644,
    "lum": 0.016,
@@ -4775,14 +4775,14 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.17,
-   "coverage_ratio": 0.247,
+   "coverage": 0.1698,
+   "coverage_ratio": 0.246,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现"
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.4422,
-   "lum": 0.1186,
+   "hist": 0.5064,
+   "lum": 0.0879,
    "model": "IridescenceAbalone",
    "preview": "scenes/khronos/IridescenceAbalone/preview.jpg",
    "readme": "../../scenes/khronos/IridescenceAbalone/README.md",
@@ -4796,7 +4796,7 @@
     985
    ],
    "review": "",
-   "rgb": 0.1477,
+   "rgb": 0.135,
    "scene": "../../scenes/khronos/IridescenceAbalone/IridescenceAbalone.scn",
    "stats": {
     "alpha_modes": {
@@ -4843,7 +4843,7 @@
    "coverage_ratio": 0.643,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现"
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
    "hist": 0.2065,
    "lum": 0.2077,
@@ -4911,7 +4911,7 @@
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现"
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
    "hist": 0.2587,
    "lum": 0.0161,
@@ -4978,7 +4978,7 @@
    "coverage_ratio": 0.39,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现"
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
    "hist": 0.7977,
    "lum": 0.0783,
@@ -5044,13 +5044,13 @@
    "coverage_ratio": 0.587,
    "framing_notes": [],
    "gaps": [
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现"
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.5722,
-   "lum": 0.0574,
+   "hist": 0.5639,
+   "lum": 0.1079,
    "model": "IridescenceSuzanne",
    "preview": "scenes/khronos/IridescenceSuzanne/preview.jpg",
    "readme": "../../scenes/khronos/IridescenceSuzanne/README.md",
@@ -5064,7 +5064,7 @@
     800
    ],
    "review": "",
-   "rgb": 0.0386,
+   "rgb": 0.0984,
    "scene": "../../scenes/khronos/IridescenceSuzanne/IridescenceSuzanne.scn",
    "stats": {
     "alpha_modes": {
@@ -5119,11 +5119,11 @@
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现",
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.4823,
-   "lum": 0.0752,
+   "hist": 0.4821,
+   "lum": 0.0756,
    "model": "IridescentDishWithOlives",
    "preview": "scenes/khronos/IridescentDishWithOlives/preview.jpg",
    "readme": "../../scenes/khronos/IridescentDishWithOlives/README.md",
@@ -5137,7 +5137,7 @@
     1167
    ],
    "review": "",
-   "rgb": 0.0663,
+   "rgb": 0.0665,
    "scene": "../../scenes/khronos/IridescentDishWithOlives/IridescentDishWithOlives.scn",
    "stats": {
     "alpha_modes": {
@@ -5245,15 +5245,15 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0526,
-   "coverage_ratio": 0.42,
+   "coverage": 0.0568,
+   "coverage_ratio": 0.453,
    "framing_notes": [],
    "gaps": [
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）"
    ],
-   "hist": 0.3993,
-   "lum": -0.1072,
+   "hist": 0.506,
+   "lum": 0.0637,
    "model": "LightsPunctualLamp",
    "preview": "scenes/khronos/LightsPunctualLamp/preview.jpg",
    "readme": "../../scenes/khronos/LightsPunctualLamp/README.md",
@@ -5267,7 +5267,7 @@
     344
    ],
    "review": "",
-   "rgb": 0.0987,
+   "rgb": 0.0649,
    "scene": "../../scenes/khronos/LightsPunctualLamp/LightsPunctualLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -5310,7 +5310,7 @@
     "testing",
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
    "coverage": 0.4228,
@@ -5318,12 +5318,12 @@
    "framing_notes": [],
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
-    "KHR_node_visibility 未实现（隐藏节点可能仍渲染；节点可见性测试模型会显示\"扩展不支持\"卡）",
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
+    "KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入",
     "KHR_animation_pointer 动画未导入"
    ],
-   "hist": 0.0908,
-   "lum": 0.3346,
+   "hist": 0.0957,
+   "lum": 0.2743,
    "model": "LightVisibility",
    "preview": "scenes/khronos/LightVisibility/preview.jpg",
    "readme": "../../scenes/khronos/LightVisibility/README.md",
@@ -5337,7 +5337,7 @@
     680
    ],
    "review": "",
-   "rgb": 0.3399,
+   "rgb": 0.2692,
    "scene": "../../scenes/khronos/LightVisibility/LightVisibility.scn",
    "stats": {
     "alpha_modes": {},
@@ -6124,15 +6124,15 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.0562,
-   "coverage_ratio": 0.083,
+   "coverage": 0.0699,
+   "coverage_ratio": 0.103,
    "framing_notes": [],
    "gaps": [
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）"
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）"
    ],
-   "hist": 0.3808,
-   "lum": -0.2868,
+   "hist": 0.6849,
+   "lum": -0.0733,
    "model": "NodePerformanceTest",
    "preview": "scenes/khronos/NodePerformanceTest/preview.jpg",
    "readme": "../../scenes/khronos/NodePerformanceTest/README.md",
@@ -6146,7 +6146,7 @@
     1077
    ],
    "review": "",
-   "rgb": 0.284,
+   "rgb": 0.0706,
    "scene": "../../scenes/khronos/NodePerformanceTest/NodePerformanceTest.scn",
    "stats": {
     "alpha_modes": {
@@ -6187,17 +6187,17 @@
    "tags": [
     "testing"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1838,
-   "coverage_ratio": 0.234,
+   "coverage": 0.1208,
+   "coverage_ratio": 0.154,
    "framing_notes": [],
    "gaps": [
-    "KHR_node_visibility 未实现（隐藏节点可能仍渲染；节点可见性测试模型会显示\"扩展不支持\"卡）"
+    "KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入"
    ],
-   "hist": 0.0837,
-   "lum": 0.2899,
+   "hist": 0.1455,
+   "lum": 0.2701,
    "model": "NodeVisibilityTest",
    "preview": "scenes/khronos/NodeVisibilityTest/preview.jpg",
    "readme": "../../scenes/khronos/NodeVisibilityTest/README.md",
@@ -6211,7 +6211,7 @@
     120
    ],
    "review": "",
-   "rgb": 0.2926,
+   "rgb": 0.2727,
    "scene": "../../scenes/khronos/NodeVisibilityTest/NodeVisibilityTest.scn",
    "stats": {
     "alpha_modes": {
@@ -6434,10 +6434,10 @@
    "framing_notes": [],
    "gaps": [
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）"
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）"
    ],
-   "hist": 0.0364,
-   "lum": 0.6147,
+   "hist": 0.0314,
+   "lum": 0.8198,
    "model": "PlaysetLightTest",
    "preview": "scenes/khronos/PlaysetLightTest/preview.jpg",
    "readme": "../../scenes/khronos/PlaysetLightTest/README.md",
@@ -6451,7 +6451,7 @@
     1112
    ],
    "review": "",
-   "rgb": 0.6047,
+   "rgb": 0.8171,
    "scene": "../../scenes/khronos/PlaysetLightTest/PlaysetLightTest.scn",
    "stats": {
     "alpha_modes": {
@@ -6502,10 +6502,10 @@
    "coverage_ratio": 0.374,
    "framing_notes": [],
    "gaps": [
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）"
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）"
    ],
-   "hist": 0.2164,
-   "lum": 0.3802,
+   "hist": 0.3141,
+   "lum": 0.3466,
    "model": "PointLightIntensityTest",
    "preview": "scenes/khronos/PointLightIntensityTest/preview.jpg",
    "readme": "../../scenes/khronos/PointLightIntensityTest/README.md",
@@ -6519,7 +6519,7 @@
     1110
    ],
    "review": "",
-   "rgb": 0.3817,
+   "rgb": 0.3487,
    "scene": "../../scenes/khronos/PointLightIntensityTest/PointLightIntensityTest.scn",
    "stats": {
     "alpha_modes": {
@@ -6563,14 +6563,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1349,
-   "coverage_ratio": 0.159,
+   "coverage": 0.1515,
+   "coverage_ratio": 0.179,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现"
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
-   "hist": 0.571,
-   "lum": -0.0352,
+   "hist": 0.4836,
+   "lum": -0.1112,
    "model": "PotOfCoals",
    "preview": "scenes/khronos/PotOfCoals/preview.jpg",
    "readme": "../../scenes/khronos/PotOfCoals/README.md",
@@ -6584,7 +6584,7 @@
     1183
    ],
    "review": "",
-   "rgb": 0.0362,
+   "rgb": 0.1121,
    "scene": "../../scenes/khronos/PotOfCoals/PotOfCoals.scn",
    "stats": {
     "alpha_modes": {
@@ -6628,20 +6628,20 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.1339,
-   "coverage_ratio": 0.146,
+   "coverage": 0.1503,
+   "coverage_ratio": 0.164,
    "framing_notes": [],
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现",
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现",
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
     "KHR_animation_pointer 动画未导入"
    ],
-   "hist": 0.5172,
-   "lum": 0.0553,
+   "hist": 0.5452,
+   "lum": -0.0206,
    "model": "PotOfCoalsAnimationPointer",
    "preview": "scenes/khronos/PotOfCoalsAnimationPointer/preview.jpg",
    "readme": "../../scenes/khronos/PotOfCoalsAnimationPointer/README.md",
@@ -6655,7 +6655,7 @@
     983
    ],
    "review": "",
-   "rgb": 0.0513,
+   "rgb": 0.039,
    "scene": "../../scenes/khronos/PotOfCoalsAnimationPointer/PotOfCoalsAnimationPointer.scn",
    "stats": {
     "alpha_modes": {
@@ -7086,7 +7086,7 @@
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现",
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
    "hist": 0.7411,
@@ -7154,15 +7154,15 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1204,
-   "coverage_ratio": 0.451,
+   "coverage": 0.1209,
+   "coverage_ratio": 0.453,
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现"
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似"
    ],
-   "hist": 0.1597,
-   "lum": 0.2745,
+   "hist": 0.2169,
+   "lum": 0.2263,
    "model": "SheenCloth",
    "preview": "scenes/khronos/SheenCloth/preview.jpg",
    "readme": "../../scenes/khronos/SheenCloth/README.md",
@@ -7176,7 +7176,7 @@
     130
    ],
    "review": "",
-   "rgb": 0.2786,
+   "rgb": 0.2352,
    "scene": "../../scenes/khronos/SheenCloth/SheenCloth.scn",
    "stats": {
     "alpha_modes": {
@@ -7228,7 +7228,7 @@
    "coverage_ratio": 0.219,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现"
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似"
    ],
    "hist": 0.4792,
    "lum": 0.1284,
@@ -7294,8 +7294,8 @@
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现",
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现",
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
     "WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）"
    ],
    "hist": 0.6655,
@@ -7835,8 +7835,8 @@
    "coverage_ratio": 0.23,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现",
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现"
+    "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
    ],
    "hist": 0.6433,
    "lum": -0.0101,
@@ -7904,7 +7904,7 @@
    "coverage_ratio": 0.349,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现"
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
    ],
    "hist": 0.4952,
    "lum": 0.1317,
@@ -8029,20 +8029,20 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
-   "coverage": 0.0491,
-   "coverage_ratio": 0.138,
+   "coverage": 0.0481,
+   "coverage_ratio": 0.135,
    "framing_notes": [
     "预览主体占比过小（<5%）→ 机位过远？"
    ],
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现",
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
     "KHR_materials_variants：只使用默认材质（不做变体切换）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.6754,
-   "lum": -0.0343,
+   "hist": 0.6906,
+   "lum": -0.0363,
    "model": "StainedGlassLamp",
    "preview": "scenes/khronos/StainedGlassLamp/preview.jpg",
    "readme": "../../scenes/khronos/StainedGlassLamp/README.md",
@@ -8056,7 +8056,7 @@
     1140
    ],
    "review": "- 结论：整盏彩绘玻璃灯完整：多层玻璃伞罩彩绘图案、珠串流苏、灯柱与底座都在，贴图正确、无缺件，构图可辨认。玻璃不透光、没有官方那种被内部灯光点亮的效果（transmission/emissive 限制），且自动机位偏远（主体约 6%），属于可接受的已知差距。\n- 差异主因：缺失特性：transmission（玻璃罩透光）未实现 + emissive 发光偏弱；机位偏远",
-   "rgb": 0.0298,
+   "rgb": 0.032,
    "scene": "../../scenes/khronos/StainedGlassLamp/StainedGlassLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -8110,7 +8110,7 @@
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume/dispersion/volume_scatter 未实现",
-    "KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现"
+    "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
    "hist": 0.5161,
    "lum": -0.1569,
@@ -8484,10 +8484,10 @@
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失",
-    "KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现"
+    "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
-   "hist": 0.837,
-   "lum": 0.067,
+   "hist": 0.8394,
+   "lum": 0.0666,
    "model": "TextureTransformMultiTest",
    "preview": "scenes/khronos/TextureTransformMultiTest/preview.jpg",
    "readme": "../../scenes/khronos/TextureTransformMultiTest/README.md",
@@ -8501,7 +8501,7 @@
     954
    ],
    "review": "",
-   "rgb": 0.0785,
+   "rgb": 0.0781,
    "scene": "../../scenes/khronos/TextureTransformMultiTest/TextureTransformMultiTest.scn",
    "stats": {
     "alpha_modes": {
@@ -8646,17 +8646,17 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
-   "coverage": 0.1768,
-   "coverage_ratio": 0.405,
+   "coverage": 0.1762,
+   "coverage_ratio": 0.403,
    "framing_notes": [],
    "gaps": [
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
-    "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
-    "KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现",
+    "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
+    "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
     "KHR_materials_retroreflection 未实现"
    ],
-   "hist": 0.0857,
-   "lum": 0.1797,
+   "hist": 0.3319,
+   "lum": 0.1021,
    "model": "TrafficCone",
    "preview": "scenes/khronos/TrafficCone/preview.jpg",
    "readme": "../../scenes/khronos/TrafficCone/README.md",
@@ -8670,7 +8670,7 @@
     542
    ],
    "review": "",
-   "rgb": 0.1834,
+   "rgb": 0.1648,
    "scene": "../../scenes/khronos/TrafficCone/TrafficCone.scn",
    "stats": {
     "alpha_modes": {
@@ -9527,16 +9527,16 @@
   "gif_refs": 13,
   "large_refs": 86,
   "median_coverage": 0.1656,
-  "median_hist": 0.4248,
-  "median_lum": 0.0786,
-  "median_rgb": 0.1178,
+  "median_hist": 0.4371,
+  "median_lum": 0.0844,
+  "median_rgb": 0.116,
   "models": 149,
   "preview_missing": 0,
   "ref_missing": 0,
   "verdicts": {
-   "bad": 71,
-   "good": 36,
-   "mid": 42
+   "bad": 69,
+   "good": 39,
+   "mid": 41
   },
   "with_compare": 149
  }

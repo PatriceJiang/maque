@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_materials_transmission`、`KHR_materials_volume`、`KHR_materials_iridescence`、`KHR_materials_ior` |
 | alpha 模式分布 | OPAQUE×3 |
 
-**导入产物**：`assets/` 3 个 `.mesh.json`（合计 1.2 MB），`textures/` 2 张；场景 `IridescenceLamp.scn`。
+**导入产物**：`assets/` 3 个 `.mesh.json`（合计 1.2 MB），`textures/` 3 张；场景 `IridescenceLamp.scn`。
 
 ## 生成 / 运行
 
@@ -42,7 +42,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
 | 前景平均亮度 | 0.284 | 0.300 | 差 +0.016 |
-| 前景平均 RGB | [77.5, 70.8, 70.8] | [82.1, 75.1, 73.1] | RGB 距离 0.015 |
+| 前景平均 RGB | [77.5, 70.8, 70.8] | [82.0, 75.1, 73.2] | RGB 距离 0.015 |
 | 亮度直方图相似度 | — | — | 0.26（16 桶交集，1=完全一致） |
 | 前景占比 | 67.8% | 12.8% | 覆盖率比 0.188 |
 
@@ -52,14 +52,14 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 
 ## 踩过的坑 / 注意
 

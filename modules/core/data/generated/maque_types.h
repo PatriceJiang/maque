@@ -1774,6 +1774,13 @@ struct PbrMaterial {
     math::Vec2 normal_uv_scale = {1.0F, 1.0F};
     math::Vec2 normal_uv_offset = {0.0F, 0.0F};
     int32_t uv1_mask = 0;
+    std::string clearcoat_texture = "";
+    std::string clearcoat_roughness_texture = "";
+    std::string sheen_color_texture = "";
+    std::string sheen_roughness_texture = "";
+    std::string iridescence_texture = "";
+    std::string iridescence_thickness_texture = "";
+    std::string anisotropy_texture = "";
 };
 
 struct SkeletonData {

@@ -315,9 +315,9 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 | 贴图 | PNG/JPEG **按字节原样搬运**（不解码）；WebP 用 PIL 转 PNG；KTX2/BasisU 跳过并 warning；命名 `image.name` 或 `image<idx>`（同名去重）；**glTF sampler 非默认时路径追加 `#wrap=clamp,mirror&filter=nearest`**（runtime 解析成 per-texture sampler） |
 | 材质 | `pbrMetallicRoughness`（baseColor/metallic/roughness）+ emissive + `alphaMode/alphaCutoff` + `doubleSided→side`（true=2 双面/false=0 单面剔除） |
 | KHR factor | unlit→`shading_model=2`(Basic)；clearcoat/sheen/iridescence/specular/ior/anisotropy → `shading_model=1`(Physical) + 对应因子；emissive_strength→`emissive_intensity`；normalTexture.scale→`normal_scale(+_y)`；occlusionTexture.strength→`occlusion_strength` |
-| KHR 贴图 | 基础 5 槽（baseColor/MR/normal/occlusion/emissive）+ `clearcoatNormalTexture`；**其它扩展贴图槽一律丢弃**（clearcoatTexture/clearcoatRoughnessTexture/sheen/iridescence/specular/anisotropy 贴图） |
+| KHR 贴图 | 基础 5 槽 + `clearcoatNormalTexture` + **7 个扩展贴图槽**（clearcoatTexture / clearcoatRoughnessTexture / sheenColorTexture / sheenRoughnessTexture / iridescenceTexture / iridescenceThicknessTexture / anisotropyTexture，尾部追加 ABI `textures3[7]` + schema 路径字段）；**specularTexture/specularColorTexture 仍未接入** |
 | KHR_texture_transform | `scale/offset` → `uv_*`（基础贴图）与 `normal_uv_*`（法线）；**rotation 忽略并 warning**；MR/AO/emissive 强制共用基础组 |
-| 场景 | `--scene`：每个 `(node, primitive)` 一个**平级实体**，世界变换**烘焙**进 `local` TRS；自动相机（包围盒 8 角点视锥拟合，§6.2）+ 一盏太阳；背景 `clear_color=(0.13,0.13,0.14)`；忽略 glTF 相机/灯光、无地面、不写 `env_*` |
+| 场景 | `--scene`：每个 `(node, primitive)` 一个**平级实体**，世界变换**烘焙**进 `local` TRS；自动相机（包围盒 8 角点视锥拟合，§6.2）+ 一盏太阳（**模型自带 `KHR_lights_punctual` 时改为导入 1~8 盏 Light、不再加太阳**）；`KHR_node_visibility.visible=false` 的节点及子树跳过；`EXT_mesh_gpu_instancing` 仍未展开；背景 `clear_color=(0.13,0.13,0.14)`；忽略 glTF 相机、无地面、不写 `env_*` |
 | 确定性 | mesh JSON 排序键 + 固定缩进；**`--compact` 额外做 6 位小数舍入 + 紧凑分隔符**；同一输入两次导入逐字节一致 |
 
 输出 `<out>/assets/*.mesh.json` 的字段：`name/vertex_stride=48/vertex_layout=0/vertices/indices/bounds_min/bounds_max/materials`；
@@ -444,8 +444,8 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | `alphaMode` OPAQUE / MASK / BLEND | ✅；MASK 走 opaque+discard；BLEND 物体级排序 | BLEND 内部三角形不排序 | 可接受；复杂透明件参考图对比时人工判读 |
 | `doubleSided` | ✅ 导入为 `side`（true=2/false=0），shader 背面翻转法线 | — | 手写 `.scn` 必须显式写 `side`（运行时只认它） |
 | `KHR_materials_unlit` | ✅ → Basic（shading_model=2）（6 个模型）；**unlit 不做 ACES**（`output_direct`），颜色与 baseColor 一致 | — | 与 three.js toneMapped=true 有细微差异，按 glTF unlit 语义取色 |
-| clearcoat / sheen / iridescence / specular / **ior** / anisotropy（**因子**） | ✅ → Physical 近似（本批：clearcoat 12、sheen 9、iridescence 10、specular 10、ior 17、anisotropy 7 个模型） | 观感与 three.js/Khronos 规范有差距（近似 BRDF） | 已记录在 README；根治见 §11 |
-| 上述扩展的**贴图槽** | ❌ 丢弃（含 ToyCar 的 clearcoatTexture；clearcoatNormalTexture 例外：已支持） | 车漆/丝绸/薄膜的细节缺失 | 需 ABI/schema 尾部追加贴图槽（P1 后续） |
+| clearcoat / sheen / iridescence / specular / **ior** / anisotropy（**因子**） | ✅ → Physical 近似（本批：clearcoat 12、sheen 9、iridescence 10、specular 10、ior 17、anisotropy 7 个模型） | 观感与 three.js/Khronos 规范有差距（近似 BRDF） | specularTexture/specularColorTexture 仍未接（§11） |
+| 上述扩展的**贴图槽** | ✅ 已支持 7 槽：clearcoat(R)/clearcoat roughness(G)/sheen color(RGB,sRGB)/sheen roughness(A)/iridescence(R)/iridescence thickness(G)/anisotropy(B)；缺失槽绑 white 且由 flags2 presence 位关闭 | specularTexture/specularColorTexture 仍丢弃；扩展贴图暂共用基础 `uv_scale/uv_offset` 与 TEXCOORD_0 | specular 贴图列入 §11
 | `KHR_materials_emissive_strength` | ✅ → `emissive_intensity`（5 个模型） | — | — |
 | `KHR_materials_transmission`（**33 个模型 / 124 处**） | ⚠️ **近似为 alpha BLEND**：`alpha_mode=2` + `opacity=clamp(1-0.85·factor, 0.15, 1)`，可透见背景；无折射/厚度/吸收 | 玻璃类从"不透明"变为"可透视"，观感接近参考；无真实折射畸变与衰减 | 根治需 backbuffer 折射 pass + volume；BLEND 物体**不再投影**（阴影 pass 跳过 caster） |
 | `KHR_materials_volume`（**25**）/ `dispersion`（4）/ `volume_scatter`（1） | ❌（transmission 近似里不含体积项） | 体积吸收/散射/色散缺失 | 后续接 transmission pass 时一起做 |
@@ -460,10 +460,11 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 
 | 特性 | 现状 | 影响 | 规避/后续 |
 |---|---|---|---|
-| 节点层级 | ⚠️ `--scene` **烘焙为平级实体**（世界变换写入 local）；`KHR_node_visibility`（3 个模型）❌ 未实现（已登记 gap） | 静态可接受；丢失父子关系/脚本按层操控；隐藏节点仍渲染（可见性测试模型显示"扩展不支持"卡） | 后续保留节点树 + 逐节点 TRS + node_visibility |
+| 节点层级 | ⚠️ `--scene` **烘焙为平级实体**（世界变换写入 local）；`KHR_node_visibility`（3 个模型）✅ 隐藏节点/子树已跳过 | 静态可接受；丢失父子关系/脚本按层操控 | 后续保留节点树 + 逐节点 TRS |
 | `EXT_mesh_gpu_instancing`（1 个模型） | ❌ 不展开实例（已登记 gap） | 该模型只显示 1 份实例 | 后续按 node 展开 |
 | glTF 自带相机（`cameras`/`node.camera`，**13 个模型 / 38 个相机**） | ⚠️ 忽略（仍用自动机位），但**支持手动机位覆盖**（`MANUAL_CAMERA`，如 Sponza 室内）与 importer `--camera-position/--camera-target/--camera-fov/--camera-distance-scale` | 官方参考常用自带机位 → 构图差异由手调弥补 | 后续可优先用 glTF 相机（§11） |
-| `KHR_lights_punctual`（**12 个模型**） | ❌ 忽略（统一一盏自动太阳 + analytic studio IBL） | 模型自带布光不还原 | 手调 `.scn` 补灯（≤8 盏，方向光优先投影）；后续可选 `--use-gltf-lights` |
+| `KHR_lights_punctual`（**12 个模型**） | ✅ 导入为 `render.Light`（directional/point/spot，≤8 盏、方向光优先；spot 内/外锥角、range 保留）；强度为**观感归一化**（directional=2.6×intensity；point/spot 按模型尺度换算，非 cd/lux 物理值）；有灯光时不再追加默认太阳 | 自带布光能还原主体明暗/彩色灯；与官方离线渲染的精确强度/软阴影仍有差异 | 手调 `.scn` 可改 Light 因子；后续接物理单位换算/光追阴影 |
+| `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
 | 动画（**26 个模型 / 38 个动画**）/ 骨骼蒙皮（7 个模型 / 90 个 skin）/ morph（4 个模型 / 6 个 primitive） | ❌ 不导入（静态渲染；角色为 bind/T-pose；morph 默认权重不生效）；`KHR_animation_pointer`（5）同样不导入 | 动画模型与参考图姿势/形变不同 | README 标注"静态迁移"；动画属独立大项（§11） |
 | 场景根 `env_*` | ⚠️ 自动场景**不写**（用引擎默认环境）；手调可用（§6.3） | 默认环境与官方 HDRI studio 不同 | 手调或后续接 HDRI/PMREM |
 | 地面/背景板/阴影接收体 | ❌ 自动场景无 | "模型飘在空中"，接触阴影缺失 | 需要时手加地面 + `material_shadow.scn` 范式（§6.4 ⑤） |
@@ -644,7 +645,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 光照/环境 | 多为 **HDRI studio**（IBL、面光、软阴影）；maque 只有方向光 + analytic studio IBL |
 | 机位/背景 | 官方机位/焦距/背景与自动机位不同；部分图为**透明背景**，部分带地面/背景板 |
 | 参考图格式/选择 | **large 优先**：先找 basename 含 `large` 的（`screenshot_large.*`/`screenshot-Large.*`/`large.jpg`…），再 `screenshot.*`，再 basename 含 screenshot，最后第一张图；格式 png/jpg/jpeg/webp/**gif**（gif 用 PIL 取第一帧）。**149 个模型都有 `screenshot/`，148/148 全部生成对比**（86 个用了 large 版、13 个仅有 GIF）。"统计缺失"不是"差异大"——若以后出现无 `screenshot/` 的资产，笔记应标"上游无参考图" |
-| 缺失特性 | transmission/volume、扩展贴图槽、动画/骨骼/morph、MSAA 等（§5） |
+| 缺失特性 | transmission/volume（真实折射）、动画/骨骼/morph、specular 贴图、MSAA 等（§5） |
 | 尺寸 | 参考图尺寸各异（150×80 到 1870×1033），本预览固定 1280×720 |
 
 **结论**：自动指标只做**筛查/趋势**，不做 pass/fail；每个模型的验收 = **人工看 preview + 参考图**并记录差异归因。
@@ -704,7 +705,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 差异现象 | 常见原因 | 处置 |
 |---|---|---|
 | 整体偏暗/偏亮 | 无 HDRI（analytic IBL 偏弱）、背景深色、参考图曝光不同 | 判为缺失特性；可手调 `env_*`/`clear_color` 后再比 |
-| 高光/反射平淡，金属像塑料 | 无 HDRI/PMREM、无 clearcoat 贴图、无 MSAA | 缺失特性，记录；后续 HDRI/扩展贴图槽 |
+| 高光/反射平淡，金属像塑料 | 无 HDRI/PMREM、无 MSAA；扩展贴图槽已接（clearcoat/sheen/iridescence/anisotropy） | 缺失特性，记录；后续 HDRI |
 | 玻璃发白/不透/内部不可见 | `KHR_materials_transmission` 未实现 | 缺失特性；GLB 变体无帮助；手调 alpha BLEND 近似 |
 | 布料/车漆纹理"巨大/重复方向错" | `KHR_texture_transform` rotation 忽略 / 逐槽 UV 不同 / UV 集缺失 | 记录；已支持 scale/offset（ToyCar 已修） |
 | 某张贴图完全没出现 | KTX2/WebP 贴图被跳过、贴图槽不支持、`TEXCOORD_1` 贴错 | 看 `textures/` 是否缺图、README「已知差距」 |
@@ -743,7 +744,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 
 | # | 现象 | 原因 | 解决/规避 |
 |---|---|---|---|
-| I1 | 某模型贴图大片缺失、只剩因子色 | 贴图是 KTX2/BasisU/WebP（无解码器）或扩展贴图槽（clearcoat/sheen/…贴图）不支持 | 换 `glTF/` 主变体；看 `manifest.json.issues`/README；无法根治（§11） |
+| I1 | 某模型贴图大片缺失、只剩因子色 | 贴图是 KTX2/BasisU（无解码器）或 specular 贴图（未接） | 换 `glTF/` 主变体；看 `manifest.json.issues`/README；无法根治（§11） |
 | I2 | 模型明显缺件（线/点/三角带装饰） | importer 只导三角形，非三角 primitive 跳过 | 已知限制；记录在 README |
 | I3 | 手调 `.scn` 被覆盖 | `gltf_import.py --scene` **无条件写 `<out>/<name>.scn`**；`migrate --force` 会重写它 | 手调模型加入 `--exclude`；刷新素材用不带 `--scene` 的导入（§3.4）；改动及时 `git commit` |
 | I4 | 想只重算指标/重写笔记，不想再渲染 148 次 | 每个模型渲染要 0.5–20s，全量重渲耗时 | `--reuse-preview`（复用 `preview.png` 只重算对比+笔记，秒级） |
@@ -811,6 +812,10 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | **transmission 全不透明** | 32 个模型玻璃/透明件与参考差异大（报告 P1） | importer 近似 alpha BLEND + 阴影 pass 跳过 BLEND caster（并新增 `vs_shadow1` 支持布局 v1 的 alpha mask 投影） |
 | **自动机位对室内/特写资产不可用** | Sponza 官方参考为主厅内部，自动包围盒拟合只能看到建筑外壳（报告视觉复核"部分可接受"） | `MANUAL_CAMERA` 表 + 世界尺度手动机位（Sponza 室内沿 -X 看）；importer 增加相机 CLI |
 | **盲目按参考图覆盖率自动取景会裁切** | 尝试 `--auto-framing`（按 coverage_ratio 缩放距离）→ 134 模型中 132 个出现"主体贴边/裁剪"，hist 有升有降 | **不默认启用**；保留为实验工具（`--auto-framing --dry-run`），迁移报告明确"覆盖率差异属参考图为特写/构图不同，非渲染缺陷" |
+| **KHR 扩展材质贴图槽全部丢弃** | clearcoat/sheen/iridescence/anisotropy 贴图缺失，观感只剩因子（报告"部分可接受"主因之一） | ABI 尾部追加 `textures3[7]`（material 268B）+ schema 7 路径字段 + gfx group1 binding 10..16（15 sampled tex + shadow depth = 16 上限）+ shader `surface_ext_params`（R/G/A 通道按 glTF 语义）；缺失槽绑 white 且 flags2 presence 位关闭 |
+| **`KHR_lights_punctual` 被忽略** | 12 个模型自带灯不还原（DirectionalLight/LightsPunctualLamp 等） | importer 把灯节点转成 `render.Light`（≤8、方向光优先、spot 锥角/range、强度观感归一化、无灯才加太阳） |
+| **`KHR_node_visibility` 未实现** | 可见性测试模型隐藏节点仍渲染/叠影 | importer 跳过 `visible=false` 节点及整棵子树（网格+灯光） |
+| **e2e grep 中文日志在 Windows 失败** | `gltf_import_e2e` 新加的灯光告警断言 `grep "KHR_lights_punctual 共 9 盏 > 8"` 失败：Python 重定向 stderr 用 locale(GBK) 编码，脚本里的 UTF-8 中文 pattern 匹配不上 | e2e 脚本前部 `export PYTHONIOENCODING=utf-8`；告警断言改 ASCII 正则 `grep -Eq "KHR_lights_punctual.*> 8"`；CI/Windows 上任何"中文日志 grep"都要注意编码 |
 
 ---
 
@@ -904,32 +909,36 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 
 ### 10.2 本批迁移结果（`manifest.json` 汇总）
 
-**数据快照**：2026-10-26 第 8 轮（引擎/导入器特性修复后整批重新导入+渲染，见 `build-win/audit/batch4-revert.log`，整批 **491.8s ≈ 8.2 min**）。
+**数据快照**：2026-10-26 第 9 轮（扩展材质贴图槽 + KHR_lights_punctual + node_visibility 导入后整批重新导入+渲染，见 `build-win/audit/batch5-exttex-lights.log`，整批 **506.5s ≈ 8.4 min**）。
 `scenes/khronos/manifest.json` 的 `total_seconds` 只是最后一次写 manifest 的耗时（不含全部渲染）——**真实批量耗时看批量日志**。
 
 | 项 | 值 |
 |---|---|
 | 处理模型 | **148**（149 − 手调 `ToyCar`） |
 | 成功 `ok` | **148（100%）**；`blocked` **0**；`failed` **0** |
-| 整批耗时 | **491.8s**（单模型含导入+渲染+对比+笔记；平均 3.3s） |
+| 整批耗时 | **506.5s**（单模型含导入+渲染+对比+笔记；平均 3.4s） |
 | 最慢模型（墙钟） | `NodePerformanceTest` 74.3s、`ABeautifulGame` 31.4s、`MetalRoughSpheresNoTextures` 22.1s、`IridescenceMetallicSpheres` 18.9s、`Sponza` 15.2s、`CarConcept` 8.0s |
-| 派生资产（本地、不入库） | `out_size_bytes` 合计 **966.9 MB**（第 8 轮重新导入；含 WebP 转码/去重贴图与布局 v1 顶点）；文件系统实测约 1.0 GB |
+| 派生资产（本地、不入库） | `out_size_bytes` 合计 **974.1 MB**（第 9 轮重新导入；含 WebP 转码/去重贴图、布局 v1 顶点与扩展贴图）；文件系统实测约 1.0 GB |
 | 入库部分 | **18.4 MB**（`.scn` 15.5 + `preview.jpg` 2.3 + `README.md` 0.5 + `compare.json` 0.1）+ `manifest.json`/总索引 0.4 MB |
 | 产物数量 | `preview.jpg` **149** 张（含 ToyCar）、`compare.json` **148** 个、`README.md` 149 份 |
 | 参考图口径 | 149 个模型目录都有 `screenshot/`；**148/148 全部生成对比**；其中 **86 个模型使用 large 版参考图**、**13 个模型的参考图是 `.gif`**（PIL 取第一帧）。判读原则：对照参考图前先确认它对应主变体；若是动画帧/过程图，只作参考、不作姿势结论（以该模型 README 为准） |
 | 渲染异常自动检测 | **0**（无 `cams=0` / `meshes=0` / `mesh=-1` / `[wgpu] error`） |
 | 构图告警 | 3 个：`AntiqueCamera`、`StainedGlassLamp`（细长/异形导致覆盖率偏低，属指标误报）、`Sponza`（手动机位为内部视角，前景占比自然偏低/部分贴边；人工确认构图与官方参考一致）。`CesiumMilkTruck` 翻倒/裁剪已由万向锁修复解决 |
-| 自动对比初判（148 个） | 36 × "主体亮度/色调较接近"、41 × "中等差异"、71 × "差异较大"（"差异较大"主要来自缺失特性/机位/背景，需人工归因，**不是失败**） |
-| 对比指标中位数 | `hist_similarity` 0.416（min 0.004 / max 0.981）、`mean_lum_delta` +0.080、`rgb_delta` 0.118、`preview_coverage` 0.166（min 0.043 / max 0.701）、`coverage_ratio` 0.289 |
+| 自动对比初判（148 个） | 39 × "主体亮度/色调较接近"、40 × "中等差异"、69 × "差异较大"（"差异较大"主要来自缺失特性/机位/背景，需人工归因，**不是失败**） |
+| 对比指标中位数 | `hist_similarity` 0.433（min 0.004 / max 0.981）、`mean_lum_delta` +0.086、`rgb_delta` 0.117、`preview_coverage` 0.166（min 0.043 / max 0.701）、`coverage_ratio` 0.289 |
 
 > 迭代记录：**BATCH1** 147 ok / 1 failed（`Box With Spaces`：`image.uri` 百分号编码未解码）→ **BATCH2** 148 ok / 0 failed
 > → 第 6 轮补 `.gif` 参考图/前景掩码口径 → **第 7 轮** 由 QA/视觉复核驱动修复并重导 13 个模型：
 > 欧拉万向锁（`CesiumMilkTruck` 翻倒）、WebP 转码（`SheenWoodLeatherSofa` 全白）、贴图重名串图
 > （`PlaysetLightTest`/`TextureTransformMultiTest`/`TransmissionRoughnessTest`）、负缩放镜像（`NegativeScaleTest`）、
 > `EXT_texture_webp` 的 source 位置、贴图双扩展名等；并补登记 5 类未实现扩展。
-> **第 8 轮（本快照）** 按迁移报告修复引擎/导入器特性：顶点布局 v1（`COLOR_0`+`TEXCOORD_1`）、glTF sampler
+> **第 8 轮** 按迁移报告修复引擎/导入器特性：顶点布局 v1（`COLOR_0`+`TEXCOORD_1`）、glTF sampler
 > wrap/filter、unlit 去 ACES、transmission 近似 alpha BLEND（+BLEND 不投影、`vs_shadow1` 支持布局 v1 镂空投影）、
 > Sponza 手动机位；整批重导+重渲 148 模型。数据用最终第 8 轮。
+> **第 9 轮（本快照）** 继续补 P1：KHR 扩展材质贴图槽（clearcoat/roughness/sheen/sheen roughness/iridescence/
+> iridescence thickness/anisotropy 共 7 槽，ABI `textures3[7]` + shader 通道语义）、`KHR_lights_punctual`
+> 导入为 Light（≤8 盏、强度观感归一化）、`KHR_node_visibility` 隐藏节点跳过；14 个灯光/可见性场景与
+> 15 个扩展贴图模型预览更新。数据用最终第 9 轮。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -937,24 +946,24 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 
 | 差距 | 模型数 | 说明 |
 |---|---|---|
-| `KHR_materials_transmission` **近似** alpha BLEND | **32** | 玻璃可透视，但无折射/厚度/吸收 |
-| 动画未导入（静态渲染/T-pose） | **26** | 角色/演示动画模型 |
-| `KHR_materials_volume` / dispersion / volume_scatter | **25** | 体积吸收/散射 |
+| `KHR_materials_transmission` **近似** alpha BLEND | **32** | 玻璃可透视，但无折射/厚度/吸收（P1 剩余） |
+| 动画未导入（静态渲染/T-pose） | **26** | 角色/演示动画模型（P2 大项） |
+| `KHR_materials_volume` / dispersion / volume_scatter | **25** | 体积吸收/散射（P1 剩余） |
 | `alphaMode=MASK/BLEND 已支持（物体级排序）` | 16 | 信息性 gap（不是阻塞） |
 | `KHR_texture_transform` rotation/逐槽缺失 | **14** | 平铺/偏移已支持 |
 | 未使用 glTF 自带相机 | **13** | 构图差异的主因之一（Sponza 已手动机位） |
-| `KHR_lights_punctual` 未导入 | **12** | 模型自带布光不还原 |
-| clearcoat 贴图槽缺失 | **12** | 清漆因子已支持 |
-| `KHR_materials_iridescence` 近似 | **10** | 虹彩/厚度贴图缺失 |
-| `KHR_materials_specular` f90/贴图缺失 | **10** | 因子已映射 |
-| `KHR_materials_sheen` 近似 | **9** | sheen 贴图缺失 |
-| `KHR_materials_anisotropy` 近似 | **7** | 各向异性贴图缺失 |
-| 骨骼蒙皮未应用 | **7** | 静态 bind/T-pose |
+| `KHR_lights_punctual` 已导入为 Light | **12** | 信息性 gap：自带灯已生效，强度为观感归一化 |
+| `KHR_materials_clearcoat` 贴图已导入（BRDF 近似） | **12** | 清漆贴图已接（P3 仅剩精确 BRDF） |
+| `KHR_materials_iridescence` 近似 | **10** | 虹彩/厚度贴图已接；干涉 BRDF 近似 |
+| `KHR_materials_specular` 贴图缺失 | **10** | 因子已映射；specularTexture/specularColorTexture 未接 |
+| `KHR_materials_sheen` 近似 | **9** | sheen 贴图已接；BRDF 近似 |
+| `KHR_materials_anisotropy` 近似 | **7** | 强度/贴图已接；各向异性 BRDF 近似 |
+| 骨骼蒙皮未应用 | **7** | 静态 bind/T-pose（P2 大项） |
 | `KHR_materials_variants` 只用默认 | **7** | 变体切换不生效 |
 | `KHR_materials_diffuse_transmission` 未实现 | **6** | 乳浊/半透材质 |
-| `KHR_animation_pointer` 动画未导入 | **5** | 指针动画 |
-| morph targets 未应用 | **4** | 默认权重不生效 |
-| `KHR_node_visibility` 未实现 | **3** | 可见性测试模型 |
+| `KHR_animation_pointer` 动画未导入 | **5** | 指针动画（P2 大项） |
+| morph targets 未应用 | **4** | 默认权重不生效（P2 大项） |
+| `KHR_node_visibility` 已支持 | **3** | 信息性 gap：隐藏节点已跳过 |
 | 非三角 primitive 被跳过 | **2** | 线/点装饰缺失 |
 | `EXT_mesh_gpu_instancing` / quantization / meshopt / WebP | 各 1 | 个别模型（见 §5） |
 
@@ -1063,13 +1072,13 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 | 优先级 | 事项 | 影响面（本批样本） | 落点/备注 |
 |---|---|---|---|
 | P1 | **HDRI/PMREM IBL**（或更精确的 studio 环境） | 几乎全部模型的观感差距最大单一因素 | 需 image 模块解 HDR + 环境预滤波；替代 analytic studio IBL |
-| P1 | **KHR 扩展贴图槽**（clearcoat/sheen/iridescence/specular/anisotropy 的 texture） | 本批 clearcoat 12、sheen 9、iridescence 10、specular 10、anisotropy 7 个模型 | renderer ABI 尾部追加贴图槽 + schema 字段 + shader 采样（`plans/19 §4` 已有字段表） |
+| P3 | **specularTexture/specularColorTexture**（其余扩展贴图槽已接） | specular 10 个模型中的贴图子集 | 同 textures3 路径再补 2 槽（受 WebGPU 每 stage 16 sampled texture 上限约束，需先腾槽） |
 | P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | 近似 alpha BLEND 已让玻璃可透视；完整版需 backbuffer 折射 pass + 厚度/吸收模型 |
 | P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 需要动画运行时 + skinning + morph；属独立大项（`plans/12`），迁移可先静态 |
 | P2 | **Draco / KTX2 / meshopt 解码** | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | 第三方解码依赖；当前用 `glTF/` 主变体规避，仅当只有压缩变体时 blocked |
-| P2 | **glTF 相机 / `KHR_lights_punctual` 导入** | 相机 13 个模型 / 38 个；灯光 12 个模型 | `--scene` 优先用 glTF 相机/灯（`plans/20 §2.3 S2/S5`）；能显著减少手调 |
+| P2 | **glTF 自带相机** | 相机 13 个模型 / 38 个 | `--scene` 可选 `--use-gltf-camera`（当前手动机位表 + 自动机位） |
 | P2 | **`KHR_texture_transform.rotation` / `TEXCOORD_2+`** | texture_transform 14 个模型；TEXCOORD_2 1 个 primitive | UV 变换加旋转项；+ 更高 UV 集（ABI 低优先级） |
-| P2 | **`KHR_node_visibility` / `EXT_mesh_gpu_instancing`** | node_visibility 3 个模型、instancing 1 个模型 | 导入期展开/隐藏节点（`EXT_mesh_gpu_instancing` 按 node 展开多实例） |
+| P3 | **`EXT_mesh_gpu_instancing`** | instancing 1 个模型 | 导入期按 node 展开多实例 |
 | P2 | **ACES 曲线是否切 three.js RRT/ODT** | 全部（与参考图的系统性色调偏差） | 会整体改变观感基线，需用户拍板（`plans/20 §6`） |
 | P3 | **--scene 保护**（输出 `.auto.scn` 或要求 `--force`） | 手调模型 | 流程安全；当前靠 `--exclude` + README 警告 |
 | P3 | **二进制网格格式 / 更大的 `--compact` 压缩** | 大模型（百万顶点级） | 降低文本 JSON 体积与解析成本 |

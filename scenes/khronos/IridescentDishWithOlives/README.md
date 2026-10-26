@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_materials_ior`、`KHR_materials_iridescence`、`KHR_materials_transmission`、`KHR_materials_volume` |
 | alpha 模式分布 | MASK×1、OPAQUE×3 |
 
-**导入产物**：`assets/` 4 个 `.mesh.json`（合计 1.9 MB），`textures/` 8 张；场景 `IridescentDishWithOlives.scn`。
+**导入产物**：`assets/` 4 个 `.mesh.json`（合计 1.9 MB），`textures/` 10 张；场景 `IridescentDishWithOlives.scn`。
 
 ## 生成 / 运行
 
@@ -41,8 +41,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.410 | 0.485 | 差 +0.075 |
-| 前景平均 RGB | [110.6, 104.7, 84.5] | [137.8, 122.8, 89.9] | RGB 距离 0.066 |
+| 前景平均亮度 | 0.410 | 0.485 | 差 +0.076 |
+| 前景平均 RGB | [110.6, 104.7, 84.5] | [137.9, 122.9, 89.9] | RGB 距离 0.067 |
 | 亮度直方图相似度 | — | — | 0.48（16 桶交集，1=完全一致） |
 | 前景占比 | 55.9% | 7.4% | 覆盖率比 0.132 |
 
@@ -54,7 +54,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
@@ -64,7 +64,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 
 ## 踩过的坑 / 注意

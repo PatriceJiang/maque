@@ -1382,6 +1382,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             mq_renderer_pbr_material mat{};
             for (int ti = 0; ti < 5; ++ti) mat.textures[ti] = -1;   /* -1 = 未给贴图 → 渲染器用 1×1 白 */
             for (int ti = 0; ti < 3; ++ti) mat.textures2[ti] = -1;  /* matcap / gradient / clearcoat-normal */
+            for (int ti = 0; ti < 7; ++ti) mat.textures3[ti] = -1;  /* KHR 扩展 7 槽（clearcoat/sheen/iridescence/anisotropy） */
             for (int ti = 0; ti < 2; ++ti) {
                 mat.uv_scale[ti] = 1.0F; mat.uv_offset[ti] = 0.0F;       /* KHR_texture_transform 缺省 */
                 mat.normal_uv_scale[ti] = 1.0F; mat.normal_uv_offset[ti] = 0.0F;
@@ -1477,12 +1478,13 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     std::memcpy(&v, base + f->offset, sizeof v);
                     mat.normal_uv_offset[0] = v.x; mat.normal_uv_offset[1] = v.y;
                 }
-                /* glTF TEXCOORD_1（多 UV 集）：uv1_mask bit0..8 = 8 个贴图槽是否用第二套 UV；
-                 * shader 从 flags2 bit4..12 读（uv1_sel），这里只负责搬运。
+                /* glTF TEXCOORD_1（多 UV 集）：uv1_mask bit0..7 = 8 个**基础**贴图槽是否用第二套 UV；
+                 * 折进 flags2 bit4..11（uv1_sel），bit12..18 留给 KHR 扩展贴图 presence（见下），
+                 * 故这里只取低 8 位（0xFF）——用 0x1FF 会占用 bit12。
                  * 只有 vertex_layout=1 的网格才有有效 uv1；layout0 的 vs 写 uv1=0，mask=0 时无影响。 */
                 {
                     const int32_t uv1_mask = (int32_t)read_num(dmat, base, "uv1_mask", 0.0F);
-                    mat.flags2 |= (uv1_mask & 0x1FF) << 4;
+                    mat.flags2 |= (uv1_mask & 0xFF) << 4;
                 }
                 /* M4：PBR 贴图槽（albedo / metallic-roughness / occlusion）；normal 在 M5（需要切线空间） */
                 if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {
@@ -1549,6 +1551,33 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: clearcoat normal texture '{}' -> {}\n", *texref, tid);
                     }
+                }
+                /* KHR 扩展材质贴图槽（plans/20）：7 槽 → mat.textures3[]，存在项置 flags2 presence bit12..18。
+                 * 槽序（与 gfx binding 10..16 / shader 一致）：
+                 *   0 clearcoat(R)          1 clearcoat_roughness(G)  2 sheen_color(RGB, sRGB)
+                 *   3 sheen_roughness(A)    4 iridescence(R)          5 iridescence_thickness(G)
+                 *   6 anisotropy(RG=方向, B=强度)
+                 * 除 sheen_color 是颜色贴图（sRGB）外，其余都是线性数据贴图（G/A/R 通道语义由 shader 解释）。
+                 * 缺失/空 → textures3 保持 -1、presence=0：shader 走旧路径（旧材质零行为变化）。 */
+                {
+                    auto load_ext_tex = [&](const char* field, int slot, bool srgb) {
+                        const std::string* texref = read_str(dmat, base, field);
+                        if (!texref || texref->empty()) return;
+                        const int tid = srgb ? load_texture_srgb(*texref) : load_texture_mips(*texref);
+                        if (tid >= 0) {
+                            mat.textures3[slot] = tid;
+                            mat.flags2 |= 1 << (12 + slot);          /* presence：bit12..18 */
+                        }
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: pbr ext texture {} '{}' -> {}\n", field, *texref, tid);
+                    };
+                    load_ext_tex("clearcoat_texture", 0, false);
+                    load_ext_tex("clearcoat_roughness_texture", 1, false);
+                    load_ext_tex("sheen_color_texture", 2, true);
+                    load_ext_tex("sheen_roughness_texture", 3, false);
+                    load_ext_tex("iridescence_texture", 4, false);
+                    load_ext_tex("iridescence_thickness_texture", 5, false);
+                    load_ext_tex("anisotropy_texture", 6, false);
                 }
             }
             if (std::getenv("MAQUE_RENDER3D_INFO"))

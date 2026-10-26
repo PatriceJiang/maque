@@ -37,27 +37,80 @@
       ]
     },
     {
-      "name": "sun",
+      "name": "VisibleLight_light",
       "components": [
         {
           "type": "scene.Transform3D",
           "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 1.0
+            },
             "rotation": {
-              "x": -1.0119793728441187,
-              "y": -0.7188299996216244,
+              "x": 0.0,
+              "y": -0.0,
               "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
             }
           }
         },
         {
           "type": "render.Light",
-          "intensity": 2.6,
+          "type": 2,
+          "intensity": 49.56250000000082,
           "color": {
-            "r": 1.0,
-            "g": 0.96,
-            "b": 0.9,
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
             "a": 1.0
+          },
+          "range": 5.0,
+          "inner_angle": 37.24225668350351,
+          "outer_angle": 45.836623610465864
+        }
+      ]
+    },
+    {
+      "name": "AnimatedVisibility_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 1.5,
+              "y": 0.0,
+              "z": 1.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
           }
+        },
+        {
+          "type": "render.Light",
+          "type": 2,
+          "intensity": 59.475000000000975,
+          "color": {
+            "r": 0.0,
+            "g": 0.125,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "range": 5.0,
+          "inner_angle": 37.24225668350351,
+          "outer_angle": 45.836623610465864
         }
       ]
     },

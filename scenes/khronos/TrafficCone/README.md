@@ -42,26 +42,26 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Tra
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.354 | 0.534 | 差 +0.180 |
-| 前景平均 RGB | [151.4, 76.4, 48.2] | [144.5, 135.1, 122.9] | RGB 距离 0.183 |
-| 亮度直方图相似度 | — | — | 0.09（16 桶交集，1=完全一致） |
-| 前景占比 | 43.7% | 17.7% | 覆盖率比 0.405 |
+| 前景平均亮度 | 0.354 | 0.456 | 差 +0.102 |
+| 前景平均 RGB | [151.4, 76.4, 48.2] | [123.2, 115.3, 107.2] | RGB 距离 0.165 |
+| 亮度直方图相似度 | — | — | 0.33（16 桶交集，1=完全一致） |
+| 前景占比 | 43.7% | 17.6% | 覆盖率比 0.403 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
-- KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
+- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
 - KHR_materials_retroreflection 未实现
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
-- KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
+- KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
 - KHR_materials_retroreflection 未实现
 
 ## 踩过的坑 / 注意

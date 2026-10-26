@@ -416,6 +416,13 @@ static const mq_field_desc mq_fields_asset_PbrMaterial[] = {
     { "normal_uv_scale", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "normal_uv_offset", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "uv1_mask", (uint32_t)offsetof(asset::PbrMaterial, uv1_mask), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clearcoat_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clearcoat_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "sheen_color_texture", (uint32_t)offsetof(asset::PbrMaterial, sheen_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "sheen_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, sheen_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "iridescence_texture", (uint32_t)offsetof(asset::PbrMaterial, iridescence_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "iridescence_thickness_texture", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "anisotropy_texture", (uint32_t)offsetof(asset::PbrMaterial, anisotropy_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_asset_Prefab[] = {
@@ -3440,7 +3447,7 @@ extern const mq_type_desc mq_type_asset_PbrMaterial = {
     460266568u,
     (uint32_t)sizeof(asset::PbrMaterial),
     (uint32_t)alignof(asset::PbrMaterial),
-    48u,
+    55u,
     mq_fields_asset_PbrMaterial,
     4u,
     0u,

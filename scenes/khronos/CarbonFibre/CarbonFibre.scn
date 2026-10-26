@@ -113,7 +113,8 @@
           "normal_texture": "textures/image1.png",
           "normal_scale": 2.0,
           "normal_scale_y": 2.0,
-          "occlusion_texture": "textures/image0.png"
+          "occlusion_texture": "textures/image0.png",
+          "anisotropy_texture": "textures/image2.png"
         }
       ]
     }

@@ -22,7 +22,7 @@
 | 必需扩展 | `KHR_texture_transform` |
 | alpha 模式分布 | OPAQUE×1 |
 
-**导入产物**：`assets/` 1 个 `.mesh.json`（合计 7.0 MB），`textures/` 4 张；场景 `SheenCloth.scn`。
+**导入产物**：`assets/` 1 个 `.mesh.json`（合计 7.0 MB），`textures/` 5 张；场景 `SheenCloth.scn`。
 
 ## 生成 / 运行
 
@@ -42,23 +42,23 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.111 | 0.385 | 差 +0.275 |
-| 前景平均 RGB | [23.3, 28.4, 41.2] | [46.9, 108.2, 150.9] | RGB 距离 0.279 |
-| 亮度直方图相似度 | — | — | 0.16（16 桶交集，1=完全一致） |
-| 前景占比 | 26.7% | 12.0% | 覆盖率比 0.451 |
+| 前景平均亮度 | 0.111 | 0.337 | 差 +0.226 |
+| 前景平均 RGB | [23.3, 28.4, 41.2] | [30.7, 96.3, 145.7] | RGB 距离 0.235 |
+| 亮度直方图相似度 | — | — | 0.22（16 桶交集，1=完全一致） |
+| 前景占比 | 26.7% | 12.1% | 覆盖率比 0.453 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
+- KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
+- KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 
 ## 踩过的坑 / 注意
 

@@ -22,7 +22,7 @@
 | 使用扩展 | `KHR_lights_punctual`、`KHR_materials_ior`、`KHR_materials_transmission`、`KHR_materials_volume`、`KHR_materials_iridescence` |
 | alpha 模式分布 | OPAQUE×3 |
 
-**导入产物**：`assets/` 3 个 `.mesh.json`（合计 1.0 MB），`textures/` 0 张；场景 `IridescenceSuzanne.scn`。
+**导入产物**：`assets/` 3 个 `.mesh.json`（合计 1.0 MB），`textures/` 1 张；场景 `IridescenceSuzanne.scn`。
 
 ## 生成 / 运行
 
@@ -42,27 +42,27 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.506 | 0.563 | 差 +0.057 |
-| 前景平均 RGB | [125.6, 129.7, 131.3] | [126.1, 149.1, 141.0] | RGB 距离 0.039 |
-| 亮度直方图相似度 | — | — | 0.57（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.506 | 0.614 | 差 +0.108 |
+| 前景平均 RGB | [125.6, 129.7, 131.3] | [145.3, 159.8, 156.9] | RGB 距离 0.098 |
+| 亮度直方图相似度 | — | — | 0.56（16 桶交集，1=完全一致） |
 | 前景占比 | 19.4% | 11.4% | 覆盖率比 0.587 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
+- KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
+- KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 
 ## 踩过的坑 / 注意
 

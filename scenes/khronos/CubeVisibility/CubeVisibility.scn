@@ -11,13 +11,13 @@
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": -3.3346484047149354,
-              "y": 3.0263751460757025,
-              "z": 5.8373535991814025
+              "x": -0.6051371903259462,
+              "y": 0.62028960052033,
+              "z": 2.372188607395316
             },
             "rotation": {
               "x": -0.22326312094374032,
-              "y": -0.519019258989053,
+              "y": -0.5190192589890531,
               "z": 0.0
             }
           }
@@ -25,8 +25,8 @@
         {
           "type": "render.Camera3D",
           "fov_y": 45.0,
-          "near": 0.13751127442123445,
-          "far": 77.9827603546459,
+          "near": 0.05588194599282252,
+          "far": 33.841903690205065,
           "clear_color": {
             "r": 0.13,
             "g": 0.13,
@@ -58,156 +58,6 @@
             "b": 0.9,
             "a": 1.0
           }
-        }
-      ]
-    },
-    {
-      "name": "InvisibleCube_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": -1.5,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": 0.0,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CubeVisibility_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "",
-          "base_color": {
-            "r": 0.855,
-            "g": 0.0,
-            "b": 0.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "ChildOfInvisibleShouldBeInvisible_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": -1.5,
-              "y": 1.5,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": 0.0,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CubeVisibility_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "",
-          "base_color": {
-            "r": 0.855,
-            "g": 0.0,
-            "b": 0.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "DescendantOfInvisibleShouldBeInvisible_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": -1.5,
-              "y": 3.0,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": 0.0,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CubeVisibility_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "",
-          "base_color": {
-            "r": 0.855,
-            "g": 0.0,
-            "b": 0.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
         }
       ]
     },

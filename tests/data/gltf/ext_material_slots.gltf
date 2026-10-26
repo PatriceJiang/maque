@@ -1,0 +1,181 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "maque-test-fixture-ext-material-slots"
+  },
+  "extensionsUsed": [
+    "KHR_materials_clearcoat",
+    "KHR_materials_sheen",
+    "KHR_materials_iridescence",
+    "KHR_materials_anisotropy"
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "ext_slots_node"
+    }
+  ],
+  "meshes": [
+    {
+      "name": "ext_slots",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "ext_slots",
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.4
+      },
+      "extensions": {
+        "KHR_materials_clearcoat": {
+          "clearcoatFactor": 1.0,
+          "clearcoatRoughnessFactor": 0.2,
+          "clearcoatTexture": {
+            "index": 0
+          },
+          "clearcoatRoughnessTexture": {
+            "index": 1
+          },
+          "clearcoatNormalTexture": {
+            "index": 1,
+            "scale": 0.8
+          }
+        },
+        "KHR_materials_sheen": {
+          "sheenColorFactor": [
+            0.8,
+            0.2,
+            0.1
+          ],
+          "sheenRoughnessFactor": 0.4,
+          "sheenColorTexture": {
+            "index": 0
+          },
+          "sheenRoughnessTexture": {
+            "index": 2
+          }
+        },
+        "KHR_materials_iridescence": {
+          "iridescenceFactor": 1.0,
+          "iridescenceTexture": {
+            "index": 0
+          },
+          "iridescenceThicknessTexture": {
+            "index": 2
+          }
+        },
+        "KHR_materials_anisotropy": {
+          "anisotropyStrength": 1.0,
+          "anisotropyTexture": {
+            "index": 1
+          }
+        }
+      }
+    }
+  ],
+  "textures": [
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 1
+    },
+    {
+      "source": 0
+    }
+  ],
+  "samplers": [
+    {
+      "wrapS": 33071,
+      "wrapT": 33071,
+      "magFilter": 9728,
+      "minFilter": 9728
+    },
+    {
+      "wrapS": 33648
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 102,
+      "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAABAAIA"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72,
+      "byteLength": 24
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 96,
+      "byteLength": 6
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 3,
+      "type": "SCALAR"
+    }
+  ]
+}

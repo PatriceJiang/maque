@@ -91,6 +91,54 @@ fn clearcoat_normal_uv(in: VOut) -> vec2f {
   return uv_pick(nuv0, nuv1, 7);
 }
 
+/* ---- KHR 扩展材质贴图槽（binding 10..16；presence = flags2 bit12..18）----
+ * glTF 语义（通道）：
+ *   clearcoatTexture.R × clearcoatFactor
+ *   clearcoatRoughnessTexture.G × clearcoatRoughnessFactor
+ *   sheenColorTexture.RGB × sheenColorFactor（sRGB）
+ *   sheenRoughnessTexture.A × sheenRoughnessFactor
+ *   iridescenceTexture.R × iridescenceFactor
+ *   iridescenceThicknessTexture.G → mix(thicknessMin, thicknessMax, G)
+ *   anisotropyTexture.B × anisotropyStrength（方向 RG 暂不参与近似 BRDF）
+ * 缺贴图时绑 white：乘 1 不改变因子；厚度用 presence 决定是否 mix（避免 white G=1 恒取 max）。 */
+struct ExtParams {
+  clearcoat: vec2f,        // x=factor y=roughness
+  sheen_color: vec3f,
+  sheen_roughness: f32,
+  iridescence: f32,
+  iridescence_thickness: f32,   // <0 = 无厚度贴图（调用方走视角近似）
+  anisotropy: f32,
+};
+
+fn ext_tex_present(bit: u32) -> bool {
+  return ((u32(flags2_bits()) >> (12u + bit)) & 1u) != 0u;
+}
+
+fn surface_ext_params(uv: vec2f) -> ExtParams {
+  var e: ExtParams;
+  e.clearcoat = vec2f(dr.clearcoat.x, dr.clearcoat.y);
+  if (ext_tex_present(0u)) { e.clearcoat.x *= textureSample(clearcoat_tex, albedo_smp, uv).r; }
+  if (ext_tex_present(1u)) { e.clearcoat.y *= textureSample(clearcoat_rough_tex, albedo_smp, uv).g; }
+  e.sheen_color = dr.sheen_color.rgb;
+  e.sheen_roughness = dr.phys1.y;
+  if (ext_tex_present(2u)) { e.sheen_color *= textureSample(sheen_color_tex, albedo_smp, uv).rgb; }
+  if (ext_tex_present(3u)) { e.sheen_roughness *= textureSample(sheen_rough_tex, albedo_smp, uv).a; }
+  e.iridescence = dr.phys1.z;
+  e.iridescence_thickness = -1.0;
+  if (ext_tex_present(4u)) { e.iridescence *= textureSample(iridescence_tex, albedo_smp, uv).r; }
+  if (ext_tex_present(5u)) {
+    let g = textureSample(iridescence_thickness_tex, albedo_smp, uv).g;
+    e.iridescence_thickness = mix(dr.phys2.x, dr.phys2.y, clamp(g, 0.0, 1.0));
+  }
+  e.anisotropy = dr.phys2.z;
+  if (ext_tex_present(6u)) { e.anisotropy *= textureSample(anisotropy_tex, albedo_smp, uv).b; }
+  e.clearcoat = clamp(e.clearcoat, vec2f(0.0), vec2f(1.0));
+  e.sheen_roughness = clamp(e.sheen_roughness, 0.0, 1.0);
+  e.iridescence = clamp(e.iridescence, 0.0, 1.0);
+  e.anisotropy = clamp(e.anisotropy, 0.0, 1.0);
+  return e;
+}
+
 /* MASK：alpha 低于 cutoff 直接丢弃（不透明/混合管线里统一做 alpha test）。 */
 fn surface_alpha_test(s: Surface) {
   if (i32(dr.alpha.y + 0.5) == 1 && s.alpha < dr.alpha.x) {

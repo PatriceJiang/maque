@@ -127,7 +127,9 @@
           "normal_uv_scale": {
             "x": 30.0,
             "y": -30.0
-          }
+          },
+          "sheen_color_texture": "textures/image3.png",
+          "sheen_roughness_texture": "textures/image3.png"
         }
       ]
     }

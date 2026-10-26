@@ -625,6 +625,13 @@ role: `pbr_material`
 | `normal_uv_scale` | math.Vec2 | {1.0F, 1.0F} |  |
 | `normal_uv_offset` | math.Vec2 | {0.0F, 0.0F} |  |
 | `uv1_mask` | int32_t | 0 |  |
+| `clearcoat_texture` | string |  |  |
+| `clearcoat_roughness_texture` | string |  |  |
+| `sheen_color_texture` | string |  |  |
+| `sheen_roughness_texture` | string |  |  |
+| `iridescence_texture` | string |  |  |
+| `iridescence_thickness_texture` | string |  |  |
+| `anisotropy_texture` | string |  |  |
 
 ### asset.PixelFormat — enum
 

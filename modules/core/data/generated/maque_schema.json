@@ -3478,6 +3478,69 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "clearcoat_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "clearcoat_roughness_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "sheen_color_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "sheen_roughness_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "iridescence_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "iridescence_thickness_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "anisotropy_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },

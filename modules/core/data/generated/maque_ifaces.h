@@ -171,6 +171,7 @@ typedef struct mq_renderer_pbr_material {
     float normal_uv_scale[2];
     float normal_uv_offset[2];
     int32_t uv1_mask;
+    int32_t textures3[7];
 } mq_renderer_pbr_material;
 
 typedef struct mq_renderer_draw3d {

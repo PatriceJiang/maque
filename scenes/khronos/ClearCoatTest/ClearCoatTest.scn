@@ -311,7 +311,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "clearcoat": 1.0
+          "clearcoat": 1.0,
+          "clearcoat_texture": "textures/PartialCoating.png"
         }
       ]
     },
@@ -465,7 +466,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "clearcoat": 1.0,
-          "clearcoat_roughness": 1.0
+          "clearcoat_roughness": 1.0,
+          "clearcoat_roughness_texture": "textures/RoughnessStripes.png"
         }
       ]
     },

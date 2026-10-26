@@ -181,9 +181,14 @@
         # KHR_texture_transform（plans/19）：法线贴图单独一组 UV 变换（其余贴图复用旧 uv_scale/uv_offset）
         - { name: normal_uv_scale,          type: "float[2]" }
         - { name: normal_uv_offset,         type: "float[2]" }
-        # TEXCOORD_1（多 UV 集）选择掩码：bit0..8 = base/mr/ao/normal/emissive/matcap/gradient/
-        # clearcoat_normal 使用第二套 UV（runtime 折进 flags2 bit4..12）。尾部追加，旧字段偏移不变。
+        # TEXCOORD_1（多 UV 集）选择掩码：bit0..7 = base/mr/ao/normal/emissive/matcap/gradient/
+        # clearcoat_normal 使用第二套 UV（runtime 折进 flags2 bit4..11）。
         - { name: uv1_mask,                 type: int32_t }
+        # KHR 扩展材质贴图槽（尾部追加）：clearcoat / clearcoat_roughness / sheen_color /
+        # sheen_roughness / iridescence / iridescence_thickness / anisotropy（-1=无）。
+        # 存在时 runtime 置 flags2 bit12..18；gfx 在 group1 binding 10..16 绑定。
+        - { name: textures3,                type: "int32_t[7]" }
+        # 注：specularTexture/specularColorTexture 仍未接入（见 docs/31 §5.3）。
     - record: draw3d
       fields:
         - { name: mesh,          type: int32_t }

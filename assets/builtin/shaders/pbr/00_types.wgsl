@@ -58,6 +58,14 @@ struct Draw {
 @group(1) @binding(7) var matcap_tex: texture_2d<f32>;      // sRGB
 @group(1) @binding(8) var gradient_tex: texture_2d<f32>;    // toon 渐变（256×1）
 @group(1) @binding(9) var clearcoat_normal_tex: texture_2d<f32>;
+// KHR 扩展材质贴图槽（binding 10..16；存在时 runtime 置 flags2 bit12..18，缺失绑 white）
+@group(1) @binding(10) var clearcoat_tex: texture_2d<f32>;            // R = clearcoat factor
+@group(1) @binding(11) var clearcoat_rough_tex: texture_2d<f32>;      // G = clearcoat roughness
+@group(1) @binding(12) var sheen_color_tex: texture_2d<f32>;          // RGB（sRGB）
+@group(1) @binding(13) var sheen_rough_tex: texture_2d<f32>;          // A = sheen roughness
+@group(1) @binding(14) var iridescence_tex: texture_2d<f32>;          // R = iridescence factor
+@group(1) @binding(15) var iridescence_thickness_tex: texture_2d<f32>; // G = thickness 0..1
+@group(1) @binding(16) var anisotropy_tex: texture_2d<f32>;           // B = anisotropy strength
 
 struct VOut {
   @builtin(position) p: vec4f,

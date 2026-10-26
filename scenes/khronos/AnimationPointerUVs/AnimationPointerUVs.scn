@@ -37,25 +37,36 @@
       ]
     },
     {
-      "name": "sun",
+      "name": "light rear_light",
       "components": [
         {
           "type": "scene.Transform3D",
           "local": {
+            "position": {
+              "x": -3.337860107421875e-06,
+              "y": 2.1971166133880615,
+              "z": -6.0
+            },
             "rotation": {
-              "x": -1.0119793728441187,
-              "y": -0.7188299996216244,
-              "z": 0.0
+              "x": -3.141592609878405,
+              "y": 1.509958025280855e-07,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000000000113,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000122
             }
           }
         },
         {
           "type": "render.Light",
-          "intensity": 2.6,
+          "type": 0,
+          "intensity": 20.0,
           "color": {
             "r": 1.0,
-            "g": 0.96,
-            "b": 0.9,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           }
         }
@@ -755,7 +766,9 @@
           "clearcoat": 1.0,
           "clearcoat_roughness": 1.0,
           "normal_texture": "textures/image4.png",
-          "clearcoat_normal_texture": "textures/image6.png"
+          "clearcoat_normal_texture": "textures/image6.png",
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -810,7 +823,9 @@
           "clearcoat": 1.0,
           "clearcoat_roughness": 1.0,
           "normal_texture": "textures/image4.png",
-          "clearcoat_normal_texture": "textures/image6.png"
+          "clearcoat_normal_texture": "textures/image6.png",
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -865,7 +880,9 @@
           "clearcoat": 1.0,
           "clearcoat_roughness": 1.0,
           "normal_texture": "textures/image4.png",
-          "clearcoat_normal_texture": "textures/image6.png"
+          "clearcoat_normal_texture": "textures/image6.png",
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -918,7 +935,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "anisotropy": 1.0,
-          "normal_texture": "textures/image6.png"
+          "normal_texture": "textures/image6.png",
+          "anisotropy_texture": "textures/image7.png"
         }
       ]
     },
@@ -971,7 +989,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "anisotropy": 1.0,
-          "normal_texture": "textures/image6.png"
+          "normal_texture": "textures/image6.png",
+          "anisotropy_texture": "textures/image7.png"
         }
       ]
     },
@@ -1024,7 +1043,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "anisotropy": 1.0,
-          "normal_texture": "textures/image6.png"
+          "normal_texture": "textures/image6.png",
+          "anisotropy_texture": "textures/image7.png"
         }
       ]
     },
@@ -1079,7 +1099,8 @@
           "clearcoat": 1.0,
           "clearcoat_roughness": 1.0,
           "normal_texture": "textures/image4.png",
-          "clearcoat_normal_texture": "textures/image8.png"
+          "clearcoat_normal_texture": "textures/image8.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -1134,7 +1155,8 @@
           "clearcoat": 1.0,
           "clearcoat_roughness": 1.0,
           "normal_texture": "textures/image4.png",
-          "clearcoat_normal_texture": "textures/image8.png"
+          "clearcoat_normal_texture": "textures/image8.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -1189,7 +1211,8 @@
           "clearcoat": 1.0,
           "clearcoat_roughness": 1.0,
           "normal_texture": "textures/image4.png",
-          "clearcoat_normal_texture": "textures/image8.png"
+          "clearcoat_normal_texture": "textures/image8.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -2488,7 +2511,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "clearcoat": 1.0,
-          "clearcoat_roughness": 1.0
+          "clearcoat_roughness": 1.0,
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -2541,7 +2566,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "clearcoat": 1.0,
-          "clearcoat_roughness": 1.0
+          "clearcoat_roughness": 1.0,
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -2594,7 +2621,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "clearcoat": 1.0,
-          "clearcoat_roughness": 1.0
+          "clearcoat_roughness": 1.0,
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -2749,7 +2778,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "clearcoat": 1.0,
-          "clearcoat_roughness": 1.0
+          "clearcoat_roughness": 1.0,
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -2802,7 +2833,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "clearcoat": 1.0,
-          "clearcoat_roughness": 1.0
+          "clearcoat_roughness": 1.0,
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -2855,7 +2888,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "clearcoat": 1.0,
-          "clearcoat_roughness": 1.0
+          "clearcoat_roughness": 1.0,
+          "clearcoat_texture": "textures/image5.png",
+          "clearcoat_roughness_texture": "textures/image5.png"
         }
       ]
     },
@@ -3271,7 +3306,9 @@
             "z": 1.0
           },
           "sheen_roughness": 0.75,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },
@@ -3330,7 +3367,9 @@
             "z": 1.0
           },
           "sheen_roughness": 0.75,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },
@@ -3389,7 +3428,9 @@
             "z": 1.0
           },
           "sheen_roughness": 0.75,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },
@@ -3820,7 +3861,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "iridescence": 1.0,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -3873,7 +3916,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "iridescence": 1.0,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -3926,7 +3971,9 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "iridescence": 1.0,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png",
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -4890,7 +4937,9 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "iridescence": 1.0
+          "iridescence": 1.0,
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -4942,7 +4991,9 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "iridescence": 1.0
+          "iridescence": 1.0,
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -4994,7 +5045,9 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "iridescence": 1.0
+          "iridescence": 1.0,
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -5148,7 +5201,9 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "iridescence": 1.0
+          "iridescence": 1.0,
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -5200,7 +5255,9 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "iridescence": 1.0
+          "iridescence": 1.0,
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -5252,7 +5309,9 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "iridescence": 1.0
+          "iridescence": 1.0,
+          "iridescence_texture": "textures/image9.png",
+          "iridescence_thickness_texture": "textures/image9.png"
         }
       ]
     },
@@ -5412,7 +5471,9 @@
             "y": 1.0,
             "z": 1.0
           },
-          "sheen_roughness": 0.75
+          "sheen_roughness": 0.75,
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },
@@ -5470,7 +5531,9 @@
             "y": 1.0,
             "z": 1.0
           },
-          "sheen_roughness": 0.75
+          "sheen_roughness": 0.75,
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },
@@ -5528,7 +5591,9 @@
             "y": 1.0,
             "z": 1.0
           },
-          "sheen_roughness": 0.75
+          "sheen_roughness": 0.75,
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },
@@ -5958,7 +6023,9 @@
             "y": 1.0,
             "z": 1.0
           },
-          "sheen_roughness": 0.75
+          "sheen_roughness": 0.75,
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },
@@ -6016,7 +6083,9 @@
             "y": 1.0,
             "z": 1.0
           },
-          "sheen_roughness": 0.75
+          "sheen_roughness": 0.75,
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },
@@ -6074,7 +6143,9 @@
             "y": 1.0,
             "z": 1.0
           },
-          "sheen_roughness": 0.75
+          "sheen_roughness": 0.75,
+          "sheen_color_texture": "textures/image10.png",
+          "sheen_roughness_texture": "textures/image10.png"
         }
       ]
     },

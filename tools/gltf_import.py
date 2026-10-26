@@ -18,7 +18,15 @@
     其它编码（KTX2/BasisU/WebP）跳过并告警
   · 材质扩展：KHR_materials_{unlit,clearcoat,sheen,iridescence,specular,ior,anisotropy,
     emissive_strength} → asset.PbrMaterial（只写非默认值）；transmission → alpha BLEND 近似。
+  · KHR 扩展材质贴图槽（plans/20 第 2 轮）：clearcoat / clearcoat_roughness / sheen_color /
+    sheen_roughness / iridescence / iridescence_thickness / anisotropy 7 槽 → 字符串字段；
+    specularTexture/specularColorTexture 仍无对应槽。UV 近似复用 uv_scale/uv_offset
+    （TEXCOORD_0；不支持这些槽的逐槽 texCoord/transform）。
   · glTF sampler 非默认时贴图路径追加 `#wrap=U,V&filter=nearest`（runtime 据此建 sampler）。
+  · KHR_lights_punctual：`--scene` 时导入为 render.Light 实体（≤8 盏、方向光优先；node 世界变换 →
+    position/rotation，传播方向 = 节点 -Z；spot 用内/外锥角）。强度为**观感归一化**（directional≈2.6×
+    intensity，point/spot 按模型尺度约几十~几百），有灯光时不再追加默认太阳。
+  · KHR_node_visibility.visible=false：跳过该节点及整棵子树（mesh 与灯光都不生成）。
 用法：
   python tools/gltf_import.py scene.gltf --out assets/imported
   python tools/gltf_import.py model.glb --out assets/imported --name hero
@@ -423,8 +431,7 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
 
     put_uv("uv", tex_transform(pbr_tex))
     put_uv("normal_uv", tex_transform(normal_tex))
-    # clearcoat 法线贴图：引擎有独立槽（clearcoat_normal_texture + scale）；clearcoatTexture /
-    # clearcoatRoughnessTexture 无对应槽，忽略（与迁移前一致，不搬运其 PNG）。
+    # clearcoat 法线贴图：引擎有独立槽（clearcoat_normal_texture + scale）。
     if "KHR_materials_clearcoat" in exts:
         cn = (exts["KHR_materials_clearcoat"] or {}).get("clearcoatNormalTexture")
         slot = tex_slot(cn)
@@ -432,6 +439,30 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
             m["clearcoat_normal_texture"] = slot
             put_num("clearcoat_normal_scale", cn.get("scale", 1.0), 1.0)
         mark_uv1("clearcoat_normal", cn)
+    # KHR 扩展材质贴图槽（plans/20 第 2 轮）：7 个 glTF textureInfo → 字符串字段（仅非空时写；
+    # 无这些扩展/无贴图的材质输出逐字节不变）。复用 tex_slot（sampler 后缀/同名去重/URL 解码）。
+    # UV 近似：引擎对这些槽复用 uv_scale/uv_offset（TEXCOORD_0）——不支持逐槽 texCoord/transform；
+    # specularTexture/specularColorTexture 仍无对应槽（known_gaps 文案在 migrate 脚本，Lead 更新）。
+    ext_tex_slots = []
+    if "KHR_materials_clearcoat" in exts:
+        cc2 = exts["KHR_materials_clearcoat"] or {}
+        ext_tex_slots += [("clearcoat_texture", cc2.get("clearcoatTexture")),
+                          ("clearcoat_roughness_texture", cc2.get("clearcoatRoughnessTexture"))]
+    if "KHR_materials_sheen" in exts:
+        sh2 = exts["KHR_materials_sheen"] or {}
+        ext_tex_slots += [("sheen_color_texture", sh2.get("sheenColorTexture")),
+                          ("sheen_roughness_texture", sh2.get("sheenRoughnessTexture"))]
+    if "KHR_materials_iridescence" in exts:
+        ir2 = exts["KHR_materials_iridescence"] or {}
+        ext_tex_slots += [("iridescence_texture", ir2.get("iridescenceTexture")),
+                          ("iridescence_thickness_texture", ir2.get("iridescenceThicknessTexture"))]
+    if "KHR_materials_anisotropy" in exts:
+        an2 = exts["KHR_materials_anisotropy"] or {}
+        ext_tex_slots += [("anisotropy_texture", an2.get("anisotropyTexture"))]
+    for field, tinfo in ext_tex_slots:
+        slot = tex_slot(tinfo)
+        if slot:
+            m[field] = slot
     if uv1_mask:
         m["uv1_mask"] = uv1_mask
     return m
@@ -534,6 +565,49 @@ def _vec4(r, g, b, a):
     return {"r": float(r), "g": float(g), "b": float(b), "a": float(a)}
 
 
+def _light_type_code(gltf_type):
+    """KHR_lights_punctual.type → render.LightType（0=directional / 1=point / 2=spot）。"""
+    return {"directional": 0, "point": 1, "spot": 2}.get(str(gltf_type or "directional"), 0)
+
+
+def _norm_light_intensity(gltf_type, intensity, radius):
+    """glTF 灯光强度（directional=lux、point/spot=candela）→ 引擎观感单位。
+
+    引擎自动太阳 intensity=2.6；glTF 物理单位常差几个数量级，故按**模型尺度**归一化到
+    「典型受光距离 d_ref（≈半个模型半径）处的照度 ≈ 自动太阳」：
+      · directional：`2.6 * intensity`（夹 [0,20]，避免 NodePerformanceTest 的 1e4 lux 过曝）；
+      · point/spot：`2.6 * (d_ref² + 1) * intensity`（夹 [0,2000]）——d_ref²+1 抵消引擎
+        衰减 `win²/(d²+1)` 中的 +1 与小模型尺度效应。
+    这是**观感归一化**，不是物理单位换算（README/known_gaps 需注明）。
+    """
+    try:
+        iv = float(intensity)
+    except (TypeError, ValueError):
+        iv = 1.0
+    if iv < 0.0:
+        iv = 0.0
+    if _light_type_code(gltf_type) == 0:
+        return max(0.0, min(20.0, 2.6 * iv))
+    r = max(float(radius), 1e-3)
+    d_ref = max(0.5 * r, 1e-3)
+    return max(0.0, min(2000.0, 2.6 * (d_ref * d_ref + 1.0) * iv))
+
+
+def _spot_angles_deg(light):
+    """KHR spot → (inner_deg, outer_deg)。glTF 是半角弧度；缺省 inner=0 / outer=π/4。"""
+    spot = light.get("spot") or {}
+    try:
+        inner = math.degrees(float(spot.get("innerConeAngle", 0.0)))
+        outer = math.degrees(float(spot.get("outerConeAngle", math.pi / 4.0)))
+    except (TypeError, ValueError):
+        inner, outer = 0.0, 45.0
+    inner = max(0.0, min(90.0, inner))
+    outer = max(0.0, min(90.0, outer))
+    if inner > outer:
+        inner = outer
+    return inner, outer
+
+
 def _fit_camera_distance(center, bmin, bmax, dir_unit, fov_y_deg, aspect, margin=0.92):
     """求让包围盒 8 角点都落进视锥（NDC*|margin|）的相机距离。
 
@@ -590,18 +664,34 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None):
 
     camera（可选，来自 CLI）：{distance_scale, position[3], target[3], fov}；
     全空/None 时输出与旧版自动取景逐字节一致。
+    KHR_lights_punctual：节点引用 → render.Light 实体（最多 8 盏、方向光优先、强度观感归一化），
+    有灯光时不再追加默认太阳；KHR_node_visibility.visible=false → 跳过该节点及整棵子树。
     """
     nodes = js.get("nodes", [])
     scn_nodes = js.get("scenes", [{}])[js.get("scene", 0)].get("nodes", []) if js.get("scenes") else []
+    gltf_lights = (((js.get("extensions") or {}).get("KHR_lights_punctual") or {})
+                   .get("lights") or [])
+    light_refs = []                    # [(light_index, world_matrix, node_name)]（节点遍历顺序）
+    hidden_nodes = 0
     entities = []
     bounds_min = [1e30, 1e30, 1e30]
     bounds_max = [-1e30, -1e30, -1e30]
 
     def walk(ni, parent, depth=0):
+        nonlocal hidden_nodes
         if depth > 128:
             return
         node = nodes[ni]
+        node_exts = node.get("extensions") or {}
+        # KHR_node_visibility：visible=false 的节点及其整棵子树不生成实体（灯光/mesh 都不）
+        if (node_exts.get("KHR_node_visibility") or {}).get("visible", True) is False:
+            hidden_nodes += 1
+            return
         world = _mat_mul(parent, _node_matrix(node))
+        # KHR_lights_punctual：记录节点引用的灯（世界变换在 collect 后用 radius 归一化强度）
+        lref = (node_exts.get("KHR_lights_punctual") or {}).get("light")
+        if isinstance(lref, int) and 0 <= lref < len(gltf_lights):
+            light_refs.append((lref, world, node.get("name") or f"node{ni}"))
         mi = node.get("mesh")
         if mi is not None:
             for meta in prims_meta:
@@ -633,11 +723,48 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None):
 
     for ni in scn_nodes:
         walk(ni, _mat_identity())
+    if hidden_nodes:
+        print(f"gltf_import: KHR_node_visibility=false 跳过 {hidden_nodes} 个隐藏节点（含整棵子树）",
+              file=sys.stderr)
     if not entities:
         raise SystemExit("gltf_import: --scene 没有生成任何实体（缺 mesh 节点？）")
     center = [(bounds_min[i] + bounds_max[i]) * 0.5 for i in range(3)]
     half = [max(bounds_max[i] - bounds_min[i], 1e-6) * 0.5 for i in range(3)]
     radius = max(1e-3, math.sqrt(sum(h * h for h in half)))       # 包围球半径（半对角线）
+    # KHR_lights_punctual → render.Light 实体（position/rotation 用节点世界变换；
+    # glTF 与引擎都以节点 -Z 为传播方向。强度按模型尺度观感归一化，见 _norm_light_intensity）。
+    light_entities = []
+    for li, world, nm in light_refs:
+        L = gltf_lights[li] or {}
+        lt = str(L.get("type") or "directional")
+        code = _light_type_code(lt)
+        pos, rot, scl = _decompose(world)
+        col = L.get("color")
+        if not (isinstance(col, list) and len(col) == 3):
+            col = [1.0, 1.0, 1.0]
+        comp = {"type": "render.Light", "__mq_light_type__": code,
+                "intensity": _norm_light_intensity(lt, L.get("intensity", 1.0), radius),
+                "color": _vec4(col[0], col[1], col[2], 1.0)}
+        if code in (1, 2):
+            rng = L.get("range")
+            comp["range"] = float(rng) if rng is not None else 0.0   # 0 = 无限远（引擎语义）
+        if code == 2:
+            inner, outer = _spot_angles_deg(L)
+            comp["inner_angle"] = inner
+            comp["outer_angle"] = outer
+        light_entities.append({"name": f"{nm}_light", "components": [
+            {"type": "scene.Transform3D", "local": {
+                "position": _vec3(*pos), "rotation": _vec3(*rot), "scale": _vec3(*scl)}},
+            comp]})
+    if len(light_entities) > 8:
+        # 引擎最多 8 盏（shader 循环）；方向光优先（阴影只作用于第 0 盏方向光），其余保持遍历顺序
+        dirs = [e for e in light_entities if e["components"][1]["__mq_light_type__"] == 0]
+        others = [e for e in light_entities if e["components"][1]["__mq_light_type__"] != 0]
+        ordered = dirs + others
+        dropped = len(ordered) - 8
+        light_entities = ordered[:8]
+        print(f"gltf_import: KHR_lights_punctual 共 {len(ordered)} 盏 > 8，按方向光优先丢弃 {dropped} 盏",
+              file=sys.stderr)
     # 自动机位：3/4 视角（左上前），距离按包围盒 8 角点投射进视锥拟合（_fit_camera_distance）。
     # 旧公式固定 -1.2r/+0.55r/+2.1r 对 1 单位立方体太近；只用包围球半径又会对薄板/长条模型过远。
     # CLI 覆盖（迁移手调）：显式 position/target 优先于自动拟合；distance_scale 乘拟合距离。
@@ -671,13 +798,22 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None):
         {"type": "render.Light", "intensity": 2.6,
          "color": _vec4(1.0, 0.96, 0.9, 1.0)},
     ]}
+    # 有 glTF 灯光时用导入灯光替代默认太阳（避免双主光）；否则保持旧行为（零漂移）。
+    scene_entities = ([cam] + light_entities + entities) if light_entities else ([cam, sun] + entities)
     scn = {"title": name, "width": 1280, "height": 720, "views": 1,
-           "entities": [cam, sun] + entities}
+           "entities": scene_entities}
     dest = os.path.join(out_dir, name + ".scn")
+    # render.Light 的字段名 "type" 与组件判别键 "type" 同名：场景加载器按 JSON 键顺序应用
+    # （先字符串判别组件类型、后数值写入 LightType，lights.scn 同款约定），故先写占位键再替换成
+    # 第二个 "type"。无灯光场景不出现占位键 → 输出与旧版逐字节一致。
+    text = json.dumps(scn, ensure_ascii=False, indent=2, sort_keys=False)
+    if light_entities:
+        text = text.replace('"__mq_light_type__"', '"type"')
     with open(dest, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(scn, f, ensure_ascii=False, indent=2, sort_keys=False)
+        f.write(text)
         f.write("\n")
-    print(f"gltf_import: scene → {dest} entities={len(entities)} bounds={bounds_min}..{bounds_max}")
+    print(f"gltf_import: scene → {dest} entities={len(entities)} lights={len(light_entities)} "
+          f"hidden={hidden_nodes} bounds={bounds_min}..{bounds_max}")
     return dest
 
 

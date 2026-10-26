@@ -37,25 +37,36 @@
       ]
     },
     {
-      "name": "sun",
+      "name": "Light_light",
       "components": [
         {
           "type": "scene.Transform3D",
           "local": {
+            "position": {
+              "x": 5.0,
+              "y": 5.0,
+              "z": 5.0
+            },
             "rotation": {
-              "x": -1.0119793728441187,
-              "y": -0.7188299996216244,
+              "x": 0.0,
+              "y": -0.0,
               "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
             }
           }
         },
         {
           "type": "render.Light",
-          "intensity": 2.6,
+          "type": 0,
+          "intensity": 5.2,
           "color": {
             "r": 1.0,
-            "g": 0.96,
-            "b": 0.9,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           }
         }
@@ -220,7 +231,8 @@
           "iridescence_ior": 1.8,
           "iridescence_thickness_min": 200.0,
           "iridescence_thickness_max": 600.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "iridescence_thickness_texture": "textures/image0.png"
         }
       ]
     }

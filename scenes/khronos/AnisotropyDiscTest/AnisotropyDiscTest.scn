@@ -109,7 +109,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -161,7 +162,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -213,7 +215,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -265,7 +268,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -317,7 +321,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -369,7 +374,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -421,7 +427,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -473,7 +480,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -525,7 +533,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -577,7 +586,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     },
@@ -679,7 +689,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "anisotropy": 1.0
+          "anisotropy": 1.0,
+          "anisotropy_texture": "textures/AnisotropyDiscs.png"
         }
       ]
     }
