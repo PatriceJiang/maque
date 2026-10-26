@@ -307,8 +307,16 @@ per view:
   runtime 读 `asset.PbrMaterial.base_color_texture`（`builtin:/` 或 VFS 路径 → `create_texture` 句柄）；
   `scenes/pbr/materials.scn` 左 cube 绑 `builtin:/textures/checker`；e2e 断言贴图真正加载/绑定
   （`MAQUE_RENDER3D_INFO` 打印 albedo texture 路径 + 句柄）。
-- **M4 剩余**：`create_texture2` 的 sRGB/mip/法线贴图槽、方向光 shadow map + PCF、
-  `tools/gltf_import.py` 离线资产导入、`.material.json` 共享材质、透明排序 —— 拆到 M4b/M5。
+- **M4b（进行中）**：
+  · **离线 glTF/GLB 导入 ✔**：`tools/gltf_import.py`（纯 Python，无第三方依赖）——
+    读 `.gltf`（external/内嵌 base64 buffer）与 `.glb`；accessor（含 byteStride）→
+    48B 顶点布局（pos3|normal3|tangent4|uv2，缺 NORMAL 时确定性计算）、三角 primitive、
+    材质（baseColorFactor/metallic/roughness/emissive/doubleSided/alphaMode → `asset.PbrMaterial`）、
+    PNG 贴图搬运；输出 `<name>.mesh.json` 排序键 + 固定缩进（逐字节确定性）；
+    e2e `gltf_import_e2e`（夹具 `tests/data/gltf/triangle.gltf`：结构/确定性/`--name`/错误路径）。
+  · 待做：运行时加载 `.mesh.json`（替换内建 cube）、MR/normal/AO 贴图槽采样、
+    方向光 shadow map + PCF、`.material.json` 共享材质引用。
+- **M4 剩余（M4b 之后）**：贴图 mip/sRGB、阴影、透明排序。
 
 ## 7. 验收标准（DoD）
 

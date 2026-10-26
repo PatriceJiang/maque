@@ -100,6 +100,16 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# glTF 离线导入端到端（plans/18 方向 2 / M4b）：夹具 glTF → tools/gltf_import.py →
+# 结构/确定性/--name/错误路径断言（纯 Python，无需图形环境；无 python 时 SKIP 77）
+if(MAQUE_BUILD_TESTS)
+    add_test(NAME gltf_import_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_import_e2e.sh"
+             "${CMAKE_SOURCE_DIR}/tools/gltf_import.py"
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/triangle.gltf"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_import_e2e")
+    set_tests_properties(gltf_import_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # 输入/UI/快照/回放端到端（docs/10 §3/§5、docs/19 §9）：注入 → 分发 → 生成 → 回放一致
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME ui_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_e2e.sh"
