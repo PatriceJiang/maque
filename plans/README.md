@@ -89,7 +89,7 @@
 | 14 | particle | ✅ | ✅ | ⬜ | ⬜ | 类型已入 schema；发射器未实现 |
 | 15 | renderer（WebGPU/pass 层） | ✅ | ✅ | ✅ | 🟡 | 相机/分层/批处理/alpha 合成已落地；pass 图待做 |
 | 16 | script（quickjs） | ✅ | ✅ | ✅ | 🟡 | 绑定生成 + 事件回调 + 热重载；capability 沙箱待做 |
-| 18 | PBR/3D 渲染（直接呈现） | ✅ | ✅ M4c | 🟡 | 🟡 | M0 接口 · M1 直呈 · M2 3D pass+`render.*` · M3 PBR · M4a albedo 贴图 · M4b glTF 导入工具 · M4c 运行时加载 .mesh.json（含资产漂移 e2e）；阴影/MR·normal 贴图待做 |
+| 18 | PBR/3D 渲染（直接呈现） | ✅ | ✅ M4d | 🟡 | 🟡 | M0 接口 · M1 直呈 · M2 3D pass+`render.*` · M3 PBR · M4a albedo · M4b glTF 导入 · M4c 运行时加载 .mesh.json · M4d MR/AO 贴图槽；阴影/法线贴图待做 |
 
 **声明即真相（docs/21）**：公开接口全部在 `modules/core/data/schema/` 声明一次 → 生成
 类型头/描述符/JSON（`class_list`）、引擎 API 声明 + JS 绑定（`api_list`）、插件 C vtable（`interface`）、

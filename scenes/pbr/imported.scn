@@ -31,6 +31,8 @@
             "scale": { "x": 1.3, "y": 1.3, "z": 1.3 } } },
         { "type": "render.MeshRenderer", "mesh_path": "assets/cube.mesh.json" },
         { "type": "asset.PbrMaterial", "metallic": 1.0, "roughness": 0.2,
+          "metallic_roughness_texture": "builtin:/textures/checker",
+          "occlusion_texture": "builtin:/textures/checker",
           "base_color": { "r": 0.9, "g": 0.75, "b": 0.3, "a": 1.0 } }
       ]
     },

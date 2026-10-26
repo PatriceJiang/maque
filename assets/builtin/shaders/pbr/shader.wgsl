@@ -23,6 +23,9 @@ struct Draw {
 /* 无 albedo 贴图时绑 1×1 白纹理（基色 × 1，不改变观感） */
 @group(1) @binding(1) var albedo_tex: texture_2d<f32>;
 @group(1) @binding(2) var albedo_smp: sampler;
+/* M4d：metallic-roughness 贴图（G=roughness、B=metallic，glTF 约定）与 AO 贴图（R） */
+@group(1) @binding(3) var mr_tex: texture_2d<f32>;
+@group(1) @binding(4) var ao_tex: texture_2d<f32>;
 
 const PI: f32 = 3.14159265;
 
@@ -72,9 +75,11 @@ struct VOut {
   let n_dot_v = max(dot(n, v), 1e-4);
   let n_dot_h = max(dot(n, h), 0.0);
 
-  let metallic = clamp(dr.mrp.x, 0.0, 1.0);
-  let rough = clamp(dr.mrp.y, 0.02, 1.0);
-  let ao = clamp(dr.mrp.w, 0.0, 1.0);
+  // 材质参数 × 贴图（无贴图时绑 1×1 白纹理 → 保持标量值不变）
+  let mr_s = textureSample(mr_tex, albedo_smp, in.uv);
+  let metallic = clamp(dr.mrp.x * mr_s.b, 0.0, 1.0);
+  let rough = clamp(dr.mrp.y * mr_s.g, 0.02, 1.0);
+  let ao = clamp(dr.mrp.w * textureSample(ao_tex, albedo_smp, in.uv).r, 0.0, 1.0);
   // albedo：sRGB 纹理采样自动解码为线性（RGBA8UnormSrgb），再乘材质 tint
   let base = dr.base_color.rgb * textureSample(albedo_tex, albedo_smp, in.uv).rgb;
 

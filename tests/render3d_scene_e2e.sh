@@ -144,6 +144,9 @@ if [ -f "$IMPORT_SCN" ]; then
     ( cd "$ROOT" && timeout 90 env MAQUE_RENDER3D_INFO=1 "$PLAYER" --shot "$WORK/imported.ppm" --frames 2 "$IMPORT_SCN" \
         >"$WORK/imported.txt" 2>&1 ) || { cat "$WORK/imported.txt"; fail "导入网格场景渲染失败"; }
     grep -q "mesh renderer node=" "$WORK/imported.txt" || { cat "$WORK/imported.txt"; fail "mesh_path 未走加载路径"; }
+    # M4d：MR / AO 贴图槽要真正加载并绑定（无贴图时走 1×1 白纹理，不影响标量材质）
+    grep -q "pbr mr texture" "$WORK/imported.txt" || { cat "$WORK/imported.txt"; fail "metallic-roughness 贴图未加载"; }
+    grep -q "pbr ao texture" "$WORK/imported.txt" || { cat "$WORK/imported.txt"; fail "occlusion 贴图未加载"; }
     if grep -q "→ mesh=-1\|mesh=-1" "$WORK/imported.txt"; then
         cat "$WORK/imported.txt"; fail "mesh_path 指向的 .mesh.json 加载失败（VFS 根 = 场景目录）"
     fi

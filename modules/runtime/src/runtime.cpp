@@ -1100,6 +1100,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             if (read_num(dmesh, mb->data(), "visible", 1.0F) < 0.5F) continue;
             /* M3 材质：同节点的 asset.PbrMaterial 组件（M4 起由共享 .material.json 资产引用） */
             mq_renderer_pbr_material mat{};
+            for (int ti = 0; ti < 5; ++ti) mat.textures[ti] = -1;   /* -1 = 未给贴图 → 渲染器用 1×1 白 */
             mat.base_color[0] = mat.base_color[1] = mat.base_color[2] = mat.base_color[3] = 1.0F;
             mat.metallic = 0.0F;
             mat.roughness = 0.6F;
@@ -1125,13 +1126,29 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 mat.alpha_cutoff = read_num(dmat, base, "alpha_cutoff", 0.5F);
                 mat.alpha_mode = (int32_t)read_num(dmat, base, "alpha_mode", 0.0F);
                 mat.flags = read_num(dmat, base, "double_sided", 0.0F) >= 0.5F ? 1 : 0;
-                /* M4：albedo 贴图（builtin:/ 或 VFS 路径）→ 渲染器纹理句柄；其它 4 槽在 M5 */
+                /* M4：PBR 贴图槽（albedo / metallic-roughness / occlusion）；normal 在 M5（需要切线空间） */
                 if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {
                     if (!texref->empty()) {
                         const int tid = load_texture_ref(*texref);
                         if (tid >= 0) mat.textures[0] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr albedo texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
+                if (const std::string* texref = read_str(dmat, base, "metallic_roughness_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_ref(*texref);
+                        if (tid >= 0) mat.textures[1] = tid;
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: pbr mr texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
+                if (const std::string* texref = read_str(dmat, base, "occlusion_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_ref(*texref);
+                        if (tid >= 0) mat.textures[2] = tid;
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: pbr ao texture '{}' -> {}\n", *texref, tid);
                     }
                 }
             }

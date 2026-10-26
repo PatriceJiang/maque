@@ -320,7 +320,13 @@ per view:
     （glTF 夹具 `tests/data/gltf/cube.gltf` → 已入库 `assets/imported/cube.mesh.json`）；
     e2e ④：importer 重新生成与已入库资产**逐字节一致**（漂移检测）+ 场景渲染非空。
   · 待做：MR/normal/AO 贴图槽采样、方向光 shadow map + PCF、`.material.json` 共享材质引用。
-- **M4 剩余（M4b 之后）**：贴图 mip/sRGB、阴影、透明排序。
+- **M4d ✅（贴图子集）**：metallic-roughness 贴图（G=roughness、B=metallic，glTF 约定）+ AO 贴图（R）：
+  gfx draw bind group 扩到 5 项（uniform/albedo/sampler/MR/AO；缺省绑 1×1 白纹理），
+  pbr shader 用 `metallicFactor×MR.b`、`roughnessFactor×MR.g`、`occlusionStrength×AO.r`；
+  runtime 读 `metallic_roughness_texture`/`occlusion_texture` 并修正材质贴图槽默认值 **-1**（未给贴图）；
+  `scenes/pbr/imported.scn` 的 cube 绑 MR/AO checker 贴图；e2e ④ 断言两槽真实加载。
+  **法线贴图**（需切线空间）与 **方向光 shadow map+PCF**（M4d 尝试遇到 wgpu 纹理使用域冲突，
+  已回退，留待重做）仍待做。
 - **测试稳定性（R7）**：`imgui_present_e2e` 真实窗口在 CI 负载下偶发**进程级**失败
   （实测约 1/6：同一命令重跑即过，日志/抓帧/像素断言均正常 → 非渲染正确性问题）；
   脚本内每次 player 调用最多两次尝试（保留 `*.retry1` 首次失败日志），两次都失败才判失败；

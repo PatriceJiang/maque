@@ -264,7 +264,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         {
-            WGPUBindGroupLayoutEntry e[3] = {};
+            WGPUBindGroupLayoutEntry e[5] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
             e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 112;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
@@ -272,7 +272,13 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
             e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment;
             e[2].sampler.type = WGPUSamplerBindingType_Filtering;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 3; bd.entries = e;
+            e[3].binding = 3; e[3].visibility = WGPUShaderStage_Fragment;   /* metallic-roughness */
+            e[3].texture.sampleType = WGPUTextureSampleType_Float;
+            e[3].texture.viewDimension = WGPUTextureViewDimension_2D;
+            e[4].binding = 4; e[4].visibility = WGPUShaderStage_Fragment;   /* occlusion */
+            e[4].texture.sampleType = WGPUTextureSampleType_Float;
+            e[4].texture.viewDimension = WGPUTextureViewDimension_2D;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 5; bd.entries = e;
             dv->p3dDrawBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         WGPUBindGroupLayout bl[2] = { dv->p3dCamBgl, dv->p3dDrawBgl };
@@ -1130,16 +1136,30 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
             wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
             WGPUTextureView albedoView = dv->whiteTexView;
-            if (mat && mat->textures[0] >= 0 && (size_t)mat->textures[0] < dv->textures.size()) {
-                Texture* at = dv->textures[(size_t)mat->textures[0]];
-                if (at && at->view) albedoView = at->view;
+            WGPUTextureView mrView = dv->whiteTexView;
+            WGPUTextureView aoView = dv->whiteTexView;
+            if (mat) {
+                if (mat->textures[0] >= 0 && (size_t)mat->textures[0] < dv->textures.size()) {
+                    Texture* at = dv->textures[(size_t)mat->textures[0]];
+                    if (at && at->view) albedoView = at->view;
+                }
+                if (mat->textures[1] >= 0 && (size_t)mat->textures[1] < dv->textures.size()) {
+                    Texture* at = dv->textures[(size_t)mat->textures[1]];
+                    if (at && at->view) mrView = at->view;
+                }
+                if (mat->textures[2] >= 0 && (size_t)mat->textures[2] < dv->textures.size()) {
+                    Texture* at = dv->textures[(size_t)mat->textures[2]];
+                    if (at && at->view) aoView = at->view;
+                }
             }
-            WGPUBindGroupEntry dbe[3] = {};
+            WGPUBindGroupEntry dbe[5] = {};
             dbe[0].binding = 0; dbe[0].buffer = dbuf; dbe[0].size = sizeof du;
             dbe[1].binding = 1; dbe[1].textureView = albedoView;
             dbe[2].binding = 2; dbe[2].sampler = dv->sampler;
+            dbe[3].binding = 3; dbe[3].textureView = mrView;
+            dbe[4].binding = 4; dbe[4].textureView = aoView;
             WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 3; dbgd.entries = dbe;
+            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 5; dbgd.entries = dbe;
             WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
             wgpuRenderPassEncoderSetBindGroup(pass, 1, drawBg, 0, nullptr);
             wgpuRenderPassEncoderSetVertexBuffer(pass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
