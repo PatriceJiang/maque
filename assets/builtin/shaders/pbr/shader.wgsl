@@ -18,8 +18,12 @@ struct Camera {
   light_color: vec4f,  // rgb = 颜色 × intensity
   ambient: vec4f,
   lights: array<GpuLight, 8>,
+  light_vp: mat4x4f,    // 方向光阴影 view*proj
+  shadow_params: vec4f, // x=bias y=1/1024 z=enabled
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
+@group(0) @binding(1) var shadow_map: texture_depth_2d;
+@group(0) @binding(2) var shadow_smp: sampler_comparison;
 
 struct Draw {
   model: mat4x4f,
@@ -76,12 +80,41 @@ fn cotangent_frame(n: vec3f, p: vec3f, uv: vec2f) -> mat3x3f {
   return mat3x3f(t * invmax, b * invmax, n);
 }
 
+/* 3×3 PCF（comparison sampler；关闭时恒 1） */
+fn shadow_factor(world: vec3f, n_dot_l: f32) -> f32 {
+  if (cam.shadow_params.z < 0.5) {
+    return 1.0;
+  }
+  let lc = cam.light_vp * vec4f(world, 1.0);
+  if (lc.w <= 0.0) {
+    return 1.0;
+  }
+  let ndc = lc.xyz / lc.w;
+  let uv = ndc.xy * 0.5 + vec2f(0.5);
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || ndc.z < 0.0 || ndc.z > 1.0) {
+    return 1.0;
+  }
+  let texel = cam.shadow_params.y;
+  let bias = cam.shadow_params.x + cam.shadow_params.y * (1.0 - n_dot_l) * 2.0;
+  var sum = 0.0;
+  for (var y = -1; y <= 1; y += 1) {
+    for (var x = -1; x <= 1; x += 1) {
+      sum += textureSampleCompare(shadow_map, shadow_smp, uv + vec2f(f32(x), f32(y)) * texel, ndc.z - bias);
+    }
+  }
+  return sum / 9.0;
+}
+
 struct VOut {
   @builtin(position) p: vec4f,
   @location(0) n: vec3f,
   @location(1) w: vec3f,
   @location(2) uv: vec2f,
 };
+
+@vertex fn vs_shadow(@location(0) pos: vec3f) -> @builtin(position) vec4f {
+  return cam.light_vp * dr.model * vec4f(pos, 1.0);
+}
 
 @vertex fn vs(@location(0) pos: vec3f, @location(1) nrm: vec3f, @location(2) uv: vec2f) -> VOut {
   var o: VOut;
@@ -154,7 +187,11 @@ struct VOut {
     let gg = geometry_smith(n_dot_v, ndl, rough);
     let sp = dg * gg * fl / (4.0 * n_dot_v * ndl + 1e-4);
     let kdl = (vec3f(1.0) - fl) * (1.0 - metallic);
-    color = color + (kdl * base / PI + sp) * L.color.rgb * ndl * atten;
+    var shade = 1.0;
+    if (li == 0) {
+      shade = shadow_factor(in.w, ndl);
+    }
+    color = color + (kdl * base / PI + sp) * L.color.rgb * ndl * atten * shade;
   }
   // 环境项：常量漫反射 + 粗糙度相关的环境高光近似（无 IBL 时的廉价替代；
   // 半球渐变 ambient 会压平粗糙度对比，M5 接真 IBL 后再启用）

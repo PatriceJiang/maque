@@ -131,6 +131,9 @@ tools\win\build.cmd -Sanitize address -RunTests
   （按路径缓存，失败缓存 -1）；为空回退内建 cube。样例 `scenes/pbr/imported.scn`（含地面）
   与导入资产 `scenes/pbr/assets/cube.mesh.json`；e2e ④ 校验「importer 输出 = 已入库资产」逐字节一致（漂移）
   + 断言网格加载成功（`mesh=-1` 视为失败）。
+  **阴影（M5c）**：方向光 **1024² shadow map + 3×3 PCF**（`MAQUE_SHADOW=0` 可关闭用于对照）；
+  shadow map 仅作深度附件、采样用独立 view（camera uniform 720B：+light_vp/shadow_params）。
+  样例 `scenes/pbr/shadows.scn`，e2e ⑨ 用开/关同场景像素差断言。
   **多光源（M5b）**：`render.Light.type` 支持 **Directional(0)/Point(1)/Spot(2)**，最多 8 盏同时生效（点光/聚光带范围衰减与锥角平滑衰减；相机 uniform 640B：8×{pos,dir,color,params}）；样例 `scenes/pbr/lights.scn`，e2e ⑧ 断言红点光/绿聚光的投影差异。
   **M4d 贴图槽**：`base_color_texture` / `metallic_roughness_texture`（G=roughness、B=metallic）/
   `occlusion_texture`（R）/ `normal_texture`（切线空间，shader 用屏幕空间导数构造切线基，无需 TANGENT 属性）四条路径 → 运行时加载为纹理句柄；材质未给的槽默认 **-1** → 渲染器绑 1×1 白纹理

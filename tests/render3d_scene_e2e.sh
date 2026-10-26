@@ -269,4 +269,27 @@ sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: ⑧ 多光源（Point/Spot）OK"
 fi
+
+# ---- ⑨ 方向光阴影（M5c）：MAQUE_SHADOW=0/1 同场景像素差 ----
+SHADOW_SCN="$ROOT/scenes/pbr/shadows.scn"
+if [ -f "$SHADOW_SCN" ]; then
+    ( cd "$ROOT" && timeout 90 "$PLAYER" --shot "$WORK/shadow_on.ppm" --frames 2 scenes/pbr/shadows.scn \
+        >"$WORK/shadow_on.txt" 2>&1 ) || { cat "$WORK/shadow_on.txt"; fail "阴影开启渲染失败"; }
+    ( cd "$ROOT" && timeout 90 env MAQUE_SHADOW=0 "$PLAYER" --shot "$WORK/shadow_off.ppm" --frames 2 scenes/pbr/shadows.scn \
+        >"$WORK/shadow_off.txt" 2>&1 ) || { cat "$WORK/shadow_off.txt"; fail "阴影关闭渲染失败"; }
+    "$PY" - "$WORK/shadow_on.ppm" "$WORK/shadow_off.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); m, dims, _x, px = d.split(b'\n', 3)
+    assert m == b'P6'
+    w, h = map(int, dims.split()); return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+def lum(px, i):
+    return 0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2]
+darker = sum(1 for i in range(0, len(a), 3) if lum(a, i) + 15.0 < lum(b, i))
+print(f'render3d_scene_e2e: shadow darker_pixels={darker} of {w*h}')
+sys.exit(0 if darker > 2000 else 1)
+PY
+    echo "render3d_scene_e2e: ⑨ 方向光阴影（shadow map + PCF）OK"
+fi
 echo "render3d_scene_e2e: PASS"

@@ -382,3 +382,7 @@ per view:
   gfx 相机 uniform 128→640B（8 盏灯 × {pos,dir,color,params}），shader 8 灯循环：
   方向光直接取；点光 `window(d/range)²/(d²+1)` 距离衰减；聚光再加 `smoothstep(cos_outer, cos_inner, cone)`；
   `scenes/pbr/lights.scn` + e2e ⑧（红点光染左 cube / 绿聚光染中 cube / 右 cube 中性）。
+
+- **M5c ✅ 方向光阴影**：1024² Depth32Float shadow map；相机 uniform 640→720B（+light_vp/shadow_params）；
+  阴影 pass 用同 shader 的 `vs_shadow`（group0 复用相机 BGL，纹理槽绑 1×1 深度占位避免同 pass 读写冲突）；
+  shader 3×3 PCF（comparison sampler，`MAQUE_SHADOW` 开关）；`scenes/pbr/shadows.scn` + e2e ⑨（开/关像素差）。

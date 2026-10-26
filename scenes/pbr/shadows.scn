@@ -1,0 +1,133 @@
+{
+ "title": "pbr_shadows",
+ "width": 640,
+ "height": 360,
+ "views": 1,
+ "entities": [
+  {
+   "name": "camera",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {
+       "x": 0.0,
+       "y": 2.4,
+       "z": 6.0
+      },
+      "rotation": {
+       "x": -0.35,
+       "y": 0.0,
+       "z": 0.0
+      }
+     }
+    },
+    {
+     "type": "render.Camera3D",
+     "fov_y": 50.0,
+     "near": 0.1,
+     "far": 100.0,
+     "clear_color": {
+      "r": 0.03,
+      "g": 0.03,
+      "b": 0.04,
+      "a": 1.0
+     }
+    }
+   ]
+  },
+  {
+   "name": "sun",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "rotation": {
+       "x": -0.7,
+       "y": -0.5,
+       "z": 0.0
+      }
+     }
+    },
+    {
+     "type": 0,
+     "intensity": 2.2,
+     "color": {
+      "r": 1.0,
+      "g": 0.98,
+      "b": 0.95,
+      "a": 1.0
+     }
+    }
+   ]
+  },
+  {
+   "name": "ground",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {
+       "x": 0.0,
+       "y": -1.0,
+       "z": 0.0
+      },
+      "scale": {
+       "x": 6.0,
+       "y": 0.05,
+       "z": 6.0
+      }
+     }
+    },
+    {
+     "type": "render.MeshRenderer"
+    },
+    {
+     "type": "asset.PbrMaterial",
+     "metallic": 0.0,
+     "roughness": 0.9,
+     "base_color": {
+      "r": 0.7,
+      "g": 0.7,
+      "b": 0.72,
+      "a": 1.0
+     }
+    }
+   ]
+  },
+  {
+   "name": "cube",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {
+       "x": 0.0,
+       "y": -0.4,
+       "z": 0.0
+      },
+      "scale": {
+       "x": 1.0,
+       "y": 1.0,
+       "z": 1.0
+      }
+     }
+    },
+    {
+     "type": "render.MeshRenderer"
+    },
+    {
+     "type": "asset.PbrMaterial",
+     "metallic": 0.0,
+     "roughness": 0.5,
+     "base_color": {
+      "r": 0.9,
+      "g": 0.25,
+      "b": 0.2,
+      "a": 1.0
+     }
+    }
+   ]
+  }
+ ]
+}

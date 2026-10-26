@@ -93,6 +93,15 @@ struct Device {
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
     WGPURenderPipeline p3dBlendPipeline = nullptr;   /* alpha blend（不写深度，画在不透明之后） */
+    /* M5c 方向光阴影：1024² depth map + comparison sampler + 1×1 深度占位（避免同 pass 同纹理读写） */
+    WGPUTexture shadowTex = nullptr;
+    WGPUTextureView shadowView = nullptr;
+    WGPUTexture dummyDepth = nullptr;
+    WGPUTextureView dummyDepthView = nullptr;
+    WGPUSampler shadowSampler = nullptr;
+    WGPURenderPipeline shadowPipeline = nullptr;
+    WGPUBuffer shadowCamBuf = nullptr;
+    WGPUBindGroup shadowCamBg = nullptr;
     /* PBR 贴图缺省：1×1 白纹理（材质没给 albedo 贴图时绑定它，基色乘 1） */
     WGPUTexture whiteTex = nullptr;
     WGPUTextureView whiteTexView = nullptr;
@@ -258,11 +267,44 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         dv->p3dShader = make_shader(dv->device, wgsl);
         if (!dv->p3dShader) return;
         {
-            WGPUBindGroupLayoutEntry e{};
-            e.binding = 0; e.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 640;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 1; bd.entries = &e;
+            WGPUBindGroupLayoutEntry e[3] = {};
+            e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 720;
+            e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
+            e[1].texture.sampleType = WGPUTextureSampleType_Depth;
+            e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
+            e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment;
+            e[2].sampler.type = WGPUSamplerBindingType_Comparison;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 3; bd.entries = e;
             dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
+        }
+        if (!dv->shadowTex) {
+            WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+            td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
+            td.dimension = WGPUTextureDimension_2D;
+            td.size = WGPUExtent3D{ 1024, 1024, 1 };
+            td.format = WGPUTextureFormat_Depth32Float;
+            td.mipLevelCount = 1; td.sampleCount = 1;
+            dv->shadowTex = wgpuDeviceCreateTexture(dv->device, &td);
+            if (dv->shadowTex) dv->shadowView = wgpuTextureCreateView(dv->shadowTex, nullptr);
+            WGPUTextureDescriptor dtd = WGPU_TEXTURE_DESCRIPTOR_INIT;
+            dtd.usage = WGPUTextureUsage_TextureBinding;
+            dtd.dimension = WGPUTextureDimension_2D;
+            dtd.size = WGPUExtent3D{ 1, 1, 1 };
+            dtd.format = WGPUTextureFormat_Depth32Float;
+            dtd.mipLevelCount = 1; dtd.sampleCount = 1;
+            dv->dummyDepth = wgpuDeviceCreateTexture(dv->device, &dtd);
+            if (dv->dummyDepth) dv->dummyDepthView = wgpuTextureCreateView(dv->dummyDepth, nullptr);
+            WGPUSamplerDescriptor smp = WGPU_SAMPLER_DESCRIPTOR_INIT;
+            smp.addressModeU = WGPUAddressMode_ClampToEdge;
+            smp.addressModeV = WGPUAddressMode_ClampToEdge;
+            smp.addressModeW = WGPUAddressMode_ClampToEdge;
+            smp.magFilter = WGPUFilterMode_Linear;
+            smp.minFilter = WGPUFilterMode_Linear;
+            smp.mipmapFilter = WGPUMipmapFilterMode_Nearest;
+            smp.compare = WGPUCompareFunction_LessEqual;
+            smp.maxAnisotropy = 1;
+            dv->shadowSampler = wgpuDeviceCreateSampler(dv->device, &smp);
         }
         {
             WGPUBindGroupLayoutEntry e[7] = {};
@@ -340,6 +382,26 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         dv->p3dBlendPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp2);
     }
     dv->p3dFormat = dv->p3dPipeline ? format : WGPUTextureFormat_Undefined;
+    if (!dv->shadowPipeline && dv->p3dShader && dv->p3dPl && dv->shadowTex) {
+        WGPUDepthStencilState sds = WGPU_DEPTH_STENCIL_STATE_INIT;
+        sds.format = WGPUTextureFormat_Depth32Float;
+        sds.depthWriteEnabled = WGPUOptionalBool_True;
+        sds.depthCompare = WGPUCompareFunction_Less;
+        WGPUVertexAttribute sattrs[1] = {};
+        sattrs[0].format = WGPUVertexFormat_Float32x3; sattrs[0].offset = 0; sattrs[0].shaderLocation = 0;
+        WGPUVertexBufferLayout svbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
+        svbl.stepMode = WGPUVertexStepMode_Vertex; svbl.arrayStride = 48;
+        svbl.attributeCount = 1; svbl.attributes = sattrs;
+        WGPUVertexState svs = WGPU_VERTEX_STATE_INIT;
+        svs.module = dv->p3dShader; svs.entryPoint = SV("vs_shadow");
+        svs.bufferCount = 1; svs.buffers = &svbl;
+        WGPURenderPipelineDescriptor srp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+        srp.layout = dv->p3dPl; srp.vertex = svs;
+        srp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        srp.primitive.cullMode = WGPUCullMode_None;
+        srp.depthStencil = &sds;
+        dv->shadowPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &srp);
+    }
 }
 
 /* 离屏 RGBA8 目标 → 像素缓冲（3D + 2D 合成后回读；--shot/CI 用）。 */
@@ -519,6 +581,12 @@ static void destroy_device(Device* dv) {
     if (dv->depthTex) wgpuTextureRelease(dv->depthTex);
     if (dv->p3dPipeline) wgpuRenderPipelineRelease(dv->p3dPipeline);
     if (dv->p3dBlendPipeline) wgpuRenderPipelineRelease(dv->p3dBlendPipeline);
+    if (dv->shadowPipeline) wgpuRenderPipelineRelease(dv->shadowPipeline);
+    if (dv->shadowSampler) wgpuSamplerRelease(dv->shadowSampler);
+    if (dv->dummyDepthView) wgpuTextureViewRelease(dv->dummyDepthView);
+    if (dv->dummyDepth) wgpuTextureRelease(dv->dummyDepth);
+    if (dv->shadowView) wgpuTextureViewRelease(dv->shadowView);
+    if (dv->shadowTex) wgpuTextureRelease(dv->shadowTex);
     if (dv->p3dPl) wgpuPipelineLayoutRelease(dv->p3dPl);
     if (dv->p3dCamBgl) wgpuBindGroupLayoutRelease(dv->p3dCamBgl);
     if (dv->p3dDrawBgl) wgpuBindGroupLayoutRelease(dv->p3dDrawBgl);
@@ -1070,11 +1138,37 @@ static void mat4_mul(const float* a, const float* b, float* o) {
                            a[2 * 4 + r] * b[c * 4 + 2] + a[3 * 4 + r] * b[c * 4 + 3];
 }
 
+static void mat4_look_at(const float eye[3], const float ctr[3], const float up[3], float* m) {
+    float f[3] = { ctr[0] - eye[0], ctr[1] - eye[1], ctr[2] - eye[2] };
+    float fl = std::sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
+    if (fl < 1e-6F) { f[0] = 0.0F; f[1] = 0.0F; f[2] = -1.0F; fl = 1.0F; }
+    f[0] /= fl; f[1] /= fl; f[2] /= fl;
+    float sx = f[1] * up[2] - f[2] * up[1];
+    float sy = f[2] * up[0] - f[0] * up[2];
+    float sz = f[0] * up[1] - f[1] * up[0];
+    float sl = std::sqrt(sx * sx + sy * sy + sz * sz);
+    if (sl < 1e-6F) { sx = 1.0F; sy = 0.0F; sz = 0.0F; sl = 1.0F; }
+    sx /= sl; sy /= sl; sz /= sl;
+    const float ux = sy * f[2] - sz * f[1], uy = sz * f[0] - sx * f[2], uz = sx * f[1] - sy * f[0];
+    m[0] = sx; m[4] = sy; m[8] = sz; m[12] = -(sx * eye[0] + sy * eye[1] + sz * eye[2]);
+    m[1] = ux; m[5] = uy; m[9] = uz; m[13] = -(ux * eye[0] + uy * eye[1] + uz * eye[2]);
+    m[2] = -f[0]; m[6] = -f[1]; m[10] = -f[2]; m[14] = f[0] * eye[0] + f[1] * eye[1] + f[2] * eye[2];
+    m[3] = 0.0F; m[7] = 0.0F; m[11] = 0.0F; m[15] = 1.0F;
+}
+static void mat4_ortho(float zn, float zf, float half, float* m) {
+    std::memset(m, 0, sizeof(float) * 16);
+    m[0] = 1.0F / half; m[5] = 1.0F / half;
+    m[10] = 1.0F / (zf - zn); m[14] = -zn / (zf - zn); m[15] = 1.0F;
+}
 /* M2：3D pass（depth + unlit3d）渲染进 target；2D 覆盖层由调用方随后
  * 用 render_impl(target, clear_first=false) 叠加（保持 2D 像素路径完全不变）。 */
 static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat target_format,
                               const mq_renderer_frame3d* f) {
     if (!dv || !target || !f) return 1;
+    static const bool shadow_on = [] {
+        const char* e = std::getenv("MAQUE_SHADOW");
+        return !e || (std::strcmp(e, "0") != 0 && std::strcmp(e, "off") != 0);
+    }();
     if (f->view_count == 0 || !f->views) return 0;
     ensure_3d_pipelines(dv, target_format);
     if (!dv->p3dPipeline) return 0;                  /* shader 剔除：3D 跳过（原因已打印） */
@@ -1101,7 +1195,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         const mq_renderer_view3d& v = f->views[vi];
         float vp[16];
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
-        float cam[160] = {};
+        float cam[180] = {};
         std::memcpy(cam, vp, sizeof vp);
         cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = v.exposure;
         cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
@@ -1110,6 +1204,27 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         cam[29] = f->env.env_color[1] * f->env.intensity;
         cam[30] = f->env.env_color[2] * f->env.intensity;
         cam[31] = 0.0F;
+        /* 阴影：light_vp（正交，覆盖场景包围球）+ (bias, 1/1024, enabled, _) */
+        {
+            float radius = 4.0F;
+            for (uint32_t di = 0; di < f->draw_count; ++di) {
+                const float* mm = f->draws[di].model;
+                const float reach = std::fabs(mm[12]) + std::fabs(mm[13]) + std::fabs(mm[14]) + 2.5F;
+                if (reach > radius) radius = reach;
+            }
+            if (radius > 12.0F) radius = 12.0F;
+            const float dist = radius * 2.0F;
+            const float ctr[3] = { 0.0F, 0.0F, 0.0F };
+            const float eye[3] = { -ldir[0] * dist, -ldir[1] * dist, -ldir[2] * dist };
+            const float up[3] = { (std::fabs(ldir[1]) > 0.99F) ? 1.0F : 0.0F,
+                                  (std::fabs(ldir[1]) > 0.99F) ? 0.0F : 1.0F, 0.0F };
+            float lview[16], lproj[16];
+            mat4_look_at(eye, ctr, up, lview);
+            mat4_ortho(-dist - radius * 1.5F, -dist + radius * 1.5F, radius * 1.2F, lproj);
+            mat4_mul(lproj, lview, cam + 160);
+            cam[176] = 0.0012F; cam[177] = 1.0F / 1024.0F;
+            cam[178] = shadow_on ? 1.0F : 0.0F; cam[179] = 0.0F;
+        }
         /* 光照数组（8 盏）：每盏 16 float = pos(4, w=类型) + dir(4) + color(4) + params(4) */
         for (uint32_t li = 0; li < 8; ++li) {
             float* dst = cam + 32 + li * 16;
@@ -1132,11 +1247,71 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         ubd.size = sizeof cam;
         WGPUBuffer cbuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
         wgpuQueueWriteBuffer(dv->queue, cbuf, 0, cam, sizeof cam);
-        WGPUBindGroupEntry cbe{};
-        cbe.binding = 0; cbe.buffer = cbuf; cbe.size = sizeof cam;
+        WGPUBindGroupEntry cbe[3] = {};
+        cbe[0].binding = 0; cbe[0].buffer = cbuf; cbe[0].size = sizeof cam;
+        cbe[1].binding = 1; cbe[1].textureView = dv->shadowView ? dv->shadowView : dv->dummyDepthView;
+        cbe[2].binding = 2; cbe[2].sampler = dv->shadowSampler ? dv->shadowSampler : dv->sampler;
         WGPUBindGroupDescriptor cbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-        cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 1; cbgd.entries = &cbe;
+        cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 3; cbgd.entries = cbe;
         WGPUBindGroup camBg = wgpuDeviceCreateBindGroup(dv->device, &cbgd);
+        /* 阴影深度 pass（仅首视图、场景相机同一帧）：用同一个 720B 相机块（light_vp 在 float 160 起） */
+        if (shadow_on && vi == 0 && dv->shadowPipeline && dv->shadowView) {
+            WGPUBindGroupEntry sbe[3] = {};
+            sbe[0].binding = 0; sbe[0].buffer = cbuf; sbe[0].size = sizeof cam;
+            sbe[1].binding = 1; sbe[1].textureView = dv->dummyDepthView ? dv->dummyDepthView : dv->shadowView;
+            sbe[2].binding = 2; sbe[2].sampler = dv->shadowSampler ? dv->shadowSampler : dv->sampler;
+            WGPUBindGroupDescriptor sbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+            sbgd.layout = dv->p3dCamBgl; sbgd.entryCount = 3; sbgd.entries = sbe;
+            WGPUBindGroup sbg = wgpuDeviceCreateBindGroup(dv->device, &sbgd);
+            WGPUCommandEncoder senc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+            WGPURenderPassDepthStencilAttachment sda = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
+            sda.view = dv->shadowView;
+            sda.depthLoadOp = WGPULoadOp_Clear;
+            sda.depthStoreOp = WGPUStoreOp_Store;
+            sda.depthClearValue = 1.0F;
+            WGPURenderPassDescriptor srpd = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+            srpd.depthStencilAttachment = &sda;
+            WGPURenderPassEncoder spass = wgpuCommandEncoderBeginRenderPass(senc, &srpd);
+            wgpuRenderPassEncoderSetPipeline(spass, dv->shadowPipeline);
+            wgpuRenderPassEncoderSetBindGroup(spass, 0, sbg, 0, nullptr);
+            for (uint32_t di = 0; di < f->draw_count; ++di) {
+                const mq_renderer_draw3d& d = f->draws[di];
+                if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
+                MeshGpu* m = dv->meshes[(size_t)d.mesh];
+                if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
+                float du[32] = {};
+                std::memcpy(du, d.model, sizeof d.model);
+                WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+                dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+                dbd.size = sizeof du;
+                WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
+                wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
+                WGPUBindGroupEntry dbe[7] = {};
+                dbe[0].binding = 0; dbe[0].buffer = dbuf; dbe[0].size = sizeof du;
+                dbe[1].binding = 1; dbe[1].textureView = dv->whiteTexView;
+                dbe[2].binding = 2; dbe[2].sampler = dv->sampler;
+                dbe[3].binding = 3; dbe[3].textureView = dv->whiteTexView;
+                dbe[4].binding = 4; dbe[4].textureView = dv->whiteTexView;
+                dbe[5].binding = 5; dbe[5].textureView = dv->whiteTexView;
+                dbe[6].binding = 6; dbe[6].textureView = dv->whiteTexView;
+                WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+                dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 7; dbgd.entries = dbe;
+                WGPUBindGroup dbg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
+                wgpuRenderPassEncoderSetBindGroup(spass, 1, dbg, 0, nullptr);
+                wgpuRenderPassEncoderSetVertexBuffer(spass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
+                wgpuRenderPassEncoderSetIndexBuffer(spass, m->ibo, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
+                wgpuRenderPassEncoderDrawIndexed(spass, m->index_count, 1, 0, 0, 0);
+                wgpuBindGroupRelease(dbg);
+                wgpuBufferRelease(dbuf);
+            }
+            wgpuRenderPassEncoderEnd(spass);
+            wgpuRenderPassEncoderRelease(spass);
+            WGPUCommandBuffer scb = wgpuCommandEncoderFinish(senc, nullptr);
+            wgpuQueueSubmit(dv->queue, 1, &scb);
+            wgpuCommandBufferRelease(scb);
+            wgpuCommandEncoderRelease(senc);
+            wgpuBindGroupRelease(sbg);
+        }
 
         WGPURenderPassColorAttachment ca = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
         ca.view = view;
