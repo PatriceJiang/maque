@@ -12,10 +12,10 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.4043,
-  "preview_mean_lum": 0.7542,
-  "mean_lum_delta": 0.3499,
-  "hist_similarity": 0.149,
-  "rgb_delta": 0.3495,
+  "preview_mean_lum": 0.756,
+  "mean_lum_delta": 0.3517,
+  "hist_similarity": 0.144,
+  "rgb_delta": 0.3509,
   "ref_coverage": 0.9417,
   "preview_coverage": 0.1946,
   "coverage_ratio": 0.207,
@@ -37,8 +37,8 @@
     84.0
   ],
   "preview_mean_rgb": [
-    192.8,
-    192.2,
+    193.4,
+    192.7,
     190.4
   ],
   "framing_notes": [],

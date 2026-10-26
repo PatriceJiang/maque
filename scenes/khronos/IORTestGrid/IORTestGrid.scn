@@ -267,6 +267,7 @@
           "shading_model": 1,
           "specular_intensity": 0.25,
           "ior": 2.42,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -320,6 +321,7 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "ior": 2.42,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -479,6 +481,7 @@
           "shading_model": 1,
           "specular_intensity": 0.25,
           "ior": 1.76,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -532,6 +535,7 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "ior": 1.76,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -688,6 +692,7 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "specular_intensity": 0.25,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -740,6 +745,7 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -899,6 +905,7 @@
           "shading_model": 1,
           "specular_intensity": 0.25,
           "ior": 1.33,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -952,6 +959,7 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "ior": 1.33,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -1111,6 +1119,7 @@
           "shading_model": 1,
           "specular_intensity": 0.25,
           "ior": 1.0,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -1164,6 +1173,7 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "ior": 1.0,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]

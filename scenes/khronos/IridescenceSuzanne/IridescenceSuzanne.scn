@@ -231,6 +231,7 @@
           "iridescence_ior": 1.8,
           "iridescence_thickness_min": 200.0,
           "iridescence_thickness_max": 600.0,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "iridescence_thickness_texture": "textures/image0.png"
         }

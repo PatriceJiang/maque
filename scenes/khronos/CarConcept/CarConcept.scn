@@ -163,6 +163,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -2282,6 +2283,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -2489,6 +2491,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -3433,6 +3436,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -4752,6 +4756,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]

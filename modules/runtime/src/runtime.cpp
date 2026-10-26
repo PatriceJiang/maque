@@ -1430,6 +1430,14 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 mat.alpha_mode = (int32_t)read_num(dmat, base, "alpha_mode", 0.0F);
     /* transmission/diffuse 近似把 MASK 改成 BLEND 时保留 alpha 镂空（shader 用 flags2 bit19） */
     if (read_num(dmat, base, "alpha_mask_in_blend", 0.0F) >= 0.5F) mat.flags2 |= 0x80000;
+
+    /* KHR_materials_transmission 近似参数：shader 用 Fresnel 视角 alpha、gfx 画两遍（背面→正面）。
+     * Draw 的 anisotropy_rotation 槽当前 shader 未使用，复用它传 transmission factor（避免扩 uniform）。 */
+    const float transmission_factor = read_num(dmat, base, "transmission_factor", 0.0F);
+    if (transmission_factor > 0.001F) {
+        mat.anisotropy_rotation = transmission_factor;
+        mat.flags2 |= 0x100000;                 /* bit20 = transmission approx */
+    }
                 mat.flags = read_num(dmat, base, "double_sided", 0.0F) >= 0.5F ? 1 : 0;
                 mat.clearcoat = read_num(dmat, base, "clearcoat", 0.0F);
                 mat.clearcoat_roughness = read_num(dmat, base, "clearcoat_roughness", 0.03F);

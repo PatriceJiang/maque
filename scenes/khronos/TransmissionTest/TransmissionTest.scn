@@ -159,6 +159,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -210,6 +211,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -261,6 +263,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/texture214190.png"
@@ -314,6 +317,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/texture4086.png"
@@ -367,6 +371,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "metallic_roughness_texture": "textures/texture177328.png"
         }
@@ -419,6 +424,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "metallic_roughness_texture": "textures/texture6807.png"
         }
@@ -471,6 +477,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/texture214190.png",
@@ -525,6 +532,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/texture4086.png"
@@ -578,6 +586,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "metallic_roughness_texture": "textures/texture175763.png"
         }
@@ -630,6 +639,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "metallic_roughness_texture": "textures/texture10487.png"
         }
@@ -682,6 +692,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/texture4086.png",
@@ -736,6 +747,7 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/texture214190.png",

@@ -23,7 +23,7 @@
 | 使用扩展 | `KHR_materials_transmission`、`KHR_materials_volume`、`KHR_materials_ior`、`KHR_materials_iridescence` |
 | alpha 模式分布 | OPAQUE×5 |
 
-**导入产物**：`assets/` 8 个 `.mesh.json`（合计 762.2 KB），`textures/` 1 张；场景 `SunglassesKhronos.scn`。
+**导入产物**：`assets/` 8 个 `.mesh.json`（合计 762.3 KB），`textures/` 1 张；场景 `SunglassesKhronos.scn`。
 
 ## 生成 / 运行
 
@@ -43,10 +43,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sun
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.511 | 0.354 | 差 -0.157 |
-| 前景平均 RGB | [136.4, 124.8, 167.5] | [80.5, 92.5, 97.4] | RGB 距离 0.207 |
-| 亮度直方图相似度 | — | — | 0.52（16 桶交集，1=完全一致） |
-| 前景占比 | 53.5% | 6.4% | 覆盖率比 0.119 |
+| 前景平均亮度 | 0.511 | 0.292 | 差 -0.219 |
+| 前景平均 RGB | [136.4, 124.8, 167.5] | [64.6, 76.6, 81.8] | RGB 距离 0.269 |
+| 亮度直方图相似度 | — | — | 0.42（16 桶交集，1=完全一致） |
+| 前景占比 | 53.5% | 16.1% | 覆盖率比 0.302 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 

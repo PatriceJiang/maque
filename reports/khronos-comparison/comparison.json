@@ -8,8 +8,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.6987,
-   "lum": -0.0519,
+   "hist": 0.6969,
+   "lum": -0.051,
    "model": "ABeautifulGame",
    "preview": "scenes/khronos/ABeautifulGame/preview.jpg",
    "readme": "../../scenes/khronos/ABeautifulGame/README.md",
@@ -23,7 +23,7 @@
     310
    ],
    "review": "- 结论：整副国际象棋（棋盘+全部棋子+底座）齐全、贴图与雕花细节正确、构图可辨认。玻璃/透明棋子被渲染为不透明白/绿色，官方参考图中的透光与体积吸收观感完全丢失；此外缺环境反射、整体偏暗。属 transmission/volume 已知差距的典型代表。\n- 差异主因：缺失特性：transmission+volume 未实现 + 无 HDRI；机位/背景",
-   "rgb": 0.0479,
+   "rgb": 0.047,
    "scene": "../../scenes/khronos/ABeautifulGame/ABeautifulGame.scn",
    "stats": {
     "alpha_modes": {
@@ -372,8 +372,8 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1264,
-   "coverage_ratio": 0.311,
+   "coverage": 0.127,
+   "coverage_ratio": 0.312,
    "framing_notes": [],
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
@@ -391,8 +391,8 @@
     "KHR_animation_pointer 动画未导入",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.6472,
-   "lum": 0.0014,
+   "hist": 0.6454,
+   "lum": -0.0016,
    "model": "AnimationPointerUVs",
    "preview": "scenes/khronos/AnimationPointerUVs/preview.jpg",
    "readme": "../../scenes/khronos/AnimationPointerUVs/README.md",
@@ -406,7 +406,7 @@
     1237
    ],
    "review": "",
-   "rgb": 0.0214,
+   "rgb": 0.0222,
    "scene": "../../scenes/khronos/AnimationPointerUVs/AnimationPointerUVs.scn",
    "stats": {
     "alpha_modes": {
@@ -474,8 +474,8 @@
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
     "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
    ],
-   "hist": 0.689,
-   "lum": -0.1014,
+   "hist": 0.7099,
+   "lum": -0.0975,
    "model": "AnisotropyBarnLamp",
    "preview": "scenes/khronos/AnisotropyBarnLamp/preview.jpg",
    "readme": "../../scenes/khronos/AnisotropyBarnLamp/README.md",
@@ -489,7 +489,7 @@
     1202
    ],
    "review": "- 结论：铜质谷仓壁灯完整：墙座、支臂、灯罩、灯泡都在，铜材质与清漆高光可信，朝向合理。与官方近景相比缺少强烈的各向异性拉丝反射，且机位更远，但整体可接受、无导入异常。\n- 差异主因：缺失特性：anisotropy 拉丝高光偏弱、无 HDRI",
-   "rgb": 0.0998,
+   "rgb": 0.0958,
    "scene": "../../scenes/khronos/AnisotropyBarnLamp/AnisotropyBarnLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -798,8 +798,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.6931,
-   "lum": 0.0935,
+   "hist": 0.695,
+   "lum": 0.0937,
    "model": "AttenuationTest",
    "preview": "scenes/khronos/AttenuationTest/preview.jpg",
    "readme": "../../scenes/khronos/AttenuationTest/README.md",
@@ -813,7 +813,7 @@
     1158
    ],
    "review": "",
-   "rgb": 0.0834,
+   "rgb": 0.0836,
    "scene": "../../scenes/khronos/AttenuationTest/AttenuationTest.scn",
    "stats": {
     "alpha_modes": {
@@ -2623,8 +2623,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.305,
-   "lum": -0.0883,
+   "hist": 0.4386,
+   "lum": -0.0673,
    "model": "CompareDispersion",
    "preview": "scenes/khronos/CompareDispersion/preview.jpg",
    "readme": "../../scenes/khronos/CompareDispersion/README.md",
@@ -2638,7 +2638,7 @@
     863
    ],
    "review": "",
-   "rgb": 0.0854,
+   "rgb": 0.0641,
    "scene": "../../scenes/khronos/CompareDispersion/CompareDispersion.scn",
    "stats": {
     "alpha_modes": {
@@ -2682,7 +2682,7 @@
     "testing",
     "pbrtest"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
    "coverage": 0.0785,
@@ -2756,8 +2756,8 @@
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.4248,
-   "lum": 0.0371,
+   "hist": 0.5279,
+   "lum": 0.0661,
    "model": "CompareIor",
    "preview": "scenes/khronos/CompareIor/preview.jpg",
    "readme": "../../scenes/khronos/CompareIor/README.md",
@@ -2771,7 +2771,7 @@
     625
    ],
    "review": "",
-   "rgb": 0.0467,
+   "rgb": 0.076,
    "scene": "../../scenes/khronos/CompareIor/CompareIor.scn",
    "stats": {
     "alpha_modes": {
@@ -3203,8 +3203,8 @@
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）"
    ],
-   "hist": 0.4078,
-   "lum": 0.0664,
+   "hist": 0.4038,
+   "lum": 0.0797,
    "model": "CompareTransmission",
    "preview": "scenes/khronos/CompareTransmission/preview.jpg",
    "readme": "../../scenes/khronos/CompareTransmission/README.md",
@@ -3218,7 +3218,7 @@
     580
    ],
    "review": "- 结论：棋盘背景、金色细环、白球都正确，但玻璃薄环与厚玻璃球完全不透明，看不到官方参考图中透过玻璃看到的棋盘格与其折射变形。几何/材质参数正确，差异可 100% 归因于 transmission 未实现（README 已知差距）。\n- 差异主因：缺失特性：KHR_materials_transmission 未实现",
-   "rgb": 0.0663,
+   "rgb": 0.0796,
    "scene": "../../scenes/khronos/CompareTransmission/CompareTransmission.scn",
    "stats": {
     "alpha_modes": {
@@ -3271,8 +3271,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.3983,
-   "lum": 0.0709,
+   "hist": 0.3515,
+   "lum": 0.0968,
    "model": "CompareVolume",
    "preview": "scenes/khronos/CompareVolume/preview.jpg",
    "readme": "../../scenes/khronos/CompareVolume/README.md",
@@ -3286,7 +3286,7 @@
     580
    ],
    "review": "",
-   "rgb": 0.077,
+   "rgb": 0.1021,
    "scene": "../../scenes/khronos/CompareVolume/CompareVolume.scn",
    "stats": {
     "alpha_modes": {
@@ -3578,7 +3578,7 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0846,
+   "coverage": 0.0841,
    "coverage_ratio": 0.106,
    "framing_notes": [],
    "gaps": [
@@ -3588,8 +3588,8 @@
     "KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.8448,
-   "lum": -0.0815,
+   "hist": 0.8462,
+   "lum": -0.0806,
    "model": "DiffuseTransmissionPlant",
    "preview": "scenes/khronos/DiffuseTransmissionPlant/preview.jpg",
    "readme": "../../scenes/khronos/DiffuseTransmissionPlant/README.md",
@@ -3603,7 +3603,7 @@
     1104
    ],
    "review": "",
-   "rgb": 0.0934,
+   "rgb": 0.0926,
    "scene": "../../scenes/khronos/DiffuseTransmissionPlant/DiffuseTransmissionPlant.scn",
    "stats": {
     "alpha_modes": {
@@ -3849,15 +3849,15 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1344,
-   "coverage_ratio": 0.155,
+   "coverage": 0.1385,
+   "coverage_ratio": 0.159,
    "framing_notes": [],
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.761,
-   "lum": 0.0701,
+   "hist": 0.7586,
+   "lum": 0.063,
    "model": "DispersionTest",
    "preview": "scenes/khronos/DispersionTest/preview.jpg",
    "readme": "../../scenes/khronos/DispersionTest/README.md",
@@ -3871,7 +3871,7 @@
     1788
    ],
    "review": "",
-   "rgb": 0.074,
+   "rgb": 0.067,
    "scene": "../../scenes/khronos/DispersionTest/DispersionTest.scn",
    "stats": {
     "alpha_modes": {
@@ -3925,8 +3925,8 @@
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
-   "hist": 0.149,
-   "lum": 0.3499,
+   "hist": 0.144,
+   "lum": 0.3517,
    "model": "DragonAttenuation",
    "preview": "scenes/khronos/DragonAttenuation/preview.jpg",
    "readme": "../../scenes/khronos/DragonAttenuation/README.md",
@@ -3940,7 +3940,7 @@
     871
    ],
    "review": "- 结论：龙的轮廓/姿态/鳞片几何完整，棋盘地面与弯曲背景板正确；但整条龙被渲染为不透明纯白，官方是琥珀色半透明体积吸收效果。属于 volume/attenuation 未实现的预期差异，非导入问题。\n- 差异主因：缺失特性：transmission+volume（体积吸收）未实现",
-   "rgb": 0.3495,
+   "rgb": 0.3509,
    "scene": "../../scenes/khronos/DragonAttenuation/DragonAttenuation.scn",
    "stats": {
     "alpha_modes": {
@@ -3985,15 +3985,15 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1564,
-   "coverage_ratio": 0.171,
+   "coverage": 0.1581,
+   "coverage_ratio": 0.173,
    "framing_notes": [],
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.4919,
-   "lum": 0.2165,
+   "hist": 0.4963,
+   "lum": 0.217,
    "model": "DragonDispersion",
    "preview": "scenes/khronos/DragonDispersion/preview.jpg",
    "readme": "../../scenes/khronos/DragonDispersion/README.md",
@@ -4007,7 +4007,7 @@
     1183
    ],
    "review": "",
-   "rgb": 0.2167,
+   "rgb": 0.2173,
    "scene": "../../scenes/khronos/DragonDispersion/DragonDispersion.scn",
    "stats": {
     "alpha_modes": {
@@ -4245,8 +4245,8 @@
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）"
    ],
-   "hist": 0.8828,
-   "lum": -0.2571,
+   "hist": 0.8842,
+   "lum": -0.2569,
    "model": "FlightHelmet",
    "preview": "scenes/khronos/FlightHelmet/preview.jpg",
    "readme": "../../scenes/khronos/FlightHelmet/README.md",
@@ -4260,7 +4260,7 @@
     130
    ],
    "review": "- 结论：飞行头盔完整：皮革帽体、护目镜、呼吸管、木底座与铭牌都在，贴图方向和细节正确、无缺件。整体明显偏暗偏橄榄色调，护目镜呈不透明黄绿色（transmission 未实现），与官方明亮工作室光照差距较大，属缺失特性/IBL 限制。\n- 差异主因：缺失特性：transmission（镜片）未实现 + 无 HDRI IBL（整体偏暗）",
-   "rgb": 0.2606,
+   "rgb": 0.2604,
    "scene": "../../scenes/khronos/FlightHelmet/FlightHelmet.scn",
    "stats": {
     "alpha_modes": {
@@ -4514,8 +4514,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.5017,
-   "lum": 0.1287,
+   "hist": 0.5613,
+   "lum": 0.1828,
    "model": "GlassHurricaneCandleHolder",
    "preview": "scenes/khronos/GlassHurricaneCandleHolder/preview.jpg",
    "readme": "../../scenes/khronos/GlassHurricaneCandleHolder/README.md",
@@ -4529,7 +4529,7 @@
     930
    ],
    "review": "",
-   "rgb": 0.1324,
+   "rgb": 0.1866,
    "scene": "../../scenes/khronos/GlassHurricaneCandleHolder/GlassHurricaneCandleHolder.scn",
    "stats": {
     "alpha_modes": {
@@ -4583,8 +4583,8 @@
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.6794,
-   "lum": -0.0605,
+   "hist": 0.656,
+   "lum": -0.0235,
    "model": "GlassVaseFlowers",
    "preview": "scenes/khronos/GlassVaseFlowers/preview.jpg",
    "readme": "../../scenes/khronos/GlassVaseFlowers/README.md",
@@ -4598,7 +4598,7 @@
     1144
    ],
    "review": "",
-   "rgb": 0.0653,
+   "rgb": 0.028,
    "scene": "../../scenes/khronos/GlassVaseFlowers/GlassVaseFlowers.scn",
    "stats": {
     "alpha_modes": {
@@ -4715,8 +4715,8 @@
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现"
    ],
-   "hist": 0.5644,
-   "lum": 0.016,
+   "hist": 0.5621,
+   "lum": 0.0262,
    "model": "IORTestGrid",
    "preview": "scenes/khronos/IORTestGrid/preview.jpg",
    "readme": "../../scenes/khronos/IORTestGrid/README.md",
@@ -4730,7 +4730,7 @@
     1080
    ],
    "review": "",
-   "rgb": 0.0392,
+   "rgb": 0.0427,
    "scene": "../../scenes/khronos/IORTestGrid/IORTestGrid.scn",
    "stats": {
     "alpha_modes": {
@@ -4913,8 +4913,8 @@
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.2587,
-   "lum": 0.0161,
+   "hist": 0.3235,
+   "lum": 0.0368,
    "model": "IridescenceLamp",
    "preview": "scenes/khronos/IridescenceLamp/preview.jpg",
    "readme": "../../scenes/khronos/IridescenceLamp/README.md",
@@ -4928,7 +4928,7 @@
     1213
    ],
    "review": "",
-   "rgb": 0.0145,
+   "rgb": 0.0353,
    "scene": "../../scenes/khronos/IridescenceLamp/IridescenceLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -5049,8 +5049,8 @@
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.5639,
-   "lum": 0.1079,
+   "hist": 0.5538,
+   "lum": 0.128,
    "model": "IridescenceSuzanne",
    "preview": "scenes/khronos/IridescenceSuzanne/preview.jpg",
    "readme": "../../scenes/khronos/IridescenceSuzanne/README.md",
@@ -5064,7 +5064,7 @@
     800
    ],
    "review": "",
-   "rgb": 0.0984,
+   "rgb": 0.1185,
    "scene": "../../scenes/khronos/IridescenceSuzanne/IridescenceSuzanne.scn",
    "stats": {
     "alpha_modes": {
@@ -5122,8 +5122,8 @@
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.4821,
-   "lum": 0.0756,
+   "hist": 0.3634,
+   "lum": 0.1375,
    "model": "IridescentDishWithOlives",
    "preview": "scenes/khronos/IridescentDishWithOlives/preview.jpg",
    "readme": "../../scenes/khronos/IridescentDishWithOlives/README.md",
@@ -5137,7 +5137,7 @@
     1167
    ],
    "review": "",
-   "rgb": 0.0665,
+   "rgb": 0.1317,
    "scene": "../../scenes/khronos/IridescentDishWithOlives/IridescentDishWithOlives.scn",
    "stats": {
     "alpha_modes": {
@@ -5182,7 +5182,7 @@
     "video",
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
    "coverage": 0.0514,
@@ -5252,8 +5252,8 @@
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）"
    ],
-   "hist": 0.506,
-   "lum": 0.0637,
+   "hist": 0.5054,
+   "lum": 0.0635,
    "model": "LightsPunctualLamp",
    "preview": "scenes/khronos/LightsPunctualLamp/preview.jpg",
    "readme": "../../scenes/khronos/LightsPunctualLamp/README.md",
@@ -5267,7 +5267,7 @@
     344
    ],
    "review": "",
-   "rgb": 0.0649,
+   "rgb": 0.0647,
    "scene": "../../scenes/khronos/LightsPunctualLamp/LightsPunctualLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -5883,8 +5883,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.1496,
-   "lum": -0.2502,
+   "hist": 0.1361,
+   "lum": -0.1556,
    "model": "MosquitoInAmber",
    "preview": "scenes/khronos/MosquitoInAmber/preview.jpg",
    "readme": "../../scenes/khronos/MosquitoInAmber/README.md",
@@ -5898,7 +5898,7 @@
     714
    ],
    "review": "",
-   "rgb": 0.2669,
+   "rgb": 0.1724,
    "scene": "../../scenes/khronos/MosquitoInAmber/MosquitoInAmber.scn",
    "stats": {
     "alpha_modes": {
@@ -6640,8 +6640,8 @@
     "KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现",
     "KHR_animation_pointer 动画未导入"
    ],
-   "hist": 0.5452,
-   "lum": -0.0206,
+   "hist": 0.5317,
+   "lum": -0.019,
    "model": "PotOfCoalsAnimationPointer",
    "preview": "scenes/khronos/PotOfCoalsAnimationPointer/preview.jpg",
    "readme": "../../scenes/khronos/PotOfCoalsAnimationPointer/README.md",
@@ -6655,7 +6655,7 @@
     983
    ],
    "review": "",
-   "rgb": 0.039,
+   "rgb": 0.0384,
    "scene": "../../scenes/khronos/PotOfCoalsAnimationPointer/PotOfCoalsAnimationPointer.scn",
    "stats": {
     "alpha_modes": {
@@ -8029,11 +8029,9 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
-   "coverage": 0.0481,
-   "coverage_ratio": 0.135,
-   "framing_notes": [
-    "预览主体占比过小（<5%）→ 机位过远？"
-   ],
+   "coverage": 0.0524,
+   "coverage_ratio": 0.147,
+   "framing_notes": [],
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
@@ -8041,8 +8039,8 @@
     "KHR_materials_variants：只使用默认材质（不做变体切换）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.6909,
-   "lum": -0.0363,
+   "hist": 0.648,
+   "lum": 0.0052,
    "model": "StainedGlassLamp",
    "preview": "scenes/khronos/StainedGlassLamp/preview.jpg",
    "readme": "../../scenes/khronos/StainedGlassLamp/README.md",
@@ -8056,7 +8054,7 @@
     1140
    ],
    "review": "- 结论：整盏彩绘玻璃灯完整：多层玻璃伞罩彩绘图案、珠串流苏、灯柱与底座都在，贴图正确、无缺件，构图可辨认。玻璃不透光、没有官方那种被内部灯光点亮的效果（transmission/emissive 限制），且自动机位偏远（主体约 6%），属于可接受的已知差距。\n- 差异主因：缺失特性：transmission（玻璃罩透光）未实现 + emissive 发光偏弱；机位偏远",
-   "rgb": 0.032,
+   "rgb": 0.0197,
    "scene": "../../scenes/khronos/StainedGlassLamp/StainedGlassLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -8101,19 +8099,19 @@
     "showcase",
     "extension"
    ],
-   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.0639,
-   "coverage_ratio": 0.119,
+   "coverage": 0.1613,
+   "coverage_ratio": 0.302,
    "framing_notes": [],
    "gaps": [
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.5161,
-   "lum": -0.1569,
+   "hist": 0.4202,
+   "lum": -0.2186,
    "model": "SunglassesKhronos",
    "preview": "scenes/khronos/SunglassesKhronos/preview.jpg",
    "readme": "../../scenes/khronos/SunglassesKhronos/README.md",
@@ -8127,7 +8125,7 @@
     869
    ],
    "review": "",
-   "rgb": 0.207,
+   "rgb": 0.269,
    "scene": "../../scenes/khronos/SunglassesKhronos/SunglassesKhronos.scn",
    "stats": {
     "alpha_modes": {
@@ -8724,8 +8722,8 @@
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.3517,
-   "lum": 0.2234,
+   "hist": 0.3453,
+   "lum": 0.2243,
    "model": "TransmissionOrderTest",
    "preview": "scenes/khronos/TransmissionOrderTest/preview.jpg",
    "readme": "../../scenes/khronos/TransmissionOrderTest/README.md",
@@ -8739,7 +8737,7 @@
     1366
    ],
    "review": "",
-   "rgb": 0.2152,
+   "rgb": 0.2167,
    "scene": "../../scenes/khronos/TransmissionOrderTest/TransmissionOrderTest.scn",
    "stats": {
     "alpha_modes": {
@@ -8792,8 +8790,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.3782,
-   "lum": 0.1732,
+   "hist": 0.3675,
+   "lum": 0.1746,
    "model": "TransmissionRoughnessTest",
    "preview": "scenes/khronos/TransmissionRoughnessTest/preview.jpg",
    "readme": "../../scenes/khronos/TransmissionRoughnessTest/README.md",
@@ -8807,7 +8805,7 @@
     831
    ],
    "review": "",
-   "rgb": 0.1533,
+   "rgb": 0.1548,
    "scene": "../../scenes/khronos/TransmissionRoughnessTest/TransmissionRoughnessTest.scn",
    "stats": {
     "alpha_modes": {
@@ -8927,8 +8925,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.0805,
-   "lum": 0.3715,
+   "hist": 0.0801,
+   "lum": 0.3833,
    "model": "TransmissionThinwallTestGrid",
    "preview": "scenes/khronos/TransmissionThinwallTestGrid/preview.jpg",
    "readme": "../../scenes/khronos/TransmissionThinwallTestGrid/README.md",
@@ -8942,7 +8940,7 @@
     600
    ],
    "review": "- 结论：测试板标签（Index of Refraction 1.0/1.33/1.5/1.76/2.42、Thin Wall / Volume Transmission 两行）和 10 个球位布局正确，说明场景结构导入无误；但所有球均为不透明白球，官方为可折射棋盘格的玻璃球，属 transmission 已知差距。\n- 差异主因：缺失特性：transmission/volume（薄壁与体积传输）未实现",
-   "rgb": 0.3722,
+   "rgb": 0.3841,
    "scene": "../../scenes/khronos/TransmissionThinwallTestGrid/TransmissionThinwallTestGrid.scn",
    "stats": {
     "alpha_modes": {
@@ -9221,8 +9219,8 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
    ],
-   "hist": 0.4725,
-   "lum": -0.055,
+   "hist": 0.4976,
+   "lum": 0.0078,
    "model": "USDShaderBallForGltf",
    "preview": "scenes/khronos/USDShaderBallForGltf/preview.jpg",
    "readme": "../../scenes/khronos/USDShaderBallForGltf/README.md",
@@ -9236,7 +9234,7 @@
     808
    ],
    "review": "",
-   "rgb": 0.0508,
+   "rgb": 0.0121,
    "scene": "../../scenes/khronos/USDShaderBallForGltf/USDShaderBallForGltf.scn",
    "stats": {
     "alpha_modes": {
@@ -9528,8 +9526,8 @@
   "large_refs": 86,
   "median_coverage": 0.1656,
   "median_hist": 0.4371,
-  "median_lum": 0.0781,
-  "median_rgb": 0.1179,
+  "median_lum": 0.0844,
+  "median_rgb": 0.1193,
   "models": 149,
   "preview_missing": 0,
   "ref_missing": 0,

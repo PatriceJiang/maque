@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_materials_transmission`、`KHR_materials_volume` |
 | alpha 模式分布 | OPAQUE×18 |
 
-**导入产物**：`assets/` 18 个 `.mesh.json`（合计 36.7 KB），`textures/` 2 张；场景 `AttenuationTest.scn`。
+**导入产物**：`assets/` 18 个 `.mesh.json`（合计 37.1 KB），`textures/` 2 张；场景 `AttenuationTest.scn`。
 
 ## 生成 / 运行
 
@@ -41,8 +41,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Att
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.656 | 0.750 | 差 +0.093 |
-| 前景平均 RGB | [155.1, 168.8, 186.6] | [189.2, 191.4, 193.6] | RGB 距离 0.083 |
+| 前景平均亮度 | 0.656 | 0.750 | 差 +0.094 |
+| 前景平均 RGB | [155.1, 168.8, 186.6] | [188.8, 191.6, 194.0] | RGB 距离 0.084 |
 | 亮度直方图相似度 | — | — | 0.69（16 桶交集，1=完全一致） |
 | 前景占比 | 89.7% | 23.6% | 覆盖率比 0.263 |
 

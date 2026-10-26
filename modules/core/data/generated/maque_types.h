@@ -1784,6 +1784,7 @@ struct PbrMaterial {
     float uv_rotation = 0.0F;
     float normal_uv_rotation = 0.0F;
     bool alpha_mask_in_blend = false;
+    float transmission_factor = 0.0F;
 };
 
 struct SkeletonData {

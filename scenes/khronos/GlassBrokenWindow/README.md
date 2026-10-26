@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_materials_transmission` |
 | alpha 模式分布 | MASK×1、OPAQUE×2 |
 
-**导入产物**：`assets/` 3 个 `.mesh.json`（合计 96.8 KB），`textures/` 5 张；场景 `GlassBrokenWindow.scn`。
+**导入产物**：`assets/` 3 个 `.mesh.json`（合计 96.9 KB），`textures/` 5 张；场景 `GlassBrokenWindow.scn`。
 
 ## 生成 / 运行
 

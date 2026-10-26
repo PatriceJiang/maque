@@ -227,6 +227,7 @@
             "y": 0.0,
             "z": 0.0
           },
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "normal_texture": "textures/image8.jpg",
           "normal_scale": 1.5,

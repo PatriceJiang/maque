@@ -100,6 +100,14 @@ fn surface_common(in: VOut, front_facing: bool) -> Surface {
     n_geo = flat_normal(in.w);           /* flat shading 本身已按朝向相机修正符号 */
   }
   s.n = sample_surface_normal(n_geo, in.w, uv_n);
+  /* transmission 近似：玻璃中心仍透，但掠射角按 Fresnel 提高不透明度（观感更像玻璃边缘反光）。 */
+  if ((flags2_bits() & 0x100000) != 0) {
+    let v = normalize(cam.eye.xyz - s.w);
+    let n_dot_v = clamp(dot(s.n, v), 0.0, 1.0);
+    let fres = pow(1.0 - n_dot_v, 3.0);
+    let tf = clamp(dr.phys2.w, 0.0, 1.0);
+    s.alpha = clamp(s.alpha + (1.0 - s.alpha) * fres * tf * 0.75, 0.0, 1.0);
+  }
   return s;
 }
 

@@ -22,7 +22,7 @@
 | 使用扩展 | `KHR_materials_transmission`、`KHR_materials_volume` |
 | alpha 模式分布 | OPAQUE×4 |
 
-**导入产物**：`assets/` 5 个 `.mesh.json`（合计 704.9 KB），`textures/` 3 张；场景 `CompareVolume.scn`。
+**导入产物**：`assets/` 5 个 `.mesh.json`（合计 705.0 KB），`textures/` 3 张；场景 `CompareVolume.scn`。
 
 ## 生成 / 运行
 
@@ -42,9 +42,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.455 | 0.526 | 差 +0.071 |
-| 前景平均 RGB | [114.3, 117.3, 110.1] | [132.2, 134.9, 133.6] | RGB 距离 0.077 |
-| 亮度直方图相似度 | — | — | 0.40（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.455 | 0.552 | 差 +0.097 |
+| 前景平均 RGB | [114.3, 117.3, 110.1] | [138.0, 141.7, 140.2] | RGB 距离 0.102 |
+| 亮度直方图相似度 | — | — | 0.35（16 桶交集，1=完全一致） |
 | 前景占比 | 96.4% | 19.9% | 覆盖率比 0.207 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**

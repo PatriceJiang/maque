@@ -212,6 +212,7 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "opacity": 0.93,
+          "alpha_mask_in_blend": true,
           "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
           "normal_texture": "textures/image1.jpg#wrap=clamp,clamp"
         }

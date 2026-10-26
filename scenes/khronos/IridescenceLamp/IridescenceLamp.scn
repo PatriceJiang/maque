@@ -167,6 +167,7 @@
           "iridescence_thickness_min": 385.0,
           "iridescence_thickness_max": 405.0,
           "ior": 1.6,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "base_color_texture": "textures/image0.png",
           "metallic_roughness_texture": "textures/image1.png",

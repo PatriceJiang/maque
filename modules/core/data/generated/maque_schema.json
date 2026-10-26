@@ -3568,6 +3568,15 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "transmission_factor",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },

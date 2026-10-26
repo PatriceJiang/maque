@@ -110,6 +110,7 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "ior": 1.55,
+          "transmission_factor": 0.75,
           "opacity": 0.36250000000000004,
           "base_color_texture": "textures/image0.jpg",
           "metallic_roughness_texture": "textures/image1.png",

@@ -447,7 +447,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | clearcoat / sheen / iridescence / specular / **ior** / anisotropy（**因子**） | ✅ → Physical 近似（本批：clearcoat 12、sheen 9、iridescence 10、specular 10、ior 17、anisotropy 7 个模型） | 观感与 three.js/Khronos 规范有差距（近似 BRDF） | specularTexture/specularColorTexture 仍未接（§11） |
 | 上述扩展的**贴图槽** | ✅ 已支持 7 槽：clearcoat(R)/clearcoat roughness(G)/sheen color(RGB,sRGB)/sheen roughness(A)/iridescence(R)/iridescence thickness(G)/anisotropy(B)；缺失槽绑 white 且由 flags2 presence 位关闭 | specularTexture/specularColorTexture 仍丢弃；扩展贴图暂共用基础 `uv_scale/uv_offset` 与 TEXCOORD_0 | specular 贴图列入 §11
 | `KHR_materials_emissive_strength` | ✅ → `emissive_intensity`（5 个模型） | — | — |
-| `KHR_materials_transmission`（**33 个模型 / 124 处**） | ⚠️ **近似为 alpha BLEND**：`alpha_mode=2` + `opacity=clamp(1-0.85·factor, 0.15, 1)`，可透见背景；原 MASK 材质保留镂空（`alpha_mask_in_blend`）；无折射/厚度/吸收 | 玻璃类从"不透明"变为"可透视"，彩绘/镂空玻璃图案保留；无真实折射畸变、Fresnel 边缘增强与衰减 | 根治需 backbuffer 折射 pass + volume；BLEND 物体**不再投影**（阴影 pass 跳过 caster） |
+| `KHR_materials_transmission`（**33 个模型 / 124 处**） | ⚠️ **近似为 alpha BLEND**：`alpha_mode=2` + `opacity=clamp(1-0.85·factor, 0.15, 1)`；**Fresnel 视角 alpha**（掠射角更实，`transmission_factor`→flags2 bit20）；**双面两遍绘制**（先背面后正面，单层玻璃也有厚度感）；原 MASK 材质保留镂空（`alpha_mask_in_blend`）；无折射/真实吸收 | 玻璃可透视且有边缘高光、背面层；无真实折射畸变/厚度衰减 | 根治需 backbuffer 折射 pass + volume；BLEND 物体**不再投影** |
 | `KHR_materials_volume`（**25**）/ `dispersion`（4）/ `volume_scatter`（1） | ⚠️ 体积**近似为薄壁色调**：`base_color ×= attenuationColor`（有限 attenuationDistance 时）；dispersion/volume_scatter 未实现 | 琥珀/有色玻璃有色调，但无厚度依赖吸收/色散 | 完整版需 refraction+thickness pass（P1 剩余） |
 | `KHR_materials_diffuse_transmission`（**6**） | ⚠️ 近似为 alpha BLEND（`opacity=clamp(1-0.7f,0.25,1)`） | 叶片/瓷器呈半透观感，但无散射/厚度 | 完整版同 transmission pass |
 | `KHR_materials_variants`（**7**） | ❌ 只用默认材质 | 变体切换不生效 | 静态迁移可接受 |
@@ -820,6 +820,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | **`EXT_mesh_gpu_instancing` 不展开** | SimpleInstancing 只显示 1 份实例 | importer 在场景生成期按实例 TRS 展开为多实体（上限 4096） |
 | **volume/diffuse_transmission 无观感** | 有色玻璃/乳浊材质与参考差异大 | volume：`base_color ×= attenuationColor`；diffuse transmission：alpha BLEND 近似（阈值/常量见 importer 注释） |
 | **transmission 近似把 MASK 改成 BLEND 后丢了 alpha 镂空** | `StainedGlassLamp` 彩绘玻璃/`GlassBrokenWindow` 裂纹/`TransmissionTest` Mask 行：整片玻璃变均匀半透明，镂空图案消失 | importer 记录原 alphaMode，改 BLEND 时置 `alpha_mask_in_blend`；runtime 映射 flags2 bit19；shader 在混合管线里按**未乘 opacity** 的 alpha 做 cutoff discard（20 个材质/5 个模型重导） |
+| **玻璃近似太"幽灵"（无边缘反光/单层无厚度）** | CompareTransmission/GlassVaseFlowers/ABeautifulGame 等玻璃中心过透、边缘与背景融合 | 材质新增 `transmission_factor`；shader 按 Fresnel 提高掠射角 alpha；gfx 对 transmission 近似材质画两遍（cull front 背面 → cull back 正面）；37 个 transmission 相关模型重导重渲 |
 
 ---
 

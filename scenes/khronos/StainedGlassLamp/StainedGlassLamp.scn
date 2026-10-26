@@ -216,6 +216,7 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "ior": 1.4,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -269,6 +270,7 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "ior": 1.52,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002
         }
       ]
@@ -484,6 +486,7 @@
           "shading_model": 1,
           "clearcoat": 1.0,
           "clearcoat_roughness": 0.0,
+          "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/image17.png",

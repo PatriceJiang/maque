@@ -457,6 +457,7 @@ for v in m0["vertices"]:
 g = m0["materials"][0]
 assert g["alpha_mode"] == 2, g.get("alpha_mode")
 assert abs(g["opacity"] - 0.575) < 1e-9, g.get("opacity")
+assert abs(g.get("transmission_factor", 0.0) - 0.5) < 1e-9, g.get("transmission_factor")
 assert "uv1_mask" not in g, g.get("uv1_mask")
 print("gltf_import_e2e: 布局 v1 / sampler / transmission OK")
 PY

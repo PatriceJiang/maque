@@ -635,6 +635,7 @@ role: `pbr_material`
 | `uv_rotation` | float | 0.0F |  |
 | `normal_uv_rotation` | float | 0.0F |  |
 | `alpha_mask_in_blend` | bool | false |  |
+| `transmission_factor` | float | 0.0F |  |
 
 ### asset.PixelFormat — enum
 

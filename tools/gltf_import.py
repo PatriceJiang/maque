@@ -282,6 +282,7 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
         tf = 0.0
     if tf > 0.01:
         m["alpha_mode"] = 2                       # PbrAlphaMode::Blend
+        m["transmission_factor"] = tf
         approx = max(0.15, min(1.0, 1.0 - 0.85 * tf))
         m["opacity"] = min(float(m.get("opacity", 1.0)), approx)
     # KHR_materials_diffuse_transmission 近似（乳浊半透）：alpha BLEND + opacity=clamp(1-0.7*factor,0.25,1)。

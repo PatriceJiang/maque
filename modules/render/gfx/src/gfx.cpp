@@ -1799,6 +1799,22 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             const int layout = (m->vertex_layout == 1) ? 1 : 0;
             WGPURenderPipeline pipe =
                 get_material_pipeline(dv, model, is_blend, side, mirrored, layout);
+            /* 玻璃/transmission 近似：同一网格画两遍（先背面 cull front，再正面 cull back），
+             * 让单层玻璃也看到背面层，混合后更接近"有厚度的透明体"。 */
+            if (is_blend && mat && (mat->flags2 & 0x100000)) {
+                WGPURenderPipeline back_pipe =
+                    get_material_pipeline(dv, model, is_blend, 1, mirrored, layout);
+                if (back_pipe) {
+                    wgpuRenderPassEncoderSetPipeline(pass, back_pipe);
+                    wgpuRenderPassEncoderSetBindGroup(pass, 1, drawBg, 0, nullptr);
+                    wgpuRenderPassEncoderSetVertexBuffer(pass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
+                    wgpuRenderPassEncoderSetIndexBuffer(pass, m->ibo, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
+                    wgpuRenderPassEncoderDrawIndexed(pass, m->index_count, 1, 0, 0, 0);
+                }
+                WGPURenderPipeline front_pipe =
+                    get_material_pipeline(dv, model, is_blend, 0, mirrored, layout);
+                if (front_pipe) pipe = front_pipe;
+            }
             if (!pipe) {
                 wgpuBindGroupRelease(drawBg);
                 wgpuBufferRelease(dbuf);

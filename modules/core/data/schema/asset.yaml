@@ -324,6 +324,9 @@
         # transmission/diffuse 近似把 alphaMode=MASK 改成 BLEND 时置 true：
         # 保留 alpha 镂空（BLEND 管线里仍按 alpha_cutoff discard），否则彩绘玻璃/镂空玻璃的图案会丢。
         - { name: alpha_mask_in_blend, type: bool, default: false }
+        # KHR_materials_transmission 的 transmissionFactor（近似渲染用：shader 做 Fresnel 视角 alpha，
+        # gfx 据此把玻璃画两遍：背面→正面；也用于光栅化近似强度）。
+        - { name: transmission_factor, type: float, default: 0.0F }
     - struct: Scene
       fields:
         - { name: name, type: string }
