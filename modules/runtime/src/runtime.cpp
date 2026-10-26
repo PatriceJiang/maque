@@ -491,12 +491,23 @@ struct Engine {
     float ss = 1.0F;
     int win_w = 0, win_h = 0;                               // 窗口尺寸（MAQUE_WINDOW 可覆盖；世界等比缩放显示）
     std::vector<mq_renderer_view> views;
+    /* M2 3D（plans/18-pbr-3d.md）：场景含 render.* 3D 组件 → 走 mq_renderer_frame3d；
+     * cube_mesh = 内建立方体网格句柄（M2 尚无 mesh 资产管线，M4 换成 glTF mesh 资产）。 */
+    bool    has_3d = false;
+    int32_t cube_mesh = -1;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
     bool load_material(const std::string& ref, scn::SpriteMaterial& out);
     void main_loop(const std::string& frames_dir, const std::string& name);
+    /* M2 3D：扫描 render.* 组件 + 上传内建 cube；每帧提取 frame3d 数据（只读）。 */
+    void setup_3d();
+    void extract_3d(int32_t tw, int32_t th,
+                    std::vector<mq_renderer_view3d>& out_views,
+                    std::vector<mq_renderer_light>& out_lights,
+                    std::vector<mq_renderer_pbr_material>& out_mats,
+                    std::vector<mq_renderer_draw3d>& out_draws);
     bool prepare_replay();                                  // 载入回放日志并设定期望校验和（docs/10 §3）
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）
@@ -837,6 +848,244 @@ uint64_t Engine::world_trail() const {
 
 /* 单帧推进：① 采样 ② 输入帧 ③ 脚本 update+GC ④ 校验和/快照 ⑤ 渲染。
  * 主循环与控制面 Runtime.step 走**同一条帧序** → 行为一致（docs/10 D1、docs/11）。 */
+/* ============================================================================
+ * M2 3D 基础（plans/18-pbr-3d.md M2）：render.* 组件 → mq_renderer_frame3d
+ *   · 矩阵列主序；右手系、Y 向上、相机看 -Z；WebGPU NDC z∈[0,1]
+ *   · M2 光照 = 方向光 Lambert + 环境色（PBR 在 M3）；所有 mesh 共用内建 cube（M4 换资产）
+ *   · 提取只读（渲染不回写模拟，ADR-0005）
+ * ==========================================================================*/
+static void m4_identity(float* m) {
+    std::memset(m, 0, sizeof(float) * 16);
+    m[0] = m[5] = m[10] = m[15] = 1.0F;
+}
+/* 局部 TRS（Euler XYZ 弧度）→ 列主序 mat4；R = Rz * Ry * Rx（与 docs/components/02 约定一致）。 */
+static void m4_from_trs(const math::Transform3D& t, float* m) {
+    const float cx = std::cos(t.rotation.x), sx = std::sin(t.rotation.x);
+    const float cy = std::cos(t.rotation.y), sy = std::sin(t.rotation.y);
+    const float cz = std::cos(t.rotation.z), sz = std::sin(t.rotation.z);
+    const float r00 = cy * cz, r10 = cy * sz, r20 = -sy;
+    const float r01 = sx * sy * cz - cx * sz, r11 = sx * sy * sz + cx * cz, r21 = sx * cy;
+    const float r02 = cx * sy * cz + sx * sz, r12 = cx * sy * sz - sx * cz, r22 = cx * cy;
+    m[0] = r00 * t.scale.x; m[1] = r10 * t.scale.x; m[2] = r20 * t.scale.x; m[3] = 0.0F;
+    m[4] = r01 * t.scale.y; m[5] = r11 * t.scale.y; m[6] = r21 * t.scale.y; m[7] = 0.0F;
+    m[8] = r02 * t.scale.z; m[9] = r12 * t.scale.z; m[10] = r22 * t.scale.z; m[11] = 0.0F;
+    m[12] = t.position.x; m[13] = t.position.y; m[14] = t.position.z; m[15] = 1.0F;
+}
+/* 透视投影（右手系，WebGPU NDC z∈[0,1]）。 */
+static void m4_perspective(float fovy_rad, float aspect, float zn, float zf, float* m) {
+    std::memset(m, 0, sizeof(float) * 16);
+    const float f = 1.0F / std::tan(fovy_rad * 0.5F);
+    m[0] = f / aspect; m[5] = f;
+    m[10] = zf / (zn - zf); m[11] = -1.0F; m[14] = (zn * zf) / (zn - zf);
+}
+/* 相机世界 TRS → view（R^T * T(-pos)）。 */
+static void m4_view(const math::Transform3D& t, float* m) {
+    math::Transform3D r = t;
+    r.position = math::Vec3{ 0.0F, 0.0F, 0.0F };
+    r.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
+    float R[16];
+    m4_from_trs(r, R);
+    for (int c = 0; c < 3; ++c)
+        for (int rr = 0; rr < 3; ++rr) m[c * 4 + rr] = R[rr * 4 + c];
+    m[3] = 0.0F; m[7] = 0.0F; m[11] = 0.0F; m[15] = 1.0F;
+    m[12] = -(m[0] * t.position.x + m[4] * t.position.y + m[8] * t.position.z);
+    m[13] = -(m[1] * t.position.x + m[5] * t.position.y + m[9] * t.position.z);
+    m[14] = -(m[2] * t.position.x + m[6] * t.position.y + m[10] * t.position.z);
+}
+static void m4_mul(const float* a, const float* b, float* o) {
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r)
+            o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] +
+                           a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+}
+static void read_color(const mq_type_desc* d, const void* base, const char* field, math::Color* out) {
+    const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
+    if (f) std::memcpy(out, (const uint8_t*)base + f->offset, sizeof *out);
+}
+
+/* 内建 cube：24 顶点（每面 4 个，法线独立）/ 36 索引；48B 规范布局（pos3|normal3|tangent4|uv2）。
+ * M2 用它验证 depth/相机/提取/直呈链路；M4 由 glTF mesh 资产取代。 */
+static void build_cube(std::vector<float>& verts, std::vector<uint32_t>& indices) {
+    const float s = 0.6F;
+    struct Face { float n[3]; float p[4][3]; };
+    static const Face faces[6] = {
+        { { 0, 0, 1 }, { { -s, -s, s }, { s, -s, s }, { s, s, s }, { -s, s, s } } },
+        { { 0, 0, -1 }, { { s, -s, -s }, { -s, -s, -s }, { -s, s, -s }, { s, s, -s } } },
+        { { 1, 0, 0 }, { { s, -s, s }, { s, -s, -s }, { s, s, -s }, { s, s, s } } },
+        { { -1, 0, 0 }, { { -s, -s, -s }, { -s, -s, s }, { -s, s, s }, { -s, s, -s } } },
+        { { 0, 1, 0 }, { { -s, s, s }, { s, s, s }, { s, s, -s }, { -s, s, -s } } },
+        { { 0, -1, 0 }, { { -s, -s, -s }, { s, -s, -s }, { s, -s, s }, { -s, -s, s } } },
+    };
+    verts.clear();
+    indices.clear();
+    for (int f = 0; f < 6; ++f) {
+        const uint32_t base = (uint32_t)verts.size() / 12;
+        for (int i = 0; i < 4; ++i) {
+            verts.insert(verts.end(), { faces[f].p[i][0], faces[f].p[i][1], faces[f].p[i][2],
+                                        faces[f].n[0], faces[f].n[1], faces[f].n[2],
+                                        1.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F });
+        }
+        indices.insert(indices.end(), { base, base + 1, base + 2, base, base + 2, base + 3 });
+    }
+}
+
+void Engine::setup_3d() {
+    has_3d = false;
+    if (!scene) return;
+    int n_cam = 0, n_mesh = 0, n_light = 0;
+    for (auto& kv : scene->ents) {
+        const mq_type_desc* d = nullptr;
+        if (comp_by_name(*this, kv.first, "render.Camera3D", &d)) ++n_cam;
+        if (comp_by_name(*this, kv.first, "render.MeshRenderer", &d)) ++n_mesh;
+        if (comp_by_name(*this, kv.first, "render.Light", &d)) ++n_light;
+    }
+    if (!n_cam && !n_mesh) return;
+    has_3d = true;
+    if (cube_mesh < 0 && rapi && rself && rapi->create_mesh) {
+        std::vector<float> verts;
+        std::vector<uint32_t> indices;
+        build_cube(verts, indices);
+        mq_renderer_mesh_gpu md{};
+        md.vertices = verts.data();
+        md.vertex_bytes = (uint64_t)verts.size() * sizeof(float);
+        md.vertex_stride = 48;
+        md.vertex_layout = 0;
+        md.indices = indices.data();
+        md.index_count = (uint32_t)indices.size();
+        md.bounds_min[0] = md.bounds_min[1] = md.bounds_min[2] = -0.6F;
+        md.bounds_max[0] = md.bounds_max[1] = md.bounds_max[2] = 0.6F;
+        int32_t id = -1;
+        if (rapi->create_mesh(rself, &md, &id) == 0) cube_mesh = id;
+    }
+    std::print("runtime: 3d scene cams={} meshes={} lights={} cube_mesh={}\n",
+               n_cam, n_mesh, n_light, (long long)cube_mesh);
+}
+
+void Engine::extract_3d(int32_t tw, int32_t th,
+                        std::vector<mq_renderer_view3d>& out_views,
+                        std::vector<mq_renderer_light>& out_lights,
+                        std::vector<mq_renderer_pbr_material>& out_mats,
+                        std::vector<mq_renderer_draw3d>& out_draws) {
+    out_views.clear(); out_lights.clear(); out_mats.clear(); out_draws.clear();
+    if (!scene || tw <= 0 || th <= 0) return;
+    /* 实体 id 排序：unordered_map 迭代顺序不可依赖（确定性） */
+    std::vector<int> ids;
+    ids.reserve(scene->ents.size());
+    for (auto& kv : scene->ents) ids.push_back(kv.first);
+    std::sort(ids.begin(), ids.end());
+
+    /* 材质：M2 固定基色（M3 由 PbrMaterial 资产替换） */
+    static const float kColors[3][3] = {
+        { 0.92F, 0.52F, 0.22F }, { 0.30F, 0.72F, 0.95F }, { 0.72F, 0.35F, 0.88F },
+    };
+    for (int i = 0; i < 3; ++i) {
+        mq_renderer_pbr_material m{};
+        m.base_color[0] = kColors[i][0];
+        m.base_color[1] = kColors[i][1];
+        m.base_color[2] = kColors[i][2];
+        m.base_color[3] = 1.0F;
+        m.roughness = 0.6F;
+        out_mats.push_back(m);
+    }
+
+    math::Transform3D cam_trs{};
+    cam_trs.position = math::Vec3{ 0.0F, 1.6F, 5.0F };
+    cam_trs.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
+    bool has_cam = false;
+    float cam_priority = -1.0e9F;
+    float fov_y = 60.0F, near_z = 0.1F, far_z = 100.0F, exposure = 1.0F;
+    math::Color clear{ 0.06F, 0.06F, 0.09F, 1.0F };
+    int draw_index = 0;
+
+    for (int idx : ids) {
+        auto it = scene->ents.find(idx);
+        if (it == scene->ents.end()) continue;
+        const mq_type_desc* dt = nullptr;
+        const mq_type_desc* dcam = nullptr;
+        const mq_type_desc* dmesh = nullptr;
+        const mq_type_desc* dlight = nullptr;
+        auto* tb = comp_by_name(*this, idx, "scene.Transform3D", &dt);
+        math::Transform3D trs{};
+        trs.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
+        if (tb && dt) {
+            if (const mq_field_desc* lf = mq_reflect_field(dt, "local"))
+                std::memcpy(&trs, tb->data() + lf->offset, sizeof trs);
+        }
+        auto* cb = comp_by_name(*this, idx, "render.Camera3D", &dcam);
+        if (cb && dcam) {
+            const float active = read_num(dcam, cb->data(), "active", 1.0F);
+            const float prio = read_num(dcam, cb->data(), "priority", 0.0F);
+            if (active >= 0.5F && (!has_cam || prio > cam_priority)) {
+                has_cam = true;
+                cam_priority = prio;
+                cam_trs = trs;
+                fov_y = read_num(dcam, cb->data(), "fov_y", 60.0F);
+                near_z = read_num(dcam, cb->data(), "near", 0.1F);
+                far_z = read_num(dcam, cb->data(), "far", 100.0F);
+                exposure = read_num(dcam, cb->data(), "exposure", 1.0F);
+                read_color(dcam, cb->data(), "clear_color", &clear);
+            }
+        }
+        auto* lb = comp_by_name(*this, idx, "render.Light", &dlight);
+        if (lb && dlight) {
+            mq_renderer_light L{};
+            const int type = (int)read_num(dlight, lb->data(), "type", 0.0F);
+            if (type == 0) {                               /* M2：只消费方向光 */
+                math::Transform3D r = trs;
+                r.position = math::Vec3{ 0.0F, 0.0F, 0.0F };
+                r.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
+                float R[16];
+                m4_from_trs(r, R);
+                L.type = 0;
+                L.dir[0] = -R[8]; L.dir[1] = -R[9]; L.dir[2] = -R[10];   /* 节点 -Z 轴 = 光传播方向 */
+                math::Color lc{ 1.0F, 1.0F, 1.0F, 1.0F };
+                read_color(dlight, lb->data(), "color", &lc);
+                L.color[0] = lc.r; L.color[1] = lc.g; L.color[2] = lc.b;
+                L.intensity = read_num(dlight, lb->data(), "intensity", 1.0F);
+                out_lights.push_back(L);
+            }
+        }
+        auto* mb = comp_by_name(*this, idx, "render.MeshRenderer", &dmesh);
+        if (mb && dmesh && cube_mesh >= 0) {
+            if (read_num(dmesh, mb->data(), "visible", 1.0F) < 0.5F) continue;
+            mq_renderer_draw3d dr{};
+            dr.mesh = cube_mesh;
+            dr.material = draw_index % 3;
+            m4_from_trs(trs, dr.model);
+            dr.layer = 0;
+            dr.sort_key = (uint64_t)idx;
+            out_draws.push_back(dr);
+            ++draw_index;
+        }
+    }
+
+    if (out_lights.empty()) {                              /* 无方向光：给一盏默认主光，避免全黑 */
+        mq_renderer_light L{};
+        L.type = 0;
+        L.dir[0] = 0.35F; L.dir[1] = -0.85F; L.dir[2] = -0.4F;
+        L.color[0] = L.color[1] = L.color[2] = 1.0F;
+        L.intensity = 1.1F;
+        out_lights.push_back(L);
+    }
+
+    mq_renderer_view3d v{};
+    float view[16], proj[16];
+    m4_view(cam_trs, view);
+    const float aspect = (float)tw / (float)th;
+    m4_perspective(fov_y * 3.14159265F / 180.0F, aspect, near_z, far_z, proj);
+    std::memcpy(v.view, view, sizeof view);
+    std::memcpy(v.proj, proj, sizeof proj);
+    v.eye[0] = cam_trs.position.x; v.eye[1] = cam_trs.position.y; v.eye[2] = cam_trs.position.z;
+    v.viewport[0] = 0.0F; v.viewport[1] = 0.0F;
+    v.viewport[2] = (float)tw; v.viewport[3] = (float)th;
+    v.exposure = exposure;
+    v.clear_mode = 1;
+    v.clear_color[0] = clear.r; v.clear_color[1] = clear.g;
+    v.clear_color[2] = clear.b; v.clear_color[3] = clear.a;
+    v.layer_mask = 0x7FFFFFFF;
+    out_views.push_back(v);
+}
+
 void Engine::step_frame() {
     MQ_TRACY_ZONE(runtime);                          // Tracy：一次模拟步（含渲染+present）总 zone
     tracy_tick();                                    // Tracy：MAQUE_TRACY 环境启动 + 1Hz CPU/内存采样
@@ -1067,7 +1316,44 @@ void Engine::step_frame() {
     /* 直接呈现（plans/18 M1）：wgpu 交换链直呈，**不经 CPU readback**。
      * 截图/抓帧（--shot / --shot-seq / frames_dir）仍走离屏回读（out 非空）→ CI 像素断言不变。 */
     const bool need_pixels = !shot_path.empty() || !shot_seq.empty() || !frames_dir.empty();
-    if (direct_present && !need_pixels && rapi && rself && rapi->render_frame3d) {
+    if (has_3d && rapi && rself && rapi->render_frame3d) {
+        /* M2：3D 场景 = 3D pass + 2D 覆盖层同帧（直呈时 out=null → present；否则离屏回读） */
+        MQ_TRACY_ZONE_N(render, "frame.3d");
+        std::vector<mq_renderer_view3d> views3d;
+        std::vector<mq_renderer_light> lights3d;
+        std::vector<mq_renderer_pbr_material> mats3d;
+        std::vector<mq_renderer_draw3d> draws3d;
+        extract_3d(TW, SHpx, views3d, lights3d, mats3d, draws3d);
+        mq_renderer_frame3d fr{};
+        fr.width = TW;
+        fr.height = SHpx;
+        fr.views = views3d.data(); fr.view_count = (uint32_t)views3d.size();
+        fr.lights = lights3d.data(); fr.light_count = (uint32_t)lights3d.size();
+        fr.materials = mats3d.data(); fr.material_count = (uint32_t)mats3d.size();
+        fr.draws = draws3d.data(); fr.draw_count = (uint32_t)draws3d.size();
+        fr.views2d = views.data(); fr.view2d_count = (uint32_t)views.size();
+        fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
+        fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
+        for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
+        fr.env.sky_mode = 1;
+        fr.env.env_color[0] = 0.18F; fr.env.env_color[1] = 0.20F;
+        fr.env.env_color[2] = 0.24F; fr.env.env_color[3] = 1.0F;
+        fr.env.intensity = 1.0F;
+        const bool direct3d = direct_present && !need_pixels;
+        fr.out = direct3d ? nullptr : pixels.data();
+        fr.out_size = (uint32_t)pixels.size();
+        const int32_t rc = rapi->render_frame3d(rself, &fr);
+        if (rc == 0 && direct3d) {
+            if (rapi->present) rapi->present(rself);
+        } else if (rc != 0) {
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                std::print(stderr, "runtime: 3D frame 渲染失败 rc={} → 本帧回退 2D\n", rc);
+            }
+            has_3d = false;
+        }
+    } else if (direct_present && !need_pixels && rapi && rself && rapi->render_frame3d) {
         MQ_TRACY_ZONE_N(render, "frame.direct");
         mq_renderer_frame3d f{};
         f.width = TW;
@@ -7512,6 +7798,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
             }
         }
     }
+    setup_3d();                                  /* M2：扫描 render.* 3D 组件 + 上传内建 cube */
     input = mq_input_create();
     mq_input_set_hit_test(input, runtime_hit_test, this);
     mq_input_set_parent_fn(input, runtime_parent, this);

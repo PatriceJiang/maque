@@ -82,6 +82,16 @@ struct Device {
     bool surfaceCopySrc = false;                   /* surface caps 允许 CopySrc → 可抓直呈帧（CI 像素断言） */
     int  captureCount = 0;
     WGPUTextureFormat pipelineFormat = WGPUTextureFormat_RGBA8Unorm;  /* 2D 管线当前目标格式 */
+    /* ---- M2 3D 基础：depth + unlit3d 管线（plans/18-pbr-3d.md §4.2）---- */
+    WGPUTexture depthTex = nullptr;
+    WGPUTextureView depthView = nullptr;
+    int32_t depthW = 0, depthH = 0;
+    WGPUTextureFormat p3dFormat = WGPUTextureFormat_Undefined;   /* unlit3d 管线当前目标格式 */
+    WGPURenderPipeline p3dPipeline = nullptr;
+    WGPUBindGroupLayout p3dCamBgl = nullptr;
+    WGPUBindGroupLayout p3dDrawBgl = nullptr;
+    WGPUPipelineLayout p3dPl = nullptr;
+    WGPUShaderModule p3dShader = nullptr;
     /* ---- 3D GPU 资源（plans/18-pbr-3d.md §4.3）---- */
     std::vector<MeshGpu*> meshes;
 };
@@ -206,6 +216,124 @@ static void ensure_2d_pipelines(Device* dv, WGPUTextureFormat format) {
     create_2d_pipelines(dv, format);
 }
 
+/* ---- M2 3D 基础（plans/18-pbr-3d.md §4.2）：depth 纹理 / unlit3d 管线 / 离屏回读 ---- */
+static bool ensure_depth(Device* dv, int32_t w, int32_t h) {
+    if (!dv || w <= 0 || h <= 0) return false;
+    if (dv->depthTex && dv->depthW == w && dv->depthH == h) return true;
+    if (dv->depthView) { wgpuTextureViewRelease(dv->depthView); dv->depthView = nullptr; }
+    if (dv->depthTex) { wgpuTextureRelease(dv->depthTex); dv->depthTex = nullptr; }
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_RenderAttachment;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    td.format = WGPUTextureFormat_Depth32Float;
+    td.mipLevelCount = 1;
+    td.sampleCount = 1;
+    dv->depthTex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!dv->depthTex) return false;
+    dv->depthView = wgpuTextureCreateView(dv->depthTex, nullptr);
+    dv->depthW = w; dv->depthH = h;
+    return dv->depthView != nullptr;
+}
+
+/* unlit3d 管线：按**目标颜色格式**创建（swapchain/离屏各一），depth32 + Lambert。 */
+static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
+    if (!dv) return;
+    if (dv->p3dFormat == format && dv->p3dPipeline) return;
+    if (dv->p3dPipeline) { wgpuRenderPipelineRelease(dv->p3dPipeline); dv->p3dPipeline = nullptr; }
+    if (!dv->p3dShader) {
+        const char* wgsl = mq_builtin_shader_text("unlit3d");
+        if (!wgsl) {
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                std::print(stderr, "gfx: 内建 shader 'unlit3d' 不可用 → 3D 网格不渲染（MAQUE_SHADER_UNLIT3D=ON 可编回）\n");
+            }
+            return;
+        }
+        dv->p3dShader = make_shader(dv->device, wgsl);
+        if (!dv->p3dShader) return;
+        {
+            WGPUBindGroupLayoutEntry e{};
+            e.binding = 0; e.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+            e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 128;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 1; bd.entries = &e;
+            dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
+        }
+        {
+            WGPUBindGroupLayoutEntry e{};
+            e.binding = 0; e.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+            e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 80;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 1; bd.entries = &e;
+            dv->p3dDrawBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
+        }
+        WGPUBindGroupLayout bl[2] = { dv->p3dCamBgl, dv->p3dDrawBgl };
+        WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+        pl.bindGroupLayoutCount = 2; pl.bindGroupLayouts = bl;
+        dv->p3dPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
+    }
+    if (!dv->p3dShader || !dv->p3dPl) return;
+    WGPUColorTargetState ct = WGPU_COLOR_TARGET_STATE_INIT;
+    ct.format = format; ct.writeMask = WGPUColorWriteMask_All;
+    WGPUDepthStencilState ds = WGPU_DEPTH_STENCIL_STATE_INIT;
+    ds.format = WGPUTextureFormat_Depth32Float;
+    ds.depthWriteEnabled = WGPUOptionalBool_True;
+    ds.depthCompare = WGPUCompareFunction_Less;
+    WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT;
+    frag.module = dv->p3dShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &ct;
+    WGPUVertexAttribute attrs[2] = {};
+    attrs[0].format = WGPUVertexFormat_Float32x3; attrs[0].offset = 0;  attrs[0].shaderLocation = 0;
+    attrs[1].format = WGPUVertexFormat_Float32x3; attrs[1].offset = 12; attrs[1].shaderLocation = 1;
+    WGPUVertexBufferLayout vbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
+    vbl.stepMode = WGPUVertexStepMode_Vertex; vbl.arrayStride = 48;
+    vbl.attributeCount = 2; vbl.attributes = attrs;
+    WGPUVertexState vs = WGPU_VERTEX_STATE_INIT;
+    vs.module = dv->p3dShader; vs.entryPoint = SV("vs");
+    vs.bufferCount = 1; vs.buffers = &vbl;
+    WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    rp.layout = dv->p3dPl; rp.vertex = vs; rp.fragment = &frag;
+    rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    rp.primitive.cullMode = WGPUCullMode_None;
+    rp.depthStencil = &ds;
+    dv->p3dPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
+    dv->p3dFormat = dv->p3dPipeline ? format : WGPUTextureFormat_Undefined;
+}
+
+/* 离屏 RGBA8 目标 → 像素缓冲（3D + 2D 合成后回读；--shot/CI 用）。 */
+static int32_t readback_rgba8(Device* dv, WGPUTexture tex, int32_t W, int32_t H,
+                              uint8_t* out, uint32_t out_size) {
+    if (!dv || !tex || !out) return 1;
+    if ((uint64_t)W * H * 4 > out_size) return 2;
+    const uint32_t row = (uint32_t)W * 4u;
+    const uint32_t padded = (row + 255u) & ~255u;
+    WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
+    bd.size = (uint64_t)padded * (uint64_t)H;
+    WGPUBuffer rb = wgpuDeviceCreateBuffer(dv->device, &bd);
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    WGPUTexelCopyTextureInfo src = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+    src.texture = tex; src.aspect = WGPUTextureAspect_All;
+    WGPUTexelCopyBufferInfo dst = WGPU_TEXEL_COPY_BUFFER_INFO_INIT;
+    dst.buffer = rb; dst.layout.bytesPerRow = padded; dst.layout.rowsPerImage = (uint32_t)H;
+    WGPUExtent3D ext = WGPUExtent3D{ (uint32_t)W, (uint32_t)H, 1 };
+    wgpuCommandEncoderCopyTextureToBuffer(enc, &src, &dst, &ext);
+    WGPUCommandBuffer cb = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cb);
+    wgpuCommandBufferRelease(cb); wgpuCommandEncoderRelease(enc);
+    WGPUMapAsyncStatus st = (WGPUMapAsyncStatus)0;
+    WGPUBufferMapCallbackInfo ci = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
+    ci.mode = WGPUCallbackMode_AllowProcessEvents; ci.callback = map_cb; ci.userdata1 = &st;
+    wgpuBufferMapAsync(rb, WGPUMapMode_Read, 0, bd.size, ci);
+    poll(dv->instance, [&]{ return (uint32_t)st != 0; });
+    if (st == WGPUMapAsyncStatus_Success) {
+        const uint8_t* m = (const uint8_t*)wgpuBufferGetConstMappedRange(rb, 0, bd.size);
+        for (int32_t y = 0; y < H; ++y) std::memcpy(out + (size_t)y * row, m + (size_t)y * padded, row);
+        wgpuBufferUnmap(rb);
+    }
+    wgpuBufferRelease(rb);
+    return st == WGPUMapAsyncStatus_Success ? 0 : 3;
+}
+
 static Device* create_device(std::string* out_backend) {
     Device* dv = new Device();
     WGPUInstanceDescriptor idesc = WGPU_INSTANCE_DESCRIPTOR_INIT;
@@ -319,6 +447,14 @@ static void destroy_device(Device* dv) {
     if (dv->surface) wgpuSurfaceRelease(dv->surface);
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
     if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
+    /* M2 3D 资源 */
+    if (dv->depthView) wgpuTextureViewRelease(dv->depthView);
+    if (dv->depthTex) wgpuTextureRelease(dv->depthTex);
+    if (dv->p3dPipeline) wgpuRenderPipelineRelease(dv->p3dPipeline);
+    if (dv->p3dPl) wgpuPipelineLayoutRelease(dv->p3dPl);
+    if (dv->p3dCamBgl) wgpuBindGroupLayoutRelease(dv->p3dCamBgl);
+    if (dv->p3dDrawBgl) wgpuBindGroupLayoutRelease(dv->p3dDrawBgl);
+    if (dv->p3dShader) wgpuShaderModuleRelease(dv->p3dShader);
     for (int b = 0; b < 4; ++b)
         for (int p = 0; p < 2; ++p)
             if (dv->meshPipeline[b][p]) wgpuRenderPipelineRelease(dv->meshPipeline[b][p]);
@@ -592,7 +728,12 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                            const mq_renderer_mesh* meshes, uint32_t mesh_count,
                            const float* bg, uint8_t* out, uint32_t out_size,
                            WGPUTexture target = nullptr,
-                           WGPUTextureFormat target_format = WGPUTextureFormat_RGBA8Unorm);
+                           WGPUTextureFormat target_format = WGPUTextureFormat_RGBA8Unorm,
+                           bool clear_first = true);
+
+/* 前向声明：3D pass（depth + unlit3d），定义在 begin_pass 之后。 */
+static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat target_format,
+                              const mq_renderer_frame3d* f);
 
 /* ---- M1 直接呈现：wgpu surface + swapchain（plans/18-pbr-3d.md §4.1）----
  * 窗口由 platform 提供原生句柄（Win32 HWND / X11 Window / Wayland wl_surface）；
@@ -740,17 +881,58 @@ static int32_t r_resize_surface(void* self, int32_t w, int32_t h) {
 static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
     auto* dv = (Device*)self;
     if (!dv || !f) return -1;
-    if (f->draw_count || f->view_count || f->light_count || f->material_count) {
-        static bool warned = false;
-        if (!warned) {
-            warned = true;
-            std::print(stderr, "gfx: 3D pass 未实现（M2/M3）；本帧 3D 绘制被跳过\n");
-        }
-    }
     if (f->width <= 0 || f->height <= 0) return -2;
     float bg[4] = { 0.0F, 0.0F, 0.0F, 1.0F };
     if (f->bg[0] != 0.0F || f->bg[1] != 0.0F || f->bg[2] != 0.0F || f->bg[3] != 0.0F)
         std::memcpy(bg, f->bg, sizeof bg);
+    /* ---- M2 3D：先跑 depth + unlit3d pass，再用 render_impl(clear_first=false) 叠加 2D 覆盖层 ---- */
+    const bool has3d = f->draw_count > 0 && f->view_count > 0 && f->views != nullptr;
+    if (has3d) {
+        if (f->out) {
+            WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+            td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+            td.dimension = WGPUTextureDimension_2D;
+            td.size = WGPUExtent3D{ (uint32_t)f->width, (uint32_t)f->height, 1 };
+            td.format = WGPUTextureFormat_RGBA8Unorm;
+            td.mipLevelCount = 1; td.sampleCount = 1;
+            WGPUTexture ctex = wgpuDeviceCreateTexture(dv->device, &td);
+            if (!ctex) return -5;
+            const int32_t rc3 = render_3d_only(dv, ctex, WGPUTextureFormat_RGBA8Unorm, f);
+            const int32_t rc2 = render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
+                                            f->items, f->item_count, f->meshes, f->mesh_count,
+                                            bg, nullptr, 0, ctex, WGPUTextureFormat_RGBA8Unorm, false);
+            const int32_t rcr = (rc3 == 0 && rc2 == 0)
+                ? readback_rgba8(dv, ctex, f->width, f->height, f->out, f->out_size) : -6;
+            wgpuTextureRelease(ctex);
+            return rcr;
+        }
+        if (!dv->surface) return -3;
+        if (dv->surfaceWidth != f->width || dv->surfaceHeight != f->height)
+            r_resize_surface(dv, f->width, f->height);
+        WGPUSurfaceTexture st3 = WGPU_SURFACE_TEXTURE_INIT;
+        wgpuSurfaceGetCurrentTexture(dv->surface, &st3);
+        if (st3.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
+            st3.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
+            if (st3.texture) wgpuTextureRelease(st3.texture);
+            if (st3.status == WGPUSurfaceGetCurrentTextureStatus_Outdated ||
+                st3.status == WGPUSurfaceGetCurrentTextureStatus_Lost)
+                configure_surface(dv, dv->surfaceWidth, dv->surfaceHeight);
+            return -4;
+        }
+        dv->surfaceTex = st3.texture;
+        dv->surfaceView = wgpuTextureCreateView(st3.texture, nullptr);
+        const int32_t rc3 = render_3d_only(dv, dv->surfaceTex, dv->surfaceFormat, f);
+        const int32_t rc2 = render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
+                                        f->items, f->item_count, f->meshes, f->mesh_count,
+                                        bg, nullptr, 0, dv->surfaceTex, dv->surfaceFormat, false);
+        if (rc3 != 0 || rc2 != 0) {
+            if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
+            if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
+            return -6;
+        }
+        capture_surface(dv, f->width, f->height);
+        return 0;
+    }
     if (f->out) {
         return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                            f->items, f->item_count, f->meshes, f->mesh_count,
@@ -783,7 +965,6 @@ static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
     capture_surface(dv, f->width, f->height);   /* MAQUE_CAPTURE_WGPU：CI 抓直呈帧（present 前） */
     return 0;
 }
-
 static int32_t r_present(void* self) {
     auto* dv = (Device*)self;
     if (!dv) return -1;
@@ -813,6 +994,127 @@ struct Cmd {
     bool nearest = false;
 };
 
+/* 列主序 4×4 乘法：o = a * b（与 WGSL/WebGPU 的列主序约定一致）。 */
+static void mat4_mul(const float* a, const float* b, float* o) {
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r)
+            o[c * 4 + r] = a[0 * 4 + r] * b[c * 4 + 0] + a[1 * 4 + r] * b[c * 4 + 1] +
+                           a[2 * 4 + r] * b[c * 4 + 2] + a[3 * 4 + r] * b[c * 4 + 3];
+}
+
+/* M2：3D pass（depth + unlit3d）渲染进 target；2D 覆盖层由调用方随后
+ * 用 render_impl(target, clear_first=false) 叠加（保持 2D 像素路径完全不变）。 */
+static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat target_format,
+                              const mq_renderer_frame3d* f) {
+    if (!dv || !target || !f) return 1;
+    if (f->view_count == 0 || !f->views) return 0;
+    ensure_3d_pipelines(dv, target_format);
+    if (!dv->p3dPipeline) return 0;                  /* shader 剔除：3D 跳过（原因已打印） */
+    if (!ensure_depth(dv, f->width, f->height)) return 2;
+    WGPUTextureView view = wgpuTextureCreateView(target, nullptr);
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    /* 方向光/环境光：取第一盏 Directional（M4 再加多光源/阴影）。 */
+    float ldir[3] = { 0.0F, -1.0F, 0.0F };
+    float lcol[3] = { 1.0F, 1.0F, 1.0F };
+    for (uint32_t i = 0; i < f->light_count; ++i) {
+        const mq_renderer_light& L = f->lights[i];
+        if (L.type != 0) continue;
+        ldir[0] = L.dir[0]; ldir[1] = L.dir[1]; ldir[2] = L.dir[2];
+        lcol[0] = L.color[0] * L.intensity;
+        lcol[1] = L.color[1] * L.intensity;
+        lcol[2] = L.color[2] * L.intensity;
+        break;
+    }
+    float ll = std::sqrt(ldir[0] * ldir[0] + ldir[1] * ldir[1] + ldir[2] * ldir[2]);
+    if (ll < 1e-6F) { ldir[0] = 0.0F; ldir[1] = -1.0F; ldir[2] = 0.0F; ll = 1.0F; }
+    ldir[0] /= ll; ldir[1] /= ll; ldir[2] /= ll;
+
+    for (uint32_t vi = 0; vi < f->view_count; ++vi) {
+        const mq_renderer_view3d& v = f->views[vi];
+        float vp[16];
+        mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
+        float cam[32] = {};
+        std::memcpy(cam, vp, sizeof vp);
+        cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = 0.0F;
+        cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
+        cam[24] = lcol[0]; cam[25] = lcol[1]; cam[26] = lcol[2]; cam[27] = 0.0F;
+        cam[28] = f->env.env_color[0] * f->env.intensity;
+        cam[29] = f->env.env_color[1] * f->env.intensity;
+        cam[30] = f->env.env_color[2] * f->env.intensity;
+        cam[31] = 0.0F;
+        WGPUBufferDescriptor ubd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        ubd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+        ubd.size = sizeof cam;
+        WGPUBuffer cbuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
+        wgpuQueueWriteBuffer(dv->queue, cbuf, 0, cam, sizeof cam);
+        WGPUBindGroupEntry cbe{};
+        cbe.binding = 0; cbe.buffer = cbuf; cbe.size = sizeof cam;
+        WGPUBindGroupDescriptor cbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+        cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 1; cbgd.entries = &cbe;
+        WGPUBindGroup camBg = wgpuDeviceCreateBindGroup(dv->device, &cbgd);
+
+        WGPURenderPassColorAttachment ca = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+        ca.view = view;
+        ca.loadOp = vi == 0 ? WGPULoadOp_Clear : WGPULoadOp_Load;
+        ca.storeOp = WGPUStoreOp_Store;
+        ca.clearValue = WGPUColor{ v.clear_color[0], v.clear_color[1], v.clear_color[2], v.clear_color[3] };
+        WGPURenderPassDepthStencilAttachment da = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
+        da.view = dv->depthView;
+        da.depthLoadOp = WGPULoadOp_Clear;
+        da.depthStoreOp = WGPUStoreOp_Store;
+        da.depthClearValue = 1.0F;
+        WGPURenderPassDescriptor rpd = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+        rpd.colorAttachmentCount = 1; rpd.colorAttachments = &ca;
+        rpd.depthStencilAttachment = &da;
+        WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
+        wgpuRenderPassEncoderSetPipeline(pass, dv->p3dPipeline);
+        wgpuRenderPassEncoderSetBindGroup(pass, 0, camBg, 0, nullptr);
+        for (uint32_t di = 0; di < f->draw_count; ++di) {
+            const mq_renderer_draw3d& d = f->draws[di];
+            if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
+            MeshGpu* m = dv->meshes[(size_t)d.mesh];
+            if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
+            float du[20] = {};
+            std::memcpy(du, d.model, sizeof d.model);
+            const mq_renderer_pbr_material* mat =
+                (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
+                    ? &f->materials[d.material] : nullptr;
+            if (mat) {
+                du[16] = mat->base_color[0]; du[17] = mat->base_color[1];
+                du[18] = mat->base_color[2]; du[19] = mat->base_color[3];
+            } else {
+                du[16] = du[17] = du[18] = du[19] = 1.0F;
+            }
+            WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+            dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+            dbd.size = sizeof du;
+            WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
+            wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
+            WGPUBindGroupEntry dbe{};
+            dbe.binding = 0; dbe.buffer = dbuf; dbe.size = sizeof du;
+            WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 1; dbgd.entries = &dbe;
+            WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
+            wgpuRenderPassEncoderSetBindGroup(pass, 1, drawBg, 0, nullptr);
+            wgpuRenderPassEncoderSetVertexBuffer(pass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
+            wgpuRenderPassEncoderSetIndexBuffer(pass, m->ibo, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
+            wgpuRenderPassEncoderDrawIndexed(pass, m->index_count, 1, 0, 0, 0);
+            wgpuBindGroupRelease(drawBg);
+            wgpuBufferRelease(dbuf);
+        }
+        wgpuRenderPassEncoderEnd(pass);
+        wgpuRenderPassEncoderRelease(pass);
+        wgpuBindGroupRelease(camBg);
+        wgpuBufferRelease(cbuf);
+    }
+    WGPUCommandBuffer cb = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cb);
+    wgpuCommandBufferRelease(cb);
+    wgpuCommandEncoderRelease(enc);
+    wgpuTextureViewRelease(view);
+    return 0;
+}
+
 /* 成帧主路径：图元 + 网格 → 同一渲染目标（render_views 是其 meshes == nullptr 的特例）。 */
 static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                            const mq_renderer_view* views, uint32_t nviews,
@@ -820,7 +1122,8 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                            const mq_renderer_mesh* meshes, uint32_t mesh_count,
                            const float* bg, uint8_t* out, uint32_t out_size,
                            WGPUTexture target,
-                           WGPUTextureFormat target_format) {
+                           WGPUTextureFormat target_format,
+                           bool clear_first) {
 
     Device* dv = (Device*)self;
     if (!dv) return 1;
@@ -994,7 +1297,7 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, sizeof uni);
 
         WGPURenderPassEncoder pass = nullptr;
-        begin_pass(enc, view, cleared ? WGPULoadOp_Load : WGPULoadOp_Clear, bg, &pass);
+        begin_pass(enc, view, cleared ? WGPULoadOp_Load : (clear_first ? WGPULoadOp_Clear : WGPULoadOp_Load), bg, &pass);
         cleared = true;
 
         /* 每视图 bind group 缓存（uniform buffer 每视图一个，所以不能跨视图复用）。

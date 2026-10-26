@@ -290,8 +290,14 @@ per view:
 - **M1 ✅（2D 路径）**：`attach_window`（Win32/X11/Wayland wgpu surface + swapchain，按 swapchain 格式重建 2D 管线）、
   `render_frame3d` 直接呈现 2D 覆盖层、`present`、`resize_surface`、surface 抓帧（`MAQUE_CAPTURE_WGPU`）；
   runtime `MAQUE_PRESENT=wgpu` 切换 + SDL_Renderer 不建（ImGui 走 CPU 网格链）+ 多帧冒烟；
-  新增 `render3d_present_e2e`（直呈抓帧非空 + 默认 SDL 路径不变 + `--shot` 离屏回读）。
-- **M2 起**：3D 深度 pass / PBR / 资产导入（未开始）。
+  新增 `render3d_present_e2e`。
+- **M2 ✅**：depth 缓冲 + 3D pass（`unlit3d`：方向光 Lambert + 环境色 + 透视相机）；
+  **直接实现已声明的 `render.*` 组件提取**——`scene.Transform3D` + `render.Camera3D/MeshRenderer/Light`
+  （实体按 id 排序保证确定性；M2 所有网格共用内建 cube，M4 换 glTF mesh 资产）；
+  3D + 2D 覆盖层同帧（3D 先跑、2D `clear_first=false` 叠加，2D 像素路径不变）；
+  `scenes/pbr/cube.scn`（3 个 cube + 方向光 + 透视相机）；新增 `render3d_scene_e2e`
+  （离屏 3D 结构断言 + 3D 直呈抓帧）。
+- **M3 起**：PBR 材质（GGX/tonemap/贴图）与资产导入（未开始）。
 
 ## 7. 验收标准（DoD）
 

@@ -90,6 +90,16 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 3D 渲染基础端到端（plans/18-pbr-3d.md M2）：render.* 组件 → depth + 3D pass + Lambert 透视
+# ① --shot 结构断言（非背景占比/中心可见/顶部为空/明暗面颜色多样性）② 3D + wgpu 交换链直呈抓帧
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME render3d_scene_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/render3d_scene_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/cube.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/render3d_scene_e2e")
+    set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # 输入/UI/快照/回放端到端（docs/10 §3/§5、docs/19 §9）：注入 → 分发 → 生成 → 回放一致
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME ui_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_e2e.sh"

@@ -110,6 +110,12 @@ tools\win\build.cmd -Sanitize address -RunTests
   （老 2D 行为不变）。`MAQUE_CAPTURE_WGPU=<前缀>` + `MAQUE_CAPTURE_FRAMES=N` 从**交换链纹理**回读前 N 帧 PPM
   （要求 surface 支持 CopySrc）→ CI 直呈像素断言（`ctest -R render3d_present_e2e`）；`MAQUE_RENDER3D_INFO=1`
   打印 renderer caps；`--shot/--shot-seq` 在直呈模式下仍走离屏回读。3D pass/PBR 尚未实现（M2–M4）。
+- **3D 组件（plans/18 M2）**：**已声明接口直接可用**——节点挂 `scene.Transform3D` + `render.Camera3D` /
+  `render.MeshRenderer` / `render.Light` 即渲染 3D（`.scn` 的 `components[].type` 写全名；实体按 id 排序保证确定性）。
+  M2 光照 = 方向光 Lambert + 环境色（`assets/builtin/shaders/unlit3d/`，`MAQUE_SHADER_UNLIT3D=OFF` 可剔除）；
+  **所有网格共用内建 cube**（M2 尚无 mesh 资产管线，M4 接 glTF）；PBR/贴图/阴影在 M3–M4。
+  样例 `scenes/pbr/cube.scn`；测试 `ctest -R 'render3d_scene_e2e|render3d_present_e2e'`
+  （离屏结构断言：非背景占比/中心可见/顶部为空/明暗面颜色多样性 + 直呈交换链抓帧）。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。
