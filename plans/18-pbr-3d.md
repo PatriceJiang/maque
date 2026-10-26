@@ -368,3 +368,7 @@ per view:
 - **剩余（M4e/M5）**：方向光 shadow map+PCF、analytic/HDRI IBL、多光源补光
   （第二次尝试 2-light 时遇 wgpu uniform/管线校验崩溃，已回退待重做）、clearcoat/transmission 扩展、
   3D 场景默认切 wgpu 直呈（M6）、Linux 侧构建/测试验证。
+
+- **M4h（交互）**：3D **OrbitControls** —— runtime 消费平台鼠标事件（左键拖拽环绕、滚轮缩放），
+  相机的环绕状态在 `extract_3d` 里覆盖场景相机（场景相机仅作为初始机位）；
+  `MAQUE_ORBIT=yaw,pitch,dist` 供 CI 确定性覆盖；`render3d_scene_e2e` ⑥ 断言两个环绕角度渲染显著不同。

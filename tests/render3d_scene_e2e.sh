@@ -189,4 +189,30 @@ sys.exit(0 if ratio > 0.05 else 1)
 PY
     echo "render3d_scene_e2e: ⑤ Khronos ToyCar（离线导入复杂 glTF + PBR 贴图）OK"
 fi
+
+# ---- ⑥ OrbitControls：MAQUE_ORBIT 覆盖相机角度（CI 无真实鼠标，验证环绕参数链路）----
+if [ -f "$SCN" ]; then
+    timeout 90 env MAQUE_ORBIT="0.0,0.30,4.4" "$PLAYER" --shot "$WORK/orbit_a.ppm" --frames 2 "$SCN" >"$WORK/orbit_a.txt" 2>&1 \
+        || { cat "$WORK/orbit_a.txt"; fail "OrbitControls 渲染 A 失败"; }
+    timeout 90 env MAQUE_ORBIT="0.9,0.30,4.4" "$PLAYER" --shot "$WORK/orbit_b.ppm" --frames 2 "$SCN" >"$WORK/orbit_b.txt" 2>&1 \
+        || { cat "$WORK/orbit_b.txt"; fail "OrbitControls 渲染 B 失败"; }
+    "$PY" - "$WORK/orbit_a.ppm" "$WORK/orbit_b.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); magic, dims, _m, px = d.split(b'\n', 3)
+    assert magic == b'P6'
+    w, h = map(int, dims.split()); return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+bg = a[0:3]
+def nonbg(px):
+    return sum(1 for i in range(0, len(px), 3)
+               if abs(px[i]-bg[0]) + abs(px[i+1]-bg[1]) + abs(px[i+2]-bg[2]) > 25)
+na, nb = nonbg(a), nonbg(b)
+diff = sum(1 for i in range(0, len(a), 3)
+           if abs(a[i]-b[i]) + abs(a[i+1]-b[i+1]) + abs(a[i+2]-b[i+2]) > 30)
+print(f'render3d_scene_e2e: orbit yaw 0->0.9 nonbg=({na},{nb}) diff={diff}')
+sys.exit(0 if na > 500 and nb > 500 and diff > 3000 else 1)
+PY
+    echo "render3d_scene_e2e: ⑥ OrbitControls（环绕/缩放参数链路）OK"
+fi
 echo "render3d_scene_e2e: PASS"

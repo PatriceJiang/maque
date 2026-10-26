@@ -497,6 +497,12 @@ struct Engine {
     int32_t cube_mesh = -1;
     /* M4c：.mesh.json 资产缓存（路径 → 渲染器网格句柄；-1 = 加载失败，避免每帧重试） */
     std::unordered_map<std::string, int32_t> mesh_cache;
+    /* 3D OrbitControls（鼠标拖拽环绕 + 滚轮缩放；在场景相机之上覆盖；MAQUE_ORBIT=yaw,pitch,dist 供 CI） */
+    bool  orbit_enabled = false;
+    bool  orbit_dragging = false;
+    bool  orbit_inited = false;
+    float orbit_yaw = 0.0F, orbit_pitch = 0.3F, orbit_dist = 1.0F;
+    float orbit_last_x = 0.0F, orbit_last_y = 0.0F;
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
@@ -1225,6 +1231,37 @@ void Engine::extract_3d(int32_t tw, int32_t th,
         }
     }
 
+    /* OrbitControls：绕世界原点环绕（从场景相机初始化半径/角度；MAQUE_ORBIT 可显式覆盖） */
+    if (const char* oo = std::getenv("MAQUE_ORBIT")) {
+        float oy = 0.0F, op = 0.3F, od = 1.0F;
+        if (std::sscanf(oo, "%f,%f,%f", &oy, &op, &od) >= 1) {
+            orbit_yaw = oy; orbit_pitch = op; orbit_dist = od > 0.0F ? od : 1.0F;
+            orbit_enabled = true; orbit_inited = true;
+        }
+    }
+    if (orbit_enabled) {
+        if (!orbit_inited) {
+            const float ex = cam_trs.position.x, ey = cam_trs.position.y, ez = cam_trs.position.z;
+            float d = std::sqrt(ex * ex + ey * ey + ez * ez);
+            if (d < 1e-4F) d = 1.0F;
+            orbit_dist = d;
+            orbit_pitch = std::asin(std::max(-1.0F, std::min(1.0F, ey / d)));
+            orbit_yaw = std::atan2(ex, ez);
+            orbit_inited = true;
+        }
+        const float cp = std::cos(orbit_pitch), sp = std::sin(orbit_pitch);
+        const float sy = std::sin(orbit_yaw), cy = std::cos(orbit_yaw);
+        const float px = sy * cp * orbit_dist, py = sp * orbit_dist, pz = cy * cp * orbit_dist;
+        cam_trs.position = math::Vec3{ px, py, pz };
+        cam_trs.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
+        const float fl = std::sqrt(px * px + py * py + pz * pz);
+        if (fl > 1e-6F) {
+            const float fx = -px / fl, fy = -py / fl, fz = -pz / fl;
+            cam_trs.rotation = math::Vec3{ std::asin(std::max(-1.0F, std::min(1.0F, fy))),
+                                           std::atan2(-fx, -fz), 0.0F };
+        }
+        (void)has_cam;
+    }
     if (out_lights.empty()) {                              /* 无方向光：给一盏默认主光，避免全黑 */
         mq_renderer_light L{};
         L.type = 0;
@@ -1297,6 +1334,31 @@ void Engine::step_frame() {
                        iframe.pointer_count, iframe.key_count, frame);
     }
     // ① 帧首：控制端点轮询（inspector/MCP；非阻塞、单线程、帧边界一次 → 不改确定性）
+    /* OrbitControls：鼠标左键拖拽环绕、滚轮缩放（3D 场景；与 ImGui 同帧时也生效，便于调试） */
+    if (has_3d) {
+        for (uint32_t i = 0; i < iframe.pointer_count; ++i) {
+            const mq_platform_pointer_event& pe = iframe.pointers[i];
+            if (pe.pointer_type != MQ_PLATFORM_POINTER_MOUSE) continue;
+            if (pe.type == MQ_PLATFORM_POINTER_DOWN && pe.button == 1) {
+                orbit_dragging = true;
+                orbit_last_x = pe.x; orbit_last_y = pe.y;
+            } else if (pe.type == MQ_PLATFORM_POINTER_UP || pe.type == MQ_PLATFORM_POINTER_CANCEL) {
+                orbit_dragging = false;
+            } else if (pe.type == MQ_PLATFORM_POINTER_MOVE && orbit_dragging) {
+                orbit_enabled = true;
+                orbit_yaw -= (pe.x - orbit_last_x) * 0.01F;
+                orbit_pitch += (pe.y - orbit_last_y) * 0.01F;
+                if (orbit_pitch > 1.45F) orbit_pitch = 1.45F;
+                if (orbit_pitch < -1.45F) orbit_pitch = -1.45F;
+                orbit_last_x = pe.x; orbit_last_y = pe.y;
+            } else if (pe.type == MQ_PLATFORM_POINTER_WHEEL) {
+                orbit_enabled = true;
+                orbit_dist *= std::exp(-pe.scroll_y * 0.12F);
+                if (orbit_dist < 0.05F) orbit_dist = 0.05F;
+                if (orbit_dist > 500.0F) orbit_dist = 500.0F;
+            }
+        }
+    }
     if (ctl_server) mq_control_server_poll(ctl_server);
     // ① 帧首：释放上一帧退役的字形图集纹理（此时已无图元引用旧 id）
     if (!retired_textures.empty()) {
