@@ -122,8 +122,9 @@ fn iridescence_tint(thickness_nm: f32, cos_theta: f32) -> vec3f {
                0.5 + 0.5 * cos(phase + 4.1887902));
 }
 
-/* ---- analytic studio IBL（plans/19 PBR 正确性）----
- * 引擎暂无 HDRI/PMREM 管线，这里用「天空-地面渐变 + 3 个软光箱」解析近似：
+/* ---- analytic studio IBL（env 贴图缺失时的回退；plans/19 PBR 正确性）----
+ * 有 `env_texture` 时镜面走 PMREM GGX 预过滤 mip、漫反射走 irradiance 贴图（见 env_sample/env_irradiance）；
+ * 这里保留「天空-地面渐变 + 3 个软光箱」解析近似：
  * 漫反射用半球辐照度，镜面用反射方向采样并按 roughness 模糊 + Karis env BRDF 近似。
  * 数据来自 scn.Scene.env_sky_color/env_ground_color/env_highlight/env_rotation（gfx 已乘强度）。
  */
@@ -143,7 +144,10 @@ fn env_softbox(d: vec3f, center: vec3f, sharp: f32) -> f32 {
 }
 
 /* 环境镜面辐（roughness 越大越模糊；软光箱随粗糙度衰减）。 */
-/* ---- equirect env map IBL: sample env texture by direction + roughness->mip ---- */
+/* ---- equirect env map IBL：PMREM 预过滤结果 ----
+ * env_tex 的 mip 链是装配期 CPU 用 GGX importance sampling 按粗糙度预过滤的 radiance
+ *（level = roughness × (levels-1)）；binding5 是余弦卷积的漫反射 irradiance（RGBA16F）。
+ * 方向→UV 与 runtime build_pmrem 保持逐式一致（经度 wrap、纬度 clamp）。 */
 fn env_equirect_uv(d: vec3f) -> vec2f {
   let dir = normalize(d);
   let u = atan2(dir.z, dir.x) / (2.0 * 3.14159265) + 0.5;
@@ -174,10 +178,13 @@ fn env_radiance(d0: vec3f, rough: f32) -> vec3f {
   return c;
 }
 
-/* 环境漫反射辐照度（半球积分近似 + 主光箱少量贡献）。 */
+/* 环境漫反射辐照度：有 PMREM irradiance 贴图时径向查表（余弦卷积结果）；
+ * 否则回退 analytic studio（旧基线，保证 148 个迁移场景逐像素不变）。 */
 fn env_irradiance(n: vec3f) -> vec3f {
-  /* 经验取舍：漫反射继续用 analytic studio IBL（与旧基线一致，避免平铺 diffuse 资产过亮/直方图回归），
-   * envmap 只增强镜面反射（env_radiance）；等做真正 PMREM 预过滤后可替换。 */
+  if (cam.env_info.z > 0.5) {
+    let uv = env_equirect_uv(env_rotate_y(n, cam.env3.w));
+    return textureSampleLevel(env_irr_tex, env_smp, uv, 0.0).rgb * cam.env_info.x;
+  }
   let t = n.y * 0.5 + 0.5;
   var c = mix(cam.env3.rgb, cam.env2.rgb, t);
   let r = env_rotate_y(n, cam.env3.w);

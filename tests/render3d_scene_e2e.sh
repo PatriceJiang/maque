@@ -343,4 +343,44 @@ sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: (9) envmap sky background OK"
 fi
+# ---- (10) 真 PMREM：GGX 粗糙度预过滤 + 漫反射 irradiance（scenes/pbr/env_pmrem.scn）----
+PMREM_SCN="$ROOT/scenes/pbr/env_pmrem.scn"
+if [ -f "$PMREM_SCN" ]; then
+    ( cd "$ROOT" && timeout 120 "$PLAYER" --shot "$WORK/pmrem_on.ppm" --frames 2 scenes/pbr/env_pmrem.scn \
+        >"$WORK/pmrem_on.txt" 2>&1 ) || { cat "$WORK/pmrem_on.txt"; fail "PMREM 场景渲染失败"; }
+    ( cd "$ROOT" && timeout 120 env MAQUE_ENV_IBL=0 "$PLAYER" --shot "$WORK/pmrem_off.ppm" --frames 2 scenes/pbr/env_pmrem.scn \
+        >"$WORK/pmrem_off.txt" 2>&1 ) || { cat "$WORK/pmrem_off.txt"; fail "PMREM analytic 对照渲染失败"; }
+    grep -q "env PMREM .*GGX.*irradiance" "$WORK/pmrem_on.txt" \
+        || { cat "$WORK/pmrem_on.txt"; fail "PMREM 预过滤日志缺失（.hdr 未走 GGX + irradiance）"; }
+    "$PY" - "$WORK/pmrem_on.ppm" "$WORK/pmrem_off.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); m, dims, _x, px = d.split(b'\n', 3)
+    assert m == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, [(px[i], px[i+1], px[i+2]) for i in range(0, len(px), 3)]
+def lum(c):
+    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+def region(px, w, h, xr0, xr1, yr0, yr1):
+    vals = [lum(px[y * w + x]) for y in range(int(h * yr0), int(h * yr1))
+            for x in range(int(w * xr0), int(w * xr1))]
+    m = sum(vals) / len(vals)
+    sd = (sum((v - m) ** 2 for v in vals) / len(vals)) ** 0.5
+    return m, sd
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+sky = a[2 * w + 2]
+left_m, left_sd = region(a, w, h, .13, .36, .30, .72)
+mid_m, _ = region(a, w, h, .38, .62, .30, .72)
+right_m, right_sd = region(a, w, h, .64, .87, .30, .72)
+mid_off, _ = region(b, w, h, .38, .62, .30, .72)
+print(f'render3d_scene_e2e: PMREM sky={sky} metal_mean={left_m:.1f}/{right_m:.1f} '
+      f'metal_sd={left_sd:.1f}/{right_sd:.1f} matte_env={mid_m:.1f} matte_analytic={mid_off:.1f}')
+# 天空 = HDR env 可见背景；镜面：光滑金属局部对比 > 粗糙金属；
+# 漫反射：matte 立方体在 PMREM irradiance 下与 analytic 有可测差异（旧实现 envmap 只影响镜面）。
+ok = (lum(sky) > 120 and mid_m > mid_off + 20.0
+      and left_sd > right_sd + 3.0 and left_m > 60.0 and right_m > 60.0)
+sys.exit(0 if ok else 1)
+PY
+    echo "render3d_scene_e2e: (10) PMREM（GGX 预过滤 + irradiance + 天空）OK"
+fi
 echo "render3d_scene_e2e: PASS"

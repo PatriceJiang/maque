@@ -133,7 +133,7 @@ TextureLinearInterpolationTest,ok,screenshot.png,,,505x506,scenes/khronos/Textur
 TextureSettingsTest,ok,screenshot.png,,,332x325,scenes/khronos/TextureSettingsTest/preview.jpg,0.2576,0.0275,0.0263,0.298,0.3,差异较大（需人工确认：机位/缺失特性/导入问题）,0,yes
 TextureTransformMultiTest,ok,screenshot_large.jpg,large,,930x954,scenes/khronos/TextureTransformMultiTest/preview.jpg,0.8383,0.0662,0.0778,0.258,0.299,主体亮度/色调分布较接近（机位/背景可能不同）,2,
 TextureTransformTest,ok,screenshot.jpg,,,300x220,scenes/khronos/TextureTransformTest/preview.jpg,0.6196,-0.0483,0.0847,0.3148,0.373,主体亮度/色调分布较接近（机位/背景可能不同）,1,
-ToyCar,ok (hand-tuned),toycar_ref.jpg,,,1870x1033,scenes/khronos/ToyCar/preview.jpg,0.5836,0.1475,0.1477,0.9994,1.223,中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？,0,
+ToyCar,ok (hand-tuned),toycar_ref.jpg,,,1870x1033,scenes/khronos/ToyCar/preview.jpg,0.6265,0.1919,0.1891,0.8348,1.022,主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？,0,
 TrafficCone,ok,screenshot_Large.jpg,large,,953x542,scenes/khronos/TrafficCone/preview.jpg,0.3319,0.1021,0.1648,0.1762,0.403,差异较大（需人工确认：机位/缺失特性/导入问题）,4,
 TransmissionOrderTest,ok,screenshot-large.jpg,large,,2027x1366,scenes/khronos/TransmissionOrderTest/preview.jpg,0.3453,0.2243,0.2167,0.1954,0.243,差异较大（需人工确认：机位/缺失特性/导入问题）,3,
 TransmissionRoughnessTest,ok,screenshot-large.png,large,,1673x831,scenes/khronos/TransmissionRoughnessTest/preview.jpg,0.3675,0.1746,0.1548,0.3254,0.354,差异较大（需人工确认：机位/缺失特性/导入问题）,2,

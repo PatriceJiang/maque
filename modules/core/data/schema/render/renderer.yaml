@@ -210,6 +210,8 @@
         - { name: sky_texture, type: int32_t }
         - { name: env_color,   type: "float[4]" }
         - { name: env_texture, type: int32_t }
+        # 漫反射辐照度贴图（PMREM 卷积产物，equirect RGBA16F；-1=无 → shader 回退 analytic）
+        - { name: env_irradiance_texture, type: int32_t }
         - { name: intensity,   type: float }
         # plans/19：analytic studio IBL（天空/地面渐变 + 软光箱高光；env_rotation 弧度，runtime 从场景度转换）
         - { name: env_sky_color,    type: "float[4]" }

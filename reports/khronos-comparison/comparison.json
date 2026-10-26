@@ -8612,14 +8612,14 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.9994,
-   "coverage_ratio": 1.223,
+   "coverage": 0.8348,
+   "coverage_ratio": 1.022,
    "framing_notes": [
     "预览主体贴边/被裁剪 → 机位过近？"
    ],
    "gaps": [],
-   "hist": 0.5836,
-   "lum": 0.1475,
+   "hist": 0.6265,
+   "lum": 0.1919,
    "model": "ToyCar",
    "preview": "scenes/khronos/ToyCar/preview.jpg",
    "readme": "../../scenes/khronos/ToyCar/README.md",
@@ -8633,7 +8633,7 @@
     1033
    ],
    "review": "",
-   "rgb": 0.1477,
+   "rgb": 0.1891,
    "scene": "../../scenes/khronos/ToyCar/ToyCar.scn",
    "stats": {},
    "status": "ok (hand-tuned)",
@@ -8641,7 +8641,7 @@
     "hand-tuned",
     "showcase"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
    "coverage": 0.1762,
@@ -9533,8 +9533,8 @@
   "ref_missing": 0,
   "verdicts": {
    "bad": 67,
-   "good": 38,
-   "mid": 44
+   "good": 39,
+   "mid": 43
   },
   "with_compare": 149
  }

@@ -193,6 +193,7 @@ typedef struct mq_renderer_environment {
     int32_t sky_texture;
     float env_color[4];
     int32_t env_texture;
+    int32_t env_irradiance_texture;
     float intensity;
     float env_sky_color[4];
     float env_ground_color[4];

@@ -33,6 +33,7 @@ struct Camera {
 @group(0) @binding(2) var shadow_smp: sampler_comparison;
 @group(0) @binding(3) var env_tex: texture_2d<f32>;
 @group(0) @binding(4) var env_smp: sampler;
+@group(0) @binding(5) var env_irr_tex: texture_2d<f32>;   // 漫反射 irradiance（PMREM 余弦卷积）
 
 struct Draw {
   model: mat4x4f,

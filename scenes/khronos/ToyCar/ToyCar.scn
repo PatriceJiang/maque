@@ -254,7 +254,7 @@
   "b": 0.48,
   "a": 1.0
  },
- "env_intensity": 1.25,
+ "env_intensity": 1.0,
  "env_sky_color": {
   "r": 0.5,
   "g": 0.53,

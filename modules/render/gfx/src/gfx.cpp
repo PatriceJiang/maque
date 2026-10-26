@@ -26,7 +26,7 @@ static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32"
 static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
 static_assert(sizeof(mq_renderer_pbr_material) == 276, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换 + uv1_mask + textures3[7]）");
-static_assert(sizeof(mq_renderer_environment) == 88, "mq_renderer_environment 布局漂移（+analytic studio IBL 参数）");
+static_assert(sizeof(mq_renderer_environment) == 92, "mq_renderer_environment 布局漂移（+analytic studio IBL 参数 + PMREM irradiance）");
 static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
 static_assert(sizeof(mq_renderer_draw3d) == 96, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64）");
 static_assert(offsetof(mq_renderer_draw3d, model) == 8, "draw3d.model 必须在 offset 8");
@@ -305,7 +305,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         dv->p3dShader = make_shader(dv->device, wgsl);
         if (!dv->p3dShader) return;
         {
-            WGPUBindGroupLayoutEntry e[5] = {};
+            WGPUBindGroupLayoutEntry e[6] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
             e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 896;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
@@ -313,12 +313,15 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
             e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment;
             e[2].sampler.type = WGPUSamplerBindingType_Comparison;
-            e[3].binding = 3; e[3].visibility = WGPUShaderStage_Fragment;      /* equirect env map */
+            e[3].binding = 3; e[3].visibility = WGPUShaderStage_Fragment;      /* equirect env map（GGX 预过滤 mip 链） */
             e[3].texture.sampleType = WGPUTextureSampleType_Float;
             e[3].texture.viewDimension = WGPUTextureViewDimension_2D;
             e[4].binding = 4; e[4].visibility = WGPUShaderStage_Fragment;      /* env sampler */
             e[4].sampler.type = WGPUSamplerBindingType_Filtering;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 5; bd.entries = e;
+            e[5].binding = 5; e[5].visibility = WGPUShaderStage_Fragment;      /* 漫反射 irradiance（PMREM 卷积） */
+            e[5].texture.sampleType = WGPUTextureSampleType_Float;
+            e[5].texture.viewDimension = WGPUTextureViewDimension_2D;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 6; bd.entries = e;
             dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         /* ---- 阴影资源（plans/18 §4.2 / R2/R19 修复）----
@@ -1727,10 +1730,10 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         cam[201] = f->env.env_ground_color[1] * f->env.intensity;
         cam[202] = f->env.env_ground_color[2] * f->env.intensity;
         cam[203] = f->env.env_rotation;
-        /* env_info：x=env_intensity y=has_env_texture z/w=预留（equirect IBL 用） */
+        /* env_info：x=env_intensity y=has_env_texture z=has_env_irradiance w=预留 */
         cam[204] = f->env.intensity;
         cam[205] = (f->env.env_texture >= 0) ? 1.0F : 0.0F;
-        cam[206] = 0.0F; cam[207] = 0.0F;
+        cam[206] = (f->env.env_irradiance_texture >= 0) ? 1.0F : 0.0F; cam[207] = 0.0F;
         /* inv_vp（208..223）：天空背景全屏 pass 由 NDC 反推世界射线 */
         float inv_vp[16];
         mat4_invert(vp, inv_vp);
@@ -1758,34 +1761,41 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         ubd.size = sizeof cam;
         WGPUBuffer cbuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
         wgpuQueueWriteBuffer(dv->queue, cbuf, 0, cam, sizeof cam);
-        WGPUBindGroupEntry cbe[5] = {};
+        WGPUBindGroupEntry cbe[6] = {};
         cbe[0].binding = 0; cbe[0].buffer = cbuf; cbe[0].size = sizeof cam;
         /* 主 pass 采样阴影图；阴影未启用时绑 1×1 dummy depth（z=0 → shader 不采样）。
          * binding2 必须是 Comparison sampler（BGL 如此声明），绝不拿 filtering sampler 兜底（R19）。 */
         cbe[1].binding = 1; cbe[1].textureView = shadow_ready ? dv->shadowView : dv->dummyDepthView;
         cbe[2].binding = 2; cbe[2].sampler = dv->shadowSampler;
-        cbe[3].binding = 3;
-        cbe[3].textureView = (f->env.env_texture >= 0 && (size_t)f->env.env_texture < dv->textures.size() &&
-                              dv->textures[(size_t)f->env.env_texture] && dv->textures[(size_t)f->env.env_texture]->view)
-                                 ? dv->textures[(size_t)f->env.env_texture]->view : dv->whiteTexView;
-        cbe[4].binding = 4;
-        cbe[4].sampler = (f->env.env_texture >= 0 && (size_t)f->env.env_texture < dv->textures.size() &&
-                          dv->textures[(size_t)f->env.env_texture] && dv->textures[(size_t)f->env.env_texture]->sampler)
-                             ? dv->textures[(size_t)f->env.env_texture]->sampler : dv->sampler;
+        auto tex_entry = [&](uint32_t binding, int32_t id, bool want_sampler) {
+            WGPUBindGroupEntry& e = cbe[binding];
+            e.binding = binding;
+            const bool valid = id >= 0 && (size_t)id < dv->textures.size() && dv->textures[(size_t)id];
+            if (want_sampler)
+                e.sampler = (valid && dv->textures[(size_t)id]->sampler)
+                                ? dv->textures[(size_t)id]->sampler : dv->sampler;
+            else
+                e.textureView = (valid && dv->textures[(size_t)id]->view)
+                                    ? dv->textures[(size_t)id]->view : dv->whiteTexView;
+        };
+        tex_entry(3, f->env.env_texture, /*want_sampler=*/false);
+        tex_entry(4, f->env.env_texture, /*want_sampler=*/true);
+        tex_entry(5, f->env.env_irradiance_texture, /*want_sampler=*/false);
         WGPUBindGroupDescriptor cbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-        cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 5; cbgd.entries = cbe;
+        cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 6; cbgd.entries = cbe;
         WGPUBindGroup camBg = wgpuDeviceCreateBindGroup(dv->device, &cbgd);
-        /* 阴影深度 pass（仅首视图）：用同一个 816B 相机块（light_vp 在 float 160 起）；group0 绑 dummy depth
+        /* 阴影深度 pass（仅首视图）：用同一个相机块（light_vp 在 float 160 起）；group0 绑 dummy depth
          * 避免与本 pass 写入的 shadowView 同纹理读写。 */
         if (shadow_ready && vi == 0) {
-            WGPUBindGroupEntry sbe[5] = {};
+            WGPUBindGroupEntry sbe[6] = {};
             sbe[0].binding = 0; sbe[0].buffer = cbuf; sbe[0].size = sizeof cam;
             sbe[1].binding = 1; sbe[1].textureView = dv->dummyDepthView;
             sbe[2].binding = 2; sbe[2].sampler = dv->shadowSampler;
             sbe[3].binding = 3; sbe[3].textureView = dv->whiteTexView;
             sbe[4].binding = 4; sbe[4].sampler = dv->sampler;
+            sbe[5].binding = 5; sbe[5].textureView = dv->whiteTexView;
             WGPUBindGroupDescriptor sbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            sbgd.layout = dv->p3dCamBgl; sbgd.entryCount = 5; sbgd.entries = sbe;
+            sbgd.layout = dv->p3dCamBgl; sbgd.entryCount = 6; sbgd.entries = sbe;
             WGPUBindGroup sbg = wgpuDeviceCreateBindGroup(dv->device, &sbgd);
             WGPUCommandEncoder senc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
             WGPURenderPassDepthStencilAttachment sda = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;

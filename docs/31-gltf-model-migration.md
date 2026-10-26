@@ -19,8 +19,8 @@
 | 批量 | `python tools/migrate_gltf_models.py`：选主变体 → 导入 → headless 截图 → 定量对比 → 写逐模型 README → 重写总索引 + `manifest.json`；单模型失败不中断整批 |
 | 本批结果 | **148/148 成功**（149 − 手调 ToyCar）；0 blocked、0 failed；整批 472.3s（≈7.9 min，平均 3.2s/模型）；派生资产 ≈983 MB（不入库）；差异分布与 Top 见 §10 |
 | 入库策略 | 入库：`.scn`、`preview.jpg`（800×450）、`README.md`、`compare.json`、`manifest.json`；**不入库**：`assets/`、`textures/`、`preview.png`（派生资产，从 `.deps` 一条命令重生成；入库体积 ≈18.4 MB，约为派生资产的 1.9%） |
-| 对比 | 与官方 `screenshot/` **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio/软阴影/不同机位/透明背景），maque 有 equirect envmap/IBL（PNG，mip 近似预过滤），但无 HDR/EXR、天空背景、真实 transmission、软阴影、动画骨骼。自动指标只用于**筛查**，最终以人工看 preview + 参考图并记录差异归因为准 |
-| 当前主要差距 | 真实 transmission/volume（现为 alpha 近似）、动画/骨骼/morph、KTX2/meshopt、HDR/EXR 环境贴图与真实 PMREM/天空背景、MSAA、specular 贴图 —— 详见 §5 与 §11 |
+| 对比 | 与官方 `screenshot/` **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio/软阴影/不同机位/透明背景），maque 有 equirect envmap/IBL（`.hdr` RGBE / PNG/JPEG，**GGX 粗糙度预过滤 mip + 漫反射 irradiance**、可见天空背景），但无 EXR/cubemap、真实 transmission、软阴影、动画骨骼。自动指标只用于**筛查**，最终以人工看 preview + 参考图并记录差异归因为准 |
+| 当前主要差距 | 真实 transmission/volume（现为 alpha 近似）、动画/骨骼/morph、KTX2/meshopt、EXR/cubemap 环境贴图、MSAA、specular 贴图 —— 详见 §5 与 §11 |
 | 确定性 | 同一输入两次导入**逐字节一致**；同机同构建、同场景同帧两次 `--shot` 的 PNG **SHA256 相同**（已实测）；流水线固定 `--compact`（与默认输出有 6 位小数舍入差异） |
 | 一键复现 | 见 §3；干净 clone 后恢复派生资产的唯一命令：`python tools/migrate_gltf_models.py --force`（会重写 `.scn`，手调模型须排除） |
 | 逐模型对比报告 | `reports/khronos-comparison/index.html`（149 个模型官方参考图 **large 优先** vs 迁移预览，左右对比 + 指标 + 差距 + 人工复核；`python tools/make_migration_report.py` 可重生成） |
@@ -466,7 +466,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | `KHR_lights_punctual`（**12 个模型**） | ✅ 导入为 `render.Light`（directional/point/spot，≤8 盏、方向光优先；spot 内/外锥角、range 保留）；强度为**观感归一化**（directional=2.6×intensity；point/spot 按模型尺度换算，非 cd/lux 物理值）；有灯光时不再追加默认太阳 | 自带布光能还原主体明暗/彩色灯；与官方离线渲染的精确强度/软阴影仍有差异 | 手调 `.scn` 可改 Light 因子；后续接物理单位换算/光追阴影 |
 | `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
 | 动画（**26 个模型 / 38 个动画**）/ 骨骼蒙皮（7 个模型 / 90 个 skin）/ morph（4 个模型 / 6 个 primitive） | ❌ 不导入（静态渲染；角色为 bind/T-pose；morph 默认权重不生效）；`KHR_animation_pointer`（5）同样不导入 | 动画模型与参考图姿势/形变不同 | README 标注"静态迁移"；动画属独立大项（§11） |
-| 场景根 `env_*` / `env_texture` | ✅ **equirect envmap + IBL（opt-in）**：`env_texture` 写 **Radiance `.hdr`（RGBE）**、PNG/JPEG（`builtin:/textures/studio_env` 或 VFS/远程）时启用；`.hdr`→RGBA16F + 线性 mip（PMREM 近似）+ **天空背景全屏 pass**（env 可见为背景）；PNG/JPEG 走 sRGB。镜面反射用 env、漫反射保留 analytic；**默认关**（保持迁移基线），`MAQUE_ENV_IBL=1`/`=0` 可强制开关 | 反射/环境光接近 HDRI studio（ToyCar、`scenes/pbr/env_ibl.scn` 已启用）；无 EXR 解码、无真正 GGX/PMREM 卷积、cubemap kind=1 未实现 | 后续：EXR、真正 PMREM/irradiance 卷积、cubemap、默认开启前的光照标定（§11） |
+| 场景根 `env_*` / `env_texture` | ✅ **真 PMREM envmap + IBL（opt-in）**：`env_texture` 写 **Radiance `.hdr`（RGBE）**、PNG/JPEG（`builtin:/textures/studio_env` 或 VFS/远程）时启用；装配期 CPU 预计算 **GGX importance-sample 粗糙度 mip 链**（RGBA16F）+ **余弦卷积漫反射 irradiance**（RGBA16F，64×32）+ **天空背景全屏 pass**；shader 镜面按 roughness 查预过滤 mip、漫反射查 irradiance；`MAQUE_ENV_IBL=1`/`=0` 可强制开关，默认关（保持迁移基线） | 反射/环境光接近 HDRI studio（ToyCar、`scenes/pbr/env_ibl.scn`、`scenes/pbr/env_pmrem.scn`）；无 EXR 解码、无 cubemap kind=1、亮度/曝光未做物理标定 | 后续：EXR、cubemap、默认开启前的光照标定（§11） |
 | 地面/背景板/阴影接收体 | ❌ 自动场景无 | "模型飘在空中"，接触阴影缺失 | 需要时手加地面 + `material_shadow.scn` 范式（§6.4 ⑤） |
 
 ---
@@ -542,7 +542,7 @@ far  = max(dist * 10, (dist + radius) * 8)
 | 环境 | **不写 `env_*`** → 用场景默认 | `env_color=(0.27,0.28,0.31)`、`env_intensity=1.6`、`env_sky/ground=0`（0=由 env_color 派生）、`env_highlight=1.0`、`env_rotation=0` |
 | 背景 | `clear_color=(0.13,0.13,0.14,1)`（深灰） | 与官方参考（多为浅灰/白棚拍）不同 → 对比时计入归因 |
 | 阴影 | 方向光阴影自动生效（1024² + 3×3 PCF） | 仅对可见 mesh 生效；`MAQUE_SHADOW=0` 可对照 |
-| IBL | **equirect envmap IBL（opt-in）**：`.hdr`（RGBE→RGBA16F）或 PNG/JPEG；线性 mip（PMREM 近似）+ Karis env BRDF + **天空背景 pass**；镜面反射用 env、漫反射仍 analytic。默认 analytic studio IBL | 有 HDR 高光/环境反射/可见天空，接近影棚；仍无 EXR 与真正 PMREM 卷积 |
+| IBL | **真 PMREM equirect envmap IBL（opt-in）**：`.hdr`（RGBE）或 PNG/JPEG/builtin studio；装配期 **GGX 粗糙度 mip 预过滤 + 漫反射 irradiance 卷积** + Karis env BRDF + **天空背景 pass**；镜面/漫反射都来自 env。默认 analytic studio IBL（148 迁移基线逐像素不变） | 有 HDR 高光/环境反射/可见天空，接近影棚；仍无 EXR/cubemap |
 
 ### 6.4 手调教程（preview 不理想时）
 
@@ -823,6 +823,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | **玻璃近似太"幽灵"（无边缘反光/单层无厚度）** | CompareTransmission/GlassVaseFlowers/ABeautifulGame 等玻璃中心过透、边缘与背景融合 | 材质新增 `transmission_factor`；shader 按 Fresnel 提高掠射角 alpha；gfx 对 transmission 近似材质画两遍（cull front 背面 → cull back 正面）；37 个 transmission 相关模型重导重渲 |
 | **envmap/IBL 完全没有** | 金属/车漆/玻璃反射平淡（报告最大观感差距）；`texture_desc.kind=1/2` 直接 -3，`sky_mode` 2/3 预留，shader 只有 analytic env | 实现 **equirect envmap IBL（opt-in）**：runtime 内建 `builtin:/textures/studio_env`（512×256 sRGB + mip 链，程序化 studio 软光箱）+ 场景 `env_texture`（PNG/JPEG，VFS/远程）；gfx group0 新增 env 纹理/采样器绑定（请求适配器更高 sampled texture 上限）；shader 镜面反射按方向采样、roughness→mip（漫反射保留 analytic）；ToyCar 样板与 `scenes/pbr/env_ibl.scn` 已启用；`MAQUE_ENV_IBL=1` 强制内建 env。默认关闭的原因：部分测试图（如纯色纹理/图表）参考图是平光渲染，env 反射会显著改变直方图指标；对金属/玻璃等真实资产观感更好 |
 | **envmap 只有 LDR 近似、没有 HDR/天空背景** | PNG env 软光箱被截断、背景仍是 clear_color，金属高光不够亮 | ①Radiance `.hdr`（RGBE）解析 → **RGBA16F** 纹理（gfx create_texture2 支持 pixel_format=2/8B 每像素）+ 线性 mip（PMREM 近似，经度 wrap）；②`scenes/pbr/env/studio.hdr`（128×64 HDR，`tools/make_env_hdr.py` 可复算）+ `env_ibl.scn` 引用；③**天空背景 pass**：camera uniform 增加 `inv_vp`（896B），全屏三角形按射线采样 env（独立 sky pipeline，不写深度）；ToyCar/示例场景启用；EXR 暂不支持（会打印并回退 analytic） |
+| **env IBL 只有 box-filter mip + analytic 漫反射** | 中高 roughness 反射能量分布不对（box 平均不是 GGX 波瓣）；漫反射完全不来自 env → 哑光物体在 HDRI 下仍是 studio 常数色 | runtime 装配期 CPU 实现真 PMREM：specular = **GGX importance sampling**（Hammersley，V=N=R，NdotL 加权归一，32→128 样本/texel）生成粗糙度 mip 链；diffuse = **余弦加权半球卷积**（64×32，256 样本）生成 irradiance；两者 RGBA16F。gfx `environment.env_irradiance_texture` + group0 binding5；shader `env_irradiance` 有 env 时查表、无 env 时保持 analytic（148 基线不变）。e2e ⑩ 用 `env_pmrem.scn` 断言天空/镜面锐利度/哑光 env 差异 |
 
 ---
 
@@ -958,6 +959,11 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > **第 12 轮（HDR envmap + 天空）** Radiance `.hdr`（RGBE）→ RGBA16F 纹理 + 线性 mip 预过滤；天空背景全屏 pass
 > （camera.inv_vp + sky pipeline）；`scenes/pbr/env/studio.hdr`（HDR 软光箱）与 `env_ibl.scn` 示例；ToyCar 样板
 > env+天空预览更新。默认仍关（148 模型基线不变）。
+> **第 13 轮（真 PMREM）** runtime 装配期 CPU 预计算：**GGX importance-sample 粗糙度 mip 预过滤**
+>（128×64 `.hdr`/512×256 builtin → 8/10 级 RGBA16F，经度 wrap）+ **余弦卷积漫反射 irradiance**（64×32 RGBA16F）；
+> gfx group0 新增 irradiance 纹理绑定（binding5）/`environment.env_irradiance_texture`；shader `env_irradiance`
+> 改查 irradiance（无 env 时仍走 analytic，148 基线零回归）；新增 `scenes/pbr/env_pmrem.scn` 与 e2e ⑩
+>（天空/镜面锐利度/漫反射 env 三项断言）。EXR 与 cubemap kind=1 仍排期。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -1090,7 +1096,7 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 
 | 优先级 | 事项 | 影响面（本批样本） | 落点/备注 |
 |---|---|---|---|
-| P2 | **EXR 解码 + 真正 PMREM/irradiance 卷积 + cubemap kind=1** | 全部（当前 opt-in equirect `.hdr`/PNG/JPEG + 线性 mip 近似 + 天空 pass） | 现有：`.hdr`（RGBE→RGBA16F）、PNG/JPEG env、内建 studio_env、线性 mip 预过滤近似、天空背景、ToyCar/`env_ibl.scn` 示例；剩余：EXR、GGX importance-sample PMREM / 漫反射卷积、cubemap 纹理、默认开启前的光照/曝光标定 |
+| P2 | **EXR 解码 + cubemap kind=1 + IBL 光照标定** | 全部（当前 opt-in equirect `.hdr`/PNG/JPEG + 真 PMREM GGX/irradiance + 天空 pass） | 现有：`.hdr`（RGBE→RGBA16F）、PNG/JPEG env、内建 studio_env、**GGX importance-sample 粗糙度 mip 预过滤**、**漫反射 irradiance 卷积**、天空背景、ToyCar/`env_ibl.scn`/`env_pmrem.scn` 示例与 e2e；剩余：EXR 解码、cubemap 纹理、默认开启前的光照/曝光标定 |
 | P3 | **specularTexture/specularColorTexture**（其余扩展贴图槽已接） | specular 10 个模型中的贴图子集 | 同 textures3 路径再补 2 槽（受 WebGPU 每 stage 16 sampled texture 上限约束，需先腾槽） |
 | P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | 现有近似：alpha BLEND + volume 薄壁色调 + diffuse BLEND；完整版需 backbuffer 折射 pass + 厚度/吸收/散射模型 |
 | P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 需要动画运行时 + skinning + morph；属独立大项（`plans/12`），迁移可先静态 |

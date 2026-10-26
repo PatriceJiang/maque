@@ -460,6 +460,8 @@ struct Engine {
     Scene*              scene = &scene_store;
 
     std::unordered_map<std::string, int> tex_cache;              // 装配期填充；提取期只读
+    /* env PMREM 产物缓存：路径 → {specular(预过滤 mip 链), irradiance}；-1 = 加载失败 */
+    std::unordered_map<std::string, std::pair<int32_t, int32_t>> env_tex_cache;
     std::unordered_map<std::string, scn::SpriteMaterial> material_cache;
     /* 音频（docs/30）：默认 **null 后端**（逻辑/脚本可用、CI 静音）；MAQUE_AUDIO=sdl|auto 才开设备。
      * 后端实现可替换（modules/world/audio/src/backend_*.cpp），runtime 只认 C ABI。 */
@@ -507,7 +509,9 @@ struct Engine {
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
-    int load_env_texture(const std::string& path);             // envmap：.hdr（RGBE→RGBA16F + mip 预过滤）或 PNG/JPEG（sRGB）
+    /* envmap（PMREM）：.hdr(RGBE) / PNG/JPEG / builtin studio → GGX 粗糙度预过滤 mip 链 +
+     * 漫反射 irradiance 贴图；两项都是 RGBA16F，失败时输出 -1（shader 回退 analytic）。 */
+    void load_env_textures(const std::string& path, int32_t& spec_id, int32_t& irr_id);
     int32_t load_mesh(const std::string& path);                // M4c：glTF 导入的 .mesh.json → 网格句柄
     int load_texture_srgb(const std::string& path);            // M4g：albedo 贴图按 sRGB 采样（RGBA8_SRGB）
     int load_texture_mips(const std::string& path);            // plans/19：线性数据贴图 + CPU mip 链（抗锯齿）
@@ -832,65 +836,106 @@ static std::vector<uint8_t> build_mip_chain(const uint8_t* src, int w0, int h0, 
 
 /* HDR env 解码 helper 的提前声明（定义在 load_texture_ref 之前）。 */
 static bool parse_radiance_hdr(const uint8_t* d, size_t n, int& W, int& H, std::vector<float>& rgba);
-static std::vector<uint8_t> build_env_mip_chain(std::vector<float>& base, int w, int h, int& mips);
+static void make_studio_env_base(std::vector<float>& out, int& w, int& h);
+/* PMREM：GGX 粗糙度预过滤（specular mip 链）+ 余弦卷积（diffuse irradiance）。 */
+static void build_pmrem(const std::vector<float>& base, int w, int h,
+                        std::vector<uint8_t>& spec_chain, int& levels,
+                        std::vector<uint8_t>& irr, int& irr_w, int& irr_h);
 
-/* envmap 加载：.hdr（RGBE）→ RGBA16F + 线性 mip（PMREM 近似）；其它（PNG/JPEG）走 sRGB 贴图。 */
-int Engine::load_env_texture(const std::string& path) {
+/* envmap 加载（PMREM）：.hdr（RGBE）/ PNG/JPEG / builtin studio → RGBA16F 预过滤 mip 链 + irradiance。
+ * 全部在装配期 CPU 预计算（确定性；与 GPU/后端无关），失败时 spec/irr 均为 -1 → shader 回退 analytic。 */
+void Engine::load_env_textures(const std::string& path, int32_t& spec_id, int32_t& irr_id) {
+    spec_id = irr_id = -1;
+    auto cached = env_tex_cache.find(path);
+    if (cached != env_tex_cache.end()) { spec_id = cached->second.first; irr_id = cached->second.second; return; }
     const TexPathParams tp = parse_tex_path(path);
-    if (tp.vfs.rfind("builtin:", 0) == 0) return load_texture_ref(path);
-    const std::string key = "env:" + path;
-    auto it = tex_cache.find(key);
-    if (it != tex_cache.end()) return it->second;
-    void* data = nullptr; size_t n = 0;
-    if (!vfs || mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) {
-        std::print(stderr, "runtime: env_texture not found '{}'\n", path);
-        return -1;
-    }
-    const bool is_hdr = (n >= 4 && data && ((const uint8_t*)data)[0] == '#' &&
-                         ((const uint8_t*)data)[1] == '?') ||
-                        (tp.vfs.size() >= 4 &&
-                         (tp.vfs.compare(tp.vfs.size() - 4, 4, ".hdr") == 0 ||
-                          tp.vfs.compare(tp.vfs.size() - 4, 4, ".HDR") == 0));
-    if (!is_hdr) {
-        if (n >= 4 && data) {
-            const uint8_t* m = (const uint8_t*)data;
-            if (m[0] == 0x76 && m[1] == 0x2f && m[2] == 0x31 && m[3] == 0x01) {
-                std::print(stderr, "runtime: env_texture '{}' 是 EXR（EXR 解码暂未支持，回退 analytic）\n", path);
-                mq_vfs_free(data);
-                tex_cache[key] = -1;
-                return -1;
-            }
-        }
-        mq_vfs_free(data);
-        const int id = load_texture_srgb(path);       /* PNG/JPEG：sRGB 贴图（shader 采样自动转线性） */
-        tex_cache[key] = id;
-        return id;
-    }
     int w = 0, h = 0;
-    std::vector<float> hdr;
-    const bool ok = parse_radiance_hdr((const uint8_t*)data, n, w, h, hdr);
-    mq_vfs_free(data);
-    if (!ok) {
-        std::print(stderr, "runtime: env_texture '{}' HDR(RGBE) 解析失败，回退 analytic\n", path);
-        tex_cache[key] = -1;
-        return -1;
+    std::vector<float> base;
+    if (tp.vfs == "builtin:/textures/studio_env") {
+        make_studio_env_base(base, w, h);
+    } else {
+        void* data = nullptr; size_t n = 0;
+        if (!vfs || mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) {
+            std::print(stderr, "runtime: env_texture not found '{}'\n", path);
+            env_tex_cache[path] = { -1, -1 };
+            return;
+        }
+        const bool is_hdr = (n >= 4 && data && ((const uint8_t*)data)[0] == '#' &&
+                             ((const uint8_t*)data)[1] == '?') ||
+                            (tp.vfs.size() >= 4 &&
+                             (tp.vfs.compare(tp.vfs.size() - 4, 4, ".hdr") == 0 ||
+                              tp.vfs.compare(tp.vfs.size() - 4, 4, ".HDR") == 0));
+        if (is_hdr) {
+            const bool ok = parse_radiance_hdr((const uint8_t*)data, n, w, h, base);
+            mq_vfs_free(data);
+            if (!ok) {
+                std::print(stderr, "runtime: env_texture '{}' HDR(RGBE) 解析失败，回退 analytic\n", path);
+                env_tex_cache[path] = { -1, -1 };
+                return;
+            }
+        } else {
+            if (n >= 4 && data) {
+                const uint8_t* m = (const uint8_t*)data;
+                if (m[0] == 0x76 && m[1] == 0x2f && m[2] == 0x31 && m[3] == 0x01) {
+                    std::print(stderr, "runtime: env_texture '{}' 是 EXR（EXR 解码暂未支持，回退 analytic）\n", path);
+                    mq_vfs_free(data);
+                    env_tex_cache[path] = { -1, -1 };
+                    return;
+                }
+            }
+            uint8_t* rgba = nullptr; uint32_t iw = 0, ih = 0;
+            char err[128] = { 0 };
+            const int rc = mq_image_decode(data, n, &rgba, &iw, &ih, err, sizeof err);
+            mq_vfs_free(data);
+            if (rc != 0) {
+                std::print(stderr, "runtime: env_texture '{}' 解码失败: {}\n", path, err);
+                env_tex_cache[path] = { -1, -1 };
+                return;
+            }
+            /* PNG/JPEG 存的是 sRGB 编码值：先解码到线性域再做 PMREM（否则高光/平均亮度错误）。 */
+            w = (int)iw; h = (int)ih;
+            base.assign((size_t)w * h * 4, 1.0f);
+            for (size_t i = 0, np = (size_t)w * h; i < np; ++i) {
+                for (int c = 0; c < 3; ++c) {
+                    const float s = (float)rgba[i * 4 + (size_t)c] / 255.0f;
+                    base[i * 4 + (size_t)c] = (s <= 0.04045f) ? s / 12.92f
+                                                             : std::pow((s + 0.055f) / 1.055f, 2.4f);
+                }
+                base[i * 4 + 3] = 1.0f;
+            }
+            mq_image_free(rgba);
+        }
     }
-    int levels = 1;
-    std::vector<uint8_t> chain = build_env_mip_chain(hdr, w, h, levels);
-    int32_t id = -1;
-    if (rapi && rself && rapi->create_texture2 && w > 0 && h > 0) {
+    if (w <= 0 || h <= 0 || base.empty()) {
+        env_tex_cache[path] = { -1, -1 };
+        return;
+    }
+    std::vector<uint8_t> spec_chain, irr;
+    int levels = 1, irr_w = 0, irr_h = 0;
+    const auto t0 = std::chrono::steady_clock::now();
+    build_pmrem(base, w, h, spec_chain, levels, irr, irr_w, irr_h);
+    const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    if (rapi && rself && rapi->create_texture2) {
         mq_renderer_texture_desc td{};
         td.width = w; td.height = h;
-        td.pixel_format = 2;                       /* 2 = RGBA16F（线性 HDR） */
+        td.pixel_format = 2;                       /* 2 = RGBA16F（线性 HDR / 预过滤结果） */
         td.kind = 0; td.mip_levels = levels;
         td.filter = 1;                             /* linear */
         td.wrap_u = 0; td.wrap_v = 1;              /* 经度 repeat、纬度 clamp */
-        td.data = chain.data(); td.data_size = (uint64_t)chain.size();
-        if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
+        td.data = spec_chain.data(); td.data_size = (uint64_t)spec_chain.size();
+        if (rapi->create_texture2(rself, &td, &spec_id) != 0) spec_id = -1;
+        mq_renderer_texture_desc id_ = {};
+        id_.width = irr_w; id_.height = irr_h;
+        id_.pixel_format = 2; id_.kind = 0; id_.mip_levels = 1;
+        id_.filter = 1; id_.wrap_u = 0; id_.wrap_v = 1;
+        id_.data = irr.data(); id_.data_size = (uint64_t)irr.size();
+        if (rapi->create_texture2(rself, &id_, &irr_id) != 0) irr_id = -1;
     }
-    if (id < 0) std::print(stderr, "runtime: env_texture '{}' 上传失败\n", path);
-    tex_cache[key] = id;
-    return id;
+    if (spec_id < 0) std::print(stderr, "runtime: env_texture '{}' PMREM 上传失败\n", path);
+    else
+        std::print("runtime: env PMREM '{}' {}x{} → {} mips (GGX) + irradiance {}x{} ({:.1f} ms)\n",
+                   path, w, h, levels, irr_w, irr_h, ms);
+    env_tex_cache[path] = { spec_id, irr_id };
 }
 
 int Engine::load_texture_srgb(const std::string& path) {
@@ -968,10 +1013,9 @@ int Engine::load_texture_mips(const std::string& path) {
 /* builtin:/ → 引擎内建（此处程序化生成）；否则 assets（VFS）。
  * ref 可带 sampler 后缀（`...` 见 parse_tex_path）；缓存 key 用完整字符串。 */
 
-/* 内建 equirect studio 环境贴图（512x256 + 完整 mip 链，RGBA8 sRGB）：
- * 天空-地面渐变 + 4 个软光箱（方向与 analytic studio IBL 一致），供 envmap/IBL 采样；
- * 同一进程按路径缓存（load_texture_ref 的 tex_cache）。 */
-static void make_studio_env_pixels(std::vector<uint8_t>& out, int& w, int& h, int& mips) {
+/* 内建 equirect studio 环境（512x256，**线性浮点**）：天空-地面渐变 + 4 个软光箱
+ *（方向与 analytic studio IBL 一致）；作为 PMREM 的源 radiance，与 .hdr 走同一条预过滤路径。 */
+static void make_studio_env_base(std::vector<float>& out, int& w, int& h) {
     w = 512; h = 256;
     constexpr float kPi = 3.14159265f;
     struct Box { float dx, dy, dz; float r, g, b; float amp; float sharp; };
@@ -985,7 +1029,7 @@ static void make_studio_env_pixels(std::vector<uint8_t>& out, int& w, int& h, in
         const float l = std::sqrt(x * x + y * y + z * z) + 1e-8f;
         ox = x / l; oy = y / l; oz = z / l;
     };
-    std::vector<uint8_t> base((size_t)w * h * 4);
+    out.assign((size_t)w * h * 4, 1.0f);
     for (int y = 0; y < h; ++y) {
         const float lat = kPi * (0.5f - (float(y) + 0.5f) / (float)h);
         const float cl = std::cos(lat), sl = std::sin(lat);
@@ -1006,39 +1050,9 @@ static void make_studio_env_pixels(std::vector<uint8_t>& out, int& w, int& h, in
                 const float spot = std::pow(c, bx.sharp) * bx.amp;
                 r += bx.r * spot; g += bx.g * spot; b += bx.b * spot;
             }
-            uint8_t* px = &base[((size_t)y * w + x) * 4];
-            px[0] = (uint8_t)std::clamp((int)(r * 255.0f + 0.5f), 0, 255);
-            px[1] = (uint8_t)std::clamp((int)(g * 255.0f + 0.5f), 0, 255);
-            px[2] = (uint8_t)std::clamp((int)(b * 255.0f + 0.5f), 0, 255);
-            px[3] = 255;
+            float* px = &out[((size_t)y * w + x) * 4];
+            px[0] = r; px[1] = g; px[2] = b; px[3] = 1.0f;
         }
-    }
-    /* 生成 mip 链（2x2 box filter；经度方向 wrap、纬度方向 clamp） */
-    out = base;
-    int cw = w, ch = h;
-    mips = 1;
-    while (cw > 1 || ch > 1) {
-        const int nw = std::max(1, cw >> 1);
-        const int nh = std::max(1, ch >> 1);
-        std::vector<uint8_t> next((size_t)nw * nh * 4);
-        for (int y = 0; y < nh; ++y) {
-            for (int x = 0; x < nw; ++x) {
-                int acc[4] = { 0, 0, 0, 0 };
-                for (int oy = 0; oy < 2; ++oy) {
-                    for (int ox = 0; ox < 2; ++ox) {
-                        int sx = (x * 2 + ox) % cw;
-                        int sy = std::min(ch - 1, y * 2 + oy);
-                        const uint8_t* q = &out[(((size_t)sy * cw) + sx) * 4];
-                        for (int k = 0; k < 4; ++k) acc[k] += q[k];
-                    }
-                }
-                uint8_t* q = &next[(((size_t)y * nw) + x) * 4];
-                for (int k = 0; k < 4; ++k) q[k] = (uint8_t)((acc[k] + 2) / 4);
-            }
-        }
-        out.insert(out.end(), next.begin(), next.end());
-        cw = nw; ch = nh; ++mips;
-        if (mips >= 12) break;
     }
 }
 
@@ -1140,36 +1154,164 @@ static bool parse_radiance_hdr(const uint8_t* d, size_t n, int& W, int& H, std::
     return true;
 }
 
-/* 线性浮点 mip 链（2x2 box；经度 wrap、纬度 clamp —— PMREM 的预过滤近似）。 */
-static std::vector<uint8_t> build_env_mip_chain(std::vector<float>& base, int w, int h, int& mips) {
-    std::vector<uint8_t> out;
-    std::vector<float> cur = std::move(base);
-    int cw = w, ch = h;
-    mips = 1;
-    while (true) {
-        for (int y = 0; y < ch; ++y) for (int x = 0; x < cw; ++x) {
-            const float* p = &cur[((size_t)y * cw + x) * 4];
-            append_half_rgba(out, p[0], p[1], p[2]);
-        }
-        if (cw <= 1 && ch <= 1) break;
-        const int nw = std::max(1, cw >> 1), nh = std::max(1, ch >> 1);
-        std::vector<float> next((size_t)nw * nh * 4, 0.0f);
-        for (int y = 0; y < nh; ++y) for (int x = 0; x < nw; ++x) {
-            float acc[4] = { 0, 0, 0, 0 };
-            for (int oy = 0; oy < 2; ++oy) for (int ox = 0; ox < 2; ++ox) {
-                const int sx = (x * 2 + ox) % cw;
-                const int sy = std::min(ch - 1, y * 2 + oy);
-                const float* p = &cur[((size_t)sy * cw + sx) * 4];
-                for (int k = 0; k < 4; ++k) acc[k] += p[k];
-            }
-            float* q = &next[((size_t)y * nw + x) * 4];
-            for (int k = 0; k < 4; ++k) q[k] = acc[k] * 0.25f;
-        }
-        cur = std::move(next);
-        cw = nw; ch = nh; ++mips;
-        if (mips >= 14) break;
+/* ---- 真正 PMREM（IBL 预过滤，CPU、确定性）----
+ * three.js / UE 的 split-sum IBL：镜面 = GGX importance-sample 预过滤的粗糙度 mip 链
+ *（V=N=R 假设下按 NdotL 加权归一），漫反射 = 余弦加权半球卷积的 irradiance 贴图。
+ * 之前实现是 2×2 box mip 近似：粗糙度增大时只是"更糊"，不是 GGX 能量分布，
+ * 且漫反射仍用 analytic —— 这两点在此替换。立方体贴图（cubemap kind=1）与 EXR 仍列后续。 */
+static constexpr float kEnvPi = 3.14159265358979f;
+
+static void env_dir_from_uv(float u, float v, float out[3]) {
+    const float phi = (u - 0.5f) * 2.0f * kEnvPi;
+    const float theta = v * kEnvPi;
+    const float st = std::sin(theta);
+    out[0] = st * std::cos(phi);
+    out[1] = std::cos(theta);
+    out[2] = st * std::sin(phi);
+}
+static void env_uv_from_dir(const float d[3], float& u, float& v) {
+    u = std::atan2(d[2], d[0]) / (2.0f * kEnvPi) + 0.5f;
+    v = std::acos(std::clamp(d[1], -1.0f, 1.0f)) / kEnvPi;
+}
+static void env_normalize(float v[3]) {
+    const float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) + 1e-20f;
+    v[0] /= l; v[1] /= l; v[2] /= l;
+}
+static float env_dot(const float a[3], const float b[3]) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+/* 以 n 为 z 轴的切线基（避免极点退化）。 */
+static void env_basis(const float n[3], float t[3], float b[3]) {
+    float up[3] = { 0.0f, 1.0f, 0.0f };
+    if (std::fabs(n[1]) > 0.999f) { up[0] = 1.0f; up[1] = 0.0f; up[2] = 0.0f; }
+    t[0] = up[1] * n[2] - up[2] * n[1];
+    t[1] = up[2] * n[0] - up[0] * n[2];
+    t[2] = up[0] * n[1] - up[1] * n[0];
+    env_normalize(t);
+    b[0] = n[1] * t[2] - n[2] * t[1];
+    b[1] = n[2] * t[0] - n[0] * t[2];
+    b[2] = n[0] * t[1] - n[1] * t[0];
+}
+/* equirect 双线性采样：经度 wrap、纬度 clamp（与 GPU 侧 sampler 语义一致）。 */
+static void env_sample_bilinear(const std::vector<float>& img, int w, int h,
+                                const float d[3], float out[3]) {
+    float u = 0.0f, v = 0.0f;
+    env_uv_from_dir(d, u, v);
+    const float fx = u * (float)w - 0.5f;
+    const float fy = v * (float)h - 0.5f;
+    const int x0 = (int)std::floor(fx);
+    const int y0 = (int)std::floor(fy);
+    const float tx = fx - (float)x0, ty = fy - (float)y0;
+    auto at = [&](int x, int y) -> const float* {
+        x %= w; if (x < 0) x += w;
+        y = std::clamp(y, 0, h - 1);
+        return &img[((size_t)y * (size_t)w + (size_t)x) * 4];
+    };
+    const float* p00 = at(x0, y0);
+    const float* p10 = at(x0 + 1, y0);
+    const float* p01 = at(x0, y0 + 1);
+    const float* p11 = at(x0 + 1, y0 + 1);
+    for (int c = 0; c < 3; ++c) {
+        const float a = p00[c] + (p10[c] - p00[c]) * tx;
+        const float b = p01[c] + (p11[c] - p01[c]) * tx;
+        out[c] = a + (b - a) * ty;
     }
-    return out;
+}
+/* Hammersley 低差异序列（radical inverse base 2）。 */
+static float radical_inverse_vdc(uint32_t bits) {
+    bits = (bits << 16u) | (bits >> 16u);
+    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+    return (float)bits * 2.3283064365386963e-10f;
+}
+/* GGX/Trowbridge-Reitz 重要性采样：返回围绕 n 的半程向量 H。 */
+static void env_importance_sample_ggx(float xi1, float xi2, const float n[3], float rough, float h[3]) {
+    const float a = rough * rough;
+    const float a2 = a * a;
+    const float phi = 2.0f * kEnvPi * xi1;
+    const float cos_theta = std::sqrt((1.0f - xi2) / (1.0f + (a2 - 1.0f) * xi2));
+    const float sin_theta = std::sqrt(std::max(0.0f, 1.0f - cos_theta * cos_theta));
+    float t[3], b[3];
+    env_basis(n, t, b);
+    const float sc = sin_theta * std::cos(phi), ss = sin_theta * std::sin(phi);
+    for (int i = 0; i < 3; ++i) h[i] = t[i] * sc + b[i] * ss + n[i] * cos_theta;
+}
+static void build_pmrem(const std::vector<float>& base, int w, int h,
+                        std::vector<uint8_t>& spec_chain, int& levels,
+                        std::vector<uint8_t>& irr, int& irr_w, int& irr_h) {
+    levels = 1;
+    for (int s = std::max(w, h); s > 1; s >>= 1) ++levels;
+    spec_chain.clear();
+    /* mip0 = 原始 radiance（roughness 0 = 镜面，shader 采样它必须保持锐利） */
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            const float* p = &base[((size_t)y * (size_t)w + (size_t)x) * 4];
+            append_half_rgba(spec_chain, p[0], p[1], p[2]);
+        }
+    }
+    for (int lvl = 1; lvl < levels; ++lvl) {
+        const int ow = std::max(1, w >> lvl), oh = std::max(1, h >> lvl);
+        const float rough = (levels > 1) ? (float)lvl / (float)(levels - 1) : 0.0f;
+        const int samples = std::clamp(32 + (int)(rough * 96.0f), 32, 128);
+        for (int y = 0; y < oh; ++y) {
+            for (int x = 0; x < ow; ++x) {
+                float n[3];
+                env_dir_from_uv(((float)x + 0.5f) / (float)ow, ((float)y + 0.5f) / (float)oh, n);
+                float acc[3] = { 0.0f, 0.0f, 0.0f };
+                float wsum = 0.0f;
+                for (int s = 0; s < samples; ++s) {
+                    const float xi1 = ((float)s + 0.5f) / (float)samples;
+                    const float xi2 = radical_inverse_vdc((uint32_t)s);
+                    float hv[3], ldir[3];
+                    env_importance_sample_ggx(xi1, xi2, n, std::max(rough, 1e-3f), hv);
+                    const float ndh = env_dot(n, hv);
+                    /* V=N=R 假设：L = reflect(-V, H) = 2*(V·H)*H - V */
+                    for (int i = 0; i < 3; ++i) ldir[i] = 2.0f * ndh * hv[i] - n[i];
+                    env_normalize(ldir);
+                    const float ndl = env_dot(n, ldir);
+                    if (ndl <= 0.0f) continue;
+                    float c[3];
+                    env_sample_bilinear(base, w, h, ldir, c);
+                    for (int i = 0; i < 3; ++i) acc[i] += c[i] * ndl;
+                    wsum += ndl;
+                }
+                if (wsum > 0.0f) { for (int i = 0; i < 3; ++i) acc[i] /= wsum; }
+                append_half_rgba(spec_chain, acc[0], acc[1], acc[2]);
+            }
+        }
+    }
+    /* 漫反射 irradiance：余弦加权半球采样 → E/π（= 与 Lambert albedo/π 相乘后的等效辐亮度）。
+     * 低分辨率即可（irradiance 在方向域很平滑）：64×32，256 样本。 */
+    irr_w = 64; irr_h = 32;
+    const int irr_samples = 256;
+    irr.clear();
+    for (int y = 0; y < irr_h; ++y) {
+        for (int x = 0; x < irr_w; ++x) {
+            float n[3];
+            env_dir_from_uv(((float)x + 0.5f) / (float)irr_w, ((float)y + 0.5f) / (float)irr_h, n);
+            float t[3], b[3];
+            env_basis(n, t, b);
+            float acc[3] = { 0.0f, 0.0f, 0.0f };
+            for (int s = 0; s < irr_samples; ++s) {
+                const float xi1 = radical_inverse_vdc((uint32_t)s);
+                const float xi2 = ((float)s + 0.5f) / (float)irr_samples;
+                const float phi = 2.0f * kEnvPi * xi1;
+                const float cos_theta = std::sqrt(std::max(0.0f, 1.0f - xi2));
+                const float sin_theta = std::sqrt(xi2);
+                const float sc = sin_theta * std::cos(phi), ss = sin_theta * std::sin(phi);
+                float ldir[3];
+                for (int i = 0; i < 3; ++i) ldir[i] = t[i] * sc + b[i] * ss + n[i] * cos_theta;
+                env_normalize(ldir);
+                float c[3];
+                env_sample_bilinear(base, w, h, ldir, c);
+                for (int i = 0; i < 3; ++i) acc[i] += c[i];
+            }
+            for (int i = 0; i < 3; ++i) acc[i] /= (float)irr_samples;
+            append_half_rgba(irr, acc[0], acc[1], acc[2]);
+        }
+    }
 }
 
 int Engine::load_texture_ref(const std::string& ref) {
@@ -1221,13 +1363,6 @@ int Engine::load_texture_ref(const std::string& ref) {
                 c[2] = (uint8_t)std::clamp((int)(b * 255.0F + 0.5F), 0, 255);
                 c[3] = (uint8_t)(a * 255.0F);
             }
-        } else if (tp.vfs == "builtin:/textures/studio_env") {
-            builtin_format = 1;              /* 环境贴图按 sRGB 采样 */
-            builtin_wrap_u = 0;              /* 经度 wrap */
-            builtin_wrap_v = 1;              /* 纬度 clamp */
-            int env_w = 512, env_h = 256, env_mips = 1;
-            make_studio_env_pixels(px, env_w, env_h, env_mips);
-            w = env_w; h = env_h; builtin_mips = env_mips;
         } else { px = { 255, 255, 255, 255 }; }
         int id = -1;
         if (rapi && rself && rapi->create_texture2) {
@@ -2272,19 +2407,20 @@ void Engine::step_frame() {
         fr.env.env_rotation = env_rot_deg * 3.14159265F / 180.0F;
     /* envmap/IBL：显式 scene.env_texture 才启用（默认保留 analytic studio IBL 基线）；
      * MAQUE_ENV_IBL=1 强制用内建 studio_env，MAQUE_ENV_IBL=0 强制关闭。 */
-    int env_tex_id = -1;
+    int32_t env_tex_id = -1, env_irr_id = -1;
     std::string env_path = scene->desc.env_texture;
     const char* env_force = std::getenv("MAQUE_ENV_IBL");
     if (env_force && env_force[0] == '1') env_path = "builtin:/textures/studio_env";
     if (env_force && env_force[0] == '0') env_path.clear();
     if (!env_path.empty()) {
-        env_tex_id = load_env_texture(env_path);
+        load_env_textures(env_path, env_tex_id, env_irr_id);
         if (env_tex_id < 0) {
             std::print(stderr, "runtime: env_texture '{}' 加载失败，回退 analytic IBL\n", env_path);
-            env_tex_id = -1;
+            env_tex_id = -1; env_irr_id = -1;
         }
     }
     fr.env.env_texture = env_tex_id;
+    fr.env.env_irradiance_texture = env_irr_id;
     fr.env.sky_mode = (env_tex_id >= 0) ? 3 : 1;
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
@@ -2313,6 +2449,8 @@ void Engine::step_frame() {
         f.mesh_count = (uint32_t)spine_meshes.size();
         for (int i = 0; i < 4; ++i) f.bg[i] = bg[i];
         f.env.sky_mode = 1;                       /* M1：背景色直出（3D 天空盒在 M3） */
+        f.env.env_texture = -1;                   /* 2D 直呈路径无 3D env（避免 0 号纹理被误当 env） */
+        f.env.env_irradiance_texture = -1;
         for (int i = 0; i < 4; ++i) f.env.sky_color[i] = bg[i];
         const int32_t rc = rapi->render_frame3d(rself, &f);
         if (rc == 0 && rapi->present) rapi->present(rself);

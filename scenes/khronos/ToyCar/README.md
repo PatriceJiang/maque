@@ -42,4 +42,9 @@ cd <repo 根>
 ```
 
 `preview.png` 是当前实现的离屏渲染预览（1280×720，方向光 + GGX/ACES + albedo/MR/normal/emissive 贴图
-+ clearcoat + 方向光阴影；尚无 IBL/transmission/clearcoat 贴图）。
++ clearcoat + 方向光阴影 + **PMREM 环境 IBL（GGX 粗糙度预过滤 mip + 漫反射 irradiance）与天空背景**；
+transmission / clearcoat 贴图仍未支持）。
+
+> 第 13 轮（真 PMREM）后环境漫反射也来自 env（旧版只有镜面），故 `env_intensity` 由 **1.25 → 1.0**
+> 重标定曝光：与官方 `screenshot_large` 的前景亮度直方图相似度 0.58 → **0.63**、亮度差 0.147 → **0.192**
+>（自动初判由「中等差异」升为「主体亮度/色调分布较接近」）。

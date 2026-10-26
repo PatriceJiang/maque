@@ -1,6 +1,6 @@
 // 光照模型：Standard/Physical（GGX）、Lambert、Phong、Toon。
 // 8 盏灯循环（Directional/Point/Spot），阴影只作用于第 0 盏（方向光，M5c 约定）。
-// 环境项 = 常量环境色近似（无 IBL），env_intensity 缩放。
+// 环境项 = analytic studio IBL（无 env 贴图时）或 PMREM env（specular GGX mip + diffuse irradiance）。
 
 /* 标准 metallic-roughness 光照（Standard / Physical 共用）。 */
 fn light_standard(s: Surface, f0: vec3f, n_cc: vec3f, cc_factor: f32, cc_roughness: f32,
