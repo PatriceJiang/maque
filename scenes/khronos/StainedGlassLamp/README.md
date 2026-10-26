@@ -41,16 +41,18 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sta
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.351 | 0.485 | 差 +0.134 |
-| 前景平均 RGB | [102.8, 87.2, 75.0] | [140.6, 120.7, 104.3] | RGB 距离 0.132 |
-| 亮度直方图相似度 | — | — | 0.67（16 桶交集，1=完全一致） |
-| 前景占比 | 35.6% | 5.1% | 覆盖率比 0.143 |
+| 前景平均亮度 | 0.351 | 0.317 | 差 -0.034 |
+| 前景平均 RGB | [102.8, 87.2, 75.0] | [88.7, 79.1, 74.3] | RGB 距离 0.030 |
+| 亮度直方图相似度 | — | — | 0.68（16 桶交集，1=完全一致） |
+| 前景占比 | 35.6% | 4.9% | 覆盖率比 0.138 |
 
-自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
+自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？**
+
+⚠️ 构图告警：预览主体占比过小（<5%）→ 机位过远？
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - KHR_materials_variants：只使用默认材质（不做变体切换）
@@ -59,7 +61,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sta
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - KHR_materials_variants：只使用默认材质（不做变体切换）
@@ -67,7 +69,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sta
 
 ## 踩过的坑 / 注意
 
-- 本模型导入/渲染无告警。
+- 构图告警：预览主体占比过小（<5%）→ 机位过远？
 
 <!-- 手动笔记开始（重生成时保留以下内容） -->
 

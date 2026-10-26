@@ -12,13 +12,13 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.5342,
-  "preview_mean_lum": 0.6076,
-  "mean_lum_delta": 0.0734,
-  "hist_similarity": 0.7001,
-  "rgb_delta": 0.0612,
+  "preview_mean_lum": 0.6368,
+  "mean_lum_delta": 0.1027,
+  "hist_similarity": 0.5865,
+  "rgb_delta": 0.0913,
   "ref_coverage": 0.3045,
-  "preview_coverage": 0.1789,
-  "coverage_ratio": 0.588,
+  "preview_coverage": 0.1813,
+  "coverage_ratio": 0.595,
   "ref_bbox": [
     14,
     47,
@@ -37,10 +37,10 @@
     126.2
   ],
   "preview_mean_rgb": [
-    153.5,
-    157.1,
-    137.0
+    160.6,
+    164.6,
+    145.6
   ],
   "framing_notes": [],
-  "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
+  "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
 }

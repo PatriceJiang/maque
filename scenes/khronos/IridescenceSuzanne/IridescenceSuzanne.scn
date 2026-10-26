@@ -213,13 +213,14 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "iridescence": 1.0,
           "iridescence_ior": 1.8,
           "iridescence_thickness_min": 200.0,
-          "iridescence_thickness_max": 600.0
+          "iridescence_thickness_max": 600.0,
+          "opacity": 0.15000000000000002
         }
       ]
     }

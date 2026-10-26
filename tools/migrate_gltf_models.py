@@ -45,6 +45,71 @@ REFERENCES_URL = "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/M
 
 MANUAL_MARKER = "<!-- 手动笔记开始（重生成时保留以下内容） -->"
 
+# 手动机位（迁移报告/视觉复核判定自动机位不可用的模型；坐标=模型局部世界空间）。
+# 生成流程在 importer 之后应用（幂等），README 会记录"手动相机"。
+MANUAL_CAMERA = {
+    # Sponza 官方参考图是主厅内部视角；自动包围盒拟合把相机放在建筑内部但朝向/远平面
+    # 不适配长向柱廊 → 手动放到 +X 端看向 -X（主厅纵深），fov 60 / far 覆盖 2800 单位。
+    # 世界空间尺寸约 30×12×18（节点带 ~0.02 缩放，顶点 bounds 是局部值）→ 内部机位用米级坐标：
+    # 主厅沿 X 长 30，把相机放在 +X 端柱廊内（x≈11,y≈3,z≈0）向 -X 看，fov 60。
+    "Sponza": {"position": (9.5, 1.7, 0.0), "target": (-13.0, 2.2, 0.0),
+               "fov": 65.0, "near": 0.05, "far": 100.0,
+               "note": "手动机位：主厅内部沿 -X 看（官方参考图为内部视角）"},
+}
+
+
+def _look_rotation(eye, target):
+    d = [target[i] - eye[i] for i in range(3)]
+    ln = math.sqrt(sum(v * v for v in d)) or 1.0
+    d = [v / ln for v in d]
+    return math.asin(max(-1.0, min(1.0, d[1]))), math.atan2(-d[0], -d[2])
+
+
+def apply_camera_override(scene_path, spec):
+    """把 MANUAL_CAMERA 的显式机位写进 .scn（幂等；保持 importer 的 JSON 格式）。"""
+    if not os.path.isfile(scene_path):
+        return False
+    try:
+        scn = load_json(scene_path)
+    except Exception:  # noqa: BLE001
+        return False
+    changed = False
+    for ent in scn.get("entities") or []:
+        comps = ent.get("components") or []
+        is_cam = any(c.get("type") == "render.Camera3D" for c in comps)
+        if not is_cam:
+            continue
+        pitch, yaw = _look_rotation(spec["position"], spec["target"])
+        for c in comps:
+            if c.get("type") == "scene.Transform3D":
+                c["local"]["position"] = {"x": spec["position"][0], "y": spec["position"][1],
+                                          "z": spec["position"][2]}
+                c["local"]["rotation"] = {"x": pitch, "y": yaw, "z": 0.0}
+                changed = True
+            elif c.get("type") == "render.Camera3D":
+                if "fov" in spec:
+                    c["fov_y"] = spec["fov"]
+                if "near" in spec:
+                    c["near"] = spec["near"]
+                if "far" in spec:
+                    c["far"] = spec["far"]
+                if "clear_color" in spec:
+                    r, g, b = spec["clear_color"]
+                    c["clear_color"] = {"r": r, "g": g, "b": b, "a": 1.0}
+                changed = True
+    if changed:
+        with open(scene_path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(scn, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+    return changed
+
+
+def _clamp(v, lo, hi):
+    return max(lo, min(hi, v))
+
+
+
+
 
 # ---------------------------------------------------------------- 基础工具
 def run(cmd, cwd=None, timeout=600):
@@ -196,6 +261,8 @@ def gltf_stats(gltf_path):
                       (mat.get("pbrMetallicRoughness") or {}).get("metallicRoughnessTexture")]:
             if tinfo and tinfo.get("texCoord", 0):
                 st["texcoord_sets"]["textureInfo>0"] = st["texcoord_sets"].get("textureInfo>0", 0) + 1
+                if tinfo.get("texCoord", 0) >= 2:
+                    st["texcoord_sets"]["textureInfo>=2"] = st["texcoord_sets"].get("textureInfo>=2", 0) + 1
     for img in js.get("images") or []:
         mime = img.get("mimeType") or ""
         uri = (img.get("uri") or "").lower()
@@ -235,13 +302,12 @@ def known_gaps(stats):
     if stats.get("non_tri_prims"):
         gaps.append("非三角形 primitive 被跳过（线/点）")
     if stats.get("color0_prims"):
-        gaps.append("COLOR_0 顶点色未使用")
-    if stats.get("texcoord_sets", {}).get("textureInfo>0"):
-        gaps.append("部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）")
+        if stats.get("texcoord_sets", {}).get("textureInfo>=2"):
+            gaps.append("部分贴图使用 TEXCOORD_2+（引擎支持 TEXCOORD_0/1；更高 UV 集会退回 uv0）")
     if "KHR_texture_transform" in used:
         gaps.append("KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失")
     if "KHR_materials_transmission" in used:
-        gaps.append("KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）")
+        gaps.append("KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）")
     if "KHR_materials_volume" in used or "KHR_materials_dispersion" in used or "KHR_materials_volume_scatter" in used:
         gaps.append("KHR_materials_volume/dispersion/volume_scatter 未实现")
     if "KHR_materials_diffuse_transmission" in used:
@@ -598,6 +664,12 @@ def migrate_one(model, args, models_root, out_root, manifest):
                     os.remove(p)
         cmd = [sys.executable, IMPORTER, gltf_path, "--out", out_dir, "--name", model,
                "--scene", "--compact"]
+        cam_scale = getattr(args, "camera_scale", None)
+        if isinstance(cam_scale, dict):
+            cam_scale = cam_scale.get(model)
+        if cam_scale:
+            cmd += ["--camera-distance-scale", "%.6f" % float(cam_scale)]
+            rec["camera_distance_scale"] = round(float(cam_scale), 4)
         t0 = time.time()
         rc, log = run(cmd, timeout=1200)
         rec["import_seconds"] = round(time.time() - t0, 2)
@@ -615,6 +687,11 @@ def migrate_one(model, args, models_root, out_root, manifest):
         rec["status"] = "failed"
         rec["issues"].append("importer 未生成场景文件")
         return rec
+    # 手动机位（Sponza 等）：每次生成后幂等覆盖；README/报告里记录
+    if model in MANUAL_CAMERA:
+        if apply_camera_override(scene, MANUAL_CAMERA[model]):
+            rec["camera_override"] = MANUAL_CAMERA[model]["note"]
+            rec["issues"].append("手动机位：%s" % MANUAL_CAMERA[model]["note"])
     # 产物统计
     assets_dir = os.path.join(out_dir, "assets")
     tex_dir = os.path.join(out_dir, "textures")
@@ -839,6 +916,48 @@ def write_index(manifest, out_root):
     return path
 
 
+def run_auto_framing(args, manifest, models_root, out_root):
+    """按参考图前景覆盖率自动调机位距离（覆盖率比 = 预览/参考；cov ∝ 1/d² → d *= sqrt(ratio)）。
+
+    只处理 coverage_ratio 偏离 [0.6, 1.8] 的模型（跳过手动机位/ToyCar）；每模型重新导入+渲染+笔记。
+    """
+    recs = [r for r in manifest.get("records", []) if r.get("model")]
+    by_name = {r["model"]: r for r in recs}
+    flagged = []
+    for r in recs:
+        model = r["model"]
+        if model in MANUAL_CAMERA or model == "ToyCar":
+            continue
+        c = r.get("compare") or {}
+        ratio = c.get("coverage_ratio")
+        cov = c.get("preview_coverage")
+        if ratio is None or cov is None or cov < 1e-4:
+            continue
+        if 0.6 <= ratio <= 1.8:
+            continue
+        scale = _clamp(math.sqrt(float(ratio)), 0.35, 2.0)
+        flagged.append((model, scale))
+    print("auto-framing: %d models outside coverage_ratio [0.6, 1.8]" % len(flagged))
+    if args.dry_run:
+        for model, scale in flagged:
+            print("  %-28s scale=%.3f" % (model, scale))
+        return
+    base_force = args.force
+    for i, (model, scale) in enumerate(flagged, 1):
+        args.force = True
+        args.camera_scale = {model: scale}
+        try:
+            rec = migrate_one(model, args, models_root, out_root, manifest)
+        except Exception as e:  # noqa: BLE001
+            rec = {"model": model, "status": "exception", "issues": [repr(e)]}
+        by_name[model] = rec
+        print("[%2d/%2d] %-28s scale=%.3f -> %s" % (i, len(flagged), model, scale, rec.get("status")))
+    args.force = base_force
+    args.camera_scale = None
+    manifest["records"] = [by_name[k] for k in sorted(by_name)]
+    manifest["auto_framing"] = {"adjusted": len(flagged)}
+
+
 def main():
     ap = argparse.ArgumentParser(description="批量迁移 Khronos glTF-Sample-Assets Models → maque scenes")
     ap.add_argument("--models-root", default=DEFAULT_MODELS_ROOT)
@@ -854,7 +973,11 @@ def main():
     ap.add_argument("--exclude", default="ToyCar",
                     help="逗号分隔的排除模型（默认 ToyCar：已手工调校机位/灯光，不参与自动批量）")
     ap.add_argument("--manifest", default=os.path.join(DEFAULT_OUT_ROOT, "manifest.json"))
+    ap.add_argument("--auto-framing", action="store_true",
+                    help="按参考图前景覆盖率自动调相机距离（需已有 manifest/compare；逐模型重导+渲染）")
+    ap.add_argument("--dry-run", action="store_true", help="只打印 auto-framing 计划，不执行")
     args = ap.parse_args()
+    args.camera_scale = None
 
     if not os.path.isdir(args.models_root):
         sys.exit("migrate: 找不到 models 目录：%s\n（先运行 node .deps/download-gltf-assets.js 并解包到 .deps/gltf-assets）"
@@ -873,6 +996,40 @@ def main():
         names = [n for n in names
                  if not os.path.isfile(os.path.join(args.out_root, n, "README.md"))]
     os.makedirs(args.out_root, exist_ok=True)
+
+    if args.auto_framing:
+        if not os.path.isfile(args.manifest):
+            sys.exit("migrate: --auto-framing 需要已有 manifest（先跑一次批量迁移）")
+        manifest0 = load_json(args.manifest)
+        run_auto_framing(args, manifest0, args.models_root, args.out_root)
+        # 写回 manifest + 索引（复用自动取景后的 records）
+        import hashlib as _hl
+
+        def _sha(path):
+            try:
+                h = _hl.sha256()
+                with open(path, "rb") as f:
+                    for chunk in iter(lambda: f.read(1 << 20), b""):
+                        h.update(chunk)
+                return h.hexdigest()
+            except OSError:
+                return None
+
+        rc, git_head = run(["git", "rev-parse", "HEAD"], timeout=30)
+        manifest0.setdefault("provenance", {}).update({
+            "git_head": git_head.strip() if rc == 0 else None,
+            "importer_sha256": _sha(IMPORTER),
+            "migrate_script_sha256": _sha(os.path.abspath(__file__)),
+            "player_sha256": _sha(PLAYER),
+        })
+        with open(args.manifest, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(manifest0, f, ensure_ascii=False, indent=1, sort_keys=True)
+            f.write("\n")
+        idx = write_index(manifest0, args.out_root)
+        print("migrate(auto-framing): %d records → %s / %s"
+              % (len(manifest0["records"]), os.path.relpath(args.manifest, REPO),
+                 os.path.relpath(idx, REPO)))
+        return
 
     manifest = {"generated_by": "tools/migrate_gltf_models.py",
                 "models_root": os.path.relpath(args.models_root, REPO),

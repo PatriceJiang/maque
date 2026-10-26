@@ -44,9 +44,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.338 | 0.413 | 差 +0.075 |
-| 前景平均 RGB | [103.7, 82.9, 70.6] | [136.1, 99.2, 76.2] | RGB 距离 0.071 |
-| 亮度直方图相似度 | — | — | 0.51（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.338 | 0.394 | 差 +0.055 |
+| 前景平均 RGB | [103.7, 82.9, 70.6] | [131.3, 94.1, 71.1] | RGB 距离 0.051 |
+| 亮度直方图相似度 | — | — | 0.52（16 桶交集，1=完全一致） |
 | 前景占比 | 91.8% | 13.4% | 覆盖率比 0.146 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
@@ -55,7 +55,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
@@ -66,7 +66,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现

@@ -108,8 +108,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image7.png",
-          "metallic_roughness_texture": "textures/image5.png",
+          "base_color_texture": "textures/image7.png#wrap=clamp,clamp",
+          "metallic_roughness_texture": "textures/image5.png#wrap=clamp,clamp",
           "uv_scale": {
             "x": 2.0,
             "y": 8.0
@@ -169,7 +169,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "normal_texture": "textures/image6.png",
-          "occlusion_texture": "textures/image4.png"
+          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp",
+          "uv1_mask": 4
         }
       ]
     },
@@ -220,7 +221,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image4.png"
+          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -271,7 +272,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image4.png"
+          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -322,7 +323,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image4.png"
+          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -373,7 +374,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image4.png"
+          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -424,9 +425,9 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image2.png",
-          "metallic_roughness_texture": "textures/image3.png",
-          "occlusion_texture": "textures/image4.png",
+          "base_color_texture": "textures/image2.png#wrap=clamp,clamp",
+          "metallic_roughness_texture": "textures/image3.png#wrap=clamp,clamp",
+          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp",
           "uv_scale": {
             "x": 1.25,
             "y": 1.75
@@ -434,7 +435,8 @@
           "uv_offset": {
             "x": -0.15,
             "y": -0.4
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -483,8 +485,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1035,9 +1038,9 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
-          "metallic_roughness_texture": "textures/image1.png",
-          "occlusion_texture": "textures/image1.png"
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
+          "metallic_roughness_texture": "textures/image1.png#wrap=clamp,clamp",
+          "occlusion_texture": "textures/image1.png#wrap=clamp,clamp"
         }
       ]
     }

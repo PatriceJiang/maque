@@ -108,10 +108,10 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/Image_0.png",
+          "base_color_texture": "textures/Image_0.png#wrap=clamp,clamp",
           "metallic_roughness_texture": "textures/Image_2.png",
-          "normal_texture": "textures/Image_1.png",
-          "occlusion_texture": "textures/Image_3.png"
+          "normal_texture": "textures/Image_1.png#wrap=clamp,clamp",
+          "occlusion_texture": "textures/Image_3.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -162,10 +162,10 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/material0_basecolor.png",
+          "base_color_texture": "textures/material0_basecolor.png#wrap=clamp,clamp",
           "metallic_roughness_texture": "textures/material0_metallic_roughness.png",
-          "normal_texture": "textures/material0_normal.png",
-          "occlusion_texture": "textures/material0_occlusion.png"
+          "normal_texture": "textures/material0_normal.png#wrap=clamp,clamp",
+          "occlusion_texture": "textures/material0_occlusion.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -270,10 +270,10 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/material0_basecolor_13.png",
+          "base_color_texture": "textures/material0_basecolor_13.png#wrap=clamp,clamp",
           "metallic_roughness_texture": "textures/material0_metallic_roughness_14.png",
-          "normal_texture": "textures/material0_normal_11.png",
-          "occlusion_texture": "textures/material0_occlusion_12.png"
+          "normal_texture": "textures/material0_normal_11.png#wrap=clamp,clamp",
+          "occlusion_texture": "textures/material0_occlusion_12.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -324,10 +324,10 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/material0_basecolor_17.png",
+          "base_color_texture": "textures/material0_basecolor_17.png#wrap=clamp,clamp",
           "metallic_roughness_texture": "textures/material0_metallic_roughness_18.png",
-          "normal_texture": "textures/material0_normal_15.png",
-          "occlusion_texture": "textures/material0_occlusion_16.png"
+          "normal_texture": "textures/material0_normal_15.png#wrap=clamp,clamp",
+          "occlusion_texture": "textures/material0_occlusion_16.png#wrap=clamp,clamp"
         }
       ]
     },

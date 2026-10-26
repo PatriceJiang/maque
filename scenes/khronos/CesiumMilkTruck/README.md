@@ -21,7 +21,7 @@
 | 动画 / 骨骼 / morph primitive / 相机 | 1 / 0 / 0 / 0 |
 | alpha 模式分布 | OPAQUE×4 |
 
-**导入产物**：`assets/` 4 个 `.mesh.json`（合计 337.8 KB），`textures/` 2 张；场景 `CesiumMilkTruck.scn`。
+**导入产物**：`assets/` 4 个 `.mesh.json`（合计 337.8 KB），`textures/` 1 张；场景 `CesiumMilkTruck.scn`。
 
 ## 生成 / 运行
 

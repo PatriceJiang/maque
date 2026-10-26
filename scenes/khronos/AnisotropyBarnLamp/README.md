@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_materials_anisotropy`、`KHR_materials_clearcoat`、`KHR_materials_emissive_strength`、`KHR_materials_transmission`、`KHR_materials_volume` |
 | alpha 模式分布 | OPAQUE×3 |
 
-**导入产物**：`assets/` 3 个 `.mesh.json`（合计 816.0 KB），`textures/` 3 张；场景 `AnisotropyBarnLamp.scn`。
+**导入产物**：`assets/` 3 个 `.mesh.json`（合计 816.1 KB），`textures/` 3 张；场景 `AnisotropyBarnLamp.scn`。
 
 ## 生成 / 运行
 
@@ -41,16 +41,16 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.512 | 0.433 | 差 -0.079 |
-| 前景平均 RGB | [148.3, 126.9, 115.3] | [137.2, 104.7, 89.6] | RGB 距离 0.077 |
-| 亮度直方图相似度 | — | — | 0.71（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.512 | 0.410 | 差 -0.102 |
+| 前景平均 RGB | [148.3, 126.9, 115.3] | [131.4, 98.8, 83.7] | RGB 距离 0.100 |
+| 亮度直方图相似度 | — | — | 0.69（16 桶交集，1=完全一致） |
 | 前景占比 | 63.7% | 7.3% | 覆盖率比 0.115 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现
@@ -58,7 +58,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现

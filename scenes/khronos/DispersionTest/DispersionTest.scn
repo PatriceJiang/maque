@@ -106,10 +106,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.0
+          "ior": 1.0,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -260,10 +261,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.0
+          "ior": 1.0,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -312,10 +314,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.0
+          "ior": 1.0,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -364,10 +367,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.0
+          "ior": 1.0,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -416,10 +420,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.0
+          "ior": 1.0,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -468,10 +473,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.3300000429153442
+          "ior": 1.3300000429153442,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -520,10 +526,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.3300000429153442
+          "ior": 1.3300000429153442,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -572,10 +579,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.3300000429153442
+          "ior": 1.3300000429153442,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -624,10 +632,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.3300000429153442
+          "ior": 1.3300000429153442,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -676,10 +685,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.3300000429153442
+          "ior": 1.3300000429153442,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -728,8 +738,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -778,8 +789,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -828,8 +840,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -878,8 +891,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -928,8 +942,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -978,10 +993,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.7599999904632568
+          "ior": 1.7599999904632568,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1030,10 +1046,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.7599999904632568
+          "ior": 1.7599999904632568,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1082,10 +1099,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.7599999904632568
+          "ior": 1.7599999904632568,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1134,10 +1152,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.7599999904632568
+          "ior": 1.7599999904632568,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1186,10 +1205,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.7599999904632568
+          "ior": 1.7599999904632568,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1238,10 +1258,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 2.4200000762939453
+          "ior": 2.4200000762939453,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1290,10 +1311,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 2.4200000762939453
+          "ior": 2.4200000762939453,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1342,10 +1364,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 2.4200000762939453
+          "ior": 2.4200000762939453,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1394,10 +1417,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 2.4200000762939453
+          "ior": 2.4200000762939453,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -1446,10 +1470,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 2.4200000762939453
+          "ior": 2.4200000762939453,
+          "opacity": 0.15000000000000002
         }
       ]
     }

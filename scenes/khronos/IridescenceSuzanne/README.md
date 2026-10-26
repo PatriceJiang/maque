@@ -42,9 +42,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.506 | 0.691 | 差 +0.186 |
-| 前景平均 RGB | [125.6, 129.7, 131.3] | [158.6, 181.9, 173.2] | RGB 距离 0.166 |
-| 亮度直方图相似度 | — | — | 0.51（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.506 | 0.563 | 差 +0.057 |
+| 前景平均 RGB | [125.6, 129.7, 131.3] | [126.1, 149.1, 141.0] | RGB 距离 0.039 |
+| 亮度直方图相似度 | — | — | 0.57（16 桶交集，1=完全一致） |
 | 前景占比 | 19.4% | 11.4% | 覆盖率比 0.587 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
@@ -52,7 +52,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
@@ -60,7 +60,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 ## 已知差距（引擎/导入器层面）
 
 - KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
 

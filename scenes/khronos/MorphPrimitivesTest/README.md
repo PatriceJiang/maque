@@ -21,7 +21,7 @@
 | 动画 / 骨骼 / morph primitive / 相机 | 0 / 0 / 2 / 0 |
 | alpha 模式分布 | OPAQUE×2 |
 
-**导入产物**：`assets/` 2 个 `.mesh.json`（合计 2.6 KB），`textures/` 2 张；场景 `MorphPrimitivesTest.scn`。
+**导入产物**：`assets/` 2 个 `.mesh.json`（合计 2.6 KB），`textures/` 1 张；场景 `MorphPrimitivesTest.scn`。
 
 ## 生成 / 运行
 

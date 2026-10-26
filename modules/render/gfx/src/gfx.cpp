@@ -25,7 +25,7 @@ namespace maque::gfx {
 static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32");
 static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
-static_assert(sizeof(mq_renderer_pbr_material) == 236, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换）");
+static_assert(sizeof(mq_renderer_pbr_material) == 240, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换 + uv1_mask）");
 static_assert(sizeof(mq_renderer_environment) == 88, "mq_renderer_environment 布局漂移（+analytic studio IBL 参数）");
 static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
 static_assert(sizeof(mq_renderer_draw3d) == 96, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64）");
@@ -46,12 +46,16 @@ struct Texture {
 };
 
 /* 3D 网格（plans/18-pbr-3d.md）：create_mesh 一次性上传，GPU 常驻。
- * 规范顶点布局 layout=0：pos.xyz / normal.xyz / tangent.xyzw / uv.xy（stride 48B）。 */
+ * 顶点布局（plans/20 §顶点布局 v1，CMake 侧与 runtime/import 的 stride 一致）：
+ *   layout 0（旧，stride 48B）：pos@0 / normal@12 / tangent@24(未用) / uv0@40
+ *   layout 1（新，stride 56B）：pos@0 / normal@12 / color@24(RGBA) / uv0@40 / uv1@48
+ * 管线按 layout 缓存（shader entry：layout0=vs / layout1=vs1）。 */
 struct MeshGpu {
     WGPUBuffer vbo = nullptr;
     WGPUBuffer ibo = nullptr;
     uint32_t index_count = 0;
     int32_t vertex_layout = 0;
+    uint32_t vertex_stride = 48;                          /* 48=layout0 / 56=layout1（管线内烘焙，绘制时不传） */
     float bounds_min[3] = { 0, 0, 0 };
     float bounds_max[3] = { 0, 0, 0 };
 };
@@ -91,18 +95,21 @@ struct Device {
     WGPUBindGroupLayout p3dDrawBgl = nullptr;
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
-    /* 多材质模型管线：[shading_model 0..9][blend 0/1][cull 0..2][mirrored 0/1]，按需创建（plans/19）。
+    /* 多材质模型管线：[shading_model 0..9][blend 0/1][cull 0..2][mirrored 0/1][layout 0/1]，按需创建（plans/19/20）。
      * mirrored = model 3×3 行列式 < 0（镜像缩放的 glTF 节点）：镜像把三角形绕序翻成 CW，
-     * 而 WebGPU 的 frontFace 默认是 CCW，不做补偿时 side=Front 的材质会把正面剔掉/显示背面。 */
-    WGPURenderPipeline p3dMatPipeline[10][2][3][2] = {};
+     * 而 WebGPU 的 frontFace 默认是 CCW，不做补偿时 side=Front 的材质会把正面剔掉/显示背面。
+     * layout = 网格顶点布局（0=48B 旧 / 1=56B COLOR_0+TEXCOORD_1），对应 shader entry vs / vs1。 */
+    WGPURenderPipeline p3dMatPipeline[10][2][3][2][2] = {};
     bool p3dMatWarned[10] = {};
+    bool p3dMatLayoutWarned[2] = {};      /* layout 级（vs/vs1 缺失）只告警一次 */
     /* M5c 方向光阴影：1024² depth map + comparison sampler + 1×1 深度占位（避免同 pass 同纹理读写） */
     WGPUTexture shadowTex = nullptr;
     WGPUTextureView shadowView = nullptr;
     WGPUTexture dummyDepth = nullptr;
     WGPUTextureView dummyDepthView = nullptr;
     WGPUSampler shadowSampler = nullptr;
-    WGPURenderPipeline shadowPipeline = nullptr;
+    /* 阴影管线按顶点布局两套（pos@0+uv@40 相同、stride 不同：48 / 56）：深度 pass 只读 pos+uv。 */
+    WGPURenderPipeline shadowPipeline[2] = {};
     WGPUBuffer shadowCamBuf = nullptr;
     WGPUBindGroup shadowCamBg = nullptr;
     /* PBR 贴图缺省：1×1 白纹理（材质没给 albedo 贴图时绑定它，基色乘 1） */
@@ -264,16 +271,19 @@ static const char* const kMatFsEntry[10] = {
 static const char* const kMatName[10] = {
     "Standard", "Physical", "Basic", "Lambert", "Phong", "Toon", "Normal", "Matcap", "Depth", "Shadow",
 };
+/* 顶点布局 → vertex entry（plans/20）：layout 0 = 旧 48B（vs），layout 1 = 56B COLOR_0/TEXCOORD_1（vs1）。 */
+static const char* const kMatVsEntry[2] = { "vs", "vs1" };
 
 static void release_material_pipelines(Device* dv) {
     for (int m = 0; m < 10; ++m)
         for (int b = 0; b < 2; ++b)
             for (int c = 0; c < 3; ++c)
                 for (int mir = 0; mir < 2; ++mir)
-                    if (dv->p3dMatPipeline[m][b][c][mir]) {
-                        wgpuRenderPipelineRelease(dv->p3dMatPipeline[m][b][c][mir]);
-                        dv->p3dMatPipeline[m][b][c][mir] = nullptr;
-                    }
+                    for (int lay = 0; lay < 2; ++lay)
+                        if (dv->p3dMatPipeline[m][b][c][mir][lay]) {
+                            wgpuRenderPipelineRelease(dv->p3dMatPipeline[m][b][c][mir][lay]);
+                            dv->p3dMatPipeline[m][b][c][mir][lay] = nullptr;
+                        }
 }
 
 static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
@@ -368,68 +378,87 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         release_material_pipelines(dv);
         dv->p3dFormat = format;
     }
-    if (!dv->shadowPipeline && dv->shadowTex && dv->dummyDepthView && dv->shadowSampler) {
+    if (dv->shadowTex && dv->dummyDepthView && dv->shadowSampler) {
         WGPUDepthStencilState sds = WGPU_DEPTH_STENCIL_STATE_INIT;
         sds.format = WGPUTextureFormat_Depth32Float;
         sds.depthWriteEnabled = WGPUOptionalBool_True;
         sds.depthCompare = WGPUCompareFunction_Less;
-        /* 顶点布局与主 pass 一致（48B：pos@0 / uv@40）：阴影 fragment 要用 uv 采样 albedo 做 MASK alpha test。 */
-        WGPUVertexAttribute sattrs[2] = {};
-        sattrs[0].format = WGPUVertexFormat_Float32x3; sattrs[0].offset = 0;  sattrs[0].shaderLocation = 0;   /* pos */
-        sattrs[1].format = WGPUVertexFormat_Float32x2; sattrs[1].offset = 40; sattrs[1].shaderLocation = 2;   /* uv  */
-        WGPUVertexBufferLayout svbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
-        svbl.stepMode = WGPUVertexStepMode_Vertex; svbl.arrayStride = 48;
-        svbl.attributeCount = 2; svbl.attributes = sattrs;
-        WGPUVertexState svs = WGPU_VERTEX_STATE_INIT;
-        svs.module = dv->p3dShader; svs.entryPoint = SV("vs_shadow");
-        svs.bufferCount = 1; svs.buffers = &svbl;
-        /* 阴影 pass 只有深度附件（colorAttachmentCount=0）。WebGPU 允许 fragment 阶段 targetCount=0
-         * （无颜色输出、仅用于 discard）：glTF alphaMode=MASK 的镂空几何要靠它执行 alpha test，
-         * 否则树叶/栅栏/发卡的投影会是整块实心（R3）。若该后端拒绝零 target，回退 depth-only 并提示。 */
-        WGPUFragmentState sfrag = WGPU_FRAGMENT_STATE_INIT;
-        sfrag.module = dv->p3dShader; sfrag.entryPoint = SV("fs_shadow_alpha");
-        sfrag.targetCount = 0; sfrag.targets = nullptr;
-        WGPURenderPipelineDescriptor srp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-        srp.layout = dv->p3dPl;
-        srp.vertex = svs;
-        srp.fragment = &sfrag;                 /* 首试：depth-only + MASK alpha discard */
-        srp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
-        srp.primitive.frontFace = WGPUFrontFace_CCW;    /* 阴影 pass 不剔面，显式写清 WebGPU 默认 CCW */
-        srp.primitive.cullMode = WGPUCullMode_None;
-        srp.depthStencil = &sds;
-        dv->shadowPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &srp);
-        if (!dv->shadowPipeline) {
-            static bool warned_shadow_alpha = false;
-            if (!warned_shadow_alpha) {
-                warned_shadow_alpha = true;
-                std::print(stderr, "gfx: 阴影 alpha 管线创建失败（fragment 'fs_shadow_alpha' 或 targetCount=0 不受支持）"
-                                   "→ 回退 depth-only 阴影（MASK 镂空材质的投影会变成实心）\n");
+        /* 顶点布局两套（layout0 48B / layout1 56B）：阴影只读 pos@0 + uv0@40，两个布局下偏移相同、stride 不同。
+         * 阴影 fragment 要用 uv 采样 albedo 做 MASK alpha test（见 fs_shadow_alpha）。 */
+        for (int lay = 0; lay < 2; ++lay) {
+            if (dv->shadowPipeline[lay]) continue;
+            WGPUVertexAttribute sattrs[4] = {};
+            sattrs[0].format = WGPUVertexFormat_Float32x3; sattrs[0].offset = 0;  sattrs[0].shaderLocation = 0;   /* pos */
+            uint32_t sattr_count = 2;
+            const char* s_vs = "vs_shadow";
+            if (lay == 0) {
+                sattrs[1].format = WGPUVertexFormat_Float32x2; sattrs[1].offset = 40; sattrs[1].shaderLocation = 2;  /* uv0 */
+            } else {
+                /* 布局 v1：阴影 alpha mask 也需要顶点色 alpha 与 TEXCOORD_1（baseColor 贴图可能用 uv1） */
+                sattrs[1].format = WGPUVertexFormat_Float32x4; sattrs[1].offset = 24; sattrs[1].shaderLocation = 1;  /* color */
+                sattrs[2].format = WGPUVertexFormat_Float32x2; sattrs[2].offset = 40; sattrs[2].shaderLocation = 2;  /* uv0 */
+                sattrs[3].format = WGPUVertexFormat_Float32x2; sattrs[3].offset = 48; sattrs[3].shaderLocation = 3;  /* uv1 */
+                sattr_count = 4;
+                s_vs = "vs_shadow1";
             }
-            srp.fragment = nullptr;
-            dv->shadowPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &srp);
-            if (!dv->shadowPipeline) {
-                static bool warned_shadow_off = false;
-                if (!warned_shadow_off) {
-                    warned_shadow_off = true;
-                    std::print(stderr, "gfx: depth-only 阴影管线也创建失败（vs_shadow 输出了 varying？）"
-                                       "→ 本设备关闭方向光阴影（其余 3D 正常）\n");
+            WGPUVertexBufferLayout svbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
+            svbl.stepMode = WGPUVertexStepMode_Vertex;
+            svbl.arrayStride = (lay == 1) ? 56u : 48u;
+            svbl.attributeCount = sattr_count; svbl.attributes = sattrs;
+            WGPUVertexState svs = WGPU_VERTEX_STATE_INIT;
+            svs.module = dv->p3dShader; svs.entryPoint = SV(s_vs);
+            svs.bufferCount = 1; svs.buffers = &svbl;
+            /* 阴影 pass 只有深度附件（colorAttachmentCount=0）。WebGPU 允许 fragment 阶段 targetCount=0
+             * （无颜色输出、仅用于 discard）：glTF alphaMode=MASK 的镂空几何要靠它执行 alpha test，
+             * 否则树叶/栅栏/发卡的投影会是整块实心（R3）。若该后端拒绝零 target，回退 depth-only 并提示。 */
+            WGPUFragmentState sfrag = WGPU_FRAGMENT_STATE_INIT;
+            sfrag.module = dv->p3dShader; sfrag.entryPoint = SV("fs_shadow_alpha");
+            sfrag.targetCount = 0; sfrag.targets = nullptr;
+            WGPURenderPipelineDescriptor srp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+            srp.layout = dv->p3dPl;
+            srp.vertex = svs;
+            srp.fragment = &sfrag;                 /* 首试：depth-only + MASK alpha discard */
+            srp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+            srp.primitive.frontFace = WGPUFrontFace_CCW;    /* 阴影 pass 不剔面，显式写清 WebGPU 默认 CCW */
+            srp.primitive.cullMode = WGPUCullMode_None;
+            srp.depthStencil = &sds;
+            dv->shadowPipeline[lay] = wgpuDeviceCreateRenderPipeline(dv->device, &srp);
+            if (!dv->shadowPipeline[lay]) {
+                static bool warned_shadow_alpha = false;
+                if (!warned_shadow_alpha) {
+                    warned_shadow_alpha = true;
+                    std::print(stderr, "gfx: 阴影 alpha 管线创建失败（fragment 'fs_shadow_alpha' 或 targetCount=0 不受支持）"
+                                       "→ 回退 depth-only 阴影（MASK 镂空材质的投影会变成实心）\n");
+                }
+                srp.fragment = nullptr;
+                dv->shadowPipeline[lay] = wgpuDeviceCreateRenderPipeline(dv->device, &srp);
+                if (!dv->shadowPipeline[lay]) {
+                    static bool warned_shadow_off = false;
+                    if (!warned_shadow_off) {
+                        warned_shadow_off = true;
+                        std::print(stderr, "gfx: depth-only 阴影管线也创建失败（布局 {}，vs_shadow 输出了 varying？）"
+                                           "→ 该顶点布局不投阴影\n", lay);
+                    }
                 }
             }
         }
     }
 }
 
-/* 按材质模型 / 透明混合 / 面朝向 / 镜像（负行列式）懒创建 3D 管线（plans/19）。
+/* 按材质模型 / 透明混合 / 面朝向 / 镜像（负行列式）/ 顶点布局懒创建 3D 管线（plans/19/20）。
  * shading_model 直接选择 fragment entry point；cull 由 side 决定（Front 剔背面 / Back 剔正面 / Double 不剔）。
  * mirrored = model 3×3 det<0：镜像变换把三角形绕序从 CCW 翻成 CW → 管线必须显式 frontFace=CW，
- * 否则 WebGPU 默认 CCW 会把正反面判反（side=Front 时正面被剔掉）。 */
-static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blend, int side, bool mirrored) {
+ * 否则 WebGPU 默认 CCW 会把正反面判反（side=Front 时正面被剔掉）。
+ * layout = 网格顶点布局：0=48B 旧（vs） / 1=56B COLOR_0+TEXCOORD_1（vs1）。 */
+static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blend, int side, bool mirrored,
+                                                int layout) {
     if (!dv || !dv->p3dShader || !dv->p3dPl) return nullptr;
     model = (model < 0) ? 0 : (model > 9 ? 9 : model);
     side = (side < 0) ? 2 : (side > 2 ? 2 : side);
+    layout = (layout == 1) ? 1 : 0;
     const int b = blend ? 1 : 0;
     const int mir = mirrored ? 1 : 0;
-    if (WGPURenderPipeline& cached = dv->p3dMatPipeline[model][b][side][mir]; cached) return cached;
+    if (WGPURenderPipeline& cached = dv->p3dMatPipeline[model][b][side][mir][layout]; cached) return cached;
     WGPUColorTargetState ct = WGPU_COLOR_TARGET_STATE_INIT;
     ct.format = dv->p3dFormat; ct.writeMask = WGPUColorWriteMask_All;
     WGPUBlendState blend_state = WGPU_BLEND_STATE_INIT;
@@ -447,15 +476,21 @@ static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blen
     WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT;
     frag.module = dv->p3dShader; frag.entryPoint = SV(kMatFsEntry[model]);
     frag.targetCount = 1; frag.targets = &ct;
-    WGPUVertexAttribute attrs[3] = {};
-    attrs[0].format = WGPUVertexFormat_Float32x3; attrs[0].offset = 0;  attrs[0].shaderLocation = 0;
-    attrs[1].format = WGPUVertexFormat_Float32x3; attrs[1].offset = 12; attrs[1].shaderLocation = 1;
-    attrs[2].format = WGPUVertexFormat_Float32x2; attrs[2].offset = 40; attrs[2].shaderLocation = 2;
+    /* 顶点布局：layout0 = pos@0/normal@12/uv0@40（stride 48，tangent@24 未用）；
+     *           layout1 = 再加 color@24(RGBA)/uv1@48（stride 56，对应 vs1 的 @location(3)/(4)）。 */
+    WGPUVertexAttribute attrs[5] = {};
+    attrs[0].format = WGPUVertexFormat_Float32x3; attrs[0].offset = 0;  attrs[0].shaderLocation = 0;   /* pos */
+    attrs[1].format = WGPUVertexFormat_Float32x3; attrs[1].offset = 12; attrs[1].shaderLocation = 1;   /* normal */
+    attrs[2].format = WGPUVertexFormat_Float32x2; attrs[2].offset = 40; attrs[2].shaderLocation = 2;   /* uv0 */
+    attrs[3].format = WGPUVertexFormat_Float32x4; attrs[3].offset = 24; attrs[3].shaderLocation = 3;   /* color */
+    attrs[4].format = WGPUVertexFormat_Float32x2; attrs[4].offset = 48; attrs[4].shaderLocation = 4;   /* uv1 */
     WGPUVertexBufferLayout vbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
-    vbl.stepMode = WGPUVertexStepMode_Vertex; vbl.arrayStride = 48;
-    vbl.attributeCount = 3; vbl.attributes = attrs;
+    vbl.stepMode = WGPUVertexStepMode_Vertex;
+    vbl.arrayStride = (layout == 1) ? 56u : 48u;
+    vbl.attributeCount = (layout == 1) ? 5u : 3u;
+    vbl.attributes = attrs;
     WGPUVertexState vs = WGPU_VERTEX_STATE_INIT;
-    vs.module = dv->p3dShader; vs.entryPoint = SV("vs");
+    vs.module = dv->p3dShader; vs.entryPoint = SV(kMatVsEntry[layout]);
     vs.bufferCount = 1; vs.buffers = &vbl;
     WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
     rp.layout = dv->p3dPl; rp.vertex = vs; rp.fragment = &frag;
@@ -467,11 +502,19 @@ static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blen
                           : (side == 1) ? WGPUCullMode_Front : WGPUCullMode_None;
     rp.depthStencil = &ds;
     WGPURenderPipeline pipe = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
-    dv->p3dMatPipeline[model][b][side][mir] = pipe;
-    if (!pipe && !dv->p3dMatWarned[model]) {
-        dv->p3dMatWarned[model] = true;
-        std::print(stderr, "gfx: 材质模型 '{}' 管线创建失败（shader entry '{}' 缺失/校验失败）→ 该模型不渲染\n",
-                   kMatName[model], kMatFsEntry[model]);
+    dv->p3dMatPipeline[model][b][side][mir][layout] = pipe;
+    if (!pipe) {
+        if (layout == 1) {
+            if (!dv->p3dMatLayoutWarned[1]) {
+                dv->p3dMatLayoutWarned[1] = true;
+                std::print(stderr, "gfx: 顶点布局 v1 管线创建失败（shader entry 'vs1' 缺失/校验失败）"
+                                   "→ vertex_layout=1 的网格不渲染（布局 0 不受影响）\n");
+            }
+        } else if (!dv->p3dMatWarned[model]) {
+            dv->p3dMatWarned[model] = true;
+            std::print(stderr, "gfx: 材质模型 '{}' 管线创建失败（shader entry '{}' 缺失/校验失败）→ 该模型不渲染\n",
+                       kMatName[model], kMatFsEntry[model]);
+        }
     }
     return pipe;
 }
@@ -667,7 +710,8 @@ static void destroy_device(Device* dv) {
     if (dv->depthView) wgpuTextureViewRelease(dv->depthView);
     if (dv->depthTex) wgpuTextureRelease(dv->depthTex);
     release_material_pipelines(dv);
-    if (dv->shadowPipeline) wgpuRenderPipelineRelease(dv->shadowPipeline);
+    if (dv->shadowPipeline[0]) wgpuRenderPipelineRelease(dv->shadowPipeline[0]);
+    if (dv->shadowPipeline[1]) wgpuRenderPipelineRelease(dv->shadowPipeline[1]);
     if (dv->shadowSampler) wgpuSamplerRelease(dv->shadowSampler);
     if (dv->dummyDepthView) wgpuTextureViewRelease(dv->dummyDepthView);
     if (dv->dummyDepth) wgpuTextureRelease(dv->dummyDepth);
@@ -902,13 +946,16 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
     return 0;
 }
 
-/* 3D 网格上传（GPU 常驻）：layout 0 = pos3/normal3/tangent4/uv2（stride 48B）。 */
+/* 3D 网格上传（GPU 常驻）：layout 0 = pos3/normal3/tangent4/uv2（stride 48B）；
+ * layout 1 = pos3/normal3/color4/uv0 2/uv1 2（stride 56B，plans/20 COLOR_0+TEXCOORD_1）。 */
 static int32_t r_create_mesh(void* self, const mq_renderer_mesh_gpu* data, int32_t* out_id) {
     auto* dv = (Device*)self;
     if (!dv || !data || !out_id) return -1;
     if (!data->vertices || data->vertex_bytes == 0) return -2;
     if (!data->indices || data->index_count == 0) return -3;
-    if (data->vertex_layout != 0 || data->vertex_stride != 48) return -4;   /* 仅 PBR 规范布局（M2） */
+    if (data->vertex_layout != 0 && data->vertex_layout != 1) return -4;   /* 仅布局 0/1 */
+    const uint32_t want_stride = (data->vertex_layout == 1) ? 56u : 48u;
+    if (data->vertex_stride != want_stride) return -4;                     /* stride 必须与布局匹配 */
 
     auto* m = new MeshGpu();
     {
@@ -930,6 +977,7 @@ static int32_t r_create_mesh(void* self, const mq_renderer_mesh_gpu* data, int32
     }
     m->index_count = data->index_count;
     m->vertex_layout = data->vertex_layout;
+    m->vertex_stride = want_stride;
     std::memcpy(m->bounds_min, data->bounds_min, sizeof m->bounds_min);
     std::memcpy(m->bounds_max, data->bounds_max, sizeof m->bounds_max);
     dv->meshes.push_back(m);
@@ -1446,7 +1494,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
      * 现在：把每个可绘制 draw 的 mesh 局部 bounds 8 角点 × model 变换到世界，再变换到光源视空间求 AABB，
      * 用 AABB 的 x/y 当作正交盒、z 当作 near/far。视锥随场景走，与模型尺度无关。
      * 无任何有效 mesh（bounds 非法/网格缺失）时回退旧启发式，保证老场景仍有合理阴影。 */
-    const bool shadow_ready = shadow_on && has_shadow_light && dv->shadowPipeline && dv->shadowView;
+    const bool shadow_ready = shadow_on && has_shadow_light && dv->shadowView &&
+                              (dv->shadowPipeline[0] || dv->shadowPipeline[1]);
     float shadow_vp[16] = {};
     shadow_vp[0] = shadow_vp[5] = shadow_vp[10] = shadow_vp[15] = 1.0F;   /* 未启用：单位矩阵（shader 不会用） */
     float shadow_bias = 0.0012F;
@@ -1611,7 +1660,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             WGPURenderPassDescriptor srpd = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
             srpd.depthStencilAttachment = &sda;
             WGPURenderPassEncoder spass = wgpuCommandEncoderBeginRenderPass(senc, &srpd);
-            wgpuRenderPassEncoderSetPipeline(spass, dv->shadowPipeline);
+            /* pipeline 按 draw 的顶点布局选择（stride 烘焙在管线里），所以不在这里统一 SetPipeline。 */
             wgpuRenderPassEncoderSetBindGroup(spass, 0, sbg, 0, nullptr);
             for (uint32_t di = 0; di < f->draw_count; ++di) {
                 const mq_renderer_draw3d& d = f->draws[di];
@@ -1619,9 +1668,16 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                     (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
                         ? &f->materials[d.material] : nullptr;
                 if (smat && smat->shading_model == 9) continue;   /* ShadowMaterial 只接收阴影，不投射 */
+                /* alpha_mode==2（BLEND）不投影：透明玻璃/薄片投实心影在多数资产上明显错误；
+                 * MASK(1) 仍然投影——阴影 fragment 用 albedo alpha 做镂空。 */
+                if (smat && smat->alpha_mode == 2) continue;
                 if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
                 MeshGpu* m = dv->meshes[(size_t)d.mesh];
                 if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
+                const int lay = (m->vertex_layout == 1) ? 1 : 0;
+                WGPURenderPipeline spipe = dv->shadowPipeline[lay];
+                if (!spipe) continue;                    /* 该布局阴影管线不可用（vs1 缺失/创建失败） */
+                wgpuRenderPassEncoderSetPipeline(spass, spipe);
                 float du[kMatUniformFloats] = {};
                 /* 传真实材质：阴影 fragment（fs_shadow_alpha）要用 dr.alpha（cutoff/mode）、
                  * dr.base_color.a、dr.model_params.w(opacity) 与 albedo 贴图做 MASK alpha test（R3）。 */
@@ -1715,9 +1771,12 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             const bool is_blend = mat && mat->alpha_mode == 2;
             const int model = mat ? mat->shading_model : 0;
             const int side = mat ? mat->side : 2;
-            /* 负行列式（镜像缩放）：NDC 绕序翻转，管线用 frontFace=CW 补偿（R9）。 */
+            /* 负行列式（镜像缩放）：NDC 绕序翻转，管线用 frontFace=CW 补偿（R9）。
+             * 顶点布局由网格决定（0=48B 旧 / 1=56B COLOR_0+TEXCOORD_1），stride 烘焙在管线里。 */
             const bool mirrored = mat3_det(d.model) < 0.0F;
-            WGPURenderPipeline pipe = get_material_pipeline(dv, model, is_blend, side, mirrored);
+            const int layout = (m->vertex_layout == 1) ? 1 : 0;
+            WGPURenderPipeline pipe =
+                get_material_pipeline(dv, model, is_blend, side, mirrored, layout);
             if (!pipe) {
                 wgpuBindGroupRelease(drawBg);
                 wgpuBufferRelease(dbuf);

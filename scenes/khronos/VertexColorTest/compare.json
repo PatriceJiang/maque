@@ -12,13 +12,13 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.0886,
-  "preview_mean_lum": 0.1903,
-  "mean_lum_delta": 0.1017,
-  "hist_similarity": 0.1626,
-  "rgb_delta": 0.2416,
+  "preview_mean_lum": 0.1538,
+  "mean_lum_delta": 0.0652,
+  "hist_similarity": 0.156,
+  "rgb_delta": 0.1848,
   "ref_coverage": 0.475,
-  "preview_coverage": 0.2311,
-  "coverage_ratio": 0.486,
+  "preview_coverage": 0.2236,
+  "coverage_ratio": 0.471,
   "ref_bbox": [
     0,
     0,
@@ -37,9 +37,9 @@
     28.5
   ],
   "preview_mean_rgb": [
-    38.4,
-    38.1,
-    181.2
+    31.6,
+    30.0,
+    152.6
   ],
   "framing_notes": [],
   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"

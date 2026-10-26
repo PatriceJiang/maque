@@ -22,7 +22,7 @@
 | 必需扩展 | `KHR_texture_transform` |
 | alpha 模式分布 | OPAQUE×6 |
 
-**导入产物**：`assets/` 4 个 `.mesh.json`（合计 2.5 MB），`textures/` 6 张；场景 `SheenChair.scn`。
+**导入产物**：`assets/` 4 个 `.mesh.json`（合计 2.9 MB），`textures/` 6 张；场景 `SheenChair.scn`。
 
 ## 生成 / 运行
 
@@ -42,16 +42,15 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.444 | 0.327 | 差 -0.117 |
-| 前景平均 RGB | [143.7, 106.0, 96.6] | [191.2, 57.2, 26.4] | RGB 距离 0.217 |
-| 亮度直方图相似度 | — | — | 0.75（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.444 | 0.326 | 差 -0.118 |
+| 前景平均 RGB | [143.7, 106.0, 96.6] | [190.5, 57.0, 26.3] | RGB 距离 0.217 |
+| 亮度直方图相似度 | — | — | 0.74（16 桶交集，1=完全一致） |
 | 前景占比 | 81.5% | 11.1% | 覆盖率比 0.136 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
 - KHR_materials_variants：只使用默认材质（不做变体切换）
@@ -59,7 +58,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 
 ## 已知差距（引擎/导入器层面）
 
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
 - KHR_materials_variants：只使用默认材质（不做变体切换）

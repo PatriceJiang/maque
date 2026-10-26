@@ -3,20 +3,28 @@
 
 输入：`.gltf`（JSON，external/内嵌 base64 buffer）或 `.glb`（二进制 chunk）。
 输出（--out 目录，确定性文本，可纳入版本库/CI 校验）：
-  <name>.mesh.json     网格 + 材质 + 贴图引用（M4b 运行时加载格式，48B 顶点布局）
+  <name>.mesh.json     网格 + 材质 + 贴图引用（运行时加载格式；默认 48B/layout0，必要时 56B/layout1）
   textures/<name>.png   PNG 贴图（bin bufferView 内嵌/外部 uri/data: URI 一律搬运；JPEG 输出 .jpg）
 
 设计约束（与引擎一致）：
-  · 顶点布局 = mq_renderer_mesh_gpu layout 0：pos3|normal3|tangent4|uv2（48B/顶点）
+  · 顶点布局 = mq_renderer_mesh_gpu：
+      layout 0（旧）：pos3|normal3|tangent4|uv2                    = 12 float / 48B
+      layout 1（新）：pos3|normal3|color4|uv0_2|uv1_2              = 14 float / 56B
+    仅当 primitive 有 COLOR_0 或其材质任一贴图 texCoord>0 时用 layout 1；
+    否则 layout 0 输出与迁移前逐字节一致（旧资产零漂移）。
   · 只接受三角网格（mode=4/缺省）；其它 mode 跳过并告警（确定性：按 primitive 顺序）
   · 输出 JSON 排序键 + 固定缩进 → 同一 glTF 导入结果逐字节一致
   · 不做图像编解码：PNG/JPEG 原样搬运（运行时 image 模块按 magic 解码）；
     其它编码（KTX2/BasisU/WebP）跳过并告警
   · 材质扩展：KHR_materials_{unlit,clearcoat,sheen,iridescence,specular,ior,anisotropy,
-    emissive_strength} → asset.PbrMaterial（只写非默认值，无扩展材质输出零漂移）
+    emissive_strength} → asset.PbrMaterial（只写非默认值）；transmission → alpha BLEND 近似。
+  · glTF sampler 非默认时贴图路径追加 `#wrap=U,V&filter=nearest`（runtime 据此建 sampler）。
 用法：
   python tools/gltf_import.py scene.gltf --out assets/imported
   python tools/gltf_import.py model.glb --out assets/imported --name hero
+  python tools/gltf_import.py model.gltf --out out --scene --camera-distance-scale 1.2
+  python tools/gltf_import.py model.gltf --out out --scene \
+      --camera-position "3,2,1" --camera-target "0,0.5,0" --camera-fov 30
 """
 from __future__ import annotations
 
@@ -95,6 +103,33 @@ def accessor_values(js, buffers, idx):
         row = list(struct.unpack_from("<" + fmt * nc, buf, base + i * stride))
         rows.append(row)
     return rows
+
+
+def accessor_norm_scale(js, idx):
+    """整数 accessor 的归一化系数（normalized 属性；颜色/UV 量化用）。
+
+    glTF 规范：COLOR_0/TEXCOORD_n 允许 float 或 normalized ubyte/ushort
+    （KHR_mesh_quantization 还允许 signed byte/short）。非 normalized 整数保持原值。
+    """
+    acc = js["accessors"][idx]
+    ct = acc["componentType"]
+    if ct == 5126 or not acc.get("normalized"):
+        return 1.0
+    return {5120: 1.0 / 127.0, 5121: 1.0 / 255.0,
+            5122: 1.0 / 32767.0, 5123: 1.0 / 65535.0}.get(ct, 1.0)
+
+
+def effective_texcoord(tinfo):
+    """textureInfo 实际使用的 UV 集：KHR_texture_transform.texCoord 覆盖 textureInfo.texCoord。"""
+    if not tinfo:
+        return 0
+    tr = (tinfo.get("extensions") or {}).get("KHR_texture_transform")
+    if isinstance(tr, dict) and "texCoord" in tr:
+        try:
+            return int(tr["texCoord"])
+        except (TypeError, ValueError):
+            return 0
+    return int(tinfo.get("texCoord", 0))
 
 
 def normalize(v):
@@ -223,6 +258,39 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
     if "KHR_materials_emissive_strength" in exts:
         put_num("emissive_intensity",
                 (exts["KHR_materials_emissive_strength"] or {}).get("emissiveStrength", 1.0), 1.0)
+    # KHR_materials_transmission 近似（无 backbuffer 折射）：factor>0 时改 alpha BLEND 半透。
+    # opacity = clamp(1 - 0.85*factor, 0.15, 1)（ToyCar Glass 手调 opacity≈0.3 的同款思路）。
+    tr = exts.get("KHR_materials_transmission") or {}
+    try:
+        tf = float(tr.get("transmissionFactor", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        tf = 0.0
+    if tf > 0.01:
+        m["alpha_mode"] = 2                       # PbrAlphaMode::Blend
+        approx = max(0.15, min(1.0, 1.0 - 0.85 * tf))
+        m["opacity"] = min(float(m.get("opacity", 1.0)), approx)
+
+    # glTF sampler → 贴图路径后缀（仅非默认；runtime 据此建 per-texture sampler）。
+    # 默认 (repeat, repeat, linear) 不写 → 旧资产路径逐字节不变。
+    def tex_suffix(tinfo):
+        if not tinfo:
+            return ""
+        tex = js["textures"][tinfo["index"]]
+        si = tex.get("sampler")
+        samplers = js.get("samplers") or []
+        if si is None or not isinstance(si, int) or si < 0 or si >= len(samplers):
+            return ""
+        s = samplers[si] or {}
+        wrap = {33071: "clamp", 33648: "mirror", 10497: "repeat"}
+        u = wrap.get(s.get("wrapS"), "repeat")
+        v = wrap.get(s.get("wrapT"), "repeat")
+        parts = []
+        if u != "repeat" or v != "repeat":
+            parts.append(f"wrap={u},{v}")
+        if s.get("magFilter") == 9728:            # NEAREST；未给/9729=linear 默认
+            parts.append("filter=nearest")
+        return "#" + "&".join(parts) if parts else ""
+
     # 贴图槽：glTF 的 texture index → image uri 或 bufferView（PNG/JPEG 原样搬运）
     def tex_slot(tinfo):
         if not tinfo:
@@ -273,7 +341,7 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
             with open(os.path.join(tex_dir, name), "wb") as f:
                 f.write(data)
             images_out.add(name)
-            return f"textures/{name}"
+            return f"textures/{name}" + tex_suffix(tinfo)
         if enc in ("gif", "webp"):
             # 引擎 image 模块不支持 WebP（wuffs 无解码器）；用 PIL 离线转 PNG（可选依赖）。
             png = transcode_to_png(data, base)
@@ -283,25 +351,39 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
                     f.write(png)
                 images_out.add(name)
                 print(f"gltf_import: 贴图 image={src} ({enc}) → PNG 转码（PIL）", file=sys.stderr)
-                return f"textures/{name}"
+                return f"textures/{name}" + tex_suffix(tinfo)
             print(f"gltf_import: 跳过 {enc} 贴图 image={src}（PIL 不可用），该贴图将缺失", file=sys.stderr)
             return ""
         print(f"gltf_import: 跳过不支持的贴图 image={src}（magic={enc}, mimeType={img.get('mimeType')}）",
               file=sys.stderr)
         return ""
 
+    # uv1_mask：bit0..7 = base/mr/ao/normal/emissive/matcap/gradient/clearcoat_normal
+    # 使用 TEXCOORD_1（仅非 0 时写；对应网格必须 vertex_layout=1，uv1 数据在顶点末尾）。
+    UV1_BIT = {"base": 1 << 0, "mr": 1 << 1, "ao": 1 << 2, "normal": 1 << 3,
+               "emissive": 1 << 4, "matcap": 1 << 5, "gradient": 1 << 6, "clearcoat_normal": 1 << 7}
+    uv1_mask = 0
+
+    def mark_uv1(bit, tinfo):
+        nonlocal uv1_mask
+        if effective_texcoord(tinfo) > 0:
+            uv1_mask |= UV1_BIT[bit]
+
     pbr_tex = pbr.get("baseColorTexture")
     slot = tex_slot(pbr_tex)
     if slot:
         m["base_color_texture"] = slot
+    mark_uv1("base", pbr_tex)
     mr_tex = pbr.get("metallicRoughnessTexture")
     slot = tex_slot(mr_tex)
     if slot:
         m["metallic_roughness_texture"] = slot
+    mark_uv1("mr", mr_tex)
     normal_tex = mat.get("normalTexture")
     slot = tex_slot(normal_tex)
     if slot:
         m["normal_texture"] = slot
+    mark_uv1("normal", normal_tex)
     if normal_tex:
         # glTF normalTexture.scale（缺省 1）→ 引擎 normal_scale / normal_scale_y
         # （three.js 语义：两轴同值；引擎把 x/y 拆开是为了兼容手写 scn）
@@ -311,12 +393,15 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
     slot = tex_slot(occ_tex)
     if slot:
         m["occlusion_texture"] = slot
+    mark_uv1("ao", occ_tex)
     if occ_tex:
         # glTF occlusionTexture.strength（缺省 1）→ 引擎 occlusion_strength
         put_num("occlusion_strength", occ_tex.get("strength", 1.0), 1.0)
-    slot = tex_slot(mat.get("emissiveTexture"))
+    emissive_tex = mat.get("emissiveTexture")
+    slot = tex_slot(emissive_tex)
     if slot:
         m["emissive_texture"] = slot
+    mark_uv1("emissive", emissive_tex)
     # KHR_texture_transform（plans/19 PBR 正确性）：基础贴图一组 UV，法线单独一组。
     # 只写非默认值（旧无变换资产逐字节不变）；rotation 暂不支持（引擎 UV 变换无旋转项）。
     def tex_transform(tinfo):
@@ -346,6 +431,9 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
         if slot:
             m["clearcoat_normal_texture"] = slot
             put_num("clearcoat_normal_scale", cn.get("scale", 1.0), 1.0)
+        mark_uv1("clearcoat_normal", cn)
+    if uv1_mask:
+        m["uv1_mask"] = uv1_mask
     return m
 
 
@@ -497,8 +585,12 @@ def _fit_camera_distance(center, bmin, bmax, dir_unit, fov_y_deg, aspect, margin
     return max(1e-4, dist)
 
 
-def emit_scene(js, out_dir, name, prims_meta, scene_mats=None):
-    """glTF 节点树 → maque .scn：每个 (node, primitive) 一个平级实体（世界变换烘焙进 local）。"""
+def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None):
+    """glTF 节点树 → maque .scn：每个 (node, primitive) 一个平级实体（世界变换烘焙进 local）。
+
+    camera（可选，来自 CLI）：{distance_scale, position[3], target[3], fov}；
+    全空/None 时输出与旧版自动取景逐字节一致。
+    """
     nodes = js.get("nodes", [])
     scn_nodes = js.get("scenes", [{}])[js.get("scene", 0)].get("nodes", []) if js.get("scenes") else []
     entities = []
@@ -548,14 +640,25 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None):
     radius = max(1e-3, math.sqrt(sum(h * h for h in half)))       # 包围球半径（半对角线）
     # 自动机位：3/4 视角（左上前），距离按包围盒 8 角点投射进视锥拟合（_fit_camera_distance）。
     # 旧公式固定 -1.2r/+0.55r/+2.1r 对 1 单位立方体太近；只用包围球半径又会对薄板/长条模型过远。
-    fov_y = 45.0
+    # CLI 覆盖（迁移手调）：显式 position/target 优先于自动拟合；distance_scale 乘拟合距离。
+    camera = camera or {}
+    fov_y = float(camera["fov"]) if camera.get("fov") is not None else 45.0
     aspect = 1280.0 / 720.0
     dirv = (-0.485, 0.222, 0.849)                                  # 归一化后的 3/4 视角方向
-    dist = _fit_camera_distance(center, bounds_min, bounds_max, dirv, fov_y, aspect)
-    eye = [center[i] + dirv[i] * dist for i in range(3)]
+    pos_override = camera.get("position")
+    target_override = camera.get("target")
+    if pos_override is not None:
+        eye = [float(v) for v in pos_override]
+        dist = max(1e-4, math.sqrt(sum((eye[i] - center[i]) ** 2 for i in range(3))))
+    else:
+        dist_fit = _fit_camera_distance(center, bounds_min, bounds_max, dirv, fov_y, aspect)
+        scale = float(camera["distance_scale"]) if camera.get("distance_scale") is not None else 1.0
+        dist = max(1e-4, dist_fit * scale)
+        eye = [center[i] + dirv[i] * dist for i in range(3)]
+    look_at = target_override if target_override is not None else center
     cam_near = max(1e-4, dist * 0.02)
     cam_far = max(dist * 10.0, (dist + radius) * 8.0)
-    pitch, yaw = _look_rotation(eye, center)
+    pitch, yaw = _look_rotation(eye, look_at)
     lrx, lry = _light_rotation((0.35, -0.85, -0.4))
     cam = {"name": "camera", "components": [
         {"type": "scene.Transform3D", "local": {
@@ -584,7 +687,7 @@ def _round_mesh(m):
     return m
 
 
-def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False):
+def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, camera=None):
     js, bin_chunk, base_dir = load_gltf(path)
     buffers = read_buffers(js, bin_chunk, base_dir)
     tex_dir = os.path.join(out_dir, "textures")
@@ -606,6 +709,24 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False):
             n = len(positions)
             uvs = (accessor_values(js, buffers, attrs["TEXCOORD_0"])
                    if "TEXCOORD_0" in attrs else [[0.0, 0.0]] * n)
+            # COLOR_0（可选，缺省白）：float 或 normalized ubyte/ushort；VEC3 → alpha=1。
+            colors = None
+            if "COLOR_0" in attrs:
+                acc = attrs["COLOR_0"]
+                sc = accessor_norm_scale(js, acc)
+                colors = []
+                for r in accessor_values(js, buffers, acc):
+                    c = [float(x) * sc for x in r]
+                    if len(c) == 3:
+                        c.append(1.0)
+                    colors.append(c[:4])
+            # TEXCOORD_1（可选；缺省复制 uv0）：第二套 UV 与 uv0 同规则读取（含量化归一化）。
+            uvs1 = None
+            if "TEXCOORD_1" in attrs:
+                acc = attrs["TEXCOORD_1"]
+                sc = accessor_norm_scale(js, acc)
+                uvs1 = [[float(r[0]) * sc, float(r[1]) * sc]
+                        for r in accessor_values(js, buffers, acc)]
             indices = (accessor_values(js, buffers, prim["indices"])
                        if "indices" in prim else [[i] for i in range(n)])
             indices = [int(r[0]) for r in indices]
@@ -619,17 +740,27 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False):
             if mat_idx >= 0:
                 mats.append(material_from_gltf(js, js["materials"][mat_idx], images,
                                                tex_dir, base_dir, buffers, tex_name_registry))
+            # 顶点布局 v1：有 COLOR_0 或材质任一贴图用 TEXCOORD_1 → 14 float / 56B
+            # （pos3|normal3|color4|uv0_2|uv1_2）；否则维持旧布局（12 float / 48B，逐字节不变）。
+            layout1 = colors is not None or bool(mats and mats[0].get("uv1_mask", 0))
             verts = []
             for i in range(n):
                 p, nr, uv = positions[i], normals[i], uvs[i]
-                verts.append([p[0], p[1], p[2], nr[0], nr[1], nr[2],
-                              1.0, 0.0, 0.0, 1.0, uv[0], uv[1]])
+                if layout1:
+                    col = colors[i] if colors is not None else [1.0, 1.0, 1.0, 1.0]
+                    uv1 = uvs1[i] if uvs1 is not None else uv
+                    verts.append([p[0], p[1], p[2], nr[0], nr[1], nr[2],
+                                  col[0], col[1], col[2], col[3],
+                                  uv[0], uv[1], uv1[0], uv1[1]])
+                else:
+                    verts.append([p[0], p[1], p[2], nr[0], nr[1], nr[2],
+                                  1.0, 0.0, 0.0, 1.0, uv[0], uv[1]])
             xs = [p[0] for p in positions]; ys = [p[1] for p in positions]; zs = [p[2] for p in positions]
             mesh_name = name if len(js.get("meshes", [])) == 1 and pi == 0 else f"{name}_{mi}_{pi}"
             meshes_out.append({
                 "name": mesh_name,
-                "vertex_stride": 48,
-                "vertex_layout": 0,
+                "vertex_stride": 56 if layout1 else 48,
+                "vertex_layout": 1 if layout1 else 0,
                 "vertices": verts,
                 "indices": indices,
                 "bounds_min": [min(xs), min(ys), min(zs)],
@@ -655,8 +786,19 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False):
             f.write("\n")
         written.append(dest)
     if emit_scene_flag:
-        emit_scene(js, out_dir, name, prims_meta)
+        emit_scene(js, out_dir, name, prims_meta, camera=camera)
     return written, sorted(images)
+
+
+def _parse_vec3(text):
+    """CLI 坐标参数 "x,y,z" → [float, float, float]（argparse type）。"""
+    try:
+        parts = [p.strip() for p in str(text).split(",")]
+        if len(parts) != 3:
+            raise ValueError
+        return [float(p) for p in parts]
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"坐标应为 'x,y,z' 三个浮点数，收到: {text!r}") from exc
 
 
 def main(argv):
@@ -668,8 +810,32 @@ def main(argv):
                     help="额外生成 <name>.scn（glTF 节点树 → 平级实体，含相机/方向光；可直接用 player 打开）")
     ap.add_argument("--compact", action="store_true",
                     help="网格 JSON 紧凑输出（大模型显著减小体积，仍可被运行时解析）")
+    # 相机 CLI（只对 --scene 生效；迁移脚本用于自动取景微调 / 手动机位）
+    ap.add_argument("--camera-distance-scale", type=float, default=None, metavar="F",
+                    help="自动取景距离倍率（拟合距离 × F，默认 1）")
+    ap.add_argument("--camera-position", type=_parse_vec3, default=None, metavar="x,y,z",
+                    help="显式相机位置（世界坐标；与 --camera-target 搭配）")
+    ap.add_argument("--camera-target", type=_parse_vec3, default=None, metavar="x,y,z",
+                    help="相机看向点（默认包围盒中心）")
+    ap.add_argument("--camera-fov", type=float, default=None, metavar="DEG",
+                    help="相机垂直 FOV（度，默认 45）")
     args = ap.parse_args(argv)
-    written, images = import_gltf(args.input, args.out, args.name, args.scene, args.compact)
+    camera = {}
+    if args.camera_distance_scale is not None:
+        if args.camera_distance_scale <= 0.0:
+            ap.error("--camera-distance-scale 必须 > 0")
+        camera["distance_scale"] = args.camera_distance_scale
+    if args.camera_position is not None:
+        camera["position"] = args.camera_position
+    if args.camera_target is not None:
+        camera["target"] = args.camera_target
+    if args.camera_fov is not None:
+        if not (0.0 < args.camera_fov < 179.0):
+            ap.error("--camera-fov 必须在 (0, 179) 度之间")
+        camera["fov"] = args.camera_fov
+    if camera and not args.scene:
+        ap.error("--camera-* 只在 --scene 生成场景时生效（请同时加 --scene）")
+    written, images = import_gltf(args.input, args.out, args.name, args.scene, args.compact, camera)
     for w in written:
         print(f"gltf_import: → {w}")
     for img in images:

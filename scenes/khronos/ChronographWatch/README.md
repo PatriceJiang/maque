@@ -24,7 +24,7 @@
 | 使用扩展 | `KHR_materials_transmission`、`KHR_materials_variants`、`KHR_texture_transform` |
 | alpha 模式分布 | OPAQUE×29 |
 
-**导入产物**：`assets/` 19 个 `.mesh.json`（合计 10.7 MB），`textures/` 8 张；场景 `ChronographWatch.scn`。
+**导入产物**：`assets/` 19 个 `.mesh.json`（合计 10.8 MB），`textures/` 8 张；场景 `ChronographWatch.scn`。
 
 ## 生成 / 运行
 
@@ -44,28 +44,26 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Chr
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.420 | 0.530 | 差 +0.111 |
-| 前景平均 RGB | [112.9, 107.1, 90.2] | [143.8, 134.7, 115.8] | RGB 距离 0.110 |
-| 亮度直方图相似度 | — | — | 0.74（16 桶交集，1=完全一致） |
-| 前景占比 | 94.2% | 14.1% | 覆盖率比 0.15 |
+| 前景平均亮度 | 0.420 | 0.442 | 差 +0.022 |
+| 前景平均 RGB | [112.9, 107.1, 90.2] | [122.4, 112.1, 89.7] | RGB 距离 0.020 |
+| 亮度直方图相似度 | — | — | 0.66（16 桶交集，1=完全一致） |
+| 前景占比 | 94.2% | 12.8% | 覆盖率比 0.136 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_variants：只使用默认材质（不做变体切换）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_variants：只使用默认材质（不做变体切换）
 
 ## 踩过的坑 / 注意

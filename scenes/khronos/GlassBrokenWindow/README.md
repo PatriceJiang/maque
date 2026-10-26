@@ -41,22 +41,22 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Gla
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.491 | 0.815 | 差 +0.324 |
-| 前景平均 RGB | [117.1, 127.6, 126.6] | [197.0, 209.8, 215.5] | RGB 距离 0.328 |
-| 亮度直方图相似度 | — | — | 0.12（16 桶交集，1=完全一致） |
-| 前景占比 | 97.9% | 27.6% | 覆盖率比 0.282 |
+| 前景平均亮度 | 0.491 | 0.455 | 差 -0.036 |
+| 前景平均 RGB | [117.1, 127.6, 126.6] | [114.2, 116.1, 118.8] | RGB 距离 0.029 |
+| 亮度直方图相似度 | — | — | 0.21（16 桶交集，1=完全一致） |
+| 前景占比 | 97.9% | 27.2% | 覆盖率比 0.278 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 
 ## 踩过的坑 / 注意

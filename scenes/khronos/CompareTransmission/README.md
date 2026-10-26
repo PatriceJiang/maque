@@ -22,7 +22,7 @@
 | 使用扩展 | `KHR_materials_transmission` |
 | alpha 模式分布 | BLEND×1、OPAQUE×3 |
 
-**导入产物**：`assets/` 5 个 `.mesh.json`（合计 704.9 KB），`textures/` 4 张；场景 `CompareTransmission.scn`。
+**导入产物**：`assets/` 5 个 `.mesh.json`（合计 705.0 KB），`textures/` 4 张；场景 `CompareTransmission.scn`。
 
 ## 生成 / 运行
 
@@ -42,8 +42,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.459 | 0.582 | 差 +0.122 |
-| 前景平均 RGB | [120.9, 116.4, 114.4] | [148.9, 148.2, 147.9] | RGB 距离 0.122 |
+| 前景平均亮度 | 0.459 | 0.526 | 差 +0.066 |
+| 前景平均 RGB | [120.9, 116.4, 114.4] | [134.8, 133.9, 133.7] | RGB 距离 0.066 |
 | 亮度直方图相似度 | — | — | 0.41（16 桶交集，1=完全一致） |
 | 前景占比 | 90.1% | 19.7% | 覆盖率比 0.219 |
 
@@ -51,12 +51,12 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 
 ## 踩过的坑 / 注意
 

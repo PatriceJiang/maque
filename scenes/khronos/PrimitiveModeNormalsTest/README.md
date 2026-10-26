@@ -20,7 +20,7 @@
 | 动画 / 骨骼 / morph primitive / 相机 | 0 / 0 / 0 / 0 |
 | alpha 模式分布 | MASK×1、OPAQUE×1 |
 
-**导入产物**：`assets/` 9 个 `.mesh.json`（合计 157.1 KB），`textures/` 1 张；场景 `PrimitiveModeNormalsTest.scn`。
+**导入产物**：`assets/` 9 个 `.mesh.json`（合计 171.5 KB），`textures/` 1 张；场景 `PrimitiveModeNormalsTest.scn`。
 
 ## 生成 / 运行
 
@@ -40,9 +40,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pri
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.730 | 0.893 | 差 +0.163 |
-| 前景平均 RGB | [186.6, 186.3, 180.8] | [224.5, 228.6, 229.4] | RGB 距离 0.168 |
-| 亮度直方图相似度 | — | — | 0.68（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.730 | 0.878 | 差 +0.148 |
+| 前景平均 RGB | [186.6, 186.3, 180.8] | [220.8, 225.7, 215.4] | RGB 距离 0.141 |
+| 亮度直方图相似度 | — | — | 0.70（16 桶交集，1=完全一致） |
 | 前景占比 | 66.8% | 11.7% | 覆盖率比 0.176 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
@@ -50,18 +50,32 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pri
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 非三角形 primitive 被跳过（线/点）
-- COLOR_0 顶点色未使用
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 非三角形 primitive 被跳过（线/点）
-- COLOR_0 顶点色未使用
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 
 ## 踩过的坑 / 注意
 
+- gltf_import: 跳过非三角 primitive mesh=0 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=1 prim=0 mode=3
+- gltf_import: 跳过非三角 primitive mesh=3 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=4 prim=0 mode=3
+- gltf_import: 跳过非三角 primitive mesh=6 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=7 prim=0 mode=3
+- gltf_import: 跳过非三角 primitive mesh=9 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=10 prim=0 mode=3
+- gltf_import: 跳过非三角 primitive mesh=12 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=13 prim=0 mode=3
+- gltf_import: 跳过非三角 primitive mesh=15 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=16 prim=0 mode=3
+- gltf_import: 跳过非三角 primitive mesh=18 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=19 prim=0 mode=3
+- gltf_import: 跳过非三角 primitive mesh=21 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=22 prim=0 mode=3
 - 13 个 primitive 无 NORMAL（导入器按索引重建法线）
 - 16 个非三角 primitive 被跳过
 - 大模型：1,050,220 顶点（加载/渲染较慢）

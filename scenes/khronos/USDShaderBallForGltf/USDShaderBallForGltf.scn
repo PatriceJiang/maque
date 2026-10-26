@@ -210,9 +210,10 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/material_ao.png",
+          "opacity": 0.15000000000000002,
+          "occlusion_texture": "textures/material_ao.png#wrap=clamp,clamp",
           "occlusion_strength": 0.5
         }
       ]
@@ -264,7 +265,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/sss_bars.png"
+          "base_color_texture": "textures/sss_bars.png#wrap=clamp,clamp"
         }
       ]
     }

@@ -21,7 +21,7 @@
 | 动画 / 骨骼 / morph primitive / 相机 | 0 / 0 / 0 / 1 |
 | alpha 模式分布 | OPAQUE×1 |
 
-**导入产物**：`assets/` 1 个 `.mesh.json`（合计 2.0 KB），`textures/` 2 张；场景 `MultiUVTest.scn`。
+**导入产物**：`assets/` 1 个 `.mesh.json`（合计 2.3 KB），`textures/` 2 张；场景 `MultiUVTest.scn`。
 
 ## 生成 / 运行
 
@@ -41,8 +41,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Mul
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.446 | 0.743 | 差 +0.297 |
-| 前景平均 RGB | [104.2, 117.9, 99.3] | [189.2, 195.0, 135.7] | RGB 距离 0.259 |
+| 前景平均亮度 | 0.446 | 0.740 | 差 +0.295 |
+| 前景平均 RGB | [104.2, 117.9, 99.3] | [187.8, 195.1, 129.4] | RGB 距离 0.249 |
 | 亮度直方图相似度 | — | — | 0.16（16 桶交集，1=完全一致） |
 | 前景占比 | 61.6% | 26.9% | 覆盖率比 0.436 |
 
@@ -51,13 +51,11 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Mul
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 
 ## 踩过的坑 / 注意
 

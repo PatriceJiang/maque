@@ -23,7 +23,7 @@
 | 使用扩展 | `KHR_materials_clearcoat`、`KHR_materials_emissive_strength`、`KHR_materials_iridescence`、`KHR_materials_transmission`、`KHR_materials_variants`、`KHR_texture_transform` |
 | alpha 模式分布 | OPAQUE×29 |
 
-**导入产物**：`assets/` 109 个 `.mesh.json`（合计 17.0 MB），`textures/` 13 张；场景 `CarConcept.scn`。
+**导入产物**：`assets/` 109 个 `.mesh.json`（合计 19.7 MB），`textures/` 13 张；场景 `CarConcept.scn`。
 
 ## 生成 / 运行
 
@@ -43,18 +43,17 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Car
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.146 | 0.416 | 差 +0.270 |
-| 前景平均 RGB | [69.0, 27.8, 36.7] | [159.7, 91.2, 94.5] | RGB 距离 0.277 |
+| 前景平均亮度 | 0.146 | 0.287 | 差 +0.141 |
+| 前景平均 RGB | [69.0, 27.8, 36.7] | [131.1, 57.0, 60.6] | RGB 距离 0.151 |
 | 亮度直方图相似度 | — | — | 0.30（16 桶交集，1=完全一致） |
-| 前景占比 | 58.0% | 14.4% | 覆盖率比 0.248 |
+| 前景占比 | 58.0% | 13.8% | 覆盖率比 0.237 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
 - KHR_materials_variants：只使用默认材质（不做变体切换）
@@ -62,9 +61,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Car
 
 ## 已知差距（引擎/导入器层面）
 
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
 - KHR_materials_variants：只使用默认材质（不做变体切换）

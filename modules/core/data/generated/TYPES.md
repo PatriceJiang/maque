@@ -624,6 +624,7 @@ role: `pbr_material`
 | `uv_offset` | math.Vec2 | {0.0F, 0.0F} |  |
 | `normal_uv_scale` | math.Vec2 | {1.0F, 1.0F} |  |
 | `normal_uv_offset` | math.Vec2 | {0.0F, 0.0F} |  |
+| `uv1_mask` | int32_t | 0 |  |
 
 ### asset.PixelFormat — enum
 

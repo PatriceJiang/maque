@@ -3469,6 +3469,15 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "uv1_mask",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },

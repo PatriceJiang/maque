@@ -108,7 +108,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
           "uv_offset": {
             "x": 0.5,
             "y": 0.0
@@ -163,7 +163,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
           "uv_offset": {
             "x": 0.0,
             "y": 0.5
@@ -218,7 +218,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
           "uv_offset": {
             "x": 0.5,
             "y": 0.5
@@ -273,7 +273,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png"
+          "base_color_texture": "textures/image1.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -477,7 +477,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png",
+          "base_color_texture": "textures/image1.png#wrap=clamp,clamp",
           "uv_scale": {
             "x": 1.5,
             "y": 1.5
@@ -634,7 +634,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png",
+          "base_color_texture": "textures/image1.png#wrap=clamp,clamp",
           "uv_scale": {
             "x": 1.5,
             "y": 1.5

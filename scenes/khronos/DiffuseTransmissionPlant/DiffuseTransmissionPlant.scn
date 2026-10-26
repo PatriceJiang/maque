@@ -108,10 +108,10 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image2.jpg",
-          "normal_texture": "textures/image3.jpg",
-          "occlusion_texture": "textures/image6.jpg",
-          "emissive_texture": "textures/image4.jpg"
+          "base_color_texture": "textures/image2.jpg#wrap=clamp,clamp",
+          "normal_texture": "textures/image3.jpg#wrap=clamp,clamp",
+          "occlusion_texture": "textures/image6.jpg#wrap=clamp,clamp",
+          "emissive_texture": "textures/image4.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -162,8 +162,8 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
-          "normal_texture": "textures/image1.jpg"
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
+          "normal_texture": "textures/image1.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -214,10 +214,10 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image2.jpg",
-          "normal_texture": "textures/image3.jpg",
-          "occlusion_texture": "textures/image6.jpg",
-          "emissive_texture": "textures/image4.jpg"
+          "base_color_texture": "textures/image2.jpg#wrap=clamp,clamp",
+          "normal_texture": "textures/image3.jpg#wrap=clamp,clamp",
+          "occlusion_texture": "textures/image6.jpg#wrap=clamp,clamp",
+          "emissive_texture": "textures/image4.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -268,10 +268,10 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image2.jpg",
-          "normal_texture": "textures/image3.jpg",
-          "occlusion_texture": "textures/image6.jpg",
-          "emissive_texture": "textures/image4.jpg"
+          "base_color_texture": "textures/image2.jpg#wrap=clamp,clamp",
+          "normal_texture": "textures/image3.jpg#wrap=clamp,clamp",
+          "occlusion_texture": "textures/image6.jpg#wrap=clamp,clamp",
+          "emissive_texture": "textures/image4.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -322,8 +322,8 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
-          "normal_texture": "textures/image1.jpg"
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
+          "normal_texture": "textures/image1.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -374,8 +374,8 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
-          "normal_texture": "textures/image1.jpg"
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
+          "normal_texture": "textures/image1.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -426,10 +426,10 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image2.jpg",
-          "normal_texture": "textures/image3.jpg",
-          "occlusion_texture": "textures/image6.jpg",
-          "emissive_texture": "textures/image4.jpg"
+          "base_color_texture": "textures/image2.jpg#wrap=clamp,clamp",
+          "normal_texture": "textures/image3.jpg#wrap=clamp,clamp",
+          "occlusion_texture": "textures/image6.jpg#wrap=clamp,clamp",
+          "emissive_texture": "textures/image4.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -480,8 +480,8 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
-          "normal_texture": "textures/image1.jpg"
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
+          "normal_texture": "textures/image1.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -532,8 +532,8 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
-          "normal_texture": "textures/image1.jpg"
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
+          "normal_texture": "textures/image1.jpg#wrap=clamp,clamp"
         }
       ]
     }

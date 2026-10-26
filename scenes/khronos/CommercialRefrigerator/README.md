@@ -43,24 +43,24 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.363 | 0.632 | 差 +0.268 |
-| 前景平均 RGB | [100.7, 91.3, 83.9] | [158.8, 161.5, 164.4] | RGB 距离 0.273 |
-| 亮度直方图相似度 | — | — | 0.35（16 桶交集，1=完全一致） |
-| 前景占比 | 97.0% | 13.0% | 覆盖率比 0.134 |
+| 前景平均亮度 | 0.363 | 0.437 | 差 +0.074 |
+| 前景平均 RGB | [100.7, 91.3, 83.9] | [108.4, 112.3, 112.4] | RGB 距离 0.075 |
+| 亮度直方图相似度 | — | — | 0.73（16 桶交集，1=完全一致） |
+| 前景占比 | 97.0% | 12.9% | 覆盖率比 0.133 |
 
-自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
+自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现
 
 ## 踩过的坑 / 注意

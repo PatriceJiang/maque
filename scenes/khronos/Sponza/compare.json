@@ -12,13 +12,13 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.3478,
-  "preview_mean_lum": 0.457,
-  "mean_lum_delta": 0.1092,
-  "hist_similarity": 0.6218,
-  "rgb_delta": 0.1033,
+  "preview_mean_lum": 0.3108,
+  "mean_lum_delta": -0.037,
+  "hist_similarity": 0.6927,
+  "rgb_delta": 0.037,
   "ref_coverage": 0.7993,
-  "preview_coverage": 0.3044,
-  "coverage_ratio": 0.381,
+  "preview_coverage": 0.7013,
+  "coverage_ratio": 0.877,
   "ref_bbox": [
     0,
     0,
@@ -26,10 +26,10 @@
     1258
   ],
   "preview_bbox": [
-    237,
-    206,
-    1054,
-    677
+    0,
+    0,
+    1279,
+    719
   ],
   "ref_mean_rgb": [
     98.8,
@@ -37,10 +37,12 @@
     77.8
   ],
   "preview_mean_rgb": [
-    122.5,
-    116.0,
-    104.2
+    85.7,
+    78.2,
+    71.4
   ],
-  "framing_notes": [],
-  "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
+  "framing_notes": [
+    "预览主体贴边/被裁剪 → 机位过近？"
+  ],
+  "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
 }

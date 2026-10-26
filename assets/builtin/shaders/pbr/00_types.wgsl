@@ -64,4 +64,7 @@ struct VOut {
   @location(0) n: vec3f,
   @location(1) w: vec3f,
   @location(2) uv: vec2f,
+  // 布局 v1（COLOR_0/TEXCOORD_1）用：layout0 的 vs 写 (1,1,1,1)/0，逐项乘法/选择不改变旧行为
+  @location(3) color: vec4f,
+  @location(4) uv1: vec2f,
 };

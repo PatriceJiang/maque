@@ -119,7 +119,8 @@
           "specular_intensity": 0.3,
           "base_color_texture": "textures/image7.png",
           "normal_texture": "textures/image8.png",
-          "occlusion_texture": "textures/image9.png"
+          "occlusion_texture": "textures/image9.png",
+          "uv1_mask": 4
         }
       ]
     },

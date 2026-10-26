@@ -57,6 +57,12 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Mes
 
 ## 踩过的坑 / 注意
 
+- gltf_import: 跳过非三角 primitive mesh=0 prim=0 mode=0
+- gltf_import: 跳过非三角 primitive mesh=1 prim=0 mode=1
+- gltf_import: 跳过非三角 primitive mesh=2 prim=0 mode=2
+- gltf_import: 跳过非三角 primitive mesh=3 prim=0 mode=3
+- gltf_import: 跳过非三角 primitive mesh=5 prim=0 mode=5
+- gltf_import: 跳过非三角 primitive mesh=6 prim=0 mode=6
 - 7 个 primitive 无 NORMAL（导入器按索引重建法线）
 - 6 个非三角 primitive 被跳过
 

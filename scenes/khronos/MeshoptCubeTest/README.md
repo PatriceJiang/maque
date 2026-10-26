@@ -22,7 +22,7 @@
 | 必需扩展 | `KHR_mesh_quantization` |
 | alpha 模式分布 | MASK×10 |
 
-**导入产物**：`assets/` 35 个 `.mesh.json`（合计 44.4 KB），`textures/` 10 张；场景 `MeshoptCubeTest.scn`。
+**导入产物**：`assets/` 35 个 `.mesh.json`（合计 50.9 KB），`textures/` 10 张；场景 `MeshoptCubeTest.scn`。
 
 ## 生成 / 运行
 
@@ -42,9 +42,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Mes
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.750 | 0.850 | 差 +0.101 |
-| 前景平均 RGB | [193.0, 190.3, 194.9] | [216.9, 216.9, 217.9] | RGB 距离 0.096 |
-| 亮度直方图相似度 | — | — | 0.49（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.750 | 0.828 | 差 +0.078 |
+| 前景平均 RGB | [193.0, 190.3, 194.9] | [210.0, 210.9, 217.0] | RGB 距离 0.078 |
+| 亮度直方图相似度 | — | — | 0.48（16 桶交集，1=完全一致） |
 | 前景占比 | 16.1% | 6.8% | 覆盖率比 0.425 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
@@ -52,7 +52,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Mes
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- COLOR_0 顶点色未使用
 - KHR_mesh_quantization（量化顶点）导入未特殊处理（数值/法线精度可能异常）
 - meshopt 压缩未实现
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
@@ -61,7 +60,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Mes
 ## 已知差距（引擎/导入器层面）
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- COLOR_0 顶点色未使用
 - KHR_mesh_quantization（量化顶点）导入未特殊处理（数值/法线精度可能异常）
 - meshopt 压缩未实现
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）

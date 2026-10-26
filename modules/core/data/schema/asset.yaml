@@ -303,6 +303,9 @@
         - { name: uv_offset, type: math.Vec2, default: "{0.0F, 0.0F}" }
         - { name: normal_uv_scale, type: math.Vec2, default: "{1.0F, 1.0F}" }
         - { name: normal_uv_offset, type: math.Vec2, default: "{0.0F, 0.0F}" }
+        # glTF 多 UV 集（TEXCOORD_1）：bit0..8 = base/mr/ao/normal/emissive/matcap/gradient/
+        # clearcoat_normal 使用第二套 UV。仅非 0 时由 importer 写；需要网格 vertex_layout=1。
+        - { name: uv1_mask, type: int32_t, default: 0 }
     - struct: Scene
       fields:
         - { name: name, type: string }

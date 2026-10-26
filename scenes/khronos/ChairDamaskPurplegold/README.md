@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_texture_transform`、`KHR_materials_sheen`、`KHR_materials_specular` |
 | alpha 模式分布 | OPAQUE×4 |
 
-**导入产物**：`assets/` 11 个 `.mesh.json`（合计 686.0 KB），`textures/` 9 张；场景 `ChairDamaskPurplegold.scn`。
+**导入产物**：`assets/` 11 个 `.mesh.json`（合计 801.3 KB），`textures/` 9 张；场景 `ChairDamaskPurplegold.scn`。
 
 ## 生成 / 运行
 
@@ -41,8 +41,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Cha
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.335 | 0.179 | 差 -0.156 |
-| 前景平均 RGB | [106.5, 75.4, 122.3] | [68.9, 35.5, 77.2] | RGB 距离 0.160 |
+| 前景平均亮度 | 0.335 | 0.181 | 差 -0.153 |
+| 前景平均 RGB | [106.5, 75.4, 122.3] | [69.6, 36.1, 77.9] | RGB 距离 0.158 |
 | 亮度直方图相似度 | — | — | 0.68（16 桶交集，1=完全一致） |
 | 前景占比 | 48.9% | 11.2% | 覆盖率比 0.228 |
 
@@ -50,7 +50,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Cha
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
 - KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
@@ -58,7 +57,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Cha
 
 ## 已知差距（引擎/导入器层面）
 
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
 - KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现

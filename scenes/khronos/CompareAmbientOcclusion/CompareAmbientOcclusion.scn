@@ -108,7 +108,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image2.jpg"
+          "occlusion_texture": "textures/image2.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -159,9 +159,9 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.jpg",
-          "metallic_roughness_texture": "textures/image1.jpg",
-          "occlusion_texture": "textures/image1.jpg"
+          "base_color_texture": "textures/image0.jpg#wrap=clamp,clamp",
+          "metallic_roughness_texture": "textures/image1.jpg#wrap=clamp,clamp",
+          "occlusion_texture": "textures/image1.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -312,8 +312,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.jpg",
-          "metallic_roughness_texture": "textures/image1.jpg"
+          "base_color_texture": "textures/image0.jpg#wrap=clamp,clamp",
+          "metallic_roughness_texture": "textures/image1.jpg#wrap=clamp,clamp"
         }
       ]
     },

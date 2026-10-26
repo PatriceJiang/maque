@@ -261,7 +261,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png"
+          "base_color_texture": "textures/image1.png#wrap=clamp,repeat"
         }
       ]
     },
@@ -312,7 +312,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png"
+          "base_color_texture": "textures/image1.png#wrap=repeat,clamp"
         }
       ]
     },
@@ -413,7 +413,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png#wrap=repeat,clamp"
         }
       ]
     },
@@ -464,7 +464,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png#wrap=clamp,repeat"
         }
       ]
     },
@@ -515,7 +515,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png"
+          "base_color_texture": "textures/image1.png#wrap=mirror,repeat"
         }
       ]
     },
@@ -566,7 +566,7 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png#wrap=repeat,mirror"
         }
       ]
     }

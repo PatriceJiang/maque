@@ -157,10 +157,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.0
+          "ior": 1.0,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -209,10 +210,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.33
+          "ior": 1.33,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -261,8 +263,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -311,10 +314,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.75999
+          "ior": 1.75999,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -363,10 +367,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.0
+          "ior": 1.0,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -415,10 +420,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.33
+          "ior": 1.33,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -467,8 +473,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -517,10 +524,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.75999
+          "ior": 1.75999,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -719,10 +727,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 2.42
+          "ior": 2.42,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -771,10 +780,11 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 2.42
+          "ior": 2.42,
+          "opacity": 0.15000000000000002
         }
       ]
     }

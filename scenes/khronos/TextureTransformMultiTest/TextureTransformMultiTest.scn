@@ -175,7 +175,8 @@
           "uv_offset": {
             "x": 0.7049999535083774,
             "y": 0.28500004152502995
-          }
+          },
+          "uv1_mask": 1
         }
       ]
     },
@@ -429,7 +430,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "emissive_texture": "textures/TestMap.png"
+          "emissive_texture": "textures/TestMap.png",
+          "uv1_mask": 16
         }
       ]
     },
@@ -598,7 +600,8 @@
           "normal_uv_offset": {
             "x": 0.7049999535083774,
             "y": 0.28500004152502995
-          }
+          },
+          "uv1_mask": 8
         }
       ]
     },
@@ -751,7 +754,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "metallic_roughness_texture": "textures/TestMap.png"
+          "metallic_roughness_texture": "textures/TestMap.png",
+          "uv1_mask": 2
         }
       ]
     },
@@ -904,7 +908,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/TestMap.png"
+          "occlusion_texture": "textures/TestMap.png",
+          "uv1_mask": 4
         }
       ]
     },
@@ -1075,7 +1080,8 @@
           "uv_offset": {
             "x": 0.7049999535083774,
             "y": 0.28500004152502995
-          }
+          },
+          "uv1_mask": 1
         }
       ]
     },
@@ -1553,7 +1559,8 @@
           "shading_model": 1,
           "clearcoat": 1.0,
           "clearcoat_roughness": 0.029999999329447746,
-          "clearcoat_normal_texture": "textures/TestMap_Normal.png"
+          "clearcoat_normal_texture": "textures/TestMap_Normal.png",
+          "uv1_mask": 128
         }
       ]
     },

@@ -20,7 +20,7 @@
 | 动画 / 骨骼 / morph primitive / 相机 | 0 / 0 / 0 / 0 |
 | alpha 模式分布 | OPAQUE×10 |
 
-**导入产物**：`assets/` 10 个 `.mesh.json`（合计 16.0 KB），`textures/` 3 张；场景 `TextureSettingsTest.scn`。
+**导入产物**：`assets/` 10 个 `.mesh.json`（合计 16.1 KB），`textures/` 3 张；场景 `TextureSettingsTest.scn`。
 
 ## 生成 / 运行
 
@@ -40,8 +40,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Tex
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.560 | 0.589 | 差 +0.029 |
-| 前景平均 RGB | [114.3, 145.3, 200.2] | [126.1, 152.2, 198.3] | RGB 距离 0.027 |
+| 前景平均亮度 | 0.560 | 0.587 | 差 +0.028 |
+| 前景平均 RGB | [114.3, 145.3, 200.2] | [122.9, 152.9, 196.3] | RGB 距离 0.026 |
 | 亮度直方图相似度 | — | — | 0.26（16 桶交集，1=完全一致） |
 | 前景占比 | 99.4% | 29.8% | 覆盖率比 0.3 |
 

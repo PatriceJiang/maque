@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_materials_ior`、`KHR_materials_iridescence`、`KHR_materials_transmission`、`KHR_materials_volume` |
 | alpha 模式分布 | MASK×1、OPAQUE×3 |
 
-**导入产物**：`assets/` 4 个 `.mesh.json`（合计 1.6 MB），`textures/` 8 张；场景 `IridescentDishWithOlives.scn`。
+**导入产物**：`assets/` 4 个 `.mesh.json`（合计 1.9 MB），`textures/` 8 张；场景 `IridescentDishWithOlives.scn`。
 
 ## 生成 / 运行
 
@@ -41,19 +41,18 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.410 | 0.829 | 差 +0.419 |
-| 前景平均 RGB | [110.6, 104.7, 84.5] | [214.8, 211.4, 201.9] | RGB 距离 0.429 |
-| 亮度直方图相似度 | — | — | 0.21（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.410 | 0.485 | 差 +0.075 |
+| 前景平均 RGB | [110.6, 104.7, 84.5] | [137.8, 122.8, 89.9] | RGB 距离 0.066 |
+| 亮度直方图相似度 | — | — | 0.48（16 桶交集，1=完全一致） |
 | 前景占比 | 55.9% | 7.4% | 覆盖率比 0.132 |
 
-自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
+自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- COLOR_0 顶点色未使用
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
@@ -63,8 +62,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
-- COLOR_0 顶点色未使用
-- KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）
+- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume/dispersion/volume_scatter 未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）

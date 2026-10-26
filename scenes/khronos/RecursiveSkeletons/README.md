@@ -19,7 +19,7 @@
 | 动画 / 骨骼 / morph primitive / 相机 | 1 / 84 / 0 / 0 |
 | alpha 模式分布 | OPAQUE×1 |
 
-**导入产物**：`assets/` 1 个 `.mesh.json`（合计 3.5 KB），`textures/` 0 张；场景 `RecursiveSkeletons.scn`。
+**导入产物**：`assets/` 1 个 `.mesh.json`（合计 3.8 KB），`textures/` 0 张；场景 `RecursiveSkeletons.scn`。
 
 ## 生成 / 运行
 
@@ -50,14 +50,12 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Rec
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）
-- COLOR_0 顶点色未使用
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）
-- COLOR_0 顶点色未使用
 
 ## 踩过的坑 / 注意
 

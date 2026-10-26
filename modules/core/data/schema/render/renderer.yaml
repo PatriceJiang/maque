@@ -181,6 +181,9 @@
         # KHR_texture_transform（plans/19）：法线贴图单独一组 UV 变换（其余贴图复用旧 uv_scale/uv_offset）
         - { name: normal_uv_scale,          type: "float[2]" }
         - { name: normal_uv_offset,         type: "float[2]" }
+        # TEXCOORD_1（多 UV 集）选择掩码：bit0..8 = base/mr/ao/normal/emissive/matcap/gradient/
+        # clearcoat_normal 使用第二套 UV（runtime 折进 flags2 bit4..12）。尾部追加，旧字段偏移不变。
+        - { name: uv1_mask,                 type: int32_t }
     - record: draw3d
       fields:
         - { name: mesh,          type: int32_t }

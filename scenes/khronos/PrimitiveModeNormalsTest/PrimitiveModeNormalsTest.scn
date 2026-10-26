@@ -424,8 +424,8 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png",
-          "emissive_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
+          "emissive_texture": "textures/image0.png#wrap=clamp,clamp"
         }
       ]
     }

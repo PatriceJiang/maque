@@ -108,10 +108,10 @@
           "side": 2,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.jpg",
-          "metallic_roughness_texture": "textures/image3.jpg",
-          "normal_texture": "textures/image1.png",
-          "emissive_texture": "textures/image2.jpg"
+          "base_color_texture": "textures/image0.jpg#wrap=clamp,clamp",
+          "metallic_roughness_texture": "textures/image3.jpg#wrap=clamp,clamp",
+          "normal_texture": "textures/image1.png#wrap=clamp,clamp",
+          "emissive_texture": "textures/image2.jpg#wrap=clamp,clamp"
         }
       ]
     },
@@ -162,8 +162,8 @@
           "side": 2,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image4.png",
-          "normal_texture": "textures/image5.png"
+          "base_color_texture": "textures/image4.png#wrap=clamp,clamp",
+          "normal_texture": "textures/image5.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -212,12 +212,13 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.jpg",
-          "metallic_roughness_texture": "textures/image3.jpg",
-          "normal_texture": "textures/image1.png",
-          "emissive_texture": "textures/image2.jpg"
+          "opacity": 0.15000000000000002,
+          "base_color_texture": "textures/image0.jpg#wrap=clamp,clamp",
+          "metallic_roughness_texture": "textures/image3.jpg#wrap=clamp,clamp",
+          "normal_texture": "textures/image1.png#wrap=clamp,clamp",
+          "emissive_texture": "textures/image2.jpg#wrap=clamp,clamp"
         }
       ]
     }

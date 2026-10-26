@@ -217,7 +217,7 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "specular_intensity": 0.0,
@@ -226,6 +226,7 @@
             "y": 0.0,
             "z": 0.0
           },
+          "opacity": 0.15000000000000002,
           "normal_texture": "textures/image8.jpg",
           "normal_scale": 1.5,
           "normal_scale_y": 1.5

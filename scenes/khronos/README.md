@@ -17,7 +17,7 @@
 | 迁移成功（含仅导入） | 148 |
 | blocked（主变体必需 Draco 等） | 0 |
 | 失败/异常 | 1 |
-| 派生资产总大小（本地，不入库） | 992.0 MB |
+| 派生资产总大小（本地，不入库） | 966.9 MB |
 
 > ⚠️ 与官方 `screenshot/` 对比**不是像素级 pass/fail**：官方图多为离线渲染（常带 HDRI studio、软阴影、不同机位/背景），maque 暂无 HDRI IBL/transmission/软阴影/动画骨骼；每个模型的 README 给出定量指标与差异归因。
 
@@ -48,15 +48,15 @@
 | [BoxInterleaved](BoxInterleaved/README.md) | core、testing | 24 / 12 | 1 / 0 | 0 | `ok` | [图](BoxInterleaved/preview.jpg) | [笔记](BoxInterleaved/README.md) |
 | [BoxTextured](BoxTextured/README.md) | core、issues、testing | 24 / 12 | 1 / 1 | 0 | `ok` | [图](BoxTextured/preview.jpg) | [笔记](BoxTextured/README.md) |
 | [BoxTexturedNonPowerOfTwo](BoxTexturedNonPowerOfTwo/README.md) | core、issues、testing | 24 / 12 | 1 / 1 | 0 | `ok` | [图](BoxTexturedNonPowerOfTwo/preview.jpg) | [笔记](BoxTexturedNonPowerOfTwo/README.md) |
-| [BoxVertexColors](BoxVertexColors/README.md) | core、testing | 24 / 12 | 0 / 0 | 1 | `ok` | [图](BoxVertexColors/preview.jpg) | [笔记](BoxVertexColors/README.md) |
+| [BoxVertexColors](BoxVertexColors/README.md) | core、testing | 24 / 12 | 0 / 0 | 0 | `ok` | [图](BoxVertexColors/preview.jpg) | [笔记](BoxVertexColors/README.md) |
 | [BrainStem](BrainStem/README.md) | core、testing | 34,159 / 61,666 | 59 / 0 | 2 | `ok` | [图](BrainStem/preview.jpg) | [笔记](BrainStem/README.md) |
 | [Cameras](Cameras/README.md) | core、testing | 4 / 2 | 0 / 0 | 1 | `ok` | [图](Cameras/preview.jpg) | [笔记](Cameras/README.md) |
-| [CarConcept](CarConcept/README.md) | showcase、extension | 162,766 / 213,347 | 29 / 15 | 6 | `ok` | [图](CarConcept/preview.jpg) | [笔记](CarConcept/README.md) |
+| [CarConcept](CarConcept/README.md) | showcase、extension | 162,766 / 213,347 | 29 / 15 | 5 | `ok` | [图](CarConcept/preview.jpg) | [笔记](CarConcept/README.md) |
 | [CarbonFibre](CarbonFibre/README.md) | extension | 2,129 / 3,968 | 1 / 3 | 1 | `ok` | [图](CarbonFibre/preview.jpg) | [笔记](CarbonFibre/README.md) |
 | [CesiumMan](CesiumMan/README.md) | core、issues、testing | 3,273 / 4,672 | 1 / 1 | 2 | `ok` | [图](CesiumMan/preview.jpg) | [笔记](CesiumMan/README.md) |
 | [CesiumMilkTruck](CesiumMilkTruck/README.md) | core、issues、testing | 3,995 / 2,856 | 4 / 2 | 1 | `ok` | [图](CesiumMilkTruck/preview.jpg) | [笔记](CesiumMilkTruck/README.md) |
-| [ChairDamaskPurplegold](ChairDamaskPurplegold/README.md) | extension | 6,275 / 9,984 | 4 / 9 | 4 | `ok` | [图](ChairDamaskPurplegold/preview.jpg) | [笔记](ChairDamaskPurplegold/README.md) |
-| [ChronographWatch](ChronographWatch/README.md) | showcase、extension | 104,765 / 100,002 | 29 / 8 | 5 | `ok` | [图](ChronographWatch/preview.jpg) | [笔记](ChronographWatch/README.md) |
+| [ChairDamaskPurplegold](ChairDamaskPurplegold/README.md) | extension | 6,275 / 9,984 | 4 / 9 | 3 | `ok` | [图](ChairDamaskPurplegold/preview.jpg) | [笔记](ChairDamaskPurplegold/README.md) |
+| [ChronographWatch](ChronographWatch/README.md) | showcase、extension | 104,765 / 100,002 | 29 / 8 | 4 | `ok` | [图](ChronographWatch/preview.jpg) | [笔记](ChronographWatch/README.md) |
 | [ClearCoatCarPaint](ClearCoatCarPaint/README.md) | extension、testing | 1,728 / 3,072 | 1 / 1 | 2 | `ok` | [图](ClearCoatCarPaint/preview.jpg) | [笔记](ClearCoatCarPaint/README.md) |
 | [ClearCoatTest](ClearCoatTest/README.md) | testing、extension | 20,106 / 37,116 | 19 / 6 | 1 | `ok` | [图](ClearCoatTest/preview.jpg) | [笔记](ClearCoatTest/README.md) |
 | [ClearcoatWicker](ClearcoatWicker/README.md) | extension、testing | 1,728 / 3,072 | 1 / 4 | 1 | `ok` | [图](ClearcoatWicker/preview.jpg) | [笔记](ClearcoatWicker/README.md) |
@@ -64,7 +64,7 @@
 | [CompareAlphaCoverage](CompareAlphaCoverage/README.md) | core、testing、pbrtest | 108 / 54 | 4 / 6 | 1 | `ok` | [图](CompareAlphaCoverage/preview.jpg) | [笔记](CompareAlphaCoverage/README.md) |
 | [CompareAmbientOcclusion](CompareAmbientOcclusion/README.md) | core、testing、pbrtest | 90,118 / 124,862 | 5 / 3 | 0 | `ok` | [图](CompareAmbientOcclusion/preview.jpg) | [笔记](CompareAmbientOcclusion/README.md) |
 | [CompareAnisotropy](CompareAnisotropy/README.md) | extension、testing、pbrtest | 19,142 / 36,864 | 4 / 5 | 2 | `ok` | [图](CompareAnisotropy/preview.jpg) | [笔记](CompareAnisotropy/README.md) |
-| [CompareBaseColor](CompareBaseColor/README.md) | testing、pbrtest | 27,648 / 9,216 | 2 / 2 | 2 | `ok` | [图](CompareBaseColor/preview.jpg) | [笔记](CompareBaseColor/README.md) |
+| [CompareBaseColor](CompareBaseColor/README.md) | testing、pbrtest | 27,648 / 9,216 | 2 / 2 | 1 | `ok` | [图](CompareBaseColor/preview.jpg) | [笔记](CompareBaseColor/README.md) |
 | [CompareClearcoat](CompareClearcoat/README.md) | extension、testing、pbrtest | 2,019 / 3,840 | 3 / 2 | 1 | `ok` | [图](CompareClearcoat/preview.jpg) | [笔记](CompareClearcoat/README.md) |
 | [CompareDispersion](CompareDispersion/README.md) | extension、testing、pbrtest | 198 / 66 | 3 / 2 | 2 | `ok` | [图](CompareDispersion/preview.jpg) | [笔记](CompareDispersion/README.md) |
 | [CompareEmissiveStrength](CompareEmissiveStrength/README.md) | extension、testing、pbrtest | 1,346 / 2,560 | 2 / 1 | 0 | `ok` | [图](CompareEmissiveStrength/preview.jpg) | [笔记](CompareEmissiveStrength/README.md) |
@@ -104,20 +104,20 @@
 | [IridescenceLamp](IridescenceLamp/README.md) | showcase、extension | 10,683 / 18,866 | 3 / 3 | 3 | `ok` | [图](IridescenceLamp/preview.jpg) | [笔记](IridescenceLamp/README.md) |
 | [IridescenceMetallicSpheres](IridescenceMetallicSpheres/README.md) | testing、extension | 329,635 / 617,406 | 344 / 1 | 1 | `ok` | [图](IridescenceMetallicSpheres/preview.jpg) | [笔记](IridescenceMetallicSpheres/README.md) |
 | [IridescenceSuzanne](IridescenceSuzanne/README.md) | testing、extension | 9,963 / 11,808 | 3 / 1 | 4 | `ok` | [图](IridescenceSuzanne/preview.jpg) | [笔记](IridescenceSuzanne/README.md) |
-| [IridescentDishWithOlives](IridescentDishWithOlives/README.md) | showcase、video、extension | 14,863 / 24,448 | 4 / 11 | 7 | `ok` | [图](IridescentDishWithOlives/preview.jpg) | [笔记](IridescentDishWithOlives/README.md) |
+| [IridescentDishWithOlives](IridescentDishWithOlives/README.md) | showcase、video、extension | 14,863 / 24,448 | 4 / 11 | 6 | `ok` | [图](IridescentDishWithOlives/preview.jpg) | [笔记](IridescentDishWithOlives/README.md) |
 | [Lantern](Lantern/README.md) | core、testing | 4,145 / 5,394 | 1 / 4 | 0 | `ok` | [图](Lantern/preview.jpg) | [笔记](Lantern/README.md) |
 | [LightVisibility](LightVisibility/README.md) | testing | 4 / 2 | 0 / 0 | 4 | `ok` | [图](LightVisibility/preview.jpg) | [笔记](LightVisibility/README.md) |
 | [LightsPunctualLamp](LightsPunctualLamp/README.md) | testing、extension | 4,555 / 6,000 | 3 / 7 | 2 | `ok` | [图](LightsPunctualLamp/preview.jpg) | [笔记](LightsPunctualLamp/README.md) |
 | [MandarinOrange](MandarinOrange/README.md) | extension、testing | 24,138 / 40,836 | 1 / 4 | 1 | `ok` | [图](MandarinOrange/preview.jpg) | [笔记](MandarinOrange/README.md) |
 | [MaterialsVariantsShoe](MaterialsVariantsShoe/README.md) | extension、showcase、written | 13,540 / 22,700 | 3 / 5 | 1 | `ok` | [图](MaterialsVariantsShoe/preview.jpg) | [笔记](MaterialsVariantsShoe/README.md) |
 | [MeshPrimitiveModes](MeshPrimitiveModes/README.md) | testing | 49 / 20 | 0 / 0 | 1 | `ok` | [图](MeshPrimitiveModes/preview.jpg) | [笔记](MeshPrimitiveModes/README.md) |
-| [MeshoptCubeTest](MeshoptCubeTest/README.md) | extension、testing | 640 / 320 | 10 / 10 | 5 | `ok` | [图](MeshoptCubeTest/preview.jpg) | [笔记](MeshoptCubeTest/README.md) |
+| [MeshoptCubeTest](MeshoptCubeTest/README.md) | extension、testing | 640 / 320 | 10 / 10 | 4 | `ok` | [图](MeshoptCubeTest/preview.jpg) | [笔记](MeshoptCubeTest/README.md) |
 | [MetalRoughSpheres](MetalRoughSpheres/README.md) | core、testing | 255,914 / 501,776 | 1 / 2 | 0 | `ok` | [图](MetalRoughSpheres/preview.jpg) | [笔记](MetalRoughSpheres/README.md) |
 | [MetalRoughSpheresNoTextures](MetalRoughSpheresNoTextures/README.md) | core、testing | 528,291 / 1,040,409 | 98 / 0 | 0 | `ok` | [图](MetalRoughSpheresNoTextures/preview.jpg) | [笔记](MetalRoughSpheresNoTextures/README.md) |
 | [MorphPrimitivesTest](MorphPrimitivesTest/README.md) | core、testing | 30 / 32 | 2 / 1 | 1 | `ok` | [图](MorphPrimitivesTest/preview.jpg) | [笔记](MorphPrimitivesTest/README.md) |
-| [MorphStressTest](MorphStressTest/README.md) | core、testing | 1,528 / 2,412 | 2 / 3 | 3 | `ok` | [图](MorphStressTest/preview.jpg) | [笔记](MorphStressTest/README.md) |
+| [MorphStressTest](MorphStressTest/README.md) | core、testing | 1,528 / 2,412 | 2 / 3 | 2 | `ok` | [图](MorphStressTest/preview.jpg) | [笔记](MorphStressTest/README.md) |
 | [MosquitoInAmber](MosquitoInAmber/README.md) | showcase、extension | 18,678 / 14,349 | 3 / 5 | 2 | `ok` | [图](MosquitoInAmber/preview.jpg) | [笔记](MosquitoInAmber/README.md) |
-| [MultiUVTest](MultiUVTest/README.md) | core、testing | 24 / 12 | 1 / 2 | 2 | `ok` | [图](MultiUVTest/preview.jpg) | [笔记](MultiUVTest/README.md) |
+| [MultiUVTest](MultiUVTest/README.md) | core、testing | 24 / 12 | 1 / 2 | 1 | `ok` | [图](MultiUVTest/preview.jpg) | [笔记](MultiUVTest/README.md) |
 | [MultipleScenes](MultipleScenes/README.md) | core、testing | 7 / 3 | 0 / 0 | 0 | `ok` | [图](MultipleScenes/preview.jpg) | [笔记](MultipleScenes/README.md) |
 | [NegativeScaleTest](NegativeScaleTest/README.md) | core、testing | 2,032 / 3,884 | 6 / 2 | 0 | `ok` | [图](NegativeScaleTest/preview.jpg) | [笔记](NegativeScaleTest/README.md) |
 | [NodePerformanceTest](NodePerformanceTest/README.md) | testing | 731,850 / 268,268 | 10000 / 10000 | 2 | `ok` | [图](NodePerformanceTest/preview.jpg) | [笔记](NodePerformanceTest/README.md) |
@@ -129,16 +129,16 @@
 | [PointLightIntensityTest](PointLightIntensityTest/README.md) | extension、testing | 296 / 280 | 3 / 1 | 1 | `ok` | [图](PointLightIntensityTest/preview.jpg) | [笔记](PointLightIntensityTest/README.md) |
 | [PotOfCoals](PotOfCoals/README.md) | showcase、extension | 54,669 / 18,223 | 2 / 8 | 1 | `ok` | [图](PotOfCoals/preview.jpg) | [笔记](PotOfCoals/README.md) |
 | [PotOfCoalsAnimationPointer](PotOfCoalsAnimationPointer/README.md) | showcase、extension | 54,933 / 18,311 | 3 / 10 | 7 | `ok` | [图](PotOfCoalsAnimationPointer/preview.jpg) | [笔记](PotOfCoalsAnimationPointer/README.md) |
-| [PrimitiveModeNormalsTest](PrimitiveModeNormalsTest/README.md) | core、issues、testing | 1,050,220 / 352,082 | 2 / 1 | 3 | `ok` | [图](PrimitiveModeNormalsTest/preview.jpg) | [笔记](PrimitiveModeNormalsTest/README.md) |
-| [RecursiveSkeletons](RecursiveSkeletons/README.md) | core、testing、issues | 40 / 76 | 1 / 0 | 3 | `ok` | [图](RecursiveSkeletons/preview.jpg) | [笔记](RecursiveSkeletons/README.md) |
+| [PrimitiveModeNormalsTest](PrimitiveModeNormalsTest/README.md) | core、issues、testing | 1,050,220 / 352,082 | 2 / 1 | 2 | `ok` | [图](PrimitiveModeNormalsTest/preview.jpg) | [笔记](PrimitiveModeNormalsTest/README.md) |
+| [RecursiveSkeletons](RecursiveSkeletons/README.md) | core、testing、issues | 40 / 76 | 1 / 0 | 2 | `ok` | [图](RecursiveSkeletons/preview.jpg) | [笔记](RecursiveSkeletons/README.md) |
 | [RiggedFigure](RiggedFigure/README.md) | core、testing | 370 / 256 | 1 / 0 | 2 | `ok` | [图](RiggedFigure/preview.jpg) | [笔记](RiggedFigure/README.md) |
 | [RiggedSimple](RiggedSimple/README.md) | core、testing | 160 / 188 | 1 / 0 | 2 | `ok` | [图](RiggedSimple/preview.jpg) | [笔记](RiggedSimple/README.md) |
 | [ScatteringSkull](ScatteringSkull/README.md) | testing | 97,880 / 188,871 | 1 / 1 | 2 | `ok` | [图](ScatteringSkull/preview.jpg) | [笔记](ScatteringSkull/README.md) |
 | [SciFiHelmet](SciFiHelmet/README.md) | core、testing | 70,074 / 23,358 | 1 / 4 | 0 | `ok` | [图](SciFiHelmet/preview.jpg) | [笔记](SciFiHelmet/README.md) |
-| [SheenChair](SheenChair/README.md) | showcase、video、extension | 22,459 / 39,936 | 6 / 7 | 4 | `ok` | [图](SheenChair/preview.jpg) | [笔记](SheenChair/README.md) |
+| [SheenChair](SheenChair/README.md) | showcase、video、extension | 22,459 / 39,936 | 6 / 7 | 3 | `ok` | [图](SheenChair/preview.jpg) | [笔记](SheenChair/README.md) |
 | [SheenCloth](SheenCloth/README.md) | showcase、video、extension | 58,081 / 115,200 | 1 / 5 | 2 | `ok` | [图](SheenCloth/preview.jpg) | [笔记](SheenCloth/README.md) |
 | [SheenTestGrid](SheenTestGrid/README.md) | extension | 64,938 / 21,646 | 19 / 1 | 1 | `ok` | [图](SheenTestGrid/preview.jpg) | [笔记](SheenTestGrid/README.md) |
-| [SheenWoodLeatherSofa](SheenWoodLeatherSofa/README.md) | showcase、extension | 139,476 / 46,492 | 6 / 15 | 6 | `ok` | [图](SheenWoodLeatherSofa/preview.jpg) | [笔记](SheenWoodLeatherSofa/README.md) |
+| [SheenWoodLeatherSofa](SheenWoodLeatherSofa/README.md) | showcase、extension | 139,476 / 46,492 | 6 / 15 | 4 | `ok` | [图](SheenWoodLeatherSofa/preview.jpg) | [笔记](SheenWoodLeatherSofa/README.md) |
 | [SimpleInstancing](SimpleInstancing/README.md) | extension、testing | 24 / 12 | 0 / 0 | 1 | `ok` | [图](SimpleInstancing/preview.jpg) | [笔记](SimpleInstancing/README.md) |
 | [SimpleMaterial](SimpleMaterial/README.md) | core、testing、written | 3 / 1 | 1 / 0 | 0 | `ok` | [图](SimpleMaterial/preview.jpg) | [笔记](SimpleMaterial/README.md) |
 | [SimpleMeshes](SimpleMeshes/README.md) | core、testing、written | 3 / 1 | 0 / 0 | 0 | `ok` | [图](SimpleMeshes/preview.jpg) | [笔记](SimpleMeshes/README.md) |
@@ -157,7 +157,7 @@
 | [TextureEncodingTest](TextureEncodingTest/README.md) | core、testing | 2,468 / 3,844 | 14 / 8 | 1 | `ok` | [图](TextureEncodingTest/preview.jpg) | [笔记](TextureEncodingTest/README.md) |
 | [TextureLinearInterpolationTest](TextureLinearInterpolationTest/README.md) | core、testing | 414 / 642 | 3 / 2 | 1 | `ok` | [图](TextureLinearInterpolationTest/preview.jpg) | [笔记](TextureLinearInterpolationTest/README.md) |
 | [TextureSettingsTest](TextureSettingsTest/README.md) | core、testing | 144 / 72 | 10 / 9 | 0 | `ok` | [图](TextureSettingsTest/preview.jpg) | [笔记](TextureSettingsTest/README.md) |
-| [TextureTransformMultiTest](TextureTransformMultiTest/README.md) | testing、extension | 2,302 / 3,956 | 29 / 4 | 3 | `ok` | [图](TextureTransformMultiTest/preview.jpg) | [笔记](TextureTransformMultiTest/README.md) |
+| [TextureTransformMultiTest](TextureTransformMultiTest/README.md) | testing、extension | 2,302 / 3,956 | 29 / 4 | 2 | `ok` | [图](TextureTransformMultiTest/preview.jpg) | [笔记](TextureTransformMultiTest/README.md) |
 | [TextureTransformTest](TextureTransformTest/README.md) | testing、extension | 36 / 18 | 9 / 5 | 1 | `ok` | [图](TextureTransformTest/preview.jpg) | [笔记](TextureTransformTest/README.md) |
 | [ToyCar](ToyCar/README.md) | hand-tuned | 0 / 0 | 0 / 0 | 0 | `ok (hand-tuned)` | [图](ToyCar/preview.jpg) | [笔记](ToyCar/README.md) |
 | [TrafficCone](TrafficCone/README.md) | extension | 10,539 / 17,224 | 4 / 7 | 4 | `ok` | [图](TrafficCone/preview.jpg) | [笔记](TrafficCone/README.md) |
@@ -170,7 +170,7 @@
 | [TwoSidedPlane](TwoSidedPlane/README.md) | core | 6 / 2 | 1 / 3 | 0 | `ok` | [图](TwoSidedPlane/preview.jpg) | [笔记](TwoSidedPlane/README.md) |
 | [USDShaderBallForGltf](USDShaderBallForGltf/README.md) | showcase、extension | 17,442 / 32,996 | 3 / 4 | 2 | `ok` | [图](USDShaderBallForGltf/preview.jpg) | [笔记](USDShaderBallForGltf/README.md) |
 | [UnlitTest](UnlitTest/README.md) | testing、extension | 192 / 88 | 2 / 0 | 0 | `ok` | [图](UnlitTest/preview.jpg) | [笔记](UnlitTest/README.md) |
-| [VertexColorTest](VertexColorTest/README.md) | core、testing | 72 / 36 | 2 / 2 | 1 | `ok` | [图](VertexColorTest/preview.jpg) | [笔记](VertexColorTest/README.md) |
+| [VertexColorTest](VertexColorTest/README.md) | core、testing | 72 / 36 | 2 / 2 | 0 | `ok` | [图](VertexColorTest/preview.jpg) | [笔记](VertexColorTest/README.md) |
 | [VirtualCity](VirtualCity/README.md) | core、testing | 19,483 / 8,383 | 167 / 28 | 2 | `ok` | [图](VirtualCity/preview.jpg) | [笔记](VirtualCity/README.md) |
 | [WaterBottle](WaterBottle/README.md) | core、testing、written | 2,549 / 4,510 | 1 / 4 | 0 | `ok` | [图](WaterBottle/preview.jpg) | [笔记](WaterBottle/README.md) |
 | [XmpMetadataRoundedCube](XmpMetadataRoundedCube/README.md) | extension、testing | 3,456 / 1,724 | 1 / 0 | 0 | `ok` | [图](XmpMetadataRoundedCube/preview.jpg) | [笔记](XmpMetadataRoundedCube/README.md) |

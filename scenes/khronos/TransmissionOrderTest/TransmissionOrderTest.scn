@@ -208,8 +208,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -258,8 +259,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -308,8 +310,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -358,8 +361,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -408,8 +412,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -458,8 +463,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -814,8 +820,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -864,8 +871,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },
@@ -914,8 +922,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002
         }
       ]
     },

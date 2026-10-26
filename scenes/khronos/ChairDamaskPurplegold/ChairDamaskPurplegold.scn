@@ -119,7 +119,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -171,7 +172,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "metallic_roughness_texture": "textures/image4.jpg",
-          "occlusion_texture": "textures/image1.jpg"
+          "occlusion_texture": "textures/image1.jpg",
+          "uv1_mask": 4
         }
       ]
     },
@@ -233,7 +235,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -307,7 +310,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -381,7 +385,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -455,7 +460,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -517,7 +523,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -569,7 +576,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "base_color_texture": "textures/image8.jpg",
-          "occlusion_texture": "textures/image1.jpg"
+          "occlusion_texture": "textures/image1.jpg",
+          "uv1_mask": 4
         }
       ]
     },
@@ -643,7 +651,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -717,7 +726,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     },
@@ -791,7 +801,8 @@
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
-          }
+          },
+          "uv1_mask": 4
         }
       ]
     }

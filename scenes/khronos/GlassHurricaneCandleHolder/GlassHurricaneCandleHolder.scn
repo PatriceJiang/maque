@@ -159,8 +159,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "opacity": 0.15000000000000002,
           "base_color_texture": "textures/image1.png",
           "metallic_roughness_texture": "textures/image0.png",
           "occlusion_texture": "textures/image0.png"

@@ -10,6 +10,16 @@
 #     贴图搬运 + 两次导入逐字节一致；unlit 材质不得带 physical 扩展字段。
 #   已入库资产漂移基线：cube.gltf 重新生成 → scenes/pbr/assets/cube.mesh.json 逐字节一致
 #     （M1 后材质新增 "side" 属一次性预期变更，基线已同步重新生成）。
+#   顶点布局 v1 + per-texture sampler + transmission 近似（task-11）：
+#     夹具 tests/data/gltf/vertex_uv1.gltf（COLOR_0 normalized ubyte VEC4 + TEXCOORD_1 +
+#     clamp/nearest 与 mirror sampler + 第二套 UV 贴图 + transmission 材质）：
+#       · 有 COLOR_0/uv1 贴图的 primitive → vertex_layout=1、vertex_stride=56、14 float/顶点
+#         （pos3|normal3|color4|uv0_2|uv1_2），颜色归一化、uv1 真读（不是复制 uv0）；
+#       · 材质 uv1_mask（bit0 base / bit3 normal 使用 TEXCOORD_1）；
+#       · 贴图路径后缀 `#wrap=clamp,clamp&filter=nearest` / `#wrap=mirror,repeat`，默认 sampler 无后缀；
+#       · 无 COLOR_0/uv1 的 primitive 仍 layout=0/12 float（旧资产零漂移）；
+#       · transmission factor=0.5 → alpha_mode=2、opacity=0.575（近似）。
+#   相机 CLI：--camera-position/--camera-target/--camera-fov/--camera-distance-scale（仅 --scene）。
 #   可选（MAQUE_TOYCAR_SRC=<含 ToyCar.gltf 的源目录>，源模型不入库）：ToyCar 三个
 #     mesh.json 逐字节一致；未设置时跳过（ToyCar 源模型有 KHR 扩展，更新入库后可用此钩子校验）。
 set -u
@@ -150,6 +160,124 @@ cmp -s "$WORK/ext/extensions_0_0.mesh.json" "$WORK/ext2/extensions_0_0.mesh.json
 cmp -s "$WORK/ext/extensions_1_0.mesh.json" "$WORK/ext2/extensions_1_0.mesh.json" \
     || fail "扩展夹具两次导入不一致（violates determinism）"
 echo "gltf_import_e2e: 扩展夹具确定性 OK"
+
+# ---- 顶点布局 v1（COLOR_0 / TEXCOORD_1）+ per-texture sampler + transmission 近似 ----
+V1_FIXTURE="$FIXDIR/vertex_uv1.gltf"
+[ -f "$V1_FIXTURE" ] || fail "缺夹具 $V1_FIXTURE"
+mkdir -p "$WORK/v1" "$WORK/v1b" "$WORK/v1c"
+"$PY" "$TOOL" "$V1_FIXTURE" --out "$WORK/v1" >"$WORK/v1.log" 2>&1 \
+    || { cat "$WORK/v1.log"; fail "布局 v1 夹具导入失败"; }
+grep -q "gltf_import: OK meshes=2 textures=1" "$WORK/v1.log" \
+    || { cat "$WORK/v1.log"; fail "布局 v1 夹具导入统计不符（期望 meshes=2 textures=1）"; }
+[ -f "$WORK/v1/vertex_uv1.mesh.json" ] || fail "缺 vertex_uv1.mesh.json"
+[ -f "$WORK/v1/vertex_uv1_0_1.mesh.json" ] || fail "缺 vertex_uv1_0_1.mesh.json"
+[ -f "$WORK/v1/textures/image0.png" ] || fail "布局 v1 夹具贴图未搬运"
+
+"$PY" - "$WORK/v1" <<'PY' || exit 1
+import json, sys
+d = sys.argv[1]
+m = json.load(open(d + "/vertex_uv1.mesh.json", encoding="utf-8"))
+# layout v1：14 float/顶点、stride 56B；顺序 pos3|normal3|color4|uv0_2|uv1_2
+assert m["vertex_layout"] == 1 and m["vertex_stride"] == 56, (m["vertex_layout"], m["vertex_stride"])
+assert len(m["vertices"]) == 3, len(m["vertices"])
+for v in m["vertices"]:
+    assert len(v) == 14, len(v)
+assert m["indices"] == [0, 1, 2], m["indices"]
+v0 = m["vertices"][0]
+assert v0[:6] == [0, 0, 0, 0, 0, 1], v0[:6]
+# COLOR_0（normalized ubyte VEC4）→ [1,0,0,1]（除以 255）
+assert [round(x, 6) for x in v0[6:10]] == [1, 0, 0, 1], v0[6:10]
+# uv0 / uv1 各自读取（uv1 不是复制 uv0）
+assert abs(v0[10] - 0.1) < 1e-6 and abs(v0[11] - 0.2) < 1e-6, v0[10:12]
+assert abs(v0[12] - 0.7) < 1e-6 and abs(v0[13] - 0.8) < 1e-6, v0[12:14]
+mat = m["materials"][0]
+# uv1_mask：bit0=base、bit3=normal 使用 TEXCOORD_1（emissive/occlusion 用 uv0）
+assert mat.get("uv1_mask") == (1 << 0) | (1 << 3), mat.get("uv1_mask")
+# per-texture sampler 后缀（仅非默认；默认 sampler 无后缀）
+assert mat["base_color_texture"] == "textures/image0.png#wrap=clamp,clamp&filter=nearest", mat["base_color_texture"]
+assert mat["normal_texture"] == "textures/image0.png#wrap=clamp,clamp&filter=nearest", mat["normal_texture"]
+assert mat["emissive_texture"] == "textures/image0.png#wrap=mirror,repeat", mat["emissive_texture"]
+assert mat["occlusion_texture"] == "textures/image0.png", mat["occlusion_texture"]
+# 无 COLOR_0 / 无 uv1 贴图的 primitive 仍走旧布局（12 float/48B，逐字节零漂移路径）
+m0 = json.load(open(d + "/vertex_uv1_0_1.mesh.json", encoding="utf-8"))
+assert m0["vertex_layout"] == 0 and m0["vertex_stride"] == 48, (m0["vertex_layout"], m0["vertex_stride"])
+for v in m0["vertices"]:
+    assert len(v) == 12, len(v)
+# KHR_materials_transmission 近似：alpha_mode=2；opacity=clamp(1-0.85*0.5,0.15,1)=0.575
+g = m0["materials"][0]
+assert g["alpha_mode"] == 2, g.get("alpha_mode")
+assert abs(g["opacity"] - 0.575) < 1e-9, g.get("opacity")
+assert "uv1_mask" not in g, g.get("uv1_mask")
+print("gltf_import_e2e: 布局 v1 / sampler / transmission OK")
+PY
+[ $? -eq 0 ] || exit 1
+
+# 布局 v1 确定性：同输入两次导入（默认 + compact）逐字节一致
+"$PY" "$TOOL" "$V1_FIXTURE" --out "$WORK/v1b" >/dev/null 2>&1 || fail "布局 v1 第二次导入失败"
+cmp -s "$WORK/v1/vertex_uv1.mesh.json" "$WORK/v1b/vertex_uv1.mesh.json" \
+    || fail "布局 v1 两次导入不一致（违反确定性）"
+cmp -s "$WORK/v1/vertex_uv1_0_1.mesh.json" "$WORK/v1b/vertex_uv1_0_1.mesh.json" \
+    || fail "布局 v1 两次导入不一致（prim1，违反确定性）"
+"$PY" "$TOOL" "$V1_FIXTURE" --out "$WORK/v1c" --compact >/dev/null 2>&1 || fail "布局 v1 compact 导入失败"
+[ -f "$WORK/v1c/vertex_uv1.mesh.json" ] || fail "布局 v1 compact 未产出"
+echo "gltf_import_e2e: 布局 v1 确定性 OK"
+
+# ---- 相机 CLI（--scene）：显式机位 / FOV / 自动拟合距离倍率（task-11）----
+mkdir -p "$WORK/cam_a" "$WORK/cam_b" "$WORK/cam_auto1" "$WORK/cam_auto2" "$WORK/cam_auto3"
+"$PY" "$TOOL" "$FIXTURE" --out "$WORK/cam_a" --scene \
+    --camera-position "3,2,1" --camera-target "0,0.5,0" --camera-fov 30 >"$WORK/cam_a.log" 2>&1 \
+    || { cat "$WORK/cam_a.log"; fail "相机 CLI（显式机位）失败"; }
+"$PY" "$TOOL" "$FIXTURE" --out "$WORK/cam_b" --scene \
+    --camera-position "3,2,1" --camera-target "0,0,0" --camera-fov 30 >/dev/null 2>&1 \
+    || fail "相机 CLI（target 变体）失败"
+"$PY" "$TOOL" "$FIXTURE" --out "$WORK/cam_auto1" --scene >/dev/null 2>&1 || fail "相机 CLI（默认）失败"
+"$PY" "$TOOL" "$FIXTURE" --out "$WORK/cam_auto2" --scene --camera-distance-scale 2 >/dev/null 2>&1 \
+    || fail "相机 CLI（distance-scale）失败"
+"$PY" "$TOOL" "$FIXTURE" --out "$WORK/cam_auto3" --scene --camera-distance-scale 1 >/dev/null 2>&1 \
+    || fail "相机 CLI（distance-scale=1）失败"
+cmp -s "$WORK/cam_auto1/triangle.scn" "$WORK/cam_auto3/triangle.scn" \
+    || fail "默认取景与 --camera-distance-scale 1 应逐字节一致（默认零漂移）"
+# CLI 参数校验：无 --scene 时应报错（不静默忽略）
+if "$PY" "$TOOL" "$FIXTURE" --out "$WORK/c" --camera-fov 30 >/dev/null 2>&1; then
+    fail "相机 CLI 参数在无 --scene 时应报错"
+fi
+echo "gltf_import_e2e: 相机 CLI 参数校验 OK"
+
+"$PY" - "$WORK" <<'PY' || exit 1
+import json, math, sys
+w = sys.argv[1]
+def cam(d):
+    scn = json.load(open(d + "/triangle.scn", encoding="utf-8"))
+    e = next(x for x in scn["entities"] if x["name"] == "camera")
+    tr = next(c for c in e["components"] if c["type"] == "scene.Transform3D")["local"]
+    c = next(c for c in e["components"] if c["type"] == "render.Camera3D")
+    return [tr["position"]["x"], tr["position"]["y"], tr["position"]["z"]], \
+           [tr["rotation"]["x"], tr["rotation"]["y"]], c
+
+p, r, c = cam(w + "/cam_a")
+assert [round(v, 6) for v in p] == [3.0, 2.0, 1.0], p
+assert c["fov_y"] == 30.0, c["fov_y"]
+# 朝向 = look_rotation：pitch=asin(dy)，yaw=atan2(-dx,-dz)，eye(3,2,1)→target(0,0.5,0)
+d3 = [-3.0, -1.5, -1.0]
+ln = math.sqrt(sum(v * v for v in d3))
+d3 = [v / ln for v in d3]
+want = (math.asin(d3[1]), math.atan2(-d3[0], -d3[2]))
+assert abs(r[0] - want[0]) < 1e-9 and abs(r[1] - want[1]) < 1e-9, (r, want)
+# --camera-target 生效：target 不同 → 朝向不同
+_, r0, _ = cam(w + "/cam_b")
+assert abs(r[0] - r0[0]) > 1e-6 or abs(r[1] - r0[1]) > 1e-6, (r, r0)
+# 自动拟合 + distance-scale：相机到包围盒中心距离恰为 2×；默认 fov 45
+p1, _, c1 = cam(w + "/cam_auto1")
+p2, _, c2 = cam(w + "/cam_auto2")
+ctr = [0.5, 0.5, 0.0]          # triangle.gltf 包围盒 [0,0,0]..[1,1,0]
+d1 = math.dist(p1, ctr)
+d2 = math.dist(p2, ctr)
+assert abs(d2 / d1 - 2.0) < 1e-9, (d1, d2)
+assert abs(c2["fov_y"] - 45.0) < 1e-9, c2["fov_y"]
+print("gltf_import_e2e: 相机 CLI OK")
+PY
+[ $? -eq 0 ] || exit 1
+echo "gltf_import_e2e: 相机 CLI 显式机位/取景倍率 OK"
 
 # ---- 已入库资产漂移基线：cube.gltf → scenes/pbr/assets/cube.mesh.json ----
 CUBE_FIXTURE="$FIXDIR/cube.gltf"

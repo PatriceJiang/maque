@@ -109,7 +109,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "base_color_texture": "textures/image0.png",
-          "emissive_texture": "textures/image1.png"
+          "emissive_texture": "textures/image1.png",
+          "uv1_mask": 16
         }
       ]
     }

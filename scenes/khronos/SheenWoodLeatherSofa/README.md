@@ -23,7 +23,7 @@
 | 必需扩展 | `KHR_texture_transform`、`EXT_texture_webp` |
 | alpha 模式分布 | BLEND×1、OPAQUE×5 |
 
-**导入产物**：`assets/` 6 个 `.mesh.json`（合计 12.7 MB），`textures/` 13 张；场景 `SheenWoodLeatherSofa.scn`。
+**导入产物**：`assets/` 6 个 `.mesh.json`（合计 15.5 MB），`textures/` 13 张；场景 `SheenWoodLeatherSofa.scn`。
 
 ## 生成 / 运行
 
@@ -43,17 +43,15 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.286 | 0.286 | 差 -0.000 |
-| 前景平均 RGB | [93.2, 69.4, 50.5] | [99.3, 67.8, 44.8] | RGB 距离 0.017 |
-| 亮度直方图相似度 | — | — | 0.71（16 桶交集，1=完全一致） |
-| 前景占比 | 64.1% | 25.4% | 覆盖率比 0.396 |
+| 前景平均亮度 | 0.286 | 0.269 | 差 -0.017 |
+| 前景平均 RGB | [93.2, 69.4, 50.5] | [94.0, 63.7, 42.1] | RGB 距离 0.019 |
+| 亮度直方图相似度 | — | — | 0.67（16 桶交集，1=完全一致） |
+| 前景占比 | 64.1% | 25.3% | 覆盖率比 0.396 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- COLOR_0 顶点色未使用
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
 - KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现
@@ -62,8 +60,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/She
 
 ## 已知差距（引擎/导入器层面）
 
-- COLOR_0 顶点色未使用
-- 部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）
 - KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
 - KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现
 - KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现

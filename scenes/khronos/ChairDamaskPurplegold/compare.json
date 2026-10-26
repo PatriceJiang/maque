@@ -12,12 +12,12 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.3346,
-  "preview_mean_lum": 0.1788,
-  "mean_lum_delta": -0.1558,
-  "hist_similarity": 0.6825,
-  "rgb_delta": 0.1603,
+  "preview_mean_lum": 0.1813,
+  "mean_lum_delta": -0.1533,
+  "hist_similarity": 0.6795,
+  "rgb_delta": 0.1576,
   "ref_coverage": 0.4893,
-  "preview_coverage": 0.1115,
+  "preview_coverage": 0.1117,
   "coverage_ratio": 0.228,
   "ref_bbox": [
     0,
@@ -37,9 +37,9 @@
     122.3
   ],
   "preview_mean_rgb": [
-    68.9,
-    35.5,
-    77.2
+    69.6,
+    36.1,
+    77.9
   ],
   "framing_notes": [],
   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"

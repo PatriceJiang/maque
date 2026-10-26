@@ -108,7 +108,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image0.png"
+          "base_color_texture": "textures/image0.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -159,7 +159,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image1.png"
+          "base_color_texture": "textures/image1.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -210,7 +210,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image2.png"
+          "base_color_texture": "textures/image2.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -261,7 +261,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image3.png"
+          "base_color_texture": "textures/image3.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -312,7 +312,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image4.png"
+          "base_color_texture": "textures/image4.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -363,7 +363,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image5.png"
+          "base_color_texture": "textures/image5.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -414,7 +414,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image6.png"
+          "base_color_texture": "textures/image6.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -465,7 +465,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image7.png"
+          "base_color_texture": "textures/image7.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -516,7 +516,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image8.png"
+          "base_color_texture": "textures/image8.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -567,7 +567,7 @@
           "side": 2,
           "alpha_mode": 1,
           "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image9.png"
+          "base_color_texture": "textures/image9.png#wrap=clamp,clamp"
         }
       ]
     },

@@ -58,7 +58,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
      参考图由上游 <code>Models/&lt;Model&gt;/screenshot/</code> 下采样到 ≤900px 后收录在 <code>ref/</code>；
      预览来自仓库 <code>scenes/khronos/&lt;Model&gt;/preview.jpg</code>。</p>
   <p>⚠️ 对比<b>不是像素级 pass/fail</b>：官方图多为离线渲染（HDRI studio、软阴影、不同机位/背景、部分含透明背景），
-     maque 当前无 HDRI IBL / transmission / 软阴影 / 动画骨骼。指标只用于筛查；每个模型卡片附自动初判、
+     maque 当前无 HDRI IBL / 真实折射（transmission 为 alpha 近似）/ 软阴影 / 动画骨骼。指标只用于筛查；每个模型卡片附自动初判、
      已知差距与（部分模型）人工视觉复核结论。迁移方法/踩坑见
      <a href="../../docs/31-gltf-model-migration.md">docs/31-gltf-model-migration.md</a>。</p>
   <div class="stats">
@@ -66,9 +66,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <div class="stat"><b>149</b><span>有自动对比</span></div>
     <div class="stat"><b>86</b><span>参考图使用 large 版</span></div>
     <div class="stat"><b>13</b><span>参考图为 GIF（取首帧）</span></div>
-    <div class="stat"><b>0.40</b><span>直方图相似度中位数</span></div>
+    <div class="stat"><b>0.42</b><span>直方图相似度中位数</span></div>
     <div class="stat"><b>16.6%</b><span>预览前景占比中位数</span></div>
-    <div class="stat"><b>35 / 41 / 73</b>
+    <div class="stat"><b>36 / 42 / 71</b>
       <span>自动初判（较接近 / 中等 / 差异较大）</span></div>
   </div>
 </header>
@@ -88,19 +88,19 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   <details><summary><b>全部模型索引表（点击跳到对比卡片）</b></summary>
   <table class="idx"><thead><tr><th>模型</th><th>参考图类型</th><th>参考文件</th><th>直方图相似度</th>
     <th>亮度差</th><th>前景占比</th><th>自动初判</th><th>差距数</th></tr></thead>
-  <tbody><tr data-name="abeautifulgame" data-verdict="good"><td><a href="#model-ABeautifulGame">ABeautifulGame</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.695</td><td>-0.044</td><td>17.4%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
-<tr data-name="alphablendmodetest" data-verdict="bad"><td><a href="#model-AlphaBlendModeTest">AlphaBlendModeTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.393</td><td>0.085</td><td>28.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
+  <tbody><tr data-name="abeautifulgame" data-verdict="good"><td><a href="#model-ABeautifulGame">ABeautifulGame</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.699</td><td>-0.052</td><td>17.4%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
+<tr data-name="alphablendmodetest" data-verdict="bad"><td><a href="#model-AlphaBlendModeTest">AlphaBlendModeTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.375</td><td>0.088</td><td>28.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="animatedcolorscube" data-verdict="mid"><td><a href="#model-AnimatedColorsCube">AnimatedColorsCube</a></td><td>large</td><td>screenshot-large.gif</td><td>0.556</td><td>-0.037</td><td>20.9%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
 <tr data-name="animatedcube" data-verdict="good"><td><a href="#model-AnimatedCube">AnimatedCube</a></td><td>gif</td><td>screenshot.gif</td><td>0.725</td><td>0.149</td><td>26.9%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
 <tr data-name="animatedmorphcube" data-verdict="bad"><td><a href="#model-AnimatedMorphCube">AnimatedMorphCube</a></td><td>gif</td><td>screenshot.gif</td><td>0.007</td><td>0.535</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="animatedtriangle" data-verdict="bad"><td><a href="#model-AnimatedTriangle">AnimatedTriangle</a></td><td>gif</td><td>screenshot.gif</td><td>0.005</td><td>0.371</td><td>16.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
-<tr data-name="animationpointeruvs" data-verdict="good"><td><a href="#model-AnimationPointerUVs">AnimationPointerUVs</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.685</td><td>0.066</td><td>13.2%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>14</td></tr>
-<tr data-name="anisotropybarnlamp" data-verdict="good"><td><a href="#model-AnisotropyBarnLamp">AnisotropyBarnLamp</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.709</td><td>-0.079</td><td>7.3%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>4</td></tr>
+<tr data-name="animationpointeruvs" data-verdict="good"><td><a href="#model-AnimationPointerUVs">AnimationPointerUVs</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.668</td><td>0.082</td><td>13.2%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>14</td></tr>
+<tr data-name="anisotropybarnlamp" data-verdict="good"><td><a href="#model-AnisotropyBarnLamp">AnisotropyBarnLamp</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.693</td><td>-0.102</td><td>7.3%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>4</td></tr>
 <tr data-name="anisotropydisctest" data-verdict="bad"><td><a href="#model-AnisotropyDiscTest">AnisotropyDiscTest</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.223</td><td>0.079</td><td>23.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="anisotropyrotationtest" data-verdict="bad"><td><a href="#model-AnisotropyRotationTest">AnisotropyRotationTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.103</td><td>0.507</td><td>13.1%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="anisotropystrengthtest" data-verdict="bad"><td><a href="#model-AnisotropyStrengthTest">AnisotropyStrengthTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.256</td><td>0.476</td><td>15.7%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="antiquecamera" data-verdict="mid"><td><a href="#model-AntiqueCamera">AntiqueCamera</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.597</td><td>-0.065</td><td>4.3%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）；预览主体占比过小（&lt;5%）→ 机位过远？</td><td>0</td></tr>
-<tr data-name="attenuationtest" data-verdict="good"><td><a href="#model-AttenuationTest">AttenuationTest</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.778</td><td>0.099</td><td>23.6%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
+<tr data-name="attenuationtest" data-verdict="good"><td><a href="#model-AttenuationTest">AttenuationTest</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.693</td><td>0.097</td><td>23.6%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
 <tr data-name="avocado" data-verdict="bad"><td><a href="#model-Avocado">Avocado</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.285</td><td>0.215</td><td>12.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="barramundifish" data-verdict="mid"><td><a href="#model-BarramundiFish">BarramundiFish</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.401</td><td>0.137</td><td>6.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
 <tr data-name="boombox" data-verdict="bad"><td><a href="#model-BoomBox">BoomBox</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.306</td><td>0.184</td><td>9.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
@@ -111,77 +111,77 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 <tr data-name="boxinterleaved" data-verdict="bad"><td><a href="#model-BoxInterleaved">BoxInterleaved</a></td><td>screenshot</td><td>screenshot.png</td><td>0.004</td><td>0.042</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="boxtextured" data-verdict="bad"><td><a href="#model-BoxTextured">BoxTextured</a></td><td>screenshot</td><td>screenshot.png</td><td>0.319</td><td>0.244</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="boxtexturednonpoweroftwo" data-verdict="bad"><td><a href="#model-BoxTexturedNonPowerOfTwo">BoxTexturedNonPowerOfTwo</a></td><td>screenshot</td><td>screenshot.png</td><td>0.320</td><td>0.244</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
-<tr data-name="boxvertexcolors" data-verdict="bad"><td><a href="#model-BoxVertexColors">BoxVertexColors</a></td><td>screenshot</td><td>screenshot.png</td><td>0.137</td><td>0.143</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
+<tr data-name="boxvertexcolors" data-verdict="good"><td><a href="#model-BoxVertexColors">BoxVertexColors</a></td><td>screenshot</td><td>screenshot.png</td><td>0.602</td><td>-0.072</td><td>26.9%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="brainstem" data-verdict="bad"><td><a href="#model-BrainStem">BrainStem</a></td><td>gif</td><td>screenshot.gif</td><td>0.304</td><td>0.274</td><td>6.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="cameras" data-verdict="bad"><td><a href="#model-Cameras">Cameras</a></td><td>screenshot</td><td>screenshot.png</td><td>0.007</td><td>0.445</td><td>23.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="carbonfibre" data-verdict="bad"><td><a href="#model-CarbonFibre">CarbonFibre</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.386</td><td>-0.114</td><td>7.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
-<tr data-name="carconcept" data-verdict="bad"><td><a href="#model-CarConcept">CarConcept</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.297</td><td>0.270</td><td>14.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>6</td></tr>
+<tr data-name="carconcept" data-verdict="bad"><td><a href="#model-CarConcept">CarConcept</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.304</td><td>0.141</td><td>13.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>5</td></tr>
 <tr data-name="cesiumman" data-verdict="good"><td><a href="#model-CesiumMan">CesiumMan</a></td><td>gif</td><td>screenshot.gif</td><td>0.649</td><td>0.164</td><td>6.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
 <tr data-name="cesiummilktruck" data-verdict="bad"><td><a href="#model-CesiumMilkTruck">CesiumMilkTruck</a></td><td>gif</td><td>screenshot.gif</td><td>0.366</td><td>0.171</td><td>16.0%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
-<tr data-name="chairdamaskpurplegold" data-verdict="good"><td><a href="#model-ChairDamaskPurplegold">ChairDamaskPurplegold</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.682</td><td>-0.156</td><td>11.2%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>4</td></tr>
-<tr data-name="chronographwatch" data-verdict="good"><td><a href="#model-ChronographWatch">ChronographWatch</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.739</td><td>0.111</td><td>14.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>5</td></tr>
+<tr data-name="chairdamaskpurplegold" data-verdict="good"><td><a href="#model-ChairDamaskPurplegold">ChairDamaskPurplegold</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.679</td><td>-0.153</td><td>11.2%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>3</td></tr>
+<tr data-name="chronographwatch" data-verdict="good"><td><a href="#model-ChronographWatch">ChronographWatch</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.661</td><td>0.022</td><td>12.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>4</td></tr>
 <tr data-name="clearcoatcarpaint" data-verdict="good"><td><a href="#model-ClearCoatCarPaint">ClearCoatCarPaint</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.723</td><td>-0.007</td><td>13.6%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
 <tr data-name="clearcoattest" data-verdict="mid"><td><a href="#model-ClearCoatTest">ClearCoatTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.485</td><td>-0.015</td><td>12.2%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
 <tr data-name="clearcoatwicker" data-verdict="good"><td><a href="#model-ClearcoatWicker">ClearcoatWicker</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.807</td><td>0.088</td><td>13.6%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
-<tr data-name="commercialrefrigerator" data-verdict="bad"><td><a href="#model-CommercialRefrigerator">CommercialRefrigerator</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.349</td><td>0.268</td><td>13.0%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
-<tr data-name="comparealphacoverage" data-verdict="bad"><td><a href="#model-CompareAlphaCoverage">CompareAlphaCoverage</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.297</td><td>0.135</td><td>31.1%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
+<tr data-name="commercialrefrigerator" data-verdict="good"><td><a href="#model-CommercialRefrigerator">CommercialRefrigerator</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.734</td><td>0.074</td><td>12.9%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>3</td></tr>
+<tr data-name="comparealphacoverage" data-verdict="bad"><td><a href="#model-CompareAlphaCoverage">CompareAlphaCoverage</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.289</td><td>0.140</td><td>31.1%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="compareambientocclusion" data-verdict="good"><td><a href="#model-CompareAmbientOcclusion">CompareAmbientOcclusion</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.808</td><td>0.035</td><td>17.4%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="compareanisotropy" data-verdict="mid"><td><a href="#model-CompareAnisotropy">CompareAnisotropy</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.487</td><td>-0.039</td><td>17.7%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
-<tr data-name="comparebasecolor" data-verdict="mid"><td><a href="#model-CompareBaseColor">CompareBaseColor</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.548</td><td>0.095</td><td>22.9%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
+<tr data-name="comparebasecolor" data-verdict="mid"><td><a href="#model-CompareBaseColor">CompareBaseColor</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.575</td><td>0.066</td><td>22.9%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
 <tr data-name="compareclearcoat" data-verdict="good"><td><a href="#model-CompareClearcoat">CompareClearcoat</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.871</td><td>-0.035</td><td>22.0%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
-<tr data-name="comparedispersion" data-verdict="mid"><td><a href="#model-CompareDispersion">CompareDispersion</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.531</td><td>0.054</td><td>19.5%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
+<tr data-name="comparedispersion" data-verdict="bad"><td><a href="#model-CompareDispersion">CompareDispersion</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.305</td><td>-0.088</td><td>19.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="compareemissivestrength" data-verdict="mid"><td><a href="#model-CompareEmissiveStrength">CompareEmissiveStrength</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.463</td><td>-0.079</td><td>7.8%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
-<tr data-name="compareior" data-verdict="bad"><td><a href="#model-CompareIor">CompareIor</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.350</td><td>0.225</td><td>19.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
+<tr data-name="compareior" data-verdict="mid"><td><a href="#model-CompareIor">CompareIor</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.425</td><td>0.037</td><td>19.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>3</td></tr>
 <tr data-name="compareiridescence" data-verdict="good"><td><a href="#model-CompareIridescence">CompareIridescence</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.714</td><td>0.069</td><td>18.0%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
 <tr data-name="comparemetallic" data-verdict="good"><td><a href="#model-CompareMetallic">CompareMetallic</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.719</td><td>0.054</td><td>19.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="comparenormal" data-verdict="mid"><td><a href="#model-CompareNormal">CompareNormal</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.472</td><td>0.224</td><td>19.8%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
 <tr data-name="compareroughness" data-verdict="good"><td><a href="#model-CompareRoughness">CompareRoughness</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.647</td><td>0.065</td><td>11.7%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="comparesheen" data-verdict="good"><td><a href="#model-CompareSheen">CompareSheen</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.645</td><td>-0.062</td><td>19.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
 <tr data-name="comparespecular" data-verdict="good"><td><a href="#model-CompareSpecular">CompareSpecular</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.777</td><td>0.010</td><td>20.0%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
-<tr data-name="comparetransmission" data-verdict="mid"><td><a href="#model-CompareTransmission">CompareTransmission</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.407</td><td>0.122</td><td>19.7%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
-<tr data-name="comparevolume" data-verdict="bad"><td><a href="#model-CompareVolume">CompareVolume</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.366</td><td>0.188</td><td>19.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
+<tr data-name="comparetransmission" data-verdict="mid"><td><a href="#model-CompareTransmission">CompareTransmission</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.408</td><td>0.066</td><td>19.7%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
+<tr data-name="comparevolume" data-verdict="bad"><td><a href="#model-CompareVolume">CompareVolume</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.398</td><td>0.074</td><td>19.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="corset" data-verdict="mid"><td><a href="#model-Corset">Corset</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.527</td><td>0.073</td><td>8.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
 <tr data-name="cube" data-verdict="bad"><td><a href="#model-Cube">Cube</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.376</td><td>0.147</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="cubevisibility" data-verdict="bad"><td><a href="#model-CubeVisibility">CubeVisibility</a></td><td>screenshot</td><td>screenshot_animated.webp</td><td>0.237</td><td>-0.152</td><td>14.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
 <tr data-name="damagedhelmet" data-verdict="mid"><td><a href="#model-DamagedHelmet">DamagedHelmet</a></td><td>screenshot</td><td>screenshot.png</td><td>0.579</td><td>0.103</td><td>11.0%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
 <tr data-name="diffusetransmissionplant" data-verdict="mid"><td><a href="#model-DiffuseTransmissionPlant">DiffuseTransmissionPlant</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.594</td><td>0.031</td><td>8.5%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>5</td></tr>
 <tr data-name="diffusetransmissionteacup" data-verdict="good"><td><a href="#model-DiffuseTransmissionTeacup">DiffuseTransmissionTeacup</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.663</td><td>0.112</td><td>14.4%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
-<tr data-name="diffusetransmissiontest" data-verdict="mid"><td><a href="#model-DiffuseTransmissionTest">DiffuseTransmissionTest</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.575</td><td>0.017</td><td>20.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
+<tr data-name="diffusetransmissiontest" data-verdict="mid"><td><a href="#model-DiffuseTransmissionTest">DiffuseTransmissionTest</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.562</td><td>0.020</td><td>20.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
 <tr data-name="directionallight" data-verdict="bad"><td><a href="#model-DirectionalLight">DirectionalLight</a></td><td>screenshot</td><td>screenshot.png</td><td>0.110</td><td>0.368</td><td>18.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
-<tr data-name="dispersiontest" data-verdict="good"><td><a href="#model-DispersionTest">DispersionTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.724</td><td>0.089</td><td>13.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
-<tr data-name="dragonattenuation" data-verdict="bad"><td><a href="#model-DragonAttenuation">DragonAttenuation</a></td><td>large</td><td>screenshot_large.png</td><td>0.144</td><td>0.368</td><td>19.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
-<tr data-name="dragondispersion" data-verdict="mid"><td><a href="#model-DragonDispersion">DragonDispersion</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.441</td><td>0.256</td><td>15.8%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
+<tr data-name="dispersiontest" data-verdict="good"><td><a href="#model-DispersionTest">DispersionTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.761</td><td>0.070</td><td>13.4%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
+<tr data-name="dragonattenuation" data-verdict="bad"><td><a href="#model-DragonAttenuation">DragonAttenuation</a></td><td>large</td><td>screenshot_large.png</td><td>0.147</td><td>0.352</td><td>19.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
+<tr data-name="dragondispersion" data-verdict="mid"><td><a href="#model-DragonDispersion">DragonDispersion</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.492</td><td>0.216</td><td>15.7%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
 <tr data-name="duck" data-verdict="bad"><td><a href="#model-Duck">Duck</a></td><td>screenshot</td><td>screenshot.png</td><td>0.388</td><td>0.297</td><td>13.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="emissivestrengthtest" data-verdict="bad"><td><a href="#model-EmissiveStrengthTest">EmissiveStrengthTest</a></td><td>large</td><td>screenshot_large_plain.jpg</td><td>0.070</td><td>0.373</td><td>31.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="environmenttest" data-verdict="bad"><td><a href="#model-EnvironmentTest">EnvironmentTest</a></td><td>large</td><td>screenshot_large.png</td><td>0.280</td><td>0.214</td><td>9.0%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
-<tr data-name="flighthelmet" data-verdict="mid"><td><a href="#model-FlightHelmet">FlightHelmet</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.903</td><td>-0.248</td><td>9.3%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
+<tr data-name="flighthelmet" data-verdict="mid"><td><a href="#model-FlightHelmet">FlightHelmet</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.883</td><td>-0.257</td><td>9.2%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
 <tr data-name="fox" data-verdict="bad"><td><a href="#model-Fox">Fox</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.282</td><td>0.113</td><td>6.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="glamvelvetsofa" data-verdict="mid"><td><a href="#model-GlamVelvetSofa">GlamVelvetSofa</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.401</td><td>-0.104</td><td>17.8%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>5</td></tr>
-<tr data-name="glassbrokenwindow" data-verdict="bad"><td><a href="#model-GlassBrokenWindow">GlassBrokenWindow</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.123</td><td>0.324</td><td>27.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
-<tr data-name="glasshurricanecandleholder" data-verdict="mid"><td><a href="#model-GlassHurricaneCandleHolder">GlassHurricaneCandleHolder</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.566</td><td>0.348</td><td>13.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
-<tr data-name="glassvaseflowers" data-verdict="good"><td><a href="#model-GlassVaseFlowers">GlassVaseFlowers</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.648</td><td>0.108</td><td>10.6%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>3</td></tr>
+<tr data-name="glassbrokenwindow" data-verdict="bad"><td><a href="#model-GlassBrokenWindow">GlassBrokenWindow</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.206</td><td>-0.036</td><td>27.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
+<tr data-name="glasshurricanecandleholder" data-verdict="mid"><td><a href="#model-GlassHurricaneCandleHolder">GlassHurricaneCandleHolder</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.498</td><td>0.131</td><td>13.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
+<tr data-name="glassvaseflowers" data-verdict="good"><td><a href="#model-GlassVaseFlowers">GlassVaseFlowers</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.679</td><td>-0.060</td><td>10.6%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>3</td></tr>
 <tr data-name="interpolationtest" data-verdict="bad"><td><a href="#model-InterpolationTest">InterpolationTest</a></td><td>gif</td><td>screenshot.gif</td><td>0.228</td><td>0.142</td><td>19.1%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
-<tr data-name="iortestgrid" data-verdict="mid"><td><a href="#model-IORTestGrid">IORTestGrid</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.591</td><td>0.079</td><td>16.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>3</td></tr>
+<tr data-name="iortestgrid" data-verdict="mid"><td><a href="#model-IORTestGrid">IORTestGrid</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.564</td><td>0.016</td><td>16.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>3</td></tr>
 <tr data-name="iridescenceabalone" data-verdict="mid"><td><a href="#model-IridescenceAbalone">IridescenceAbalone</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.442</td><td>0.119</td><td>17.0%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
-<tr data-name="iridescencedielectricspheres" data-verdict="bad"><td><a href="#model-IridescenceDielectricSpheres">IridescenceDielectricSpheres</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.207</td><td>0.208</td><td>16.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
-<tr data-name="iridescencelamp" data-verdict="bad"><td><a href="#model-IridescenceLamp">IridescenceLamp</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.207</td><td>0.108</td><td>12.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
+<tr data-name="iridescencedielectricspheres" data-verdict="bad"><td><a href="#model-IridescenceDielectricSpheres">IridescenceDielectricSpheres</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.206</td><td>0.208</td><td>16.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
+<tr data-name="iridescencelamp" data-verdict="bad"><td><a href="#model-IridescenceLamp">IridescenceLamp</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.259</td><td>0.016</td><td>12.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
 <tr data-name="iridescencemetallicspheres" data-verdict="good"><td><a href="#model-IridescenceMetallicSpheres">IridescenceMetallicSpheres</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.798</td><td>0.078</td><td>16.2%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
-<tr data-name="iridescencesuzanne" data-verdict="mid"><td><a href="#model-IridescenceSuzanne">IridescenceSuzanne</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.512</td><td>0.186</td><td>11.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>4</td></tr>
-<tr data-name="iridescentdishwitholives" data-verdict="bad"><td><a href="#model-IridescentDishWithOlives">IridescentDishWithOlives</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.214</td><td>0.419</td><td>7.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>7</td></tr>
+<tr data-name="iridescencesuzanne" data-verdict="mid"><td><a href="#model-IridescenceSuzanne">IridescenceSuzanne</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.572</td><td>0.057</td><td>11.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>4</td></tr>
+<tr data-name="iridescentdishwitholives" data-verdict="mid"><td><a href="#model-IridescentDishWithOlives">IridescentDishWithOlives</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.482</td><td>0.075</td><td>7.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>6</td></tr>
 <tr data-name="lantern" data-verdict="mid"><td><a href="#model-Lantern">Lantern</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.437</td><td>0.146</td><td>5.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
-<tr data-name="lightspunctuallamp" data-verdict="mid"><td><a href="#model-LightsPunctualLamp">LightsPunctualLamp</a></td><td>screenshot</td><td>screenshot.png</td><td>0.442</td><td>-0.009</td><td>5.3%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
+<tr data-name="lightspunctuallamp" data-verdict="bad"><td><a href="#model-LightsPunctualLamp">LightsPunctualLamp</a></td><td>screenshot</td><td>screenshot.png</td><td>0.399</td><td>-0.107</td><td>5.3%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="lightvisibility" data-verdict="bad"><td><a href="#model-LightVisibility">LightVisibility</a></td><td>screenshot</td><td>screenshot_animated.webp</td><td>0.091</td><td>0.335</td><td>42.3%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>4</td></tr>
 <tr data-name="mandarinorange" data-verdict="mid"><td><a href="#model-MandarinOrange">MandarinOrange</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.588</td><td>0.008</td><td>7.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
 <tr data-name="materialsvariantsshoe" data-verdict="mid"><td><a href="#model-MaterialsVariantsShoe">MaterialsVariantsShoe</a></td><td>large</td><td>screenshot-large.png</td><td>0.532</td><td>-0.097</td><td>15.6%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
-<tr data-name="meshoptcubetest" data-verdict="mid"><td><a href="#model-MeshoptCubeTest">MeshoptCubeTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.491</td><td>0.101</td><td>6.8%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>5</td></tr>
+<tr data-name="meshoptcubetest" data-verdict="mid"><td><a href="#model-MeshoptCubeTest">MeshoptCubeTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.484</td><td>0.078</td><td>6.8%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>4</td></tr>
 <tr data-name="meshprimitivemodes" data-verdict="bad"><td><a href="#model-MeshPrimitiveModes">MeshPrimitiveModes</a></td><td>screenshot</td><td>screenshot.png</td><td>0.091</td><td>0.010</td><td>20.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="metalroughspheres" data-verdict="good"><td><a href="#model-MetalRoughSpheres">MetalRoughSpheres</a></td><td>screenshot</td><td>screenshot.png</td><td>0.723</td><td>0.199</td><td>13.2%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="metalroughspheresnotextures" data-verdict="good"><td><a href="#model-MetalRoughSpheresNoTextures">MetalRoughSpheresNoTextures</a></td><td>screenshot</td><td>screenshot.png</td><td>0.680</td><td>0.190</td><td>13.7%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="morphprimitivestest" data-verdict="mid"><td><a href="#model-MorphPrimitivesTest">MorphPrimitivesTest</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.454</td><td>-0.411</td><td>18.9%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
-<tr data-name="morphstresstest" data-verdict="good"><td><a href="#model-MorphStressTest">MorphStressTest</a></td><td>large</td><td>screenshot_large.png</td><td>0.700</td><td>0.073</td><td>17.9%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>3</td></tr>
-<tr data-name="mosquitoinamber" data-verdict="good"><td><a href="#model-MosquitoInAmber">MosquitoInAmber</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.694</td><td>0.001</td><td>17.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
+<tr data-name="morphstresstest" data-verdict="mid"><td><a href="#model-MorphStressTest">MorphStressTest</a></td><td>large</td><td>screenshot_large.png</td><td>0.587</td><td>0.103</td><td>18.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
+<tr data-name="mosquitoinamber" data-verdict="bad"><td><a href="#model-MosquitoInAmber">MosquitoInAmber</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.150</td><td>-0.250</td><td>17.1%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="multiplescenes" data-verdict="bad"><td><a href="#model-MultipleScenes">MultipleScenes</a></td><td>screenshot</td><td>screenshot.png</td><td>0.232</td><td>0.128</td><td>30.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
-<tr data-name="multiuvtest" data-verdict="bad"><td><a href="#model-MultiUVTest">MultiUVTest</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.161</td><td>0.297</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
+<tr data-name="multiuvtest" data-verdict="bad"><td><a href="#model-MultiUVTest">MultiUVTest</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.157</td><td>0.295</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="negativescaletest" data-verdict="bad"><td><a href="#model-NegativeScaleTest">NegativeScaleTest</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.125</td><td>0.283</td><td>29.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="nodeperformancetest" data-verdict="bad"><td><a href="#model-NodePerformanceTest">NodePerformanceTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.381</td><td>-0.287</td><td>5.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="nodevisibilitytest" data-verdict="bad"><td><a href="#model-NodeVisibilityTest">NodeVisibilityTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.084</td><td>0.290</td><td>18.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
@@ -189,58 +189,58 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 <tr data-name="normaltangenttest" data-verdict="mid"><td><a href="#model-NormalTangentTest">NormalTangentTest</a></td><td>large</td><td>screenshot-larger.png</td><td>0.513</td><td>0.158</td><td>17.6%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
 <tr data-name="orientationtest" data-verdict="bad"><td><a href="#model-OrientationTest">OrientationTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.154</td><td>0.063</td><td>22.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="playsetlighttest" data-verdict="bad"><td><a href="#model-PlaysetLightTest">PlaysetLightTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.036</td><td>0.615</td><td>17.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
-<tr data-name="pointlightintensitytest" data-verdict="bad"><td><a href="#model-PointLightIntensityTest">PointLightIntensityTest</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.204</td><td>0.377</td><td>31.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
+<tr data-name="pointlightintensitytest" data-verdict="bad"><td><a href="#model-PointLightIntensityTest">PointLightIntensityTest</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.216</td><td>0.380</td><td>31.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="potofcoals" data-verdict="mid"><td><a href="#model-PotOfCoals">PotOfCoals</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.571</td><td>-0.035</td><td>13.5%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
-<tr data-name="potofcoalsanimationpointer" data-verdict="mid"><td><a href="#model-PotOfCoalsAnimationPointer">PotOfCoalsAnimationPointer</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.515</td><td>0.075</td><td>13.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>7</td></tr>
-<tr data-name="primitivemodenormalstest" data-verdict="good"><td><a href="#model-PrimitiveModeNormalsTest">PrimitiveModeNormalsTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.679</td><td>0.163</td><td>11.7%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>3</td></tr>
-<tr data-name="recursiveskeletons" data-verdict="bad"><td><a href="#model-RecursiveSkeletons">RecursiveSkeletons</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.314</td><td>-0.019</td><td>6.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
+<tr data-name="potofcoalsanimationpointer" data-verdict="mid"><td><a href="#model-PotOfCoalsAnimationPointer">PotOfCoalsAnimationPointer</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.517</td><td>0.055</td><td>13.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>7</td></tr>
+<tr data-name="primitivemodenormalstest" data-verdict="good"><td><a href="#model-PrimitiveModeNormalsTest">PrimitiveModeNormalsTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.695</td><td>0.148</td><td>11.7%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
+<tr data-name="recursiveskeletons" data-verdict="bad"><td><a href="#model-RecursiveSkeletons">RecursiveSkeletons</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.314</td><td>-0.019</td><td>6.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="riggedfigure" data-verdict="bad"><td><a href="#model-RiggedFigure">RiggedFigure</a></td><td>gif</td><td>screenshot.gif</td><td>0.167</td><td>0.254</td><td>7.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="riggedsimple" data-verdict="bad"><td><a href="#model-RiggedSimple">RiggedSimple</a></td><td>gif</td><td>screenshot.gif</td><td>0.103</td><td>0.426</td><td>5.3%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="scatteringskull" data-verdict="bad"><td><a href="#model-ScatteringSkull">ScatteringSkull</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.187</td><td>0.460</td><td>12.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="scifihelmet" data-verdict="mid"><td><a href="#model-SciFiHelmet">SciFiHelmet</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.565</td><td>-0.017</td><td>8.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
-<tr data-name="sheenchair" data-verdict="good"><td><a href="#model-SheenChair">SheenChair</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.754</td><td>-0.117</td><td>11.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>4</td></tr>
+<tr data-name="sheenchair" data-verdict="good"><td><a href="#model-SheenChair">SheenChair</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.741</td><td>-0.118</td><td>11.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>3</td></tr>
 <tr data-name="sheencloth" data-verdict="bad"><td><a href="#model-SheenCloth">SheenCloth</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.160</td><td>0.275</td><td>12.0%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="sheentestgrid" data-verdict="mid"><td><a href="#model-SheenTestGrid">SheenTestGrid</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.479</td><td>0.128</td><td>13.7%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
-<tr data-name="sheenwoodleathersofa" data-verdict="good"><td><a href="#model-SheenWoodLeatherSofa">SheenWoodLeatherSofa</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.714</td><td>-0.000</td><td>25.4%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>6</td></tr>
+<tr data-name="sheenwoodleathersofa" data-verdict="good"><td><a href="#model-SheenWoodLeatherSofa">SheenWoodLeatherSofa</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.665</td><td>-0.017</td><td>25.3%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>4</td></tr>
 <tr data-name="simpleinstancing" data-verdict="bad"><td><a href="#model-SimpleInstancing">SimpleInstancing</a></td><td>large</td><td>screenshot_large.png</td><td>0.106</td><td>0.026</td><td>26.9%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="simplematerial" data-verdict="bad"><td><a href="#model-SimpleMaterial">SimpleMaterial</a></td><td>screenshot</td><td>screenshot.png</td><td>0.074</td><td>-0.131</td><td>16.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="simplemeshes" data-verdict="bad"><td><a href="#model-SimpleMeshes">SimpleMeshes</a></td><td>screenshot</td><td>screenshot.png</td><td>0.014</td><td>0.362</td><td>22.7%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="simplemorph" data-verdict="bad"><td><a href="#model-SimpleMorph">SimpleMorph</a></td><td>screenshot</td><td>screenshot.png</td><td>0.031</td><td>0.115</td><td>18.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="simpleskin" data-verdict="bad"><td><a href="#model-SimpleSkin">SimpleSkin</a></td><td>gif</td><td>screenshot.gif</td><td>0.250</td><td>0.197</td><td>17.2%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="simplesparseaccessor" data-verdict="bad"><td><a href="#model-SimpleSparseAccessor">SimpleSparseAccessor</a></td><td>screenshot</td><td>screenshot.png</td><td>0.226</td><td>0.215</td><td>16.7%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
-<tr data-name="simpletexture" data-verdict="good"><td><a href="#model-SimpleTexture">SimpleTexture</a></td><td>screenshot</td><td>screenshot.png</td><td>0.668</td><td>-0.136</td><td>29.5%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
+<tr data-name="simpletexture" data-verdict="good"><td><a href="#model-SimpleTexture">SimpleTexture</a></td><td>screenshot</td><td>screenshot.png</td><td>0.667</td><td>-0.137</td><td>29.5%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="specglossvsmetalrough" data-verdict="bad"><td><a href="#model-SpecGlossVsMetalRough">SpecGlossVsMetalRough</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.148</td><td>0.313</td><td>12.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="specularsilkpouf" data-verdict="good"><td><a href="#model-SpecularSilkPouf">SpecularSilkPouf</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.643</td><td>-0.010</td><td>15.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
 <tr data-name="speculartest" data-verdict="mid"><td><a href="#model-SpecularTest">SpecularTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.495</td><td>0.132</td><td>23.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
-<tr data-name="sponza" data-verdict="good"><td><a href="#model-Sponza">Sponza</a></td><td>large</td><td>large.jpg</td><td>0.622</td><td>0.109</td><td>30.4%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
-<tr data-name="stainedglasslamp" data-verdict="good"><td><a href="#model-StainedGlassLamp">StainedGlassLamp</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.672</td><td>0.134</td><td>5.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>5</td></tr>
-<tr data-name="sunglasseskhronos" data-verdict="mid"><td><a href="#model-SunglassesKhronos">SunglassesKhronos</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.486</td><td>-0.116</td><td>16.1%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>3</td></tr>
+<tr data-name="sponza" data-verdict="good"><td><a href="#model-Sponza">Sponza</a></td><td>large</td><td>large.jpg</td><td>0.693</td><td>-0.037</td><td>70.1%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？</td><td>1</td></tr>
+<tr data-name="stainedglasslamp" data-verdict="good"><td><a href="#model-StainedGlassLamp">StainedGlassLamp</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.675</td><td>-0.034</td><td>4.9%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（&lt;5%）→ 机位过远？</td><td>5</td></tr>
+<tr data-name="sunglasseskhronos" data-verdict="mid"><td><a href="#model-SunglassesKhronos">SunglassesKhronos</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.516</td><td>-0.157</td><td>6.4%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>3</td></tr>
 <tr data-name="suzanne" data-verdict="mid"><td><a href="#model-Suzanne">Suzanne</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.429</td><td>0.029</td><td>5.2%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>0</td></tr>
 <tr data-name="texturecoordinatetest" data-verdict="bad"><td><a href="#model-TextureCoordinateTest">TextureCoordinateTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.223</td><td>-0.029</td><td>27.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="textureencodingtest" data-verdict="bad"><td><a href="#model-TextureEncodingTest">TextureEncodingTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.381</td><td>0.057</td><td>12.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
 <tr data-name="texturelinearinterpolationtest" data-verdict="mid"><td><a href="#model-TextureLinearInterpolationTest">TextureLinearInterpolationTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.586</td><td>0.130</td><td>12.5%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>1</td></tr>
-<tr data-name="texturesettingstest" data-verdict="bad"><td><a href="#model-TextureSettingsTest">TextureSettingsTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.257</td><td>0.029</td><td>29.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
-<tr data-name="texturetransformmultitest" data-verdict="good"><td><a href="#model-TextureTransformMultiTest">TextureTransformMultiTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.836</td><td>0.059</td><td>25.7%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>3</td></tr>
-<tr data-name="texturetransformtest" data-verdict="good"><td><a href="#model-TextureTransformTest">TextureTransformTest</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.623</td><td>-0.042</td><td>31.2%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
+<tr data-name="texturesettingstest" data-verdict="bad"><td><a href="#model-TextureSettingsTest">TextureSettingsTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.258</td><td>0.028</td><td>29.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
+<tr data-name="texturetransformmultitest" data-verdict="good"><td><a href="#model-TextureTransformMultiTest">TextureTransformMultiTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.837</td><td>0.067</td><td>25.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
+<tr data-name="texturetransformtest" data-verdict="good"><td><a href="#model-TextureTransformTest">TextureTransformTest</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.627</td><td>-0.045</td><td>31.5%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
 <tr data-name="toycar" data-verdict="mid"><td><a href="#model-ToyCar">ToyCar</a></td><td>screenshot</td><td>toycar_ref.jpg</td><td>0.496</td><td>0.054</td><td>54.9%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？</td><td>0</td></tr>
 <tr data-name="trafficcone" data-verdict="bad"><td><a href="#model-TrafficCone">TrafficCone</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.086</td><td>0.180</td><td>17.7%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>4</td></tr>
-<tr data-name="transmissionordertest" data-verdict="bad"><td><a href="#model-TransmissionOrderTest">TransmissionOrderTest</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.377</td><td>0.211</td><td>19.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
-<tr data-name="transmissionroughnesstest" data-verdict="mid"><td><a href="#model-TransmissionRoughnessTest">TransmissionRoughnessTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.401</td><td>0.190</td><td>32.5%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
-<tr data-name="transmissiontest" data-verdict="bad"><td><a href="#model-TransmissionTest">TransmissionTest</a></td><td>large</td><td>screenshot_large.png</td><td>0.315</td><td>0.199</td><td>19.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
-<tr data-name="transmissionthinwalltestgrid" data-verdict="bad"><td><a href="#model-TransmissionThinwallTestGrid">TransmissionThinwallTestGrid</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.109</td><td>0.438</td><td>16.3%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
+<tr data-name="transmissionordertest" data-verdict="bad"><td><a href="#model-TransmissionOrderTest">TransmissionOrderTest</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.352</td><td>0.223</td><td>19.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
+<tr data-name="transmissionroughnesstest" data-verdict="bad"><td><a href="#model-TransmissionRoughnessTest">TransmissionRoughnessTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.378</td><td>0.173</td><td>32.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
+<tr data-name="transmissiontest" data-verdict="bad"><td><a href="#model-TransmissionTest">TransmissionTest</a></td><td>large</td><td>screenshot_large.png</td><td>0.291</td><td>0.205</td><td>19.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
+<tr data-name="transmissionthinwalltestgrid" data-verdict="bad"><td><a href="#model-TransmissionThinwallTestGrid">TransmissionThinwallTestGrid</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.081</td><td>0.371</td><td>16.3%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
 <tr data-name="triangle" data-verdict="bad"><td><a href="#model-Triangle">Triangle</a></td><td>screenshot</td><td>screenshot.png</td><td>0.013</td><td>0.367</td><td>16.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="trianglewithoutindices" data-verdict="bad"><td><a href="#model-TriangleWithoutIndices">TriangleWithoutIndices</a></td><td>screenshot</td><td>screenshot.png</td><td>0.013</td><td>0.367</td><td>16.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="twosidedplane" data-verdict="bad"><td><a href="#model-TwoSidedPlane">TwoSidedPlane</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.220</td><td>0.084</td><td>19.3%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
-<tr data-name="unlittest" data-verdict="bad"><td><a href="#model-UnlitTest">UnlitTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.035</td><td>0.083</td><td>28.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
-<tr data-name="usdshaderballforgltf" data-verdict="bad"><td><a href="#model-USDShaderBallForGltf">USDShaderBallForGltf</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.350</td><td>0.376</td><td>13.7%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
-<tr data-name="vertexcolortest" data-verdict="bad"><td><a href="#model-VertexColorTest">VertexColorTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.163</td><td>0.102</td><td>23.1%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>1</td></tr>
+<tr data-name="unlittest" data-verdict="good"><td><a href="#model-UnlitTest">UnlitTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.981</td><td>0.021</td><td>28.4%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
+<tr data-name="usdshaderballforgltf" data-verdict="mid"><td><a href="#model-USDShaderBallForGltf">USDShaderBallForGltf</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.473</td><td>-0.055</td><td>13.7%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
+<tr data-name="vertexcolortest" data-verdict="bad"><td><a href="#model-VertexColorTest">VertexColorTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.156</td><td>0.065</td><td>22.4%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="virtualcity" data-verdict="mid"><td><a href="#model-VirtualCity">VirtualCity</a></td><td>gif</td><td>screenshot.gif</td><td>0.469</td><td>-0.137</td><td>17.9%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）</td><td>2</td></tr>
 <tr data-name="waterbottle" data-verdict="good"><td><a href="#model-WaterBottle">WaterBottle</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.609</td><td>-0.083</td><td>8.9%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>0</td></tr>
 <tr data-name="xmpmetadataroundedcube" data-verdict="bad"><td><a href="#model-XmpMetadataRoundedCube">XmpMetadataRoundedCube</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.076</td><td>0.336</td><td>20.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr></tbody></table></details>
   <section class="cards" id="cards">
 
 <article class="card good" id="model-ABeautifulGame" data-name="abeautifulgame"
-         data-verdict="good" data-hist="0.6953" data-gaps="2">
+         data-verdict="good" data-hist="0.6987" data-gaps="2">
   <header class="card-head">
     <h2>ABeautifulGame</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>video</span><span class=tag>extension</span><span class="status">ok</span>
@@ -250,13 +250,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/ABeautifulGame.jpg" target=_blank><img loading=lazy src="ref/ABeautifulGame.jpg" alt="ref ABeautifulGame"></a></div><figcaption>官方参考：screenshot.jpg（400×310）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/ABeautifulGame/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/ABeautifulGame/preview.jpg" alt="maque ABeautifulGame"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.695</span><span title="前景平均亮度差">亮度差 -0.044</span><span title="前景平均 RGB 距离">RGB 距离 0.042</span><span title="预览前景像素占比">前景占比 17.4%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.699</span><span title="前景平均亮度差">亮度差 -0.052</span><span title="前景平均 RGB 距离">RGB 距离 0.048</span><span title="预览前景像素占比">前景占比 17.4%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：整副国际象棋（棋盘+全部棋子+底座）齐全、贴图与雕花细节正确、构图可辨认。玻璃/透明棋子被渲染为不透明白/绿色，官方参考图中的透光与体积吸收观感完全丢失；此外缺环境反射、整体偏暗。属 transmission/volume 已知差距的典型代表。<br>- 差异主因：缺失特性：transmission+volume 未实现 + 无 HDRI；机位/背景</div><details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：整副国际象棋（棋盘+全部棋子+底座）齐全、贴图与雕花细节正确、构图可辨认。玻璃/透明棋子被渲染为不透明白/绿色，官方参考图中的透光与体积吸收观感完全丢失；此外缺环境反射、整体偏暗。属 transmission/volume 已知差距的典型代表。<br>- 差异主因：缺失特性：transmission+volume 未实现 + 无 HDRI；机位/背景</div><details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-AlphaBlendModeTest" data-name="alphablendmodetest"
-         data-verdict="bad" data-hist="0.3932" data-gaps="1">
+         data-verdict="bad" data-hist="0.3747" data-gaps="1">
   <header class="card-head">
     <h2>AlphaBlendModeTest</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class="status">ok</span>
@@ -266,7 +266,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/AlphaBlendModeTest.jpg" target=_blank><img loading=lazy src="ref/AlphaBlendModeTest.jpg" alt="ref AlphaBlendModeTest"></a></div><figcaption>官方参考：screenshot_large.jpg（960×295，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/AlphaBlendModeTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/AlphaBlendModeTest/preview.jpg" alt="maque AlphaBlendModeTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.393</span><span title="前景平均亮度差">亮度差 0.085</span><span title="前景平均 RGB 距离">RGB 距离 0.084</span><span title="预览前景像素占比">前景占比 28.5%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.375</span><span title="前景平均亮度差">亮度差 0.088</span><span title="前景平均 RGB 距离">RGB 距离 0.088</span><span title="预览前景像素占比">前景占比 28.5%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
   <div class=review><b>人工视觉复核：</b>- 结论：5 块 OPAQUE/BLEND/MASK 测试面板与底部标签（Opaque/Blend/Mask 0.25/0.5 等）都在，棋盘条纹透过 alpha 面板的观感与官方基本一致，未发现明显排序错误。差异主要是机位（官方正对、本引擎侧向 3/4）与光照。<br>- 差异主因：机位/背景：透视角度不同；光照差异</div><details><summary>已知差距 1 项</summary><ul><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
@@ -336,7 +336,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-AnimationPointerUVs" data-name="animationpointeruvs"
-         data-verdict="good" data-hist="0.6847" data-gaps="14">
+         data-verdict="good" data-hist="0.6679" data-gaps="14">
   <header class="card-head">
     <h2>AnimationPointerUVs</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class="status">ok</span>
@@ -346,13 +346,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/AnimationPointerUVs.jpg" target=_blank><img loading=lazy src="ref/AnimationPointerUVs.jpg" alt="ref AnimationPointerUVs"></a></div><figcaption>官方参考：screenshot_Large.jpg（2322×1237，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/AnimationPointerUVs/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/AnimationPointerUVs/preview.jpg" alt="maque AnimationPointerUVs"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.685</span><span title="前景平均亮度差">亮度差 0.066</span><span title="前景平均 RGB 距离">RGB 距离 0.073</span><span title="预览前景像素占比">前景占比 13.2%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.668</span><span title="前景平均亮度差">亮度差 0.082</span><span title="前景平均 RGB 距离">RGB 距离 0.088</span><span title="预览前景像素占比">前景占比 13.2%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 14 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>… 共 14 项，见该模型 README</li></ul></details>
+  <details><summary>已知差距 14 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>… 共 14 项，见该模型 README</li></ul></details>
 </article>
 
 <article class="card good" id="model-AnisotropyBarnLamp" data-name="anisotropybarnlamp"
-         data-verdict="good" data-hist="0.7092" data-gaps="4">
+         data-verdict="good" data-hist="0.6927" data-gaps="4">
   <header class="card-head">
     <h2>AnisotropyBarnLamp</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -362,9 +362,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/AnisotropyBarnLamp.jpg" target=_blank><img loading=lazy src="ref/AnisotropyBarnLamp.jpg" alt="ref AnisotropyBarnLamp"></a></div><figcaption>官方参考：screenshot_Large.jpg（1055×1202，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/AnisotropyBarnLamp/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/AnisotropyBarnLamp/preview.jpg" alt="maque AnisotropyBarnLamp"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.709</span><span title="前景平均亮度差">亮度差 -0.079</span><span title="前景平均 RGB 距离">RGB 距离 0.077</span><span title="预览前景像素占比">前景占比 7.3%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.693</span><span title="前景平均亮度差">亮度差 -0.102</span><span title="前景平均 RGB 距离">RGB 距离 0.100</span><span title="预览前景像素占比">前景占比 7.3%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：铜质谷仓壁灯完整：墙座、支臂、灯罩、灯泡都在，铜材质与清漆高光可信，朝向合理。与官方近景相比缺少强烈的各向异性拉丝反射，且机位更远，但整体可接受、无导入异常。<br>- 差异主因：缺失特性：anisotropy 拉丝高光偏弱、无 HDRI</div><details><summary>已知差距 4 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li><li>KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：铜质谷仓壁灯完整：墙座、支臂、灯罩、灯泡都在，铜材质与清漆高光可信，朝向合理。与官方近景相比缺少强烈的各向异性拉丝反射，且机位更远，但整体可接受、无导入异常。<br>- 差异主因：缺失特性：anisotropy 拉丝高光偏弱、无 HDRI</div><details><summary>已知差距 4 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li><li>KHR_materials_anisotropy：只做粗糙度近似，anisotropy 贴图未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-AnisotropyDiscTest" data-name="anisotropydisctest"
@@ -432,7 +432,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-AttenuationTest" data-name="attenuationtest"
-         data-verdict="good" data-hist="0.7778" data-gaps="2">
+         data-verdict="good" data-hist="0.6930" data-gaps="2">
   <header class="card-head">
     <h2>AttenuationTest</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -442,9 +442,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/AttenuationTest.jpg" target=_blank><img loading=lazy src="ref/AttenuationTest.jpg" alt="ref AttenuationTest"></a></div><figcaption>官方参考：screenshot-large.jpg（1212×1158，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/AttenuationTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/AttenuationTest/preview.jpg" alt="maque AttenuationTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.778</span><span title="前景平均亮度差">亮度差 0.099</span><span title="前景平均 RGB 距离">RGB 距离 0.089</span><span title="预览前景像素占比">前景占比 23.6%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.693</span><span title="前景平均亮度差">亮度差 0.097</span><span title="前景平均 RGB 距离">RGB 距离 0.087</span><span title="预览前景像素占比">前景占比 23.6%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-Avocado" data-name="avocado"
@@ -607,8 +607,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   
 </article>
 
-<article class="card bad" id="model-BoxVertexColors" data-name="boxvertexcolors"
-         data-verdict="bad" data-hist="0.1365" data-gaps="1">
+<article class="card good" id="model-BoxVertexColors" data-name="boxvertexcolors"
+         data-verdict="good" data-hist="0.6021" data-gaps="0">
   <header class="card-head">
     <h2>BoxVertexColors</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class="status">ok</span>
@@ -618,9 +618,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/BoxVertexColors.jpg" target=_blank><img loading=lazy src="ref/BoxVertexColors.jpg" alt="ref BoxVertexColors"></a></div><figcaption>官方参考：screenshot.png（128×128）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/BoxVertexColors/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/BoxVertexColors/preview.jpg" alt="maque BoxVertexColors"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.137</span><span title="前景平均亮度差">亮度差 0.143</span><span title="前景平均 RGB 距离">RGB 距离 0.139</span><span title="预览前景像素占比">前景占比 26.9%</span></div>
-  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 1 项</summary><ul><li>COLOR_0 顶点色未使用</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.602</span><span title="前景平均亮度差">亮度差 -0.072</span><span title="前景平均 RGB 距离">RGB 距离 0.099</span><span title="预览前景像素占比">前景占比 26.9%</span></div>
+  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
+  
 </article>
 
 <article class="card bad" id="model-BrainStem" data-name="brainstem"
@@ -672,7 +672,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card bad" id="model-CarConcept" data-name="carconcept"
-         data-verdict="bad" data-hist="0.2974" data-gaps="6">
+         data-verdict="bad" data-hist="0.3036" data-gaps="5">
   <header class="card-head">
     <h2>CarConcept</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -682,9 +682,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CarConcept.jpg" target=_blank><img loading=lazy src="ref/CarConcept.jpg" alt="ref CarConcept"></a></div><figcaption>官方参考：screenshot_Large.jpg（1280×953，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CarConcept/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CarConcept/preview.jpg" alt="maque CarConcept"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.297</span><span title="前景平均亮度差">亮度差 0.270</span><span title="前景平均 RGB 距离">RGB 距离 0.277</span><span title="预览前景像素占比">前景占比 14.4%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.304</span><span title="前景平均亮度差">亮度差 0.141</span><span title="前景平均 RGB 距离">RGB 距离 0.151</span><span title="预览前景像素占比">前景占比 13.8%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：红色概念跑车完整、比例与姿态正确，红色车漆 clearcoat 高光可信，轮胎/轮毂结构正常、无破面。车顶/座舱大面积为白色（官方为深色玻璃+彩色虹彩反射），与 clearcoat 高光在没有 HDRI 时被 analytic 环境拉亮有关，属缺失特性/IBL 限制；源资产的 KTX2/Draco 变体未被迁移，不影响主变体观感。<br>- 差异主因：缺失特性：transmission/iridescence/无 HDRI → 车顶座舱发白过曝；KTX2 变体未迁移</div><details><summary>已知差距 6 项</summary><ul><li>部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：红色概念跑车完整、比例与姿态正确，红色车漆 clearcoat 高光可信，轮胎/轮毂结构正常、无破面。车顶/座舱大面积为白色（官方为深色玻璃+彩色虹彩反射），与 clearcoat 高光在没有 HDRI 时被 analytic 环境拉亮有关，属缺失特性/IBL 限制；源资产的 KTX2/Draco 变体未被迁移，不影响主变体观感。<br>- 差异主因：缺失特性：transmission/iridescence/无 HDRI → 车顶座舱发白过曝；KTX2 变体未迁移</div><details><summary>已知差距 5 项</summary><ul><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
 </article>
 
 <article class="card good" id="model-CesiumMan" data-name="cesiumman"
@@ -720,7 +720,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-ChairDamaskPurplegold" data-name="chairdamaskpurplegold"
-         data-verdict="good" data-hist="0.6825" data-gaps="4">
+         data-verdict="good" data-hist="0.6795" data-gaps="3">
   <header class="card-head">
     <h2>ChairDamaskPurplegold</h2>
     <div class="meta"><span class=tag>extension</span><span class="status">ok</span>
@@ -730,13 +730,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/ChairDamaskPurplegold.jpg" target=_blank><img loading=lazy src="ref/ChairDamaskPurplegold.jpg" alt="ref ChairDamaskPurplegold"></a></div><figcaption>官方参考：screenshot_Large.jpg（1280×970，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/ChairDamaskPurplegold/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/ChairDamaskPurplegold/preview.jpg" alt="maque ChairDamaskPurplegold"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.682</span><span title="前景平均亮度差">亮度差 -0.156</span><span title="前景平均 RGB 距离">RGB 距离 0.160</span><span title="预览前景像素占比">前景占比 11.2%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.679</span><span title="前景平均亮度差">亮度差 -0.153</span><span title="前景平均 RGB 距离">RGB 距离 0.158</span><span title="预览前景像素占比">前景占比 11.2%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 4 项</summary><ul><li>部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现</li><li>KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现</li><li>KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现</li></ul></details>
 </article>
 
 <article class="card good" id="model-ChronographWatch" data-name="chronographwatch"
-         data-verdict="good" data-hist="0.7391" data-gaps="5">
+         data-verdict="good" data-hist="0.6610" data-gaps="4">
   <header class="card-head">
     <h2>ChronographWatch</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -746,9 +746,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/ChronographWatch.jpg" target=_blank><img loading=lazy src="ref/ChronographWatch.jpg" alt="ref ChronographWatch"></a></div><figcaption>官方参考：screenshot_Large.jpg（1104×1176，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/ChronographWatch/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/ChronographWatch/preview.jpg" alt="maque ChronographWatch"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.739</span><span title="前景平均亮度差">亮度差 0.111</span><span title="前景平均 RGB 距离">RGB 距离 0.110</span><span title="预览前景像素占比">前景占比 14.1%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.661</span><span title="前景平均亮度差">亮度差 0.022</span><span title="前景平均 RGB 距离">RGB 距离 0.020</span><span title="预览前景像素占比">前景占比 12.8%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 5 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
+  <details><summary>已知差距 4 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
 </article>
 
 <article class="card good" id="model-ClearCoatCarPaint" data-name="clearcoatcarpaint"
@@ -799,8 +799,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   <details><summary>已知差距 1 项</summary><ul><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li></ul></details>
 </article>
 
-<article class="card bad" id="model-CommercialRefrigerator" data-name="commercialrefrigerator"
-         data-verdict="bad" data-hist="0.3487" data-gaps="3">
+<article class="card good" id="model-CommercialRefrigerator" data-name="commercialrefrigerator"
+         data-verdict="good" data-hist="0.7335" data-gaps="3">
   <header class="card-head">
     <h2>CommercialRefrigerator</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -810,13 +810,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CommercialRefrigerator.jpg" target=_blank><img loading=lazy src="ref/CommercialRefrigerator.jpg" alt="ref CommercialRefrigerator"></a></div><figcaption>官方参考：screenshot_Large.jpg（639×1244，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CommercialRefrigerator/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CommercialRefrigerator/preview.jpg" alt="maque CommercialRefrigerator"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.349</span><span title="前景平均亮度差">亮度差 0.268</span><span title="前景平均 RGB 距离">RGB 距离 0.273</span><span title="预览前景像素占比">前景占比 13.0%</span></div>
-  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.734</span><span title="前景平均亮度差">亮度差 0.074</span><span title="前景平均 RGB 距离">RGB 距离 0.075</span><span title="预览前景像素占比">前景占比 12.9%</span></div>
+  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
+  <details><summary>已知差距 3 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-CompareAlphaCoverage" data-name="comparealphacoverage"
-         data-verdict="bad" data-hist="0.2968" data-gaps="1">
+         data-verdict="bad" data-hist="0.2887" data-gaps="1">
   <header class="card-head">
     <h2>CompareAlphaCoverage</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class=tag>pbrtest</span><span class="status">ok</span>
@@ -826,7 +826,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CompareAlphaCoverage.jpg" target=_blank><img loading=lazy src="ref/CompareAlphaCoverage.jpg" alt="ref CompareAlphaCoverage"></a></div><figcaption>官方参考：screenshot_Large.jpg（1915×560，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CompareAlphaCoverage/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CompareAlphaCoverage/preview.jpg" alt="maque CompareAlphaCoverage"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.297</span><span title="前景平均亮度差">亮度差 0.135</span><span title="前景平均 RGB 距离">RGB 距离 0.122</span><span title="预览前景像素占比">前景占比 31.1%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.289</span><span title="前景平均亮度差">亮度差 0.140</span><span title="前景平均 RGB 距离">RGB 距离 0.127</span><span title="预览前景像素占比">前景占比 31.1%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
   <details><summary>已知差距 1 项</summary><ul><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
@@ -864,7 +864,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card mid" id="model-CompareBaseColor" data-name="comparebasecolor"
-         data-verdict="mid" data-hist="0.5485" data-gaps="2">
+         data-verdict="mid" data-hist="0.5752" data-gaps="1">
   <header class="card-head">
     <h2>CompareBaseColor</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>pbrtest</span><span class="status">ok</span>
@@ -874,9 +874,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CompareBaseColor.jpg" target=_blank><img loading=lazy src="ref/CompareBaseColor.jpg" alt="ref CompareBaseColor"></a></div><figcaption>官方参考：screenshot_Large.jpg（1822×600，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CompareBaseColor/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CompareBaseColor/preview.jpg" alt="maque CompareBaseColor"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.548</span><span title="前景平均亮度差">亮度差 0.095</span><span title="前景平均 RGB 距离">RGB 距离 0.093</span><span title="预览前景像素占比">前景占比 22.9%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.575</span><span title="前景平均亮度差">亮度差 0.066</span><span title="前景平均 RGB 距离">RGB 距离 0.063</span><span title="预览前景像素占比">前景占比 22.9%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>COLOR_0 顶点色未使用</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li></ul></details>
+  <details><summary>已知差距 1 项</summary><ul><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li></ul></details>
 </article>
 
 <article class="card good" id="model-CompareClearcoat" data-name="compareclearcoat"
@@ -895,8 +895,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   <div class=review><b>人工视觉复核：</b>- 结论：三颗绿色清漆球完整，glTF logo 贴图方向正确，表面有明显窄高光与清漆层的光泽感，观感与官方接近。官方更亮、反射更强（HDRI），但材质可信、无异常。<br>- 差异主因：缺失特性：无 HDRI IBL（高光/环境反射偏弱）</div><details><summary>已知差距 1 项</summary><ul><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li></ul></details>
 </article>
 
-<article class="card mid" id="model-CompareDispersion" data-name="comparedispersion"
-         data-verdict="mid" data-hist="0.5308" data-gaps="2">
+<article class="card bad" id="model-CompareDispersion" data-name="comparedispersion"
+         data-verdict="bad" data-hist="0.3050" data-gaps="2">
   <header class="card-head">
     <h2>CompareDispersion</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class=tag>pbrtest</span><span class="status">ok</span>
@@ -906,9 +906,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CompareDispersion.jpg" target=_blank><img loading=lazy src="ref/CompareDispersion.jpg" alt="ref CompareDispersion"></a></div><figcaption>官方参考：screenshot_Large.jpg（1703×863，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CompareDispersion/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CompareDispersion/preview.jpg" alt="maque CompareDispersion"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.531</span><span title="前景平均亮度差">亮度差 0.054</span><span title="前景平均 RGB 距离">RGB 距离 0.056</span><span title="预览前景像素占比">前景占比 19.5%</span></div>
-  <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.305</span><span title="前景平均亮度差">亮度差 -0.088</span><span title="前景平均 RGB 距离">RGB 距离 0.085</span><span title="预览前景像素占比">前景占比 19.5%</span></div>
+  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card mid" id="model-CompareEmissiveStrength" data-name="compareemissivestrength"
@@ -927,8 +927,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   
 </article>
 
-<article class="card bad" id="model-CompareIor" data-name="compareior"
-         data-verdict="bad" data-hist="0.3502" data-gaps="3">
+<article class="card mid" id="model-CompareIor" data-name="compareior"
+         data-verdict="mid" data-hist="0.4248" data-gaps="3">
   <header class="card-head">
     <h2>CompareIor</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class=tag>pbrtest</span><span class="status">ok</span>
@@ -938,9 +938,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CompareIor.jpg" target=_blank><img loading=lazy src="ref/CompareIor.jpg" alt="ref CompareIor"></a></div><figcaption>官方参考：screenshot_Large.jpg（1221×625，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CompareIor/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CompareIor/preview.jpg" alt="maque CompareIor"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.350</span><span title="前景平均亮度差">亮度差 0.225</span><span title="前景平均 RGB 距离">RGB 距离 0.227</span><span title="预览前景像素占比">前景占比 19.4%</span></div>
-  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.425</span><span title="前景平均亮度差">亮度差 0.037</span><span title="前景平均 RGB 距离">RGB 距离 0.047</span><span title="预览前景像素占比">前景占比 19.4%</span></div>
+  <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card good" id="model-CompareIridescence" data-name="compareiridescence"
@@ -1040,7 +1040,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card mid" id="model-CompareTransmission" data-name="comparetransmission"
-         data-verdict="mid" data-hist="0.4074" data-gaps="1">
+         data-verdict="mid" data-hist="0.4078" data-gaps="1">
   <header class="card-head">
     <h2>CompareTransmission</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class=tag>pbrtest</span><span class="status">ok</span>
@@ -1050,13 +1050,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CompareTransmission.jpg" target=_blank><img loading=lazy src="ref/CompareTransmission.jpg" alt="ref CompareTransmission"></a></div><figcaption>官方参考：screenshot_Large.jpg（1160×580，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CompareTransmission/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CompareTransmission/preview.jpg" alt="maque CompareTransmission"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.407</span><span title="前景平均亮度差">亮度差 0.122</span><span title="前景平均 RGB 距离">RGB 距离 0.122</span><span title="预览前景像素占比">前景占比 19.7%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.408</span><span title="前景平均亮度差">亮度差 0.066</span><span title="前景平均 RGB 距离">RGB 距离 0.066</span><span title="预览前景像素占比">前景占比 19.7%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：棋盘背景、金色细环、白球都正确，但玻璃薄环与厚玻璃球完全不透明，看不到官方参考图中透过玻璃看到的棋盘格与其折射变形。几何/材质参数正确，差异可 100% 归因于 transmission 未实现（README 已知差距）。<br>- 差异主因：缺失特性：KHR_materials_transmission 未实现</div><details><summary>已知差距 1 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：棋盘背景、金色细环、白球都正确，但玻璃薄环与厚玻璃球完全不透明，看不到官方参考图中透过玻璃看到的棋盘格与其折射变形。几何/材质参数正确，差异可 100% 归因于 transmission 未实现（README 已知差距）。<br>- 差异主因：缺失特性：KHR_materials_transmission 未实现</div><details><summary>已知差距 1 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-CompareVolume" data-name="comparevolume"
-         data-verdict="bad" data-hist="0.3664" data-gaps="2">
+         data-verdict="bad" data-hist="0.3977" data-gaps="2">
   <header class="card-head">
     <h2>CompareVolume</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class=tag>pbrtest</span><span class="status">ok</span>
@@ -1066,9 +1066,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/CompareVolume.jpg" target=_blank><img loading=lazy src="ref/CompareVolume.jpg" alt="ref CompareVolume"></a></div><figcaption>官方参考：screenshot_Large.jpg（1160×580，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/CompareVolume/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/CompareVolume/preview.jpg" alt="maque CompareVolume"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.366</span><span title="前景平均亮度差">亮度差 0.188</span><span title="前景平均 RGB 距离">RGB 距离 0.196</span><span title="预览前景像素占比">前景占比 19.9%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.398</span><span title="前景平均亮度差">亮度差 0.074</span><span title="前景平均 RGB 距离">RGB 距离 0.083</span><span title="预览前景像素占比">前景占比 19.9%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card mid" id="model-Corset" data-name="corset"
@@ -1168,7 +1168,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card mid" id="model-DiffuseTransmissionTest" data-name="diffusetransmissiontest"
-         data-verdict="mid" data-hist="0.5748" data-gaps="2">
+         data-verdict="mid" data-hist="0.5624" data-gaps="2">
   <header class="card-head">
     <h2>DiffuseTransmissionTest</h2>
     <div class="meta"><span class=tag>video</span><span class=tag>written</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1178,7 +1178,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/DiffuseTransmissionTest.jpg" target=_blank><img loading=lazy src="ref/DiffuseTransmissionTest.jpg" alt="ref DiffuseTransmissionTest"></a></div><figcaption>官方参考：screenshot_Large.jpg（1280×828，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/DiffuseTransmissionTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/DiffuseTransmissionTest/preview.jpg" alt="maque DiffuseTransmissionTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.575</span><span title="前景平均亮度差">亮度差 0.017</span><span title="前景平均 RGB 距离">RGB 距离 0.118</span><span title="预览前景像素占比">前景占比 20.1%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.562</span><span title="前景平均亮度差">亮度差 0.020</span><span title="前景平均 RGB 距离">RGB 距离 0.118</span><span title="预览前景像素占比">前景占比 20.1%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
   <details><summary>已知差距 2 项</summary><ul><li>KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）</li><li>KHR_materials_diffuse_transmission 未实现</li></ul></details>
 </article>
@@ -1200,7 +1200,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-DispersionTest" data-name="dispersiontest"
-         data-verdict="good" data-hist="0.7237" data-gaps="2">
+         data-verdict="good" data-hist="0.7610" data-gaps="2">
   <header class="card-head">
     <h2>DispersionTest</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class="status">ok</span>
@@ -1210,13 +1210,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/DispersionTest.jpg" target=_blank><img loading=lazy src="ref/DispersionTest.jpg" alt="ref DispersionTest"></a></div><figcaption>官方参考：screenshot-large.png（2283×1788，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/DispersionTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/DispersionTest/preview.jpg" alt="maque DispersionTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.724</span><span title="前景平均亮度差">亮度差 0.089</span><span title="前景平均 RGB 距离">RGB 距离 0.094</span><span title="预览前景像素占比">前景占比 13.8%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.761</span><span title="前景平均亮度差">亮度差 0.070</span><span title="前景平均 RGB 距离">RGB 距离 0.074</span><span title="预览前景像素占比">前景占比 13.4%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-DragonAttenuation" data-name="dragonattenuation"
-         data-verdict="bad" data-hist="0.1442" data-gaps="3">
+         data-verdict="bad" data-hist="0.1472" data-gaps="3">
   <header class="card-head">
     <h2>DragonAttenuation</h2>
     <div class="meta"><span class=tag>extension</span><span class="status">ok</span>
@@ -1226,13 +1226,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/DragonAttenuation.jpg" target=_blank><img loading=lazy src="ref/DragonAttenuation.jpg" alt="ref DragonAttenuation"></a></div><figcaption>官方参考：screenshot_large.png（1101×871，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/DragonAttenuation/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/DragonAttenuation/preview.jpg" alt="maque DragonAttenuation"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.144</span><span title="前景平均亮度差">亮度差 0.368</span><span title="前景平均 RGB 距离">RGB 距离 0.370</span><span title="预览前景像素占比">前景占比 19.5%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.147</span><span title="前景平均亮度差">亮度差 0.352</span><span title="前景平均 RGB 距离">RGB 距离 0.354</span><span title="预览前景像素占比">前景占比 19.5%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：龙的轮廓/姿态/鳞片几何完整，棋盘地面与弯曲背景板正确；但整条龙被渲染为不透明纯白，官方是琥珀色半透明体积吸收效果。属于 volume/attenuation 未实现的预期差异，非导入问题。<br>- 差异主因：缺失特性：transmission+volume（体积吸收）未实现</div><details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：龙的轮廓/姿态/鳞片几何完整，棋盘地面与弯曲背景板正确；但整条龙被渲染为不透明纯白，官方是琥珀色半透明体积吸收效果。属于 volume/attenuation 未实现的预期差异，非导入问题。<br>- 差异主因：缺失特性：transmission+volume（体积吸收）未实现</div><details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
 </article>
 
 <article class="card mid" id="model-DragonDispersion" data-name="dragondispersion"
-         data-verdict="mid" data-hist="0.4409" data-gaps="2">
+         data-verdict="mid" data-hist="0.4921" data-gaps="2">
   <header class="card-head">
     <h2>DragonDispersion</h2>
     <div class="meta"><span class=tag>extension</span><span class="status">ok</span>
@@ -1242,9 +1242,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/DragonDispersion.jpg" target=_blank><img loading=lazy src="ref/DragonDispersion.jpg" alt="ref DragonDispersion"></a></div><figcaption>官方参考：screenshot-large.jpg（1640×1183，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/DragonDispersion/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/DragonDispersion/preview.jpg" alt="maque DragonDispersion"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.441</span><span title="前景平均亮度差">亮度差 0.256</span><span title="前景平均 RGB 距离">RGB 距离 0.256</span><span title="预览前景像素占比">前景占比 15.8%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.492</span><span title="前景平均亮度差">亮度差 0.216</span><span title="前景平均 RGB 距离">RGB 距离 0.217</span><span title="预览前景像素占比">前景占比 15.7%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-Duck" data-name="duck"
@@ -1296,7 +1296,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card mid" id="model-FlightHelmet" data-name="flighthelmet"
-         data-verdict="mid" data-hist="0.9028" data-gaps="1">
+         data-verdict="mid" data-hist="0.8828" data-gaps="1">
   <header class="card-head">
     <h2>FlightHelmet</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>testing</span><span class="status">ok</span>
@@ -1306,9 +1306,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/FlightHelmet.jpg" target=_blank><img loading=lazy src="ref/FlightHelmet.jpg" alt="ref FlightHelmet"></a></div><figcaption>官方参考：screenshot.jpg（130×130）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/FlightHelmet/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/FlightHelmet/preview.jpg" alt="maque FlightHelmet"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.903</span><span title="前景平均亮度差">亮度差 -0.248</span><span title="前景平均 RGB 距离">RGB 距离 0.253</span><span title="预览前景像素占比">前景占比 9.3%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.883</span><span title="前景平均亮度差">亮度差 -0.257</span><span title="前景平均 RGB 距离">RGB 距离 0.261</span><span title="预览前景像素占比">前景占比 9.2%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：飞行头盔完整：皮革帽体、护目镜、呼吸管、木底座与铭牌都在，贴图方向和细节正确、无缺件。整体明显偏暗偏橄榄色调，护目镜呈不透明黄绿色（transmission 未实现），与官方明亮工作室光照差距较大，属缺失特性/IBL 限制。<br>- 差异主因：缺失特性：transmission（镜片）未实现 + 无 HDRI IBL（整体偏暗）</div><details><summary>已知差距 1 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：飞行头盔完整：皮革帽体、护目镜、呼吸管、木底座与铭牌都在，贴图方向和细节正确、无缺件。整体明显偏暗偏橄榄色调，护目镜呈不透明黄绿色（transmission 未实现），与官方明亮工作室光照差距较大，属缺失特性/IBL 限制。<br>- 差异主因：缺失特性：transmission（镜片）未实现 + 无 HDRI IBL（整体偏暗）</div><details><summary>已知差距 1 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-Fox" data-name="fox"
@@ -1344,7 +1344,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card bad" id="model-GlassBrokenWindow" data-name="glassbrokenwindow"
-         data-verdict="bad" data-hist="0.1230" data-gaps="2">
+         data-verdict="bad" data-hist="0.2063" data-gaps="2">
   <header class="card-head">
     <h2>GlassBrokenWindow</h2>
     <div class="meta"><span class=tag>video</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1354,13 +1354,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/GlassBrokenWindow.jpg" target=_blank><img loading=lazy src="ref/GlassBrokenWindow.jpg" alt="ref GlassBrokenWindow"></a></div><figcaption>官方参考：screenshot_large.jpg（1110×1115，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/GlassBrokenWindow/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/GlassBrokenWindow/preview.jpg" alt="maque GlassBrokenWindow"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.123</span><span title="前景平均亮度差">亮度差 0.324</span><span title="前景平均 RGB 距离">RGB 距离 0.328</span><span title="预览前景像素占比">前景占比 27.6%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.206</span><span title="前景平均亮度差">亮度差 -0.036</span><span title="前景平均 RGB 距离">RGB 距离 0.029</span><span title="预览前景像素占比">前景占比 27.2%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card mid" id="model-GlassHurricaneCandleHolder" data-name="glasshurricanecandleholder"
-         data-verdict="mid" data-hist="0.5660" data-gaps="2">
+         data-verdict="mid" data-hist="0.4983" data-gaps="2">
   <header class="card-head">
     <h2>GlassHurricaneCandleHolder</h2>
     <div class="meta"><span class=tag>video</span><span class=tag>written</span><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1370,13 +1370,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/GlassHurricaneCandleHolder.jpg" target=_blank><img loading=lazy src="ref/GlassHurricaneCandleHolder.jpg" alt="ref GlassHurricaneCandleHolder"></a></div><figcaption>官方参考：screenshot_large.jpg（556×930，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/GlassHurricaneCandleHolder/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/GlassHurricaneCandleHolder/preview.jpg" alt="maque GlassHurricaneCandleHolder"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.566</span><span title="前景平均亮度差">亮度差 0.348</span><span title="前景平均 RGB 距离">RGB 距离 0.346</span><span title="预览前景像素占比">前景占比 13.1%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.498</span><span title="前景平均亮度差">亮度差 0.131</span><span title="前景平均 RGB 距离">RGB 距离 0.135</span><span title="预览前景像素占比">前景占比 13.1%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card good" id="model-GlassVaseFlowers" data-name="glassvaseflowers"
-         data-verdict="good" data-hist="0.6477" data-gaps="3">
+         data-verdict="good" data-hist="0.6794" data-gaps="3">
   <header class="card-head">
     <h2>GlassVaseFlowers</h2>
     <div class="meta"><span class=tag>video</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1386,9 +1386,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/GlassVaseFlowers.jpg" target=_blank><img loading=lazy src="ref/GlassVaseFlowers.jpg" alt="ref GlassVaseFlowers"></a></div><figcaption>官方参考：screenshot_large.jpg（1186×1144，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/GlassVaseFlowers/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/GlassVaseFlowers/preview.jpg" alt="maque GlassVaseFlowers"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.648</span><span title="前景平均亮度差">亮度差 0.108</span><span title="前景平均 RGB 距离">RGB 距离 0.106</span><span title="预览前景像素占比">前景占比 10.6%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.679</span><span title="前景平均亮度差">亮度差 -0.060</span><span title="前景平均 RGB 距离">RGB 距离 0.065</span><span title="预览前景像素占比">前景占比 10.6%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-InterpolationTest" data-name="interpolationtest"
@@ -1408,7 +1408,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card mid" id="model-IORTestGrid" data-name="iortestgrid"
-         data-verdict="mid" data-hist="0.5913" data-gaps="3">
+         data-verdict="mid" data-hist="0.5644" data-gaps="3">
   <header class="card-head">
     <h2>IORTestGrid</h2>
     <div class="meta"><span class=tag>extension</span><span class="status">ok</span>
@@ -1418,9 +1418,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/IORTestGrid.jpg" target=_blank><img loading=lazy src="ref/IORTestGrid.jpg" alt="ref IORTestGrid"></a></div><figcaption>官方参考：screenshot_Large.jpg（991×1080，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/IORTestGrid/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/IORTestGrid/preview.jpg" alt="maque IORTestGrid"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.591</span><span title="前景平均亮度差">亮度差 0.079</span><span title="前景平均 RGB 距离">RGB 距离 0.083</span><span title="预览前景像素占比">前景占比 16.4%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.564</span><span title="前景平均亮度差">亮度差 0.016</span><span title="前景平均 RGB 距离">RGB 距离 0.039</span><span title="预览前景像素占比">前景占比 16.4%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现</li></ul></details>
 </article>
 
 <article class="card mid" id="model-IridescenceAbalone" data-name="iridescenceabalone"
@@ -1440,7 +1440,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card bad" id="model-IridescenceDielectricSpheres" data-name="iridescencedielectricspheres"
-         data-verdict="bad" data-hist="0.2067" data-gaps="1">
+         data-verdict="bad" data-hist="0.2065" data-gaps="1">
   <header class="card-head">
     <h2>IridescenceDielectricSpheres</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1450,13 +1450,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/IridescenceDielectricSpheres.jpg" target=_blank><img loading=lazy src="ref/IridescenceDielectricSpheres.jpg" alt="ref IridescenceDielectricSpheres"></a></div><figcaption>官方参考：screenshot_large.jpg（2000×2000，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/IridescenceDielectricSpheres/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/IridescenceDielectricSpheres/preview.jpg" alt="maque IridescenceDielectricSpheres"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.207</span><span title="前景平均亮度差">亮度差 0.208</span><span title="前景平均 RGB 距离">RGB 距离 0.210</span><span title="预览前景像素占比">前景占比 16.2%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.206</span><span title="前景平均亮度差">亮度差 0.208</span><span title="前景平均 RGB 距离">RGB 距离 0.211</span><span title="预览前景像素占比">前景占比 16.2%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
   <div class=review><b>人工视觉复核：</b>- 结论：6×6 球阵与 Thin Film Thickness / Material IOR 坐标轴标签都在、布局与官方一致（说明场景导入正确），但球面几乎呈白色，官方能看到明显的彩色薄膜干涉光泽；虹彩效果在本引擎中过弱。<br>- 差异主因：缺失特性：iridescence 近似太弱；机位/标签比例</div><details><summary>已知差距 1 项</summary><ul><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-IridescenceLamp" data-name="iridescencelamp"
-         data-verdict="bad" data-hist="0.2067" data-gaps="3">
+         data-verdict="bad" data-hist="0.2587" data-gaps="3">
   <header class="card-head">
     <h2>IridescenceLamp</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1466,13 +1466,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/IridescenceLamp.jpg" target=_blank><img loading=lazy src="ref/IridescenceLamp.jpg" alt="ref IridescenceLamp"></a></div><figcaption>官方参考：screenshot_Large.jpg（681×1213，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/IridescenceLamp/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/IridescenceLamp/preview.jpg" alt="maque IridescenceLamp"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.207</span><span title="前景平均亮度差">亮度差 0.108</span><span title="前景平均 RGB 距离">RGB 距离 0.105</span><span title="预览前景像素占比">前景占比 12.8%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.259</span><span title="前景平均亮度差">亮度差 0.016</span><span title="前景平均 RGB 距离">RGB 距离 0.015</span><span title="预览前景像素占比">前景占比 12.8%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li></ul></details>
 </article>
 
 <article class="card good" id="model-IridescenceMetallicSpheres" data-name="iridescencemetallicspheres"
-         data-verdict="good" data-hist="0.7976" data-gaps="1">
+         data-verdict="good" data-hist="0.7977" data-gaps="1">
   <header class="card-head">
     <h2>IridescenceMetallicSpheres</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1488,7 +1488,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card mid" id="model-IridescenceSuzanne" data-name="iridescencesuzanne"
-         data-verdict="mid" data-hist="0.5121" data-gaps="4">
+         data-verdict="mid" data-hist="0.5722" data-gaps="4">
   <header class="card-head">
     <h2>IridescenceSuzanne</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1498,13 +1498,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/IridescenceSuzanne.jpg" target=_blank><img loading=lazy src="ref/IridescenceSuzanne.jpg" alt="ref IridescenceSuzanne"></a></div><figcaption>官方参考：screenshot_large.jpg（2000×800，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/IridescenceSuzanne/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/IridescenceSuzanne/preview.jpg" alt="maque IridescenceSuzanne"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.512</span><span title="前景平均亮度差">亮度差 0.186</span><span title="前景平均 RGB 距离">RGB 距离 0.166</span><span title="预览前景像素占比">前景占比 11.4%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.572</span><span title="前景平均亮度差">亮度差 0.057</span><span title="前景平均 RGB 距离">RGB 距离 0.039</span><span title="预览前景像素占比">前景占比 11.4%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 4 项</summary><ul><li>KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li></ul></details>
+  <details><summary>已知差距 4 项</summary><ul><li>KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li></ul></details>
 </article>
 
-<article class="card bad" id="model-IridescentDishWithOlives" data-name="iridescentdishwitholives"
-         data-verdict="bad" data-hist="0.2137" data-gaps="7">
+<article class="card mid" id="model-IridescentDishWithOlives" data-name="iridescentdishwitholives"
+         data-verdict="mid" data-hist="0.4823" data-gaps="6">
   <header class="card-head">
     <h2>IridescentDishWithOlives</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>video</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1514,9 +1514,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/IridescentDishWithOlives.jpg" target=_blank><img loading=lazy src="ref/IridescentDishWithOlives.jpg" alt="ref IridescentDishWithOlives"></a></div><figcaption>官方参考：screenshot_Large.jpg（1280×1167，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/IridescentDishWithOlives/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/IridescentDishWithOlives/preview.jpg" alt="maque IridescentDishWithOlives"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.214</span><span title="前景平均亮度差">亮度差 0.419</span><span title="前景平均 RGB 距离">RGB 距离 0.429</span><span title="预览前景像素占比">前景占比 7.4%</span></div>
-  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 7 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>COLOR_0 顶点色未使用</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li><li>… 共 7 项，见该模型 README</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.482</span><span title="前景平均亮度差">亮度差 0.075</span><span title="前景平均 RGB 距离">RGB 距离 0.066</span><span title="预览前景像素占比">前景占比 7.4%</span></div>
+  <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
+  <details><summary>已知差距 6 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card mid" id="model-Lantern" data-name="lantern"
@@ -1535,8 +1535,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   
 </article>
 
-<article class="card mid" id="model-LightsPunctualLamp" data-name="lightspunctuallamp"
-         data-verdict="mid" data-hist="0.4424" data-gaps="2">
+<article class="card bad" id="model-LightsPunctualLamp" data-name="lightspunctuallamp"
+         data-verdict="bad" data-hist="0.3993" data-gaps="2">
   <header class="card-head">
     <h2>LightsPunctualLamp</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1546,9 +1546,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/LightsPunctualLamp.jpg" target=_blank><img loading=lazy src="ref/LightsPunctualLamp.jpg" alt="ref LightsPunctualLamp"></a></div><figcaption>官方参考：screenshot.png（400×344）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/LightsPunctualLamp/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/LightsPunctualLamp/preview.jpg" alt="maque LightsPunctualLamp"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.442</span><span title="前景平均亮度差">亮度差 -0.009</span><span title="前景平均 RGB 距离">RGB 距离 0.018</span><span title="预览前景像素占比">前景占比 5.3%</span></div>
-  <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.399</span><span title="前景平均亮度差">亮度差 -0.107</span><span title="前景平均 RGB 距离">RGB 距离 0.099</span><span title="预览前景像素占比">前景占比 5.3%</span></div>
+  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-LightVisibility" data-name="lightvisibility"
@@ -1600,7 +1600,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card mid" id="model-MeshoptCubeTest" data-name="meshoptcubetest"
-         data-verdict="mid" data-hist="0.4915" data-gaps="5">
+         data-verdict="mid" data-hist="0.4841" data-gaps="4">
   <header class="card-head">
     <h2>MeshoptCubeTest</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class="status">ok</span>
@@ -1610,9 +1610,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/MeshoptCubeTest.jpg" target=_blank><img loading=lazy src="ref/MeshoptCubeTest.jpg" alt="ref MeshoptCubeTest"></a></div><figcaption>官方参考：screenshot.png（1324×1471）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/MeshoptCubeTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/MeshoptCubeTest/preview.jpg" alt="maque MeshoptCubeTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.491</span><span title="前景平均亮度差">亮度差 0.101</span><span title="前景平均 RGB 距离">RGB 距离 0.096</span><span title="预览前景像素占比">前景占比 6.8%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.484</span><span title="前景平均亮度差">亮度差 0.078</span><span title="前景平均 RGB 距离">RGB 距离 0.078</span><span title="预览前景像素占比">前景占比 6.8%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：压缩/未压缩各变体的立方体阵列全部成功渲染（说明 meshopt/量化数据可用）、标签可读、布局正确；但立方体全为白色，官方为顶点色染色的彩色立方体。差异可归因于 COLOR_0 未使用（8 个含顶点色模型之一）。<br>- 差异主因：缺失特性：COLOR_0 顶点色未使用（meshopt 压缩几何本身加载成功）</div><details><summary>已知差距 5 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>COLOR_0 顶点色未使用</li><li>KHR_mesh_quantization（量化顶点）导入未特殊处理（数值/法线精度可能异常）</li><li>meshopt 压缩未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：压缩/未压缩各变体的立方体阵列全部成功渲染（说明 meshopt/量化数据可用）、标签可读、布局正确；但立方体全为白色，官方为顶点色染色的彩色立方体。差异可归因于 COLOR_0 未使用（8 个含顶点色模型之一）。<br>- 差异主因：缺失特性：COLOR_0 顶点色未使用（meshopt 压缩几何本身加载成功）</div><details><summary>已知差距 4 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>KHR_mesh_quantization（量化顶点）导入未特殊处理（数值/法线精度可能异常）</li><li>meshopt 压缩未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-MeshPrimitiveModes" data-name="meshprimitivemodes"
@@ -1679,8 +1679,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   <details><summary>已知差距 1 项</summary><ul><li>morph targets 未应用（默认权重不生效）</li></ul></details>
 </article>
 
-<article class="card good" id="model-MorphStressTest" data-name="morphstresstest"
-         data-verdict="good" data-hist="0.7001" data-gaps="3">
+<article class="card mid" id="model-MorphStressTest" data-name="morphstresstest"
+         data-verdict="mid" data-hist="0.5865" data-gaps="2">
   <header class="card-head">
     <h2>MorphStressTest</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class="status">ok</span>
@@ -1690,13 +1690,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/MorphStressTest.jpg" target=_blank><img loading=lazy src="ref/MorphStressTest.jpg" alt="ref MorphStressTest"></a></div><figcaption>官方参考：screenshot_large.png（640×360，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/MorphStressTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/MorphStressTest/preview.jpg" alt="maque MorphStressTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.700</span><span title="前景平均亮度差">亮度差 0.073</span><span title="前景平均 RGB 距离">RGB 距离 0.061</span><span title="预览前景像素占比">前景占比 17.9%</span></div>
-  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>morph targets 未应用（默认权重不生效）</li><li>部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.587</span><span title="前景平均亮度差">亮度差 0.103</span><span title="前景平均 RGB 距离">RGB 距离 0.091</span><span title="预览前景像素占比">前景占比 18.1%</span></div>
+  <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
+  <details><summary>已知差距 2 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>morph targets 未应用（默认权重不生效）</li></ul></details>
 </article>
 
-<article class="card good" id="model-MosquitoInAmber" data-name="mosquitoinamber"
-         data-verdict="good" data-hist="0.6935" data-gaps="2">
+<article class="card bad" id="model-MosquitoInAmber" data-name="mosquitoinamber"
+         data-verdict="bad" data-hist="0.1496" data-gaps="2">
   <header class="card-head">
     <h2>MosquitoInAmber</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1706,9 +1706,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/MosquitoInAmber.jpg" target=_blank><img loading=lazy src="ref/MosquitoInAmber.jpg" alt="ref MosquitoInAmber"></a></div><figcaption>官方参考：screenshot_large.jpg（1280×714，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/MosquitoInAmber/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/MosquitoInAmber/preview.jpg" alt="maque MosquitoInAmber"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.694</span><span title="前景平均亮度差">亮度差 0.001</span><span title="前景平均 RGB 距离">RGB 距离 0.164</span><span title="预览前景像素占比">前景占比 17.1%</span></div>
-  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.150</span><span title="前景平均亮度差">亮度差 -0.250</span><span title="前景平均 RGB 距离">RGB 距离 0.267</span><span title="预览前景像素占比">前景占比 17.1%</span></div>
+  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-MultipleScenes" data-name="multiplescenes"
@@ -1728,7 +1728,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card bad" id="model-MultiUVTest" data-name="multiuvtest"
-         data-verdict="bad" data-hist="0.1607" data-gaps="2">
+         data-verdict="bad" data-hist="0.1568" data-gaps="1">
   <header class="card-head">
     <h2>MultiUVTest</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class="status">ok</span>
@@ -1738,9 +1738,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/MultiUVTest.jpg" target=_blank><img loading=lazy src="ref/MultiUVTest.jpg" alt="ref MultiUVTest"></a></div><figcaption>官方参考：screenshot.jpg（320×320）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/MultiUVTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/MultiUVTest/preview.jpg" alt="maque MultiUVTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.161</span><span title="前景平均亮度差">亮度差 0.297</span><span title="前景平均 RGB 距离">RGB 距离 0.259</span><span title="预览前景像素占比">前景占比 26.9%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.157</span><span title="前景平均亮度差">亮度差 0.295</span><span title="前景平均 RGB 距离">RGB 距离 0.249</span><span title="预览前景像素占比">前景占比 26.9%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：立方体几何与 UV0 贴图完整，但立方体表面显示的是“Multiple UVs not supported in this viewer”文字贴图，官方参考图为经 TEXCOORD_1 采样的 glTF logo 图案。与 README 已知差距（引擎只用 TEXCOORD_0）完全对应，属预期行为。<br>- 差异主因：缺失特性/引擎限制：TEXCOORD_1 未使用 → 显示“Multiple UVs not supported”兜底贴图</div><details><summary>已知差距 2 项</summary><ul><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：立方体几何与 UV0 贴图完整，但立方体表面显示的是“Multiple UVs not supported in this viewer”文字贴图，官方参考图为经 TEXCOORD_1 采样的 glTF logo 图案。与 README 已知差距（引擎只用 TEXCOORD_0）完全对应，属预期行为。<br>- 差异主因：缺失特性/引擎限制：TEXCOORD_1 未使用 → 显示“Multiple UVs not supported”兜底贴图</div><details><summary>已知差距 1 项</summary><ul><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-NegativeScaleTest" data-name="negativescaletest"
@@ -1856,7 +1856,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card bad" id="model-PointLightIntensityTest" data-name="pointlightintensitytest"
-         data-verdict="bad" data-hist="0.2037" data-gaps="1">
+         data-verdict="bad" data-hist="0.2164" data-gaps="1">
   <header class="card-head">
     <h2>PointLightIntensityTest</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class="status">ok</span>
@@ -1866,7 +1866,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/PointLightIntensityTest.jpg" target=_blank><img loading=lazy src="ref/PointLightIntensityTest.jpg" alt="ref PointLightIntensityTest"></a></div><figcaption>官方参考：screenshot-large.jpg（1514×1110，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/PointLightIntensityTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/PointLightIntensityTest/preview.jpg" alt="maque PointLightIntensityTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.204</span><span title="前景平均亮度差">亮度差 0.377</span><span title="前景平均 RGB 距离">RGB 距离 0.378</span><span title="预览前景像素占比">前景占比 31.2%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.216</span><span title="前景平均亮度差">亮度差 0.380</span><span title="前景平均 RGB 距离">RGB 距离 0.382</span><span title="预览前景像素占比">前景占比 31.2%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
   <details><summary>已知差距 1 项</summary><ul><li>KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）</li></ul></details>
 </article>
@@ -1888,7 +1888,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card mid" id="model-PotOfCoalsAnimationPointer" data-name="potofcoalsanimationpointer"
-         data-verdict="mid" data-hist="0.5148" data-gaps="7">
+         data-verdict="mid" data-hist="0.5172" data-gaps="7">
   <header class="card-head">
     <h2>PotOfCoalsAnimationPointer</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -1898,13 +1898,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/PotOfCoalsAnimationPointer.jpg" target=_blank><img loading=lazy src="ref/PotOfCoalsAnimationPointer.jpg" alt="ref PotOfCoalsAnimationPointer"></a></div><figcaption>官方参考：screenshot_Large.jpg（1119×983，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/PotOfCoalsAnimationPointer/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/PotOfCoalsAnimationPointer/preview.jpg" alt="maque PotOfCoalsAnimationPointer"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.515</span><span title="前景平均亮度差">亮度差 0.075</span><span title="前景平均 RGB 距离">RGB 距离 0.071</span><span title="预览前景像素占比">前景占比 13.4%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.517</span><span title="前景平均亮度差">亮度差 0.055</span><span title="前景平均 RGB 距离">RGB 距离 0.051</span><span title="预览前景像素占比">前景占比 13.4%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 7 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li><li>KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现</li><li>… 共 7 项，见该模型 README</li></ul></details>
+  <details><summary>已知差距 7 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li><li>KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现</li><li>… 共 7 项，见该模型 README</li></ul></details>
 </article>
 
 <article class="card good" id="model-PrimitiveModeNormalsTest" data-name="primitivemodenormalstest"
-         data-verdict="good" data-hist="0.6788" data-gaps="3">
+         data-verdict="good" data-hist="0.6952" data-gaps="2">
   <header class="card-head">
     <h2>PrimitiveModeNormalsTest</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>issues</span><span class=tag>testing</span><span class="status">ok</span>
@@ -1914,13 +1914,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/PrimitiveModeNormalsTest.jpg" target=_blank><img loading=lazy src="ref/PrimitiveModeNormalsTest.jpg" alt="ref PrimitiveModeNormalsTest"></a></div><figcaption>官方参考：screenshot.png（720×512）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/PrimitiveModeNormalsTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/PrimitiveModeNormalsTest/preview.jpg" alt="maque PrimitiveModeNormalsTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.679</span><span title="前景平均亮度差">亮度差 0.163</span><span title="前景平均 RGB 距离">RGB 距离 0.168</span><span title="预览前景像素占比">前景占比 11.7%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.695</span><span title="前景平均亮度差">亮度差 0.148</span><span title="前景平均 RGB 距离">RGB 距离 0.141</span><span title="预览前景像素占比">前景占比 11.7%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>非三角形 primitive 被跳过（线/点）</li><li>COLOR_0 顶点色未使用</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>非三角形 primitive 被跳过（线/点）</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-RecursiveSkeletons" data-name="recursiveskeletons"
-         data-verdict="bad" data-hist="0.3141" data-gaps="3">
+         data-verdict="bad" data-hist="0.3141" data-gaps="2">
   <header class="card-head">
     <h2>RecursiveSkeletons</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class=tag>issues</span><span class="status">ok</span>
@@ -1932,7 +1932,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   </div>
   <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.314</span><span title="前景平均亮度差">亮度差 -0.019</span><span title="前景平均 RGB 距离">RGB 距离 0.017</span><span title="预览前景像素占比">前景占比 6.2%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：官方参考图是多根分叉弯曲的骨骼束（84 个 skin 的递归测试），本引擎只渲染出一根竖直白色柱体：所有蒙皮网格都按未蒙皮的节点世界矩阵烘焙后重叠在一起。几何/贴图本身在，但视觉上完全无法与官方对应，属 skin 未实现的最严重案例。<br>- 差异主因：缺失特性：skin/骨骼未应用 → 蒙皮网格重叠成一根柱子</div><details><summary>已知差距 3 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）</li><li>COLOR_0 顶点色未使用</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：官方参考图是多根分叉弯曲的骨骼束（84 个 skin 的递归测试），本引擎只渲染出一根竖直白色柱体：所有蒙皮网格都按未蒙皮的节点世界矩阵烘焙后重叠在一起。几何/贴图本身在，但视觉上完全无法与官方对应，属 skin 未实现的最严重案例。<br>- 差异主因：缺失特性：skin/骨骼未应用 → 蒙皮网格重叠成一根柱子</div><details><summary>已知差距 2 项</summary><ul><li>动画未导入（静态渲染；角色模型为 bind/T-pose）</li><li>骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-RiggedFigure" data-name="riggedfigure"
@@ -2000,7 +2000,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-SheenChair" data-name="sheenchair"
-         data-verdict="good" data-hist="0.7545" data-gaps="4">
+         data-verdict="good" data-hist="0.7411" data-gaps="3">
   <header class="card-head">
     <h2>SheenChair</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>video</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2010,9 +2010,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/SheenChair.jpg" target=_blank><img loading=lazy src="ref/SheenChair.jpg" alt="ref SheenChair"></a></div><figcaption>官方参考：screenshot-large.jpg（1280×1003，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/SheenChair/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/SheenChair/preview.jpg" alt="maque SheenChair"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.754</span><span title="前景平均亮度差">亮度差 -0.117</span><span title="前景平均 RGB 距离">RGB 距离 0.217</span><span title="预览前景像素占比">前景占比 11.1%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.741</span><span title="前景平均亮度差">亮度差 -0.118</span><span title="前景平均 RGB 距离">RGB 距离 0.217</span><span title="预览前景像素占比">前景占比 11.1%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 4 项</summary><ul><li>部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-SheenCloth" data-name="sheencloth"
@@ -2048,7 +2048,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-SheenWoodLeatherSofa" data-name="sheenwoodleathersofa"
-         data-verdict="good" data-hist="0.7141" data-gaps="6">
+         data-verdict="good" data-hist="0.6655" data-gaps="4">
   <header class="card-head">
     <h2>SheenWoodLeatherSofa</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2058,9 +2058,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/SheenWoodLeatherSofa.jpg" target=_blank><img loading=lazy src="ref/SheenWoodLeatherSofa.jpg" alt="ref SheenWoodLeatherSofa"></a></div><figcaption>官方参考：screenshot_Large.jpg（1610×720，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/SheenWoodLeatherSofa/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/SheenWoodLeatherSofa/preview.jpg" alt="maque SheenWoodLeatherSofa"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.714</span><span title="前景平均亮度差">亮度差 -0.000</span><span title="前景平均 RGB 距离">RGB 距离 0.017</span><span title="预览前景像素占比">前景占比 25.4%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.665</span><span title="前景平均亮度差">亮度差 -0.017</span><span title="前景平均 RGB 距离">RGB 距离 0.019</span><span title="预览前景像素占比">前景占比 25.3%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：沙发几何完整（软垫/靠背/木框形状正确），但所有部件呈纯白无贴图，官方为深色木质+金棕色织物。README 已记录“WebP 贴图无解码器”，本模型是 148 个里唯一使用 EXT_texture_webp 的模型，属明确可定位的贴图缺失问题（补 WebP 解码即可恢复）。<br>- 差异主因：导入问题：EXT_texture_webp 贴图无解码器 → 全部贴图缺失（白模）</div><details><summary>已知差距 6 项</summary><ul><li>COLOR_0 顶点色未使用</li><li>部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现</li><li>KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现</li><li>WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：沙发几何完整（软垫/靠背/木框形状正确），但所有部件呈纯白无贴图，官方为深色木质+金棕色织物。README 已记录“WebP 贴图无解码器”，本模型是 148 个里唯一使用 EXT_texture_webp 的模型，属明确可定位的贴图缺失问题（补 WebP 解码即可恢复）。<br>- 差异主因：导入问题：EXT_texture_webp 贴图无解码器 → 全部贴图缺失（白模）</div><details><summary>已知差距 4 项</summary><ul><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_sheen：sheen 因子/颜色为观感近似，sheen 贴图未实现</li><li>KHR_materials_specular：specularFactor/specularColor 已映射，f90 行为与贴图未实现</li><li>WebP 贴图：导入期用 PIL 转 PNG（需 Pillow；无 Pillow 时该贴图缺失）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-SimpleInstancing" data-name="simpleinstancing"
@@ -2160,7 +2160,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-SimpleTexture" data-name="simpletexture"
-         data-verdict="good" data-hist="0.6680" data-gaps="0">
+         data-verdict="good" data-hist="0.6671" data-gaps="0">
   <header class="card-head">
     <h2>SimpleTexture</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class=tag>written</span><span class="status">ok</span>
@@ -2170,7 +2170,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/SimpleTexture.jpg" target=_blank><img loading=lazy src="ref/SimpleTexture.jpg" alt="ref SimpleTexture"></a></div><figcaption>官方参考：screenshot.png（501×425）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/SimpleTexture/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/SimpleTexture/preview.jpg" alt="maque SimpleTexture"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.668</span><span title="前景平均亮度差">亮度差 -0.136</span><span title="前景平均 RGB 距离">RGB 距离 0.167</span><span title="预览前景像素占比">前景占比 29.5%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.667</span><span title="前景平均亮度差">亮度差 -0.137</span><span title="前景平均 RGB 距离">RGB 距离 0.167</span><span title="预览前景像素占比">前景占比 29.5%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
   
 </article>
@@ -2224,7 +2224,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card good" id="model-Sponza" data-name="sponza"
-         data-verdict="good" data-hist="0.6218" data-gaps="1">
+         data-verdict="good" data-hist="0.6927" data-gaps="1">
   <header class="card-head">
     <h2>Sponza</h2>
     <div class="meta"><span class=tag>core</span><span class="status">ok</span>
@@ -2234,13 +2234,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/Sponza.jpg" target=_blank><img loading=lazy src="ref/Sponza.jpg" alt="ref Sponza"></a></div><figcaption>官方参考：large.jpg（2491×1259，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/Sponza/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/Sponza/preview.jpg" alt="maque Sponza"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.622</span><span title="前景平均亮度差">亮度差 0.109</span><span title="前景平均 RGB 距离">RGB 距离 0.103</span><span title="预览前景像素占比">前景占比 30.4%</span></div>
-  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.693</span><span title="前景平均亮度差">亮度差 -0.037</span><span title="前景平均 RGB 距离">RGB 距离 0.037</span><span title="预览前景像素占比">前景占比 70.1%</span><span class=warn>预览主体贴边/被裁剪 → 机位过近？</span></div>
+  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？</div>
   <div class=review><b>人工视觉复核：</b>- 结论：预览显示整个 Sponza 建筑的外壳（石墙/瓦顶贴图正常、几何完整、无破面），但官方参考图是内部中庭视角（柱廊、旗帜、雕塑），当前机位看不到室内细节。若需要核验室内材质/构图需手动机位；作为自动迁移初版可接受。<br>- 差异主因：机位/背景：自动机位在包围盒外，只能看到外墙</div><details><summary>已知差距 1 项</summary><ul><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card good" id="model-StainedGlassLamp" data-name="stainedglasslamp"
-         data-verdict="good" data-hist="0.6724" data-gaps="5">
+         data-verdict="good" data-hist="0.6754" data-gaps="5">
   <header class="card-head">
     <h2>StainedGlassLamp</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2250,13 +2250,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/StainedGlassLamp.jpg" target=_blank><img loading=lazy src="ref/StainedGlassLamp.jpg" alt="ref StainedGlassLamp"></a></div><figcaption>官方参考：screenshot_large.jpg（751×1140，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/StainedGlassLamp/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/StainedGlassLamp/preview.jpg" alt="maque StainedGlassLamp"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.672</span><span title="前景平均亮度差">亮度差 0.134</span><span title="前景平均 RGB 距离">RGB 距离 0.132</span><span title="预览前景像素占比">前景占比 5.1%</span></div>
-  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：整盏彩绘玻璃灯完整：多层玻璃伞罩彩绘图案、珠串流苏、灯柱与底座都在，贴图正确、无缺件，构图可辨认。玻璃不透光、没有官方那种被内部灯光点亮的效果（transmission/emissive 限制），且自动机位偏远（主体约 6%），属于可接受的已知差距。<br>- 差异主因：缺失特性：transmission（玻璃罩透光）未实现 + emissive 发光偏弱；机位偏远</div><details><summary>已知差距 5 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.675</span><span title="前景平均亮度差">亮度差 -0.034</span><span title="前景平均 RGB 距离">RGB 距离 0.030</span><span title="预览前景像素占比">前景占比 4.9%</span><span class=warn>预览主体占比过小（&lt;5%）→ 机位过远？</span></div>
+  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（&lt;5%）→ 机位过远？</div>
+  <div class=review><b>人工视觉复核：</b>- 结论：整盏彩绘玻璃灯完整：多层玻璃伞罩彩绘图案、珠串流苏、灯柱与底座都在，贴图正确、无缺件，构图可辨认。玻璃不透光、没有官方那种被内部灯光点亮的效果（transmission/emissive 限制），且自动机位偏远（主体约 6%），属于可接受的已知差距。<br>- 差异主因：缺失特性：transmission（玻璃罩透光）未实现 + emissive 发光偏弱；机位偏远</div><details><summary>已知差距 5 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li><li>KHR_materials_variants：只使用默认材质（不做变体切换）</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card mid" id="model-SunglassesKhronos" data-name="sunglasseskhronos"
-         data-verdict="mid" data-hist="0.4864" data-gaps="3">
+         data-verdict="mid" data-hist="0.5161" data-gaps="3">
   <header class="card-head">
     <h2>SunglassesKhronos</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2266,9 +2266,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/SunglassesKhronos.jpg" target=_blank><img loading=lazy src="ref/SunglassesKhronos.jpg" alt="ref SunglassesKhronos"></a></div><figcaption>官方参考：screenshot_Large.jpg（1474×869，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/SunglassesKhronos/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/SunglassesKhronos/preview.jpg" alt="maque SunglassesKhronos"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.486</span><span title="前景平均亮度差">亮度差 -0.116</span><span title="前景平均 RGB 距离">RGB 距离 0.187</span><span title="预览前景像素占比">前景占比 16.1%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.516</span><span title="前景平均亮度差">亮度差 -0.157</span><span title="前景平均 RGB 距离">RGB 距离 0.207</span><span title="预览前景像素占比">前景占比 6.4%</span></div>
   <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>KHR_materials_iridescence：薄膜干涉为观感近似，厚度/虹彩贴图未实现</li></ul></details>
 </article>
 
 <article class="card mid" id="model-Suzanne" data-name="suzanne"
@@ -2304,7 +2304,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card bad" id="model-TextureEncodingTest" data-name="textureencodingtest"
-         data-verdict="bad" data-hist="0.3805" data-gaps="1">
+         data-verdict="bad" data-hist="0.3806" data-gaps="1">
   <header class="card-head">
     <h2>TextureEncodingTest</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class="status">ok</span>
@@ -2336,7 +2336,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card bad" id="model-TextureSettingsTest" data-name="texturesettingstest"
-         data-verdict="bad" data-hist="0.2567" data-gaps="0">
+         data-verdict="bad" data-hist="0.2576" data-gaps="0">
   <header class="card-head">
     <h2>TextureSettingsTest</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class="status">ok</span>
@@ -2346,13 +2346,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/TextureSettingsTest.jpg" target=_blank><img loading=lazy src="ref/TextureSettingsTest.jpg" alt="ref TextureSettingsTest"></a></div><figcaption>官方参考：screenshot.png（332×325）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/TextureSettingsTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/TextureSettingsTest/preview.jpg" alt="maque TextureSettingsTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.257</span><span title="前景平均亮度差">亮度差 0.029</span><span title="前景平均 RGB 距离">RGB 距离 0.027</span><span title="预览前景像素占比">前景占比 29.8%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.258</span><span title="前景平均亮度差">亮度差 0.028</span><span title="前景平均 RGB 距离">RGB 距离 0.026</span><span title="预览前景像素占比">前景占比 29.8%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
   <div class=review><b>人工视觉复核：</b>- 结论：测试面板几何/标签/贴图完整，但 Test 列结果与官方不符：官方 8 行全绿（✓ 或绿色方块），maque 的 texture clamp s/t、texture repeat t、texture mirror s/t 行显示红色 X。检查链路：importer 不导出 sampler，runtime 创建贴图写死 wrap_u/wrap_v=0（repeat，runtime.cpp:800/834/895），故 CLAMP_TO_EDGE/MIRRORED_REPEAT 类采样不生效，是明确的引擎侧可修问题。<br>- 差异主因：引擎限制：glTF sampler（wrap）未导入，runtime 贴图硬编码 REPEAT → clamp/mirror 测试行失败</div>
 </article>
 
 <article class="card good" id="model-TextureTransformMultiTest" data-name="texturetransformmultitest"
-         data-verdict="good" data-hist="0.8362" data-gaps="3">
+         data-verdict="good" data-hist="0.8370" data-gaps="2">
   <header class="card-head">
     <h2>TextureTransformMultiTest</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2362,13 +2362,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/TextureTransformMultiTest.jpg" target=_blank><img loading=lazy src="ref/TextureTransformMultiTest.jpg" alt="ref TextureTransformMultiTest"></a></div><figcaption>官方参考：screenshot_large.jpg（930×954，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/TextureTransformMultiTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/TextureTransformMultiTest/preview.jpg" alt="maque TextureTransformMultiTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.836</span><span title="前景平均亮度差">亮度差 0.059</span><span title="前景平均 RGB 距离">RGB 距离 0.071</span><span title="预览前景像素占比">前景占比 25.7%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.837</span><span title="前景平均亮度差">亮度差 0.067</span><span title="前景平均 RGB 距离">RGB 距离 0.079</span><span title="预览前景像素占比">前景占比 25.8%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>部分贴图使用 TEXCOORD_1/更高 UV 集（引擎只用 TEXCOORD_0 → 贴图 UV 可能错误）</li><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li></ul></details>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li><li>KHR_materials_clearcoat：清漆因子/粗糙度已支持，但 clearcoatTexture/clearcoatRoughnessTexture 贴图槽未实现</li></ul></details>
 </article>
 
 <article class="card good" id="model-TextureTransformTest" data-name="texturetransformtest"
-         data-verdict="good" data-hist="0.6225" data-gaps="1">
+         data-verdict="good" data-hist="0.6274" data-gaps="1">
   <header class="card-head">
     <h2>TextureTransformTest</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2378,7 +2378,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/TextureTransformTest.jpg" target=_blank><img loading=lazy src="ref/TextureTransformTest.jpg" alt="ref TextureTransformTest"></a></div><figcaption>官方参考：screenshot.jpg（300×220）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/TextureTransformTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/TextureTransformTest/preview.jpg" alt="maque TextureTransformTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.623</span><span title="前景平均亮度差">亮度差 -0.042</span><span title="前景平均 RGB 距离">RGB 距离 0.079</span><span title="预览前景像素占比">前景占比 31.2%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.627</span><span title="前景平均亮度差">亮度差 -0.045</span><span title="前景平均 RGB 距离">RGB 距离 0.082</span><span title="预览前景像素占比">前景占比 31.5%</span></div>
   <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
   <details><summary>已知差距 1 项</summary><ul><li>KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失</li></ul></details>
 </article>
@@ -2416,7 +2416,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 </article>
 
 <article class="card bad" id="model-TransmissionOrderTest" data-name="transmissionordertest"
-         data-verdict="bad" data-hist="0.3773" data-gaps="3">
+         data-verdict="bad" data-hist="0.3517" data-gaps="3">
   <header class="card-head">
     <h2>TransmissionOrderTest</h2>
     <div class="meta"><span class=tag>extension</span><span class=tag>testing</span><span class="status">ok</span>
@@ -2426,13 +2426,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/TransmissionOrderTest.jpg" target=_blank><img loading=lazy src="ref/TransmissionOrderTest.jpg" alt="ref TransmissionOrderTest"></a></div><figcaption>官方参考：screenshot-large.jpg（2027×1366，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/TransmissionOrderTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/TransmissionOrderTest/preview.jpg" alt="maque TransmissionOrderTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.377</span><span title="前景平均亮度差">亮度差 0.211</span><span title="前景平均 RGB 距离">RGB 距离 0.210</span><span title="预览前景像素占比">前景占比 19.5%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.352</span><span title="前景平均亮度差">亮度差 0.223</span><span title="前景平均 RGB 距离">RGB 距离 0.215</span><span title="预览前景像素占比">前景占比 19.5%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
-<article class="card mid" id="model-TransmissionRoughnessTest" data-name="transmissionroughnesstest"
-         data-verdict="mid" data-hist="0.4010" data-gaps="2">
+<article class="card bad" id="model-TransmissionRoughnessTest" data-name="transmissionroughnesstest"
+         data-verdict="bad" data-hist="0.3782" data-gaps="2">
   <header class="card-head">
     <h2>TransmissionRoughnessTest</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2442,13 +2442,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/TransmissionRoughnessTest.jpg" target=_blank><img loading=lazy src="ref/TransmissionRoughnessTest.jpg" alt="ref TransmissionRoughnessTest"></a></div><figcaption>官方参考：screenshot-large.png（1673×831，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/TransmissionRoughnessTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/TransmissionRoughnessTest/preview.jpg" alt="maque TransmissionRoughnessTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.401</span><span title="前景平均亮度差">亮度差 0.190</span><span title="前景平均 RGB 距离">RGB 距离 0.170</span><span title="预览前景像素占比">前景占比 32.5%</span></div>
-  <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.378</span><span title="前景平均亮度差">亮度差 0.173</span><span title="前景平均 RGB 距离">RGB 距离 0.153</span><span title="预览前景像素占比">前景占比 32.5%</span></div>
+  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-TransmissionTest" data-name="transmissiontest"
-         data-verdict="bad" data-hist="0.3147" data-gaps="3">
+         data-verdict="bad" data-hist="0.2915" data-gaps="3">
   <header class="card-head">
     <h2>TransmissionTest</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2458,13 +2458,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/TransmissionTest.jpg" target=_blank><img loading=lazy src="ref/TransmissionTest.jpg" alt="ref TransmissionTest"></a></div><figcaption>官方参考：screenshot_large.png（1105×718，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/TransmissionTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/TransmissionTest/preview.jpg" alt="maque TransmissionTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.315</span><span title="前景平均亮度差">亮度差 0.199</span><span title="前景平均 RGB 距离">RGB 距离 0.201</span><span title="预览前景像素占比">前景占比 19.6%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.291</span><span title="前景平均亮度差">亮度差 0.205</span><span title="前景平均 RGB 距离">RGB 距离 0.212</span><span title="预览前景像素占比">前景占比 19.5%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 3 项</summary><ul><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
+  <details><summary>已知差距 3 项</summary><ul><li>未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）</li><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）</li></ul></details>
 </article>
 
 <article class="card bad" id="model-TransmissionThinwallTestGrid" data-name="transmissionthinwalltestgrid"
-         data-verdict="bad" data-hist="0.1093" data-gaps="2">
+         data-verdict="bad" data-hist="0.0805" data-gaps="2">
   <header class="card-head">
     <h2>TransmissionThinwallTestGrid</h2>
     <div class="meta"><span class=tag>extension</span><span class="status">ok</span>
@@ -2474,9 +2474,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/TransmissionThinwallTestGrid.jpg" target=_blank><img loading=lazy src="ref/TransmissionThinwallTestGrid.jpg" alt="ref TransmissionThinwallTestGrid"></a></div><figcaption>官方参考：screenshot_Large.jpg（1280×600，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/TransmissionThinwallTestGrid/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/TransmissionThinwallTestGrid/preview.jpg" alt="maque TransmissionThinwallTestGrid"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.109</span><span title="前景平均亮度差">亮度差 0.438</span><span title="前景平均 RGB 距离">RGB 距离 0.439</span><span title="预览前景像素占比">前景占比 16.3%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.081</span><span title="前景平均亮度差">亮度差 0.371</span><span title="前景平均 RGB 距离">RGB 距离 0.372</span><span title="预览前景像素占比">前景占比 16.3%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：测试板标签（Index of Refraction 1.0/1.33/1.5/1.76/2.42、Thin Wall / Volume Transmission 两行）和 10 个球位布局正确，说明场景结构导入无误；但所有球均为不透明白球，官方为可折射棋盘格的玻璃球，属 transmission 已知差距。<br>- 差异主因：缺失特性：transmission/volume（薄壁与体积传输）未实现</div><details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：测试板标签（Index of Refraction 1.0/1.33/1.5/1.76/2.42、Thin Wall / Volume Transmission 两行）和 10 个球位布局正确，说明场景结构导入无误；但所有球均为不透明白球，官方为可折射棋盘格的玻璃球，属 transmission 已知差距。<br>- 差异主因：缺失特性：transmission/volume（薄壁与体积传输）未实现</div><details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-Triangle" data-name="triangle"
@@ -2527,8 +2527,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   
 </article>
 
-<article class="card bad" id="model-UnlitTest" data-name="unlittest"
-         data-verdict="bad" data-hist="0.0353" data-gaps="0">
+<article class="card good" id="model-UnlitTest" data-name="unlittest"
+         data-verdict="good" data-hist="0.9813" data-gaps="0">
   <header class="card-head">
     <h2>UnlitTest</h2>
     <div class="meta"><span class=tag>testing</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2538,13 +2538,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/UnlitTest.jpg" target=_blank><img loading=lazy src="ref/UnlitTest.jpg" alt="ref UnlitTest"></a></div><figcaption>官方参考：screenshot_large.jpg（737×435，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/UnlitTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/UnlitTest/preview.jpg" alt="maque UnlitTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.035</span><span title="前景平均亮度差">亮度差 0.083</span><span title="前景平均 RGB 距离">RGB 距离 0.113</span><span title="预览前景像素占比">前景占比 28.4%</span></div>
-  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.981</span><span title="前景平均亮度差">亮度差 0.021</span><span title="前景平均 RGB 距离">RGB 距离 0.086</span><span title="预览前景像素占比">前景占比 28.4%</span></div>
+  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）</div>
   <div class=review><b>人工视觉复核：</b>- 结论：两个 unlit 八边形完整、大小/位置关系正确，KHR_materials_unlit 已生效（不受光照影响、无明暗面）。但颜色与官方不符：橙色偏黄、蓝色偏青（官方为纯橙/纯蓝）。根因是 pbr shader 对 Basic（unlit）也做 ACES tonemap + exposure（assets/builtin/shaders/pbr/10_utils.wgsl:99-101），属色彩管线可修问题。<br>- 差异主因：引擎限制：unlit 材质也走 ACES 色调映射 → 颜色偏移</div>
 </article>
 
-<article class="card bad" id="model-USDShaderBallForGltf" data-name="usdshaderballforgltf"
-         data-verdict="bad" data-hist="0.3500" data-gaps="2">
+<article class="card mid" id="model-USDShaderBallForGltf" data-name="usdshaderballforgltf"
+         data-verdict="mid" data-hist="0.4729" data-gaps="2">
   <header class="card-head">
     <h2>USDShaderBallForGltf</h2>
     <div class="meta"><span class=tag>showcase</span><span class=tag>extension</span><span class="status">ok</span>
@@ -2554,13 +2554,13 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/USDShaderBallForGltf.jpg" target=_blank><img loading=lazy src="ref/USDShaderBallForGltf.jpg" alt="ref USDShaderBallForGltf"></a></div><figcaption>官方参考：screenshot_large.jpg（1422×808，large）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/USDShaderBallForGltf/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/USDShaderBallForGltf/preview.jpg" alt="maque USDShaderBallForGltf"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.350</span><span title="前景平均亮度差">亮度差 0.376</span><span title="前景平均 RGB 距离">RGB 距离 0.380</span><span title="预览前景像素占比">前景占比 13.7%</span></div>
-  <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.473</span><span title="前景平均亮度差">亮度差 -0.055</span><span title="前景平均 RGB 距离">RGB 距离 0.050</span><span title="预览前景像素占比">前景占比 13.7%</span></div>
+  <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）</div>
+  <details><summary>已知差距 2 项</summary><ul><li>KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）</li><li>KHR_materials_volume/dispersion/volume_scatter 未实现</li></ul></details>
 </article>
 
 <article class="card bad" id="model-VertexColorTest" data-name="vertexcolortest"
-         data-verdict="bad" data-hist="0.1626" data-gaps="1">
+         data-verdict="bad" data-hist="0.1560" data-gaps="0">
   <header class="card-head">
     <h2>VertexColorTest</h2>
     <div class="meta"><span class=tag>core</span><span class=tag>testing</span><span class="status">ok</span>
@@ -2570,9 +2570,9 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/VertexColorTest.jpg" target=_blank><img loading=lazy src="ref/VertexColorTest.jpg" alt="ref VertexColorTest"></a></div><figcaption>官方参考：screenshot.png（256×256）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/VertexColorTest/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/VertexColorTest/preview.jpg" alt="maque VertexColorTest"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.163</span><span title="前景平均亮度差">亮度差 0.102</span><span title="前景平均 RGB 距离">RGB 距离 0.242</span><span title="预览前景像素占比">前景占比 23.1%</span></div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.156</span><span title="前景平均亮度差">亮度差 0.065</span><span title="前景平均 RGB 距离">RGB 距离 0.185</span><span title="预览前景像素占比">前景占比 22.4%</span></div>
   <div class="verdict"><b>自动初判：</b>差异较大（需人工确认：机位/缺失特性/导入问题）</div>
-  <div class=review><b>人工视觉复核：</b>- 结论：测试面板/文字标签/红绿蓝行布局完整，但 Test 列本应全为彩色 ✓（官方如此），maque 显示异常配色的 X 形；Sample pass 列正常。与 manifest 记录的 COLOR_0 未使用一致，属顶点色通道缺失导致的可视差异。<br>- 差异主因：缺失特性：COLOR_0 顶点色未使用</div><details><summary>已知差距 1 项</summary><ul><li>COLOR_0 顶点色未使用</li></ul></details>
+  <div class=review><b>人工视觉复核：</b>- 结论：测试面板/文字标签/红绿蓝行布局完整，但 Test 列本应全为彩色 ✓（官方如此），maque 显示异常配色的 X 形；Sample pass 列正常。与 manifest 记录的 COLOR_0 未使用一致，属顶点色通道缺失导致的可视差异。<br>- 差异主因：缺失特性：COLOR_0 顶点色未使用</div>
 </article>
 
 <article class="card mid" id="model-VirtualCity" data-name="virtualcity"

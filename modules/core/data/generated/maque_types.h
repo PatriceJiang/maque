@@ -1773,6 +1773,7 @@ struct PbrMaterial {
     math::Vec2 uv_offset = {0.0F, 0.0F};
     math::Vec2 normal_uv_scale = {1.0F, 1.0F};
     math::Vec2 normal_uv_offset = {0.0F, 0.0F};
+    int32_t uv1_mask = 0;
 };
 
 struct SkeletonData {

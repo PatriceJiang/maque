@@ -675,11 +675,66 @@ bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>
 }
 
 /* ---- Engine ---- */
+/* ---- 贴图路径 sampler 后缀（plans/20：glTF sampler 的 wrap/filter 落到 VFS 路径上）----
+ * 路径形如 `textures/x.png#wrap=clamp,mirror&filter=nearest`：
+ *   · '#' 之前是真正的 VFS 路径（读文件/解码用它）；
+ *   · wrap=repeat|clamp|mirror → create_texture2 的 wrap_u/wrap_v（0/1/2）；可写一个（u=v）或 "u,v"；
+ *   · filter=nearest|linear → create_texture2 的 filter（0/1）；
+ *   · 无 '#'：文件贴图默认 repeat+linear（glTF sampler 缺省）；builtin 贴图由调用方默认 clamp。
+ * 缓存 key 用**完整字符串**：同一张图配不同 sampler 是两个独立的 GPU 纹理对象。 */
+struct TexPathParams {
+    std::string vfs;                 /* 去掉 sampler 后缀的 VFS 路径 */
+    int wrap_u = 0, wrap_v = 0;      /* 0=repeat 1=clamp 2=mirror（文件贴图默认 repeat） */
+    int filter = 1;                  /* 0=nearest 1=linear */
+    bool wrap_set = false, filter_set = false;
+};
+
+static int wrap_mode_code(const std::string& s) {
+    if (s == "repeat") return 0;
+    if (s == "clamp") return 1;
+    if (s == "mirror") return 2;
+    return -1;                       /* 未知值 → 忽略该项（用默认） */
+}
+
+static TexPathParams parse_tex_path(const std::string& ref) {
+    TexPathParams p;
+    p.vfs = ref;
+    const size_t hash = ref.find('#');
+    if (hash == std::string::npos) return p;
+    p.vfs.assign(ref, 0, hash);
+    const std::string query = ref.substr(hash + 1);
+    size_t pos = 0;
+    while (pos <= query.size()) {
+        size_t amp = query.find('&', pos);
+        if (amp == std::string::npos) amp = query.size();
+        const std::string kv = query.substr(pos, amp - pos);
+        const size_t eq = kv.find('=');
+        if (eq != std::string::npos) {
+            const std::string key = kv.substr(0, eq);
+            const std::string val = kv.substr(eq + 1);
+            if (key == "wrap") {
+                const size_t comma = val.find(',');
+                const int u = wrap_mode_code(comma == std::string::npos ? val : val.substr(0, comma));
+                const int v = wrap_mode_code(comma == std::string::npos ? val : val.substr(comma + 1));
+                if (u >= 0) { p.wrap_u = u; p.wrap_v = (v >= 0 ? v : u); p.wrap_set = true; }
+            } else if (key == "filter") {
+                if (val == "nearest") { p.filter = 0; p.filter_set = true; }
+                else if (val == "linear") { p.filter = 1; p.filter_set = true; }
+            }
+        }
+        pos = amp + 1;
+    }
+    return p;
+}
+
 int Engine::load_texture(const std::string& path) {
     auto it = tex_cache.find(path);
     if (it != tex_cache.end()) return it->second;
+    /* 旧 create_texture 没有 sampler 参数：这里只把 '#' 后缀剥掉再读文件（sampler 由 2D 全局采样器决定）；
+     * PBR 贴图走 load_texture_srgb/mips → create_texture2 才真正生效。 */
+    const TexPathParams tp = parse_tex_path(path);
     void* data = nullptr; size_t n = 0;
-    if (mq_vfs_read(vfs, path.c_str(), &data, &n) != 0) { std::print("runtime: texture not found '{}'\n", path); return -1; }
+    if (mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) { std::print("runtime: texture not found '{}'\n", path); return -1; }
     uint8_t* rgba = nullptr; uint32_t w = 0, h = 0;
     char err[128] = { 0 };
     int rc = mq_image_decode(data, n, &rgba, &w, &h, err, sizeof err);
@@ -774,13 +829,14 @@ static std::vector<uint8_t> build_mip_chain(const uint8_t* src, int w0, int h0, 
 /* M4g：PBR albedo 贴图必须按 sRGB 采样（文件存 sRGB、shader 需要线性）——
  * create_texture2 的 RGBA8_SRGB；MR/AO/normal 是线性数据，仍走 load_texture_mips（RGBA8Unorm）。 */
 int Engine::load_texture_srgb(const std::string& path) {
+    const TexPathParams tp = parse_tex_path(path);
     /* builtin: 是程序化纹理（checker 等），沿用既有 UNorm 路径，不做 sRGB 解码 */
-    if (path.rfind("builtin:", 0) == 0) return load_texture_ref(path);
+    if (tp.vfs.rfind("builtin:", 0) == 0) return load_texture_ref(path);
     const std::string key = "srgb:" + path;
     auto it = tex_cache.find(key);
     if (it != tex_cache.end()) return it->second;
     void* data = nullptr; size_t n = 0;
-    if (!vfs || mq_vfs_read(vfs, path.c_str(), &data, &n) != 0) {
+    if (!vfs || mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) {
         std::print("runtime: srgb texture not found '{}'\n", path);
         return -1;
     }
@@ -797,7 +853,8 @@ int Engine::load_texture_srgb(const std::string& path) {
         td.width = (int32_t)w; td.height = (int32_t)h;
         td.pixel_format = 1;                  /* 1 = RGBA8_SRGB */
         td.kind = 0; td.mip_levels = levels;
-        td.filter = 1; td.wrap_u = 0; td.wrap_v = 0;
+        td.filter = tp.filter;                /* glTF sampler 后缀（缺省 linear） */
+        td.wrap_u = tp.wrap_u; td.wrap_v = tp.wrap_v;   /* 缺省 repeat */
         td.data = mips.data(); td.data_size = (uint64_t)mips.size();
         if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
     }
@@ -809,12 +866,13 @@ int Engine::load_texture_srgb(const std::string& path) {
 
 /* plans/19：线性数据贴图（MR/AO/normal/clearcoat normal）+ CPU mip 链；采样 RGBA8Unorm。 */
 int Engine::load_texture_mips(const std::string& path) {
-    if (path.rfind("builtin:", 0) == 0) return load_texture_ref(path);
+    const TexPathParams tp = parse_tex_path(path);
+    if (tp.vfs.rfind("builtin:", 0) == 0) return load_texture_ref(path);
     const std::string key = "mip:" + path;
     auto it = tex_cache.find(key);
     if (it != tex_cache.end()) return it->second;
     void* data = nullptr; size_t n = 0;
-    if (!vfs || mq_vfs_read(vfs, path.c_str(), &data, &n) != 0) {
+    if (!vfs || mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) {
         std::print("runtime: texture not found '{}'\n", path);
         return -1;
     }
@@ -831,31 +889,34 @@ int Engine::load_texture_mips(const std::string& path) {
         td.width = (int32_t)w; td.height = (int32_t)h;
         td.pixel_format = 0;                  /* 0 = RGBA8（线性数据） */
         td.kind = 0; td.mip_levels = levels;
-        td.filter = 1; td.wrap_u = 0; td.wrap_v = 0;
+        td.filter = tp.filter;                /* glTF sampler 后缀（缺省 linear） */
+        td.wrap_u = tp.wrap_u; td.wrap_v = tp.wrap_v;   /* 缺省 repeat */
         td.data = mips.data(); td.data_size = (uint64_t)mips.size();
         if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
     }
     mq_image_free(rgba);
-    if (id < 0) id = load_texture(path);      /* create_texture2 不可用时退回无 mip 路径 */
+    if (id < 0) id = load_texture(path);      /* create_texture2 不可用时退回无 mip 路径（内部会剥后缀） */
     tex_cache[key] = id;
     return id;
 }
 
-/* builtin:/ → 引擎内建（此处程序化生成）；否则 assets（VFS）。 */
+/* builtin:/ → 引擎内建（此处程序化生成）；否则 assets（VFS）。
+ * ref 可带 sampler 后缀（`...` 见 parse_tex_path）；缓存 key 用完整字符串。 */
 int Engine::load_texture_ref(const std::string& ref) {
-    if (ref.rfind("builtin:", 0) == 0) {
+    const TexPathParams tp = parse_tex_path(ref);
+    if (tp.vfs.rfind("builtin:", 0) == 0) {
         auto it = tex_cache.find(ref);
         if (it != tex_cache.end()) return it->second;
         int w = 1, h = 1;
         std::vector<uint8_t> px;
-        if (ref == "builtin:/textures/checker") {
+        if (tp.vfs == "builtin:/textures/checker") {
             w = h = 16; px.resize((size_t)w * h * 4);
             for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
                 bool alt = (((x / 4) + (y / 4)) & 1) != 0;
                 uint8_t* c = &px[((size_t)y * w + x) * 4];
                 c[0] = alt ? 255 : 230; c[1] = alt ? 255 : 140; c[2] = alt ? 255 : 60; c[3] = 255;
             }
-        } else if (ref == "builtin:/textures/toon_ramp") {
+        } else if (tp.vfs == "builtin:/textures/toon_ramp") {
             /* Toon 渐变：256×1 四档硬阶（与 toon_steps=4 对应；线性 clamp 采样） */
             w = 256; h = 1; px.resize((size_t)w * 4);
             static const uint8_t steps[4] = { 64, 132, 200, 255 };
@@ -863,7 +924,7 @@ int Engine::load_texture_ref(const std::string& ref) {
                 const uint8_t v = steps[std::min(3, x * 4 / w)];
                 uint8_t* c = &px[(size_t)x * 4]; c[0] = v; c[1] = v; c[2] = v; c[3] = 255;
             }
-        } else if (ref == "builtin:/textures/matcap_studio") {
+        } else if (tp.vfs == "builtin:/textures/matcap_studio") {
             /* Matcap：256×256 冷色相影棚球（左上高光、右下暗），线性采样/clamp；用作 view-space 法线查表 */
             w = h = 256; px.resize((size_t)w * h * 4);
             for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
@@ -890,9 +951,13 @@ int Engine::load_texture_ref(const std::string& ref) {
         } else { px = { 255, 255, 255, 255 }; }
         int id = -1;
         if (rapi && rself && rapi->create_texture2) {
+            /* builtin 查表纹理默认 clamp（matcap 球/渐变在边界外不能 wrap）；路径后缀可覆盖。 */
+            const int wrap_u = tp.wrap_set ? tp.wrap_u : 1;
+            const int wrap_v = tp.wrap_set ? tp.wrap_v : 1;
+            const int filter = tp.filter_set ? tp.filter : 1;
             mq_renderer_texture_desc td{};
             td.width = w; td.height = h; td.pixel_format = 0; td.kind = 0; td.mip_levels = 1;
-            td.filter = 1; td.wrap_u = 1; td.wrap_v = 1;
+            td.filter = filter; td.wrap_u = wrap_u; td.wrap_v = wrap_v;
             td.data = px.data(); td.data_size = px.size();
             if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
         }
@@ -900,7 +965,7 @@ int Engine::load_texture_ref(const std::string& ref) {
         tex_cache[ref] = id;
         return id;
     }
-    return load_texture(ref);   // assets
+    return load_texture(ref);   // assets（load_texture 内部剥 sampler 后缀）
 }
 
 /* M4c：加载离线导入的 .mesh.json（tools/gltf_import.py 产出，48B 顶点布局）→ 渲染器网格句柄。
@@ -921,17 +986,28 @@ int32_t Engine::load_mesh(const std::string& path) {
         } else {
             std::vector<float> verts;
             std::vector<uint32_t> idx;
+            /* 顶点布局（plans/20 §COLOR_0/TEXCOORD_1）：
+             *   0 = 旧 48B：pos3|normal3|tangent4|uv0 2（12 float/顶点）
+             *   1 = 新 56B：pos3|normal3|color4|uv0 2|uv1 2（14 float/顶点）
+             * 字段可选（旧资产没有 → 默认 0，零行为变化）。 */
+            int32_t vertex_layout = 0;
+            if (const mq_json* jlay = mq_json_get(dom, "vertex_layout"))
+                vertex_layout = (int32_t)mq_json_num(jlay, 0.0);
+            const uint32_t row_floats = (vertex_layout == 1) ? 14u : 12u;
+            const uint32_t stride = (vertex_layout == 1) ? 56u : 48u;
             const mq_json* jv = mq_json_get(dom, "vertices");
             const uint32_t vn = mq_json_len(jv);
-            verts.reserve((size_t)vn * 12);
+            verts.reserve((size_t)vn * row_floats);
             const mq_json* ji = mq_json_get(dom, "indices");
             const uint32_t in = mq_json_len(ji);
             idx.reserve(in);
-            bool ok = vn > 0 && in > 0;
+            bool ok = vn > 0 && in > 0 && (vertex_layout == 0 || vertex_layout == 1);
+            if (!ok) std::print(stderr, "runtime: mesh '{}' 无效（vertices={} indices={} vertex_layout={}）\n",
+                                path, vn, in, vertex_layout);
             for (uint32_t i = 0; ok && i < vn; ++i) {
                 const mq_json* row = mq_json_at(jv, i);
-                if (mq_json_len(row) != 12) { ok = false; break; }
-                for (uint32_t k = 0; k < 12; ++k)
+                if (mq_json_len(row) != row_floats) { ok = false; break; }
+                for (uint32_t k = 0; k < row_floats; ++k)
                     verts.push_back((float)mq_json_num(mq_json_at(row, k), 0.0));
             }
             for (uint32_t i = 0; ok && i < in; ++i)
@@ -940,8 +1016,8 @@ int32_t Engine::load_mesh(const std::string& path) {
                 mq_renderer_mesh_gpu md{};
                 md.vertices = verts.data();
                 md.vertex_bytes = (uint64_t)verts.size() * sizeof(float);
-                md.vertex_stride = 48;
-                md.vertex_layout = 0;
+                md.vertex_stride = stride;
+                md.vertex_layout = vertex_layout;
                 md.indices = idx.data();
                 md.index_count = (uint32_t)idx.size();
                 const mq_json* bmin = mq_json_get(dom, "bounds_min");
@@ -1400,6 +1476,13 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     math::Vec2 v{ 0.0F, 0.0F };
                     std::memcpy(&v, base + f->offset, sizeof v);
                     mat.normal_uv_offset[0] = v.x; mat.normal_uv_offset[1] = v.y;
+                }
+                /* glTF TEXCOORD_1（多 UV 集）：uv1_mask bit0..8 = 8 个贴图槽是否用第二套 UV；
+                 * shader 从 flags2 bit4..12 读（uv1_sel），这里只负责搬运。
+                 * 只有 vertex_layout=1 的网格才有有效 uv1；layout0 的 vs 写 uv1=0，mask=0 时无影响。 */
+                {
+                    const int32_t uv1_mask = (int32_t)read_num(dmat, base, "uv1_mask", 0.0F);
+                    mat.flags2 |= (uv1_mask & 0x1FF) << 4;
                 }
                 /* M4：PBR 贴图槽（albedo / metallic-roughness / occlusion）；normal 在 M5（需要切线空间） */
                 if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {

@@ -13,8 +13,8 @@
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.6435,
   "preview_mean_lum": 0.7007,
-  "mean_lum_delta": 0.0571,
-  "hist_similarity": 0.3805,
+  "mean_lum_delta": 0.0572,
+  "hist_similarity": 0.3806,
   "rgb_delta": 0.0738,
   "ref_coverage": 0.8757,
   "preview_coverage": 0.1252,
@@ -38,7 +38,7 @@
   ],
   "preview_mean_rgb": [
     145.5,
-    191.8,
+    191.9,
     146.5
   ],
   "framing_notes": [],
