@@ -117,7 +117,9 @@ struct VOut {
   // 环境项：常量漫反射 + 粗糙度相关的环境高光近似（无 IBL 时的廉价替代；
   // 半球渐变 ambient 会压平粗糙度对比，M5 接真 IBL 后再启用）
   let spec_amb = mix(vec3f(0.04), base, metallic) * cam.ambient.rgb * (1.0 - rough) * 0.35;
-  color = color + cam.ambient.rgb * base * ao + spec_amb * ao + dr.emissive.rgb * textureSample(emissive_tex, albedo_smp, in.uv).rgb;
+  // 环境漫反射只对电介质有效（金属没有漫反射环境项）；镜面环境项金属/电介质都参与
+  color = color + cam.ambient.rgb * base * ao * (1.0 - metallic) + spec_amb * ao
+          + dr.emissive.rgb * textureSample(emissive_tex, albedo_smp, in.uv).rgb;
   color = aces_tonemap(color * cam.eye.w);
   return vec4f(pow(color, vec3f(1.0 / 2.2)), dr.base_color.a);
 }

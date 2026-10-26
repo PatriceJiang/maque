@@ -1502,9 +1502,10 @@ void Engine::step_frame() {
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
         fr.env.sky_mode = 1;
-        fr.env.env_color[0] = 0.18F; fr.env.env_color[1] = 0.20F;
-        fr.env.env_color[2] = 0.24F; fr.env.env_color[3] = 1.0F;
-        fr.env.intensity = 1.0F;
+        /* 影棚环境光（中性偏冷、比早先 0.18/0.20/0.24 ×1.0 更亮，作为环境漫反射/镜面近似） */
+        fr.env.env_color[0] = 0.27F; fr.env.env_color[1] = 0.28F;
+        fr.env.env_color[2] = 0.31F; fr.env.env_color[3] = 1.0F;
+        fr.env.intensity = 1.6F;
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
         fr.out_size = (uint32_t)pixels.size();
