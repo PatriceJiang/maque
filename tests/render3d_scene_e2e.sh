@@ -215,4 +215,32 @@ sys.exit(0 if na > 500 and nb > 500 and diff > 3000 else 1)
 PY
     echo "render3d_scene_e2e: ⑥ OrbitControls（环绕/缩放参数链路）OK"
 fi
+
+# ---- ⑦ 透明材质（M5a）：BLEND 半透明混合 / MASK alpha 丢弃 / 不透明不受影响 ----
+TRANS_SCN="$ROOT/scenes/pbr/transparency.scn"
+if [ -f "$TRANS_SCN" ]; then
+    ( cd "$ROOT" && timeout 90 "$PLAYER" --shot "$WORK/trans.ppm" --frames 2 scenes/pbr/transparency.scn \
+        >"$WORK/trans.txt" 2>&1 ) || { cat "$WORK/trans.txt"; fail "透明材质场景渲染失败"; }
+    "$PY" - "$WORK/trans.ppm" <<'PY' || exit 1
+import sys
+d = open(sys.argv[1], 'rb').read()
+magic, dims, _m, px = d.split(b'\n', 3)
+assert magic == b'P6'
+w, h = map(int, dims.split())
+def rgb(x, y):
+    i = (y * w + x) * 3
+    return px[i], px[i+1], px[i+2]
+def at(xr):
+    return rgb(int(w * xr), h // 2)
+red = at(0.33)     # 不透明红 cube
+mid = at(0.50)     # 黄 panel(alpha 0.5) 叠在蓝 cube 上 → 同时含红/蓝分量
+grn = at(0.66)     # MASK panel(alpha 0.2<0.5) 被丢弃 → 绿色 cube 可见
+print(f'render3d_scene_e2e: transparency red={red} mid={mid} green={grn}')
+ok = (red[0] > 90 and red[0] > red[1] * 2 and red[0] > red[2] * 2
+      and mid[2] > 20 and mid[0] > 20
+      and grn[1] > 60 and grn[1] > grn[0] and grn[1] > grn[2])
+sys.exit(0 if ok else 1)
+PY
+    echo "render3d_scene_e2e: ⑦ 透明材质（BLEND 混合 / MASK 裁剪）OK"
+fi
 echo "render3d_scene_e2e: PASS"

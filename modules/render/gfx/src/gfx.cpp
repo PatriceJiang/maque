@@ -92,6 +92,7 @@ struct Device {
     WGPUBindGroupLayout p3dDrawBgl = nullptr;
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
+    WGPURenderPipeline p3dBlendPipeline = nullptr;   /* alpha blend（不写深度，画在不透明之后） */
     /* PBR 贴图缺省：1×1 白纹理（材质没给 albedo 贴图时绑定它，基色乘 1） */
     WGPUTexture whiteTex = nullptr;
     WGPUTextureView whiteTexView = nullptr;
@@ -266,7 +267,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         {
             WGPUBindGroupLayoutEntry e[7] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 112;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 128;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
             e[1].texture.sampleType = WGPUTextureSampleType_Float;
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
@@ -317,6 +318,27 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
     rp.primitive.cullMode = WGPUCullMode_None;
     rp.depthStencil = &ds;
     dv->p3dPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
+    /* 透明 pass 管线：同一 shader/布局，srcAlpha 混合 + 不写深度（深度测试仍用不透明 pass 的结果） */
+    if (dv->p3dBlendPipeline) { wgpuRenderPipelineRelease(dv->p3dBlendPipeline); dv->p3dBlendPipeline = nullptr; }
+    {
+        WGPUBlendState blend = WGPU_BLEND_STATE_INIT;
+        blend.color.srcFactor = WGPUBlendFactor_SrcAlpha;
+        blend.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+        blend.color.operation = WGPUBlendOperation_Add;
+        blend.alpha.srcFactor = WGPUBlendFactor_One;
+        blend.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+        blend.alpha.operation = WGPUBlendOperation_Add;
+        WGPUColorTargetState ct2 = ct;
+        ct2.blend = &blend;
+        WGPUDepthStencilState ds2 = ds;
+        ds2.depthWriteEnabled = WGPUOptionalBool_False;
+        WGPUFragmentState frag2 = frag;
+        frag2.targets = &ct2;
+        WGPURenderPipelineDescriptor rp2 = rp;
+        rp2.fragment = &frag2;
+        rp2.depthStencil = &ds2;
+        dv->p3dBlendPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp2);
+    }
     dv->p3dFormat = dv->p3dPipeline ? format : WGPUTextureFormat_Undefined;
 }
 
@@ -496,6 +518,7 @@ static void destroy_device(Device* dv) {
     if (dv->depthView) wgpuTextureViewRelease(dv->depthView);
     if (dv->depthTex) wgpuTextureRelease(dv->depthTex);
     if (dv->p3dPipeline) wgpuRenderPipelineRelease(dv->p3dPipeline);
+    if (dv->p3dBlendPipeline) wgpuRenderPipelineRelease(dv->p3dBlendPipeline);
     if (dv->p3dPl) wgpuPipelineLayoutRelease(dv->p3dPl);
     if (dv->p3dCamBgl) wgpuBindGroupLayoutRelease(dv->p3dCamBgl);
     if (dv->p3dDrawBgl) wgpuBindGroupLayoutRelease(dv->p3dDrawBgl);
@@ -1112,14 +1135,38 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         rpd.colorAttachmentCount = 1; rpd.colorAttachments = &ca;
         rpd.depthStencilAttachment = &da;
         WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
-        wgpuRenderPassEncoderSetPipeline(pass, dv->p3dPipeline);
         wgpuRenderPassEncoderSetBindGroup(pass, 0, camBg, 0, nullptr);
+        /* 不透明先画；透明按"相机→物体"距离从远到近（不写深度、混合管线） */
+        std::vector<const mq_renderer_draw3d*> opaque_list, blend_list;
+        opaque_list.reserve(f->draw_count);
+        blend_list.reserve(f->draw_count);
         for (uint32_t di = 0; di < f->draw_count; ++di) {
             const mq_renderer_draw3d& d = f->draws[di];
+            const mq_renderer_pbr_material* mm =
+                (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
+                    ? &f->materials[d.material] : nullptr;
+            if (mm && mm->alpha_mode == 2) blend_list.push_back(&d);
+            else opaque_list.push_back(&d);
+        }
+        {
+            const float ex = v.eye[0], ey = v.eye[1], ez = v.eye[2];
+            auto dist2 = [&](const mq_renderer_draw3d* d) {
+                const float dx = d->model[12] - ex, dy = d->model[13] - ey, dz = d->model[14] - ez;
+                return dx * dx + dy * dy + dz * dz;
+            };
+            std::stable_sort(blend_list.begin(), blend_list.end(),
+                             [&](const mq_renderer_draw3d* a, const mq_renderer_draw3d* b) {
+                                 return dist2(a) > dist2(b);
+                             });
+        }
+        std::vector<const mq_renderer_draw3d*> draw_order = opaque_list;
+        draw_order.insert(draw_order.end(), blend_list.begin(), blend_list.end());
+        for (const mq_renderer_draw3d* dpp : draw_order) {
+            const mq_renderer_draw3d& d = *dpp;
             if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
             MeshGpu* m = dv->meshes[(size_t)d.mesh];
             if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
-            float du[28] = {};
+            float du[32] = {};
             std::memcpy(du, d.model, sizeof d.model);              /* 0..15：模型矩阵 */
             const mq_renderer_pbr_material* mat =
                 (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
@@ -1132,9 +1179,13 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 du[25] = mat->roughness;
                 du[26] = mat->normal_scale;
                 du[27] = mat->occlusion_strength;
+                du[28] = mat->alpha_cutoff;
+                du[29] = (float)mat->alpha_mode;
+                du[30] = (float)mat->flags;
             } else {
                 du[16] = du[17] = du[18] = du[19] = 1.0F;
                 du[25] = 0.6F; du[26] = 1.0F; du[27] = 1.0F;
+                du[28] = 0.5F; du[29] = 0.0F; du[30] = 0.0F;
             }
             WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
             dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
@@ -1179,6 +1230,9 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
             dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 7; dbgd.entries = dbe;
             WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
+            const bool is_blend = mat && mat->alpha_mode == 2;
+            wgpuRenderPassEncoderSetPipeline(pass, (is_blend && dv->p3dBlendPipeline)
+                                                       ? dv->p3dBlendPipeline : dv->p3dPipeline);
             wgpuRenderPassEncoderSetBindGroup(pass, 1, drawBg, 0, nullptr);
             wgpuRenderPassEncoderSetVertexBuffer(pass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
             wgpuRenderPassEncoderSetIndexBuffer(pass, m->ibo, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);

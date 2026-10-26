@@ -372,3 +372,8 @@ per view:
 - **M4h（交互）**：3D **OrbitControls** —— runtime 消费平台鼠标事件（左键拖拽环绕、滚轮缩放），
   相机的环绕状态在 `extract_3d` 里覆盖场景相机（场景相机仅作为初始机位）；
   `MAQUE_ORBIT=yaw,pitch,dist` 供 CI 确定性覆盖；`render3d_scene_e2e` ⑥ 断言两个环绕角度渲染显著不同。
+
+- **M5a ✅ 透明材质**：draw uniform 112→128（alpha_cutoff/mode/flags）；shader MASK discard、输出 alpha；
+  gfx 新增 blend 管线（srcAlpha/1-srcAlpha、depthWrite=false），draw 按材质 alpha_mode 分成
+  不透明/透明两组，透明按相机距离远→近排序并画在不透明之后；`scenes/pbr/transparency.scn`
+  + e2e ⑦（BLEND 混合可见、MASK 被裁剪、不透明不受影响）。

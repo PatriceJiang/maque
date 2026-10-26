@@ -18,6 +18,7 @@ struct Draw {
   base_color: vec4f,   // 线性空间（贴图模式下作为 tint）
   emissive: vec4f,
   mrp: vec4f,          // x=metallic y=roughness z=normal_scale w=occlusion
+  alpha: vec4f,        // x=alpha_cutoff y=alpha_mode(0 opaque/1 mask/2 blend) z=flags(1=double_sided)
 };
 @group(1) @binding(0) var<uniform> dr: Draw;
 /* 无 albedo 贴图时绑 1×1 白纹理（基色 × 1，不改变观感） */
@@ -103,7 +104,13 @@ struct VOut {
   let rough = clamp(dr.mrp.y * mr_s.g, 0.02, 1.0);
   let ao = clamp(dr.mrp.w * textureSample(ao_tex, albedo_smp, in.uv).r, 0.0, 1.0);
   // albedo：sRGB 纹理采样自动解码为线性（RGBA8UnormSrgb），再乘材质 tint
-  let base = dr.base_color.rgb * textureSample(albedo_tex, albedo_smp, in.uv).rgb;
+  let alb_s = textureSample(albedo_tex, albedo_smp, in.uv);
+  let base = dr.base_color.rgb * alb_s.rgb;
+  let alpha = clamp(dr.base_color.a * alb_s.a, 0.0, 1.0);
+  // MASK：alpha 低于 cutoff 直接丢弃（不透明管线里做 alpha test）
+  if (dr.alpha.y > 0.5 && dr.alpha.y < 1.5 && alpha < dr.alpha.x) {
+    discard;
+  }
 
   let f0 = mix(vec3f(0.04), base, metallic);
   let f = fresnel_schlick(max(dot(h, v), 0.0), f0);
@@ -121,5 +128,5 @@ struct VOut {
   color = color + cam.ambient.rgb * base * ao * (1.0 - metallic) + spec_amb * ao
           + dr.emissive.rgb * textureSample(emissive_tex, albedo_smp, in.uv).rgb;
   color = aces_tonemap(color * cam.eye.w);
-  return vec4f(pow(color, vec3f(1.0 / 2.2)), dr.base_color.a);
+  return vec4f(pow(color, vec3f(1.0 / 2.2)), alpha);
 }
