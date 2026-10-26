@@ -38,14 +38,32 @@ unset MAQUE_HEADLESS MAQUE_KEEP_OPEN MAQUE_IMGUI MAQUE_PRESENT MAQUE_CAPTURE \
 # 抓第 5 次 present（= 运行期第 4 帧，拖动事件已在第 2..4 帧注入完）之后的整帧。
 COMMON=(MAQUE_WINDOW=800x650 MAQUE_CAPTURE_EVERY=5 MAQUE_CAPTURE_FRAMES=2 MAQUE_MAX_FRAMES=12)
 
+# 真实窗口 + GPU 在 CI 负载下偶发**进程级**失败（实测约 1/6：同一命令重跑即过，
+# 抓帧/度量/像素断言全部正常——不是渲染正确性问题，而是 D3D 窗口/设备创建瞬时失败）。
+# 每次运行最多两次尝试；两次都失败仍判失败（不会把真实回归掩盖成"偶发"），
+# 并保留第一次失败日志（*.retry1）便于排查。
+run_player() {
+    local log="$1"; shift
+    local n
+    for n in 1 2; do
+        if "$@" >"$log" 2>&1; then return 0; fi
+        if [ "$n" -eq 1 ]; then
+            cp "$log" "$log.retry1" 2>/dev/null || true
+            echo "imgui_present_e2e: 第 1 次运行失败，重试一次（日志 $log）" >&2
+        fi
+    done
+    return 1
+}
+
+
 # ---- ① 基线：imgui 关 ----
-env "${COMMON[@]}" MAQUE_IMGUI=0 MAQUE_CAPTURE="$WORK/off" \
-    timeout 60 "$PLAYER" "$SCN" >"$WORK/off.log" 2>&1 || fail "imgui 关运行失败"
+run_player "$WORK/off.log" env "${COMMON[@]}" MAQUE_IMGUI=0 MAQUE_CAPTURE="$WORK/off" \
+    timeout 60 "$PLAYER" "$SCN" || fail "imgui 关运行失败"
 [ -f "$WORK/off_0.ppm" ] || fail "imgui 关：未产生窗口抓帧（$WORK/off.log）"
 
 # ---- ② imgui 开 ----
-env "${COMMON[@]}" MAQUE_IMGUI=1 MAQUE_CAPTURE="$WORK/on" \
-    timeout 60 "$PLAYER" "$SCN" >"$WORK/on.log" 2>&1 || fail "imgui 开运行失败"
+run_player "$WORK/on.log" env "${COMMON[@]}" MAQUE_IMGUI=1 MAQUE_CAPTURE="$WORK/on" \
+    timeout 60 "$PLAYER" "$SCN" || fail "imgui 开运行失败"
 [ -f "$WORK/on_0.ppm" ] || fail "imgui 开：未产生窗口抓帧"
 grep -q "present via renderer=" "$WORK/on.log" || fail "未走统一 renderer 呈现（日志缺 'present via renderer='）"
 grep -q "official SDL_Renderer backend" "$WORK/on.log" || fail "面板未走官方 SDL_Renderer 后端"
@@ -71,19 +89,19 @@ DRAG_MID=$((DRAG_Y + DRAG_DY / 2))
 DRAG_END=$((DRAG_Y + DRAG_DY))
 
 # ---- ③ imgui 开 + 合成指针拖动 stats（标题栏 → 向下 220px）----
-env "${COMMON[@]}" MAQUE_IMGUI=1 MAQUE_CAPTURE="$WORK/drag" \
+run_player "$WORK/drag.log" env "${COMMON[@]}" MAQUE_IMGUI=1 MAQUE_CAPTURE="$WORK/drag" \
     MAQUE_IMGUI_POINTER="2:$DRAG_X:$DRAG_Y:1;3:$DRAG_X:$DRAG_MID:0;4:$DRAG_X:$DRAG_END:0;5:$DRAG_X:$DRAG_END:2" \
-    timeout 60 "$PLAYER" "$SCN" >"$WORK/drag.log" 2>&1 || fail "拖动运行失败"
+    timeout 60 "$PLAYER" "$SCN" || fail "拖动运行失败"
 [ -f "$WORK/drag_0.ppm" ] || fail "拖动：未产生窗口抓帧"
 
 # ---- ④ 软件 renderer 回退路径也要能显示（游戏帧 + 面板）----
-env "${COMMON[@]}" MAQUE_IMGUI=1 MAQUE_PRESENT=software MAQUE_CAPTURE="$WORK/sw" \
-    timeout 60 "$PLAYER" "$SCN" >"$WORK/sw.log" 2>&1 || fail "software 呈现运行失败"
+run_player "$WORK/sw.log" env "${COMMON[@]}" MAQUE_IMGUI=1 MAQUE_PRESENT=software MAQUE_CAPTURE="$WORK/sw" \
+    timeout 60 "$PLAYER" "$SCN" || fail "software 呈现运行失败"
 [ -f "$WORK/sw_0.ppm" ] || fail "software 呈现：未产生窗口抓帧"
 
 # ---- ⑤ 固定 UI 度量：换个更大的窗口，度量必须逐字一致（旧实现会变）----
-MAQUE_WINDOW=1200x900 MAQUE_IMGUI=1 MAQUE_MAX_FRAMES=6 \
-    timeout 60 "$PLAYER" "$SCN" >"$WORK/big.log" 2>&1 || fail "大窗口运行失败"
+run_player "$WORK/big.log" env MAQUE_WINDOW=1200x900 MAQUE_IMGUI=1 MAQUE_MAX_FRAMES=6 \
+    timeout 60 "$PLAYER" "$SCN" || fail "大窗口运行失败"
 METRICS_BIG="$(grep -o 'runtime: imgui ui scale=.*' "$WORK/big.log" | head -1)"
 [ -n "$METRICS_BIG" ] || fail "大窗口日志缺 UI 度量行"
 [ "$METRICS" = "$METRICS_BIG" ] || \
