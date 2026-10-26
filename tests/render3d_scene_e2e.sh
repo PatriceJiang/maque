@@ -135,14 +135,18 @@ fi
 IMPORT_SCN="${SCN%cube.scn}imported.scn"
 if [ -f "$IMPORT_SCN" ]; then
     ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-    [ -f "$ROOT/assets/imported/cube.mesh.json" ] || fail "缺已入库导入资产 assets/imported/cube.mesh.json"
+    IMPORTED="$ROOT/scenes/pbr/assets/cube.mesh.json"
+    [ -f "$IMPORTED" ] || fail "缺已入库导入资产 scenes/pbr/assets/cube.mesh.json"
     timeout 90 "$PY" "$ROOT/tools/gltf_import.py" "$ROOT/tests/data/gltf/cube.gltf" --out "$WORK/import" \
         >"$WORK/import.txt" 2>&1 || { cat "$WORK/import.txt"; fail "glTF 导入失败"; }
-    cmp -s "$WORK/import/cube.mesh.json" "$ROOT/assets/imported/cube.mesh.json" \
+    cmp -s "$WORK/import/cube.mesh.json" "$IMPORTED" \
         || fail "已入库资产与 importer 输出不一致（导入资产漂移）"
     ( cd "$ROOT" && timeout 90 env MAQUE_RENDER3D_INFO=1 "$PLAYER" --shot "$WORK/imported.ppm" --frames 2 "$IMPORT_SCN" \
         >"$WORK/imported.txt" 2>&1 ) || { cat "$WORK/imported.txt"; fail "导入网格场景渲染失败"; }
     grep -q "mesh renderer node=" "$WORK/imported.txt" || { cat "$WORK/imported.txt"; fail "mesh_path 未走加载路径"; }
+    if grep -q "→ mesh=-1\|mesh=-1" "$WORK/imported.txt"; then
+        cat "$WORK/imported.txt"; fail "mesh_path 指向的 .mesh.json 加载失败（VFS 根 = 场景目录）"
+    fi
     grep -q "runtime: shot" "$WORK/imported.txt" || { cat "$WORK/imported.txt"; fail "导入网格场景未截图"; }
     "$PY" - "$WORK/imported.ppm" <<'PY' || exit 1
 import sys

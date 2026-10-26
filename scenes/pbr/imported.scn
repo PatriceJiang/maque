@@ -29,9 +29,20 @@
             "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
             "rotation": { "x": 0.25, "y": 0.5, "z": 0.0 },
             "scale": { "x": 1.3, "y": 1.3, "z": 1.3 } } },
-        { "type": "render.MeshRenderer", "mesh_path": "assets/imported/cube.mesh.json" },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/cube.mesh.json" },
         { "type": "asset.PbrMaterial", "metallic": 1.0, "roughness": 0.2,
           "base_color": { "r": 0.9, "g": 0.75, "b": 0.3, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "ground",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": -0.68, "z": 0.0 },
+            "scale": { "x": 8.0, "y": 0.06, "z": 8.0 } } },
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial", "metallic": 0.0, "roughness": 0.9,
+          "base_color": { "r": 0.55, "g": 0.57, "b": 0.6, "a": 1.0 } }
       ]
     }
   ]
