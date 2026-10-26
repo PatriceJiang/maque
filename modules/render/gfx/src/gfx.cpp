@@ -264,7 +264,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         {
-            WGPUBindGroupLayoutEntry e[6] = {};
+            WGPUBindGroupLayoutEntry e[7] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
             e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 112;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
@@ -281,7 +281,10 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             e[5].binding = 5; e[5].visibility = WGPUShaderStage_Fragment;   /* normal map */
             e[5].texture.sampleType = WGPUTextureSampleType_Float;
             e[5].texture.viewDimension = WGPUTextureViewDimension_2D;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 6; bd.entries = e;
+            e[6].binding = 6; e[6].visibility = WGPUShaderStage_Fragment;   /* emissive map */
+            e[6].texture.sampleType = WGPUTextureSampleType_Float;
+            e[6].texture.viewDimension = WGPUTextureViewDimension_2D;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 7; bd.entries = e;
             dv->p3dDrawBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         WGPUBindGroupLayout bl[2] = { dv->p3dCamBgl, dv->p3dDrawBgl };
@@ -1142,6 +1145,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             WGPUTextureView mrView = dv->whiteTexView;
             WGPUTextureView aoView = dv->whiteTexView;
             WGPUTextureView normalView = dv->whiteTexView;
+            WGPUTextureView emissiveView = dv->whiteTexView;
             if (mat) {
                 if (mat->textures[0] >= 0 && (size_t)mat->textures[0] < dv->textures.size()) {
                     Texture* at = dv->textures[(size_t)mat->textures[0]];
@@ -1159,16 +1163,21 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                     Texture* at = dv->textures[(size_t)mat->textures[3]];
                     if (at && at->view) normalView = at->view;
                 }
+                if (mat->textures[4] >= 0 && (size_t)mat->textures[4] < dv->textures.size()) {
+                    Texture* at = dv->textures[(size_t)mat->textures[4]];
+                    if (at && at->view) emissiveView = at->view;
+                }
             }
-            WGPUBindGroupEntry dbe[6] = {};
+            WGPUBindGroupEntry dbe[7] = {};
             dbe[0].binding = 0; dbe[0].buffer = dbuf; dbe[0].size = sizeof du;
             dbe[1].binding = 1; dbe[1].textureView = albedoView;
             dbe[2].binding = 2; dbe[2].sampler = dv->sampler;
             dbe[3].binding = 3; dbe[3].textureView = mrView;
             dbe[4].binding = 4; dbe[4].textureView = aoView;
             dbe[5].binding = 5; dbe[5].textureView = normalView;
+            dbe[6].binding = 6; dbe[6].textureView = emissiveView;
             WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 6; dbgd.entries = dbe;
+            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 7; dbgd.entries = dbe;
             WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
             wgpuRenderPassEncoderSetBindGroup(pass, 1, drawBg, 0, nullptr);
             wgpuRenderPassEncoderSetVertexBuffer(pass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);

@@ -502,6 +502,7 @@ struct Engine {
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
     int32_t load_mesh(const std::string& path);                // M4c：glTF 导入的 .mesh.json → 网格句柄
+    int load_texture_srgb(const std::string& path);            // M4g：albedo 贴图按 sRGB 采样（RGBA8_SRGB）
     bool load_material(const std::string& ref, scn::SpriteMaterial& out);
     void main_loop(const std::string& frames_dir, const std::string& name);
     /* M2 3D：扫描 render.* 组件 + 上传内建 cube；每帧提取 frame3d 数据（只读）。 */
@@ -680,6 +681,40 @@ int Engine::load_texture(const std::string& path) {
     int id = rapi->create_texture(rself, rgba, (int)w, (int)h);
     mq_image_free(rgba);
     tex_cache[path] = id;
+    return id;
+}
+
+/* M4g：PBR albedo 贴图必须按 sRGB 采样（文件存 sRGB、shader 需要线性）——
+ * create_texture2 的 RGBA8_SRGB；MR/AO/normal 是线性数据，仍走 load_texture_ref（RGBA8Unorm）。 */
+int Engine::load_texture_srgb(const std::string& path) {
+    /* builtin: 是程序化纹理（checker 等），沿用既有 UNorm 路径，不做 sRGB 解码 */
+    if (path.rfind("builtin:", 0) == 0) return load_texture_ref(path);
+    const std::string key = "srgb:" + path;
+    auto it = tex_cache.find(key);
+    if (it != tex_cache.end()) return it->second;
+    void* data = nullptr; size_t n = 0;
+    if (!vfs || mq_vfs_read(vfs, path.c_str(), &data, &n) != 0) {
+        std::print("runtime: srgb texture not found '{}'\n", path);
+        return -1;
+    }
+    uint8_t* rgba = nullptr; uint32_t w = 0, h = 0;
+    char err[128] = { 0 };
+    int rc = mq_image_decode(data, n, &rgba, &w, &h, err, sizeof err);
+    mq_vfs_free(data);
+    if (rc != 0) { std::print("runtime: srgb decode failed '{}': {}\n", path, err); return -1; }
+    int32_t id = -1;
+    if (rapi && rself && rapi->create_texture2) {
+        mq_renderer_texture_desc td{};
+        td.width = (int32_t)w; td.height = (int32_t)h;
+        td.pixel_format = 1;                  /* 1 = RGBA8_SRGB */
+        td.kind = 0; td.mip_levels = 1;
+        td.filter = 1; td.wrap_u = 0; td.wrap_v = 0;
+        td.data = rgba; td.data_size = (uint64_t)w * h * 4;
+        if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
+    }
+    mq_image_free(rgba);
+    if (id < 0) std::print("runtime: srgb texture upload failed '{}'\n", path);
+    tex_cache[key] = id;
     return id;
 }
 
@@ -1129,7 +1164,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 /* M4：PBR 贴图槽（albedo / metallic-roughness / occlusion）；normal 在 M5（需要切线空间） */
                 if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_ref(*texref);
+                        const int tid = load_texture_srgb(*texref);
                         if (tid >= 0) mat.textures[0] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr albedo texture '{}' -> {}\n", *texref, tid);
@@ -1157,6 +1192,14 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                         if (tid >= 0) mat.textures[3] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr normal texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
+                if (const std::string* texref = read_str(dmat, base, "emissive_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_ref(*texref);
+                        if (tid >= 0) mat.textures[4] = tid;
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: pbr emissive texture '{}' -> {}\n", *texref, tid);
                     }
                 }
             }

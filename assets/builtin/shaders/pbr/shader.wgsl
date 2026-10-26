@@ -28,6 +28,8 @@ struct Draw {
 @group(1) @binding(4) var ao_tex: texture_2d<f32>;
 /* 法线贴图（切线空间；用屏幕空间导数构造切线基，导入网格无需 TANGENT 属性） */
 @group(1) @binding(5) var normal_tex: texture_2d<f32>;
+/* 自发光贴图（glTF emissiveTexture；缺省白 → 等于 emissiveFactor） */
+@group(1) @binding(6) var emissive_tex: texture_2d<f32>;
 
 const PI: f32 = 3.14159265;
 
@@ -112,7 +114,10 @@ struct VOut {
   let diffuse = kd * base / PI;
 
   var color = (diffuse + spec) * cam.light_color.rgb * n_dot_l;
-  color = color + cam.ambient.rgb * base * ao + dr.emissive.rgb;
+  // 环境项：常量漫反射 + 粗糙度相关的环境高光近似（无 IBL 时的廉价替代；
+  // 半球渐变 ambient 会压平粗糙度对比，M5 接真 IBL 后再启用）
+  let spec_amb = mix(vec3f(0.04), base, metallic) * cam.ambient.rgb * (1.0 - rough) * 0.35;
+  color = color + cam.ambient.rgb * base * ao + spec_amb * ao + dr.emissive.rgb * textureSample(emissive_tex, albedo_smp, in.uv).rgb;
   color = aces_tonemap(color * cam.eye.w);
   return vec4f(pow(color, vec3f(1.0 / 2.2)), dr.base_color.a);
 }
