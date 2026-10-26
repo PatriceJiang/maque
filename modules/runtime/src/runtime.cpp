@@ -1151,6 +1151,14 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             std::print("runtime: pbr ao texture '{}' -> {}\n", *texref, tid);
                     }
                 }
+                if (const std::string* texref = read_str(dmat, base, "normal_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_ref(*texref);
+                        if (tid >= 0) mat.textures[3] = tid;
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: pbr normal texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
             }
             const int32_t mat_index = (int32_t)out_mats.size();
             out_mats.push_back(mat);

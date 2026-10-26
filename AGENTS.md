@@ -132,7 +132,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   与导入资产 `scenes/pbr/assets/cube.mesh.json`；e2e ④ 校验「importer 输出 = 已入库资产」逐字节一致（漂移）
   + 断言网格加载成功（`mesh=-1` 视为失败）。
   **M4d 贴图槽**：`base_color_texture` / `metallic_roughness_texture`（G=roughness、B=metallic）/
-  `occlusion_texture`（R）三条路径 → 运行时加载为纹理句柄；材质未给的槽默认 **-1** → 渲染器绑 1×1 白纹理
+  `occlusion_texture`（R）/ `normal_texture`（切线空间，shader 用屏幕空间导数构造切线基，无需 TANGENT 属性）四条路径 → 运行时加载为纹理句柄；材质未给的槽默认 **-1** → 渲染器绑 1×1 白纹理
   （参数乘 1 不变）。法线贴图（需切线空间）与阴影仍待做。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：

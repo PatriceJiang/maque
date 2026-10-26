@@ -51,7 +51,7 @@
         },
         {
           "type": "render.Light",
-          "intensity": 2.6,
+          "intensity": 1.5,
           "color": {
             "r": 1.0,
             "g": 0.96,

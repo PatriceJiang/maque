@@ -166,4 +166,27 @@ sys.exit(0 if ratio > 0.03 else 1)
 PY
     echo "render3d_scene_e2e: ④ 离线导入网格（glTF→.mesh.json→渲染）OK"
 fi
+
+# ---- ⑤ Khronos ToyCar PBR 场景（scenes/khronos/ToyCar，离线导入的复杂 glTF）----
+KHRONOS_SCN="$ROOT/scenes/khronos/ToyCar/ToyCar.scn"
+if [ -f "$KHRONOS_SCN" ] && [ -f "$ROOT/scenes/khronos/ToyCar/assets/ToyCar_0_0.mesh.json" ]; then
+    ( cd "$ROOT" && timeout 120 env MAQUE_RENDER3D_INFO=1 "$PLAYER" --shot "$WORK/khronos.ppm" --frames 2 "$KHRONOS_SCN" \
+        >"$WORK/khronos.txt" 2>&1 ) || { cat "$WORK/khronos.txt"; fail "Khronos 场景渲染失败"; }
+    grep -q "3d scene cams=1 meshes=3 lights=1" "$WORK/khronos.txt" || { cat "$WORK/khronos.txt"; fail "Khronos 场景 3D 内容不符"; }
+    grep -q "pbr normal texture" "$WORK/khronos.txt" || { cat "$WORK/khronos.txt"; fail "Khronos 场景法线贴图未加载"; }
+    "$PY" - "$WORK/khronos.ppm" <<'PY' || exit 1
+import sys
+d = open(sys.argv[1], 'rb').read()
+magic, dims, _max, px = d.split(b'\n', 3)
+assert magic == b'P6', magic
+w, h = map(int, dims.split())
+bg = px[0:3]
+nonbg = sum(1 for i in range(0, len(px), 3)
+            if abs(px[i]-bg[0]) + abs(px[i+1]-bg[1]) + abs(px[i+2]-bg[2]) > 25)
+ratio = nonbg / (w * h)
+print(f'render3d_scene_e2e: khronos_toycar nonbg={ratio:.3f}')
+sys.exit(0 if ratio > 0.05 else 1)
+PY
+    echo "render3d_scene_e2e: ⑤ Khronos ToyCar（离线导入复杂 glTF + PBR 贴图）OK"
+fi
 echo "render3d_scene_e2e: PASS"

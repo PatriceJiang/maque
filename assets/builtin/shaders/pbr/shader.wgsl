@@ -26,6 +26,8 @@ struct Draw {
 /* M4d：metallic-roughness 贴图（G=roughness、B=metallic，glTF 约定）与 AO 贴图（R） */
 @group(1) @binding(3) var mr_tex: texture_2d<f32>;
 @group(1) @binding(4) var ao_tex: texture_2d<f32>;
+/* 法线贴图（切线空间；用屏幕空间导数构造切线基，导入网格无需 TANGENT 属性） */
+@group(1) @binding(5) var normal_tex: texture_2d<f32>;
 
 const PI: f32 = 3.14159265;
 
@@ -49,6 +51,20 @@ fn aces_tonemap(x: vec3f) -> vec3f {
   return clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3f(0.0), vec3f(1.0));
 }
 
+/* 由屏幕空间导数求切线基（cotangent frame）：不依赖顶点 TANGENT，导入网格可直接用法线贴图。 */
+fn cotangent_frame(n: vec3f, p: vec3f, uv: vec2f) -> mat3x3f {
+  let dp1 = dpdx(p);
+  let dp2 = dpdy(p);
+  let duv1 = dpdx(uv);
+  let duv2 = dpdy(uv);
+  let dp2perp = cross(dp2, n);
+  let dp1perp = cross(n, dp1);
+  let t = dp2perp * duv1.x + dp1perp * duv2.x;
+  let b = dp2perp * duv1.y + dp1perp * duv2.y;
+  let invmax = inverseSqrt(max(max(dot(t, t), dot(b, b)), 1e-8));
+  return mat3x3f(t * invmax, b * invmax, n);
+}
+
 struct VOut {
   @builtin(position) p: vec4f,
   @location(0) n: vec3f,
@@ -67,7 +83,11 @@ struct VOut {
 }
 
 @fragment fn fs(in: VOut) -> @location(0) vec4f {
-  let n = normalize(in.n);
+  var n = normalize(in.n);
+  // 法线贴图：白色 1×1 缺省 → nm = (0,0,1) → 等价于不扰动
+  let nm = textureSample(normal_tex, albedo_smp, in.uv).xyz * 2.0 - 1.0;
+  let nm_s = vec3f(nm.x * dr.mrp.z, nm.y * dr.mrp.z, nm.z);
+  n = normalize(cotangent_frame(n, in.w, in.uv) * nm_s);
   let v = normalize(cam.eye.xyz - in.w);
   let l = normalize(-cam.light_dir.xyz);
   let h = normalize(v + l);
