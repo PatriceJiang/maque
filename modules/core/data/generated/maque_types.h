@@ -1712,6 +1712,8 @@ struct PbrMaterial {
     asset::PbrAlphaMode alpha_mode = PbrAlphaMode::Opaque;
     float alpha_cutoff = 0.5F;
     bool double_sided = false;
+    float clearcoat = 0.0F;
+    float clearcoat_roughness = 0.03F;
     std::string base_color_texture = "";
     std::string metallic_roughness_texture = "";
     std::string normal_texture = "";
@@ -2319,6 +2321,8 @@ struct Scene {
     uint32_t seed = 0;
     int32_t views = 1;
     float eye_sep = 0.0F;
+    math::Color env_color = {0.27F, 0.28F, 0.31F, 1.0F};
+    float env_intensity = 1.6F;
     float gravity_y = -900.0F;
     float restitution = 0.86F;
 };

@@ -142,6 +142,8 @@ typedef struct mq_renderer_pbr_material {
     int32_t textures[5];
     float uv_scale[2];
     float uv_offset[2];
+    float clearcoat;
+    float clearcoat_roughness;
 } mq_renderer_pbr_material;
 
 typedef struct mq_renderer_draw3d {

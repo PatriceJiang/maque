@@ -386,3 +386,7 @@ per view:
 - **M5c ✅ 方向光阴影**：1024² Depth32Float shadow map；相机 uniform 640→720B（+light_vp/shadow_params）；
   阴影 pass 用同 shader 的 `vs_shadow`（group0 复用相机 BGL，纹理槽绑 1×1 深度占位避免同 pass 读写冲突）；
   shader 3×3 PCF（comparison sampler，`MAQUE_SHADOW` 开关）；`scenes/pbr/shadows.scn` + e2e ⑨（开/关像素差）。
+
+- **M5d ✅ 环境光按场景配置**：`scn.Scene.env_color/env_intensity` → frame3d env；默认值等于原硬编码（零回归）；
+  ToyCar 暖灰影棚环境。**M5e ✅ clearcoat**：`asset.PbrMaterial.clearcoat/clearcoat_roughness`
+  （同 KHR_materials_clearcoat 字段名），draw uniform 144B，shader 独立 F0=0.04 清漆窄高光。

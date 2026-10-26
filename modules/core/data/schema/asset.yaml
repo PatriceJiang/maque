@@ -237,6 +237,9 @@
         - { name: alpha_mode, type: PbrAlphaMode, default: "PbrAlphaMode::Opaque" }
         - { name: alpha_cutoff, type: float, default: 0.5F, attrs: { range: [0, 1] } }
         - { name: double_sided, type: bool, default: false }
+        # KHR_materials_clearcoat（清漆层）：factor=0 关闭；ToyCar 车漆即靠它出镜面感
+        - { name: clearcoat, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: clearcoat_roughness, type: float, default: 0.03F, attrs: { range: [0.0, 1] } }
         # 贴图用稳定 VFS 路径字符串（M3 节点组件形态；M4 的 .material.json 资产同样写路径）
         - { name: base_color_texture, type: string, default: "" }
         - { name: metallic_roughness_texture, type: string, default: "" }

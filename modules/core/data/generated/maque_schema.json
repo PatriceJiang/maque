@@ -2999,6 +2999,34 @@
           "attrs": {}
         },
         {
+          "name": "clearcoat",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "clearcoat_roughness",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
           "name": "base_color_texture",
           "type": "string",
           "kind": "string",
@@ -10760,6 +10788,24 @@
         },
         {
           "name": "eye_sep",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_color",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_intensity",
           "type": "float",
           "kind": "f32",
           "type_id": 0,

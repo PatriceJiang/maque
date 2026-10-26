@@ -25,7 +25,7 @@ namespace maque::gfx {
 static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32");
 static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
-static_assert(sizeof(mq_renderer_pbr_material) == 92, "mq_renderer_pbr_material 布局漂移（5 贴图槽）");
+static_assert(sizeof(mq_renderer_pbr_material) == 100, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat）");
 static_assert(sizeof(mq_renderer_environment) == 48, "mq_renderer_environment 布局漂移");
 static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
 static_assert(sizeof(mq_renderer_draw3d) == 96, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64）");
@@ -309,7 +309,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         {
             WGPUBindGroupLayoutEntry e[7] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 128;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 144;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
             e[1].texture.sampleType = WGPUTextureSampleType_Float;
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
@@ -1279,7 +1279,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
                 MeshGpu* m = dv->meshes[(size_t)d.mesh];
                 if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
-                float du[32] = {};
+                float du[36] = {};
                 std::memcpy(du, d.model, sizeof d.model);
                 WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
                 dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
@@ -1358,7 +1358,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
             MeshGpu* m = dv->meshes[(size_t)d.mesh];
             if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
-            float du[32] = {};
+            float du[36] = {};
             std::memcpy(du, d.model, sizeof d.model);              /* 0..15：模型矩阵 */
             const mq_renderer_pbr_material* mat =
                 (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
@@ -1374,10 +1374,13 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 du[28] = mat->alpha_cutoff;
                 du[29] = (float)mat->alpha_mode;
                 du[30] = (float)mat->flags;
+                du[32] = mat->clearcoat;
+                du[33] = mat->clearcoat_roughness;
             } else {
                 du[16] = du[17] = du[18] = du[19] = 1.0F;
                 du[25] = 0.6F; du[26] = 1.0F; du[27] = 1.0F;
                 du[28] = 0.5F; du[29] = 0.0F; du[30] = 0.0F;
+                du[32] = 0.0F; du[33] = 0.03F;
             }
             WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
             dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;

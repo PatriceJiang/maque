@@ -409,7 +409,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `mesh_gpu`：vertices: const void*, vertex_bytes: uint64_t, vertex_stride: uint32_t, vertex_layout: int32_t, indices: const uint32_t*, index_count: uint32_t, bounds_min: float[3], bounds_max: float[3]
 - `view3d`：view: float[16], proj: float[16], eye: float[3], viewport: float[4], exposure: float, clear_mode: int32_t, clear_color: float[4], layer_mask: int32_t
 - `light`：type: int32_t, pos: float[3], dir: float[3], color: float[3], intensity: float, range: float, inner_cos: float, outer_cos: float, flags: int32_t, shadow_slot: int32_t
-- `pbr_material`：base_color: float[4], emissive: float[3], metallic: float, roughness: float, normal_scale: float, occlusion_strength: float, alpha_cutoff: float, alpha_mode: int32_t, flags: int32_t, textures: int32_t[5], uv_scale: float[2], uv_offset: float[2]
+- `pbr_material`：base_color: float[4], emissive: float[3], metallic: float, roughness: float, normal_scale: float, occlusion_strength: float, alpha_cutoff: float, alpha_mode: int32_t, flags: int32_t, textures: int32_t[5], uv_scale: float[2], uv_offset: float[2], clearcoat: float, clearcoat_roughness: float
 - `draw3d`：mesh: int32_t, material: int32_t, model: float[16], submesh_first: int32_t, submesh_count: int32_t, flags: int32_t, layer: int32_t, sort_key: uint64_t
 - `environment`：sky_mode: int32_t, sky_color: float[4], sky_texture: int32_t, env_color: float[4], env_texture: int32_t, intensity: float
 - `post`：exposure: float, tonemap: int32_t

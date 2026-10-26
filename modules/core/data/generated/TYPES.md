@@ -557,6 +557,8 @@ role: `pbr_material`
 | `alpha_mode` | PbrAlphaMode | PbrAlphaMode::Opaque |  |
 | `alpha_cutoff` | float | 0.5F | range: 0,1 |
 | `double_sided` | bool | false |  |
+| `clearcoat` | float | 0.0F | range: 0,1 |
+| `clearcoat_roughness` | float | 0.03F | range: 0,1 |
 | `base_color_texture` | string |  |  |
 | `metallic_roughness_texture` | string |  |  |
 | `normal_texture` | string |  |  |
@@ -1932,6 +1934,8 @@ role: `particle_emitter`
 | `seed` | uint32_t | 0 |  |
 | `views` | int32_t | 1 |  |
 | `eye_sep` | float | 0.0F |  |
+| `env_color` | math.Color | {0.27F, 0.28F, 0.31F, 1.0F} |  |
+| `env_intensity` | float | 1.6F |  |
 | `gravity_y` | float | -900.0F |  |
 | `restitution` | float | 0.86F |  |
 

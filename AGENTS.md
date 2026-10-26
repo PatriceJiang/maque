@@ -131,6 +131,10 @@ tools\win\build.cmd -Sanitize address -RunTests
   （按路径缓存，失败缓存 -1）；为空回退内建 cube。样例 `scenes/pbr/imported.scn`（含地面）
   与导入资产 `scenes/pbr/assets/cube.mesh.json`；e2e ④ 校验「importer 输出 = 已入库资产」逐字节一致（漂移）
   + 断言网格加载成功（`mesh=-1` 视为失败）。
+  **环境光（M5d）**：`scn.Scene.env_color/env_intensity` 按场景配置影棚环境（默认值 = 引擎原硬编码，老场景零回归）；
+  ToyCar 用暖灰环境 + 车漆 clearcoat 出镜面感。
+  **清漆层（M5e）**：`asset.PbrMaterial.clearcoat/clearcoat_roughness`（KHR_materials_clearcoat 对齐）——
+  独立 F0=0.04 的窄高光（roughness 独立于底材），方向光逐灯叠加。
   **阴影（M5c）**：方向光 **1024² shadow map + 3×3 PCF**（`MAQUE_SHADOW=0` 可关闭用于对照）；
   shadow map 仅作深度附件、采样用独立 view（camera uniform 720B：+light_vp/shadow_params）。
   样例 `scenes/pbr/shadows.scn`，e2e ⑨ 用开/关同场景像素差断言。

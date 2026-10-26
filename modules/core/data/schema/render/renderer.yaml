@@ -150,6 +150,8 @@
         - { name: textures,           type: "int32_t[5]" } # base_color/mr/normal/occlusion/emissive
         - { name: uv_scale,           type: "float[2]" }
         - { name: uv_offset,          type: "float[2]" }
+        - { name: clearcoat,           type: float }     # KHR_materials_clearcoat factor
+        - { name: clearcoat_roughness, type: float }
     - record: draw3d
       fields:
         - { name: mesh,          type: int32_t }

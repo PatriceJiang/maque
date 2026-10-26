@@ -31,6 +31,7 @@ struct Draw {
   emissive: vec4f,
   mrp: vec4f,          // x=metallic y=roughness z=normal_scale w=occlusion
   alpha: vec4f,        // x=alpha_cutoff y=alpha_mode(0 opaque/1 mask/2 blend) z=flags(1=double_sided)
+  clearcoat: vec4f,    // x=clearcoat factor y=clearcoat roughness（KHR_materials_clearcoat）
 };
 @group(1) @binding(0) var<uniform> dr: Draw;
 /* 无 albedo 贴图时绑 1×1 白纹理（基色 × 1，不改变观感） */
@@ -191,7 +192,18 @@ struct VOut {
     if (li == 0) {
       shade = shadow_factor(in.w, ndl);
     }
-    color = color + (kdl * base / PI + sp) * L.color.rgb * ndl * atten * shade;
+    // 清漆层：F0=0.04 的窄高光（roughness 独立，ToyCar 车漆靠它出镜面感）
+    let cc_factor = clamp(dr.clearcoat.x, 0.0, 1.0);
+    var cc = vec3f(0.0);
+    if (cc_factor > 0.001) {
+      let cc_rough = clamp(dr.clearcoat.y, 0.02, 1.0);
+      let cc_f = fresnel_schlick(max(dot(hv, v), 0.0), vec3f(0.04));
+      let cc_d = distribution_ggx(ndh, cc_rough);
+      let cc_g = geometry_smith(n_dot_v, ndl, cc_rough);
+      let cc_spec = cc_d * cc_g * cc_f / (4.0 * n_dot_v * ndl + 1e-4);
+      cc = cc_factor * cc_spec;
+    }
+    color = color + (kdl * base / PI + sp + cc) * L.color.rgb * ndl * atten * shade;
   }
   // 环境项：常量漫反射 + 粗糙度相关的环境高光近似（无 IBL 时的廉价替代；
   // 半球渐变 ambient 会压平粗糙度对比，M5 接真 IBL 后再启用）
