@@ -100,6 +100,35 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 材质模型端到端（plans/19-threejs-materials.md）：three.js 材质族 → asset.PbrMaterial.shading_model。
+# ① material_models_e2e：9 个对象（Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/
+#    Depth；Shadow 无遮挡时透明，由 ② 的阴影地面覆盖）离屏截图 → 连通域聚类 + 场景 JSON 定位 →
+#    逐模型结构性断言 + 对照组（Basic 平坦 vs Lambert 渐变 vs Phong 高光 / Toon 分级 /
+#    Normal 彩色法线 / Matcap 冷色渐变 / Depth 灰度 / Standard+Physical 非空）。
+# ② material_shadow_e2e：同场景 MAQUE_SHADOW=1 与 =0 两张 → “开时变暗像素数”显著更多 +
+#    空间一致性（单连通块、集中在可见物体附近，防“整个 shadow 视锥误遮挡”复现）。
+# ③ material_physical_e2e：MAQUE_ORBIT 两角度 → Physical vs Standard 差异 + iridescence 视角偏色。
+# 场景由 scenes/pbr 并行产出：任一场景缺失时脚本自身 SKIP 77（不阻塞构建）。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME material_models_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/material_models_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/material_models.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/material_models_e2e")
+    set_tests_properties(material_models_e2e PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_test(NAME material_shadow_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/material_shadow_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/material_shadow.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/material_shadow_e2e")
+    set_tests_properties(material_shadow_e2e PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_test(NAME material_physical_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/material_physical_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/material_physical.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/material_physical_e2e")
+    set_tests_properties(material_physical_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # glTF 离线导入端到端（plans/18 方向 2 / M4b）：夹具 glTF → tools/gltf_import.py →
 # 结构/确定性/--name/错误路径断言（纯 Python，无需图形环境；无 python 时 SKIP 77）
 if(MAQUE_BUILD_TESTS)

@@ -1,0 +1,58 @@
+{
+  "title": "pbr_material_physical",
+  "width": 640,
+  "height": 360,
+  "views": 1,
+  "env_color": { "r": 0.3, "g": 0.34, "b": 0.42, "a": 1.0 },
+  "env_intensity": 0.8,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 1.05, "z": 5.6 },
+            "rotation": { "x": -0.1855, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.Camera3D", "fov_y": 45.0, "near": 0.1, "far": 100.0,
+          "clear_color": { "r": 0.05, "g": 0.055, "b": 0.075, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "rotation": { "x": -0.55, "y": -0.35, "z": 0.0 } } },
+        { "type": "render.Light", "intensity": 1.6,
+          "color": { "r": 1.0, "g": 0.97, "b": 0.92, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "sphere_standard",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -1.15, "y": 0.0, "z": 0.85 },
+            "scale": { "x": 1.1, "y": 1.1, "z": 1.1 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 0,
+          "base_color": { "r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0 },
+          "metallic": 0.0, "roughness": 0.4 }
+      ]
+    },
+    {
+      "name": "sphere_physical",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 1.15, "y": 0.0, "z": -0.85 },
+            "scale": { "x": 1.1, "y": 1.1, "z": 1.1 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 1,
+          "base_color": { "r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0 },
+          "metallic": 0.0, "roughness": 0.4,
+          "clearcoat": 1.0, "clearcoat_roughness": 0.03,
+          "sheen": 0.8, "sheen_roughness": 0.3,
+          "sheen_color": { "x": 0.2, "y": 0.35, "z": 1.0 },
+          "iridescence": 1.0, "iridescence_ior": 1.3,
+          "iridescence_thickness_min": 100.0, "iridescence_thickness_max": 400.0 }
+      ]
+    }
+  ]
+}

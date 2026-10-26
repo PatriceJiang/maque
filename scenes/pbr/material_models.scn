@@ -1,0 +1,142 @@
+{
+  "title": "pbr_material_models",
+  "width": 640,
+  "height": 360,
+  "views": 1,
+  "env_color": { "r": 0.24, "g": 0.26, "b": 0.32, "a": 1.0 },
+  "env_intensity": 1.0,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 6.3 } } },
+        { "type": "render.Camera3D", "fov_y": 55.0, "near": 0.1, "far": 100.0,
+          "clear_color": { "r": 0.42, "g": 0.43, "b": 0.47, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "rotation": { "x": -0.6, "y": -0.4, "z": 0.0 } } },
+        { "type": "render.Light", "intensity": 2.2,
+          "color": { "r": 1.0, "g": 0.97, "b": 0.92, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "m0_standard",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -4.8, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 0,
+          "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 },
+          "metallic": 0.15, "roughness": 0.5 }
+      ]
+    },
+    {
+      "name": "m1_physical",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -3.6, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 1,
+          "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 },
+          "metallic": 0.15, "roughness": 0.5,
+          "clearcoat": 1.0, "clearcoat_roughness": 0.05,
+          "sheen": 1.0, "sheen_roughness": 0.35,
+          "sheen_color": { "x": 0.25, "y": 0.45, "z": 1.0 },
+          "iridescence": 1.0, "iridescence_ior": 1.3,
+          "iridescence_thickness_min": 100.0, "iridescence_thickness_max": 400.0 }
+      ]
+    },
+    {
+      "name": "m2_basic",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -2.4, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 2,
+          "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "m3_lambert",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -1.2, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 3,
+          "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 },
+          "metallic": 0.15, "roughness": 0.5 }
+      ]
+    },
+    {
+      "name": "m4_phong",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 4,
+          "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 },
+          "metallic": 0.15, "roughness": 0.5,
+          "specular": { "x": 1.0, "y": 1.0, "z": 1.0 },
+          "specular_intensity": 1.0, "shininess": 60.0 }
+      ]
+    },
+    {
+      "name": "m5_toon",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 1.2, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 5,
+          "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 },
+          "metallic": 0.15, "roughness": 0.5,
+          "toon_steps": 4, "gradient_texture": "builtin:/textures/toon_ramp" }
+      ]
+    },
+    {
+      "name": "m6_normal",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 2.4, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 6,
+          "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "m7_matcap",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 3.6, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 7,
+          "base_color": { "r": 0.88, "g": 0.92, "b": 1.0, "a": 1.0 },
+          "matcap_texture": "builtin:/textures/matcap_studio" }
+      ]
+    },
+    {
+      "name": "m8_depth",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 4.8, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/sphere.mesh.json" },
+        { "type": "asset.PbrMaterial", "shading_model": 8,
+          "base_color": { "r": 0.878, "g": 0.627, "b": 0.251, "a": 1.0 },
+          "depth_packing": 0 }
+      ]
+    }
+  ]
+}

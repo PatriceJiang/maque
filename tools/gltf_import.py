@@ -11,6 +11,8 @@
   · 只接受三角网格（mode=4/缺省）；其它 mode 跳过并告警（确定性：按 primitive 顺序）
   · 输出 JSON 排序键 + 固定缩进 → 同一 glTF 导入结果逐字节一致
   · 不做图像编解码：PNG 直接搬运；JPEG 贴图跳过（M5 接 image 解码器）
+  · 材质扩展：KHR_materials_{unlit,clearcoat,sheen,iridescence,specular,ior,anisotropy,
+    emissive_strength} → asset.PbrMaterial（只写非默认值，无扩展材质输出零漂移）
 用法：
   python tools/gltf_import.py scene.gltf --out assets/imported
   python tools/gltf_import.py model.glb --out assets/imported --name hero
@@ -30,6 +32,9 @@ COMPONENT = {5120: ("b", 1), 5121: ("B", 1), 5122: ("h", 2),
              5123: ("H", 2), 5125: ("I", 4), 5126: ("f", 4)}
 NCOMP = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT4": 16}
 MODE_TRIANGLES = 4
+# 会映射为 MaterialShadingModel::Physical 的 KHR 扩展（unlit 单独映射为 Basic）。
+PHYSICAL_EXTS = ("KHR_materials_clearcoat", "KHR_materials_sheen", "KHR_materials_iridescence",
+                 "KHR_materials_specular", "KHR_materials_ior", "KHR_materials_anisotropy")
 
 
 def load_gltf(path: str):
@@ -131,6 +136,51 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
     alpha_mode = mat.get("alphaMode", "OPAQUE")
     m["alpha_mode"] = {"OPAQUE": 0, "MASK": 1, "BLEND": 2}.get(alpha_mode, 0)
     m["alpha_cutoff"] = float(mat.get("alphaCutoff", 0.5))
+    # KHR 材质扩展 → asset.PbrMaterial 字段（plans/19 材质迁移）。缺省值 = schema 默认；
+    # 只写"非默认"值 → 无扩展/全默认材质输出与迁移前逐字节一致（已入库 cube 零漂移）。
+    exts = mat.get("extensions") or {}
+
+    def put_num(field, value, default):
+        if float(value) != float(default):
+            m[field] = float(value)
+
+    def put_vec3(field, value, default):
+        v = [float(x) for x in value]
+        if v != [float(x) for x in default]:
+            m[field] = {"x": v[0], "y": v[1], "z": v[2]}
+
+    if "KHR_materials_unlit" in exts:
+        m["shading_model"] = 2  # MaterialShadingModel::Basic
+    elif any(k in exts for k in PHYSICAL_EXTS):
+        m["shading_model"] = 1  # MaterialShadingModel::Physical
+    if "KHR_materials_clearcoat" in exts:
+        cc = exts["KHR_materials_clearcoat"] or {}
+        put_num("clearcoat", cc.get("clearcoatFactor", 0.0), 0.0)
+        put_num("clearcoat_roughness", cc.get("clearcoatRoughnessFactor", 0.0), 0.03)
+    if "KHR_materials_sheen" in exts:
+        sh = exts["KHR_materials_sheen"] or {}
+        m["sheen"] = 1.0  # glTF 无 sheen 开关：扩展存在即视为开启（近似）
+        put_vec3("sheen_color", sh.get("sheenColorFactor", [0.0, 0.0, 0.0]), [0.0, 0.0, 0.0])
+        put_num("sheen_roughness", sh.get("sheenRoughnessFactor", 0.0), 0.5)
+    if "KHR_materials_iridescence" in exts:
+        ir = exts["KHR_materials_iridescence"] or {}
+        put_num("iridescence", ir.get("iridescenceFactor", 0.0), 0.0)
+        put_num("iridescence_ior", ir.get("iridescenceIor", 1.3), 1.3)
+        put_num("iridescence_thickness_min", ir.get("iridescenceThicknessMinimum", 100.0), 100.0)
+        put_num("iridescence_thickness_max", ir.get("iridescenceThicknessMaximum", 400.0), 400.0)
+    if "KHR_materials_specular" in exts:
+        sp = exts["KHR_materials_specular"] or {}
+        put_num("specular_intensity", sp.get("specularFactor", 1.0), 1.0)
+        put_vec3("specular", sp.get("specularColorFactor", [1.0, 1.0, 1.0]), [1.0, 1.0, 1.0])
+    if "KHR_materials_ior" in exts:
+        put_num("ior", (exts["KHR_materials_ior"] or {}).get("ior", 1.5), 1.5)
+    if "KHR_materials_anisotropy" in exts:
+        an = exts["KHR_materials_anisotropy"] or {}
+        put_num("anisotropy", an.get("anisotropyStrength", 0.0), 0.0)
+        put_num("anisotropy_rotation", an.get("anisotropyRotation", 0.0), 0.0)
+    if "KHR_materials_emissive_strength" in exts:
+        put_num("emissive_intensity",
+                (exts["KHR_materials_emissive_strength"] or {}).get("emissiveStrength", 1.0), 1.0)
     # 贴图槽：glTF 的 texture index → image uri 或 bufferView（PNG 搬运）
     def tex_slot(tinfo):
         if not tinfo:
@@ -178,6 +228,14 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
     slot = tex_slot(mat.get("emissiveTexture"))
     if slot:
         m["emissive_texture"] = slot
+    # clearcoat 法线贴图：引擎有独立槽（clearcoat_normal_texture + scale）；clearcoatTexture /
+    # clearcoatRoughnessTexture 无对应槽，忽略（与迁移前一致，不搬运其 PNG）。
+    if "KHR_materials_clearcoat" in exts:
+        cn = (exts["KHR_materials_clearcoat"] or {}).get("clearcoatNormalTexture")
+        slot = tex_slot(cn)
+        if slot:
+            m["clearcoat_normal_texture"] = slot
+            put_num("clearcoat_normal_scale", cn.get("scale", 1.0), 1.0)
     return m
 
 

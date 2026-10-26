@@ -1,0 +1,212 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "maque-test-fixture"
+  },
+  "extensionsUsed": [
+    "KHR_materials_unlit",
+    "KHR_materials_clearcoat",
+    "KHR_materials_sheen",
+    "KHR_materials_iridescence",
+    "KHR_materials_specular",
+    "KHR_materials_ior",
+    "KHR_materials_anisotropy",
+    "KHR_materials_emissive_strength"
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "physical"
+    },
+    {
+      "mesh": 1,
+      "name": "unlit"
+    }
+  ],
+  "meshes": [
+    {
+      "name": "physical",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "unlit",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "physical",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8,
+          0.6,
+          0.2,
+          1.0
+        ],
+        "metallicFactor": 0.75,
+        "roughnessFactor": 0.25
+      },
+      "emissiveFactor": [
+        0.1,
+        0.2,
+        0.3
+      ],
+      "doubleSided": true,
+      "alphaMode": "OPAQUE",
+      "extensions": {
+        "KHR_materials_clearcoat": {
+          "clearcoatFactor": 0.8,
+          "clearcoatRoughnessFactor": 0.12,
+          "clearcoatNormalTexture": {
+            "index": 0,
+            "scale": 0.7
+          }
+        },
+        "KHR_materials_sheen": {
+          "sheenColorFactor": [
+            0.2,
+            0.4,
+            0.9
+          ],
+          "sheenRoughnessFactor": 0.25
+        },
+        "KHR_materials_iridescence": {
+          "iridescenceFactor": 0.6,
+          "iridescenceIor": 1.4,
+          "iridescenceThicknessMinimum": 150.0,
+          "iridescenceThicknessMaximum": 500.0
+        },
+        "KHR_materials_specular": {
+          "specularFactor": 0.7,
+          "specularColorFactor": [
+            0.9,
+            0.95,
+            1.0
+          ]
+        },
+        "KHR_materials_ior": {
+          "ior": 1.7
+        },
+        "KHR_materials_anisotropy": {
+          "anisotropyStrength": 0.45,
+          "anisotropyRotation": 1.2
+        },
+        "KHR_materials_emissive_strength": {
+          "emissiveStrength": 3.5
+        }
+      }
+    },
+    {
+      "name": "unlit",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.1,
+          0.9,
+          0.5,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0
+      },
+      "extensions": {
+        "KHR_materials_unlit": {}
+      }
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/png",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 3,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72,
+      "byteLength": 24
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 96,
+      "byteLength": 6
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 104,
+      "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAABAAIAAAA="
+    }
+  ]
+}
