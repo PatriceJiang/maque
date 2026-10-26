@@ -316,8 +316,8 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 | 材质 | `pbrMetallicRoughness`（baseColor/metallic/roughness）+ emissive + `alphaMode/alphaCutoff` + `doubleSided→side`（true=2 双面/false=0 单面剔除） |
 | KHR factor | unlit→`shading_model=2`(Basic)；clearcoat/sheen/iridescence/specular/ior/anisotropy → `shading_model=1`(Physical) + 对应因子；emissive_strength→`emissive_intensity`；normalTexture.scale→`normal_scale(+_y)`；occlusionTexture.strength→`occlusion_strength` |
 | KHR 贴图 | 基础 5 槽 + `clearcoatNormalTexture` + **7 个扩展贴图槽**（clearcoatTexture / clearcoatRoughnessTexture / sheenColorTexture / sheenRoughnessTexture / iridescenceTexture / iridescenceThicknessTexture / anisotropyTexture，尾部追加 ABI `textures3[7]` + schema 路径字段）；**specularTexture/specularColorTexture 仍未接入** |
-| KHR_texture_transform | `scale/offset` → `uv_*`（基础贴图）与 `normal_uv_*`（法线）；**rotation 忽略并 warning**；MR/AO/emissive 强制共用基础组 |
-| 场景 | `--scene`：每个 `(node, primitive)` 一个**平级实体**，世界变换**烘焙**进 `local` TRS；自动相机（包围盒 8 角点视锥拟合，§6.2）+ 一盏太阳（**模型自带 `KHR_lights_punctual` 时改为导入 1~8 盏 Light、不再加太阳**）；`KHR_node_visibility.visible=false` 的节点及子树跳过；`EXT_mesh_gpu_instancing` 仍未展开；背景 `clear_color=(0.13,0.13,0.14)`；忽略 glTF 相机、无地面、不写 `env_*` |
+| KHR_texture_transform | `scale/offset/rotation` → `uv_*` + `uv_rotation`（基础贴图组）与 `normal_uv_*` + `normal_uv_rotation`（法线组）；shader 按 glTF 的 T·R·S 顺序作用（rotation 角由 gfx 打包装进 Draw 的 specular.w/sheen_color.w）；逐贴图独立 transform 仍部分近似（MR/AO/emissive 共用基础组） |
+| 场景 | `--scene`：每个 `(node, primitive)` 一个**平级实体**，世界变换**烘焙**进 `local` TRS；`EXT_mesh_gpu_instancing` 在导入期展开为多实体（实例 TRS = node 世界 × 实例 TRS）；自动相机（包围盒 8 角点视锥拟合，§6.2）+ 一盏太阳（**模型自带 `KHR_lights_punctual` 时改为导入 1~8 盏 Light、不再加太阳**）；`KHR_node_visibility.visible=false` 的节点及子树跳过；背景 `clear_color=(0.13,0.13,0.14)`；忽略 glTF 相机、无地面、不写 `env_*` |
 | 确定性 | mesh JSON 排序键 + 固定缩进；**`--compact` 额外做 6 位小数舍入 + 紧凑分隔符**；同一输入两次导入逐字节一致 |
 
 输出 `<out>/assets/*.mesh.json` 的字段：`name/vertex_stride=48/vertex_layout=0/vertices/indices/bounds_min/bounds_max/materials`；
@@ -448,12 +448,12 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | 上述扩展的**贴图槽** | ✅ 已支持 7 槽：clearcoat(R)/clearcoat roughness(G)/sheen color(RGB,sRGB)/sheen roughness(A)/iridescence(R)/iridescence thickness(G)/anisotropy(B)；缺失槽绑 white 且由 flags2 presence 位关闭 | specularTexture/specularColorTexture 仍丢弃；扩展贴图暂共用基础 `uv_scale/uv_offset` 与 TEXCOORD_0 | specular 贴图列入 §11
 | `KHR_materials_emissive_strength` | ✅ → `emissive_intensity`（5 个模型） | — | — |
 | `KHR_materials_transmission`（**33 个模型 / 124 处**） | ⚠️ **近似为 alpha BLEND**：`alpha_mode=2` + `opacity=clamp(1-0.85·factor, 0.15, 1)`，可透见背景；无折射/厚度/吸收 | 玻璃类从"不透明"变为"可透视"，观感接近参考；无真实折射畸变与衰减 | 根治需 backbuffer 折射 pass + volume；BLEND 物体**不再投影**（阴影 pass 跳过 caster） |
-| `KHR_materials_volume`（**25**）/ `dispersion`（4）/ `volume_scatter`（1） | ❌（transmission 近似里不含体积项） | 体积吸收/散射/色散缺失 | 后续接 transmission pass 时一起做 |
-| `KHR_materials_diffuse_transmission`（**6**） | ❌ | 乳浊/半透材质（植物叶、瓷器）缺失 | 同上 |
+| `KHR_materials_volume`（**25**）/ `dispersion`（4）/ `volume_scatter`（1） | ⚠️ 体积**近似为薄壁色调**：`base_color ×= attenuationColor`（有限 attenuationDistance 时）；dispersion/volume_scatter 未实现 | 琥珀/有色玻璃有色调，但无厚度依赖吸收/色散 | 完整版需 refraction+thickness pass（P1 剩余） |
+| `KHR_materials_diffuse_transmission`（**6**） | ⚠️ 近似为 alpha BLEND（`opacity=clamp(1-0.7f,0.25,1)`） | 叶片/瓷器呈半透观感，但无散射/厚度 | 完整版同 transmission pass |
 | `KHR_materials_variants`（**7**） | ❌ 只用默认材质 | 变体切换不生效 | 静态迁移可接受 |
 | `KHR_materials_pbrSpecularGlossiness`（旧扩展，1） | ❌ | 极少数旧资产材质退化 | 优先切 MR 变体 |
 | `KHR_materials_retroreflection`（1） | ❌ | 反光材料（交通标志类）缺失 | 记录 gap |
-| `KHR_texture_transform`（**14 个模型**） | ⚠️ 只支持 `scale/offset`（基础贴图 + 法线两组）；**rotation 忽略**，逐槽独立 transform 不精确 | 平铺/偏移正确，旋转 UV 错；MR/AO/emissive 共用基础组可能错 | ToyCar 布纹已靠 scale 修复；rotation 需引擎 UV 变换加旋转项 |
+| `KHR_texture_transform`（**14 个模型**） | ✅ `scale/offset/rotation` 已支持（基础组 + 法线组）；逐贴图独立 transform 仍部分近似（MR/AO/emissive/扩展贴图共用基础组） | 平铺/偏移/旋转正确；个别模型逐槽差异仍在 | 剩余为低优先级逐槽矩阵 |
 | glTF 默认材质语义 | ⚠️ importer/runtime 默认值与 glTF 规范略有差异 | 无材质 primitive 呈"灰塑料" | 已登记；不阻塞 |
 
 ### 5.4 场景 / 动画 / 灯光
@@ -461,7 +461,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | 特性 | 现状 | 影响 | 规避/后续 |
 |---|---|---|---|
 | 节点层级 | ⚠️ `--scene` **烘焙为平级实体**（世界变换写入 local）；`KHR_node_visibility`（3 个模型）✅ 隐藏节点/子树已跳过 | 静态可接受；丢失父子关系/脚本按层操控 | 后续保留节点树 + 逐节点 TRS |
-| `EXT_mesh_gpu_instancing`（1 个模型） | ❌ 不展开实例（已登记 gap） | 该模型只显示 1 份实例 | 后续按 node 展开 |
+| `EXT_mesh_gpu_instancing`（1 个模型） | ✅ 导入期展开实例（SimpleInstancing 125 实例；上限 4096，超出 warning 截断） | 几何正确；非 GPU 实例化（每个实例一个实体/draw） | 大实例数资产可后续做 GPU 实例化 |
 | glTF 自带相机（`cameras`/`node.camera`，**13 个模型 / 38 个相机**） | ⚠️ 忽略（仍用自动机位），但**支持手动机位覆盖**（`MANUAL_CAMERA`，如 Sponza 室内）与 importer `--camera-position/--camera-target/--camera-fov/--camera-distance-scale` | 官方参考常用自带机位 → 构图差异由手调弥补 | 后续可优先用 glTF 相机（§11） |
 | `KHR_lights_punctual`（**12 个模型**） | ✅ 导入为 `render.Light`（directional/point/spot，≤8 盏、方向光优先；spot 内/外锥角、range 保留）；强度为**观感归一化**（directional=2.6×intensity；point/spot 按模型尺度换算，非 cd/lux 物理值）；有灯光时不再追加默认太阳 | 自带布光能还原主体明暗/彩色灯；与官方离线渲染的精确强度/软阴影仍有差异 | 手调 `.scn` 可改 Light 因子；后续接物理单位换算/光追阴影 |
 | `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
@@ -707,7 +707,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 整体偏暗/偏亮 | 无 HDRI（analytic IBL 偏弱）、背景深色、参考图曝光不同 | 判为缺失特性；可手调 `env_*`/`clear_color` 后再比 |
 | 高光/反射平淡，金属像塑料 | 无 HDRI/PMREM、无 MSAA；扩展贴图槽已接（clearcoat/sheen/iridescence/anisotropy） | 缺失特性，记录；后续 HDRI |
 | 玻璃发白/不透/内部不可见 | `KHR_materials_transmission` 未实现 | 缺失特性；GLB 变体无帮助；手调 alpha BLEND 近似 |
-| 布料/车漆纹理"巨大/重复方向错" | `KHR_texture_transform` rotation 忽略 / 逐槽 UV 不同 / UV 集缺失 | 记录；已支持 scale/offset（ToyCar 已修） |
+| 布料/车漆纹理"巨大/重复方向错" | `KHR_texture_transform` 逐槽 UV 不同 / UV 集缺失 | 记录；scale/offset/rotation 已支持（ToyCar 已修） |
 | 某张贴图完全没出现 | KTX2/WebP 贴图被跳过、贴图槽不支持、`TEXCOORD_1` 贴错 | 看 `textures/` 是否缺图、README「已知差距」 |
 | 角色姿势与参考不同 | 动画/骨骼/morph 未导入（T-pose/bind pose） | 缺失特性，README 标注"静态迁移" |
 | 参考图是动画帧 | 同上 | 同上 |
@@ -816,6 +816,9 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | **`KHR_lights_punctual` 被忽略** | 12 个模型自带灯不还原（DirectionalLight/LightsPunctualLamp 等） | importer 把灯节点转成 `render.Light`（≤8、方向光优先、spot 锥角/range、强度观感归一化、无灯才加太阳） |
 | **`KHR_node_visibility` 未实现** | 可见性测试模型隐藏节点仍渲染/叠影 | importer 跳过 `visible=false` 节点及整棵子树（网格+灯光） |
 | **e2e grep 中文日志在 Windows 失败** | `gltf_import_e2e` 新加的灯光告警断言 `grep "KHR_lights_punctual 共 9 盏 > 8"` 失败：Python 重定向 stderr 用 locale(GBK) 编码，脚本里的 UTF-8 中文 pattern 匹配不上 | e2e 脚本前部 `export PYTHONIOENCODING=utf-8`；告警断言改 ASCII 正则 `grep -Eq "KHR_lights_punctual.*> 8"`；CI/Windows 上任何"中文日志 grep"都要注意编码 |
+| **`KHR_texture_transform.rotation` 忽略** | 14 个模型的旋转 UV 错（面料/车漆纹理方向） | importer 导出 `uv_rotation`/`normal_uv_rotation`（弧度）；shader 按 T·R·S 旋转 UV（旋转角复用 Draw 的 specular.w/sheen_color.w，避免扩 uniform） |
+| **`EXT_mesh_gpu_instancing` 不展开** | SimpleInstancing 只显示 1 份实例 | importer 在场景生成期按实例 TRS 展开为多实体（上限 4096） |
+| **volume/diffuse_transmission 无观感** | 有色玻璃/乳浊材质与参考差异大 | volume：`base_color ×= attenuationColor`；diffuse transmission：alpha BLEND 近似（阈值/常量见 importer 注释） |
 
 ---
 
@@ -850,7 +853,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 贴图缺失（README 有 gap） | `textures/` 是否有该图；`issues` 是否提"跳过不支持的贴图"；源变体是否 KTX2（WebP 已支持转码，需 Pillow） | 换 `glTF/` 主变体；无法根治的记 gap |
 | 贴图存在但没生效 | `.scn` 材质字段名/路径拼写；路径必须相对场景目录；文件是否真 PNG/JPEG | 修 scn 字段/路径 |
 | 颜色偏暗/偏亮 | 手写贴图槽是否把 MR/AO/normal 放到 sRGB 槽；`env_intensity`/曝光 | 按运行时约定放槽 |
-| 面料/车漆纹理巨大 | `KHR_texture_transform.rotation` 不支持 / `uv_scale` 未导入 | 检查 `uv_scale/uv_offset` 字段是否有值 |
+| 面料/车漆纹理巨大 | `uv_scale/uv_offset/uv_rotation` 字段缺失/为默认 | 检查 `.scn` 材质三字段；rotation 走 `uv_rotation` |
 | 双面材质背面变黑 | 手写 scn 没写 `side=2`，或 `doubleSided` 语义未落到 `side` | 显式 `"side": 2` |
 | 法线细节"反了" | 审计已修切线基；若手写材质把 normal 槽指到错误贴图 | 检查 `normal_texture` 指向 |
 
@@ -909,14 +912,14 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 
 ### 10.2 本批迁移结果（`manifest.json` 汇总）
 
-**数据快照**：2026-10-26 第 9 轮（扩展材质贴图槽 + KHR_lights_punctual + node_visibility 导入后整批重新导入+渲染，见 `build-win/audit/batch5-exttex-lights.log`，整批 **506.5s ≈ 8.4 min**）。
+**数据快照**：2026-10-26 第 10 轮（texture_transform.rotation + EXT_mesh_gpu_instancing + diffuse/volume 近似后整批重新导入+渲染，见 `build-win/audit/batch6-round3.log`，整批 **544.3s ≈ 9.1 min**）。
 `scenes/khronos/manifest.json` 的 `total_seconds` 只是最后一次写 manifest 的耗时（不含全部渲染）——**真实批量耗时看批量日志**。
 
 | 项 | 值 |
 |---|---|
 | 处理模型 | **148**（149 − 手调 `ToyCar`） |
 | 成功 `ok` | **148（100%）**；`blocked` **0**；`failed` **0** |
-| 整批耗时 | **506.5s**（单模型含导入+渲染+对比+笔记；平均 3.4s） |
+| 整批耗时 | **544.3s**（单模型含导入+渲染+对比+笔记；平均 3.7s） |
 | 最慢模型（墙钟） | `NodePerformanceTest` 74.3s、`ABeautifulGame` 31.4s、`MetalRoughSpheresNoTextures` 22.1s、`IridescenceMetallicSpheres` 18.9s、`Sponza` 15.2s、`CarConcept` 8.0s |
 | 派生资产（本地、不入库） | `out_size_bytes` 合计 **974.1 MB**（第 9 轮重新导入；含 WebP 转码/去重贴图、布局 v1 顶点与扩展贴图）；文件系统实测约 1.0 GB |
 | 入库部分 | **18.4 MB**（`.scn` 15.5 + `preview.jpg` 2.3 + `README.md` 0.5 + `compare.json` 0.1）+ `manifest.json`/总索引 0.4 MB |
@@ -924,8 +927,8 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 参考图口径 | 149 个模型目录都有 `screenshot/`；**148/148 全部生成对比**；其中 **86 个模型使用 large 版参考图**、**13 个模型的参考图是 `.gif`**（PIL 取第一帧）。判读原则：对照参考图前先确认它对应主变体；若是动画帧/过程图，只作参考、不作姿势结论（以该模型 README 为准） |
 | 渲染异常自动检测 | **0**（无 `cams=0` / `meshes=0` / `mesh=-1` / `[wgpu] error`） |
 | 构图告警 | 3 个：`AntiqueCamera`、`StainedGlassLamp`（细长/异形导致覆盖率偏低，属指标误报）、`Sponza`（手动机位为内部视角，前景占比自然偏低/部分贴边；人工确认构图与官方参考一致）。`CesiumMilkTruck` 翻倒/裁剪已由万向锁修复解决 |
-| 自动对比初判（148 个） | 39 × "主体亮度/色调较接近"、40 × "中等差异"、69 × "差异较大"（"差异较大"主要来自缺失特性/机位/背景，需人工归因，**不是失败**） |
-| 对比指标中位数 | `hist_similarity` 0.433（min 0.004 / max 0.981）、`mean_lum_delta` +0.086、`rgb_delta` 0.117、`preview_coverage` 0.166（min 0.043 / max 0.701）、`coverage_ratio` 0.289 |
+| 自动对比初判（148 个） | 38 × "主体亮度/色调较接近"、43 × "中等差异"、67 × "差异较大"（"差异较大"主要来自缺失特性/机位/背景，需人工归因，**不是失败**） |
+| 对比指标中位数 | `hist_similarity` 0.436（min 0.004 / max 0.981）、`mean_lum_delta` +0.078、`rgb_delta` 0.119、`preview_coverage` 0.166（min 0.043 / max 0.701）、`coverage_ratio` 0.289 |
 
 > 迭代记录：**BATCH1** 147 ok / 1 failed（`Box With Spaces`：`image.uri` 百分号编码未解码）→ **BATCH2** 148 ok / 0 failed
 > → 第 6 轮补 `.gif` 参考图/前景掩码口径 → **第 7 轮** 由 QA/视觉复核驱动修复并重导 13 个模型：
@@ -935,10 +938,14 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > **第 8 轮** 按迁移报告修复引擎/导入器特性：顶点布局 v1（`COLOR_0`+`TEXCOORD_1`）、glTF sampler
 > wrap/filter、unlit 去 ACES、transmission 近似 alpha BLEND（+BLEND 不投影、`vs_shadow1` 支持布局 v1 镂空投影）、
 > Sponza 手动机位；整批重导+重渲 148 模型。数据用最终第 8 轮。
-> **第 9 轮（本快照）** 继续补 P1：KHR 扩展材质贴图槽（clearcoat/roughness/sheen/sheen roughness/iridescence/
+> **第 9 轮** 继续补 P1：KHR 扩展材质贴图槽（clearcoat/roughness/sheen/sheen roughness/iridescence/
 > iridescence thickness/anisotropy 共 7 槽，ABI `textures3[7]` + shader 通道语义）、`KHR_lights_punctual`
 > 导入为 Light（≤8 盏、强度观感归一化）、`KHR_node_visibility` 隐藏节点跳过；14 个灯光/可见性场景与
 > 15 个扩展贴图模型预览更新。数据用最终第 9 轮。
+> **第 10 轮（本快照）** 补最后一批可定位导入缺陷：`KHR_texture_transform.rotation`（基础组/法线组，
+> 按 T·R·S 旋转 UV）、`EXT_mesh_gpu_instancing`（导入期展开实例，SimpleInstancing 125 实体）、
+> `KHR_materials_diffuse_transmission`（alpha BLEND 近似）、`KHR_materials_volume`（薄壁 attenuationColor
+> 色调近似）；21 个模型预览更新。数据用最终第 10 轮。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -948,9 +955,9 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 |---|---|---|
 | `KHR_materials_transmission` **近似** alpha BLEND | **32** | 玻璃可透视，但无折射/厚度/吸收（P1 剩余） |
 | 动画未导入（静态渲染/T-pose） | **26** | 角色/演示动画模型（P2 大项） |
-| `KHR_materials_volume` / dispersion / volume_scatter | **25** | 体积吸收/散射（P1 剩余） |
+| `KHR_materials_volume`（近似薄壁色调）/ dispersion / volume_scatter | **25** | 有色玻璃有色调；无厚度吸收/散射/色散（P1 剩余） |
 | `alphaMode=MASK/BLEND 已支持（物体级排序）` | 16 | 信息性 gap（不是阻塞） |
-| `KHR_texture_transform` rotation/逐槽缺失 | **14** | 平铺/偏移已支持 |
+| `KHR_texture_transform` 已支持 scale/offset/rotation | **14** | 信息性 gap：逐贴图独立 transform 仍部分近似 |
 | 未使用 glTF 自带相机 | **13** | 构图差异的主因之一（Sponza 已手动机位） |
 | `KHR_lights_punctual` 已导入为 Light | **12** | 信息性 gap：自带灯已生效，强度为观感归一化 |
 | `KHR_materials_clearcoat` 贴图已导入（BRDF 近似） | **12** | 清漆贴图已接（P3 仅剩精确 BRDF） |
@@ -960,12 +967,12 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | `KHR_materials_anisotropy` 近似 | **7** | 强度/贴图已接；各向异性 BRDF 近似 |
 | 骨骼蒙皮未应用 | **7** | 静态 bind/T-pose（P2 大项） |
 | `KHR_materials_variants` 只用默认 | **7** | 变体切换不生效 |
-| `KHR_materials_diffuse_transmission` 未实现 | **6** | 乳浊/半透材质 |
+| `KHR_materials_diffuse_transmission` 近似 alpha BLEND | **6** | 乳浊/半透观感，无散射/厚度 |
 | `KHR_animation_pointer` 动画未导入 | **5** | 指针动画（P2 大项） |
 | morph targets 未应用 | **4** | 默认权重不生效（P2 大项） |
 | `KHR_node_visibility` 已支持 | **3** | 信息性 gap：隐藏节点已跳过 |
 | 非三角 primitive 被跳过 | **2** | 线/点装饰缺失 |
-| `EXT_mesh_gpu_instancing` / quantization / meshopt / WebP | 各 1 | 个别模型（见 §5） |
+| `EXT_mesh_gpu_instancing` 已导入展开 / quantization / meshopt / WebP | 各 1 | 个别模型（见 §5；instancing 为 CPU 展开，非 GPU 实例化） |
 
 > **blocked 为 0** 的原因：所有 149 个模型的 `glTF/` 主变体都**没有** `extensionsRequired` 含 Draco/KTX2/WebP；
 > 压缩变体只存在于 `glTF-Draco/` 等目录（迁移不取）。
@@ -1073,12 +1080,12 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 |---|---|---|---|
 | P1 | **HDRI/PMREM IBL**（或更精确的 studio 环境） | 几乎全部模型的观感差距最大单一因素 | 需 image 模块解 HDR + 环境预滤波；替代 analytic studio IBL |
 | P3 | **specularTexture/specularColorTexture**（其余扩展贴图槽已接） | specular 10 个模型中的贴图子集 | 同 textures3 路径再补 2 槽（受 WebGPU 每 stage 16 sampled texture 上限约束，需先腾槽） |
-| P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | 近似 alpha BLEND 已让玻璃可透视；完整版需 backbuffer 折射 pass + 厚度/吸收模型 |
+| P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | 现有近似：alpha BLEND + volume 薄壁色调 + diffuse BLEND；完整版需 backbuffer 折射 pass + 厚度/吸收/散射模型 |
 | P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 需要动画运行时 + skinning + morph；属独立大项（`plans/12`），迁移可先静态 |
 | P2 | **Draco / KTX2 / meshopt 解码** | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | 第三方解码依赖；当前用 `glTF/` 主变体规避，仅当只有压缩变体时 blocked |
 | P2 | **glTF 自带相机** | 相机 13 个模型 / 38 个 | `--scene` 可选 `--use-gltf-camera`（当前手动机位表 + 自动机位） |
-| P2 | **`KHR_texture_transform.rotation` / `TEXCOORD_2+`** | texture_transform 14 个模型；TEXCOORD_2 1 个 primitive | UV 变换加旋转项；+ 更高 UV 集（ABI 低优先级） |
-| P3 | **`EXT_mesh_gpu_instancing`** | instancing 1 个模型 | 导入期按 node 展开多实例 |
+| P3 | **`TEXCOORD_2+` / 逐贴图独立 UV transform** | TEXCOORD_2 1 个 primitive；14 个 texture_transform 模型中少数逐槽不同 | 更高 UV 集/逐槽矩阵（ABI 低优先级） |
+| P3 | **GPU 实例化** | 大实例数资产（当前 CPU 展开，每实例一个 draw） | renderer 加 instance buffer + drawIndexedInstanced |
 | P2 | **ACES 曲线是否切 three.js RRT/ODT** | 全部（与参考图的系统性色调偏差） | 会整体改变观感基线，需用户拍板（`plans/20 §6`） |
 | P3 | **--scene 保护**（输出 `.auto.scn` 或要求 `--force`） | 手调模型 | 流程安全；当前靠 `--exclude` + README 警告 |
 | P3 | **二进制网格格式 / 更大的 `--compact` 压缩** | 大模型（百万顶点级） | 降低文本 JSON 体积与解析成本 |

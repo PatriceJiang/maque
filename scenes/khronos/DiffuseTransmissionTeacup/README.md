@@ -41,21 +41,21 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dif
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.503 | 0.615 | 差 +0.112 |
-| 前景平均 RGB | [137.3, 127.1, 115.1] | [161.8, 156.1, 149.2] | RGB 距离 0.115 |
-| 亮度直方图相似度 | — | — | 0.66（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.503 | 0.376 | 差 -0.127 |
+| 前景平均 RGB | [137.3, 127.1, 115.1] | [98.2, 95.4, 93.4] | RGB 距离 0.121 |
+| 亮度直方图相似度 | — | — | 0.42（16 桶交集，1=完全一致） |
 | 前景占比 | 69.4% | 14.4% | 覆盖率比 0.207 |
 
-自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
+自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 
 ## 踩过的坑 / 注意
 

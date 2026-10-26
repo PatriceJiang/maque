@@ -41,8 +41,8 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/USD
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.477 | 0.423 | 差 -0.055 |
-| 前景平均 RGB | [119.7, 122.5, 121.1] | [107.9, 107.7, 109.1] | RGB 距离 0.050 |
+| 前景平均亮度 | 0.477 | 0.422 | 差 -0.055 |
+| 前景平均 RGB | [119.7, 122.5, 121.1] | [107.7, 107.6, 109.0] | RGB 距离 0.051 |
 | 亮度直方图相似度 | — | — | 0.47（16 桶交集，1=完全一致） |
 | 前景占比 | 56.6% | 13.7% | 覆盖率比 0.241 |
 
@@ -51,13 +51,13 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/USD
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 
 ## 踩过的坑 / 注意
 

@@ -43,16 +43,16 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Gla
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
 | 前景平均亮度 | 0.234 | 0.168 | 差 -0.065 |
-| 前景平均 RGB | [44.9, 60.9, 89.1] | [30.3, 43.6, 73.7] | RGB 距离 0.062 |
-| 亮度直方图相似度 | — | — | 0.54（16 桶交集，1=完全一致） |
-| 前景占比 | 43.3% | 16.5% | 覆盖率比 0.381 |
+| 前景平均 RGB | [44.9, 60.9, 89.1] | [30.2, 43.5, 73.7] | RGB 距离 0.062 |
+| 亮度直方图相似度 | — | — | 0.53（16 桶交集，1=完全一致） |
+| 前景占比 | 43.3% | 17.0% | 覆盖率比 0.393 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
 - KHR_materials_variants：只使用默认材质（不做变体切换）
@@ -61,7 +61,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Gla
 ## 已知差距（引擎/导入器层面）
 
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
 - KHR_materials_variants：只使用默认材质（不做变体切换）

@@ -4,9 +4,9 @@
 > 打开 [index.html](index.html) 查看左右对比（支持搜索/筛选/排序）。
 
 - 模型：**149**（149 个有自动对比；86 个参考图使用 large 版，13 个为 GIF 首帧）
-- 指标中位数：直方图相似度 **0.437**、前景平均亮度差 **+0.084**、
-  前景 RGB 距离 **0.116**、预览前景占比 **16.6%**
-- 自动初判：较接近 **39** / 中等 **41** / 差异较大 **69**
+- 指标中位数：直方图相似度 **0.437**、前景平均亮度差 **+0.078**、
+  前景 RGB 距离 **0.118**、预览前景占比 **16.6%**
+- 自动初判：较接近 **38** / 中等 **44** / 差异较大 **67**
 - 参考图下采样：≤900px、JPEG q82，存于 `ref/`；预览来自 `scenes/khronos/<Model>/preview.jpg`
 - 复现：`python tools/make_migration_report.py`；表格数据：[comparison.csv](comparison.csv)、[comparison.json](comparison.json)
 
@@ -44,8 +44,8 @@
 | [UnlitTest](#model-UnlitTest) | screenshot_large.jpg（large） | 0.981 | 0.021 | 28.4% | 主体亮度/色调分布较接近（机位/背景可能不同） | 0 |
 | [FlightHelmet](#model-FlightHelmet) | screenshot.jpg | 0.883 | -0.257 | 9.2% | 中等差异（多为机位/背景/光照/缺失特性） | 1 |
 | [CompareClearcoat](#model-CompareClearcoat) | screenshot_Large.jpg（large） | 0.871 | -0.035 | 22.0% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
-| [TextureTransformMultiTest](#model-TextureTransformMultiTest) | screenshot_large.jpg（large） | 0.839 | 0.067 | 25.8% | 主体亮度/色调分布较接近（机位/背景可能不同） | 2 |
-| [DiffuseTransmissionPlant](#model-DiffuseTransmissionPlant) | screenshot_Large.jpg（large） | 0.831 | -0.059 | 8.4% | 主体亮度/色调分布较接近（机位/背景可能不同） | 5 |
+| [DiffuseTransmissionPlant](#model-DiffuseTransmissionPlant) | screenshot_Large.jpg（large） | 0.845 | -0.082 | 8.5% | 主体亮度/色调分布较接近（机位/背景可能不同） | 5 |
+| [TextureTransformMultiTest](#model-TextureTransformMultiTest) | screenshot_large.jpg（large） | 0.838 | 0.066 | 25.8% | 主体亮度/色调分布较接近（机位/背景可能不同） | 2 |
 | [CompareAmbientOcclusion](#model-CompareAmbientOcclusion) | screenshot_Large.jpg（large） | 0.808 | 0.035 | 17.4% | 主体亮度/色调分布较接近（机位/背景可能不同） | 0 |
 | [ClearcoatWicker](#model-ClearcoatWicker) | screenshot_large.jpg（large） | 0.807 | 0.088 | 13.6% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |
 | [IridescenceMetallicSpheres](#model-IridescenceMetallicSpheres) | screenshot_large.jpg（large） | 0.798 | 0.078 | 16.2% | 主体亮度/色调分布较接近（机位/背景可能不同） | 1 |

@@ -54,9 +54,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
 - KHR_animation_pointer 动画未导入
@@ -65,9 +65,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pot
 ## 已知差距（引擎/导入器层面）
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_specular：factor/color 已映射；specularTexture/specularColorTexture 与 f90 行为未实现
 - KHR_animation_pointer 动画未导入

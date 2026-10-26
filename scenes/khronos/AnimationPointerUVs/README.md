@@ -42,10 +42,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.471 | 0.446 | 差 -0.025 |
-| 前景平均 RGB | [110.0, 124.2, 111.8] | [101.9, 116.8, 117.9] | RGB 距离 0.028 |
-| 亮度直方图相似度 | — | — | 0.62（16 桶交集，1=完全一致） |
-| 前景占比 | 40.7% | 14.5% | 覆盖率比 0.356 |
+| 前景平均亮度 | 0.471 | 0.473 | 差 +0.001 |
+| 前景平均 RGB | [110.0, 124.2, 111.8] | [106.4, 124.3, 124.4] | RGB 距离 0.021 |
+| 亮度直方图相似度 | — | — | 0.65（16 桶交集，1=完全一致） |
+| 前景占比 | 40.7% | 12.6% | 覆盖率比 0.311 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
@@ -54,10 +54,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
@@ -72,10 +72,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）

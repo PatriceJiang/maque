@@ -53,7 +53,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sta
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_variants：只使用默认材质（不做变体切换）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
@@ -62,7 +62,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sta
 ## 已知差距（引擎/导入器层面）
 
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_variants：只使用默认材质（不做变体切换）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）

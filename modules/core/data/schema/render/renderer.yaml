@@ -188,6 +188,10 @@
         # sheen_roughness / iridescence / iridescence_thickness / anisotropy（-1=无）。
         # 存在时 runtime 置 flags2 bit12..18；gfx 在 group1 binding 10..16 绑定。
         - { name: textures3,                type: "int32_t[7]" }
+        # KHR_texture_transform.rotation（弧度）：基础贴图组 / 法线贴图组各一个旋转角。
+        # gfx pack 到 Draw 的 specular.w / sheen_color.w（GPU 端不额外扩 uniform 结构）。
+        - { name: uv_rotation,              type: float }
+        - { name: normal_uv_rotation,       type: float }
         # 注：specularTexture/specularColorTexture 仍未接入（见 docs/31 §5.3）。
     - record: draw3d
       fields:

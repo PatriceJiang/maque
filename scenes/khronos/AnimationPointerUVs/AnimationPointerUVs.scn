@@ -240,7 +240,8 @@
           "uv_offset": {
             "x": -0.219,
             "y": 0.148
-          }
+          },
+          "uv_rotation": 0.3752458095550537
         }
       ]
     },
@@ -2098,7 +2099,8 @@
           "normal_uv_offset": {
             "x": -0.219,
             "y": 0.148
-          }
+          },
+          "normal_uv_rotation": 0.3752458095550537
         }
       ]
     },
@@ -3143,8 +3145,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004,
           "base_color_texture": "textures/image0.png"
         }
       ]
@@ -3194,8 +3197,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004,
           "base_color_texture": "textures/image0.png"
         }
       ]
@@ -3245,8 +3249,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004,
           "base_color_texture": "textures/image0.png"
         }
       ]
@@ -3636,9 +3641,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #170",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -3688,9 +3693,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #175",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -3740,9 +3745,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #171",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -4430,8 +4435,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -4480,8 +4486,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -4530,8 +4537,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -4682,8 +4690,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -4732,8 +4741,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -4782,8 +4792,9 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -6552,9 +6563,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #172",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -6603,9 +6614,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #174",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -6654,9 +6665,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #173",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -6807,9 +6818,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #176",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -6858,9 +6869,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #178",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -6909,9 +6920,9 @@
           "type": "asset.PbrMaterial",
           "name": "Material #177",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.03423020988702774,
+            "g": 0.4423229694366455,
+            "b": 0.29321616888046265,
             "a": 1.0
           },
           "metallic": 0.0,

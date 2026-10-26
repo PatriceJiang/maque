@@ -116,10 +116,12 @@
             "x": 3.0,
             "y": 3.0
           },
+          "uv_rotation": 0.1,
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
           },
+          "normal_uv_rotation": 0.1,
           "uv1_mask": 4
         }
       ]
@@ -232,10 +234,12 @@
             "x": 3.0,
             "y": 3.0
           },
+          "uv_rotation": 0.1,
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
           },
+          "normal_uv_rotation": 0.1,
           "uv1_mask": 4
         }
       ]
@@ -520,10 +524,12 @@
             "x": 3.0,
             "y": 3.0
           },
+          "uv_rotation": 0.1,
           "normal_uv_scale": {
             "x": 3.0,
             "y": 3.0
           },
+          "normal_uv_rotation": 0.1,
           "uv1_mask": 4
         }
       ]

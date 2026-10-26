@@ -92,9 +92,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -143,9 +143,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_ThicknessFac_1.5",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -194,9 +194,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_ThicknessFac_2.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -245,9 +245,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_ThicknessFac_0.50",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -296,9 +296,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_ThicknessFac_0.25",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -398,9 +398,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -449,9 +449,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -500,9 +500,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -551,9 +551,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -602,9 +602,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -653,9 +653,9 @@
           "type": "asset.PbrMaterial",
           "name": "R3_ThicknessTex_Mat",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -704,9 +704,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_1.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -755,9 +755,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_1.5",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -806,9 +806,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_2.0",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -857,9 +857,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_0.50",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -908,9 +908,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_0.25",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
+            "r": 0.1,
+            "g": 0.5,
+            "b": 0.9,
             "a": 1.0
           },
           "metallic": 0.0,

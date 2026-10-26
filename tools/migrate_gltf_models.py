@@ -305,13 +305,13 @@ def known_gaps(stats):
         if stats.get("texcoord_sets", {}).get("textureInfo>=2"):
             gaps.append("部分贴图使用 TEXCOORD_2+（引擎支持 TEXCOORD_0/1；更高 UV 集会退回 uv0）")
     if "KHR_texture_transform" in used:
-        gaps.append("KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失")
+        gaps.append("KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似")
     if "KHR_materials_transmission" in used:
         gaps.append("KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）")
     if "KHR_materials_volume" in used or "KHR_materials_dispersion" in used or "KHR_materials_volume_scatter" in used:
-        gaps.append("KHR_materials_volume/dispersion/volume_scatter 未实现")
+        gaps.append("KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现")
     if "KHR_materials_diffuse_transmission" in used:
-        gaps.append("KHR_materials_diffuse_transmission 未实现")
+        gaps.append("KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）")
     if "KHR_materials_clearcoat" in used:
         gaps.append("KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似")
     if "KHR_materials_sheen" in used:
@@ -333,7 +333,7 @@ def known_gaps(stats):
     if "KHR_node_visibility" in used:
         gaps.append("KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入")
     if "EXT_mesh_gpu_instancing" in used:
-        gaps.append("EXT_mesh_gpu_instancing 未实现（实例化网格的多实例会丢失）")
+        gaps.append("EXT_mesh_gpu_instancing 已导入（导入期展开实例；非 GPU 实例化）")
     if "KHR_materials_retroreflection" in used:
         gaps.append("KHR_materials_retroreflection 未实现")
     if "EXT_lights_image_based" in used:

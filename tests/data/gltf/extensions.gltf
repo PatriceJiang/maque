@@ -84,6 +84,14 @@
         0.3
       ],
       "doubleSided": true,
+      "normalTexture": {
+        "index": 0,
+        "extensions": {
+          "KHR_texture_transform": {
+            "rotation": 0.5
+          }
+        }
+      },
       "alphaMode": "OPAQUE",
       "extensions": {
         "KHR_materials_clearcoat": {
@@ -150,7 +158,8 @@
               "scale": [
                 2.0,
                 3.0
-              ]
+              ],
+              "rotation": 0.5
             }
           }
         }

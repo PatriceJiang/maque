@@ -27,6 +27,23 @@ fn uv_pick(uv0: vec2f, uv1: vec2f, bit: i32) -> vec2f {
   return select(uv0, uv1, uv1_sel(bit));
 }
 
+/* KHR_texture_transform：uv' = T * R * S * uv（先缩放、再旋转、最后平移）。
+ * 旋转角由 gfx 打包进 Draw.specular.w（基础贴图组）/ Draw.sheen_color.w（法线组），
+ * 避免给 uniform 结构额外扩字段；默认 0 时行为与旧版完全一致。 */
+fn rot2(p: vec2f, a: f32) -> vec2f {
+  let c = cos(a);
+  let s = sin(a);
+  return vec2f(c * p.x - s * p.y, s * p.x + c * p.y);
+}
+
+fn uv_base(uv: vec2f) -> vec2f {
+  return rot2(uv * dr.uv.xy, dr.specular.w) + dr.uv.zw;
+}
+
+fn uv_norm(uv: vec2f) -> vec2f {
+  return rot2(uv * dr.uv_normal.xy, dr.sheen_color.w) + dr.uv_normal.zw;
+}
+
 fn sample_surface_normal(geo_n: vec3f, w: vec3f, uv: vec2f) -> vec3f {
   let nm = textureSample(normal_tex, albedo_smp, uv).xyz * 2.0 - 1.0;
   let nm_s = vec3f(nm.x * dr.mrp.z, nm.y * dr.misc.y, nm.z);
@@ -55,14 +72,14 @@ fn surface_common(in: VOut, front_facing: bool) -> Surface {
   s.w = in.w;
   /* KHR_texture_transform：基础贴图一组 UV、法线贴图单独一组（glTF 允许各贴图不同）。
    * 每张贴图再按 uv1_mask 决定用 TEXCOORD_0 还是 TEXCOORD_1（布局 v1 才有有效 uv1）。 */
-  let uv0 = in.uv * dr.uv.xy + dr.uv.zw;
-  let uv1 = in.uv1 * dr.uv.xy + dr.uv.zw;
+  let uv0 = uv_base(in.uv);
+  let uv1 = uv_base(in.uv1);
   let uv_base = uv_pick(uv0, uv1, 0);
   let uv_mr = uv_pick(uv0, uv1, 1);
   let uv_ao = uv_pick(uv0, uv1, 2);
   let uv_em = uv_pick(uv0, uv1, 4);
-  let nuv0 = in.uv * dr.uv_normal.xy + dr.uv_normal.zw;
-  let nuv1 = in.uv1 * dr.uv_normal.xy + dr.uv_normal.zw;
+  let nuv0 = uv_norm(in.uv);
+  let nuv1 = uv_norm(in.uv1);
   let uv_n = uv_pick(nuv0, nuv1, 3);
   let alb_s = textureSample(albedo_tex, albedo_smp, uv_base);
   /* glTF COLOR_0：顶点色 ⊗ baseColor（layout0 的 vs 输出 (1,1,1,1)，旧场景不变） */
@@ -86,8 +103,8 @@ fn surface_common(in: VOut, front_facing: bool) -> Surface {
 
 /* clearcoat normal 的 UV（bit7；法线贴图一组 transform） */
 fn clearcoat_normal_uv(in: VOut) -> vec2f {
-  let nuv0 = in.uv * dr.uv_normal.xy + dr.uv_normal.zw;
-  let nuv1 = in.uv1 * dr.uv_normal.xy + dr.uv_normal.zw;
+  let nuv0 = uv_norm(in.uv);
+  let nuv1 = uv_norm(in.uv1);
   return uv_pick(nuv0, nuv1, 7);
 }
 

@@ -53,7 +53,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
@@ -63,7 +63,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 

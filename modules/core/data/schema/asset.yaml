@@ -317,6 +317,10 @@
         - { name: iridescence_texture, type: string, default: "" }
         - { name: iridescence_thickness_texture, type: string, default: "" }
         - { name: anisotropy_texture, type: string, default: "" }
+        # KHR_texture_transform.rotation（弧度；glTF 约定 UV' = T * R * S * uv）：
+        # 基础贴图组（base/MR/AO/emissive/扩展贴图）与法线贴图组各一个旋转角。
+        - { name: uv_rotation, type: float, default: 0.0F }
+        - { name: normal_uv_rotation, type: float, default: 0.0F }
     - struct: Scene
       fields:
         - { name: name, type: string }

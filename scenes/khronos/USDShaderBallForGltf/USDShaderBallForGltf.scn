@@ -196,9 +196,9 @@
           "type": "asset.PbrMaterial",
           "name": "material_surface",
           "base_color": {
-            "r": 1,
-            "g": 1,
-            "b": 1,
+            "r": 0.9734452903978066,
+            "g": 0.9911020971136257,
+            "b": 0.982250550332711,
             "a": 1
           },
           "metallic": 0.0,

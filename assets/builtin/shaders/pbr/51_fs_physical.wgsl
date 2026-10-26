@@ -6,7 +6,7 @@
   surface_alpha_test(s);
   let v = normalize(cam.eye.xyz - s.w);
   let n_dot_v = max(dot(s.n, v), 1e-4);
-  let ep = surface_ext_params(in.uv * dr.uv.xy + dr.uv.zw);
+  let ep = surface_ext_params(uv_base(in.uv));
   /* F0：IOR + specularIntensity/specularColor（KHR_materials_specular / ior） */
   let ior = clamp(dr.phys0.y, 1.0, 2.5);
   let f0_d = pow((ior - 1.0) / (ior + 1.0), 2.0);

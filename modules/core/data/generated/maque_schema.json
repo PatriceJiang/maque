@@ -3541,6 +3541,24 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "uv_rotation",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "normal_uv_rotation",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },

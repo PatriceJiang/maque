@@ -273,7 +273,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png#wrap=clamp,clamp"
+          "base_color_texture": "textures/image1.png#wrap=clamp,clamp",
+          "uv_rotation": 0.39269908169872414
         }
       ]
     },
@@ -642,7 +643,8 @@
           "uv_offset": {
             "x": -0.2,
             "y": -0.1
-          }
+          },
+          "uv_rotation": 0.3
         }
       ]
     },

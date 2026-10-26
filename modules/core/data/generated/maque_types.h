@@ -1781,6 +1781,8 @@ struct PbrMaterial {
     std::string iridescence_texture = "";
     std::string iridescence_thickness_texture = "";
     std::string anisotropy_texture = "";
+    float uv_rotation = 0.0F;
+    float normal_uv_rotation = 0.0F;
 };
 
 struct SkeletonData {

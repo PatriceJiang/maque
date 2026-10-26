@@ -25,7 +25,7 @@ namespace maque::gfx {
 static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32");
 static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
-static_assert(sizeof(mq_renderer_pbr_material) == 268, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换 + uv1_mask + textures3[7]）");
+static_assert(sizeof(mq_renderer_pbr_material) == 276, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换 + uv1_mask + textures3[7]）");
 static_assert(sizeof(mq_renderer_environment) == 88, "mq_renderer_environment 布局漂移（+analytic studio IBL 参数）");
 static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
 static_assert(sizeof(mq_renderer_draw3d) == 96, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64）");
@@ -1343,6 +1343,7 @@ static void pack_draw_uniform(float* du, const float model[16], const mq_rendere
         du[48] = 100.0F; du[49] = 400.0F; du[50] = 0.0F; du[51] = 0.0F;
         du[52] = 0.0F; du[53] = 1.0F; du[54] = 1.0F; du[55] = 3.0F;
         du[56] = du[57] = du[58] = 1.0F;                           /* specular */
+        du[59] = 0.0F; du[63] = 0.0F;                              /* uv_rotation / normal_uv_rotation */
         du[64] = du[65] = 1.0F; du[66] = du[67] = 0.0F;             /* uv scale/offset */
         du[68] = du[69] = 1.0F; du[70] = du[71] = 0.0F;             /* normal uv scale/offset */
         return;
@@ -1366,7 +1367,9 @@ static void pack_draw_uniform(float* du, const float model[16], const mq_rendere
     du[52] = (float)mat->depth_packing; du[53] = mat->normal_scale_y;
     du[54] = mat->clearcoat_normal_scale; du[55] = (float)mat->toon_steps;
     du[56] = mat->specular[0]; du[57] = mat->specular[1]; du[58] = mat->specular[2];
+    du[59] = mat->uv_rotation;                                   /* specular.w = 基础贴图 UV 旋转 */
     du[60] = mat->sheen_color[0]; du[61] = mat->sheen_color[1]; du[62] = mat->sheen_color[2];
+    du[63] = mat->normal_uv_rotation;                            /* sheen_color.w = 法线贴图 UV 旋转 */
     du[64] = mat->uv_scale[0]; du[65] = mat->uv_scale[1];
     du[66] = mat->uv_offset[0]; du[67] = mat->uv_offset[1];
     du[68] = mat->normal_uv_scale[0]; du[69] = mat->normal_uv_scale[1];

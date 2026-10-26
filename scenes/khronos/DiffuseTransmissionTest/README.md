@@ -24,7 +24,7 @@
 | 必需扩展 | `KHR_materials_unlit`、`KHR_lights_punctual` |
 | alpha 模式分布 | BLEND×1、OPAQUE×28 |
 
-**导入产物**：`assets/` 33 个 `.mesh.json`（合计 402.9 KB），`textures/` 3 张；场景 `DiffuseTransmissionTest.scn`。
+**导入产物**：`assets/` 33 个 `.mesh.json`（合计 403.2 KB），`textures/` 3 张；场景 `DiffuseTransmissionTest.scn`。
 
 ## 生成 / 运行
 
@@ -44,9 +44,9 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dif
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.426 | 0.368 | 差 -0.058 |
-| 前景平均 RGB | [108.9, 109.9, 98.8] | [50.2, 106.6, 96.6] | RGB 距离 0.084 |
-| 亮度直方图相似度 | — | — | 0.71（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.426 | 0.320 | 差 -0.107 |
+| 前景平均 RGB | [108.9, 109.9, 98.8] | [52.8, 89.5, 86.9] | RGB 距离 0.116 |
+| 亮度直方图相似度 | — | — | 0.67（16 桶交集，1=完全一致） |
 | 前景占比 | 95.9% | 20.1% | 覆盖率比 0.209 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
@@ -54,13 +54,13 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dif
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 
 ## 踩过的坑 / 注意
 

@@ -143,9 +143,9 @@
           "type": "asset.PbrMaterial",
           "name": "Dragon with Attenuation",
           "base_color": {
-            "r": 1,
-            "g": 1,
-            "b": 1,
+            "r": 0.921,
+            "g": 0.64,
+            "b": 0.064,
             "a": 1
           },
           "metallic": 0.0,

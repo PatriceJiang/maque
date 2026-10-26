@@ -21,7 +21,7 @@
 | 使用扩展 | `KHR_texture_transform` |
 | alpha 模式分布 | OPAQUE×9 |
 
-**导入产物**：`assets/` 9 个 `.mesh.json`（合计 6.0 KB），`textures/` 5 张；场景 `TextureTransformTest.scn`。
+**导入产物**：`assets/` 9 个 `.mesh.json`（合计 6.1 KB），`textures/` 5 张；场景 `TextureTransformTest.scn`。
 
 ## 生成 / 运行
 
@@ -41,21 +41,21 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Tex
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.689 | 0.644 | 差 -0.045 |
-| 前景平均 RGB | [150.2, 181.8, 190.2] | [121.0, 176.9, 161.7] | RGB 距离 0.082 |
-| 亮度直方图相似度 | — | — | 0.63（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.689 | 0.640 | 差 -0.048 |
+| 前景平均 RGB | [150.2, 181.8, 190.2] | [120.2, 176.1, 161.0] | RGB 距离 0.085 |
+| 亮度直方图相似度 | — | — | 0.62（16 桶交集，1=完全一致） |
 | 前景占比 | 84.3% | 31.5% | 覆盖率比 0.373 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 
 ## 踩过的坑 / 注意
 

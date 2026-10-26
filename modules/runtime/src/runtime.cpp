@@ -1528,7 +1528,10 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     }
                 }
                 /* plans/19：matcap / toon 渐变 / clearcoat 法线三个新贴图槽（flags2 位告知 shader 是否有图） */
-                if (const std::string* texref = read_str(dmat, base, "matcap_texture")) {
+                /* KHR_texture_transform.rotation（弧度；glTF T*R*S 顺序，shader 里先缩放再旋转再平移） */
+    mat.uv_rotation = read_num(dmat, base, "uv_rotation", 0.0F);
+    mat.normal_uv_rotation = read_num(dmat, base, "normal_uv_rotation", 0.0F);
+    if (const std::string* texref = read_str(dmat, base, "matcap_texture")) {
                     if (!texref->empty()) {
                         const int tid = load_texture_srgb(*texref);
                         if (tid >= 0) { mat.textures2[0] = tid; mat.flags2 |= 2; }

@@ -269,8 +269,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.825
         }
       ]
     },
@@ -319,8 +320,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.65
         }
       ]
     },
@@ -369,8 +371,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.4750000000000001
         }
       ]
     },
@@ -419,8 +422,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -519,8 +523,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.825
         }
       ]
     },
@@ -569,8 +574,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.65
         }
       ]
     },
@@ -619,8 +625,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.4750000000000001
         }
       ]
     },
@@ -669,8 +676,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -769,8 +777,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.825
         }
       ]
     },
@@ -819,8 +828,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.65
         }
       ]
     },
@@ -869,8 +879,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.4750000000000001
         }
       ]
     },
@@ -919,8 +930,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_mode": 2,
+          "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004
         }
       ]
     },
@@ -1020,8 +1032,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "opacity": 0.825,
           "base_color_texture": "textures/image1.png"
         }
       ]
@@ -1071,8 +1084,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "opacity": 0.65,
           "base_color_texture": "textures/image1.png"
         }
       ]
@@ -1122,8 +1136,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "opacity": 0.4750000000000001,
           "base_color_texture": "textures/image1.png"
         }
       ]
@@ -1173,8 +1188,9 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 0,
+          "alpha_mode": 2,
           "alpha_cutoff": 0.5,
+          "opacity": 0.30000000000000004,
           "base_color_texture": "textures/image1.png"
         }
       ]

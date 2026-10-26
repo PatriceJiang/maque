@@ -41,23 +41,23 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sca
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.396 | 0.856 | 差 +0.460 |
-| 前景平均 RGB | [66.0, 110.4, 112.7] | [218.0, 218.1, 219.3] | RGB 距离 0.479 |
-| 亮度直方图相似度 | — | — | 0.19（16 桶交集，1=完全一致） |
-| 前景占比 | 31.8% | 12.6% | 覆盖率比 0.396 |
+| 前景平均亮度 | 0.396 | 0.339 | 差 -0.058 |
+| 前景平均 RGB | [66.0, 110.4, 112.7] | [82.5, 87.5, 86.0] | RGB 距离 0.086 |
+| 亮度直方图相似度 | — | — | 0.43（16 桶交集，1=完全一致） |
+| 前景占比 | 31.8% | 12.3% | 覆盖率比 0.386 |
 
-自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
+自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_volume/dispersion/volume_scatter 未实现
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 
 ## 踩过的坑 / 注意
 

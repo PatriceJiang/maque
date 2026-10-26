@@ -11,13 +11,13 @@
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": -0.5781013452890518,
-              "y": 0.9934814405240608,
-              "z": 2.387233076598773
+              "x": -9.990386036641553,
+              "y": 12.63785065990335,
+              "z": 32.70560795655633
             },
             "rotation": {
               "x": -0.22326312094374032,
-              "y": -0.5190192589890531,
+              "y": -0.5190192589890528,
               "z": 0.0
             }
           }
@@ -25,8 +25,8 @@
         {
           "type": "render.Camera3D",
           "fov_y": 45.0,
-          "near": 0.04445778743460007,
-          "far": 24.711318204115535,
+          "near": 0.6401198499729818,
+          "far": 355.8028011340539,
           "clear_color": {
             "r": 0.13,
             "g": 0.13,
@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "node0_0",
+      "name": "node0_0_0",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -81,6 +81,3602 @@
               "x": 1.0,
               "y": 1.0,
               "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.09937432920564322
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_2_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.4084391816557878
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_3_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.9291087864259019
+            },
+            "scale": {
+              "x": 0.9999999999999999,
+              "y": 0.9999999999999999,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_4_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 1.5707963267948963
+            },
+            "scale": {
+              "x": 0.9999999999999998,
+              "y": 0.9999999999999998,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_5_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 2.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.09937432920564322,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.25,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_6_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 2.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.004945726031353577,
+              "y": 0.09912898830367287,
+              "z": 0.09961965897518672
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.25,
+              "z": 1.2500000000000002
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_7_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 2.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.041532468324297175,
+              "y": 0.19785592351095768,
+              "z": 0.4125619605911105
+            },
+            "scale": {
+              "x": 0.9999999999999999,
+              "y": 1.25,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_8_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 2.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.13602467188930456,
+              "y": 0.264268618464662,
+              "z": 0.9472150901480373
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.25,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_9_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 2.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.25255427577805956,
+              "y": 0.24486385420562135,
+              "z": 1.6020361602251647
+            },
+            "scale": {
+              "x": 0.9999999999999998,
+              "y": 1.2499999999999998,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_10_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 5.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.4084391816557878,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.5,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_11_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 5.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.04428998554130002,
+              "y": 0.40403873347953123,
+              "z": 0.2154438422626968
+            },
+            "scale": {
+              "x": 0.9999999999999999,
+              "y": 1.5,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_12_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 5.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.08557693289146043,
+              "y": 0.3914045990076399,
+              "z": 0.4254138649954257
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.4999999999999998,
+              "z": 1.4999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_13_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 5.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.2858044515413636,
+              "y": 0.5124523239765953,
+              "z": 1.0044634259039578
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.5,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_14_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 5.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.5191461142465229,
+              "y": 0.4605539916813224,
+              "z": 1.695151321341658
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.5,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_15_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 7.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.929108786425902,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999999999999,
+              "y": 1.75,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_16_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 7.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.21229077538702765,
+              "y": 0.9004556555529998,
+              "z": 0.433936855583221
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.7500000000000002,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_17_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 7.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.3711091193575996,
+              "y": 0.8263661317212542,
+              "z": 0.8090868430519181
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.75,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_18_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 7.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.46546242789347314,
+              "y": 0.7304014973107693,
+              "z": 1.109869920154422
+            },
+            "scale": {
+              "x": 0.9999999999999999,
+              "y": 1.75,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_19_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 7.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.8066715494215094,
+              "y": 0.6253312269231597,
+              "z": 1.8449637779145551
+            },
+            "scale": {
+              "x": 0.9999999999999997,
+              "y": 1.7499999999999996,
+              "z": 1.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_20_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 10.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 1.5707963267948966,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9999999999999998,
+              "y": 2.0,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_21_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 10.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.4464413322481344,
+              "y": 1.323987393325324,
+              "z": 1.6951513213416571
+            },
+            "scale": {
+              "x": 0.9999999999999998,
+              "y": 2.0,
+              "z": 1.2499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_22_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 10.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.3258176636680323,
+              "y": 1.0949140771344799,
+              "z": 1.8157749899217608
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 2.0,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_23_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 10.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.212025656524324,
+              "y": 0.8954457119553527,
+              "z": 1.9295669970654685
+            },
+            "scale": {
+              "x": 0.9999999999999997,
+              "y": 1.9999999999999998,
+              "z": 1.7499999999999996
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_24_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 10.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.1071487177940904,
+              "y": 0.7297276562269664,
+              "z": 2.0344439357957027
+            },
+            "scale": {
+              "x": 0.9999999999999999,
+              "y": 2.0,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_25_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.09937432920564322,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_26_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 0.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.09913019274693333,
+              "y": -0.0049214459991803045,
+              "z": 0.09913019274693333
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.0,
+              "z": 1.2500000000000002
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_27_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 0.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.1980222641412161,
+              "y": -0.04072172913568158,
+              "z": 0.4043935098678181
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 0.9999999999999999,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_28_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 0.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.26661783308150894,
+              "y": -0.13127459614347486,
+              "z": 0.9114794417530749
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.0,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_29_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 0.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.25255427577805956,
+              "y": -0.24486385420562135,
+              "z": 1.5395564933646282
+            },
+            "scale": {
+              "x": 1.2499999999999998,
+              "y": 0.9999999999999998,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_30_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 2.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.09961965897518672,
+              "y": 0.09912898830367287,
+              "z": 0.004945726031353576
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.25,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_31_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 2.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.10428111173413925,
+              "y": 0.09395260368617962,
+              "z": 0.10428111173413925
+            },
+            "scale": {
+              "x": 1.2500000000000002,
+              "y": 1.2500000000000002,
+              "z": 1.2500000000000002
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_32_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 2.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.240032308487728,
+              "y": 0.15490555493903865,
+              "z": 0.4271570224753586
+            },
+            "scale": {
+              "x": 1.2499999999999998,
+              "y": 1.2499999999999998,
+              "z": 1.4999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_33_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 2.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.39725480552574066,
+              "y": 0.12787156853080744,
+              "z": 0.9548806728429584
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.25,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_34_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 2.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.48995732625372834,
+              "y": -0.0,
+              "z": 1.5707963267948966
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.25,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_35_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 5.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.21544384226269678,
+              "y": 0.4040387334795312,
+              "z": 0.04428998554130002
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.5,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_36_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 5.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.25549540013626665,
+              "y": 0.3779587245087182,
+              "z": 0.25549540013626665
+            },
+            "scale": {
+              "x": 1.2499999999999998,
+              "y": 1.4999999999999998,
+              "z": 1.2499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_37_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 5.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.28784563380992356,
+              "y": 0.3454694781864875,
+              "z": 0.45899948279362257
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.4999999999999998,
+              "z": 1.4999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_38_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 5.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.5417195225124718,
+              "y": 0.3683598982835308,
+              "z": 1.0324767831277575
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.5,
+              "z": 1.7500000000000002
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_39_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 5.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.7266423406817256,
+              "y": 0.21793734059082415,
+              "z": 1.6539375586833378
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.5,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_40_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 7.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.433936855583221,
+              "y": 0.9004556555529998,
+              "z": 0.2122907753870277
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.75,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_41_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 7.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.5900979554613919,
+              "y": 0.809842459137985,
+              "z": 0.590097955461392
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.7500000000000002,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_42_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 7.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.6768430624621788,
+              "y": 0.6950909849588338,
+              "z": 0.8984891364879788
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.75,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_43_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 7.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.7104822858308179,
+              "y": 0.5770902930127232,
+              "z": 1.1484600287674462
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 1.7499999999999998,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_44_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 7.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.9685089570936426,
+              "y": 0.39082611636505077,
+              "z": 1.7782925396538671
+            },
+            "scale": {
+              "x": 1.2499999999999998,
+              "y": 1.7499999999999998,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_45_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 10.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.6951513213416571,
+              "y": 1.323987393325324,
+              "z": 1.4464413322481344
+            },
+            "scale": {
+              "x": 1.2499999999999998,
+              "y": 2.0,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_46_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 10.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": 1.0808390005411685,
+              "z": 1.5707963267948966
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 2.0,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_47_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 10.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.4464413322481353,
+              "y": 0.8583373744911514,
+              "z": 1.6951513213416582
+            },
+            "scale": {
+              "x": 1.2500000000000002,
+              "y": 2.0,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_48_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 10.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.3258176750292743,
+              "y": 0.6675294613656906,
+              "z": 1.8157749785605186
+            },
+            "scale": {
+              "x": 1.25,
+              "y": 2.0,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_49_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.5,
+              "y": 10.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.2120256565243244,
+              "y": 0.5118556552438803,
+              "z": 1.9295669970654687
+            },
+            "scale": {
+              "x": 1.2499999999999998,
+              "y": 1.9999999999999998,
+              "z": 1.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_50_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.4084391816557878,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_51_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 0.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.40439350986781814,
+              "y": -0.04072172913568158,
+              "z": 0.19802226414121607
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 0.9999999999999999,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_52_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 0.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.3926991106980001,
+              "y": -0.07909101722309317,
+              "z": 0.3926991106980001
+            },
+            "scale": {
+              "x": 1.4999999999999998,
+              "y": 1.0,
+              "z": 1.4999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_53_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 0.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.5303361914376468,
+              "y": -0.24825625240292606,
+              "z": 0.8613691301704168
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.0,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_54_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 0.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.5191461142465229,
+              "y": -0.4605539916813224,
+              "z": 1.446441332248135
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.0,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_55_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 2.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.41256196059111044,
+              "y": 0.19785592351095765,
+              "z": 0.041532468324297175
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.25,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_56_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 2.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.4271570224753586,
+              "y": 0.15490555493903865,
+              "z": 0.24003230848772797
+            },
+            "scale": {
+              "x": 1.4999999999999998,
+              "y": 1.2499999999999998,
+              "z": 1.2499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_57_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 2.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.4328390005920386,
+              "y": 0.11086928074801743,
+              "z": 0.43283900059203867
+            },
+            "scale": {
+              "x": 1.4999999999999998,
+              "y": 1.25,
+              "z": 1.4999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_58_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 2.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.6445885718613396,
+              "y": -0.0005448515061037368,
+              "z": 0.9289268144931785
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.25,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_59_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 2.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.7266423406817256,
+              "y": -0.21793734059082415,
+              "z": 1.4876550949064555
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.2500000000000002,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_60_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 5.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.4254138649954257,
+              "y": 0.3914045990076399,
+              "z": 0.08557693289146043
+            },
+            "scale": {
+              "x": 1.4999999999999998,
+              "y": 1.4999999999999998,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_61_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 5.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.4589994827936226,
+              "y": 0.3454694781864876,
+              "z": 0.28784563380992356
+            },
+            "scale": {
+              "x": 1.4999999999999998,
+              "y": 1.4999999999999998,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_62_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 5.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.48141272126876666,
+              "y": 0.29525463891118253,
+              "z": 0.48141272126876666
+            },
+            "scale": {
+              "x": 1.4999999999999998,
+              "y": 1.4999999999999998,
+              "z": 1.4999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_63_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 5.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.7731491228612234,
+              "y": 0.22805632413369448,
+              "z": 1.0222776021209048
+            },
+            "scale": {
+              "x": 1.5000000000000002,
+              "y": 1.5000000000000002,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_64_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 5.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.9272952180016123,
+              "y": -0.0,
+              "z": 1.5707963267948966
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.5000000000000002,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_65_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 7.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.8090868430519181,
+              "y": 0.8263661317212542,
+              "z": 0.37110911935759966
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.75,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_66_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 7.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.8984892332988712,
+              "y": 0.6950909900590223,
+              "z": 0.6768431412941555
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.75,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_67_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 7.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.9294711509239313,
+              "y": 0.5566999576217849,
+              "z": 0.9294711509239312
+            },
+            "scale": {
+              "x": 1.5000000000000002,
+              "y": 1.75,
+              "z": 1.5000000000000002
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_68_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 7.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.9215528200484855,
+              "y": 0.4263484994780691,
+              "z": 1.1431989074962823
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 1.75,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_69_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 7.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.1273479703933478,
+              "y": 0.17872777910522178,
+              "z": 1.6839472959477235
+            },
+            "scale": {
+              "x": 1.4999999999999993,
+              "y": 1.7499999999999996,
+              "z": 1.9999999999999996
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_70_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 10.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.8157749899217608,
+              "y": 1.0949140771344799,
+              "z": 1.3258176636680323
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 2.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_71_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 10.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.6951513213416582,
+              "y": 0.8583373744911514,
+              "z": 1.4464413322481353
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 2.0,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_72_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 10.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": 0.6435011087932844,
+              "z": 1.5707963267948966
+            },
+            "scale": {
+              "x": 1.5000000000000002,
+              "y": 2.0,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_73_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 10.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.4464413445509072,
+              "y": 0.46055400821267634,
+              "z": 1.6951513090388854
+            },
+            "scale": {
+              "x": 1.4999999999999993,
+              "y": 1.9999999999999996,
+              "z": 1.7499999999999996
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_74_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 10.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.3258176636680326,
+              "y": 0.312766721941545,
+              "z": 1.8157749899217608
+            },
+            "scale": {
+              "x": 1.5,
+              "y": 2.0,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_75_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.9291087864259019,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 0.9999999999999999,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_76_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 0.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.9114794417530749,
+              "y": -0.13127459614347484,
+              "z": 0.26661783308150894
+            },
+            "scale": {
+              "x": 1.7500000000000002,
+              "y": 1.0,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_77_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 0.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.8613691301704168,
+              "y": -0.24825625240292604,
+              "z": 0.5303361914376468
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 1.0,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_78_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 0.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.7865308856548343,
+              "y": -0.3409058585859434,
+              "z": 0.7865308856548342
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 0.9999999999999999,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_79_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 0.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.8066715494215094,
+              "y": -0.6253312269231597,
+              "z": 1.2966288756752375
+            },
+            "scale": {
+              "x": 1.7499999999999996,
+              "y": 0.9999999999999997,
+              "z": 1.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_80_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 2.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.9472150901480373,
+              "y": 0.264268618464662,
+              "z": 0.13602467188930456
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 1.25,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_81_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 2.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 0.9548806728429584,
+              "y": 0.12787156853080742,
+              "z": 0.39725480552574066
+            },
+            "scale": {
+              "x": 1.7500000000000002,
+              "y": 1.25,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_82_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 2.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.9289268144931785,
+              "y": -0.0005448515061037367,
+              "z": 0.6445885718613396
+            },
+            "scale": {
+              "x": 1.7500000000000002,
+              "y": 1.25,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_83_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 2.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.8773950289041837,
+              "y": -0.1101323501862314,
+              "z": 0.8773950289041837
+            },
+            "scale": {
+              "x": 1.7499999999999998,
+              "y": 1.25,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_84_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 2.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 0.9685089570936425,
+              "y": -0.3908261163650507,
+              "z": 1.363300113935926
+            },
+            "scale": {
+              "x": 1.7499999999999998,
+              "y": 1.25,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_85_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 5.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.0044634259039578,
+              "y": 0.5124523239765953,
+              "z": 0.2858044515413636
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 1.5,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_86_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 5.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.0324768551508519,
+              "y": 0.36835991191271233,
+              "z": 0.541719582162137
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 1.5,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_87_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 5.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.0222776021209048,
+              "y": 0.2280563241336945,
+              "z": 0.7731491228612235
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 1.5000000000000002,
+              "z": 1.5000000000000002
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_88_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 5.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 0.9843619582789493,
+              "y": 0.10298229595031401,
+              "z": 0.9843619582789492
+            },
+            "scale": {
+              "x": 1.7499999999999998,
+              "y": 1.5,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_89_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 5.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.1273479703933478,
+              "y": -0.17872777910522175,
+              "z": 1.4576453576420692
+            },
+            "scale": {
+              "x": 1.7499999999999996,
+              "y": 1.4999999999999993,
+              "z": 1.9999999999999996
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_90_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 7.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.109869920154422,
+              "y": 0.7304014973107692,
+              "z": 0.46546242789347314
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 1.75,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_91_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 7.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.1484600287674462,
+              "y": 0.5770902930127233,
+              "z": 0.7104822858308179
+            },
+            "scale": {
+              "x": 1.7499999999999998,
+              "y": 1.7499999999999998,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_92_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 7.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.1431989074962823,
+              "y": 0.426348499478069,
+              "z": 0.9215528200484856
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 1.7499999999999998,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_93_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 7.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.1089606692685707,
+              "y": 0.2891710959007405,
+              "z": 1.108960669268571
+            },
+            "scale": {
+              "x": 1.7499999999999998,
+              "y": 1.75,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_94_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 7.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.2870022175865687,
+              "y": -0.0,
+              "z": 1.5707963267948966
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 1.7499999999999998,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_95_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 10.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.9295669970654685,
+              "y": 0.8954457119553525,
+              "z": 1.2120256565243241
+            },
+            "scale": {
+              "x": 1.7499999999999998,
+              "y": 1.9999999999999998,
+              "z": 0.9999999999999997
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_96_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 10.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.8157749785605188,
+              "y": 0.6675294613656908,
+              "z": 1.3258176750292745
+            },
+            "scale": {
+              "x": 1.7499999999999998,
+              "y": 2.0,
+              "z": 1.2499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_97_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 10.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.6951513090388854,
+              "y": 0.4605540082126763,
+              "z": 1.4464413445509072
+            },
+            "scale": {
+              "x": 1.7499999999999996,
+              "y": 1.9999999999999996,
+              "z": 1.4999999999999993
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_98_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 10.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": 0.2837941092083279,
+              "z": 1.5707963267948966
+            },
+            "scale": {
+              "x": 1.7499999999999998,
+              "y": 2.0,
+              "z": 1.75
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_99_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 7.5,
+              "y": 10.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.4464413322481353,
+              "y": 0.1408157907723402,
+              "z": 1.6951513213416582
+            },
+            "scale": {
+              "x": 1.75,
+              "y": 2.0,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_100_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963267948963,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 0.9999999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_101_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 0.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.5395564933646282,
+              "y": -0.2448638542056213,
+              "z": 0.2525542757780595
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 0.9999999999999998,
+              "z": 1.2499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_102_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 0.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.446441332248135,
+              "y": -0.4605539916813224,
+              "z": 0.5191461142465229
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.0,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_103_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 0.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.2966288756752375,
+              "y": -0.6253312269231595,
+              "z": 0.8066715494215093
+            },
+            "scale": {
+              "x": 1.9999999999999998,
+              "y": 0.9999999999999997,
+              "z": 1.7499999999999996
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_104_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 0.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.1071487177940904,
+              "y": -0.7297276562269663,
+              "z": 1.1071487177940904
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 0.9999999999999999,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_105_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 2.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.6020361602251647,
+              "y": 0.2448638542056213,
+              "z": 0.2525542757780595
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.2499999999999998,
+              "z": 0.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_106_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 2.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": 0.48995732625372834
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.25,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_107_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 2.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.4876550949064555,
+              "y": -0.21793734059082415,
+              "z": 0.7266423406817256
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.25,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_108_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 2.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.363300113935926,
+              "y": -0.3908261163650507,
+              "z": 0.9685089570936425
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.2499999999999998,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_109_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 2.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.2120256565243244,
+              "y": -0.5118556552438802,
+              "z": 1.2120256565243244
+            },
+            "scale": {
+              "x": 1.9999999999999998,
+              "y": 1.2499999999999998,
+              "z": 1.9999999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_110_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 5.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.695151321341658,
+              "y": 0.4605539916813224,
+              "z": 0.5191461142465229
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.5,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_111_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 5.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.6539375586833378,
+              "y": 0.21793734059082415,
+              "z": 0.7266423406817256
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.5000000000000002,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_112_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 5.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": 0.9272952180016123
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.5,
+              "z": 1.5000000000000002
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_113_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 5.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.4576453576420692,
+              "y": -0.17872777910522175,
+              "z": 1.1273479703933478
+            },
+            "scale": {
+              "x": 1.9999999999999996,
+              "y": 1.4999999999999993,
+              "z": 1.7499999999999996
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_114_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 5.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.3258176636680326,
+              "y": -0.312766721941545,
+              "z": 1.3258176636680326
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.5,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_115_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 7.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.8449637779145553,
+              "y": 0.6253312269231595,
+              "z": 0.8066715494215093
+            },
+            "scale": {
+              "x": 1.9999999999999998,
+              "y": 1.7499999999999998,
+              "z": 0.9999999999999997
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_116_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 7.5,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.7782925396538671,
+              "y": 0.3908261163650507,
+              "z": 0.9685089570936425
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.7499999999999998,
+              "z": 1.25
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_117_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 7.5,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.6839472959477235,
+              "y": 0.17872777910522175,
+              "z": 1.1273479703933478
+            },
+            "scale": {
+              "x": 1.9999999999999996,
+              "y": 1.7499999999999996,
+              "z": 1.4999999999999993
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_118_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 7.5,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": 1.2870022175865687
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.75,
+              "z": 1.7499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_119_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 7.5,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.4464413322481353,
+              "y": -0.1408157907723402,
+              "z": 1.4464413322481353
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 1.7500000000000002,
+              "z": 2.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_120_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 10.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 2.0344439357957027,
+              "y": 0.7297276562269663,
+              "z": 1.1071487177940904
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 2.0,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_121_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 10.0,
+              "z": 2.5
+            },
+            "rotation": {
+              "x": 1.9295669970654687,
+              "y": 0.5118556552438802,
+              "z": 1.2120256565243244
+            },
+            "scale": {
+              "x": 1.9999999999999998,
+              "y": 1.9999999999999998,
+              "z": 1.2499999999999998
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_122_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 10.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 1.8157749899217608,
+              "y": 0.312766721941545,
+              "z": 1.3258176636680326
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 2.0,
+              "z": 1.5
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_123_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 10.0,
+              "z": 7.5
+            },
+            "rotation": {
+              "x": 1.6951513213416582,
+              "y": 0.1408157907723402,
+              "z": 1.4464413322481353
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 2.0,
+              "z": 1.7500000000000002
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/SimpleInstancing.mesh.json"
+        }
+      ]
+    },
+    {
+      "name": "node0_124_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 10.0,
+              "y": 10.0,
+              "z": 10.0
+            },
+            "rotation": {
+              "x": 1.5707963267948966,
+              "y": -0.0,
+              "z": 1.5707963267948966
+            },
+            "scale": {
+              "x": 2.0,
+              "y": 2.0,
+              "z": 2.0
             }
           }
         },

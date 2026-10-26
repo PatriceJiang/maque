@@ -42,10 +42,10 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dif
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.427 | 0.368 | 差 -0.059 |
-| 前景平均 RGB | [121.0, 107.1, 89.5] | [112.3, 91.9, 57.5] | RGB 距离 0.073 |
-| 亮度直方图相似度 | — | — | 0.83（16 桶交集，1=完全一致） |
-| 前景占比 | 79.6% | 8.4% | 覆盖率比 0.106 |
+| 前景平均亮度 | 0.427 | 0.345 | 差 -0.082 |
+| 前景平均 RGB | [121.0, 107.1, 89.5] | [106.2, 86.1, 53.9] | RGB 距离 0.093 |
+| 亮度直方图相似度 | — | — | 0.84（16 桶交集，1=完全一致） |
+| 前景占比 | 79.6% | 8.5% | 覆盖率比 0.106 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
@@ -54,7 +54,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dif
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
@@ -63,7 +63,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Dif
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
 - 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
 
 ## 踩过的坑 / 注意

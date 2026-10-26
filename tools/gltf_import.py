@@ -27,6 +27,12 @@
     position/rotation，传播方向 = 节点 -Z；spot 用内/外锥角）。强度为**观感归一化**（directional≈2.6×
     intensity，point/spot 按模型尺度约几十~几百），有灯光时不再追加默认太阳。
   · KHR_node_visibility.visible=false：跳过该节点及整棵子树（mesh 与灯光都不生成）。
+  · KHR_texture_transform.rotation（glTF T*R*S 约定，弧度）→ 材质 `uv_rotation`（baseColor 组）/
+    `normal_uv_rotation`（normal 组）；仅非 0 写（旧输出零漂移）。
+  · EXT_mesh_gpu_instancing：节点的 TRANSLATION/ROTATION(xyzw)/SCALE 实例 accessor → 每个 mesh
+    primitive 展开 N 个实体（实例世界矩阵 = node 世界矩阵 × 实例 TRS）；>4096 警告并截断。
+  · KHR_materials_diffuse_transmission → alpha BLEND 近似（opacity=clamp(1-0.7*factor,0.25,1)）；
+    KHR_materials_volume 的 attenuationColor+finite attenuationDistance → base_color.rgb 乘色调（薄壁近似）。
 用法：
   python tools/gltf_import.py scene.gltf --out assets/imported
   python tools/gltf_import.py model.glb --out assets/imported --name hero
@@ -277,6 +283,35 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
         m["alpha_mode"] = 2                       # PbrAlphaMode::Blend
         approx = max(0.15, min(1.0, 1.0 - 0.85 * tf))
         m["opacity"] = min(float(m.get("opacity", 1.0)), approx)
+    # KHR_materials_diffuse_transmission 近似（乳浊半透）：alpha BLEND + opacity=clamp(1-0.7*factor,0.25,1)。
+    # 「不改 transmission 已有近似」：两者都存在时取 opacity 更小者（min）。
+    dt = exts.get("KHR_materials_diffuse_transmission") or {}
+    try:
+        dtf = float(dt.get("diffuseTransmissionFactor", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        dtf = 0.0
+    if dtf > 0.01:
+        m["alpha_mode"] = 2
+        approx = max(0.25, min(1.0, 1.0 - 0.7 * dtf))
+        m["opacity"] = min(float(m.get("opacity", 1.0)), approx)
+    # KHR_materials_volume：薄壁吸收色调近似——仅当 attenuationColor 存在且 attenuationDistance 有限时，
+    # base_color.rgb *= attenuationColor（不改已有 transmission alpha；无厚度/折射/散射模型）。
+    vol = exts.get("KHR_materials_volume") or {}
+    ac = vol.get("attenuationColor")
+    ad = vol.get("attenuationDistance")
+    if isinstance(ac, list) and len(ac) == 3:
+        try:
+            adf = float(ad) if ad is not None else None
+        except (TypeError, ValueError):
+            adf = None
+        if adf is not None and math.isfinite(adf) and adf > 0.0:
+            bc = m["base_color"]
+            def _tint(v):
+                return max(0.0, min(1.0, float(v)))
+            m["base_color"] = {"r": bc["r"] * _tint(ac[0]), "g": bc["g"] * _tint(ac[1]),
+                               "b": bc["b"] * _tint(ac[2]), "a": bc["a"]}
+            print(f"gltf_import: material '{m.get('name', '')}' KHR_materials_volume "
+                  f"attenuationColor → base_color 色调近似", file=sys.stderr)
 
     # glTF sampler → 贴图路径后缀（仅非默认；runtime 据此建 per-texture sampler）。
     # 默认 (repeat, repeat, linear) 不写 → 旧资产路径逐字节不变。
@@ -411,7 +446,8 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
         m["emissive_texture"] = slot
     mark_uv1("emissive", emissive_tex)
     # KHR_texture_transform（plans/19 PBR 正确性）：基础贴图一组 UV，法线单独一组。
-    # 只写非默认值（旧无变换资产逐字节不变）；rotation 暂不支持（引擎 UV 变换无旋转项）。
+    # 只写非默认值（旧无变换资产逐字节不变）；rotation（弧度，glTF T*R*S 约定）→
+    # 引擎 uv_rotation / normal_uv_rotation（schema 新增 float；仅非 0 写）。
     def tex_transform(tinfo):
         t = ((tinfo or {}).get("extensions") or {}).get("KHR_texture_transform")
         return t if isinstance(t, dict) else None
@@ -425,9 +461,12 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
             m[prefix + "_scale"] = {"x": sc[0], "y": sc[1]}
         if of != [0.0, 0.0]:
             m[prefix + "_offset"] = {"x": of[0], "y": of[1]}
-        if abs(float(tr.get("rotation", 0.0))) > 1e-9:
-            print(f"gltf_import: material '{m.get('name', '')}' 的 KHR_texture_transform.rotation "
-                  f"暂不支持（忽略）", file=sys.stderr)
+        try:
+            rot = float(tr.get("rotation", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            rot = 0.0
+        if abs(rot) > 1e-9:
+            m[prefix + "_rotation"] = rot
 
     put_uv("uv", tex_transform(pbr_tex))
     put_uv("normal_uv", tex_transform(normal_tex))
@@ -498,6 +537,46 @@ def _node_matrix(node):
     m[8] = r02 * s[2]; m[9] = r12 * s[2]; m[10] = r22 * s[2]
     m[12], m[13], m[14] = t[0], t[1], t[2]
     return m
+
+
+INSTANCE_LIMIT = 4096
+
+
+def _instance_matrices(js, buffers, node, node_name):
+    """EXT_mesh_gpu_instancing.attributes → [node-local TRS 矩阵]（TRANSLATION/ROTATION/SCALE）。
+
+    ROTATION 为四元数 xyzw；缺失属性用缺省（t=0, q=identity, s=1）。实例数 > INSTANCE_LIMIT 时
+    截断并 warning（确定性：保留前 INSTANCE_LIMIT 个）。返回 [] = 无有效实例属性（按普通节点处理）。
+    """
+    ext = (node.get("extensions") or {}).get("EXT_mesh_gpu_instancing") or {}
+    attrs = ext.get("attributes") or {}
+
+    def rows(name):
+        idx = attrs.get(name)
+        if idx is None:
+            return None
+        sc = accessor_norm_scale(js, idx)
+        return [[float(x) * sc for x in r] for r in accessor_values(js, buffers, idx)]
+
+    tr, ro, sc = rows("TRANSLATION"), rows("ROTATION"), rows("SCALE")
+    counts = [len(v) for v in (tr, ro, sc) if v is not None]
+    if not counts:
+        return []
+    n = min(counts)                       # 规范要求各属性 count 一致；容错取最小
+    if n > INSTANCE_LIMIT:
+        print(f"gltf_import: EXT_mesh_gpu_instancing 实例数 {n} > {INSTANCE_LIMIT}"
+              f"（node '{node_name}'）→ 截断到 {INSTANCE_LIMIT}", file=sys.stderr)
+        n = INSTANCE_LIMIT
+    mats = []
+    for i in range(n):
+        t = list(tr[i][:3]) if tr is not None else [0.0, 0.0, 0.0]
+        q = list(ro[i][:4]) if ro is not None else [0.0, 0.0, 0.0, 1.0]
+        s = list(sc[i][:3]) if sc is not None else [1.0, 1.0, 1.0]
+        qn = math.sqrt(sum(v * v for v in q))
+        if qn > 1e-12:
+            q = [v / qn for v in q]
+        mats.append(_node_matrix({"translation": t, "rotation": q, "scale": s}))
+    return mats
 
 
 def _decompose(m):
@@ -659,13 +738,15 @@ def _fit_camera_distance(center, bmin, bmax, dir_unit, fov_y_deg, aspect, margin
     return max(1e-4, dist)
 
 
-def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None):
+def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buffers=None):
     """glTF 节点树 → maque .scn：每个 (node, primitive) 一个平级实体（世界变换烘焙进 local）。
 
     camera（可选，来自 CLI）：{distance_scale, position[3], target[3], fov}；
     全空/None 时输出与旧版自动取景逐字节一致。
     KHR_lights_punctual：节点引用 → render.Light 实体（最多 8 盏、方向光优先、强度观感归一化），
     有灯光时不再追加默认太阳；KHR_node_visibility.visible=false → 跳过该节点及整棵子树。
+    EXT_mesh_gpu_instancing：node 的实例 accessor（需 buffers）→ 每个 primitive 展开 N 个实体
+    （世界矩阵 = node 世界矩阵 × 实例 TRS；实体名 `<node>_<inst>_<prim>`）。
     """
     nodes = js.get("nodes", [])
     scn_nodes = js.get("scenes", [{}])[js.get("scene", 0)].get("nodes", []) if js.get("scenes") else []
@@ -693,31 +774,44 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None):
         if isinstance(lref, int) and 0 <= lref < len(gltf_lights):
             light_refs.append((lref, world, node.get("name") or f"node{ni}"))
         mi = node.get("mesh")
+        nm = node.get("name") or f"node{ni}"
+        # EXT_mesh_gpu_instancing：节点 mesh 按 N 个实例 TRS 展开（world_i = node world × instance TRS）
+        inst_mats = None
+        if mi is not None and buffers is not None and node_exts.get("EXT_mesh_gpu_instancing"):
+            inst_mats = _instance_matrices(js, buffers, node, nm)
+            if not inst_mats:
+                inst_mats = None
         if mi is not None:
             for meta in prims_meta:
                 if meta["mi"] != mi:
                     continue
-                for cx in (meta["bounds_min"], meta["bounds_max"]):
-                    lo = [cx[0], cx[1], cx[2]]
-                    # 8 个角点 → 世界包围盒（用 min/max 两个角近似覆盖旋转）
-                    for sx in (cx[0], meta["bounds_max"][0]):
-                        for sy in (cx[1], meta["bounds_max"][1]):
-                            for sz in (cx[2], meta["bounds_max"][2]):
-                                wp = _xform_point(world, [sx, sy, sz])
-                                for k in range(3):
-                                    bounds_min[k] = min(bounds_min[k], wp[k])
-                                    bounds_max[k] = max(bounds_max[k], wp[k])
-                pos, rot, scl = _decompose(world)
-                comps = [
-                    {"type": "scene.Transform3D", "local": {
-                        "position": _vec3(*pos), "rotation": _vec3(*rot), "scale": _vec3(*scl)}},
-                    {"type": "render.MeshRenderer",
-                     "mesh_path": "assets/" + meta["mesh_name"] + ".mesh.json"},
-                ]
-                if meta.get("material"):
-                    comps.append(meta["material"])
-                nm = node.get("name") or f"node{ni}"
-                entities.append({"name": f"{nm}_{meta['pi']}", "components": comps})
+                if inst_mats is None:
+                    instance_variants = [(None, world)]
+                else:
+                    instance_variants = [(i, _mat_mul(world, im)) for i, im in enumerate(inst_mats)]
+                for inst_idx, w in instance_variants:
+                    for cx in (meta["bounds_min"], meta["bounds_max"]):
+                        lo = [cx[0], cx[1], cx[2]]
+                        # 8 个角点 → 世界包围盒（用 min/max 两个角近似覆盖旋转）
+                        for sx in (cx[0], meta["bounds_max"][0]):
+                            for sy in (cx[1], meta["bounds_max"][1]):
+                                for sz in (cx[2], meta["bounds_max"][2]):
+                                    wp = _xform_point(w, [sx, sy, sz])
+                                    for k in range(3):
+                                        bounds_min[k] = min(bounds_min[k], wp[k])
+                                        bounds_max[k] = max(bounds_max[k], wp[k])
+                    pos, rot, scl = _decompose(w)
+                    comps = [
+                        {"type": "scene.Transform3D", "local": {
+                            "position": _vec3(*pos), "rotation": _vec3(*rot), "scale": _vec3(*scl)}},
+                        {"type": "render.MeshRenderer",
+                         "mesh_path": "assets/" + meta["mesh_name"] + ".mesh.json"},
+                    ]
+                    if meta.get("material"):
+                        comps.append(meta["material"])
+                    ent_name = (f"{nm}_{meta['pi']}" if inst_idx is None
+                                else f"{nm}_{inst_idx}_{meta['pi']}")
+                    entities.append({"name": ent_name, "components": comps})
         for ci in node.get("children", []):
             walk(ci, world, depth + 1)
 
@@ -922,7 +1016,7 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, 
             f.write("\n")
         written.append(dest)
     if emit_scene_flag:
-        emit_scene(js, out_dir, name, prims_meta, camera=camera)
+        emit_scene(js, out_dir, name, prims_meta, camera=camera, buffers=buffers)
     return written, sorted(images)
 
 

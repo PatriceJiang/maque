@@ -145,8 +145,8 @@
           "type": "asset.PbrMaterial",
           "name": "GlassHurricaneCandleHolder-glass",
           "base_color": {
-            "r": 1.0,
-            "g": 1.0,
+            "r": 0.8,
+            "g": 0.95,
             "b": 1.0,
             "a": 1.0
           },

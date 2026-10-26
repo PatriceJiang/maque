@@ -52,7 +52,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Car
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
@@ -61,7 +61,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Car
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_texture_transform 支持 scale/offset；rotation 与逐贴图独立 transform 部分缺失
+- KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）

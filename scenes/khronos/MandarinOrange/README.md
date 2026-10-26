@@ -42,21 +42,21 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Man
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.526 | 0.534 | 差 +0.008 |
-| 前景平均 RGB | [171.1, 127.5, 94.0] | [177.9, 131.9, 55.8] | RGB 距离 0.065 |
-| 亮度直方图相似度 | — | — | 0.59（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.526 | 0.289 | 差 -0.237 |
+| 前景平均 RGB | [171.1, 127.5, 94.0] | [88.3, 72.1, 45.5] | RGB 距离 0.244 |
+| 亮度直方图相似度 | — | — | 0.47（16 桶交集，1=完全一致） |
 | 前景占比 | 79.6% | 7.1% | 覆盖率比 0.09 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 - 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_diffuse_transmission 未实现
+- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
 
 ## 踩过的坑 / 注意
 

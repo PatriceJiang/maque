@@ -38,6 +38,14 @@
 #       · 强度观感归一化：directional=2.6×intensity；point/spot=2.6×(d_ref²+1)×intensity；
 #       · KHR_node_visibility=false 节点及整棵子树（hidden_mesh/hidden_light）不生成实体；
 #       · 无灯光模型仍生成默认太阳（旧行为零漂移）。
+#   KHR_texture_transform.rotation + EXT_mesh_gpu_instancing + diffuse/volume（task-15）：
+#     · extensions.gltf 的 unlit baseColor transform 加 rotation=0.5、physical 加
+#       normalTexture + rotation=0.5 → 断言 uv_rotation / normal_uv_rotation（弧度，仅非 0 写）；
+#     · 夹具 tests/data/gltf/instancing.gltf（node 世界变换 [10,0,0] × 5 个实例 TRS：
+#       TRANSLATION/ROTATION(xyzw)/SCALE）→ 5 个实体、位置/旋转/缩放按「node 世界 × 实例 TRS」；
+#     · 夹具 tests/data/gltf/diffuse_volume.gltf：KHR_materials_diffuse_transmission factor=0.5
+#       → alpha_mode=2 / opacity=0.65；KHR_materials_volume attenuationColor+finite distance
+#       → base_color.rgb ×= attenuationColor（amber: [0.8,0.7,0.6]×[0.5,0.8,0.9]=[0.4,0.56,0.54]）。
 #   可选（MAQUE_TOYCAR_SRC=<含 ToyCar.gltf 的源目录>，源模型不入库）：ToyCar 三个
 #     mesh.json 逐字节一致；未设置时跳过（ToyCar 源模型有 KHR 扩展，更新入库后可用此钩子校验）。
 set -u
@@ -167,6 +175,10 @@ assert png[:8] == b"\x89PNG\r\n\x1a\n", png[:8]
 # KHR_texture_transform（plans/19）：unlit 的 baseColorTexture scale=[2,3] offset=[0.125,0.25]
 assert u.get("uv_scale") == {"x": 2.0, "y": 3.0}, u.get("uv_scale")
 assert u.get("uv_offset") == {"x": 0.125, "y": 0.25}, u.get("uv_offset")
+# KHR_texture_transform.rotation（task-15）→ uv_rotation / normal_uv_rotation（弧度；仅非 0 写）
+assert abs(u.get("uv_rotation") - 0.5) < 1e-9, u.get("uv_rotation")
+assert mat.get("normal_texture") == "textures/image0.png", mat.get("normal_texture")
+assert abs(mat.get("normal_uv_rotation") - 0.5) < 1e-9, mat.get("normal_uv_rotation")
 # 无变换的 physical 材质不写 uv 字段（非默认才写）
 assert "uv_scale" not in mat and "normal_uv_scale" not in mat
 print("gltf_import_e2e: 扩展材质映射 OK")
@@ -319,6 +331,84 @@ assert sum(1 for e in scn["entities"] if any("intensity" in c for c in e["compon
 print("gltf_import_e2e: 无灯光模型默认太阳 OK")
 PY
 [ $? -eq 0 ] || exit 1
+
+# ---- EXT_mesh_gpu_instancing + diffuse_transmission/volume 近似（task-15）----
+# （KHR_texture_transform.rotation 的断言在「扩展夹具」段：uv_rotation / normal_uv_rotation）
+INST_FIXTURE="$FIXDIR/instancing.gltf"
+DV_FIXTURE="$FIXDIR/diffuse_volume.gltf"
+[ -f "$INST_FIXTURE" ] || fail "缺夹具 $INST_FIXTURE"
+[ -f "$DV_FIXTURE" ] || fail "缺夹具 $DV_FIXTURE"
+mkdir -p "$WORK/inst" "$WORK/inst2" "$WORK/dv" "$WORK/dv2"
+"$PY" "$TOOL" "$INST_FIXTURE" --out "$WORK/inst" --scene --compact >"$WORK/inst.log" 2>&1 \
+    || { cat "$WORK/inst.log"; fail "instancing 夹具导入失败"; }
+"$PY" - "$WORK/inst/instancing.scn" <<'PY' || exit 1
+import json, math, sys
+scn = json.load(open(sys.argv[1], encoding="utf-8"))
+def mesh_entities():
+    out = []
+    for e in scn["entities"]:
+        if any("mesh_path" in c for c in e["components"]):
+            tr = next(c for c in e["components"] if c.get("type") == "scene.Transform3D")["local"]
+            out.append((e["name"], [tr["position"]["x"], tr["position"]["y"], tr["position"]["z"]],
+                        [tr["rotation"]["x"], tr["rotation"]["y"], tr["rotation"]["z"]],
+                        [tr["scale"]["x"], tr["scale"]["y"], tr["scale"]["z"]]))
+    return out
+ents = mesh_entities()
+# EXT_mesh_gpu_instancing：node 世界变换 [10,0,0] × 5 个实例 TRS → 5 个实体
+assert len(ents) == 5, ents
+assert [n for n, *_ in ents] == [f"inst_node_{i}_0" for i in range(5)], [n for n, *_ in ents]
+want_pos = [[10.0, 0.0, 0.0], [12.0, 0.0, 0.0], [14.0, 0.0, 0.0], [10.0, 2.0, 0.0], [10.0, 0.0, 2.0]]
+for (name, pos, rot, scl), wp in zip(ents, want_pos):
+    assert all(abs(a - b) < 1e-6 for a, b in zip(pos, wp)), (name, pos, wp)
+# 实例 1：绕 Y +90°；实例 2：scale=2；其余 identity
+assert abs(ents[1][2][1] - math.pi / 2) < 1e-6, ents[1][2]
+assert abs(ents[1][2][0]) < 1e-6 and abs(ents[1][2][2]) < 1e-6, ents[1][2]
+assert all(abs(v - 2.0) < 1e-6 for v in ents[2][3]), ents[2][3]
+for i in (0, 3, 4):
+    assert all(abs(v) < 1e-6 for v in ents[i][2]), ents[i][2]
+    assert all(abs(v - 1.0) < 1e-6 for v in ents[i][3]), ents[i][3]
+print("gltf_import_e2e: EXT_mesh_gpu_instancing OK")
+PY
+[ $? -eq 0 ] || exit 1
+
+"$PY" "$TOOL" "$INST_FIXTURE" --out "$WORK/inst2" --scene --compact >/dev/null 2>&1 \
+    || fail "instancing 夹具第二次导入失败"
+cmp -s "$WORK/inst/instancing.scn" "$WORK/inst2/instancing.scn" \
+    || fail "instancing 夹具 scn 两次导入不一致（违反确定性）"
+cmp -s "$WORK/inst/assets/instancing.mesh.json" "$WORK/inst2/assets/instancing.mesh.json" \
+    || fail "instancing 夹具 mesh 两次导入不一致（违反确定性）"
+echo "gltf_import_e2e: instancing 确定性 OK"
+
+"$PY" "$TOOL" "$DV_FIXTURE" --out "$WORK/dv" --compact >"$WORK/dv.log" 2>&1 \
+    || { cat "$WORK/dv.log"; fail "diffuse/volume 夹具导入失败"; }
+[ -f "$WORK/dv/diffuse_volume.mesh.json" ] || fail "缺 diffuse_volume.mesh.json"
+[ -f "$WORK/dv/diffuse_volume_0_1.mesh.json" ] || fail "缺 diffuse_volume_0_1.mesh.json"
+"$PY" - "$WORK/dv" <<'PY' || exit 1
+import json, sys
+d = sys.argv[1]
+milky = json.load(open(d + "/diffuse_volume.mesh.json", encoding="utf-8"))["materials"][0]
+# KHR_materials_diffuse_transmission factor=0.5 → alpha BLEND + opacity=clamp(1-0.7*0.5)=0.65
+assert milky["alpha_mode"] == 2 and abs(milky["opacity"] - 0.65) < 1e-9, (milky["alpha_mode"], milky.get("opacity"))
+assert abs(milky["base_color"]["r"] - 0.8) < 1e-9 and abs(milky["base_color"]["g"] - 0.6) < 1e-9
+amber = json.load(open(d + "/diffuse_volume_0_1.mesh.json", encoding="utf-8"))["materials"][0]
+# transmission factor=1 → alpha BLEND + opacity=0.15；volume attenuationColor [0.5,0.8,0.9] × baseColor [0.8,0.7,0.6]
+assert amber["alpha_mode"] == 2 and abs(amber["opacity"] - 0.15) < 1e-9, (amber["alpha_mode"], amber.get("opacity"))
+bc = amber["base_color"]
+assert abs(bc["r"] - 0.4) < 1e-9 and abs(bc["g"] - 0.56) < 1e-9 and abs(bc["b"] - 0.54) < 1e-9, bc
+assert abs(bc["a"] - 1.0) < 1e-9, bc
+# 无 texture transform → 不写 rotation 字段
+assert "uv_rotation" not in milky and "normal_uv_rotation" not in amber
+print("gltf_import_e2e: diffuse_transmission/volume 近似 OK")
+PY
+[ $? -eq 0 ] || exit 1
+
+"$PY" "$TOOL" "$DV_FIXTURE" --out "$WORK/dv2" --compact >/dev/null 2>&1 \
+    || fail "diffuse/volume 夹具第二次导入失败"
+for n in diffuse_volume diffuse_volume_0_1; do
+    cmp -s "$WORK/dv/$n.mesh.json" "$WORK/dv2/$n.mesh.json" \
+        || fail "diffuse/volume 夹具两次导入不一致（$n，违反确定性）"
+done
+echo "gltf_import_e2e: diffuse/volume 确定性 OK"
 
 # ---- 顶点布局 v1（COLOR_0 / TEXCOORD_1）+ per-texture sampler + transmission 近似 ----
 V1_FIXTURE="$FIXDIR/vertex_uv1.gltf"

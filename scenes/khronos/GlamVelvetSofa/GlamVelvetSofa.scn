@@ -190,7 +190,8 @@
           "normal_uv_scale": {
             "x": 5.0,
             "y": 5.0
-          }
+          },
+          "normal_uv_rotation": 0.36
         }
       ]
     },
