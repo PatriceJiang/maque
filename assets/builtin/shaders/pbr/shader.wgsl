@@ -4,12 +4,20 @@
 //
 // 顶点布局（mq_renderer_mesh_gpu layout=0，48B 规范）：
 //   location0 pos@0 · location1 normal@12 · location2 uv@40（tangent@24 留给 M5 法线贴图）
+struct GpuLight {
+  pos: vec4f,       // xyz=世界位置（dir 光不用）; w=类型（1=dir 2=point 3=spot；0=关闭）
+  dir: vec4f,       // xyz=传播方向（point 不用）
+  color: vec4f,     // rgb × intensity
+  params: vec4f,    // x=range, y=cos(inner), z=cos(outer), w=unused
+};
+
 struct Camera {
   vp: mat4x4f,
   eye: vec4f,          // xyz = 相机位置；w = exposure
   light_dir: vec4f,
   light_color: vec4f,  // rgb = 颜色 × intensity
   ambient: vec4f,
+  lights: array<GpuLight, 8>,
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
 
@@ -92,11 +100,7 @@ struct VOut {
   let nm_s = vec3f(nm.x * dr.mrp.z, nm.y * dr.mrp.z, nm.z);
   n = normalize(cotangent_frame(n, in.w, in.uv) * nm_s);
   let v = normalize(cam.eye.xyz - in.w);
-  let l = normalize(-cam.light_dir.xyz);
-  let h = normalize(v + l);
-  let n_dot_l = max(dot(n, l), 0.0);
   let n_dot_v = max(dot(n, v), 1e-4);
-  let n_dot_h = max(dot(n, h), 0.0);
 
   // 材质参数 × 贴图（无贴图时绑 1×1 白纹理 → 保持标量值不变）
   let mr_s = textureSample(mr_tex, albedo_smp, in.uv);
@@ -113,14 +117,45 @@ struct VOut {
   }
 
   let f0 = mix(vec3f(0.04), base, metallic);
-  let f = fresnel_schlick(max(dot(h, v), 0.0), f0);
-  let d = distribution_ggx(n_dot_h, rough);
-  let g = geometry_smith(n_dot_v, n_dot_l, rough);
-  let spec = d * g * f / (4.0 * n_dot_v * n_dot_l + 1e-4);
-  let kd = (vec3f(1.0) - f) * (1.0 - metallic);
-  let diffuse = kd * base / PI;
 
-  var color = (diffuse + spec) * cam.light_color.rgb * n_dot_l;
+  /* M5b：8 盏灯的循环光照 —— Directional / Point / Spot（点/聚光带距离与锥角衰减） */
+  var color = vec3f(0.0);
+  for (var li = 0; li < 8; li = li + 1) {
+    let L = cam.lights[li];
+    let lt = L.pos.w;
+    if (lt < 0.5) {
+      continue;
+    }
+    var l = vec3f(0.0, 1.0, 0.0);
+    var atten = 1.0;
+    if (lt < 1.5) {
+      l = normalize(-L.dir.xyz);
+    } else {
+      let to_light = L.pos.xyz - in.w;
+      let d2 = max(dot(to_light, to_light), 1e-6);
+      let dl = sqrt(d2);
+      l = to_light / dl;
+      let rng = max(L.params.x, 1e-4);
+      let win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      atten = win * win / (d2 + 1.0);
+      if (lt > 2.5) {
+        let cone = -dot(normalize(L.dir.xyz), l);
+        atten = atten * smoothstep(L.params.z, L.params.y, cone);
+      }
+    }
+    let ndl = max(dot(n, l), 0.0);
+    if (ndl <= 0.0) {
+      continue;
+    }
+    let hv = normalize(v + l);
+    let ndh = max(dot(n, hv), 0.0);
+    let fl = fresnel_schlick(max(dot(hv, v), 0.0), f0);
+    let dg = distribution_ggx(ndh, rough);
+    let gg = geometry_smith(n_dot_v, ndl, rough);
+    let sp = dg * gg * fl / (4.0 * n_dot_v * ndl + 1e-4);
+    let kdl = (vec3f(1.0) - fl) * (1.0 - metallic);
+    color = color + (kdl * base / PI + sp) * L.color.rgb * ndl * atten;
+  }
   // 环境项：常量漫反射 + 粗糙度相关的环境高光近似（无 IBL 时的廉价替代；
   // 半球渐变 ambient 会压平粗糙度对比，M5 接真 IBL 后再启用）
   let spec_amb = mix(vec3f(0.04), base, metallic) * cam.ambient.rgb * (1.0 - rough) * 0.35;

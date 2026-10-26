@@ -1119,22 +1119,28 @@ void Engine::extract_3d(int32_t tw, int32_t th,
         }
         auto* lb = comp_by_name(*this, idx, "render.Light", &dlight);
         if (lb && dlight) {
+            /* M5b：Directional / Point / Spot 全类型（后两种用节点世界位置；方向 = 节点 -Z 轴） */
             mq_renderer_light L{};
             const int type = (int)read_num(dlight, lb->data(), "type", 0.0F);
-            if (type == 0) {                               /* M2：只消费方向光 */
-                math::Transform3D r = trs;
-                r.position = math::Vec3{ 0.0F, 0.0F, 0.0F };
-                r.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
-                float R[16];
-                m4_from_trs(r, R);
-                L.type = 0;
-                L.dir[0] = -R[8]; L.dir[1] = -R[9]; L.dir[2] = -R[10];   /* 节点 -Z 轴 = 光传播方向 */
-                math::Color lc{ 1.0F, 1.0F, 1.0F, 1.0F };
-                read_color(dlight, lb->data(), "color", &lc);
-                L.color[0] = lc.r; L.color[1] = lc.g; L.color[2] = lc.b;
-                L.intensity = read_num(dlight, lb->data(), "intensity", 1.0F);
-                out_lights.push_back(L);
-            }
+            L.type = type;
+            math::Color lc{ 1.0F, 1.0F, 1.0F, 1.0F };
+            read_color(dlight, lb->data(), "color", &lc);
+            L.color[0] = lc.r; L.color[1] = lc.g; L.color[2] = lc.b;
+            L.intensity = read_num(dlight, lb->data(), "intensity", 1.0F);
+            L.range = read_num(dlight, lb->data(), "range", 10.0F);
+            constexpr float kDeg = 3.14159265F / 180.0F;
+            const float inner_d = read_num(dlight, lb->data(), "inner_angle", 20.0F);
+            const float outer_d = read_num(dlight, lb->data(), "outer_angle", 30.0F);
+            L.inner_cos = std::cos(inner_d * kDeg);
+            L.outer_cos = std::cos(outer_d * kDeg);
+            math::Transform3D r = trs;
+            r.position = math::Vec3{ 0.0F, 0.0F, 0.0F };
+            r.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
+            float R[16];
+            m4_from_trs(r, R);
+            L.pos[0] = trs.position.x; L.pos[1] = trs.position.y; L.pos[2] = trs.position.z;
+            L.dir[0] = -R[8]; L.dir[1] = -R[9]; L.dir[2] = -R[10];
+            out_lights.push_back(L);
         }
         auto* mb = comp_by_name(*this, idx, "render.MeshRenderer", &dmesh);
         if (mb && dmesh && cube_mesh >= 0) {

@@ -243,4 +243,30 @@ sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: ⑦ 透明材质（BLEND 混合 / MASK 裁剪）OK"
 fi
+
+# ---- ⑧ 多光源（M5b）：Point（红）与 Spot（绿）投影到不同 cube ----
+LIGHTS_SCN="$ROOT/scenes/pbr/lights.scn"
+if [ -f "$LIGHTS_SCN" ]; then
+    ( cd "$ROOT" && timeout 90 "$PLAYER" --shot "$WORK/lights.ppm" --frames 2 scenes/pbr/lights.scn \
+        >"$WORK/lights.txt" 2>&1 ) || { cat "$WORK/lights.txt"; fail "多光源场景渲染失败"; }
+    "$PY" - "$WORK/lights.ppm" <<'PY' || exit 1
+import sys
+d = open(sys.argv[1], 'rb').read()
+magic, dims, _m, px = d.split(b'\n', 3)
+assert magic == b'P6'
+w, h = map(int, dims.split())
+def rgb(cx, cy):
+    i = (cy * w + cx) * 3
+    return px[i], px[i+1], px[i+2]
+left = rgb(int(w*0.34), h//2)
+mid = rgb(int(w*0.50), h//2)
+right = rgb(int(w*0.66), h//2)
+print(f'render3d_scene_e2e: lights point={left} spot_mid={mid} right={right}')
+ok = (left[0] > left[1] + 12 and left[0] > left[2] + 12
+      and mid[1] > mid[0] + 5 and mid[1] > mid[2] + 8
+      and abs(right[0]-right[1]) < 12)
+sys.exit(0 if ok else 1)
+PY
+    echo "render3d_scene_e2e: ⑧ 多光源（Point/Spot）OK"
+fi
 echo "render3d_scene_e2e: PASS"

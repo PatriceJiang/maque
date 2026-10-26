@@ -1,0 +1,41 @@
+{
+  "title": "pbr_lights", "width": 640, "height": 360, "views": 1,
+  "entities": [
+    { "name": "camera", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.2, "z": 6.0 } } },
+      { "type": "render.Camera3D", "fov_y": 50.0, "near": 0.1, "far": 100.0,
+        "clear_color": { "r": 0.015, "g": 0.015, "b": 0.02, "a": 1.0 } } ] },
+    { "name": "sun", "components": [
+      { "type": "scene.Transform3D", "local": { "rotation": { "x": -1.224749, "y": -2.158799, "z": 0.0 } } },
+      { "type": "render.Light", "type": 0, "intensity": 0.25,
+        "color": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } } ] },
+    { "name": "point_light", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": -1.6, "y": 0.5, "z": 1.6 } } },
+      { "type": "render.Light", "type": 1, "intensity": 4.0, "range": 4.0,
+        "color": { "r": 1.0, "g": 0.12, "b": 0.08, "a": 1.0 } } ] },
+    { "name": "spot_light", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.1, "z": 2.4 },
+          "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+      { "type": "render.Light", "type": 2, "intensity": 6.0, "range": 8.0,
+        "inner_angle": 18.0, "outer_angle": 32.0,
+        "color": { "r": 0.1, "g": 1.0, "b": 0.2, "a": 1.0 } } ] },
+    { "name": "cube_l", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": -1.6, "y": 0.0, "z": 0.0 },
+          "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+      { "type": "render.MeshRenderer" },
+      { "type": "asset.PbrMaterial", "metallic": 0.0, "roughness": 0.6,
+        "base_color": { "r": 0.7, "g": 0.7, "b": 0.7, "a": 1.0 } } ] },
+    { "name": "cube_m", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+          "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+      { "type": "render.MeshRenderer" },
+      { "type": "asset.PbrMaterial", "metallic": 0.0, "roughness": 0.6,
+        "base_color": { "r": 0.7, "g": 0.7, "b": 0.7, "a": 1.0 } } ] },
+    { "name": "cube_r", "components": [
+      { "type": "scene.Transform3D", "local": { "position": { "x": 1.6, "y": 0.0, "z": 0.0 },
+          "scale": { "x": 0.9, "y": 0.9, "z": 0.9 } } },
+      { "type": "render.MeshRenderer" },
+      { "type": "asset.PbrMaterial", "metallic": 0.0, "roughness": 0.6,
+        "base_color": { "r": 0.7, "g": 0.7, "b": 0.7, "a": 1.0 } } ] }
+  ]
+}

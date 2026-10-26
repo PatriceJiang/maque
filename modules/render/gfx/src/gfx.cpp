@@ -260,7 +260,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         {
             WGPUBindGroupLayoutEntry e{};
             e.binding = 0; e.visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 128;
+            e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 640;
             WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 1; bd.entries = &e;
             dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
@@ -1101,7 +1101,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         const mq_renderer_view3d& v = f->views[vi];
         float vp[16];
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
-        float cam[32] = {};
+        float cam[160] = {};
         std::memcpy(cam, vp, sizeof vp);
         cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = v.exposure;
         cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
@@ -1110,6 +1110,23 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         cam[29] = f->env.env_color[1] * f->env.intensity;
         cam[30] = f->env.env_color[2] * f->env.intensity;
         cam[31] = 0.0F;
+        /* 光照数组（8 盏）：每盏 16 float = pos(4, w=类型) + dir(4) + color(4) + params(4) */
+        for (uint32_t li = 0; li < 8; ++li) {
+            float* dst = cam + 32 + li * 16;
+            if (li < f->light_count) {
+                const mq_renderer_light& L = f->lights[li];
+                dst[0] = L.pos[0]; dst[1] = L.pos[1]; dst[2] = L.pos[2];
+                dst[3] = (L.type == 0) ? 1.0F : ((L.type == 1) ? 2.0F : 3.0F);
+                dst[4] = L.dir[0]; dst[5] = L.dir[1]; dst[6] = L.dir[2]; dst[7] = 1.0F;
+                dst[8] = L.color[0] * L.intensity;
+                dst[9] = L.color[1] * L.intensity;
+                dst[10] = L.color[2] * L.intensity;
+                dst[11] = 1.0F;
+                dst[12] = L.range; dst[13] = L.inner_cos; dst[14] = L.outer_cos; dst[15] = 0.0F;
+            } else {
+                dst[3] = 0.0F;                                   /* w=0 → 未启用 */
+            }
+        }
         WGPUBufferDescriptor ubd = WGPU_BUFFER_DESCRIPTOR_INIT;
         ubd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
         ubd.size = sizeof cam;

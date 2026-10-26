@@ -377,3 +377,8 @@ per view:
   gfx 新增 blend 管线（srcAlpha/1-srcAlpha、depthWrite=false），draw 按材质 alpha_mode 分成
   不透明/透明两组，透明按相机距离远→近排序并画在不透明之后；`scenes/pbr/transparency.scn`
   + e2e ⑦（BLEND 混合可见、MASK 被裁剪、不透明不受影响）。
+
+- **M5b ✅ 多光源**：runtime 提取 Directional/Point/Spot（pos+dir+range+cos(inner/outer)），
+  gfx 相机 uniform 128→640B（8 盏灯 × {pos,dir,color,params}），shader 8 灯循环：
+  方向光直接取；点光 `window(d/range)²/(d²+1)` 距离衰减；聚光再加 `smoothstep(cos_outer, cos_inner, cone)`；
+  `scenes/pbr/lights.scn` + e2e ⑧（红点光染左 cube / 绿聚光染中 cube / 右 cube 中性）。
