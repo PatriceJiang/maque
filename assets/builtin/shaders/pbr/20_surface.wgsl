@@ -28,7 +28,17 @@ fn sample_clearcoat_normal(geo_n: vec3f, w: vec3f, uv: vec2f) -> vec3f {
   return normalize(cotangent_frame(geo_n, w, uv) * nm_s);
 }
 
-fn surface_common(in: VOut) -> Surface {
+/* glTF doubleSided：背面渲染时先把几何法线取反再做光照（规范 MUST；three.js faceDirection 同义）。
+ * 切线基由取反后的几何法线派生，normal map 的 T/B 随 n 一起翻转，与 three.js 行为一致。 */
+fn surface_geo_normal(raw: vec3f, front_facing: bool) -> vec3f {
+  var n = normalize(raw);
+  if (dr.alpha.z > 0.5 && !front_facing) {
+    n = -n;
+  }
+  return n;
+}
+
+fn surface_common(in: VOut, front_facing: bool) -> Surface {
   var s: Surface;
   s.uv = in.uv;
   s.w = in.w;
@@ -41,12 +51,14 @@ fn surface_common(in: VOut) -> Surface {
   let mr_s = textureSample(mr_tex, albedo_smp, uv);
   s.metallic = clamp(dr.mrp.x * mr_s.b, 0.0, 1.0);
   s.rough = clamp(dr.mrp.y * mr_s.g, 0.02, 1.0);
-  s.ao = clamp(dr.mrp.w * textureSample(ao_tex, albedo_smp, uv).r, 0.0, 1.0);
+  /* glTF occlusionTexture.strength 语义 = mix(1, tex.r, strength)，不是 tex.r × strength */
+  let ao_s = textureSample(ao_tex, albedo_smp, uv).r;
+  s.ao = clamp(1.0 + dr.mrp.w * (ao_s - 1.0), 0.0, 1.0);
   s.emissive = dr.emissive.rgb * dr.emissive.w * textureSample(emissive_tex, albedo_smp, uv).rgb;
 
-  var n_geo = normalize(in.n);
+  var n_geo = surface_geo_normal(in.n, front_facing);
   if ((flags2_bits() & 1) != 0) {
-    n_geo = flat_normal(in.w);
+    n_geo = flat_normal(in.w);           /* flat shading 本身已按朝向相机修正符号 */
   }
   s.n = sample_surface_normal(n_geo, in.w, uv_n);
   return s;

@@ -11,9 +11,12 @@
 ```bash
 # 原始 glTF 目录（ToyCar.gltf + ToyCar.bin + *.png）放到任意目录，然后：
 # ⚠️ --scene 会重新生成 ToyCar.scn（当前入库的 scn 已手工调过相机/灯光/环境光，别直接覆盖）；
-#    只更新素材/材质时去掉 --scene：
+#    更新素材/材质时**不要**加 --scene。无 --scene 时 importer 把 mesh 写到 --out 根目录，
+#    所以先导到临时目录，再把 *.mesh.json 放到 assets/、textures/ 放到 textures/：
 python tools/gltf_import.py <源目录>/ToyCar.gltf \
-    --out scenes/khronos/ToyCar --name ToyCar --compact
+    --out build/toycar-regen --name ToyCar --compact
+cp build/toycar-regen/*.mesh.json scenes/khronos/ToyCar/assets/
+cp build/toycar-regen/textures/* scenes/khronos/ToyCar/textures/
 ```
 
 - `--scene`：把 glTF 节点树烘焙成平级实体（世界变换写入 `scene.Transform3D.local`），
@@ -25,6 +28,9 @@ python tools/gltf_import.py <源目录>/ToyCar.gltf \
   `KHR_materials_sheen`（Fabric → Physical + sheen=1/sheenColor=红）；
   `KHR_materials_transmission`（Glass）暂不支持。运行时材质以 `ToyCar.scn` 节点上的
   `asset.PbrMaterial` 组件为准（可在此手调观感）。
+- `side`（M1 修复）：运行时剔除只认 `asset.PbrMaterial.side`（`doubleSided=true → 2` 双面 /
+  `false → 0` 单面剔除背面）。手写 scn 的材质必须与源 glTF 的 `doubleSided` 保持一致：
+  当前 paint=2、Fabric=2、Glass=0（Glass 用 alpha BLEND 近似 transmission）。
 
 ## 运行
 

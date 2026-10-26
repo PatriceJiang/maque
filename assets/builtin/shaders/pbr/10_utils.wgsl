@@ -24,18 +24,26 @@ fn aces_tonemap(x: vec3f) -> vec3f {
   return clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3f(0.0), vec3f(1.0));
 }
 
-/* 由屏幕空间导数求切线基（cotangent frame）：不依赖顶点 TANGENT，导入网格可直接用法线贴图。 */
+/* 由屏幕空间导数求切线基（cotangent frame）：不依赖顶点 TANGENT，导入网格可直接用法线贴图。
+ * WebGPU 的 dpdy 以 framebuffer 坐标为准（y 向下），与 GLSL dFdy（y 向上）反号；本公式来自 GLSL 语义，
+ * 故 dp2/duv2 先取负。否则 T、B 同时取反 = 法线贴图在切线空间旋转 180°（glTF/three.js 约定 T=+∂P/∂u、B=+∂P/∂v）。
+ * t/b 必须**各自归一化**（不要用共同的 1/|max|）：|t|² 是「世界/像素 × UV/像素」量纲，小尺度场景
+ *（ToyCar 1e-4）下 |t|² 可以远小于 1e-8 → 共同 epsilon 会把 T/B 缩成 0.07 长度，法线贴图效果被削掉 ~85%。 */
 fn cotangent_frame(n: vec3f, p: vec3f, uv: vec2f) -> mat3x3f {
   let dp1 = dpdx(p);
-  let dp2 = dpdy(p);
+  let dp2 = -dpdy(p);
   let duv1 = dpdx(uv);
-  let duv2 = dpdy(uv);
+  let duv2 = -dpdy(uv);
   let dp2perp = cross(dp2, n);
   let dp1perp = cross(n, dp1);
   let t = dp2perp * duv1.x + dp1perp * duv2.x;
   let b = dp2perp * duv1.y + dp1perp * duv2.y;
-  let invmax = inverseSqrt(max(max(dot(t, t), dot(b, b)), 1e-8));
-  return mat3x3f(t * invmax, b * invmax, n);
+  let t2 = dot(t, t);
+  let b2 = dot(b, b);
+  let tiny = 1e-30;
+  let it = inverseSqrt(max(t2, tiny));
+  let ib = inverseSqrt(max(b2, tiny));
+  return mat3x3f(t * it, b * ib, n);
 }
 
 /* 3×3 PCF（comparison sampler；关闭时恒 1） */
@@ -58,7 +66,9 @@ fn shadow_factor(world: vec3f, n_dot_l: f32) -> f32 {
   var sum = 0.0;
   for (var y = -1; y <= 1; y += 1) {
     for (var x = -1; x <= 1; x += 1) {
-      sum += textureSampleCompare(shadow_map, shadow_smp, uv + vec2f(f32(x), f32(y)) * texel, ndc.z - bias);
+      /* `CompareLevel`：显式 LOD0 比较采样，不依赖隐式导数 → 不受上面的非一致控制流 return 影响
+       *（WGSL 对 textureSampleCompare 要求 uniform control flow）。 */
+      sum += textureSampleCompareLevel(shadow_map, shadow_smp, uv + vec2f(f32(x), f32(y)) * texel, ndc.z - bias);
     }
   }
   return sum / 9.0;

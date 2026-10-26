@@ -4,13 +4,14 @@
 输入：`.gltf`（JSON，external/内嵌 base64 buffer）或 `.glb`（二进制 chunk）。
 输出（--out 目录，确定性文本，可纳入版本库/CI 校验）：
   <name>.mesh.json     网格 + 材质 + 贴图引用（M4b 运行时加载格式，48B 顶点布局）
-  textures/<name>.png  bin bufferView 内嵌的 PNG 贴图（外部 uri 贴图也复制进来）
+  textures/<name>.png   PNG 贴图（bin bufferView 内嵌/外部 uri/data: URI 一律搬运；JPEG 输出 .jpg）
 
 设计约束（与引擎一致）：
   · 顶点布局 = mq_renderer_mesh_gpu layout 0：pos3|normal3|tangent4|uv2（48B/顶点）
   · 只接受三角网格（mode=4/缺省）；其它 mode 跳过并告警（确定性：按 primitive 顺序）
   · 输出 JSON 排序键 + 固定缩进 → 同一 glTF 导入结果逐字节一致
-  · 不做图像编解码：PNG 直接搬运；JPEG 贴图跳过（M5 接 image 解码器）
+  · 不做图像编解码：PNG/JPEG 原样搬运（运行时 image 模块按 magic 解码）；
+    其它编码（KTX2/BasisU/WebP）跳过并告警
   · 材质扩展：KHR_materials_{unlit,clearcoat,sheen,iridescence,specular,ior,anisotropy,
     emissive_strength} → asset.PbrMaterial（只写非默认值，无扩展材质输出零漂移）
 用法：
@@ -120,10 +121,42 @@ def compute_normals(positions, indices):
     return [normalize(v) for v in nrm]
 
 
+def image_encoding(img):
+    """判定 glTF image 的搬运编码：'png' / 'jpeg' / None（不支持，跳过）。
+
+    判定顺序（确定性）：
+      ① 显式 mimeType：image/png → png；image/jpeg → jpeg；其它 → 不支持；
+      ② mimeType 缺失时看 data: URI 头（data:image/jpeg;... / data:image/png;...）；
+      ③ mimeType 缺失时看 uri 扩展名：.jpg/.jpeg → jpeg，其它 → png
+         （旧版对 mimeType 缺失的图一律按 .png 放行，保持兼容、PNG 资产零漂移）；
+      ④ bufferView 内嵌图缺 mimeType（glTF 规范不允许）→ 沿用旧行为按 png。
+    """
+    mime = img.get("mimeType")
+    if mime is not None:
+        if mime == "image/png":
+            return "png"
+        if mime == "image/jpeg":
+            return "jpeg"
+        return None
+    uri = img.get("uri")
+    if uri and uri.startswith("data:"):
+        head = uri.split(",", 1)[0].lower()
+        if "image/jpeg" in head:
+            return "jpeg"
+        if "image/png" in head:
+            return "png"
+        return None
+    if uri:
+        ext = os.path.splitext(uri.split("?", 1)[0])[1].lower()
+        return "jpeg" if ext in (".jpg", ".jpeg") else "png"
+    return "png"
+
+
 def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
     pbr = mat.get("pbrMetallicRoughness", {})
     c = pbr.get("baseColorFactor", [1.0, 1.0, 1.0, 1.0])
     e = mat.get("emissiveFactor", [0.0, 0.0, 0.0])
+    double_sided = bool(mat.get("doubleSided", False))
     m = {
         "type": "asset.PbrMaterial",
         "name": mat.get("name", ""),
@@ -131,13 +164,17 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
         "metallic": float(pbr.get("metallicFactor", 1.0)),
         "roughness": float(pbr.get("roughnessFactor", 1.0)),
         "emissive": {"x": e[0], "y": e[1], "z": e[2]},
-        "double_sided": bool(mat.get("doubleSided", False)),
+        "double_sided": double_sided,
+        # 运行时剔除只看 MaterialSide（gfx side→cullMode）：doubleSided=false 必须 Front(0)
+        # 才会剔除背面；true → Double(2)（保留 double_sided 供 shader 侧将来使用）
+        "side": 2 if double_sided else 0,
     }
     alpha_mode = mat.get("alphaMode", "OPAQUE")
     m["alpha_mode"] = {"OPAQUE": 0, "MASK": 1, "BLEND": 2}.get(alpha_mode, 0)
     m["alpha_cutoff"] = float(mat.get("alphaCutoff", 0.5))
     # KHR 材质扩展 → asset.PbrMaterial 字段（plans/19 材质迁移）。缺省值 = schema 默认；
-    # 只写"非默认"值 → 无扩展/全默认材质输出与迁移前逐字节一致（已入库 cube 零漂移）。
+    # 扩展字段只写"非默认"值（无扩展材质不因扩展逻辑产生漂移）。例外：side/double_sided 对
+    # **每个**材质都写 —— 修 M1（运行时剔除只认 side，不看 double_sided）→ 已入库资产一次性重生成。
     exts = mat.get("extensions") or {}
 
     def put_num(field, value, default):
@@ -181,7 +218,7 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
     if "KHR_materials_emissive_strength" in exts:
         put_num("emissive_intensity",
                 (exts["KHR_materials_emissive_strength"] or {}).get("emissiveStrength", 1.0), 1.0)
-    # 贴图槽：glTF 的 texture index → image uri 或 bufferView（PNG 搬运）
+    # 贴图槽：glTF 的 texture index → image uri 或 bufferView（PNG/JPEG 原样搬运）
     def tex_slot(tinfo):
         if not tinfo:
             return ""
@@ -190,10 +227,13 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
         if src is None:
             return ""
         img = js["images"][src]
-        name = (img.get("name") or f"image{src}") + ".png"
-        if img.get("mimeType") not in (None, "image/png"):
-            print(f"gltf_import: 跳过非 PNG 贴图 '{name}'（{img.get('mimeType')}）", file=sys.stderr)
+        enc = image_encoding(img)
+        if enc is None:
+            print(f"gltf_import: 跳过不支持的贴图 image={src} "
+                  f"（mimeType={img.get('mimeType')}）", file=sys.stderr)
             return ""
+        ext = ".jpg" if enc == "jpeg" else ".png"
+        name = (img.get("name") or f"image{src}") + ext
         dest = os.path.join(tex_dir, name)
         if img.get("uri") and not img["uri"].startswith("data:"):
             with open(os.path.join(base_dir, img["uri"]), "rb") as f:
@@ -223,9 +263,18 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
     slot = tex_slot(normal_tex)
     if slot:
         m["normal_texture"] = slot
-    slot = tex_slot(mat.get("occlusionTexture"))
+    if normal_tex:
+        # glTF normalTexture.scale（缺省 1）→ 引擎 normal_scale / normal_scale_y
+        # （three.js 语义：两轴同值；引擎把 x/y 拆开是为了兼容手写 scn）
+        put_num("normal_scale", normal_tex.get("scale", 1.0), 1.0)
+        put_num("normal_scale_y", normal_tex.get("scale", 1.0), 1.0)
+    occ_tex = mat.get("occlusionTexture")
+    slot = tex_slot(occ_tex)
     if slot:
         m["occlusion_texture"] = slot
+    if occ_tex:
+        # glTF occlusionTexture.strength（缺省 1）→ 引擎 occlusion_strength
+        put_num("occlusion_strength", occ_tex.get("strength", 1.0), 1.0)
     slot = tex_slot(mat.get("emissiveTexture"))
     if slot:
         m["emissive_texture"] = slot
@@ -437,13 +486,16 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False):
                 continue
             positions = accessor_values(js, buffers, attrs["POSITION"])
             n = len(positions)
-            normals = (accessor_values(js, buffers, attrs["NORMAL"])
-                       if "NORMAL" in attrs else compute_normals(positions, list(range(n))))
             uvs = (accessor_values(js, buffers, attrs["TEXCOORD_0"])
                    if "TEXCOORD_0" in attrs else [[0.0, 0.0]] * n)
             indices = (accessor_values(js, buffers, prim["indices"])
                        if "indices" in prim else [[i] for i in range(n)])
             indices = [int(r[0]) for r in indices]
+            # 缺 NORMAL：glTF 规范允许。**有索引时必须按真实 indices** 累积（旧实现传 range(n)
+            # 把顶点序号当三角形汤 → 法线随机错）；无索引时 range(n) 才等价于索引序列。
+            normals = (accessor_values(js, buffers, attrs["NORMAL"])
+                       if "NORMAL" in attrs
+                       else compute_normals(positions, indices if "indices" in prim else list(range(n))))
             mat_idx = prim.get("material", -1)
             mats = []
             if mat_idx >= 0:

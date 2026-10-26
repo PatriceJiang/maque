@@ -1,6 +1,6 @@
 // Matcap（MeshMatcapMaterial）：视空间法线查 matcap 贴图 × base_color（不做光照）。
-@fragment fn fs_matcap(in: VOut) -> @location(0) vec4f {
-  var s = surface_common(in);
+@fragment fn fs_matcap(in: VOut, @builtin(front_facing) ff: bool) -> @location(0) vec4f {
+  var s = surface_common(in, ff);
   surface_alpha_test(s);
   var color = s.base;
   if ((flags2_bits() & 2) != 0) {

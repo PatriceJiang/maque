@@ -692,13 +692,45 @@ int Engine::load_texture(const std::string& path) {
 }
 
 /* plans/19：CPU box-filter mip 链（RGBA8，各层连续存放）。
- * 无 mip 时高频贴图（布纹/车漆细节）在远处会强烈闪烁/摩尔纹——PBR 正确性的重要一环。 */
-static std::vector<uint8_t> build_mip_chain(const uint8_t* src, int w0, int h0, int& levels) {
+ * 无 mip 时高频贴图（布纹/车漆细节）在远处会强烈闪烁/摩尔纹——PBR 正确性的重要一环。
+ * srgb=true（M4g albedo/emissive）：RGB 必须**先解码到线性再平均、再编码回 sRGB**——
+ * 直接在 sRGB 编码字节上平均会让明暗混合显著偏暗（黑白棋盘 2×2 的线性均值 0.5 →
+ * 编码域平均只剩 ~0.214，线性亮度 -57%）。alpha 始终是线性数据，直接平均。
+ * 线性数据贴图（MR/AO/normal）走 srgb=false，与旧实现逐字节一致。 */
+static void srgb_mip_tables(float* decode, float* encode_thr) {
+    for (int i = 0; i < 256; ++i) {
+        const double c = (double)i / 255.0;
+        decode[i] = (float)(c <= 0.04045 ? c / 12.92 : std::pow((c + 0.055) / 1.055, 2.4));
+    }
+    /* encode_thr[b] = 线性域中「编码值恰为 (b+0.5)/255」的门槛：值 >= 门槛即进位到 b+1，
+     * 二分即得 round(255*srgb(linear))，避免逐像素 pow。 */
+    for (int b = 0; b < 255; ++b) {
+        const double s = ((double)b + 0.5) / 255.0;
+        encode_thr[b] = (float)(s <= 0.04045 ? s / 12.92 : std::pow((s + 0.055) / 1.055, 2.4));
+    }
+}
+
+static uint8_t srgb_encode_from_linear(float linear, const float* encode_thr) {
+    if (linear <= 0.0F) return 0;
+    if (linear >= 1.0F) return 255;
+    int lo = 0, hi = 255;                       /* 找第一个 > linear 的门槛 → 输出 lo */
+    while (lo < hi) {
+        const int mid = (lo + hi) / 2;
+        if (linear < encode_thr[mid]) hi = mid; else lo = mid + 1;
+    }
+    return (uint8_t)lo;
+}
+
+static std::vector<uint8_t> build_mip_chain(const uint8_t* src, int w0, int h0, int& levels,
+                                            bool srgb) {
     levels = 0;
     std::vector<uint8_t> out;
     if (!src || w0 <= 0 || h0 <= 0) return out;
     out.assign(src, src + (size_t)w0 * (size_t)h0 * 4u);
     levels = 1;
+    float decode[256];
+    float encode_thr[255];
+    if (srgb) srgb_mip_tables(decode, encode_thr);
     int w = w0, h = h0;
     size_t prev_off = 0;
     while (w > 1 || h > 1) {
@@ -708,16 +740,27 @@ static std::vector<uint8_t> build_mip_chain(const uint8_t* src, int w0, int h0, 
         for (int y = 0; y < nh; ++y) {
             for (int x = 0; x < nw; ++x) {
                 int acc[4] = { 0, 0, 0, 0 };
+                float lin[3] = { 0.0F, 0.0F, 0.0F };
                 for (int dy = 0; dy < 2; ++dy) {
                     for (int dx = 0; dx < 2; ++dx) {
                         const int sx = std::min(w - 1, x * 2 + dx);
                         const int sy = std::min(h - 1, y * 2 + dy);
                         const uint8_t* p = &out[prev_off + ((size_t)sy * (size_t)w + (size_t)sx) * 4u];
-                        for (int c = 0; c < 4; ++c) acc[c] += p[c];
+                        if (srgb) {
+                            for (int c = 0; c < 3; ++c) lin[c] += decode[p[c]];
+                            acc[3] += p[3];
+                        } else {
+                            for (int c = 0; c < 4; ++c) acc[c] += p[c];
+                        }
                     }
                 }
                 uint8_t* q = &out[dst_off + ((size_t)y * (size_t)nw + (size_t)x) * 4u];
-                for (int c = 0; c < 4; ++c) q[c] = (uint8_t)((acc[c] + 2) / 4);
+                if (srgb) {
+                    for (int c = 0; c < 3; ++c) q[c] = srgb_encode_from_linear(lin[c] * 0.25F, encode_thr);
+                    q[3] = (uint8_t)((acc[3] + 2) / 4);
+                } else {
+                    for (int c = 0; c < 4; ++c) q[c] = (uint8_t)((acc[c] + 2) / 4);
+                }
             }
         }
         prev_off = dst_off;
@@ -749,7 +792,7 @@ int Engine::load_texture_srgb(const std::string& path) {
     int32_t id = -1;
     if (rapi && rself && rapi->create_texture2 && w > 0 && h > 0) {
         int levels = 1;
-        std::vector<uint8_t> mips = build_mip_chain(rgba, (int)w, (int)h, levels);
+        std::vector<uint8_t> mips = build_mip_chain(rgba, (int)w, (int)h, levels, /*srgb=*/true);
         mq_renderer_texture_desc td{};
         td.width = (int32_t)w; td.height = (int32_t)h;
         td.pixel_format = 1;                  /* 1 = RGBA8_SRGB */
@@ -783,7 +826,7 @@ int Engine::load_texture_mips(const std::string& path) {
     int32_t id = -1;
     if (rapi && rself && rapi->create_texture2 && w > 0 && h > 0) {
         int levels = 1;
-        std::vector<uint8_t> mips = build_mip_chain(rgba, (int)w, (int)h, levels);
+        std::vector<uint8_t> mips = build_mip_chain(rgba, (int)w, (int)h, levels, /*srgb=*/false);
         mq_renderer_texture_desc td{};
         td.width = (int32_t)w; td.height = (int32_t)h;
         td.pixel_format = 0;                  /* 0 = RGBA8（线性数据） */

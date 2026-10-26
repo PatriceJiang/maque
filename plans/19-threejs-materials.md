@@ -147,6 +147,28 @@ renderer 记录 `pbr_material` 同步追加扁平字段 + `textures2[3]`（matca
 5. ToyCar 场景按参考图重调：Physical 材质、玻璃改 Blend 透明（可见内饰）、布料 sheen + 正确 UV、
    studio 环境色/软光箱、相机取景。参考：Khronos glTF-Sample-Assets `Models/ToyCar/screenshot/screenshot_large.jpg`。
 
+### 6.3 PBR 实现审计后的正确性修复（plans/20-pbr-audit.md）
+
+在批量迁移 Khronos glTF-Sample-Assets 前做了独立三方审计（shader/gfx/资产管线）+ 实证 probe，修复了以下
+会直接破坏迁移观感的缺陷（详见 `plans/20-pbr-audit.md`；全量 ctest 84/84 通过）：
+
+1. **法线贴图**：`cotangent_frame` 补偿 WebGPU `dpdy` 反号（否则 normal map 旋转 180°）；T/B 改为各自归一化
+   （旧共同 epsilon 在小尺度场景把法线效果削 ~85%，ToyCar 1e-4 尺度即命中）。
+2. **doubleSided**：shader 增加 `front_facing` 背面法线/TBN 翻转；importer 为每个材质写 `side`
+   （true→2 / false→0），运行时剔除只认 `side`（ToyCar.scn 已同步）。
+3. **贴图采样**：材质 bind group 绑定 per-texture sampler（旧版全部用全局 ClampToEdge → REPEAT/filter 丢失）；
+   sRGB 贴图的 CPU mip 改为「线性域平均」（旧版在编码值上平均，黑白棋盘偏暗 -57%）。
+4. **阴影**：正交盒按 draw mesh bounds×model 在光源视空间拟合（旧启发式导致 ToyCar 阴影仅 ~4 像素、
+   大/偏移资产无影）；阴影 depth pass 增加 `fs_shadow_alpha`（MASK 镂空投影）；灯序重排（方向光优先、
+   >8 盏告警、`caps.max_lights=8`）；阴影资源失败时明确关闭而不是绑错 sampler 类型。
+5. **材质语义**：occlusion 改为规范 `mix(1,ao,strength)`；importer 映射 `normalTexture.scale` /
+   `occlusionTexture.strength`；JPEG 贴图支持（引擎本就能解码）；缺 NORMAL 的索引网格按真实 indices 算法线；
+   顶点法线改用逆转置矩阵、镜像缩放补偿 frontFace。
+6. **点光**：`range=0` 视为无限远（three.js 语义）。
+
+仍待做（plans/20 §6）：KHR 扩展贴图槽（clearcoat/sheen/iridescence/specular/anisotropy）、texCoord
+集、COLOR_0、transmission/volume、动画/骨骼/morph、Draco/KTX2/meshopt、ACES 曲线是否切 three.js。
+
 ## 7. 验收（DoD）
 
 - `codegen_drift` / `schema_imports` / `builtin_shaders` 全绿；generated 入库；

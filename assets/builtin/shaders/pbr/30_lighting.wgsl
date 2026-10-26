@@ -22,8 +22,11 @@ fn light_standard(s: Surface, f0: vec3f, n_cc: vec3f, cc_factor: f32, cc_roughne
       let d2 = max(dot(to_light, to_light), 1e-6);
       let dl = sqrt(d2);
       dir = to_light / dl;
-      let rng = max(L.params.x, 1e-4);
-      let win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      let rng = L.params.x;
+      var win = 1.0;
+      if (rng > 1e-4) {                       /* range<=0 = 无限远（three.js/KHR_lights_punctual 语义） */
+        win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      }
       atten = win * win / (d2 + 1.0);
       if (L.pos.w > 2.5) {
         let cone = -dot(normalize(L.dir.xyz), dir);
@@ -90,8 +93,11 @@ fn light_lambert(s: Surface, env_intensity: f32) -> vec3f {
       let d2 = max(dot(to_light, to_light), 1e-6);
       let dl = sqrt(d2);
       dir = to_light / dl;
-      let rng = max(L.params.x, 1e-4);
-      let win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      let rng = L.params.x;
+      var win = 1.0;
+      if (rng > 1e-4) {                       /* range<=0 = 无限远（three.js/KHR_lights_punctual 语义） */
+        win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      }
       atten = win * win / (d2 + 1.0);
       if (L.pos.w > 2.5) {
         let cone = -dot(normalize(L.dir.xyz), dir);
@@ -130,8 +136,11 @@ fn light_phong(s: Surface, spec_color: vec3f, shininess: f32, env_intensity: f32
       let d2 = max(dot(to_light, to_light), 1e-6);
       let dl = sqrt(d2);
       dir = to_light / dl;
-      let rng = max(L.params.x, 1e-4);
-      let win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      let rng = L.params.x;
+      var win = 1.0;
+      if (rng > 1e-4) {                       /* range<=0 = 无限远（three.js/KHR_lights_punctual 语义） */
+        win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      }
       atten = win * win / (d2 + 1.0);
       if (L.pos.w > 2.5) {
         let cone = -dot(normalize(L.dir.xyz), dir);
@@ -174,8 +183,11 @@ fn light_toon(s: Surface, steps: i32, has_gradient: bool, env_intensity: f32) ->
       let d2 = max(dot(to_light, to_light), 1e-6);
       let dl = sqrt(d2);
       dir = to_light / dl;
-      let rng = max(L.params.x, 1e-4);
-      let win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      let rng = L.params.x;
+      var win = 1.0;
+      if (rng > 1e-4) {                       /* range<=0 = 无限远（three.js/KHR_lights_punctual 语义） */
+        win = clamp(1.0 - pow(dl / rng, 4.0), 0.0, 1.0);
+      }
       atten = win * win / (d2 + 1.0);
       if (L.pos.w > 2.5) {
         let cone = -dot(normalize(L.dir.xyz), dir);

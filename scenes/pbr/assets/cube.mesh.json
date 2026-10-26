@@ -66,6 +66,7 @@
       "metallic": 1.0,
       "name": "gold",
       "roughness": 0.2,
+      "side": 0,
       "type": "asset.PbrMaterial"
     }
   ],

@@ -161,6 +161,13 @@ tools\win\build.cmd -Sanitize address -RunTests
   KHR_materials_unlit/clearcoat/sheen/iridescence/specular/ior/anisotropy/emissive_strength
   （transmission/IBL/Points/Line/Sprite 未做，见 plans/19 §1）。
   附带修复：无 `normal_map` 时改用 1×1 中性法线（旧版误用白纹理导致法线扰动，Standard 观感有小幅变化）。
+  **PBR 审计修复（plans/20-pbr-audit.md，2026-10，批量迁移 Khronos Models 前）**：normal map 切线基
+  （WebGPU `dpdy` 反号 + T/B **各自**归一化，旧实现小尺度场景法线效果被削 ~85%）；`doubleSided` →
+  importer 写 `side`（true=2 / false=0；运行时剔除只认 `side`，手写 scn 必须显式写）；材质绑
+  per-texture sampler（REPEAT/filter 恢复）；sRGB 贴图 CPU mip 改**线性域平均**；阴影正交盒按
+  mesh bounds 拟合 + `fs_shadow_alpha`（MASK 镂空投影）+ 方向光优先灯序（≤8）；occlusion 改
+  `mix(1,ao,strength)`；JPEG 贴图导入；顶点法线用逆转置、镜像缩放补 frontFace。P1 剩余：
+  KHR 扩展贴图槽 / texCoord 集 / COLOR_0 / transmission-volume / 动画骨骼 morph / Draco-KTX2。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

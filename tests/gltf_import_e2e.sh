@@ -2,14 +2,16 @@
 # glTF 离线导入端到端（plans/18-pbr-3d.md 方向 2 / M4b；plans/19 材质迁移）。
 #   夹具 tests/data/gltf/triangle.gltf（内嵌 base64 buffer）→ tools/gltf_import.py
 #   断言：顶点/索引/包围盒/材质字段正确、48B 顶点布局一致、两次导入逐字节一致（确定性）、
-#         --name 覆盖输出名、错误输入返回非 0、无扩展材质不写任何扩展默认字段。
+#         --name 覆盖输出名、错误输入返回非 0；M1 修复后每个材质都写 side
+#         （doubleSided=true→2 / false→0，运行时剔除只认 side）。
 #   夹具 tests/data/gltf/extensions.gltf（三角网格 + 内嵌 1x1 PNG）：
 #     KHR_materials_{unlit,clearcoat,sheen,iridescence,specular,ior,anisotropy,
 #     emissive_strength} → asset.PbrMaterial 字段值 + shading_model(Physical/Basic) +
 #     贴图搬运 + 两次导入逐字节一致；unlit 材质不得带 physical 扩展字段。
-#   旧资产零漂移：cube.gltf 重新生成 → scenes/pbr/assets/cube.mesh.json 逐字节一致。
+#   已入库资产漂移基线：cube.gltf 重新生成 → scenes/pbr/assets/cube.mesh.json 逐字节一致
+#     （M1 后材质新增 "side" 属一次性预期变更，基线已同步重新生成）。
 #   可选（MAQUE_TOYCAR_SRC=<含 ToyCar.gltf 的源目录>，源模型不入库）：ToyCar 三个
-#     mesh.json 零漂移；未设置时跳过（ToyCar 源模型有 KHR 扩展，更新入库后可用此钩子校验）。
+#     mesh.json 逐字节一致；未设置时跳过（ToyCar 源模型有 KHR 扩展，更新入库后可用此钩子校验）。
 set -u
 . "$(dirname "$0")/maque_python.sh" 2>/dev/null || true
 TOOL="$1"
@@ -45,9 +47,11 @@ assert mat["metallic"] == 0.75 and mat["roughness"] == 0.25, (mat["metallic"], m
 bc = mat["base_color"]
 assert abs(bc["r"] - 0.8) < 1e-6 and abs(bc["g"] - 0.6) < 1e-6 and abs(bc["b"] - 0.2) < 1e-6, bc
 assert mat["double_sided"] is False and mat["alpha_mode"] == 0
-# 无扩展材质：材质键集合必须与迁移前完全一致（不写任何扩展默认字段，旧资产零漂移）
+# M1：doubleSided=false → side=0（MaterialSide::Front，运行时剔除背面）
+assert mat["side"] == 0, mat.get("side")
+# 无扩展材质：键集合 = 基础字段 + M1 的 side（不写任何扩展默认字段）
 assert set(mat) == {"type", "name", "base_color", "metallic", "roughness", "emissive",
-                    "double_sided", "alpha_mode", "alpha_cutoff"}, sorted(mat)
+                    "double_sided", "side", "alpha_mode", "alpha_cutoff"}, sorted(mat)
 print("gltf_import_e2e: 结构断言 OK")
 PY
 [ $? -eq 0 ] || exit 1
@@ -110,13 +114,18 @@ assert abs(mat["anisotropy"] - 0.45) < 1e-9, mat.get("anisotropy")
 assert abs(mat["anisotropy_rotation"] - 1.2) < 1e-9, mat.get("anisotropy_rotation")
 # KHR_materials_emissive_strength
 assert abs(mat["emissive_intensity"] - 3.5) < 1e-9, mat.get("emissive_intensity")
-# 无 glTF 来源的字段不写（"非默认才写"契约）
-for k in ("opacity", "side", "flat_shading", "env_intensity", "normal_scale_y", "shininess",
+# M1：源材质 doubleSided=true → side=2（MaterialSide::Double）
+assert mat["side"] == 2, mat.get("side")
+assert mat["double_sided"] is True
+# 无 glTF 来源的字段不写（"非默认才写"契约；side 是例外：每个材质都写）
+for k in ("opacity", "flat_shading", "env_intensity", "normal_scale_y", "shininess",
           "toon_steps", "depth_packing", "matcap_texture", "gradient_texture"):
     assert k not in mat, (k, mat[k])
 # KHR_materials_unlit → shading_model=2 (Basic)，且不带任何 physical 扩展字段
 u = json.load(open(d + "/extensions_1_0.mesh.json", encoding="utf-8"))["materials"][0]
 assert u["shading_model"] == 2, u.get("shading_model")
+# M1：unlit 源材质未写 doubleSided（默认 false）→ side=0
+assert u["side"] == 0, u.get("side")
 for k in ("clearcoat", "clearcoat_roughness", "clearcoat_normal_texture", "clearcoat_normal_scale",
           "sheen", "sheen_color", "sheen_roughness", "iridescence", "iridescence_ior",
           "iridescence_thickness_min", "iridescence_thickness_max", "specular",
@@ -142,18 +151,18 @@ cmp -s "$WORK/ext/extensions_1_0.mesh.json" "$WORK/ext2/extensions_1_0.mesh.json
     || fail "扩展夹具两次导入不一致（violates determinism）"
 echo "gltf_import_e2e: 扩展夹具确定性 OK"
 
-# ---- 已入库资产零漂移（无扩展材质）：cube.gltf → scenes/pbr/assets/cube.mesh.json ----
+# ---- 已入库资产漂移基线：cube.gltf → scenes/pbr/assets/cube.mesh.json ----
 CUBE_FIXTURE="$FIXDIR/cube.gltf"
 CUBE_ASSET="$ROOT/scenes/pbr/assets/cube.mesh.json"
 if [ -f "$CUBE_FIXTURE" ] && [ -f "$CUBE_ASSET" ]; then
     mkdir -p "$WORK/cube"
     "$PY" "$TOOL" "$CUBE_FIXTURE" --out "$WORK/cube" >/dev/null 2>&1 || fail "cube.gltf 导入失败"
     cmp -s "$WORK/cube/cube.mesh.json" "$CUBE_ASSET" \
-        || fail "已入库 cube 资产漂移（扩展映射不得影响无扩展材质输出）"
-    echo "gltf_import_e2e: cube 旧资产零漂移 OK"
+        || fail "已入库 cube 资产漂移（基线需随 importer 变更重新生成）"
+    echo "gltf_import_e2e: cube 资产基线一致 OK"
 fi
 
-# ---- 可选：ToyCar 三个 mesh.json 零漂移（源模型不入库，用 MAQUE_TOYCAR_SRC 提供源目录）----
+# ---- 可选：ToyCar 三个 mesh.json 漂移基线（源模型不入库，用 MAQUE_TOYCAR_SRC 提供源目录）----
 if [ -n "${MAQUE_TOYCAR_SRC:-}" ] && [ -f "$MAQUE_TOYCAR_SRC/ToyCar.gltf" ]; then
     mkdir -p "$WORK/toycar"
     "$PY" "$TOOL" "$MAQUE_TOYCAR_SRC/ToyCar.gltf" --out "$WORK/toycar" --name ToyCar --compact \
@@ -162,9 +171,9 @@ if [ -n "${MAQUE_TOYCAR_SRC:-}" ] && [ -f "$MAQUE_TOYCAR_SRC/ToyCar.gltf" ]; the
         cmp -s "$WORK/toycar/$n.mesh.json" "$ROOT/scenes/khronos/ToyCar/assets/$n.mesh.json" \
             || fail "ToyCar 资产漂移: $n"
     done
-    echo "gltf_import_e2e: ToyCar 零漂移 OK"
+    echo "gltf_import_e2e: ToyCar 资产基线一致 OK"
 else
-    echo "gltf_import_e2e: ToyCar 零漂移 skip（未设 MAQUE_TOYCAR_SRC）"
+    echo "gltf_import_e2e: ToyCar 资产基线 skip（未设 MAQUE_TOYCAR_SRC）"
 fi
 
 echo "gltf_import_e2e: PASS"

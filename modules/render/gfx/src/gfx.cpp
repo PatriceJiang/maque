@@ -91,8 +91,10 @@ struct Device {
     WGPUBindGroupLayout p3dDrawBgl = nullptr;
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
-    /* 多材质模型管线：[shading_model 0..9][blend 0/1][cull 0..2]，按需创建（plans/19） */
-    WGPURenderPipeline p3dMatPipeline[10][2][3] = {};
+    /* 多材质模型管线：[shading_model 0..9][blend 0/1][cull 0..2][mirrored 0/1]，按需创建（plans/19）。
+     * mirrored = model 3×3 行列式 < 0（镜像缩放的 glTF 节点）：镜像把三角形绕序翻成 CW，
+     * 而 WebGPU 的 frontFace 默认是 CCW，不做补偿时 side=Front 的材质会把正面剔掉/显示背面。 */
+    WGPURenderPipeline p3dMatPipeline[10][2][3][2] = {};
     bool p3dMatWarned[10] = {};
     /* M5c 方向光阴影：1024² depth map + comparison sampler + 1×1 深度占位（避免同 pass 同纹理读写） */
     WGPUTexture shadowTex = nullptr;
@@ -267,10 +269,11 @@ static void release_material_pipelines(Device* dv) {
     for (int m = 0; m < 10; ++m)
         for (int b = 0; b < 2; ++b)
             for (int c = 0; c < 3; ++c)
-                if (dv->p3dMatPipeline[m][b][c]) {
-                    wgpuRenderPipelineRelease(dv->p3dMatPipeline[m][b][c]);
-                    dv->p3dMatPipeline[m][b][c] = nullptr;
-                }
+                for (int mir = 0; mir < 2; ++mir)
+                    if (dv->p3dMatPipeline[m][b][c][mir]) {
+                        wgpuRenderPipelineRelease(dv->p3dMatPipeline[m][b][c][mir]);
+                        dv->p3dMatPipeline[m][b][c][mir] = nullptr;
+                    }
 }
 
 static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
@@ -301,6 +304,11 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 3; bd.entries = e;
             dv->p3dCamBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
+        /* ---- 阴影资源（plans/18 §4.2 / R2/R19 修复）----
+         * shadowTex 缺失时仍必须建好 dummyDepth 与比较采样器：
+         *  · dummyDepth 给"主 pass 采样阴影图"的同时避免同 pass 读写的 1×1 深度占位（既有的正确设计）；
+         *  · comparison sampler 是 group0 binding2 的唯一合法类型（Filtering sampler 绑上去会 bind-group 校验失败）。
+         * 因此三者分开建；任一下降为 null 时 render_3d_only 会自动关闭 shadow（shadow_params.z=0），而不是绑错类型。 */
         if (!dv->shadowTex) {
             WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
             td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
@@ -310,6 +318,8 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             td.mipLevelCount = 1; td.sampleCount = 1;
             dv->shadowTex = wgpuDeviceCreateTexture(dv->device, &td);
             if (dv->shadowTex) dv->shadowView = wgpuTextureCreateView(dv->shadowTex, nullptr);
+        }
+        if (!dv->dummyDepth) {
             WGPUTextureDescriptor dtd = WGPU_TEXTURE_DESCRIPTOR_INIT;
             dtd.usage = WGPUTextureUsage_TextureBinding;
             dtd.dimension = WGPUTextureDimension_2D;
@@ -318,6 +328,8 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             dtd.mipLevelCount = 1; dtd.sampleCount = 1;
             dv->dummyDepth = wgpuDeviceCreateTexture(dv->device, &dtd);
             if (dv->dummyDepth) dv->dummyDepthView = wgpuTextureCreateView(dv->dummyDepth, nullptr);
+        }
+        if (!dv->shadowSampler) {
             WGPUSamplerDescriptor smp = WGPU_SAMPLER_DESCRIPTOR_INIT;
             smp.addressModeU = WGPUAddressMode_ClampToEdge;
             smp.addressModeV = WGPUAddressMode_ClampToEdge;
@@ -330,7 +342,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             dv->shadowSampler = wgpuDeviceCreateSampler(dv->device, &smp);
         }
         {
-            /* group1：材质 uniform（256B）+ 8 张贴图 + sampler（plans/19 材质模型扩展） */
+            /* group1：材质 uniform（288B = 72 floats）+ 8 张贴图 + sampler（plans/19 材质模型扩展） */
             WGPUBindGroupLayoutEntry e[10] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
             e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 288;
@@ -356,36 +368,68 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         release_material_pipelines(dv);
         dv->p3dFormat = format;
     }
-    if (!dv->shadowPipeline && dv->shadowTex) {
+    if (!dv->shadowPipeline && dv->shadowTex && dv->dummyDepthView && dv->shadowSampler) {
         WGPUDepthStencilState sds = WGPU_DEPTH_STENCIL_STATE_INIT;
         sds.format = WGPUTextureFormat_Depth32Float;
         sds.depthWriteEnabled = WGPUOptionalBool_True;
         sds.depthCompare = WGPUCompareFunction_Less;
-        WGPUVertexAttribute sattrs[1] = {};
-        sattrs[0].format = WGPUVertexFormat_Float32x3; sattrs[0].offset = 0; sattrs[0].shaderLocation = 0;
+        /* 顶点布局与主 pass 一致（48B：pos@0 / uv@40）：阴影 fragment 要用 uv 采样 albedo 做 MASK alpha test。 */
+        WGPUVertexAttribute sattrs[2] = {};
+        sattrs[0].format = WGPUVertexFormat_Float32x3; sattrs[0].offset = 0;  sattrs[0].shaderLocation = 0;   /* pos */
+        sattrs[1].format = WGPUVertexFormat_Float32x2; sattrs[1].offset = 40; sattrs[1].shaderLocation = 2;   /* uv  */
         WGPUVertexBufferLayout svbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
         svbl.stepMode = WGPUVertexStepMode_Vertex; svbl.arrayStride = 48;
-        svbl.attributeCount = 1; svbl.attributes = sattrs;
+        svbl.attributeCount = 2; svbl.attributes = sattrs;
         WGPUVertexState svs = WGPU_VERTEX_STATE_INIT;
         svs.module = dv->p3dShader; svs.entryPoint = SV("vs_shadow");
         svs.bufferCount = 1; svs.buffers = &svbl;
+        /* 阴影 pass 只有深度附件（colorAttachmentCount=0）。WebGPU 允许 fragment 阶段 targetCount=0
+         * （无颜色输出、仅用于 discard）：glTF alphaMode=MASK 的镂空几何要靠它执行 alpha test，
+         * 否则树叶/栅栏/发卡的投影会是整块实心（R3）。若该后端拒绝零 target，回退 depth-only 并提示。 */
+        WGPUFragmentState sfrag = WGPU_FRAGMENT_STATE_INIT;
+        sfrag.module = dv->p3dShader; sfrag.entryPoint = SV("fs_shadow_alpha");
+        sfrag.targetCount = 0; sfrag.targets = nullptr;
         WGPURenderPipelineDescriptor srp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-        srp.layout = dv->p3dPl; srp.vertex = svs;
+        srp.layout = dv->p3dPl;
+        srp.vertex = svs;
+        srp.fragment = &sfrag;                 /* 首试：depth-only + MASK alpha discard */
         srp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        srp.primitive.frontFace = WGPUFrontFace_CCW;    /* 阴影 pass 不剔面，显式写清 WebGPU 默认 CCW */
         srp.primitive.cullMode = WGPUCullMode_None;
         srp.depthStencil = &sds;
         dv->shadowPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &srp);
+        if (!dv->shadowPipeline) {
+            static bool warned_shadow_alpha = false;
+            if (!warned_shadow_alpha) {
+                warned_shadow_alpha = true;
+                std::print(stderr, "gfx: 阴影 alpha 管线创建失败（fragment 'fs_shadow_alpha' 或 targetCount=0 不受支持）"
+                                   "→ 回退 depth-only 阴影（MASK 镂空材质的投影会变成实心）\n");
+            }
+            srp.fragment = nullptr;
+            dv->shadowPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &srp);
+            if (!dv->shadowPipeline) {
+                static bool warned_shadow_off = false;
+                if (!warned_shadow_off) {
+                    warned_shadow_off = true;
+                    std::print(stderr, "gfx: depth-only 阴影管线也创建失败（vs_shadow 输出了 varying？）"
+                                       "→ 本设备关闭方向光阴影（其余 3D 正常）\n");
+                }
+            }
+        }
     }
 }
 
-/* 按材质模型 / 透明混合 / 面朝向懒创建 3D 管线（plans/19）。
- * shading_model 直接选择 fragment entry point；cull 由 side 决定（Front 剔背面 / Back 剔正面 / Double 不剔）。 */
-static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blend, int side) {
+/* 按材质模型 / 透明混合 / 面朝向 / 镜像（负行列式）懒创建 3D 管线（plans/19）。
+ * shading_model 直接选择 fragment entry point；cull 由 side 决定（Front 剔背面 / Back 剔正面 / Double 不剔）。
+ * mirrored = model 3×3 det<0：镜像变换把三角形绕序从 CCW 翻成 CW → 管线必须显式 frontFace=CW，
+ * 否则 WebGPU 默认 CCW 会把正反面判反（side=Front 时正面被剔掉）。 */
+static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blend, int side, bool mirrored) {
     if (!dv || !dv->p3dShader || !dv->p3dPl) return nullptr;
     model = (model < 0) ? 0 : (model > 9 ? 9 : model);
     side = (side < 0) ? 2 : (side > 2 ? 2 : side);
     const int b = blend ? 1 : 0;
-    if (WGPURenderPipeline& cached = dv->p3dMatPipeline[model][b][side]; cached) return cached;
+    const int mir = mirrored ? 1 : 0;
+    if (WGPURenderPipeline& cached = dv->p3dMatPipeline[model][b][side][mir]; cached) return cached;
     WGPUColorTargetState ct = WGPU_COLOR_TARGET_STATE_INIT;
     ct.format = dv->p3dFormat; ct.writeMask = WGPUColorWriteMask_All;
     WGPUBlendState blend_state = WGPU_BLEND_STATE_INIT;
@@ -416,11 +460,14 @@ static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blen
     WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
     rp.layout = dv->p3dPl; rp.vertex = vs; rp.fragment = &frag;
     rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    /* WebGPU 约定：frontFace 默认 CCW（glTF 正面的绕序也是 CCW）；负行列式 model 翻转绕序 →
+     * 显式改成 CW，让 cullMode 的"正面/背面"语义仍然成立。 */
+    rp.primitive.frontFace = mirrored ? WGPUFrontFace_CW : WGPUFrontFace_CCW;
     rp.primitive.cullMode = (side == 0) ? WGPUCullMode_Back
                           : (side == 1) ? WGPUCullMode_Front : WGPUCullMode_None;
     rp.depthStencil = &ds;
     WGPURenderPipeline pipe = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
-    dv->p3dMatPipeline[model][b][side] = pipe;
+    dv->p3dMatPipeline[model][b][side][mir] = pipe;
     if (!pipe && !dv->p3dMatWarned[model]) {
         dv->p3dMatWarned[model] = true;
         std::print(stderr, "gfx: 材质模型 '{}' 管线创建失败（shader entry '{}' 缺失/校验失败）→ 该模型不渲染\n",
@@ -553,7 +600,12 @@ static Device* create_device(std::string* out_backend) {
         dv->texBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT; pl.bindGroupLayoutCount = 1; pl.bindGroupLayouts = &dv->texBgl;
         dv->texPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
-            WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
+    }
+    /* 全局采样器与 2D 贴图管线无关地创建：PBR 材质 bind group 在"材质无任何贴图"时回退到 dv->sampler，
+     * 若只在 textured shader 存在时才建，`MAQUE_SHADER_TEXTURED=OFF` 的构建里 3D 材质 bind group 会拿到
+     * null sampler（创建失败）；且 material_sampler() 的兜底也依赖它。 */
+    {
+        WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
         sd.magFilter = WGPUFilterMode_Linear; sd.minFilter = WGPUFilterMode_Linear; sd.mipmapFilter = WGPUMipmapFilterMode_Linear;
         sd.addressModeU = WGPUAddressMode_ClampToEdge; sd.addressModeV = WGPUAddressMode_ClampToEdge; sd.addressModeW = WGPUAddressMode_ClampToEdge;
         dv->sampler = wgpuDeviceCreateSampler(dv->device, &sd);
@@ -720,6 +772,8 @@ static void r_destroy_texture(void* self, int32_t id) {
     if (!dv || id < 0 || id >= (int)dv->textures.size()) return;
     Texture* t = dv->textures[(size_t)id];
     if (t) {
+        /* per-texture sampler（create_texture2 每张贴图一个）也必须释放，否则 destroy 一次漏一个 GPU 对象。 */
+        if (t->sampler) wgpuSamplerRelease(t->sampler);
         if (t->view) wgpuTextureViewRelease(t->view);
         if (t->tex) wgpuTextureRelease(t->tex);
         delete t;
@@ -772,7 +826,7 @@ static int32_t r_caps(void* self, mq_renderer_caps* out) {
     if (wgpuAdapterGetLimits(dv->adapter, &lim) == WGPUStatus_Success)
         out->max_texture_size = (int32_t)lim.maxTextureDimension2D;
     if (out->max_texture_size <= 0) out->max_texture_size = 2048;
-    out->max_lights = 64;      /* MVP：1 方向光 + 点/聚光数组上限（M4 起按设备调） */
+    out->max_lights = 8;       /* 与 shader 的 lights: array<GpuLight,8> 一致（超出部分 runtime 侧应截断并告警） */
     out->max_samples = 1;      /* M5 MSAA 后再按设备能力填 */
     out->target_format = dv->surface ? format_code(dv->surfaceFormat) : 0;
     out->depth_format = 0;     /* Depth32Float（M2） */
@@ -815,7 +869,10 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
     sd.magFilter = nearest ? WGPUFilterMode_Nearest : WGPUFilterMode_Linear;
     sd.minFilter = sd.magFilter;
     sd.mipmapFilter = nearest ? WGPUMipmapFilterMode_Nearest : WGPUMipmapFilterMode_Linear;
-    sd.maxAnisotropy = 1;
+    /* 各向异性 4：PBR 地面/车漆等斜视纹理靠它保锐度。WebGPU 采样器校验要求
+     * maxAnisotropy>1 时三个 filter 都是 linear —— nearest（像素画/数据图）保持 1。
+     * 实际生效取决于该贴图绑定到材质 bind group 时用的是这个 per-texture sampler（见 material_sampler）。 */
+    sd.maxAnisotropy = nearest ? 1 : 4;
     t->sampler = wgpuDeviceCreateSampler(dv->device, &sd);
 
     if (d->data && d->data_size) {
@@ -1194,7 +1251,26 @@ static void mat4_ortho(float zn, float zf, float half, float* m) {
     m[0] = 1.0F / half; m[5] = 1.0F / half;
     m[10] = 1.0F / (zf - zn); m[14] = -zn / (zf - zn); m[15] = 1.0F;
 }
-/* 材质 uniform 打包（plans/19）：64 floats / 256B，与 pbr shader 的 Draw 结构逐项对应。
+/* 任意正交盒（视空间 x∈[l,r]、y∈[b,t]、z∈[zn,zf]，zn > zf 且都为负=相机前方）。
+ * 与 mat4_ortho 的 WebGPU NDC 约定完全一致（z∈[0,1]：near→0、far→1），只是 x/y 各自缩放+平移。
+ * 用于按场景 mesh bounds 拟合方向光阴影视锥（审计 R2：旧实现固定原点+半径启发式、忽略 bounds）。 */
+static void mat4_ortho_box(float l, float r, float b, float t, float zn, float zf, float* m) {
+    std::memset(m, 0, sizeof(float) * 16);
+    m[0] = 2.0F / (r - l);
+    m[5] = 2.0F / (t - b);
+    m[10] = 1.0F / (zf - zn);
+    m[12] = -(r + l) / (r - l);
+    m[13] = -(t + b) / (t - b);
+    m[14] = -zn / (zf - zn);
+    m[15] = 1.0F;
+}
+/* model 矩阵左上 3×3 的行列式（列主序）：<0 = 镜像缩放 → 三角形绕序翻转，材质管线需 frontFace=CW。 */
+static float mat3_det(const float m[16]) {
+    return m[0] * (m[5] * m[10] - m[6] * m[9]) -
+           m[4] * (m[1] * m[10] - m[2] * m[9]) +
+           m[8] * (m[1] * m[6] - m[2] * m[5]);
+}
+/* 材质 uniform 打包（plans/19）：72 floats / 288B，与 pbr shader 的 Draw 结构逐项对应。
  * 阴影 pass 与主 pass 共用同一函数，避免两处字段漂移。 */
 static constexpr int kMatUniformFloats = 72;
 static void pack_draw_uniform(float* du, const float model[16], const mq_renderer_pbr_material* mat) {
@@ -1254,6 +1330,30 @@ static WGPUTextureView material_tex_view(Device* dv, int32_t handle, WGPUTexture
     return fallback;
 }
 
+/* 材质贴图采样器：优先用该材质**第一张有效贴图**的 per-texture sampler。
+ * 为什么：create_texture2 按 desc.wrap_u/wrap_v/filter 建了独立 sampler（runtime 传 wrap=0=Repeat、
+ * filter=1=linear），glTF 的 REPEAT/MIRRORED_REPEAT/NEAREST 就存在这里；旧实现把所有贴图统一绑
+ * 全局 ClampToEdge+linear 采样器 → UV>1（平铺、KHR_texture_transform）被 clamp 成边缘拉伸、
+ * NEAREST 被线性糊掉（审计 R1）。同一材质的各贴图通常共用同一批 sampler 语义，取第一张有效贴图的
+ * sampler 即可覆盖绝大多数资产；找不到（材质无贴图）才回退全局 sampler。 */
+static WGPUSampler material_sampler(Device* dv, const mq_renderer_pbr_material* mat) {
+    if (dv && mat) {
+        for (int i = 0; i < 5; ++i) {                       /* albedo→mr→ao→normal→emissive */
+            const int32_t h = mat->textures[i];
+            if (h < 0 || (size_t)h >= dv->textures.size()) continue;
+            Texture* t = dv->textures[(size_t)h];
+            if (t && t->sampler) return t->sampler;
+        }
+        for (int i = 0; i < 3; ++i) {                       /* matcap / gradient / clearcoat-normal */
+            const int32_t h = mat->textures2[i];
+            if (h < 0 || (size_t)h >= dv->textures.size()) continue;
+            Texture* t = dv->textures[(size_t)h];
+            if (t && t->sampler) return t->sampler;
+        }
+    }
+    return dv ? dv->sampler : nullptr;
+}
+
 static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[10], WGPUBuffer buf, size_t buf_size,
                                        const mq_renderer_pbr_material* mat) {
     const WGPUTextureView white = dv->whiteTexView;
@@ -1261,7 +1361,7 @@ static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[10], 
     std::memset(e, 0, sizeof(e));
     e[0].binding = 0; e[0].buffer = buf; e[0].size = buf_size;
     e[1].binding = 1; e[1].textureView = material_tex_view(dv, mat ? mat->textures[0] : -1, white);
-    e[2].binding = 2; e[2].sampler = dv->sampler;
+    e[2].binding = 2; e[2].sampler = material_sampler(dv, mat);   /* R1：per-texture wrap/filter 恢复 */
     e[3].binding = 3; e[3].textureView = material_tex_view(dv, mat ? mat->textures[1] : -1, white);
     e[4].binding = 4; e[4].textureView = material_tex_view(dv, mat ? mat->textures[2] : -1, white);
     e[5].binding = 5; e[5].textureView = material_tex_view(dv, mat ? mat->textures[3] : -1, neutral);
@@ -1281,26 +1381,154 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         return !e || (std::strcmp(e, "0") != 0 && std::strcmp(e, "off") != 0);
     }();
     if (f->view_count == 0 || !f->views) return 0;
+    if (f->draw_count > 0 && !f->draws) return 1;     /* 防御：非法帧描述（不做静默降级） */
     ensure_3d_pipelines(dv, target_format);
     if (!dv->p3dShader || !dv->p3dPl) return 0;      /* shader 剔除：3D 跳过（原因已打印） */
     if (!ensure_depth(dv, f->width, f->height)) return 2;
+    /* group0 的 binding1/2 分别是 depth 纹理与 comparison sampler：主 pass 无论如何都要能绑一组合法资源
+     * （未启用阴影时绑 1×1 dummy depth + comparison sampler，z=0 让 shader 提前返回）。
+     * 任一缺失只可能来自 GPU 资源创建失败 → 明确跳过 3D 并打印一次（R19：绝不把 filtering sampler 绑到
+     * comparison 槽，那会让整个 bind group 校验失败）。 */
+    if (!dv->dummyDepthView || !dv->shadowSampler) {
+        static bool warned_shadow_res = false;
+        if (!warned_shadow_res) {
+            warned_shadow_res = true;
+            std::print(stderr, "gfx: 阴影占位深度纹理/比较采样器不可用 → 3D 跳过本帧\n");
+        }
+        return 3;
+    }
     WGPUTextureView view = wgpuTextureCreateView(target, nullptr);
     WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
-    /* 方向光/环境光：取第一盏 Directional（M4 再加多光源/阴影）。 */
+    /* ---- 光源顺序（R4）：方向光在前、其余在后，各自保持原相对序 ----
+     * shader 的阴影固定乘在 lights[0]（30_lighting.wgsl: `if (li == 0)`），而 runtime 的灯序 = 实体 id 序，
+     * 不保证方向光最先（例如先创建点光）。这里做一次确定性重排，保证 0 号就是方向光；超过 8 盏按
+     * "方向光优先"截断并打印一次告警（shader 的数组上限是 8）。 */
+    uint32_t light_order[8] = {};
+    uint32_t light_count = 0;
+    {
+        auto push_lights = [&](bool want_dir) {
+            if (!f->lights) return;                        /* 防御：light_count>0 但指针为空 */
+            for (uint32_t i = 0; i < f->light_count && light_count < 8; ++i)
+                if ((f->lights[i].type == 0) == want_dir) light_order[light_count++] = i;
+        };
+        push_lights(true);
+        push_lights(false);
+        if (f->light_count > 8) {
+            static bool warned_many_lights = false;
+            if (!warned_many_lights) {
+                warned_many_lights = true;
+                std::print(stderr, "gfx: 光源 {} 盏 > shader 上限 8 → 按「方向光优先」截断（其余忽略）\n",
+                           f->light_count);
+            }
+        }
+    }
+    /* 光源 0 = 方向光（若无方向光则 has_shadow_light=false → 关闭阴影：light_vp 与 li==0 的约定不成立）。 */
     float ldir[3] = { 0.0F, -1.0F, 0.0F };
     float lcol[3] = { 1.0F, 1.0F, 1.0F };
-    for (uint32_t i = 0; i < f->light_count; ++i) {
-        const mq_renderer_light& L = f->lights[i];
-        if (L.type != 0) continue;
-        ldir[0] = L.dir[0]; ldir[1] = L.dir[1]; ldir[2] = L.dir[2];
-        lcol[0] = L.color[0] * L.intensity;
-        lcol[1] = L.color[1] * L.intensity;
-        lcol[2] = L.color[2] * L.intensity;
-        break;
+    bool has_shadow_light = false;
+    if (light_count > 0) {
+        const mq_renderer_light& L0 = f->lights[light_order[0]];
+        if (L0.type == 0) {
+            has_shadow_light = true;
+            ldir[0] = L0.dir[0]; ldir[1] = L0.dir[1]; ldir[2] = L0.dir[2];
+            lcol[0] = L0.color[0] * L0.intensity;
+            lcol[1] = L0.color[1] * L0.intensity;
+            lcol[2] = L0.color[2] * L0.intensity;
+        }
     }
     float ll = std::sqrt(ldir[0] * ldir[0] + ldir[1] * ldir[1] + ldir[2] * ldir[2]);
     if (ll < 1e-6F) { ldir[0] = 0.0F; ldir[1] = -1.0F; ldir[2] = 0.0F; ll = 1.0F; }
     ldir[0] /= ll; ldir[1] /= ll; ldir[2] /= ll;
+
+    /* ---- 方向光阴影视锥拟合（R2）----
+     * 旧实现：中心固定世界原点、半径 = max(4, |model 平移|₁ + 2.5) 封顶 12，mesh bounds 上传后从未使用
+     * → 小尺度资产（如 ToyCar，scale=1e-4）阴影只剩几像素且 bias 大于物体；大/偏移资产阴影被裁掉。
+     * 现在：把每个可绘制 draw 的 mesh 局部 bounds 8 角点 × model 变换到世界，再变换到光源视空间求 AABB，
+     * 用 AABB 的 x/y 当作正交盒、z 当作 near/far。视锥随场景走，与模型尺度无关。
+     * 无任何有效 mesh（bounds 非法/网格缺失）时回退旧启发式，保证老场景仍有合理阴影。 */
+    const bool shadow_ready = shadow_on && has_shadow_light && dv->shadowPipeline && dv->shadowView;
+    float shadow_vp[16] = {};
+    shadow_vp[0] = shadow_vp[5] = shadow_vp[10] = shadow_vp[15] = 1.0F;   /* 未启用：单位矩阵（shader 不会用） */
+    float shadow_bias = 0.0012F;
+    if (shadow_ready) {
+        std::vector<float> corners;                    /* 每个有效 draw 8 个世界点（xyz 紧排） */
+        corners.reserve((size_t)f->draw_count * 24u);
+        for (uint32_t di = 0; di < f->draw_count; ++di) {
+            const mq_renderer_draw3d& d = f->draws[di];
+            if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
+            MeshGpu* m = dv->meshes[(size_t)d.mesh];
+            if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
+            for (int ci = 0; ci < 8; ++ci) {
+                const float p[3] = { (ci & 1) ? m->bounds_max[0] : m->bounds_min[0],
+                                     (ci & 2) ? m->bounds_max[1] : m->bounds_min[1],
+                                     (ci & 4) ? m->bounds_max[2] : m->bounds_min[2] };
+                corners.push_back(d.model[0] * p[0] + d.model[4] * p[1] + d.model[8] * p[2] + d.model[12]);
+                corners.push_back(d.model[1] * p[0] + d.model[5] * p[1] + d.model[9] * p[2] + d.model[13]);
+                corners.push_back(d.model[2] * p[0] + d.model[6] * p[1] + d.model[10] * p[2] + d.model[14]);
+            }
+        }
+        /* look_at 的 up：光方向接近 ±Y 时换 X 轴，避免退化 */
+        const float up[3] = { (std::fabs(ldir[1]) > 0.99F) ? 1.0F : 0.0F,
+                              (std::fabs(ldir[1]) > 0.99F) ? 0.0F : 1.0F, 0.0F };
+        float lview[16];
+        if (!corners.empty()) {
+            float max_r2 = 0.0F;
+            for (size_t i = 0; i + 2 < corners.size(); i += 3) {
+                const float x = corners[i], y = corners[i + 1], z = corners[i + 2];
+                max_r2 = std::max(max_r2, x * x + y * y + z * z);
+            }
+            /* 视点放在包围球外侧（方向光无位置，只需要一个不产生除零的 look_at 参考点） */
+            const float dist = std::max(1.0F, std::sqrt(max_r2) + 1.0F);
+            const float eye[3] = { -ldir[0] * dist, -ldir[1] * dist, -ldir[2] * dist };
+            const float ctr[3] = { 0.0F, 0.0F, 0.0F };
+            mat4_look_at(eye, ctr, up, lview);
+            float xmin = 1e30F, xmax = -1e30F, ymin = 1e30F, ymax = -1e30F;
+            float znear = -1e30F, zfar = 1e30F;        /* 视空间 z：相机前方为负 → 近 = 较大值，远 = 较小值 */
+            for (size_t i = 0; i + 2 < corners.size(); i += 3) {
+                const float x = corners[i], y = corners[i + 1], z = corners[i + 2];
+                const float vx = lview[0] * x + lview[4] * y + lview[8] * z + lview[12];
+                const float vy = lview[1] * x + lview[5] * y + lview[9] * z + lview[13];
+                const float vz = lview[2] * x + lview[6] * y + lview[10] * z + lview[14];
+                xmin = std::min(xmin, vx); xmax = std::max(xmax, vx);
+                ymin = std::min(ymin, vy); ymax = std::max(ymax, vy);
+                znear = std::max(znear, vz); zfar = std::min(zfar, vz);
+            }
+            /* padding：xy 取 2% 尺寸（保证平面/边界片元不会被裁）、z 取范围 2% */
+            const float extent = std::max(xmax - xmin, ymax - ymin);
+            const float pad_xy = std::max(extent * 0.02F, 1e-4F);
+            const float pad_z = std::max((znear - zfar) * 0.02F, 1e-4F);
+            const float l = xmin - pad_xy, r = xmax + pad_xy;
+            const float b = ymin - pad_xy, t = ymax + pad_xy;
+            float zn = znear + pad_z, zf = zfar - pad_z;
+            if (zn - zf < 1e-3F) zf = zn - 1e-3F;      /* 退化保护：极扁平场景仍给出稳定的深度范围 */
+            float lproj[16];
+            mat4_ortho_box(l, r, b, t, zn, zf, lproj);
+            mat4_mul(lproj, lview, shadow_vp);
+            /* NDC z 常数偏置按"纹素在世界空间的大小 / 深度范围"派生：
+             * 1024² 贴图覆盖 max(宽,高) → texel_world = max(r-l, t-b)/1024；乘 1.5 texel 安全边际。
+             * 旧值 0.0012 是固定 NDC（= 世界 0.0012*(zf-zn)，随场景尺度失真）→ R2/R15。 */
+            const float depth_range = zn - zf;
+            const float texel_world = std::max(r - l, t - b) / 1024.0F;
+            shadow_bias = std::clamp(texel_world * 1.5F / depth_range, 1e-6F, 0.01F);
+        } else {
+            /* fallback：旧半径启发式（无 mesh bounds 可用时保持历史行为） */
+            float radius = 4.0F;
+            for (uint32_t di = 0; di < f->draw_count; ++di) {
+                const float* mm = f->draws[di].model;
+                const float reach = std::fabs(mm[12]) + std::fabs(mm[13]) + std::fabs(mm[14]) + 2.5F;
+                if (reach > radius) radius = reach;
+            }
+            if (radius > 12.0F) radius = 12.0F;
+            const float dist = radius * 2.0F;
+            const float ctr[3] = { 0.0F, 0.0F, 0.0F };
+            const float eye[3] = { -ldir[0] * dist, -ldir[1] * dist, -ldir[2] * dist };
+            float lview2[16], lproj2[16];
+            mat4_look_at(eye, ctr, up, lview2);
+            mat4_ortho(-dist + radius * 1.5F, -dist - radius * 1.5F, radius * 1.2F, lproj2);
+            mat4_mul(lproj2, lview2, shadow_vp);
+            shadow_bias = 0.0012F;
+        }
+    }
 
     for (uint32_t vi = 0; vi < f->view_count; ++vi) {
         const mq_renderer_view3d& v = f->views[vi];
@@ -1315,29 +1543,12 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         cam[29] = f->env.env_color[1] * f->env.intensity;
         cam[30] = f->env.env_color[2] * f->env.intensity;
         cam[31] = 0.0F;
-        /* 阴影：light_vp（正交，覆盖场景包围球）+ (bias, 1/1024, enabled, _) */
-        {
-            float radius = 4.0F;
-            for (uint32_t di = 0; di < f->draw_count; ++di) {
-                const float* mm = f->draws[di].model;
-                const float reach = std::fabs(mm[12]) + std::fabs(mm[13]) + std::fabs(mm[14]) + 2.5F;
-                if (reach > radius) radius = reach;
-            }
-            if (radius > 12.0F) radius = 12.0F;
-            const float dist = radius * 2.0F;
-            const float ctr[3] = { 0.0F, 0.0F, 0.0F };
-            const float eye[3] = { -ldir[0] * dist, -ldir[1] * dist, -ldir[2] * dist };
-            const float up[3] = { (std::fabs(ldir[1]) > 0.99F) ? 1.0F : 0.0F,
-                                  (std::fabs(ldir[1]) > 0.99F) ? 0.0F : 1.0F, 0.0F };
-            float lview[16], lproj[16];
-            mat4_look_at(eye, ctr, up, lview);
-            /* look_at 的视空间 z 对相机前方为负：近平面 = -(dist - 1.5r)、远平面 = -(dist + 1.5r)
-             * （plans/19 修复：旧调用把 zn/zf 传反 → 深度反向，阴影贴图几乎全被判为遮挡）。 */
-            mat4_ortho(-dist + radius * 1.5F, -dist - radius * 1.5F, radius * 1.2F, lproj);
-            mat4_mul(lproj, lview, cam + 160);
-            cam[176] = 0.0012F; cam[177] = 1.0F / 1024.0F;
-            cam[178] = shadow_on ? 1.0F : 0.0F; cam[179] = 0.0F;
-        }
+        /* 阴影：light_vp 是按场景 mesh bounds 在光源视空间拟合的正交盒（R2，见循环外），
+         * 对每个视图相同（方向光与相机无关）；未启用时为单位阵 + z=0（shader 直接返回 1）。 */
+        std::memcpy(cam + 160, shadow_vp, sizeof shadow_vp);
+        cam[176] = shadow_bias;
+        cam[177] = 1.0F / 1024.0F;          /* 斜率项用的纹素尺寸（UV 单位；shader 现有公式保留） */
+        cam[178] = shadow_ready ? 1.0F : 0.0F; cam[179] = 0.0F;
         /* 视矩阵（matcap 用 view-space 法线；plans/19）：camera uniform 尾部 16 floats */
         std::memcpy(cam + 180, v.view, sizeof(float) * 16);
         /* analytic studio IBL（plans/19）：天空/地面色（已乘环境强度）+ 软光箱强度 + 旋转（弧度） */
@@ -1349,11 +1560,12 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         cam[201] = f->env.env_ground_color[1] * f->env.intensity;
         cam[202] = f->env.env_ground_color[2] * f->env.intensity;
         cam[203] = f->env.env_rotation;
-        /* 光照数组（8 盏）：每盏 16 float = pos(4, w=类型) + dir(4) + color(4) + params(4) */
+        /* 光照数组（8 盏）：按 light_order 重排后的顺序（方向光在前，保证 0 号是方向光/阴影灯）。
+         * 每盏 16 float = pos(4, w=类型) + dir(4) + color(4) + params(4)。 */
         for (uint32_t li = 0; li < 8; ++li) {
             float* dst = cam + 32 + li * 16;
-            if (li < f->light_count) {
-                const mq_renderer_light& L = f->lights[li];
+            if (li < light_count) {
+                const mq_renderer_light& L = f->lights[light_order[li]];
                 dst[0] = L.pos[0]; dst[1] = L.pos[1]; dst[2] = L.pos[2];
                 dst[3] = (L.type == 0) ? 1.0F : ((L.type == 1) ? 2.0F : 3.0F);
                 dst[4] = L.dir[0]; dst[5] = L.dir[1]; dst[6] = L.dir[2]; dst[7] = 1.0F;
@@ -1373,17 +1585,20 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         wgpuQueueWriteBuffer(dv->queue, cbuf, 0, cam, sizeof cam);
         WGPUBindGroupEntry cbe[3] = {};
         cbe[0].binding = 0; cbe[0].buffer = cbuf; cbe[0].size = sizeof cam;
-        cbe[1].binding = 1; cbe[1].textureView = dv->shadowView ? dv->shadowView : dv->dummyDepthView;
-        cbe[2].binding = 2; cbe[2].sampler = dv->shadowSampler ? dv->shadowSampler : dv->sampler;
+        /* 主 pass 采样阴影图；阴影未启用时绑 1×1 dummy depth（z=0 → shader 不采样）。
+         * binding2 必须是 Comparison sampler（BGL 如此声明），绝不拿 filtering sampler 兜底（R19）。 */
+        cbe[1].binding = 1; cbe[1].textureView = shadow_ready ? dv->shadowView : dv->dummyDepthView;
+        cbe[2].binding = 2; cbe[2].sampler = dv->shadowSampler;
         WGPUBindGroupDescriptor cbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
         cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 3; cbgd.entries = cbe;
         WGPUBindGroup camBg = wgpuDeviceCreateBindGroup(dv->device, &cbgd);
-        /* 阴影深度 pass（仅首视图、场景相机同一帧）：用同一个 784B 相机块（light_vp 在 float 160 起） */
-        if (shadow_on && vi == 0 && dv->shadowPipeline && dv->shadowView) {
+        /* 阴影深度 pass（仅首视图）：用同一个 816B 相机块（light_vp 在 float 160 起）；group0 绑 dummy depth
+         * 避免与本 pass 写入的 shadowView 同纹理读写。 */
+        if (shadow_ready && vi == 0) {
             WGPUBindGroupEntry sbe[3] = {};
             sbe[0].binding = 0; sbe[0].buffer = cbuf; sbe[0].size = sizeof cam;
-            sbe[1].binding = 1; sbe[1].textureView = dv->dummyDepthView ? dv->dummyDepthView : dv->shadowView;
-            sbe[2].binding = 2; sbe[2].sampler = dv->shadowSampler ? dv->shadowSampler : dv->sampler;
+            sbe[1].binding = 1; sbe[1].textureView = dv->dummyDepthView;
+            sbe[2].binding = 2; sbe[2].sampler = dv->shadowSampler;
             WGPUBindGroupDescriptor sbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
             sbgd.layout = dv->p3dCamBgl; sbgd.entryCount = 3; sbgd.entries = sbe;
             WGPUBindGroup sbg = wgpuDeviceCreateBindGroup(dv->device, &sbgd);
@@ -1408,14 +1623,16 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                 MeshGpu* m = dv->meshes[(size_t)d.mesh];
                 if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
                 float du[kMatUniformFloats] = {};
-                pack_draw_uniform(du, d.model, nullptr);              /* 阴影 pass 只看几何 */
+                /* 传真实材质：阴影 fragment（fs_shadow_alpha）要用 dr.alpha（cutoff/mode）、
+                 * dr.base_color.a、dr.model_params.w(opacity) 与 albedo 贴图做 MASK alpha test（R3）。 */
+                pack_draw_uniform(du, d.model, smat);
                 WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
                 dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
                 dbd.size = sizeof du;
                 WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
                 wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
                 WGPUBindGroupEntry dbe[10] = {};
-                fill_material_bind_entries(dv, dbe, dbuf, sizeof du, nullptr);
+                fill_material_bind_entries(dv, dbe, dbuf, sizeof du, smat);
                 WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
                 dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 10; dbgd.entries = dbe;
                 WGPUBindGroup dbg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
@@ -1498,7 +1715,9 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             const bool is_blend = mat && mat->alpha_mode == 2;
             const int model = mat ? mat->shading_model : 0;
             const int side = mat ? mat->side : 2;
-            WGPURenderPipeline pipe = get_material_pipeline(dv, model, is_blend, side);
+            /* 负行列式（镜像缩放）：NDC 绕序翻转，管线用 frontFace=CW 补偿（R9）。 */
+            const bool mirrored = mat3_det(d.model) < 0.0F;
+            WGPURenderPipeline pipe = get_material_pipeline(dv, model, is_blend, side, mirrored);
             if (!pipe) {
                 wgpuBindGroupRelease(drawBg);
                 wgpuBufferRelease(dbuf);

@@ -1,7 +1,7 @@
 // Physical（MeshPhysicalMaterial）：Standard + clearcoat/sheen/iridescence/specular/ior/anisotropy。
 // transmission/refraction 需要 backbuffer 折射 pass，本期不做（docs/plans/19 已知差异）。
-@fragment fn fs_physical(in: VOut) -> @location(0) vec4f {
-  var s = surface_common(in);
+@fragment fn fs_physical(in: VOut, @builtin(front_facing) ff: bool) -> @location(0) vec4f {
+  var s = surface_common(in, ff);
   surface_alpha_test(s);
   let v = normalize(cam.eye.xyz - s.w);
   let n_dot_v = max(dot(s.n, v), 1e-4);
@@ -21,7 +21,7 @@
   }
   var n_cc = s.n;
   if ((flags2_bits() & 8) != 0) {
-    n_cc = sample_clearcoat_normal(normalize(in.n), in.w, in.uv * dr.uv_normal.xy + dr.uv_normal.zw);
+    n_cc = sample_clearcoat_normal(surface_geo_normal(in.n, ff), in.w, in.uv * dr.uv_normal.xy + dr.uv_normal.zw);
   }
   var color = light_standard(s, f0, n_cc, dr.clearcoat.x, dr.clearcoat.y, dr.phys0.w);
   /* sheen：边缘绒光（three.js sheen 的观感近似） */
