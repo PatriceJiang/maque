@@ -39,12 +39,12 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Gla
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot.jpg`（153×256）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot_large.jpg`（556×930）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
 | 前景平均亮度 | 0.426 | 0.773 | 差 +0.348 |
-| 前景平均 RGB | [98.2, 111.2, 112.9] | [194.9, 198.2, 194.3] | RGB 距离 0.347 |
+| 前景平均 RGB | [98.4, 111.3, 113.1] | [194.9, 198.2, 194.3] | RGB 距离 0.346 |
 | 亮度直方图相似度 | — | — | 0.57（16 桶交集，1=完全一致） |
 | 前景占比 | 93.0% | 13.1% | 覆盖率比 0.141 |
 

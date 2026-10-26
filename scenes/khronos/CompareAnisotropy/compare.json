@@ -1,8 +1,8 @@
 {
-  "reference": "screenshot.jpg",
+  "reference": "screenshot_Large.jpg",
   "reference_size": [
-    150,
-    78
+    1559,
+    814
   ],
   "reference_has_alpha": false,
   "preview_size": [
@@ -11,19 +11,19 @@
   ],
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
-  "ref_mean_lum": 0.4132,
+  "ref_mean_lum": 0.3861,
   "preview_mean_lum": 0.3469,
-  "mean_lum_delta": -0.0663,
-  "hist_similarity": 0.5066,
-  "rgb_delta": 0.0569,
-  "ref_coverage": 0.7362,
+  "mean_lum_delta": -0.0392,
+  "hist_similarity": 0.4875,
+  "rgb_delta": 0.0333,
+  "ref_coverage": 0.7042,
   "preview_coverage": 0.1773,
-  "coverage_ratio": 0.241,
+  "coverage_ratio": 0.252,
   "ref_bbox": [
-    2,
-    1,
-    147,
-    75
+    24,
+    14,
+    1529,
+    788
   ],
   "preview_bbox": [
     307,
@@ -32,9 +32,9 @@
     555
   ],
   "ref_mean_rgb": [
-    126.4,
-    101.8,
-    79.0
+    120.6,
+    94.7,
+    71.0
   ],
   "preview_mean_rgb": [
     122.0,

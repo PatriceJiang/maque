@@ -93,6 +93,17 @@ def find_reference_image(model_dir):
     if not files:
         return None
     prio = {".png": 0, ".jpg": 1, ".jpeg": 2, ".webp": 3, ".gif": 4}
+    # 0) **large 优先**（screenshot_large / screenshot-Large / large.jpg 等；报告按用户要求优先用大图）
+    large = [f for f in files if "large" in f.lower()]
+    if large:
+        def _large_key(f):
+            # 同尺寸优先"canonical"screenshot_large；排除 bloom/变体/对比图等过程图
+            low = f.lower()
+            penalty = 1 if any(k in low for k in ("bloom", "on-off", "on_off", "variant",
+                                                  "compare", "before", "after")) else 0
+            canonical = 0 if low.startswith("screenshot") and "large" in low else 1
+            return (penalty, canonical, prio.get(os.path.splitext(low)[1], 9), len(f))
+        return os.path.join(shot_dir, sorted(large, key=_large_key)[0])
     # 1) 精确 screenshot.*（多格式时 png > jpg > webp > gif）
     exact = [f for f in files if os.path.splitext(f)[0].lower() == "screenshot"]
     if exact:
@@ -770,7 +781,8 @@ def write_index(manifest, out_root):
                  "由 `python tools/migrate_gltf_models.py --only <Model> --force` 从 `.deps/gltf-assets` 重新生成）。")
     lines.append("")
     lines.append("迁移流程、踩坑与经验：见 [docs/31-gltf-model-migration.md](../../docs/31-gltf-model-migration.md)。"
-                 "机器可读清单：[manifest.json](manifest.json)。")
+                 "机器可读清单：[manifest.json](manifest.json)；"
+                 "**逐模型官方参考图（large 优先）vs 迁移预览对比报告：[reports/khronos-comparison/index.html](../../reports/khronos-comparison/index.html)**。")
     lines.append("")
     lines.append("## 总览")
     lines.append("")

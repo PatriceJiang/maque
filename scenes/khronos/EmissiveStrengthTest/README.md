@@ -37,14 +37,14 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Emi
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot.jpg`（400×293）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot_large_plain.jpg`（1290×944）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.397 | 0.761 | 差 +0.365 |
-| 前景平均 RGB | [102.0, 99.9, 111.6] | [191.9, 194.5, 196.5] | RGB 距离 0.352 |
+| 前景平均亮度 | 0.389 | 0.761 | 差 +0.373 |
+| 前景平均 RGB | [101.4, 98.1, 108.8] | [191.9, 194.5, 196.5] | RGB 距离 0.359 |
 | 亮度直方图相似度 | — | — | 0.07（16 桶交集，1=完全一致） |
-| 前景占比 | 68.9% | 31.2% | 覆盖率比 0.454 |
+| 前景占比 | 69.3% | 31.2% | 覆盖率比 0.45 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
 

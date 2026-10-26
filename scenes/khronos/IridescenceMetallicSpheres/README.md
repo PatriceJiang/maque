@@ -37,14 +37,14 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot.jpg`（400×400）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot_large.jpg`（2000×2000）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.397 | 0.466 | 差 +0.068 |
-| 前景平均 RGB | [99.1, 101.9, 102.5] | [122.5, 115.4, 140.6] | RGB 距离 0.098 |
+| 前景平均亮度 | 0.388 | 0.466 | 差 +0.078 |
+| 前景平均 RGB | [96.6, 99.5, 100.1] | [122.5, 115.4, 140.6] | RGB 距离 0.108 |
 | 亮度直方图相似度 | — | — | 0.80（16 桶交集，1=完全一致） |
-| 前景占比 | 41.9% | 16.2% | 覆盖率比 0.387 |
+| 前景占比 | 41.6% | 16.2% | 覆盖率比 0.39 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 

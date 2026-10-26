@@ -39,14 +39,14 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Car
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot.jpg`（150×112）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot_Large.jpg`（1280×953）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.147 | 0.416 | 差 +0.269 |
-| 前景平均 RGB | [69.1, 28.3, 37.0] | [159.7, 91.2, 94.5] | RGB 距离 0.276 |
+| 前景平均亮度 | 0.146 | 0.416 | 差 +0.270 |
+| 前景平均 RGB | [69.0, 27.8, 36.7] | [159.7, 91.2, 94.5] | RGB 距离 0.277 |
 | 亮度直方图相似度 | — | — | 0.30（16 桶交集，1=完全一致） |
-| 前景占比 | 58.4% | 14.4% | 覆盖率比 0.246 |
+| 前景占比 | 58.0% | 14.4% | 覆盖率比 0.248 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
 

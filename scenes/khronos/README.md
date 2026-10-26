@@ -7,7 +7,7 @@
 - `<Model>/README.md` —— **独立笔记**：来源/许可/模型统计/生成与运行命令/与官方 screenshot 的定量对比与差异归因/已知差距/踩坑；
 - `<Model>/assets/`、`textures/` —— 导入产物（`.mesh.json`/贴图，体积大，**不入库**，由 `python tools/migrate_gltf_models.py --only <Model> --force` 从 `.deps/gltf-assets` 重新生成）。
 
-迁移流程、踩坑与经验：见 [docs/31-gltf-model-migration.md](../../docs/31-gltf-model-migration.md)。机器可读清单：[manifest.json](manifest.json)。
+迁移流程、踩坑与经验：见 [docs/31-gltf-model-migration.md](../../docs/31-gltf-model-migration.md)。机器可读清单：[manifest.json](manifest.json)；**逐模型官方参考图（large 优先）vs 迁移预览对比报告：[reports/khronos-comparison/index.html](../../reports/khronos-comparison/index.html)**。
 
 ## 总览
 

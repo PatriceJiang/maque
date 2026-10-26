@@ -37,14 +37,14 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Ani
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot.jpg`（132×150）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot_Large.jpg`（1055×1202）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.515 | 0.433 | 差 -0.082 |
-| 前景平均 RGB | [148.6, 127.7, 116.3] | [137.2, 104.7, 89.6] | RGB 距离 0.080 |
+| 前景平均亮度 | 0.512 | 0.433 | 差 -0.079 |
+| 前景平均 RGB | [148.3, 126.9, 115.3] | [137.2, 104.7, 89.6] | RGB 距离 0.077 |
 | 亮度直方图相似度 | — | — | 0.71（16 桶交集，1=完全一致） |
-| 前景占比 | 64.8% | 7.3% | 覆盖率比 0.113 |
+| 前景占比 | 63.7% | 7.3% | 覆盖率比 0.115 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 

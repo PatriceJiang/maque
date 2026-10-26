@@ -1,8 +1,8 @@
 {
-  "reference": "screenshot.jpg",
+  "reference": "screenshot_Large.jpg",
   "reference_size": [
-    150,
-    97
+    1280,
+    828
   ],
   "reference_has_alpha": false,
   "preview_size": [
@@ -11,19 +11,19 @@
   ],
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
-  "ref_mean_lum": 0.4263,
+  "ref_mean_lum": 0.4264,
   "preview_mean_lum": 0.4438,
-  "mean_lum_delta": 0.0175,
-  "hist_similarity": 0.6401,
-  "rgb_delta": 0.1186,
-  "ref_coverage": 0.9691,
+  "mean_lum_delta": 0.0173,
+  "hist_similarity": 0.5748,
+  "rgb_delta": 0.118,
+  "ref_coverage": 0.9589,
   "preview_coverage": 0.2006,
-  "coverage_ratio": 0.207,
+  "coverage_ratio": 0.209,
   "ref_bbox": [
     0,
     0,
-    149,
-    96
+    1279,
+    827
   ],
   "preview_bbox": [
     205,
@@ -32,9 +32,9 @@
     643
   ],
   "ref_mean_rgb": [
-    109.0,
-    109.7,
-    98.5
+    108.9,
+    109.9,
+    98.8
   ],
   "preview_mean_rgb": [
     55.9,
@@ -42,5 +42,5 @@
     115.9
   ],
   "framing_notes": [],
-  "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
+  "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
 }

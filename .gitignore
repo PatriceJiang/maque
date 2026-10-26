@@ -34,3 +34,6 @@ Testing/
 /scenes/khronos/*/assets/
 /scenes/khronos/*/textures/
 /scenes/khronos/*/preview.png
+
+# Python 字节码缓存
+__pycache__/

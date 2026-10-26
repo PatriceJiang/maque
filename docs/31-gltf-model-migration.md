@@ -23,6 +23,7 @@
 | 当前主要差距 | transmission/volume（32/25 个模型）、扩展贴图槽、动画/骨骼/morph、texCoord 集、COLOR_0、KTX2/meshopt/WebP、IBL/HDRI 与 MSAA —— 详见 §5 与 §11 |
 | 确定性 | 同一输入两次导入**逐字节一致**；同机同构建、同场景同帧两次 `--shot` 的 PNG **SHA256 相同**（已实测）；流水线固定 `--compact`（与默认输出有 6 位小数舍入差异） |
 | 一键复现 | 见 §3；干净 clone 后恢复派生资产的唯一命令：`python tools/migrate_gltf_models.py --force`（会重写 `.scn`，手调模型须排除） |
+| 逐模型对比报告 | `reports/khronos-comparison/index.html`（149 个模型官方参考图 **large 优先** vs 迁移预览，左右对比 + 指标 + 差距 + 人工复核；`python tools/make_migration_report.py` 可重生成） |
 
 ---
 
@@ -615,7 +616,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 渲染器不同 | 官方常见 Blender/three.js/Marmoset 等，BRDF 实现/色调映射/曝光不同 |
 | 光照/环境 | 多为 **HDRI studio**（IBL、面光、软阴影）；maque 只有方向光 + analytic studio IBL |
 | 机位/背景 | 官方机位/焦距/背景与自动机位不同；部分图为**透明背景**，部分带地面/背景板 |
-| 参考图格式 | png/jpg/jpeg/webp/**gif**（gif 用 PIL 取第一帧）；**149 个模型目录都有 `screenshot/`**，本批 **148/148 全部生成对比**（13 个模型的参考图是 `.gif`）。"统计缺失"不是"差异大"——若以后出现无 `screenshot/` 的资产，笔记应标"上游无参考图" |
+| 参考图格式/选择 | **large 优先**：先找 basename 含 `large` 的（`screenshot_large.*`/`screenshot-Large.*`/`large.jpg`…），再 `screenshot.*`，再 basename 含 screenshot，最后第一张图；格式 png/jpg/jpeg/webp/**gif**（gif 用 PIL 取第一帧）。**149 个模型都有 `screenshot/`，148/148 全部生成对比**（86 个用了 large 版、13 个仅有 GIF）。"统计缺失"不是"差异大"——若以后出现无 `screenshot/` 的资产，笔记应标"上游无参考图" |
 | 缺失特性 | transmission/volume、扩展贴图槽、动画/骨骼/morph、MSAA 等（§5） |
 | 尺寸 | 参考图尺寸各异（150×80 到 1870×1033），本预览固定 1280×720 |
 
@@ -882,7 +883,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 派生资产（本地、不入库） | `out_size_bytes` 合计 **992.0 MB**（BATCH2 后重新导入含 WebP 转码/去重贴图）；文件系统实测约 1.0 GB |
 | 入库部分 | **18.4 MB**（`.scn` 15.5 + `preview.jpg` 2.3 + `README.md` 0.5 + `compare.json` 0.1）+ `manifest.json`/总索引 0.4 MB |
 | 产物数量 | `preview.jpg` **149** 张（含 ToyCar）、`compare.json` **148** 个、`README.md` 149 份 |
-| 参考图口径 | 149 个模型目录都有 `screenshot/`；**148/148 全部生成对比**；其中 **13 个模型的参考图是 `.gif`**（PIL 取第一帧）。判读原则：对照参考图前先确认它对应主变体；若是动画帧/过程图，只作参考、不作姿势结论（以该模型 README 为准） |
+| 参考图口径 | 149 个模型目录都有 `screenshot/`；**148/148 全部生成对比**；其中 **86 个模型使用 large 版参考图**、**13 个模型的参考图是 `.gif`**（PIL 取第一帧）。判读原则：对照参考图前先确认它对应主变体；若是动画帧/过程图，只作参考、不作姿势结论（以该模型 README 为准） |
 | 渲染异常自动检测 | **0**（无 `cams=0` / `meshes=0` / `mesh=-1` / `[wgpu] error`） |
 | 构图告警 | 1 个：`AntiqueCamera`（前景占比 4.3%——细长三脚架/相机造型导致覆盖率低，人工看构图正常，属指标误报）。`CesiumMilkTruck` 的翻倒/裁剪已由万向锁修复解决 |
 | 自动对比初判（148 个） | 39 × "主体亮度/色调较接近"、38 × "中等差异"、71 × "差异较大"（"差异较大"主要来自缺失特性/机位/背景，需人工归因，**不是失败**） |
@@ -998,6 +999,28 @@ PY
 ```
 
 ---
+
+### 10.6 逐模型对比报告（`reports/khronos-comparison/`）
+
+迁移完成后生成**可浏览的逐模型对比报告**（149 个模型 = 148 自动 + 手工 ToyCar）：
+
+| 文件 | 说明 |
+|---|---|
+| `index.html` | 左右对比卡片：官方参考图（**large 优先**；GIF 取首帧）vs maque `preview.jpg`，附指标（直方图相似度/亮度差/RGB 距离/前景占比）、自动初判、已知差距、人工视觉复核（34 个模型）、到模型笔记/场景的链接；支持搜索、按初判筛选、按相似度/差距排序 |
+| `ref/<Model>.jpg` | 官方参考图下采样（≤900px、JPEG q82；透明背景合成中性灰，便于左右并排）——报告自包含，不依赖 `.deps` |
+| `overview.jpg` | 代表模型总览拼图（差异两端 + 手工样板 + 特性代表） |
+| `comparison.csv` / `comparison.json` | 全量指标（可用 Excel/脚本二次分析） |
+| `README.md` | 报告摘要 + 最需关注的 15 个模型 + 最接近的 10 个模型 |
+
+生成命令（仓库根目录）：
+
+```bash
+python tools/make_migration_report.py                 # 默认 ≤900px / q82
+python tools/make_migration_report.py --max-dim 1200 --quality 85
+```
+
+> 报告中的参考图选择与 `manifest.json.compare` 一致（`find_reference_image()` **large 优先**）。
+> 注意报告仍**不是像素级 pass/fail**（见 §7.1）：自动指标只用于筛查，结论以人工复核/README 归因为准。
 
 ## 11. 后续工作（按收益/成本排序）
 

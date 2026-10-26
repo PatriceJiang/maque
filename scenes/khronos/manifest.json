@@ -3,9 +3,9 @@
  "generated_by": "tools/migrate_gltf_models.py",
  "models_root": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models",
  "provenance": {
-  "git_head": "455736503818f7bc71436b722af905dda86e157d",
+  "git_head": "ee11d6c336dd3a7655f1c8e8f224f660fbc9623d",
   "importer_sha256": "836ef0c7cd8849799785577eb8806fa95d0b0af0616b730a0a9dbca8d02a4355",
-  "migrate_script_sha256": "81c556e376a7cb79aa3bcb34890745aa2a8e313ecdabf23dcc69791c27efa71f",
+  "migrate_script_sha256": "404defa509a768871510388c04c231a9d9eb4ae167175afdb2e0b856811c33fe",
   "player_sha256": "142abe896af9e36dd479bb2db6f3edf9f03561742980b5bb31fb14c5f2759784"
  },
  "records": [
@@ -121,10 +121,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.582,
+    "coverage_ratio": 0.385,
     "framing_notes": [],
-    "hist_similarity": 0.46,
-    "mean_lum_delta": 0.0855,
+    "hist_similarity": 0.3932,
+    "mean_lum_delta": 0.0848,
     "preview_bbox": [
      83,
      212,
@@ -144,27 +144,27 @@
      720
     ],
     "ref_bbox": [
-     8,
-     34,
-     323,
-     121
+     23,
+     19,
+     936,
+     274
     ],
-    "ref_coverage": 0.4905,
+    "ref_coverage": 0.7402,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.659,
+    "ref_mean_lum": 0.6597,
     "ref_mean_rgb": [
-     161.2,
-     171.2,
-     157.2
+     161.3,
+     171.3,
+     157.3
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     332,
-     154
+     960,
+     295
     ],
-    "rgb_delta": 0.0849,
-    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+    "rgb_delta": 0.0844,
+    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
@@ -176,14 +176,14 @@
     "texture_files": 4
    },
    "issues": [
-    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
+    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "AlphaBlendModeTest",
-   "out_size_bytes": 3556930,
+   "out_size_bytes": 3556968,
    "preview_jpg": "scenes\\khronos\\AlphaBlendModeTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\AlphaBlendModeTest\\preview.png",
    "readme": "scenes\\khronos\\AlphaBlendModeTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AlphaBlendModeTest\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AlphaBlendModeTest\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AlphaBlendModeTest\\glTF\\AlphaBlendModeTest.gltf",
    "stats": {
@@ -229,10 +229,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.669,
+    "coverage_ratio": 0.69,
     "framing_notes": [],
-    "hist_similarity": 0.5608,
-    "mean_lum_delta": -0.0332,
+    "hist_similarity": 0.5559,
+    "mean_lum_delta": -0.0374,
     "preview_bbox": [
      241,
      134,
@@ -252,26 +252,26 @@
      720
     ],
     "ref_bbox": [
-     13,
-     5,
-     130,
-     75
+     69,
+     29,
+     698,
+     407
     ],
-    "ref_coverage": 0.3122,
+    "ref_coverage": 0.3029,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3923,
+    "ref_mean_lum": 0.3966,
     "ref_mean_rgb": [
-     126.2,
-     93.5,
-     87.6
+     127.6,
+     94.5,
+     88.2
     ],
-    "reference": "screenshot.gif",
+    "reference": "screenshot-large.gif",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     84
+     800,
+     450
     ],
-    "rgb_delta": 0.0643,
+    "rgb_delta": 0.0645,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -288,11 +288,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "AnimatedColorsCube",
-   "out_size_bytes": 103910,
+   "out_size_bytes": 104004,
    "preview_jpg": "scenes\\khronos\\AnimatedColorsCube\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnimatedColorsCube\\preview.png",
    "readme": "scenes\\khronos\\AnimatedColorsCube\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimatedColorsCube\\screenshot\\screenshot.gif",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimatedColorsCube\\screenshot\\screenshot-large.gif",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimatedColorsCube\\glTF\\AnimatedColorsCube.gltf",
    "stats": {
@@ -641,10 +641,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.286,
+    "coverage_ratio": 0.324,
     "framing_notes": [],
-    "hist_similarity": 0.6636,
-    "mean_lum_delta": 0.065,
+    "hist_similarity": 0.6847,
+    "mean_lum_delta": 0.066,
     "preview_bbox": [
      142,
      132,
@@ -664,26 +664,26 @@
      720
     ],
     "ref_bbox": [
-     1,
-     1,
-     147,
-     78
+     23,
+     18,
+     2290,
+     1215
     ],
-    "ref_coverage": 0.4598,
+    "ref_coverage": 0.4066,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4723,
+    "ref_mean_lum": 0.4713,
     "ref_mean_rgb": [
-     112.2,
-     123.5,
-     114.3
+     110.0,
+     124.2,
+     111.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     80
+     2322,
+     1237
     ],
-    "rgb_delta": 0.0679,
+    "rgb_delta": 0.0732,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -712,11 +712,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "AnimationPointerUVs",
-   "out_size_bytes": 13551256,
+   "out_size_bytes": 13551359,
    "preview_jpg": "scenes\\khronos\\AnimationPointerUVs\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnimationPointerUVs\\preview.png",
    "readme": "scenes\\khronos\\AnimationPointerUVs\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimationPointerUVs\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimationPointerUVs\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnimationPointerUVs\\glTF\\AnimationPointerUVs.gltf",
    "stats": {
@@ -777,10 +777,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.113,
+    "coverage_ratio": 0.115,
     "framing_notes": [],
-    "hist_similarity": 0.7066,
-    "mean_lum_delta": -0.0815,
+    "hist_similarity": 0.7092,
+    "mean_lum_delta": -0.0788,
     "preview_bbox": [
      495,
      145,
@@ -802,24 +802,24 @@
     "ref_bbox": [
      0,
      0,
-     131,
-     149
+     1054,
+     1201
     ],
-    "ref_coverage": 0.6478,
+    "ref_coverage": 0.6367,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5149,
+    "ref_mean_lum": 0.5122,
     "ref_mean_rgb": [
-     148.6,
-     127.7,
-     116.3
+     148.3,
+     126.9,
+     115.3
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     132,
-     150
+     1055,
+     1202
     ],
-    "rgb_delta": 0.0798,
+    "rgb_delta": 0.077,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -838,11 +838,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "AnisotropyBarnLamp",
-   "out_size_bytes": 7199825,
+   "out_size_bytes": 7199842,
    "preview_jpg": "scenes\\khronos\\AnisotropyBarnLamp\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnisotropyBarnLamp\\preview.png",
    "readme": "scenes\\khronos\\AnisotropyBarnLamp\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyBarnLamp\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyBarnLamp\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyBarnLamp\\glTF\\AnisotropyBarnLamp.gltf",
    "stats": {
@@ -891,10 +891,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.322,
+    "coverage_ratio": 0.347,
     "framing_notes": [],
-    "hist_similarity": 0.2375,
-    "mean_lum_delta": 0.0856,
+    "hist_similarity": 0.2232,
+    "mean_lum_delta": 0.0786,
     "preview_bbox": [
      52,
      161,
@@ -916,24 +916,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     63
+     1534,
+     655
     ],
-    "ref_coverage": 0.7374,
+    "ref_coverage": 0.6859,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4617,
+    "ref_mean_lum": 0.4686,
     "ref_mean_rgb": [
-     123.2,
-     116.6,
-     112.5
+     122.7,
+     119.0,
+     116.9
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     64
+     1535,
+     656
     ],
-    "rgb_delta": 0.0926,
+    "rgb_delta": 0.0844,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -949,11 +949,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "AnisotropyDiscTest",
-   "out_size_bytes": 350524,
+   "out_size_bytes": 350542,
    "preview_jpg": "scenes\\khronos\\AnisotropyDiscTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnisotropyDiscTest\\preview.png",
    "readme": "scenes\\khronos\\AnisotropyDiscTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyDiscTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyDiscTest\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyDiscTest\\glTF\\AnisotropyDiscTest.gltf",
    "stats": {
@@ -998,10 +998,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.404,
+    "coverage_ratio": 0.421,
     "framing_notes": [],
-    "hist_similarity": 0.132,
-    "mean_lum_delta": 0.4928,
+    "hist_similarity": 0.1028,
+    "mean_lum_delta": 0.5071,
     "preview_bbox": [
      176,
      153,
@@ -1021,26 +1021,26 @@
      720
     ],
     "ref_bbox": [
-     3,
-     3,
-     197,
-     105
+     27,
+     25,
+     1591,
+     847
     ],
-    "ref_coverage": 0.3245,
+    "ref_coverage": 0.3109,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.1614,
+    "ref_mean_lum": 0.1472,
     "ref_mean_rgb": [
-     41.0,
-     41.2,
-     41.8
+     37.5,
+     37.5,
+     37.5
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot-large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     200,
-     108
+     1610,
+     868
     ],
-    "rgb_delta": 0.4968,
+    "rgb_delta": 0.5117,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -1056,11 +1056,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "AnisotropyRotationTest",
-   "out_size_bytes": 1327274,
+   "out_size_bytes": 1327292,
    "preview_jpg": "scenes\\khronos\\AnisotropyRotationTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnisotropyRotationTest\\preview.png",
    "readme": "scenes\\khronos\\AnisotropyRotationTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyRotationTest\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyRotationTest\\screenshot\\screenshot-large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyRotationTest\\glTF\\AnisotropyRotationTest.gltf",
    "stats": {
@@ -1105,10 +1105,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.405,
+    "coverage_ratio": 0.411,
     "framing_notes": [],
-    "hist_similarity": 0.2639,
-    "mean_lum_delta": 0.4673,
+    "hist_similarity": 0.256,
+    "mean_lum_delta": 0.4758,
     "preview_bbox": [
      340,
      72,
@@ -1128,26 +1128,26 @@
      720
     ],
     "ref_bbox": [
-     6,
-     3,
-     190,
-     183
+     38,
+     21,
+     1134,
+     1090
     ],
-    "ref_coverage": 0.388,
+    "ref_coverage": 0.3825,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2296,
+    "ref_mean_lum": 0.2211,
     "ref_mean_rgb": [
-     58.3,
-     58.5,
-     59.1
+     56.4,
+     56.4,
+     56.5
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot-large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     200,
-     189
+     1186,
+     1120
     ],
-    "rgb_delta": 0.4708,
+    "rgb_delta": 0.4795,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -1163,11 +1163,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "AnisotropyStrengthTest",
-   "out_size_bytes": 5989102,
+   "out_size_bytes": 5989122,
    "preview_jpg": "scenes\\khronos\\AnisotropyStrengthTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\AnisotropyStrengthTest\\preview.png",
    "readme": "scenes\\khronos\\AnisotropyStrengthTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyStrengthTest\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyStrengthTest\\screenshot\\screenshot-large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AnisotropyStrengthTest\\glTF\\AnisotropyStrengthTest.gltf",
    "stats": {
@@ -1212,12 +1212,12 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.095,
+    "coverage_ratio": 0.098,
     "framing_notes": [
      "预览主体占比过小（<5%）→ 机位过远？"
     ],
-    "hist_similarity": 0.6213,
-    "mean_lum_delta": -0.0695,
+    "hist_similarity": 0.5966,
+    "mean_lum_delta": -0.0649,
     "preview_bbox": [
      558,
      83,
@@ -1239,25 +1239,25 @@
     "ref_bbox": [
      0,
      0,
-     77,
-     149
+     519,
+     999
     ],
-    "ref_coverage": 0.4512,
+    "ref_coverage": 0.4351,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3303,
+    "ref_mean_lum": 0.3256,
     "ref_mean_rgb": [
-     92.2,
-     82.1,
-     81.6
+     90.7,
+     80.9,
+     80.3
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     78,
-     150
+     520,
+     1000
     ],
-    "rgb_delta": 0.0724,
-    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？"
+    "rgb_delta": 0.0672,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体占比过小（<5%）→ 机位过远？"
    },
    "gaps": [],
    "import": {
@@ -1267,15 +1267,15 @@
     "texture_files": 6
    },
    "issues": [
-    "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？",
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）；预览主体占比过小（<5%）→ 机位过远？",
     "构图告警：预览主体占比过小（<5%）→ 机位过远？"
    ],
    "model": "AntiqueCamera",
-   "out_size_bytes": 19048423,
+   "out_size_bytes": 19048424,
    "preview_jpg": "scenes\\khronos\\AntiqueCamera\\preview.jpg",
    "preview_png": "scenes\\khronos\\AntiqueCamera\\preview.png",
    "readme": "scenes\\khronos\\AntiqueCamera\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AntiqueCamera\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AntiqueCamera\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AntiqueCamera\\glTF\\AntiqueCamera.gltf",
    "stats": {
@@ -1319,10 +1319,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.292,
+    "coverage_ratio": 0.263,
     "framing_notes": [],
-    "hist_similarity": 0.7568,
-    "mean_lum_delta": 0.1033,
+    "hist_similarity": 0.7778,
+    "mean_lum_delta": 0.0991,
     "preview_bbox": [
      344,
      84,
@@ -1344,24 +1344,24 @@
     "ref_bbox": [
      0,
      0,
-     399,
-     381
+     1211,
+     1157
     ],
-    "ref_coverage": 0.8097,
+    "ref_coverage": 0.8974,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.6519,
+    "ref_mean_lum": 0.6561,
     "ref_mean_rgb": [
-     153.6,
-     168.0,
-     186.8
+     155.1,
+     168.8,
+     186.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     382
+     1212,
+     1158
     ],
-    "rgb_delta": 0.0922,
+    "rgb_delta": 0.0895,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -1378,11 +1378,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "AttenuationTest",
-   "out_size_bytes": 283012,
+   "out_size_bytes": 283030,
    "preview_jpg": "scenes\\khronos\\AttenuationTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\AttenuationTest\\preview.png",
    "readme": "scenes\\khronos\\AttenuationTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AttenuationTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AttenuationTest\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\AttenuationTest\\glTF\\AttenuationTest.gltf",
    "stats": {
@@ -1634,10 +1634,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.129,
+    "coverage_ratio": 0.13,
     "framing_notes": [],
-    "hist_similarity": 0.3342,
-    "mean_lum_delta": 0.1821,
+    "hist_similarity": 0.306,
+    "mean_lum_delta": 0.1839,
     "preview_bbox": [
      441,
      162,
@@ -1659,24 +1659,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     138
+     999,
+     923
     ],
-    "ref_coverage": 0.7349,
+    "ref_coverage": 0.7291,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2785,
+    "ref_mean_lum": 0.2767,
     "ref_mean_rgb": [
-     66.0,
-     71.9,
-     77.7
+     65.5,
+     71.6,
+     77.5
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     139
+     1000,
+     924
     ],
-    "rgb_delta": 0.1767,
+    "rgb_delta": 0.1779,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [],
@@ -1690,11 +1690,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "BoomBox",
-   "out_size_bytes": 11017140,
+   "out_size_bytes": 11017151,
    "preview_jpg": "scenes\\khronos\\BoomBox\\preview.jpg",
    "preview_png": "scenes\\khronos\\BoomBox\\preview.png",
    "readme": "scenes\\khronos\\BoomBox\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoomBox\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoomBox\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoomBox\\glTF\\BoomBox.gltf",
    "stats": {
@@ -1737,10 +1737,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.1,
+    "coverage_ratio": 0.107,
     "framing_notes": [],
-    "hist_similarity": 0.4843,
-    "mean_lum_delta": 0.1353,
+    "hist_similarity": 0.4283,
+    "mean_lum_delta": 0.1485,
     "preview_bbox": [
      482,
      114,
@@ -1762,24 +1762,24 @@
     "ref_bbox": [
      0,
      0,
-     100,
-     149
+     669,
+     999
     ],
-    "ref_coverage": 0.5517,
+    "ref_coverage": 0.5185,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3204,
+    "ref_mean_lum": 0.3072,
     "ref_mean_rgb": [
-     80.8,
-     81.5,
-     86.7
+     77.1,
+     78.3,
+     83.4
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     101,
-     150
+     670,
+     1000
     ],
-    "rgb_delta": 0.1253,
+    "rgb_delta": 0.1386,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [],
@@ -1793,11 +1793,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "BoomBoxWithAxes",
-   "out_size_bytes": 10337136,
+   "out_size_bytes": 10337154,
    "preview_jpg": "scenes\\khronos\\BoomBoxWithAxes\\preview.jpg",
    "preview_png": "scenes\\khronos\\BoomBoxWithAxes\\preview.png",
    "readme": "scenes\\khronos\\BoomBoxWithAxes\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoomBoxWithAxes\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoomBoxWithAxes\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\BoomBoxWithAxes\\glTF\\BoomBoxWithAxes.gltf",
    "stats": {
@@ -1941,8 +1941,8 @@
    "compare": {
     "coverage_ratio": 0.085,
     "framing_notes": [],
-    "hist_similarity": 0.2423,
-    "mean_lum_delta": 0.112,
+    "hist_similarity": 0.2059,
+    "mean_lum_delta": 0.114,
     "preview_bbox": [
      382,
      159,
@@ -1962,26 +1962,26 @@
      720
     ],
     "ref_bbox": [
-     7,
-     6,
-     120,
-     120
+     36,
+     34,
+     662,
+     661
     ],
-    "ref_coverage": 0.6019,
+    "ref_coverage": 0.601,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2097,
+    "ref_mean_lum": 0.2077,
     "ref_mean_rgb": [
-     50.8,
-     54.8,
-     48.4
+     50.3,
+     54.1,
+     47.9
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot_large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     128,
-     128
+     700,
+     700
     ],
-    "rgb_delta": 0.0806,
+    "rgb_delta": 0.0814,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [],
@@ -1995,11 +1995,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "Box With Spaces",
-   "out_size_bytes": 223200,
+   "out_size_bytes": 223213,
    "preview_jpg": "scenes\\khronos\\Box With Spaces\\preview.jpg",
    "preview_png": "scenes\\khronos\\Box With Spaces\\preview.png",
    "readme": "scenes\\khronos\\Box With Spaces\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Box With Spaces\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Box With Spaces\\screenshot\\screenshot_large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Box With Spaces\\glTF\\Box With Spaces.gltf",
    "stats": {
@@ -2751,10 +2751,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.246,
+    "coverage_ratio": 0.248,
     "framing_notes": [],
-    "hist_similarity": 0.3048,
-    "mean_lum_delta": 0.2685,
+    "hist_similarity": 0.2974,
+    "mean_lum_delta": 0.2701,
     "preview_bbox": [
      387,
      244,
@@ -2774,26 +2774,26 @@
      720
     ],
     "ref_bbox": [
-     4,
-     4,
-     145,
-     108
+     34,
+     32,
+     1247,
+     921
     ],
-    "ref_coverage": 0.5842,
+    "ref_coverage": 0.5801,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.1474,
+    "ref_mean_lum": 0.1459,
     "ref_mean_rgb": [
-     69.1,
-     28.3,
-     37.0
+     69.0,
+     27.8,
+     36.7
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     112
+     1280,
+     953
     ],
-    "rgb_delta": 0.2759,
+    "rgb_delta": 0.2769,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -2814,11 +2814,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CarConcept",
-   "out_size_bytes": 20486552,
+   "out_size_bytes": 20486569,
    "preview_jpg": "scenes\\khronos\\CarConcept\\preview.jpg",
    "preview_png": "scenes\\khronos\\CarConcept\\preview.png",
    "readme": "scenes\\khronos\\CarConcept\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CarConcept\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CarConcept\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CarConcept\\glTF\\CarConcept.gltf",
    "stats": {
@@ -2872,8 +2872,8 @@
    "compare": {
     "coverage_ratio": 0.096,
     "framing_notes": [],
-    "hist_similarity": 0.3684,
-    "mean_lum_delta": -0.1141,
+    "hist_similarity": 0.3863,
+    "mean_lum_delta": -0.1143,
     "preview_bbox": [
      440,
      160,
@@ -2895,24 +2895,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     145
+     899,
+     875
     ],
     "ref_coverage": 0.8253,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2568,
+    "ref_mean_lum": 0.2569,
     "ref_mean_rgb": [
-     64.3,
-     65.9,
-     64.5
+     64.6,
+     66.1,
+     64.9
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     150
+     900,
+     900
     ],
-    "rgb_delta": 0.1104,
+    "rgb_delta": 0.1115,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -2928,11 +2928,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CarbonFibre",
-   "out_size_bytes": 810722,
+   "out_size_bytes": 810734,
    "preview_jpg": "scenes\\khronos\\CarbonFibre\\preview.jpg",
    "preview_png": "scenes\\khronos\\CarbonFibre\\preview.png",
    "readme": "scenes\\khronos\\CarbonFibre\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CarbonFibre\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CarbonFibre\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CarbonFibre\\glTF\\CarbonFibre.gltf",
    "stats": {
@@ -3189,10 +3189,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.213,
+    "coverage_ratio": 0.228,
     "framing_notes": [],
-    "hist_similarity": 0.7127,
-    "mean_lum_delta": -0.1644,
+    "hist_similarity": 0.6825,
+    "mean_lum_delta": -0.1558,
     "preview_bbox": [
      396,
      157,
@@ -3214,24 +3214,24 @@
     "ref_bbox": [
      0,
      0,
-     144,
-     111
+     1279,
+     969
     ],
-    "ref_coverage": 0.5233,
+    "ref_coverage": 0.4893,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3432,
+    "ref_mean_lum": 0.3346,
     "ref_mean_rgb": [
-     106.6,
-     78.3,
-     123.0
+     106.5,
+     75.4,
+     122.3
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     114
+     1280,
+     970
     ],
-    "rgb_delta": 0.1651,
+    "rgb_delta": 0.1603,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -3250,11 +3250,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ChairDamaskPurplegold",
-   "out_size_bytes": 2747890,
+   "out_size_bytes": 2747905,
    "preview_jpg": "scenes\\khronos\\ChairDamaskPurplegold\\preview.jpg",
    "preview_png": "scenes\\khronos\\ChairDamaskPurplegold\\preview.png",
    "readme": "scenes\\khronos\\ChairDamaskPurplegold\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChairDamaskPurplegold\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChairDamaskPurplegold\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChairDamaskPurplegold\\glTF\\ChairDamaskPurplegold.gltf",
    "stats": {
@@ -3302,10 +3302,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.149,
+    "coverage_ratio": 0.15,
     "framing_notes": [],
-    "hist_similarity": 0.7497,
-    "mean_lum_delta": 0.1101,
+    "hist_similarity": 0.7391,
+    "mean_lum_delta": 0.1109,
     "preview_bbox": [
      488,
      154,
@@ -3327,24 +3327,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     159
+     1103,
+     1175
     ],
-    "ref_coverage": 0.9465,
+    "ref_coverage": 0.9422,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4204,
+    "ref_mean_lum": 0.4196,
     "ref_mean_rgb": [
-     113.0,
-     107.2,
-     90.5
+     112.9,
+     107.1,
+     90.2
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     160
+     1104,
+     1176
     ],
-    "rgb_delta": 0.1093,
+    "rgb_delta": 0.1098,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -3364,11 +3364,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ChronographWatch",
-   "out_size_bytes": 14749779,
+   "out_size_bytes": 14749795,
    "preview_jpg": "scenes\\khronos\\ChronographWatch\\preview.jpg",
    "preview_png": "scenes\\khronos\\ChronographWatch\\preview.png",
    "readme": "scenes\\khronos\\ChronographWatch\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChronographWatch\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChronographWatch\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ChronographWatch\\glTF\\ChronographWatch.gltf",
    "stats": {
@@ -3419,8 +3419,8 @@
    "compare": {
     "coverage_ratio": 0.169,
     "framing_notes": [],
-    "hist_similarity": 0.722,
-    "mean_lum_delta": -0.0072,
+    "hist_similarity": 0.7228,
+    "mean_lum_delta": -0.0073,
     "preview_bbox": [
      438,
      162,
@@ -3442,24 +3442,24 @@
     "ref_bbox": [
      0,
      0,
-     255,
-     234
+     842,
+     774
     ],
-    "ref_coverage": 0.8074,
+    "ref_coverage": 0.8075,
     "ref_mask": "border-bg",
     "ref_mean_lum": 0.3493,
     "ref_mean_rgb": [
      150.6,
-     72.2,
-     75.1
+     72.4,
+     75.3
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     256,
-     246
+     843,
+     809
     ],
-    "rgb_delta": 0.1053,
+    "rgb_delta": 0.1059,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -3476,11 +3476,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ClearCoatCarPaint",
-   "out_size_bytes": 500198,
+   "out_size_bytes": 500211,
    "preview_jpg": "scenes\\khronos\\ClearCoatCarPaint\\preview.jpg",
    "preview_png": "scenes\\khronos\\ClearCoatCarPaint\\preview.png",
    "readme": "scenes\\khronos\\ClearCoatCarPaint\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearCoatCarPaint\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearCoatCarPaint\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearCoatCarPaint\\glTF\\ClearCoatCarPaint.gltf",
    "stats": {
@@ -3529,10 +3529,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.223,
+    "coverage_ratio": 0.226,
     "framing_notes": [],
-    "hist_similarity": 0.4654,
-    "mean_lum_delta": -0.0202,
+    "hist_similarity": 0.4855,
+    "mean_lum_delta": -0.0151,
     "preview_bbox": [
      393,
      63,
@@ -3553,25 +3553,25 @@
     ],
     "ref_bbox": [
      0,
-     0,
-     286,
-     329
+     2,
+     730,
+     837
     ],
-    "ref_coverage": 0.5492,
+    "ref_coverage": 0.5414,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3704,
+    "ref_mean_lum": 0.3653,
     "ref_mean_rgb": [
-     94.2,
-     92.6,
-     113.8
+     92.9,
+     91.3,
+     112.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     291,
-     332
+     740,
+     844
     ],
-    "rgb_delta": 0.0185,
+    "rgb_delta": 0.0174,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -3587,11 +3587,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "ClearCoatTest",
-   "out_size_bytes": 2623720,
+   "out_size_bytes": 2623732,
    "preview_jpg": "scenes\\khronos\\ClearCoatTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\ClearCoatTest\\preview.png",
    "readme": "scenes\\khronos\\ClearCoatTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearCoatTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearCoatTest\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearCoatTest\\glTF\\ClearCoatTest.gltf",
    "stats": {
@@ -3638,10 +3638,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.208,
+    "coverage_ratio": 0.21,
     "framing_notes": [],
-    "hist_similarity": 0.8061,
-    "mean_lum_delta": 0.0906,
+    "hist_similarity": 0.8066,
+    "mean_lum_delta": 0.0883,
     "preview_bbox": [
      438,
      162,
@@ -3661,26 +3661,26 @@
      720
     ],
     "ref_bbox": [
-     11,
-     9,
-     243,
-     236
+     41,
+     33,
+     836,
+     813
     ],
-    "ref_coverage": 0.6536,
+    "ref_coverage": 0.6486,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4191,
+    "ref_mean_lum": 0.4214,
     "ref_mean_rgb": [
-     135.6,
-     101.0,
-     81.1
+     136.5,
+     101.6,
+     81.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     256,
-     247
+     880,
+     850
     ],
-    "rgb_delta": 0.0897,
+    "rgb_delta": 0.0871,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -3696,11 +3696,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "ClearcoatWicker",
-   "out_size_bytes": 1816323,
+   "out_size_bytes": 1816334,
    "preview_jpg": "scenes\\khronos\\ClearcoatWicker\\preview.jpg",
    "preview_png": "scenes\\khronos\\ClearcoatWicker\\preview.png",
    "readme": "scenes\\khronos\\ClearcoatWicker\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearcoatWicker\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearcoatWicker\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ClearcoatWicker\\glTF\\ClearcoatWicker.gltf",
    "stats": {
@@ -3745,10 +3745,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.133,
+    "coverage_ratio": 0.134,
     "framing_notes": [],
-    "hist_similarity": 0.3391,
-    "mean_lum_delta": 0.2682,
+    "hist_similarity": 0.3487,
+    "mean_lum_delta": 0.2683,
     "preview_bbox": [
      490,
      64,
@@ -3770,24 +3770,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     291
+     638,
+     1243
     ],
-    "ref_coverage": 0.9719,
+    "ref_coverage": 0.9697,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3635,
+    "ref_mean_lum": 0.3634,
     "ref_mean_rgb": [
-     100.6,
-     91.2,
-     83.7
+     100.7,
+     91.3,
+     83.9
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     292
+     639,
+     1244
     ],
-    "rgb_delta": 0.2734,
+    "rgb_delta": 0.273,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -3805,11 +3805,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CommercialRefrigerator",
-   "out_size_bytes": 16625227,
+   "out_size_bytes": 16625241,
    "preview_jpg": "scenes\\khronos\\CommercialRefrigerator\\preview.jpg",
    "preview_png": "scenes\\khronos\\CommercialRefrigerator\\preview.png",
    "readme": "scenes\\khronos\\CommercialRefrigerator\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CommercialRefrigerator\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CommercialRefrigerator\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CommercialRefrigerator\\glTF\\CommercialRefrigerator.gltf",
    "stats": {
@@ -3857,10 +3857,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.359,
+    "coverage_ratio": 0.388,
     "framing_notes": [],
-    "hist_similarity": 0.2637,
-    "mean_lum_delta": 0.092,
+    "hist_similarity": 0.2968,
+    "mean_lum_delta": 0.1345,
     "preview_bbox": [
      73,
      210,
@@ -3880,26 +3880,26 @@
      720
     ],
     "ref_bbox": [
-     1,
-     1,
-     148,
-     43
+     19,
+     24,
+     1894,
+     541
     ],
-    "ref_coverage": 0.8674,
+    "ref_coverage": 0.8025,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.49,
+    "ref_mean_lum": 0.4475,
     "ref_mean_rgb": [
-     144.9,
-     121.5,
-     100.4
+     135.6,
+     110.4,
+     87.5
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     44
+     1915,
+     560
     ],
-    "rgb_delta": 0.0786,
+    "rgb_delta": 0.1221,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -3915,11 +3915,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CompareAlphaCoverage",
-   "out_size_bytes": 4851562,
+   "out_size_bytes": 4851583,
    "preview_jpg": "scenes\\khronos\\CompareAlphaCoverage\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareAlphaCoverage\\preview.png",
    "readme": "scenes\\khronos\\CompareAlphaCoverage\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAlphaCoverage\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAlphaCoverage\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAlphaCoverage\\glTF\\CompareAlphaCoverage.gltf",
    "stats": {
@@ -3966,10 +3966,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.233,
+    "coverage_ratio": 0.237,
     "framing_notes": [],
-    "hist_similarity": 0.8339,
-    "mean_lum_delta": 0.0282,
+    "hist_similarity": 0.8076,
+    "mean_lum_delta": 0.0354,
     "preview_bbox": [
      317,
      216,
@@ -3989,26 +3989,26 @@
      720
     ],
     "ref_bbox": [
-     3,
-     1,
-     146,
-     73
+     26,
+     20,
+     1252,
+     626
     ],
-    "ref_coverage": 0.7461,
+    "ref_coverage": 0.734,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.552,
+    "ref_mean_lum": 0.5449,
     "ref_mean_rgb": [
-     170.5,
-     135.4,
-     106.0
+     169.2,
+     133.5,
+     103.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     76
+     1280,
+     652
     ],
-    "rgb_delta": 0.0362,
+    "rgb_delta": 0.0437,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [],
@@ -4022,11 +4022,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareAmbientOcclusion",
-   "out_size_bytes": 11850146,
+   "out_size_bytes": 11850166,
    "preview_jpg": "scenes\\khronos\\CompareAmbientOcclusion\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareAmbientOcclusion\\preview.png",
    "readme": "scenes\\khronos\\CompareAmbientOcclusion\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAmbientOcclusion\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAmbientOcclusion\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAmbientOcclusion\\glTF\\CompareAmbientOcclusion.gltf",
    "stats": {
@@ -4070,10 +4070,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.241,
+    "coverage_ratio": 0.252,
     "framing_notes": [],
-    "hist_similarity": 0.5066,
-    "mean_lum_delta": -0.0663,
+    "hist_similarity": 0.4875,
+    "mean_lum_delta": -0.0392,
     "preview_bbox": [
      307,
      197,
@@ -4093,26 +4093,26 @@
      720
     ],
     "ref_bbox": [
-     2,
-     1,
-     147,
-     75
+     24,
+     14,
+     1529,
+     788
     ],
-    "ref_coverage": 0.7362,
+    "ref_coverage": 0.7042,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4132,
+    "ref_mean_lum": 0.3861,
     "ref_mean_rgb": [
-     126.4,
-     101.8,
-     79.0
+     120.6,
+     94.7,
+     71.0
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     78
+     1559,
+     814
     ],
-    "rgb_delta": 0.0569,
+    "rgb_delta": 0.0333,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -4129,11 +4129,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareAnisotropy",
-   "out_size_bytes": 2679620,
+   "out_size_bytes": 2679638,
    "preview_jpg": "scenes\\khronos\\CompareAnisotropy\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareAnisotropy\\preview.png",
    "readme": "scenes\\khronos\\CompareAnisotropy\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAnisotropy\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAnisotropy\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareAnisotropy\\glTF\\CompareAnisotropy.gltf",
    "stats": {
@@ -4181,10 +4181,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.335,
+    "coverage_ratio": 0.358,
     "framing_notes": [],
-    "hist_similarity": 0.6802,
-    "mean_lum_delta": 0.0559,
+    "hist_similarity": 0.5485,
+    "mean_lum_delta": 0.0953,
     "preview_bbox": [
      109,
      210,
@@ -4204,27 +4204,27 @@
      720
     ],
     "ref_bbox": [
-     2,
-     2,
-     147,
-     46
+     30,
+     30,
+     1791,
+     570
     ],
-    "ref_coverage": 0.6823,
+    "ref_coverage": 0.6393,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4269,
+    "ref_mean_lum": 0.3876,
     "ref_mean_rgb": [
-     137.0,
-     104.0,
-     74.3
+     129.0,
+     93.7,
+     62.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     49
+     1822,
+     600
     ],
-    "rgb_delta": 0.0537,
-    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
+    "rgb_delta": 0.0935,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
     "COLOR_0 顶点色未使用",
@@ -4237,14 +4237,14 @@
     "texture_files": 2
    },
    "issues": [
-    "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareBaseColor",
-   "out_size_bytes": 3481966,
+   "out_size_bytes": 3481968,
    "preview_jpg": "scenes\\khronos\\CompareBaseColor\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareBaseColor\\preview.png",
    "readme": "scenes\\khronos\\CompareBaseColor\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareBaseColor\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareBaseColor\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareBaseColor\\glTF\\CompareBaseColor.gltf",
    "stats": {
@@ -4289,10 +4289,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.314,
+    "coverage_ratio": 0.346,
     "framing_notes": [],
-    "hist_similarity": 0.6967,
-    "mean_lum_delta": -0.091,
+    "hist_similarity": 0.8714,
+    "mean_lum_delta": -0.0348,
     "preview_bbox": [
      114,
      209,
@@ -4312,26 +4312,26 @@
      720
     ],
     "ref_bbox": [
-     2,
-     1,
-     147,
-     48
+     27,
+     25,
+     1671,
+     553
     ],
-    "ref_coverage": 0.6996,
+    "ref_coverage": 0.6356,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4492,
+    "ref_mean_lum": 0.3931,
     "ref_mean_rgb": [
-     105.9,
-     120.3,
-     83.3
+     90.8,
+     106.6,
+     65.9
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     51
+     1699,
+     582
     ],
-    "rgb_delta": 0.0944,
+    "rgb_delta": 0.0341,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -4347,11 +4347,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareClearcoat",
-   "out_size_bytes": 616896,
+   "out_size_bytes": 616915,
    "preview_jpg": "scenes\\khronos\\CompareClearcoat\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareClearcoat\\preview.png",
    "readme": "scenes\\khronos\\CompareClearcoat\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareClearcoat\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareClearcoat\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareClearcoat\\glTF\\CompareClearcoat.gltf",
    "stats": {
@@ -4398,10 +4398,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.237,
+    "coverage_ratio": 0.235,
     "framing_notes": [],
-    "hist_similarity": 0.5678,
-    "mean_lum_delta": 0.0519,
+    "hist_similarity": 0.5308,
+    "mean_lum_delta": 0.0538,
     "preview_bbox": [
      231,
      179,
@@ -4423,24 +4423,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     75
+     1702,
+     862
     ],
-    "ref_coverage": 0.8236,
+    "ref_coverage": 0.8297,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.6103,
+    "ref_mean_lum": 0.6083,
     "ref_mean_rgb": [
-     155.6,
-     155.6,
-     155.7
+     154.8,
+     154.8,
+     155.0
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     76
+     1703,
+     863
     ],
-    "rgb_delta": 0.0534,
+    "rgb_delta": 0.0564,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -4457,11 +4457,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareDispersion",
-   "out_size_bytes": 141449,
+   "out_size_bytes": 141467,
    "preview_jpg": "scenes\\khronos\\CompareDispersion\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareDispersion\\preview.png",
    "readme": "scenes\\khronos\\CompareDispersion\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareDispersion\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareDispersion\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareDispersion\\glTF\\CompareDispersion.gltf",
    "stats": {
@@ -4510,10 +4510,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.121,
+    "coverage_ratio": 0.13,
     "framing_notes": [],
-    "hist_similarity": 0.5288,
-    "mean_lum_delta": -0.0597,
+    "hist_similarity": 0.4634,
+    "mean_lum_delta": -0.0792,
     "preview_bbox": [
      329,
      213,
@@ -4533,26 +4533,26 @@
      720
     ],
     "ref_bbox": [
-     2,
-     2,
-     149,
-     71
+     27,
+     27,
+     1430,
+     681
     ],
-    "ref_coverage": 0.6495,
+    "ref_coverage": 0.6052,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2717,
+    "ref_mean_lum": 0.2913,
     "ref_mean_rgb": [
-     63.3,
-     73.3,
-     46.8
+     68.0,
+     78.7,
+     50.4
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     74
+     1431,
+     709
     ],
-    "rgb_delta": 0.0393,
+    "rgb_delta": 0.0571,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [],
@@ -4566,11 +4566,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareEmissiveStrength",
-   "out_size_bytes": 322919,
+   "out_size_bytes": 322937,
    "preview_jpg": "scenes\\khronos\\CompareEmissiveStrength\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareEmissiveStrength\\preview.png",
    "readme": "scenes\\khronos\\CompareEmissiveStrength\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareEmissiveStrength\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareEmissiveStrength\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareEmissiveStrength\\glTF\\CompareEmissiveStrength.gltf",
    "stats": {
@@ -4616,10 +4616,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.233,
+    "coverage_ratio": 0.212,
     "framing_notes": [],
-    "hist_similarity": 0.3444,
-    "mean_lum_delta": 0.2196,
+    "hist_similarity": 0.3502,
+    "mean_lum_delta": 0.225,
     "preview_bbox": [
      242,
      183,
@@ -4641,24 +4641,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     76
+     1220,
+     624
     ],
-    "ref_coverage": 0.8322,
+    "ref_coverage": 0.9113,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4542,
+    "ref_mean_lum": 0.4487,
     "ref_mean_rgb": [
-     115.3,
-     116.8,
-     107.8
+     114.3,
+     115.2,
+     107.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     77
+     1221,
+     625
     ],
-    "rgb_delta": 0.2225,
+    "rgb_delta": 0.2267,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -4676,11 +4676,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CompareIor",
-   "out_size_bytes": 445596,
+   "out_size_bytes": 445613,
    "preview_jpg": "scenes\\khronos\\CompareIor\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareIor\\preview.png",
    "readme": "scenes\\khronos\\CompareIor\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareIor\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareIor\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareIor\\glTF\\CompareIor.gltf",
    "stats": {
@@ -4729,10 +4729,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.259,
+    "coverage_ratio": 0.27,
     "framing_notes": [],
-    "hist_similarity": 0.6526,
-    "mean_lum_delta": 0.0379,
+    "hist_similarity": 0.7142,
+    "mean_lum_delta": 0.0686,
     "preview_bbox": [
      268,
      190,
@@ -4752,26 +4752,26 @@
      720
     ],
     "ref_bbox": [
-     3,
-     3,
-     146,
-     73
+     34,
+     34,
+     1457,
+     728
     ],
-    "ref_coverage": 0.6945,
+    "ref_coverage": 0.6668,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2741,
+    "ref_mean_lum": 0.2433,
     "ref_mean_rgb": [
-     75.5,
-     68.7,
-     65.6
+     68.0,
+     60.9,
+     57.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     77
+     1493,
+     762
     ],
-    "rgb_delta": 0.0668,
+    "rgb_delta": 0.0617,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -4787,11 +4787,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareIridescence",
-   "out_size_bytes": 517362,
+   "out_size_bytes": 517380,
    "preview_jpg": "scenes\\khronos\\CompareIridescence\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareIridescence\\preview.png",
    "readme": "scenes\\khronos\\CompareIridescence\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareIridescence\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareIridescence\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareIridescence\\glTF\\CompareIridescence.gltf",
    "stats": {
@@ -4837,10 +4837,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.284,
+    "coverage_ratio": 0.296,
     "framing_notes": [],
-    "hist_similarity": 0.7094,
-    "mean_lum_delta": 0.0403,
+    "hist_similarity": 0.7185,
+    "mean_lum_delta": 0.0541,
     "preview_bbox": [
      268,
      190,
@@ -4860,26 +4860,26 @@
      720
     ],
     "ref_bbox": [
-     0,
-     2,
-     147,
-     71
+     27,
+     28,
+     1684,
+     818
     ],
-    "ref_coverage": 0.6991,
+    "ref_coverage": 0.6691,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.6978,
+    "ref_mean_lum": 0.684,
     "ref_mean_rgb": [
-     196.8,
-     178.6,
-     115.9
+     193.8,
+     175.0,
+     109.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     74
+     1714,
+     847
     ],
-    "rgb_delta": 0.0409,
+    "rgb_delta": 0.0518,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [],
@@ -4893,11 +4893,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareMetallic",
-   "out_size_bytes": 511524,
+   "out_size_bytes": 511543,
    "preview_jpg": "scenes\\khronos\\CompareMetallic\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareMetallic\\preview.png",
    "readme": "scenes\\khronos\\CompareMetallic\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareMetallic\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareMetallic\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareMetallic\\glTF\\CompareMetallic.gltf",
    "stats": {
@@ -4941,10 +4941,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.28,
+    "coverage_ratio": 0.291,
     "framing_notes": [],
-    "hist_similarity": 0.4798,
-    "mean_lum_delta": 0.2045,
+    "hist_similarity": 0.4719,
+    "mean_lum_delta": 0.2244,
     "preview_bbox": [
      264,
      192,
@@ -4964,26 +4964,26 @@
      720
     ],
     "ref_bbox": [
-     2,
-     1,
-     147,
-     70
+     25,
+     24,
+     1624,
+     770
     ],
-    "ref_coverage": 0.7084,
+    "ref_coverage": 0.6805,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5299,
+    "ref_mean_lum": 0.51,
     "ref_mean_rgb": [
-     140.8,
-     133.7,
-     132.1
+     135.9,
+     128.6,
+     126.9
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     72
+     1649,
+     792
     ],
-    "rgb_delta": 0.196,
+    "rgb_delta": 0.2158,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [],
@@ -4997,11 +4997,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareNormal",
-   "out_size_bytes": 660656,
+   "out_size_bytes": 660677,
    "preview_jpg": "scenes\\khronos\\CompareNormal\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareNormal\\preview.png",
    "readme": "scenes\\khronos\\CompareNormal\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareNormal\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareNormal\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareNormal\\glTF\\CompareNormal.gltf",
    "stats": {
@@ -5045,10 +5045,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.166,
+    "coverage_ratio": 0.173,
     "framing_notes": [],
-    "hist_similarity": 0.6263,
-    "mean_lum_delta": 0.0311,
+    "hist_similarity": 0.6467,
+    "mean_lum_delta": 0.0648,
     "preview_bbox": [
      268,
      190,
@@ -5068,26 +5068,26 @@
      720
     ],
     "ref_bbox": [
-     2,
-     1,
-     147,
-     71
+     27,
+     25,
+     1684,
+     813
     ],
-    "ref_coverage": 0.7053,
+    "ref_coverage": 0.6753,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2563,
+    "ref_mean_lum": 0.2225,
     "ref_mean_rgb": [
-     62.8,
-     67.8,
-     48.3
+     54.3,
+     59.5,
+     39.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     74
+     1716,
+     842
     ],
-    "rgb_delta": 0.0171,
+    "rgb_delta": 0.0511,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [],
@@ -5101,11 +5101,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareRoughness",
-   "out_size_bytes": 462763,
+   "out_size_bytes": 462783,
    "preview_jpg": "scenes\\khronos\\CompareRoughness\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareRoughness\\preview.png",
    "readme": "scenes\\khronos\\CompareRoughness\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareRoughness\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareRoughness\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareRoughness\\glTF\\CompareRoughness.gltf",
    "stats": {
@@ -5149,10 +5149,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.281,
+    "coverage_ratio": 0.296,
     "framing_notes": [],
-    "hist_similarity": 0.6292,
-    "mean_lum_delta": -0.0956,
+    "hist_similarity": 0.6448,
+    "mean_lum_delta": -0.0621,
     "preview_bbox": [
      268,
      190,
@@ -5172,26 +5172,26 @@
      720
     ],
     "ref_bbox": [
-     2,
-     1,
-     147,
-     71
+     28,
+     26,
+     1685,
+     815
     ],
-    "ref_coverage": 0.705,
+    "ref_coverage": 0.6704,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3586,
+    "ref_mean_lum": 0.3251,
     "ref_mean_rgb": [
-     154.9,
-     76.2,
-     55.4
+     149.6,
+     67.0,
+     45.2
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     74
+     1718,
+     848
     ],
-    "rgb_delta": 0.0933,
+    "rgb_delta": 0.061,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -5207,11 +5207,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareSheen",
-   "out_size_bytes": 1346520,
+   "out_size_bytes": 1346540,
    "preview_jpg": "scenes\\khronos\\CompareSheen\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareSheen\\preview.png",
    "readme": "scenes\\khronos\\CompareSheen\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSheen\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSheen\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSheen\\glTF\\CompareSheen.gltf",
    "stats": {
@@ -5257,10 +5257,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.282,
+    "coverage_ratio": 0.296,
     "framing_notes": [],
-    "hist_similarity": 0.7621,
-    "mean_lum_delta": -0.0231,
+    "hist_similarity": 0.7767,
+    "mean_lum_delta": 0.0103,
     "preview_bbox": [
      275,
      189,
@@ -5280,26 +5280,26 @@
      720
     ],
     "ref_bbox": [
-     2,
-     2,
-     147,
-     73
+     35,
+     33,
+     1618,
+     805
     ],
-    "ref_coverage": 0.7078,
+    "ref_coverage": 0.6749,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3249,
+    "ref_mean_lum": 0.2915,
     "ref_mean_rgb": [
-     139.9,
-     68.8,
-     54.4
+     134.2,
+     59.7,
+     44.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     76
+     1654,
+     840
     ],
-    "rgb_delta": 0.0404,
+    "rgb_delta": 0.0233,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -5315,11 +5315,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "CompareSpecular",
-   "out_size_bytes": 971639,
+   "out_size_bytes": 971658,
    "preview_jpg": "scenes\\khronos\\CompareSpecular\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareSpecular\\preview.png",
    "readme": "scenes\\khronos\\CompareSpecular\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSpecular\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSpecular\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareSpecular\\glTF\\CompareSpecular.gltf",
    "stats": {
@@ -5366,10 +5366,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.23,
+    "coverage_ratio": 0.219,
     "framing_notes": [],
-    "hist_similarity": 0.4277,
-    "mean_lum_delta": 0.1153,
+    "hist_similarity": 0.4074,
+    "mean_lum_delta": 0.1222,
     "preview_bbox": [
      231,
      179,
@@ -5391,24 +5391,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     74
+     1159,
+     579
     ],
-    "ref_coverage": 0.8588,
+    "ref_coverage": 0.9008,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4663,
+    "ref_mean_lum": 0.4594,
     "ref_mean_rgb": [
-     122.4,
-     118.1,
-     116.1
+     120.9,
+     116.4,
+     114.4
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     75
+     1160,
+     580
     ],
-    "rgb_delta": 0.1154,
+    "rgb_delta": 0.122,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -5424,11 +5424,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "CompareTransmission",
-   "out_size_bytes": 981928,
+   "out_size_bytes": 981947,
    "preview_jpg": "scenes\\khronos\\CompareTransmission\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareTransmission\\preview.png",
    "readme": "scenes\\khronos\\CompareTransmission\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareTransmission\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareTransmission\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareTransmission\\glTF\\CompareTransmission.gltf",
    "stats": {
@@ -5476,10 +5476,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.215,
+    "coverage_ratio": 0.207,
     "framing_notes": [],
-    "hist_similarity": 0.428,
-    "mean_lum_delta": 0.1834,
+    "hist_similarity": 0.3664,
+    "mean_lum_delta": 0.1878,
     "preview_bbox": [
      231,
      179,
@@ -5501,25 +5501,25 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     74
+     1159,
+     579
     ],
-    "ref_coverage": 0.9263,
+    "ref_coverage": 0.9637,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4598,
+    "ref_mean_lum": 0.4554,
     "ref_mean_rgb": [
-     115.0,
-     118.5,
-     111.0
+     114.3,
+     117.3,
+     110.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     75
+     1160,
+     580
     ],
-    "rgb_delta": 0.1926,
-    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+    "rgb_delta": 0.1963,
+    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
     "KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）",
@@ -5532,14 +5532,14 @@
     "texture_files": 3
    },
    "issues": [
-    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
+    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CompareVolume",
-   "out_size_bytes": 938877,
+   "out_size_bytes": 938918,
    "preview_jpg": "scenes\\khronos\\CompareVolume\\preview.jpg",
    "preview_png": "scenes\\khronos\\CompareVolume\\preview.png",
    "readme": "scenes\\khronos\\CompareVolume\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareVolume\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareVolume\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\CompareVolume\\glTF\\CompareVolume.gltf",
    "stats": {
@@ -5853,7 +5853,7 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "CubeVisibility",
-   "out_size_bytes": 77920,
+   "out_size_bytes": 78248,
    "preview_jpg": "scenes\\khronos\\CubeVisibility\\preview.jpg",
    "preview_png": "scenes\\khronos\\CubeVisibility\\preview.png",
    "readme": "scenes\\khronos\\CubeVisibility\\README.md",
@@ -6005,10 +6005,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.105,
+    "coverage_ratio": 0.107,
     "framing_notes": [],
-    "hist_similarity": 0.5897,
-    "mean_lum_delta": 0.0297,
+    "hist_similarity": 0.5938,
+    "mean_lum_delta": 0.0313,
     "preview_bbox": [
      453,
      140,
@@ -6030,24 +6030,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     160
+     1027,
+     1103
     ],
-    "ref_coverage": 0.8115,
+    "ref_coverage": 0.7957,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4283,
+    "ref_mean_lum": 0.4267,
     "ref_mean_rgb": [
-     121.1,
-     107.6,
-     90.2
+     121.0,
+     107.1,
+     89.5
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     161
+     1028,
+     1104
     ],
-    "rgb_delta": 0.0504,
+    "rgb_delta": 0.0502,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -6067,11 +6067,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "DiffuseTransmissionPlant",
-   "out_size_bytes": 9521360,
+   "out_size_bytes": 9521378,
    "preview_jpg": "scenes\\khronos\\DiffuseTransmissionPlant\\preview.jpg",
    "preview_png": "scenes\\khronos\\DiffuseTransmissionPlant\\preview.png",
    "readme": "scenes\\khronos\\DiffuseTransmissionPlant\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionPlant\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionPlant\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionPlant\\glTF\\DiffuseTransmissionPlant.gltf",
    "stats": {
@@ -6120,10 +6120,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.201,
+    "coverage_ratio": 0.207,
     "framing_notes": [],
-    "hist_similarity": 0.6831,
-    "mean_lum_delta": 0.1162,
+    "hist_similarity": 0.6626,
+    "mean_lum_delta": 0.1116,
     "preview_bbox": [
      370,
      221,
@@ -6143,26 +6143,26 @@
      720
     ],
     "ref_bbox": [
-     1,
      0,
-     149,
-     127
+     0,
+     1279,
+     1084
     ],
-    "ref_coverage": 0.7137,
+    "ref_coverage": 0.6944,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4988,
+    "ref_mean_lum": 0.5035,
     "ref_mean_rgb": [
-     135.9,
-     125.9,
-     114.1
+     137.3,
+     127.1,
+     115.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     130
+     1280,
+     1110
     ],
-    "rgb_delta": 0.1191,
+    "rgb_delta": 0.1145,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -6178,11 +6178,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "DiffuseTransmissionTeacup",
-   "out_size_bytes": 10236867,
+   "out_size_bytes": 10236885,
    "preview_jpg": "scenes\\khronos\\DiffuseTransmissionTeacup\\preview.jpg",
    "preview_png": "scenes\\khronos\\DiffuseTransmissionTeacup\\preview.png",
    "readme": "scenes\\khronos\\DiffuseTransmissionTeacup\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTeacup\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTeacup\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTeacup\\glTF\\DiffuseTransmissionTeacup.gltf",
    "stats": {
@@ -6228,10 +6228,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.207,
+    "coverage_ratio": 0.209,
     "framing_notes": [],
-    "hist_similarity": 0.6401,
-    "mean_lum_delta": 0.0175,
+    "hist_similarity": 0.5748,
+    "mean_lum_delta": 0.0173,
     "preview_bbox": [
      205,
      111,
@@ -6253,25 +6253,25 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     96
+     1279,
+     827
     ],
-    "ref_coverage": 0.9691,
+    "ref_coverage": 0.9589,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4263,
+    "ref_mean_lum": 0.4264,
     "ref_mean_rgb": [
-     109.0,
-     109.7,
-     98.5
+     108.9,
+     109.9,
+     98.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     97
+     1280,
+     828
     ],
-    "rgb_delta": 0.1186,
-    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
+    "rgb_delta": 0.118,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
     "KHR_lights_punctual 未导入（统一用自动生成的方向光 + 引擎 analytic studio IBL）",
@@ -6284,14 +6284,14 @@
     "texture_files": 3
    },
    "issues": [
-    "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "DiffuseTransmissionTest",
-   "out_size_bytes": 601209,
+   "out_size_bytes": 601210,
    "preview_jpg": "scenes\\khronos\\DiffuseTransmissionTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\DiffuseTransmissionTest\\preview.png",
    "readme": "scenes\\khronos\\DiffuseTransmissionTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTest\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTest\\glTF\\DiffuseTransmissionTest.gltf",
    "stats": {
@@ -6448,10 +6448,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.161,
+    "coverage_ratio": 0.159,
     "framing_notes": [],
-    "hist_similarity": 0.7257,
-    "mean_lum_delta": 0.084,
+    "hist_similarity": 0.7237,
+    "mean_lum_delta": 0.0893,
     "preview_bbox": [
      332,
      208,
@@ -6473,24 +6473,24 @@
     "ref_bbox": [
      0,
      0,
-     399,
-     312
+     2282,
+     1787
     ],
-    "ref_coverage": 0.8608,
+    "ref_coverage": 0.8684,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.6373,
+    "ref_mean_lum": 0.632,
     "ref_mean_rgb": [
-     162.6,
-     162.5,
-     162.4
+     160.5,
+     160.4,
+     160.3
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot-large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     313
+     2283,
+     1788
     ],
-    "rgb_delta": 0.0855,
+    "rgb_delta": 0.0937,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -6507,11 +6507,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "DispersionTest",
-   "out_size_bytes": 6533603,
+   "out_size_bytes": 6533621,
    "preview_jpg": "scenes\\khronos\\DispersionTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\DispersionTest\\preview.png",
    "readme": "scenes\\khronos\\DispersionTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DispersionTest\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DispersionTest\\screenshot\\screenshot-large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DispersionTest\\glTF\\DispersionTest.gltf",
    "stats": {
@@ -6559,10 +6559,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.21,
+    "coverage_ratio": 0.207,
     "framing_notes": [],
-    "hist_similarity": 0.1455,
-    "mean_lum_delta": 0.368,
+    "hist_similarity": 0.1442,
+    "mean_lum_delta": 0.3681,
     "preview_bbox": [
      344,
      204,
@@ -6584,24 +6584,24 @@
     "ref_bbox": [
      0,
      0,
-     239,
-     189
+     1100,
+     870
     ],
-    "ref_coverage": 0.9246,
+    "ref_coverage": 0.9417,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4044,
+    "ref_mean_lum": 0.4043,
     "ref_mean_rgb": [
-     125.7,
-     98.3,
-     84.1
+     125.5,
+     98.5,
+     84.0
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     240,
-     190
+     1101,
+     871
     ],
-    "rgb_delta": 0.3703,
+    "rgb_delta": 0.3705,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -6619,11 +6619,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "DragonAttenuation",
-   "out_size_bytes": 14302024,
+   "out_size_bytes": 14302042,
    "preview_jpg": "scenes\\khronos\\DragonAttenuation\\preview.jpg",
    "preview_png": "scenes\\khronos\\DragonAttenuation\\preview.png",
    "readme": "scenes\\khronos\\DragonAttenuation\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DragonAttenuation\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DragonAttenuation\\screenshot\\screenshot_large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DragonAttenuation\\glTF\\DragonAttenuation.gltf",
    "stats": {
@@ -6670,10 +6670,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.171,
+    "coverage_ratio": 0.173,
     "framing_notes": [],
-    "hist_similarity": 0.4778,
-    "mean_lum_delta": 0.2572,
+    "hist_similarity": 0.4409,
+    "mean_lum_delta": 0.2561,
     "preview_bbox": [
      344,
      204,
@@ -6695,24 +6695,24 @@
     "ref_bbox": [
      0,
      0,
-     255,
-     184
+     1639,
+     1182
     ],
-    "ref_coverage": 0.9228,
+    "ref_coverage": 0.9163,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4857,
+    "ref_mean_lum": 0.4868,
     "ref_mean_rgb": [
-     121.5,
-     124.4,
-     125.7
+     121.6,
+     124.8,
+     126.2
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     256,
-     185
+     1640,
+     1183
     ],
-    "rgb_delta": 0.2578,
+    "rgb_delta": 0.2564,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -6729,11 +6729,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "DragonDispersion",
-   "out_size_bytes": 14347363,
+   "out_size_bytes": 14347381,
    "preview_jpg": "scenes\\khronos\\DragonDispersion\\preview.jpg",
    "preview_png": "scenes\\khronos\\DragonDispersion\\preview.png",
    "readme": "scenes\\khronos\\DragonDispersion\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DragonDispersion\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DragonDispersion\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DragonDispersion\\glTF\\DragonDispersion.gltf",
    "stats": {
@@ -6886,10 +6886,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.454,
+    "coverage_ratio": 0.45,
     "framing_notes": [],
-    "hist_similarity": 0.0712,
-    "mean_lum_delta": 0.365,
+    "hist_similarity": 0.07,
+    "mean_lum_delta": 0.3728,
     "preview_bbox": [
      241,
      139,
@@ -6909,26 +6909,26 @@
      720
     ],
     "ref_bbox": [
-     4,
-     5,
-     396,
-     287
+     13,
+     8,
+     1278,
+     927
     ],
-    "ref_coverage": 0.6886,
+    "ref_coverage": 0.6933,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3965,
+    "ref_mean_lum": 0.3887,
     "ref_mean_rgb": [
-     102.0,
-     99.9,
-     111.6
+     101.4,
+     98.1,
+     108.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large_plain.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     293
+     1290,
+     944
     ],
-    "rgb_delta": 0.3523,
+    "rgb_delta": 0.3589,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [],
@@ -6942,11 +6942,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "EmissiveStrengthTest",
-   "out_size_bytes": 257973,
+   "out_size_bytes": 258003,
    "preview_jpg": "scenes\\khronos\\EmissiveStrengthTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\EmissiveStrengthTest\\preview.png",
    "readme": "scenes\\khronos\\EmissiveStrengthTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EmissiveStrengthTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EmissiveStrengthTest\\screenshot\\screenshot_large_plain.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EmissiveStrengthTest\\glTF\\EmissiveStrengthTest.gltf",
    "stats": {
@@ -6993,8 +6993,8 @@
    "compare": {
     "coverage_ratio": 0.103,
     "framing_notes": [],
-    "hist_similarity": 0.2757,
-    "mean_lum_delta": 0.2141,
+    "hist_similarity": 0.2801,
+    "mean_lum_delta": 0.2143,
     "preview_bbox": [
      57,
      225,
@@ -7016,24 +7016,24 @@
     "ref_bbox": [
      0,
      0,
-     399,
-     228
+     1058,
+     604
     ],
-    "ref_coverage": 0.8749,
+    "ref_coverage": 0.8773,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.431,
+    "ref_mean_lum": 0.4308,
     "ref_mean_rgb": [
-     128.7,
+     128.8,
      104.0,
-     114.1
+     114.2
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     229
+     1059,
+     605
     ],
-    "rgb_delta": 0.1948,
+    "rgb_delta": 0.1945,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -7049,11 +7049,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "EnvironmentTest",
-   "out_size_bytes": 1751691,
+   "out_size_bytes": 1751707,
    "preview_jpg": "scenes\\khronos\\EnvironmentTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\EnvironmentTest\\preview.png",
    "readme": "scenes\\khronos\\EnvironmentTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EnvironmentTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EnvironmentTest\\screenshot\\screenshot_large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EnvironmentTest\\glTF\\EnvironmentTest.gltf",
    "stats": {
@@ -7310,10 +7310,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.405,
+    "coverage_ratio": 0.412,
     "framing_notes": [],
-    "hist_similarity": 0.4119,
-    "mean_lum_delta": -0.1144,
+    "hist_similarity": 0.401,
+    "mean_lum_delta": -0.1037,
     "preview_bbox": [
      214,
      208,
@@ -7333,26 +7333,26 @@
      720
     ],
     "ref_bbox": [
-     13,
-     11,
-     389,
-     153
+     32,
+     27,
+     962,
+     380
     ],
-    "ref_coverage": 0.4397,
+    "ref_coverage": 0.4326,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2444,
+    "ref_mean_lum": 0.2337,
     "ref_mean_rgb": [
-     47.9,
-     63.6,
-     91.4
+     44.9,
+     60.9,
+     89.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     165
+     989,
+     409
     ],
-    "rgb_delta": 0.1143,
+    "rgb_delta": 0.1036,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -7372,11 +7372,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "GlamVelvetSofa",
-   "out_size_bytes": 3664079,
+   "out_size_bytes": 3664090,
    "preview_jpg": "scenes\\khronos\\GlamVelvetSofa\\preview.jpg",
    "preview_png": "scenes\\khronos\\GlamVelvetSofa\\preview.png",
    "readme": "scenes\\khronos\\GlamVelvetSofa\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlamVelvetSofa\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlamVelvetSofa\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlamVelvetSofa\\glTF\\GlamVelvetSofa.gltf",
    "stats": {
@@ -7427,10 +7427,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.281,
+    "coverage_ratio": 0.282,
     "framing_notes": [],
-    "hist_similarity": 0.1227,
-    "mean_lum_delta": 0.3238,
+    "hist_similarity": 0.123,
+    "mean_lum_delta": 0.3235,
     "preview_bbox": [
      341,
      72,
@@ -7452,24 +7452,24 @@
     "ref_bbox": [
      0,
      0,
-     254,
-     255
+     1109,
+     1114
     ],
-    "ref_coverage": 0.9832,
+    "ref_coverage": 0.9787,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4908,
+    "ref_mean_lum": 0.491,
     "ref_mean_rgb": [
      117.1,
-     127.4,
-     126.4
+     127.6,
+     126.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     255,
-     256
+     1110,
+     1115
     ],
-    "rgb_delta": 0.3286,
+    "rgb_delta": 0.3281,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -7486,11 +7486,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "GlassBrokenWindow",
-   "out_size_bytes": 1382742,
+   "out_size_bytes": 1382758,
    "preview_jpg": "scenes\\khronos\\GlassBrokenWindow\\preview.jpg",
    "preview_png": "scenes\\khronos\\GlassBrokenWindow\\preview.png",
    "readme": "scenes\\khronos\\GlassBrokenWindow\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassBrokenWindow\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassBrokenWindow\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassBrokenWindow\\glTF\\GlassBrokenWindow.gltf",
    "stats": {
@@ -7539,8 +7539,8 @@
    "compare": {
     "coverage_ratio": 0.141,
     "framing_notes": [],
-    "hist_similarity": 0.573,
-    "mean_lum_delta": 0.3478,
+    "hist_similarity": 0.566,
+    "mean_lum_delta": 0.3476,
     "preview_bbox": [
      483,
      103,
@@ -7562,24 +7562,24 @@
     "ref_bbox": [
      0,
      0,
-     152,
-     255
+     555,
+     929
     ],
-    "ref_coverage": 0.9305,
+    "ref_coverage": 0.9302,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4257,
+    "ref_mean_lum": 0.4259,
     "ref_mean_rgb": [
-     98.2,
-     111.2,
-     112.9
+     98.4,
+     111.3,
+     113.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     153,
-     256
+     556,
+     930
     ],
-    "rgb_delta": 0.3466,
+    "rgb_delta": 0.346,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -7596,11 +7596,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "GlassHurricaneCandleHolder",
-   "out_size_bytes": 2919125,
+   "out_size_bytes": 2919136,
    "preview_jpg": "scenes\\khronos\\GlassHurricaneCandleHolder\\preview.jpg",
    "preview_png": "scenes\\khronos\\GlassHurricaneCandleHolder\\preview.png",
    "readme": "scenes\\khronos\\GlassHurricaneCandleHolder\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassHurricaneCandleHolder\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassHurricaneCandleHolder\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassHurricaneCandleHolder\\glTF\\GlassHurricaneCandleHolder.gltf",
    "stats": {
@@ -7650,8 +7650,8 @@
    "compare": {
     "coverage_ratio": 0.112,
     "framing_notes": [],
-    "hist_similarity": 0.6433,
-    "mean_lum_delta": 0.1085,
+    "hist_similarity": 0.6477,
+    "mean_lum_delta": 0.1083,
     "preview_bbox": [
      419,
      140,
@@ -7673,24 +7673,24 @@
     "ref_bbox": [
      0,
      0,
-     255,
-     246
+     1185,
+     1143
     ],
-    "ref_coverage": 0.9452,
+    "ref_coverage": 0.9465,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3999,
+    "ref_mean_lum": 0.4001,
     "ref_mean_rgb": [
-     103.2,
-     102.8,
-     89.8
+     103.4,
+     103.0,
+     90.0
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     256,
-     247
+     1186,
+     1144
     ],
-    "rgb_delta": 0.1072,
+    "rgb_delta": 0.1064,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -7708,11 +7708,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "GlassVaseFlowers",
-   "out_size_bytes": 2522798,
+   "out_size_bytes": 2522816,
    "preview_jpg": "scenes\\khronos\\GlassVaseFlowers\\preview.jpg",
    "preview_png": "scenes\\khronos\\GlassVaseFlowers\\preview.png",
    "readme": "scenes\\khronos\\GlassVaseFlowers\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassVaseFlowers\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassVaseFlowers\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\GlassVaseFlowers\\glTF\\GlassVaseFlowers.gltf",
    "stats": {
@@ -7761,10 +7761,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.174,
+    "coverage_ratio": 0.176,
     "framing_notes": [],
-    "hist_similarity": 0.6107,
-    "mean_lum_delta": 0.0806,
+    "hist_similarity": 0.5913,
+    "mean_lum_delta": 0.0789,
     "preview_bbox": [
      385,
      73,
@@ -7786,25 +7786,25 @@
     "ref_bbox": [
      0,
      0,
-     137,
-     149
+     990,
+     1079
     ],
-    "ref_coverage": 0.9433,
+    "ref_coverage": 0.9337,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.478,
+    "ref_mean_lum": 0.4798,
     "ref_mean_rgb": [
-     132.5,
-     119.7,
-     112.1
+     132.9,
+     120.2,
+     112.7
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     138,
-     150
+     991,
+     1080
     ],
-    "rgb_delta": 0.0847,
-    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
+    "rgb_delta": 0.0827,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
     "KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）",
@@ -7818,14 +7818,14 @@
     "texture_files": 1
    },
    "issues": [
-    "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "IORTestGrid",
    "out_size_bytes": 7997945,
    "preview_jpg": "scenes\\khronos\\IORTestGrid\\preview.jpg",
    "preview_png": "scenes\\khronos\\IORTestGrid\\preview.png",
    "readme": "scenes\\khronos\\IORTestGrid\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IORTestGrid\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IORTestGrid\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IORTestGrid\\glTF\\IORTestGrid.gltf",
    "stats": {
@@ -7977,10 +7977,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.244,
+    "coverage_ratio": 0.247,
     "framing_notes": [],
-    "hist_similarity": 0.4372,
-    "mean_lum_delta": 0.1151,
+    "hist_similarity": 0.4422,
+    "mean_lum_delta": 0.1186,
     "preview_bbox": [
      355,
      176,
@@ -8000,26 +8000,26 @@
      720
     ],
     "ref_bbox": [
-     2,
-     2,
-     253,
-     152
+     17,
+     12,
+     1612,
+     972
     ],
-    "ref_coverage": 0.6954,
+    "ref_coverage": 0.6894,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5708,
+    "ref_mean_lum": 0.5672,
     "ref_mean_rgb": [
-     142.4,
-     148.6,
-     124.9
+     141.5,
+     147.6,
+     123.7
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     256,
-     155
+     1625,
+     985
     ],
-    "rgb_delta": 0.1438,
+    "rgb_delta": 0.1477,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -8035,11 +8035,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "IridescenceAbalone",
-   "out_size_bytes": 7549266,
+   "out_size_bytes": 7549283,
    "preview_jpg": "scenes\\khronos\\IridescenceAbalone\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescenceAbalone\\preview.png",
    "readme": "scenes\\khronos\\IridescenceAbalone\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceAbalone\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceAbalone\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceAbalone\\glTF\\IridescenceAbalone.gltf",
    "stats": {
@@ -8084,10 +8084,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.636,
+    "coverage_ratio": 0.643,
     "framing_notes": [],
-    "hist_similarity": 0.1962,
-    "mean_lum_delta": 0.2032,
+    "hist_similarity": 0.2067,
+    "mean_lum_delta": 0.2076,
     "preview_bbox": [
      377,
      157,
@@ -8109,24 +8109,24 @@
     "ref_bbox": [
      0,
      0,
-     399,
-     392
+     1997,
+     1963
     ],
-    "ref_coverage": 0.2549,
+    "ref_coverage": 0.252,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.619,
+    "ref_mean_lum": 0.6146,
     "ref_mean_rgb": [
-     158.0,
-     157.8,
-     157.7
+     156.9,
+     156.5,
+     156.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     400
+     2000,
+     2000
     ],
-    "rgb_delta": 0.206,
+    "rgb_delta": 0.2105,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -8142,11 +8142,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "IridescenceDielectricSpheres",
-   "out_size_bytes": 34461447,
+   "out_size_bytes": 34461466,
    "preview_jpg": "scenes\\khronos\\IridescenceDielectricSpheres\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescenceDielectricSpheres\\preview.png",
    "readme": "scenes\\khronos\\IridescenceDielectricSpheres\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceDielectricSpheres\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceDielectricSpheres\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceDielectricSpheres\\glTF\\IridescenceDielectricSpheres.gltf",
    "stats": {
@@ -8193,10 +8193,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.187,
+    "coverage_ratio": 0.188,
     "framing_notes": [],
-    "hist_similarity": 0.2046,
-    "mean_lum_delta": 0.1027,
+    "hist_similarity": 0.2067,
+    "mean_lum_delta": 0.1076,
     "preview_bbox": [
      480,
      104,
@@ -8216,26 +8216,26 @@
      720
     ],
     "ref_bbox": [
-     7,
-     5,
-     218,
-     393
+     21,
+     16,
+     661,
+     1193
     ],
-    "ref_coverage": 0.6836,
+    "ref_coverage": 0.6785,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2886,
+    "ref_mean_lum": 0.2836,
     "ref_mean_rgb": [
-     78.8,
-     72.2,
-     72.1
+     77.5,
+     70.8,
+     70.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     225,
-     400
+     681,
+     1213
     ],
-    "rgb_delta": 0.1001,
+    "rgb_delta": 0.1051,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -8253,11 +8253,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "IridescenceLamp",
-   "out_size_bytes": 4674488,
+   "out_size_bytes": 4674505,
    "preview_jpg": "scenes\\khronos\\IridescenceLamp\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescenceLamp\\preview.png",
    "readme": "scenes\\khronos\\IridescenceLamp\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceLamp\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceLamp\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceLamp\\glTF\\IridescenceLamp.gltf",
    "stats": {
@@ -8305,10 +8305,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.387,
+    "coverage_ratio": 0.39,
     "framing_notes": [],
-    "hist_similarity": 0.7995,
-    "mean_lum_delta": 0.0684,
+    "hist_similarity": 0.7976,
+    "mean_lum_delta": 0.0782,
     "preview_bbox": [
      377,
      157,
@@ -8330,24 +8330,24 @@
     "ref_bbox": [
      0,
      0,
-     391,
-     392
+     1998,
+     1966
     ],
-    "ref_coverage": 0.4187,
+    "ref_coverage": 0.4163,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3973,
+    "ref_mean_lum": 0.3875,
     "ref_mean_rgb": [
-     99.1,
-     101.9,
-     102.5
+     96.6,
+     99.5,
+     100.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     400
+     2000,
+     2000
     ],
-    "rgb_delta": 0.0981,
+    "rgb_delta": 0.1076,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -8363,11 +8363,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "IridescenceMetallicSpheres",
-   "out_size_bytes": 34552092,
+   "out_size_bytes": 34552106,
    "preview_jpg": "scenes\\khronos\\IridescenceMetallicSpheres\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescenceMetallicSpheres\\preview.png",
    "readme": "scenes\\khronos\\IridescenceMetallicSpheres\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceMetallicSpheres\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceMetallicSpheres\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceMetallicSpheres\\glTF\\IridescenceMetallicSpheres.gltf",
    "stats": {
@@ -8414,10 +8414,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.416,
+    "coverage_ratio": 0.587,
     "framing_notes": [],
-    "hist_similarity": 0.51,
-    "mean_lum_delta": 0.1282,
+    "hist_similarity": 0.5121,
+    "mean_lum_delta": 0.1857,
     "preview_bbox": [
      76,
      240,
@@ -8437,26 +8437,26 @@
      720
     ],
     "ref_bbox": [
-     17,
      0,
-     376,
-     127
+     0,
+     1998,
+     798
     ],
-    "ref_coverage": 0.2737,
+    "ref_coverage": 0.1937,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5631,
+    "ref_mean_lum": 0.5056,
     "ref_mean_rgb": [
-     141.1,
-     144.2,
-     145.3
+     125.6,
+     129.7,
+     131.3
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     160
+     2000,
+     800
     ],
-    "rgb_delta": 0.1088,
+    "rgb_delta": 0.1662,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -8475,11 +8475,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "IridescenceSuzanne",
-   "out_size_bytes": 1290522,
+   "out_size_bytes": 1290538,
    "preview_jpg": "scenes\\khronos\\IridescenceSuzanne\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescenceSuzanne\\preview.png",
    "readme": "scenes\\khronos\\IridescenceSuzanne\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceSuzanne\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceSuzanne\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescenceSuzanne\\glTF\\IridescenceSuzanne.gltf",
    "stats": {
@@ -8530,8 +8530,8 @@
    "compare": {
     "coverage_ratio": 0.132,
     "framing_notes": [],
-    "hist_similarity": 0.2145,
-    "mean_lum_delta": 0.4208,
+    "hist_similarity": 0.2137,
+    "mean_lum_delta": 0.4194,
     "preview_bbox": [
      439,
      267,
@@ -8551,26 +8551,26 @@
      720
     ],
     "ref_bbox": [
-     7,
-     4,
-     393,
-     358
+     22,
+     14,
+     1259,
+     1147
     ],
-    "ref_coverage": 0.5606,
+    "ref_coverage": 0.5586,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4082,
+    "ref_mean_lum": 0.4096,
     "ref_mean_rgb": [
-     110.2,
-     104.3,
-     84.1
+     110.6,
+     104.7,
+     84.5
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     365
+     1280,
+     1167
     ],
-    "rgb_delta": 0.4308,
+    "rgb_delta": 0.4292,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -8592,11 +8592,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "IridescentDishWithOlives",
-   "out_size_bytes": 5276259,
+   "out_size_bytes": 5276279,
    "preview_jpg": "scenes\\khronos\\IridescentDishWithOlives\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescentDishWithOlives\\preview.png",
    "readme": "scenes\\khronos\\IridescentDishWithOlives\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescentDishWithOlives\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescentDishWithOlives\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescentDishWithOlives\\glTF\\IridescentDishWithOlives.gltf",
    "stats": {
@@ -8810,7 +8810,7 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "LightVisibility",
-   "out_size_bytes": 139243,
+   "out_size_bytes": 139571,
    "preview_jpg": "scenes\\khronos\\LightVisibility\\preview.jpg",
    "preview_png": "scenes\\khronos\\LightVisibility\\preview.png",
    "readme": "scenes\\khronos\\LightVisibility\\README.md",
@@ -8968,10 +8968,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.089,
+    "coverage_ratio": 0.09,
     "framing_notes": [],
-    "hist_similarity": 0.5686,
-    "mean_lum_delta": 0.0049,
+    "hist_similarity": 0.5877,
+    "mean_lum_delta": 0.0079,
     "preview_bbox": [
      473,
      176,
@@ -8993,24 +8993,24 @@
     "ref_bbox": [
      0,
      0,
-     131,
-     149
+     1150,
+     1308
     ],
-    "ref_coverage": 0.8022,
+    "ref_coverage": 0.7959,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5291,
+    "ref_mean_lum": 0.5261,
     "ref_mean_rgb": [
-     171.5,
-     128.0,
-     95.3
+     171.1,
+     127.5,
+     94.0
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     132,
-     150
+     1151,
+     1309
     ],
-    "rgb_delta": 0.065,
+    "rgb_delta": 0.0646,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -9026,11 +9026,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "MandarinOrange",
-   "out_size_bytes": 5674102,
+   "out_size_bytes": 5674119,
    "preview_jpg": "scenes\\khronos\\MandarinOrange\\preview.jpg",
    "preview_png": "scenes\\khronos\\MandarinOrange\\preview.png",
    "readme": "scenes\\khronos\\MandarinOrange\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MandarinOrange\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MandarinOrange\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MandarinOrange\\glTF\\MandarinOrange.gltf",
    "stats": {
@@ -9076,10 +9076,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.436,
+    "coverage_ratio": 0.577,
     "framing_notes": [],
-    "hist_similarity": 0.3672,
-    "mean_lum_delta": -0.0985,
+    "hist_similarity": 0.5316,
+    "mean_lum_delta": -0.0969,
     "preview_bbox": [
      278,
      177,
@@ -9099,27 +9099,27 @@
      720
     ],
     "ref_bbox": [
-     16,
-     18,
-     225,
-     196
+     55,
+     44,
+     1868,
+     724
     ],
-    "ref_coverage": 0.358,
+    "ref_coverage": 0.2702,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5523,
+    "ref_mean_lum": 0.5507,
     "ref_mean_rgb": [
-     91.1,
-     151.7,
-     179.8
+     144.3,
+     139.1,
+     141.4
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     240,
-     212
+     1958,
+     808
     ],
-    "rgb_delta": 0.0904,
-    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "rgb_delta": 0.1179,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
@@ -9131,14 +9131,14 @@
     "texture_files": 3
    },
    "issues": [
-    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "MaterialsVariantsShoe",
-   "out_size_bytes": 6639181,
+   "out_size_bytes": 6639177,
    "preview_jpg": "scenes\\khronos\\MaterialsVariantsShoe\\preview.jpg",
    "preview_png": "scenes\\khronos\\MaterialsVariantsShoe\\preview.png",
    "readme": "scenes\\khronos\\MaterialsVariantsShoe\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MaterialsVariantsShoe\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MaterialsVariantsShoe\\screenshot\\screenshot-large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MaterialsVariantsShoe\\glTF\\MaterialsVariantsShoe.gltf",
    "stats": {
@@ -9706,10 +9706,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.574,
+    "coverage_ratio": 0.588,
     "framing_notes": [],
-    "hist_similarity": 0.7024,
-    "mean_lum_delta": 0.0793,
+    "hist_similarity": 0.7001,
+    "mean_lum_delta": 0.0734,
     "preview_bbox": [
      75,
      260,
@@ -9729,26 +9729,26 @@
      720
     ],
     "ref_bbox": [
-     8,
-     29,
-     389,
-     194
+     14,
+     47,
+     622,
+     310
     ],
-    "ref_coverage": 0.3118,
+    "ref_coverage": 0.3045,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5283,
+    "ref_mean_lum": 0.5342,
     "ref_mean_rgb": [
-     136.4,
-     135.2,
-     125.0
+     137.9,
+     136.7,
+     126.2
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     225
+     640,
+     360
     ],
-    "rgb_delta": 0.0668,
+    "rgb_delta": 0.0612,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -9766,11 +9766,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "MorphStressTest",
-   "out_size_bytes": 618929,
+   "out_size_bytes": 618942,
    "preview_jpg": "scenes\\khronos\\MorphStressTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\MorphStressTest\\preview.png",
    "readme": "scenes\\khronos\\MorphStressTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MorphStressTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MorphStressTest\\screenshot\\screenshot_large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MorphStressTest\\glTF\\MorphStressTest.gltf",
    "stats": {
@@ -9815,10 +9815,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.193,
+    "coverage_ratio": 0.195,
     "framing_notes": [],
-    "hist_similarity": 0.6961,
-    "mean_lum_delta": 0.0011,
+    "hist_similarity": 0.6935,
+    "mean_lum_delta": 0.0009,
     "preview_bbox": [
      440,
      150,
@@ -9840,22 +9840,22 @@
     "ref_bbox": [
      0,
      0,
-     239,
-     133
+     1279,
+     713
     ],
-    "ref_coverage": 0.8837,
+    "ref_coverage": 0.8763,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5729,
+    "ref_mean_lum": 0.5731,
     "ref_mean_rgb": [
-     158.3,
-     143.7,
-     133.3
+     158.4,
+     143.8,
+     133.2
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     240,
-     134
+     1280,
+     714
     ],
     "rgb_delta": 0.1643,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
@@ -9874,11 +9874,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "MosquitoInAmber",
-   "out_size_bytes": 25504738,
+   "out_size_bytes": 25504753,
    "preview_jpg": "scenes\\khronos\\MosquitoInAmber\\preview.jpg",
    "preview_png": "scenes\\khronos\\MosquitoInAmber\\preview.png",
    "readme": "scenes\\khronos\\MosquitoInAmber\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MosquitoInAmber\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MosquitoInAmber\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\MosquitoInAmber\\glTF\\MosquitoInAmber.gltf",
    "stats": {
@@ -10134,10 +10134,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.316,
+    "coverage_ratio": 0.315,
     "framing_notes": [],
-    "hist_similarity": 0.1273,
-    "mean_lum_delta": 0.2801,
+    "hist_similarity": 0.1247,
+    "mean_lum_delta": 0.283,
     "preview_bbox": [
      303,
      77,
@@ -10157,26 +10157,26 @@
      720
     ],
     "ref_bbox": [
-     3,
-     4,
-     290,
-     253
+     13,
+     18,
+     1229,
+     1071
     ],
-    "ref_coverage": 0.9321,
+    "ref_coverage": 0.9347,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2616,
+    "ref_mean_lum": 0.2587,
     "ref_mean_rgb": [
-     37.7,
+     36.7,
      69.2,
-     127.7
+     128.7
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     294,
-     256
+     1244,
+     1082
     ],
-    "rgb_delta": 0.2805,
+    "rgb_delta": 0.2803,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [],
@@ -10190,11 +10190,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "NegativeScaleTest",
-   "out_size_bytes": 468304,
+   "out_size_bytes": 468323,
    "preview_jpg": "scenes\\khronos\\NegativeScaleTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\NegativeScaleTest\\preview.png",
    "readme": "scenes\\khronos\\NegativeScaleTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NegativeScaleTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NegativeScaleTest\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NegativeScaleTest\\glTF\\NegativeScaleTest.gltf",
    "stats": {
@@ -10237,10 +10237,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.08,
+    "coverage_ratio": 0.083,
     "framing_notes": [],
-    "hist_similarity": 0.3648,
-    "mean_lum_delta": -0.3055,
+    "hist_similarity": 0.3808,
+    "mean_lum_delta": -0.2868,
     "preview_bbox": [
      242,
      276,
@@ -10262,24 +10262,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     83
+     1916,
+     1076
     ],
-    "ref_coverage": 0.7036,
+    "ref_coverage": 0.6781,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5803,
+    "ref_mean_lum": 0.5616,
     "ref_mean_rgb": [
-     151.3,
-     147.4,
-     144.0
+     146.2,
+     142.8,
+     139.5
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     84
+     1917,
+     1077
     ],
-    "rgb_delta": 0.3026,
+    "rgb_delta": 0.284,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -10297,11 +10297,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "NodePerformanceTest",
-   "out_size_bytes": 88256981,
+   "out_size_bytes": 88257003,
    "preview_jpg": "scenes\\khronos\\NodePerformanceTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\NodePerformanceTest\\preview.png",
    "readme": "scenes\\khronos\\NodePerformanceTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NodePerformanceTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NodePerformanceTest\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NodePerformanceTest\\glTF\\NodePerformanceTest.gltf",
    "stats": {
@@ -10405,7 +10405,7 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "NodeVisibilityTest",
-   "out_size_bytes": 142998,
+   "out_size_bytes": 143201,
    "preview_jpg": "scenes\\khronos\\NodeVisibilityTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\NodeVisibilityTest\\preview.png",
    "readme": "scenes\\khronos\\NodeVisibilityTest\\README.md",
@@ -10453,10 +10453,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.379,
+    "coverage_ratio": 0.392,
     "framing_notes": [],
-    "hist_similarity": 0.5327,
-    "mean_lum_delta": 0.1565,
+    "hist_similarity": 0.5168,
+    "mean_lum_delta": 0.1482,
     "preview_bbox": [
      265,
      74,
@@ -10476,26 +10476,26 @@
      720
     ],
     "ref_bbox": [
-     12,
-     3,
-     260,
-     196
+     34,
+     9,
+     745,
+     561
     ],
-    "ref_coverage": 0.5347,
+    "ref_coverage": 0.5177,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4828,
+    "ref_mean_lum": 0.4911,
     "ref_mean_rgb": [
-     111.5,
-     126.9,
-     119.5
+     113.3,
+     129.3,
+     120.8
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot-larger.png",
     "reference_has_alpha": false,
     "reference_size": [
-     268,
-     202
+     765,
+     577
     ],
-    "rgb_delta": 0.1573,
+    "rgb_delta": 0.1502,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [],
@@ -10509,11 +10509,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "NormalTangentMirrorTest",
-   "out_size_bytes": 2006474,
+   "out_size_bytes": 2006488,
    "preview_jpg": "scenes\\khronos\\NormalTangentMirrorTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\NormalTangentMirrorTest\\preview.png",
    "readme": "scenes\\khronos\\NormalTangentMirrorTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NormalTangentMirrorTest\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NormalTangentMirrorTest\\screenshot\\screenshot-larger.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NormalTangentMirrorTest\\glTF\\NormalTangentMirrorTest.gltf",
    "stats": {
@@ -10556,10 +10556,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.329,
+    "coverage_ratio": 0.34,
     "framing_notes": [],
-    "hist_similarity": 0.5141,
-    "mean_lum_delta": 0.1691,
+    "hist_similarity": 0.5131,
+    "mean_lum_delta": 0.158,
     "preview_bbox": [
      322,
      58,
@@ -10579,26 +10579,26 @@
      720
     ],
     "ref_bbox": [
-     9,
-     6,
-     221,
-     211
+     19,
+     12,
+     442,
+     423
     ],
-    "ref_coverage": 0.5363,
+    "ref_coverage": 0.5185,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5308,
+    "ref_mean_lum": 0.5419,
     "ref_mean_rgb": [
-     132.5,
-     137.0,
-     127.9
+     135.3,
+     140.0,
+     129.5
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot-larger.png",
     "reference_has_alpha": false,
     "reference_size": [
-     230,
-     217
+     460,
+     434
     ],
-    "rgb_delta": 0.1708,
+    "rgb_delta": 0.161,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [],
@@ -10612,11 +10612,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "NormalTangentTest",
-   "out_size_bytes": 2331146,
+   "out_size_bytes": 2331158,
    "preview_jpg": "scenes\\khronos\\NormalTangentTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\NormalTangentTest\\preview.png",
    "readme": "scenes\\khronos\\NormalTangentTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NormalTangentTest\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NormalTangentTest\\screenshot\\screenshot-larger.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\NormalTangentTest\\glTF\\NormalTangentTest.gltf",
    "stats": {
@@ -10758,10 +10758,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.309,
+    "coverage_ratio": 0.176,
     "framing_notes": [],
-    "hist_similarity": 0.0313,
-    "mean_lum_delta": 0.5214,
+    "hist_similarity": 0.0364,
+    "mean_lum_delta": 0.6147,
     "preview_bbox": [
      275,
      251,
@@ -10782,25 +10782,25 @@
     ],
     "ref_bbox": [
      0,
-     0,
-     147,
-     83
+     1,
+     1921,
+     1111
     ],
-    "ref_coverage": 0.5675,
+    "ref_coverage": 0.997,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2589,
+    "ref_mean_lum": 0.1656,
     "ref_mean_rgb": [
-     59.9,
-     67.3,
-     71.0
+     38.9,
+     43.1,
+     45.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     84
+     1922,
+     1112
     ],
-    "rgb_delta": 0.5119,
+    "rgb_delta": 0.6047,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -10817,11 +10817,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "PlaysetLightTest",
-   "out_size_bytes": 23284687,
+   "out_size_bytes": 23284707,
    "preview_jpg": "scenes\\khronos\\PlaysetLightTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\PlaysetLightTest\\preview.png",
    "readme": "scenes\\khronos\\PlaysetLightTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PlaysetLightTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PlaysetLightTest\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PlaysetLightTest\\glTF\\PlaysetLightTest.gltf",
    "stats": {
@@ -10870,10 +10870,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.384,
+    "coverage_ratio": 0.374,
     "framing_notes": [],
-    "hist_similarity": 0.2449,
-    "mean_lum_delta": 0.3695,
+    "hist_similarity": 0.2037,
+    "mean_lum_delta": 0.3769,
     "preview_bbox": [
      238,
      74,
@@ -10895,24 +10895,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     109
+     1513,
+     1109
     ],
-    "ref_coverage": 0.8127,
+    "ref_coverage": 0.8343,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3473,
+    "ref_mean_lum": 0.3399,
     "ref_mean_rgb": [
-     89.7,
-     88.3,
-     88.1
+     88.0,
+     86.4,
+     86.3
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     110
+     1514,
+     1110
     ],
-    "rgb_delta": 0.3713,
+    "rgb_delta": 0.3784,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -10928,11 +10928,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "PointLightIntensityTest",
-   "out_size_bytes": 270815,
+   "out_size_bytes": 270833,
    "preview_jpg": "scenes\\khronos\\PointLightIntensityTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\PointLightIntensityTest\\preview.png",
    "readme": "scenes\\khronos\\PointLightIntensityTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PointLightIntensityTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PointLightIntensityTest\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PointLightIntensityTest\\glTF\\PointLightIntensityTest.gltf",
    "stats": {
@@ -10978,10 +10978,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.155,
+    "coverage_ratio": 0.159,
     "framing_notes": [],
-    "hist_similarity": 0.5651,
-    "mean_lum_delta": -0.0444,
+    "hist_similarity": 0.571,
+    "mean_lum_delta": -0.0352,
     "preview_bbox": [
      389,
      200,
@@ -11002,25 +11002,25 @@
     ],
     "ref_bbox": [
      0,
-     0,
-     149,
-     134
+     27,
+     1314,
+     1182
     ],
-    "ref_coverage": 0.8687,
+    "ref_coverage": 0.847,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4357,
+    "ref_mean_lum": 0.4265,
     "ref_mean_rgb": [
-     149.3,
-     103.2,
-     76.3
+     147.5,
+     100.8,
+     74.0
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     135
+     1315,
+     1183
     ],
-    "rgb_delta": 0.0447,
+    "rgb_delta": 0.0362,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -11036,11 +11036,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "PotOfCoals",
-   "out_size_bytes": 8317810,
+   "out_size_bytes": 8317827,
    "preview_jpg": "scenes\\khronos\\PotOfCoals\\preview.jpg",
    "preview_png": "scenes\\khronos\\PotOfCoals\\preview.png",
    "readme": "scenes\\khronos\\PotOfCoals\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoals\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoals\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoals\\glTF\\PotOfCoals.gltf",
    "stats": {
@@ -11088,8 +11088,8 @@
    "compare": {
     "coverage_ratio": 0.146,
     "framing_notes": [],
-    "hist_similarity": 0.53,
-    "mean_lum_delta": 0.0746,
+    "hist_similarity": 0.5148,
+    "mean_lum_delta": 0.0751,
     "preview_bbox": [
      390,
      202,
@@ -11111,24 +11111,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     131
+     1118,
+     982
     ],
-    "ref_coverage": 0.9193,
+    "ref_coverage": 0.9178,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3389,
+    "ref_mean_lum": 0.3384,
     "ref_mean_rgb": [
-     103.6,
+     103.7,
      82.9,
      70.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     132
+     1119,
+     983
     ],
-    "rgb_delta": 0.0711,
+    "rgb_delta": 0.071,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -11150,11 +11150,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "PotOfCoalsAnimationPointer",
-   "out_size_bytes": 9935774,
+   "out_size_bytes": 9935870,
    "preview_jpg": "scenes\\khronos\\PotOfCoalsAnimationPointer\\preview.jpg",
    "preview_png": "scenes\\khronos\\PotOfCoalsAnimationPointer\\preview.png",
    "readme": "scenes\\khronos\\PotOfCoalsAnimationPointer\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoalsAnimationPointer\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoalsAnimationPointer\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\PotOfCoalsAnimationPointer\\glTF\\PotOfCoalsAnimationPointer.gltf",
    "stats": {
@@ -11631,10 +11631,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.276,
+    "coverage_ratio": 0.396,
     "framing_notes": [],
-    "hist_similarity": 0.1536,
-    "mean_lum_delta": 0.4529,
+    "hist_similarity": 0.1868,
+    "mean_lum_delta": 0.4597,
     "preview_bbox": [
      456,
      173,
@@ -11654,26 +11654,26 @@
      720
     ],
     "ref_bbox": [
-     0,
-     10,
-     127,
-     111
+     86,
+     105,
+     1263,
+     919
     ],
-    "ref_coverage": 0.4566,
+    "ref_coverage": 0.3184,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.403,
+    "ref_mean_lum": 0.3961,
     "ref_mean_rgb": [
-     66.7,
-     112.3,
-     114.6
+     66.0,
+     110.4,
+     112.7
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     120
+     1750,
+     977
     ],
-    "rgb_delta": 0.473,
+    "rgb_delta": 0.4788,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -11690,11 +11690,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "ScatteringSkull",
-   "out_size_bytes": 14443573,
+   "out_size_bytes": 14443592,
    "preview_jpg": "scenes\\khronos\\ScatteringSkull\\preview.jpg",
    "preview_png": "scenes\\khronos\\ScatteringSkull\\preview.png",
    "readme": "scenes\\khronos\\ScatteringSkull\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ScatteringSkull\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ScatteringSkull\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\ScatteringSkull\\glTF\\ScatteringSkull.gltf",
    "stats": {
@@ -11846,10 +11846,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.134,
+    "coverage_ratio": 0.136,
     "framing_notes": [],
-    "hist_similarity": 0.7387,
-    "mean_lum_delta": -0.1165,
+    "hist_similarity": 0.7545,
+    "mean_lum_delta": -0.1167,
     "preview_bbox": [
      396,
      157,
@@ -11871,24 +11871,24 @@
     "ref_bbox": [
      0,
      0,
-     239,
-     187
+     1279,
+     1002
     ],
-    "ref_coverage": 0.8277,
+    "ref_coverage": 0.8151,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4439,
+    "ref_mean_lum": 0.4441,
     "ref_mean_rgb": [
-     143.3,
-     105.9,
-     96.7
+     143.7,
+     106.0,
+     96.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     240,
-     188
+     1280,
+     1003
     ],
-    "rgb_delta": 0.2181,
+    "rgb_delta": 0.2175,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -11907,11 +11907,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "SheenChair",
-   "out_size_bytes": 5815920,
+   "out_size_bytes": 5815938,
    "preview_jpg": "scenes\\khronos\\SheenChair\\preview.jpg",
    "preview_png": "scenes\\khronos\\SheenChair\\preview.png",
    "readme": "scenes\\khronos\\SheenChair\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenChair\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenChair\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenChair\\glTF\\SheenChair.gltf",
    "stats": {
@@ -12076,10 +12076,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.215,
+    "coverage_ratio": 0.219,
     "framing_notes": [],
-    "hist_similarity": 0.4851,
-    "mean_lum_delta": 0.1219,
+    "hist_similarity": 0.4792,
+    "mean_lum_delta": 0.1284,
     "preview_bbox": [
      280,
      112,
@@ -12101,24 +12101,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     108
+     1279,
+     929
     ],
-    "ref_coverage": 0.6354,
+    "ref_coverage": 0.624,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2997,
+    "ref_mean_lum": 0.2931,
     "ref_mean_rgb": [
-     76.7,
-     74.9,
-     90.8
+     75.0,
+     73.5,
+     88.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     109
+     1280,
+     930
     ],
-    "rgb_delta": 0.1758,
+    "rgb_delta": 0.1826,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -12134,11 +12134,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "SheenTestGrid",
-   "out_size_bytes": 5775511,
+   "out_size_bytes": 5775525,
    "preview_jpg": "scenes\\khronos\\SheenTestGrid\\preview.jpg",
    "preview_png": "scenes\\khronos\\SheenTestGrid\\preview.png",
    "readme": "scenes\\khronos\\SheenTestGrid\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenTestGrid\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenTestGrid\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenTestGrid\\glTF\\SheenTestGrid.gltf",
    "stats": {
@@ -12184,10 +12184,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.402,
+    "coverage_ratio": 0.396,
     "framing_notes": [],
-    "hist_similarity": 0.6926,
-    "mean_lum_delta": -0.0021,
+    "hist_similarity": 0.7141,
+    "mean_lum_delta": -0.0002,
     "preview_bbox": [
      187,
      190,
@@ -12207,26 +12207,26 @@
      720
     ],
     "ref_bbox": [
-     3,
-     2,
-     146,
-     63
+     27,
+     22,
+     1581,
+     684
     ],
-    "ref_coverage": 0.6317,
+    "ref_coverage": 0.6407,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2879,
+    "ref_mean_lum": 0.286,
     "ref_mean_rgb": [
-     93.5,
-     69.7,
-     50.8
+     93.2,
+     69.4,
+     50.5
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     67
+     1610,
+     720
     ],
-    "rgb_delta": 0.0179,
+    "rgb_delta": 0.0173,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -12247,11 +12247,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "SheenWoodLeatherSofa",
-   "out_size_bytes": 25743936,
+   "out_size_bytes": 25743955,
    "preview_jpg": "scenes\\khronos\\SheenWoodLeatherSofa\\preview.jpg",
    "preview_png": "scenes\\khronos\\SheenWoodLeatherSofa\\preview.png",
    "readme": "scenes\\khronos\\SheenWoodLeatherSofa\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenWoodLeatherSofa\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenWoodLeatherSofa\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SheenWoodLeatherSofa\\glTF\\SheenWoodLeatherSofa.gltf",
    "stats": {
@@ -12305,10 +12305,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.633,
+    "coverage_ratio": 0.658,
     "framing_notes": [],
-    "hist_similarity": 0.1247,
-    "mean_lum_delta": 0.0539,
+    "hist_similarity": 0.1065,
+    "mean_lum_delta": 0.026,
     "preview_bbox": [
      382,
      159,
@@ -12328,26 +12328,26 @@
      720
     ],
     "ref_bbox": [
-     10,
-     15,
-     111,
-     115
+     42,
+     62,
+     448,
+     464
     ],
-    "ref_coverage": 0.4246,
+    "ref_coverage": 0.4086,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.8055,
+    "ref_mean_lum": 0.8334,
     "ref_mean_rgb": [
-     205.4,
-     205.4,
-     205.4
+     212.5,
+     212.5,
+     212.5
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot_large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     128,
-     128
+     512,
+     512
     ],
-    "rgb_delta": 0.054,
+    "rgb_delta": 0.0261,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -12363,11 +12363,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "SimpleInstancing",
-   "out_size_bytes": 117351,
+   "out_size_bytes": 117474,
    "preview_jpg": "scenes\\khronos\\SimpleInstancing\\preview.jpg",
    "preview_png": "scenes\\khronos\\SimpleInstancing\\preview.png",
    "readme": "scenes\\khronos\\SimpleInstancing\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleInstancing\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleInstancing\\screenshot\\screenshot_large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SimpleInstancing\\glTF\\SimpleInstancing.gltf",
    "stats": {
@@ -13011,10 +13011,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.26,
+    "coverage_ratio": 0.263,
     "framing_notes": [],
-    "hist_similarity": 0.1545,
-    "mean_lum_delta": 0.3099,
+    "hist_similarity": 0.1483,
+    "mean_lum_delta": 0.3131,
     "preview_bbox": [
      384,
      95,
@@ -13034,26 +13034,26 @@
      720
     ],
     "ref_bbox": [
-     10,
-     1,
-     219,
-     224
+     24,
+     3,
+     506,
+     519
     ],
-    "ref_coverage": 0.4857,
+    "ref_coverage": 0.4803,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3064,
+    "ref_mean_lum": 0.3033,
     "ref_mean_rgb": [
-     86.7,
-     77.5,
-     58.9
+     85.9,
+     76.7,
+     57.4
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     230,
-     230
+     532,
+     532
     ],
-    "rgb_delta": 0.3081,
+    "rgb_delta": 0.3122,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -13069,11 +13069,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "SpecGlossVsMetalRough",
-   "out_size_bytes": 6470280,
+   "out_size_bytes": 6470294,
    "preview_jpg": "scenes\\khronos\\SpecGlossVsMetalRough\\preview.jpg",
    "preview_png": "scenes\\khronos\\SpecGlossVsMetalRough\\preview.png",
    "readme": "scenes\\khronos\\SpecGlossVsMetalRough\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecGlossVsMetalRough\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecGlossVsMetalRough\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecGlossVsMetalRough\\glTF\\SpecGlossVsMetalRough.gltf",
    "stats": {
@@ -13120,10 +13120,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.229,
+    "coverage_ratio": 0.23,
     "framing_notes": [],
-    "hist_similarity": 0.642,
-    "mean_lum_delta": -0.0104,
+    "hist_similarity": 0.6433,
+    "mean_lum_delta": -0.0101,
     "preview_bbox": [
      318,
      244,
@@ -13143,26 +13143,26 @@
      720
     ],
     "ref_bbox": [
-     3,
-     3,
-     146,
-     95
+     30,
+     32,
+     1248,
+     822
     ],
-    "ref_coverage": 0.6887,
+    "ref_coverage": 0.6848,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.2318,
+    "ref_mean_lum": 0.2315,
     "ref_mean_rgb": [
-     94.5,
+     94.9,
      47.7,
      68.0
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     100
+     1280,
+     850
     ],
-    "rgb_delta": 0.0939,
+    "rgb_delta": 0.0944,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -13179,11 +13179,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "SpecularSilkPouf",
-   "out_size_bytes": 7783545,
+   "out_size_bytes": 7783562,
    "preview_jpg": "scenes\\khronos\\SpecularSilkPouf\\preview.jpg",
    "preview_png": "scenes\\khronos\\SpecularSilkPouf\\preview.png",
    "readme": "scenes\\khronos\\SpecularSilkPouf\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularSilkPouf\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularSilkPouf\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularSilkPouf\\glTF\\SpecularSilkPouf.gltf",
    "stats": {
@@ -13232,10 +13232,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.345,
+    "coverage_ratio": 0.349,
     "framing_notes": [],
-    "hist_similarity": 0.5664,
-    "mean_lum_delta": 0.1196,
+    "hist_similarity": 0.4952,
+    "mean_lum_delta": 0.1317,
     "preview_bbox": [
      229,
      105,
@@ -13255,26 +13255,26 @@
      720
     ],
     "ref_bbox": [
-     0,
-     0,
-     231,
-     158
+     18,
+     36,
+     1345,
+     932
     ],
-    "ref_coverage": 0.6775,
+    "ref_coverage": 0.6689,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4946,
+    "ref_mean_lum": 0.4824,
     "ref_mean_rgb": [
-     124.2,
-     126.4,
-     129.0
+     121.3,
+     123.6,
+     125.6
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     240,
-     159
+     1411,
+     933
     ],
-    "rgb_delta": 0.1188,
+    "rgb_delta": 0.1307,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -13290,11 +13290,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "SpecularTest",
-   "out_size_bytes": 2955766,
+   "out_size_bytes": 2955783,
    "preview_jpg": "scenes\\khronos\\SpecularTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\SpecularTest\\preview.png",
    "readme": "scenes\\khronos\\SpecularTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularTest\\screenshot\\screenshot-large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SpecularTest\\glTF\\SpecularTest.gltf",
    "stats": {
@@ -13339,10 +13339,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.319,
+    "coverage_ratio": 0.381,
     "framing_notes": [],
-    "hist_similarity": 0.6217,
-    "mean_lum_delta": 0.0851,
+    "hist_similarity": 0.6218,
+    "mean_lum_delta": 0.1092,
     "preview_bbox": [
      237,
      206,
@@ -13364,24 +13364,24 @@
     "ref_bbox": [
      0,
      0,
-     267,
-     201
+     2490,
+     1258
     ],
-    "ref_coverage": 0.9539,
+    "ref_coverage": 0.7993,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3719,
+    "ref_mean_lum": 0.3478,
     "ref_mean_rgb": [
-     99.7,
-     94.4,
-     84.8
+     98.8,
+     87.0,
+     77.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     268,
-     202
+     2491,
+     1259
     ],
-    "rgb_delta": 0.0833,
+    "rgb_delta": 0.1033,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -13397,11 +13397,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "Sponza",
-   "out_size_bytes": 65072835,
+   "out_size_bytes": 65072831,
    "preview_jpg": "scenes\\khronos\\Sponza\\preview.jpg",
    "preview_png": "scenes\\khronos\\Sponza\\preview.png",
    "readme": "scenes\\khronos\\Sponza\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Sponza\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Sponza\\screenshot\\large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Sponza\\glTF\\Sponza.gltf",
    "stats": {
@@ -13445,10 +13445,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.14,
+    "coverage_ratio": 0.143,
     "framing_notes": [],
-    "hist_similarity": 0.6873,
-    "mean_lum_delta": 0.1246,
+    "hist_similarity": 0.6724,
+    "mean_lum_delta": 0.1339,
     "preview_bbox": [
      484,
      117,
@@ -13468,26 +13468,26 @@
      720
     ],
     "ref_bbox": [
-     4,
-     3,
-     259,
-     396
+     11,
+     8,
+     740,
+     1129
     ],
-    "ref_coverage": 0.3637,
+    "ref_coverage": 0.3558,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3606,
+    "ref_mean_lum": 0.3513,
     "ref_mean_rgb": [
-     104.5,
-     89.7,
-     77.6
+     102.8,
+     87.2,
+     75.0
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     264,
-     400
+     751,
+     1140
     ],
-    "rgb_delta": 0.1226,
+    "rgb_delta": 0.1315,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -13507,11 +13507,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "StainedGlassLamp",
-   "out_size_bytes": 37353679,
+   "out_size_bytes": 37353697,
    "preview_jpg": "scenes\\khronos\\StainedGlassLamp\\preview.jpg",
    "preview_png": "scenes\\khronos\\StainedGlassLamp\\preview.png",
    "readme": "scenes\\khronos\\StainedGlassLamp\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\StainedGlassLamp\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\StainedGlassLamp\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\StainedGlassLamp\\glTF\\StainedGlassLamp.gltf",
    "stats": {
@@ -13561,10 +13561,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.295,
+    "coverage_ratio": 0.302,
     "framing_notes": [],
-    "hist_similarity": 0.4825,
-    "mean_lum_delta": -0.1212,
+    "hist_similarity": 0.4864,
+    "mean_lum_delta": -0.1158,
     "preview_bbox": [
      341,
      271,
@@ -13586,24 +13586,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     84
+     1473,
+     832
     ],
-    "ref_coverage": 0.5468,
+    "ref_coverage": 0.535,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5163,
+    "ref_mean_lum": 0.5109,
     "ref_mean_rgb": [
-     137.5,
-     126.3,
-     167.9
+     136.4,
+     124.8,
+     167.5
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     88
+     1474,
+     869
     ],
-    "rgb_delta": 0.1911,
+    "rgb_delta": 0.1874,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -13621,11 +13621,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "SunglassesKhronos",
-   "out_size_bytes": 1016472,
+   "out_size_bytes": 1016489,
    "preview_jpg": "scenes\\khronos\\SunglassesKhronos\\preview.jpg",
    "preview_png": "scenes\\khronos\\SunglassesKhronos\\preview.png",
    "readme": "scenes\\khronos\\SunglassesKhronos\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SunglassesKhronos\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SunglassesKhronos\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\SunglassesKhronos\\glTF\\SunglassesKhronos.gltf",
    "stats": {
@@ -14198,8 +14198,8 @@
    "compare": {
     "coverage_ratio": 0.298,
     "framing_notes": [],
-    "hist_similarity": 0.8394,
-    "mean_lum_delta": 0.0534,
+    "hist_similarity": 0.8362,
+    "mean_lum_delta": 0.0592,
     "preview_bbox": [
      375,
      40,
@@ -14219,26 +14219,26 @@
      720
     ],
     "ref_bbox": [
-     3,
-     1,
-     295,
-     302
+     10,
+     5,
+     915,
+     936
     ],
-    "ref_coverage": 0.8617,
+    "ref_coverage": 0.8621,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4294,
+    "ref_mean_lum": 0.4235,
     "ref_mean_rgb": [
-     87.9,
-     110.9,
-     159.4
+     86.5,
+     109.4,
+     157.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     300,
-     308
+     930,
+     954
     ],
-    "rgb_delta": 0.0654,
+    "rgb_delta": 0.0712,
     "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
    },
    "gaps": [
@@ -14256,11 +14256,11 @@
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
    "model": "TextureTransformMultiTest",
-   "out_size_bytes": 758261,
+   "out_size_bytes": 758274,
    "preview_jpg": "scenes\\khronos\\TextureTransformMultiTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TextureTransformMultiTest\\preview.png",
    "readme": "scenes\\khronos\\TextureTransformMultiTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureTransformMultiTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureTransformMultiTest\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TextureTransformMultiTest\\glTF\\TextureTransformMultiTest.gltf",
    "stats": {
@@ -14419,10 +14419,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.424,
+    "coverage_ratio": 0.405,
     "framing_notes": [],
-    "hist_similarity": 0.0956,
-    "mean_lum_delta": 0.1661,
+    "hist_similarity": 0.0857,
+    "mean_lum_delta": 0.1797,
     "preview_bbox": [
      257,
      283,
@@ -14444,24 +14444,24 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     84
+     952,
+     541
     ],
-    "ref_coverage": 0.4165,
+    "ref_coverage": 0.4368,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.3679,
+    "ref_mean_lum": 0.3543,
     "ref_mean_rgb": [
-     158.0,
-     79.1,
-     50.4
+     151.4,
+     76.4,
+     48.2
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     85
+     953,
+     542
     ],
-    "rgb_delta": 0.1857,
+    "rgb_delta": 0.1834,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -14480,11 +14480,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "TrafficCone",
-   "out_size_bytes": 3275781,
+   "out_size_bytes": 3275880,
    "preview_jpg": "scenes\\khronos\\TrafficCone\\preview.jpg",
    "preview_png": "scenes\\khronos\\TrafficCone\\preview.png",
    "readme": "scenes\\khronos\\TrafficCone\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TrafficCone\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TrafficCone\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TrafficCone\\glTF\\TrafficCone.gltf",
    "stats": {
@@ -14532,10 +14532,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.247,
+    "coverage_ratio": 0.243,
     "framing_notes": [],
-    "hist_similarity": 0.4087,
-    "mean_lum_delta": 0.2088,
+    "hist_similarity": 0.3773,
+    "mean_lum_delta": 0.2114,
     "preview_bbox": [
      344,
      204,
@@ -14557,25 +14557,25 @@
     "ref_bbox": [
      0,
      0,
-     149,
-     100
+     2026,
+     1365
     ],
-    "ref_coverage": 0.7912,
+    "ref_coverage": 0.8049,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5237,
+    "ref_mean_lum": 0.521,
     "ref_mean_rgb": [
-     132.9,
-     133.2,
-     138.8
+     132.4,
+     132.8,
+     136.8
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     101
+     2027,
+     1366
     ],
-    "rgb_delta": 0.2061,
-    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+    "rgb_delta": 0.21,
+    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
     "KHR_materials_transmission 未实现（玻璃/透明材质会渲染为不透明；ToyCar 用 alpha BLEND 近似）",
@@ -14589,14 +14589,14 @@
     "texture_files": 3
    },
    "issues": [
-    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
+    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "TransmissionOrderTest",
-   "out_size_bytes": 6041025,
+   "out_size_bytes": 6041062,
    "preview_jpg": "scenes\\khronos\\TransmissionOrderTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TransmissionOrderTest\\preview.png",
    "readme": "scenes\\khronos\\TransmissionOrderTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionOrderTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionOrderTest\\screenshot\\screenshot-large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionOrderTest\\glTF\\TransmissionOrderTest.gltf",
    "stats": {
@@ -14644,10 +14644,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.36,
+    "coverage_ratio": 0.354,
     "framing_notes": [],
-    "hist_similarity": 0.4006,
-    "mean_lum_delta": 0.1857,
+    "hist_similarity": 0.401,
+    "mean_lum_delta": 0.1898,
     "preview_bbox": [
      157,
      172,
@@ -14669,24 +14669,24 @@
     "ref_bbox": [
      0,
      0,
-     399,
-     198
+     1672,
+     830
     ],
-    "ref_coverage": 0.9037,
+    "ref_coverage": 0.9206,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5422,
+    "ref_mean_lum": 0.5381,
     "ref_mean_rgb": [
-     138.5,
-     136.4,
-     156.8
+     137.5,
+     135.2,
+     155.2
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot-large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     400,
-     199
+     1673,
+     831
     ],
-    "rgb_delta": 0.1653,
+    "rgb_delta": 0.1703,
     "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
@@ -14703,11 +14703,11 @@
     "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "TransmissionRoughnessTest",
-   "out_size_bytes": 5776026,
+   "out_size_bytes": 5776042,
    "preview_jpg": "scenes\\khronos\\TransmissionRoughnessTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TransmissionRoughnessTest\\preview.png",
    "readme": "scenes\\khronos\\TransmissionRoughnessTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionRoughnessTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionRoughnessTest\\screenshot\\screenshot-large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionRoughnessTest\\glTF\\TransmissionRoughnessTest.gltf",
    "stats": {
@@ -14756,8 +14756,8 @@
    "compare": {
     "coverage_ratio": 0.222,
     "framing_notes": [],
-    "hist_similarity": 0.3137,
-    "mean_lum_delta": 0.1952,
+    "hist_similarity": 0.3147,
+    "mean_lum_delta": 0.1985,
     "preview_bbox": [
      344,
      204,
@@ -14778,25 +14778,25 @@
     ],
     "ref_bbox": [
      0,
-     1,
-     359,
-     233
+     5,
+     1104,
+     717
     ],
-    "ref_coverage": 0.8803,
+    "ref_coverage": 0.8788,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.5559,
+    "ref_mean_lum": 0.5527,
     "ref_mean_rgb": [
-     141.9,
-     142.5,
-     134.5
+     141.1,
+     141.7,
+     133.7
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.png",
     "reference_has_alpha": false,
     "reference_size": [
-     360,
-     234
+     1105,
+     718
     ],
-    "rgb_delta": 0.1974,
+    "rgb_delta": 0.2006,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -14814,11 +14814,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "TransmissionTest",
-   "out_size_bytes": 8002592,
+   "out_size_bytes": 8002607,
    "preview_jpg": "scenes\\khronos\\TransmissionTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TransmissionTest\\preview.png",
    "readme": "scenes\\khronos\\TransmissionTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionTest\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionTest\\screenshot\\screenshot_large.png",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionTest\\glTF\\TransmissionTest.gltf",
    "stats": {
@@ -14865,10 +14865,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.299,
+    "coverage_ratio": 0.289,
     "framing_notes": [],
-    "hist_similarity": 0.1065,
-    "mean_lum_delta": 0.444,
+    "hist_similarity": 0.1093,
+    "mean_lum_delta": 0.4382,
     "preview_bbox": [
      144,
      155,
@@ -14890,24 +14890,24 @@
     "ref_bbox": [
      0,
      0,
-     148,
-     69
+     1279,
+     599
     ],
-    "ref_coverage": 0.5445,
+    "ref_coverage": 0.5633,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.304,
+    "ref_mean_lum": 0.3098,
     "ref_mean_rgb": [
-     85.8,
-     75.6,
-     72.5
+     87.6,
+     77.0,
+     73.5
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_Large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     70
+     1280,
+     600
     ],
-    "rgb_delta": 0.4442,
+    "rgb_delta": 0.4387,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -14924,11 +14924,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "TransmissionThinwallTestGrid",
-   "out_size_bytes": 3725684,
+   "out_size_bytes": 3725704,
    "preview_jpg": "scenes\\khronos\\TransmissionThinwallTestGrid\\preview.jpg",
    "preview_png": "scenes\\khronos\\TransmissionThinwallTestGrid\\preview.png",
    "readme": "scenes\\khronos\\TransmissionThinwallTestGrid\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionThinwallTestGrid\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionThinwallTestGrid\\screenshot\\screenshot_Large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionThinwallTestGrid\\glTF\\TransmissionThinwallTestGrid.gltf",
    "stats": {
@@ -15273,10 +15273,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.234,
+    "coverage_ratio": 0.241,
     "framing_notes": [],
-    "hist_similarity": 0.3586,
-    "mean_lum_delta": 0.3629,
+    "hist_similarity": 0.35,
+    "mean_lum_delta": 0.3764,
     "preview_bbox": [
      436,
      168,
@@ -15298,24 +15298,24 @@
     "ref_bbox": [
      0,
      0,
-     144,
-     83
+     1402,
+     793
     ],
-    "ref_coverage": 0.5845,
+    "ref_coverage": 0.5664,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.491,
+    "ref_mean_lum": 0.4775,
     "ref_mean_rgb": [
-     123.1,
-     125.9,
-     124.5
+     119.7,
+     122.5,
+     121.1
     ],
-    "reference": "screenshot.jpg",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     150,
-     85
+     1422,
+     808
     ],
-    "rgb_delta": 0.3667,
+    "rgb_delta": 0.3802,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [
@@ -15332,11 +15332,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "USDShaderBallForGltf",
-   "out_size_bytes": 2556546,
+   "out_size_bytes": 2556563,
    "preview_jpg": "scenes\\khronos\\USDShaderBallForGltf\\preview.jpg",
    "preview_png": "scenes\\khronos\\USDShaderBallForGltf\\preview.png",
    "readme": "scenes\\khronos\\USDShaderBallForGltf\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\USDShaderBallForGltf\\screenshot\\screenshot.jpg",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\USDShaderBallForGltf\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\USDShaderBallForGltf\\glTF\\USDShaderBallForGltf.gltf",
    "stats": {
@@ -15382,10 +15382,10 @@
   },
   {
    "compare": {
-    "coverage_ratio": 0.974,
+    "coverage_ratio": 0.709,
     "framing_notes": [],
-    "hist_similarity": 0.0428,
-    "mean_lum_delta": 0.0871,
+    "hist_similarity": 0.0353,
+    "mean_lum_delta": 0.0827,
     "preview_bbox": [
      229,
      188,
@@ -15405,26 +15405,26 @@
      720
     ],
     "ref_bbox": [
-     36,
-     37,
-     194,
-     123
+     96,
+     80,
+     655,
+     359
     ],
-    "ref_coverage": 0.2918,
+    "ref_coverage": 0.4004,
     "ref_mask": "border-bg",
-    "ref_mean_lum": 0.4936,
+    "ref_mean_lum": 0.498,
     "ref_mean_rgb": [
-     126.8,
-     125.6,
-     125.8
+     127.6,
+     126.9,
+     126.3
     ],
-    "reference": "screenshot.png",
+    "reference": "screenshot_large.jpg",
     "reference_has_alpha": false,
     "reference_size": [
-     230,
-     168
+     737,
+     435
     ],
-    "rgb_delta": 0.1153,
+    "rgb_delta": 0.1133,
     "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
    },
    "gaps": [],
@@ -15438,11 +15438,11 @@
     "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
    ],
    "model": "UnlitTest",
-   "out_size_bytes": 42181,
+   "out_size_bytes": 42192,
    "preview_jpg": "scenes\\khronos\\UnlitTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\UnlitTest\\preview.png",
    "readme": "scenes\\khronos\\UnlitTest\\README.md",
-   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\UnlitTest\\screenshot\\screenshot.png",
+   "reference": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\UnlitTest\\screenshot\\screenshot_large.jpg",
    "render_seconds": 0.0,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\UnlitTest\\glTF\\UnlitTest.gltf",
    "stats": {
@@ -15901,5 +15901,5 @@
    ]
   }
  ],
- "total_seconds": 14.5
+ "total_seconds": 23.3
 }

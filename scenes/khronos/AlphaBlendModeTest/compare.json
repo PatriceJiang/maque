@@ -1,8 +1,8 @@
 {
-  "reference": "screenshot.png",
+  "reference": "screenshot_large.jpg",
   "reference_size": [
-    332,
-    154
+    960,
+    295
   ],
   "reference_has_alpha": false,
   "preview_size": [
@@ -11,19 +11,19 @@
   ],
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
-  "ref_mean_lum": 0.659,
+  "ref_mean_lum": 0.6597,
   "preview_mean_lum": 0.7445,
-  "mean_lum_delta": 0.0855,
-  "hist_similarity": 0.46,
-  "rgb_delta": 0.0849,
-  "ref_coverage": 0.4905,
+  "mean_lum_delta": 0.0848,
+  "hist_similarity": 0.3932,
+  "rgb_delta": 0.0844,
+  "ref_coverage": 0.7402,
   "preview_coverage": 0.2853,
-  "coverage_ratio": 0.582,
+  "coverage_ratio": 0.385,
   "ref_bbox": [
-    8,
-    34,
-    323,
-    121
+    23,
+    19,
+    936,
+    274
   ],
   "preview_bbox": [
     83,
@@ -32,9 +32,9 @@
     636
   ],
   "ref_mean_rgb": [
-    161.2,
-    171.2,
-    157.2
+    161.3,
+    171.3,
+    157.3
   ],
   "preview_mean_rgb": [
     185.2,
@@ -42,5 +42,5 @@
     177.0
   ],
   "framing_notes": [],
-  "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+  "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
 }
