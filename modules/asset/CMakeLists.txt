@@ -5,6 +5,7 @@ add_library(maque::asset ALIAS maque_asset)
 target_include_directories(maque_asset PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(maque_asset PUBLIC maque::vfs)
 set_target_properties(maque_asset PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(maque_asset PUBLIC maque::tracy)   # Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时是空接口）
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_asset_test tests/asset_test.cpp)

@@ -56,6 +56,8 @@ typedef struct mq_field_desc {
 #define MQ_ROLE_UI_TEXT     (1u << 18)   /* 文本：Label/RichText（排版 + 字形渲染） */
 #define MQ_ROLE_UI_CANVAS   (1u << 19)   /* 画布：UI 根 + 分辨率策略（设计分辨率 → 设备像素） */
 #define MQ_ROLE_SPINE       (1u << 20)   /* 骨骼动画（Spine）：装配期建实例，帧内步进 + 网格绘制 */
+#define MQ_ROLE_AUDIO_SOURCE  (1u << 21)  /* 音频发射源（docs/30）：装配期/帧边界同步 voice */
+#define MQ_ROLE_AUDIO_LISTENER (1u << 22) /* 音频听者：每 instance 至多一个（取稳定首个） */
 
 /* 枚举字面量（供 JSON 文本按名字读写、AI 自省；docs/06） */
 typedef struct mq_enum_value {

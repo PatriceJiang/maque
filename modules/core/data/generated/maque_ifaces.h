@@ -61,6 +61,135 @@ typedef struct mq_renderer_mesh {
     int32_t z;
 } mq_renderer_mesh;
 
+typedef struct mq_renderer_window {
+    int32_t kind;
+    void* display;
+    void* handle;
+    void* extra;
+    int32_t width;
+    int32_t height;
+} mq_renderer_window;
+
+typedef struct mq_renderer_caps {
+    int32_t max_texture_size;
+    int32_t max_lights;
+    int32_t max_samples;
+    int32_t target_format;
+    int32_t depth_format;
+    int32_t direct_present;
+    int32_t hdr;
+    int32_t reserved;
+} mq_renderer_caps;
+
+typedef struct mq_renderer_texture_desc {
+    int32_t width;
+    int32_t height;
+    int32_t pixel_format;
+    int32_t kind;
+    int32_t mip_levels;
+    int32_t filter;
+    int32_t wrap_u;
+    int32_t wrap_v;
+    const uint8_t* data;
+    uint64_t data_size;
+} mq_renderer_texture_desc;
+
+typedef struct mq_renderer_mesh_gpu {
+    const void* vertices;
+    uint64_t vertex_bytes;
+    uint32_t vertex_stride;
+    int32_t vertex_layout;
+    const uint32_t* indices;
+    uint32_t index_count;
+    float bounds_min[3];
+    float bounds_max[3];
+} mq_renderer_mesh_gpu;
+
+typedef struct mq_renderer_view3d {
+    float view[16];
+    float proj[16];
+    float eye[3];
+    float viewport[4];
+    float exposure;
+    int32_t clear_mode;
+    float clear_color[4];
+    int32_t layer_mask;
+} mq_renderer_view3d;
+
+typedef struct mq_renderer_light {
+    int32_t type;
+    float pos[3];
+    float dir[3];
+    float color[3];
+    float intensity;
+    float range;
+    float inner_cos;
+    float outer_cos;
+    int32_t flags;
+    int32_t shadow_slot;
+} mq_renderer_light;
+
+typedef struct mq_renderer_pbr_material {
+    float base_color[4];
+    float emissive[3];
+    float metallic;
+    float roughness;
+    float normal_scale;
+    float occlusion_strength;
+    float alpha_cutoff;
+    int32_t alpha_mode;
+    int32_t flags;
+    int32_t textures[5];
+    float uv_scale[2];
+    float uv_offset[2];
+} mq_renderer_pbr_material;
+
+typedef struct mq_renderer_draw3d {
+    int32_t mesh;
+    int32_t material;
+    float model[16];
+    int32_t submesh_first;
+    int32_t submesh_count;
+    int32_t flags;
+    int32_t layer;
+    uint64_t sort_key;
+} mq_renderer_draw3d;
+
+typedef struct mq_renderer_environment {
+    int32_t sky_mode;
+    float sky_color[4];
+    int32_t sky_texture;
+    float env_color[4];
+    int32_t env_texture;
+    float intensity;
+} mq_renderer_environment;
+
+typedef struct mq_renderer_post {
+    float exposure;
+    int32_t tonemap;
+} mq_renderer_post;
+
+typedef struct mq_renderer_frame3d {
+    int32_t width;
+    int32_t height;
+    const mq_renderer_view3d* views;
+    uint32_t view_count;
+    const mq_renderer_light* lights;
+    uint32_t light_count;
+    const mq_renderer_pbr_material* materials;
+    uint32_t material_count;
+    const mq_renderer_draw3d* draws;
+    uint32_t draw_count;
+    mq_renderer_environment env;
+    mq_renderer_post post;
+    const mq_renderer_item* items;
+    uint32_t item_count;
+    const mq_renderer_mesh* meshes;
+    uint32_t mesh_count;
+    uint8_t* out;
+    uint32_t out_size;
+} mq_renderer_frame3d;
+
 #define MQ_RENDERER_API_NAME "maque.renderer"
 typedef struct mq_renderer_v1 {
     mq_api_header header;
@@ -71,4 +200,12 @@ typedef struct mq_renderer_v1 {
     int32_t (*has_texture)(void* self, int32_t id);
     int32_t (*render_views)(void* self, int32_t tw, int32_t th, const mq_renderer_view* views, uint32_t nviews, const mq_renderer_item* items, uint32_t count, const float* bg, uint8_t* out, uint32_t out_size);
     int32_t (*render_mesh_views)(void* self, int32_t tw, int32_t th, const mq_renderer_view* views, uint32_t nviews, const mq_renderer_item* items, uint32_t count, const mq_renderer_mesh* meshes, uint32_t mesh_count, const float* bg, uint8_t* out, uint32_t out_size);
+    int32_t (*attach_window)(void* self, const mq_renderer_window* win);
+    int32_t (*resize_surface)(void* self, int32_t w, int32_t h);
+    int32_t (*caps)(void* self, mq_renderer_caps* out);
+    int32_t (*create_texture2)(void* self, const mq_renderer_texture_desc* desc, int32_t* out_id);
+    int32_t (*create_mesh)(void* self, const mq_renderer_mesh_gpu* data, int32_t* out_id);
+    void (*destroy_mesh)(void* self, int32_t id);
+    int32_t (*render_frame3d)(void* self, const mq_renderer_frame3d* frame);
+    int32_t (*present)(void* self);
 } mq_renderer_v1;

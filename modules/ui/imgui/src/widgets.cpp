@@ -6,6 +6,7 @@
  * 两者都放在本模块，所以控件的 C ABI **不需要 Engine 指针**。
  */
 #include "ui/mq_imgui_widgets.h"
+#include "core/tracy/mq_tracy.h"
 
 #include "imgui.h"
 
@@ -240,25 +241,17 @@ int mq_imgui_push_small_font(void) {
 void mq_imgui_pop_small_font(void) { ImGui::PopFont(); }
 
 int mq_imgui_begin_overlay(const char *title) {
-    /* 可拖动（有标题栏）但不参与命中：NoInputs 让 ImGui 不把悬停/点击算到它头上。 */
-    /* 可拖动（标题栏）+ 自适应内容。
-     * 注意：**不能加 NoInputs** —— 它会连标题栏拖动一起禁掉（实测"无法拖动"），
-     * 也会让内容绘制异常。需要"不挡游戏点击"时应改用 ImGui 的 hover 判定，而不是 NoInputs。 */
-    /* 覆盖层**固定位置、不可手动移动/缩放**（NoMove | NoResize）。
+    MQ_TRACY_ZONE_N(imgui, "overlay");
+    /* 覆盖层（stats）：普通 ImGui 窗口 —— **标题栏可拖动、边框可缩放**。
      *
-     * 原因（实测两次）：只要允许用户拖动这个窗口，就会出现"窗口动了、文字没跟着走"的
-     * 错位 —— 我们的绘制数据导出里，窗口位置与内容坐标来自同一份 ImGui draw list，
-     * 本应同步；实测不同步说明拖动路径上还有未定位的时序问题（ImGui 在拖动帧会把
-     * 窗口位置更新推迟到下一帧，而文本布局用的是上一帧起点）。
-     * 在定位清楚之前，覆盖层固定不动是**正确且可用**的：
-     * 它是常驻信息栏，固定左上角即可，也避免挡住游戏内容。 */
-    /* 可移动、可缩放（拖动/缩放由 ImGui 处理）。
-     * 之前为规避自研网格链的"拖动错位"曾禁用拖动；现在 accelerated 模式下走官方
-     * SDL_Renderer 后端，拖动/缩放是官方行为，应当放开。 */
-    /* 网格链模式下拖动会留下残影/错位（截图里那串阶梯状三角形），
-     * 因此在官方后端显示问题修好之前，覆盖层保持固定（NoMove|NoResize）。 */
-    return ImGui::Begin(title && *title ? title : "overlay", nullptr,
-                        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize) ? 1 : 0;
+     * 历史坑（已解决，勿回退）：
+     *   · 早期为规避自研「draw data → 网格图元」链在拖动时的错位/残影，这里曾加
+     *     NoMove | NoResize（用户反馈"stats 拖不动"）；
+     *   · 现在窗口模式下面板走 ImGui **官方 SDL_Renderer 后端**，与游戏帧在同一个
+     *     renderer 上渲染、只 present 一次 → 拖动/缩放是官方行为，坐标天然同步。
+     * 网格链模式（headless / present off）没有鼠标交互，加不加限制都无所谓；
+     * 保留可拖动可缩放才能让 e2e 用合成指针验证"面板真的会跟随移动"。 */
+    return ImGui::Begin(title && *title ? title : "overlay") ? 1 : 0;
 }
 
 void mq_imgui_push_font_size(float size_px) {

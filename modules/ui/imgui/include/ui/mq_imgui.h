@@ -79,6 +79,13 @@ int mq_imgui_init(float font_size, float pixel_scale);
  * 覆盖面板文案足够。ttf 为空或加载失败 → 退回默认字体。
  * font_size 单位是**像素**；pixel_scale 会再乘上去（HiDPI）。 */
 int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_scale);
+/* 双档字号版本（引擎 stats 面板用）：
+ *   title_size / body_size —— **逻辑像素**（窗口/显示坐标系，不含 pixel_scale）；
+ *   标题栏用 title_size 的字体，正文用 body_size 的字体（图集一次烘两档）。
+ *   pixel_scale —— UI 缩放倍数（屏幕分辨率/DPI/渲染倍率），字号与**样式尺寸**
+ *   （内边距/间距/标题栏高度/滚动条…）一并按它缩放 → 控件比例不变。
+ * body_size<=0 → 取 title_size*0.78；title_size<=0 → 内置默认。 */
+int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_size, float pixel_scale);
 void mq_imgui_shutdown(void);
 int mq_imgui_ready(void);
 

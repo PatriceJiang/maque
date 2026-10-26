@@ -74,6 +74,9 @@ ctest --test-dir build-win --output-on-failure
 ```bash
 # Linux（GCC/Clang）
 cmake -S . -B build-asan -G Ninja -DCMAKE_BUILD_TYPE=Debug -DMAQUE_SANITIZE=address,undefined
+# 跑测试：wgpu/SDL/Mesa 退出期全局单例会被 LeakSanitizer 误报；stdbuf 的 LD_PRELOAD
+# 又会让 libasan 不在首位（ASan 直接 abort）——这两个开关是跑全绿的必要条件。
+ASAN_OPTIONS=detect_leaks=0:verify_asan_link_order=0 ctest --test-dir build-asan --output-on-failure
 # Windows（clang-cl；仅 address）
 tools\win\build.cmd -Sanitize address -RunTests
 ```
@@ -81,6 +84,8 @@ tools\win\build.cmd -Sanitize address -RunTests
 - `-DMAQUE_SANITIZE=` 空 = 关闭。Windows 上会自动把 MSVC 运行时从 `/MDd` 改成 `/MD`
   （ASan 不支持调试版 CRT），并把 clang 的动态 ASan 运行时显式接进链接行、
   复制到各可执行文件/插件旁（否则启动即 `0xC0000135` / 链接报 `__asan_*` 未定义）。
+- **Tracy 兼容**：`third_party/tracy` 的客户端配置必须带 `TRACY_NO_CRASH_HANDLER`
+  （Tracy 自带崩溃处理器与 ASan 冲突；见 docs/29 §8）。
 - **鉴别力自检**（别只看"能构建"）：故意越界应被报出 `heap-buffer-overflow`：
   ```bash
   printf 'int main(){int*p=new int[4];p[4]=1;return p[4];}\n' > t.cpp
@@ -93,9 +98,12 @@ tools\win\build.cmd -Sanitize address -RunTests
   输入坐标自动映射回世界坐标）。`MAQUE_WINDOW=WxH` 覆盖尺寸，**`0x0` = 不建窗口**（CI/无显示环境）；
   ⚠️ 渲染倍率 `MAQUE_SS` 未设时只在**确有窗口**时跟随窗口像素（离屏/headless 恒为 1.0 =
   设计分辨率），否则截图尺寸与文本折行行数会随窗口大小漂移。`MAQUE_TITLE=<标题>`；
-  `MAQUE_VIEWS=n`；`MAQUE_PRESENT=off|software|accelerated`（默认 software：纯窗口表面，
-  不初始化 GL/EGL，避免与渲染插件的 wgpu(EGL) 争用）；`MAQUE_CAPTURE=<前缀>` 从**窗口表面**
-  回读前 3 帧为 PPM（用于真实窗口路径的像素级验证）；`MAQUE_KEEP_OPEN=1` 忽略脚本 `quit()`。
+  `MAQUE_VIEWS=n`；`MAQUE_PRESENT=off|software|accelerated`（默认 Windows accelerated=Direct3D /
+  其它平台 software；两者都走统一的 SDL_Renderer 呈现 → 不建 GL/EGL 上下文，不与渲染插件的
+  wgpu(EGL) 争用）；`MAQUE_CAPTURE=<前缀>` 从 **renderer 后台缓冲**回读前 3 帧为 PPM
+  （= present 前用户即将看到的整帧，含 ImGui 面板）；`MAQUE_KEEP_OPEN=1` 忽略脚本 `quit()`。
+  `MAQUE_IMGUI_POINTER="frame:x:y:type[;...]"`（type 0=move 1=down 2=up）把合成指针事件压进
+  **本帧设备事件队列**，与真实鼠标同一条路径 → CI 验证 ImGui 面板拖动（`imgui_present_e2e`）。
   示例：`MAQUE_WINDOW=800x600 MAQUE_TITLE=MaqueEngine ./build/samples/player/maque_player scenes/ball.scn`
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
@@ -163,6 +171,26 @@ tools\win\build.cmd -Sanitize address -RunTests
   - 两者**共用同一份相机 uniform 布局**（48B：size/view/cam/zoom/rot/pan/eye），且顶点都已是
     "渲染目标像素空间、y 向下"→ 变换逐项一致（**不要再翻 y**）。
   - 剔除开关：`-DMAQUE_SHADER_MESH=OFF` 时不生成/不链接，gfx 取不到时打印原因并跳过网格图元。
+  - **成帧性能（勿回退）**：gfx 每视图只开**一个 render pass**，图元/网格命令在同一 pass 内切
+    pipeline/bind group/scissor 完成（bind group 按 solid/textured/mesh 状态缓存）。
+    ⚠️ 曾按"每条命令一个 pass"实现 → `all.scn` 331 条命令 = 331 次 BeginRenderPass，
+    render 从 8.4ms 涨到 12.5ms；改成单 pass 后 Debug+ASan ~8.4ms / Release ~5.1ms。
+  - **帧预算诊断**：`MAQUE_TRACE_STATS=1` 每 30 帧打印 `logic/render/present/draws/tris/target`。
+    主循环每个模拟步都渲染+present 一次 → **屏幕 FPS ≈ 1000 / (logic+render+present) ms**；
+    单步 >16.7ms 就上不了 60fps（Debug+ASan 构建比 Release 慢 ~2 倍，属预期）。
+- **性能分析 Tracy（docs/29）**：默认**零开销**（客户端手动启动，普通运行不监听端口/不占线程）；
+  游戏里 **F3** 启动客户端并拉起 profiler GUI，或 `MAQUE_TRACY=1` 启动即开（等外部连）。
+  GUI/CLI 二进制不入库：Windows 跑 `tools/tracy/get-profiler.ps1` 下载官方包；
+  Linux/macOS 跑 `tools/tracy/build-profiler.sh`（F3 的 GUI）与 `build-capture.sh`（CI 抓 trace），
+  都装到 `.deps/tracy/`
+  （`MAQUE_TRACY_PROFILER=<exe>` 可覆盖路径；`MAQUE_TRACY_PORT` 改端口，默认 8086）。
+  埋点**只用** `modules/core/tracy` 的 `MQ_TRACY_*` 宏（模块颜色/命名/开关一处管理，
+  `#include "core/tracy/mq_tracy.h"`）；只加在**外层入口**，不要进热内循环；新增模块色改
+  `mq_tracy.h` 的 `Module`/`color()`。`-DMAQUE_TRACY=OFF` 时全部宏 no-op。
+  ⚠️ Tracy 客户端配置必须含 **`TRACY_NO_CRASH_HANDLER`**（与 ASan 冲突：不关时 Debug+ASan 下
+  `tracy-capture` 只能收到 3 帧/0 zone，关掉才正常）。
+  无 GUI 抓 trace：`MAQUE_TRACY=1 MAQUE_WINDOW=0x0 ./maque_player <scene> &` +
+  `.deps/tracy/tracy-capture.exe -o out.tracy -a 127.0.0.1 -p 8086 -s 2`；测试 `ctest -R tracy`。
 - **节点属性对渲染生效（含层级累积）**：`node_set_angle`（度）/`node_set_scale`/`node_set_opacity`
   影响**自身与子树** —— 提取时沿父链累积（角度相加、缩放相乘、透明度相乘并夹 [0,1]），
   `node_set_active(id,0)` 隐藏整棵子树。所以"炮塔挂在车体下、各自转向"这类层级结构直接可用：
@@ -195,10 +223,40 @@ tools\win\build.cmd -Sanitize address -RunTests
   鼠标点选会被立刻覆盖；请求必须"满足后即清空"（请求页 / 当前页分离）。
   **二进制传输**：控制面是行分隔 JSON → 图集/画面走 **base64 分块**（`offset`/`max`，单块 ≤48KB，客户端在途上限 4 且偏移递增）；
   自建纹理必须 `ImGui::RegisterUserTexture()`（1.92+ 的外部纹理 API），否则后端不创建 SDL_Texture（白图）。
+- **引擎侧 ImGui 调试面板（docs/28）**：`modules/ui/imgui` + `modules/runtime`。**默认不显示**（`MAQUE_IMGUI=1`
+  或游戏内 **F2** 打开）；打开后 stats 面板（FPS/logic/render/draws/tris/frame/target）+ 74 个 `imgui_*` 脚本函数。**帧时序**：脚本阶段只
+  **录制** ImGui draw list → 引擎渲染到 CPU 像素 → `mq_platform_draw_rect` 游戏帧进 `SDL_Renderer` 后台缓冲 →
+  `mq_imgui_backend_render` 官方后端单独一趟 pass 叠画 → `mq_platform_present_ui` **只 present 一次**。
+  **窗口呈现唯一通道 = SDL_Renderer，禁止 `SDL_GetWindowSurface`**（SDL2 不允许与 renderer 混用；
+  混用会导致"imgui 一开、游戏画面不上屏"——已踩过）。面板拖动/缩放交给官方后端，**不要**再加
+  `NoMove|NoResize`。无窗口/`MAQUE_PRESENT=off` 时回退自研网格链（面板进 `--shot` 像素缓冲）。
+  **UI 度量固定 = 屏幕分辨率派生**（`imgui_resolve_metrics`：`ui_scale = 屏幕逻辑高/1080`，
+  正文 15、标题 = 正文×4/3，面板 = 正文×16×正文×10；`MAQUE_IMGUI_SCALE` / `MAQUE_IMGUI_FONT_SIZE`
+  = 正文字号 覆盖）：**窗口大小/场景分辨率/视图数不参与**，别再用 `win_w/TW` 当字体倍率
+  （会把面板大小绑到窗口 → "标题太大/有的窗口又偏小"）。官方后端显示空间 = 绘制区**设备像素**，
+  鼠标逻辑坐标按 content_scale 换算。
+  测试：`ctest -R 'imgui|imgui_present_e2e'`（后者断言游戏上屏 + 拖动后位置变化 +
+  换窗口后 UI 度量逐字一致 + software 回退）。
+- **音频（docs/30）**：`modules/world/audio` **分层**——`maque_audio_core`（Mixer/解码，无 SDL）
+  + `maque_audio`（C ABI 门面 + **可替换设备后端**）。只有 `src/backend_sdl.cpp` / `backend_null.cpp`
+  碰设备；换 miniaudio/SoLoud 只需实现 `AudioDevice` 接口 + CMake 加一个源文件，核心/解码/ABI/runtime 不动。
+  **默认 null 后端**（逻辑与脚本可用、CI 静音）；`MAQUE_AUDIO=sdl|auto|1` 开设备
+  （CI 可 `SDL_AUDIODRIVER=dummy`）。脚本：`audio_play(path, volume, loop, bus)` /
+  `audio_stop/pause/set_volume/set_pitch/state/playhead`、`audio_set_listener`、`audio_master_volume`、
+  `audio_bus_volume`；`playhead` 按**模拟 dt** 推进（不进 checksum，docs/30 §5）。
+  **组件**：`AudioSource`（`autoplay`、每帧 volume/pitch/空间化同步、`state/playhead/voice` transient 回写）与
+  `AudioListener`（世界位置 + 节点 angle；`master_volume` 变化才下发）；字段用 **string 路径**（`clip/bus/curve`，
+  不是 `asset_ref`，见 docs/27 §6）。`MQ_ASSET_KIND_AUDIO`（`.wav/.ogg/.mp3`）已加；
+  **解码**：WAV/OGG（vendored `third_party/stb_vorbis`）/MP3（`third_party/dr_mp3`），解码器表在
+  `modules/world/audio/src/decode_wav.cpp`。
+  **离线抓音**：`MAQUE_AUDIO_CAPTURE=<wav>` → 强制 null 后端，每模拟步 `mq_audio_mix` 后写 PCM16 WAV
+  （确定性；e2e 断言 RMS 非静音）。
+  **控制面**：`Audio.info/voices`（只读）、`Audio.play/stop/set_master/set_bus`（变更类；voice 用字符串句柄）。
+  测试：`ctest -R 'audio'`（单测 + `audio_e2e`：null/OGG/组件/抓音 + SDL dummy + `audio_control_e2e`）。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
 - 系统依赖：SDL2 / libcurl / libwebsockets（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev`）。
 - 已 vendored：`third_party/quickjs-ng`（JS 后端）、`third_party/lua`（Lua 5.4 后端）、`third_party/wuffs`、
-  `third_party/imgui`（master；**仅 inspector 链接**，游戏进程不引入 UI 依赖）。
+  `third_party/imgui`（master；**inspector 与引擎侧 `modules/ui/imgui` 共用**，见 docs/28）。
 
 ## 硬约定（改代码前先读）
 
@@ -243,7 +301,12 @@ tools\win\build.cmd -Sanitize address -RunTests
 - **运行时（浏览器）**：`modules/runtime` 的 `mq_run_scene(path)`：加载 `.scn` → 反序列化 → 加载 `.js` → 固定步长循环 → WebGPU 渲染 → 退出。
   宿主 `samples/player` 仅一行；**游戏逻辑全在资源**（`scenes/*.scn`、`scenes/*.js`）。
 - **渲染**：`maque::gfx`（wgpu-native）。注意：该构建的 `wgpuInstanceWaitAny` **未实现**，异步统一用 `wgpuInstanceProcessEvents` 轮询。
-- **实体/组件**：runtime 内实体表（`maque::handle`）+ 组件；**渲染从组件提取**（只读）。
+- **场景模型（单一模型，ADR-0003 2026-10 修订）**：**节点树（children + 反射组件）是唯一模型**；
+  runtime 的实体表只是"`id → 节点` 的扁平索引 + 每帧 `Scene::flatten_world()` 展平出的世界坐标缓存"
+  （`Entity::world_x/world_y` 是派生数据，**不是位置真相**——位置在 Transform 组件里，改 `world_*` 会被下一帧覆盖）。
+  渲染/物理/UI 按**组件角色**从展平视图提取（只读）；**不做 ECS/archetype 存储**（高基数用专用数组，如粒子）。
+  脚本两面同一模型：`node_*` 是树语义规范面，`entity_*` 是**扁平别名**（按 id 直接寻址）。
+  控制面 `Scene.expand_prefabs` = 展开 PrefabInstance（旧名 `Scene.bake` 为兼容别名，已弃用）。
 
 ## 脚本可见 API（docs/18）
 

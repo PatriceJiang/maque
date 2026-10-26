@@ -14,6 +14,7 @@
  * （docs/08 §2 的 backend file:// 形态）；读源内容一律经 VFS。 */
 #include "asset/mq_asset.h"
 #include "core/vfs/mq_vfs.h"
+#include "core/tracy/mq_tracy.h"
 
 #include <algorithm>
 #include <cstring>
@@ -85,6 +86,9 @@ mq_asset_kind detect_kind(std::string_view path) noexcept {
     if (ends_with(path, ".anim.json")) return MQ_ASSET_KIND_ANIMATION;
     if (ends_with(path, ".scn")) return MQ_ASSET_KIND_SCENE;
     if (ends_with(path, ".js")) return MQ_ASSET_KIND_SCRIPT;
+    if (ends_with(path, ".wav") || ends_with(path, ".ogg") || ends_with(path, ".mp3")) {
+        return MQ_ASSET_KIND_AUDIO;
+    }
     return MQ_ASSET_KIND_OTHER;
 }
 
@@ -97,6 +101,7 @@ const char* kind_name(mq_asset_kind kind) noexcept {
         case MQ_ASSET_KIND_ANIMATION: return "animation";
         case MQ_ASSET_KIND_SCENE:     return "scene";
         case MQ_ASSET_KIND_SCRIPT:    return "script";
+        case MQ_ASSET_KIND_AUDIO:     return "audio";
         case MQ_ASSET_KIND_OTHER:
         default:                      return "other";
     }
@@ -569,6 +574,7 @@ void mq_asset_destroy(mq_asset_db* db) {
 }
 
 int mq_asset_import(mq_asset_db* db, const char* path, mq_asset_info* out) {
+    MQ_TRACY_ZONE_N(asset, "import");
     return guard_int([&] { return import_impl(db, path, out); });
 }
 
@@ -610,10 +616,12 @@ int mq_asset_validate(mq_asset_db* db, char* missing_out, size_t missing_cap) {
 }
 
 int mq_asset_cook(mq_asset_db* db, const char* path, const char* out_path) {
+    MQ_TRACY_ZONE_N(asset, "cook");
     return guard_int([&] { return cook_impl(db, path, out_path); });
 }
 
 int mq_asset_pack(mq_asset_db* db, const char* const* paths, uint32_t count, const char* out_path) {
+    MQ_TRACY_ZONE_N(asset, "pack");
     return guard_int([&] { return pack_impl(db, paths, count, out_path); });
 }
 

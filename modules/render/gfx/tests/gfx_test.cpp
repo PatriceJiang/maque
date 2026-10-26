@@ -7,6 +7,8 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <cstring>
+#include <cstddef>
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
@@ -202,6 +204,66 @@ int main() {
         CHECK(rc == 0);
         CHECK(cv.at(160, 120, 0) > 200 && cv.at(160, 120, 2) > 200 && cv.at(160, 120, 1) < 60);
         api->destroy_texture(self, tex);
+    }
+
+    // ---- 7) 3D/PBR 资源层（plans/18-pbr-3d.md M0）：caps / 纹理 v2 / 网格上传 ----
+    //     这些方法只在表尾追加；老插件的 struct_size 更小 → 调用前用 struct_size 守卫。
+    const bool has_3d_api = api->header.struct_size >=
+        offsetof(mq_renderer_v1, present) + sizeof(api->present);
+    CHECK(has_3d_api);
+    if (has_3d_api) {
+        mq_renderer_caps caps{};
+        CHECK(api->caps(self, &caps) == 0);
+        CHECK(caps.max_texture_size >= 2048);
+        CHECK(caps.max_lights >= 1);
+        CHECK(caps.target_format == 0);            // 未 attach_window → 离屏 RGBA8
+        CHECK(caps.direct_present == 0);           // 无 surface
+        std::print("gfx_test: caps tex={} lights={} fmt={} direct_present={}\n",
+                   caps.max_texture_size, caps.max_lights, caps.target_format, caps.direct_present);
+
+        // 纹理 v2：RGBA8 + 2 级 mip（2x2 → 1x1），带 sampler
+        const uint8_t mip0[16] = { 255,0,0,255, 0,255,0,255, 0,0,255,255, 255,255,0,255 };
+        const uint8_t mip1[4]  = { 128,128,128,255 };
+        uint8_t mips[20];
+        std::memcpy(mips, mip0, sizeof mip0);
+        std::memcpy(mips + sizeof mip0, mip1, sizeof mip1);
+        mq_renderer_texture_desc td{};
+        td.width = 2; td.height = 2; td.pixel_format = 0; td.kind = 0;
+        td.mip_levels = 2; td.filter = 1; td.wrap_u = 1; td.wrap_v = 1;
+        td.data = mips; td.data_size = sizeof mips;
+        int32_t tex2 = -1;
+        CHECK(api->create_texture2(self, &td, &tex2) == 0);
+        CHECK(tex2 >= 0 && api->has_texture(self, tex2) == 1);
+        api->destroy_texture(self, tex2);
+        CHECK(api->has_texture(self, tex2) == 0);
+
+        // 网格上传：单三角形，规范布局 pos3/normal3/tangent4/uv2 = 48B
+        const float verts48[36] = {
+            // pos3              normal3          tangent4           uv2
+             0.0F,  0.5F, 0.0F,  0.0F, 0.0F, 1.0F,  1.0F, 0.0F, 0.0F, 1.0F,  0.5F, 1.0F,
+            -0.5F, -0.5F, 0.0F,  0.0F, 0.0F, 1.0F,  1.0F, 0.0F, 0.0F, 1.0F,  0.0F, 0.0F,
+             0.5F, -0.5F, 0.0F,  0.0F, 0.0F, 1.0F,  1.0F, 0.0F, 0.0F, 1.0F,  1.0F, 0.0F,
+        };
+        const uint32_t idx[3] = { 0, 1, 2 };
+        mq_renderer_mesh_gpu md{};
+        md.vertices = verts48; md.vertex_bytes = sizeof verts48; md.vertex_stride = 48; md.vertex_layout = 0;
+        md.indices = idx; md.index_count = 3;
+        md.bounds_min[0] = -0.5F; md.bounds_min[1] = -0.5F; md.bounds_min[2] = 0.0F;
+        md.bounds_max[0] =  0.5F; md.bounds_max[1] =  0.5F; md.bounds_max[2] = 0.0F;
+        int32_t mesh = -1;
+        CHECK(api->create_mesh(self, &md, &mesh) == 0);
+        CHECK(mesh >= 0);
+        api->destroy_mesh(self, mesh);
+        // 非法布局/数据：明确失败（不静默）
+        mq_renderer_mesh_gpu bad = md;
+        bad.vertex_stride = 32;
+        int32_t dummy = -1;
+        CHECK(api->create_mesh(self, &bad, &dummy) != 0);
+        bad = md; bad.vertices = nullptr;
+        CHECK(api->create_mesh(self, &bad, &dummy) != 0);
+        // 无窗口时 attach_window 必须明确失败（调用方回退离屏）
+        mq_renderer_window win{};
+        CHECK(api->attach_window(self, &win) != 0);
     }
 
     api->destroy(self);

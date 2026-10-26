@@ -8,6 +8,9 @@ project(Maque CXX C ASM)
 
 option(MAQUE_BUILD_TESTS "Build maque unit tests" ON)
 option(MAQUE_WINDOWS_DEPS "Windows: 自动 include .deps/deps.cmake（第三方依赖预置变量）" ON)
+# Tracy 性能分析（docs/29）：默认编入客户端（手动启动：F3 / MAQUE_TRACY=1）；
+# OFF = 全部埋点宏展开为 no-op、不链接第三方库（最小构建）。
+option(MAQUE_TRACY "Tracy performance profiler integration (docs/29)" ON)
 
 # 确定性 D8（docs/10 §2）：关闭 FMA 收缩 —— 浮点结果不随编译器/优化级别变化。
 # 符号可见性 R8（docs/02）：默认 hidden，跨模块导出只经 MQ_MODULE_EXPORT / extern "C"。
@@ -217,6 +220,13 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/modules/core/compat/include")
 # 全项目可见：各模块 tests/*.cpp 直接 #include "maque_test_fs.h" 即可。
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
+# Tracy 封装（docs/29）：第三方客户端源码 vendored（third_party/tracy，仅 public/）。
+# 必须早于所有要埋点的模块（它们 link maque::tracy）。
+if(MAQUE_TRACY)
+    add_subdirectory(third_party/tracy)
+endif()
+add_subdirectory(modules/core/tracy)
+
 # script 需先于 data（data 生成绑定 TU 依赖 script）
 add_subdirectory(modules/script)
 add_subdirectory(modules/core/data)
@@ -238,6 +248,7 @@ add_subdirectory(modules/data/persist)
 add_subdirectory(modules/image)
 add_subdirectory(modules/world/physics)
 add_subdirectory(modules/world/nav)
+add_subdirectory(modules/world/audio)   # 音频：core（平台无关）+ 可替换设备后端（SDL/null）
 # Spine 2D 官方运行时接入（docs/assets/06 §2、docs/27）：vendored spine-cpp **4.2** + C ABI 封装。
 # 选 4.2 并**打开 C++ RTTI**（封装层用 dynamic_cast 判别附件类型）—— 见 third_party/spine-cpp/CMakeLists.txt。
 add_subdirectory(modules/anim/spine2d)

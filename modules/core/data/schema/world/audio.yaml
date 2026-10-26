@@ -1,4 +1,4 @@
-# audio —— 世界层音频组件（尚无独立模块目录）
+# audio —— 世界层音频组件 + 模块 ABI（modules/world/audio）
 - namespace: audio
   version: 1
   class_list:
@@ -19,16 +19,17 @@
         - { name: Playing, value: 1 }
         - { name: Paused, value: 2 }
     - struct: AudioSource
+      roles: [ audio_source ]
       fields:
-        - { name: clip, type: "asset_ref<AudioClip>", attrs: { ref: AudioClip } }
-        - { name: bus, type: "asset_ref<AudioBus>", attrs: { ref: AudioBus } }
+        - { name: clip, type: string, doc: "VFS 路径（相对场景目录）；组件引用用**路径**而不是 asset_ref（docs/27 §6）" }
+        - { name: bus, type: string, doc: "总线名（空 = sfx；AudioBus 资产在 P2 接入）" }
         - { name: autoplay, type: bool, default: false }
         - { name: loop, type: bool, default: false }
         - { name: volume, type: float, default: 1.0F, attrs: { range: [0, 4], unit: linear } }
         - { name: pitch, type: float, default: 1.0F, attrs: { range: [0.01, 4] } }
         - { name: panning, type: PanningMode, default: "PanningMode::Stereo2D" }
         - { name: attenuation, type: AttenuationModel, default: "AttenuationModel::InverseDistance" }
-        - { name: curve, type: "asset_ref<AudioCurve>", attrs: { ref: AudioCurve } }
+        - { name: curve, type: string, doc: "衰减曲线资产路径（P2；空 = 用 attenuation 模型）" }
         - { name: min_distance, type: float, default: 1.0F, attrs: { unit: m } }
         - { name: max_distance, type: float, default: 50.0F, attrs: { unit: m } }
         - { name: doppler, type: float, default: 0.0F, attrs: { range: [0, 2] } }
@@ -36,8 +37,122 @@
         - { name: playhead, type: float, default: 0.0F, attrs: { transient: true, unit: s } }
         - { name: voice, type: uint64_t, default: 0, attrs: { transient: true } }
     - struct: AudioListener
+      roles: [ audio_listener ]
       fields:
         - { name: active, type: bool, default: true }
         - { name: master_volume, type: float, default: 1.0F, attrs: { range: [0, 2], unit: linear } }
         - { name: doppler_scale, type: float, default: 1.0F, attrs: { range: [0, 2] } }
         - { name: listener, type: uint64_t, default: 0, attrs: { transient: true } }
+
+  # 跨模块 C ABI（docs/02/21）：混音核心与设备后端解耦，后端可替换
+  # （当前 SDL2；后续接 miniaudio/SoLoud 只实现同一组函数即可）。
+  module_abi:
+    module: audio
+    abi_name: "maque.audio"
+    includes: [ "<stddef.h>", "<stdint.h>" ]
+    opaque: [ mq_audio, mq_audio_clip ]
+    macros:
+      - { name: MQ_AUDIO_DEFAULT_RATE, value: "48000" }
+      - { name: MQ_AUDIO_DEFAULT_CHANNELS, value: "2" }
+      - { name: MQ_AUDIO_DEFAULT_BUFFER, value: "1024" }
+      - { name: MQ_AUDIO_DEFAULT_VOICES, value: "64" }
+    enums:
+      - name: mq_audio_status
+        values:
+          - { name: MQ_AUDIO_OK, value: 0 }
+          - { name: MQ_AUDIO_ERR_ARG, value: 1 }
+          - { name: MQ_AUDIO_ERR_FORMAT, value: 2, doc: "解码失败 / 不支持的编码" }
+          - { name: MQ_AUDIO_ERR_IO, value: 3 }
+          - { name: MQ_AUDIO_ERR_DEVICE, value: 4, doc: "设备打开失败（可回退 null 后端）" }
+          - { name: MQ_AUDIO_ERR_CAPACITY, value: 5, doc: "voice 池满 / clip 无效" }
+          - { name: MQ_AUDIO_ERR_HANDLE, value: 6, doc: "voice 句柄过期" }
+      - name: mq_audio_backend
+        values:
+          - { name: MQ_AUDIO_BACKEND_AUTO, value: 0, doc: "有 SDL 用 SDL，否则 null" }
+          - { name: MQ_AUDIO_BACKEND_NULL, value: 1, doc: "不出声：仅逻辑推进/离线混音" }
+          - { name: MQ_AUDIO_BACKEND_SDL, value: 2 }
+      - name: mq_audio_panning
+        values:
+          - { name: MQ_AUDIO_PANNING_STEREO, value: 0 }
+          - { name: MQ_AUDIO_PANNING_SPATIAL, value: 1 }
+          - { name: MQ_AUDIO_PANNING_HRTF, value: 2, doc: "P2 预留（当前按 SPATIAL 处理）" }
+      - name: mq_audio_attenuation
+        values:
+          - { name: MQ_AUDIO_ATTEN_INVERSE, value: 0 }
+          - { name: MQ_AUDIO_ATTEN_LINEAR, value: 1 }
+          - { name: MQ_AUDIO_ATTEN_EXPONENTIAL, value: 2 }
+          - { name: MQ_AUDIO_ATTEN_CURVE, value: 3, doc: "P2（当前回退 INVERSE）" }
+      - name: mq_audio_play_state
+        values:
+          - { name: MQ_AUDIO_STOPPED, value: 0 }
+          - { name: MQ_AUDIO_PLAYING, value: 1 }
+          - { name: MQ_AUDIO_PAUSED, value: 2 }
+    structs:
+      - name: mq_audio_desc
+        doc: "实例配置（struct_size 版本化；0 字段 = 默认）。"
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: sample_rate, type: "uint32_t", doc: "0=48000；设备可能协商成其它值（见 stats）" }
+          - { name: channels, type: "uint32_t", doc: "0=2；P0 仅立体声" }
+          - { name: buffer_frames, type: "uint32_t", doc: "0=1024" }
+          - { name: max_voices, type: "uint32_t", doc: "0=64" }
+          - { name: backend, type: "uint32_t", doc: "MQ_AUDIO_BACKEND_*；0=AUTO" }
+          - { name: device, type: "const char*", doc: "NULL=默认设备；SDL 后端按名字匹配" }
+      - name: mq_audio_voice_desc
+        doc: "一次播放的参数（P0 支持 clip/volume/pitch/pan/loop/bus + 3D 位置）。"
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: clip, type: "const mq_audio_clip*", doc: "由 mq_audio_load_memory 产生；播放期间调用方保持有效" }
+          - { name: volume, type: "float", doc: "线性增益，默认 1" }
+          - { name: pitch, type: "float", doc: "0.01..4，默认 1（同时改变播放速度）" }
+          - { name: pan, type: "float", doc: "-1 左 .. +1 右，默认 0（Stereo2D）" }
+          - { name: loop, type: "uint32_t", doc: "0/1" }
+          - { name: bus, type: "const char*", doc: "NULL/空 = \"sfx\"" }
+          - { name: x, type: "float", doc: "3D 声源位置（世界坐标；y 向上）" }
+          - { name: y, type: "float" }
+          - { name: z, type: "float" }
+          - { name: panning, type: "uint32_t", doc: "mq_audio_panning" }
+          - { name: attenuation, type: "uint32_t", doc: "mq_audio_attenuation" }
+          - { name: min_distance, type: "float" }
+          - { name: max_distance, type: "float" }
+          - { name: doppler, type: "float", doc: "0=关（P0 仅记录，P2 生效）" }
+      - name: mq_audio_listener
+        doc: "听者（世界坐标；dir 为单位朝向）。"
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: x, type: "float" }
+          - { name: y, type: "float" }
+          - { name: z, type: "float" }
+          - { name: dir_x, type: "float" }
+          - { name: dir_y, type: "float" }
+          - { name: dir_z, type: "float" }
+      - name: mq_audio_stats
+        doc: "运行期统计（只读诊断；控制面/Tracy 用）。"
+        fields:
+          - { name: struct_size, type: "uint32_t" }
+          - { name: sample_rate, type: "uint32_t" }
+          - { name: channels, type: "uint32_t" }
+          - { name: voices, type: "uint32_t", doc: "活动 voice 数" }
+          - { name: callbacks, type: "uint64_t", doc: "设备回调次数（null=0）" }
+          - { name: dropped, type: "uint64_t", doc: "因容量/无效句柄丢弃的命令数" }
+    fns:
+      - { fn: mq_audio_create, returns: "mq_audio*", args: [ { name: desc, type: "const mq_audio_desc*" } ], doc: "desc=NULL → 默认；设备打开失败自动回退 null（仍返回实例）" }
+      - { fn: mq_audio_destroy, returns: void, args: [ { name: a, type: "mq_audio*" } ] }
+      - { fn: mq_audio_load_memory, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: data, type: "const void*" }, { name: size, type: "size_t" }, { name: hint, type: "const char*" }, { name: out, type: "mq_audio_clip**" } ], doc: "hint = 扩展名/路径（决定解码器；P0 仅 .wav）" }
+      - { fn: mq_audio_clip_release, returns: void, args: [ { name: clip, type: "mq_audio_clip*" } ] }
+      - { fn: mq_audio_clip_info, returns: int, args: [ { name: clip, type: "const mq_audio_clip*" }, { name: frames, type: "uint32_t*" }, { name: rate, type: "uint32_t*" }, { name: channels, type: "uint32_t*" } ] }
+      - { fn: mq_audio_play, returns: uint64_t, args: [ { name: a, type: "mq_audio*" }, { name: d, type: "const mq_audio_voice_desc*" } ], doc: "返回 voice 句柄；0=失败" }
+      - { fn: mq_audio_stop, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" } ] }
+      - { fn: mq_audio_pause, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: paused, type: "uint32_t" } ] }
+      - { fn: mq_audio_set_voice, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: volume, type: "float" }, { name: pitch, type: "float" }, { name: pan, type: "float" } ] }
+      - { fn: mq_audio_set_volume, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: volume, type: "float" } ], doc: "只改变量（保留 pitch/pan）" }
+      - { fn: mq_audio_set_pitch, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: pitch, type: "float" } ], doc: "只改音高（保留 volume/pan）" }
+      - { fn: mq_audio_set_spatial, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: x, type: "float" }, { name: y, type: "float" }, { name: z, type: "float" }, { name: panning, type: "uint32_t" }, { name: attenuation, type: "uint32_t" }, { name: min_distance, type: "float" }, { name: max_distance, type: "float" } ], doc: "组件/AudioSource 每帧同步世界位置与衰减参数" }
+      - { fn: mq_audio_set_listener, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: l, type: "const mq_audio_listener*" } ] }
+      - { fn: mq_audio_set_bus, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: bus, type: "const char*" }, { name: volume, type: "float" }, { name: mute, type: "uint32_t" } ] }
+      - { fn: mq_audio_set_master, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: volume, type: "float" }, { name: mute, type: "uint32_t" } ] }
+      - { fn: mq_audio_update, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: dt, type: "float" } ], doc: "模拟线程：逻辑 playhead/状态推进（不受设备是否出声影响）" }
+      - { fn: mq_audio_mix, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: out, type: "float*" }, { name: frames, type: "uint32_t" } ], doc: "离线混音（设备回调同一条路径）；out = 交错 stereo float" }
+      - { fn: mq_audio_voice_state, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: voice, type: "uint64_t" }, { name: state, type: "uint32_t*" }, { name: playhead, type: "float*" } ] }
+      - { fn: mq_audio_voice_at, returns: uint32_t, args: [ { name: a, type: "mq_audio*" }, { name: index, type: "uint32_t" }, { name: voice, type: "uint64_t*" }, { name: state, type: "uint32_t*" }, { name: playhead, type: "float*" } ], doc: "调试：按 slot 顺序枚举 active voice（0=没有更多）" }
+      - { fn: mq_audio_get_stats, returns: int, args: [ { name: a, type: "mq_audio*" }, { name: out, type: "mq_audio_stats*" } ] }

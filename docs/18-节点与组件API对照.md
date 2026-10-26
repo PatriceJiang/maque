@@ -100,6 +100,9 @@
 | —（无显式 Listener） | **AudioListener** | ➕ |
 | —（无导航） | **NavAgent / NavMesh** | ➕ |
 
+> 音频两条面均可用：**脚本一次性音效**（`audio_play/stop/...`）与
+> `AudioSource/AudioListener` 组件（autoplay/空间化/transient 回写）；组件资源用**路径**（docs/30）。
+
 ### 资产（被引用但未设计）
 | 参考基准 资产 | maque | 说明 |
 |---|---|---|

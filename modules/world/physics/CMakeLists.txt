@@ -3,6 +3,7 @@ add_library(maque_physics STATIC src/physics.cpp)
 add_library(maque::physics ALIAS maque_physics)
 target_include_directories(maque_physics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set_target_properties(maque_physics PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(maque_physics PUBLIC maque::tracy)   # Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时是空接口）
 # 确定性（docs/10 D8）：禁 FMA 收缩、禁 -ffast-math；求解器仅用普通 float 运算。
 target_compile_options(maque_physics PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-ffp-contract=off>)
 

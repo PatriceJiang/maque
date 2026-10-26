@@ -91,18 +91,29 @@
           - { name: resized, type: "int" }
           - { name: width, type: "int" }
           - { name: height, type: "int" }
+      # 原生窗口句柄（plans/18-pbr-3d.md §2.4）：renderer 用它建 wgpu surface 直接呈现。
+      # kind: 0=none 1=win32 2=xlib 3=wayland；display/handle 含义随 kind。
+      - name: mq_platform_native_window
+        fields:
+          - { name: kind, type: "int32_t" }
+          - { name: display, type: "void*" }
+          - { name: handle, type: "void*" }
+          - { name: extra, type: "void*" }
     fns:
       - { fn: mq_platform_create, returns: "mq_platform*", args: [ { name: title, type: "const char*" }, { name: w, type: "int" }, { name: h, type: "int" } ] }
       - { fn: mq_platform_present, returns: int,
           args: [ { name: p, type: "mq_platform*" }, { name: rgba, type: "const void*" },
                   { name: w, type: "int32_t" }, { name: h, type: "int32_t" } ],
-          doc: "把 RGBA8 帧呈现到窗口（无窗口/dummy 驱动安全空操作；MAQUE_PRESENT=off|software|accelerated）" }
+          doc: "把 RGBA8 帧等比居中呈现到窗口（无窗口/off 安全空操作；MAQUE_PRESENT=off|software|accelerated）" }
       - { fn: mq_platform_drawable_size, returns: void,
           args: [ { name: p, type: "mq_platform*" }, { name: out_w, type: "int32_t*" }, { name: out_h, type: "int32_t*" } ],
           doc: "绘制区尺寸（设备像素；HiDPI 下大于窗口逻辑尺寸）" }
       - { fn: mq_platform_content_scale, returns: float,
           args: [ { name: p, type: "mq_platform*" } ],
           doc: "显示器内容缩放（绘制区/窗口；1.0 = 非 HiDPI）" }
+      - { fn: mq_platform_screen_size, returns: void,
+          args: [ { name: p, type: "mq_platform*" }, { name: out_w, type: "int32_t*" }, { name: out_h, type: "int32_t*" } ],
+          doc: "应用可见的桌面**逻辑**尺寸（已含 OS DPI 缩放；无窗口/无显示 → 0）——ImGui 调试面板按它算一次性的固定 UI 缩放" }
       - { fn: mq_platform_display_changed, returns: int,
           args: [ { name: p, type: "mq_platform*" } ],
           doc: "自上次调用以来窗口是否更换显示器/尺寸变化（画布需重解析）" }
@@ -112,18 +123,33 @@
       - { fn: mq_platform_sdl_window, returns: "void*",
           args: [ { name: p, type: "mq_platform*" } ],
           doc: "原生 SDL_Window*（无窗口时 NULL）" }
+      # 原生窗口句柄（直接呈现）：renderer 用它在 wgpu 侧建 surface（Win32 HWND / X11 Window / Wayland wl_surface）。
+      # 返回 1=可用 0=无窗口/驱动不支持（调用方回退离屏 + platform 呈现）。
+      - { fn: mq_platform_get_native_window, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: out, type: "mq_platform_native_window*" } ],
+          doc: "取原生窗口句柄（kind/display/handle；plans/18 §2.4）；1=可用 0=不可用" }
+      # 呈现统一走 **SDL_Renderer**（唯一通道）：游戏帧先画进 renderer 后台缓冲，
+      # ImGui 官方后端在同一后台缓冲上再画一趟，最后单次 present。
+      # 不再使用 SDL_GetWindowSurface —— SDL2 不允许同一窗口混用 window surface 与 renderer
+      #（混用正是「ImGui 一开、游戏画面就不上屏」的根因）。
+      - { fn: mq_platform_draw_rect, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: rgba, type: "const void*" },
+                  { name: w, type: "int32_t" }, { name: h, type: "int32_t" },
+                  { name: dx, type: "int32_t" }, { name: dy, type: "int32_t" },
+                  { name: dw, type: "int32_t" }, { name: dh, type: "int32_t" }, { name: filter, type: "int32_t" } ],
+          doc: "把引擎帧画进 SDL_Renderer 后台缓冲（**不 present**；filter 0=linear 1=nearest -1=自动）——给「游戏帧 → ImGui pass → 单次 present」两阶段呈现用" }
       - { fn: mq_platform_present_ui, returns: int,
           args: [ { name: p, type: "mq_platform*" } ],
-          doc: "把 SDL_Renderer 上的额外绘制（ImGui 面板）提交到窗口（再做一次 SDL_RenderPresent）" }
+          doc: "提交 renderer 后台缓冲：抓帧（MAQUE_CAPTURE）→ 单次 SDL_RenderPresent（游戏帧与 ImGui 面板一起上屏）" }
       - { fn: mq_platform_capture_now, returns: int,
           args: [ { name: p, type: "mq_platform*" } ],
-          doc: "立即把当前窗口内容按 MAQUE_CAPTURE 写一帧 PPM（用于在面板绘制之后抓图验证）" }
+          doc: "立即把 renderer 后台缓冲按 MAQUE_CAPTURE 写一帧 PPM（用于在面板绘制之后抓图验证）" }
       - { fn: mq_platform_ensure_renderer, returns: "void*",
           args: [ { name: p, type: "mq_platform*" } ],
           doc: "立即创建并返回 SDL_Renderer*（供 ImGui 官方后端在首帧前初始化；无窗口/off 返回 NULL）" }
       - { fn: mq_platform_sdl_renderer, returns: "void*",
           args: [ { name: p, type: "mq_platform*" } ],
-          doc: "原生 SDL_Renderer*（仅 MAQUE_PRESENT=accelerated 时非空）" }
+          doc: "原生 SDL_Renderer*（呈现通道；ensure_renderer 之后非空）" }
       - { fn: mq_platform_set_safe_area, returns: void,
           args: [ { name: p, type: "mq_platform*" }, { name: l, type: "float" }, { name: t, type: "float" },
                   { name: r, type: "float" }, { name: b, type: "float" } ],
@@ -133,11 +159,18 @@
                   { name: w, type: "int32_t" }, { name: h, type: "int32_t" },
                   { name: dx, type: "int32_t" }, { name: dy, type: "int32_t" },
                   { name: dw, type: "int32_t" }, { name: dh, type: "int32_t" }, { name: filter, type: "int32_t" } ],
-          doc: "把帧按**指定目标矩形**呈现（画布策略决定缩放/留边；filter 0=linear 1=nearest -1=自动）" }
+          doc: "把帧按**指定目标矩形**画进 renderer 并立即 present（单阶段便捷接口；画布策略决定缩放/留边；filter 0=linear 1=nearest -1=自动）" }
       - { fn: mq_platform_simulate_pointer, returns: int,
           args: [ { name: p, type: "mq_platform*" }, { name: kind, type: "int32_t" },
                   { name: x, type: "float" }, { name: y, type: "float" }, { name: button, type: "int32_t" } ],
           doc: "测试/CI 用：把指针事件压入 SDL 事件队列（kind: 0=move 1=down 2=up）——覆盖 OS→SDL→引擎的真实翻译路径" }
+      # ---- 进程/工具（docs/29 Tracy：F3 启动 profiler GUI；基础数据 CPU/内存）----
+      - { fn: mq_platform_spawn_detached, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: exe, type: "const char*" }, { name: args, type: "const char*" } ],
+          doc: "以**分离进程**启动外部程序（F3 启动 Tracy profiler GUI 等）；args 为命令行参数串（可空）。0=成功；进程起来后与引擎无生命周期绑定" }
+      - { fn: mq_platform_process_stats, returns: int,
+          args: [ { name: p, type: "mq_platform*" }, { name: out_cpu_percent, type: "double*" }, { name: out_mem_bytes, type: "uint64_t*" } ],
+          doc: "当前进程自上次调用以来的 CPU 占用百分比（0..100×核数）与常驻内存字节数（Tracy 基础数据；任一输出指针可空）" }
       - { fn: mq_platform_destroy, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }
       - { fn: mq_platform_has_window, returns: "int", args: [ { name: p, type: "mq_platform*" } ] }
       - { fn: mq_platform_pump, returns: "void", args: [ { name: p, type: "mq_platform*" } ] }

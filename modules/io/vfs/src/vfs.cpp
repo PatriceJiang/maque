@@ -4,6 +4,7 @@
  * 本文件只做"挂载点 → 后端"的路由，不掺协议细节。
  * 确定性：读路径不做隐式异步；URL 挂载带会话内容缓存（同一 URL 只抓一次）；哈希为纯函数。 */
 #include "vfs_internal.h"
+#include "core/tracy/mq_tracy.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -103,6 +104,7 @@ int mq_vfs_exists(mq_vfs* vfs, const char* path) {
 }
 
 int mq_vfs_read(mq_vfs* vfs, const char* path, void** out, size_t* out_size) {
+    MQ_TRACY_ZONE_N(vfs, "read");
     if (out) *out = nullptr;
     if (out_size) *out_size = 0;
     if (!vfs || !path) return MQ_VFS_ERR_ARG;

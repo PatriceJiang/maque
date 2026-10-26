@@ -1,0 +1,38 @@
+{
+  "title": "audio_e2e",
+  "script": "audio_e2e.js",
+  "width": 320,
+  "height": 240,
+  "seed": 7,
+  "entities": [
+    {
+      "name": "root",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 120 }
+      ]
+    },
+    {
+      "name": "speaker",
+      "components": [
+        { "type": "scn.Transform2D", "x": 300, "y": 120 },
+        { "type": "audio.AudioSource", "clip": "beep.wav", "autoplay": true,
+          "loop": false, "volume": 0.5 }
+      ]
+    },
+    {
+      "name": "speaker_ogg",
+      "components": [
+        { "type": "scn.Transform2D", "x": 100, "y": 120 },
+        { "type": "audio.AudioSource", "clip": "beep.ogg", "autoplay": true,
+          "volume": 0.3 }
+      ]
+    },
+    {
+      "name": "listener",
+      "components": [
+        { "type": "scn.Transform2D", "x": 0, "y": 0 },
+        { "type": "audio.AudioListener", "active": true }
+      ]
+    }
+  ]
+}

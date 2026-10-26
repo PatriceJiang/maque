@@ -10,6 +10,11 @@ if(SDL2_INCLUDE_DIR AND SDL2_LIBRARY)
         "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
     target_link_libraries(maque_platform PUBLIC "${SDL2_LIBRARY}")
     set_target_properties(maque_platform PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+    target_link_libraries(maque_platform PUBLIC maque::tracy)   # Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时是空接口）
+    if(WIN32)
+        # 进程常驻内存（mq_platform_process_stats，Tracy 基础数据）
+        target_link_libraries(maque_platform PUBLIC psapi)
+    endif()
 
     if(MAQUE_BUILD_TESTS)
         add_executable(maque_platform_test tests/platform_test.cpp)

@@ -19,13 +19,42 @@ namespace maque::gfx {
 
 #define SV(x) WGPUStringView { (x), WGPU_STRLEN }
 
+/* ---- 3D/PBR 记录布局守卫（plans/18-pbr-3d.md §2.2）----
+ * 这些记录**不含指针**，尺寸与平台/字长无关 → 可直接 static_assert；
+ * C 定义与 WGSL uniform 布局逐字段对齐（M2/M3 的 PBR shader 按此打包）。 */
+static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32");
+static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
+static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
+static_assert(sizeof(mq_renderer_pbr_material) == 92, "mq_renderer_pbr_material 布局漂移（5 贴图槽）");
+static_assert(sizeof(mq_renderer_environment) == 48, "mq_renderer_environment 布局漂移");
+static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
+static_assert(sizeof(mq_renderer_draw3d) == 96, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64）");
+static_assert(offsetof(mq_renderer_draw3d, model) == 8, "draw3d.model 必须在 offset 8");
+static_assert(offsetof(mq_renderer_draw3d, sort_key) == 88, "draw3d.sort_key 必须在 offset 88");
+
 /* 内建 shader 来自**资产** assets/builtin/shaders/<name>/（不是内联字面量）：
  * 配置期由 cmake/shader_pack.cmake + tools/shader_pack.js 打包成压缩源码（zstd），
  * 这里按名字取（未编入的 shader → NULL，见 MAQUE_SHADER_<NAME>=OFF 的剔除开关）。
  *   solid    —— 无贴图图元（矩形/圆/方块）
  *   textured —— 贴图图元（图集子矩形 + 采样器），uniform 布局与 solid 一致（48B）
  *   mesh     —— 网格图元（逐顶点 pos/uv/color + 索引），uniform 布局同上（48B） */
-struct Texture { WGPUTexture tex = nullptr; WGPUTextureView view = nullptr; };
+struct Texture {
+    WGPUTexture tex = nullptr;
+    WGPUTextureView view = nullptr;
+    WGPUSampler sampler = nullptr;                        /* create_texture2 的 filter/wrap（M3 PBR 采样用） */
+    WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm;
+};
+
+/* 3D 网格（plans/18-pbr-3d.md）：create_mesh 一次性上传，GPU 常驻。
+ * 规范顶点布局 layout=0：pos.xyz / normal.xyz / tangent.xyzw / uv.xy（stride 48B）。 */
+struct MeshGpu {
+    WGPUBuffer vbo = nullptr;
+    WGPUBuffer ibo = nullptr;
+    uint32_t index_count = 0;
+    int32_t vertex_layout = 0;
+    float bounds_min[3] = { 0, 0, 0 };
+    float bounds_max[3] = { 0, 0, 0 };
+};
 
 struct Device {
     WGPUInstance instance = nullptr;
@@ -44,7 +73,14 @@ struct Device {
     WGPUSampler samplerNearest = nullptr;      /* 字形/像素画：nearest */
     std::string backend;
     std::vector<Texture*> textures;
+    /* ---- 直接呈现（plans/18-pbr-3d.md §4.1）：attach_window 成功后非空（M1 使用）---- */
+    WGPUSurface surface = nullptr;
+    WGPUTextureFormat surfaceFormat = WGPUTextureFormat_RGBA8Unorm;
+    int32_t surfaceWidth = 0, surfaceHeight = 0;
+    /* ---- 3D GPU 资源（plans/18-pbr-3d.md §4.3）---- */
+    std::vector<MeshGpu*> meshes;
 };
+
 
 template <class P>
 static bool poll(WGPUInstance inst, P ready, int timeout_ms = 20000) {
@@ -228,12 +264,20 @@ static Device* create_device(std::string* out_backend) {
 
 static void destroy_device(Device* dv) {
     if (!dv) return;
+    for (auto* m : dv->meshes) {
+        if (!m) continue;
+        if (m->vbo) wgpuBufferRelease(m->vbo);
+        if (m->ibo) wgpuBufferRelease(m->ibo);
+        delete m;
+    }
     for (auto* t : dv->textures) {
         if (!t) continue;                  /* 已由 destroy_texture 释放（槽位保留但指针为空） */
+        if (t->sampler) wgpuSamplerRelease(t->sampler);
         if (t->view) wgpuTextureViewRelease(t->view);
         if (t->tex) wgpuTextureRelease(t->tex);
         delete t;
     }
+    if (dv->surface) wgpuSurfaceRelease(dv->surface);
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
     if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
     for (int b = 0; b < 4; ++b)
@@ -340,7 +384,191 @@ static void r_destroy_texture(void* self, int32_t id) {
 
 static int32_t r_has_texture(void* self, int32_t id) {
     auto* dv = (Device*)self;
-    return (dv && id >= 0 && id < (int)dv->textures.size()) ? 1 : 0;
+    if (!dv || id < 0 || id >= (int)dv->textures.size()) return 0;
+    return dv->textures[(size_t)id] != nullptr ? 1 : 0;   /* 已 destroy 的槽位 → 0（调用方据此丢弃悬空句柄） */
+}
+
+/* ============================================================================
+ * 3D / PBR 资源层（plans/18-pbr-3d.md §2.2/§4）
+ *   M0（本次）：纹理 v2（sRGB/mip/wrap/filter）、网格上传、caps —— 只加资源，不改 2D 路径。
+ *   M1+：attach_window（wgpu surface 直呈）、3D pass、PBR 管线。
+ * 未实现的方法**明确返回非 0**（不静默降级），调用方（runtime）在帧边界按返回值回退。
+ * ========================================================================== */
+static WGPUTextureFormat format_from_code(int32_t code) {
+    switch (code) {
+    case 1: return WGPUTextureFormat_RGBA8UnormSrgb;
+    case 2: return WGPUTextureFormat_RGBA16Float;
+    default: return WGPUTextureFormat_RGBA8Unorm;
+    }
+}
+static int32_t format_code(WGPUTextureFormat f) {
+    switch (f) {
+    case WGPUTextureFormat_BGRA8Unorm: return 1;
+    case WGPUTextureFormat_RGBA8UnormSrgb: return 2;
+    case WGPUTextureFormat_BGRA8UnormSrgb: return 3;
+    case WGPUTextureFormat_RGBA16Float: return 4;
+    default: return 0;
+    }
+}
+static WGPUAddressMode wrap_from_code(int32_t c) {
+    switch (c) {
+    case 1: return WGPUAddressMode_ClampToEdge;
+    case 2: return WGPUAddressMode_MirrorRepeat;
+    default: return WGPUAddressMode_Repeat;
+    }
+}
+
+/* 适配器与目标能力：提取/资产 cook 据此选择（不做静默降级）。 */
+static int32_t r_caps(void* self, mq_renderer_caps* out) {
+    auto* dv = (Device*)self;
+    if (!dv || !out) return -1;
+    std::memset(out, 0, sizeof *out);
+    WGPULimits lim = WGPU_LIMITS_INIT;
+    if (wgpuAdapterGetLimits(dv->adapter, &lim) == WGPUStatus_Success)
+        out->max_texture_size = (int32_t)lim.maxTextureDimension2D;
+    if (out->max_texture_size <= 0) out->max_texture_size = 2048;
+    out->max_lights = 64;      /* MVP：1 方向光 + 点/聚光数组上限（M4 起按设备调） */
+    out->max_samples = 1;      /* M5 MSAA 后再按设备能力填 */
+    out->target_format = dv->surface ? format_code(dv->surfaceFormat) : 0;
+    out->depth_format = 0;     /* Depth32Float（M2） */
+    out->direct_present = dv->surface ? 1 : 0;
+    out->hdr = 0;              /* M3 用 RGBA16F 之前按设备特性探测 */
+    return 0;
+}
+
+/* 纹理 v2：RGBA8 / RGBA8_SRGB + mip 链 + per-texture sampler（PBR 用）。
+ * data 里各 mip 紧排（mip0..mipN）；data 为空 = 只建资源（M3 里给 runtime 上传用）。 */
+static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, int32_t* out_id) {
+    auto* dv = (Device*)self;
+    if (!dv || !d || !out_id) return -1;
+    if (d->width <= 0 || d->height <= 0) return -2;
+    if (d->kind != 0) return -3;                                  /* cube/equirect：M4 */
+    if (d->pixel_format != 0 && d->pixel_format != 1) return -4;  /* M0 只 RGBA8 / RGBA8_SRGB */
+    int32_t max_mips = 1;
+    for (uint32_t s = (uint32_t)std::max(d->width, d->height); s > 1; s >>= 1) ++max_mips;
+    int32_t mips = d->mip_levels <= 0 ? 1 : d->mip_levels;
+    if (mips > max_mips) mips = max_mips;
+
+    auto* t = new Texture();
+    t->format = format_from_code(d->pixel_format);
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)d->width, (uint32_t)d->height, 1 };
+    td.format = t->format;
+    td.mipLevelCount = (uint32_t)mips;
+    td.sampleCount = 1;
+    t->tex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!t->tex) { delete t; return -5; }
+    t->view = wgpuTextureCreateView(t->tex, nullptr);
+
+    const bool nearest = d->filter == 0;
+    WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
+    sd.addressModeU = wrap_from_code(d->wrap_u);
+    sd.addressModeV = wrap_from_code(d->wrap_v);
+    sd.addressModeW = sd.addressModeU;
+    sd.magFilter = nearest ? WGPUFilterMode_Nearest : WGPUFilterMode_Linear;
+    sd.minFilter = sd.magFilter;
+    sd.mipmapFilter = nearest ? WGPUMipmapFilterMode_Nearest : WGPUMipmapFilterMode_Linear;
+    sd.maxAnisotropy = 1;
+    t->sampler = wgpuDeviceCreateSampler(dv->device, &sd);
+
+    if (d->data && d->data_size) {
+        const uint8_t* p = d->data;
+        size_t remain = (size_t)d->data_size;
+        uint32_t w = (uint32_t)d->width, h = (uint32_t)d->height;
+        for (int32_t lvl = 0; lvl < mips; ++lvl) {
+            const size_t bytes = (size_t)w * h * 4;
+            if (remain < bytes) break;                    /* 数据不足：后续 mip 留空（不越界） */
+            WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+            dst.texture = t->tex;
+            dst.mipLevel = (uint32_t)lvl;
+            dst.aspect = WGPUTextureAspect_All;
+            WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
+            layout.bytesPerRow = w * 4;
+            layout.rowsPerImage = h;
+            WGPUExtent3D sz = WGPUExtent3D{ w, h, 1 };
+            wgpuQueueWriteTexture(dv->queue, &dst, p, bytes, &layout, &sz);
+            p += bytes;
+            remain -= bytes;
+            w = std::max(1u, w >> 1);
+            h = std::max(1u, h >> 1);
+        }
+    }
+    dv->textures.push_back(t);
+    *out_id = (int32_t)dv->textures.size() - 1;
+    return 0;
+}
+
+/* 3D 网格上传（GPU 常驻）：layout 0 = pos3/normal3/tangent4/uv2（stride 48B）。 */
+static int32_t r_create_mesh(void* self, const mq_renderer_mesh_gpu* data, int32_t* out_id) {
+    auto* dv = (Device*)self;
+    if (!dv || !data || !out_id) return -1;
+    if (!data->vertices || data->vertex_bytes == 0) return -2;
+    if (!data->indices || data->index_count == 0) return -3;
+    if (data->vertex_layout != 0 || data->vertex_stride != 48) return -4;   /* 仅 PBR 规范布局（M2） */
+
+    auto* m = new MeshGpu();
+    {
+        WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        bd.usage = WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst;
+        bd.size = data->vertex_bytes;
+        m->vbo = wgpuDeviceCreateBuffer(dv->device, &bd);
+        if (!m->vbo) { delete m; return -5; }
+        wgpuQueueWriteBuffer(dv->queue, m->vbo, 0, data->vertices, (size_t)data->vertex_bytes);
+    }
+    {
+        const uint64_t bytes = (uint64_t)data->index_count * sizeof(uint32_t);
+        WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        bd.usage = WGPUBufferUsage_Index | WGPUBufferUsage_CopyDst;
+        bd.size = bytes;
+        m->ibo = wgpuDeviceCreateBuffer(dv->device, &bd);
+        if (!m->ibo) { wgpuBufferRelease(m->vbo); delete m; return -6; }
+        wgpuQueueWriteBuffer(dv->queue, m->ibo, 0, data->indices, (size_t)bytes);
+    }
+    m->index_count = data->index_count;
+    m->vertex_layout = data->vertex_layout;
+    std::memcpy(m->bounds_min, data->bounds_min, sizeof m->bounds_min);
+    std::memcpy(m->bounds_max, data->bounds_max, sizeof m->bounds_max);
+    dv->meshes.push_back(m);
+    *out_id = (int32_t)dv->meshes.size() - 1;
+    return 0;
+}
+static void r_destroy_mesh(void* self, int32_t id) {
+    auto* dv = (Device*)self;
+    if (!dv || id < 0 || id >= (int)dv->meshes.size()) return;
+    MeshGpu* m = dv->meshes[(size_t)id];
+    if (m) {
+        if (m->vbo) wgpuBufferRelease(m->vbo);
+        if (m->ibo) wgpuBufferRelease(m->ibo);
+        delete m;
+    }
+    dv->meshes[(size_t)id] = nullptr;   /* 槽位保留（id 稳定） */
+}
+
+/* M1：用 mq_renderer_window 建 wgpu surface + swapchain（直接呈现）。 */
+static int32_t r_attach_window(void* self, const mq_renderer_window* win) {
+    (void)self; (void)win;
+    std::print(stderr, "gfx: attach_window 未实现（M1：wgpu surface 直接呈现；plans/18-pbr-3d.md）\n");
+    return -1;
+}
+static int32_t r_resize_surface(void* self, int32_t w, int32_t h) {
+    (void)self; (void)w; (void)h;
+    return -1;
+}
+/* M2/M3：3D pass + PBR。M0 明确返回未实现（runtime 不调用；不静默）。 */
+static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* frame) {
+    (void)self; (void)frame;
+    static bool warned = false;
+    if (!warned) {
+        warned = true;
+        std::print(stderr, "gfx: render_frame3d 未实现（M2/M3：深度 pass + PBR；plans/18-pbr-3d.md）\n");
+    }
+    return -1;
+}
+static int32_t r_present(void* self) {
+    (void)self;
+    return -1;
 }
 
 /* 网格顶点（与 assets/builtin/shaders/mesh/shader.wgsl 的顶点布局严格一致：stride 48B）
@@ -514,9 +742,12 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
     }
 
     WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
-    { WGPURenderPassEncoder pass = nullptr; begin_pass(enc, view, WGPULoadOp_Clear, bg, &pass);
-      wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass); }
-
+    /* **一个视图一个 render pass**：所有绘制命令（图元 + 网格）都在同一 pass 内完成。
+     * 旧实现是"每条命令一个 pass"（all.scn 有 331 条命令 → 331 次 Begin/EndRenderPass
+     * + 331 个 bind group），wgpu 的 pass 建立/校验开销让 render 多花约 6-8ms（实测）。
+     * 同一 pass 内本来就允许改 pipeline / bind group / scissor / vertex buffer，
+     * 命令顺序不变 → 绘制结果与旧实现完全一致；bind group 按"同纹理+同采样"缓存复用。 */
+    bool cleared = false;
     for (uint32_t vi = 0; vi < nviews; ++vi) {
         const mq_renderer_view& v = views[vi];
         const float zoom = v.zoom > 0.0F ? v.zoom : 1.0F;
@@ -528,6 +759,21 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         float uni[12] = { (float)TW, (float)TH, v.vx, v.vy, v.cx, v.cy, zoom, v.rot, v.pan, v.eye, 0.0F, 0.0F };
         WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
         wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, sizeof uni);
+
+        WGPURenderPassEncoder pass = nullptr;
+        begin_pass(enc, view, cleared ? WGPULoadOp_Load : WGPULoadOp_Clear, bg, &pass);
+        cleared = true;
+
+        /* 每视图 bind group 缓存（uniform buffer 每视图一个，所以不能跨视图复用）。
+         * key: 0 = solid；1<<32 | tex<<1 | nearest = textured；2<<32 | tex = mesh。 */
+        struct BgEntry { uint64_t key; WGPUBindGroup bg; };
+        std::vector<BgEntry> bg_cache;
+        auto find_bg = [&](uint64_t key) -> WGPUBindGroup {
+            for (const BgEntry& e : bg_cache)
+                if (e.key == key) return e.bg;
+            return nullptr;
+        };
+
         for (const Cmd& c : cmds) {
             /* ---- 网格批次 ---- */
             if (c.kind == 1) {
@@ -560,15 +806,18 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                     continue;
                 }
                 if (!has_tex) continue;          /* 无页纹理 → 无法采样（不静默画错颜色） */
-                WGPUBindGroupEntry be[3] = {};
-                be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
-                be[1].binding = 1; be[1].textureView = dv->textures[c.texture]->view;
-                be[2].binding = 2; be[2].sampler = dv->sampler;
-                WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-                bgd.layout = dv->meshBgl; bgd.entryCount = 3; bgd.entries = be;
-                WGPUBindGroup bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
-                WGPURenderPassEncoder pass = nullptr;
-                begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
+                const uint64_t bkey = (uint64_t{ 2 } << 32) | (uint32_t)c.texture;
+                WGPUBindGroup bgroup = find_bg(bkey);
+                if (!bgroup) {
+                    WGPUBindGroupEntry be[3] = {};
+                    be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
+                    be[1].binding = 1; be[1].textureView = dv->textures[c.texture]->view;
+                    be[2].binding = 2; be[2].sampler = dv->sampler;
+                    WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+                    bgd.layout = dv->meshBgl; bgd.entryCount = 3; bgd.entries = be;
+                    bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+                    bg_cache.push_back({ bkey, bgroup });
+                }
                 /* 裁剪矩形：`clip_w/h > 0` 时用网格自带的（ImGui 的 scissor），否则用整个视图。
                  * 两者取**交集**并夹到视图内，避免越界（WebGPU 要求 scissor 在附件范围内）。 */
                 int sx = v.vx, sy = v.vy, sw = v.vw, sh = v.vh;
@@ -578,7 +827,7 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                     const int x0 = std::max(sx, cx), y0 = std::max(sy, cy);
                     const int x1 = std::min(sx + sw, cx + cw), y1 = std::min(sy + sh, cy + ch);
                     sx = x0; sy = y0; sw = std::max(0, x1 - x0); sh = std::max(0, y1 - y0);
-                    if (sw <= 0 || sh <= 0) { wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass); wgpuBindGroupRelease(bgroup); continue; }
+                    if (sw <= 0 || sh <= 0) continue;
                 }
                 wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)sx, (uint32_t)sy, (uint32_t)sw, (uint32_t)sh);
                 wgpuRenderPassEncoderSetPipeline(pass, pipe);
@@ -588,8 +837,6 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                                                     (uint64_t)midx.size() * sizeof(uint32_t));
                 wgpuRenderPassEncoderDrawIndexed(pass, m.index_count, 1, ibase[c.first],
                                                  (int32_t)(vbase[c.first] + m.base_vertex), 0);
-                wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
-                wgpuBindGroupRelease(bgroup);
                 continue;
             }
             /* ---- 图元批次（实例化矩形/圆） ---- */
@@ -607,30 +854,35 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 }
                 continue;
             }
-            WGPUBindGroupEntry be[4] = {};
-            be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
-            be[1].binding = 1; be[1].buffer = ibuf;
-            be[1].size = (uint64_t)insts.size() * sizeof(GpuInst);
-            WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            WGPUBindGroup bgroup = nullptr;
-            if (textured) {
-                be[2].binding = 2; be[2].textureView = dv->textures[c.texture]->view;
-                be[3].binding = 3;
-                be[3].sampler = c.nearest && dv->samplerNearest ? dv->samplerNearest : dv->sampler;
-                bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
-            } else {
-                bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
+            const uint64_t bkey = textured
+                ? ((uint64_t{ 1 } << 32) | ((uint64_t)(uint32_t)c.texture << 1) | (c.nearest ? 1ull : 0ull))
+                : 0ull;
+            WGPUBindGroup bgroup = find_bg(bkey);
+            if (!bgroup) {
+                WGPUBindGroupEntry be[4] = {};
+                be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
+                be[1].binding = 1; be[1].buffer = ibuf;
+                be[1].size = (uint64_t)insts.size() * sizeof(GpuInst);
+                WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+                if (textured) {
+                    be[2].binding = 2; be[2].textureView = dv->textures[c.texture]->view;
+                    be[3].binding = 3;
+                    be[3].sampler = c.nearest && dv->samplerNearest ? dv->samplerNearest : dv->sampler;
+                    bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
+                } else {
+                    bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
+                }
+                bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+                bg_cache.push_back({ bkey, bgroup });
             }
-            bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
-            WGPURenderPassEncoder pass = nullptr;
-            begin_pass(enc, view, WGPULoadOp_Load, bg, &pass);
             wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
             wgpuRenderPassEncoderSetPipeline(pass, textured ? dv->texPipeline : dv->solidPipeline);
             wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
             wgpuRenderPassEncoderDraw(pass, 6, c.count, 0, c.first);
-            wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
-            wgpuBindGroupRelease(bgroup);
         }
+        wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
+        for (const BgEntry& e : bg_cache)
+            if (e.bg) wgpuBindGroupRelease(e.bg);
         wgpuBufferRelease(ubuf);
     }
 
@@ -688,7 +940,10 @@ static int32_t r_render_mesh_views(void* self, int32_t TW, int32_t TH,
 
 static const mq_renderer_v1 g_api = {
     { (uint32_t)sizeof(mq_renderer_v1), MQ_ABI_VERSION },
-    r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views, r_render_mesh_views
+    r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views, r_render_mesh_views,
+    /* ---- 3D / 直接呈现（追加；plans/18-pbr-3d.md）---- */
+    r_attach_window, r_resize_surface, r_caps, r_create_texture2, r_create_mesh, r_destroy_mesh,
+    r_render_frame3d, r_present
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {

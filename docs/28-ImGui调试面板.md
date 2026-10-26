@@ -5,58 +5,104 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
 
 ## 能做什么
 
-- **默认 stats 面板**（左上角，所有窗口程序都有）：FPS、逻辑耗时、渲染耗时、
-  drawcall、三角形、帧号、渲染目标尺寸。
+- **stats 面板**（左上角；**默认不显示**，按 F2 或 `MAQUE_IMGUI=1` 打开）：FPS、逻辑耗时、渲染耗时、
+  drawcall、三角形、帧号、渲染目标尺寸。**可拖动、可缩放**（标题栏拖动，边框缩放）。
+  面板的**字号与尺寸 = 屏幕分辨率派生的固定值**（见下"固定 UI 度量"）：
+  同一块屏上不随游戏窗口/场景分辨率变化，换屏/换 DPI 缩放才变。
 - **脚本可用的控件 API**：`imgui_begin/end`、文本、按钮、复选框、单选、滑块、拖动、
   输入框、下拉、列表、树、折叠头、标签页、表格、菜单、进度条、颜色、tooltip、
   plot（引擎侧环形缓冲）、内建演示窗口（`imgui_show_demo`）等 **74 个函数**
   （声明在 `schema/runtime/host.yaml`，实现见 `modules/runtime/src/runtime.cpp` 的
   `namespace host`）。
-- **中文**：复用 `scenes/fonts/` 的 TTF，图集一次烘两档字号（26px 主字体 + 15px 小字体）。
-- **F2 开关**：引擎级热键（沿检测，按住不会连续切换）；`MAQUE_IMGUI=1/0` 可强制开关。
+- **中文**：复用 `scenes/fonts/` 的 TTF，图集一次烘两档字号（标题 + 正文，默认 20/15 逻辑像素）。
+- **F2 开关**：引擎级热键（沿检测，按住不会连续切换）；`MAQUE_IMGUI=1/0` 设定**初始**开关。
+
+### 固定 UI 度量（屏幕分辨率 → 字号/面板大小）
+
+| 量 | 规则 | 默认（1080p 逻辑屏） |
+|---|---|---|
+| UI 缩放 `ui_scale` | `clamp(屏幕逻辑高 / 1080, 0.7, 2.5)`；`MAQUE_IMGUI_SCALE` 覆盖 | 1080p→1.0；1707x1067（2560x1600@150%）→0.99 |
+| 正文字号 | 15 逻辑像素 × ui_scale；`MAQUE_IMGUI_FONT_SIZE` 覆盖 | 15 |
+| 标题字号 | 正文 × 4/3（只大一档，不再 26px:15px 压过内容） | 20 |
+| stats 面板 | 固定 正文×16 × 正文×10（显示空间像素），窗口放不下时才缩到 85%/75% | 237×148 |
+
+"逻辑像素"= 应用可见的桌面坐标（已含 OS DPI 缩放；`mq_platform_screen_size` 读
+`SDL_GetDisplayBounds`）。所以 4K/1080p/HiDPI 上视觉大小一致，**窗口大小不参与**。
 
 ## 结构
 
 | 层 | 内容 |
 |---|---|
-| `modules/ui/imgui` | ImGui 上下文/帧/控件 C ABI（`mq_imgui.h`、`mq_imgui_widgets.h`）、字体图集、官方 SDL_Renderer 后端（实验） |
+| `modules/ui/imgui` | ImGui 上下文/帧/控件 C ABI（`mq_imgui.h`、`mq_imgui_widgets.h`）、字体图集、官方 SDL_Renderer 后端 |
 | `modules/runtime` | 生命周期、帧时序、输入转发与隔离、stats 计量、脚本绑定实现 |
+| `modules/platform` | **唯一呈现通道 = SDL_Renderer**：游戏帧 → 后台缓冲 →（ImGui pass）→ 单次 present |
 | `schema/runtime/host.yaml` | 74 个 `imgui_*` 脚本函数声明（codegen 生成绑定） |
 
-## 帧时序
+## 帧时序（窗口模式）
 
-1. 引擎采样输入 → `imgui_input_feed`（窗口像素）
-2. `imgui_frame_begin`：初始化（惰性）、上传字体图集、`ImGui::NewFrame`、画 **stats**
-3. 脚本 `update()`：脚本画自己的面板
-4. 引擎渲染所有图层（含 ui pass）
-5. `imgui_extract`：ImGui draw data → 引擎 mesh 图元（`layer = MQ_IMGUI_LAYER = 100`）
-6. present → 窗口
+1. 引擎采样输入 → `imgui_input_feed`（窗口像素坐标）
+2. `imgui_frame_begin`：初始化（惰性）、`ImGui::NewFrame`、画 **stats**
+3. 脚本 `update()`：脚本画自己的面板（这一阶段 ImGui 只是**录制 draw list**，不渲染）
+4. 引擎渲染所有图层到 CPU 像素（wgpu 离屏回读）
+5. **呈现（统一 renderer，只 present 一次）**：
+   1. `mq_platform_draw_rect`：引擎帧 → 流式纹理 → `SDL_Renderer` 后台缓冲；
+   2. `mq_imgui_backend_render`：ImGui 官方后端在**同一后台缓冲**上再画一趟（单独的 render pass）；
+   3. `mq_platform_present_ui`：抓帧（如需）+ `SDL_RenderPresent` → 游戏画面与面板一起上屏。
+6. 无窗口 / `MAQUE_PRESENT=off` → 自研"draw data → mesh 图元"链把面板写进引擎像素缓冲
+   （网格 layer = `MQ_IMGUI_LAYER = 100`，在引擎 UI 的 layer=1 之上）→ `--shot` 里也有面板。
 
-数值上"面板在所有引擎图层之上"，因为 mgui mesh 的 layer 高于引擎 UI 的 layer=1。
+## 已修复的关键问题（勿回退）
 
-## 已知问题（重要）
+1. **「imgui 一开，游戏画面不上屏」**：根因是**呈现通道混用** ——
+   游戏帧走 `SDL_GetWindowSurface + SDL_BlitSurface`，面板却走另一个 `SDL_Renderer`
+   （为官方后端创建）。SDL2 明确规定同一窗口不能混用 window surface 与 renderer：
+   先写进窗口表面的游戏帧被随后的 `SDL_RenderPresent` 覆盖 → 屏幕上只剩面板/黑屏。
+   修复：**所有输出统一走同一个 SDL_Renderer**（游戏帧先画、ImGui 再叠、只 present 一次），
+   不再调用任何 `SDL_GetWindowSurface` 路径。回归：`ctest -R imgui_present_e2e`。
+2. **「stats 拖不动」**：覆盖层当初为规避网格链拖动错位加了 `NoMove|NoResize`。
+   现在窗口模式下面板走官方后端（拖动/缩放是官方行为，坐标天然同步）→ 恢复普通窗口。
+   网格链模式（headless）没有鼠标交互，不受影响。
+3. **ImGui 官方后端初始化时序**：必须**先**拿到 `SDL_Renderer`（`mq_platform_ensure_renderer`）、
+   **先声明** `mq_imgui_set_backend_mode(1)`、**再** `mq_imgui_init*()`。顺序反了会命中
+   `Build() before RendererHasTextures` 断言。
+4. **自研网格链索引必须是命令内 0 基**；gfx 绘制时会再加 `baseVertex`，
+   宿主**不能**自己再加偏移（否则三角形拿到别的图元顶点 → 画面糊成一片）。
+5. **显示空间两种模式不可混用**：官方后端 = **窗口设备像素空间**（`io.DisplaySize = 绘制区
+   设备像素`，鼠标逻辑坐标 × content_scale 换算）；网格链 = **设计/目标空间**
+   （脚本按 `screen_w()` 定位）。输入坐标按对应空间喂。
+6. **「stats 标题太大 / 有些窗口又偏小」**：旧实现的字体倍率是
+   `ps = win_w / TW`（窗口/渲染目标比）→ 窗口大小、场景分辨率、视图数都会改变面板大小。
+   修复：字号/样式/面板尺寸改为**屏幕分辨率派生的固定 UI 度量**
+   （`imgui_resolve_metrics`：`ui_scale = 屏幕逻辑高/1080`，正文 15、标题 = 正文×4/3，
+   面板 = 正文×16 × 正文×10），**窗口大小不再参与**；换屏/换 DPI 缩放才变。
+   回归：`imgui_present_e2e` 用两种窗口尺寸断言度量逐字一致。
 
-1. **面板不可拖动**：覆盖层窗口当前用 `NoMove|NoResize`。
-   原因：自研"draw data → mesh 图元"链在拖动时会出现**残影/内容不跟随**
-   （实际现象：拖动后旧内容留在原处、阶梯状三角形）。
-2. **官方 SDL_Renderer 后端路径画不出面板**：`MAQUE_PRESENT=accelerated` 时后端初始化成功、
-   无断言，但面板不出现在窗口（已加"面板绘制后再 present"仍无效，根因待查）。
-   因此**默认呈现保持 software**，面板走自研网格链（可见、可截图验证）。
-3. **面板不参与 `--shot` 之外的抓图**：`--shot` 截的是引擎像素缓冲（含面板）；
-   `MAQUE_CAPTURE` 抓窗口表面（software 模式下含面板）。
+## 已知限制
+
+| 项 | 说明 |
+|---|---|
+| `PushFont(size)` 改字号 | 静态图集（网格链模式）只烘两档；官方后端模式走动态图集无此限制 |
+| 弹窗/样式/拖放/剪贴板/IME | 未实现 |
+| HiDPI 窗口模糊 | SDL 进程未开 DPI 感知时窗口会被系统整体放大（面板坐标与引擎帧同一缩放，非 ImGui 问题；见待办 3） |
 
 ## 使用
 
 ```powershell
-# 默认启动就有 stats（窗口模式）
+# 默认不显示；窗口模式下按 F2 或 MAQUE_IMGUI=1 打开 stats
 ./build-win/samples/player/maque_player.exe samples/spine/spine.scn
 
-# 强制开/关
+# 启动时开/关（运行中 F2 仍可切换）
 MAQUE_IMGUI=1 ./build-win/samples/player/maque_player.exe <scene>
 MAQUE_IMGUI=0 ./build-win/samples/player/maque_player.exe <scene>
 
-# 字号（设计像素）
-MAQUE_IMGUI_FONT_SIZE=32 ./build-win/samples/player/maque_player.exe <scene>
+# 字号（正文字号，逻辑像素；默认 15，标题自动 = 正文 × 4/3）
+MAQUE_IMGUI_FONT_SIZE=15 ./build-win/samples/player/maque_player.exe <scene>
+
+# UI 缩放覆盖（相对 1080p 的倍率；默认 = 屏幕逻辑高/1080，固定不随窗口变）
+MAQUE_IMGUI_SCALE=1.5 ./build-win/samples/player/maque_player.exe <scene>
+
+# 呈现后端（默认 Windows accelerated / 其它平台 software；两者都支持面板）
+MAQUE_PRESENT=software ./build-win/samples/player/maque_player.exe <scene>
 ```
 
 脚本里画自己的面板：
@@ -84,59 +130,35 @@ if (imgui_enabled()) {
 
 - `ctest -R imgui`：模块单测（字体图集非空、命令几何、坐标映射、参数校验）。
 - `ctest -R imgui_toggle_e2e`：F2 开关的沿检测（单次/按住/两次/反复开关/像素可见）。
-- `ctest -R shot_e2e`：`--shot` 截图路径。
+- `ctest -R imgui_present_e2e`：**修复回归** —— 真实窗口抓帧断言
+  ① imgui 开启时游戏区域逐像素可见且不被面板扰动；② 合成指针拖动 stats 后
+  面板确实换位置、游戏仍可见；③ `MAQUE_PRESENT=software` 回退路径同样可见；
+  ④ 800x650 与 1200x900 两种窗口的 `ui scale/title/body/panel` 度量**逐字一致**
+  （固定 UI 度量回归）。
+  合成指针用 `MAQUE_IMGUI_POINTER="frame:x:y:type[;...]"`（type 0=move 1=down 2=up）
+  压进本帧设备事件队列 —— 与真实鼠标同一条路径（`iframe → imgui_input_feed → ImGui`）。
+- `ctest -R shot_e2e`：`--shot` 截图路径（网格链模式下面板进截图）。
 
-## 现状快照（2026-10-22）
-
-记录当时的实现程度与实测结论，便于后续接手。基线提交见 `git log`（本文件所在提交附近）。
+## 现状快照（2026-10-22，统一呈现 + 固定 UI 度量）
 
 ### 已可用（有实测证据）
 
 | 项 | 状态 | 证据 |
 |---|---|---|
-| `modules/ui/imgui` 模块（上下文/帧/控件 C ABI） | ✅ | `ctest -R imgui`（34 项断言：图集非空、命令几何、坐标映射、参数校验） |
+| 游戏帧 + 面板同屏、只 present 一次 | ✅ | `imgui_present_e2e`（游戏区逐像素一致 + 游戏区颜色 >5000 种）；真实窗口截屏 |
+| stats 面板**可拖动/缩放** | ✅ | `imgui_present_e2e`（拖动后旧位置差异 0、新位置差异 >2 万）；真实鼠标拖拽截屏 |
+| **UI 度量固定（屏幕分辨率派生）** | ✅ | `imgui_present_e2e`：400x300 / 800x650 / 1200x900 / 2 视图下 `panel=237x148` 等度量一致 |
+| `modules/ui/imgui` 模块（上下文/帧/控件 C ABI） | ✅ | `ctest -R imgui` |
 | 74 个 `imgui_*` 脚本函数 | ✅ | schema → codegen → runtime 实现一致；`bindings_e2e` 通过 |
-| 中文字体（TTF + 两档字号 26px/15px） | ✅ | `--shot` 截图里中文正常、stats 用小字号 |
-| 默认 stats 面板（左上角） | ✅ | `--shot` 截图：FPS / logic / render / draws / tris / frame / target 七项 |
-| F2 开关（沿检测） | ✅ | `imgui_toggle_e2e`（单次/按住/两次/反复开关/像素可见） |
-| 输入隔离（面板吃输入时清空本帧设备事件） | ⚠️ 已实现未实测 | 代码路径 + `imgui_want_mouse/keyboard` |
-| 绘制在引擎所有图层之上 | ✅ | 面板网格 layer=100（引擎 UI = 1） |
-
-### 不可用 / 有限制（全部为实测）
-
-| 项 | 现象 | 定位 |
-|---|---|---|
-| **面板拖动** | 拖动后内容不跟随/留残影（阶梯状三角形） | 自研"draw data → mesh 图元"链；覆盖层暂用 `NoMove\|NoResize` 禁用拖动 |
-| **加速呈现 + 官方 SDL_Renderer 后端** | 后端初始化成功、无断言，但面板**不出现在窗口**；加"面板绘制后再 present"仍无效 | 双重 present/renderer 状态冲突，根因未定位 |
-| **默认呈现** | 为规避上一条，Windows 默认仍是 `software`（面板走网格链，可见但不可拖） | platform `present_mode` 默认值 |
-| `PushFont(size)` 改字号 | 静态图集只烘两档；推其它尺寸会取不到字形 → 空白 | 已改为"图集内两档 + push 字体指针" |
-| 弹窗/样式/拖放/剪贴板/IME | 未实现 | 见待办 |
-
-### 关键结论（避免重复踩坑）
-
-1. ImGui 1.92+ 的**动态图集**要求后端实现完整的 `WantCreate/WantUpdates` 状态机；
-   本集成改用**静态图集**（`Build()` + `GetTexDataAsRGBA32()` + `SetTexID`），
-   但因此**不能**再启用官方动态后端（否则命中
-   `Build() before RendererHasTextures` 断言）。
-2. 自研网格链的索引必须是**命令内 0 基**；gfx 绘制时会再加 `baseVertex`，
-   宿主**不能**自己再加偏移（否则三角形拿到别的图元顶点 → 画面糊成一片）。
-3. ImGui 显示空间：网格链模式 = **设计/目标空间**（脚本按 `screen_w()` 定位）；
-   官方后端模式 = **窗口像素空间**（两者不可混用）。
-4. `ImGuiWindowFlags_AlwaysAutoResize` + 每帧 `SetNextWindowPos` + 可拖动
-   → "窗口动了、文字不跟"；要么固定位置，要么只首帧定位一次。
-5. 官方后端必须在**第一帧之前**初始化（renderer 提前创建），否则先走静态图集再切后端会崩。
-
-### 下一步（按优先级）
-
-1. **统一呈现**：游戏帧与面板画到同一 renderer，只 `present` 一次
-   → 同时解决"加速路径面板不可见"与"网格链拖动残影"，然后恢复面板可拖动。
-2. 面板可拖动后，补 e2e：拖动/缩放后像素仍正确。
-3. 样式 API（`push_style_color/var`）、弹窗、拖放、剪贴板/IME。
-4. `MAQUE_STATS=0` 开关 stats 面板。
+| 中文字体（TTF + 标题/正文两档字号，默认 20/15） | ✅ | `--shot` 截图里中文正常、stats 用正文字号 |
+| stats 面板（左上角，237x148；F2 / `MAQUE_IMGUI=1` 打开） | ✅ | FPS / logic / render / draws / tris / frame / target 七项 |
+| F2 开关（沿检测） | ✅ | `imgui_toggle_e2e` |
+| `MAQUE_PRESENT=software/accelerated` 都能显示面板 | ✅ | `imgui_present_e2e`（software 抓帧） |
+| 输入隔离（面板吃输入时清空本帧设备事件） | ✅ | `imgui_present_e2e` 拖动用合成指针走 `imgui_input_feed` |
 
 ## 待办
 
-1. 修"面板可拖动"：统一呈现结构（渲染游戏帧与面板到同一 renderer 后只 present 一次），
-   然后恢复覆盖层可拖动、并让 accelerated 路径也能显示面板。
-2. 多字号/主题样式 API（`push_style_color/var`）、弹窗（popup/modal）、拖放、剪贴板/IME。
-3. 把 stats 面板做成可选开关（`MAQUE_STATS=0`）。
+1. 样式 API（`push_style_color/var`）、弹窗（popup/modal）、拖放、剪贴板/IME。
+2. `MAQUE_STATS=0` 开关 stats 面板。
+3. HiDPI：SDL 窗口 DPI 感知（`SDL_HINT_WINDOWS_DPI_AWARENESS=permonitorv2`）+ 面板按帧缓冲比例渲染
+   （当前窗口被系统放大时窗口与文字会糊；UI 度量本身已按逻辑分辨率算好）。

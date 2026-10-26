@@ -16,6 +16,7 @@ typedef struct mq_platform mq_platform;
 typedef struct mq_platform_pointer_event mq_platform_pointer_event;
 typedef struct mq_platform_key_event mq_platform_key_event;
 typedef struct mq_input_frame mq_input_frame;
+typedef struct mq_platform_native_window mq_platform_native_window;
 
 typedef enum mq_platform_pointer_type {
     MQ_PLATFORM_POINTER_MOUSE = 0,
@@ -99,36 +100,53 @@ typedef struct mq_input_frame {
     int height;
 } mq_input_frame;
 
+typedef struct mq_platform_native_window {
+    int32_t kind;
+    void* display;
+    void* handle;
+    void* extra;
+} mq_platform_native_window;
+
 #define MQ_PLATFORM_MOD_SHIFT (1u << 0)
 #define MQ_PLATFORM_MOD_CTRL (1u << 1)
 #define MQ_PLATFORM_MOD_ALT (1u << 2)
 #define MQ_PLATFORM_MOD_META (1u << 3)
 
 mq_platform* mq_platform_create(const char* title, int w, int h);
-/* 把 RGBA8 帧呈现到窗口（无窗口/dummy 驱动安全空操作；MAQUE_PRESENT=off|software|accelerated） */
+/* 把 RGBA8 帧等比居中呈现到窗口（无窗口/off 安全空操作；MAQUE_PRESENT=off|software|accelerated） */
 int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h);
 /* 绘制区尺寸（设备像素；HiDPI 下大于窗口逻辑尺寸） */
 void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h);
 /* 显示器内容缩放（绘制区/窗口；1.0 = 非 HiDPI） */
 float mq_platform_content_scale(mq_platform* p);
+/* 应用可见的桌面**逻辑**尺寸（已含 OS DPI 缩放；无窗口/无显示 → 0）——ImGui 调试面板按它算一次性的固定 UI 缩放 */
+void mq_platform_screen_size(mq_platform* p, int32_t* out_w, int32_t* out_h);
 /* 自上次调用以来窗口是否更换显示器/尺寸变化（画布需重解析） */
 int mq_platform_display_changed(mq_platform* p);
 /* 原生 SDL_Window*（无窗口时 NULL） */
 void* mq_platform_sdl_window(mq_platform* p);
-/* 把 SDL_Renderer 上的额外绘制（ImGui 面板）提交到窗口（再做一次 SDL_RenderPresent） */
+/* 取原生窗口句柄（kind/display/handle；plans/18 §2.4）；1=可用 0=不可用 */
+int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out);
+/* 把引擎帧画进 SDL_Renderer 后台缓冲（**不 present**；filter 0=linear 1=nearest -1=自动）——给「游戏帧 → ImGui pass → 单次 present」两阶段呈现用 */
+int mq_platform_draw_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h, int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter);
+/* 提交 renderer 后台缓冲：抓帧（MAQUE_CAPTURE）→ 单次 SDL_RenderPresent（游戏帧与 ImGui 面板一起上屏） */
 int mq_platform_present_ui(mq_platform* p);
-/* 立即把当前窗口内容按 MAQUE_CAPTURE 写一帧 PPM（用于在面板绘制之后抓图验证） */
+/* 立即把 renderer 后台缓冲按 MAQUE_CAPTURE 写一帧 PPM（用于在面板绘制之后抓图验证） */
 int mq_platform_capture_now(mq_platform* p);
 /* 立即创建并返回 SDL_Renderer*（供 ImGui 官方后端在首帧前初始化；无窗口/off 返回 NULL） */
 void* mq_platform_ensure_renderer(mq_platform* p);
-/* 原生 SDL_Renderer*（仅 MAQUE_PRESENT=accelerated 时非空） */
+/* 原生 SDL_Renderer*（呈现通道；ensure_renderer 之后非空） */
 void* mq_platform_sdl_renderer(mq_platform* p);
 /* 安全区内缩（设备像素，刘海/圆角）；画布解析时扣除 */
 void mq_platform_set_safe_area(mq_platform* p, float l, float t, float r, float b);
-/* 把帧按**指定目标矩形**呈现（画布策略决定缩放/留边；filter 0=linear 1=nearest -1=自动） */
+/* 把帧按**指定目标矩形**画进 renderer 并立即 present（单阶段便捷接口；画布策略决定缩放/留边；filter 0=linear 1=nearest -1=自动） */
 int mq_platform_present_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h, int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter);
 /* 测试/CI 用：把指针事件压入 SDL 事件队列（kind: 0=move 1=down 2=up）——覆盖 OS→SDL→引擎的真实翻译路径 */
 int mq_platform_simulate_pointer(mq_platform* p, int32_t kind, float x, float y, int32_t button);
+/* 以**分离进程**启动外部程序（F3 启动 Tracy profiler GUI 等）；args 为命令行参数串（可空）。0=成功；进程起来后与引擎无生命周期绑定 */
+int mq_platform_spawn_detached(mq_platform* p, const char* exe, const char* args);
+/* 当前进程自上次调用以来的 CPU 占用百分比（0..100×核数）与常驻内存字节数（Tracy 基础数据；任一输出指针可空） */
+int mq_platform_process_stats(mq_platform* p, double* out_cpu_percent, uint64_t* out_mem_bytes);
 void mq_platform_destroy(mq_platform* p);
 int mq_platform_has_window(mq_platform* p);
 void mq_platform_pump(mq_platform* p);

@@ -119,13 +119,20 @@ engine.wasm（引擎本体）──→ 启动 VFS ──→ 拉取 game 包 (htt
 
 ## 呈现（窗口输出）
 
-- 平台层提供 `mq_platform_present(p, rgba, w, h)`：把宿主渲染出的 RGBA8 帧送到窗口。
-- **默认软件路径**：`SDL_GetWindowSurface` + 等比 `SDL_BlitScaled`（居中留边）→ 不初始化 GL/EGL。
-  选择原因：渲染插件的 wgpu 自身使用 EGL，若 SDL 也建 GL 上下文，多实例/多窗口下会 `EGL BadAccess`。
-  `MAQUE_PRESENT=accelerated` 可切到 `SDL_Renderer`（GPU blit），`off` 关闭。
+- 平台层的**唯一呈现通道 = `SDL_Renderer`**：`mq_platform_draw_rect` 把宿主渲染出的 RGBA8 帧
+  上传为流式纹理并画进 renderer 后台缓冲；`mq_platform_present_ui`（+ 可选抓帧）只
+  `SDL_RenderPresent` 一次。`mq_platform_present_rect` / `mq_platform_present` 是"画 + 立即 present"
+  的单阶段便捷包装。给 ImGui 面板留的扩展点是：**画完游戏帧、present 之前**在同一后台缓冲上再画一趟
+  （ImGui 官方 SDL_Renderer 后端），这样游戏画面与调试面板天然同屏、同步、只交换一次。
+  ⚠️ **不能再用 `SDL_GetWindowSurface`**：SDL2 不允许同一窗口混用 window surface 与 renderer。
+  历史上混用导致"ImGui 一开、游戏画面就不上屏"（游戏帧写窗口表面后被 renderer present 覆盖）。
+- **后端选择**：默认 Windows = `accelerated`（SDL_Renderer = Direct3D，不建 GL/EGL上下文，
+  不与渲染插件的 wgpu 争用）；其它平台默认 `software`（`SDL_RENDERER_SOFTWARE`，同样不碰 GL/EGL）。
+  `MAQUE_PRESENT=off|software|accelerated` 可覆盖；加速后端创建失败自动 software 回退，再失败则关闭呈现。
 - **世界尺寸 ≠ 窗口尺寸**：`MAQUE_WINDOW` 只改窗口；渲染目标与世界仍是场景尺寸（`scenes/*.scn` 的
   `width/height`），窗口内按 `min(win/world)` 等比缩放并居中留边；宿主输入把手标坐标映射回世界坐标
   （与 UI 命中测试同一规则）。
 - **无窗口/dummy 驱动**（`MAQUE_HEADLESS=1`）时呈现是安全空操作，headless/CI 不受影响。
-- 抓帧：`MAQUE_CAPTURE=<前缀>` 从窗口表面回读前 3 帧 PPM（`tests/window_present_e2e.sh` 用它做
-  真实窗口路径的像素级断言）。
+- 抓帧：`MAQUE_CAPTURE=<前缀>` 从 **renderer 后台缓冲**（present 之前 = 用户即将看到的整帧，
+  含游戏画面与 ImGui 面板）回读前 3 帧 PPM（`tests/window_present_e2e.sh` /
+  `tests/imgui_present_e2e.sh` 用它做真实窗口路径的像素级断言）。

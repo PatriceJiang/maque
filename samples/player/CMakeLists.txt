@@ -34,6 +34,31 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/shot_e2e")
 endif()
 
+# Tracy 性能分析端到端（docs/29）：默认不启动客户端；MAQUE_TRACY=1 时 tracy-capture 能抓到
+# 帧/zone；F3 启动客户端并拉起 profiler 进程（CI 用 capture 二进制当假 profiler）。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME tracy_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/tracy_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/samples"
+             "${CMAKE_CURRENT_BINARY_DIR}/tracy_e2e")
+    set_tests_properties(tracy_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 音频端到端（docs/30）：脚本 audio_* → VFS 解码 → 混音器逻辑时钟/状态机；
+# null 后端确定性断言 + SDL dummy 驱动设备路径。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME audio_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/audio_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/audio/audio_e2e.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/audio_e2e")
+    set_tests_properties(audio_e2e PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_test(NAME audio_control_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/audio_control_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/audio/audio_control.scn")
+    set_tests_properties(audio_control_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # ImGui 面板开关（F2）端到端：沿检测（单次/按住/两次）+ 反复开关不崩 + 面板确实画进像素缓冲。
 # headless 无真实键盘 → 用 MAQUE_SIM_KEY_AT 注入按下事件（与真实键盘同一条路径）。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
@@ -42,6 +67,16 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/samples"
              "${CMAKE_CURRENT_BINARY_DIR}/imgui_toggle_e2e")
     set_tests_properties(imgui_toggle_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# ImGui 窗口呈现端到端（docs/28）：① imgui 开启时游戏画面仍上屏（统一 renderer、单次 present）
+# ② stats 可拖动（合成指针走真实输入路径）；③ UI 度量固定（换窗口大小不变）；④ software 回退可见。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME imgui_present_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/imgui_present_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/samples"
+             "${CMAKE_CURRENT_BINARY_DIR}/imgui_present_e2e")
+    set_tests_properties(imgui_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
 # 输入/UI/快照/回放端到端（docs/10 §3/§5、docs/19 §9）：注入 → 分发 → 生成 → 回放一致

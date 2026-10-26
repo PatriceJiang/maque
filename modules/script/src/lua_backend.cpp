@@ -11,6 +11,7 @@
  *     同一 seed → 同一序列 → 可回放）；
  *   · GC 停用自动步进，改为**帧边界**固定步数（frame_boundary），避免 GC 时机影响确定性。 */
 #include "vm_base.h"
+#include "core/tracy/mq_tracy.h"
 
 #if defined(MAQUE_HAVE_LUA)
 extern "C" {
@@ -213,6 +214,8 @@ bool push_function(LuaVm* vm, const char* fn) {
 }
 
 int call_impl(mq_script_vm* vm, const char* fn, int argc, const double* argv, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "lua.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
     if (ret) *ret = 0.0;
     LuaVm* v = S(vm);
     if (!v || !v->L || !fn) return 1;
@@ -226,6 +229,8 @@ int call_impl(mq_script_vm* vm, const char* fn, int argc, const double* argv, do
 
 int call_with_str(mq_script_vm* vm, const char* fn, int n, const double* nums,
                   const char* s, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "lua.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
     if (ret) *ret = 0.0;
     LuaVm* v = S(vm);
     if (!v || !v->L || !fn) return 1;
@@ -336,6 +341,7 @@ int register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds
 }
 
 int eval(mq_script_vm* vm, const char* src, const char* filename) {
+    MQ_TRACY_ZONE_N(script, "lua.eval");
     LuaVm* v = S(vm);
     if (!v || !v->L || !src) return 1;
     const std::string chunk = filename ? std::string("@") + filename : "@<script>";
@@ -393,6 +399,7 @@ void set_rng(mq_script_vm* vm, mq_script_rng_fn fn, void* user) {
 }
 
 void gc(mq_script_vm* vm) {
+    MQ_TRACY_ZONE_N(script, "lua.gc");
     LuaVm* v = S(vm);
     if (v && v->L) lua_gc(v->L, LUA_GCCOLLECT, 0);
 }

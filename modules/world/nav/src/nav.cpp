@@ -2,6 +2,7 @@
  * 确定性要点：① 节点按格子索引升序的稳定优先队列；② 浮点只用普通运算（无 fast-math）；
  * ③ 不读墙钟/不用 std::random；④ 所有状态在实例内。 */
 #include "nav/mq_nav.h"
+#include "core/tracy/mq_tracy.h"
 
 #include <cmath>
 #include <queue>
@@ -117,6 +118,7 @@ int mq_nav_is_walkable_at(mq_nav_world* w, float wx, float wy) {
 /* A*：稳定优先队列 + 升序索引；给出容器（path_xy 无容器时仅返回点数）。 */
 int mq_nav_find_path(mq_nav_world* w, float sx, float sy, float tx, float ty,
                      float* out_xy, uint32_t out_cap, uint32_t* out_count, uint32_t* out_needed) {
+    MQ_TRACY_ZONE_N(nav, "find_path");
     if (out_count) *out_count = 0;
     if (out_needed) *out_needed = 0;
     if (!w) return MQ_NAV_ERR_ARG;
@@ -250,6 +252,7 @@ uint32_t mq_nav_smooth(mq_nav_world* w, float* xy, uint32_t count) {
 int mq_nav_step_towards(mq_nav_world* w, float* px, float* py, const float* path_xy,
                         uint32_t count, uint32_t* index, float speed, float dt,
                         float arrive_dist) {
+    MQ_TRACY_ZONE_N(nav, "step");
     if (!w || !px || !py || !path_xy || !index) return -1;
     if (*index >= count) return 1;                        // 已到终点
     const float tx = path_xy[*index * 2];

@@ -63,32 +63,34 @@
 
 | 字段 | 类型 | 默认 | attrs | 说明 |
 |------|------|------|-------|------|
-| `clip` | `asset_ref<AudioClip>` | 空 | `ref: AudioClip` | 音频裁剪资产（`asset_ref`） |
-| `bus` | `asset_ref<AudioBus>` | 空 | `ref: AudioBus` | 混音总线；空 → 默认总线 |
+| `clip` | `string` | 空 | — | VFS 路径（相对场景目录）；组件引用用路径而非 `asset_ref`（`27 §6`） |
+| `bus` | `string` | 空 | — | 总线名；空 → `sfx`（AudioBus 资产 P2） |
 | `autoplay` | `bool` | `false` | — | `on_enter_tree` 后自动播放 |
 | `loop` | `bool` | `false` | — | 循环播放 |
 | `volume` | `float` | `1.0` | `range:[0,4]`,`unit:linear` | 线性增益 |
 | `pitch` | `float` | `1.0` | `range:[0.01,4]` | 音高（变速）；回放确定性见下 |
 | `panning` | `PanningMode` | `Stereo2D` | — | 空间化模式 |
 | `attenuation` | `AttenuationModel` | `InverseDistance` | — | 音量衰减模型（`Spatial3D` 时生效） |
-| `curve` | `asset_ref<AudioCurve>` | 空 | `ref: AudioCurve` | `CustomCurve` 时的衰减曲线 |
+| `curve` | `string` | 空 | — | 曲线路径（P2；当前忽略） |
 | `min_distance` | `float` | `1.0` | `unit:m` | 衰减起点 |
 | `max_distance` | `float` | `50.0` | `unit:m` | 衰减终点 |
 | `doppler` | `float` | `0.0` | `range:[0,2]` | 多普勒系数（`0`=关） |
-| `_state` | `AudioPlayState` | `Stopped` | `transient` | 运行期播放状态 |
-| `_playhead` | `float` | `0.0` | `transient`,`unit:s` | 播放进度（**sim time** 推进，非墙钟） |
-| `_voice` | `audio_voice_handle` | `0` | `transient` | 后端混音声部句柄 |
+| `state` | `AudioPlayState` | `Stopped` | `transient` | 运行期播放状态（引擎回写） |
+| `playhead` | `float` | `0.0` | `transient`,`unit:s` | 播放进度（**sim time** 推进，非墙钟；引擎回写） |
+| `voice` | `uint64_t` | `0` | `transient` | 后端混音 voice 句柄（引擎回写） |
 
 - **句柄 / 引用**：
-  - `clip` / `bus` / `curve`：`asset_ref<T>`（强引用，控制资产存活），序列化为稳定路径。
-  - `_voice`：`audio_voice_handle`，**transient**——后端（如 miniaudio）的声部/voice id，实例销毁或停止时释放，**不进序列化**。
+  - `clip` / `bus` / `curve`：**路径/名字**（不是 `asset_ref`；`docs/27 §6`）。运行时按路径经 VFS 解码，
+    解码缓存按路径；voice 持 `shared_ptr` 保证资产在播放期间不释放。
+  - `voice`：**transient**——混音器 voice 句柄，slot 复用时 generation 变化；**不进序列化**。
 - **生命周期 / 确定性**：
-  - `autoplay` 在 `on_enter_tree` 后、且资产就绪时触发；播放进度 `_playhead` 以**模拟 dt 的 sim time** 推进（`10 D3`），**不读墙钟**。
+  - `autoplay` 在实体装配后的首个 `audio.step` 触发；`playhead` 以**模拟 dt 的 sim time** 推进（`10 D3`），**不读墙钟**。
+  - 每帧把 `state/playhead` 回写 transient（**不是模拟字段**）；`voice=0` + `autoplay` 是唯一的自动启动条件。
   - **音频是否影响模拟**：**否**。音频只读消费 `Transform3D` 等模拟状态并输出采样；**不写回**组件，不进模拟 checksum，**排除出回放确定性**（`15 §4` 类比 GPU 粒子）。
   - 允许音频后端（重采样、HRTF、混音线程）**非确定**；但 `_playhead`/`_state` 的**逻辑推进确定**，保证同一输入下脚本可见的播放态一致。
 - **序列化**：
-  - **序列化**：`clip`/`bus`/`curve`（稳定路径）、`autoplay`…`doppler` 等配置、可选 `_playhead`（`loop` 时保存以便续播）。
-  - **transient**：`_state`（可选重算）、`_voice`——运行时重建。
+  - **序列化**：`clip`/`bus`/`curve`（路径）、`autoplay`…`doppler` 等配置。
+  - **transient**：`state`/`playhead`/`voice`——运行时重建/回写。
 
 ---
 
@@ -207,8 +209,8 @@
 | 组件 | 必须配对 | 全局/单例 | 参与模拟 | 主要 transient |
 |------|----------|-----------|----------|----------------|
 | `Script` | 无（行为入口） | 否（可多个） | 是 | `_vm` / `_expose_defs` |
-| `AudioSource` | `Transform3D`（时空化时） | 否 | **否**（只读消费） | `_voice` / `_playhead` |
-| `AudioListener` | `Transform3D` | **是**（每 view 唯一） | **否** | `_listener` |
+| `AudioSource` | `Transform2D`（空间化时；`Transform3D` P2） | 否 | **否**（只读消费） | `voice` / `playhead` / `state` |
+| `AudioListener` | `Transform2D`（位置 + 节点 angle） | **是**（取首个 active） | **否** | —（引擎内部 listener） |
 | `NavAgent` | `Transform3D` + `NavMesh` | 否 | 是（`physics_process`） | `_path` / `_query` |
 | `NavMesh` | 几何源 / `data` 资产 | 否（每域唯一） | 烘焙离线，查询只读 | `_accel` |
 

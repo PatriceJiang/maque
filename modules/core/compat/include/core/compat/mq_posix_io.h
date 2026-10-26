@@ -37,6 +37,7 @@ using ssize_t = long long;
 inline constexpr int kOpenReadOnly      = _O_RDONLY | _O_BINARY;
 inline constexpr int kOpenWriteCreate   = _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY;
 #else
+using ::ssize_t;                  /* POSIX 已有；引入本命名空间，使调用代码跨平台同一份 */
 inline constexpr int kOpenReadOnly      = O_RDONLY;
 inline constexpr int kOpenWriteCreate   = O_WRONLY | O_CREAT | O_TRUNC;
 #endif

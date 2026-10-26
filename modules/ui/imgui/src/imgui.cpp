@@ -9,6 +9,7 @@
  * 这样面板按窗口像素排版（UI 大小不随画布缩放变化），但落点仍与引擎图元同一空间。
  */
 #include "ui/mq_imgui.h"
+#include "core/tracy/mq_tracy.h"
 
 #include "imgui.h"
 
@@ -30,7 +31,6 @@ namespace {
 
 bool g_ready = false;
 bool g_trace = false;                  // MAQUE_IMGUI_TRACE=1：打印每帧命令几何（排障用）
-float g_font_size = 0.0F;
 float g_pixel_scale = 1.0F;
 uint64_t g_font_tex = 0;
 uint32_t g_font_gen = 0;
@@ -84,10 +84,14 @@ void adopt_font_texture() {
 extern "C" {
 
 int mq_imgui_init(float font_size, float pixel_scale) {
-    return mq_imgui_init_with_font(nullptr, font_size, pixel_scale);
+    return mq_imgui_init_with_fonts(nullptr, font_size, 0.0F, pixel_scale);
 }
 
 int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_scale) {
+    return mq_imgui_init_with_fonts(ttf_path, font_size, 0.0F, pixel_scale);
+}
+
+int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_size, float pixel_scale) {
     if (g_ready) return 0;
     g_trace = std::getenv("MAQUE_IMGUI_TRACE") != nullptr;
     IMGUI_CHECKVERSION();
@@ -100,35 +104,40 @@ int mq_imgui_init_with_font(const char *ttf_path, float font_size, float pixel_s
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-    g_font_size = font_size > 0.0F ? font_size : 0.0F;
+    /* 字号（逻辑像素；标题 / 正文两档）与 UI 缩放（样式尺寸一并缩放）。
+     * 这样"屏幕分辨率决定 UI 大小、窗口大小不参与"——同一块屏上外观固定。 */
+    const float title_px = title_size > 0.0F ? title_size : 15.0F;
+    const float body_px = body_size > 0.0F ? body_size : title_px * 0.78F;
     g_pixel_scale = pixel_scale > 0.0F ? pixel_scale : 1.0F;
+    ImGui::GetStyle().ScaleAllSizes(g_pixel_scale);   // 内边距/间距/标题栏高度/滚动条…
     /* 让字体图集直接用 **RGBA32**：宿主只处理一种纹理格式，引擎的 normal 混合即可正确工作
      *（Alpha8 需要后端自己扩成 RGBA，多一步且易错）。
      * 注：1.93 里这是**公开字段** TexDesiredFormat，不是 Set 方法。 */
     io.Fonts->TexDesiredFormat = ImTextureFormat_RGBA32;
 
-    /* 字体：TTF（含 CJK）+ 常用简体中文范围；没有 TTF 才退默认（只有 ASCII → 中文会是 '?'）。 */
+    /* 字体：TTF（含 CJK）+ 常用简体中文范围；没有 TTF 才退默认（只有 ASCII → 中文会是 '?'）。
+     * 一次烘**两档**：标题（title_px）与正文（body_px），都乘 UI 缩放 → 屏幕像素级清晰。 */
     bool loaded = false;
-    if (ttf_path && *ttf_path && g_font_size > 0.0F) {
+    if (ttf_path && *ttf_path) {
         ImFontConfig cfg;
-        cfg.SizePixels = g_font_size * g_pixel_scale;
+        cfg.SizePixels = title_px * g_pixel_scale;
         /* OverrideGlyphOffset 保持默认；范围取"常用简体中文"（约 2500 字）——够面板文案用，
          * 且图集不会过大（全量 CJK 会到几 MB 图集，没必要）。 */
         cfg.GlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
         if (io.Fonts->AddFontFromFileTTF(ttf_path, cfg.SizePixels, &cfg)) {
             loaded = true;
-            /* 额外烘一档 15px 小字号（静态图集可以一次烘多种字号）——stats 面板用。 */
+            /* 第二档：正文小字号（stats 面板内容用）。**必须也乘 g_pixel_scale** ——
+             * 之前写死 15px，UI 缩放变化时标题跟着变、正文不变 → 比例失衡。 */
             ImFontConfig small_cfg;
-            small_cfg.SizePixels = 15.0F;
+            small_cfg.SizePixels = body_px * g_pixel_scale;
             small_cfg.GlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-            g_small_font = io.Fonts->AddFontFromFileTTF(ttf_path, 15.0F, &small_cfg);
+            g_small_font = io.Fonts->AddFontFromFileTTF(ttf_path, small_cfg.SizePixels, &small_cfg);
         }
     }
-    if (!loaded) {
-        if (g_font_size > 0.0F) io.Fonts->AddFontDefault();
-    }
-    std::print(stderr, "[imgui] font: path='{}' size={:.1f}px → {}\n",
-               ttf_path && *ttf_path ? ttf_path : "(default)", g_font_size,
+    if (!loaded) io.Fonts->AddFontDefault();
+    std::print(stderr, "[imgui] fonts: path='{}' title={:.1f}px body={:.1f}px scale={:.2f} → {}\n",
+               ttf_path && *ttf_path ? ttf_path : "(default)", title_px * g_pixel_scale,
+               body_px * g_pixel_scale, g_pixel_scale,
                loaded ? "TTF(含 CJK 范围)" : "内置默认（仅 ASCII）");
     /* 按 ImGui 1.93 官方后端（imgui_impl_*）的模式：设好 RendererHasTextures 后**由 ImGui
      * 自己构建图集**，后端**不**手动调 Fonts->Build()。
@@ -283,6 +292,7 @@ void mq_imgui_input_focus(int focused) { g_focused = focused != 0; }
 
 int mq_imgui_begin_frame(float show_w, float show_h, float target_w, float target_h,
                          float scale, float off_x, float off_y, float dt, float dpi_scale) {
+    MQ_TRACY_ZONE_N(imgui, "begin_frame");
     if (!g_ready) return 1;
     if (show_w <= 0.0F || show_h <= 0.0F || target_w <= 0.0F || target_h <= 0.0F) return 2;
     g_show_w = show_w; g_show_h = show_h;
@@ -310,6 +320,7 @@ int mq_imgui_begin_frame(float show_w, float show_h, float target_w, float targe
 }
 
 int mq_imgui_end_frame(mq_imgui_frame *out) {
+    MQ_TRACY_ZONE_N(imgui, "end_frame");
     if (!g_ready || !out) return 1;
     ImGui::Render();
 

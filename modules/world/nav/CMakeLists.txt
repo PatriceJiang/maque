@@ -3,6 +3,7 @@ add_library(maque_nav STATIC src/nav.cpp)
 add_library(maque::nav ALIAS maque_nav)
 target_include_directories(maque_nav PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set_target_properties(maque_nav PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(maque_nav PUBLIC maque::tracy)   # Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时是空接口）
 target_compile_options(maque_nav PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-ffp-contract=off>)
 
 if(MAQUE_BUILD_TESTS)

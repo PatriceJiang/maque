@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **273** 个 · 控制面方法 **43** 个 · 事件回调 **10** 个 · 模块 C ABI **25** 个 · 插件接口 **1** 个。
+统计：脚本 API **284** 个 · 控制面方法 **49** 个 · 事件回调 **10** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -31,12 +31,12 @@
 
 | 函数 | 参数 | 返回 | 说明 |
 |------|------|------|------|
-| `storage.get` | key: string | string | ctx |
-| `storage.set` | key: string, value: string | float | ctx |
-| `storage.remove` | key: string | float | ctx |
-| `storage.exists` | key: string | float | ctx |
-| `storage.keys` | — | string | ctx |
-| `storage.info` | — | string | ctx |
+| `storage.get` | key: string | string | ctx · 读键；不存在返回空串（用 exists 区分） |
+| `storage.set` | key: string, value: string | float | ctx · 写键；返回 1/0 |
+| `storage.remove` | key: string | float | ctx · 删键；返回 1/0 |
+| `storage.exists` | key: string | float | ctx · 键是否存在 |
+| `storage.keys` | — | string | ctx · 键列表（JSON 数组字符串） |
+| `storage.info` | — | string | ctx · 自省：JSON {mode, root, ns}（AI/调试） |
 
 ### host（全局，无前缀） · `runtime/host.yaml`
 
@@ -50,16 +50,16 @@
 | `log` | msg: string | void | ctx |
 | `cfg` | path: string | float | ctx |
 | `load_texture` | path: string | float | ctx |
-| `entity_spawn` | — | float | ctx |
-| `entity_set_pos` | id: float, x: float, y: float | void | ctx |
-| `entity_x` | id: float | float | ctx |
-| `entity_y` | id: float | float | ctx |
-| `entity_count` | — | float | ctx |
-| `entity_destroy` | id: float | void | ctx |
-| `entity_name` | id: float | string | ctx |
+| `entity_spawn` | — | float | ctx · 新建节点（返回单调 id）；entity_* 是 node_* 的**扁平别名**（按 id 直接寻址，同一模型） |
+| `entity_set_pos` | id: float, x: float, y: float | void | ctx · 写 Transform 组件（世界坐标）；不要直接改 Entity::world_x/y（那是每帧展平的派生缓存） |
+| `entity_x` | id: float | float | ctx · 读世界坐标（派生缓存；改位置用 entity_set_pos / node_set_position） |
+| `entity_y` | id: float | float | ctx · 读世界坐标（派生缓存；改位置用 entity_set_pos / node_set_position） |
+| `entity_count` | — | float | ctx · 节点总数（树的扁平视图） |
+| `entity_destroy` | id: float | void | ctx · 销毁节点（帧末生效；与 node_destroy 相同） |
+| `entity_name` | id: float | string | ctx · 节点名（空串 = 无/无此 id） |
 | `env` | name: string | string | ctx |
-| `entity_find` | name: string | float | ctx |
-| `entity_valid` | id: float | float | ctx |
+| `entity_find` | name: string | float | ctx · 按名字找节点（返回 id；-1 = 没有） |
+| `entity_valid` | id: float | float | ctx · id 是否仍有效（id 单调递增、永不复用） |
 | `input_x` | — | float | ctx |
 | `input_y` | — | float | ctx |
 | `input_target` | — | float | ctx |
@@ -132,15 +132,15 @@
 | `ui_get_value` | id: float | float | ctx |
 | `ui_set_checked` | id: float, on: float | float | ctx |
 | `ui_get_checked` | id: float | float | ctx |
-| `window_w` | — | float | ctx |
+| `window_w` | — | float | ctx · 绘制区宽（设备像素；HiDPI 下大于 screen_w） |
 | `window_h` | — | float | ctx |
-| `canvas_scale` | — | float | ctx |
+| `canvas_scale` | — | float | ctx · 设计 → 设备 的等比缩放 |
 | `canvas_scale_x` | — | float | ctx |
 | `canvas_scale_y` | — | float | ctx |
-| `canvas_offset_x` | — | float | ctx |
+| `canvas_offset_x` | — | float | ctx · 画布原点的绘制区偏移（留边） |
 | `canvas_offset_y` | — | float | ctx |
-| `canvas_device_scale` | — | float | ctx |
-| `canvas_safe_area` | edge: float | float | ctx |
+| `canvas_device_scale` | — | float | ctx · 显示器内容缩放（HiDPI） |
+| `canvas_safe_area` | edge: float | float | ctx · 安全区内缩（0=左 1=上 2=右 3=下，设备像素） |
 | `ui_set_text` | id: float, text: string | float | ctx |
 | `ui_get_text` | id: float | string | ctx |
 | `ui_text_width` | id: float | float | ctx |
@@ -162,82 +162,82 @@
 | `node_destroy` | id: float | float | ctx |
 | `node_valid` | id: float | float | ctx |
 | `node_find_path` | root: float, path: string | float | ctx |
-| `spine_animation_count` | id: float | float | ctx |
-| `spine_animation_name` | id: float, index: float | string | ctx |
-| `spine_animation_index` | id: float, name: string | float | ctx |
-| `spine_play` | id: float, name: string, loop: float | float | ctx |
-| `spine_current_animation` | id: float | string | ctx |
-| `spine_set_skin` | id: float, name: string | float | ctx |
+| `spine_animation_count` | id: float | float | ctx · 动画个数（无 SpineSkeleton 组件 → 0） |
+| `spine_animation_name` | id: float, index: float | string | ctx · 第 index 个动画名（声明序；越界 → ""） |
+| `spine_animation_index` | id: float, name: string | float | ctx · 动画名 → 声明序下标（不存在 → -1） |
+| `spine_play` | id: float, name: string, loop: float | float | ctx · 播放动画（loop != 0 循环）；成功 0，失败 -1（名字不存在/无实例） |
+| `spine_current_animation` | id: float | string | ctx · track 0 当前动画名（未播放 → ""） |
+| `spine_set_skin` | id: float, name: string | float | ctx · 换皮肤（名字不存在 → -1） |
 | `spine_skin_count` | id: float | float | ctx |
 | `spine_skin_name` | id: float, index: float | string | ctx |
-| `spine_time` | id: float | float | ctx |
-| `spine_set_time` | id: float, t: float | float | ctx |
-| `spine_pages` | id: float | float | ctx |
-| `spine_page_texture` | id: float, index: float | float | ctx |
-| `spine_set_animation` | id: float, track: float, name: string, loop: float | float | ctx |
-| `spine_add_animation` | id: float, track: float, name: string, loop: float, delay: float | float | ctx |
-| `spine_track_count` | id: float | float | ctx |
-| `spine_track_animation` | id: float, track: float | string | ctx |
-| `spine_queue_count` | id: float, track: float | float | ctx |
+| `spine_time` | id: float | float | ctx · track 0 播放头时间（秒） |
+| `spine_set_time` | id: float, t: float | float | ctx · 设置播放头时间（确定性回放/定格用；下一帧 step 生效） |
+| `spine_pages` | id: float | float | ctx · 图集页数（多页图集 = 多次绘制批次） |
+| `spine_page_texture` | id: float, index: float | float | ctx · 第 index 页的引擎纹理句柄（-1 = 无/越界；用于确认纹理真的上传了） |
+| `spine_set_animation` | id: float, track: float, name: string, loop: float | float | ctx · 指定轨播动画（IK: track0=walk、track1=aim）；成功 0，失败 -1 |
+| `spine_add_animation` | id: float, track: float, name: string, loop: float, delay: float | float | ctx · 排队：delay 秒后播（Raptor: track1 gun-grab false 2） |
+| `spine_track_count` | id: float | float | ctx · 有轨条目的轨数 |
+| `spine_track_animation` | id: float, track: float | string | ctx · 该轨当前动画名（空轨 → ""） |
+| `spine_queue_count` | id: float, track: float | float | ctx · 该轨排队中的条目数（addAnimation 之后还剩几个；官方 SkeletonAnimation 的 queue 语义） |
 | `spine_clear_track` | id: float, track: float | float | ctx |
-| `spine_track_time` | id: float, track: float | float | ctx |
-| `spine_set_track_time` | id: float, track: float, t: float | float | ctx |
+| `spine_track_time` | id: float, track: float | float | ctx · 该轨播放头时间（秒）；多轨各自独立推进 |
+| `spine_set_track_time` | id: float, track: float, t: float | float | ctx · 设该轨播放头（设完立刻 step(0) 重算姿势） |
 | `spine_track_time_scale` | id: float, track: float | float | ctx |
 | `spine_set_track_time_scale` | id: float, track: float, scale: float | float | ctx |
-| `spine_time_scale` | id: float | float | ctx |
+| `spine_time_scale` | id: float | float | ctx · AnimationState 全局时间缩放（官方 Coin/Tank 的 setTimeScale(0.3)） |
 | `spine_set_time_scale` | id: float, scale: float | float | ctx |
 | `spine_default_mix` | id: float | float | ctx |
-| `spine_set_default_mix` | id: float, duration: float | float | ctx |
-| `spine_set_mix` | id: float, from: string, to: string, duration: float | float | ctx |
-| `spine_event_count` | id: float | float | ctx |
-| `spine_event_type` | id: float, index: float | float | ctx |
+| `spine_set_default_mix` | id: float, duration: float | float | ctx · 换动画的默认混合时长（官方 C++ 入口 demo: 0.2） |
+| `spine_set_mix` | id: float, from: string, to: string, duration: float | float | ctx · setMix(from,to,duration)（Batching walk→jump 0.2；Separator 0.4） |
+| `spine_event_count` | id: float | float | ctx · 上一次帧边界以来发生的事件数（Spineboy: start/complete/event…） |
+| `spine_event_type` | id: float, index: float | float | ctx · 事件类型：0=start 1=interrupt 2=end 3=complete 4=dispose 5=event（越界 → -1） |
 | `spine_event_track` | id: float, index: float | float | ctx |
 | `spine_event_animation` | id: float, index: float | string | ctx |
-| `spine_event_name` | id: float, index: float | string | ctx |
+| `spine_event_name` | id: float, index: float | string | ctx · 用户事件名（仅 type=5；否则 ""） |
 | `spine_event_int` | id: float, index: float | float | ctx |
 | `spine_event_float` | id: float, index: float | float | ctx |
 | `spine_event_string` | id: float, index: float | string | ctx |
 | `spine_clear_events` | id: float | float | ctx |
 | `spine_bone_count` | id: float | float | ctx |
 | `spine_bone_name` | id: float, index: float | string | ctx |
-| `spine_bone_find` | id: float, name: string | float | ctx |
-| `spine_bone_value` | id: float, index: float, what: float | float | ctx |
-| `spine_bone_set_position` | id: float, index: float, x: float, y: float | float | ctx |
-| `spine_bone_set_world_position` | id: float, index: float, x: float, y: float | float | ctx |
-| `spine_update_world_transform` | id: float | float | ctx |
+| `spine_bone_find` | id: float, name: string | float | ctx · 骨骼名 → 序号（-1 = 无） |
+| `spine_bone_value` | id: float, index: float, what: float | float | ctx · what: 0=局部x 1=局部y 2=世界x 3=世界y（世界坐标 = 骨架子空间、y 向上） |
+| `spine_bone_set_position` | id: float, index: float, x: float, y: float | float | ctx · 设父空间局部位置 |
+| `spine_bone_set_world_position` | id: float, index: float, x: float, y: float | float | ctx · 设世界位置（内部走父骨骼 worldToLocal，与官方 IK demo 同款） |
+| `spine_update_world_transform` | id: float | float | ctx · 只重算世界变换（不 apply 动画）→ 设完骨骼位置后让 IK 链当帧跟随 |
 | `spine_slot_count` | id: float | float | ctx |
 | `spine_slot_name` | id: float, index: float | string | ctx |
-| `spine_slot_index` | id: float, name: string | float | ctx |
-| `spine_slot_attachment` | id: float, index: float | string | ctx |
-| `spine_set_slots_range` | id: float, from: float, to: float | float | ctx |
+| `spine_slot_index` | id: float, name: string | float | ctx · 槽名 → 声明序下标（= 官方 findSlot(name)->getData().getIndex()；-1 = 无） |
+| `spine_slot_attachment` | id: float, index: float | string | ctx · 该槽当前附件名（"" = 空槽） |
+| `spine_set_slots_range` | id: float, from: float, to: float | float | ctx · 只画声明序槽区间 [from,to]（to<0 → 到末尾；from<0 → 不限制）—— Separator demo 的前/后段拆分 |
 | `spine_slots_from` | id: float | float | ctx |
 | `spine_slots_to` | id: float | float | ctx |
-| `spine_set_attachment` | id: float, slot_name: string, attachment_name: string, skin_name: string | float | ctx |
-| `spine_skin_find` | id: float, name: string | float | ctx |
-| `spine_skin_create` | id: float, name: string | float | ctx |
-| `spine_skin_add` | id: float, handle: float, source_skin: string | float | ctx |
-| `spine_set_skin_obj` | id: float, handle: float | float | ctx |
-| `spine_skin_compose` | id: float, names: string | float | ctx |
-| `spine_skin_attachment_count` | id: float, handle: float | float | ctx |
-| `spine_set_two_color` | id: float, on: float | float | ctx |
+| `spine_set_attachment` | id: float, slot_name: string, attachment_name: string, skin_name: string | float | ctx · 按皮肤名取附件设到槽（skin_name 空 → 当前皮肤；attachment_name 空 → 卸下） |
+| `spine_skin_find` | id: float, name: string | float | ctx · 皮肤名 → 声明序下标（-1 = 无） |
+| `spine_skin_create` | id: float, name: string | float | ctx · 新建空皮肤 → 返回**句柄**（>=0；失败 -1）。句柄由引擎持有，切场景/退出时释放 |
+| `spine_skin_add` | id: float, handle: float, source_skin: string | float | ctx · 把骨架里名为 source_skin 的皮肤**并入**句柄（Skin::addSkin；同槽同名后者覆盖）；成功 0 |
+| `spine_set_skin_obj` | id: float, handle: float | float | ctx · 把句柄指向的皮肤设为当前皮肤（Skin* 版 setSkin + 按 setup 姿势复位槽） |
+| `spine_skin_compose` | id: float, names: string | float | ctx · 一步到位：逗号分隔皮肤名 → 合成新皮肤并设为当前（MixAndMatch: skin-base,nose/short,…）；成功 0 |
+| `spine_skin_attachment_count` | id: float, handle: float | float | ctx · 皮肤附件数（handle<0 → 最近一次 create/compose 的那一个；用于断言合成真的合上了） |
+| `spine_set_two_color` | id: float, on: float | float | ctx · 官方 setTwoColorTint 的忠实复刻：**本引擎网格恒定走两色着色路径**（暗色通道始终产出；素材无 dark 时是 (0,0,0,1) → 与关闭逐字节等价），故该开关不改变输出，只为让官方 demo 的调用点有落处（值照存进组件字段） |
 | `spine_ik_count` | id: float | float | ctx |
 | `spine_ik_name` | id: float, index: float | string | ctx |
 | `spine_set_ik_mix` | id: float, index: float, mix: float | float | ctx |
-| `spine_physics_count` | id: float | float | ctx |
+| `spine_physics_count` | id: float | float | ctx · 物理约束个数（celestial-circus 有；普通骨架 0） |
 | `spine_physics_name` | id: float, index: float | string | ctx |
-| `spine_physics_translate` | id: float, x: float, y: float | float | ctx |
+| `spine_physics_translate` | id: float, x: float, y: float | float | ctx · 给所有物理约束一个位移冲量（官方 Physics demo） |
 | `spine_physics_reset` | id: float | float | ctx |
-| `spine_sequence_frames` | id: float, slot: float | float | ctx |
-| `spine_sequence_index` | id: float, slot: float | float | ctx |
-| `spine_sequence_path` | id: float, slot: float | string | ctx |
-| `spine_sequence_value` | id: float, slot: float, what: float | float | ctx |
-| `spine_set_sequence_index` | id: float, slot: float, frame: float | float | ctx |
-| `imgui_ready` | — | float | ctx |
-| `imgui_enabled` | — | float | ctx |
-| `imgui_set_enabled` | on: float | float | ctx |
-| `imgui_begin` | title: string | float | ctx |
+| `spine_sequence_frames` | id: float, slot: float | float | ctx · 序列帧附件的总帧数（0 = 该槽不是序列帧附件） |
+| `spine_sequence_index` | id: float, slot: float | float | ctx · 当前帧下标（-1 = setup 帧） |
+| `spine_sequence_path` | id: float, slot: float | string | ctx · 当前帧路径名（Sequence::getPath） |
+| `spine_sequence_value` | id: float, slot: float, what: float | float | ctx · what: 0=u 1=v 2=u2 3=v2 4=width 5=height 6=setup_index（逐帧不同 → 可断言真的换图了） |
+| `spine_set_sequence_index` | id: float, slot: float, frame: float | float | ctx · 手动定格序列帧下标（-1 = setup 帧） |
+| `imgui_ready` | — | float | ctx · ImGui 是否已初始化 |
+| `imgui_enabled` | — | float | ctx · 面板是否启用（MAQUE_IMGUI=0 可关；默认关） |
+| `imgui_set_enabled` | on: float | float | ctx · 运行时开关面板（关掉后不再占 GPU/输入） |
+| `imgui_begin` | title: string | float | ctx · 开窗口 → 1=可见（须配对 imgui_end） |
 | `imgui_end` | — | void | ctx |
-| `imgui_begin_closed` | title: string, x: float, y: float, w: float, h: float | float | ctx |
+| `imgui_begin_closed` | title: string, x: float, y: float, w: float, h: float | float | ctx · 指定位置/尺寸且默认打开 |
 | `imgui_set_pos` | x: float, y: float | void | ctx |
 | `imgui_set_size` | w: float, h: float | void | ctx |
 | `imgui_same_line` | — | void | ctx |
@@ -268,44 +268,55 @@
 | `imgui_text_colored` | text: string, r: float, g: float, b: float, a: float | void | ctx |
 | `imgui_label_text` | label: string, value: string | void | ctx |
 | `imgui_bullet_text` | text: string | void | ctx |
-| `imgui_button` | label: string | float | ctx |
+| `imgui_button` | label: string | float | ctx · 点击 → 1 |
 | `imgui_small_button` | label: string | float | ctx |
 | `imgui_invisible_button` | id: string, w: float, h: float | float | ctx |
 | `imgui_arrow_button` | id: string, dir: float | float | ctx |
-| `imgui_checkbox` | label: string, value: float | float | ctx |
-| `imgui_radio_button` | label: string, active: float | float | ctx |
-| `imgui_slider_float` | label: string, value: float, min: float, max: float | float | ctx |
-| `imgui_slider_int` | label: string, value: float, min: float, max: float | float | ctx |
-| `imgui_drag_float` | label: string, value: float, speed: float | float | ctx |
+| `imgui_checkbox` | label: string, value: float | float | ctx · 返回新值（0/1） |
+| `imgui_radio_button` | label: string, active: float | float | ctx · 点了且变为选中 → 1 |
+| `imgui_slider_float` | label: string, value: float, min: float, max: float | float | ctx · 返回新值 |
+| `imgui_slider_int` | label: string, value: float, min: float, max: float | float | ctx · 返回新值（整数按 float 传） |
+| `imgui_drag_float` | label: string, value: float, speed: float | float | ctx · 返回新值 |
 | `imgui_drag_int` | label: string, value: float, speed: float | float | ctx |
-| `imgui_input_float` | label: string, value: float | float | ctx |
+| `imgui_input_float` | label: string, value: float | float | ctx · 返回新值（可键入） |
 | `imgui_input_int` | label: string, value: float | float | ctx |
-| `imgui_input_text` | label: string, text: string | string | ctx |
-| `imgui_combo` | label: string, current: float, items: string | float | ctx |
+| `imgui_input_text` | label: string, text: string | string | ctx · 返回当前文本（引擎按 label 维持缓冲） |
+| `imgui_combo` | label: string, current: float, items: string | float | ctx · items 是逗号分隔串；返回选中下标 |
 | `imgui_list_box` | label: string, current: float, items: string | float | ctx |
 | `imgui_selectable` | label: string, selected: float | float | ctx |
 | `imgui_progress_bar` | fraction: float, w: float, h: float, overlay: string | void | ctx |
-| `imgui_plot_value` | id: string, value: float | void | ctx |
-| `imgui_color_edit` | label: string, packed: float | float | ctx |
-| `imgui_tree_node` | label: string | float | ctx |
+| `imgui_plot_value` | id: string, value: float | void | ctx · 把值推进该 id 的环形历史并画折线图（脚本不必自己存数组） |
+| `imgui_color_edit` | label: string, packed: float | float | ctx · packed = r*65536+g*256+b（0..255）；返回新 packed |
+| `imgui_tree_node` | label: string | float | ctx · 展开 → 1（须配 imgui_tree_pop） |
 | `imgui_tree_pop` | — | void | ctx |
-| `imgui_collapsing_header` | label: string | float | ctx |
+| `imgui_collapsing_header` | label: string | float | ctx · 展开 → 1 |
 | `imgui_set_next_item_width` | w: float | void | ctx |
 | `imgui_push_item_width` | w: float | void | ctx |
 | `imgui_pop_item_width` | — | void | ctx |
 | `imgui_push_id` | id: string | void | ctx |
 | `imgui_pop_id` | — | void | ctx |
-| `imgui_tooltip` | text: string | void | ctx |
+| `imgui_tooltip` | text: string | void | ctx · 悬停在本项时显示文本 |
 | `imgui_is_item_hovered` | — | float | ctx |
 | `imgui_is_item_active` | — | float | ctx |
 | `imgui_is_window_hovered` | — | float | ctx |
 | `imgui_set_item_default` | — | void | ctx |
-| `imgui_show_demo` | — | float | ctx |
-| `imgui_want_mouse` | — | float | ctx |
+| `imgui_show_demo` | — | float | ctx · 内建 ImGui 演示窗口（自检用） |
+| `imgui_want_mouse` | — | float | ctx · 1 = ImGui 要吃鼠标 → 世界输入应被阻断 |
 | `imgui_want_keyboard` | — | float | ctx |
-| `imgui_hovered` | — | float | ctx |
-| `imgui_frame` | — | float | ctx |
-| `imgui_last_cmd_count` | — | float | ctx |
+| `audio_enabled` | — | float | ctx · 音频实例是否可用（MAQUE_AUDIO=off 时仍可逻辑播放） |
+| `audio_play` | path: string, volume: float, loop: float, bus: string | double | ctx · 播放（VFS 路径，P0 仅 WAV）；返回 voice，0=失败 |
+| `audio_stop` | voice: double | void | ctx · 停止并释放 voice |
+| `audio_pause` | voice: double, paused: float | void | ctx |
+| `audio_set_volume` | voice: double, volume: float | void | ctx |
+| `audio_set_pitch` | voice: double, pitch: float | void | ctx |
+| `audio_state` | voice: double | float | ctx · 0=停止 1=播放 2=暂停；-1=无效句柄 |
+| `audio_playhead` | voice: double | float | ctx · 逻辑播放进度（秒，模拟时间；与设备是否出声无关） |
+| `audio_set_listener` | x: float, y: float, dir_x: float, dir_y: float | void | ctx |
+| `audio_master_volume` | volume: float | void | ctx |
+| `audio_bus_volume` | bus: string, volume: float | void | ctx |
+| `imgui_hovered` | — | float | ctx · 指针是否落在面板上 |
+| `imgui_frame` | — | float | ctx · 面板已渲染的帧数（自省：证明真的在跑） |
+| `imgui_last_cmd_count` | — | float | ctx · 上一帧导出的绘制命令数（0 = 面板没画东西） |
 
 ## 2. 控制面方法（control_list，AI/MCP）
 
@@ -335,6 +346,12 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Director.pause` | — | — |
 | `Director.resume` | — | — |
 | `Director.status` | — | — |
+| `Audio.info` | — | — |
+| `Audio.voices` | — | — |
+| `Audio.play` | path: string, volume: float, loop: bool, bus: string | string, number, boolean, string |
+| `Audio.stop` | voice: string | string |
+| `Audio.set_master` | volume: float, mute: bool | number, boolean |
+| `Audio.set_bus` | bus: string, volume: float, mute: bool | string, number, boolean |
 | `Storage.info` | — | — |
 | `Storage.list` | — | — |
 | `Storage.get` | key: string | string |
@@ -386,6 +403,17 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float
 - `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
 - `mesh`：vertices: const float*, uvs: const float*, colors: const float*, dark_colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float, z: int32_t
+- `window`：kind: int32_t, display: void*, handle: void*, extra: void*, width: int32_t, height: int32_t
+- `caps`：max_texture_size: int32_t, max_lights: int32_t, max_samples: int32_t, target_format: int32_t, depth_format: int32_t, direct_present: int32_t, hdr: int32_t, reserved: int32_t
+- `texture_desc`：width: int32_t, height: int32_t, pixel_format: int32_t, kind: int32_t, mip_levels: int32_t, filter: int32_t, wrap_u: int32_t, wrap_v: int32_t, data: const uint8_t*, data_size: uint64_t
+- `mesh_gpu`：vertices: const void*, vertex_bytes: uint64_t, vertex_stride: uint32_t, vertex_layout: int32_t, indices: const uint32_t*, index_count: uint32_t, bounds_min: float[3], bounds_max: float[3]
+- `view3d`：view: float[16], proj: float[16], eye: float[3], viewport: float[4], exposure: float, clear_mode: int32_t, clear_color: float[4], layer_mask: int32_t
+- `light`：type: int32_t, pos: float[3], dir: float[3], color: float[3], intensity: float, range: float, inner_cos: float, outer_cos: float, flags: int32_t, shadow_slot: int32_t
+- `pbr_material`：base_color: float[4], emissive: float[3], metallic: float, roughness: float, normal_scale: float, occlusion_strength: float, alpha_cutoff: float, alpha_mode: int32_t, flags: int32_t, textures: int32_t[5], uv_scale: float[2], uv_offset: float[2]
+- `draw3d`：mesh: int32_t, material: int32_t, model: float[16], submesh_first: int32_t, submesh_count: int32_t, flags: int32_t, layer: int32_t, sort_key: uint64_t
+- `environment`：sky_mode: int32_t, sky_color: float[4], sky_texture: int32_t, env_color: float[4], env_texture: int32_t, intensity: float
+- `post`：exposure: float, tonemap: int32_t
+- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, out: uint8_t*, out_size: uint32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -396,6 +424,14 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `has_texture` | self: self, id: int32_t | int32_t |
 | `render_views` | self: self, tw: int32_t, th: int32_t, views: const mq_renderer_view*, nviews: uint32_t, items: const mq_renderer_item*, count: uint32_t, bg: const float*, out: uint8_t*, out_size: uint32_t | int32_t |
 | `render_mesh_views` | self: self, tw: int32_t, th: int32_t, views: const mq_renderer_view*, nviews: uint32_t, items: const mq_renderer_item*, count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, bg: const float*, out: uint8_t*, out_size: uint32_t | int32_t |
+| `attach_window` | self: self, win: const mq_renderer_window* | int32_t |
+| `resize_surface` | self: self, w: int32_t, h: int32_t | int32_t |
+| `caps` | self: self, out: mq_renderer_caps* | int32_t |
+| `create_texture2` | self: self, desc: const mq_renderer_texture_desc*, out_id: int32_t* | int32_t |
+| `create_mesh` | self: self, data: const mq_renderer_mesh_gpu*, out_id: int32_t* | int32_t |
+| `destroy_mesh` | self: self, id: int32_t | void |
+| `render_frame3d` | self: self, frame: const mq_renderer_frame3d* | int32_t |
+| `present` | self: self | int32_t |
 
 ## 5. 模块 C ABI（module_abi）
 
@@ -597,6 +633,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `mq_platform_pointer_event`：pointer_id: uint32_t, type: uint32_t, pointer_type: uint32_t, button: uint32_t, x: float, y: float, dx: float, dy: float, pressure: float, scroll_x: float, scroll_y: float, modifiers: uint32_t
 - `mq_platform_key_event`：key: uint32_t, scancode: uint32_t, modifiers: uint32_t, repeat: uint32_t, down: uint32_t, text: char[16]
 - `mq_input_frame`：quit: int, focused: int, mouse_x: float, mouse_y: float, mouse_down: int, pointers: mq_platform_pointer_event*, pointer_count: uint32_t, pointer_cap: uint32_t, keys: mq_platform_key_event*, key_count: uint32_t, key_cap: uint32_t, resized: int, width: int, height: int
+- `mq_platform_native_window`：kind: int32_t, display: void*, handle: void*, extra: void*
 
 | 函数 | 返回 | 参数 |
 |------|------|------|
@@ -604,8 +641,11 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_platform_present` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t |
 | `mq_platform_drawable_size` | void | p: mq_platform*, out_w: int32_t*, out_h: int32_t* |
 | `mq_platform_content_scale` | float | p: mq_platform* |
+| `mq_platform_screen_size` | void | p: mq_platform*, out_w: int32_t*, out_h: int32_t* |
 | `mq_platform_display_changed` | int | p: mq_platform* |
 | `mq_platform_sdl_window` | void* | p: mq_platform* |
+| `mq_platform_get_native_window` | int | p: mq_platform*, out: mq_platform_native_window* |
+| `mq_platform_draw_rect` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t, dx: int32_t, dy: int32_t, dw: int32_t, dh: int32_t, filter: int32_t |
 | `mq_platform_present_ui` | int | p: mq_platform* |
 | `mq_platform_capture_now` | int | p: mq_platform* |
 | `mq_platform_ensure_renderer` | void* | p: mq_platform* |
@@ -613,6 +653,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_platform_set_safe_area` | void | p: mq_platform*, l: float, t: float, r: float, b: float |
 | `mq_platform_present_rect` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t, dx: int32_t, dy: int32_t, dw: int32_t, dh: int32_t, filter: int32_t |
 | `mq_platform_simulate_pointer` | int | p: mq_platform*, kind: int32_t, x: float, y: float, button: int32_t |
+| `mq_platform_spawn_detached` | int | p: mq_platform*, exe: const char*, args: const char* |
+| `mq_platform_process_stats` | int | p: mq_platform*, out_cpu_percent: double*, out_mem_bytes: uint64_t* |
 | `mq_platform_destroy` | void | p: mq_platform* |
 | `mq_platform_has_window` | int | p: mq_platform* |
 | `mq_platform_pump` | void | p: mq_platform* |
@@ -840,7 +882,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 枚举：
 
 - (匿名)：MQ_ASSET_OK=0, MQ_ASSET_ERR_ARG=1, MQ_ASSET_ERR_NOT_FOUND=2, MQ_ASSET_ERR_IO=3, MQ_ASSET_ERR_FORMAT=4, MQ_ASSET_ERR_NO_MEM=5, MQ_ASSET_ERR_DEPENDENCY=6, MQ_ASSET_ERR_DUPLICATE=7
-- `mq_asset_kind`：MQ_ASSET_KIND_OTHER=0, MQ_ASSET_KIND_TEXTURE=1, MQ_ASSET_KIND_MATERIAL=2, MQ_ASSET_KIND_MESH=3, MQ_ASSET_KIND_FONT=4, MQ_ASSET_KIND_ANIMATION=5, MQ_ASSET_KIND_SCENE=6, MQ_ASSET_KIND_SCRIPT=7
+- `mq_asset_kind`：MQ_ASSET_KIND_OTHER=0, MQ_ASSET_KIND_TEXTURE=1, MQ_ASSET_KIND_MATERIAL=2, MQ_ASSET_KIND_MESH=3, MQ_ASSET_KIND_FONT=4, MQ_ASSET_KIND_ANIMATION=5, MQ_ASSET_KIND_SCENE=6, MQ_ASSET_KIND_SCRIPT=7, MQ_ASSET_KIND_AUDIO=8
 
 结构体：
 
@@ -864,6 +906,48 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_asset_pack` | int | db: mq_asset_db*, paths: const char* const*, count: uint32_t, out_path: const char* |
 | `mq_asset_dump_json` | const char* | db: mq_asset_db* |
 | `mq_asset_count_kind` | uint32_t | db: mq_asset_db*, kind: mq_asset_kind |
+
+### audio — `maque.audio` v1
+
+头文件：`build/modules/core/data/generated/abi/audio.h` · 宏：`MQ_AUDIO_ABI_VERSION` / `_IFACE_NAME`
+
+枚举：
+
+- `mq_audio_status`：MQ_AUDIO_OK=0, MQ_AUDIO_ERR_ARG=1, MQ_AUDIO_ERR_FORMAT=2, MQ_AUDIO_ERR_IO=3, MQ_AUDIO_ERR_DEVICE=4, MQ_AUDIO_ERR_CAPACITY=5, MQ_AUDIO_ERR_HANDLE=6
+- `mq_audio_backend`：MQ_AUDIO_BACKEND_AUTO=0, MQ_AUDIO_BACKEND_NULL=1, MQ_AUDIO_BACKEND_SDL=2
+- `mq_audio_panning`：MQ_AUDIO_PANNING_STEREO=0, MQ_AUDIO_PANNING_SPATIAL=1, MQ_AUDIO_PANNING_HRTF=2
+- `mq_audio_attenuation`：MQ_AUDIO_ATTEN_INVERSE=0, MQ_AUDIO_ATTEN_LINEAR=1, MQ_AUDIO_ATTEN_EXPONENTIAL=2, MQ_AUDIO_ATTEN_CURVE=3
+- `mq_audio_play_state`：MQ_AUDIO_STOPPED=0, MQ_AUDIO_PLAYING=1, MQ_AUDIO_PAUSED=2
+
+结构体：
+
+- `mq_audio_desc`：struct_size: uint32_t, sample_rate: uint32_t, channels: uint32_t, buffer_frames: uint32_t, max_voices: uint32_t, backend: uint32_t, device: const char*
+- `mq_audio_voice_desc`：struct_size: uint32_t, clip: const mq_audio_clip*, volume: float, pitch: float, pan: float, loop: uint32_t, bus: const char*, x: float, y: float, z: float, panning: uint32_t, attenuation: uint32_t, min_distance: float, max_distance: float, doppler: float
+- `mq_audio_listener`：struct_size: uint32_t, x: float, y: float, z: float, dir_x: float, dir_y: float, dir_z: float
+- `mq_audio_stats`：struct_size: uint32_t, sample_rate: uint32_t, channels: uint32_t, voices: uint32_t, callbacks: uint64_t, dropped: uint64_t
+
+| 函数 | 返回 | 参数 |
+|------|------|------|
+| `mq_audio_create` | mq_audio* | desc: const mq_audio_desc* |
+| `mq_audio_destroy` | void | a: mq_audio* |
+| `mq_audio_load_memory` | int | a: mq_audio*, data: const void*, size: size_t, hint: const char*, out: mq_audio_clip** |
+| `mq_audio_clip_release` | void | clip: mq_audio_clip* |
+| `mq_audio_clip_info` | int | clip: const mq_audio_clip*, frames: uint32_t*, rate: uint32_t*, channels: uint32_t* |
+| `mq_audio_play` | uint64_t | a: mq_audio*, d: const mq_audio_voice_desc* |
+| `mq_audio_stop` | int | a: mq_audio*, voice: uint64_t |
+| `mq_audio_pause` | int | a: mq_audio*, voice: uint64_t, paused: uint32_t |
+| `mq_audio_set_voice` | int | a: mq_audio*, voice: uint64_t, volume: float, pitch: float, pan: float |
+| `mq_audio_set_volume` | int | a: mq_audio*, voice: uint64_t, volume: float |
+| `mq_audio_set_pitch` | int | a: mq_audio*, voice: uint64_t, pitch: float |
+| `mq_audio_set_spatial` | int | a: mq_audio*, voice: uint64_t, x: float, y: float, z: float, panning: uint32_t, attenuation: uint32_t, min_distance: float, max_distance: float |
+| `mq_audio_set_listener` | int | a: mq_audio*, l: const mq_audio_listener* |
+| `mq_audio_set_bus` | int | a: mq_audio*, bus: const char*, volume: float, mute: uint32_t |
+| `mq_audio_set_master` | int | a: mq_audio*, volume: float, mute: uint32_t |
+| `mq_audio_update` | int | a: mq_audio*, dt: float |
+| `mq_audio_mix` | int | a: mq_audio*, out: float*, frames: uint32_t |
+| `mq_audio_voice_state` | int | a: mq_audio*, voice: uint64_t, state: uint32_t*, playhead: float* |
+| `mq_audio_voice_at` | uint32_t | a: mq_audio*, index: uint32_t, voice: uint64_t*, state: uint32_t*, playhead: float* |
+| `mq_audio_get_stats` | int | a: mq_audio*, out: mq_audio_stats* |
 
 ### physics — `maque.physics` v1
 

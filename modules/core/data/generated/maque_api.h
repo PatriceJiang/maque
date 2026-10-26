@@ -281,6 +281,17 @@ namespace host {
   float imgui_show_demo(void* ctx);
   float imgui_want_mouse(void* ctx);
   float imgui_want_keyboard(void* ctx);
+  float audio_enabled(void* ctx);
+  double audio_play(void* ctx, const char* path, float volume, float loop, const char* bus);
+  void audio_stop(void* ctx, double voice);
+  void audio_pause(void* ctx, double voice, float paused);
+  void audio_set_volume(void* ctx, double voice, float volume);
+  void audio_set_pitch(void* ctx, double voice, float pitch);
+  float audio_state(void* ctx, double voice);
+  float audio_playhead(void* ctx, double voice);
+  void audio_set_listener(void* ctx, float x, float y, float dir_x, float dir_y);
+  void audio_master_volume(void* ctx, float volume);
+  void audio_bus_volume(void* ctx, const char* bus, float volume);
   float imgui_hovered(void* ctx);
   float imgui_frame(void* ctx);
   float imgui_last_cmd_count(void* ctx);

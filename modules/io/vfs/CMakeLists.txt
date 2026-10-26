@@ -21,6 +21,7 @@ add_library(maque::vfs ALIAS maque_vfs)
 target_include_directories(maque_vfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(maque_vfs PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set_target_properties(maque_vfs PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(maque_vfs PUBLIC maque::tracy)   # Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时是空接口）
 
 # libcurl：URL(http/https/file) 抓取 + http(s) 目录挂载（docs/04 §4）
 find_package(CURL QUIET)

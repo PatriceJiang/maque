@@ -718,6 +718,8 @@ role: `spine_skeleton`
 
 ### audio.AudioListener — struct (24B)
 
+role: `audio_listener`
+
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
 | `active` | bool | true |  |
@@ -735,17 +737,19 @@ role: `spine_skeleton`
 
 ### audio.AudioSource — struct (变长（含动态成员）)
 
+role: `audio_source`
+
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
-| `clip` | asset_ref<AudioClip> | — | ref: AudioClip |
-| `bus` | asset_ref<AudioBus> | — | ref: AudioBus |
+| `clip` | string | — |  |
+| `bus` | string | — |  |
 | `autoplay` | bool | false |  |
 | `loop` | bool | false |  |
 | `volume` | float | 1.0F | range: 0,4, unit: linear |
 | `pitch` | float | 1.0F | range: 0.01,4 |
 | `panning` | PanningMode | PanningMode::Stereo2D |  |
 | `attenuation` | AttenuationModel | AttenuationModel::InverseDistance |  |
-| `curve` | asset_ref<AudioCurve> | — | ref: AudioCurve |
+| `curve` | string | — |  |
 | `min_distance` | float | 1.0F | unit: m |
 | `max_distance` | float | 50.0F | unit: m |
 | `doppler` | float | 0.0F | range: 0,2 |

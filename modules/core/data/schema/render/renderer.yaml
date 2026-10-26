@@ -1,5 +1,9 @@
 # renderer —— 渲染插件接口（C vtable）· modules/render/gfx
 # 插件接口 ABI（由 DSL 生成 C vtable；docs/02/21）。opaque self = void*。
+#
+# 版本化（docs/02）：本接口 version 保持 1 —— 新能力**只在表尾追加**（记录/方法），
+# 既有记录字段与方法签名不变；调用方用 mq_api_header.struct_size 判断新方法是否存在。
+# 3D/PBR 扩展见 plans/18-pbr-3d.md §2（直接呈现 / 网格 GPU 资源 / PBR 帧描述）。
 - interface: renderer
   version: 1
   records:
@@ -65,6 +69,130 @@
         - { name: clip_w,     type: float }
         - { name: clip_h,     type: float }
         - { name: z,          type: int32_t }
+    # ---- 3D / 直接呈现（plans/18-pbr-3d.md §2；只在表尾追加，旧记录不变）----
+    # 原生窗口描述：platform 提供，renderer 用它建 wgpu surface（直接呈现）。
+    - record: window
+      fields:
+        - { name: kind,    type: int32_t }   # 0=none 1=win32 2=xlib 3=wayland
+        - { name: display, type: "void*" }   # win32: HINSTANCE；xlib: Display*；wayland: wl_display*
+        - { name: handle,  type: "void*" }   # win32: HWND；xlib: Window；wayland: wl_surface*
+        - { name: extra,   type: "void*" }   # 预留（xcb connection / cocoa view）
+        - { name: width,   type: int32_t }   # 绘制区（设备像素）
+        - { name: height,  type: int32_t }
+    # 适配器/目标能力（提取与资产 cook 据此选择；不做静默降级）。
+    - record: caps
+      fields:
+        - { name: max_texture_size, type: int32_t }
+        - { name: max_lights,       type: int32_t }
+        - { name: max_samples,      type: int32_t }
+        - { name: target_format,    type: int32_t }  # 0=RGBA8 1=BGRA8 2=RGBA8_SRGB 3=BGRA8_SRGB 4=RGBA16F
+        - { name: depth_format,     type: int32_t }  # 0=Depth32Float 1=Depth24Plus 2=Depth24PlusStencil8
+        - { name: direct_present,   type: int32_t }  # 1 = swapchain 直呈可用
+        - { name: hdr,              type: int32_t }  # 1 = RGBA16F 离屏可用
+        - { name: reserved,         type: int32_t }
+    # 纹理创建（PBR 需要 sRGB / mip / wrap / filter；2D 字形图集仍走旧 create_texture）。
+    - record: texture_desc
+      fields:
+        - { name: width,        type: int32_t }
+        - { name: height,       type: int32_t }
+        - { name: pixel_format, type: int32_t }  # 0=RGBA8 1=RGBA8_SRGB 2=RGBA16F（3=BC7 预留）
+        - { name: kind,         type: int32_t }  # 0=2D 1=cube（IBL 预留）2=equirect（预留）
+        - { name: mip_levels,   type: int32_t }  # 1 = 无 mip；data 内各 mip 连续存放
+        - { name: filter,       type: int32_t }  # 0=nearest 1=linear（含 mip linear）
+        - { name: wrap_u,       type: int32_t }  # 0=repeat 1=clamp 2=mirror
+        - { name: wrap_v,       type: int32_t }
+        - { name: data,         type: "const uint8_t*" }  # RGBA8 各 mip 连续；cube 为 6 面
+        - { name: data_size,    type: uint64_t }
+    # 3D 网格（一次性上传，GPU 常驻；规范顶点布局 = pos3/normal3/tangent4/uv2，stride 48B）。
+    - record: mesh_gpu
+      fields:
+        - { name: vertices,      type: "const void*" }
+        - { name: vertex_bytes,  type: uint64_t }
+        - { name: vertex_stride, type: uint32_t }
+        - { name: vertex_layout, type: int32_t }   # 0=PBR 48B
+        - { name: indices,       type: "const uint32_t*" }
+        - { name: index_count,   type: uint32_t }
+        - { name: bounds_min,    type: "float[3]" }
+        - { name: bounds_max,    type: "float[3]" }
+    - record: view3d
+      fields:
+        - { name: view,        type: "float[16]" }  # 列主序
+        - { name: proj,        type: "float[16]" }  # WebGPU NDC：z∈[0,1]
+        - { name: eye,         type: "float[3]" }
+        - { name: viewport,    type: "float[4]" }   # 目标像素 x,y,w,h
+        - { name: exposure,    type: float }
+        - { name: clear_mode,  type: int32_t }      # 0=skybox 1=color 2=depth 3=none
+        - { name: clear_color, type: "float[4]" }
+        - { name: layer_mask,  type: int32_t }
+    - record: light
+      fields:
+        - { name: type,        type: int32_t }      # 0=directional 1=point 2=spot
+        - { name: pos,         type: "float[3]" }
+        - { name: dir,         type: "float[3]" }
+        - { name: color,       type: "float[3]" }
+        - { name: intensity,   type: float }
+        - { name: range,       type: float }
+        - { name: inner_cos,   type: float }
+        - { name: outer_cos,   type: float }
+        - { name: flags,       type: int32_t }      # bit0 cast_shadow
+        - { name: shadow_slot, type: int32_t }      # -1 = 不投影
+    - record: pbr_material
+      fields:
+        - { name: base_color,         type: "float[4]" }  # 线性空间
+        - { name: emissive,           type: "float[3]" }
+        - { name: metallic,           type: float }
+        - { name: roughness,          type: float }
+        - { name: normal_scale,       type: float }
+        - { name: occlusion_strength, type: float }
+        - { name: alpha_cutoff,       type: float }
+        - { name: alpha_mode,         type: int32_t }     # 0=opaque 1=mask 2=blend
+        - { name: flags,              type: int32_t }     # bit0 double_sided
+        - { name: textures,           type: "int32_t[5]" } # base_color/mr/normal/occlusion/emissive
+        - { name: uv_scale,           type: "float[2]" }
+        - { name: uv_offset,          type: "float[2]" }
+    - record: draw3d
+      fields:
+        - { name: mesh,          type: int32_t }
+        - { name: material,      type: int32_t }       # frame3d.materials 下标
+        - { name: model,         type: "float[16]" }
+        - { name: submesh_first, type: int32_t }
+        - { name: submesh_count, type: int32_t }
+        - { name: flags,         type: int32_t }       # cast/receive shadow 等
+        - { name: layer,         type: int32_t }
+        - { name: sort_key,      type: uint64_t }
+    - record: environment
+      fields:
+        - { name: sky_mode,    type: int32_t }      # 0=color 1=gradient 2=cubemap(预留) 3=equirect(预留)
+        - { name: sky_color,   type: "float[4]" }
+        - { name: sky_texture, type: int32_t }
+        - { name: env_color,   type: "float[4]" }
+        - { name: env_texture, type: int32_t }
+        - { name: intensity,   type: float }
+    - record: post
+      fields:
+        - { name: exposure, type: float }
+        - { name: tonemap,  type: int32_t }         # 0=none 1=ACES
+    # 一帧 3D + 2D 覆盖层：非空 out = 离屏渲染并回读；空 out = 直接呈现到窗口。
+    - record: frame3d
+      fields:
+        - { name: width,          type: int32_t }
+        - { name: height,         type: int32_t }
+        - { name: views,          type: "const mq_renderer_view3d*" }
+        - { name: view_count,     type: uint32_t }
+        - { name: lights,         type: "const mq_renderer_light*" }
+        - { name: light_count,    type: uint32_t }
+        - { name: materials,      type: "const mq_renderer_pbr_material*" }
+        - { name: material_count, type: uint32_t }
+        - { name: draws,          type: "const mq_renderer_draw3d*" }
+        - { name: draw_count,     type: uint32_t }
+        - { name: env,            type: mq_renderer_environment }
+        - { name: post,           type: mq_renderer_post }
+        - { name: items,          type: "const mq_renderer_item*" }
+        - { name: item_count,     type: uint32_t }
+        - { name: meshes,         type: "const mq_renderer_mesh*" }
+        - { name: mesh_count,     type: uint32_t }
+        - { name: out,            type: "uint8_t*" }
+        - { name: out_size,       type: uint32_t }
   methods:
     - fn: create
       returns: self
@@ -88,4 +216,36 @@
     # 这是 render_views 的超集；不带网格时等价于 render_views（兼容旧调用）。
     - fn: render_mesh_views
       returns: int32_t
-      args: [ { name: self, type: self }, { name: tw, type: "int32_t" }, { name: th, type: "int32_t" }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: "uint32_t" }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: "uint32_t" }, { name: meshes, type: "const mq_renderer_mesh*" }, { name: mesh_count, type: "uint32_t" }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: "uint32_t" } ]
+      args: [ { name: self, type: self }, { name: tw, type: int32_t }, { name: th, type: int32_t }, { name: views, type: "const mq_renderer_view*" }, { name: nviews, type: uint32_t }, { name: items, type: "const mq_renderer_item*" }, { name: count, type: uint32_t }, { name: meshes, type: "const mq_renderer_mesh*" }, { name: mesh_count, type: uint32_t }, { name: bg, type: "const float*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]
+    # ---- 3D / 直接呈现（追加；plans/18-pbr-3d.md）----
+    - fn: attach_window
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: win, type: "const mq_renderer_window*" } ]
+      doc: "建 wgpu surface + 交换链（直接呈现）；0=成功，非 0=不支持/无窗口（调用方回退离屏+platform 呈现）。可重复调用（resize/换显示器）"
+    - fn: resize_surface
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: w, type: int32_t }, { name: h, type: int32_t } ]
+      doc: "重建交换链/深度/中间目标（设备像素尺寸）；下一帧生效"
+    - fn: caps
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: out, type: "mq_renderer_caps*" } ]
+      doc: "适配器与目标格式能力（提取/资产 cook 据此选择；不做静默降级）"
+    - fn: create_texture2
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: desc, type: "const mq_renderer_texture_desc*" }, { name: out_id, type: "int32_t*" } ]
+      doc: "带 sRGB/mip/wrap/filter 的纹理（PBR）；0=成功。旧 create_texture 仍是 2D 字形图集路径"
+    - fn: create_mesh
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: data, type: "const mq_renderer_mesh_gpu*" }, { name: out_id, type: "int32_t*" } ]
+      doc: "上传 3D 网格（GPU 常驻；runtime 按资产缓存）；0=成功"
+    - fn: destroy_mesh
+      returns: void
+      args: [ { name: self, type: self }, { name: id, type: "int32_t" } ]
+    - fn: render_frame3d
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: frame, type: "const mq_renderer_frame3d*" } ]
+      doc: "一帧：阴影/3D PBR/天空/透明/tonemap + 2D 覆盖层；out 非空→离屏回读，空→直接呈现（需先 attach_window）"
+    - fn: present
+      returns: int32_t
+      args: [ { name: self, type: self } ]
+      doc: "提交交换链（直接呈现路径；离屏路径为空操作）"

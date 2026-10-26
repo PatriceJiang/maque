@@ -20,12 +20,14 @@
 #include "core/watcher/mq_watcher.h"
 #include "physics/mq_physics.h"
 #include "nav/mq_nav.h"
+#include "abi/audio.h"                // 音频模块 C ABI（docs/30）
 #include "text/mq_text.h"
 #include "sim/mq_sim.h"
 #include "canvas/mq_canvas.h"
 #include "anim/mq_spine2d.h"          // Spine 2D 官方运行时（docs/27）：骨架/实例/绘制数据
 #include "ui/mq_imgui.h"              // 引擎侧 ImGui 调试面板：帧管理/绘制数据导出
 #include "ui/mq_imgui_widgets.h"      // ImGui 控件 C ABI（runtime 不直接依赖 ImGui 头）
+#include "core/tracy/mq_tracy.h"      // Tracy 性能分析封装（docs/29；MAQUE_TRACY=OFF 时全部 no-op）
 
 #include <fstream>
 #include "core/control/mq_control.h"
@@ -44,6 +46,8 @@
 #include <unordered_map>
 #include <filesystem>
 #include <algorithm>
+#include <array>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
@@ -225,6 +229,15 @@ struct Engine {
     bool                pace_wall_clock = false;            // 真窗口且非自动化时置 true
     double              pace_accum = 0.0;                   // 已累计但尚未消费的墙钟秒数
     bool                trace_hits = false;                 // MAQUE_HITS=1：命中轨迹打印（调试）
+    /* ---- Tracy 性能分析（docs/29）----
+     * 客户端**手动启动**：F3（并顺手拉起 profiler GUI）或启动期 MAQUE_TRACY=1（等外部连）。
+     * 未启动时所有埋点宏 no-op → 普通运行/CI 零开销。 */
+    bool                tracy_env_checked = false;          // 是否已按 MAQUE_TRACY 决定过初始启动
+    bool                tracy_f3_held = false;              // F3 沿检测（按住只触发一次）
+    bool                tracy_gui_launched = false;         // profiler GUI 是否已拉起（避免重复弹窗）
+    void tracy_tick();                                      // 帧首：env 启动 + 1Hz CPU/内存采样
+    void tracy_start(const char* why);                      // 启动 client + 配置基础数据曲线
+    void tracy_launch_gui();                                // 拉起 tracy-profiler（F3）
     int                 hover = -1;                         // 悬停实体（上帧命中）
     int                 capture = -1;                       // 指针捕获（拖拽中）
     float               mouse_x = 0, mouse_y = 0;
@@ -359,17 +372,19 @@ struct Engine {
     void imgui_extract(std::vector<mq_renderer_mesh>& out);   // 结束帧 + 命令 → 网格图元
     float imgui_ptr_x = 0, imgui_ptr_y = 0;    // 最近指针位置（窗口像素）
     bool  imgui_ptr_down = false;              // 左键是否按住
-    /* 指针的"窗口像素 → 目标/设计像素"换算（ImGui 显示空间 = 目标空间）：
-     * 显示 = 目标*scale + offset → 目标 = (显示 - offset) / scale。
+    /* 指针的"窗口像素 → ImGui 显示空间"换算：
+     *   · 官方后端：显示空间 = 绘制区**设备像素**；SDL 鼠标是**逻辑像素** →
+     *     乘 content_scale（非 HiDPI 时 1:1）；
+     *   · 网格链（无窗口/present off）：显示空间 = 目标像素 → 按画布映射反算。
      * 无窗口时 scale=1/offset=0，等价于直接用。 */
     float ptr_target_x() const {
-        if (imgui_backend) return imgui_ptr_x;      // 官方后端：窗口像素空间，直接用
+        if (imgui_backend) return imgui_ptr_x * imgui_input_scale;
         if (!window) return imgui_ptr_x;
         const float s = canvas.scale > 0.0F ? canvas.scale : 1.0F;
         return (imgui_ptr_x - canvas.offset_x) / s;
     }
     float ptr_target_y() const {
-        if (imgui_backend) return imgui_ptr_y;
+        if (imgui_backend) return imgui_ptr_y * imgui_input_scale;
         if (!window) return imgui_ptr_y;
         const float s = canvas.scale > 0.0F ? canvas.scale : 1.0F;
         return (imgui_ptr_y - canvas.offset_y) / s;
@@ -377,11 +392,30 @@ struct Engine {
     bool  imgui_env_checked = false;           // 是否已按 MAQUE_IMGUI 决定过初始开关
     bool  imgui_frame_active = false;          // 本帧已 begin（保证 end 一定配对）
     bool  imgui_f2_held = false;               // F2 是否按住（热键沿检测：按住只切一次）
-    /* 默认 stats 面板用的计量（显示上一帧的值：开帧时就要有数）。 */
-    float stat_logic_ms = 0, stat_render_ms = 0, stat_fps = 0;
+    /* ImGui 面板的**固定 UI 度量**：`imgui_resolve_metrics()` 一次算定
+     *（屏幕逻辑分辨率 + DPI + 渲染倍率），**不随游戏窗口/渲染目标变化** ——
+     * 同一块屏上 stats 字号/面板大小恒定；换显示器/换缩放才变。 */
+    float imgui_ui_scale = 1.0F;               // 屏幕分辨率派生的 UI 缩放
+    float imgui_pixel_scale = 1.0F;            // 实际像素倍率（字号 × 样式尺寸）
+    float imgui_content_scale = 1.0F;          // 窗口 绘制区/逻辑区 比（HiDPI）
+    float imgui_input_scale = 1.0F;            // 输入坐标 → ImGui 显示空间 的倍率
+    int   imgui_screen_w = 0, imgui_screen_h = 0;
+    float imgui_title_size = 0.0F;             // 标题字号（逻辑像素，未乘 pixel_scale）
+    float imgui_body_size = 0.0F;              // 正文字号（逻辑像素，未乘 pixel_scale）
+    float imgui_panel_w = 0, imgui_panel_h = 0;  // stats 面板固定尺寸（显示空间单位）
+    void imgui_resolve_metrics();              // 屏幕分辨率 → 固定 UI 度量（一次）
+    /* CI/无真鼠标环境验证「拖动 stats」：把合成指针事件压进**本帧设备事件队列**
+     *（与真实鼠标同一条路径：iframe → imgui_input_feed → ImGui）。
+     * 格式 MAQUE_IMGUI_POINTER="frame:x:y:type[;...]"，type 0=move 1=down 2=up。 */
+    struct ImguiFakePointer { int frame; float x, y; int type; };
+    std::vector<ImguiFakePointer> imgui_fake_ptr;
+    bool imgui_fake_parsed = false;
+    void imgui_fake_input(mq_platform_pointer_event* ptrs, uint32_t& count, uint32_t cap);
+    /* stats 面板用的计量（显示上一帧的值：开帧时就要有数）。 */
+    float stat_logic_ms = 0, stat_render_ms = 0, stat_present_ms = 0, stat_fps = 0;
     int   stat_calls = 0, stat_tris = 0;
     bool  stat_window_sized = false;
-    bool  imgui_backend = false;   // 用官方 SDL_Renderer 后端直接画到窗口（绕开网格导出链）   // stats 窗口只在首帧定位/定尺寸（之后可自由拖动）
+    bool  imgui_backend = false;   // 用官方 SDL_Renderer 后端（与游戏帧共用 renderer、单次 present）
     std::chrono::steady_clock::time_point stat_t0{};   // 本帧起点（算逻辑/整帧耗时）
     int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
@@ -426,6 +460,26 @@ struct Engine {
 
     std::unordered_map<std::string, int> tex_cache;              // 装配期填充；提取期只读
     std::unordered_map<std::string, scn::SpriteMaterial> material_cache;
+    /* 音频（docs/30）：默认 **null 后端**（逻辑/脚本可用、CI 静音）；MAQUE_AUDIO=sdl|auto 才开设备。
+     * 后端实现可替换（modules/world/audio/src/backend_*.cpp），runtime 只认 C ABI。 */
+    mq_audio* audio = nullptr;
+    std::unordered_map<std::string, mq_audio_clip*> audio_clips;   // 解码缓存（切场景清空）
+    float last_listener_master = 1.0F;                             // 组件 master 只在变化时下发（避免覆盖脚本 audio_master_volume）
+    void audio_setup();
+    void audio_teardown();
+    mq_audio_clip* audio_clip(const std::string& path);
+    void audio_capture_start(const char* path);
+    void audio_capture_step(float dt);
+    void audio_capture_finish();
+    /* 离线抓音（docs/30 §8）：MAQUE_AUDIO_CAPTURE=<wav> → 强制 null 后端，每模拟步
+     * mq_audio_mix(dt*rate) 落盘。确定性、与设备/墙钟无关，CI 用它断言"确实有声音"。 */
+    std::FILE* audio_cap = nullptr;
+    std::string audio_cap_path;
+    uint64_t audio_cap_frames = 0;
+    uint32_t audio_cap_rate = 48000;
+    uint32_t audio_cap_channels = 2;
+    double audio_cap_frac = 0.0;
+    std::vector<float> audio_cap_buf;
     uint32_t rng = 0;
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
@@ -454,6 +508,7 @@ struct Engine {
     void physics_components_setup();                        // 装配期：按 role 建物理体（刚体/碰撞体组件）
     void physics_components_step(float dt);                 // 帧内：步进并回写变换
     void anim_step(float dt);                               // 关键帧采样 → 写回字段（docs/15 §2）
+    void audio_step(float dt);                              // 音频组件同步（docs/30 §6）
     void particles_step(float dt);                          // 确定性粒子推进（docs/15 §4）
     bool setup(const std::string& scn_path, const char* renderer_override);   // 加载并装配引擎
     void teardown();                                        // 释放全部实例资源（幂等）
@@ -782,6 +837,8 @@ uint64_t Engine::world_trail() const {
 /* 单帧推进：① 采样 ② 输入帧 ③ 脚本 update+GC ④ 校验和/快照 ⑤ 渲染。
  * 主循环与控制面 Runtime.step 走**同一条帧序** → 行为一致（docs/10 D1、docs/11）。 */
 void Engine::step_frame() {
+    MQ_TRACY_ZONE(runtime);                          // Tracy：一次模拟步（含渲染+present）总 zone
+    tracy_tick();                                    // Tracy：MAQUE_TRACY 环境启动 + 1Hz CPU/内存采样
     /* 输入帧缓冲：**必须预分配**（平台按 pointer_cap/key_cap 写入；容量 0 = 静默丢弃全部设备事件）。
      * 这是"真实鼠标/键盘事件永远到不了脚本"的根因（docs/19 §3：宿主预分配语义）。 */
     static constexpr uint32_t kMaxPointers = 16, kMaxKeys = 32;
@@ -808,8 +865,11 @@ void Engine::step_frame() {
     iframe.pointer_count = 0;
     iframe.key_count = 0;
     if (platform) {
+        MQ_TRACY_ZONE_N(runtime, "input.sample");    // Tracy：平台事件泵 + 原始事件（窗口像素）
         mq_platform_pump(platform);
         if (window) mq_platform_poll(platform, &iframe);
+        /* 测试注入：MAQUE_IMGUI_POINTER（合成指针 → 本帧设备队列，与真实鼠标同路径） */
+        imgui_fake_input(iframe.pointers, iframe.pointer_count, iframe.pointer_cap);
         /* ImGui 先吃**窗口像素**事件（它工作在窗口空间）；之后才把同一批转成世界坐标。
          * 顺序不能反：转成世界坐标后就没有原始窗口坐标了。 */
         imgui_input_feed(iframe.pointers, iframe.pointer_count, iframe.keys, iframe.key_count);
@@ -874,6 +934,21 @@ void Engine::step_frame() {
         if (f2_down && !imgui_f2_held) imgui_toggle();          // 只有上升沿才切换
         imgui_f2_held = f2_down;
     }
+    /* **F3 引擎级热键**：启动 Tracy（若未启动）+ 拉起 profiler GUI（docs/29）。
+     * 沿检测同上（按住只触发一次）；已启动也允许再按 F3 —— 只补拉 GUI（不会重复弹窗）。 */
+    {
+        bool f3_down = false;
+        for (uint32_t i = 0; i < iframe.key_count; ++i) {
+            const mq_platform_key_event& k = iframe.keys[i];
+            if (k.key != MQ_KEY_F3 || k.repeat) continue;
+            if (k.down) f3_down = true;
+        }
+        if (f3_down && !tracy_f3_held) {
+            tracy_start("F3");
+            tracy_launch_gui();
+        }
+        tracy_f3_held = f3_down;
+    }
     /* ImGui：开始一帧（**必须在脚本 update 之前** —— 脚本里要调 imgui_begin/控件/imgui_end）。
      * 内部还会按需初始化、上传字体图集纹理，并在 ImGui 要吃输入时清空本帧设备事件（不点穿）。 */
     imgui_frame_begin(1.0F / 60.0F);
@@ -911,39 +986,59 @@ void Engine::step_frame() {
         /* director.pause()：跳过模拟（脚本/动画/粒子/导航/物理/UI 布局），仅保留采样与渲染
          * （暂停语义；输入仍被采样，便于 resume 后继续）。 */
     } else if (scene) {
+        MQ_TRACY_ZONE_N(runtime, "sim");             // Tracy：逻辑阶段总 zone（脚本+动画+物理+提取）
         ++script_frames;
-        step_tweens(dt);                             // Tween（补间）
-        step_schedules(dt);                          // 定时器（定时器）
+        {
+            MQ_TRACY_ZONE_N(anim, "tween");          // Tween（补间）
+            step_tweens(dt);
+            step_schedules(dt);                      // 定时器
+        }
         /* 脚本错误的判定：总线**错误计数**的增量（每个 VM 各自受保护调用 → 错误隔离但不静默）。
          * 注意不能拿 dispatch_event 的返回值判断：它返回的是命中数，不是错误码。 */
-        const uint32_t err_before = bus ? mq_script_bus_error_count(bus) : 0;
-        dispatch_event(*this, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr);
-        if (bus && mq_script_bus_error_count(bus) != err_before) {
-            char ebuf[512] = { 0 };
-            mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
-            mq_obs_event(obs, "script", 3, "update_failed");
-            write_crash_context(ebuf[0] ? ebuf : "script update failed");      // 可精确重放（docs/09 §5）
+        {
+            MQ_TRACY_ZONE_N(script, "update");       // Tracy：脚本入口（update 回调派发）
+            const uint32_t err_before = bus ? mq_script_bus_error_count(bus) : 0;
+            dispatch_event(*this, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr);
+            if (bus && mq_script_bus_error_count(bus) != err_before) {
+                char ebuf[512] = { 0 };
+                mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
+                mq_obs_event(obs, "script", 3, "update_failed");
+                write_crash_context(ebuf[0] ? ebuf : "script update failed");      // 可精确重放（docs/09 §5）
+            }
+            if (bus) mq_script_bus_gc(bus);          // 帧边界：逐 VM 推进 GC（docs/10 D7）
         }
-        if (bus) mq_script_bus_gc(bus);             // 帧边界：逐 VM 推进 GC（docs/10 D7）
-        anim_step(dt);                                   // 动画采样写回（docs/15 §2）
-        particles_step(dt);                              // 粒子推进（docs/15 §4）
-        nav_step();                                      // 导航代理推进（A* + 追踪）
-        physics_components_step(dt);                     // 组件驱动物理（RigidBody2D）
+        { MQ_TRACY_ZONE_N(anim, "anim.step"); anim_step(dt); }           // 动画采样写回（docs/15 §2）
+        { MQ_TRACY_ZONE_N(anim, "particles"); particles_step(dt); }      // 粒子推进（docs/15 §4）
+        { MQ_TRACY_ZONE_N(nav, "nav.step"); nav_step(); }                // 导航代理推进（A* + 追踪）
+        { MQ_TRACY_ZONE_N(physics, "physics.step"); physics_components_step(dt); }   // 组件驱动物理
         flush_pending_destroy();                         // node.destroy()：帧边界统一销毁
-        ui_step();                                       // UI 组件语义（layout/progress/slider/check/safearea/scroll）
-        scene->flatten_world(*this);
+        { MQ_TRACY_ZONE_N(ui, "ui.step"); ui_step(); }   // UI 组件语义（layout/progress/slider/...）
+        { MQ_TRACY_ZONE_N(runtime, "flatten"); scene->flatten_world(*this); }
+        /* 音频：组件同步（autoplay/参数/空间化）→ 逻辑 playhead/状态按模拟 dt 推进
+         * （与设备是否出声无关，docs/30 §5）。 */
+        {
+            MQ_TRACY_ZONE_N(audio, "step");
+            audio_step(dt);
+            if (audio) mq_audio_update(audio, dt);
+            if (audio_cap) audio_capture_step(dt);
+        }
         /* Spine 事件记录的清空点：**脚本之后、step 之前**（见 Engine::spine_clear_events 注释：
          * 放错了会导致 pull 面永远读到 0 条）。 */
         spine_clear_events();
-        spine_step(dt);                                  // Spine：步进 + 出绘制数据（依赖展平后的世界位置）
-        scene->extract(*this, draws);
-        spine_extract(spine_meshes);                     // Spine：绘制数据 → 网格图元（与图元同序渲染）
-    text_flush(draws);            // 文本阶段 2：刷新图集纹理并按最终尺寸计算 UV
-    /* ImGui：结束帧 → 绘制命令转成网格图元。**放在这里**是刻意的：
-     * 引擎所有图层（含 ui pass 的 layer=1）都已提取完 → 面板以 MQ_IMGUI_LAYER 提交，
-     * 天然画在最上层；且与其它图元一起进同一像素缓冲 → 截图里也有面板（可自证）。 */
-    imgui_extract(spine_meshes);
+        {
+            MQ_TRACY_ZONE_N(anim, "spine.step");         // Tracy：Spine 步进
+            spine_step(dt);                              // Spine：步进 + 出绘制数据（依赖展平后的世界位置）
+        }
+        { MQ_TRACY_ZONE_N(runtime, "extract"); scene->extract(*this, draws); }
+        { MQ_TRACY_ZONE_N(anim, "spine.extract"); spine_extract(spine_meshes); }
+        { MQ_TRACY_ZONE_N(text, "text.flush"); text_flush(draws); }   // 文本阶段 2：图集纹理 + 最终 UV
     }
+    /* ImGui：结束帧 → 绘制命令转成网格图元（**grid 链模式**；官方后端模式下唤醒 Render）。
+     * 放在这里（脚本/暂停分支之外）是刻意的：
+     *   · 每帧都必须 end，暂停/无场景帧也不能漏（否则 ImGui 帧状态错乱、面板冻结）；
+     *   · 引擎所有图层（含 ui pass 的 layer=1）都已提取完 → 面板以 MQ_IMGUI_LAYER 提交，
+     *     天然画在最上层；且与其它图元一起进同一像素缓冲 → 截图里也有面板（可自证）。 */
+    imgui_extract(spine_meshes);
     // ④ 世界校验和 + 周期快照（确定性验证 + 回滚点，docs/10 §4/§5）
     if (scene) {
         last_checksum = world_checksum();
@@ -969,6 +1064,7 @@ void Engine::step_frame() {
     const auto stat_render0 = std::chrono::steady_clock::now();
     std::vector<uint8_t> pixels((size_t)TW * SHpx * 4);
     if (rapi && rself) {
+        MQ_TRACY_ZONE_N(render, "frame");   // Tracy：渲染插件成帧 + 回读（颜色 = render 模块）
         /* 有网格（骨骼动画）时走 render_mesh_views（图元 + 网格一次成帧、统一 layer/z 排序）；
          * 没有网格时保持原路径（老插件/纯精灵场景零行为变化）。 */
         if (!spine_meshes.empty() && rapi->render_mesh_views)
@@ -991,20 +1087,48 @@ void Engine::step_frame() {
         stat_render_ms = stat_render_ms > 0 ? (float)(stat_render_ms * 0.9 + rms * 0.1) : (float)rms;
         stat_logic_ms = stat_logic_ms > 0 ? (float)(stat_logic_ms * 0.9 + lms * 0.1) : (float)lms;
     }
-    /* 呈现到窗口（docs/05、M5）：无窗口/dummy 驱动时为安全空操作 */
+    const auto stat_present0 = std::chrono::steady_clock::now();
+    /* 呈现（docs/05、M5）：**游戏帧与 ImGui 面板共用同一个 SDL_Renderer，只 present 一次**。
+     *   ① mq_platform_draw_rect：引擎帧（CPU 像素）→ renderer 后台缓冲（游戏画面）
+     *   ② mq_imgui_backend_render：ImGui 官方后端在同一后台缓冲上再画一趟（调试面板，
+     *      独立 render pass —— ImGui 的所有指令在脚本阶段只是**录制**，到这里才真正渲染）
+     *   ③ mq_platform_present_ui：抓帧（MAQUE_CAPTURE）+ 单次 SDL_RenderPresent → 一起上屏
+     * 这样不会再出现「先写窗口表面、又被 renderer present 覆盖 → 游戏画面不上屏」。
+     * 无窗口 / MAQUE_PRESENT=off 时各步骤均为安全空操作。 */
     if (platform && window && rapi && rself) {
-        /* 呈现按**画布策略**给出的目标矩形（缩放/留边由分辨率策略决定；整倍放大用最近邻） */
+        MQ_TRACY_ZONE_N(platform, "present");   // Tracy：上传纹理 + ImGui pass + 单次 present
+        /* 目标矩形按**画布策略**（缩放/留边由分辨率策略决定；整倍放大用最近邻） */
         const int dx = (int)(canvas.offset_x + 0.5F), dy = (int)(canvas.offset_y + 0.5F);
         const int dw = (int)(canvas.viewport_w + 0.5F), dh = (int)(canvas.viewport_h + 0.5F);
-        mq_platform_present_rect(platform, pixels.data(), TW, SHpx, dx, dy, dw, dh, -1);
+        mq_platform_draw_rect(platform, pixels.data(), TW, SHpx, dx, dy, dw, dh, -1);
+        if (imgui_on && imgui_backend) mq_imgui_backend_render();   // ② ImGui 独立 pass（叠在游戏帧上）
+        mq_platform_present_ui(platform);                            // ③ 单次 present（含抓帧）
     }
-    /* 官方后端模式：**present 之后**把面板直接画到窗口（在窗口像素空间，不受引擎缩放影响）。 */
-    if (imgui_on && imgui_backend) {
-        mq_imgui_backend_render();
-        /* ⚠️ 面板是在 platform.present 之后画的 → 必须再 present 一次才显示（否则只在后台缓冲）。
-         * present_ui 内部同时处理 MAQUE_CAPTURE 抓图（抓到的图里包含面板）。 */
-        mq_platform_present_ui(platform);
+    /* 诊断：MAQUE_TRACE_STATS=1 时每 30 帧打印一次逐项耗时（logic / render / present）。
+     * 三项相加 ≈ 每步成本，**屏幕 FPS ≈ 1000 / 该值**（主循环每个模拟步都渲染+present 一次）。
+     * 用来回答"这个场景为什么只有 N fps"：先看是逻辑（脚本/Spine/文本）还是渲染/呈现。 */
+    {
+        const double pms = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - stat_present0).count();
+        stat_present_ms = stat_present_ms > 0 ? (float)(stat_present_ms * 0.9 + pms * 0.1) : (float)pms;
+        if (const char* ts = std::getenv("MAQUE_TRACE_STATS"); ts && *ts && *ts != '0' && frame % 30 == 0)
+            std::print("[stats] frame={} fps={:.1f} total={:.1f}ms logic={:.1f} render={:.1f} present={:.1f} "
+                       "draws={} tris={} target={}x{} imgui={}\n",
+                       (long long)frame, stat_fps,
+                       stat_logic_ms + stat_render_ms + stat_present_ms,
+                       stat_logic_ms, stat_render_ms, stat_present_ms,
+                       stat_calls, stat_tris, TW, SHpx, imgui_on ? 1 : 0);
     }
+    /* Tracy：**基础数据**（帧时间/逻辑/渲染/呈现/FPS/draw/实体）+ 帧标记。
+     * 未启动 Tracy 时全部 no-op（每次只是一个原子读 + 返回）。 */
+    MQ_TRACY_FRAME();
+    MQ_TRACY_PLOT("frametime", stat_logic_ms + stat_render_ms + stat_present_ms);
+    MQ_TRACY_PLOT("logic", stat_logic_ms);
+    MQ_TRACY_PLOT("render", stat_render_ms);
+    MQ_TRACY_PLOT("present", stat_present_ms);
+    MQ_TRACY_PLOT("fps", stat_fps);
+    MQ_TRACY_PLOT("draws", stat_calls);
+    MQ_TRACY_PLOT("entities", scene ? (double)scene->count() : 0.0);
     if (!frames_dir.empty()) {
         char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);
         write_ppm(frames_dir + fn, TW, SHpx, pixels);
@@ -1162,6 +1286,125 @@ void Engine::anim_step(float dt) {
                     }
                 }
             }
+        }
+    }
+}
+
+/* 音频组件（docs/30 §6）：AudioSource/AudioListener 按 role 扫描（不硬编码类型），
+ * 所有字段走反射；只写 transient（state/playhead/voice），不改配置字段。 */
+void Engine::audio_step(float dt) {
+    (void)dt;
+    if (!audio || !scene) return;
+    std::vector<int> ids;
+    ids.reserve(scene->ents.size());
+    for (auto& [k, e] : scene->ents) ids.push_back(k);
+    std::sort(ids.begin(), ids.end());   // 稳定顺序（docs/10 D4）
+
+    /* 听者：每 instance 取稳定排序后的第一个 active */
+    const mq_type_desc* listener_desc = nullptr;
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        auto* lb = comp_by_role(*this, id, MQ_ROLE_AUDIO_LISTENER);
+        if (!lb) continue;
+        for (auto& [tid, b] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            if (d && (d->role & MQ_ROLE_AUDIO_LISTENER)) { listener_desc = d; break; }
+        }
+        if (!listener_desc) continue;
+        if (read_num(listener_desc, lb->data(), "active", 1.0F) <= 0.0F) continue;
+        const float rad = e->angle * 3.14159265358979F / 180.0F;
+        mq_audio_listener l{};
+        l.struct_size = sizeof l;
+        l.x = e->world_x;
+        l.y = e->world_y;
+        l.z = 0.0F;
+        l.dir_x = std::cos(rad);
+        l.dir_y = std::sin(rad);
+        l.dir_z = 0.0F;
+        mq_audio_set_listener(audio, &l);
+        const float master = read_num(listener_desc, lb->data(), "master_volume", 1.0F);
+        if (master != last_listener_master) {
+            mq_audio_set_master(audio, master, 0);
+            last_listener_master = master;
+        }
+        break;
+    }
+
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        auto* sb = comp_by_role(*this, id, MQ_ROLE_AUDIO_SOURCE);
+        if (!sb) continue;
+        const mq_type_desc* d = nullptr;
+        for (auto& [tid, b] : e->comps) {
+            const mq_type_desc* t = mq_reflect_type_by_id(reflect, tid);
+            if (t && (t->role & MQ_ROLE_AUDIO_SOURCE)) { d = t; break; }
+        }
+        if (!d) continue;
+        uint8_t* data = sb->data();
+        const mq_field_desc* fv = mq_reflect_field(d, "voice");
+        uint64_t voice = fv ? *(uint64_t*)(data + fv->offset) : 0;
+        const std::string* clip_path = read_str(d, data, "clip");
+        if (!clip_path || clip_path->empty()) {
+            if (voice) {
+                mq_audio_stop(audio, voice);
+                if (fv) *(uint64_t*)(data + fv->offset) = 0;
+            }
+            continue;
+        }
+        const bool autoplay = read_num(d, data, "autoplay", 0.0F) > 0.0F;
+        const bool loop = read_num(d, data, "loop", 0.0F) > 0.0F;
+        const float volume = read_num(d, data, "volume", 1.0F);
+        const float pitch = read_num(d, data, "pitch", 1.0F);
+        const float min_d = read_num(d, data, "min_distance", 1.0F);
+        const float max_d = read_num(d, data, "max_distance", 50.0F);
+        const uint32_t panning = (uint32_t)read_num(d, data, "panning", 0.0F);
+        const uint32_t attenuation = (uint32_t)read_num(d, data, "attenuation", 0.0F);
+        const std::string* bus = read_str(d, data, "bus");
+
+        if (voice == 0) {
+            if (!autoplay) continue;
+            if (std::getenv("MAQUE_TRACE_AUDIO"))
+                std::print("[audio] start id={} type={} clip='{}'\n", id, d->name, *clip_path);
+            mq_audio_clip* clip = audio_clip(*clip_path);
+            if (!clip) continue;
+            mq_audio_voice_desc vd{};
+            vd.struct_size = sizeof vd;
+            vd.clip = clip;
+            vd.volume = volume;
+            vd.pitch = pitch;
+            vd.loop = loop ? 1u : 0u;
+            vd.bus = (bus && !bus->empty()) ? bus->c_str() : "sfx";
+            vd.panning = panning;
+            vd.attenuation = attenuation;
+            vd.min_distance = min_d;
+            vd.max_distance = max_d;
+            vd.x = e->world_x;
+            vd.y = e->world_y;
+            vd.z = 0.0F;
+            voice = mq_audio_play(audio, &vd);
+            if (std::getenv("MAQUE_TRACE_AUDIO")) {
+                uint32_t fr = 0, rt = 0, chn = 0;
+                mq_audio_clip_info(clip, &fr, &rt, &chn);
+                std::print("[audio] start voice={} frames={} rate={} ch={}\n", voice, fr, rt, chn);
+            }
+            if (!voice) continue;
+            if (fv) *(uint64_t*)(data + fv->offset) = voice;
+        }
+        /* 每帧同步可调参数（脚本可用 node_set_number 改 volume 等） */
+        mq_audio_set_volume(audio, voice, volume);
+        mq_audio_set_pitch(audio, voice, pitch);
+        mq_audio_set_spatial(audio, voice, e->world_x, e->world_y, 0.0F, panning, attenuation,
+                             min_d, max_d);
+        uint32_t st = 0;
+        float head = 0.0F;
+        if (mq_audio_voice_state(audio, voice, &st, &head) == MQ_AUDIO_OK) {
+            if (const mq_field_desc* fs = mq_reflect_field(d, "state"))
+                *(int32_t*)(data + fs->offset) = (int32_t)st;
+            if (const mq_field_desc* fh = mq_reflect_field(d, "playhead"))
+                *(float*)(data + fh->offset) = head;
+            (void)0;
         }
     }
 }
@@ -1607,6 +1850,7 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     uint64_t pace_steps = 0;
 
     for (; frame < cap && !quit; ) {
+        MQ_TRACY_ZONE_N(runtime, "loop");   // Tracy：一轮主循环（含可能的多步补偿 + 墙钟 sleep）
         if (stop_frame && frame > stop_frame) break;
         if (g_quit_requested) {                          // SIGTERM/SIGINT → 优雅退出（正常收尾 + 清理端点）
             quit = true;
@@ -2278,6 +2522,9 @@ int dispatch_event(Engine& eng, int kind, double a, double b, double c, const ch
     uint32_t n = 0;
     const mq_event_desc* tab = mq_event_table(&n);
     if (!tab || kind < 0 || (uint32_t)kind >= n) return 0;
+    /* Tracy：事件派发 zone 名直接用**事件名**（on_update / on_click / on_key_down …），
+     * 时间线上可直接按事件过滤 / 看每个事件耗时（脚本入口之一）。 */
+    MQ_TRACY_ZONE_NAMED(__tz_evt, script, tab[kind].name);
     return mq_script_bus_call3(eng.bus, tab[kind].name, a, b, c, text);
 }
 
@@ -2425,6 +2672,21 @@ std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
                      want = mq_reflect_type_by_name(eng.reflect, fq); }
         if (!want) { std::snprintf(fq, sizeof fq, "physics.%s", type_name);
                      want = mq_reflect_type_by_name(eng.reflect, fq); }
+    }
+    if (!want) {
+        /* 通用短名：任意 namespace 的 "Ns.Type" 后缀匹配（audio.AudioSource 等），
+         * 避免每加一个模块都要在这里补一个前缀。重名时取注册顺序第一个。 */
+        const std::string suffix = std::string(".") + type_name;
+        const uint32_t n = mq_reflect_count(eng.reflect);
+        for (uint32_t i = 0; i < n && !want; ++i) {
+            const mq_type_desc* t = mq_reflect_type_at(eng.reflect, i);
+            if (!t || !t->name) continue;
+            const std::string nm(t->name);
+            if (nm.size() > suffix.size() &&
+                nm.compare(nm.size() - suffix.size(), suffix.size(), suffix) == 0) {
+                want = t;
+            }
+        }
     }
     if (!want) return nullptr;
     auto it = e->comps.find(want->type_id);
@@ -3496,47 +3758,95 @@ void Engine::write_seq_shot(const std::vector<uint8_t>& px, int tw, int th) {
  *
  * 未启用时（默认）**一次都不碰** ImGui 上下文 —— tank/flappy 等程序零开销。
  */
+/* 固定 UI 度量（**一次算定**）：字号/面板尺寸只由**屏幕逻辑分辨率 + DPI + 渲染倍率**
+ * 决定，与游戏窗口大小、场景分辨率、视图数无关。
+ *
+ * 为什么不用窗口/渲染目标比（旧做法 `ps = win_w/TW`）：同一个面板在不同窗口里会
+ * 一会儿过大一会儿过小（用户反馈"标题太大、有些窗口又偏小"）。SDK 侧 SDL 对
+ * DPI-unaware 进程报的是**逻辑分辨率**（2560x1600 @150% → 1707x1067），
+ * 所以 `屏幕高/1080` 这一条公式同时覆盖了"4K 屏要放大"和"150% 缩放要放大"。
+ * 可用 `MAQUE_IMGUI_SCALE` 显式覆盖（1.0 = 默认）。
+ * 字号：正文 15 逻辑像素（可用 `MAQUE_IMGUI_FONT_SIZE` 覆盖）、标题 = 正文 × 4/3
+ * —— 标题只比正文大一档，不会像之前 26px:15px 那样压过内容。 */
+void Engine::imgui_resolve_metrics() {
+    imgui_screen_w = imgui_screen_h = 0;
+    /* 只有**真实窗口**才取屏幕尺寸；headless（dummy 驱动）没有有意义的"屏幕"，
+     * 保持 ui_scale=1.0（截图/CI 的基准）。 */
+    if (window && platform) mq_platform_screen_size(platform, &imgui_screen_w, &imgui_screen_h);
+    float ui = 1.0F;
+    if (imgui_screen_h > 0) ui = (float)imgui_screen_h / 1080.0F;
+    if (const char* e = std::getenv("MAQUE_IMGUI_SCALE"); e && *e) {
+        const float v = (float)std::atof(e);
+        if (v > 0.0F) ui = v;                        // 显式覆盖（相对 1080p 的倍率）
+    }
+    if (ui < 0.7F) ui = 0.7F;
+    if (ui > 2.5F) ui = 2.5F;
+    imgui_ui_scale = ui;
+    float body = 15.0F;
+    if (const char* e = std::getenv("MAQUE_IMGUI_FONT_SIZE"); e && *e) {
+        const float v = (float)std::atof(e);
+        if (v > 0.0F) body = v;                      // 正文字号（逻辑像素）
+    }
+    imgui_body_size = body;
+    imgui_title_size = std::round(body * 4.0F / 3.0F);
+}
+
 void Engine::imgui_setup() {
     if (imgui_inited) return;
     /* 字体：复用文本模块已解析的路径（MAQUE_FONT → scenes/fonts/*.ttf → 系统）。
-     * **必须给 TTF**：ImGui 默认字体只有 ASCII，中文会渲染成 '?'（实测）。
-     * 字号默认 18px（调试面板要能看清），可用 MAQUE_IMGUI_FONT_SIZE 覆盖。 */
+     * **必须给 TTF**：ImGui 默认字体只有 ASCII，中文会渲染成 '?'（实测）。 */
     text_setup();                                // 确保 font_path 已解析（幂等）
-    /* 默认设计字号 26px：窗口默认 800x650 看 1600x1300 场景时是 0.5 倍，
-     * 屏幕上约 13px（可读）；字号按屏幕像素栅格化，所以清晰。 */
-    float fs = 26.0F;
-    if (const char* e = std::getenv("MAQUE_IMGUI_FONT_SIZE")) {
-        const float v = (float)std::atof(e);
-        if (v > 0.0F) fs = v;
-    }
-    /* 字体栅格化倍率：ImGui 显示空间 = 目标/设计空间（见 imgui_frame_begin），
-     * 所以字号就是**设计像素**，不需要再乘窗口缩放；窗口比设计小时最终画面整体缩小，
-     * 字体仍按设计尺寸栅格化才清晰（缩放交给 GPU）。 */
-    /* 字体栅格化倍率 = 窗口/目标比：面板几何在**设计空间**（目标像素），
-     * 但最终要缩放到窗口显示。字按「设计字号」栅格化的话，经过一次降采样会糊；
-     * 按「字号 × 窗口/目标」栅格化，采样时的缩放恰好抵消最后的降采样 → **1:1 落到屏幕像素**，不糊。
-     * 无窗口（headless/截图）时目标就是最终像素 → 1.0。 */
-    float ps = 1.0F;
-    if (window && TW > 0 && win_w > 0) ps = (float)win_w / (float)TW;
-    if (canvas.device_scale > 0.0F) ps *= canvas.device_scale;
-    if (ps <= 0.0F) ps = 1.0F;
-    /* 官方后端优先：先拿到 SDL_Renderer（提前创建），再声明 backend 模式 → 字体图集交给官方后端。 */
+    imgui_resolve_metrics();                     // 屏幕分辨率 → 固定 UI 度量（一次）
+    /* 窗口 绘制区/逻辑区 比：HiDPI 下 ImGui 显示空间 = 设备像素（见 imgui_frame_begin），
+     * 字号/样式与输入坐标都按这个比例换算。 */
+    imgui_content_scale = (window && platform) ? mq_platform_content_scale(platform) : 1.0F;
+    if (imgui_content_scale <= 0.0F) imgui_content_scale = 1.0F;
+    /* 呈现通道 = SDL_Renderer（游戏帧与面板共用同一个）：能拿到 renderer 就把面板交给
+     * **官方后端**（它自己管坐标/裁剪/字体纹理/多窗口，拖动/缩放是官方行为），
+     * 与引擎帧一起在**同一次 present** 上屏（见 step_frame 呈现段）。
+     * 拿不到 renderer（headless / MAQUE_PRESENT=off / 无窗口）→ 自研网格链，
+     * 面板直接写进引擎像素缓冲（--shot 可验证）。
+     * ⚠️ 必须在 init 之前声明 backend 模式：否则会先走静态图集，再切官方后端会撞
+     *    "Build() before RendererHasTextures" 断言（实测）。 */
     void* pre_ren = (window && platform) ? mq_platform_ensure_renderer(platform) : nullptr;
     if (pre_ren) mq_imgui_set_backend_mode(1);
-    if (mq_imgui_init_with_font(font_path.empty() ? nullptr : font_path.c_str(), fs, ps) != 0) {
+    /* 像素倍率：
+     *   · 官方后端：显示空间 = 窗口**设备像素** → 只按 UI 缩放 × DPI 缩放；
+     *   · 网格链：显示空间 = **渲染目标像素**（设计分辨率 × 渲染倍率）→ 再乘 ss，
+     *     这样 --shot 里面板与画面的比例和窗口模式一致。 */
+    const float ps = imgui_ui_scale * imgui_content_scale * (pre_ren ? 1.0F : (ss > 0.0F ? ss : 1.0F));
+    imgui_pixel_scale = ps > 0.0F ? ps : 1.0F;
+    imgui_input_scale = imgui_content_scale;
+    if (mq_imgui_init_with_fonts(font_path.empty() ? nullptr : font_path.c_str(),
+                                 imgui_title_size, imgui_body_size, imgui_pixel_scale) != 0) {
         std::print(stderr, "runtime: imgui init failed\n");
         imgui_on = false;
         return;
     }
-    if (pre_ren && mq_imgui_backend_init(pre_ren) == 0) {
-        imgui_backend = true;
-        std::print("runtime: imgui uses official SDL_Renderer backend\n");
+    if (pre_ren) {
+        if (mq_imgui_backend_init(pre_ren) == 0) {
+            imgui_backend = true;
+            std::print("runtime: imgui uses official SDL_Renderer backend (shared present)\n");
+        } else {
+            /* 官方后端初始化失败 → 回退网格链：把模式复位，让图集走静态 Build 路径。
+             * （字体已按"窗口像素"倍率烘好；网格链下略小于目标空间比例，可接受——
+             *  这条路径只在 renderer 存在但官方后端初始化失败时触发。） */
+            mq_imgui_set_backend_mode(0);
+            imgui_backend = false;
+            std::print(stderr, "runtime: imgui official backend init failed → mesh-chain fallback\n");
+        }
     }
     imgui_inited = true;
     imgui_tex = -1;
     imgui_tex_gen = 0;
-    std::print("runtime: imgui enabled (layer={}, font={} size={:.0f} scale={:.2f})\n",
-               MQ_IMGUI_LAYER, font_path.empty() ? "(default)" : font_path.c_str(), fs, ps);
+    stat_window_sized = false;       // 新上下文：stats 窗口按固定度量重新定位/定尺寸
+    /* 面板固定尺寸：正文 16 字宽 × 10 行高（含标题/内边距）——屏幕比例固定，不随窗口变。 */
+    imgui_panel_w = std::round(imgui_body_size * 16.0F * imgui_pixel_scale);
+    imgui_panel_h = std::round(imgui_body_size * 10.0F * imgui_pixel_scale);
+    std::print("runtime: imgui ui scale={:.2f} screen={}x{} title={:.0f} body={:.0f} "
+               "pixel={:.2f} panel={:.0f}x{:.0f}\n",
+               imgui_ui_scale, imgui_screen_w, imgui_screen_h,
+               imgui_title_size, imgui_body_size, imgui_pixel_scale, imgui_panel_w, imgui_panel_h);
 }
 
 /* 开关面板：关掉时释放上下文 + 字体纹理（不占 GPU/输入）；再开会重新初始化。 */
@@ -3584,58 +3894,57 @@ void Engine::imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np
     }
 }
 
+/* CI/无真鼠标：把 MAQUE_IMGUI_POINTER 声明的**合成指针事件**压进本帧设备队列。
+ * 走与真实鼠标完全相同的路径（iframe → imgui_input_feed → ImGui），用于 e2e 验证拖动。
+ * 格式："frame:x:y:type[;frame:x:y:type...]"，type 0=move 1=down 2=up。 */
+void Engine::imgui_fake_input(mq_platform_pointer_event* ptrs, uint32_t& count, uint32_t cap) {
+    if (!imgui_fake_parsed) {
+        imgui_fake_parsed = true;
+        const char* spec = std::getenv("MAQUE_IMGUI_POINTER");
+        if (spec && *spec) {
+            std::string s(spec), item;
+            for (size_t i = 0; i <= s.size(); ++i) {
+                const char c = i < s.size() ? s[i] : ';';
+                if (c != ';') { if (c != ' ') item.push_back(c); continue; }
+                int fr = 0, ty = 0; float x = 0, y = 0;
+                if (item.size() > 0 && std::sscanf(item.c_str(), "%d:%f:%f:%d", &fr, &x, &y, &ty) == 4)
+                    imgui_fake_ptr.push_back({ fr, x, y, ty });
+                item.clear();
+            }
+            std::print("runtime: imgui fake pointer events={}\n", imgui_fake_ptr.size());
+        }
+    }
+    for (const ImguiFakePointer& ev : imgui_fake_ptr) {
+        if ((uint64_t)ev.frame != frame || count >= cap) continue;
+        mq_platform_pointer_event& e = ptrs[count++];
+        std::memset(&e, 0, sizeof e);
+        e.pointer_id = 0;
+        e.pointer_type = MQ_PLATFORM_POINTER_MOUSE;
+        e.button = 0;
+        e.type = ev.type == 1 ? MQ_PLATFORM_POINTER_DOWN
+               : ev.type == 2 ? MQ_PLATFORM_POINTER_UP
+                              : MQ_PLATFORM_POINTER_MOVE;
+        e.x = ev.x;
+        e.y = ev.y;
+        e.pressure = ev.type == 1 ? 1.0F : 0.0F;
+    }
+}
+
 void Engine::imgui_frame_begin(float dt) {
-    /* 首次调用时按 MAQUE_IMGUI 决定初始开关（默认**关**：不写脚本的游戏不受影响）。 */
+    /* 首次调用时决定初始开关：**默认关**（ImGui 是开发工具，不默认覆盖游戏画面）。
+     * 打开：启动期 `MAQUE_IMGUI=1`（含 headless/截图），或运行时 F2 / 脚本
+     * `imgui_set_enabled(1)`；`MAQUE_IMGUI=0` 只是显式初值（F2 仍可再开）。 */
     if (!imgui_env_checked) {
         imgui_env_checked = true;
-        /* 默认：**真窗口且不是截图/离屏**时自动开启（所有游戏都有 stats 面板）。
-         * MAQUE_IMGUI=0 关掉；=1 强制开（含 headless/截图）；F2 随时开关。 */
-        /* 默认关闭（需要显式开）：MAQUE_IMGUI=1 或运行时按 F2。
-         * 默认开启会改变所有窗口程序的画面与输入命中（stats 面板覆盖左上角），
-         * 现有 e2e（imgui_toggle_e2e 期望初始为关、canvas_e2e 依赖像素/命中）
-         * 需要一并调整后才能改默认值 —— 见提交说明的待办。 */
-        /* 默认：**真窗口 + 非截图 + 未关呈现** → 开启（所有游戏都有 stats 面板；
-         * stats 是 NoInputs 覆盖层，不挡点击）。MAQUE_IMGUI=0 关；=1 强制开（含 headless）。 */
         const char* e = std::getenv("MAQUE_IMGUI");
-        const char* pres = std::getenv("MAQUE_PRESENT");
-        const bool present_off = pres && (std::strcmp(pres, "off") == 0 || std::strcmp(pres, "0") == 0);
-        const bool force_off = e && *e && std::strcmp(e, "0") == 0;
-        const bool force_on = e && *e && std::strcmp(e, "0") != 0;
-        /* MAQUE_CAPTURE（窗口表面回读做像素断言）时也不自动开：覆盖层会出现在捕获里。 */
-        const bool capturing = std::getenv("MAQUE_CAPTURE") != nullptr;
-        if (force_on || (!force_off && window && shot_path.empty() && !present_off && !capturing)) {
+        if (e && *e && std::strcmp(e, "0") != 0) {
             imgui_on = true;
-            std::print("runtime: imgui on{} (F2 toggles)\n", force_on ? " (MAQUE_IMGUI)" : " (default)");
+            std::print("runtime: imgui on (MAQUE_IMGUI) (F2 toggles)\n");
         }
     }
     if (!imgui_on) return;
-    /* 加速呈现 + 有窗口：SDL_Renderer 要到首次 present 才创建 → 等它出现再初始化，
-     * 且**先声明 backend 模式**（图集交给官方后端动态烘焙，避免静态 Build 断言）。 */
-    const char* pres_env2 = std::getenv("MAQUE_PRESENT");
-    const bool want_backend = window && platform && pres_env2 &&
-                              std::strcmp(pres_env2, "accelerated") == 0;
-    if (want_backend && !imgui_backend) {
-        void* sdl_ren = mq_platform_sdl_renderer(platform);
-        if (sdl_ren) {
-            if (!imgui_inited) { mq_imgui_set_backend_mode(1); imgui_setup(); }
-            if (imgui_inited && mq_imgui_backend_init(sdl_ren) == 0) {
-                imgui_backend = true;
-                std::print("runtime: imgui uses official SDL_Renderer backend\n");
-            }
-        }
-        if (!imgui_backend) return;      // renderer 还没创建好：本帧不画面板
-    }
     if (!imgui_inited) imgui_setup();
     if (!imgui_inited) return;
-    /* 官方后端延迟切换：SDL_Renderer 要到首次 present 才创建，setup 时还是 null。
-     * 每帧尝试一次，成功即永久切到官方后端（面板直接画窗口、不经过网格导出链）。 */
-    if (!imgui_backend && window && platform) {
-        void* sdl_ren = mq_platform_sdl_renderer(platform);
-        if (sdl_ren && mq_imgui_backend_init(sdl_ren) == 0) {
-            imgui_backend = true;
-            std::print("runtime: imgui uses official SDL_Renderer backend\n");
-        }
-    }
     const int target_w = TW;
     const int target_h = (int)(H * ss + 0.5F);
     if (target_w <= 0 || target_h <= 0) return;
@@ -3664,47 +3973,44 @@ void Engine::imgui_frame_begin(float dt) {
         }
     }
 
-    /* 映射参数：**ImGui 的显示空间直接 = 目标/设计空间**（scale=1、offset=0）。
-     *
-     * 为什么不让显示空间 = 窗口像素：脚本是按 `screen_w()`（设计分辨率）定位面板的
-     *（如 all.scn 1600x1300 把面板放在 x=1284）。若显示空间是窗口像素（默认 800x650），
-     * 面板会落在显示空间外 → ImGui 把它裁成**宽度 0**（实测 clip=(800,32)-(800,477)，
-     * 面板整块消失）。设计空间 = 目标空间时，两种模式（有窗口/headless）行为一致。
-     *
-     * 代价：输入坐标要把"窗口像素"反算到设计坐标（见 imgui_input_feed）。 */
     /* 显示空间：
-     * · 官方后端模式（accelerated）：ImGui 直接在**窗口像素空间**画（SDL_Renderer），
-     *   所以显示尺寸必须用窗口尺寸；否则面板会画到窗口外（实测：屏幕左边只剩一列被裁的字）。
-     * · 自研网格链模式（software）：显示空间 = 设计/目标空间（脚本按 screen_w() 定位）。 */
+     * · 官方后端模式：ImGui 直接画在 SDL_Renderer 上 → 显示空间 = 窗口**设备像素**
+     *   （HiDPI 下大于逻辑尺寸；鼠标逻辑坐标按 imgui_input_scale 换算）。
+     * · 自研网格链模式（headless / present off）：显示空间 = 目标像素（面板进 --shot）。
+     * 字号/面板尺寸都是**固定 UI 度量**（imgui_resolve_metrics），与窗口/目标大小无关。 */
     float show_w = (float)target_w;
     float show_h = (float)target_h;
-    if (imgui_backend && win_w > 0 && win_h > 0) {
-        show_w = (float)win_w;
-        show_h = (float)win_h;
+    if (imgui_backend) {
+        int dw = 0, dh = 0;
+        if (platform) mq_platform_drawable_size(platform, &dw, &dh);
+        if (dw > 0 && dh > 0) { show_w = (float)dw; show_h = (float)dh; }
+        else if (win_w > 0 && win_h > 0) { show_w = (float)win_w; show_h = (float)win_h; }
     }
     const float scale = 1.0F, off_x = 0.0F, off_y = 0.0F;
     const float dpi = 1.0F;
+    if (imgui_backend) mq_imgui_backend_new_frame();   // 官方后端的 NewFrame（须在 ImGui::NewFrame 之前）
     mq_imgui_begin_frame(show_w, show_h, (float)target_w, (float)target_h,
                         scale, off_x, off_y, dt, dpi);
     imgui_frame_active = true;
 
-    /* ---- 默认 stats 面板：**所有游戏都有**，左上角，无需脚本参与 ----
-     * 数据是上一帧的（开帧时就显示）。
-     * · **不设尺寸**：让窗口按内容自动收缩 —— 之前固定 268x300，用户拖动后内容被截断
-     *   （窗口尺寸写死、内容行数/字号变化就溢出）；
-     * · 内容压缩成 4 行，避免"窗体偏大"。位置仍用 FirstUseEver（可拖动、不弹回）。 */
+    /* ---- stats 面板（打开时）：所有游戏通用，左上角，无需脚本参与 ----
+     * · 尺寸/字号 = **屏幕分辨率派生的固定值**（`imgui_panel_w/h`）——同一块屏上
+     *   无论游戏窗口多大、场景分辨率多少，面板看起来都一样大（用户反馈"标题太大/
+     *   有些窗口又偏小"的修复点）；只有窗口小到放不下时才按比例收缩。
+     * · 位置/尺寸只在**首帧**设一次（FirstUseEver）——之后用户拖动/缩放不被复位。 */
     if (mq_imgui_ready()) {
-        /* 位置/尺寸只在**首帧**设一次（之后拖动/缩放不被复位）。尺寸按 4 行内容给够。 */
         if (!stat_window_sized) {
-            /* 尺寸不能超过渲染目标（320x240 的小场景里 400x260 会盖满整个画面）。 */
-            const float w = std::min(400.0F, (float)target_w * 0.8F);
-            const float h = std::min(260.0F, (float)target_h * 0.62F);
-            mq_imgui_set_pos(8.0F, 8.0F);
-            mq_imgui_set_size(w > 80.0F ? w : 80.0F, h > 60.0F ? h : 60.0F);
+            const float pad = 8.0F * imgui_pixel_scale;
+            const float min_w = 80.0F * imgui_pixel_scale;
+            const float min_h = 60.0F * imgui_pixel_scale;
+            const float w = std::min(imgui_panel_w, show_w * 0.85F);
+            const float h = std::min(imgui_panel_h, show_h * 0.75F);
+            mq_imgui_set_pos(pad, pad);
+            mq_imgui_set_size(w > min_w ? w : min_w, h > min_h ? h : min_h);
             stat_window_sized = true;
         }
         if (mq_imgui_begin_overlay("stats")) {
-            mq_imgui_push_small_font();     // stats 用 15px 小字号（图集烘了第二档）
+            mq_imgui_push_small_font();     // 内容用正文字号（图集烘了标题/正文两档）
             char line[160];
             std::snprintf(line, sizeof line, "FPS %.0f  (%.1f ms)",
                           stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);
@@ -3789,6 +4095,98 @@ void Engine::imgui_extract(std::vector<mq_renderer_mesh>& out) {
         m.clip_w = c.clip_w;
         m.clip_h = c.clip_h;
         out.push_back(m);
+    }
+}
+
+/* ---- Tracy 性能分析（docs/29）------------------------------------------------------
+ * 设计：客户端**手动启动**（F3 / MAQUE_TRACY=1）；未启动时所有宏 no-op。
+ * 基础数据：frame/logic/render/present/FPS/draw/实体（每步）+ CPU%/内存（1Hz）。
+ * F3 还会拉起 tracy-profiler GUI（独立进程；退出游戏后 trace 仍可看）。
+ */
+static std::string find_tracy_profiler() {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+#if defined(_WIN32)
+    const char* exe_name = "tracy-profiler.exe";
+#elif defined(__APPLE__)
+    const char* exe_name = "Tracy.app/Contents/MacOS/Tracy";
+#else
+    const char* exe_name = "tracy-profiler";
+#endif
+    std::vector<fs::path> cands;
+    if (const char* e = std::getenv("MAQUE_TRACY_PROFILER"); e && *e) cands.emplace_back(fs::path(e));
+    /* 从 CWD 逐级向上找 `.deps/tracy/<exe>`（典型：仓库根 或 build-win/samples/player 启动）。 */
+    fs::path dir = fs::current_path(ec);
+    for (int i = 0; i < 6 && !dir.empty() && !ec; ++i) {
+        cands.push_back(dir / ".deps" / "tracy" / exe_name);
+        cands.push_back(dir / "tools" / "tracy" / exe_name);
+        dir = dir.parent_path();
+    }
+    for (const auto& c : cands)
+        if (fs::exists(c, ec) && !ec) return c.string();
+    return {};
+}
+
+void Engine::tracy_start(const char* why) {
+    if (maque::tracy::started()) return;
+    if (!maque::tracy::startup()) {
+        std::print(stderr, "runtime: [tracy] 本构建未编入 Tracy（MAQUE_TRACY=OFF）\n");
+        return;
+    }
+    /* 基础数据曲线：颜色与模块色一致（frametime=蓝 / logic=绿 / render=棕 / present=紫 …）。 */
+    MQ_TRACY_PLOT_CONFIG("frametime", 0, false, true, 0x4E79A7);
+    MQ_TRACY_PLOT_CONFIG("logic", 0, false, true, 0x59A14F);
+    MQ_TRACY_PLOT_CONFIG("render", 0, false, true, 0x9C755F);
+    MQ_TRACY_PLOT_CONFIG("present", 0, false, true, 0xB07AA1);
+    MQ_TRACY_PLOT_CONFIG("fps", 0, false, true, 0xEDC948);
+    MQ_TRACY_PLOT_CONFIG("draws", 0, false, true, 0x9E9E9E);
+    MQ_TRACY_PLOT_CONFIG("entities", 0, false, true, 0x8CD17D);
+    MQ_TRACY_PLOT_CONFIG("cpu", 2 /*percentage*/, false, true, 0xF28E2B);
+    MQ_TRACY_PLOT_CONFIG("memory", 1 /*memory*/, false, true, 0x76B7B2);
+    maque::tracy::thread_name("main");
+    MQ_TRACY_MESSAGE("Tracy client started");
+    const char* port = std::getenv("MAQUE_TRACY_PORT");
+    std::print("runtime: [tracy] client started ({}) — listening on 127.0.0.1:{}\n", why,
+               port && *port ? port : "8086");
+}
+
+void Engine::tracy_launch_gui() {
+    if (tracy_gui_launched) return;
+    if (!maque::tracy::started()) return;          // 未编入/启动失败：不弹 GUI
+    const std::string exe = find_tracy_profiler();
+    if (exe.empty()) {
+        std::print(stderr,
+                   "runtime: [tracy] 未找到 tracy-profiler；Windows 跑 tools/tracy/get-profiler.ps1 下载、"
+                   "Linux/macOS 跑 tools/tracy/build-profiler.sh 构建 GUI，"
+                   "或设 MAQUE_TRACY_PROFILER=<path>\n");
+        return;
+    }
+    const char* env_port = std::getenv("MAQUE_TRACY_PORT");
+    const std::string port = (env_port && *env_port) ? env_port : "8086";
+    const std::string args = "-a 127.0.0.1 -p " + port;
+    const int rc = platform ? mq_platform_spawn_detached(platform, exe.c_str(), args.c_str()) : 1;
+    if (rc == 0) {
+        tracy_gui_launched = true;
+        std::print("runtime: [tracy] launched profiler '{} {}'\n", exe, args);
+    } else {
+        std::print(stderr, "runtime: [tracy] 启动 profiler 失败（rc={}）: '{}'\n", rc, exe);
+    }
+}
+
+void Engine::tracy_tick() {
+    if (!tracy_env_checked) {
+        tracy_env_checked = true;
+        const char* e = std::getenv("MAQUE_TRACY");
+        if (e && *e && std::strcmp(e, "0") != 0) tracy_start("MAQUE_TRACY");
+    }
+    if (!maque::tracy::started()) return;
+    /* 1Hz：进程 CPU%/常驻内存（Tracy 基础数据）。 */
+    if (frame % 60 != 0 || !platform) return;
+    double cpu = 0.0;
+    uint64_t mem = 0;
+    if (mq_platform_process_stats(platform, &cpu, &mem) == 0) {
+        MQ_TRACY_PLOT("cpu", cpu);
+        MQ_TRACY_PLOT("memory", (double)mem);
     }
 }
 
@@ -5812,6 +6210,77 @@ float imgui_last_cmd_count(void* ctx) {
     return eng ? (float)eng->imgui_last_cmds : 0.0F;
 }
 
+/* ---- 音频（docs/30）：一次性音效；场景常驻声源用 audio.AudioSource 组件 ---- */
+double audio_play(void* ctx, const char* path, float volume, float loop, const char* bus) {
+    auto* eng = (Engine*)ctx;
+    if (!eng || !eng->audio || !path || !*path) return 0.0;
+    mq_audio_clip* clip = eng->audio_clip(path);
+    if (!clip) return 0.0;
+    mq_audio_voice_desc d{};
+    d.struct_size = sizeof d;
+    d.clip = clip;
+    d.volume = volume;
+    d.pitch = 1.0F;
+    d.loop = (loop != 0.0F) ? 1u : 0u;
+    d.bus = (bus && *bus) ? bus : "sfx";
+    d.min_distance = 1.0F;
+    d.max_distance = 50.0F;
+    return (double)mq_audio_play(eng->audio, &d);
+}
+void audio_stop(void* ctx, double voice) {
+    auto* eng = (Engine*)ctx;
+    if (eng && eng->audio && voice > 0.0) mq_audio_stop(eng->audio, (uint64_t)voice);
+}
+void audio_pause(void* ctx, double voice, float paused) {
+    auto* eng = (Engine*)ctx;
+    if (eng && eng->audio && voice > 0.0) mq_audio_pause(eng->audio, (uint64_t)voice, paused != 0.0F);
+}
+void audio_set_volume(void* ctx, double voice, float volume) {
+    auto* eng = (Engine*)ctx;
+    if (eng && eng->audio && voice > 0.0) mq_audio_set_volume(eng->audio, (uint64_t)voice, volume);
+}
+void audio_set_pitch(void* ctx, double voice, float pitch) {
+    auto* eng = (Engine*)ctx;
+    if (eng && eng->audio && voice > 0.0) mq_audio_set_pitch(eng->audio, (uint64_t)voice, pitch);
+}
+float audio_state(void* ctx, double voice) {
+    auto* eng = (Engine*)ctx;
+    if (!eng || !eng->audio || voice <= 0.0) return -1.0F;
+    uint32_t state = 0;
+    if (mq_audio_voice_state(eng->audio, (uint64_t)voice, &state, nullptr) != MQ_AUDIO_OK)
+        return -1.0F;
+    return (float)state;
+}
+float audio_playhead(void* ctx, double voice) {
+    auto* eng = (Engine*)ctx;
+    if (!eng || !eng->audio || voice <= 0.0) return -1.0F;
+    float head = 0.0F;
+    if (mq_audio_voice_state(eng->audio, (uint64_t)voice, nullptr, &head) != MQ_AUDIO_OK)
+        return -1.0F;
+    return head;
+}
+float audio_enabled(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return (eng && eng->audio) ? 1.0F : 0.0F;
+}
+void audio_set_listener(void* ctx, float x, float y, float dir_x, float dir_y) {
+    auto* eng = (Engine*)ctx;
+    if (!eng || !eng->audio) return;
+    mq_audio_listener l{};
+    l.struct_size = sizeof l;
+    l.x = x; l.y = y; l.z = 0.0F;
+    l.dir_x = dir_x; l.dir_y = dir_y; l.dir_z = 0.0F;
+    mq_audio_set_listener(eng->audio, &l);
+}
+void audio_master_volume(void* ctx, float volume) {
+    auto* eng = (Engine*)ctx;
+    if (eng && eng->audio) mq_audio_set_master(eng->audio, volume, 0);
+}
+void audio_bus_volume(void* ctx, const char* bus, float volume) {
+    auto* eng = (Engine*)ctx;
+    if (eng && eng->audio && bus && *bus) mq_audio_set_bus(eng->audio, bus, volume, 0);
+}
+
 } // namespace host
 
 
@@ -6343,6 +6812,101 @@ extern "C" int mq_control_Storage_remove(void* u, const mq_json* params, char* o
     return 0;
 }
 
+/* ---- 音频控制面（docs/30）：只读查询 + 变更类（D2 由 control_mutating 统一限制）---- */
+extern "C" int mq_control_Audio_info(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    if (!e->audio) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"audio unavailable\"}"); return 0; }
+    mq_audio_stats st{};
+    st.struct_size = sizeof st;
+    mq_audio_get_stats(e->audio, &st);
+    std::snprintf(out, cap,
+                  "{\"ok\":true,\"sample_rate\":%u,\"channels\":%u,\"voices\":%u,"
+                  "\"callbacks\":%llu,\"dropped\":%llu}",
+                  st.sample_rate, st.channels, st.voices,
+                  (unsigned long long)st.callbacks, (unsigned long long)st.dropped);
+    return 0;
+}
+
+extern "C" int mq_control_Audio_voices(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    if (!e->audio) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"audio unavailable\"}"); return 0; }
+    std::string json = "{\"ok\":true,\"voices\":[";
+    uint64_t voice = 0;
+    uint32_t state = 0;
+    float head = 0.0F;
+    for (uint32_t i = 0; i < 256; ++i) {
+        if (!mq_audio_voice_at(e->audio, i, &voice, &state, &head)) break;
+        if (i) json += ',';
+        char b[192];
+        std::snprintf(b, sizeof b,
+                      "{\"voice\":\"%llu\",\"state\":%u,\"playhead\":%.6f}",
+                      (unsigned long long)voice, state, (double)head);
+        json += b;
+    }
+    json += "]}";
+    std::snprintf(out, cap, "%s", json.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Audio_play(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
+    if (!e->audio || !path || !*path) {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing path/audio\"}");
+        return 0;
+    }
+    mq_audio_clip* clip = e->audio_clip(path);
+    if (!clip) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"load failed\"}"); return 0; }
+    mq_audio_voice_desc d{};
+    d.struct_size = sizeof d;
+    d.clip = clip;
+    d.volume = (float)mq_json_num(mq_json_get(params, "volume"), 1.0);
+    d.pitch = 1.0F;
+    d.loop = mq_json_num(mq_json_get(params, "loop"), 0.0) != 0.0 ? 1u : 0u;
+    const char* bus = mq_json_str(mq_json_get(params, "bus"), "sfx");
+    d.bus = (bus && *bus) ? bus : "sfx";
+    d.min_distance = 1.0F;
+    d.max_distance = 50.0F;
+    const uint64_t voice = mq_audio_play(e->audio, &d);
+    if (!voice) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"voice pool full\"}"); return 0; }
+    std::snprintf(out, cap, "{\"ok\":true,\"voice\":\"%llu\"}", (unsigned long long)voice);
+    return 0;
+}
+
+extern "C" int mq_control_Audio_stop(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const char* vs = mq_json_str(mq_json_get(params, "voice"), nullptr);
+    const uint64_t voice = (vs && *vs) ? std::strtoull(vs, nullptr, 10) : 0;
+    if (!e->audio || !voice) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing voice\"}"); return 0; }
+    const int rc = mq_audio_stop(e->audio, voice);
+    std::snprintf(out, cap, "{\"ok\":%s}", rc == MQ_AUDIO_OK ? "true" : "false");
+    return 0;
+}
+
+extern "C" int mq_control_Audio_set_master(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    if (!e->audio) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"audio unavailable\"}"); return 0; }
+    const float volume = (float)mq_json_num(mq_json_get(params, "volume"), 1.0);
+    const bool mute = mq_json_num(mq_json_get(params, "mute"), 0.0) != 0.0;
+    const int rc = mq_audio_set_master(e->audio, volume, mute ? 1u : 0u);
+    std::snprintf(out, cap, "{\"ok\":%s}", rc == MQ_AUDIO_OK ? "true" : "false");
+    return 0;
+}
+
+extern "C" int mq_control_Audio_set_bus(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const char* bus = mq_json_str(mq_json_get(params, "bus"), nullptr);
+    if (!e->audio || !bus || !*bus) {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing bus\"}");
+        return 0;
+    }
+    const float volume = (float)mq_json_num(mq_json_get(params, "volume"), 1.0);
+    const bool mute = mq_json_num(mq_json_get(params, "mute"), 0.0) != 0.0;
+    const int rc = mq_audio_set_bus(e->audio, bus, volume, mute ? 1u : 0u);
+    std::snprintf(out, cap, "{\"ok\":%s}", rc == MQ_AUDIO_OK ? "true" : "false");
+    return 0;
+}
+
 /* Scene.bake：Scene.expand_prefabs 的兼容别名（已弃用；docs/12 §5 改名） */
 extern "C" int mq_control_Scene_bake(void* u, const mq_json* params, char* out, size_t cap) {
     return mq_control_Scene_expand_prefabs(u, params, out, cap);
@@ -6821,6 +7385,7 @@ void apply_env_mounts(mq_vfs* vfs) {
 /* 装配引擎：VFS → 反射 → 渲染插件 → 场景 → 平台/输入 → 脚本 → 控制面。
  * 两条入口（命令行 / 嵌入宿主）共用，保证行为一致。 */
 bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
+    MQ_TRACY_ZONE_N(runtime, "engine.setup");   // Tracy：装配阶段（VFS/反射/插件/场景/平台/脚本）
     /* 优雅退出：**无条件**安装（宿主 kill / CI 超时清理）——
      * 注意 SDL_HINT_NO_SIGNAL_HANDLERS 已阻止 SDL 接管；这里必须在平台创建之后仍持有处理器。 */
     signal(SIGTERM, on_quit_signal);
@@ -6873,6 +7438,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     if (!rself) { std::print("runtime: renderer create failed\n"); return false; }
     std::print("runtime: renderer plugin '{}' backend='{}'\n", plugin, backend ? backend : "?");
 
+    audio_setup();                               // 音频实例先于场景：脚本 on_start 可 audio_play
     obs = mq_obs_create();                       // 场景装配期即可能产生事件（脚本错误等）
     if (!load_scene_into(scn_path)) return false;
     /* 窗口标题：MAQUE_TITLE 覆盖场景标题（默认用场景 title） */
@@ -6880,6 +7446,41 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     if (const char* ts = std::getenv("MAQUE_TITLE"); ts && *ts) win_title = ts;
     platform = mq_platform_create(win_title.c_str(), win_w, win_h);
     window = mq_platform_has_window(platform) != 0;
+    /* ---- 3D/PBR：能力自省 + 直接呈现探测（plans/18-pbr-3d.md M0）----
+     *   · caps 总是调用（记录适配器能力，MAQUE_RENDER3D_INFO/wgpu 时打印）；
+     *   · 直接呈现只在显式 MAQUE_PRESENT=wgpu 时尝试：M1 接通前 attach_window 明确返回失败
+     *     → 保持现有「离屏 + platform(SDL_Renderer) 呈现」路径，老 2D 行为不变。 */
+    if (rapi->caps && rself) {
+        const bool want_wgpu = [] {
+            const char* p = std::getenv("MAQUE_PRESENT");
+            return p && std::strcmp(p, "wgpu") == 0;
+        }();
+        const char* info = std::getenv("MAQUE_RENDER3D_INFO");
+        mq_renderer_caps caps{};
+        if (rapi->caps(rself, &caps) == 0 && (want_wgpu || (info && *info && *info != '0')))
+            std::print("runtime: renderer caps tex={} lights={} target_fmt={} depth_fmt={} direct_present={} hdr={}\n",
+                       caps.max_texture_size, caps.max_lights, caps.target_format, caps.depth_format,
+                       caps.direct_present, caps.hdr);
+        if (want_wgpu && window && rapi->attach_window) {
+            mq_platform_native_window nw{};
+            if (mq_platform_get_native_window(platform, &nw) != 0) {
+                mq_renderer_window rw{};
+                rw.kind = nw.kind;
+                rw.display = nw.display;
+                rw.handle = nw.handle;
+                rw.extra = nw.extra;
+                int32_t dw = 0, dh = 0;
+                mq_platform_drawable_size(platform, &dw, &dh);
+                rw.width = dw;
+                rw.height = dh;
+                const int rc = rapi->attach_window(rself, &rw);
+                std::print("runtime: direct present attach_window kind={} size={}x{} rc={}（{}）\n",
+                           rw.kind, rw.width, rw.height, rc, rc == 0 ? "wgpu swapchain" : "回退离屏+SDL");
+            } else {
+                std::print("runtime: direct present 不可用（platform 未给出原生窗口句柄）\n");
+            }
+        }
+    }
     input = mq_input_create();
     mq_input_set_hit_test(input, runtime_hit_test, this);
     mq_input_set_parent_fn(input, runtime_parent, this);
@@ -6920,6 +7521,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
 /* 场景装配（setup 与 director.loadScene 共用）：解析 → 实例化 → 尺寸/视图 → 物理世界
  * → 脚本 VM/绑定 → 监视 → 资源预解析 → 物理组件建体。切场景同样走此处（docs/12/20）。 */
 bool Engine::load_scene_into(const std::string& scn_path) {
+    MQ_TRACY_ZONE_N(runtime, "scene.load");   // Tracy：场景加载（资源/实体/脚本装配）
     namespace fs = std::filesystem;
     /* 场景来源挂载（本地目录 / http(s) URL 目录）——后挂载者优先 → 新场景来源生效 */
     std::string scn_vfs;
@@ -6939,6 +7541,11 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     node_events.clear();
     physics_role_bodies.clear();
     particles.clear();
+    if (audio) {
+        for (auto& kv : audio_clips) mq_audio_clip_release(kv.second);
+        audio_clips.clear();
+        last_listener_master = 1.0F;
+    }
     director_paused = false;
     scene_store = Scene();
     scene = &scene_store;
@@ -7155,6 +7762,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
 }
 
 void Engine::teardown() {
+    MQ_TRACY_ZONE_N(runtime, "engine.teardown");   // Tracy：退出清理
     /* ImGui：先关官方后端再销毁上下文（否则退出时断言 "Forgot to shutdown Renderer backend?"）。 */
     if (imgui_inited) {
         mq_imgui_shutdown();
@@ -7190,11 +7798,154 @@ void Engine::teardown() {
     mq_physics_destroy(physics); physics = nullptr;
     spine_release();                     // Spine 实例/骨架数据（纹理归 tex_cache → 随渲染器销毁）
     mq_input_destroy(input); input = nullptr;
+    audio_teardown();                    // 先停设备/join 回调，再拆平台（SDL）
     mq_platform_destroy(platform); platform = nullptr;
     if (rapi && rself) { rapi->destroy(rself); rself = nullptr; }
     mq_host_destroy(host); host = nullptr;
     mq_vfs_destroy(vfs); vfs = nullptr;
     if (storage) { mq_storage_destroy(storage); storage = nullptr; }
+}
+
+/* ---- 音频生命周期（docs/30）---- */
+void Engine::audio_setup() {
+    mq_audio_desc d{};
+    d.struct_size = sizeof d;
+    d.sample_rate = 48000;
+    d.channels = 2;
+    d.buffer_frames = 1024;
+    d.max_voices = 64;
+    d.backend = MQ_AUDIO_BACKEND_NULL;   // 默认静音：逻辑/脚本可用，CI 不弹设备
+    bool want_device = false;
+    if (const char* env = std::getenv("MAQUE_AUDIO"); env && *env) {
+        if (std::strcmp(env, "0") == 0 || std::strcmp(env, "off") == 0 ||
+            std::strcmp(env, "null") == 0) {
+            d.backend = MQ_AUDIO_BACKEND_NULL;
+        } else if (std::strcmp(env, "sdl") == 0) {
+            d.backend = MQ_AUDIO_BACKEND_SDL;
+            want_device = true;
+        } else {   // 1 / on / auto
+            d.backend = MQ_AUDIO_BACKEND_AUTO;
+            want_device = true;
+        }
+    }
+    if (const char* dev = std::getenv("MAQUE_AUDIO_DEVICE"); dev && *dev) d.device = dev;
+    if (const char* buf = std::getenv("MAQUE_AUDIO_BUFFER"); buf && *buf) {
+        const int v = std::atoi(buf);
+        if (v > 0) d.buffer_frames = (uint32_t)v;
+    }
+    const char* cap_path = std::getenv("MAQUE_AUDIO_CAPTURE");
+    const bool capture = cap_path && *cap_path;
+    if (capture) {
+        /* 抓音必须独占混音推进（否则设备回调 + 抓音各 mix 一次 → playhead 双倍消耗） */
+        d.backend = MQ_AUDIO_BACKEND_NULL;
+        want_device = false;
+    }
+    audio = mq_audio_create(&d);
+    if (audio) {
+        mq_audio_stats st{};
+        st.struct_size = sizeof st;
+        mq_audio_get_stats(audio, &st);
+        audio_cap_rate = st.sample_rate;
+        audio_cap_channels = st.channels;
+        std::print("runtime: audio {} backend rate={} ch={}\n",
+                   capture ? "capture(null pump)"
+                           : (want_device ? "device requested" : "null (MAQUE_AUDIO=off/null)"),
+                   st.sample_rate, st.channels);
+        if (capture) audio_capture_start(cap_path);
+    } else {
+        std::print(stderr, "runtime: audio init failed（脚本 audio_* 将返回失败）\n");
+    }
+}
+
+void Engine::audio_teardown() {
+    audio_capture_finish();
+    if (audio) {
+        mq_audio_destroy(audio);   // 内含 stop/close（join 音频线程）
+        audio = nullptr;
+    }
+    for (auto& kv : audio_clips) mq_audio_clip_release(kv.second);
+    audio_clips.clear();
+}
+
+void Engine::audio_capture_start(const char* path) {
+    audio_cap = std::fopen(path, "wb");
+    if (!audio_cap) {
+        std::print(stderr, "runtime: audio capture open failed '{}'\n", path);
+        return;
+    }
+    std::array<uint8_t, 44> header{};   // 先占位，退出时回填
+    std::fwrite(header.data(), 1, header.size(), audio_cap);
+    audio_cap_path = path;
+    audio_cap_frames = 0;
+    audio_cap_frac = 0.0;
+    std::print("runtime: audio capture -> {}\n", path);
+}
+
+void Engine::audio_capture_step(float dt) {
+    if (!audio_cap || !audio) return;
+    audio_cap_frac += (double)dt * (double)audio_cap_rate;
+    uint32_t frames = (uint32_t)audio_cap_frac;
+    if (frames == 0) return;
+    audio_cap_frac -= (double)frames;
+    if (frames > 4800) frames = 4800;                 // 单帧上限（防 dt 异常）
+    audio_cap_buf.assign((size_t)frames * 2, 0.0F);
+    if (mq_audio_mix(audio, audio_cap_buf.data(), frames) != MQ_AUDIO_OK) return;
+    std::vector<int16_t> pcm((size_t)frames * 2);
+    for (size_t i = 0; i < pcm.size(); ++i) {
+        const float v = std::clamp(audio_cap_buf[i], -1.0F, 1.0F);
+        pcm[i] = (int16_t)std::lround(v * 32767.0F);
+    }
+    std::fwrite(pcm.data(), sizeof(int16_t), pcm.size(), audio_cap);
+    audio_cap_frames += frames;
+}
+
+void Engine::audio_capture_finish() {
+    if (!audio_cap) return;
+    const uint32_t channels = audio_cap_channels ? audio_cap_channels : 2;
+    const uint32_t data_bytes = (uint32_t)(audio_cap_frames * channels * 2u);
+    const uint32_t byte_rate = audio_cap_rate * channels * 2u;
+    std::array<uint8_t, 44> h{};
+    auto w16 = [&](size_t off, uint16_t v) { h[off] = (uint8_t)(v & 0xFF); h[off + 1] = (uint8_t)(v >> 8); };
+    auto w32 = [&](size_t off, uint32_t v) {
+        h[off] = (uint8_t)(v & 0xFF); h[off + 1] = (uint8_t)((v >> 8) & 0xFF);
+        h[off + 2] = (uint8_t)((v >> 16) & 0xFF); h[off + 3] = (uint8_t)((v >> 24) & 0xFF);
+    };
+    std::memcpy(h.data(), "RIFF", 4);
+    w32(4, 36u + data_bytes);
+    std::memcpy(h.data() + 8, "WAVEfmt ", 8);
+    w32(16, 16);
+    w16(20, 1);                       // PCM
+    w16(22, (uint16_t)channels);
+    w32(24, audio_cap_rate);
+    w32(28, byte_rate);
+    w16(32, (uint16_t)(channels * 2u));
+    w16(34, 16);
+    std::memcpy(h.data() + 36, "data", 4);
+    w32(40, data_bytes);
+    std::fseek(audio_cap, 0, SEEK_SET);
+    std::fwrite(h.data(), 1, h.size(), audio_cap);
+    std::fclose(audio_cap);
+    audio_cap = nullptr;
+    std::print("runtime: audio capture done '{}' frames={}\n", audio_cap_path,
+               (unsigned long long)audio_cap_frames);
+}
+
+mq_audio_clip* Engine::audio_clip(const std::string& path) {
+    if (!audio || path.empty()) return nullptr;
+    auto it = audio_clips.find(path);
+    if (it != audio_clips.end()) return it->second;
+    void* data = nullptr;
+    size_t n = 0;
+    if (mq_vfs_read(vfs, path.c_str(), &data, &n) != MQ_VFS_OK || !data || n == 0) {
+        std::print(stderr, "runtime: audio clip not found '{}'\n", path);
+        return nullptr;
+    }
+    mq_audio_clip* clip = nullptr;
+    const int rc = mq_audio_load_memory(audio, data, n, path.c_str(), &clip);
+    mq_vfs_free(data);
+    if (rc != MQ_AUDIO_OK || !clip) return nullptr;
+    audio_clips[path] = clip;
+    return clip;
 }
 
 extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
@@ -7232,6 +7983,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
             }
         }
         eng->teardown(); delete eng;
+        maque::tracy::shutdown();        // Tracy：冲刷数据（若本次运行启动过；普通运行是 no-op）
         return 0;
     }
 
@@ -7245,6 +7997,7 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     const bool quit = eng->quit || eng->frames_capped;
     eng->teardown();
     delete eng;
+    maque::tracy::shutdown();            // Tracy：冲刷数据（未启动时 no-op）
     return quit ? 0 : 1;
 }
 
@@ -7273,6 +8026,9 @@ extern "C" void mq_host_scene_destroy(mq_host_scene* s) {
     if (!s) return;
     if (s->eng) { s->eng->teardown(); delete s->eng; }
     delete s;
+    /* 嵌入宿主：如果本进程启动过 Tracy（F3/MAQUE_TRACY），退出时冲刷。多实例同时销毁时
+     * 第一个 destroy 就会 shutdown —— 嵌入式 profile 默认按单实例使用（docs/29）。 */
+    maque::tracy::shutdown();
 }
 
 extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
@@ -7283,13 +8039,18 @@ extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
     std::vector<mq_renderer_item> draws;
     std::vector<mq_renderer_mesh> meshes;
     if (e.scene) { e.scene->extract(e, draws); e.spine_extract(meshes); }
-    if (!out || out_size < (size_t)e.TW * e.H * 4) return 2;
+    /* 渲染目标是 **缩放后** 的像素尺寸（W×ss, H×ss），与 step_frame 的 SHpx 同口径；
+     * 之前误用 e.H → 窗口缩放（ss≠1）时 views 是 800x600、目标却按 800x240 建 → wgpu 报
+     * "Scissor Rect ... is not contained in the render target" 直接 abort（嵌入宿主必现）。 */
+    const int SHpx = (int)(e.H * e.ss + 0.5F);
+    if (!out || out_size < (size_t)e.TW * (size_t)SHpx * 4) return 2;
+    MQ_TRACY_ZONE_N(render, "frame");   // Tracy：宿主侧补渲染（mq_host_tick 的额外一次成帧）
     float bg[4] = { e.bg[0], e.bg[1], e.bg[2], e.bg[3] };
     const int rc = (!meshes.empty() && e.rapi->render_mesh_views)
-        ? e.rapi->render_mesh_views(e.rself, e.TW, e.H, e.views.data(), (uint32_t)e.views.size(),
+        ? e.rapi->render_mesh_views(e.rself, e.TW, SHpx, e.views.data(), (uint32_t)e.views.size(),
                                     draws.data(), (uint32_t)draws.size(),
                                     meshes.data(), (uint32_t)meshes.size(), bg, out, (uint32_t)out_size)
-        : e.rapi->render_views(e.rself, e.TW, e.H, e.views.data(), (uint32_t)e.views.size(),
+        : e.rapi->render_views(e.rself, e.TW, SHpx, e.views.data(), (uint32_t)e.views.size(),
                                draws.data(), (uint32_t)draws.size(), bg, out, (uint32_t)out_size);
     return rc == 0 ? 0 : 3;
 }
@@ -7297,7 +8058,7 @@ extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
 extern "C" void mq_host_size(mq_host_scene* s, int* w, int* h) {
     if (!s || !s->eng) return;
     if (w) *w = s->eng->TW;
-    if (h) *h = s->eng->H;
+    if (h) *h = (int)(s->eng->H * s->eng->ss + 0.5F);   // 缩放后的目标高度（与 mq_host_tick 一致）
 }
 
 extern "C" void mq_host_push_pointer(mq_host_scene* s, int type, int button, float x, float y) {

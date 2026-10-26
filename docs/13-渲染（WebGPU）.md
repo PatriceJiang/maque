@@ -57,6 +57,23 @@
 - **管线/绑定组缓存**：按状态哈希缓存，避免每帧重编译。
 - **实例化 / 批处理 / 剔除**：CPU 侧配合 gather；GPU-driven 可选（按平台评估）。
 
+### 成帧：一个视图一个 render pass + bind group 缓存（性能关键，勿回退）
+
+`modules/render/gfx` 的成帧顺序：**稳定排序**（layer → z → 原始序）→ 合并图元/网格为一条命令序列 →
+**每个视图只开一个 render pass**，所有命令在同一 pass 内用
+`SetPipeline / SetBindGroup / SetScissorRect / SetVertexBuffer` 切换状态完成绘制。
+
+- ⚠️ 旧实现是**每条命令一个 pass**（`all.scn` 331 条命令 → 331 次 `Begin/EndRenderPass`
+  + 331 个 bind group），实测 render 12.5ms → 改为单 pass 后 8.4ms（Debug+ASan）、
+  8.1ms → 5.1ms（Release）。不要再逐命令开 pass。
+- bind group 按状态缓存（每视图一份：`solid` / `textured(贴图+采样器)` / `mesh(贴图)`），
+  命令顺序不变 → 绘制结果与逐 pass 实现**逐像素一致**（`gfx`/`twocolor`/`text_pixel`/`spine_demos`/
+  `shot_e2e` 等用例覆盖）。
+- 每个模拟步渲染+present 一次；**屏幕刷新率 ≈ 1000 / 单步总耗时**。单步超过 16.7ms 就到不了 60fps
+  （主循环的墙钟补偿会多跑模拟步，但每步仍各自渲染/呈现）。
+  诊断：`MAQUE_TRACE_STATS=1` 每 30 帧打印
+  `logic / render / present / draws / tris / target`，先定位是逻辑还是渲染/呈现。
+
 ## 6. 离屏渲染与 AI 预览（关键）
 
 - 支持**离屏目标**渲染 → `readback` → 图像。

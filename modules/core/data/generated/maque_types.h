@@ -47,15 +47,15 @@ enum class PanningMode : int32_t {
 };
 
 struct AudioSource {
-    maque::AssetRef clip;
-    maque::AssetRef bus;
+    std::string clip;
+    std::string bus;
     bool autoplay = false;
     bool loop = false;
     float volume = 1.0F;
     float pitch = 1.0F;
     audio::PanningMode panning = PanningMode::Stereo2D;
     audio::AttenuationModel attenuation = AttenuationModel::InverseDistance;
-    maque::AssetRef curve;
+    std::string curve;
     float min_distance = 1.0F;
     float max_distance = 50.0F;
     float doppler = 0.0F;

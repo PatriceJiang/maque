@@ -35,7 +35,9 @@
 | [25](25-本地存储与远程存档.md) | 本地/远程**键值存储**（localStorage 类比）：模式可配 + `(uid,session)` 命名空间 |
 | [26](26-用真实游戏驱动引擎（flappy）.md) | 用真实游戏驱动引擎（flappy 全流程示例） |
 | [27](27-Spine运行时接入.md) | Spine 2D 运行时接入（骨骼动画网格 + 官方 13 个 demo） |
-| [28](28-ImGui调试面板.md) | 引擎侧 ImGui 调试面板：默认 stats、74 个脚本控件、F2 开关、**已知限制（不可拖动）** |
+| [28](28-ImGui调试面板.md) | 引擎侧 ImGui 调试面板：stats 面板（**默认不显示，F2 / `MAQUE_IMGUI=1` 打开**；可拖动、屏幕分辨率固定大小）、74 个脚本控件、统一 renderer 呈现（游戏帧 + 面板同屏、单次 present） |
+| [29](29-Tracy性能分析.md) | Tracy 性能分析：**手动启动零开销**（F3 / `MAQUE_TRACY=1`）、按模块上色 zone（核心循环/事件派发/脚本入口/各子系统）、frametime·logic·render·present·CPU·内存曲线、`tracy-capture` 无 GUI 抓取与 CI |
+| [30](30-音频集成方案.md) | 音频集成方案：**SDL2 设备 + 自研离线混音器**、WAV/OGG/MP3 解码、无锁音频线程、模拟时间 playhead、WASM/桌面跨平台矩阵与分期 |
 | [api/](api/README.md) | **API 参考（自动生成，随仓库提交）**：脚本 API / 控制面 / 事件 / 插件 vtable / 模块 C ABI / 数据类型 |
 | [assets/00](assets/00-index.md) | 资产系列索引（Effect/Material/Mesh/Texture/Font/AnimationClip/Skeleton/Spine） |
 | [assets/01](assets/01-material.md) | 资产详设：材质（Material / Effect / MaterialInstance） |

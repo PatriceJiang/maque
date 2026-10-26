@@ -9,6 +9,7 @@
  *   · 总线**拥有**其 VM：销毁总线即销毁全部 VM（生命周期单点，避免悬空）。
  */
 #include "abi/script.h"
+#include "core/tracy/mq_tracy.h"
 
 #include <cstring>
 #include <string>
@@ -37,6 +38,7 @@ extern "C" int mq_script_bus_add(mq_script_bus* bus, mq_script_vm* vm, const cha
 /* 把已准备好的 VM 换入槽位（热重载原子替换）：销毁旧 VM、**顺序不变**。
  * 由调用方先完成"创建 + eval"，成功后再换入 —— 编译/加载失败时旧 VM 原样保留（热更出错不致命）。 */
 extern "C" mq_script_vm* mq_script_bus_swap(mq_script_bus* bus, uint32_t index, mq_script_vm* vm, const char* name) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, name ? name : "hot.reload");
     if (!bus || index >= bus->vms.size() || !vm) return nullptr;
     mq_script_vm_destroy(bus->vms[index].vm);
     bus->vms[index].vm = vm;
@@ -66,6 +68,7 @@ extern "C" int mq_script_bus_has(mq_script_bus* bus, const char* fn) {
 }
 
 extern "C" int mq_script_bus_call(mq_script_bus* bus, const char* fn, double a, double b, const char* text) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, fn);
     if (!bus || !fn || !*fn) return 0;
     int hits = 0;
     for (const auto& e : bus->vms) {
@@ -81,6 +84,7 @@ extern "C" int mq_script_bus_call(mq_script_bus* bus, const char* fn, double a, 
 
 extern "C" int mq_script_bus_call3(mq_script_bus* bus, const char* fn, double a, double b, double c,
                                    const char* text) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, fn);
     if (!bus || !fn || !*fn) return 0;
     int hits = 0;
     for (const auto& e : bus->vms) {
@@ -99,6 +103,7 @@ extern "C" uint32_t mq_script_bus_error_count(mq_script_bus* bus) {
 }
 
 extern "C" void mq_script_bus_gc(mq_script_bus* bus) {
+    MQ_TRACY_ZONE_N(script, "bus.gc");
     if (!bus) return;
     for (const auto& e : bus->vms) mq_script_frame_boundary(e.vm);   /* 逐 VM，帧边界一次 */
 }

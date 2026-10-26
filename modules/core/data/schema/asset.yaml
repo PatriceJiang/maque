@@ -311,6 +311,7 @@
           - { name: MQ_ASSET_KIND_ANIMATION, value: 5 }
           - { name: MQ_ASSET_KIND_SCENE,     value: 6 }
           - { name: MQ_ASSET_KIND_SCRIPT,    value: 7 }
+          - { name: MQ_ASSET_KIND_AUDIO,     value: 8, doc: "音频（.wav；P1 起 OGG/MP3）" }
     structs:
       - name: mq_asset_info
         doc: "资源记录（稳定 ID / 源路径 / 烘焙产物 / 内容哈希）。"

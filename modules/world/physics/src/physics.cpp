@@ -24,6 +24,7 @@
  * 每实例状态：全部在 mq_physics_world 内（docs/02 §5 零全局可变状态）。 */
 
 #include "physics/mq_physics.h"
+#include "core/tracy/mq_tracy.h"
 
 #include <cmath>
 #include <cstring>
@@ -643,6 +644,7 @@ int mq_physics_set_bounds(mq_physics_world* w, float min_x, float min_y, float m
 }
 
 int mq_physics_step(mq_physics_world* w) {
+    MQ_TRACY_ZONE_N(physics, "step");
     if (w == nullptr)
         return MQ_PHYSICS_ERR_INVALID_ARG;
 

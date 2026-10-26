@@ -94,11 +94,11 @@ int   mq_imgui_collapsing_header(const char *label);
 void  mq_imgui_show_demo(int *open);
 
 /* 局部字号：`mq_imgui_push_font_size(px)` 之后绘制的内容用该像素字号，`pop` 恢复。
- * 用途：默认 stats 面板要**比游戏自己的面板小一号**（ImGui 1.93 没有 SetWindowFontScale，
+ * 用途：stats 面板要**比游戏自己的面板小一号**（ImGui 1.93 没有 SetWindowFontScale，
  * 官方替代是 `PushFont(NULL, size)`）。
  * 注：size 是**设计像素**（与 ImGui 显示空间一致）；传 <=0 表示沿用当前字号。 */
 /* 覆盖层窗口：带 NoInputs（**不吃鼠标/键盘**）+ 可拖动标题栏。
- * 用于引擎默认 stats 面板 —— 默认开启时不能挡住游戏的点击/命中测试。 */
+ * 用于引擎 stats 面板 —— 开启时不能挡住游戏的点击/命中测试。 */
 int   mq_imgui_begin_overlay(const char *title);
 /* 小字号字体（初始化时若提供了 TTF 会额外烘 15px 一档）：
  * push 之后绘制的内容用 15px，pop 恢复。用于 stats 这类常驻信息栏。 */

@@ -2,19 +2,43 @@
  * 事件先入内部队列（pump），在 poll 时统一消费（docs/19 §3：采样与消费分离）。
  * 注入（inject_*）与设备事件走同一队列 → AI/CI/回放与真机路径一致（docs/19 §9）。
  * 指针位置/按键状态只由事件流推导（不查设备状态）→ 顺序与回放确定。 */
+/* Windows 头必须禁用 min/max 宏（否则 <windows.h> 的 `min` 宏会吃掉 std::min），
+ * 且要在 SDL.h 之前定义（SDL 内部也可能 include windows.h）。 */
+#if defined(_WIN32)
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#endif
 #include "core/platform/mq_platform.h"
+#include "core/tracy/mq_tracy.h"   // Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时 no-op）
 #include "core/compat/mq_env.h"   // setenv/unsetenv 的跨平台封装（Windows 无 setenv）
 
 #include <print>
 #include <vector>
+#include <string>
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 
 #include <SDL.h>
+#include <SDL_syswm.h>   /* mq_platform_get_native_window：直接呈现要原生句柄（plans/18-pbr-3d.md） */
 
 #include <deque>
 #include <cstdlib>
 #include <cstring>
+
+#if defined(_WIN32)
+#  include <windows.h>
+#  include <psapi.h>
+#else
+#  include <sys/resource.h>
+#  include <sys/wait.h>
+#  include <unistd.h>
+#  include <time.h>
+#endif
 
 namespace {
 
@@ -65,13 +89,11 @@ uint32_t key_from_sdl(SDL_Keycode k) {
 
 struct mq_platform {
     SDL_Window* win = nullptr;
-    SDL_Renderer* ren = nullptr;      /* 呈现用（懒创建）；无窗口/off 时为 null */
-    SDL_Texture*  tex = nullptr;      /* 流式帧纹理 */
-    int tex_w = 0, tex_h = 0;
+    SDL_Renderer* ren = nullptr;      /* 唯一呈现通道（懒创建）；无窗口/off/创建失败时为 null */
+    SDL_Texture*  frame_tex = nullptr;/* 游戏帧流式纹理（每帧 UpdateTexture → RenderCopy） */
+    int frame_tex_w = 0, frame_tex_h = 0;
     int present_mode = -1;            /* -1 未定；0 off；1 software；2 accelerated */
     bool present_logged = false;
-    int  logical_w = 0, logical_h = 0;
-    bool cap_pending = false;
     int  cap_max = -1, cap_every = 1, cap_seen = 0;
     float safe[4] = { 0, 0, 0, 0 };      /* 安全区内缩（设备像素） */
     int  display_dirty = 0;              /* 尺寸/显示器变化待消费 */
@@ -84,6 +106,9 @@ struct mq_platform {
     int         mouse_down = 0;
     int         focused = 1;
     int         resized = 0;
+    /* 进程自省（docs/29 Tracy 基础数据）：CPU% 需要"上次采样"做差分。 */
+    uint64_t    ps_prev_cpu_100ns = 0;   /* 上次累计 CPU 时间（100ns 单位，Windows/POSIX 统一折算） */
+    uint64_t    ps_prev_wall_ns = 0;     /* 上次采样墙钟（ns） */
 
     struct PEv { mq_platform_pointer_event ev; };
     struct KEv { mq_platform_key_event ev; };
@@ -96,8 +121,55 @@ struct mq_platform {
 namespace {
 
 /* 入队并更新指针状态（设备与注入共用；delta 在此统一计算）。 */
-/* 抓帧：回读**窗口表面**（真正呈现给用户的像素，含画布留边）→ PPM */
-static void capture_window(mq_platform* p) {
+
+/* ---- 呈现：唯一通道 = SDL_Renderer ----------------------------------------
+ * 为什么不用「窗口表面（SDL_GetWindowSurface）」这条旧路径：
+ *   SDL2 规定**不能**对同一个窗口混用 window surface 与 SDL_Renderer。一旦为了
+ *   ImGui 官方后端创建了 renderer，`SDL_UpdateWindowSurface` 写的内容就不再是
+ *   用户看到的东西 —— 实测现象正是「游戏帧呈不上屏、只剩 ImGui 面板」。
+ * 现在的结构（与 ImGui 的「先录制命令、画面渲染完后单独一趟 pass」模型一致）：
+ *   ① 引擎帧（CPU RGBA）→ 流式纹理 → RenderCopy 到 renderer 后台缓冲（游戏画面）
+ *   ② ImGui 官方后端在**同一个** renderer 后台缓冲上再画一趟（调试面板）
+ *   ③ 一次 SDL_RenderPresent 把整帧上屏（抓帧也在这里，回读后台缓冲）
+ * 默认后端：Windows 用 accelerated（Direct3D，不建 GL/EGL 上下文 → 不与 wgpu 争用）；
+ * 其它平台默认 software（SDL_RENDERER_SOFTWARE 同样不建 GL 上下文）。
+ * MAQUE_PRESENT=off|software|accelerated 可显式覆盖。
+ */
+static void ensure_present_mode(mq_platform* p) {
+    if (p->present_mode >= 0) return;
+#if defined(_WIN32)
+    p->present_mode = 2;                                  // Windows 默认 Direct3D
+#else
+    p->present_mode = 1;                                  // 其它平台默认纯软件（不碰 GL/EGL）
+#endif
+    const char* mode = std::getenv("MAQUE_PRESENT");
+    if (mode && *mode) {
+        if (std::strcmp(mode, "off") == 0 || std::strcmp(mode, "0") == 0) p->present_mode = 0;
+        else if (std::strcmp(mode, "accelerated") == 0) p->present_mode = 2;
+        else if (std::strcmp(mode, "software") == 0) p->present_mode = 1;
+    }
+}
+
+/* 懒创建 renderer（唯一后端的入口；无窗口 / present off / 创建失败 → null）。 */
+static SDL_Renderer* ensure_renderer(mq_platform* p) {
+    if (!p || !p->win || !p->window) return nullptr;
+    ensure_present_mode(p);
+    if (p->present_mode == 0) return nullptr;
+    if (!p->ren) {
+        const Uint32 flags = p->present_mode == 2 ? SDL_RENDERER_ACCELERATED : SDL_RENDERER_SOFTWARE;
+        p->ren = SDL_CreateRenderer(p->win, -1, flags);
+        if (!p->ren && p->present_mode == 2) {           // 加速不可用 → 软件回退
+            p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
+            if (p->ren) p->present_mode = 1;
+        }
+        if (!p->ren) { p->present_mode = 0; return nullptr; }   // 呈现不可用 → 降级为不呈现
+    }
+    return p->ren;
+}
+
+/* 抓帧：回读 **renderer 后台缓冲**（= 用户即将看到的整帧：游戏画面 + ImGui 面板）→ PPM。
+ * 必须在 SDL_RenderPresent **之前**调用（present 之后后台缓冲内容未定义）。 */
+static void capture_renderer(mq_platform* p) {
     if (p->cap_max < 0) {
         p->cap_max = 3; p->cap_every = 1;
         if (const char* v = std::getenv("MAQUE_CAPTURE_FRAMES")) p->cap_max = std::atoi(v);
@@ -106,28 +178,64 @@ static void capture_window(mq_platform* p) {
     ++p->cap_seen;
     const char* cap = std::getenv("MAQUE_CAPTURE");
     if (!cap || !*cap || p->cap_count >= p->cap_max || (p->cap_seen % p->cap_every) != 0) return;
-    SDL_Surface* ws = SDL_GetWindowSurface(p->win);
-    if (!ws || SDL_LockSurface(ws) != 0) { ++p->cap_count; return; }
+    int w = 0, h = 0;
+    if (!p->ren || SDL_GetRendererOutputSize(p->ren, &w, &h) != 0 || w <= 0 || h <= 0) return;
+    std::vector<uint8_t> px((size_t)w * (size_t)h * 4);
+    if (SDL_RenderReadPixels(p->ren, nullptr, SDL_PIXELFORMAT_RGBA32, px.data(), w * 4) != 0) return;
     char path[512];
     std::snprintf(path, sizeof path, "%s_%d.ppm", cap, p->cap_count);
     if (FILE* f = std::fopen(path, "wb")) {
-        std::fprintf(f, "P6\n%d %d\n255\n", ws->w, ws->h);
-        const SDL_PixelFormat* fmt = ws->format;
-        for (int y = 0; y < ws->h; ++y) {
-            const uint8_t* row = (const uint8_t*)ws->pixels + (size_t)y * ws->pitch;
-            for (int x = 0; x < ws->w; ++x) {
-                uint32_t v = 0;
-                std::memcpy(&v, row + (size_t)x * fmt->BytesPerPixel, (size_t)fmt->BytesPerPixel);
-                uint8_t r = 0, g = 0, b = 0, a = 0;
-                SDL_GetRGBA(v, fmt, &r, &g, &b, &a);
-                const uint8_t rgb[3] = { r, g, b };
-                std::fwrite(rgb, 1, 3, f);
-            }
-        }
+        std::fprintf(f, "P6\n%d %d\n255\n", w, h);
+        for (int i = 0; i < w * h; ++i) std::fwrite(&px[(size_t)i * 4], 1, 3, f);
         std::fclose(f);
     }
-    SDL_UnlockSurface(ws);
     ++p->cap_count;
+}
+
+/* 游戏帧 → renderer 后台缓冲（**不 present**；随后可叠 ImGui，最后统一 present 一次）。 */
+static int draw_frame_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h,
+                           int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter) {
+    MQ_TRACY_ZONE_N(platform, "present.draw");   // Tracy：帧纹理上传 + RenderCopy
+    if (!p || !rgba || w <= 0 || h <= 0) return 1;
+    SDL_Renderer* ren = ensure_renderer(p);
+    if (!ren) return 2;                                  // 无窗口 / present off / renderer 不可用
+    if (dw <= 0 || dh <= 0) return 3;
+    if (!p->frame_tex || p->frame_tex_w != w || p->frame_tex_h != h) {
+        if (p->frame_tex) SDL_DestroyTexture(p->frame_tex);
+        p->frame_tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
+        p->frame_tex_w = w; p->frame_tex_h = h;
+        if (!p->frame_tex) return 4;
+        SDL_SetTextureBlendMode(p->frame_tex, SDL_BLENDMODE_NONE);   // 不透明整帧覆盖
+    }
+    /* 放大过滤：整数倍时 nearest（pixel-perfect：字形/像素画放大后仍是硬边）；
+     * 非整数倍只能线性（与旧软件路径同一规则）。 */
+    const bool integer_scale = dw % w == 0 && dh % h == 0 && dw / w == dh / h && dw / w >= 2;
+    const bool nearest = filter == 1 || (filter < 0 && integer_scale);
+    SDL_SetTextureScaleMode(p->frame_tex, nearest ? SDL_ScaleModeNearest : SDL_ScaleModeLinear);
+    if (SDL_UpdateTexture(p->frame_tex, nullptr, rgba, w * 4) != 0) return 5;
+    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+    SDL_RenderClear(ren);                                 // 画布外留黑（letterbox）
+    SDL_Rect dst{ dx, dy, dw, dh };
+    if (SDL_RenderCopy(ren, p->frame_tex, nullptr, &dst) != 0) return 6;
+    if (!p->present_logged) {
+        SDL_RendererInfo info{};
+        if (SDL_GetRendererInfo(ren, &info) == 0)
+            std::print("platform: present via renderer='{}' ({}) frame={}x{} target={},{} {}x{} window={}x{}\n",
+                       info.name ? info.name : "?",
+                       p->present_mode == 2 ? "accelerated" : "software",
+                       w, h, dx, dy, dw, dh, p->w, p->h);
+        p->present_logged = true;
+    }
+    return 0;
+}
+
+/* 提交后台缓冲：抓帧（如需，present 之前）→ 单次 SDL_RenderPresent。 */
+static int present_renderer(mq_platform* p) {
+    MQ_TRACY_ZONE_N(platform, "present");        // Tracy：抓帧（如需）+ SDL_RenderPresent
+    if (!p || !p->ren) return 2;
+    capture_renderer(p);
+    SDL_RenderPresent(p->ren);
+    return 0;
 }
 
 void queue_pointer(mq_platform* p, const mq_platform_pointer_event& in) {
@@ -207,7 +315,7 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
 }
 
 void mq_platform_destroy(mq_platform* p) {
-    if (p && p->tex) { SDL_DestroyTexture(p->tex); p->tex = nullptr; }
+    if (p && p->frame_tex) { SDL_DestroyTexture(p->frame_tex); p->frame_tex = nullptr; }
     if (p && p->ren) { SDL_DestroyRenderer(p->ren); p->ren = nullptr; }
     if (!p) return;
     if (p->window) SDL_StopTextInput();
@@ -217,198 +325,94 @@ void mq_platform_destroy(mq_platform* p) {
 }
 
 /* 真实窗口：SDL dummy 驱动也会返回非空窗口指针，故用驱动名判定。 */
-/* 把 RGBA8 帧呈现到窗口（docs/05、M5）。
- *   · 无窗口 / dummy 驱动 / MAQUE_PRESENT=off → 安全空操作（headless/CI 不报错）
- *   · MAQUE_PRESENT=software|accelerated 可强制后端；默认 accelerated → software 回退
- * 呈现失败不致命（视为无窗口），避免把渲染问题升级成"跑不起来"。 */
-/* 原生句柄：给官方 ImGui 后端用（它必须拿到真的 SDL_Window/SDL_Renderer）。 */
+/* 原生句柄：给官方 ImGui 后端用（它必须拿到真的 SDL_Window/SDL_Renderer）。
+ * 呈现统一走 SDL_Renderer（见文件上方「呈现：唯一通道」注释）；不再使用窗口表面。 */
 void *mq_platform_sdl_window(mq_platform *p) { return p ? (void *)p->win : nullptr; }
 void *mq_platform_sdl_renderer(mq_platform *p) { return p ? (void *)p->ren : nullptr; }
 
+/* 原生窗口句柄（plans/18-pbr-3d.md §2.4）：renderer 用它在 wgpu 侧建 surface 做**直接呈现**。
+ * 返回 1=可用 0=无窗口/后端不支持（调用方回退离屏 + platform 呈现）。
+ *   kind=1 win32 : display=HINSTANCE, handle=HWND
+ *   kind=2 xlib  : display=Display*, handle=X11 Window（转 void*）
+ *   kind=3 wl    : display=wl_display*, handle=wl_surface*
+ * 其它子系统（dummy/offscreen/WASM）→ 0。 */
+int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out) {
+    if (!p || !out || !p->win) return 0;
+    std::memset(out, 0, sizeof *out);
+    SDL_SysWMinfo wm{};
+    SDL_VERSION(&wm.version);
+    if (!SDL_GetWindowWMInfo(p->win, &wm)) return 0;
+    switch (wm.subsystem) {
+#if defined(_WIN32)
+    case SDL_SYSWM_WINDOWS:
+        out->kind = 1;
+        out->display = (void*)wm.info.win.hinstance;
+        out->handle = (void*)wm.info.win.window;
+        return 1;
+#endif
+#if defined(__linux__)
+    case SDL_SYSWM_X11:
+        out->kind = 2;
+        out->display = (void*)wm.info.x11.display;
+        out->handle = (void*)(uintptr_t)wm.info.x11.window;
+        return 1;
+    case SDL_SYSWM_WAYLAND:
+        out->kind = 3;
+        out->display = (void*)wm.info.wl.display;
+        out->handle = (void*)wm.info.wl.surface;
+        return 1;
+#endif
+    default:
+        return 0;   /* dummy / offscreen / 未知子系统：不支持直接呈现 */
+    }
+}
+
 /* 立即创建 SDL_Renderer：官方 ImGui 后端必须在**第一帧之前**拿到它
  *（否则会先走静态字体图集，之后切后端会撞 ImGui 的动态图集断言）。 */
-/* 立即抓一帧窗口内容（在 ImGui 面板绘制**之后**调用，才能把面板也抓进去）。 */
-/* 提交 renderer 上的额外绘制（ImGui 面板）：platform 的 present 已经画过游戏帧，
- * 面板是在那之后画的 → 必须再 present 一次才会显示到窗口。 */
-int mq_platform_present_ui(mq_platform *p) {
-    if (!p || !p->ren || !p->window) return 1;
-    SDL_RenderPresent(p->ren);
-    capture_window(p);
-    return 0;
+void *mq_platform_ensure_renderer(mq_platform *p) { return (void *)ensure_renderer(p); }
+
+/* 把游戏帧画进 renderer 后台缓冲（**不 present**）：给"游戏帧 → ImGui pass → 单次 present"
+ * 的两阶段呈现用。目标矩形由画布策略给出（缩放/留边）。 */
+int mq_platform_draw_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h,
+                          int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter) {
+    return draw_frame_rect(p, rgba, w, h, dx, dy, dw, dh, filter);
 }
+
+/* 提交当前后台缓冲（抓帧 + 单次 SDL_RenderPresent）。ImGui 面板画完后调用它。 */
+int mq_platform_present_ui(mq_platform *p) { return present_renderer(p); }
 
 int mq_platform_capture_now(mq_platform *p) {
-    if (!p || !p->win || !p->window) return 1;
-    capture_window(p);
+    if (!p || !p->win || !p->window || !p->ren) return 1;
+    capture_renderer(p);
     return 0;
 }
 
-void *mq_platform_ensure_renderer(mq_platform *p) {
-    if (!p || !p->window || !p->win || p->present_mode == 0) return nullptr;
-    if (!p->ren) {
-        if (p->present_mode == 1) p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
-        else p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_ACCELERATED);
-        if (!p->ren) p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
-    }
-    return p->ren;
-}
-
+/* 画 + 立即 present（单阶段便捷接口；自洽，不假设调用方还会叠画其它东西）。 */
 int mq_platform_present_rect(mq_platform* p, const void* rgba, int32_t w, int32_t h,
                              int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter) {
-    if (!p || !rgba || w <= 0 || h <= 0) return 1;
-    if (!p->win || !p->window) return 2;
-    if (p->present_mode < 0) { mq_platform_present(p, rgba, w, h); return 0; }   /* 触发模式初始化 */
-    /* 复用软件窗口表面路径：目标矩形由调用方（画布策略）给出 */
-    SDL_Surface* ws = SDL_GetWindowSurface(p->win);
-    if (!ws) return 4;
-    SDL_Surface* src = SDL_CreateRGBSurfaceWithFormatFrom(
-        const_cast<void*>(rgba), w, h, 32, w * 4, SDL_PIXELFORMAT_RGBA32);
-    if (!src) return 5;
-    SDL_Rect dst{ dx, dy, dw, dh };
-    SDL_FillRect(ws, nullptr, SDL_MapRGB(ws->format, 0, 0, 0));                 // 画布外为黑
-    int rc = 0;
-    const bool nearest = filter == 1 || (filter < 0 && dw % w == 0 && dw / w >= 2 && dw / w == dh / h);
-    if (nearest && dw % w == 0) {
-        const int k = dw / w;
-        SDL_Surface* big = SDL_CreateRGBSurfaceWithFormat(0, dw, dh, 32, SDL_PIXELFORMAT_RGBA32);
-        if (big) {
-            const uint8_t* sp = (const uint8_t*)rgba;
-            for (int y = 0; y < dh; ++y) {
-                const uint8_t* srow = sp + (size_t)std::min(h - 1, y / k) * (size_t)w * 4;
-                uint8_t* drow = (uint8_t*)big->pixels + (size_t)y * (size_t)big->pitch;
-                for (int x = 0; x < dw; ++x)
-                    std::memcpy(drow + (size_t)x * 4, srow + (size_t)std::min(w - 1, x / k) * 4, 4);
-            }
-            rc = SDL_BlitSurface(big, nullptr, ws, &dst);
-            SDL_FreeSurface(big);
-        } else rc = -1;
-    } else {
-        rc = SDL_BlitScaled(src, nullptr, ws, &dst);
-    }
-    SDL_FreeSurface(src);
-    if (rc != 0) return 6;
-    SDL_UpdateWindowSurface(p->win);
-    capture_window(p);
-    return 0;
+    const int rc = draw_frame_rect(p, rgba, w, h, dx, dy, dw, dh, filter);
+    if (rc != 0) return rc;
+    return present_renderer(p);
 }
 
 int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) {
     if (!p || !rgba || w <= 0 || h <= 0) return 1;
     if (!p->win || !p->window) return 2;                  // 无窗口：空操作
-    if (p->present_mode < 0) {
-        /* 默认 **软件** 呈现：帧本来就在 CPU（渲染插件回读），软件 blit 无需 GL 上下文，
-         * 避免与 wgpu(EGL) 争用 —— 多实例/多窗口下 GL 上下文会 BadAccess。
-         * MAQUE_PRESENT=accelerated 可切回 GPU blit；=off 关闭呈现。 */
-        /* 默认 software：帧本来就在 CPU，软件 blit 无需 GL 上下文（多实例/多窗口下 GL 会 BadAccess）。
-     * ⚠️ 实测：accelerated 下官方 ImGui 后端画的面板**显示不出来**（面板在 platform.present
-     * 之后画，需要再 present 一次；加了第二次 present 仍无效，待查 SDL_Renderer 与窗口表面的
-     * 关系）。所以默认保持 software + 自研网格链（面板可见、可验证），
-     * MAQUE_PRESENT=accelerated 可显式切换（该路径待修）。 */
-    p->present_mode = 1;
-        const char* mode = std::getenv("MAQUE_PRESENT");
-        if (mode && *mode) {
-            if (std::strcmp(mode, "off") == 0) p->present_mode = 0;
-            else if (std::strcmp(mode, "accelerated") == 0) p->present_mode = 2;
-        }
-    }
-    if (p->present_mode == 0) return 3;                    // 显式关闭
-    if (p->present_mode == 1) {
-        /* 纯软件路径：写入窗口表面（X11 下为 XShm/XImage）——不涉及 GL/EGL。
-         * 目标尺寸 ≠ 窗口尺寸时按等比 + 居中留边缩放（与宿主输入映射同一规则）。 */
-        SDL_Surface* ws = SDL_GetWindowSurface(p->win);
-        if (!ws) return 4;
-        SDL_Surface* src = SDL_CreateRGBSurfaceWithFormatFrom(
-            const_cast<void*>(rgba), w, h, 32, w * 4, SDL_PIXELFORMAT_RGBA32);
-        if (!src) return 5;
-        const float sc = std::min((float)ws->w / (float)w, (float)ws->h / (float)h);
-        SDL_Rect dst;
-        dst.w = (int)((float)w * sc);
-        dst.h = (int)((float)h * sc);
-        dst.x = (ws->w - dst.w) / 2;
-        dst.y = (ws->h - dst.h) / 2;
-        SDL_FillRect(ws, nullptr, SDL_MapRGB(ws->format, 0, 0, 0));   // 留边黑
-        /* 放大过滤：**整数倍**时默认最近邻（pixel-perfect：字形/像素画放大后仍是硬边），
-         * MAQUE_PRESENT_FILTER=linear|nearest 可强制；非整数倍只能线性缩放。 */
-        int filter = -1;                                   // -1 自动
-        if (const char* f = std::getenv("MAQUE_PRESENT_FILTER"); f && *f)
-            filter = std::strcmp(f, "nearest") == 0 ? 1 : (std::strcmp(f, "linear") == 0 ? 0 : -1);
-        const bool integer_scale = dst.w % w == 0 && dst.h % h == 0 && dst.w / w == dst.h / h && dst.w / w >= 2;
-        const bool nearest = filter == 1 || (filter == -1 && integer_scale);
-        int rc = 0;
-        if (nearest && dst.w % w == 0) {
-            const int k = dst.w / w;                       // 整数倍：逐像素复制（无插值）
-            SDL_Surface* big = SDL_CreateRGBSurfaceWithFormat(0, dst.w, dst.h, 32, SDL_PIXELFORMAT_RGBA32);
-            if (big) {
-                const uint8_t* sp = (const uint8_t*)rgba;
-                for (int y = 0; y < dst.h; ++y) {
-                    const uint8_t* srow = sp + (size_t)(y / k) * (size_t)w * 4;
-                    uint8_t* drow = (uint8_t*)big->pixels + (size_t)y * (size_t)big->pitch;
-                    for (int x = 0; x < dst.w; ++x)
-                        std::memcpy(drow + (size_t)x * 4, srow + (size_t)(x / k) * 4, 4);
-                }
-                rc = SDL_BlitSurface(big, nullptr, ws, &dst);
-                SDL_FreeSurface(big);
-            } else rc = -1;
-        } else {
-            rc = SDL_BlitScaled(src, nullptr, ws, &dst);
-        }
-        SDL_FreeSurface(src);
-        if (rc != 0) return 6;
-        if (!p->present_logged) {
-            std::print("platform: present via window surface (software) target={}x{} window={}x{}\n",
-                       w, h, ws->w, ws->h);
-            p->present_logged = true;
-        }
-        if (p->cap_pending) { /* 抓帧见下（软件路径从源帧拷贝，内容一致） */ }
-        SDL_UpdateWindowSurface(p->win);
-        capture_window(p);
-        return 0;
-    }
-    if (!p->ren) {
-        /* SDL2：第二个参数是驱动索引（-1 = 自动）；用 flags 指定软件/加速 */
-        if (p->present_mode == 1) p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
-        else p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_ACCELERATED);
-        if (!p->ren) p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
-        if (!p->ren) { p->window = false; return 4; }       // 呈现不可用 → 降级为无窗口
-    }
-    if (!p->tex || p->tex_w != w || p->tex_h != h) {
-        if (p->tex) SDL_DestroyTexture(p->tex);
-        p->tex = SDL_CreateTexture(p->ren, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
-        p->tex_w = w; p->tex_h = h;
-        if (!p->tex) return 5;
-    }
-    if (!p->present_logged) {
-        SDL_RendererInfo info{};
-        if (SDL_GetRendererInfo(p->ren, &info) == 0)
-            std::print("platform: present via renderer='{}' flags={:#x} size={}x{}\n",
-                       info.name ? info.name : "?", (unsigned)info.flags, w, h);
-        p->present_logged = true;
-    }
-    if (p->logical_w != w || p->logical_h != h) {
-        SDL_RenderSetLogicalSize(p->ren, w, h);   // 等比缩放 + 居中留边（与宿主输入映射同规则）
-        p->logical_w = w; p->logical_h = h;
-    }
-    if (SDL_UpdateTexture(p->tex, nullptr, rgba, w * 4) != 0) return 6;
-    SDL_RenderClear(p->ren);
-    SDL_RenderCopy(p->ren, p->tex, nullptr, nullptr);       // 目标尺寸不同则自动缩放
-    /* 可选：从**呈现缓冲**回读抓帧（MAQUE_CAPTURE=<前缀>，取前 N 帧）
-     *   —— 用于在真实窗口路径上做像素级验证（CI/无合成器读取手段时尤其有用） */
-    if (const char* cap = std::getenv("MAQUE_CAPTURE"); cap && *cap && p->cap_count < 3) {
-        std::vector<uint8_t> px((size_t)w * h * 4);
-        if (SDL_RenderReadPixels(p->ren, nullptr, SDL_PIXELFORMAT_RGBA32, px.data(), w * 4) == 0) {
-            char path[512];
-            std::snprintf(path, sizeof path, "%s_%d.ppm", cap, p->cap_count);
-            FILE* f = std::fopen(path, "wb");
-            if (f) {
-                std::fprintf(f, "P6\n%d %d\n255\n", w, h);
-                for (int i = 0; i < w * h; ++i) std::fwrite(&px[(size_t)i * 4], 1, 3, f);
-                std::fclose(f);
-            }
-            ++p->cap_count;
-        }
-    }
-    SDL_RenderPresent(p->ren);
-    return 0;
+    SDL_Renderer* ren = ensure_renderer(p);
+    if (!ren) return 3;                                   // MAQUE_PRESENT=off / renderer 不可用
+    /* 目标尺寸 ≠ 窗口尺寸时按等比 + 居中留边缩放（与宿主输入映射同一规则）。 */
+    int ow = 0, oh = 0;
+    SDL_GetRendererOutputSize(ren, &ow, &oh);
+    if (ow <= 0 || oh <= 0) return 4;
+    const float sc = std::min((float)ow / (float)w, (float)oh / (float)h);
+    const int dst_w = (int)((float)w * sc);
+    const int dst_h = (int)((float)h * sc);
+    const int dst_x = (ow - dst_w) / 2;
+    const int dst_y = (oh - dst_h) / 2;
+    int filter = -1;                                      // -1 自动
+    if (const char* f = std::getenv("MAQUE_PRESENT_FILTER"); f && *f)
+        filter = std::strcmp(f, "nearest") == 0 ? 1 : (std::strcmp(f, "linear") == 0 ? 0 : -1);
+    return mq_platform_present_rect(p, rgba, w, h, dst_x, dst_y, dst_w, dst_h, filter);
 }
 
 void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h) {
@@ -430,6 +434,27 @@ float mq_platform_content_scale(mq_platform* p) {
     SDL_GetWindowSizeInPixels(p->win, &pw, &ph);
     if (lw > 0 && pw > 0) return (float)pw / (float)lw;
     return 1.0F;
+}
+
+/* 应用可见的桌面**逻辑**尺寸。SDL 在 DPI-unaware 进程里看到的就是逻辑分辨率
+ * （例：2560x1600 @150% → 1707x1067），所以这个值已经含 OS DPI 缩放 ——
+ * UI 按它算"固定大小"即可：同一块屏上不随游戏窗口变化，换屏/换缩放自动适配。 */
+void mq_platform_screen_size(mq_platform* p, int32_t* out_w, int32_t* out_h) {
+    int w = 0, h = 0;
+    if (p && p->sdl) {
+        int di = -1;
+        if (p->win) di = SDL_GetWindowDisplayIndex(p->win);
+        if (di < 0) di = 0;
+        SDL_Rect bounds{};
+        if (SDL_GetDisplayBounds(di, &bounds) == 0 && bounds.w > 0 && bounds.h > 0) {
+            w = bounds.w; h = bounds.h;
+        } else {
+            SDL_DisplayMode dm{};
+            if (SDL_GetDesktopDisplayMode(di, &dm) == 0) { w = dm.w; h = dm.h; }
+        }
+    }
+    if (out_w) *out_w = w;
+    if (out_h) *out_h = h;
 }
 
 int mq_platform_display_changed(mq_platform* p) {
@@ -470,6 +495,7 @@ int mq_platform_has_window(mq_platform* p) {
 }
 
 void mq_platform_pump(mq_platform* p) {
+    MQ_TRACY_ZONE_N(platform, "pump");           // Tracy：SDL 事件泵
     if (!p || !p->sdl) return;
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -562,6 +588,7 @@ void mq_platform_pump(mq_platform* p) {
 }
 
 uint32_t mq_platform_poll(mq_platform* p, mq_input_frame* out) {
+    MQ_TRACY_ZONE_N(platform, "input.poll");     // Tracy：设备事件出队（→ 输入帧）
     if (!out) return 0;
     // 宿主预分配的缓冲与容量跨帧保留
     mq_platform_pointer_event* pbuf = out->pointers; const uint32_t pcap = out->pointer_cap;
@@ -613,5 +640,116 @@ void mq_platform_set_title(mq_platform* p, const char* title) {
 }
 
 void mq_platform_request_quit(mq_platform* p) { if (p) p->quit = 1; }
+
+/* ---- 进程/工具（docs/29 Tracy）--------------------------------------------
+ * ① spawn_detached：F3 启动 Tracy profiler GUI —— 子进程与引擎**无生命周期绑定**，
+ *    引擎退出不等待/不杀它（方便"游戏退出后继续看 trace"）。
+ * ② process_stats：给 Tracy 基础数据喂 CPU% / 常驻内存。CPU% 是**自上次调用**的差分
+ *    （调用方按 1Hz 采样即可）；首个采样返回 0%。
+ */
+int mq_platform_spawn_detached(mq_platform* p, const char* exe, const char* args) {
+    (void)p;
+    if (!exe || !*exe) return 1;
+#if defined(_WIN32)
+    /* CreateProcess 的 lpCommandLine 可写且包含程序名：拼成 `"exe" args`。 */
+    std::string cmd = "\"";
+    cmd += exe;
+    cmd += "\"";
+    if (args && *args) { cmd += ' '; cmd += args; }
+    std::vector<wchar_t> wcmd(cmd.begin(), cmd.end());
+    wcmd.push_back(L'\0');
+    STARTUPINFOW si{};
+    si.cb = sizeof si;
+    PROCESS_INFORMATION pi{};
+    if (!CreateProcessW(nullptr, wcmd.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi))
+        return 2;
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    return 0;
+#else
+    /* POSIX：fork + setsid（脱离会话）→ exec；参数按空白切分（工具路径/参数不含空格引号）。 */
+    std::vector<std::string> argv_storage;
+    argv_storage.emplace_back(exe);
+    if (args && *args) {
+        std::string cur;
+        for (const char* c = args; ; ++c) {
+            if (*c == '\0' || *c == ' ') {
+                if (!cur.empty()) { argv_storage.push_back(cur); cur.clear(); }
+                if (*c == '\0') break;
+            } else cur.push_back(*c);
+        }
+    }
+    std::vector<char*> argv;
+    for (auto& s : argv_storage) argv.push_back(s.data());
+    argv.push_back(nullptr);
+    const pid_t pid = fork();
+    if (pid < 0) return 2;
+    if (pid == 0) {
+        setsid();
+        execvp(argv[0], argv.data());
+        _exit(127);
+    }
+    return 0;
+#endif
+}
+
+int mq_platform_process_stats(mq_platform* p, double* out_cpu_percent, uint64_t* out_mem_bytes) {
+    if (!p) return 1;
+    uint64_t cpu_100ns = 0;      /* 累计 CPU 时间，100ns 单位 */
+    uint64_t mem_bytes = 0;
+    uint64_t wall_ns = 0;
+#if defined(_WIN32)
+    FILETIME t_create{}, t_exit{}, t_kernel{}, t_user{};
+    if (GetProcessTimes(GetCurrentProcess(), &t_create, &t_exit, &t_kernel, &t_user)) {
+        auto to_u64 = [](const FILETIME& f) {
+            return ((uint64_t)f.dwHighDateTime << 32) | (uint64_t)f.dwLowDateTime;
+        };
+        cpu_100ns = to_u64(t_kernel) + to_u64(t_user);
+    }
+    PROCESS_MEMORY_COUNTERS pmc{};
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof pmc)) mem_bytes = (uint64_t)pmc.WorkingSetSize;
+    uint64_t qpc = 0;
+    LARGE_INTEGER li{};
+    if (QueryPerformanceCounter(&li)) {
+        LARGE_INTEGER freq{};
+        QueryPerformanceFrequency(&freq);
+        if (freq.QuadPart > 0) {
+            qpc = (uint64_t)li.QuadPart;
+            wall_ns = (uint64_t)((double)qpc * 1e9 / (double)freq.QuadPart);
+        }
+    }
+#else
+    struct rusage ru{};
+    if (getrusage(RUSAGE_SELF, &ru) == 0) {
+        const uint64_t us = (uint64_t)ru.ru_utime.tv_sec * 1000000ull + (uint64_t)ru.ru_utime.tv_usec +
+                            (uint64_t)ru.ru_stime.tv_sec * 1000000ull + (uint64_t)ru.ru_stime.tv_usec;
+        cpu_100ns = us * 10ull;
+    }
+    /* 常驻内存：Linux 读 /proc/self/statm（RSS 页数）；其它平台退回 ru_maxrss（KB）。 */
+    long rss_pages = 0;
+    if (FILE* f = std::fopen("/proc/self/statm", "r")) {
+        long size = 0;
+        if (std::fscanf(f, "%ld %ld", &size, &rss_pages) != 2) rss_pages = 0;
+        std::fclose(f);
+        if (rss_pages > 0) mem_bytes = (uint64_t)rss_pages * (uint64_t)sysconf(_SC_PAGESIZE);
+    }
+    if (mem_bytes == 0) mem_bytes = (uint64_t)ru.ru_maxrss * 1024ull;
+    struct timespec ts{};
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    wall_ns = (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+#endif
+    double pct = 0.0;
+    if (p->ps_prev_wall_ns != 0 && wall_ns > p->ps_prev_wall_ns) {
+        const double wall_s = (double)(wall_ns - p->ps_prev_wall_ns) / 1e9;
+        const double cpu_s = (double)(cpu_100ns - p->ps_prev_cpu_100ns) / 1e7;   /* 100ns → s */
+        if (wall_s > 0.0) pct = cpu_s / wall_s * 100.0;
+        if (pct < 0.0) pct = 0.0;
+    }
+    p->ps_prev_cpu_100ns = cpu_100ns;
+    p->ps_prev_wall_ns = wall_ns;
+    if (out_cpu_percent) *out_cpu_percent = pct;
+    if (out_mem_bytes) *out_mem_bytes = mem_bytes;
+    return 0;
+}
 
 } // extern "C"

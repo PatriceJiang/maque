@@ -39,7 +39,8 @@ typedef enum mq_asset_kind {
     MQ_ASSET_KIND_FONT = 4,
     MQ_ASSET_KIND_ANIMATION = 5,
     MQ_ASSET_KIND_SCENE = 6,
-    MQ_ASSET_KIND_SCRIPT = 7
+    MQ_ASSET_KIND_SCRIPT = 7,
+    MQ_ASSET_KIND_AUDIO = 8   /* 音频（.wav；P1 起 OGG/MP3） */
 } mq_asset_kind;
 
 /* 资源记录（稳定 ID / 源路径 / 烘焙产物 / 内容哈希）。 */

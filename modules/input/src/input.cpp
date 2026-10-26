@@ -1,6 +1,7 @@
 /* 输入系统实现（docs/19）：确定性事件流 + 录制/回放 + 捕获/目标/冒泡分发。
  * 时间只来自帧号（模拟时间），绝不读墙钟（docs/10 D3）。 */
 #include "core/input/mq_input.h"
+#include "core/tracy/mq_tracy.h"
 
 #include "core/persist/mq_persist.h"     // mq_json（日志 JSON 形态）
 
@@ -178,6 +179,7 @@ void mq_input_add_handler(mq_input* in, mq_input_handler fn, void* user) {
 }
 
 void mq_input_begin_frame(mq_input* in, const mq_input_frame* frame, uint64_t frame_index) {
+    MQ_TRACY_ZONE_N(input, "begin_frame");
     if (!in) return;
     in->frame_index = frame_index;
     in->events.clear();
@@ -298,6 +300,7 @@ static void dispatch_one(mq_input* in, mq_input_event ev) {
 }
 
 uint32_t mq_input_dispatch(mq_input* in) {
+    MQ_TRACY_ZONE_N(input, "dispatch");
     if (!in) return 0;
     // 帧内注入（AI/CI 在 begin_frame 之后到达）也并入本帧，顺序 = 到达顺序
     if (!in->pending_inject.empty()) {
@@ -373,6 +376,7 @@ void mq_input_replay_end(mq_input* in) {
 int mq_input_replaying(mq_input* in) { return in && in->replaying; }
 
 void mq_input_inject(mq_input* in, const mq_input_event* ev) {
+    MQ_TRACY_ZONE_N(input, "inject");
     if (!in || !ev) return;
     mq_input_event copy = *ev;
     copy.phase = MQ_INPUT_PHASE_TARGET;

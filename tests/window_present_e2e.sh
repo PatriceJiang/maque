@@ -2,7 +2,8 @@
 # 窗口呈现端到端（docs/05、M5）：真实窗口 + 呈现路径 + 缩放映射。
 #   ① 有 DISPLAY 时才跑（无显示环境自动跳过 → CI 友好）
 #   ② 窗口尺寸取自 MAQUE_WINDOW；标题取自 MAQUE_TITLE
-#   ③ 从**窗口表面**回读像素（MAQUE_CAPTURE）→ 断言画面非纯背景（渲染确实呈现到窗口）
+#   ③ 从 **SDL_Renderer 后台缓冲**回读像素（MAQUE_CAPTURE，present 前 = 用户看到的整帧）
+#      → 断言画面非纯背景（渲染确实呈现到窗口）
 #   ④ 世界尺寸 ≠ 窗口尺寸时按等比缩放（letterbox）：窗口像素 = 世界像素 × scale
 set -u
 . "$(dirname "$0")/maque_python.sh"                 # tests/ 下的脚本：本仓库内直接跑
@@ -31,8 +32,8 @@ MAQUE_CAPTURE="$WORK/win" MAQUE_MAX_FRAMES=6 MAQUE_KEEP_OPEN=1 \
 
 grep -q "window 800x600" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未应用窗口尺寸覆盖" >&2; exit 1; }
 grep -q "platform window=1" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未创建真实窗口" >&2; exit 1; }
-# 呈现覆盖两条路径：software（窗口表面）与 accelerated（SDL_Renderer）
-grep -qE "present via (window surface|renderer=)" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未走呈现路径" >&2; exit 1; }
+# 呈现统一走 SDL_Renderer（默认 Windows accelerated / 其它平台 software）
+grep -qE "present via renderer=" "$WORK/out.txt" || { echo "window_present_e2e: FAIL 未走呈现路径" >&2; exit 1; }
 
 "$PY" - "$WORK/win_0.ppm" <<'PY' || exit 1
 import sys

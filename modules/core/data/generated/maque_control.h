@@ -54,6 +54,18 @@ int mq_control_Director_pause(void* user, const mq_json* params, char* out, size
 int mq_control_Director_resume(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Director.status() */
 int mq_control_Director_status(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Audio.info() */
+int mq_control_Audio_info(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Audio.voices() */
+int mq_control_Audio_voices(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Audio.play(path: string, volume: float, loop: bool, bus: string) */
+int mq_control_Audio_play(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Audio.stop(voice: string) */
+int mq_control_Audio_stop(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Audio.set_master(volume: float, mute: bool) */
+int mq_control_Audio_set_master(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Audio.set_bus(bus: string, volume: float, mute: bool) */
+int mq_control_Audio_set_bus(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Storage.info() */
 int mq_control_Storage_info(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Storage.list() */

@@ -11,7 +11,8 @@
                       Runtime.step, Director.pause, Director.resume, World.restore,
                       Replay.seek, Input.sim_load, Input.sim_stop, Input.inject,
                       Reload.script, Reload.scene, Reload.files,
-                      Storage.put, Storage.remove ]
+                      Storage.put, Storage.remove,
+                      Audio.play, Audio.stop, Audio.set_master, Audio.set_bus ]
   control_list:
     # ---- 自省（A1）----
     - { method: Control.info,  args: [] }
@@ -48,6 +49,16 @@
     - { method: Director.resume, args: []  }
     - { method: Director.status, args: [] }
     # ---- 键值存储（docs/25）：读写同一份 (uid,session) 命名空间；变更类需读写会话 ----
+    # ---- 音频（docs/30）：只读查询 + 变更类播放/停止/音量（D2 默认只读会话拒绝）----
+    - { method: Audio.info,       args: [] }
+    - { method: Audio.voices,     args: [], summary: "当前 active voice 列表（voice 为字符串句柄）" }
+    - { method: Audio.play,       args: [ { name: path, type: string }, { name: volume, type: float },
+                                          { name: loop, type: bool }, { name: bus, type: string } ] }
+    - { method: Audio.stop,       args: [ { name: voice, type: string } ] }
+    - { method: Audio.set_master, args: [ { name: volume, type: float }, { name: mute, type: bool } ] }
+    - { method: Audio.set_bus,    args: [ { name: bus, type: string }, { name: volume, type: float },
+                                          { name: mute, type: bool } ] }
+
     - { method: Storage.info,   args: [] }
     - { method: Storage.list,   args: [] }
     - { method: Storage.get,    args: [ { name: key, type: string } ] }

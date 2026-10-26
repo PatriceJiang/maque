@@ -1,4 +1,5 @@
 #include "core/script/mq_script.h"
+#include "core/tracy/mq_tracy.h"
 #include <print>
 
 #include "quickjs.h"
@@ -234,6 +235,7 @@ int register_ret_str(mq_script_vm* vm, const char* name, mq_script_ret_str_fn fn
 }
 
 int eval(mq_script_vm* vm, const char* src, const char* filename) {
+    MQ_TRACY_ZONE_N(script, "js.eval");
     if (!vm || !src) return 1;
     JSValue v = JS_Eval(S(vm)->ctx, src, __builtin_strlen(src), filename ? filename : "<script>",
                         JS_EVAL_TYPE_GLOBAL);
@@ -253,6 +255,8 @@ int has(mq_script_vm* vm, const char* fn) {
 }
 
 static int call_impl(mq_script_vm* vm, const char* fn, int argc, double* argv, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "js.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
     if (ret) *ret = 0.0;
     JSValue global = JS_GetGlobalObject(S(vm)->ctx);
     JSValue f = JS_GetPropertyStr(S(vm)->ctx, global, fn);
@@ -283,6 +287,8 @@ int call2(mq_script_vm* vm, const char* fn, double a, double b, double* ret) {
 /* 数值参数 + 末尾字符串：统一实现（n 为数值个数，0..2）。 */
 static int call_with_str(mq_script_vm* vm, const char* fn, int n, const double* nums,
                          const char* s, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "js.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
     if (ret) *ret = 0.0;
     JSValue global = JS_GetGlobalObject(S(vm)->ctx);
     JSValue f = JS_GetPropertyStr(S(vm)->ctx, global, fn);
@@ -343,6 +349,7 @@ void frame_boundary(mq_script_vm* vm) {
 }
 
 void gc(mq_script_vm* vm) {
+    MQ_TRACY_ZONE_N(script, "js.gc");
     if (vm && S(vm)->rt) JS_RunGC(S(vm)->rt);
 }
 

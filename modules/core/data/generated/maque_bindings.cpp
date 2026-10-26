@@ -816,6 +816,39 @@ int b_host_imgui_want_mouse(void* user, int, const double* a, double* ret) {
 int b_host_imgui_want_keyboard(void* user, int, const double* a, double* ret) {
   *ret = (double)host::imgui_want_keyboard(user); return 0;
 }
+int b_host_audio_enabled(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::audio_enabled(user); return 0;
+}
+int b_host_audio_play(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::audio_play(user, s[0], (float)a[0], (float)a[1], s[1]); return 0;
+}  /* kinds=snns */
+int b_host_audio_stop(void* user, int, const double* a, double* ret) {
+  host::audio_stop(user, a[0]); return 0;
+}
+int b_host_audio_pause(void* user, int, const double* a, double* ret) {
+  host::audio_pause(user, a[0], (float)a[1]); return 0;
+}
+int b_host_audio_set_volume(void* user, int, const double* a, double* ret) {
+  host::audio_set_volume(user, a[0], (float)a[1]); return 0;
+}
+int b_host_audio_set_pitch(void* user, int, const double* a, double* ret) {
+  host::audio_set_pitch(user, a[0], (float)a[1]); return 0;
+}
+int b_host_audio_state(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::audio_state(user, a[0]); return 0;
+}
+int b_host_audio_playhead(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::audio_playhead(user, a[0]); return 0;
+}
+int b_host_audio_set_listener(void* user, int, const double* a, double* ret) {
+  host::audio_set_listener(user, (float)a[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
+}
+int b_host_audio_master_volume(void* user, int, const double* a, double* ret) {
+  host::audio_master_volume(user, (float)a[0]); return 0;
+}
+int b_host_audio_bus_volume(void* user, int, const double* a, int, const char** s, double* ret) {
+  host::audio_bus_volume(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
 int b_host_imgui_hovered(void* user, int, const double* a, double* ret) {
   *ret = (double)host::imgui_hovered(user); return 0;
 }
@@ -1098,6 +1131,17 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "imgui_show_demo", b_host_imgui_show_demo, ctx);
   mq_script_register_num(vm, "imgui_want_mouse", b_host_imgui_want_mouse, ctx);
   mq_script_register_num(vm, "imgui_want_keyboard", b_host_imgui_want_keyboard, ctx);
+  mq_script_register_num(vm, "audio_enabled", b_host_audio_enabled, ctx);
+  mq_script_register_multi(vm, "audio_play", "snns", b_host_audio_play, ctx);
+  mq_script_register_num(vm, "audio_stop", b_host_audio_stop, ctx);
+  mq_script_register_num(vm, "audio_pause", b_host_audio_pause, ctx);
+  mq_script_register_num(vm, "audio_set_volume", b_host_audio_set_volume, ctx);
+  mq_script_register_num(vm, "audio_set_pitch", b_host_audio_set_pitch, ctx);
+  mq_script_register_num(vm, "audio_state", b_host_audio_state, ctx);
+  mq_script_register_num(vm, "audio_playhead", b_host_audio_playhead, ctx);
+  mq_script_register_num(vm, "audio_set_listener", b_host_audio_set_listener, ctx);
+  mq_script_register_num(vm, "audio_master_volume", b_host_audio_master_volume, ctx);
+  mq_script_register_multi(vm, "audio_bus_volume", "sn", b_host_audio_bus_volume, ctx);
   mq_script_register_num(vm, "imgui_hovered", b_host_imgui_hovered, ctx);
   mq_script_register_num(vm, "imgui_frame", b_host_imgui_frame, ctx);
   mq_script_register_num(vm, "imgui_last_cmd_count", b_host_imgui_last_cmd_count, ctx);

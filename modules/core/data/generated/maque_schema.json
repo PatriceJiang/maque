@@ -2,10 +2,10 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 242,
-  "api_count": 273,
-  "control_count": 43,
+  "api_count": 284,
+  "control_count": 49,
   "callback_count": 10,
-  "module_count": 25,
+  "module_count": 26,
   "types": [
     {
       "name": "anim.AnimatedSprite",
@@ -3751,6 +3751,9 @@
       "pod": true,
       "has_dynamic": false,
       "source": "world/audio.yaml",
+      "roles": [
+        "audio_listener"
+      ],
       "fields": [
         {
           "name": "active",
@@ -3836,32 +3839,31 @@
       "kind": "struct",
       "type_id": 3174450644,
       "size": null,
-      "align": 1,
-      "pod": true,
-      "has_dynamic": false,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
       "source": "world/audio.yaml",
+      "roles": [
+        "audio_source"
+      ],
       "fields": [
         {
           "name": "clip",
-          "type": "asset_ref<AudioClip>",
-          "kind": "asset_ref",
+          "type": "string",
+          "kind": "string",
           "type_id": 0,
           "count": 0,
           "offset": null,
-          "attrs": {
-            "ref": "AudioClip"
-          }
+          "attrs": {}
         },
         {
           "name": "bus",
-          "type": "asset_ref<AudioBus>",
-          "kind": "asset_ref",
+          "type": "string",
+          "kind": "string",
           "type_id": 0,
           "count": 0,
           "offset": null,
-          "attrs": {
-            "ref": "AudioBus"
-          }
+          "attrs": {}
         },
         {
           "name": "autoplay",
@@ -3930,14 +3932,12 @@
         },
         {
           "name": "curve",
-          "type": "asset_ref<AudioCurve>",
-          "kind": "asset_ref",
+          "type": "string",
+          "kind": "string",
           "type_id": 0,
           "count": 0,
           "offset": null,
-          "attrs": {
-            "ref": "AudioCurve"
-          }
+          "attrs": {}
         },
         {
           "name": "min_distance",
@@ -15132,6 +15132,7 @@
       ],
       "returns": "float",
       "ctx": false,
+      "doc": null,
       "manual": null
     },
     {
@@ -15155,6 +15156,7 @@
       ],
       "returns": "float",
       "ctx": false,
+      "doc": null,
       "manual": null
     },
     {
@@ -15170,6 +15172,7 @@
       ],
       "returns": "float",
       "ctx": false,
+      "doc": null,
       "manual": "math.custom.h"
     },
     {
@@ -15185,6 +15188,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "读键；不存在返回空串（用 exists 区分）",
       "manual": null
     },
     {
@@ -15204,6 +15208,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "写键；返回 1/0",
       "manual": null
     },
     {
@@ -15219,6 +15224,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "删键；返回 1/0",
       "manual": null
     },
     {
@@ -15234,6 +15240,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "键是否存在",
       "manual": null
     },
     {
@@ -15244,6 +15251,7 @@
       "args": [],
       "returns": "string",
       "ctx": true,
+      "doc": "键列表（JSON 数组字符串）",
       "manual": null
     },
     {
@@ -15254,6 +15262,7 @@
       "args": [],
       "returns": "string",
       "ctx": true,
+      "doc": "自省：JSON {mode, root, ns}（AI/调试）",
       "manual": null
     },
     {
@@ -15264,6 +15273,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15274,6 +15284,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15284,6 +15295,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15294,6 +15306,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15317,6 +15330,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15332,6 +15346,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15347,6 +15362,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15362,6 +15378,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15372,6 +15389,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "新建节点（返回单调 id）；entity_* 是 node_* 的**扁平别名**（按 id 直接寻址，同一模型）",
       "manual": null
     },
     {
@@ -15395,6 +15413,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": "写 Transform 组件（世界坐标）；不要直接改 Entity::world_x/y（那是每帧展平的派生缓存）",
       "manual": null
     },
     {
@@ -15410,6 +15429,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "读世界坐标（派生缓存；改位置用 entity_set_pos / node_set_position）",
       "manual": null
     },
     {
@@ -15425,6 +15445,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "读世界坐标（派生缓存；改位置用 entity_set_pos / node_set_position）",
       "manual": null
     },
     {
@@ -15435,6 +15456,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "节点总数（树的扁平视图）",
       "manual": null
     },
     {
@@ -15450,6 +15472,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": "销毁节点（帧末生效；与 node_destroy 相同）",
       "manual": null
     },
     {
@@ -15465,6 +15488,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "节点名（空串 = 无/无此 id）",
       "manual": null
     },
     {
@@ -15480,6 +15504,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15495,6 +15520,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "按名字找节点（返回 id；-1 = 没有）",
       "manual": null
     },
     {
@@ -15510,6 +15536,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "id 是否仍有效（id 单调递增、永不复用）",
       "manual": null
     },
     {
@@ -15520,6 +15547,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15530,6 +15558,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15540,6 +15569,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15550,6 +15580,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15565,6 +15596,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15575,6 +15607,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15590,6 +15623,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15600,6 +15634,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15610,6 +15645,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15625,6 +15661,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15640,6 +15677,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15659,6 +15697,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15690,6 +15729,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15705,6 +15745,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15715,6 +15756,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15725,6 +15767,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15740,6 +15783,7 @@
       ],
       "returns": "bool",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15755,6 +15799,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15770,6 +15815,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15785,6 +15831,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15800,6 +15847,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15810,6 +15858,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15829,6 +15878,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15848,6 +15898,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15871,6 +15922,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15898,6 +15950,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15921,6 +15974,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15936,6 +15990,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15946,6 +16001,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15965,6 +16021,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15980,6 +16037,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -15995,6 +16053,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16014,6 +16073,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16033,6 +16093,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16052,6 +16113,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16071,6 +16133,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16086,6 +16149,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16105,6 +16169,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16120,6 +16185,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16139,6 +16205,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16154,6 +16221,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16173,6 +16241,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16188,6 +16257,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16207,6 +16277,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16222,6 +16293,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16237,6 +16309,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16252,6 +16325,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16275,6 +16349,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16290,6 +16365,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16305,6 +16381,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16328,6 +16405,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16351,6 +16429,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16370,6 +16449,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16389,6 +16469,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16408,6 +16489,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16423,6 +16505,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16442,6 +16525,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16461,6 +16545,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16484,6 +16569,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16511,6 +16597,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16534,6 +16621,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16561,6 +16649,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16584,6 +16673,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16611,6 +16701,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16634,6 +16725,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16653,6 +16745,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16672,6 +16765,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16695,6 +16789,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16714,6 +16809,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16729,6 +16825,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16748,6 +16845,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16763,6 +16861,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16773,6 +16872,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "绘制区宽（设备像素；HiDPI 下大于 screen_w）",
       "manual": null
     },
     {
@@ -16783,6 +16883,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16793,6 +16894,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "设计 → 设备 的等比缩放",
       "manual": null
     },
     {
@@ -16803,6 +16905,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16813,6 +16916,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16823,6 +16927,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "画布原点的绘制区偏移（留边）",
       "manual": null
     },
     {
@@ -16833,6 +16938,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16843,6 +16949,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "显示器内容缩放（HiDPI）",
       "manual": null
     },
     {
@@ -16858,6 +16965,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "安全区内缩（0=左 1=上 2=右 3=下，设备像素）",
       "manual": null
     },
     {
@@ -16877,6 +16985,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16892,6 +17001,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16907,6 +17017,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16922,6 +17033,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16937,6 +17049,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16947,6 +17060,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16957,6 +17071,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16967,6 +17082,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16977,6 +17093,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -16992,6 +17109,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17023,6 +17141,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17038,6 +17157,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17053,6 +17173,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17068,6 +17189,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17087,6 +17209,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17106,6 +17229,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17121,6 +17245,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17131,6 +17256,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17146,6 +17272,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17161,6 +17288,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17180,6 +17308,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17195,6 +17324,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "动画个数（无 SpineSkeleton 组件 → 0）",
       "manual": null
     },
     {
@@ -17214,6 +17344,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "第 index 个动画名（声明序；越界 → \"\"）",
       "manual": null
     },
     {
@@ -17233,6 +17364,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "动画名 → 声明序下标（不存在 → -1）",
       "manual": null
     },
     {
@@ -17256,6 +17388,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "播放动画（loop != 0 循环）；成功 0，失败 -1（名字不存在/无实例）",
       "manual": null
     },
     {
@@ -17271,6 +17404,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "track 0 当前动画名（未播放 → \"\"）",
       "manual": null
     },
     {
@@ -17290,6 +17424,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "换皮肤（名字不存在 → -1）",
       "manual": null
     },
     {
@@ -17305,6 +17440,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17324,6 +17460,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17339,6 +17476,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "track 0 播放头时间（秒）",
       "manual": null
     },
     {
@@ -17358,6 +17496,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "设置播放头时间（确定性回放/定格用；下一帧 step 生效）",
       "manual": null
     },
     {
@@ -17373,6 +17512,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "图集页数（多页图集 = 多次绘制批次）",
       "manual": null
     },
     {
@@ -17392,6 +17532,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "第 index 页的引擎纹理句柄（-1 = 无/越界；用于确认纹理真的上传了）",
       "manual": null
     },
     {
@@ -17419,6 +17560,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "指定轨播动画（IK: track0=walk、track1=aim）；成功 0，失败 -1",
       "manual": null
     },
     {
@@ -17450,6 +17592,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "排队：delay 秒后播（Raptor: track1 gun-grab false 2）",
       "manual": null
     },
     {
@@ -17465,6 +17608,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "有轨条目的轨数",
       "manual": null
     },
     {
@@ -17484,6 +17628,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "该轨当前动画名（空轨 → \"\"）",
       "manual": null
     },
     {
@@ -17503,6 +17648,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "该轨排队中的条目数（addAnimation 之后还剩几个；官方 SkeletonAnimation 的 queue 语义）",
       "manual": null
     },
     {
@@ -17522,6 +17668,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17541,6 +17688,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "该轨播放头时间（秒）；多轨各自独立推进",
       "manual": null
     },
     {
@@ -17564,6 +17712,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "设该轨播放头（设完立刻 step(0) 重算姿势）",
       "manual": null
     },
     {
@@ -17583,6 +17732,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17606,6 +17756,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17621,6 +17772,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "AnimationState 全局时间缩放（官方 Coin/Tank 的 setTimeScale(0.3)）",
       "manual": null
     },
     {
@@ -17640,6 +17792,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17655,6 +17808,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17674,6 +17828,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "换动画的默认混合时长（官方 C++ 入口 demo: 0.2）",
       "manual": null
     },
     {
@@ -17701,6 +17856,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "setMix(from,to,duration)（Batching walk→jump 0.2；Separator 0.4）",
       "manual": null
     },
     {
@@ -17716,6 +17872,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "上一次帧边界以来发生的事件数（Spineboy: start/complete/event…）",
       "manual": null
     },
     {
@@ -17735,6 +17892,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "事件类型：0=start 1=interrupt 2=end 3=complete 4=dispose 5=event（越界 → -1）",
       "manual": null
     },
     {
@@ -17754,6 +17912,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17773,6 +17932,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17792,6 +17952,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "用户事件名（仅 type=5；否则 \"\"）",
       "manual": null
     },
     {
@@ -17811,6 +17972,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17830,6 +17992,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17849,6 +18012,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17864,6 +18028,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17879,6 +18044,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17898,6 +18064,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -17917,6 +18084,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "骨骼名 → 序号（-1 = 无）",
       "manual": null
     },
     {
@@ -17940,6 +18108,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "what: 0=局部x 1=局部y 2=世界x 3=世界y（世界坐标 = 骨架子空间、y 向上）",
       "manual": null
     },
     {
@@ -17967,6 +18136,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "设父空间局部位置",
       "manual": null
     },
     {
@@ -17994,6 +18164,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "设世界位置（内部走父骨骼 worldToLocal，与官方 IK demo 同款）",
       "manual": null
     },
     {
@@ -18009,6 +18180,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "只重算世界变换（不 apply 动画）→ 设完骨骼位置后让 IK 链当帧跟随",
       "manual": null
     },
     {
@@ -18024,6 +18196,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18043,6 +18216,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18062,6 +18236,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "槽名 → 声明序下标（= 官方 findSlot(name)->getData().getIndex()；-1 = 无）",
       "manual": null
     },
     {
@@ -18081,6 +18256,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "该槽当前附件名（\"\" = 空槽）",
       "manual": null
     },
     {
@@ -18104,6 +18280,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "只画声明序槽区间 [from,to]（to<0 → 到末尾；from<0 → 不限制）—— Separator demo 的前/后段拆分",
       "manual": null
     },
     {
@@ -18119,6 +18296,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18134,6 +18312,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18161,6 +18340,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "按皮肤名取附件设到槽（skin_name 空 → 当前皮肤；attachment_name 空 → 卸下）",
       "manual": null
     },
     {
@@ -18180,6 +18360,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "皮肤名 → 声明序下标（-1 = 无）",
       "manual": null
     },
     {
@@ -18199,6 +18380,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "新建空皮肤 → 返回**句柄**（>=0；失败 -1）。句柄由引擎持有，切场景/退出时释放",
       "manual": null
     },
     {
@@ -18222,6 +18404,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "把骨架里名为 source_skin 的皮肤**并入**句柄（Skin::addSkin；同槽同名后者覆盖）；成功 0",
       "manual": null
     },
     {
@@ -18241,6 +18424,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "把句柄指向的皮肤设为当前皮肤（Skin* 版 setSkin + 按 setup 姿势复位槽）",
       "manual": null
     },
     {
@@ -18260,6 +18444,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "一步到位：逗号分隔皮肤名 → 合成新皮肤并设为当前（MixAndMatch: skin-base,nose/short,…）；成功 0",
       "manual": null
     },
     {
@@ -18279,6 +18464,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "皮肤附件数（handle<0 → 最近一次 create/compose 的那一个；用于断言合成真的合上了）",
       "manual": null
     },
     {
@@ -18298,6 +18484,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "官方 setTwoColorTint 的忠实复刻：**本引擎网格恒定走两色着色路径**（暗色通道始终产出；素材无 dark 时是 (0,0,0,1) → 与关闭逐字节等价），故该开关不改变输出，只为让官方 demo 的调用点有落处（值照存进组件字段）",
       "manual": null
     },
     {
@@ -18313,6 +18500,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18332,6 +18520,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18355,6 +18544,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18370,6 +18560,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "物理约束个数（celestial-circus 有；普通骨架 0）",
       "manual": null
     },
     {
@@ -18389,6 +18580,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18412,6 +18604,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "给所有物理约束一个位移冲量（官方 Physics demo）",
       "manual": null
     },
     {
@@ -18427,6 +18620,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18446,6 +18640,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "序列帧附件的总帧数（0 = 该槽不是序列帧附件）",
       "manual": null
     },
     {
@@ -18465,6 +18660,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "当前帧下标（-1 = setup 帧）",
       "manual": null
     },
     {
@@ -18484,6 +18680,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "当前帧路径名（Sequence::getPath）",
       "manual": null
     },
     {
@@ -18507,6 +18704,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "what: 0=u 1=v 2=u2 3=v2 4=width 5=height 6=setup_index（逐帧不同 → 可断言真的换图了）",
       "manual": null
     },
     {
@@ -18530,6 +18728,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "手动定格序列帧下标（-1 = setup 帧）",
       "manual": null
     },
     {
@@ -18540,6 +18739,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "ImGui 是否已初始化",
       "manual": null
     },
     {
@@ -18550,6 +18750,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "面板是否启用（MAQUE_IMGUI=0 可关；默认关）",
       "manual": null
     },
     {
@@ -18565,6 +18766,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "运行时开关面板（关掉后不再占 GPU/输入）",
       "manual": null
     },
     {
@@ -18580,6 +18782,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "开窗口 → 1=可见（须配对 imgui_end）",
       "manual": null
     },
     {
@@ -18590,6 +18793,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18621,6 +18825,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "指定位置/尺寸且默认打开",
       "manual": null
     },
     {
@@ -18640,6 +18845,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18659,6 +18865,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18669,6 +18876,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18679,6 +18887,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18689,6 +18898,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18699,6 +18909,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18714,6 +18925,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18724,6 +18936,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18751,6 +18964,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18761,6 +18975,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18771,6 +18986,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18781,6 +18997,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18796,6 +19013,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18806,6 +19024,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18829,6 +19048,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18844,6 +19064,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18854,6 +19075,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18869,6 +19091,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18879,6 +19102,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18898,6 +19122,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18908,6 +19133,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18918,6 +19144,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18928,6 +19155,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18938,6 +19166,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18953,6 +19182,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18968,6 +19198,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -18983,6 +19214,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19014,6 +19246,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19033,6 +19266,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19048,6 +19282,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19063,6 +19298,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "点击 → 1",
       "manual": null
     },
     {
@@ -19078,6 +19314,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19101,6 +19338,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19120,6 +19358,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19139,6 +19378,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "返回新值（0/1）",
       "manual": null
     },
     {
@@ -19158,6 +19398,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "点了且变为选中 → 1",
       "manual": null
     },
     {
@@ -19185,6 +19426,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "返回新值",
       "manual": null
     },
     {
@@ -19212,6 +19454,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "返回新值（整数按 float 传）",
       "manual": null
     },
     {
@@ -19235,6 +19478,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "返回新值",
       "manual": null
     },
     {
@@ -19258,6 +19502,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19277,6 +19522,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "返回新值（可键入）",
       "manual": null
     },
     {
@@ -19296,6 +19542,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19315,6 +19562,7 @@
       ],
       "returns": "string",
       "ctx": true,
+      "doc": "返回当前文本（引擎按 label 维持缓冲）",
       "manual": null
     },
     {
@@ -19338,6 +19586,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "items 是逗号分隔串；返回选中下标",
       "manual": null
     },
     {
@@ -19361,6 +19610,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19380,6 +19630,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19407,6 +19658,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19426,6 +19678,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": "把值推进该 id 的环形历史并画折线图（脚本不必自己存数组）",
       "manual": null
     },
     {
@@ -19445,6 +19698,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "packed = r*65536+g*256+b（0..255）；返回新 packed",
       "manual": null
     },
     {
@@ -19460,6 +19714,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "展开 → 1（须配 imgui_tree_pop）",
       "manual": null
     },
     {
@@ -19470,6 +19725,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19485,6 +19741,7 @@
       ],
       "returns": "float",
       "ctx": true,
+      "doc": "展开 → 1",
       "manual": null
     },
     {
@@ -19500,6 +19757,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19515,6 +19773,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19525,6 +19784,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19540,6 +19800,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19550,6 +19811,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19565,6 +19827,7 @@
       ],
       "returns": "void",
       "ctx": true,
+      "doc": "悬停在本项时显示文本",
       "manual": null
     },
     {
@@ -19575,6 +19838,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19585,6 +19849,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19595,6 +19860,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19605,6 +19871,7 @@
       "args": [],
       "returns": "void",
       "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19615,6 +19882,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "内建 ImGui 演示窗口（自检用）",
       "manual": null
     },
     {
@@ -19625,6 +19893,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "1 = ImGui 要吃鼠标 → 世界输入应被阻断",
       "manual": null
     },
     {
@@ -19635,6 +19904,218 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.audio_enabled",
+      "namespace": "host",
+      "fn": "audio_enabled",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": "音频实例是否可用（MAQUE_AUDIO=off 时仍可逻辑播放）",
+      "manual": null
+    },
+    {
+      "name": "host.audio_play",
+      "namespace": "host",
+      "fn": "audio_play",
+      "global": true,
+      "args": [
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "volume",
+          "type": "float"
+        },
+        {
+          "name": "loop",
+          "type": "float"
+        },
+        {
+          "name": "bus",
+          "type": "string"
+        }
+      ],
+      "returns": "double",
+      "ctx": true,
+      "doc": "播放（VFS 路径，P0 仅 WAV）；返回 voice，0=失败",
+      "manual": null
+    },
+    {
+      "name": "host.audio_stop",
+      "namespace": "host",
+      "fn": "audio_stop",
+      "global": true,
+      "args": [
+        {
+          "name": "voice",
+          "type": "double"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": "停止并释放 voice",
+      "manual": null
+    },
+    {
+      "name": "host.audio_pause",
+      "namespace": "host",
+      "fn": "audio_pause",
+      "global": true,
+      "args": [
+        {
+          "name": "voice",
+          "type": "double"
+        },
+        {
+          "name": "paused",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.audio_set_volume",
+      "namespace": "host",
+      "fn": "audio_set_volume",
+      "global": true,
+      "args": [
+        {
+          "name": "voice",
+          "type": "double"
+        },
+        {
+          "name": "volume",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.audio_set_pitch",
+      "namespace": "host",
+      "fn": "audio_set_pitch",
+      "global": true,
+      "args": [
+        {
+          "name": "voice",
+          "type": "double"
+        },
+        {
+          "name": "pitch",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.audio_state",
+      "namespace": "host",
+      "fn": "audio_state",
+      "global": true,
+      "args": [
+        {
+          "name": "voice",
+          "type": "double"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "0=停止 1=播放 2=暂停；-1=无效句柄",
+      "manual": null
+    },
+    {
+      "name": "host.audio_playhead",
+      "namespace": "host",
+      "fn": "audio_playhead",
+      "global": true,
+      "args": [
+        {
+          "name": "voice",
+          "type": "double"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "逻辑播放进度（秒，模拟时间；与设备是否出声无关）",
+      "manual": null
+    },
+    {
+      "name": "host.audio_set_listener",
+      "namespace": "host",
+      "fn": "audio_set_listener",
+      "global": true,
+      "args": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "dir_x",
+          "type": "float"
+        },
+        {
+          "name": "dir_y",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.audio_master_volume",
+      "namespace": "host",
+      "fn": "audio_master_volume",
+      "global": true,
+      "args": [
+        {
+          "name": "volume",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.audio_bus_volume",
+      "namespace": "host",
+      "fn": "audio_bus_volume",
+      "global": true,
+      "args": [
+        {
+          "name": "bus",
+          "type": "string"
+        },
+        {
+          "name": "volume",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": null,
       "manual": null
     },
     {
@@ -19645,6 +20126,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "指针是否落在面板上",
       "manual": null
     },
     {
@@ -19655,6 +20137,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "面板已渲染的帧数（自省：证明真的在跑）",
       "manual": null
     },
     {
@@ -19665,6 +20148,7 @@
       "args": [],
       "returns": "float",
       "ctx": true,
+      "doc": "上一帧导出的绘制命令数（0 = 面板没画东西）",
       "manual": null
     }
   ],
@@ -19897,6 +20381,80 @@
       "method": "Director.status",
       "namespace": "control",
       "args": []
+    },
+    {
+      "method": "Audio.info",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Audio.voices",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Audio.play",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "volume",
+          "type": "float"
+        },
+        {
+          "name": "loop",
+          "type": "bool"
+        },
+        {
+          "name": "bus",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "method": "Audio.stop",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "voice",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "method": "Audio.set_master",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "volume",
+          "type": "float"
+        },
+        {
+          "name": "mute",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "method": "Audio.set_bus",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "bus",
+          "type": "string"
+        },
+        {
+          "name": "volume",
+          "type": "float"
+        },
+        {
+          "name": "mute",
+          "type": "bool"
+        }
+      ]
     },
     {
       "method": "Storage.info",
@@ -22061,6 +22619,27 @@
           ]
         },
         {
+          "name": "mq_platform_screen_size",
+          "returns": "void",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "out_w",
+              "type": "int32_t*",
+              "doc": null
+            },
+            {
+              "name": "out_h",
+              "type": "int32_t*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_platform_display_changed",
           "returns": "int",
           "args": [
@@ -22078,6 +22657,73 @@
             {
               "name": "p",
               "type": "mq_platform*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_get_native_window",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_platform_native_window*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_draw_rect",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "rgba",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "w",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "h",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "dx",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "dy",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "dw",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "dh",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "filter",
+              "type": "int32_t",
               "doc": null
             }
           ]
@@ -22235,6 +22881,48 @@
             {
               "name": "button",
               "type": "int32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_spawn_detached",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "exe",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "args",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_process_stats",
+          "returns": "int",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "out_cpu_percent",
+              "type": "double*",
+              "doc": null
+            },
+            {
+              "name": "out_mem_bytes",
+              "type": "uint64_t*",
               "doc": null
             }
           ]
@@ -22520,6 +23208,31 @@
             {
               "name": "height",
               "type": "int",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_native_window",
+          "fields": [
+            {
+              "name": "kind",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "display",
+              "type": "void*",
+              "doc": null
+            },
+            {
+              "name": "handle",
+              "type": "void*",
+              "doc": null
+            },
+            {
+              "name": "extra",
+              "type": "void*",
               "doc": null
             }
           ]
@@ -26474,6 +27187,784 @@
             {
               "name": "MQ_ASSET_KIND_SCRIPT",
               "value": 7,
+              "doc": null
+            },
+            {
+              "name": "MQ_ASSET_KIND_AUDIO",
+              "value": 8,
+              "doc": "音频（.wav；P1 起 OGG/MP3）"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "module": "audio",
+      "abi_name": "maque.audio",
+      "version": 1,
+      "language": "c",
+      "header": "abi/audio.h",
+      "fns": [
+        {
+          "name": "mq_audio_create",
+          "returns": "mq_audio*",
+          "args": [
+            {
+              "name": "desc",
+              "type": "const mq_audio_desc*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_load_memory",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "data",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "size_t",
+              "doc": null
+            },
+            {
+              "name": "hint",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_audio_clip**",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_clip_release",
+          "returns": "void",
+          "args": [
+            {
+              "name": "clip",
+              "type": "mq_audio_clip*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_clip_info",
+          "returns": "int",
+          "args": [
+            {
+              "name": "clip",
+              "type": "const mq_audio_clip*",
+              "doc": null
+            },
+            {
+              "name": "frames",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "rate",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "channels",
+              "type": "uint32_t*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_play",
+          "returns": "uint64_t",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "d",
+              "type": "const mq_audio_voice_desc*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_stop",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_pause",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "paused",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_set_voice",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "volume",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "pitch",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "pan",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_set_volume",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "volume",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_set_pitch",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "pitch",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_set_spatial",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "z",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "panning",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "attenuation",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "min_distance",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "max_distance",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_set_listener",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "l",
+              "type": "const mq_audio_listener*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_set_bus",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "bus",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "volume",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "mute",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_set_master",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "volume",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "mute",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_update",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "dt",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_mix",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "float*",
+              "doc": null
+            },
+            {
+              "name": "frames",
+              "type": "uint32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_voice_state",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t",
+              "doc": null
+            },
+            {
+              "name": "state",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "playhead",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_voice_at",
+          "returns": "uint32_t",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "index",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "voice",
+              "type": "uint64_t*",
+              "doc": null
+            },
+            {
+              "name": "state",
+              "type": "uint32_t*",
+              "doc": null
+            },
+            {
+              "name": "playhead",
+              "type": "float*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_get_stats",
+          "returns": "int",
+          "args": [
+            {
+              "name": "a",
+              "type": "mq_audio*",
+              "doc": null
+            },
+            {
+              "name": "out",
+              "type": "mq_audio_stats*",
+              "doc": null
+            }
+          ]
+        }
+      ],
+      "structs": [
+        {
+          "name": "mq_audio_desc",
+          "fields": [
+            {
+              "name": "struct_size",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "sample_rate",
+              "type": "uint32_t",
+              "doc": "0=48000；设备可能协商成其它值（见 stats）"
+            },
+            {
+              "name": "channels",
+              "type": "uint32_t",
+              "doc": "0=2；P0 仅立体声"
+            },
+            {
+              "name": "buffer_frames",
+              "type": "uint32_t",
+              "doc": "0=1024"
+            },
+            {
+              "name": "max_voices",
+              "type": "uint32_t",
+              "doc": "0=64"
+            },
+            {
+              "name": "backend",
+              "type": "uint32_t",
+              "doc": "MQ_AUDIO_BACKEND_*；0=AUTO"
+            },
+            {
+              "name": "device",
+              "type": "const char*",
+              "doc": "NULL=默认设备；SDL 后端按名字匹配"
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_voice_desc",
+          "fields": [
+            {
+              "name": "struct_size",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "clip",
+              "type": "const mq_audio_clip*",
+              "doc": "由 mq_audio_load_memory 产生；播放期间调用方保持有效"
+            },
+            {
+              "name": "volume",
+              "type": "float",
+              "doc": "线性增益，默认 1"
+            },
+            {
+              "name": "pitch",
+              "type": "float",
+              "doc": "0.01..4，默认 1（同时改变播放速度）"
+            },
+            {
+              "name": "pan",
+              "type": "float",
+              "doc": "-1 左 .. +1 右，默认 0（Stereo2D）"
+            },
+            {
+              "name": "loop",
+              "type": "uint32_t",
+              "doc": "0/1"
+            },
+            {
+              "name": "bus",
+              "type": "const char*",
+              "doc": "NULL/空 = \"sfx\""
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": "3D 声源位置（世界坐标；y 向上）"
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "z",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "panning",
+              "type": "uint32_t",
+              "doc": "mq_audio_panning"
+            },
+            {
+              "name": "attenuation",
+              "type": "uint32_t",
+              "doc": "mq_audio_attenuation"
+            },
+            {
+              "name": "min_distance",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "max_distance",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "doppler",
+              "type": "float",
+              "doc": "0=关（P0 仅记录，P2 生效）"
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_listener",
+          "fields": [
+            {
+              "name": "struct_size",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "z",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dir_x",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dir_y",
+              "type": "float",
+              "doc": null
+            },
+            {
+              "name": "dir_z",
+              "type": "float",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_stats",
+          "fields": [
+            {
+              "name": "struct_size",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "sample_rate",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "channels",
+              "type": "uint32_t",
+              "doc": null
+            },
+            {
+              "name": "voices",
+              "type": "uint32_t",
+              "doc": "活动 voice 数"
+            },
+            {
+              "name": "callbacks",
+              "type": "uint64_t",
+              "doc": "设备回调次数（null=0）"
+            },
+            {
+              "name": "dropped",
+              "type": "uint64_t",
+              "doc": "因容量/无效句柄丢弃的命令数"
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": "mq_audio_status",
+          "values": [
+            {
+              "name": "MQ_AUDIO_OK",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_ERR_ARG",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_ERR_FORMAT",
+              "value": 2,
+              "doc": "解码失败 / 不支持的编码"
+            },
+            {
+              "name": "MQ_AUDIO_ERR_IO",
+              "value": 3,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_ERR_DEVICE",
+              "value": 4,
+              "doc": "设备打开失败（可回退 null 后端）"
+            },
+            {
+              "name": "MQ_AUDIO_ERR_CAPACITY",
+              "value": 5,
+              "doc": "voice 池满 / clip 无效"
+            },
+            {
+              "name": "MQ_AUDIO_ERR_HANDLE",
+              "value": 6,
+              "doc": "voice 句柄过期"
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_backend",
+          "values": [
+            {
+              "name": "MQ_AUDIO_BACKEND_AUTO",
+              "value": 0,
+              "doc": "有 SDL 用 SDL，否则 null"
+            },
+            {
+              "name": "MQ_AUDIO_BACKEND_NULL",
+              "value": 1,
+              "doc": "不出声：仅逻辑推进/离线混音"
+            },
+            {
+              "name": "MQ_AUDIO_BACKEND_SDL",
+              "value": 2,
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_panning",
+          "values": [
+            {
+              "name": "MQ_AUDIO_PANNING_STEREO",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_PANNING_SPATIAL",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_PANNING_HRTF",
+              "value": 2,
+              "doc": "P2 预留（当前按 SPATIAL 处理）"
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_attenuation",
+          "values": [
+            {
+              "name": "MQ_AUDIO_ATTEN_INVERSE",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_ATTEN_LINEAR",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_ATTEN_EXPONENTIAL",
+              "value": 2,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_ATTEN_CURVE",
+              "value": 3,
+              "doc": "P2（当前回退 INVERSE）"
+            }
+          ]
+        },
+        {
+          "name": "mq_audio_play_state",
+          "values": [
+            {
+              "name": "MQ_AUDIO_STOPPED",
+              "value": 0,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_PLAYING",
+              "value": 1,
+              "doc": null
+            },
+            {
+              "name": "MQ_AUDIO_PAUSED",
+              "value": 2,
               "doc": null
             }
           ]

@@ -7,6 +7,7 @@
  *   · 无 FreeType 时回退到内置 5x7 位图字体（保证 headless/CI 亦可用）。
  * 富文本标记：<color=#rrggbb>…</color>、<size=NN>…</size>、<b>…</b>、<br/>（大小写不敏感）。 */
 #include "text/mq_text.h"
+#include "core/tracy/mq_tracy.h"
 
 #include <algorithm>
 #include <cstring>
@@ -646,6 +647,7 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
 
 extern "C" int mq_text_measure(mq_font* font, const mq_text_style* style, const char* text,
                                mq_text_metrics* out_metrics) {
+    MQ_TRACY_ZONE_N(text, "measure");
     if (!font || !style || !out_metrics) return MQ_TEXT_ERR_ARG;
     return layout_impl(font, *style, text, nullptr, out_metrics);
 }
@@ -653,6 +655,7 @@ extern "C" int mq_text_measure(mq_font* font, const mq_text_style* style, const 
 extern "C" int mq_text_layout(mq_font* font, const mq_text_style* style, const char* text,
                               mq_text_glyph* out, uint32_t cap, uint32_t* out_count,
                               mq_text_metrics* out_metrics) {
+    MQ_TRACY_ZONE_N(text, "layout");
     if (!font || !style) return MQ_TEXT_ERR_ARG;
     std::vector<PlacedGlyph> placed;
     const int rc = layout_impl(font, *style, text, &placed, out_metrics);

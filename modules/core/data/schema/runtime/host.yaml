@@ -12,19 +12,19 @@
     - { fn: log,           ctx: true, args: [ { name: msg,  type: string } ] }
     - { fn: cfg,           ctx: true, args: [ { name: path, type: string } ], returns: float }
     - { fn: load_texture,  ctx: true, args: [ { name: path, type: string } ], returns: float }
-    - { fn: entity_spawn,  ctx: true, returns: float }
-    - { fn: entity_set_pos,ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float } ] }
-    - { fn: entity_x,      ctx: true, args: [ { name: id, type: float } ], returns: float }
-    - { fn: entity_y,      ctx: true, args: [ { name: id, type: float } ], returns: float }
-    - { fn: entity_count,  ctx: true, returns: float }
-    - { fn: entity_destroy,ctx: true, args: [ { name: id, type: float } ] }
-    - { fn: entity_name,   ctx: true, args: [ { name: id, type: float } ], returns: string }
+    - { fn: entity_spawn,  ctx: true, returns: float, doc: "新建节点（返回单调 id）；entity_* 是 node_* 的**扁平别名**（按 id 直接寻址，同一模型）" }
+    - { fn: entity_set_pos,ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float } ], doc: "写 Transform 组件（世界坐标）；不要直接改 Entity::world_x/y（那是每帧展平的派生缓存）" }
+    - { fn: entity_x,      ctx: true, args: [ { name: id, type: float } ], returns: float, doc: "读世界坐标（派生缓存；改位置用 entity_set_pos / node_set_position）" }
+    - { fn: entity_y,      ctx: true, args: [ { name: id, type: float } ], returns: float, doc: "读世界坐标（派生缓存；改位置用 entity_set_pos / node_set_position）" }
+    - { fn: entity_count,  ctx: true, returns: float, doc: "节点总数（树的扁平视图）" }
+    - { fn: entity_destroy,ctx: true, args: [ { name: id, type: float } ], doc: "销毁节点（帧末生效；与 node_destroy 相同）" }
+    - { fn: entity_name,   ctx: true, args: [ { name: id, type: float } ], returns: string, doc: "节点名（空串 = 无/无此 id）" }
     # 运行期配置：读宿主环境变量（不存在 → ""）。
     # 用途：游戏资源（远程/热更内容）不该被硬编码；CI 与调试也需要"给资源一个开关"。
     - { fn: env,           ctx: true, args: [ { name: name, type: string } ], returns: string }
-    - { fn: entity_find,   ctx: true, args: [ { name: name, type: string } ], returns: float }
+    - { fn: entity_find,   ctx: true, args: [ { name: name, type: string } ], returns: float, doc: "按名字找节点（返回 id；-1 = 没有）" }
     # 实体 id 单调分配（永不复用）→ 陈旧 id 可判定：valid=0 表示已销毁/从未存在
-    - { fn: entity_valid,  ctx: true, args: [ { name: id, type: float } ], returns: float }
+    - { fn: entity_valid,  ctx: true, args: [ { name: id, type: float } ], returns: float, doc: "id 是否仍有效（id 单调递增、永不复用）" }
     # 输入（docs/19）：脚本读"事件发生时"的状态，不读设备（确定性/回放友好）
     - { fn: input_x,       ctx: true, returns: float }
     - { fn: input_y,       ctx: true, returns: float }
@@ -375,6 +375,19 @@
     - { fn: imgui_show_demo,    ctx: true, returns: float, doc: "内建 ImGui 演示窗口（自检用）" }
     - { fn: imgui_want_mouse,   ctx: true, returns: float, doc: "1 = ImGui 要吃鼠标 → 世界输入应被阻断" }
     - { fn: imgui_want_keyboard, ctx: true, returns: float }
+    # 音频（docs/30）：一次性音效走这里；场景内常驻声源用 audio.AudioSource 组件。
+    # voice 是 uint64 句柄（脚本里当 number 用；gen<<32|index，远小于 2^53）。
+    - { fn: audio_enabled,      ctx: true, returns: float, doc: "音频实例是否可用（MAQUE_AUDIO=off 时仍可逻辑播放）" }
+    - { fn: audio_play,         ctx: true, args: [ { name: path, type: string }, { name: volume, type: float }, { name: loop, type: float }, { name: bus, type: string } ], returns: double, doc: "播放（VFS 路径，P0 仅 WAV）；返回 voice，0=失败" }
+    - { fn: audio_stop,         ctx: true, args: [ { name: voice, type: double } ], doc: "停止并释放 voice" }
+    - { fn: audio_pause,        ctx: true, args: [ { name: voice, type: double }, { name: paused, type: float } ] }
+    - { fn: audio_set_volume,   ctx: true, args: [ { name: voice, type: double }, { name: volume, type: float } ] }
+    - { fn: audio_set_pitch,    ctx: true, args: [ { name: voice, type: double }, { name: pitch, type: float } ] }
+    - { fn: audio_state,        ctx: true, args: [ { name: voice, type: double } ], returns: float, doc: "0=停止 1=播放 2=暂停；-1=无效句柄" }
+    - { fn: audio_playhead,     ctx: true, args: [ { name: voice, type: double } ], returns: float, doc: "逻辑播放进度（秒，模拟时间；与设备是否出声无关）" }
+    - { fn: audio_set_listener, ctx: true, args: [ { name: x, type: float }, { name: y, type: float }, { name: dir_x, type: float }, { name: dir_y, type: float } ] }
+    - { fn: audio_master_volume,ctx: true, args: [ { name: volume, type: float } ] }
+    - { fn: audio_bus_volume,   ctx: true, args: [ { name: bus, type: string }, { name: volume, type: float } ] }
     - { fn: imgui_hovered,      ctx: true, returns: float, doc: "指针是否落在面板上" }
     - { fn: imgui_frame,        ctx: true, returns: float, doc: "面板已渲染的帧数（自省：证明真的在跑）" }
     - { fn: imgui_last_cmd_count, ctx: true, returns: float, doc: "上一帧导出的绘制命令数（0 = 面板没画东西）" }

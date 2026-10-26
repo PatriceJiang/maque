@@ -5,15 +5,19 @@
 #   完成后通过 mq_spine_data_page_texture 回填句柄（见 schema/world/anim.yaml 的注释）。
 add_subdirectory("${CMAKE_SOURCE_DIR}/third_party/spine-cpp" "${CMAKE_BINARY_DIR}/third_party/spine-cpp")
 
-add_library(maque_spine2d STATIC
-    src/spine2d.cpp
-    src/spine_extension.cpp   # spine 要求宿主实现的扩展点（getDefaultExtension）
-)
+# 宿主扩展点（spine::getDefaultExtension）**必须无条件进最终链接**：
+# spine-cpp 的 Extension.cpp 引用它，而它是本模块提供的；若放进 maque_spine2d.a，
+# GNU ld 单趟扫描（先扫本归档、后扫 spine-cpp）不会回扫 → undefined reference。
+# 放进 OBJECT 库并 PUBLIC 传播 → 每个消费者（player/host/测试）都会带上这一份。
+# 宿主扩展点（spine::getDefaultExtension）实现放在 spine2d.cpp 里 —— 它**必然被消费者拉入**
+# （都引用 mq_spine_*）；单独成 TU 进 .a 会被 GNU ld 的单趟扫描漏掉（undefined reference）。
+add_library(maque_spine2d STATIC src/spine2d.cpp)
 add_library(maque::spine2d ALIAS maque_spine2d)
 
 target_include_directories(maque_spine2d PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(maque_spine2d PUBLIC Spine::spine-cpp)
 set_target_properties(maque_spine2d PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(maque_spine2d PUBLIC maque::tracy)   # Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时是空接口）
 
 if(MAQUE_BUILD_TESTS)
     add_executable(maque_spine2d_test tests/spine2d_test.cpp)

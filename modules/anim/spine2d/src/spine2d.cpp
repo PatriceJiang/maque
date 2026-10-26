@@ -17,6 +17,8 @@
  * 确定性（docs/10）：不做内部计时、不开线程、不用系统熵；时间只由 dt / set_time 驱动。
  * 渲染只读：绘制导出只填调用方缓冲，不改任何模拟状态。 */
 #include "anim/mq_spine2d.h"
+#include <spine/Extension.h>
+#include "core/tracy/mq_tracy.h"
 
 #include <spine/spine.h>
 #include <spine/ClippingAttachment.h>
@@ -552,6 +554,7 @@ int mq_spine_instance_set_time(mq_spine_instance *inst, int track, float time) {
 }
 
 int mq_spine_instance_step_ex(mq_spine_instance *inst, float dt, int physics) {
+    MQ_TRACY_ZONE_N(anim, "step");
     if (!inst || !std::isfinite(dt)) return MQ_SPINE_ERR_ARG;
     if (physics < 0 || physics > 3) return MQ_SPINE_ERR_ARG;
     /* 固定步语义：dt 由调用方按主循环固定步长给（docs/10 D1）；本模块不自建计时器。
@@ -1012,6 +1015,7 @@ int mq_spine_instance_set_sequence_index(mq_spine_instance *inst, int slot_index
 int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs, float *colors,
                            float *dark_colors, uint32_t *indices, mq_spine_batch *batches,
                            int max_vertices, int max_indices, int max_batches, mq_spine_draw *out) {
+    MQ_TRACY_ZONE_N(anim, "draw");
     if (!inst || !out || !vertices || !uvs || !colors || !indices || !batches)
         return MQ_SPINE_ERR_ARG;
     if (max_vertices <= 0 || max_indices <= 0 || max_batches <= 0) return MQ_SPINE_ERR_ARG;
@@ -1246,3 +1250,19 @@ int mq_spine_instance_draw(mq_spine_instance *inst, float *vertices, float *uvs,
 }
 
 } // extern "C"
+
+/* ---- 宿主扩展点（spine-cpp 4.2 要求宿主提供）----
+ * `SpineExtension::getInstance()` 首次使用时调用 `spine::getDefaultExtension()` —— 留给宿主实现
+ * （分配器 / 文件读取 / 日志）。官方各平台样例都放在自己的 main 里；引擎侧由本模块提供默认实现
+ * （上游 `DefaultSpineExtension`：标准 malloc/free + FILE* 读文件）。
+ * 与引擎约定：骨架/图集都从**内存**进来（调用方用 VFS 读），故 `_readFile` 正常路径不会用到；
+ * 将来要让 spine 直接走 VFS，可 `SpineExtension::setInstance` 换自定义实现。
+ *
+ * ⚠️ 为什么和 spine2d.cpp 放在一起：本定义若单独成 TU 放进 .a，GNU ld 单趟扫描（先本归档、
+ * 后 spine-cpp）不会回扫 → `undefined reference to spine::getDefaultExtension()`。
+ * 放在**必然被拉入**的 TU（消费者都引用 mq_spine_*）里即可，无需链接器 group。 */
+namespace spine {
+SpineExtension* getDefaultExtension() {
+    return new DefaultSpineExtension();
+}
+} // namespace spine

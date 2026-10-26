@@ -8,6 +8,7 @@
  *   · min/max_scale 用于限制极端 DPI 下的缩放（<=0 表示不限）；
  *   · 非法/退化输入（设计分辨率 <=0、绘制区 <=0）回退 1:1 并返回非 0，调用方可据此记录告警。 */
 #include "canvas/mq_canvas.h"
+#include "core/tracy/mq_tracy.h"
 
 #include <algorithm>
 #include <cmath>
@@ -42,6 +43,7 @@ void fallback(const mq_canvas_desc& d, mq_canvas_metrics* m) {
 } // namespace
 
 extern "C" int mq_canvas_resolve(const mq_canvas_desc* desc, mq_canvas_metrics* out) {
+    MQ_TRACY_ZONE_N(ui, "resolve");
     if (!desc || !out) return 1;
     *out = mq_canvas_metrics{};
     const mq_canvas_desc& d = *desc;

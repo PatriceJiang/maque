@@ -9,6 +9,7 @@
  * 显示尺寸仍由宿主先用 mq_imgui_begin_frame(...) 提供（它负责 io.DisplaySize/输入）。
  */
 #include "ui/mq_imgui.h"
+#include "core/tracy/mq_tracy.h"
 
 #include "imgui.h"
 #include "imgui_impl_sdlrenderer2.h"
@@ -47,6 +48,7 @@ void mq_imgui_backend_new_frame(void) {
 }
 
 void mq_imgui_backend_render(void) {
+    MQ_TRACY_ZONE_N(imgui, "backend_render");
     if (!g_backend_ready || !g_ren) return;
     ImGui::Render();
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), g_ren);
