@@ -186,6 +186,9 @@ typedef struct mq_renderer_frame3d {
     uint32_t item_count;
     const mq_renderer_mesh* meshes;
     uint32_t mesh_count;
+    const mq_renderer_view* views2d;
+    uint32_t view2d_count;
+    float bg[4];
     uint8_t* out;
     uint32_t out_size;
 } mq_renderer_frame3d;

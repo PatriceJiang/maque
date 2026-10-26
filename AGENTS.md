@@ -105,6 +105,11 @@ tools\win\build.cmd -Sanitize address -RunTests
   `MAQUE_IMGUI_POINTER="frame:x:y:type[;...]"`（type 0=move 1=down 2=up）把合成指针事件压进
   **本帧设备事件队列**，与真实鼠标同一条路径 → CI 验证 ImGui 面板拖动（`imgui_present_e2e`）。
   示例：`MAQUE_WINDOW=800x600 MAQUE_TITLE=MaqueEngine ./build/samples/player/maque_player scenes/ball.scn`
+- **3D/PBR 与直接呈现（plans/18-pbr-3d.md）**：`MAQUE_PRESENT=wgpu` → 渲染插件建 **wgpu swapchain 直呈**
+  （不建 SDL_Renderer、不走 CPU readback；ImGui 面板走 CPU 像素→2D 网格链叠加）；**默认仍是 SDL 路径**
+  （老 2D 行为不变）。`MAQUE_CAPTURE_WGPU=<前缀>` + `MAQUE_CAPTURE_FRAMES=N` 从**交换链纹理**回读前 N 帧 PPM
+  （要求 surface 支持 CopySrc）→ CI 直呈像素断言（`ctest -R render3d_present_e2e`）；`MAQUE_RENDER3D_INFO=1`
+  打印 renderer caps；`--shot/--shot-seq` 在直呈模式下仍走离屏回读。3D pass/PBR 尚未实现（M2–M4）。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

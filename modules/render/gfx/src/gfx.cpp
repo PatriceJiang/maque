@@ -73,10 +73,15 @@ struct Device {
     WGPUSampler samplerNearest = nullptr;      /* 字形/像素画：nearest */
     std::string backend;
     std::vector<Texture*> textures;
-    /* ---- 直接呈现（plans/18-pbr-3d.md §4.1）：attach_window 成功后非空（M1 使用）---- */
+    /* ---- 直接呈现（plans/18-pbr-3d.md §4.1）：attach_window 成功后非空（M1）---- */
     WGPUSurface surface = nullptr;
     WGPUTextureFormat surfaceFormat = WGPUTextureFormat_RGBA8Unorm;
     int32_t surfaceWidth = 0, surfaceHeight = 0;
+    WGPUTexture surfaceTex = nullptr;              /* 本帧从 swapchain acquire 的纹理 */
+    WGPUTextureView surfaceView = nullptr;
+    bool surfaceCopySrc = false;                   /* surface caps 允许 CopySrc → 可抓直呈帧（CI 像素断言） */
+    int  captureCount = 0;
+    WGPUTextureFormat pipelineFormat = WGPUTextureFormat_RGBA8Unorm;  /* 2D 管线当前目标格式 */
     /* ---- 3D GPU 资源（plans/18-pbr-3d.md §4.3）---- */
     std::vector<MeshGpu*> meshes;
 };
@@ -114,6 +119,93 @@ static WGPUShaderModule make_shader(WGPUDevice dev, const char* wgsl) {
     return wgpuDeviceCreateShaderModule(dev, &smd);
 }
 
+/* ---- 2D 管线：按**目标格式**创建/重建（plans/18-pbr-3d.md §4.1）------------
+ * 直接呈现时目标 = swapchain 纹理（格式可能是 BGRA8/SRGB），离屏/截图 = RGBA8Unorm。
+ * 管线状态（blend/topology）与格式无关，随格式变化的只有 ColorTargetState.format；
+ * 切换目标格式时释放重建（最多两套，只在 attach/首次离屏发生，不在热循环里）。 */
+static void release_2d_pipelines(Device* dv) {
+    if (dv->solidPipeline) { wgpuRenderPipelineRelease(dv->solidPipeline); dv->solidPipeline = nullptr; }
+    if (dv->texPipeline) { wgpuRenderPipelineRelease(dv->texPipeline); dv->texPipeline = nullptr; }
+    for (int b = 0; b < 4; ++b)
+        for (int p = 0; p < 2; ++p)
+            if (dv->meshPipeline[b][p]) { wgpuRenderPipelineRelease(dv->meshPipeline[b][p]); dv->meshPipeline[b][p] = nullptr; }
+}
+
+static void create_2d_pipelines(Device* dv, WGPUTextureFormat format) {
+    release_2d_pipelines(dv);
+    WGPUBlendState blend = WGPU_BLEND_STATE_INIT;
+    blend.color.srcFactor = WGPUBlendFactor_SrcAlpha;                // 直通 alpha 合成
+    blend.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+    blend.color.operation = WGPUBlendOperation_Add;
+    blend.alpha.srcFactor = WGPUBlendFactor_One;
+    blend.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+    blend.alpha.operation = WGPUBlendOperation_Add;
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = format;
+    target.writeMask = WGPUColorWriteMask_All;
+    target.blend = &blend;
+
+    if (dv->solidShader && dv->solidPl) {
+        WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT; frag.module = dv->solidShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
+        WGPUVertexState vert = WGPU_VERTEX_STATE_INIT; vert.module = dv->solidShader; vert.entryPoint = SV("vs");
+        WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+        rp.layout = dv->solidPl; rp.vertex = vert; rp.fragment = &frag; rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        dv->solidPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
+    }
+    if (dv->texShader && dv->texPl) {
+        WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT; frag.module = dv->texShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
+        WGPUVertexState vert = WGPU_VERTEX_STATE_INIT; vert.module = dv->texShader; vert.entryPoint = SV("vs");
+        WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+        rp.layout = dv->texPl; rp.vertex = vert; rp.fragment = &frag; rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        dv->texPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
+    }
+    if (dv->meshShader && dv->meshPl) {
+        /* 顶点布局：交错 stride 48B（pos.xy | uv.xy | color.rgba | darkColor.rgba），与 CPU 侧 MeshVertex 一一对应。 */
+        WGPUVertexAttribute mattrs[4] = {};
+        mattrs[0].format = WGPUVertexFormat_Float32x2; mattrs[0].offset = 0;  mattrs[0].shaderLocation = 0;
+        mattrs[1].format = WGPUVertexFormat_Float32x2; mattrs[1].offset = 8;  mattrs[1].shaderLocation = 1;
+        mattrs[2].format = WGPUVertexFormat_Float32x4; mattrs[2].offset = 16; mattrs[2].shaderLocation = 2;
+        mattrs[3].format = WGPUVertexFormat_Float32x4; mattrs[3].offset = 32; mattrs[3].shaderLocation = 3;
+        WGPUVertexBufferLayout mvbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
+        mvbl.stepMode = WGPUVertexStepMode_Vertex; mvbl.arrayStride = 48;
+        mvbl.attributeCount = 4; mvbl.attributes = mattrs;
+        for (int blendIdx = 0; blendIdx < 4; ++blendIdx) {
+            for (int pma = 0; pma < 2; ++pma) {
+                WGPUBlendState mb = WGPU_BLEND_STATE_INIT;
+                if (blendIdx == 1) {                        /* additive */
+                    mb.color.srcFactor = WGPUBlendFactor_One; mb.color.dstFactor = WGPUBlendFactor_One;
+                } else {                                    /* normal（含 multiply/screen 的回退，见 render_impl） */
+                    /* pma=1：纹理已预乘 → 源因子必须 ONE，否则 alpha 被乘两次（边缘发暗） */
+                    mb.color.srcFactor = pma ? WGPUBlendFactor_One : WGPUBlendFactor_SrcAlpha;
+                    mb.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+                }
+                mb.color.operation = WGPUBlendOperation_Add;
+                mb.alpha.srcFactor = WGPUBlendFactor_One; mb.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+                mb.alpha.operation = WGPUBlendOperation_Add;
+                WGPUColorTargetState mt = WGPU_COLOR_TARGET_STATE_INIT;
+                mt.format = format; mt.writeMask = WGPUColorWriteMask_All;
+                mt.blend = &mb;
+                WGPUFragmentState mfrag = WGPU_FRAGMENT_STATE_INIT;
+                mfrag.module = dv->meshShader; mfrag.entryPoint = SV("fs"); mfrag.targetCount = 1; mfrag.targets = &mt;
+                WGPUVertexState mvert = WGPU_VERTEX_STATE_INIT;
+                mvert.module = dv->meshShader; mvert.entryPoint = SV("vs");
+                mvert.bufferCount = 1; mvert.buffers = &mvbl;
+                WGPURenderPipelineDescriptor mrp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+                mrp.layout = dv->meshPl; mrp.vertex = mvert; mrp.fragment = &mfrag;
+                mrp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+                dv->meshPipeline[blendIdx][pma] = wgpuDeviceCreateRenderPipeline(dv->device, &mrp);
+            }
+        }
+    }
+    dv->pipelineFormat = format;
+}
+
+/* 保证当前目标格式的 2D 管线已建好（离屏 RGBA8 ↔ 窗口 swapchain 格式切换时重建）。 */
+static void ensure_2d_pipelines(Device* dv, WGPUTextureFormat format) {
+    if (dv->pipelineFormat == format) return;
+    create_2d_pipelines(dv, format);
+}
+
 static Device* create_device(std::string* out_backend) {
     Device* dv = new Device();
     WGPUInstanceDescriptor idesc = WGPU_INSTANCE_DESCRIPTOR_INIT;
@@ -143,16 +235,6 @@ static Device* create_device(std::string* out_backend) {
     if (!poll(dv->instance, [&]{ return dv->device != nullptr; })) { delete dv; return nullptr; }
 
     dv->queue = wgpuDeviceGetQueue(dv->device);
-    WGPUBlendState blend = WGPU_BLEND_STATE_INIT;
-    blend.color.srcFactor = WGPUBlendFactor_SrcAlpha;                // 直通 alpha 合成
-    blend.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
-    blend.color.operation = WGPUBlendOperation_Add;
-    blend.alpha.srcFactor = WGPUBlendFactor_One;
-    blend.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
-    blend.alpha.operation = WGPUBlendOperation_Add;
-    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
-    target.format = WGPUTextureFormat_RGBA8Unorm; target.writeMask = WGPUColorWriteMask_All;
-    target.blend = &blend;
 
     /* 内建 shader（按名字查注册表）：某个被剔除（-DMAQUE_SHADER_<NAME>=OFF）或解压失败时
      * 打印一行说明、跳过该管线 —— 渲染循环对空管线会跳过对应批次（不崩、不静默）。 */
@@ -172,11 +254,6 @@ static Device* create_device(std::string* out_backend) {
         dv->solidBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT; pl.bindGroupLayoutCount = 1; pl.bindGroupLayouts = &dv->solidBgl;
         dv->solidPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
-        WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT; frag.module = dv->solidShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
-        WGPUVertexState vert = WGPU_VERTEX_STATE_INIT; vert.module = dv->solidShader; vert.entryPoint = SV("vs");
-        WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-        rp.layout = dv->solidPl; rp.vertex = vert; rp.fragment = &frag; rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
-        dv->solidPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
     }
     if (tex_wgsl) dv->texShader = make_shader(dv->device, tex_wgsl);
     if (dv->texShader) {
@@ -189,11 +266,6 @@ static Device* create_device(std::string* out_backend) {
         dv->texBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT; pl.bindGroupLayoutCount = 1; pl.bindGroupLayouts = &dv->texBgl;
         dv->texPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
-        WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT; frag.module = dv->texShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
-        WGPUVertexState vert = WGPU_VERTEX_STATE_INIT; vert.module = dv->texShader; vert.entryPoint = SV("vs");
-        WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-        rp.layout = dv->texPl; rp.vertex = vert; rp.fragment = &frag; rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
-        dv->texPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
             WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
         sd.magFilter = WGPUFilterMode_Linear; sd.minFilter = WGPUFilterMode_Linear; sd.mipmapFilter = WGPUMipmapFilterMode_Linear;
         sd.addressModeU = WGPUAddressMode_ClampToEdge; sd.addressModeV = WGPUAddressMode_ClampToEdge; sd.addressModeW = WGPUAddressMode_ClampToEdge;
@@ -221,44 +293,9 @@ static Device* create_device(std::string* out_backend) {
         dv->meshBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &mbd);
         WGPUPipelineLayoutDescriptor mpl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT; mpl.bindGroupLayoutCount = 1; mpl.bindGroupLayouts = &dv->meshBgl;
         dv->meshPl = wgpuDeviceCreatePipelineLayout(dv->device, &mpl);
-        /* 顶点布局：交错 stride 48B（pos.xy | uv.xy | color.rgba | darkColor.rgba），与 CPU 侧 MeshVertex 一一对应。
-         * dark 一路 = 两色着色（TintBlack）：公式与出处见 assets/builtin/shaders/mesh/shader.wgsl 顶部。 */
-        WGPUVertexAttribute mattrs[4] = {};
-        mattrs[0].format = WGPUVertexFormat_Float32x2; mattrs[0].offset = 0;  mattrs[0].shaderLocation = 0;
-        mattrs[1].format = WGPUVertexFormat_Float32x2; mattrs[1].offset = 8;  mattrs[1].shaderLocation = 1;
-        mattrs[2].format = WGPUVertexFormat_Float32x4; mattrs[2].offset = 16; mattrs[2].shaderLocation = 2;
-        mattrs[3].format = WGPUVertexFormat_Float32x4; mattrs[3].offset = 32; mattrs[3].shaderLocation = 3;
-        WGPUVertexBufferLayout mvbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
-        mvbl.stepMode = WGPUVertexStepMode_Vertex; mvbl.arrayStride = 48;
-        mvbl.attributeCount = 4; mvbl.attributes = mattrs;
-        for (int blend = 0; blend < 4; ++blend) {
-            for (int pma = 0; pma < 2; ++pma) {
-                WGPUBlendState mb = WGPU_BLEND_STATE_INIT;
-                if (blend == 1) {                       /* additive */
-                    mb.color.srcFactor = WGPUBlendFactor_One; mb.color.dstFactor = WGPUBlendFactor_One;
-                } else {                                    /* normal（含 multiply/screen 的回退，见 render_impl） */
-                    /* pma=1：纹理已预乘 → 源因子必须 ONE，否则 alpha 被乘两次（边缘发暗） */
-                    mb.color.srcFactor = pma ? WGPUBlendFactor_One : WGPUBlendFactor_SrcAlpha;
-                    mb.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
-                }
-                mb.color.operation = WGPUBlendOperation_Add;
-                mb.alpha.srcFactor = WGPUBlendFactor_One; mb.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
-                mb.alpha.operation = WGPUBlendOperation_Add;
-                WGPUColorTargetState mt = WGPU_COLOR_TARGET_STATE_INIT;
-                mt.format = WGPUTextureFormat_RGBA8Unorm; mt.writeMask = WGPUColorWriteMask_All;
-                mt.blend = &mb;
-                WGPUFragmentState mfrag = WGPU_FRAGMENT_STATE_INIT;
-                mfrag.module = dv->meshShader; mfrag.entryPoint = SV("fs"); mfrag.targetCount = 1; mfrag.targets = &mt;
-                WGPUVertexState mvert = WGPU_VERTEX_STATE_INIT;
-                mvert.module = dv->meshShader; mvert.entryPoint = SV("vs");
-                mvert.bufferCount = 1; mvert.buffers = &mvbl;
-                WGPURenderPipelineDescriptor mrp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-                mrp.layout = dv->meshPl; mrp.vertex = mvert; mrp.fragment = &mfrag;
-                mrp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
-                dv->meshPipeline[blend][pma] = wgpuDeviceCreateRenderPipeline(dv->device, &mrp);
-            }
-        }
     }
+    /* 初始 2D 管线 = **离屏 RGBA8** 目标；窗口直接呈现在 attach_window 时按 swapchain 格式重建。 */
+    create_2d_pipelines(dv, WGPUTextureFormat_RGBA8Unorm);
     return dv;
 }
 
@@ -277,6 +314,8 @@ static void destroy_device(Device* dv) {
         if (t->tex) wgpuTextureRelease(t->tex);
         delete t;
     }
+    if (dv->surfaceView) wgpuTextureViewRelease(dv->surfaceView);
+    if (dv->surfaceTex) wgpuTextureRelease(dv->surfaceTex);
     if (dv->surface) wgpuSurfaceRelease(dv->surface);
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
     if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
@@ -546,29 +585,212 @@ static void r_destroy_mesh(void* self, int32_t id) {
     dv->meshes[(size_t)id] = nullptr;   /* 槽位保留（id 稳定） */
 }
 
-/* M1：用 mq_renderer_window 建 wgpu surface + swapchain（直接呈现）。 */
+/* 前向声明：成帧主路径定义在下方（图元 + 网格 + 可选外部目标纹理）。 */
+static int32_t render_impl(void* self, int32_t TW, int32_t TH,
+                           const mq_renderer_view* views, uint32_t nviews,
+                           const mq_renderer_item* items, uint32_t count,
+                           const mq_renderer_mesh* meshes, uint32_t mesh_count,
+                           const float* bg, uint8_t* out, uint32_t out_size,
+                           WGPUTexture target = nullptr,
+                           WGPUTextureFormat target_format = WGPUTextureFormat_RGBA8Unorm);
+
+/* ---- M1 直接呈现：wgpu surface + swapchain（plans/18-pbr-3d.md §4.1）----
+ * 窗口由 platform 提供原生句柄（Win32 HWND / X11 Window / Wayland wl_surface）；
+ * swapchain 格式由 surface caps 决定（优先非 sRGB 的 RGBA8/BGRA8，保持既有 2D 输出观感），
+ * 2D 管线按该格式重建；离屏/截图仍是 RGBA8（切换时 ensure_2d_pipelines 处理）。 */
+static bool configure_surface(Device* dv, int32_t w, int32_t h) {
+    if (!dv->surface || w <= 0 || h <= 0) return false;
+    WGPUSurfaceConfiguration cfg = WGPU_SURFACE_CONFIGURATION_INIT;
+    cfg.device = dv->device;
+    cfg.format = dv->surfaceFormat;
+    cfg.usage = WGPUTextureUsage_RenderAttachment |
+                (dv->surfaceCopySrc ? WGPUTextureUsage_CopySrc : WGPUTextureUsage_None);
+    cfg.width = (uint32_t)w;
+    cfg.height = (uint32_t)h;
+    cfg.presentMode = WGPUPresentMode_Fifo;
+    cfg.alphaMode = WGPUCompositeAlphaMode_Opaque;
+    wgpuSurfaceConfigure(dv->surface, &cfg);
+    dv->surfaceWidth = w;
+    dv->surfaceHeight = h;
+    return true;
+}
+
 static int32_t r_attach_window(void* self, const mq_renderer_window* win) {
-    (void)self; (void)win;
-    std::print(stderr, "gfx: attach_window 未实现（M1：wgpu surface 直接呈现；plans/18-pbr-3d.md）\n");
-    return -1;
-}
-static int32_t r_resize_surface(void* self, int32_t w, int32_t h) {
-    (void)self; (void)w; (void)h;
-    return -1;
-}
-/* M2/M3：3D pass + PBR。M0 明确返回未实现（runtime 不调用；不静默）。 */
-static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* frame) {
-    (void)self; (void)frame;
-    static bool warned = false;
-    if (!warned) {
-        warned = true;
-        std::print(stderr, "gfx: render_frame3d 未实现（M2/M3：深度 pass + PBR；plans/18-pbr-3d.md）\n");
+    auto* dv = (Device*)self;
+    if (!dv || !win) return -1;
+    if (win->width <= 0 || win->height <= 0) return -2;
+    if (dv->surface) {
+        wgpuSurfaceUnconfigure(dv->surface);
+        wgpuSurfaceRelease(dv->surface);
+        dv->surface = nullptr;
     }
-    return -1;
+    WGPUSurfaceDescriptor desc = WGPU_SURFACE_DESCRIPTOR_INIT;
+    if (win->kind == 1) {                       /* Win32 */
+        WGPUSurfaceSourceWindowsHWND src = WGPU_SURFACE_SOURCE_WINDOWS_HWND_INIT;
+        src.hinstance = win->display;
+        src.hwnd = win->handle;
+        desc.nextInChain = &src.chain;
+        dv->surface = wgpuInstanceCreateSurface(dv->instance, &desc);
+    } else if (win->kind == 2) {                /* X11 */
+        WGPUSurfaceSourceXlibWindow src = WGPU_SURFACE_SOURCE_XLIB_WINDOW_INIT;
+        src.display = win->display;
+        src.window = (uint64_t)(uintptr_t)win->handle;
+        desc.nextInChain = &src.chain;
+        dv->surface = wgpuInstanceCreateSurface(dv->instance, &desc);
+    } else if (win->kind == 3) {                /* Wayland */
+        WGPUSurfaceSourceWaylandSurface src = WGPU_SURFACE_SOURCE_WAYLAND_SURFACE_INIT;
+        src.display = win->display;
+        src.surface = win->handle;
+        desc.nextInChain = &src.chain;
+        dv->surface = wgpuInstanceCreateSurface(dv->instance, &desc);
+    } else {
+        return -3;                              /* 不支持的窗口系统 */
+    }
+    if (!dv->surface) return -4;
+
+    WGPUSurfaceCapabilities caps = WGPU_SURFACE_CAPABILITIES_INIT;
+    if (wgpuSurfaceGetCapabilities(dv->surface, dv->adapter, &caps) != WGPUStatus_Success || caps.formatCount == 0) {
+        wgpuSurfaceCapabilitiesFreeMembers(caps);
+        wgpuSurfaceRelease(dv->surface);
+        dv->surface = nullptr;
+        return -5;
+    }
+    WGPUTextureFormat chosen = caps.formats[0];
+    for (size_t i = 0; i < caps.formatCount; ++i) {
+        const WGPUTextureFormat f = caps.formats[i];
+        if (f == WGPUTextureFormat_RGBA8Unorm || f == WGPUTextureFormat_BGRA8Unorm) { chosen = f; break; }
+    }
+    dv->surfaceFormat = chosen;
+    dv->surfaceCopySrc = (caps.usages & WGPUTextureUsage_CopySrc) != 0;
+    wgpuSurfaceCapabilitiesFreeMembers(caps);
+    if (!configure_surface(dv, win->width, win->height)) return -6;
+    ensure_2d_pipelines(dv, dv->surfaceFormat);
+    return 0;
 }
+
+/* 抓直呈帧（CI 像素断言用）：MAQUE_CAPTURE_WGPU=<前缀> 前 N 帧从 swapchain 纹理回读 PPM。
+ * 需要 surface 支持 CopySrc；不支持时打印一次原因（不静默）。 */
+static void capture_surface(Device* dv, int32_t w, int32_t h) {
+    const char* prefix = std::getenv("MAQUE_CAPTURE_WGPU");
+    if (!prefix || !*prefix || !dv->surfaceTex) return;
+    int cap_max = 3;
+    if (const char* v = std::getenv("MAQUE_CAPTURE_FRAMES")) cap_max = std::atoi(v);
+    if (dv->captureCount >= cap_max) return;
+    if (!dv->surfaceCopySrc) {
+        static bool warned = false;
+        if (!warned) { warned = true; std::print(stderr, "gfx: surface 不支持 CopySrc → 无法抓直呈帧\n"); }
+        return;
+    }
+    const uint32_t row = (uint32_t)w * 4u;
+    const uint32_t padded = (row + 255u) & ~255u;
+    WGPUBufferDescriptor rbd = WGPU_BUFFER_DESCRIPTOR_INIT;
+    rbd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
+    rbd.size = (uint64_t)padded * (uint64_t)h;
+    WGPUBuffer rb = wgpuDeviceCreateBuffer(dv->device, &rbd);
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    WGPUTexelCopyTextureInfo src = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+    src.texture = dv->surfaceTex; src.aspect = WGPUTextureAspect_All;
+    WGPUTexelCopyBufferInfo dst = WGPU_TEXEL_COPY_BUFFER_INFO_INIT;
+    dst.buffer = rb; dst.layout.bytesPerRow = padded; dst.layout.rowsPerImage = (uint32_t)h;
+    WGPUExtent3D ext = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    wgpuCommandEncoderCopyTextureToBuffer(enc, &src, &dst, &ext);
+    WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cmd);
+    wgpuCommandBufferRelease(cmd); wgpuCommandEncoderRelease(enc);
+
+    WGPUMapAsyncStatus st = (WGPUMapAsyncStatus)0;
+    WGPUBufferMapCallbackInfo mci = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
+    mci.mode = WGPUCallbackMode_AllowProcessEvents; mci.callback = map_cb; mci.userdata1 = &st;
+    wgpuBufferMapAsync(rb, WGPUMapMode_Read, 0, rbd.size, mci);
+    poll(dv->instance, [&]{ return (uint32_t)st != 0; });
+    if (st == WGPUMapAsyncStatus_Success) {
+        const uint8_t* m = (const uint8_t*)wgpuBufferGetConstMappedRange(rb, 0, rbd.size);
+        char path[512];
+        std::snprintf(path, sizeof path, "%s_%d.ppm", prefix, dv->captureCount);
+        if (FILE* f = std::fopen(path, "wb")) {
+            std::fprintf(f, "P6\n%d %d\n255\n", w, h);
+            const bool bgra = dv->surfaceFormat == WGPUTextureFormat_BGRA8Unorm ||
+                              dv->surfaceFormat == WGPUTextureFormat_BGRA8UnormSrgb;
+            for (int y = 0; y < h; ++y) {
+                const uint8_t* p = m + (size_t)y * padded;
+                for (int x = 0; x < w; ++x) {
+                    const uint8_t* q = p + (size_t)x * 4;
+                    const uint8_t rgb[3] = { bgra ? q[2] : q[0], q[1], bgra ? q[0] : q[2] };
+                    std::fwrite(rgb, 1, 3, f);
+                }
+            }
+            std::fclose(f);
+            std::print("gfx: capture(wgpu surface) '{}' {}x{} frame#{}\n", path, w, h, dv->captureCount);
+        }
+        wgpuBufferUnmap(rb);
+        ++dv->captureCount;
+    }
+    wgpuBufferRelease(rb);
+}
+
+static int32_t r_resize_surface(void* self, int32_t w, int32_t h) {
+    auto* dv = (Device*)self;
+    if (!dv || !dv->surface) return -1;
+    if (w <= 0 || h <= 0) return -2;
+    if (w == dv->surfaceWidth && h == dv->surfaceHeight) return 0;
+    return configure_surface(dv, w, h) ? 0 : -3;
+}
+
+/* 一帧：M1 仅 2D 覆盖层（3D pass 在 M2/M3）。out 非空 → 离屏回读（--shot/CI）；空 → 直接呈现。 */
+static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
+    auto* dv = (Device*)self;
+    if (!dv || !f) return -1;
+    if (f->draw_count || f->view_count || f->light_count || f->material_count) {
+        static bool warned = false;
+        if (!warned) {
+            warned = true;
+            std::print(stderr, "gfx: 3D pass 未实现（M2/M3）；本帧 3D 绘制被跳过\n");
+        }
+    }
+    if (f->width <= 0 || f->height <= 0) return -2;
+    float bg[4] = { 0.0F, 0.0F, 0.0F, 1.0F };
+    if (f->bg[0] != 0.0F || f->bg[1] != 0.0F || f->bg[2] != 0.0F || f->bg[3] != 0.0F)
+        std::memcpy(bg, f->bg, sizeof bg);
+    if (f->out) {
+        return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
+                           f->items, f->item_count, f->meshes, f->mesh_count,
+                           bg, f->out, f->out_size);
+    }
+    /* 直接呈现：acquire → 渲染 → present（present 由 ABI 的 present 完成） */
+    if (!dv->surface) return -3;
+    if (dv->surfaceWidth != f->width || dv->surfaceHeight != f->height)
+        r_resize_surface(dv, f->width, f->height);
+    WGPUSurfaceTexture st = WGPU_SURFACE_TEXTURE_INIT;
+    wgpuSurfaceGetCurrentTexture(dv->surface, &st);
+    if (st.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
+        st.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
+        if (st.texture) wgpuTextureRelease(st.texture);
+        if (st.status == WGPUSurfaceGetCurrentTextureStatus_Outdated ||
+            st.status == WGPUSurfaceGetCurrentTextureStatus_Lost)
+            configure_surface(dv, dv->surfaceWidth, dv->surfaceHeight);
+        return -4;
+    }
+    dv->surfaceTex = st.texture;
+    dv->surfaceView = wgpuTextureCreateView(st.texture, nullptr);
+    const int32_t rc = render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
+                                   f->items, f->item_count, f->meshes, f->mesh_count,
+                                   bg, nullptr, 0, dv->surfaceTex, dv->surfaceFormat);
+    if (rc != 0) {
+        if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
+        if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
+        return rc;
+    }
+    capture_surface(dv, f->width, f->height);   /* MAQUE_CAPTURE_WGPU：CI 抓直呈帧（present 前） */
+    return 0;
+}
+
 static int32_t r_present(void* self) {
-    (void)self;
-    return -1;
+    auto* dv = (Device*)self;
+    if (!dv) return -1;
+    if (!dv->surface) return 0;               /* 离屏路径：空操作 */
+    if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
+    if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
+    return wgpuSurfacePresent(dv->surface) == WGPUStatus_Success ? 0 : -2;
 }
 
 /* 网格顶点（与 assets/builtin/shaders/mesh/shader.wgsl 的顶点布局严格一致：stride 48B）
@@ -596,11 +818,17 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                            const mq_renderer_view* views, uint32_t nviews,
                            const mq_renderer_item* items, uint32_t count,
                            const mq_renderer_mesh* meshes, uint32_t mesh_count,
-                           const float* bg, uint8_t* out, uint32_t out_size) {
+                           const float* bg, uint8_t* out, uint32_t out_size,
+                           WGPUTexture target,
+                           WGPUTextureFormat target_format) {
 
     Device* dv = (Device*)self;
-    if (!dv || !out) return 1;
-    if ((uint64_t)TW * TH * 4 > out_size) return 2;
+    if (!dv) return 1;
+    if (!target && !out) return 1;                        /* 离屏必须给回读缓冲；直呈用 target */
+    if (!target && (uint64_t)TW * TH * 4 > out_size) return 2;
+    if (target && out) return 1;                          /* 二者互斥：直呈不回读（截图走离屏） */
+    /* 目标格式变了（窗口 swapchain vs 离屏 RGBA8）→ 按需重建 2D 管线。 */
+    ensure_2d_pipelines(dv, target ? target_format : WGPUTextureFormat_RGBA8Unorm);
     if (count && !items) return 1;
     if (mesh_count && !meshes) return 1;
     if (nviews == 0 || !views) {
@@ -713,13 +941,18 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         mvalid[k] = 1;
     }
 
-    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
-    td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
-    td.dimension = WGPUTextureDimension_2D;
-    td.size = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
-    td.format = WGPUTextureFormat_RGBA8Unorm;
-    td.mipLevelCount = 1; td.sampleCount = 1;
-    WGPUTexture tex = wgpuDeviceCreateTexture(dv->device, &td);
+    /* 目标纹理：离屏路径自建 RGBA8（+CopySrc 供回读）；直接呈现用 swapchain 纹理（不拥有）。 */
+    WGPUTexture tex = target;
+    if (!tex) {
+        WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+        td.dimension = WGPUTextureDimension_2D;
+        td.size = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
+        td.format = WGPUTextureFormat_RGBA8Unorm;
+        td.mipLevelCount = 1; td.sampleCount = 1;
+        tex = wgpuDeviceCreateTexture(dv->device, &td);
+        if (!tex) return 3;
+    }
     WGPUTextureView view = wgpuTextureCreateView(tex, nullptr);
 
     WGPUBufferDescriptor ubd = WGPU_BUFFER_DESCRIPTOR_INIT;
@@ -886,37 +1119,46 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         wgpuBufferRelease(ubuf);
     }
 
+    /* 离屏路径：编码回读拷贝（必须在 finish 之前）；直呈路径跳过（present 由 ABI 的 present 完成）。 */
     const uint32_t bytes_per_row = TW * 4;
     const uint32_t padded = (bytes_per_row + 255u) & ~255u;
+    WGPUBuffer rbuf = nullptr;
     WGPUBufferDescriptor rbd = WGPU_BUFFER_DESCRIPTOR_INIT;
-    rbd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
-    rbd.size = (uint64_t)padded * TH;
-    WGPUBuffer rbuf = wgpuDeviceCreateBuffer(dv->device, &rbd);
-    WGPUTexelCopyTextureInfo src = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT; src.texture = tex; src.aspect = WGPUTextureAspect_All;
-    WGPUTexelCopyBufferInfo dst = WGPU_TEXEL_COPY_BUFFER_INFO_INIT; dst.buffer = rbuf; dst.layout.bytesPerRow = padded; dst.layout.rowsPerImage = TH;
-    WGPUExtent3D extent = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
-    wgpuCommandEncoderCopyTextureToBuffer(enc, &src, &dst, &extent);
+    if (!target) {
+        rbd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
+        rbd.size = (uint64_t)padded * TH;
+        rbuf = wgpuDeviceCreateBuffer(dv->device, &rbd);
+        WGPUTexelCopyTextureInfo src = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT; src.texture = tex; src.aspect = WGPUTextureAspect_All;
+        WGPUTexelCopyBufferInfo dst = WGPU_TEXEL_COPY_BUFFER_INFO_INIT; dst.buffer = rbuf; dst.layout.bytesPerRow = padded; dst.layout.rowsPerImage = TH;
+        WGPUExtent3D extent = WGPUExtent3D{ (uint32_t)TW, (uint32_t)TH, 1 };
+        wgpuCommandEncoderCopyTextureToBuffer(enc, &src, &dst, &extent);
+    }
     WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
     wgpuQueueSubmit(dv->queue, 1, &cmd);
     wgpuCommandBufferRelease(cmd); wgpuCommandEncoderRelease(enc);
 
-    WGPUMapAsyncStatus st = (WGPUMapAsyncStatus)0;
-    WGPUBufferMapCallbackInfo mci = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
-    mci.mode = WGPUCallbackMode_AllowProcessEvents; mci.callback = map_cb; mci.userdata1 = &st;
-    wgpuBufferMapAsync(rbuf, WGPUMapMode_Read, 0, rbd.size, mci);
-    poll(dv->instance, [&]{ return (uint32_t)st != 0; });
-    if (st == WGPUMapAsyncStatus_Success) {
-        const uint8_t* mapped = (const uint8_t*)wgpuBufferGetConstMappedRange(rbuf, 0, rbd.size);
-        for (int y = 0; y < TH; ++y)
-            std::memcpy(out + (size_t)y * TW * 4, mapped + (size_t)y * padded, bytes_per_row);
-        wgpuBufferUnmap(rbuf);
+    int32_t rc = 0;
+    if (!target) {
+        WGPUMapAsyncStatus st = (WGPUMapAsyncStatus)0;
+        WGPUBufferMapCallbackInfo mci = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
+        mci.mode = WGPUCallbackMode_AllowProcessEvents; mci.callback = map_cb; mci.userdata1 = &st;
+        wgpuBufferMapAsync(rbuf, WGPUMapMode_Read, 0, rbd.size, mci);
+        poll(dv->instance, [&]{ return (uint32_t)st != 0; });
+        if (st == WGPUMapAsyncStatus_Success) {
+            const uint8_t* mapped = (const uint8_t*)wgpuBufferGetConstMappedRange(rbuf, 0, rbd.size);
+            for (int y = 0; y < TH; ++y)
+                std::memcpy(out + (size_t)y * TW * 4, mapped + (size_t)y * padded, bytes_per_row);
+            wgpuBufferUnmap(rbuf);
+        }
+        wgpuBufferRelease(rbuf);
+        rc = st == WGPUMapAsyncStatus_Success ? 0 : 3;
     }
-    wgpuBufferRelease(rbuf);
     if (mibuf) wgpuBufferRelease(mibuf);
     if (mvbuf) wgpuBufferRelease(mvbuf);
     if (ibuf) wgpuBufferRelease(ibuf);
-    wgpuTextureViewRelease(view); wgpuTextureRelease(tex);
-    return st == WGPUMapAsyncStatus_Success ? 0 : 3;
+    wgpuTextureViewRelease(view);
+    if (!target) wgpuTextureRelease(tex);   /* 外部 target（swapchain 纹理）归调用方所有 */
+    return rc;
 }
 
 /* 兼容入口：只有图元（render_views 语义不变）。 */

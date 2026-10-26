@@ -416,6 +416,7 @@ struct Engine {
     int   stat_calls = 0, stat_tris = 0;
     bool  stat_window_sized = false;
     bool  imgui_backend = false;   // 用官方 SDL_Renderer 后端（与游戏帧共用 renderer、单次 present）
+    bool  direct_present = false;  // plans/18 M1：wgpu swapchain 直接呈现（attach_window 成功；不走 CPU readback→SDL）
     std::chrono::steady_clock::time_point stat_t0{};   // 本帧起点（算逻辑/整帧耗时）
     int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
@@ -1063,7 +1064,34 @@ void Engine::step_frame() {
     for (const auto& sm : spine_meshes) stat_tris += (int)(sm.index_count / 3);
     const auto stat_render0 = std::chrono::steady_clock::now();
     std::vector<uint8_t> pixels((size_t)TW * SHpx * 4);
-    if (rapi && rself) {
+    /* 直接呈现（plans/18 M1）：wgpu 交换链直呈，**不经 CPU readback**。
+     * 截图/抓帧（--shot / --shot-seq / frames_dir）仍走离屏回读（out 非空）→ CI 像素断言不变。 */
+    const bool need_pixels = !shot_path.empty() || !shot_seq.empty() || !frames_dir.empty();
+    if (direct_present && !need_pixels && rapi && rself && rapi->render_frame3d) {
+        MQ_TRACY_ZONE_N(render, "frame.direct");
+        mq_renderer_frame3d f{};
+        f.width = TW;
+        f.height = SHpx;
+        f.views2d = views.data();
+        f.view2d_count = (uint32_t)views.size();
+        f.items = draws.data();
+        f.item_count = (uint32_t)draws.size();
+        f.meshes = spine_meshes.data();
+        f.mesh_count = (uint32_t)spine_meshes.size();
+        for (int i = 0; i < 4; ++i) f.bg[i] = bg[i];
+        f.env.sky_mode = 1;                       /* M1：背景色直出（3D 天空盒在 M3） */
+        for (int i = 0; i < 4; ++i) f.env.sky_color[i] = bg[i];
+        const int32_t rc = rapi->render_frame3d(rself, &f);
+        if (rc == 0 && rapi->present) rapi->present(rself);
+        else {
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                std::print(stderr, "runtime: direct present 失败 rc={} → 回退 SDL 呈现\n", rc);
+            }
+            direct_present = false;
+        }
+    } else if (rapi && rself) {
         MQ_TRACY_ZONE_N(render, "frame");   // Tracy：渲染插件成帧 + 回读（颜色 = render 模块）
         /* 有网格（骨骼动画）时走 render_mesh_views（图元 + 网格一次成帧、统一 layer/z 排序）；
          * 没有网格时保持原路径（老插件/纯精灵场景零行为变化）。 */
@@ -1095,7 +1123,7 @@ void Engine::step_frame() {
      *   ③ mq_platform_present_ui：抓帧（MAQUE_CAPTURE）+ 单次 SDL_RenderPresent → 一起上屏
      * 这样不会再出现「先写窗口表面、又被 renderer present 覆盖 → 游戏画面不上屏」。
      * 无窗口 / MAQUE_PRESENT=off 时各步骤均为安全空操作。 */
-    if (platform && window && rapi && rself) {
+    if (!direct_present && platform && window && rapi && rself) {
         MQ_TRACY_ZONE_N(platform, "present");   // Tracy：上传纹理 + ImGui pass + 单次 present
         /* 目标矩形按**画布策略**（缩放/留边由分辨率策略决定；整倍放大用最近邻） */
         const int dx = (int)(canvas.offset_x + 0.5F), dy = (int)(canvas.offset_y + 0.5F);
@@ -3808,7 +3836,9 @@ void Engine::imgui_setup() {
      * 面板直接写进引擎像素缓冲（--shot 可验证）。
      * ⚠️ 必须在 init 之前声明 backend 模式：否则会先走静态图集，再切官方后端会撞
      *    "Build() before RendererHasTextures" 断言（实测）。 */
-    void* pre_ren = (window && platform) ? mq_platform_ensure_renderer(platform) : nullptr;
+    void* pre_ren = (window && platform && !direct_present) ? mq_platform_ensure_renderer(platform) : nullptr;
+    /* 直接呈现（plans/18 M1）：窗口归 wgpu 交换链所有，不能再建 SDL_Renderer（SDL2 不允许混用）→
+     * ImGui 走 CPU 像素 → 2D 网格的既有回退链，随 render_frame3d 的 meshes 提交。 */
     if (pre_ren) mq_imgui_set_backend_mode(1);
     /* 像素倍率：
      *   · 官方后端：显示空间 = 窗口**设备像素** → 只按 UI 缩放 × DPI 缩放；
@@ -7476,6 +7506,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
                 const int rc = rapi->attach_window(rself, &rw);
                 std::print("runtime: direct present attach_window kind={} size={}x{} rc={}（{}）\n",
                            rw.kind, rw.width, rw.height, rc, rc == 0 ? "wgpu swapchain" : "回退离屏+SDL");
+                direct_present = (rc == 0);
             } else {
                 std::print("runtime: direct present 不可用（platform 未给出原生窗口句柄）\n");
             }

@@ -79,6 +79,17 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(imgui_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 3D/PBR 直接呈现端到端（plans/18-pbr-3d.md M1）：MAQUE_PRESENT=wgpu → wgpu swapchain 直呈
+# ① attach_window 成功且不建 SDL_Renderer ② MAQUE_CAPTURE_WGPU 从交换链抓帧断言画面非空
+# ③ 直呈环境下 --shot 仍走离屏回读（截图/CI 路径不受影响）
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME render3d_present_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/render3d_present_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/render3d_present_e2e")
+    set_tests_properties(render3d_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # 输入/UI/快照/回放端到端（docs/10 §3/§5、docs/19 §9）：注入 → 分发 → 生成 → 回放一致
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME ui_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_e2e.sh"

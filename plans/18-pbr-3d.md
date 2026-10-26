@@ -136,6 +136,9 @@ typedef struct mq_renderer_frame3d {
     /* 2D 覆盖层（与 3D 同一帧、固定合成在 3D 之后）：沿用既有记录 */
     const mq_renderer_item* items; uint32_t item_count;
     const mq_renderer_mesh* meshes; uint32_t mesh_count;
+    /* 2D 覆盖层视图（与旧 render_views 的 view 语义相同：多视图/相机）；空 = 默认单视图 */
+    const mq_renderer_view* views2d; uint32_t view2d_count;
+    float bg[4];                            /* 2D 覆盖层清屏色 */
     /* 非空 = 离屏渲染并回读 RGBA8（headless / --shot / 抓帧）；空 = 直接呈现到窗口 */
     uint8_t* out; uint32_t out_size;
 } mq_renderer_frame3d;
@@ -279,6 +282,16 @@ per view:
 | **M4 阴影/环境/资产** | 单方向 shadow map+PCF；渐变天空/环境光；`tools/gltf_import.py` + 样例；透明排序；多光源 | e2e 截图断言 + 导入确定性 |
 | **M5 功能补齐** | CSM、IBL（equirect→cube+辐照度/预过滤+解析 BRDF）、ReflectionProbe、Billboard、多视图/VR、MSAA、压缩纹理、材质实例、热重载 | 按游戏需求验收；性能预算 |
 | **M6 默认切换** | 直接呈现路径稳定后：窗口 + 有 3D 内容的场景默认 `wgpu`，2D 游戏默认 SDL；文档/AGENTS 更新 | 全量 Windows/Linux ctest |
+
+**当前进度（2026-10-26）**
+
+- **M0 ✅**：renderer 接口表尾追加（10 记录 + 8 方法）、platform 原生窗口 ABI、parser 定长数组、
+  gfx `caps`/`create_texture2`/`create_mesh`、runtime 能力自省与探测回退；Windows 构建 + ctest 全绿。
+- **M1 ✅（2D 路径）**：`attach_window`（Win32/X11/Wayland wgpu surface + swapchain，按 swapchain 格式重建 2D 管线）、
+  `render_frame3d` 直接呈现 2D 覆盖层、`present`、`resize_surface`、surface 抓帧（`MAQUE_CAPTURE_WGPU`）；
+  runtime `MAQUE_PRESENT=wgpu` 切换 + SDL_Renderer 不建（ImGui 走 CPU 网格链）+ 多帧冒烟；
+  新增 `render3d_present_e2e`（直呈抓帧非空 + 默认 SDL 路径不变 + `--shot` 离屏回读）。
+- **M2 起**：3D 深度 pass / PBR / 资产导入（未开始）。
 
 ## 7. 验收标准（DoD）
 

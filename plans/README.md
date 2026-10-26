@@ -89,7 +89,7 @@
 | 14 | particle | ✅ | ✅ | ⬜ | ⬜ | 类型已入 schema；发射器未实现 |
 | 15 | renderer（WebGPU/pass 层） | ✅ | ✅ | ✅ | 🟡 | 相机/分层/批处理/alpha 合成已落地；pass 图待做 |
 | 16 | script（quickjs） | ✅ | ✅ | ✅ | 🟡 | 绑定生成 + 事件回调 + 热重载；capability 沙箱待做 |
-| 18 | PBR/3D 渲染（直接呈现） | ✅ | 🟡 M0 | ⬜ | ⬜ | M0：renderer v1 表尾追加（3D 记录/方法）+ platform 原生窗口 ABI + gfx 纹理v2/网格上传/caps；直呈与 PBR 在 M1–M4 |
+| 18 | PBR/3D 渲染（直接呈现） | ✅ | ✅ M1 | ⬜ | ⬜ | M0 接口冻结 + M1 wgpu 交换链直呈（2D 覆盖层 + 交换链抓帧 e2e）；3D/PBR pass 在 M2–M4 |
 
 **声明即真相（docs/21）**：公开接口全部在 `modules/core/data/schema/` 声明一次 → 生成
 类型头/描述符/JSON（`class_list`）、引擎 API 声明 + JS 绑定（`api_list`）、插件 C vtable（`interface`）、

@@ -191,6 +191,10 @@
         - { name: item_count,     type: uint32_t }
         - { name: meshes,         type: "const mq_renderer_mesh*" }
         - { name: mesh_count,     type: uint32_t }
+        # 2D 覆盖层视图（与旧 render_views 的 view 语义相同：多视图/相机）；空 = 默认单视图。
+        - { name: views2d,        type: "const mq_renderer_view*" }
+        - { name: view2d_count,   type: uint32_t }
+        - { name: bg,             type: "float[4]" }      # 2D 覆盖层清屏色
         - { name: out,            type: "uint8_t*" }
         - { name: out_size,       type: uint32_t }
   methods:
