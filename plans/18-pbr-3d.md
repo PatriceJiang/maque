@@ -361,3 +361,10 @@ per view:
 - **M4e（示例迁移）**：`tools/gltf_import.py` 增加 `--scene`（glTF 节点树 → 平级实体 + 相机/方向光）
   与 `--compact`；迁移 Khronos **ToyCar**（77k 顶点 / 7 张 PBR 贴图）到 `scenes/khronos/ToyCar/`，
   `preview.png` 已可用（阴影/IBL/clearcoat/transmission 仍缺）。
+
+- **M4g（贴图正确性 + 官方场景回归）**：emissive 贴图槽（emissiveFactor×emissiveTexture）、
+  albedo sRGB 解码（`load_texture_srgb` / RGBA8_SRGB）、环境高光近似；Khronos ToyCar 渲染回归
+  （`render3d_scene_e2e` ⑤：3D 内容/贴图槽/非空像素）。
+- **剩余（M4e/M5）**：方向光 shadow map+PCF、analytic/HDRI IBL、多光源补光
+  （第二次尝试 2-light 时遇 wgpu uniform/管线校验崩溃，已回退待重做）、clearcoat/transmission 扩展、
+  3D 场景默认切 wgpu 直呈（M6）、Linux 侧构建/测试验证。

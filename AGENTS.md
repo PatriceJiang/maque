@@ -42,7 +42,7 @@ cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Debug `
       -DCMAKE_C_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" `
       -DCMAKE_CXX_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe" -DMAQUE_SANITIZE=address
 cmake --build build-win
-ctest --test-dir build-win --output-on-failure
+ctest --test-dir build-win --timeout 120 --output-on-failure
 ```
 
 - **切勿加载 `vcvars64.bat`**：它会把 PATH 指向 VS 自带的 clang-cl 19.x，并让 CMake 的
