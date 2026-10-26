@@ -3559,6 +3559,15 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "alpha_mask_in_blend",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },

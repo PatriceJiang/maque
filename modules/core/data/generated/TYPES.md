@@ -634,6 +634,7 @@ role: `pbr_material`
 | `anisotropy_texture` | string |  |  |
 | `uv_rotation` | float | 0.0F |  |
 | `normal_uv_rotation` | float | 0.0F |  |
+| `alpha_mask_in_blend` | bool | false |  |
 
 ### asset.PixelFormat — enum
 

@@ -425,6 +425,7 @@ static const mq_field_desc mq_fields_asset_PbrMaterial[] = {
     { "anisotropy_texture", (uint32_t)offsetof(asset::PbrMaterial, anisotropy_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "uv_rotation", (uint32_t)offsetof(asset::PbrMaterial, uv_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "normal_uv_rotation", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "alpha_mask_in_blend", (uint32_t)offsetof(asset::PbrMaterial, alpha_mask_in_blend), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_asset_Prefab[] = {
@@ -3449,7 +3450,7 @@ extern const mq_type_desc mq_type_asset_PbrMaterial = {
     460266568u,
     (uint32_t)sizeof(asset::PbrMaterial),
     (uint32_t)alignof(asset::PbrMaterial),
-    57u,
+    58u,
     mq_fields_asset_PbrMaterial,
     4u,
     0u,

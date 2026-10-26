@@ -321,6 +321,9 @@
         # 基础贴图组（base/MR/AO/emissive/扩展贴图）与法线贴图组各一个旋转角。
         - { name: uv_rotation, type: float, default: 0.0F }
         - { name: normal_uv_rotation, type: float, default: 0.0F }
+        # transmission/diffuse 近似把 alphaMode=MASK 改成 BLEND 时置 true：
+        # 保留 alpha 镂空（BLEND 管线里仍按 alpha_cutoff discard），否则彩绘玻璃/镂空玻璃的图案会丢。
+        - { name: alpha_mask_in_blend, type: bool, default: false }
     - struct: Scene
       fields:
         - { name: name, type: string }

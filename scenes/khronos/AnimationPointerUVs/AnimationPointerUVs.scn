@@ -3658,6 +3658,7 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true,
           "base_color_texture": "textures/image0.png"
         }
       ]
@@ -3710,6 +3711,7 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true,
           "base_color_texture": "textures/image0.png"
         }
       ]
@@ -3762,6 +3764,7 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true,
           "base_color_texture": "textures/image0.png"
         }
       ]
@@ -6579,7 +6582,8 @@
           "side": 0,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true
         }
       ]
     },
@@ -6630,7 +6634,8 @@
           "side": 0,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true
         }
       ]
     },
@@ -6681,7 +6686,8 @@
           "side": 0,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true
         }
       ]
     },
@@ -6834,7 +6840,8 @@
           "side": 0,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true
         }
       ]
     },
@@ -6885,7 +6892,8 @@
           "side": 0,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true
         }
       ]
     },
@@ -6936,7 +6944,8 @@
           "side": 0,
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true
         }
       ]
     },

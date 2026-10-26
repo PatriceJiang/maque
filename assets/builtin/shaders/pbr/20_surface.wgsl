@@ -11,6 +11,7 @@ struct Surface {
   ao: f32,
   emissive: vec3f,
   uv: vec2f,
+  alpha_mask: f32,   /* 未乘 opacity 的 alpha（MASK+BLEND 近似用） */
 };
 
 fn flags2_bits() -> i32 {
@@ -84,7 +85,8 @@ fn surface_common(in: VOut, front_facing: bool) -> Surface {
   let alb_s = textureSample(albedo_tex, albedo_smp, uv_base);
   /* glTF COLOR_0：顶点色 ⊗ baseColor（layout0 的 vs 输出 (1,1,1,1)，旧场景不变） */
   s.base = dr.base_color.rgb * alb_s.rgb * in.color.rgb;
-  s.alpha = clamp(dr.base_color.a * in.color.a * dr.model_params.w * alb_s.a, 0.0, 1.0);
+  s.alpha_mask = clamp(dr.base_color.a * in.color.a * alb_s.a, 0.0, 1.0);
+  s.alpha = clamp(s.alpha_mask * dr.model_params.w, 0.0, 1.0);
   let mr_s = textureSample(mr_tex, albedo_smp, uv_mr);
   s.metallic = clamp(dr.mrp.x * mr_s.b, 0.0, 1.0);
   s.rough = clamp(dr.mrp.y * mr_s.g, 0.02, 1.0);
@@ -159,6 +161,10 @@ fn surface_ext_params(uv: vec2f) -> ExtParams {
 /* MASK：alpha 低于 cutoff 直接丢弃（不透明/混合管线里统一做 alpha test）。 */
 fn surface_alpha_test(s: Surface) {
   if (i32(dr.alpha.y + 0.5) == 1 && s.alpha < dr.alpha.x) {
+    discard;
+  }
+  /* transmission/diffuse 近似：原 MASK 材质被改成 BLEND，但仍按未乘 opacity 的 alpha 做镂空 */
+  if ((flags2_bits() & 0x80000) != 0 && s.alpha_mask < dr.alpha.x) {
     discard;
   }
 }

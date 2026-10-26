@@ -392,7 +392,7 @@
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
    "hist": 0.6472,
-   "lum": 0.0013,
+   "lum": 0.0014,
    "model": "AnimationPointerUVs",
    "preview": "scenes/khronos/AnimationPointerUVs/preview.jpg",
    "readme": "../../scenes/khronos/AnimationPointerUVs/README.md",
@@ -4447,7 +4447,7 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.2063,
+   "hist": 0.2065,
    "lum": -0.0362,
    "model": "GlassBrokenWindow",
    "preview": "scenes/khronos/GlassBrokenWindow/preview.jpg",
@@ -8041,7 +8041,7 @@
     "KHR_materials_variants：只使用默认材质（不做变体切换）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.6906,
+   "hist": 0.6909,
    "lum": -0.0363,
    "model": "StainedGlassLamp",
    "preview": "scenes/khronos/StainedGlassLamp/preview.jpg",
@@ -8860,7 +8860,7 @@
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.2915,
+   "hist": 0.2916,
    "lum": 0.2046,
    "model": "TransmissionTest",
    "preview": "scenes/khronos/TransmissionTest/preview.jpg",

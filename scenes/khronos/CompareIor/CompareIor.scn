@@ -109,6 +109,7 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true,
           "base_color_texture": "textures/image1.jpg",
           "metallic_roughness_texture": "textures/image2.jpg"
         }
@@ -164,6 +165,7 @@
           "shading_model": 1,
           "ior": 2.42,
           "opacity": 0.15000000000000002,
+          "alpha_mask_in_blend": true,
           "base_color_texture": "textures/image1.jpg",
           "metallic_roughness_texture": "textures/image2.jpg"
         }

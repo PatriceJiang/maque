@@ -1428,6 +1428,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 mat.occlusion_strength = read_num(dmat, base, "occlusion_strength", 1.0F);
                 mat.alpha_cutoff = read_num(dmat, base, "alpha_cutoff", 0.5F);
                 mat.alpha_mode = (int32_t)read_num(dmat, base, "alpha_mode", 0.0F);
+    /* transmission/diffuse 近似把 MASK 改成 BLEND 时保留 alpha 镂空（shader 用 flags2 bit19） */
+    if (read_num(dmat, base, "alpha_mask_in_blend", 0.0F) >= 0.5F) mat.flags2 |= 0x80000;
                 mat.flags = read_num(dmat, base, "double_sided", 0.0F) >= 0.5F ? 1 : 0;
                 mat.clearcoat = read_num(dmat, base, "clearcoat", 0.0F);
                 mat.clearcoat_roughness = read_num(dmat, base, "clearcoat_roughness", 0.03F);

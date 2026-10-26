@@ -5,7 +5,7 @@ AnimatedColorsCube,ok,screenshot-large.gif,large,gif,800x450,scenes/khronos/Anim
 AnimatedCube,ok,screenshot.gif,,gif,174x130,scenes/khronos/AnimatedCube/preview.jpg,0.7252,0.1494,0.1387,0.2687,0.288,主体亮度/色调分布较接近（机位/背景可能不同）,1,
 AnimatedMorphCube,ok,screenshot.gif,,gif,324x342,scenes/khronos/AnimatedMorphCube/preview.jpg,0.007,0.5348,0.5356,0.2687,0.491,差异较大（需人工确认：机位/缺失特性/导入问题）,2,yes
 AnimatedTriangle,ok,screenshot.gif,,gif,217x204,scenes/khronos/AnimatedTriangle/preview.jpg,0.0049,0.3712,0.3715,0.1656,4.182,差异较大（需人工确认：机位/缺失特性/导入问题）,1,
-AnimationPointerUVs,ok,screenshot_Large.jpg,large,,2322x1237,scenes/khronos/AnimationPointerUVs/preview.jpg,0.6472,0.0013,0.0214,0.1264,0.311,主体亮度/色调分布较接近（机位/背景可能不同）,14,
+AnimationPointerUVs,ok,screenshot_Large.jpg,large,,2322x1237,scenes/khronos/AnimationPointerUVs/preview.jpg,0.6472,0.0014,0.0214,0.1264,0.311,主体亮度/色调分布较接近（机位/背景可能不同）,14,
 AnisotropyBarnLamp,ok,screenshot_Large.jpg,large,,1055x1202,scenes/khronos/AnisotropyBarnLamp/preview.jpg,0.689,-0.1014,0.0998,0.0735,0.115,主体亮度/色调分布较接近（机位/背景可能不同）,4,yes
 AnisotropyDiscTest,ok,screenshot_Large.jpg,large,,1535x656,scenes/khronos/AnisotropyDiscTest/preview.jpg,0.2486,0.1144,0.1193,0.2377,0.347,差异较大（需人工确认：机位/缺失特性/导入问题）,1,
 AnisotropyRotationTest,ok,screenshot-large.png,large,,1610x868,scenes/khronos/AnisotropyRotationTest/preview.jpg,0.1028,0.5071,0.5117,0.131,0.421,差异较大（需人工确认：机位/缺失特性/导入问题）,1,
@@ -68,7 +68,7 @@ EnvironmentTest,ok,screenshot_large.png,large,,1059x605,scenes/khronos/Environme
 FlightHelmet,ok,screenshot.jpg,,,130x130,scenes/khronos/FlightHelmet/preview.jpg,0.8828,-0.2571,0.2606,0.0922,0.106,中等差异（多为机位/背景/光照/缺失特性）,1,yes
 Fox,ok,screenshot.jpg,,,130x130,scenes/khronos/Fox/preview.jpg,0.2818,0.1128,0.0922,0.0685,0.265,差异较大（需人工确认：机位/缺失特性/导入问题）,2,yes
 GlamVelvetSofa,ok,screenshot_large.jpg,large,,989x409,scenes/khronos/GlamVelvetSofa/preview.jpg,0.5332,-0.0654,0.0619,0.1702,0.393,中等差异（多为机位/背景/光照/缺失特性）,5,
-GlassBrokenWindow,ok,screenshot_large.jpg,large,,1110x1115,scenes/khronos/GlassBrokenWindow/preview.jpg,0.2063,-0.0362,0.029,0.2723,0.278,差异较大（需人工确认：机位/缺失特性/导入问题）,2,
+GlassBrokenWindow,ok,screenshot_large.jpg,large,,1110x1115,scenes/khronos/GlassBrokenWindow/preview.jpg,0.2065,-0.0362,0.029,0.2723,0.278,差异较大（需人工确认：机位/缺失特性/导入问题）,2,
 GlassHurricaneCandleHolder,ok,screenshot_large.jpg,large,,556x930,scenes/khronos/GlassHurricaneCandleHolder/preview.jpg,0.5017,0.1287,0.1324,0.1312,0.141,中等差异（多为机位/背景/光照/缺失特性）,2,
 GlassVaseFlowers,ok,screenshot_large.jpg,large,,1186x1144,scenes/khronos/GlassVaseFlowers/preview.jpg,0.6794,-0.0605,0.0653,0.1061,0.112,主体亮度/色调分布较接近（机位/背景可能不同）,3,
 InterpolationTest,ok,screenshot.gif,,gif,512x512,scenes/khronos/InterpolationTest/preview.jpg,0.2278,0.1417,0.1426,0.1913,0.871,差异较大（需人工确认：机位/缺失特性/导入问题）,1,
@@ -124,7 +124,7 @@ SpecGlossVsMetalRough,ok,screenshot-large.jpg,large,,532x532,scenes/khronos/Spec
 SpecularSilkPouf,ok,screenshot_Large.jpg,large,,1280x850,scenes/khronos/SpecularSilkPouf/preview.jpg,0.6433,-0.0101,0.0944,0.1575,0.23,主体亮度/色调分布较接近（机位/背景可能不同）,2,
 SpecularTest,ok,screenshot-large.png,large,,1411x933,scenes/khronos/SpecularTest/preview.jpg,0.4952,0.1317,0.1307,0.2335,0.349,中等差异（多为机位/背景/光照/缺失特性）,1,
 Sponza,ok,large.jpg,large,,2491x1259,scenes/khronos/Sponza/preview.jpg,0.6927,-0.037,0.037,0.7013,0.877,主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？,1,yes
-StainedGlassLamp,ok,screenshot_large.jpg,large,,751x1140,scenes/khronos/StainedGlassLamp/preview.jpg,0.6906,-0.0363,0.032,0.0481,0.135,主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？,5,yes
+StainedGlassLamp,ok,screenshot_large.jpg,large,,751x1140,scenes/khronos/StainedGlassLamp/preview.jpg,0.6909,-0.0363,0.032,0.0481,0.135,主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？,5,yes
 SunglassesKhronos,ok,screenshot_Large.jpg,large,,1474x869,scenes/khronos/SunglassesKhronos/preview.jpg,0.5161,-0.1569,0.207,0.0639,0.119,中等差异（多为机位/背景/光照/缺失特性）,3,
 Suzanne,ok,screenshot.jpg,,,180x135,scenes/khronos/Suzanne/preview.jpg,0.4293,0.0293,0.049,0.052,0.072,中等差异（多为机位/背景/光照/缺失特性）,0,
 TextureCoordinateTest,ok,screenshot.png,,,300x300,scenes/khronos/TextureCoordinateTest/preview.jpg,0.2234,-0.0288,0.0187,0.2775,0.339,差异较大（需人工确认：机位/缺失特性/导入问题）,0,
@@ -137,7 +137,7 @@ ToyCar,ok (hand-tuned),toycar_ref.jpg,,,1870x1033,scenes/khronos/ToyCar/preview.
 TrafficCone,ok,screenshot_Large.jpg,large,,953x542,scenes/khronos/TrafficCone/preview.jpg,0.3319,0.1021,0.1648,0.1762,0.403,差异较大（需人工确认：机位/缺失特性/导入问题）,4,
 TransmissionOrderTest,ok,screenshot-large.jpg,large,,2027x1366,scenes/khronos/TransmissionOrderTest/preview.jpg,0.3517,0.2234,0.2152,0.1954,0.243,差异较大（需人工确认：机位/缺失特性/导入问题）,3,
 TransmissionRoughnessTest,ok,screenshot-large.png,large,,1673x831,scenes/khronos/TransmissionRoughnessTest/preview.jpg,0.3782,0.1732,0.1533,0.3254,0.354,差异较大（需人工确认：机位/缺失特性/导入问题）,2,
-TransmissionTest,ok,screenshot_large.png,large,,1105x718,scenes/khronos/TransmissionTest/preview.jpg,0.2915,0.2046,0.212,0.1954,0.222,差异较大（需人工确认：机位/缺失特性/导入问题）,3,
+TransmissionTest,ok,screenshot_large.png,large,,1105x718,scenes/khronos/TransmissionTest/preview.jpg,0.2916,0.2046,0.212,0.1954,0.222,差异较大（需人工确认：机位/缺失特性/导入问题）,3,
 TransmissionThinwallTestGrid,ok,screenshot_Large.jpg,large,,1280x600,scenes/khronos/TransmissionThinwallTestGrid/preview.jpg,0.0805,0.3715,0.3722,0.1628,0.289,差异较大（需人工确认：机位/缺失特性/导入问题）,2,yes
 Triangle,ok,screenshot.png,,,176x181,scenes/khronos/Triangle/preview.jpg,0.0126,0.3668,0.3672,0.1656,0.62,差异较大（需人工确认：机位/缺失特性/导入问题）,0,
 TriangleWithoutIndices,ok,screenshot.png,,,176x181,scenes/khronos/TriangleWithoutIndices/preview.jpg,0.0126,0.3668,0.3672,0.1656,0.62,差异较大（需人工确认：机位/缺失特性/导入问题）,0,

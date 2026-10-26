@@ -1783,6 +1783,7 @@ struct PbrMaterial {
     std::string anisotropy_texture = "";
     float uv_rotation = 0.0F;
     float normal_uv_rotation = 0.0F;
+    bool alpha_mask_in_blend = false;
 };
 
 struct SkeletonData {

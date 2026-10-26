@@ -441,13 +441,13 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | `pbrMetallicRoughness` 因子 | ✅ | — | — |
 | baseColor / metallicRoughness / normal / occlusion / emissive 贴图 | ✅ 5 槽（per-texture sampler，REPEAT/filter 生效） | — | — |
 | glTF sampler（wrapS/wrapT/min/magFilter） | ✅ 导入为贴图路径后缀 → per-texture sampler；`TextureSettingsTest` 的 clamp/repeat/mirror 行全部通过 | — | 默认(REPEAT,线性)不写后缀，旧路径零漂移 |
-| `alphaMode` OPAQUE / MASK / BLEND | ✅；MASK 走 opaque+discard；BLEND 物体级排序 | BLEND 内部三角形不排序 | 可接受；复杂透明件参考图对比时人工判读 |
+| `alphaMode` OPAQUE / MASK / BLEND | ✅；MASK 走 opaque+discard；BLEND 物体级排序（远→近）；transmission/diffuse 近似把 MASK 改 BLEND 时用 `alpha_mask_in_blend` 保留 alpha 镂空 | BLEND 内部三角形不排序 | 可接受；复杂透明件参考图对比时人工判读 |
 | `doubleSided` | ✅ 导入为 `side`（true=2/false=0），shader 背面翻转法线 | — | 手写 `.scn` 必须显式写 `side`（运行时只认它） |
 | `KHR_materials_unlit` | ✅ → Basic（shading_model=2）（6 个模型）；**unlit 不做 ACES**（`output_direct`），颜色与 baseColor 一致 | — | 与 three.js toneMapped=true 有细微差异，按 glTF unlit 语义取色 |
 | clearcoat / sheen / iridescence / specular / **ior** / anisotropy（**因子**） | ✅ → Physical 近似（本批：clearcoat 12、sheen 9、iridescence 10、specular 10、ior 17、anisotropy 7 个模型） | 观感与 three.js/Khronos 规范有差距（近似 BRDF） | specularTexture/specularColorTexture 仍未接（§11） |
 | 上述扩展的**贴图槽** | ✅ 已支持 7 槽：clearcoat(R)/clearcoat roughness(G)/sheen color(RGB,sRGB)/sheen roughness(A)/iridescence(R)/iridescence thickness(G)/anisotropy(B)；缺失槽绑 white 且由 flags2 presence 位关闭 | specularTexture/specularColorTexture 仍丢弃；扩展贴图暂共用基础 `uv_scale/uv_offset` 与 TEXCOORD_0 | specular 贴图列入 §11
 | `KHR_materials_emissive_strength` | ✅ → `emissive_intensity`（5 个模型） | — | — |
-| `KHR_materials_transmission`（**33 个模型 / 124 处**） | ⚠️ **近似为 alpha BLEND**：`alpha_mode=2` + `opacity=clamp(1-0.85·factor, 0.15, 1)`，可透见背景；无折射/厚度/吸收 | 玻璃类从"不透明"变为"可透视"，观感接近参考；无真实折射畸变与衰减 | 根治需 backbuffer 折射 pass + volume；BLEND 物体**不再投影**（阴影 pass 跳过 caster） |
+| `KHR_materials_transmission`（**33 个模型 / 124 处**） | ⚠️ **近似为 alpha BLEND**：`alpha_mode=2` + `opacity=clamp(1-0.85·factor, 0.15, 1)`，可透见背景；原 MASK 材质保留镂空（`alpha_mask_in_blend`）；无折射/厚度/吸收 | 玻璃类从"不透明"变为"可透视"，彩绘/镂空玻璃图案保留；无真实折射畸变、Fresnel 边缘增强与衰减 | 根治需 backbuffer 折射 pass + volume；BLEND 物体**不再投影**（阴影 pass 跳过 caster） |
 | `KHR_materials_volume`（**25**）/ `dispersion`（4）/ `volume_scatter`（1） | ⚠️ 体积**近似为薄壁色调**：`base_color ×= attenuationColor`（有限 attenuationDistance 时）；dispersion/volume_scatter 未实现 | 琥珀/有色玻璃有色调，但无厚度依赖吸收/色散 | 完整版需 refraction+thickness pass（P1 剩余） |
 | `KHR_materials_diffuse_transmission`（**6**） | ⚠️ 近似为 alpha BLEND（`opacity=clamp(1-0.7f,0.25,1)`） | 叶片/瓷器呈半透观感，但无散射/厚度 | 完整版同 transmission pass |
 | `KHR_materials_variants`（**7**） | ❌ 只用默认材质 | 变体切换不生效 | 静态迁移可接受 |
@@ -819,6 +819,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | **`KHR_texture_transform.rotation` 忽略** | 14 个模型的旋转 UV 错（面料/车漆纹理方向） | importer 导出 `uv_rotation`/`normal_uv_rotation`（弧度）；shader 按 T·R·S 旋转 UV（旋转角复用 Draw 的 specular.w/sheen_color.w，避免扩 uniform） |
 | **`EXT_mesh_gpu_instancing` 不展开** | SimpleInstancing 只显示 1 份实例 | importer 在场景生成期按实例 TRS 展开为多实体（上限 4096） |
 | **volume/diffuse_transmission 无观感** | 有色玻璃/乳浊材质与参考差异大 | volume：`base_color ×= attenuationColor`；diffuse transmission：alpha BLEND 近似（阈值/常量见 importer 注释） |
+| **transmission 近似把 MASK 改成 BLEND 后丢了 alpha 镂空** | `StainedGlassLamp` 彩绘玻璃/`GlassBrokenWindow` 裂纹/`TransmissionTest` Mask 行：整片玻璃变均匀半透明，镂空图案消失 | importer 记录原 alphaMode，改 BLEND 时置 `alpha_mask_in_blend`；runtime 映射 flags2 bit19；shader 在混合管线里按**未乘 opacity** 的 alpha 做 cutoff discard（20 个材质/5 个模型重导） |
 
 ---
 

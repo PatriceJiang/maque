@@ -225,6 +225,7 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
     }
     alpha_mode = mat.get("alphaMode", "OPAQUE")
     m["alpha_mode"] = {"OPAQUE": 0, "MASK": 1, "BLEND": 2}.get(alpha_mode, 0)
+    orig_alpha_mode = m["alpha_mode"]
     m["alpha_cutoff"] = float(mat.get("alphaCutoff", 0.5))
     # KHR 材质扩展 → asset.PbrMaterial 字段（plans/19 材质迁移）。缺省值 = schema 默认；
     # 扩展字段只写"非默认"值（无扩展材质不因扩展逻辑产生漂移）。例外：side/double_sided 对
@@ -315,6 +316,9 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
 
     # glTF sampler → 贴图路径后缀（仅非默认；runtime 据此建 per-texture sampler）。
     # 默认 (repeat, repeat, linear) 不写 → 旧资产路径逐字节不变。
+    # transmission/diffuse 近似覆盖了 MASK → BLEND 时保留 alpha 镂空（shader 按 alpha_cutoff discard）
+    if orig_alpha_mode == 1 and m.get("alpha_mode") == 2:
+        m["alpha_mask_in_blend"] = True
     def tex_suffix(tinfo):
         if not tinfo:
             return ""

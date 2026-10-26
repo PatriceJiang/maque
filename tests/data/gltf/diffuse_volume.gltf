@@ -86,7 +86,9 @@
           ],
           "attenuationDistance": 2.0
         }
-      }
+      },
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.4
     }
   ],
   "buffers": [

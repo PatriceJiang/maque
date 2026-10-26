@@ -393,6 +393,7 @@ assert abs(milky["base_color"]["r"] - 0.8) < 1e-9 and abs(milky["base_color"]["g
 amber = json.load(open(d + "/diffuse_volume_0_1.mesh.json", encoding="utf-8"))["materials"][0]
 # transmission factor=1 → alpha BLEND + opacity=0.15；volume attenuationColor [0.5,0.8,0.9] × baseColor [0.8,0.7,0.6]
 assert amber["alpha_mode"] == 2 and abs(amber["opacity"] - 0.15) < 1e-9, (amber["alpha_mode"], amber.get("opacity"))
+assert amber.get("alpha_mask_in_blend") is True, amber.get("alpha_mask_in_blend")
 bc = amber["base_color"]
 assert abs(bc["r"] - 0.4) < 1e-9 and abs(bc["g"] - 0.56) < 1e-9 and abs(bc["b"] - 0.54) < 1e-9, bc
 assert abs(bc["a"] - 1.0) < 1e-9, bc
