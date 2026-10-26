@@ -68,7 +68,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <div class="stat"><b>13</b><span>参考图为 GIF（取首帧）</span></div>
     <div class="stat"><b>0.44</b><span>直方图相似度中位数</span></div>
     <div class="stat"><b>16.6%</b><span>预览前景占比中位数</span></div>
-    <div class="stat"><b>39 / 43 / 67</b>
+    <div class="stat"><b>38 / 44 / 67</b>
       <span>自动初判（较接近 / 中等 / 差异较大）</span></div>
   </div>
 </header>
@@ -222,7 +222,7 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
 <tr data-name="texturesettingstest" data-verdict="bad"><td><a href="#model-TextureSettingsTest">TextureSettingsTest</a></td><td>screenshot</td><td>screenshot.png</td><td>0.258</td><td>0.028</td><td>29.8%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>0</td></tr>
 <tr data-name="texturetransformmultitest" data-verdict="good"><td><a href="#model-TextureTransformMultiTest">TextureTransformMultiTest</a></td><td>large</td><td>screenshot_large.jpg</td><td>0.838</td><td>0.066</td><td>25.8%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>2</td></tr>
 <tr data-name="texturetransformtest" data-verdict="good"><td><a href="#model-TextureTransformTest">TextureTransformTest</a></td><td>screenshot</td><td>screenshot.jpg</td><td>0.620</td><td>-0.048</td><td>31.5%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）</td><td>1</td></tr>
-<tr data-name="toycar" data-verdict="good"><td><a href="#model-ToyCar">ToyCar</a></td><td>screenshot</td><td>toycar_ref.jpg</td><td>0.651</td><td>-0.012</td><td>57.5%</td><td class="v-good">主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？</td><td>0</td></tr>
+<tr data-name="toycar" data-verdict="mid"><td><a href="#model-ToyCar">ToyCar</a></td><td>screenshot</td><td>toycar_ref.jpg</td><td>0.584</td><td>0.147</td><td>99.9%</td><td class="v-mid">中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？</td><td>0</td></tr>
 <tr data-name="trafficcone" data-verdict="bad"><td><a href="#model-TrafficCone">TrafficCone</a></td><td>large</td><td>screenshot_Large.jpg</td><td>0.332</td><td>0.102</td><td>17.6%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>4</td></tr>
 <tr data-name="transmissionordertest" data-verdict="bad"><td><a href="#model-TransmissionOrderTest">TransmissionOrderTest</a></td><td>large</td><td>screenshot-large.jpg</td><td>0.345</td><td>0.224</td><td>19.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>3</td></tr>
 <tr data-name="transmissionroughnesstest" data-verdict="bad"><td><a href="#model-TransmissionRoughnessTest">TransmissionRoughnessTest</a></td><td>large</td><td>screenshot-large.png</td><td>0.367</td><td>0.175</td><td>32.5%</td><td class="v-bad">差异较大（需人工确认：机位/缺失特性/导入问题）</td><td>2</td></tr>
@@ -2383,8 +2383,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
   <details><summary>已知差距 1 项</summary><ul><li>KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似</li></ul></details>
 </article>
 
-<article class="card good" id="model-ToyCar" data-name="toycar"
-         data-verdict="good" data-hist="0.6513" data-gaps="0">
+<article class="card mid" id="model-ToyCar" data-name="toycar"
+         data-verdict="mid" data-hist="0.5836" data-gaps="0">
   <header class="card-head">
     <h2>ToyCar</h2>
     <div class="meta"><span class=tag>hand-tuned</span><span class=tag>showcase</span><span class="status">ok (hand-tuned)</span>
@@ -2394,8 +2394,8 @@ footer { color:var(--dim); font-size:12px; padding:0 32px 40px; }
     <figure><div class="imgbox"><a href="ref/ToyCar.jpg" target=_blank><img loading=lazy src="ref/ToyCar.jpg" alt="ref ToyCar"></a></div><figcaption>官方参考：toycar_ref.jpg（1870×1033）</figcaption></figure>
     <figure><div class="imgbox"><a href="../../scenes/khronos/ToyCar/preview.jpg" target=_blank><img loading=lazy src="../../scenes/khronos/ToyCar/preview.jpg" alt="maque ToyCar"></a></div><figcaption>maque 迁移预览：preview.jpg（800×450）</figcaption></figure>
   </div>
-  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.651</span><span title="前景平均亮度差">亮度差 -0.012</span><span title="前景平均 RGB 距离">RGB 距离 0.030</span><span title="预览前景像素占比">前景占比 57.5%</span><span class=warn>预览主体贴边/被裁剪 → 机位过近？</span></div>
-  <div class="verdict"><b>自动初判：</b>主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？</div>
+  <div class="metrics"><span title="16 桶亮度直方图交集">直方图相似 0.584</span><span title="前景平均亮度差">亮度差 0.147</span><span title="前景平均 RGB 距离">RGB 距离 0.148</span><span title="预览前景像素占比">前景占比 99.9%</span><span class=warn>预览主体贴边/被裁剪 → 机位过近？</span></div>
+  <div class="verdict"><b>自动初判：</b>中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？</div>
   
 </article>
 

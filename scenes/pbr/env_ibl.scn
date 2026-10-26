@@ -141,6 +141,6 @@
    ]
   }
  ],
- "env_texture": "builtin:/textures/studio_env",
+ "env_texture": "env/studio.hdr",
  "env_intensity": 1.2
 }

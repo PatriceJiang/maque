@@ -26,6 +26,7 @@ struct Camera {
   env2: vec4f,          // xyz=天空色（已乘环境强度）w=软光箱强度
   env3: vec4f,          // xyz=地面色（已乘环境强度）w=环境旋转（弧度）
   env_info: vec4f,      // x=env intensity y=has_env_texture z/w=reserved
+  inv_vp: mat4x4f,      // NDC -> world ray（天空背景 pass）
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
 @group(0) @binding(1) var shadow_map: texture_depth_2d;

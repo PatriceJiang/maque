@@ -507,6 +507,7 @@ struct Engine {
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
+    int load_env_texture(const std::string& path);             // envmap：.hdr（RGBE→RGBA16F + mip 预过滤）或 PNG/JPEG（sRGB）
     int32_t load_mesh(const std::string& path);                // M4c：glTF 导入的 .mesh.json → 网格句柄
     int load_texture_srgb(const std::string& path);            // M4g：albedo 贴图按 sRGB 采样（RGBA8_SRGB）
     int load_texture_mips(const std::string& path);            // plans/19：线性数据贴图 + CPU mip 链（抗锯齿）
@@ -828,6 +829,70 @@ static std::vector<uint8_t> build_mip_chain(const uint8_t* src, int w0, int h0, 
 
 /* M4g：PBR albedo 贴图必须按 sRGB 采样（文件存 sRGB、shader 需要线性）——
  * create_texture2 的 RGBA8_SRGB；MR/AO/normal 是线性数据，仍走 load_texture_mips（RGBA8Unorm）。 */
+
+/* HDR env 解码 helper 的提前声明（定义在 load_texture_ref 之前）。 */
+static bool parse_radiance_hdr(const uint8_t* d, size_t n, int& W, int& H, std::vector<float>& rgba);
+static std::vector<uint8_t> build_env_mip_chain(std::vector<float>& base, int w, int h, int& mips);
+
+/* envmap 加载：.hdr（RGBE）→ RGBA16F + 线性 mip（PMREM 近似）；其它（PNG/JPEG）走 sRGB 贴图。 */
+int Engine::load_env_texture(const std::string& path) {
+    const TexPathParams tp = parse_tex_path(path);
+    if (tp.vfs.rfind("builtin:", 0) == 0) return load_texture_ref(path);
+    const std::string key = "env:" + path;
+    auto it = tex_cache.find(key);
+    if (it != tex_cache.end()) return it->second;
+    void* data = nullptr; size_t n = 0;
+    if (!vfs || mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) {
+        std::print(stderr, "runtime: env_texture not found '{}'\n", path);
+        return -1;
+    }
+    const bool is_hdr = (n >= 4 && data && ((const uint8_t*)data)[0] == '#' &&
+                         ((const uint8_t*)data)[1] == '?') ||
+                        (tp.vfs.size() >= 4 &&
+                         (tp.vfs.compare(tp.vfs.size() - 4, 4, ".hdr") == 0 ||
+                          tp.vfs.compare(tp.vfs.size() - 4, 4, ".HDR") == 0));
+    if (!is_hdr) {
+        if (n >= 4 && data) {
+            const uint8_t* m = (const uint8_t*)data;
+            if (m[0] == 0x76 && m[1] == 0x2f && m[2] == 0x31 && m[3] == 0x01) {
+                std::print(stderr, "runtime: env_texture '{}' 是 EXR（EXR 解码暂未支持，回退 analytic）\n", path);
+                mq_vfs_free(data);
+                tex_cache[key] = -1;
+                return -1;
+            }
+        }
+        mq_vfs_free(data);
+        const int id = load_texture_srgb(path);       /* PNG/JPEG：sRGB 贴图（shader 采样自动转线性） */
+        tex_cache[key] = id;
+        return id;
+    }
+    int w = 0, h = 0;
+    std::vector<float> hdr;
+    const bool ok = parse_radiance_hdr((const uint8_t*)data, n, w, h, hdr);
+    mq_vfs_free(data);
+    if (!ok) {
+        std::print(stderr, "runtime: env_texture '{}' HDR(RGBE) 解析失败，回退 analytic\n", path);
+        tex_cache[key] = -1;
+        return -1;
+    }
+    int levels = 1;
+    std::vector<uint8_t> chain = build_env_mip_chain(hdr, w, h, levels);
+    int32_t id = -1;
+    if (rapi && rself && rapi->create_texture2 && w > 0 && h > 0) {
+        mq_renderer_texture_desc td{};
+        td.width = w; td.height = h;
+        td.pixel_format = 2;                       /* 2 = RGBA16F（线性 HDR） */
+        td.kind = 0; td.mip_levels = levels;
+        td.filter = 1;                             /* linear */
+        td.wrap_u = 0; td.wrap_v = 1;              /* 经度 repeat、纬度 clamp */
+        td.data = chain.data(); td.data_size = (uint64_t)chain.size();
+        if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
+    }
+    if (id < 0) std::print(stderr, "runtime: env_texture '{}' 上传失败\n", path);
+    tex_cache[key] = id;
+    return id;
+}
+
 int Engine::load_texture_srgb(const std::string& path) {
     const TexPathParams tp = parse_tex_path(path);
     /* builtin: 是程序化纹理（checker 等），沿用既有 UNorm 路径，不做 sRGB 解码 */
@@ -975,6 +1040,136 @@ static void make_studio_env_pixels(std::vector<uint8_t>& out, int& w, int& h, in
         cw = nw; ch = nh; ++mips;
         if (mips >= 12) break;
     }
+}
+
+
+/* ---- envmap：Radiance .hdr（RGBE）解码 + 线性 mip（PMREM 式预过滤近似） ---- */
+static uint16_t f32_to_f16(float f) {
+    uint32_t x = 0;
+    std::memcpy(&x, &f, sizeof x);
+    const uint32_t sign = (x >> 16) & 0x8000u;
+    const int32_t exponent = (int32_t)((x >> 23) & 0xffu) - 127;
+    uint32_t mantissa = x & 0x7fffffu;
+    if (exponent == 128) return (uint16_t)(sign | 0x7c00u | (mantissa ? 0x200u : 0u));
+    if (exponent > 15) return (uint16_t)(sign | 0x7c00u);
+    if (exponent < -14) {
+        if (exponent < -24) return (uint16_t)sign;
+        mantissa |= 0x800000u;
+        const uint32_t shift = (uint32_t)(-exponent - 14);
+        return (uint16_t)(sign | (mantissa >> (13 + shift)));
+    }
+    return (uint16_t)(sign | ((uint32_t)(exponent + 15) << 10) | (mantissa >> 13));
+}
+
+static void append_half_rgba(std::vector<uint8_t>& out, float r, float g, float b) {
+    const uint16_t h[4] = { f32_to_f16(r), f32_to_f16(g), f32_to_f16(b), f32_to_f16(1.0f) };
+    const uint8_t* p = (const uint8_t*)h;
+    out.insert(out.end(), p, p + sizeof h);
+}
+
+/* 解析 Radiance RGBE（new RLE 扫描线；老格式按平铺 RGBE 兼容）。 */
+static bool parse_radiance_hdr(const uint8_t* d, size_t n, int& W, int& H, std::vector<float>& rgba) {
+    size_t pos = 0;
+    auto get_line = [&](std::string& line) {
+        line.clear();
+        while (pos < n && d[pos] != '\n') line.push_back((char)d[pos++]);
+        if (pos < n) ++pos;
+    };
+    std::string line;
+    get_line(line);
+    if (line.rfind("#?", 0) != 0) return false;
+    bool rgbe = false;
+    for (;;) {
+        get_line(line);
+        if (line.empty() || pos >= n) break;
+        if (line.rfind("FORMAT=", 0) == 0) {
+            if (line.find("32-bit_rle_rgbe") != std::string::npos) rgbe = true;
+            else return false;
+        }
+    }
+    if (!rgbe) return false;
+    get_line(line);                       /* 分辨率行：-Y <h> +X <w>（也支持 +Y 等简单变体） */
+    int h = 0, w = 0;
+    char s1 = 0, s2 = 0;
+    if (std::sscanf(line.c_str(), "%c%c %d %c%c %d", &s1, &s2, &h, &s1, &s2, &w) != 6) return false;
+    if (w <= 0 || h <= 0 || (uint64_t)w * h > 64u * 1024u * 1024u) return false;
+    W = w; H = h;
+    rgba.assign((size_t)w * h * 4, 0.0f);
+    std::vector<uint8_t> scan((size_t)w * 4);
+    for (int y = 0; y < h; ++y) {
+        if (pos + 4 > n) return false;
+        const uint8_t b0 = d[pos], b1 = d[pos + 1], b2 = d[pos + 2], b3 = d[pos + 3];
+        bool new_rle = (b0 == 2 && b1 == 2 && (((int)b2 << 8) | b3) == w);
+        if (new_rle) {
+            pos += 4;
+            for (int ch = 0; ch < 4; ++ch) {
+                int x = 0;
+                while (x < w) {
+                    if (pos >= n) return false;
+                    const int cnt = d[pos++];
+                    if (cnt > 128) {
+                        const int run = cnt - 128;
+                        if (pos >= n) return false;
+                        const uint8_t v = d[pos++];
+                        for (int i = 0; i < run && x < w; ++i) scan[(size_t)(x++) * 4 + ch] = v;
+                    } else {
+                        for (int i = 0; i < cnt && x < w; ++i) {
+                            if (pos >= n) return false;
+                            scan[(size_t)(x++) * 4 + ch] = d[pos++];
+                        }
+                    }
+                }
+            }
+        } else {
+            /* 老格式/平铺 RGBE：直接读 w*4 字节 */
+            if (pos + (size_t)w * 4 > n) return false;
+            std::memcpy(scan.data(), d + pos, (size_t)w * 4);
+            pos += (size_t)w * 4;
+        }
+        for (int x = 0; x < w; ++x) {
+            const uint8_t* p4 = &scan[(size_t)x * 4];
+            float* out = &rgba[((size_t)y * w + x) * 4];
+            if (p4[3] == 0) { out[0] = out[1] = out[2] = 0.0f; }
+            else {
+                const float f = std::ldexp(1.0f, (int)p4[3] - 136);
+                out[0] = p4[0] * f; out[1] = p4[1] * f; out[2] = p4[2] * f;
+            }
+            out[3] = 1.0f;
+        }
+    }
+    return true;
+}
+
+/* 线性浮点 mip 链（2x2 box；经度 wrap、纬度 clamp —— PMREM 的预过滤近似）。 */
+static std::vector<uint8_t> build_env_mip_chain(std::vector<float>& base, int w, int h, int& mips) {
+    std::vector<uint8_t> out;
+    std::vector<float> cur = std::move(base);
+    int cw = w, ch = h;
+    mips = 1;
+    while (true) {
+        for (int y = 0; y < ch; ++y) for (int x = 0; x < cw; ++x) {
+            const float* p = &cur[((size_t)y * cw + x) * 4];
+            append_half_rgba(out, p[0], p[1], p[2]);
+        }
+        if (cw <= 1 && ch <= 1) break;
+        const int nw = std::max(1, cw >> 1), nh = std::max(1, ch >> 1);
+        std::vector<float> next((size_t)nw * nh * 4, 0.0f);
+        for (int y = 0; y < nh; ++y) for (int x = 0; x < nw; ++x) {
+            float acc[4] = { 0, 0, 0, 0 };
+            for (int oy = 0; oy < 2; ++oy) for (int ox = 0; ox < 2; ++ox) {
+                const int sx = (x * 2 + ox) % cw;
+                const int sy = std::min(ch - 1, y * 2 + oy);
+                const float* p = &cur[((size_t)sy * cw + sx) * 4];
+                for (int k = 0; k < 4; ++k) acc[k] += p[k];
+            }
+            float* q = &next[((size_t)y * nw + x) * 4];
+            for (int k = 0; k < 4; ++k) q[k] = acc[k] * 0.25f;
+        }
+        cur = std::move(next);
+        cw = nw; ch = nh; ++mips;
+        if (mips >= 14) break;
+    }
+    return out;
 }
 
 int Engine::load_texture_ref(const std::string& ref) {
@@ -2083,11 +2278,7 @@ void Engine::step_frame() {
     if (env_force && env_force[0] == '1') env_path = "builtin:/textures/studio_env";
     if (env_force && env_force[0] == '0') env_path.clear();
     if (!env_path.empty()) {
-        if (env_path.rfind("builtin:", 0) == 0) {
-            env_tex_id = load_texture_ref(env_path);
-        } else {
-            env_tex_id = load_texture_srgb(env_path);
-        }
+        env_tex_id = load_env_texture(env_path);
         if (env_tex_id < 0) {
             std::print(stderr, "runtime: env_texture '{}' 加载失败，回退 analytic IBL\n", env_path);
             env_tex_id = -1;

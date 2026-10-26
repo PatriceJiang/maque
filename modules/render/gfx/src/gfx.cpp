@@ -95,6 +95,8 @@ struct Device {
     WGPUBindGroupLayout p3dDrawBgl = nullptr;
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
+    WGPUPipelineLayout p3dSkyPl = nullptr;       /* envmap 天空背景：仅 group0（camera） */
+    WGPURenderPipeline skyPipeline = nullptr;
     /* 多材质模型管线：[shading_model 0..9][blend 0/1][cull 0..2][mirrored 0/1][layout 0/1]，按需创建（plans/19/20）。
      * mirrored = model 3×3 行列式 < 0（镜像缩放的 glTF 节点）：镜像把三角形绕序翻成 CW，
      * 而 WebGPU 的 frontFace 默认是 CCW，不做补偿时 side=Front 的材质会把正面剔掉/显示背面。
@@ -305,7 +307,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         {
             WGPUBindGroupLayoutEntry e[5] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 832;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 896;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
             e[1].texture.sampleType = WGPUTextureSampleType_Depth;
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
@@ -381,11 +383,46 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
         pl.bindGroupLayoutCount = 2; pl.bindGroupLayouts = bl;
         dv->p3dPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
+        /* envmap 天空背景：独立 pipeline layout（只有 group0 camera），全屏三角形。 */
+        WGPUBindGroupLayout skyBl[1] = { dv->p3dCamBgl };
+        WGPUPipelineLayoutDescriptor spl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+        spl.bindGroupLayoutCount = 1; spl.bindGroupLayouts = skyBl;
+        dv->p3dSkyPl = wgpuDeviceCreatePipelineLayout(dv->device, &spl);
     }
     if (!dv->p3dShader || !dv->p3dPl) return;
     if (dv->p3dFormat != format) {
         release_material_pipelines(dv);
         dv->p3dFormat = format;
+        if (dv->skyPipeline) { wgpuRenderPipelineRelease(dv->skyPipeline); dv->skyPipeline = nullptr; }
+    }
+    if (!dv->skyPipeline && dv->p3dSkyPl && dv->p3dShader) {
+        WGPUDepthStencilState sky_ds = WGPU_DEPTH_STENCIL_STATE_INIT;
+        sky_ds.format = WGPUTextureFormat_Depth32Float;
+        sky_ds.depthWriteEnabled = WGPUOptionalBool_False;
+        sky_ds.depthCompare = WGPUCompareFunction_Always;
+        WGPUColorTargetState sky_ct = WGPU_COLOR_TARGET_STATE_INIT;
+        sky_ct.format = format; sky_ct.writeMask = WGPUColorWriteMask_All; sky_ct.blend = nullptr;
+        WGPUVertexState sky_vs = WGPU_VERTEX_STATE_INIT;
+        sky_vs.module = dv->p3dShader; sky_vs.entryPoint = SV("vs_sky");
+        WGPUFragmentState sky_fs = WGPU_FRAGMENT_STATE_INIT;
+        sky_fs.module = dv->p3dShader; sky_fs.entryPoint = SV("fs_sky");
+        sky_fs.targetCount = 1; sky_fs.targets = &sky_ct;
+        WGPURenderPipelineDescriptor sky_rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+        sky_rp.layout = dv->p3dSkyPl;
+        sky_rp.vertex = sky_vs;
+        sky_rp.fragment = &sky_fs;
+        sky_rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        sky_rp.primitive.frontFace = WGPUFrontFace_CCW;
+        sky_rp.primitive.cullMode = WGPUCullMode_None;
+        sky_rp.depthStencil = &sky_ds;
+        dv->skyPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &sky_rp);
+        if (!dv->skyPipeline) {
+            static bool warned_sky = false;
+            if (!warned_sky) {
+                warned_sky = true;
+                std::print(stderr, "gfx: 天空背景管线创建失败（shader entry vs_sky/fs_sky 缺失）→ 不画 env 天空\n");
+            }
+        }
     }
     if (dv->shadowTex && dv->dummyDepthView && dv->shadowSampler) {
         WGPUDepthStencilState sds = WGPU_DEPTH_STENCIL_STATE_INIT;
@@ -732,6 +769,8 @@ static void destroy_device(Device* dv) {
     if (dv->dummyDepth) wgpuTextureRelease(dv->dummyDepth);
     if (dv->shadowView) wgpuTextureViewRelease(dv->shadowView);
     if (dv->shadowTex) wgpuTextureRelease(dv->shadowTex);
+    if (dv->skyPipeline) wgpuRenderPipelineRelease(dv->skyPipeline);
+    if (dv->p3dSkyPl) wgpuPipelineLayoutRelease(dv->p3dSkyPl);
     if (dv->p3dPl) wgpuPipelineLayoutRelease(dv->p3dPl);
     if (dv->p3dCamBgl) wgpuBindGroupLayoutRelease(dv->p3dCamBgl);
     if (dv->p3dDrawBgl) wgpuBindGroupLayoutRelease(dv->p3dDrawBgl);
@@ -900,8 +939,8 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
     auto* dv = (Device*)self;
     if (!dv || !d || !out_id) return -1;
     if (d->width <= 0 || d->height <= 0) return -2;
-    if (d->kind != 0) return -3;                                  /* cube/equirect：M4 */
-    if (d->pixel_format != 0 && d->pixel_format != 1) return -4;  /* M0 只 RGBA8 / RGBA8_SRGB */
+    if (d->kind != 0) return -3;                                  /* cube：仍未实现；equirect 走 kind=0 2D */
+    if (d->pixel_format != 0 && d->pixel_format != 1 && d->pixel_format != 2) return -4;  /* RGBA8 / RGBA8_SRGB / RGBA16F */
     int32_t max_mips = 1;
     for (uint32_t s = (uint32_t)std::max(d->width, d->height); s > 1; s >>= 1) ++max_mips;
     int32_t mips = d->mip_levels <= 0 ? 1 : d->mip_levels;
@@ -939,14 +978,15 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
         size_t remain = (size_t)d->data_size;
         uint32_t w = (uint32_t)d->width, h = (uint32_t)d->height;
         for (int32_t lvl = 0; lvl < mips; ++lvl) {
-            const size_t bytes = (size_t)w * h * 4;
+            const uint32_t bpp = (t->format == WGPUTextureFormat_RGBA16Float) ? 8u : 4u;
+            const size_t bytes = (size_t)w * h * bpp;
             if (remain < bytes) break;                    /* 数据不足：后续 mip 留空（不越界） */
             WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
             dst.texture = t->tex;
             dst.mipLevel = (uint32_t)lvl;
             dst.aspect = WGPUTextureAspect_All;
             WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
-            layout.bytesPerRow = w * 4;
+            layout.bytesPerRow = w * bpp;
             layout.rowsPerImage = h;
             WGPUExtent3D sz = WGPUExtent3D{ w, h, 1 };
             wgpuQueueWriteTexture(dv->queue, &dst, p, bytes, &layout, &sz);
@@ -1292,6 +1332,51 @@ static void mat4_mul(const float* a, const float* b, float* o) {
                            a[2 * 4 + r] * b[c * 4 + 2] + a[3 * 4 + r] * b[c * 4 + 3];
 }
 
+/* 4x4 逆（列主序；天空背景由 NDC 反推世界射线）。 */
+static void mat4_invert(const float* m, float* out) {
+    float inv[16];
+    inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] +
+             m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
+    inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] -
+             m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
+    inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] +
+             m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
+    inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] -
+              m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
+    inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] -
+             m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
+    inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] +
+             m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
+    inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] -
+             m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
+    inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] +
+              m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
+    inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] +
+             m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
+    inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] -
+             m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
+    inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] +
+              m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
+    inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] -
+              m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
+    inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] -
+             m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
+    inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] +
+             m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
+    inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] -
+              m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
+    inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] +
+              m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
+    float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+    if (std::fabs(det) < 1e-20F) {
+        std::memset(out, 0, sizeof(float) * 16);
+        out[0] = out[5] = out[10] = out[15] = 1.0F;
+        return;
+    }
+    det = 1.0F / det;
+    for (int i = 0; i < 16; ++i) out[i] = inv[i] * det;
+}
+
 static void mat4_look_at(const float eye[3], const float ctr[3], const float up[3], float* m) {
     float f[3] = { ctr[0] - eye[0], ctr[1] - eye[1], ctr[2] - eye[2] };
     float fl = std::sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
@@ -1616,7 +1701,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         const mq_renderer_view3d& v = f->views[vi];
         float vp[16];
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
-        float cam[208] = {};
+        float cam[224] = {};
         std::memcpy(cam, vp, sizeof vp);
         cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = v.exposure;
         cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
@@ -1646,6 +1731,10 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         cam[204] = f->env.intensity;
         cam[205] = (f->env.env_texture >= 0) ? 1.0F : 0.0F;
         cam[206] = 0.0F; cam[207] = 0.0F;
+        /* inv_vp（208..223）：天空背景全屏 pass 由 NDC 反推世界射线 */
+        float inv_vp[16];
+        mat4_invert(vp, inv_vp);
+        std::memcpy(cam + 208, inv_vp, sizeof inv_vp);
         /* 光照数组（8 盏）：按 light_order 重排后的顺序（方向光在前，保证 0 号是方向光/阴影灯）。
          * 每盏 16 float = pos(4, w=类型) + dir(4) + color(4) + params(4)。 */
         for (uint32_t li = 0; li < 8; ++li) {
@@ -1770,6 +1859,11 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         rpd.depthStencilAttachment = &da;
         WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
         wgpuRenderPassEncoderSetBindGroup(pass, 0, camBg, 0, nullptr);
+    /* envmap 天空背景：在 opaque 之前画全屏三角形（不写深度；opaque 会覆盖它）。 */
+    if (dv->skyPipeline && f->env.sky_mode == 3 && f->env.env_texture >= 0) {
+        wgpuRenderPassEncoderSetPipeline(pass, dv->skyPipeline);
+        wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+    }
         /* 不透明先画；透明按"相机→物体"距离从远到近（不写深度、混合管线） */
         std::vector<const mq_renderer_draw3d*> opaque_list, blend_list;
         opaque_list.reserve(f->draw_count);

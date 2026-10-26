@@ -317,4 +317,30 @@ sys.exit(0 if diff / (w*h) > 0.02 else 1)
 PY
     echo "render3d_scene_e2e: (8) envmap/IBL OK"
 fi
+# ---- (9) envmap sky background: scenes/pbr/env_ibl.scn (HDR .hdr) must show a bright sky ----
+ENV_SCN="$ROOT/scenes/pbr/env_ibl.scn"
+if [ -f "$ENV_SCN" ]; then
+    ( cd "$ROOT" && timeout 90 "$PLAYER" --shot "$WORK/env_sky.ppm" --frames 2 scenes/pbr/env_ibl.scn \
+        >"$WORK/env_sky.txt" 2>&1 ) || { cat "$WORK/env_sky.txt"; fail "HDR env sky render failed"; }
+    ( cd "$ROOT" && timeout 90 env MAQUE_ENV_IBL=0 "$PLAYER" --shot "$WORK/env_sky_off.ppm" --frames 2 scenes/pbr/env_ibl.scn \
+        >"$WORK/env_sky_off.txt" 2>&1 ) || { cat "$WORK/env_sky_off.txt"; fail "HDR env sky off render failed"; }
+    cmp -s "$WORK/env_sky.ppm" "$WORK/env_sky_off.ppm" && fail "HDR env has no effect on env_ibl scene"
+    "$PY" - "$WORK/env_sky.ppm" "$WORK/env_sky_off.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); m, dims, _x, px = d.split(b'\n', 3)
+    assert m == b'P6'
+    w, h = map(int, dims.split()); return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+def corner(px):
+    i = (2 * w + 2) * 3
+    return px[i], px[i+1], px[i+2]
+ca = corner(a); cb = corner(b)
+lum = lambda c: 0.299*c[0] + 0.587*c[1] + 0.114*c[2]
+print(f'render3d_scene_e2e: env sky corner_on={tuple(ca)} corner_off={tuple(cb)}')
+ok = lum(ca) > 120 and lum(ca) > lum(cb) + 60
+sys.exit(0 if ok else 1)
+PY
+    echo "render3d_scene_e2e: (9) envmap sky background OK"
+fi
 echo "render3d_scene_e2e: PASS"
