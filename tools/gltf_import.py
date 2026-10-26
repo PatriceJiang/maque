@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import math
 import os
 import struct
 import sys
@@ -180,13 +181,171 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers):
     return m
 
 
-def import_gltf(path, out_dir, name=None):
+# ---- 场景模式（M4e：把 glTF 场景迁移成 maque .scn）----
+def _mat_identity():
+    return [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+
+def _mat_mul(a, b):
+    o = [0.0] * 16
+    for c in range(4):
+        for r in range(4):
+            o[c * 4 + r] = (a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] +
+                            a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3])
+    return o
+
+
+def _node_matrix(node):
+    if "matrix" in node:
+        return [float(x) for x in node["matrix"]]
+    t = node.get("translation", [0.0, 0.0, 0.0])
+    q = node.get("rotation", [0.0, 0.0, 0.0, 1.0])
+    s = node.get("scale", [1.0, 1.0, 1.0])
+    x, y, z, w = q
+    m = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    r00 = 1 - 2 * (y * y + z * z); r01 = 2 * (x * y - z * w); r02 = 2 * (x * z + y * w)
+    r10 = 2 * (x * y + z * w); r11 = 1 - 2 * (x * x + z * z); r12 = 2 * (y * z - x * w)
+    r20 = 2 * (x * z - y * w); r21 = 2 * (y * z + x * w); r22 = 1 - 2 * (x * x + y * y)
+    m[0] = r00 * s[0]; m[1] = r10 * s[0]; m[2] = r20 * s[0]
+    m[4] = r01 * s[1]; m[5] = r11 * s[1]; m[6] = r21 * s[1]
+    m[8] = r02 * s[2]; m[9] = r12 * s[2]; m[10] = r22 * s[2]
+    m[12], m[13], m[14] = t[0], t[1], t[2]
+    return m
+
+
+def _decompose(m):
+    """列主序矩阵 → (position, euler Rz*Ry*Rx 弧度, scale)，与 runtime m4_from_trs 约定一致。"""
+    sx = math.sqrt(m[0] ** 2 + m[1] ** 2 + m[2] ** 2) or 1.0
+    sy = math.sqrt(m[4] ** 2 + m[5] ** 2 + m[6] ** 2) or 1.0
+    sz = math.sqrt(m[8] ** 2 + m[9] ** 2 + m[10] ** 2) or 1.0
+    r00, r10, r20 = m[0] / sx, m[1] / sx, m[2] / sx
+    r01, r11, r21 = m[4] / sy, m[5] / sy, m[6] / sy
+    r02, r12, r22 = m[8] / sz, m[9] / sz, m[10] / sz
+    ry = math.asin(max(-1.0, min(1.0, -r20)))
+    rx = math.atan2(r21, r22)
+    rz = math.atan2(r10, r00)
+    return (m[12], m[13], m[14]), (rx, ry, rz), (sx, sy, sz)
+
+
+def _xform_point(m, p):
+    return [m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12],
+            m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13],
+            m[2] * p[0] + m[6] * p[1] + m[10] * p[2] + m[14]]
+
+
+def _look_rotation(eye, center):
+    d = [center[i] - eye[i] for i in range(3)]
+    ln = math.sqrt(sum(v * v for v in d)) or 1.0
+    d = [v / ln for v in d]
+    return math.asin(max(-1.0, min(1.0, d[1]))), math.atan2(-d[0], -d[2])
+
+
+def _light_rotation(propagation):
+    """光传播方向 → 灯节点 rotation（runtime 用节点 -Z 轴作为传播方向）。"""
+    p = [float(v) for v in propagation]
+    ln = math.sqrt(sum(v * v for v in p)) or 1.0
+    p = [v / ln for v in p]
+    rx = math.asin(max(-1.0, min(1.0, p[1])))
+    ry = math.atan2(-p[0], -p[2])
+    return rx, ry
+
+
+def _vec3(x, y, z):
+    return {"x": float(x), "y": float(y), "z": float(z)}
+
+
+def _vec4(r, g, b, a):
+    return {"r": float(r), "g": float(g), "b": float(b), "a": float(a)}
+
+
+def emit_scene(js, out_dir, name, prims_meta, scene_mats=None):
+    """glTF 节点树 → maque .scn：每个 (node, primitive) 一个平级实体（世界变换烘焙进 local）。"""
+    nodes = js.get("nodes", [])
+    scn_nodes = js.get("scenes", [{}])[js.get("scene", 0)].get("nodes", []) if js.get("scenes") else []
+    entities = []
+    bounds_min = [1e30, 1e30, 1e30]
+    bounds_max = [-1e30, -1e30, -1e30]
+
+    def walk(ni, parent, depth=0):
+        if depth > 128:
+            return
+        node = nodes[ni]
+        world = _mat_mul(parent, _node_matrix(node))
+        mi = node.get("mesh")
+        if mi is not None:
+            for meta in prims_meta:
+                if meta["mi"] != mi:
+                    continue
+                for cx in (meta["bounds_min"], meta["bounds_max"]):
+                    lo = [cx[0], cx[1], cx[2]]
+                    # 8 个角点 → 世界包围盒（用 min/max 两个角近似覆盖旋转）
+                    for sx in (cx[0], meta["bounds_max"][0]):
+                        for sy in (cx[1], meta["bounds_max"][1]):
+                            for sz in (cx[2], meta["bounds_max"][2]):
+                                wp = _xform_point(world, [sx, sy, sz])
+                                for k in range(3):
+                                    bounds_min[k] = min(bounds_min[k], wp[k])
+                                    bounds_max[k] = max(bounds_max[k], wp[k])
+                pos, rot, scl = _decompose(world)
+                comps = [
+                    {"type": "scene.Transform3D", "local": {
+                        "position": _vec3(*pos), "rotation": _vec3(*rot), "scale": _vec3(*scl)}},
+                    {"type": "render.MeshRenderer",
+                     "mesh_path": "assets/" + meta["mesh_name"] + ".mesh.json"},
+                ]
+                if meta.get("material"):
+                    comps.append(meta["material"])
+                nm = node.get("name") or f"node{ni}"
+                entities.append({"name": f"{nm}_{meta['pi']}", "components": comps})
+        for ci in node.get("children", []):
+            walk(ci, world, depth + 1)
+
+    for ni in scn_nodes:
+        walk(ni, _mat_identity())
+    if not entities:
+        raise SystemExit("gltf_import: --scene 没有生成任何实体（缺 mesh 节点？）")
+    center = [(bounds_min[i] + bounds_max[i]) * 0.5 for i in range(3)]
+    radius = max(1e-3, max(bounds_max[i] - bounds_min[i] for i in range(3)) * 0.5)
+    eye = [center[0] - radius * 1.2, center[1] + radius * 0.55, center[2] + radius * 2.1]
+    cam_near = max(0.001, radius * 0.02)
+    cam_far = max(10.0, radius * 300.0)
+    pitch, yaw = _look_rotation(eye, center)
+    lrx, lry = _light_rotation((0.35, -0.85, -0.4))
+    cam = {"name": "camera", "components": [
+        {"type": "scene.Transform3D", "local": {
+            "position": _vec3(*eye), "rotation": _vec3(pitch, yaw, 0.0)}},
+        {"type": "render.Camera3D", "fov_y": 45.0, "near": cam_near, "far": cam_far,
+         "clear_color": _vec4(0.045, 0.05, 0.065, 1.0)},
+    ]}
+    sun = {"name": "sun", "components": [
+        {"type": "scene.Transform3D", "local": {"rotation": _vec3(lrx, lry, 0.0)}},
+        {"type": "render.Light", "intensity": 2.6,
+         "color": _vec4(1.0, 0.96, 0.9, 1.0)},
+    ]}
+    scn = {"title": name, "width": 1280, "height": 720, "views": 1,
+           "entities": [cam, sun] + entities}
+    dest = os.path.join(out_dir, name + ".scn")
+    with open(dest, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(scn, f, ensure_ascii=False, indent=2, sort_keys=False)
+        f.write("\n")
+    print(f"gltf_import: scene → {dest} entities={len(entities)} bounds={bounds_min}..{bounds_max}")
+    return dest
+
+
+def _round_mesh(m):
+    m = dict(m)
+    m['vertices'] = [[round(float(v), 6) for v in row] for row in m['vertices']]
+    return m
+
+
+def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False):
     js, bin_chunk, base_dir = load_gltf(path)
     buffers = read_buffers(js, bin_chunk, base_dir)
     tex_dir = os.path.join(out_dir, "textures")
     name = name or os.path.splitext(os.path.basename(path))[0]
     images = set()
     meshes_out = []
+    prims_meta = []
     for mi, mesh in enumerate(js.get("meshes", [])):
         for pi, prim in enumerate(mesh.get("primitives", [])):
             mode = prim.get("mode", MODE_TRIANGLES)
@@ -227,16 +386,26 @@ def import_gltf(path, out_dir, name=None):
                 "bounds_max": [max(xs), max(ys), max(zs)],
                 "materials": mats,
             })
+            prims_meta.append({"mi": mi, "pi": pi, "mesh_name": mesh_name,
+                               "material": mats[0] if mats else None,
+                               "bounds_min": [min(xs), min(ys), min(zs)],
+                               "bounds_max": [max(xs), max(ys), max(zs)]})
     if not meshes_out:
         raise SystemExit("gltf_import: 没有可导入的三角网格")
-    os.makedirs(out_dir, exist_ok=True)
+    mesh_dir = os.path.join(out_dir, "assets") if emit_scene_flag else out_dir
+    os.makedirs(mesh_dir, exist_ok=True)
     written = []
     for m in meshes_out:
-        dest = os.path.join(out_dir, m["name"] + ".mesh.json")
+        dest = os.path.join(mesh_dir, m["name"] + ".mesh.json")
         with open(dest, "w", encoding="utf-8", newline="\n") as f:
-            json.dump(m, f, ensure_ascii=False, indent=2, sort_keys=True)
+            if compact:
+                json.dump(_round_mesh(m), f, ensure_ascii=False, separators=(",", ":"))
+            else:
+                json.dump(m, f, ensure_ascii=False, indent=2, sort_keys=True)
             f.write("\n")
         written.append(dest)
+    if emit_scene_flag:
+        emit_scene(js, out_dir, name, prims_meta)
     return written, sorted(images)
 
 
@@ -245,8 +414,12 @@ def main(argv):
     ap.add_argument("input")
     ap.add_argument("--out", required=True, help="输出目录")
     ap.add_argument("--name", default=None, help="输出基名（默认取输入文件名）")
+    ap.add_argument("--scene", action="store_true",
+                    help="额外生成 <name>.scn（glTF 节点树 → 平级实体，含相机/方向光；可直接用 player 打开）")
+    ap.add_argument("--compact", action="store_true",
+                    help="网格 JSON 紧凑输出（大模型显著减小体积，仍可被运行时解析）")
     args = ap.parse_args(argv)
-    written, images = import_gltf(args.input, args.out, args.name)
+    written, images = import_gltf(args.input, args.out, args.name, args.scene, args.compact)
     for w in written:
         print(f"gltf_import: → {w}")
     for img in images:

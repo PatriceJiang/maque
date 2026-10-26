@@ -1,0 +1,220 @@
+{
+  "title": "ToyCar",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.04265100707228857,
+              "y": 0.01854480451448513,
+              "z": 0.0776604041689142
+            },
+            "rotation": {
+              "x": -0.22359477967934147,
+              "y": -0.5191461142465229,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.001,
+          "far": 11.094343946416869,
+          "clear_color": {
+            "r": 0.045,
+            "g": 0.05,
+            "b": 0.065,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "ToyCar_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963800073814,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.0001,
+              "y": 9.999999117911215e-05,
+              "z": 9.999999117911215e-05
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ToyCar_0_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "ToyCar",
+          "base_color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "metallic": 1.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "double_sided": true,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image2.png",
+          "metallic_roughness_texture": "textures/image3.png",
+          "normal_texture": "textures/image0.png",
+          "occlusion_texture": "textures/image3.png",
+          "emissive_texture": "textures/image1.png"
+        }
+      ]
+    },
+    {
+      "name": "Fabric_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963800073814,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.0001,
+              "y": 9.999999117911215e-05,
+              "z": 9.999999117911215e-05
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ToyCar_1_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Fabric",
+          "base_color": {
+            "r": 0.15,
+            "g": 0.15,
+            "b": 0.15,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 1.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": true,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5,
+          "base_color_texture": "textures/image6.png",
+          "normal_texture": "textures/image4.png",
+          "occlusion_texture": "textures/image5.png"
+        }
+      ]
+    },
+    {
+      "name": "Glass_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 1.5707963800073814,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.0001,
+              "y": 9.999999117911215e-05,
+              "z": 9.999999117911215e-05
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ToyCar_2_0.mesh.json"
+        },
+        {
+          "type": "asset.PbrMaterial",
+          "name": "Glass",
+          "base_color": {
+            "r": 0.3,
+            "g": 0.8,
+            "b": 0.3,
+            "a": 1
+          },
+          "metallic": 0.0,
+          "roughness": 0.0,
+          "emissive": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "double_sided": false,
+          "alpha_mode": 0,
+          "alpha_cutoff": 0.5
+        }
+      ]
+    }
+  ]
+}

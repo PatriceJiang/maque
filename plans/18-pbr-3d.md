@@ -357,3 +357,7 @@ per view:
 - **角色标识**：`agent-render3d`（与 `agent-renderer` 协作：ABI/管线归 renderer，3D 提取归 runtime）。
 - **职责边界**：本计划覆盖 renderer 3D 扩展、platform 原生窗口、runtime 3D 提取、PBR 资产与导入工具；
   不改动 2D 组件语义与脚本可见 API（新增 3D 便利函数需单独列 schema `api_list` 并走生成绑定）。
+
+- **M4e（示例迁移）**：`tools/gltf_import.py` 增加 `--scene`（glTF 节点树 → 平级实体 + 相机/方向光）
+  与 `--compact`；迁移 Khronos **ToyCar**（77k 顶点 / 7 张 PBR 贴图）到 `scenes/khronos/ToyCar/`，
+  `preview.png` 已可用（阴影/IBL/clearcoat/transmission 仍缺）。
