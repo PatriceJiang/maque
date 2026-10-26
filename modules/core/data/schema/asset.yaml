@@ -224,6 +224,30 @@
         - { name: Opaque, value: 0 }
         - { name: Mask, value: 1 }
         - { name: Blend, value: 2 }
+    # 3D 表面着色模型（plans/19-threejs-materials.md）：把 three.js 材质族映射为一套模型，
+    # 由同一个 shader 模块的不同 fragment 入口实现；缺省 Standard 与既有 PbrMaterial 语义一致。
+    - enum: MaterialShadingModel
+      values:
+        - { name: Standard, value: 0 }    # MeshStandardMaterial（metallic-roughness PBR）
+        - { name: Physical, value: 1 }    # MeshPhysicalMaterial（Standard + clearcoat/sheen/iridescence/specular/ior/anisotropy）
+        - { name: Basic, value: 2 }       # MeshBasicMaterial（无光照）
+        - { name: Lambert, value: 3 }     # MeshLambertMaterial（仅漫反射）
+        - { name: Phong, value: 4 }       # MeshPhongMaterial（Blinn-Phong 高光）
+        - { name: Toon, value: 5 }        # MeshToonMaterial（NdotL 分级）
+        - { name: Normal, value: 6 }      # MeshNormalMaterial（视空间法线可视化）
+        - { name: Matcap, value: 7 }      # MeshMatcapMaterial（matcap 贴图）
+        - { name: Depth, value: 8 }       # MeshDepthMaterial（深度可视化）
+        - { name: Shadow, value: 9 }      # ShadowMaterial（只显示阴影的透明材质）
+    # 面朝向（three.js Material.side）。缺省 Double 与引擎此前 cullMode=None 一致，老场景零回归。
+    - enum: MaterialSide
+      values:
+        - { name: Front, value: 0 }
+        - { name: Back, value: 1 }
+        - { name: Double, value: 2 }
+    - enum: DepthPacking
+      values:
+        - { name: Basic, value: 0 }
+        - { name: RGBA, value: 1 }
     - struct: PbrMaterial
       roles: [pbr_material]
       fields:
@@ -246,6 +270,33 @@
         - { name: normal_texture, type: string, default: "" }
         - { name: occlusion_texture, type: string, default: "" }
         - { name: emissive_texture, type: string, default: "" }
+        # ---- 多着色模型扩展（plans/19-threejs-materials.md；以下均为尾部追加，旧字段偏移不变）----
+        - { name: shading_model, type: MaterialShadingModel, default: "MaterialShadingModel::Standard" }
+        - { name: opacity, type: float, default: 1.0F, attrs: { range: [0, 1] } }
+        - { name: side, type: MaterialSide, default: "MaterialSide::Double" }
+        - { name: flat_shading, type: bool, default: false }
+        - { name: emissive_intensity, type: float, default: 1.0F }
+        - { name: env_intensity, type: float, default: 1.0F }
+        - { name: normal_scale_y, type: float, default: 1.0F }
+        - { name: specular, type: math.Vec3, default: "{1.0F, 1.0F, 1.0F}" }
+        - { name: shininess, type: float, default: 30.0F }
+        - { name: specular_intensity, type: float, default: 1.0F }
+        - { name: ior, type: float, default: 1.5F }
+        - { name: sheen, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: sheen_roughness, type: float, default: 0.5F }
+        - { name: sheen_color, type: math.Vec3, default: "{0.0F, 0.0F, 0.0F}" }
+        - { name: iridescence, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: iridescence_ior, type: float, default: 1.3F }
+        - { name: iridescence_thickness_min, type: float, default: 100.0F, attrs: { unit: nm } }
+        - { name: iridescence_thickness_max, type: float, default: 400.0F, attrs: { unit: nm } }
+        - { name: anisotropy, type: float, default: 0.0F, attrs: { range: [0, 1] } }
+        - { name: anisotropy_rotation, type: float, default: 0.0F }
+        - { name: clearcoat_normal_scale, type: float, default: 1.0F }
+        - { name: toon_steps, type: int32_t, default: 3 }
+        - { name: depth_packing, type: DepthPacking, default: "DepthPacking::Basic" }
+        - { name: matcap_texture, type: string, default: "" }
+        - { name: gradient_texture, type: string, default: "" }
+        - { name: clearcoat_normal_texture, type: string, default: "" }
     - struct: Scene
       fields:
         - { name: name, type: string }

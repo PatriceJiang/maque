@@ -152,6 +152,32 @@
         - { name: uv_offset,          type: "float[2]" }
         - { name: clearcoat,           type: float }     # KHR_materials_clearcoat factor
         - { name: clearcoat_roughness, type: float }
+        # ---- 多着色模型扩展（plans/19-threejs-materials.md；尾部追加，旧字段偏移不变）----
+        - { name: shading_model,            type: int32_t }   # 0=Standard 1=Physical 2=Basic 3=Lambert 4=Phong
+                                                             # 5=Toon 6=Normal 7=Matcap 8=Depth 9=Shadow
+        - { name: side,                     type: int32_t }   # 0=Front 1=Back 2=Double
+        - { name: flags2,                   type: int32_t }   # bit0 flat_shading / bit1 has_matcap / bit2 has_gradient / bit3 has_clearcoat_normal
+        - { name: opacity,                  type: float }
+        - { name: emissive_intensity,       type: float }
+        - { name: env_intensity,            type: float }
+        - { name: normal_scale_y,           type: float }
+        - { name: specular,                 type: "float[3]" }
+        - { name: shininess,                type: float }
+        - { name: specular_intensity,       type: float }
+        - { name: ior,                      type: float }
+        - { name: sheen,                    type: float }
+        - { name: sheen_roughness,          type: float }
+        - { name: sheen_color,              type: "float[3]" }
+        - { name: iridescence,              type: float }
+        - { name: iridescence_ior,          type: float }
+        - { name: iridescence_thickness_min, type: float }
+        - { name: iridescence_thickness_max, type: float }
+        - { name: anisotropy,               type: float }
+        - { name: anisotropy_rotation,      type: float }
+        - { name: clearcoat_normal_scale,   type: float }
+        - { name: toon_steps,               type: int32_t }
+        - { name: depth_packing,            type: int32_t }
+        - { name: textures2,                type: "int32_t[3]" } # matcap / gradient / clearcoat_normal（-1=无）
     - record: draw3d
       fields:
         - { name: mesh,          type: int32_t }

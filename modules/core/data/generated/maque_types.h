@@ -1505,6 +1505,11 @@ enum class CullMode : int32_t {
     Back  = 2,
 };
 
+enum class DepthPacking : int32_t {
+    Basic = 0,
+    RGBA  = 1,
+};
+
 enum class FileFormat : int32_t {
     PNG = 0,
     JPG = 1,
@@ -1529,6 +1534,25 @@ struct Key {
     float out_tangent = 0.0F;
 };
 static_assert(sizeof(Key) == 28, "Key must be 28 bytes");
+
+enum class MaterialShadingModel : int32_t {
+    Standard = 0,
+    Physical = 1,
+    Basic    = 2,
+    Lambert  = 3,
+    Phong    = 4,
+    Toon     = 5,
+    Normal   = 6,
+    Matcap   = 7,
+    Depth    = 8,
+    Shadow   = 9,
+};
+
+enum class MaterialSide : int32_t {
+    Front  = 0,
+    Back   = 1,
+    Double = 2,
+};
 
 struct NavMeshData {
     std::string name;
@@ -1719,6 +1743,32 @@ struct PbrMaterial {
     std::string normal_texture = "";
     std::string occlusion_texture = "";
     std::string emissive_texture = "";
+    asset::MaterialShadingModel shading_model = MaterialShadingModel::Standard;
+    float opacity = 1.0F;
+    asset::MaterialSide side = MaterialSide::Double;
+    bool flat_shading = false;
+    float emissive_intensity = 1.0F;
+    float env_intensity = 1.0F;
+    float normal_scale_y = 1.0F;
+    math::Vec3 specular = {1.0F, 1.0F, 1.0F};
+    float shininess = 30.0F;
+    float specular_intensity = 1.0F;
+    float ior = 1.5F;
+    float sheen = 0.0F;
+    float sheen_roughness = 0.5F;
+    math::Vec3 sheen_color = {0.0F, 0.0F, 0.0F};
+    float iridescence = 0.0F;
+    float iridescence_ior = 1.3F;
+    float iridescence_thickness_min = 100.0F;
+    float iridescence_thickness_max = 400.0F;
+    float anisotropy = 0.0F;
+    float anisotropy_rotation = 0.0F;
+    float clearcoat_normal_scale = 1.0F;
+    int32_t toon_steps = 3;
+    asset::DepthPacking depth_packing = DepthPacking::Basic;
+    std::string matcap_texture = "";
+    std::string gradient_texture = "";
+    std::string clearcoat_normal_texture = "";
 };
 
 struct SkeletonData {

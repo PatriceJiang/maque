@@ -385,6 +385,32 @@ static const mq_field_desc mq_fields_asset_PbrMaterial[] = {
     { "normal_texture", (uint32_t)offsetof(asset::PbrMaterial, normal_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "occlusion_texture", (uint32_t)offsetof(asset::PbrMaterial, occlusion_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "emissive_texture", (uint32_t)offsetof(asset::PbrMaterial, emissive_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shading_model", (uint32_t)offsetof(asset::PbrMaterial, shading_model), MQ_TK_ENUM, 3420218605u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "opacity", (uint32_t)offsetof(asset::PbrMaterial, opacity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "side", (uint32_t)offsetof(asset::PbrMaterial, side), MQ_TK_ENUM, 2939004181u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "flat_shading", (uint32_t)offsetof(asset::PbrMaterial, flat_shading), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "emissive_intensity", (uint32_t)offsetof(asset::PbrMaterial, emissive_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "env_intensity", (uint32_t)offsetof(asset::PbrMaterial, env_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "normal_scale_y", (uint32_t)offsetof(asset::PbrMaterial, normal_scale_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "specular", (uint32_t)offsetof(asset::PbrMaterial, specular), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shininess", (uint32_t)offsetof(asset::PbrMaterial, shininess), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "specular_intensity", (uint32_t)offsetof(asset::PbrMaterial, specular_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "ior", (uint32_t)offsetof(asset::PbrMaterial, ior), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "sheen", (uint32_t)offsetof(asset::PbrMaterial, sheen), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "sheen_roughness", (uint32_t)offsetof(asset::PbrMaterial, sheen_roughness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "sheen_color", (uint32_t)offsetof(asset::PbrMaterial, sheen_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "iridescence", (uint32_t)offsetof(asset::PbrMaterial, iridescence), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "iridescence_ior", (uint32_t)offsetof(asset::PbrMaterial, iridescence_ior), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "iridescence_thickness_min", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_min), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "iridescence_thickness_max", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_max), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "anisotropy", (uint32_t)offsetof(asset::PbrMaterial, anisotropy), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "anisotropy_rotation", (uint32_t)offsetof(asset::PbrMaterial, anisotropy_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clearcoat_normal_scale", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_normal_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "toon_steps", (uint32_t)offsetof(asset::PbrMaterial, toon_steps), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "depth_packing", (uint32_t)offsetof(asset::PbrMaterial, depth_packing), MQ_TK_ENUM, 483116663u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "matcap_texture", (uint32_t)offsetof(asset::PbrMaterial, matcap_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "gradient_texture", (uint32_t)offsetof(asset::PbrMaterial, gradient_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clearcoat_normal_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_normal_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_asset_Prefab[] = {
@@ -1707,6 +1733,11 @@ static const mq_enum_value mq_values_asset_CullMode[] = {
     { "Back", (int64_t)2 },
 };
 
+static const mq_enum_value mq_values_asset_DepthPacking[] = {
+    { "Basic", (int64_t)0 },
+    { "RGBA", (int64_t)1 },
+};
+
 static const mq_enum_value mq_values_asset_FileFormat[] = {
     { "PNG", (int64_t)0 },
     { "JPG", (int64_t)1 },
@@ -1722,6 +1753,25 @@ static const mq_enum_value mq_values_asset_FontMode[] = {
     { "Bitmap", (int64_t)0 },
     { "SDF", (int64_t)1 },
     { "MSDF", (int64_t)2 },
+};
+
+static const mq_enum_value mq_values_asset_MaterialShadingModel[] = {
+    { "Standard", (int64_t)0 },
+    { "Physical", (int64_t)1 },
+    { "Basic", (int64_t)2 },
+    { "Lambert", (int64_t)3 },
+    { "Phong", (int64_t)4 },
+    { "Toon", (int64_t)5 },
+    { "Normal", (int64_t)6 },
+    { "Matcap", (int64_t)7 },
+    { "Depth", (int64_t)8 },
+    { "Shadow", (int64_t)9 },
+};
+
+static const mq_enum_value mq_values_asset_MaterialSide[] = {
+    { "Front", (int64_t)0 },
+    { "Back", (int64_t)1 },
+    { "Double", (int64_t)2 },
 };
 
 static const mq_enum_value mq_values_asset_ParamType[] = {
@@ -2396,6 +2446,7 @@ static void mq_defaults_asset_BlendFactor(void* p) { new (p) asset::BlendFactor{
 static void mq_defaults_asset_BoneB(void* p) { new (p) asset::BoneB{}; }
 static void mq_defaults_asset_CharsetPreset(void* p) { new (p) asset::CharsetPreset{}; }
 static void mq_defaults_asset_CullMode(void* p) { new (p) asset::CullMode{}; }
+static void mq_defaults_asset_DepthPacking(void* p) { new (p) asset::DepthPacking{}; }
 static void mq_defaults_asset_Effect(void* p) { new (p) asset::Effect{}; }
 static void mq_defaults_asset_EffectParam(void* p) { new (p) asset::EffectParam{}; }
 static void mq_defaults_asset_FileFormat(void* p) { new (p) asset::FileFormat{}; }
@@ -2406,6 +2457,8 @@ static void mq_defaults_asset_Key(void* p) { new (p) asset::Key{}; }
 static void mq_defaults_asset_Material(void* p) { new (p) asset::Material{}; }
 static void mq_defaults_asset_MaterialInstance(void* p) { new (p) asset::MaterialInstance{}; }
 static void mq_defaults_asset_MaterialParam(void* p) { new (p) asset::MaterialParam{}; }
+static void mq_defaults_asset_MaterialShadingModel(void* p) { new (p) asset::MaterialShadingModel{}; }
+static void mq_defaults_asset_MaterialSide(void* p) { new (p) asset::MaterialSide{}; }
 static void mq_defaults_asset_Mesh(void* p) { new (p) asset::Mesh{}; }
 static void mq_defaults_asset_NavMeshData(void* p) { new (p) asset::NavMeshData{}; }
 static void mq_defaults_asset_ParamType(void* p) { new (p) asset::ParamType{}; }
@@ -3135,6 +3188,20 @@ extern const mq_type_desc mq_type_asset_CullMode = {
     mq_defaults_asset_CullMode,
 };
 
+extern const mq_type_desc mq_type_asset_DepthPacking = {
+    "asset.DepthPacking",
+    483116663u,
+    (uint32_t)sizeof(asset::DepthPacking),
+    (uint32_t)alignof(asset::DepthPacking),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_asset_DepthPacking,
+    2u,
+    mq_defaults_asset_DepthPacking,
+};
+
 extern const mq_type_desc mq_type_asset_Effect = {
     "asset.Effect",
     1886629898u,
@@ -3275,6 +3342,34 @@ extern const mq_type_desc mq_type_asset_MaterialParam = {
     mq_defaults_asset_MaterialParam,
 };
 
+extern const mq_type_desc mq_type_asset_MaterialShadingModel = {
+    "asset.MaterialShadingModel",
+    3420218605u,
+    (uint32_t)sizeof(asset::MaterialShadingModel),
+    (uint32_t)alignof(asset::MaterialShadingModel),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_asset_MaterialShadingModel,
+    10u,
+    mq_defaults_asset_MaterialShadingModel,
+};
+
+extern const mq_type_desc mq_type_asset_MaterialSide = {
+    "asset.MaterialSide",
+    2939004181u,
+    (uint32_t)sizeof(asset::MaterialSide),
+    (uint32_t)alignof(asset::MaterialSide),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_asset_MaterialSide,
+    3u,
+    mq_defaults_asset_MaterialSide,
+};
+
 extern const mq_type_desc mq_type_asset_Mesh = {
     "asset.Mesh",
     3507804226u,
@@ -3336,7 +3431,7 @@ extern const mq_type_desc mq_type_asset_PbrMaterial = {
     460266568u,
     (uint32_t)sizeof(asset::PbrMaterial),
     (uint32_t)alignof(asset::PbrMaterial),
-    17u,
+    43u,
     mq_fields_asset_PbrMaterial,
     4u,
     0u,
@@ -6058,6 +6153,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_asset_BoneB,
     &mq_type_asset_CharsetPreset,
     &mq_type_asset_CullMode,
+    &mq_type_asset_DepthPacking,
     &mq_type_asset_Effect,
     &mq_type_asset_EffectParam,
     &mq_type_asset_FileFormat,
@@ -6068,6 +6164,8 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_asset_Material,
     &mq_type_asset_MaterialInstance,
     &mq_type_asset_MaterialParam,
+    &mq_type_asset_MaterialShadingModel,
+    &mq_type_asset_MaterialSide,
     &mq_type_asset_Mesh,
     &mq_type_asset_NavMeshData,
     &mq_type_asset_ParamType,
@@ -6266,7 +6364,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 244u;
+const uint32_t mq_schema_type_count = 247u;
 
 #ifdef __cplusplus
 } // extern "C"

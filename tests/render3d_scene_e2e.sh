@@ -110,22 +110,26 @@ w, h = map(int, dims.split())
 def lum(i):
     return 0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2]
 def stats(lo, hi):
-    s = n = 0
+    s = n = hot = 0
     for y in range(h):
         for x in range(lo, hi):
             v = lum((y*w+x)*3)
             if v > 30:
                 s += v
                 n += 1
-    return s / max(1, n), n
-lm, ln = stats(0, w // 2)
-rm, rn = stats(w // 2, w)
+                if v > 110:
+                    hot += 1
+    return s / max(1, n), n, hot
+lm, ln, lhot = stats(0, w // 2)
+rm, rn, rhot = stats(w // 2, w)
 bg = px[0:3]
 nonbg = sum(1 for i in range(0, len(px), 3)
             if abs(px[i]-bg[0]) + abs(px[i+1]-bg[1]) + abs(px[i+2]-bg[2]) > 25)
-print(f'render3d_scene_e2e: PBR smooth_mean={lm:.1f} rough_mean={rm:.1f} nonbg={nonbg/(w*h):.3f}')
-# 粗糙度对比：粗糙面把能量摊开 → 平均亮度显著高于光滑面（贴图/采样通路由上面的 grep 断言）
-ok = (ln > 500 and rn > 500 and rm > lm + 15 and nonbg / (w*h) > 0.05)
+print(f'render3d_scene_e2e: PBR smooth_mean={lm:.1f} rough_mean={rm:.1f} hot={lhot}/{rhot} nonbg={nonbg/(w*h):.3f}')
+# 粗糙度对比：光滑金属只有窄高光（几乎没有 >110 热像素），粗糙金属把能量摊开到整面（大量热像素）。
+# 注：M1 修复"无 normal_map 时把 1×1 白纹理当法线贴图"的缺省错误后，旧的平均亮度差断言不再成立；
+#     这里改用高光能量分布（热像素数）断言，仍能区分"粗糙度被忽略"的回归。
+ok = (ln > 500 and rn > 500 and lhot < 20 and rhot > 50 and nonbg / (w*h) > 0.05)
 sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: ③ PBR 材质（GGX/tonemap，粗糙度对比）OK"
@@ -288,7 +292,11 @@ def lum(px, i):
     return 0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2]
 darker = sum(1 for i in range(0, len(a), 3) if lum(a, i) + 15.0 < lum(b, i))
 print(f'render3d_scene_e2e: shadow darker_pixels={darker} of {w*h}')
-sys.exit(0 if darker > 2000 else 1)
+# M6/plans/19 修复阴影两处数学 bug（light 正交近远平面传反 + shadow uv.y 未翻）后，
+# 正确阴影 = cube 投影的紧凑四边形（数百像素），不再是"整个 shadow 视锥误判"（数万像素）。
+# 双边界断言：既要有真实投影，也不能回退成大范围误遮挡。
+ok = (darker > 300 and darker < w * h // 4)
+sys.exit(0 if ok else 1)
 PY
     echo "render3d_scene_e2e: ⑨ 方向光阴影（shadow map + PCF）OK"
 fi

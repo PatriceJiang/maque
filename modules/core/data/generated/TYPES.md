@@ -3,7 +3,7 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **244** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **247** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
 ## anim（29） · `world/anim.yaml`
 
@@ -309,7 +309,7 @@ role: `spine_skeleton`
 | `Process` | 0 |
 | `Physics` | 1 |
 
-## asset（43） · `asset.yaml`
+## asset（46） · `asset.yaml`
 
 ### asset.AnimationClip — struct (变长（含动态成员）)
 
@@ -394,6 +394,13 @@ role: `spine_skeleton`
 | `None` | 0 |
 | `Front` | 1 |
 | `Back` | 2 |
+
+### asset.DepthPacking — enum
+
+| 值 | 数值 |
+|----|------|
+| `Basic` | 0 |
+| `RGBA` | 1 |
 
 ### asset.Effect — struct (变长（含动态成员）)
 
@@ -492,6 +499,29 @@ role: `spine_skeleton`
 | `type` | ParamType | ParamType::Float |  |
 | `value` | string | — |  |
 
+### asset.MaterialShadingModel — enum
+
+| 值 | 数值 |
+|----|------|
+| `Standard` | 0 |
+| `Physical` | 1 |
+| `Basic` | 2 |
+| `Lambert` | 3 |
+| `Phong` | 4 |
+| `Toon` | 5 |
+| `Normal` | 6 |
+| `Matcap` | 7 |
+| `Depth` | 8 |
+| `Shadow` | 9 |
+
+### asset.MaterialSide — enum
+
+| 值 | 数值 |
+|----|------|
+| `Front` | 0 |
+| `Back` | 1 |
+| `Double` | 2 |
+
 ### asset.Mesh — struct (变长（含动态成员）)
 
 | 字段 | 类型 | 默认值 | attrs |
@@ -564,6 +594,32 @@ role: `pbr_material`
 | `normal_texture` | string |  |  |
 | `occlusion_texture` | string |  |  |
 | `emissive_texture` | string |  |  |
+| `shading_model` | MaterialShadingModel | MaterialShadingModel::Standard |  |
+| `opacity` | float | 1.0F | range: 0,1 |
+| `side` | MaterialSide | MaterialSide::Double |  |
+| `flat_shading` | bool | false |  |
+| `emissive_intensity` | float | 1.0F |  |
+| `env_intensity` | float | 1.0F |  |
+| `normal_scale_y` | float | 1.0F |  |
+| `specular` | math.Vec3 | {1.0F, 1.0F, 1.0F} |  |
+| `shininess` | float | 30.0F |  |
+| `specular_intensity` | float | 1.0F |  |
+| `ior` | float | 1.5F |  |
+| `sheen` | float | 0.0F | range: 0,1 |
+| `sheen_roughness` | float | 0.5F |  |
+| `sheen_color` | math.Vec3 | {0.0F, 0.0F, 0.0F} |  |
+| `iridescence` | float | 0.0F | range: 0,1 |
+| `iridescence_ior` | float | 1.3F |  |
+| `iridescence_thickness_min` | float | 100.0F | unit: nm |
+| `iridescence_thickness_max` | float | 400.0F | unit: nm |
+| `anisotropy` | float | 0.0F | range: 0,1 |
+| `anisotropy_rotation` | float | 0.0F |  |
+| `clearcoat_normal_scale` | float | 1.0F |  |
+| `toon_steps` | int32_t | 3 |  |
+| `depth_packing` | DepthPacking | DepthPacking::Basic |  |
+| `matcap_texture` | string |  |  |
+| `gradient_texture` | string |  |  |
+| `clearcoat_normal_texture` | string |  |  |
 
 ### asset.PixelFormat — enum
 

@@ -56,6 +56,7 @@
 | 15 | renderer（WebGPU / pass 层） | [15-renderer.md](15-renderer.md) | `agent-renderer` | docs/13 |
 | 16 | script（quickjs 为主） | [16-script.md](16-script.md) | `agent-script` | docs/14 |
 | 18 | **PBR 材质系统与 3D 渲染（直接呈现）** | [18-pbr-3d.md](18-pbr-3d.md) | `agent-render3d` | docs/13、components/03/14、assets/01/03 |
+| 19 | **three.js 材质迁移（多着色模型）** | [19-threejs-materials.md](19-threejs-materials.md) | `agent-render3d` | docs/13、assets/01、plans/18 |
 
 ## 4. 交付顺序（依赖驱动）
 
@@ -90,6 +91,7 @@
 | 15 | renderer（WebGPU/pass 层） | ✅ | ✅ | ✅ | 🟡 | 相机/分层/批处理/alpha 合成已落地；pass 图待做 |
 | 16 | script（quickjs） | ✅ | ✅ | ✅ | 🟡 | 绑定生成 + 事件回调 + 热重载；capability 沙箱待做 |
 | 18 | PBR/3D 渲染（直接呈现） | ✅ | ✅ M4g | 🟡 | 🟡 | M0 接口 · M1 直呈 · M2 3D pass+`render.*` · M3 PBR · M4a albedo · M4b glTF 导入 · M4c 运行时加载 .mesh.json · M4d MR/AO 贴图槽；阴影/法线贴图待做 |
+| 19 | three.js 材质迁移（多着色模型） | ✅ | ✅ M1 | 🟡 | 🟡 | M1 schema/ABI/管线/10 个 fragment entry；M2/M3 场景+Physical 扩展+importer 扩展；Points/Line/Sprite 未做 |
 
 **声明即真相（docs/21）**：公开接口全部在 `modules/core/data/schema/` 声明一次 → 生成
 类型头/描述符/JSON（`class_list`）、引擎 API 声明 + JS 绑定（`api_list`）、插件 C vtable（`interface`）、
@@ -106,4 +108,5 @@
 `hot_reload_e2e`、`anim_e2e`、`editor_e2e`、`prefab_e2e`、`crash_context_e2e`、`nav_e2e`、
 `host_tick`、`host_multi_instance`。
 **附加计划**：[17](17-inspector.md) 游戏检查器（ImGui + TCP 控制面，独立进程）；
-[18](18-pbr-3d.md) PBR 材质系统与 3D 渲染（直接呈现；M0 接口冻结已完成）。
+[18](18-pbr-3d.md) PBR 材质系统与 3D 渲染（直接呈现；M0 接口冻结已完成）；
+[19](19-threejs-materials.md) three.js 材质迁移（多着色模型：Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/Depth/Shadow）。

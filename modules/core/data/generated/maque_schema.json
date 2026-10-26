@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 244,
+  "type_count": 247,
   "api_count": 284,
   "control_count": 49,
   "callback_count": 10,
@@ -2099,6 +2099,29 @@
       "fields": []
     },
     {
+      "name": "asset.DepthPacking",
+      "namespace": "asset",
+      "kind": "enum",
+      "type_id": 483116663,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "asset.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Basic",
+          "value": 0
+        },
+        {
+          "name": "RGBA",
+          "value": 1
+        }
+      ],
+      "fields": []
+    },
+    {
       "name": "asset.Effect",
       "namespace": "asset",
       "kind": "struct",
@@ -2624,6 +2647,88 @@
       ]
     },
     {
+      "name": "asset.MaterialShadingModel",
+      "namespace": "asset",
+      "kind": "enum",
+      "type_id": 3420218605,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "asset.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Standard",
+          "value": 0
+        },
+        {
+          "name": "Physical",
+          "value": 1
+        },
+        {
+          "name": "Basic",
+          "value": 2
+        },
+        {
+          "name": "Lambert",
+          "value": 3
+        },
+        {
+          "name": "Phong",
+          "value": 4
+        },
+        {
+          "name": "Toon",
+          "value": 5
+        },
+        {
+          "name": "Normal",
+          "value": 6
+        },
+        {
+          "name": "Matcap",
+          "value": 7
+        },
+        {
+          "name": "Depth",
+          "value": 8
+        },
+        {
+          "name": "Shadow",
+          "value": 9
+        }
+      ],
+      "fields": []
+    },
+    {
+      "name": "asset.MaterialSide",
+      "namespace": "asset",
+      "kind": "enum",
+      "type_id": 2939004181,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "asset.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Front",
+          "value": 0
+        },
+        {
+          "name": "Back",
+          "value": 1
+        },
+        {
+          "name": "Double",
+          "value": 2
+        }
+      ],
+      "fields": []
+    },
+    {
       "name": "asset.Mesh",
       "namespace": "asset",
       "kind": "struct",
@@ -3064,6 +3169,264 @@
         },
         {
           "name": "emissive_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "shading_model",
+          "type": "MaterialShadingModel",
+          "kind": "enum",
+          "type_id": 3420218605,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "opacity",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "side",
+          "type": "MaterialSide",
+          "kind": "enum",
+          "type_id": 2939004181,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "flat_shading",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "emissive_intensity",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_intensity",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "normal_scale_y",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "specular",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "shininess",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "specular_intensity",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "ior",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "sheen",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "sheen_roughness",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "sheen_color",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "iridescence",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "iridescence_ior",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "iridescence_thickness_min",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "nm"
+          }
+        },
+        {
+          "name": "iridescence_thickness_max",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "nm"
+          }
+        },
+        {
+          "name": "anisotropy",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "anisotropy_rotation",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "clearcoat_normal_scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "toon_steps",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "depth_packing",
+          "type": "DepthPacking",
+          "kind": "enum",
+          "type_id": 483116663,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "matcap_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "gradient_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "clearcoat_normal_texture",
           "type": "string",
           "kind": "string",
           "type_id": 0,

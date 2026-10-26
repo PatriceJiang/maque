@@ -136,12 +136,27 @@ tools\win\build.cmd -Sanitize address -RunTests
   **清漆层（M5e）**：`asset.PbrMaterial.clearcoat/clearcoat_roughness`（KHR_materials_clearcoat 对齐）——
   独立 F0=0.04 的窄高光（roughness 独立于底材），方向光逐灯叠加。
   **阴影（M5c）**：方向光 **1024² shadow map + 3×3 PCF**（`MAQUE_SHADOW=0` 可关闭用于对照）；
-  shadow map 仅作深度附件、采样用独立 view（camera uniform 720B：+light_vp/shadow_params）。
+  shadow map 仅作深度附件、采样用独立 view（camera uniform 784B：+light_vp/shadow_params +view 矩阵）。
   样例 `scenes/pbr/shadows.scn`，e2e ⑨ 用开/关同场景像素差断言。
   **多光源（M5b）**：`render.Light.type` 支持 **Directional(0)/Point(1)/Spot(2)**，最多 8 盏同时生效（点光/聚光带范围衰减与锥角平滑衰减；相机 uniform 640B：8×{pos,dir,color,params}）；样例 `scenes/pbr/lights.scn`，e2e ⑧ 断言红点光/绿聚光的投影差异。
   **M4d 贴图槽**：`base_color_texture` / `metallic_roughness_texture`（G=roughness、B=metallic）/
-  `occlusion_texture`（R）/ `normal_texture`（切线空间，shader 用屏幕空间导数构造切线基，无需 TANGENT 属性）四条路径 → 运行时加载为纹理句柄；材质未给的槽默认 **-1** → 渲染器绑 1×1 白纹理
-  （参数乘 1 不变）。法线贴图（需切线空间）与阴影仍待做。
+  `occlusion_texture`（R）/ `normal_texture`（切线空间，shader 用屏幕空间导数构造切线基，无需 TANGENT 属性）四条路径 → 运行时加载为纹理句柄；材质未给的槽默认 **-1** → 渲染器绑 1×1 白纹理/中性法线
+  （参数乘 1、法线不扰动）。
+- **3D 材质模型（plans/19 / 材质迁移）**：`asset.PbrMaterial.shading_model` 选择 10 种 three.js 对齐模型——
+  Standard(0)/Physical(1)/Basic(2)/Lambert(3)/Phong(4)/Toon(5)/Normal(6)/Matcap(7)/Depth(8)/Shadow(9)；
+  同一个 `pbr` shader 模块的 10 个 fragment 入口实现（`fs_standard`/…/`fs_shadow`），
+  gfx 按 `(shading_model, blend, side)` 懒建管线（`side` → cullMode，缺省 Double 兼容旧 cull=None）。
+  追加字段：`opacity`/`side`/`flat_shading`/`emissive_intensity`/`env_intensity`/`normal_scale_y`/`specular`/
+  `shininess`/`specular_intensity`/`ior`/`sheen`(+color/roughness)/`iridescence`(+ior/thickness)/
+  `anisotropy`(+rotation)/`clearcoat_normal_scale`/`toon_steps`/`depth_packing` + 3 个贴图路径
+  （`matcap_texture`/`gradient_texture`/`clearcoat_normal_texture`）。材质 uniform **256B（64 floats）**，
+  camera uniform **784B（+view 矩阵，matcap 用 view-space 法线）**；贴图槽 8 张。
+  内置程序化纹理 `builtin:/textures/toon_ramp`、`builtin:/textures/matcap_studio`。
+  样例 `scenes/pbr/material_models.scn`（9 个网格模型）、`material_shadow.scn`（shadow catcher）、
+  `material_physical.scn`；测试 `ctest -R 'material_.*_e2e'`。glTF importer 支持
+  KHR_materials_unlit/clearcoat/sheen/iridescence/specular/ior/anisotropy/emissive_strength
+  （transmission/IBL/Points/Line/Sprite 未做，见 plans/19 §1）。
+  附带修复：无 `normal_map` 时改用 1×1 中性法线（旧版误用白纹理导致法线扰动，Standard 观感有小幅变化）。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

@@ -25,7 +25,7 @@ namespace maque::gfx {
 static_assert(sizeof(mq_renderer_caps) == 32, "mq_renderer_caps 应为 8×int32");
 static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂移（view/proj 各 64B + 后段）");
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
-static_assert(sizeof(mq_renderer_pbr_material) == 100, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat）");
+static_assert(sizeof(mq_renderer_pbr_material) == 220, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型）");
 static_assert(sizeof(mq_renderer_environment) == 48, "mq_renderer_environment 布局漂移");
 static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
 static_assert(sizeof(mq_renderer_draw3d) == 96, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64）");
@@ -86,13 +86,14 @@ struct Device {
     WGPUTexture depthTex = nullptr;
     WGPUTextureView depthView = nullptr;
     int32_t depthW = 0, depthH = 0;
-    WGPUTextureFormat p3dFormat = WGPUTextureFormat_Undefined;   /* unlit3d 管线当前目标格式 */
-    WGPURenderPipeline p3dPipeline = nullptr;
+    WGPUTextureFormat p3dFormat = WGPUTextureFormat_Undefined;   /* 3D 材质管线当前目标格式 */
     WGPUBindGroupLayout p3dCamBgl = nullptr;
     WGPUBindGroupLayout p3dDrawBgl = nullptr;
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
-    WGPURenderPipeline p3dBlendPipeline = nullptr;   /* alpha blend（不写深度，画在不透明之后） */
+    /* 多材质模型管线：[shading_model 0..9][blend 0/1][cull 0..2]，按需创建（plans/19） */
+    WGPURenderPipeline p3dMatPipeline[10][2][3] = {};
+    bool p3dMatWarned[10] = {};
     /* M5c 方向光阴影：1024² depth map + comparison sampler + 1×1 深度占位（避免同 pass 同纹理读写） */
     WGPUTexture shadowTex = nullptr;
     WGPUTextureView shadowView = nullptr;
@@ -105,6 +106,9 @@ struct Device {
     /* PBR 贴图缺省：1×1 白纹理（材质没给 albedo 贴图时绑定它，基色乘 1） */
     WGPUTexture whiteTex = nullptr;
     WGPUTextureView whiteTexView = nullptr;
+    /* 法线贴图缺省：1×1 中性法线 (0.5,0.5,1) → 解码 (0,0,1)，不扰动几何法线 */
+    WGPUTexture neutralNormalTex = nullptr;
+    WGPUTextureView neutralNormalView = nullptr;
     /* ---- 3D GPU 资源（plans/18-pbr-3d.md §4.3）---- */
     std::vector<MeshGpu*> meshes;
 };
@@ -250,10 +254,29 @@ static bool ensure_depth(Device* dv, int32_t w, int32_t h) {
 }
 
 /* pbr 管线：按**目标颜色格式**创建（swapchain/离屏各一），depth32 + Cook-Torrance。 */
+/* 材质模型 → fragment entry point / 诊断名（与 assets/builtin/shaders/pbr/ 的入口名一致） */
+static const char* const kMatFsEntry[10] = {
+    "fs_standard", "fs_physical", "fs_basic", "fs_lambert", "fs_phong",
+    "fs_toon", "fs_normal", "fs_matcap", "fs_depth", "fs_shadow",
+};
+static const char* const kMatName[10] = {
+    "Standard", "Physical", "Basic", "Lambert", "Phong", "Toon", "Normal", "Matcap", "Depth", "Shadow",
+};
+
+static void release_material_pipelines(Device* dv) {
+    for (int m = 0; m < 10; ++m)
+        for (int b = 0; b < 2; ++b)
+            for (int c = 0; c < 3; ++c)
+                if (dv->p3dMatPipeline[m][b][c]) {
+                    wgpuRenderPipelineRelease(dv->p3dMatPipeline[m][b][c]);
+                    dv->p3dMatPipeline[m][b][c] = nullptr;
+                }
+}
+
 static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
     if (!dv) return;
-    if (dv->p3dFormat == format && dv->p3dPipeline) return;
-    if (dv->p3dPipeline) { wgpuRenderPipelineRelease(dv->p3dPipeline); dv->p3dPipeline = nullptr; }
+    const bool have_res = dv->p3dShader && dv->p3dPl && dv->p3dCamBgl && dv->p3dDrawBgl;
+    if (have_res && dv->p3dFormat == format) return;
     if (!dv->p3dShader) {
         const char* wgsl = mq_builtin_shader_text("pbr");
         if (!wgsl) {
@@ -269,7 +292,7 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         {
             WGPUBindGroupLayoutEntry e[3] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 720;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 784;
             e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
             e[1].texture.sampleType = WGPUTextureSampleType_Depth;
             e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
@@ -307,27 +330,20 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
             dv->shadowSampler = wgpuDeviceCreateSampler(dv->device, &smp);
         }
         {
-            WGPUBindGroupLayoutEntry e[7] = {};
+            /* group1：材质 uniform（256B）+ 8 张贴图 + sampler（plans/19 材质模型扩展） */
+            WGPUBindGroupLayoutEntry e[10] = {};
             e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 144;
-            e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
-            e[1].texture.sampleType = WGPUTextureSampleType_Float;
-            e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
+            e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 256;
+            for (int ti = 1; ti <= 9; ++ti) {
+                if (ti == 2) continue;                       /* binding2 = sampler */
+                e[ti].binding = (uint32_t)ti;
+                e[ti].visibility = WGPUShaderStage_Fragment;
+                e[ti].texture.sampleType = WGPUTextureSampleType_Float;
+                e[ti].texture.viewDimension = WGPUTextureViewDimension_2D;
+            }
             e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment;
             e[2].sampler.type = WGPUSamplerBindingType_Filtering;
-            e[3].binding = 3; e[3].visibility = WGPUShaderStage_Fragment;   /* metallic-roughness */
-            e[3].texture.sampleType = WGPUTextureSampleType_Float;
-            e[3].texture.viewDimension = WGPUTextureViewDimension_2D;
-            e[4].binding = 4; e[4].visibility = WGPUShaderStage_Fragment;   /* occlusion */
-            e[4].texture.sampleType = WGPUTextureSampleType_Float;
-            e[4].texture.viewDimension = WGPUTextureViewDimension_2D;
-            e[5].binding = 5; e[5].visibility = WGPUShaderStage_Fragment;   /* normal map */
-            e[5].texture.sampleType = WGPUTextureSampleType_Float;
-            e[5].texture.viewDimension = WGPUTextureViewDimension_2D;
-            e[6].binding = 6; e[6].visibility = WGPUShaderStage_Fragment;   /* emissive map */
-            e[6].texture.sampleType = WGPUTextureSampleType_Float;
-            e[6].texture.viewDimension = WGPUTextureViewDimension_2D;
-            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 7; bd.entries = e;
+            WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT; bd.entryCount = 10; bd.entries = e;
             dv->p3dDrawBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
         }
         WGPUBindGroupLayout bl[2] = { dv->p3dCamBgl, dv->p3dDrawBgl };
@@ -336,53 +352,11 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         dv->p3dPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
     }
     if (!dv->p3dShader || !dv->p3dPl) return;
-    WGPUColorTargetState ct = WGPU_COLOR_TARGET_STATE_INIT;
-    ct.format = format; ct.writeMask = WGPUColorWriteMask_All;
-    WGPUDepthStencilState ds = WGPU_DEPTH_STENCIL_STATE_INIT;
-    ds.format = WGPUTextureFormat_Depth32Float;
-    ds.depthWriteEnabled = WGPUOptionalBool_True;
-    ds.depthCompare = WGPUCompareFunction_Less;
-    WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT;
-    frag.module = dv->p3dShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &ct;
-    WGPUVertexAttribute attrs[3] = {};
-    attrs[0].format = WGPUVertexFormat_Float32x3; attrs[0].offset = 0;  attrs[0].shaderLocation = 0;
-    attrs[1].format = WGPUVertexFormat_Float32x3; attrs[1].offset = 12; attrs[1].shaderLocation = 1;
-    attrs[2].format = WGPUVertexFormat_Float32x2; attrs[2].offset = 40; attrs[2].shaderLocation = 2;
-    WGPUVertexBufferLayout vbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
-    vbl.stepMode = WGPUVertexStepMode_Vertex; vbl.arrayStride = 48;
-    vbl.attributeCount = 3; vbl.attributes = attrs;
-    WGPUVertexState vs = WGPU_VERTEX_STATE_INIT;
-    vs.module = dv->p3dShader; vs.entryPoint = SV("vs");
-    vs.bufferCount = 1; vs.buffers = &vbl;
-    WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-    rp.layout = dv->p3dPl; rp.vertex = vs; rp.fragment = &frag;
-    rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
-    rp.primitive.cullMode = WGPUCullMode_None;
-    rp.depthStencil = &ds;
-    dv->p3dPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
-    /* 透明 pass 管线：同一 shader/布局，srcAlpha 混合 + 不写深度（深度测试仍用不透明 pass 的结果） */
-    if (dv->p3dBlendPipeline) { wgpuRenderPipelineRelease(dv->p3dBlendPipeline); dv->p3dBlendPipeline = nullptr; }
-    {
-        WGPUBlendState blend = WGPU_BLEND_STATE_INIT;
-        blend.color.srcFactor = WGPUBlendFactor_SrcAlpha;
-        blend.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
-        blend.color.operation = WGPUBlendOperation_Add;
-        blend.alpha.srcFactor = WGPUBlendFactor_One;
-        blend.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
-        blend.alpha.operation = WGPUBlendOperation_Add;
-        WGPUColorTargetState ct2 = ct;
-        ct2.blend = &blend;
-        WGPUDepthStencilState ds2 = ds;
-        ds2.depthWriteEnabled = WGPUOptionalBool_False;
-        WGPUFragmentState frag2 = frag;
-        frag2.targets = &ct2;
-        WGPURenderPipelineDescriptor rp2 = rp;
-        rp2.fragment = &frag2;
-        rp2.depthStencil = &ds2;
-        dv->p3dBlendPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp2);
+    if (dv->p3dFormat != format) {
+        release_material_pipelines(dv);
+        dv->p3dFormat = format;
     }
-    dv->p3dFormat = dv->p3dPipeline ? format : WGPUTextureFormat_Undefined;
-    if (!dv->shadowPipeline && dv->p3dShader && dv->p3dPl && dv->shadowTex) {
+    if (!dv->shadowPipeline && dv->shadowTex) {
         WGPUDepthStencilState sds = WGPU_DEPTH_STENCIL_STATE_INIT;
         sds.format = WGPUTextureFormat_Depth32Float;
         sds.depthWriteEnabled = WGPUOptionalBool_True;
@@ -402,6 +376,57 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         srp.depthStencil = &sds;
         dv->shadowPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &srp);
     }
+}
+
+/* 按材质模型 / 透明混合 / 面朝向懒创建 3D 管线（plans/19）。
+ * shading_model 直接选择 fragment entry point；cull 由 side 决定（Front 剔背面 / Back 剔正面 / Double 不剔）。 */
+static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blend, int side) {
+    if (!dv || !dv->p3dShader || !dv->p3dPl) return nullptr;
+    model = (model < 0) ? 0 : (model > 9 ? 9 : model);
+    side = (side < 0) ? 2 : (side > 2 ? 2 : side);
+    const int b = blend ? 1 : 0;
+    if (WGPURenderPipeline& cached = dv->p3dMatPipeline[model][b][side]; cached) return cached;
+    WGPUColorTargetState ct = WGPU_COLOR_TARGET_STATE_INIT;
+    ct.format = dv->p3dFormat; ct.writeMask = WGPUColorWriteMask_All;
+    WGPUBlendState blend_state = WGPU_BLEND_STATE_INIT;
+    blend_state.color.srcFactor = WGPUBlendFactor_SrcAlpha;
+    blend_state.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+    blend_state.color.operation = WGPUBlendOperation_Add;
+    blend_state.alpha.srcFactor = WGPUBlendFactor_One;
+    blend_state.alpha.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+    blend_state.alpha.operation = WGPUBlendOperation_Add;
+    if (blend) ct.blend = &blend_state;
+    WGPUDepthStencilState ds = WGPU_DEPTH_STENCIL_STATE_INIT;
+    ds.format = WGPUTextureFormat_Depth32Float;
+    ds.depthWriteEnabled = blend ? WGPUOptionalBool_False : WGPUOptionalBool_True;
+    ds.depthCompare = WGPUCompareFunction_Less;
+    WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT;
+    frag.module = dv->p3dShader; frag.entryPoint = SV(kMatFsEntry[model]);
+    frag.targetCount = 1; frag.targets = &ct;
+    WGPUVertexAttribute attrs[3] = {};
+    attrs[0].format = WGPUVertexFormat_Float32x3; attrs[0].offset = 0;  attrs[0].shaderLocation = 0;
+    attrs[1].format = WGPUVertexFormat_Float32x3; attrs[1].offset = 12; attrs[1].shaderLocation = 1;
+    attrs[2].format = WGPUVertexFormat_Float32x2; attrs[2].offset = 40; attrs[2].shaderLocation = 2;
+    WGPUVertexBufferLayout vbl = WGPU_VERTEX_BUFFER_LAYOUT_INIT;
+    vbl.stepMode = WGPUVertexStepMode_Vertex; vbl.arrayStride = 48;
+    vbl.attributeCount = 3; vbl.attributes = attrs;
+    WGPUVertexState vs = WGPU_VERTEX_STATE_INIT;
+    vs.module = dv->p3dShader; vs.entryPoint = SV("vs");
+    vs.bufferCount = 1; vs.buffers = &vbl;
+    WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    rp.layout = dv->p3dPl; rp.vertex = vs; rp.fragment = &frag;
+    rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    rp.primitive.cullMode = (side == 0) ? WGPUCullMode_Back
+                          : (side == 1) ? WGPUCullMode_Front : WGPUCullMode_None;
+    rp.depthStencil = &ds;
+    WGPURenderPipeline pipe = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
+    dv->p3dMatPipeline[model][b][side] = pipe;
+    if (!pipe && !dv->p3dMatWarned[model]) {
+        dv->p3dMatWarned[model] = true;
+        std::print(stderr, "gfx: 材质模型 '{}' 管线创建失败（shader entry '{}' 缺失/校验失败）→ 该模型不渲染\n",
+                   kMatName[model], kMatFsEntry[model]);
+    }
+    return pipe;
 }
 
 /* 离屏 RGBA8 目标 → 像素缓冲（3D + 2D 合成后回读；--shot/CI 用）。 */
@@ -439,8 +464,9 @@ static int32_t readback_rgba8(Device* dv, WGPUTexture tex, int32_t W, int32_t H,
     return st == WGPUMapAsyncStatus_Success ? 0 : 3;
 }
 
-/* PBR 缺省 albedo：1×1 白纹理（材质没给 albedo 贴图时绑定它，基色乘 1）。 */
-static void create_white_texture(Device* dv) {
+/* 1×1 RGBA8 缺省纹理（白 / 中性法线等），CopyDst 写入后用于绑定。 */
+static void make_1x1_texture(Device* dv, WGPUTexture* out_tex, WGPUTextureView* out_view,
+                             uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
     td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
     td.dimension = WGPUTextureDimension_2D;
@@ -448,16 +474,23 @@ static void create_white_texture(Device* dv) {
     td.format = WGPUTextureFormat_RGBA8Unorm;
     td.mipLevelCount = 1;
     td.sampleCount = 1;
-    dv->whiteTex = wgpuDeviceCreateTexture(dv->device, &td);
-    if (!dv->whiteTex) return;
-    dv->whiteTexView = wgpuTextureCreateView(dv->whiteTex, nullptr);
-    const uint8_t px[4] = { 255, 255, 255, 255 };
+    WGPUTexture tex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!tex) return;
+    *out_tex = tex;
+    *out_view = wgpuTextureCreateView(tex, nullptr);
+    const uint8_t px[4] = { r, g, b, a };
     WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
-    dst.texture = dv->whiteTex; dst.aspect = WGPUTextureAspect_All;
+    dst.texture = tex; dst.aspect = WGPUTextureAspect_All;
     WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
     layout.bytesPerRow = 4; layout.rowsPerImage = 1;
     WGPUExtent3D sz = WGPUExtent3D{ 1, 1, 1 };
     wgpuQueueWriteTexture(dv->queue, &dst, px, sizeof px, &layout, &sz);
+}
+
+/* PBR 缺省 albedo/法线：1×1 白 + 1×1 中性法线。 */
+static void create_white_texture(Device* dv) {
+    make_1x1_texture(dv, &dv->whiteTex, &dv->whiteTexView, 255, 255, 255, 255);
+    make_1x1_texture(dv, &dv->neutralNormalTex, &dv->neutralNormalView, 128, 128, 255, 255);
 }
 
 static Device* create_device(std::string* out_backend) {
@@ -576,11 +609,12 @@ static void destroy_device(Device* dv) {
     if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
     if (dv->whiteTexView) wgpuTextureViewRelease(dv->whiteTexView);
     if (dv->whiteTex) wgpuTextureRelease(dv->whiteTex);
+    if (dv->neutralNormalView) wgpuTextureViewRelease(dv->neutralNormalView);
+    if (dv->neutralNormalTex) wgpuTextureRelease(dv->neutralNormalTex);
     /* M2 3D 资源 */
     if (dv->depthView) wgpuTextureViewRelease(dv->depthView);
     if (dv->depthTex) wgpuTextureRelease(dv->depthTex);
-    if (dv->p3dPipeline) wgpuRenderPipelineRelease(dv->p3dPipeline);
-    if (dv->p3dBlendPipeline) wgpuRenderPipelineRelease(dv->p3dBlendPipeline);
+    release_material_pipelines(dv);
     if (dv->shadowPipeline) wgpuRenderPipelineRelease(dv->shadowPipeline);
     if (dv->shadowSampler) wgpuSamplerRelease(dv->shadowSampler);
     if (dv->dummyDepthView) wgpuTextureViewRelease(dv->dummyDepthView);
@@ -1160,6 +1194,77 @@ static void mat4_ortho(float zn, float zf, float half, float* m) {
     m[0] = 1.0F / half; m[5] = 1.0F / half;
     m[10] = 1.0F / (zf - zn); m[14] = -zn / (zf - zn); m[15] = 1.0F;
 }
+/* 材质 uniform 打包（plans/19）：64 floats / 256B，与 pbr shader 的 Draw 结构逐项对应。
+ * 阴影 pass 与主 pass 共用同一函数，避免两处字段漂移。 */
+static constexpr int kMatUniformFloats = 64;
+static void pack_draw_uniform(float* du, const float model[16], const mq_renderer_pbr_material* mat) {
+    std::memset(du, 0, sizeof(float) * (size_t)kMatUniformFloats);
+    std::memcpy(du, model, sizeof(float) * 16);                    /* 0..15：模型矩阵 */
+    if (!mat) {
+        /* 无材质：沿用历史默认灰（基色白/粗糙度 0.6/无 clearcoat） */
+        du[16] = du[17] = du[18] = du[19] = 1.0F;
+        du[23] = 1.0F;                                             /* emissive_intensity */
+        du[25] = 0.6F;                                             /* roughness */
+        du[26] = 1.0F;                                             /* normal_scale */
+        du[27] = 1.0F;                                             /* occlusion */
+        du[28] = 0.5F;                                             /* alpha_cutoff */
+        du[32] = 0.0F; du[33] = 0.03F;                             /* clearcoat */
+        du[36] = 0.0F; du[37] = 2.0F; du[38] = 0.0F; du[39] = 1.0F;/* model/side/flags2/opacity */
+        du[40] = 1.0F; du[41] = 1.5F; du[42] = 30.0F; du[43] = 1.0F;
+        du[44] = 0.0F; du[45] = 0.5F; du[46] = 0.0F; du[47] = 1.3F;
+        du[48] = 100.0F; du[49] = 400.0F; du[50] = 0.0F; du[51] = 0.0F;
+        du[52] = 0.0F; du[53] = 1.0F; du[54] = 1.0F; du[55] = 3.0F;
+        du[56] = du[57] = du[58] = 1.0F;                           /* specular */
+        return;
+    }
+    du[16] = mat->base_color[0]; du[17] = mat->base_color[1];
+    du[18] = mat->base_color[2]; du[19] = mat->base_color[3];
+    du[20] = mat->emissive[0]; du[21] = mat->emissive[1]; du[22] = mat->emissive[2];
+    du[23] = mat->emissive_intensity;
+    du[24] = mat->metallic; du[25] = mat->roughness;
+    du[26] = mat->normal_scale; du[27] = mat->occlusion_strength;
+    du[28] = mat->alpha_cutoff; du[29] = (float)mat->alpha_mode; du[30] = (float)mat->flags;
+    du[32] = mat->clearcoat; du[33] = mat->clearcoat_roughness;
+    du[36] = (float)mat->shading_model; du[37] = (float)mat->side;
+    du[38] = (float)mat->flags2; du[39] = mat->opacity;
+    du[40] = mat->specular_intensity; du[41] = mat->ior;
+    du[42] = mat->shininess; du[43] = mat->env_intensity;
+    du[44] = mat->sheen; du[45] = mat->sheen_roughness;
+    du[46] = mat->iridescence; du[47] = mat->iridescence_ior;
+    du[48] = mat->iridescence_thickness_min; du[49] = mat->iridescence_thickness_max;
+    du[50] = mat->anisotropy; du[51] = mat->anisotropy_rotation;
+    du[52] = (float)mat->depth_packing; du[53] = mat->normal_scale_y;
+    du[54] = mat->clearcoat_normal_scale; du[55] = (float)mat->toon_steps;
+    du[56] = mat->specular[0]; du[57] = mat->specular[1]; du[58] = mat->specular[2];
+    du[60] = mat->sheen_color[0]; du[61] = mat->sheen_color[1]; du[62] = mat->sheen_color[2];
+}
+
+/* 材质贴图句柄 → 纹理 view（非法/未给 → fallback 缺省纹理） */
+static WGPUTextureView material_tex_view(Device* dv, int32_t handle, WGPUTextureView fallback) {
+    if (dv && handle >= 0 && (size_t)handle < dv->textures.size()) {
+        Texture* t = dv->textures[(size_t)handle];
+        if (t && t->view) return t->view;
+    }
+    return fallback;
+}
+
+static void fill_material_bind_entries(Device* dv, WGPUBindGroupEntry (&e)[10], WGPUBuffer buf, size_t buf_size,
+                                       const mq_renderer_pbr_material* mat) {
+    const WGPUTextureView white = dv->whiteTexView;
+    const WGPUTextureView neutral = dv->neutralNormalView ? dv->neutralNormalView : dv->whiteTexView;
+    std::memset(e, 0, sizeof(e));
+    e[0].binding = 0; e[0].buffer = buf; e[0].size = buf_size;
+    e[1].binding = 1; e[1].textureView = material_tex_view(dv, mat ? mat->textures[0] : -1, white);
+    e[2].binding = 2; e[2].sampler = dv->sampler;
+    e[3].binding = 3; e[3].textureView = material_tex_view(dv, mat ? mat->textures[1] : -1, white);
+    e[4].binding = 4; e[4].textureView = material_tex_view(dv, mat ? mat->textures[2] : -1, white);
+    e[5].binding = 5; e[5].textureView = material_tex_view(dv, mat ? mat->textures[3] : -1, neutral);
+    e[6].binding = 6; e[6].textureView = material_tex_view(dv, mat ? mat->textures[4] : -1, white);
+    e[7].binding = 7; e[7].textureView = material_tex_view(dv, mat ? mat->textures2[0] : -1, white);
+    e[8].binding = 8; e[8].textureView = material_tex_view(dv, mat ? mat->textures2[1] : -1, white);
+    e[9].binding = 9; e[9].textureView = material_tex_view(dv, mat ? mat->textures2[2] : -1, neutral);
+}
+
 /* M2：3D pass（depth + unlit3d）渲染进 target；2D 覆盖层由调用方随后
  * 用 render_impl(target, clear_first=false) 叠加（保持 2D 像素路径完全不变）。 */
 static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat target_format,
@@ -1171,7 +1276,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
     }();
     if (f->view_count == 0 || !f->views) return 0;
     ensure_3d_pipelines(dv, target_format);
-    if (!dv->p3dPipeline) return 0;                  /* shader 剔除：3D 跳过（原因已打印） */
+    if (!dv->p3dShader || !dv->p3dPl) return 0;      /* shader 剔除：3D 跳过（原因已打印） */
     if (!ensure_depth(dv, f->width, f->height)) return 2;
     WGPUTextureView view = wgpuTextureCreateView(target, nullptr);
     WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
@@ -1195,7 +1300,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         const mq_renderer_view3d& v = f->views[vi];
         float vp[16];
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
-        float cam[180] = {};
+        float cam[196] = {};
         std::memcpy(cam, vp, sizeof vp);
         cam[16] = v.eye[0]; cam[17] = v.eye[1]; cam[18] = v.eye[2]; cam[19] = v.exposure;
         cam[20] = ldir[0]; cam[21] = ldir[1]; cam[22] = ldir[2]; cam[23] = 0.0F;
@@ -1220,11 +1325,15 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                                   (std::fabs(ldir[1]) > 0.99F) ? 0.0F : 1.0F, 0.0F };
             float lview[16], lproj[16];
             mat4_look_at(eye, ctr, up, lview);
-            mat4_ortho(-dist - radius * 1.5F, -dist + radius * 1.5F, radius * 1.2F, lproj);
+            /* look_at 的视空间 z 对相机前方为负：近平面 = -(dist - 1.5r)、远平面 = -(dist + 1.5r)
+             * （plans/19 修复：旧调用把 zn/zf 传反 → 深度反向，阴影贴图几乎全被判为遮挡）。 */
+            mat4_ortho(-dist + radius * 1.5F, -dist - radius * 1.5F, radius * 1.2F, lproj);
             mat4_mul(lproj, lview, cam + 160);
             cam[176] = 0.0012F; cam[177] = 1.0F / 1024.0F;
             cam[178] = shadow_on ? 1.0F : 0.0F; cam[179] = 0.0F;
         }
+        /* 视矩阵（matcap 用 view-space 法线；plans/19）：camera uniform 尾部 16 floats */
+        std::memcpy(cam + 180, v.view, sizeof(float) * 16);
         /* 光照数组（8 盏）：每盏 16 float = pos(4, w=类型) + dir(4) + color(4) + params(4) */
         for (uint32_t li = 0; li < 8; ++li) {
             float* dst = cam + 32 + li * 16;
@@ -1254,7 +1363,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         WGPUBindGroupDescriptor cbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
         cbgd.layout = dv->p3dCamBgl; cbgd.entryCount = 3; cbgd.entries = cbe;
         WGPUBindGroup camBg = wgpuDeviceCreateBindGroup(dv->device, &cbgd);
-        /* 阴影深度 pass（仅首视图、场景相机同一帧）：用同一个 720B 相机块（light_vp 在 float 160 起） */
+        /* 阴影深度 pass（仅首视图、场景相机同一帧）：用同一个 784B 相机块（light_vp 在 float 160 起） */
         if (shadow_on && vi == 0 && dv->shadowPipeline && dv->shadowView) {
             WGPUBindGroupEntry sbe[3] = {};
             sbe[0].binding = 0; sbe[0].buffer = cbuf; sbe[0].size = sizeof cam;
@@ -1276,26 +1385,24 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             wgpuRenderPassEncoderSetBindGroup(spass, 0, sbg, 0, nullptr);
             for (uint32_t di = 0; di < f->draw_count; ++di) {
                 const mq_renderer_draw3d& d = f->draws[di];
+                const mq_renderer_pbr_material* smat =
+                    (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
+                        ? &f->materials[d.material] : nullptr;
+                if (smat && smat->shading_model == 9) continue;   /* ShadowMaterial 只接收阴影，不投射 */
                 if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
                 MeshGpu* m = dv->meshes[(size_t)d.mesh];
                 if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
-                float du[36] = {};
-                std::memcpy(du, d.model, sizeof d.model);
+                float du[kMatUniformFloats] = {};
+                pack_draw_uniform(du, d.model, nullptr);              /* 阴影 pass 只看几何 */
                 WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
                 dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
                 dbd.size = sizeof du;
                 WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
                 wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
-                WGPUBindGroupEntry dbe[7] = {};
-                dbe[0].binding = 0; dbe[0].buffer = dbuf; dbe[0].size = sizeof du;
-                dbe[1].binding = 1; dbe[1].textureView = dv->whiteTexView;
-                dbe[2].binding = 2; dbe[2].sampler = dv->sampler;
-                dbe[3].binding = 3; dbe[3].textureView = dv->whiteTexView;
-                dbe[4].binding = 4; dbe[4].textureView = dv->whiteTexView;
-                dbe[5].binding = 5; dbe[5].textureView = dv->whiteTexView;
-                dbe[6].binding = 6; dbe[6].textureView = dv->whiteTexView;
+                WGPUBindGroupEntry dbe[10] = {};
+                fill_material_bind_entries(dv, dbe, dbuf, sizeof du, nullptr);
                 WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-                dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 7; dbgd.entries = dbe;
+                dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 10; dbgd.entries = dbe;
                 WGPUBindGroup dbg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
                 wgpuRenderPassEncoderSetBindGroup(spass, 1, dbg, 0, nullptr);
                 wgpuRenderPassEncoderSetVertexBuffer(spass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
@@ -1358,76 +1465,31 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) continue;
             MeshGpu* m = dv->meshes[(size_t)d.mesh];
             if (!m || !m->vbo || !m->ibo || m->index_count == 0) continue;
-            float du[36] = {};
-            std::memcpy(du, d.model, sizeof d.model);              /* 0..15：模型矩阵 */
             const mq_renderer_pbr_material* mat =
                 (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
                     ? &f->materials[d.material] : nullptr;
-            if (mat) {
-                du[16] = mat->base_color[0]; du[17] = mat->base_color[1];
-                du[18] = mat->base_color[2]; du[19] = mat->base_color[3];
-                du[20] = mat->emissive[0]; du[21] = mat->emissive[1]; du[22] = mat->emissive[2];
-                du[24] = mat->metallic;
-                du[25] = mat->roughness;
-                du[26] = mat->normal_scale;
-                du[27] = mat->occlusion_strength;
-                du[28] = mat->alpha_cutoff;
-                du[29] = (float)mat->alpha_mode;
-                du[30] = (float)mat->flags;
-                du[32] = mat->clearcoat;
-                du[33] = mat->clearcoat_roughness;
-            } else {
-                du[16] = du[17] = du[18] = du[19] = 1.0F;
-                du[25] = 0.6F; du[26] = 1.0F; du[27] = 1.0F;
-                du[28] = 0.5F; du[29] = 0.0F; du[30] = 0.0F;
-                du[32] = 0.0F; du[33] = 0.03F;
-            }
+            float du[kMatUniformFloats] = {};
+            pack_draw_uniform(du, d.model, mat);
             WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
             dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
             dbd.size = sizeof du;
             WGPUBuffer dbuf = wgpuDeviceCreateBuffer(dv->device, &dbd);
             wgpuQueueWriteBuffer(dv->queue, dbuf, 0, du, sizeof du);
-            WGPUTextureView albedoView = dv->whiteTexView;
-            WGPUTextureView mrView = dv->whiteTexView;
-            WGPUTextureView aoView = dv->whiteTexView;
-            WGPUTextureView normalView = dv->whiteTexView;
-            WGPUTextureView emissiveView = dv->whiteTexView;
-            if (mat) {
-                if (mat->textures[0] >= 0 && (size_t)mat->textures[0] < dv->textures.size()) {
-                    Texture* at = dv->textures[(size_t)mat->textures[0]];
-                    if (at && at->view) albedoView = at->view;
-                }
-                if (mat->textures[1] >= 0 && (size_t)mat->textures[1] < dv->textures.size()) {
-                    Texture* at = dv->textures[(size_t)mat->textures[1]];
-                    if (at && at->view) mrView = at->view;
-                }
-                if (mat->textures[2] >= 0 && (size_t)mat->textures[2] < dv->textures.size()) {
-                    Texture* at = dv->textures[(size_t)mat->textures[2]];
-                    if (at && at->view) aoView = at->view;
-                }
-                if (mat->textures[3] >= 0 && (size_t)mat->textures[3] < dv->textures.size()) {
-                    Texture* at = dv->textures[(size_t)mat->textures[3]];
-                    if (at && at->view) normalView = at->view;
-                }
-                if (mat->textures[4] >= 0 && (size_t)mat->textures[4] < dv->textures.size()) {
-                    Texture* at = dv->textures[(size_t)mat->textures[4]];
-                    if (at && at->view) emissiveView = at->view;
-                }
-            }
-            WGPUBindGroupEntry dbe[7] = {};
-            dbe[0].binding = 0; dbe[0].buffer = dbuf; dbe[0].size = sizeof du;
-            dbe[1].binding = 1; dbe[1].textureView = albedoView;
-            dbe[2].binding = 2; dbe[2].sampler = dv->sampler;
-            dbe[3].binding = 3; dbe[3].textureView = mrView;
-            dbe[4].binding = 4; dbe[4].textureView = aoView;
-            dbe[5].binding = 5; dbe[5].textureView = normalView;
-            dbe[6].binding = 6; dbe[6].textureView = emissiveView;
+            WGPUBindGroupEntry dbe[10] = {};
+            fill_material_bind_entries(dv, dbe, dbuf, sizeof du, mat);
             WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 7; dbgd.entries = dbe;
+            dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 10; dbgd.entries = dbe;
             WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
             const bool is_blend = mat && mat->alpha_mode == 2;
-            wgpuRenderPassEncoderSetPipeline(pass, (is_blend && dv->p3dBlendPipeline)
-                                                       ? dv->p3dBlendPipeline : dv->p3dPipeline);
+            const int model = mat ? mat->shading_model : 0;
+            const int side = mat ? mat->side : 2;
+            WGPURenderPipeline pipe = get_material_pipeline(dv, model, is_blend, side);
+            if (!pipe) {
+                wgpuBindGroupRelease(drawBg);
+                wgpuBufferRelease(dbuf);
+                continue;
+            }
+            wgpuRenderPassEncoderSetPipeline(pass, pipe);
             wgpuRenderPassEncoderSetBindGroup(pass, 1, drawBg, 0, nullptr);
             wgpuRenderPassEncoderSetVertexBuffer(pass, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
             wgpuRenderPassEncoderSetIndexBuffer(pass, m->ibo, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);

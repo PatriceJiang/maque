@@ -738,8 +738,48 @@ int Engine::load_texture_ref(const std::string& ref) {
                 uint8_t* c = &px[((size_t)y * w + x) * 4];
                 c[0] = alt ? 255 : 230; c[1] = alt ? 255 : 140; c[2] = alt ? 255 : 60; c[3] = 255;
             }
+        } else if (ref == "builtin:/textures/toon_ramp") {
+            /* Toon 渐变：256×1 四档硬阶（与 toon_steps=4 对应；线性 clamp 采样） */
+            w = 256; h = 1; px.resize((size_t)w * 4);
+            static const uint8_t steps[4] = { 64, 132, 200, 255 };
+            for (int x = 0; x < w; ++x) {
+                const uint8_t v = steps[std::min(3, x * 4 / w)];
+                uint8_t* c = &px[(size_t)x * 4]; c[0] = v; c[1] = v; c[2] = v; c[3] = 255;
+            }
+        } else if (ref == "builtin:/textures/matcap_studio") {
+            /* Matcap：256×256 冷色相影棚球（左上高光、右下暗），线性采样/clamp；用作 view-space 法线查表 */
+            w = h = 256; px.resize((size_t)w * h * 4);
+            for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
+                const float nx = (float(x) + 0.5F) / w * 2.0F - 1.0F;
+                const float ny = (float(y) + 0.5F) / h * 2.0F - 1.0F;
+                const float r2 = nx * nx + ny * ny;
+                const float nz = std::sqrt(std::max(0.0F, 1.0F - r2));
+                /* 视空间光：左上前方（与 view 法线约定一致；纹理 v 向下 → ny 取反） */
+                const float lx = -0.42F, ly = -0.50F, lz = 0.76F;
+                const float ndl = std::max(0.0F, nx * lx + ny * ly + nz * lz);
+                const float spec = std::pow(std::max(0.0F, nx * (-0.20F) + ny * (-0.26F) + nz * 0.94F), 28.0F);
+                const float diff = 0.12F + 0.88F * ndl;
+                const float edge = std::clamp(1.0F - r2, 0.0F, 1.0F);   /* 球外渐暗 */
+                const float r = (0.20F * diff + spec * 0.95F) * edge;
+                const float g = (0.34F * diff + spec * 0.98F) * edge;
+                const float b = (0.62F * diff + spec * 0.95F) * edge;
+                const float a = 1.0F;
+                uint8_t* c = &px[((size_t)y * w + x) * 4];
+                c[0] = (uint8_t)std::clamp((int)(r * 255.0F + 0.5F), 0, 255);
+                c[1] = (uint8_t)std::clamp((int)(g * 255.0F + 0.5F), 0, 255);
+                c[2] = (uint8_t)std::clamp((int)(b * 255.0F + 0.5F), 0, 255);
+                c[3] = (uint8_t)(a * 255.0F);
+            }
         } else { px = { 255, 255, 255, 255 }; }
-        int id = rapi->create_texture(rself, px.data(), w, h);
+        int id = -1;
+        if (rapi && rself && rapi->create_texture2) {
+            mq_renderer_texture_desc td{};
+            td.width = w; td.height = h; td.pixel_format = 0; td.kind = 0; td.mip_levels = 1;
+            td.filter = 1; td.wrap_u = 1; td.wrap_v = 1;
+            td.data = px.data(); td.data_size = px.size();
+            if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
+        }
+        if (id < 0) id = rapi->create_texture(rself, px.data(), w, h);
         tex_cache[ref] = id;
         return id;
     }
@@ -1148,6 +1188,24 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             /* M3 材质：同节点的 asset.PbrMaterial 组件（M4 起由共享 .material.json 资产引用） */
             mq_renderer_pbr_material mat{};
             for (int ti = 0; ti < 5; ++ti) mat.textures[ti] = -1;   /* -1 = 未给贴图 → 渲染器用 1×1 白 */
+            for (int ti = 0; ti < 3; ++ti) mat.textures2[ti] = -1;  /* matcap / gradient / clearcoat-normal */
+            mat.shading_model = 0;                                  /* Standard（与旧 PbrMaterial 语义一致） */
+            mat.side = 2;                                           /* Double：兼容旧 cullMode=None */
+            mat.opacity = 1.0F;
+            mat.emissive_intensity = 1.0F;
+            mat.env_intensity = 1.0F;
+            mat.normal_scale_y = 1.0F;
+            mat.shininess = 30.0F;
+            mat.specular_intensity = 1.0F;
+            mat.ior = 1.5F;
+            mat.specular[0] = mat.specular[1] = mat.specular[2] = 1.0F;
+            mat.sheen_roughness = 0.5F;
+            mat.iridescence_ior = 1.3F;
+            mat.iridescence_thickness_min = 100.0F;
+            mat.iridescence_thickness_max = 400.0F;
+            mat.clearcoat_normal_scale = 1.0F;
+            mat.toon_steps = 3;
+            mat.depth_packing = 0;
             mat.base_color[0] = mat.base_color[1] = mat.base_color[2] = mat.base_color[3] = 1.0F;
             mat.metallic = 0.0F;
             mat.roughness = 0.6F;
@@ -1175,6 +1233,32 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 mat.flags = read_num(dmat, base, "double_sided", 0.0F) >= 0.5F ? 1 : 0;
                 mat.clearcoat = read_num(dmat, base, "clearcoat", 0.0F);
                 mat.clearcoat_roughness = read_num(dmat, base, "clearcoat_roughness", 0.03F);
+                /* plans/19：多着色模型参数（缺省 = Standard 观感，旧场景零变化） */
+                mat.shading_model = (int32_t)read_num(dmat, base, "shading_model", 0.0F);
+                mat.side = (int32_t)read_num(dmat, base, "side", 2.0F);
+                mat.opacity = read_num(dmat, base, "opacity", 1.0F);
+                mat.emissive_intensity = read_num(dmat, base, "emissive_intensity", 1.0F);
+                mat.env_intensity = read_num(dmat, base, "env_intensity", 1.0F);
+                mat.normal_scale_y = read_num(dmat, base, "normal_scale_y", 1.0F);
+                if (const mq_field_desc* f = mq_reflect_field(dmat, "specular"))
+                    std::memcpy(mat.specular, base + f->offset, sizeof mat.specular);
+                mat.shininess = read_num(dmat, base, "shininess", 30.0F);
+                mat.specular_intensity = read_num(dmat, base, "specular_intensity", 1.0F);
+                mat.ior = read_num(dmat, base, "ior", 1.5F);
+                mat.sheen = read_num(dmat, base, "sheen", 0.0F);
+                mat.sheen_roughness = read_num(dmat, base, "sheen_roughness", 0.5F);
+                if (const mq_field_desc* f = mq_reflect_field(dmat, "sheen_color"))
+                    std::memcpy(mat.sheen_color, base + f->offset, sizeof mat.sheen_color);
+                mat.iridescence = read_num(dmat, base, "iridescence", 0.0F);
+                mat.iridescence_ior = read_num(dmat, base, "iridescence_ior", 1.3F);
+                mat.iridescence_thickness_min = read_num(dmat, base, "iridescence_thickness_min", 100.0F);
+                mat.iridescence_thickness_max = read_num(dmat, base, "iridescence_thickness_max", 400.0F);
+                mat.anisotropy = read_num(dmat, base, "anisotropy", 0.0F);
+                mat.anisotropy_rotation = read_num(dmat, base, "anisotropy_rotation", 0.0F);
+                mat.clearcoat_normal_scale = read_num(dmat, base, "clearcoat_normal_scale", 1.0F);
+                mat.toon_steps = (int32_t)read_num(dmat, base, "toon_steps", 3.0F);
+                mat.depth_packing = (int32_t)read_num(dmat, base, "depth_packing", 0.0F);
+                if (read_num(dmat, base, "flat_shading", 0.0F) >= 0.5F) mat.flags2 |= 1;
                 /* M4：PBR 贴图槽（albedo / metallic-roughness / occlusion）；normal 在 M5（需要切线空间） */
                 if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {
                     if (!texref->empty()) {
@@ -1216,7 +1300,36 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             std::print("runtime: pbr emissive texture '{}' -> {}\n", *texref, tid);
                     }
                 }
+                /* plans/19：matcap / toon 渐变 / clearcoat 法线三个新贴图槽（flags2 位告知 shader 是否有图） */
+                if (const std::string* texref = read_str(dmat, base, "matcap_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_srgb(*texref);
+                        if (tid >= 0) { mat.textures2[0] = tid; mat.flags2 |= 2; }
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: matcap texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
+                if (const std::string* texref = read_str(dmat, base, "gradient_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_ref(*texref);
+                        if (tid >= 0) { mat.textures2[1] = tid; mat.flags2 |= 4; }
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: toon gradient texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
+                if (const std::string* texref = read_str(dmat, base, "clearcoat_normal_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_ref(*texref);
+                        if (tid >= 0) { mat.textures2[2] = tid; mat.flags2 |= 8; }
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: clearcoat normal texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
             }
+            if (std::getenv("MAQUE_RENDER3D_INFO"))
+                std::print("runtime: 3d material node={} model={} side={} flags2={} tex2=({},{},{})\n",
+                           idx, mat.shading_model, mat.side, mat.flags2,
+                           mat.textures2[0], mat.textures2[1], mat.textures2[2]);
             const int32_t mat_index = (int32_t)out_mats.size();
             out_mats.push_back(mat);
             /* M4c：mesh_path 非空时用离线导入网格（glTF → .mesh.json），否则内建 cube */

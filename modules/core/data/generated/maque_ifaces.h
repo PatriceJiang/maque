@@ -144,6 +144,30 @@ typedef struct mq_renderer_pbr_material {
     float uv_offset[2];
     float clearcoat;
     float clearcoat_roughness;
+    int32_t shading_model;
+    int32_t side;
+    int32_t flags2;
+    float opacity;
+    float emissive_intensity;
+    float env_intensity;
+    float normal_scale_y;
+    float specular[3];
+    float shininess;
+    float specular_intensity;
+    float ior;
+    float sheen;
+    float sheen_roughness;
+    float sheen_color[3];
+    float iridescence;
+    float iridescence_ior;
+    float iridescence_thickness_min;
+    float iridescence_thickness_max;
+    float anisotropy;
+    float anisotropy_rotation;
+    float clearcoat_normal_scale;
+    int32_t toon_steps;
+    int32_t depth_packing;
+    int32_t textures2[3];
 } mq_renderer_pbr_material;
 
 typedef struct mq_renderer_draw3d {

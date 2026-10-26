@@ -93,3 +93,11 @@ material:
 | 管线编译卡顿 | 按 Effect+state 缓存 + 预热（docs/13 §5） |
 | 参数类型不匹配 | Effect 布局 + codegen 校验，加载期报错 |
 | 着色器文本漂移 | 文本入库 + 编译期校验（docs/08） |
+
+## 8. 3D 表面材质（当前实现，plans/19）
+
+3D 网格材质**不**走本文的 Effect/Material 资产模型：现实现为节点上的 `asset.PbrMaterial` 组件
+（typed 字段 + 贴图 VFS 路径），`shading_model` 选择 Standard/Physical/Basic/Lambert/Phong/Toon/
+Normal/Matcap/Depth/Shadow 十种模型（three.js 材质族语义对齐，见 plans/19-threejs-materials.md）。
+Effect/Material/MaterialInstance 仍是 2D/自定义 shader 材质的未来方向；两者都遵循同一条原则：
+材质只影响渲染、不回写模拟。

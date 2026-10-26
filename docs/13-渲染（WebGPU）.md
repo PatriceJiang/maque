@@ -144,3 +144,15 @@
 
 **窗口放大过滤**：呈现路径在**整数倍**放大时默认最近邻（`MAQUE_PRESENT_FILTER=nearest|linear` 可强制），
 否则整帧会被线性插值糊掉。这样 1×/2×/3× 窗口下字形都是硬边。
+
+## 3D 材质模型（plans/19）
+
+3D 表面材质的单一数据源是节点上的 `asset.PbrMaterial` 组件：`shading_model` 选择 10 种 three.js 对齐模型
+（Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/Depth/Shadow），共同字段（`base_color`/`metallic`/
+`roughness`/`emissive`/alpha/双面 + 各模型扩展参数 + 8 个贴图槽）由同一个 `pbr` shader 模块的不同
+fragment 入口消费。
+
+- gfx 按 `(shading_model, blend, side)` 懒创建管线；`side` 映射 cullMode（缺省 Double 兼容旧行为）。
+- 材质 uniform 256B（64 floats，plans/19 单一定义 + gfx 统一打包）；camera uniform 784B（含 view 矩阵，供 matcap）。
+- 无贴图时的缺省绑定：颜色/参数用 1×1 白，法线用 1×1 中性法线 (0.5,0.5,1)（避免法线扰动）。
+- 详细字段/映射/非目标见 plans/19-threejs-materials.md；glTF 扩展由 `tools/gltf_import.py` 导入。

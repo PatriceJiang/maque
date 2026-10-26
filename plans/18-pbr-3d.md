@@ -390,3 +390,5 @@ per view:
 - **M5d ✅ 环境光按场景配置**：`scn.Scene.env_color/env_intensity` → frame3d env；默认值等于原硬编码（零回归）；
   ToyCar 暖灰影棚环境。**M5e ✅ clearcoat**：`asset.PbrMaterial.clearcoat/clearcoat_roughness`
   （同 KHR_materials_clearcoat 字段名），draw uniform 144B，shader 独立 F0=0.04 清漆窄高光。
+
+- **M7 材质模型扩展（plans/19）**：3D 表面材质新增 `shading_model`（Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/Depth/Shadow），由同一个 pbr shader 模块的 10 个 fragment 入口实现；gfx 按模型懒建管线、材质 uniform 扩到 256B、camera +view 矩阵（784B）、贴图槽扩到 8 张（matcap/toon 渐变/clearcoat 法线）。附带修复：无 normal_map 时改用 1×1 中性法线（旧版误用白纹理导致法线扰动，Standard 观感有小幅变化）。详见 plans/19-threejs-materials.md。
