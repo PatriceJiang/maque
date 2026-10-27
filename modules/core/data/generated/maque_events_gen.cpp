@@ -15,10 +15,11 @@ static const mq_event_desc kEvents[] = {
   { "on_key_down", 2u },
   { "on_key_up", 2u },
   { "on_text", 2u },
+  { "on_destroy", 0u },
 };
 
 extern "C" const mq_event_desc* mq_event_table(uint32_t* out_count) {
-  if (out_count) *out_count = 10u;
+  if (out_count) *out_count = 11u;
   return kEvents;
 }
 
@@ -78,6 +79,10 @@ extern "C" int mq_event_dispatch(mq_script_vm* vm, int kind, double a, double b,
     case MQ_EVENT_ON_TEXT: {
       if (!mq_script_has(vm, "on_text")) return 0;   // 脚本未定义 → 跳过
       return mq_script_call1s(vm, "on_text", a, text ? text : "", nullptr);
+    }
+    case MQ_EVENT_ON_DESTROY: {
+      if (!mq_script_has(vm, "on_destroy")) return 0;   // 脚本未定义 → 跳过
+      return mq_script_call0(vm, "on_destroy", nullptr);
     }
     default: return 1;
   }

@@ -142,6 +142,39 @@
     - { fn: director_paused,     ctx: true, returns: float }
     - { fn: director_frame,      ctx: true, returns: float }
     - { fn: director_load_scene, ctx: true, args: [ { name: path, type: string } ], returns: float }
+    # 场景自省（外壳/导航脚本用）：当前场景标题/目录/路径
+    - { fn: scene_title,   ctx: true, returns: string, doc: "当前场景 title（scn.Scene.title）" }
+    - { fn: scene_dir,     ctx: true, returns: string, doc: "当前场景所在目录（相对/绝对，取决于启动参数）" }
+    - { fn: scene_path,    ctx: true, returns: string, doc: "当前场景路径（启动/切场景时给出的原始路径）" }
+
+    # ---- 场景实例（docs/32）：`.scn` = 节点树 + 行为；每个实例独立 VM/生命周期/事件作用域 ----
+    # 变更类：句柄**立即分配**，实体/VM/on_start 在**下一个帧边界**完成（docs/32 §7）。
+    - { fn: scene_instantiate, ctx: true, args: [ { name: parent, type: float }, { name: path, type: string } ], returns: float,
+        doc: "实例化一个 .scn（parent=-1 挂到世界根）；返回实例句柄（-1=失败）" }
+    - { fn: scene_unload, ctx: true, args: [ { name: instance, type: float } ], returns: float,
+        doc: "卸载实例（帧边界；先后序 on_destroy 再销毁子树/VM）" }
+    - { fn: scene_reload, ctx: true, args: [ { name: instance, type: float } ], returns: float }
+    - { fn: scene_set_instance_paused, ctx: true, args: [ { name: instance, type: float }, { name: paused, type: float } ] }
+    - { fn: scene_set_instance_active, ctx: true, args: [ { name: instance, type: float }, { name: active, type: float } ] }
+    # 只读查询（立即反映已提交状态；pending 实例 valid=0）
+    - { fn: scene_instance_valid,  ctx: true, args: [ { name: instance, type: float } ], returns: float }
+    - { fn: scene_instance_root,   ctx: true, args: [ { name: instance, type: float } ], returns: float,
+        doc: "实例挂载壳/根实体 id（根实例 = 世界根：-1）" }
+    - { fn: scene_instance_parent, ctx: true, args: [ { name: instance, type: float } ], returns: float }
+    - { fn: scene_instance_source, ctx: true, args: [ { name: instance, type: float } ], returns: string }
+    - { fn: scene_instance_paused, ctx: true, args: [ { name: instance, type: float } ], returns: float }
+    - { fn: scene_instance_count,  ctx: true, returns: float }
+    - { fn: scene_instance_at,     ctx: true, args: [ { name: index, type: float } ], returns: float,
+        doc: "按创建/声明顺序取实例句柄（-1=越界）；顺序确定 → 可回放" }
+    - { fn: scene_instance_of,     ctx: true, args: [ { name: entity, type: float } ], returns: float,
+        doc: "实体所属实例（-1=未归属/无此实体）" }
+    # 当前脚本上下文（在回调里调用）：所属实例 + 挂载壳
+    - { fn: scene_self,      ctx: true, returns: float }
+    - { fn: scene_self_root, ctx: true, returns: float }
+    # 跨实例事件：直接调用指定实例 VM 组里定义了 event 的处理器
+    - { fn: scene_emit, ctx: true, args: [ { name: instance, type: float }, { name: event, type: string },
+                                          { name: value, type: float } ], returns: float }
+    - { fn: scene_last_error, ctx: true, returns: string }
 
     # ---- 常用 API 续：Tween / schedule / destroy / find(path) ----
     # Tween（确定性：固定步长推进，完成时派发 tween_complete）

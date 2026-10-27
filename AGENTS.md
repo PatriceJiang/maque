@@ -93,15 +93,23 @@ tools\win\build.cmd -Sanitize address -RunTests
   clang++ -fsanitize=address t.cpp -o t && ./t                    # Linux
   ```
 
-- **窗口（宿主启动期覆盖）**：**默认窗口 800x650**（世界/渲染目标仍是场景尺寸，
-  窗口内**等比缩放 + 居中留边**显示 —— 场景比窗口大就缩小、小就放大，都不裁剪；
-  输入坐标自动映射回世界坐标）。`MAQUE_WINDOW=WxH` 覆盖尺寸，**`0x0` = 不建窗口**（CI/无显示环境）；
-  ⚠️ 渲染倍率 `MAQUE_SS` 未设时只在**确有窗口**时跟随窗口像素（离屏/headless 恒为 1.0 =
-  设计分辨率），否则截图尺寸与文本折行行数会随窗口大小漂移。`MAQUE_TITLE=<标题>`；
-  `MAQUE_VIEWS=n`；`MAQUE_PRESENT=off|software|accelerated`（默认 Windows accelerated=Direct3D /
+- **窗口（宿主启动期覆盖）**：**默认窗口 800x650**（场景 `width/height` 是设计分辨率/世界尺寸；
+  窗口内**等比缩放 + 居中留边**显示 —— 场景比窗口大就缩小、小就放大，都不裁剪；输入坐标自动映射回
+  世界坐标）。`MAQUE_WINDOW=WxH` 覆盖尺寸，**`0x0` = 不建窗口**（CI/无显示环境）。
+  渲染倍率：`MAQUE_RENDER_SCALE=N` 显式固定（`1` = 设计分辨率/像素风）；**未设时自动跟随窗口**：
+  `ss = clamp(窗口逻辑宽 / 设计宽, 0.25, 4)`，渲染目标 = `round(设计宽×ss) × round(设计高×ss)` × 视图数，
+  文字按 ss 栅格化；离屏/headless 恒 1.0（否则截图尺寸与文本折行行数会随窗口大小漂移）。
+  **窗口默认可 resize / 可最大化**（用户拖拽标题栏、点最大化按钮；`MAQUE_WINDOW_MAXIMIZED=1` 启动即最大化）
+  → SDL `SIZE_CHANGED` → runtime **自动重建渲染目标（FBO）**并打印一行
+  `runtime: window resized ...`（gfx 侧 depth/MSAA/颜色目标按新尺寸重建，直呈路径 `resize_surface`）；
+  显式 `MAQUE_RENDER_SCALE` 时目标固定、窗口变化只缩放呈现。CI 用
+  `MAQUE_WINDOW_EVENT_AT="<frame>:<op>[;...]"`（op = `WxH` / `max` / `restore`）在指定帧对**真实窗口**
+  下发操作（同一条 SDL 事件路径，`ctest -R window_resize_e2e`）。
+  `MAQUE_TITLE=<标题>`；`MAQUE_VIEWS=n`；`MAQUE_PRESENT=off|software|accelerated`（默认 Windows accelerated=Direct3D /
   其它平台 software；两者都走统一的 SDL_Renderer 呈现 → 不建 GL/EGL 上下文，不与渲染插件的
   wgpu(EGL) 争用）；`MAQUE_CAPTURE=<前缀>` 从 **renderer 后台缓冲**回读前 3 帧为 PPM
-  （= present 前用户即将看到的整帧，含 ImGui 面板）；`MAQUE_KEEP_OPEN=1` 忽略脚本 `quit()`。
+  （= present 前用户即将看到的整帧，含 ImGui 面板；`MAQUE_CAPTURE_EVERY` / `MAQUE_CAPTURE_FRAMES` 可调；
+  尺寸 = 窗口绘制区**设备像素** → resize/最大化后新抓帧跟随窗口）；`MAQUE_KEEP_OPEN=1` 忽略脚本 `quit()`。
   `MAQUE_IMGUI_POINTER="frame:x:y:type[;...]"`（type 0=move 1=down 2=up）把合成指针事件压进
   **本帧设备事件队列**，与真实鼠标同一条路径 → CI 验证 ImGui 面板拖动（`imgui_present_e2e`）。
   示例：`MAQUE_WINDOW=800x600 MAQUE_TITLE=MaqueEngine ./build/samples/player/maque_player scenes/ball.scn`
@@ -208,7 +216,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   - `--shot-every 20 --shot-count 4`：每 20 帧一张、共 4 张后退出（`MAQUE_SHOT_EVERY`/`MAQUE_SHOT_COUNT`）。
   - `--frames N`：最多跑 N 帧（`MAQUE_MAX_FRAMES`）。**到上限属于正常结束（退出码 0）**，
     不是失败 —— 之前返回 1，在脚本里看起来像出错。
-  PNG 由 image 模块写出（zlib 可用则真压缩，否则 stored deflate）；尺寸 = 渲染目标（设计分辨率 × 视图 × `MAQUE_SS`）。
+  PNG 由 image 模块写出（zlib 可用则真压缩，否则 stored deflate）；尺寸 = 渲染目标（设计分辨率 × 视图 × `MAQUE_RENDER_SCALE`；未设时 1.0，与窗口无关）。
   测试：`ctest -R shot_e2e`（PNG 有效性/确定性/PPM/错误路径/**批量截图**/`--frames` 退出码）。VSCode 预览插件：`editors/vscode/`（`install.sh` 装到本地扩展目录；
   文档在该目录 README）。绑定面一致性：`ctest -R bindings_e2e`（schema → JS/Lua 探针，逐条检查可调用性）。
 - **内建 shader（assets/builtin/shaders/）**：**一个 shader 一个目录**（目录名 = shader 名，
@@ -370,6 +378,16 @@ tools\win\build.cmd -Sanitize address -RunTests
   渲染/物理/UI 按**组件角色**从展平视图提取（只读）；**不做 ECS/archetype 存储**（高基数用专用数组，如粒子）。
   脚本两面同一模型：`node_*` 是树语义规范面，`entity_*` 是**扁平别名**（按 id 直接寻址）。
   控制面 `Scene.expand_prefabs` = 展开 PrefabInstance（旧名 `Scene.bake` 为兼容别名，已弃用）。
+- **场景实例（docs/32，P0–P2 已落地）**：`.scn` = 节点树 + 行为（`script`/`scripts`）；节点挂
+  `scn.SceneInstance{source}` 即加载期实例化**带行为的子场景**（每实例独立 `mq_script_bus`/VM、生命周期与事件作用域；
+  根场景 = 0 号实例）。`on_start` 后序（子先父）、`update` 前序（父先子，paused 跳过）、`on_destroy` 后序；
+  `node_on` 记录 owner_instance（子实例只能注册自己子树；越界拒绝），`node_emit` 冒泡但只调处理器所属实例的 VM。
+  动态接口（脚本 / 控制面）：`scene_instantiate(parent,path)`（句柄立即分配、帧边界构建）、
+  `scene_unload/reload`、`scene_set_instance_paused/active`、`scene_instance_*` 查询、`scene_self/self_root`、
+  `scene_emit`；控制面 `Scene.instances/instance_info/instantiate/unload_instance/reload_instance/bake_instances`。
+  预算：实例数默认 256（`MAQUE_SCENE_INSTANCE_LIMIT`）、嵌套深度 16；循环源链报错不崩。
+  样例 `scenes/nested/`，测试 `ctest -R scene_instance`。⚠️ 序列化（P3：`Scene.save` 保引用/场景字段完整）、
+  嵌套脚本热重载/快照（P4）、嵌套场景内纹理等资源按实例 base 解析仍未完成（见 docs/32 §14）。
 
 ## 脚本可见 API（docs/18）
 

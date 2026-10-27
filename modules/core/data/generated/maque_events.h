@@ -21,7 +21,8 @@ typedef enum mq_event_kind {
   MQ_EVENT_ON_KEY_DOWN = 7,
   MQ_EVENT_ON_KEY_UP = 8,
   MQ_EVENT_ON_TEXT = 9,
-  MQ_EVENT_COUNT = 10
+  MQ_EVENT_ON_DESTROY = 10,
+  MQ_EVENT_COUNT = 11
 } mq_event_kind;
 
 typedef struct mq_event_desc { const char* name; uint32_t argc; } mq_event_desc;

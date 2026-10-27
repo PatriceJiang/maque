@@ -117,6 +117,12 @@ mq_platform* mq_platform_create(const char* title, int w, int h);
 int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h);
 /* 绘制区尺寸（设备像素；HiDPI 下大于窗口逻辑尺寸） */
 void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h);
+/* 窗口**逻辑**尺寸（DPI 缩放后用户看到的尺寸；无窗口 → 0）——渲染倍率按它跟随窗口 */
+void mq_platform_window_size(mq_platform* p, int32_t* out_w, int32_t* out_h);
+/* 设置窗口逻辑尺寸（像素）；0=成功，无窗口/非法尺寸非 0。触发真实 resize 事件 → 渲染目标按新尺寸重建（FBO 重建） */
+int32_t mq_platform_set_window_size(mq_platform* p, int32_t w, int32_t h);
+/* 最大化 / 还原窗口（on=0 还原）；0=成功，无窗口非 0。窗口必须可 resize（默认已是 SDL_WINDOW_RESIZABLE） */
+int32_t mq_platform_set_window_maximized(mq_platform* p, int32_t on);
 /* 显示器内容缩放（绘制区/窗口；1.0 = 非 HiDPI） */
 float mq_platform_content_scale(mq_platform* p);
 /* 应用可见的桌面**逻辑**尺寸（已含 OS DPI 缩放；无窗口/无显示 → 0）——ImGui 调试面板按它算一次性的固定 UI 缩放 */

@@ -36,7 +36,8 @@ static void usage() {
                "  --shot-count <m>     最多拍 m 张后退出\n"
                "  --frames <n>         最多跑 n 帧后退出（等价 MAQUE_MAX_FRAMES；冒烟/回归用）\n"
                "  frames_dir           位置参数（可选）：逐帧 PPM 输出目录\n"
-               "环境：MAQUE_WINDOW / MAQUE_PRESENT / MAQUE_SS / MAQUE_MAX_FRAMES / MAQUE_STORAGE …\n");
+               "环境：MAQUE_WINDOW / MAQUE_WINDOW_MAXIMIZED / MAQUE_WINDOW_EVENT_AT / MAQUE_PRESENT /\n"
+               "      MAQUE_RENDER_SCALE / MAQUE_MAX_FRAMES / MAQUE_STORAGE …\n");
 }
 
 int main(int argc, char** argv) {

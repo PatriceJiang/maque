@@ -67,9 +67,19 @@ int mq_vfs_mount(mq_vfs* vfs, const char* mountpoint, const char* source) {
         if (rc != MQ_VFS_OK) return rc;
     }
     const std::string mp = normalize_mount(mountpoint);
-    /* 幂等：同一 (挂载点, 来源) 重复挂载不追加（切场景/重复应用 MAQUE_MOUNT 时不堆积） */
-    for (const auto& m : v->mounts)
-        if (m.mountpoint == mp && m.source == src && m.backend == b) return MQ_VFS_OK;
+    /* 幂等：同一 (挂载点, 来源) 重复挂载不追加；但必须把它**移到表尾** ——
+     * resolve() 的规则是"最长前缀 + 后挂载优先"。不移动的话，切回**之前挂载过的**
+     * 场景目录时（director.loadScene 每次重新挂 "/"），旧的 "/" 条目拿不回优先级，
+     * 会继续读到上一个场景目录 → 场景切回静默失败（旧行为实测复现）。
+     * 只移动同一来源条目：不同来源仍是"后挂载追加"，MAQUE_MOUNT 覆盖语义不变。 */
+    for (auto it = v->mounts.begin(); it != v->mounts.end(); ++it) {
+        if (it->mountpoint == mp && it->source == src && it->backend == b) {
+            Mount again = *it;
+            v->mounts.erase(it);
+            v->mounts.push_back(std::move(again));
+            return MQ_VFS_OK;
+        }
+    }
     v->mounts.push_back(Mount{ mp, std::move(src), b });
     return MQ_VFS_OK;
 }

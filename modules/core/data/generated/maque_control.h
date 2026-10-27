@@ -44,6 +44,18 @@ int mq_control_Scene_expand_prefabs(void* user, const mq_json* params, char* out
 int mq_control_Scene_bake(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.save(path: string) */
 int mq_control_Scene_save(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.instances() */
+int mq_control_Scene_instances(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.instance_info(instance: float) */
+int mq_control_Scene_instance_info(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.instantiate(parent: float, path: string, strict: bool) */
+int mq_control_Scene_instantiate(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.unload_instance(instance: float) */
+int mq_control_Scene_unload_instance(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.reload_instance(instance: float) */
+int mq_control_Scene_reload_instance(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Scene.bake_instances(dry_run: bool) */
+int mq_control_Scene_bake_instances(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Runtime.step(frames: float) */
 int mq_control_Runtime_step(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Runtime.frame() */

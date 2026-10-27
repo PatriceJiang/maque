@@ -8,6 +8,7 @@
   version: 1
   # 变更类方法（权限单一真相，D2 默认只读）：只读会话对这些方法返回 -32001
   control_mutating: [ Scene.set, Scene.spawn, Scene.destroy, Scene.expand_prefabs, Scene.bake, Scene.save, Scene.emit,
+                      Scene.instantiate, Scene.unload_instance, Scene.reload_instance, Scene.bake_instances,
                       Runtime.step, Director.pause, Director.resume, World.restore,
                       Replay.seek, Input.sim_load, Input.sim_stop, Input.inject,
                       Reload.script, Reload.scene, Reload.files,
@@ -42,6 +43,16 @@
     - { method: Scene.bake,    args: [ { name: dry_run, type: bool  } ],
         summary: "已弃用别名 → Scene.expand_prefabs（历史名保留，避免打断既有工具）" }
     - { method: Scene.save,    args: [ { name: path, type: string  } ] }
+    # ---- 场景实例（docs/32 §7）：静态/动态嵌套场景的查询与生命周期 ----
+    - { method: Scene.instances, args: [], summary: "场景实例树（id/source/parent/root/paused/state/error/scripts）" }
+    - { method: Scene.instance_info, args: [ { name: instance, type: float } ], summary: "单实例详情" }
+    - { method: Scene.instantiate, args: [ { name: parent, type: float }, { name: path, type: string },
+                                           { name: strict, type: bool } ],
+        summary: "动态实例化 .scn（帧边界生效；返回实例句柄）" }
+    - { method: Scene.unload_instance, args: [ { name: instance, type: float } ] }
+    - { method: Scene.reload_instance, args: [ { name: instance, type: float } ] }
+    - { method: Scene.bake_instances, args: [ { name: dry_run, type: bool } ],
+        summary: "把 SceneInstance 标记 detached=true（自包含；对齐 Scene.expand_prefabs）" }
     # ---- 运行与帧（A4）----
     - { method: Runtime.step,  args: [ { name: frames, type: float  } ] }
     - { method: Runtime.frame, args: [] }

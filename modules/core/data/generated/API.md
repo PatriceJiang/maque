@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **284** 个 · 控制面方法 **49** 个 · 事件回调 **10** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
+统计：脚本 API **304** 个 · 控制面方法 **55** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -151,6 +151,26 @@
 | `director_paused` | — | float | ctx |
 | `director_frame` | — | float | ctx |
 | `director_load_scene` | path: string | float | ctx |
+| `scene_title` | — | string | ctx · 当前场景 title（scn.Scene.title） |
+| `scene_dir` | — | string | ctx · 当前场景所在目录（相对/绝对，取决于启动参数） |
+| `scene_path` | — | string | ctx · 当前场景路径（启动/切场景时给出的原始路径） |
+| `scene_instantiate` | parent: float, path: string | float | ctx · 实例化一个 .scn（parent=-1 挂到世界根）；返回实例句柄（-1=失败） |
+| `scene_unload` | instance: float | float | ctx · 卸载实例（帧边界；先后序 on_destroy 再销毁子树/VM） |
+| `scene_reload` | instance: float | float | ctx |
+| `scene_set_instance_paused` | instance: float, paused: float | void | ctx |
+| `scene_set_instance_active` | instance: float, active: float | void | ctx |
+| `scene_instance_valid` | instance: float | float | ctx |
+| `scene_instance_root` | instance: float | float | ctx · 实例挂载壳/根实体 id（根实例 = 世界根：-1） |
+| `scene_instance_parent` | instance: float | float | ctx |
+| `scene_instance_source` | instance: float | string | ctx |
+| `scene_instance_paused` | instance: float | float | ctx |
+| `scene_instance_count` | — | float | ctx |
+| `scene_instance_at` | index: float | float | ctx · 按创建/声明顺序取实例句柄（-1=越界）；顺序确定 → 可回放 |
+| `scene_instance_of` | entity: float | float | ctx · 实体所属实例（-1=未归属/无此实体） |
+| `scene_self` | — | float | ctx |
+| `scene_self_root` | — | float | ctx |
+| `scene_emit` | instance: float, event: string, value: float | float | ctx |
+| `scene_last_error` | — | string | ctx |
 | `tween_start` | id: float, field: string, to: float, duration: float, easing: float | float | ctx |
 | `tween_stop` | id: float | float | ctx |
 | `tween_count` | id: float | float | ctx |
@@ -341,6 +361,12 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Scene.expand_prefabs` | dry_run: bool | boolean |
 | `Scene.bake` | dry_run: bool | boolean |
 | `Scene.save` | path: string | string |
+| `Scene.instances` | — | — |
+| `Scene.instance_info` | instance: float | number |
+| `Scene.instantiate` | parent: float, path: string, strict: bool | number, string, boolean |
+| `Scene.unload_instance` | instance: float | number |
+| `Scene.reload_instance` | instance: float | number |
+| `Scene.bake_instances` | dry_run: bool | boolean |
 | `Runtime.step` | frames: float | number |
 | `Runtime.frame` | — | — |
 | `Director.pause` | — | — |
@@ -391,6 +417,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `on_key_down` | target: float, key: float | key_down |
 | `on_key_up` | target: float, key: float | key_up |
 | `on_text` | target: float, text: string | text |
+| `on_destroy` | — | — |
 
 ## 4. 插件接口（interface → C vtable）
 
@@ -413,7 +440,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `draw3d`：mesh: int32_t, material: int32_t, model: float[16], submesh_first: int32_t, submesh_count: int32_t, flags: int32_t, layer: int32_t, sort_key: uint64_t
 - `environment`：sky_mode: int32_t, sky_color: float[4], sky_texture: int32_t, env_color: float[4], env_texture: int32_t, env_irradiance_texture: int32_t, intensity: float, env_sky_color: float[4], env_ground_color: float[4], env_highlight: float, env_rotation: float
 - `post`：exposure: float, tonemap: int32_t
-- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t
+- `shader_pass`：shader: int32_t, time: float, frame: float, mouse: float[4]
+- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -432,6 +460,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `destroy_mesh` | self: self, id: int32_t | void |
 | `render_frame3d` | self: self, frame: const mq_renderer_frame3d* | int32_t |
 | `present` | self: self | int32_t |
+| `create_shader_pass` | self: self, wgsl: const char*, out_id: int32_t* | int32_t |
+| `destroy_shader_pass` | self: self, id: int32_t | void |
 
 ## 5. 模块 C ABI（module_abi）
 
@@ -640,6 +670,9 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `mq_platform_create` | mq_platform* | title: const char*, w: int, h: int |
 | `mq_platform_present` | int | p: mq_platform*, rgba: const void*, w: int32_t, h: int32_t |
 | `mq_platform_drawable_size` | void | p: mq_platform*, out_w: int32_t*, out_h: int32_t* |
+| `mq_platform_window_size` | void | p: mq_platform*, out_w: int32_t*, out_h: int32_t* |
+| `mq_platform_set_window_size` | int32_t | p: mq_platform*, w: int32_t, h: int32_t |
+| `mq_platform_set_window_maximized` | int32_t | p: mq_platform*, on: int32_t |
 | `mq_platform_content_scale` | float | p: mq_platform* |
 | `mq_platform_screen_size` | void | p: mq_platform*, out_w: int32_t*, out_h: int32_t* |
 | `mq_platform_display_changed` | int | p: mq_platform* |

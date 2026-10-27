@@ -1,0 +1,11 @@
+{
+  "title": "nested-child",
+  "script": "child.js",
+  "width": 100,
+  "height": 100,
+  "entities": [
+    { "name": "Body", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+        { "type": "scn.Sprite", "radius": 6.0, "r": 1.0, "g": 0.6, "b": 0.2 } ] }
+  ]
+}

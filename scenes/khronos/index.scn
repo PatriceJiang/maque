@@ -1,0 +1,7 @@
+{
+  "title": "Khronos glTF Sample Assets",
+  "width": 1280,
+  "height": 720,
+  "overlay_script": "gallery.js",
+  "entities": []
+}

@@ -162,6 +162,27 @@ struct Scene {
     void extract(Engine& eng, std::vector<mq_renderer_item>& out);
 };
 
+/* ---- 场景实例（docs/32）：`.scn` = 节点树 + 行为（scripts）+ 场景级配置。
+ * 每次加载/实例化 = 一个 SceneInstance：独立 VM 组（bus）、独立生命周期与事件作用域。
+ * 实例树：根场景 = 0 号；`scn.SceneInstance` 组件在加载期把嵌套 .scn 实例化为子实例。
+ * 所有结构变化都发生在帧边界（加载期或动态请求队列），保证确定性。 */
+struct SceneInstanceRuntime {
+    int id = -1;
+    int parent = -1;                 // 父实例（根 = -1）
+    int attach_entity = -1;          // 父世界里的挂载壳实体（根 = -1）
+    std::string source;              // VFS 路径（"/dir/x.scn"；根 = scn_vfs_path）
+    std::string base;                // 资源解析基准（相对 VFS 根；根场景 = ""）
+    std::vector<int> roots;          // 本实例的顶层实体（parent == attach_entity 且 owner==id）
+    std::vector<int> children;       // 子实例（创建/声明顺序）
+    mq_script_bus* bus = nullptr;    // 本实例的 VM 组（总线拥有 VM）
+    std::vector<std::string> scripts;     // 相对 base 的脚本路径（声明序）
+    std::vector<uint64_t> script_hashes;  // 内容哈希（热重载）
+    bool paused = false;
+    bool active = true;
+    int state = 0;                   // 0=pending 1=active 2=destroyed 3=error
+    std::string error;
+};
+
 /* ---- 快照写入器（Scene::encode 的字节汇；无反射依赖） ---- */
 struct SnapshotWriter {
     std::vector<uint8_t> buf;
@@ -183,6 +204,13 @@ struct Engine {
     mq_script_vm*       vm = nullptr;
     std::vector<std::string> script_paths;   // 已装载脚本（声明顺序；自省/诊断用）
     std::vector<uint64_t> script_hashes;     // 每个脚本的内容哈希（热重载判定"哪个改了"）
+    /* 常驻覆盖层脚本（scn.Scene.overlay_script）：独立 VM/总线，**跨 director_load_scene 保留**
+     *（主场景脚本随世界重建，覆盖层不重建）。用于外壳/HUD/导航：每次场景装配完成后收 on_start，
+     *  update/输入事件在主脚本之后同时派发给它。 */
+    mq_script_bus*      overlay_bus = nullptr;
+    std::string         overlay_rel;         // 声明路径（相对场景目录）
+    std::string         overlay_abs;         // 本地文件路径（热重载/watch 用）
+    uint64_t            overlay_hash = 0;
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
     mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
     mq_control*         control = nullptr;                 // 控制平面（JSON-RPC）
@@ -265,8 +293,9 @@ struct Engine {
     /* 每个 NavAgent 的路径缓存（按实体 id；path 为 [x,y] 交错世界坐标） */
     struct AgentPath { std::vector<float> path; uint32_t index = 0; };
     std::unordered_map<int, AgentPath> agent_paths;
-    /* 节点事件表（entity → [(event, handler)]；注册序即派发序，确定性） */
-    struct NodeHandler { std::string event; std::string handler; };
+    /* 节点事件表（entity → [(event, handler, owner_instance)]；注册序即派发序，确定性）。
+     * owner_instance：注册该处理器的脚本所属实例（0=根，-2=常驻覆盖层）；派发只调它自己的 bus。 */
+    struct NodeHandler { std::string event; std::string handler; int instance = 0; };
     std::unordered_map<int, std::vector<NodeHandler>> node_events;
     bool director_paused = false;                  // director.pause()：跳过模拟，仅保留采样/渲染
     uint64_t script_frames = 0;                    // 脚本 update 实际执行次数（对照暂停）
@@ -294,6 +323,13 @@ struct Engine {
     void canvas_setup();                  // 装配期：定位画布实体
     void storage_setup();                 // 装配期：建键值存储（默认 <场景目录>/.maque；MAQUE_STORAGE/UID/SESSION 覆盖）
     void canvas_resolve();                // 每帧/尺寸变化：重解析 + 写回 transient 字段
+    /* ---- 窗口尺寸 / 渲染目标（FBO）重建 ----
+     * 窗口可 resize / 最大化：SDL SIZE_CHANGED → sync_window_size() → auto 倍率时
+     * 重建 ss/TW/views（= 新 FBO），直呈路径同步 resize_surface；显式倍率时目标固定。 */
+    void resolve_render_scale();          // 读 MAQUE_RENDER_SCALE / ui.Canvas.render_scale + window_intent
+    void rebuild_render_target();         // 解析 ss + TW + 每视图 view（装配期与窗口 resize 共用）
+    void sync_window_size(int32_t log_w, int32_t log_h);   // 窗口逻辑尺寸变化 → 重建渲染目标
+    void window_event_hooks();            // CI/演示：MAQUE_WINDOW_EVENT_AT（真实 SDL 窗口路径）
     mq_sim* sim = nullptr;
     bool sim_active = false;
     std::string sim_path;                   // MAQUE_SIM 载入的场景文件（自省用）
@@ -463,6 +499,48 @@ struct Engine {
     std::unique_ptr<Scene> scene_owned;                     // 宿主模式：堆上场景
     Scene*              scene = &scene_store;
 
+    /* ---- 场景实例（docs/32）----
+     * instances[id] = 实例；id 单调、永不复用（陈旧句柄可判定）；根场景 = 0。
+     * entity_instance：实体 → 所属实例（运行期归属，不序列化；save/snapshot 用它过滤）。
+     * active_instance / in_overlay：脚本上下文（派发期间设置、嵌套调用保存恢复）。 */
+    std::vector<std::unique_ptr<SceneInstanceRuntime>> instances;
+    std::unordered_map<int, int> entity_instance;
+    std::vector<std::string> scene_chain;            // 正在装配的 .scn 链（循环实例化检测）
+    SceneInstanceRuntime* active_instance = nullptr; // 当前脚本所属实例（回调内有效）
+    bool in_overlay = false;                         // 当前脚本是常驻覆盖层（node_on 归属 -2）
+    int building_instance = 0;                       // 装配中的实例（load_entity 打归属）
+    std::string building_base;                       // 装配中的资源基准
+    struct InstanceOp {
+        int kind = 0;                                // 0=instantiate 1=unload 2=reload
+        int instance = -1;
+        int parent = -1;                             // 挂载壳实体（-1 = 世界根）
+        std::string source;                          // VFS 路径
+    };
+    std::vector<InstanceOp> instance_ops;            // 动态请求（帧边界 FIFO）
+    std::string scene_last_error;                    // 最近一次实例化/卸载错误
+    int  instance_limit = 256;                       // 实例数预算（MAQUE_SCENE_INSTANCE_LIMIT 可调）
+    /* 实例/事件辅助（实现见下方） */
+    SceneInstanceRuntime* instance_at(int id);
+    SceneInstanceRuntime* instance_of_entity(int entity);
+    SceneInstanceRuntime* instance_by_attach(int entity);
+    int   create_instance(int parent, int attach, const std::string& vfs_source);
+    bool  entity_in_instance_subtree(int instance, int entity) const;
+    void  reset_instances();
+    bool  build_instance(SceneInstanceRuntime& inst, int depth);
+    bool  load_instance_scripts(SceneInstanceRuntime& inst, std::vector<std::string> rels, bool is_root);
+    void  collect_instance_preorder(int id, std::vector<int>& out, bool skip_paused = false) const;
+    void  collect_instance_postorder(int id, std::vector<int>& out) const;
+    int   call_instance_event(SceneInstanceRuntime& inst, const char* name, double a, double b, double c, const char* text);
+    int   call_overlay_event(const char* name, double a, double b, double c, const char* text);
+    int   dispatch_instance_on_start(int id);
+    int   dispatch_instance_on_destroy(int id);
+    void  gc_all_instance_scripts();
+    uint32_t instance_script_errors() const;
+    void  apply_instance_ops();
+    void  destroy_instance_content(SceneInstanceRuntime& inst, bool fire_destroy);
+    void  destroy_instances();
+    bool  resolve_instance_path(const std::string& rel, const std::string& base, std::string& out_vfs) const;
+
     std::unordered_map<std::string, int> tex_cache;              // 装配期填充；提取期只读
     /* env PMREM 产物缓存：路径 → {specular(预过滤 mip 链), irradiance}；-1 = 加载失败 */
     std::unordered_map<std::string, std::pair<int32_t, int32_t>> env_tex_cache;
@@ -495,7 +573,14 @@ struct Engine {
      * ss = 0 → 自动跟随窗口像素（上限 4）；1 → 设计分辨率（像素风）；N → 固定 N 倍。
      * 文字按目标像素栅格化（device_scale = ss）→ ss 越接近"窗口/设计"，文字越平滑（无锯齿）。 */
     float ss = 1.0F;
-    int win_w = 0, win_h = 0;                               // 窗口尺寸（MAQUE_WINDOW 可覆盖；世界等比缩放显示）
+    /* 显式渲染倍率请求（MAQUE_RENDER_SCALE 或 ui.Canvas.render_scale）；<=0 = 自动跟随窗口。
+     * 窗口 resize 时：自动模式重建渲染目标（FBO）；显式模式目标固定、由 present 缩放呈现。 */
+    float render_scale_req = 0.0F;
+    /* 启动期"确实会有真实窗口"的意图（headless / --shot / present=off → false）。
+     * 装配期 platform 还没创建，只能靠意图判断"是否按窗口像素算倍率"。 */
+    bool  window_intent = false;
+    int   win_last_w = 0, win_last_h = 0;         // 上次采样的窗口逻辑尺寸（0 = 尚未采样）
+    int win_w = 0, win_h = 0;                     // 窗口逻辑尺寸（MAQUE_WINDOW 可覆盖；世界等比缩放显示）
     std::vector<mq_renderer_view> views;
     /* M2 3D（plans/18-pbr-3d.md）：场景含 render.* 3D 组件 → 走 mq_renderer_frame3d；
      * cube_mesh = 内建立方体网格句柄（M2 尚无 mesh 资产管线，M4 换成 glTF mesh 资产）。 */
@@ -503,6 +588,11 @@ struct Engine {
     int32_t cube_mesh = -1;
     /* M4c：.mesh.json 资产缓存（路径 → 渲染器网格句柄；-1 = 加载失败，避免每帧重试） */
     std::unordered_map<std::string, int32_t> mesh_cache;
+    /* 场景资源全屏 shader pass（docs/13）：shader = 场景目录里的 .wgsl（**不是** builtin shader）。
+     * 每个实体最多一个 render.ShaderPass；顺序 = 实体 id 序（确定性）。 */
+    struct LoadedShaderPass { int entity = -1; int32_t handle = -1; };
+    bool has_shader_pass = false;
+    std::vector<LoadedShaderPass> loaded_shader_passes;
     /* 3D OrbitControls（鼠标拖拽环绕 + 滚轮缩放；在场景相机之上覆盖；MAQUE_ORBIT=yaw,pitch,dist 供 CI） */
     bool  orbit_enabled = false;
     bool  orbit_dragging = false;
@@ -523,6 +613,11 @@ struct Engine {
     void main_loop(const std::string& frames_dir, const std::string& name);
     /* M2 3D：扫描 render.* 组件 + 上传内建 cube；每帧提取 frame3d 数据（只读）。 */
     void setup_3d();
+    /* 场景资源全屏 shader pass（docs/13）：加载 .wgsl → create_shader_pass；每帧推进 time/提取。 */
+    void setup_shader_passes();
+    void destroy_shader_passes();
+    void shader_pass_step(float dt);
+    void extract_shader_passes(std::vector<mq_renderer_shader_pass>& out);
     void extract_3d(int32_t tw, int32_t th,
                     std::vector<mq_renderer_view3d>& out_views,
                     std::vector<mq_renderer_light>& out_lights,
@@ -548,6 +643,10 @@ struct Engine {
     bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
     void preload_scene_assets();                            // 装配期预解析纹理/材质（extract 只读，docs/13 §8）
     bool reload_script(std::string* err = nullptr, const std::string* only = nullptr);   // 重载脚本（多脚本：按路径）
+    /* 常驻覆盖层脚本：激活/切换（同一路径复用已有 VM，状态保留）、卸载、热重载。 */
+    bool ensure_overlay_script(const std::string& rel);
+    void unload_overlay();
+    bool reload_overlay_script();
     bool reload_scene();                                    // 重载场景（重建世界，docs/08）
     bool load_scene_into(const std::string& scn_path);       // 场景装配（setup / director.loadScene 共用）
     uint32_t poll_watcher();                                // 帧边界检查资源变化
@@ -1963,6 +2062,98 @@ void Engine::setup_3d() {
                n_cam, n_mesh, n_light, (long long)cube_mesh);
 }
 
+/* ==========================================================================
+ * 场景资源全屏 shader pass（docs/13）
+ *   · 资源是场景目录里的 .wgsl（相对路径、VFS 根 = 场景目录）——**不是** builtin shader；
+ *   · 装配期加载/编译一次；每帧只推进 time（模拟 dt，确定性）并提交给渲染器；
+ *   · 失败（文件缺失/编译错）打印明确原因并跳过，场景其余部分照常运行。
+ * ==========================================================================*/
+void Engine::destroy_shader_passes() {
+    if (rapi && rself && rapi->destroy_shader_pass)
+        for (auto& p : loaded_shader_passes)
+            if (p.handle >= 0) rapi->destroy_shader_pass(rself, p.handle);
+    loaded_shader_passes.clear();
+    has_shader_pass = false;
+}
+
+void Engine::setup_shader_passes() {
+    destroy_shader_passes();
+    if (!scene || !vfs || !rapi || !rself || !rapi->create_shader_pass) return;
+    std::vector<int> ids;
+    ids.reserve(scene->ents.size());
+    for (auto& kv : scene->ents) ids.push_back(kv.first);
+    std::sort(ids.begin(), ids.end());            // unordered_map 顺序不可依赖（确定性）
+    for (int id : ids) {
+        const mq_type_desc* d = nullptr;
+        auto* blob = comp_by_name(*this, id, "render.ShaderPass", &d);
+        if (!blob || !d) continue;
+        const std::string* path = read_str(d, blob->data(), "shader");
+        if (!path || path->empty()) continue;
+        void* src = nullptr;
+        size_t n = 0;
+        const std::string vpath = "/" + *path;
+        if (mq_vfs_read(vfs, vpath.c_str(), &src, &n) != MQ_VFS_OK || !src || n == 0) {
+            std::print(stderr, "runtime: shader pass '{}' 未找到（相对场景目录，经 VFS 读取）\n", *path);
+            if (src) mq_vfs_free(src);
+            continue;
+        }
+        std::string wgsl((const char*)src, n);
+        mq_vfs_free(src);
+        int32_t handle = -1;
+        const int32_t rc = rapi->create_shader_pass(rself, wgsl.c_str(), &handle);
+        if (rc != 0 || handle < 0) {
+            std::print(stderr, "runtime: shader pass '{}' 编译失败 rc={}"
+                               "（需 @fragment fs_main + group0 binding0 的 32B uniform，见 docs/13）\n",
+                       *path, (int)rc);
+            continue;
+        }
+        loaded_shader_passes.push_back({ id, handle });
+        std::print("runtime: shader pass '{}' loaded (entity={}, id={})\n",
+                   *path, id, (long long)handle);
+    }
+    has_shader_pass = !loaded_shader_passes.empty();
+}
+
+void Engine::shader_pass_step(float dt) {
+    if (!scene) return;
+    std::vector<int> ids;
+    ids.reserve(scene->ents.size());
+    for (auto& kv : scene->ents) ids.push_back(kv.first);
+    std::sort(ids.begin(), ids.end());
+    for (int id : ids) {
+        const mq_type_desc* d = nullptr;
+        auto* blob = comp_by_name(*this, id, "render.ShaderPass", &d);
+        if (!blob || !d) continue;
+        if (read_num(d, blob->data(), "paused", 0.0F) >= 0.5F) continue;
+        const float speed = read_num(d, blob->data(), "speed", 1.0F);
+        if (speed == 0.0F) continue;
+        const float time = read_num(d, blob->data(), "time", 0.0F) + dt * speed;
+        if (const mq_field_desc* f = mq_reflect_field(d, "time"))
+            *(float*)(blob->data() + f->offset) = time;
+    }
+}
+
+void Engine::extract_shader_passes(std::vector<mq_renderer_shader_pass>& out) {
+    out.clear();
+    if (!scene || loaded_shader_passes.empty()) return;
+    /* 指针位置：世界坐标（设计分辨率像素、y 向上）→ 渲染目标像素（原点左上，与 frag_coord 同向）。 */
+    const float mx = mouse_x * ss;
+    const float my = ((float)H - mouse_y) * ss;
+    for (const auto& p : loaded_shader_passes) {
+        const mq_type_desc* d = nullptr;
+        auto* blob = comp_by_name(*this, p.entity, "render.ShaderPass", &d);
+        if (!blob || !d) continue;
+        if (read_num(d, blob->data(), "enabled", 1.0F) < 0.5F) continue;
+        mq_renderer_shader_pass sp{};
+        sp.shader = p.handle;
+        sp.time = read_num(d, blob->data(), "time", 0.0F);
+        sp.frame = (float)frame;
+        sp.mouse[0] = mx;
+        sp.mouse[1] = my;
+        out.push_back(sp);
+    }
+}
+
 void Engine::extract_3d(int32_t tw, int32_t th,
                         std::vector<mq_renderer_view3d>& out_views,
                         std::vector<mq_renderer_light>& out_lights,
@@ -2390,8 +2581,12 @@ void Engine::step_frame() {
     iframe.key_count = 0;
     if (platform) {
         MQ_TRACY_ZONE_N(runtime, "input.sample");    // Tracy：平台事件泵 + 原始事件（窗口像素）
+        window_event_hooks();                        // CI/演示：MAQUE_WINDOW_EVENT_AT → 真实 SDL 窗口事件
         mq_platform_pump(platform);
         if (window) mq_platform_poll(platform, &iframe);
+        /* 窗口 resize/最大化 → 自动重建渲染目标（FBO）。必须在 canvas_resolve / 渲染之前：
+         * 画布映射、文本栅格化倍率（ss）、视图几何都读 TW/ss（下一段代码）。 */
+        if (window) sync_window_size(iframe.width, iframe.height);
         /* 测试注入：MAQUE_IMGUI_POINTER（合成指针 → 本帧设备队列，与真实鼠标同路径） */
         imgui_fake_input(iframe.pointers, iframe.pointer_count, iframe.pointer_cap);
         /* ImGui 先吃**窗口像素**事件（它工作在窗口空间）；之后才把同一批转成世界坐标。
@@ -2546,17 +2741,23 @@ void Engine::step_frame() {
          * 注意不能拿 dispatch_event 的返回值判断：它返回的是命中数，不是错误码。 */
         {
             MQ_TRACY_ZONE_N(script, "update");       // Tracy：脚本入口（update 回调派发）
-            const uint32_t err_before = bus ? mq_script_bus_error_count(bus) : 0;
+            const uint32_t err_before = instance_script_errors();
             dispatch_event(*this, MQ_EVENT_UPDATE, (double)dt, 0.0, 0.0, nullptr);
-            if (bus && mq_script_bus_error_count(bus) != err_before) {
+            if (instance_script_errors() != err_before) {
                 char ebuf[512] = { 0 };
-                mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
+                if (bus) mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
+                if (!ebuf[0] && overlay_bus)
+                    mq_script_bus_last_error(overlay_bus, ebuf, (int)sizeof ebuf);
                 mq_obs_event(obs, "script", 3, "update_failed");
                 write_crash_context(ebuf[0] ? ebuf : "script update failed");      // 可精确重放（docs/09 §5）
             }
-            if (bus) mq_script_bus_gc(bus);          // 帧边界：逐 VM 推进 GC（docs/10 D7）
+            gc_all_instance_scripts();               // 帧边界：逐实例逐 VM 推进 GC（docs/10 D7）
+            /* 动态实例化/卸载：脚本阶段之后的固定边界执行（docs/32 §7.1）；
+             * 本边界内 on_start 里再发的请求留到下一帧边界（FIFO，禁止递归构建）。 */
+            apply_instance_ops();
         }
         { MQ_TRACY_ZONE_N(anim, "anim.step"); anim_step(dt); }           // 动画采样写回（docs/15 §2）
+        { shader_pass_step(dt); }                                        // 场景 shader pass 时间推进（docs/13）
         { MQ_TRACY_ZONE_N(anim, "particles"); particles_step(dt); }      // 粒子推进（docs/15 §4）
         { MQ_TRACY_ZONE_N(nav, "nav.step"); nav_step(); }                // 导航代理推进（A* + 追踪）
         { MQ_TRACY_ZONE_N(physics, "physics.step"); physics_components_step(dt); }   // 组件驱动物理
@@ -2615,14 +2816,17 @@ void Engine::step_frame() {
     /* 直接呈现（plans/18 M1）：wgpu 交换链直呈，**不经 CPU readback**。
      * 截图/抓帧（--shot / --shot-seq / frames_dir）仍走离屏回读（out 非空）→ CI 像素断言不变。 */
     const bool need_pixels = !shot_path.empty() || !shot_seq.empty() || !frames_dir.empty();
-    if (has_3d && rapi && rself && rapi->render_frame3d) {
-        /* M2：3D 场景 = 3D pass + 2D 覆盖层同帧（直呈时 out=null → present；否则离屏回读） */
+    if ((has_3d || has_shader_pass) && rapi && rself && rapi->render_frame3d) {
+        /* M2：3D 场景 = 3D pass + 2D 覆盖层同帧（直呈时 out=null → present；否则离屏回读）
+         * docs/13：场景自带全屏 shader pass 也走这条通路（纯 shader 场景 view_count=0 同样支持）。 */
         MQ_TRACY_ZONE_N(render, "frame.3d");
         std::vector<mq_renderer_view3d> views3d;
         std::vector<mq_renderer_light> lights3d;
         std::vector<mq_renderer_pbr_material> mats3d;
         std::vector<mq_renderer_draw3d> draws3d;
         extract_3d(TW, SHpx, views3d, lights3d, mats3d, draws3d);
+        std::vector<mq_renderer_shader_pass> passes3d;
+        extract_shader_passes(passes3d);
         mq_renderer_frame3d fr{};
         fr.width = TW;
         fr.height = SHpx;
@@ -2633,6 +2837,7 @@ void Engine::step_frame() {
         fr.views2d = views.data(); fr.view2d_count = (uint32_t)views.size();
         fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
+        fr.passes = passes3d.data(); fr.pass_count = (uint32_t)passes3d.size();
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
         /* MSAA：场景字段 scn.Scene.msaa_samples（0/1=关、4=4x），MAQUE_MSAA 覆盖（0/1/4）。
          * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。 */
@@ -3296,15 +3501,134 @@ bool Engine::reload_scene() {
     if (mq_vfs_read(vfs, scn_vfs_path.c_str(), &d, &n) != MQ_VFS_OK) return false;
     std::string text((char*)d, n);
     mq_vfs_free(d);
+    /* 场景文件热重载（docs/32 §5.3）：根实例的 VM 保留（与旧行为一致），
+     * 子实例随旧世界销毁并在装配时按新文件重建；实体归属/节点事件重新登记。 */
+    for (auto& up : instances) {
+        if (up && up->id != 0 && up->state == 1) destroy_instance_content(*up, true);
+    }
+    if (SceneInstanceRuntime* root = instance_at(0)) {
+        root->children.clear();
+        root->roots.clear();
+    }
+    entity_instance.clear();
+    node_events.clear();
+    const size_t instance_mark = instances.size();
     Scene* fresh = new Scene();
+    scene_chain.clear();
+    scene_chain.push_back(scn_vfs_path);
+    building_instance = 0;
+    building_base.clear();
     fresh->deserialize(*this, text);
     fresh->instantiate(*this);
+    scene_chain.pop_back();
     delete scene;                       // 重建世界（编辑器/AI 场景迭代路径）
     scene = fresh;
     scene->flatten_world(*this);
+    if (SceneInstanceRuntime* root = instance_at(0)) {
+        for (auto& [eid, ent] : scene->ents)
+            if (ent.parent < 0 && entity_instance.find(eid) != entity_instance.end() && entity_instance[eid] == 0)
+                root->roots.push_back(eid);
+        std::sort(root->roots.begin(), root->roots.end());
+    }
+    /* 新装配出的子实例需要一次 on_start（后序）；根实例保持"世界重建但 VM 状态不丢"的旧语义。 */
+    for (size_t i = instance_mark; i < instances.size(); ++i) {
+        SceneInstanceRuntime* up = instance_at((int)i);
+        if (up && up->state == 1 && up->parent == 0) (void)dispatch_instance_on_start(up->id);
+    }
+    setup_3d();                         // 重载可能改变 2D/3D 组成 → 重算 has_3d/cube_mesh
+    setup_shader_passes();              // 场景资源 shader pass（.wgsl）随场景重载重建
+    /* 热重载重建了世界：覆盖层 UI 实体属于旧世界 → 让常驻脚本重建（VM 状态保留）。 */
+    if (overlay_bus) mq_script_bus_call3(overlay_bus, "on_start", 0.0, 0.0, 0.0, nullptr);
     ++reloads;
     mq_obs_event(obs, "runtime", 1, "scene_reloaded");
     std::print("runtime: hot reload scene '{}'\n", scn_vfs_path);
+    return true;
+}
+
+/* ---- 常驻覆盖层脚本（scn.Scene.overlay_script）----
+ * 独立 VM/总线：世界重置（director.loadScene）时主脚本随 `bus` 重建，覆盖层 VM 不动 →
+ * 外壳/HUD/导航的 JS 状态跨场景保留；UI 实体仍属于当前世界（切场景即销毁），
+ * 所以每次场景装配完成后由 on_start 让脚本重建 UI。 */
+void Engine::unload_overlay() {
+    if (overlay_bus) { mq_script_bus_destroy(overlay_bus); overlay_bus = nullptr; }
+    overlay_rel.clear();
+    overlay_abs.clear();
+    overlay_hash = 0;
+}
+
+bool Engine::ensure_overlay_script(const std::string& rel) {
+    if (rel.empty()) return false;
+    /* 同一脚本：复用已有 VM（状态跨场景保留，只重新收 on_start）。 */
+    if (overlay_bus && rel == overlay_rel) return true;
+    unload_overlay();
+    void* d = nullptr; size_t n = 0;
+    const std::string vpath = "/" + rel;
+    if (mq_vfs_read(vfs, vpath.c_str(), &d, &n) != MQ_VFS_OK || !d) {
+        std::print(stderr, "runtime: overlay script not found '{}'\n", rel);
+        mq_obs_event(obs, "runtime", 3, "overlay_script_missing");
+        return false;
+    }
+    std::string src((char*)d, n);
+    mq_vfs_free(d);
+    const char* lang = mq_script_lang_for_path(rel.c_str());
+    mq_script_vm* one = mq_script_vm_create_lang(lang);
+    if (!one) {
+        std::print(stderr, "runtime: overlay script backend '{}' unavailable for '{}'\n", lang, rel);
+        mq_obs_event(obs, "runtime", 3, "overlay_script_backend");
+        return false;
+    }
+    mq_script_set_rng(one, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+    mq_bind_generated(one, this);
+    if (mq_script_eval(one, src.c_str(), rel.c_str()) != 0) {
+        char ebuf[512] = { 0 };
+        mq_script_last_error(one, ebuf, (int)sizeof ebuf);
+        std::print(stderr, "runtime: overlay script eval failed '{}': {}\n", rel, ebuf);
+        mq_script_vm_destroy(one);
+        mq_obs_event(obs, "runtime", 3, "overlay_script_failed");
+        return false;
+    }
+    overlay_bus = mq_script_bus_create();
+    if (!overlay_bus) { mq_script_vm_destroy(one); return false; }
+    mq_script_bus_add(overlay_bus, one, rel.c_str());
+    overlay_rel = rel;
+    overlay_abs = scn_dir.empty() ? rel : (std::filesystem::path(scn_dir) / rel).string();
+    overlay_hash = mq_vfs_hash(src.data(), src.size());
+    if (watcher) mq_watcher_add(watcher, overlay_abs.c_str());
+    std::print("runtime: overlay script '{}' active (persists across scene loads)\n", rel);
+    mq_obs_event(obs, "runtime", 1, "overlay_script_loaded");
+    return true;
+}
+
+bool Engine::reload_overlay_script() {
+    if (!overlay_bus || overlay_abs.empty() || !scene) return false;
+    std::ifstream f(overlay_abs, std::ios::binary);
+    if (!f) return false;
+    std::string src((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    if (src.empty()) return false;
+    const uint64_t h = mq_vfs_hash(src.data(), src.size());
+    if (h == overlay_hash) return false;
+    const char* lang = mq_script_lang_for_path(overlay_rel.c_str());
+    mq_script_vm* fresh = mq_script_vm_create_lang(lang);
+    if (!fresh) return false;
+    mq_script_set_rng(fresh, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+    mq_bind_generated(fresh, this);
+    if (mq_script_eval(fresh, src.c_str(), overlay_rel.c_str()) != 0) {
+        char ebuf[512] = { 0 };
+        std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "eval failed";
+        mq_script_vm_destroy(fresh);                 // 保留旧 VM：写坏脚本不打断运行时
+        std::print(stderr, "runtime: overlay hot reload failed '{}': {} (旧脚本保留)\n", overlay_rel, e);
+        return false;
+    }
+    mq_script_bus_swap(overlay_bus, 0, fresh, overlay_rel.c_str());
+    overlay_hash = h;
+    /* 换入后只对新 VM 派发 on_start：重建 UI 并重新初始化。 */
+    if (mq_event_dispatch(fresh, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
+        char ebuf[512] = { 0 };
+        std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "on_start failed";
+        std::print(stderr, "runtime: overlay hot reload on_start failed '{}': {}\n", overlay_rel, e);
+    }
+    std::print("runtime: hot reload overlay script '{}' ({} bytes)\n", overlay_rel, src.size());
+    mq_obs_event(obs, "runtime", 1, "overlay_script_reloaded");
     return true;
 }
 
@@ -3316,6 +3640,13 @@ uint32_t Engine::poll_watcher() {
         auto* c = (Ctx*)ud;
         if (kind == MQ_WATCH_REMOVED) return 0;
         const std::string p = path ? path : "";
+        /* 常驻覆盖层脚本优先（它不在 script_paths 里，跨场景保留）。 */
+        if (!c->eng->overlay_abs.empty() && p.size() >= c->eng->overlay_abs.size() &&
+            p.compare(p.size() - c->eng->overlay_abs.size(), c->eng->overlay_abs.size(),
+                      c->eng->overlay_abs) == 0) {
+            c->eng->reload_overlay_script();
+            return 0;
+        }
         bool is_script = false;
         for (const std::string& sp : c->eng->script_paths) {          // 多脚本：按路径定位改的是哪一个
             if (p.size() >= sp.size() && p.compare(p.size() - sp.size(), sp.size(), sp) == 0) {
@@ -3616,6 +3947,10 @@ void Scene::remove(int index) {
         for (auto& [t, b] : it->second.comps) if (eng) destroy_blob(*eng, t, b);
         ents.erase(it);
     }
+    if (eng) {
+        eng->entity_instance.erase(index);
+        eng->node_events.erase(index);
+    }
     /* 不回收 id（单调分配）→ 之后 entity_valid(旧 id) 恒为 false */
 }
 
@@ -3626,6 +3961,36 @@ bool Scene::deserialize(Engine& eng, const std::string& text) {
     int rc = mq_persist_apply_json(eng.reflect, eng.scene_type, dom, &desc);
     mq_json_free(dom);
     return rc == 0;
+}
+
+/* VFS 路径拼接（docs/32 §5.1）：`base` 是相对 VFS 根的目录（"" 或 "dir/"）；
+ * `rel` 为绝对路径（/x、http(s)://、builtin:/…）时原样返回，否则相对 base 解析并做
+ * "." / ".." 归一化（不允许逃出 VFS 根）。 */
+static std::string vfs_join(const std::string& base, const std::string& rel) {
+    if (rel.empty()) return std::string();
+    if (rel[0] == '/' || rel.find("://") != std::string::npos || rel.rfind("builtin:", 0) == 0)
+        return rel;
+    std::string joined = (base.empty() ? std::string() : base) + rel;
+    std::vector<std::string> segs;
+    size_t i = 0;
+    while (i <= joined.size()) {
+        size_t slash = joined.find('/', i);
+        std::string seg = joined.substr(i, slash == std::string::npos ? std::string::npos : slash - i);
+        if (seg == "..") { if (!segs.empty()) segs.pop_back(); }
+        else if (!seg.empty() && seg != ".") segs.push_back(seg);
+        if (slash == std::string::npos) break;
+        i = slash + 1;
+    }
+    std::string out = "/";
+    for (size_t k = 0; k < segs.size(); ++k) { if (k) out += '/'; out += segs[k]; }
+    return out;
+}
+
+/* 场景资产所在目录（相对 VFS 根，含结尾 '/'）——用于嵌套实例的资源基准。 */
+static std::string vfs_dirname(const std::string& vfs_path) {
+    const size_t slash = vfs_path.find_last_of('/');
+    if (slash == std::string::npos) return std::string();
+    return vfs_path.substr(1, slash == 0 ? 0 : slash - 1) + (slash > 1 ? "/" : "");
 }
 
 /* 加载实体树；prefab 就地展开。
@@ -3644,18 +4009,19 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
 static void expand_prefab(Engine& eng, Scene& sc, const std::string& src, int parent,
                           std::vector<std::string>* chain, int depth,
                           const std::string& name_prefix = std::string()) {
+    /* 相对路径按**当前场景实例的资源基准**解析（嵌套场景内的 prefab 不再按根场景目录解析）。 */
+    const std::string src_vfs = vfs_join(eng.building_base, src);
     if (chain) {
         for (const auto& c : *chain)
-            if (c == src) {
+            if (c == src_vfs) {
                 std::print(stderr, "runtime: cyclic prefab reference '{}' — skipped\n", src);
                 mq_obs_event(eng.obs, "runtime", 3, "prefab_cycle");
                 return;
             }
     }
     void* pd = nullptr; size_t pn = 0;
-    const std::string ppath = "/" + src;
-    if (mq_vfs_read(eng.vfs, ppath.c_str(), &pd, &pn) != MQ_VFS_OK) {
-        std::print(stderr, "runtime: prefab not found '{}'\n", src);
+    if (mq_vfs_read(eng.vfs, src_vfs.c_str(), &pd, &pn) != MQ_VFS_OK) {
+        std::print(stderr, "runtime: prefab not found '{}' (resolved '{}')\n", src, src_vfs);
         return;
     }
     std::string ptext((char*)pd, pn);
@@ -3663,7 +4029,7 @@ static void expand_prefab(Engine& eng, Scene& sc, const std::string& src, int pa
     mq_json* pdom = mq_json_parse(ptext.c_str(), ptext.size());
     if (!pdom) return;
     std::vector<std::string> child_chain = chain ? *chain : std::vector<std::string>{};
-    child_chain.push_back(src);
+    child_chain.push_back(src_vfs);
     const mq_json* pents = mq_json_get(pdom, "entities");
     const uint32_t pcount = mq_json_len(pents);
     for (uint32_t i = 0; i < pcount; ++i) {
@@ -3700,6 +4066,7 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
 
     int idx = sc.spawn();
     if (idx < 0) return -1;
+    eng.entity_instance[idx] = eng.building_instance;    // 归属（事件作用域/序列化过滤用）
     Entity* ent = sc.at(idx);
     ent->parent = parent;
     if (nm) ent->name = nm;
@@ -3716,16 +4083,54 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
         mq_persist_apply_json(eng.reflect, d, c, blob.data());
     }
     /* Prefab 实例（docs/12 §5）：按 source 载入 .prefab.json，就地展开为子实体。
-     * detached=true 表示**已展开**（内容已是本场景的一部分），不再展开。 */
+     * detached=true 表示**已展开**（内容已是本场景的一部分），不再展开。
+     * ⚠️ 只认 `scn.PrefabInstance`：`scn.SceneInstance` 也有 source/detached 字段，
+     * 若按字段名盲扫会被当成 prefab 再展开一次（docs/32 §5 的两类实例必须分开）。 */
     for (auto& [tid, blob] : ent->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
-        if (!d) continue;
+        if (!d || std::strcmp(d->name, "scn.PrefabInstance") != 0) continue;
         const std::string* src = read_str(d, blob.data(), "source");
         if (!src || src->empty()) continue;
         bool detached = false;
         if (const mq_field_desc* fd = mq_reflect_field(d, "detached")) detached = *(const bool*)(blob.data() + fd->offset);
         if (detached) continue;
         expand_prefab(eng, sc, *src, idx, chain, depth);
+    }
+
+    /* 场景实例（docs/32 §5）：`scn.SceneInstance.source` 指向一个 .scn → 在该实体下实例化
+     * 子场景（独立 VM 组/生命周期/事件作用域）。detached=true 表示已烘焙，不再加载源。 */
+    {
+        const mq_type_desc* sid = mq_reflect_type_by_name(eng.reflect, "scn.SceneInstance");
+        if (sid) {
+            auto it = ent->comps.find(sid->type_id);
+            if (it != ent->comps.end()) {
+                std::vector<uint8_t>& blob = it->second;
+                const std::string* src = read_str(sid, blob.data(), "source");
+                const mq_field_desc* det = mq_reflect_field(sid, "detached");
+                const bool detached = det && *(const bool*)(blob.data() + det->offset);
+                if (!detached && src && !src->empty()) {
+                    std::string src_vfs;
+                    const int iid = eng.resolve_instance_path(*src, eng.building_base, src_vfs)
+                                        ? eng.create_instance(eng.building_instance, idx, src_vfs)
+                                        : -1;
+                    int state = 0; uint16_t err = 0;
+                    if (iid < 0) { state = 3; err = 1; }
+                    else {
+                        SceneInstanceRuntime* ci = eng.instance_at(iid);
+                        if (!ci || !eng.build_instance(*ci, (int)eng.scene_chain.size())) {
+                            state = 3; err = (uint16_t)(ci ? 2 : 1);
+                            if (ci) { ci->state = 3; ci->error = "instance build failed"; }
+                        } else state = 1;
+                    }
+                    if (const mq_field_desc* f = mq_reflect_field(sid, "instance_id"))
+                        *(int32_t*)(blob.data() + f->offset) = (int32_t)iid;
+                    if (const mq_field_desc* f = mq_reflect_field(sid, "state"))
+                        *(int32_t*)(blob.data() + f->offset) = state;
+                    if (const mq_field_desc* f = mq_reflect_field(sid, "error"))
+                        *(uint16_t*)(blob.data() + f->offset) = err;
+                }
+            }
+        }
     }
 
     /* 实体的 `source` 简写（平级展开）：prefab 的**根实体直接成为本实体的兄弟**，不套壳。
@@ -3752,6 +4157,392 @@ void Scene::instantiate(Engine& eng) {
     mq_json_free(dom);
     std::print("runtime: instantiated {} root entities\n", n);
 }
+
+/* =====================================================================================
+ * 场景实例（docs/32）
+ * ===================================================================================== */
+
+SceneInstanceRuntime* Engine::instance_at(int id) {
+    if (id < 0 || id >= (int)instances.size()) return nullptr;
+    return instances[(size_t)id].get();
+}
+
+SceneInstanceRuntime* Engine::instance_of_entity(int entity) {
+    auto it = entity_instance.find(entity);
+    return it == entity_instance.end() ? nullptr : instance_at(it->second);
+}
+
+SceneInstanceRuntime* Engine::instance_by_attach(int entity) {
+    for (auto& up : instances)
+        if (up && up->attach_entity == entity && up->state != 2) return up.get();
+    return nullptr;
+}
+
+bool Engine::entity_in_instance_subtree(int instance, int entity) const {
+    if (instance <= 0) return true;                 // 根实例：整棵树可见
+    int cur = entity;
+    for (int guard = 0; cur >= 0 && guard < 100000; ++guard) {
+        auto it = entity_instance.find(cur);
+        if (it != entity_instance.end() && it->second == instance) return true;
+        auto* e = scene ? scene->at(cur) : nullptr;
+        cur = e ? e->parent : -1;
+    }
+    return false;
+}
+
+int Engine::create_instance(int parent, int attach, const std::string& vfs_source) {
+    if ((int)instances.size() >= std::max(1, instance_limit)) {
+        scene_last_error = "instance limit reached";
+        std::print(stderr, "runtime: scene instance limit reached ({}) — '{}' skipped\n",
+                   instance_limit, vfs_source);
+        mq_obs_event(obs, "runtime", 3, "scene_instance_limit");
+        return -1;
+    }
+    auto up = std::make_unique<SceneInstanceRuntime>();
+    const int id = (int)instances.size();
+    up->id = id;
+    up->parent = parent;
+    up->attach_entity = attach;
+    up->source = vfs_source;
+    up->base = vfs_dirname(vfs_source);
+    up->state = 0;
+    instances.push_back(std::move(up));
+    SceneInstanceRuntime* parent_inst = instance_at(parent);
+    if (parent_inst) parent_inst->children.push_back(id);
+    return id;
+}
+
+bool Engine::resolve_instance_path(const std::string& rel, const std::string& base,
+                                   std::string& out_vfs) const {
+    out_vfs = vfs_join(base, rel);
+    return !out_vfs.empty() && out_vfs.size() > 1;
+}
+
+int Engine::call_instance_event(SceneInstanceRuntime& inst, const char* name,
+                                double a, double b, double c, const char* text) {
+    if (!inst.bus || !name) return 0;
+    SceneInstanceRuntime* prev = active_instance;
+    const bool prev_ov = in_overlay;
+    active_instance = &inst;
+    in_overlay = false;
+    const int hits = mq_script_bus_call3(inst.bus, name, a, b, c, text);
+    active_instance = prev;
+    in_overlay = prev_ov;
+    return hits;
+}
+
+int Engine::call_overlay_event(const char* name, double a, double b, double c, const char* text) {
+    if (!overlay_bus || !name) return 0;
+    SceneInstanceRuntime* prev = active_instance;
+    const bool prev_ov = in_overlay;
+    active_instance = nullptr;
+    in_overlay = true;
+    const int hits = mq_script_bus_call3(overlay_bus, name, a, b, c, text);
+    active_instance = prev;
+    in_overlay = prev_ov;
+    return hits;
+}
+
+void Engine::collect_instance_preorder(int id, std::vector<int>& out, bool skip_paused) const {
+    if (id < 0 || id >= (int)instances.size() || !instances[(size_t)id]) return;
+    const SceneInstanceRuntime* inst = instances[(size_t)id].get();
+    if (inst->state != 1) return;
+    if (!inst->active) return;
+    if (skip_paused && inst->paused) return;
+    out.push_back(id);
+    for (int c : inst->children) collect_instance_preorder(c, out, skip_paused);
+}
+
+void Engine::collect_instance_postorder(int id, std::vector<int>& out) const {
+    if (id < 0 || id >= (int)instances.size() || !instances[(size_t)id]) return;
+    const SceneInstanceRuntime* inst = instances[(size_t)id].get();
+    if (inst->state != 1) return;
+    for (int c : inst->children) collect_instance_postorder(c, out);
+    out.push_back(id);
+}
+
+bool Engine::load_instance_scripts(SceneInstanceRuntime& inst, std::vector<std::string> rels, bool is_root) {
+    mq_script_bus* bus = mq_script_bus_create();
+    if (!bus) {
+        inst.error = "script bus create failed";
+        scene_last_error = inst.error;
+        return false;
+    }
+    inst.bus = bus;
+    inst.scripts = rels;
+    inst.script_hashes.clear();
+    if (is_root) { this->bus = bus; }
+    for (const std::string& rel : rels) {
+        const char* want = mq_script_lang_for_path(rel.c_str());
+        mq_script_vm* one = mq_script_vm_create_lang(want);
+        if (!one) {
+            std::print(stderr, "runtime: script backend '{}' unavailable for '{}' (instance {})\n",
+                       want, rel, inst.id);
+            inst.error = "script backend unavailable";
+            scene_last_error = inst.error;
+            if (is_root) this->bus = nullptr;
+            inst.bus = nullptr;
+            mq_script_bus_destroy(bus);
+            return false;
+        }
+        std::print("runtime: script backend '{}' for '{}' (instance {})\n", mq_script_lang(one), rel, inst.id);
+        mq_script_set_rng(one, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+        mq_bind_generated(one, this);
+        std::string src;
+        const std::string vfs_path = vfs_join(inst.base, rel);
+        { void* d = nullptr; size_t n = 0;
+          if (mq_vfs_read(vfs, vfs_path.c_str(), &d, &n) == MQ_VFS_OK) { src.assign((char*)d, n); mq_vfs_free(d); } }
+        if (src.empty()) {
+            std::print("runtime: cannot read script '{}' (resolved '{}', instance {})\n", rel, vfs_path, inst.id);
+            inst.error = "cannot read script";
+            scene_last_error = inst.error;
+            mq_script_vm_destroy(one);
+            if (is_root) this->bus = nullptr;
+            inst.bus = nullptr;
+            mq_script_bus_destroy(bus);
+            return false;
+        }
+        inst.script_hashes.push_back(mq_vfs_hash(src.data(), src.size()));
+        SceneInstanceRuntime* prev = active_instance;
+        const bool prev_ov = in_overlay;
+        active_instance = &inst;
+        in_overlay = false;
+        const int rc = mq_script_eval(one, src.c_str(), rel.c_str());
+        active_instance = prev;
+        in_overlay = prev_ov;
+        if (rc != 0) {
+            std::print("runtime: script error in '{}' (instance {})\n", rel, inst.id);
+            inst.error = "script eval failed";
+            scene_last_error = inst.error;
+            mq_script_vm_destroy(one);
+            if (is_root) this->bus = nullptr;
+            inst.bus = nullptr;
+            mq_script_bus_destroy(bus);
+            return false;
+        }
+        mq_script_bus_add(bus, one, rel.c_str());
+    }
+    if (is_root) {
+        script_paths = rels;
+        script_hashes = inst.script_hashes;
+        script_path = rels.empty() ? std::string() : rels[0];
+        script_hash = inst.script_hashes.empty() ? 0 : inst.script_hashes[0];
+        vm = mq_script_bus_vm_at(bus, 0);
+        if (rels.size() > 1)
+            std::print("runtime: multi-script bus with {} VM(s) (dispatch order = declaration order)\n",
+                       mq_script_bus_count(bus));
+    }
+    return true;
+}
+
+bool Engine::build_instance(SceneInstanceRuntime& inst, int depth) {
+    (void)depth;
+    inst.roots.clear();
+    if (!scene) { inst.error = "no world"; inst.state = 3; return false; }
+    for (const auto& s : scene_chain) {
+        if (s == inst.source) {
+            inst.error = "cyclic scene instance reference";
+            scene_last_error = "cyclic scene instance: " + inst.source;
+            std::print(stderr, "runtime: cyclic scene instance reference '{}' — skipped\n", inst.source);
+            mq_obs_event(obs, "runtime", 3, "scene_instance_cycle");
+            inst.state = 3;
+            return false;
+        }
+    }
+    if ((int)scene_chain.size() >= 16) {
+        inst.error = "scene instance nesting too deep (>16)";
+        scene_last_error = inst.error;
+        std::print(stderr, "runtime: scene instance nesting too deep (>16) — '{}' skipped\n", inst.source);
+        inst.state = 3;
+        return false;
+    }
+    void* pd = nullptr; size_t pn = 0;
+    if (mq_vfs_read(vfs, inst.source.c_str(), &pd, &pn) != MQ_VFS_OK) {
+        inst.error = "scene not found: " + inst.source;
+        scene_last_error = inst.error;
+        std::print(stderr, "runtime: scene instance source not found '{}'\n", inst.source);
+        mq_obs_event(obs, "runtime", 3, "scene_instance_missing");
+        inst.state = 3;
+        return false;
+    }
+    std::string text((char*)pd, pn);
+    mq_vfs_free(pd);
+    mq_json* dom = mq_json_parse(text.c_str(), text.size());
+    if (!dom) {
+        inst.error = "scene json parse failed";
+        scene_last_error = inst.error;
+        inst.state = 3;
+        return false;
+    }
+    scn::Scene nd{};
+    if (scene_type) (void)mq_persist_apply_json(reflect, scene_type, dom, &nd);
+
+    std::vector<std::string> rel_scripts;
+    if (!nd.scripts.empty()) rel_scripts = nd.scripts;
+    else if (!nd.script.empty()) rel_scripts.push_back(nd.script);
+
+    scene_chain.push_back(inst.source);
+    const int prev_inst = building_instance;
+    const std::string prev_base = building_base;
+    building_instance = inst.id;
+    building_base = inst.base;
+    const int attach = inst.attach_entity;
+    const mq_json* ents = mq_json_get(dom, "entities");
+    const uint32_t count = mq_json_len(ents);
+    for (uint32_t i = 0; i < count; ++i) load_entity(*this, *scene, mq_json_at(ents, i), attach, nullptr, 1);
+    bool ok = true;
+    if (!rel_scripts.empty()) ok = load_instance_scripts(inst, rel_scripts, false);
+    building_instance = prev_inst;
+    building_base = prev_base;
+    scene_chain.pop_back();
+    mq_json_free(dom);
+
+    for (auto& [eid, ent] : scene->ents)
+        if (ent.parent == attach && entity_instance.find(eid) != entity_instance.end()
+            && entity_instance[eid] == inst.id)
+            inst.roots.push_back(eid);
+    std::sort(inst.roots.begin(), inst.roots.end());
+    if (!ok) { inst.state = 3; return false; }
+    inst.state = 1;
+    std::print("runtime: scene instance #{} '{}' built ({} roots, {} scripts)\n",
+               inst.id, inst.source, inst.roots.size(), inst.scripts.size());
+    mq_obs_event(obs, "runtime", 1, "scene_instance_built");
+    return true;
+}
+
+int Engine::dispatch_instance_on_start(int id) {
+    SceneInstanceRuntime* inst = instance_at(id);
+    if (!inst || inst->state != 1) return 0;
+    int hits = 0;
+    std::vector<int> kids = inst->children;         // 复制：回调里不会立即改结构（动态请求排队）
+    for (int c : kids) hits += dispatch_instance_on_start(c);
+    hits += call_instance_event(*inst, "on_start", 0.0, 0.0, 0.0, nullptr);
+    return hits;
+}
+
+int Engine::dispatch_instance_on_destroy(int id) {
+    SceneInstanceRuntime* inst = instance_at(id);
+    if (!inst) return 0;
+    if (inst->state != 1 && inst->state != 4) return 0;
+    int hits = 0;
+    std::vector<int> kids = inst->children;
+    for (int c : kids) hits += dispatch_instance_on_destroy(c);
+    hits += call_instance_event(*inst, "on_destroy", 0.0, 0.0, 0.0, nullptr);
+    return hits;
+}
+
+void Engine::gc_all_instance_scripts() {
+    for (auto& up : instances)
+        if (up && up->bus) mq_script_bus_gc(up->bus);
+    if (overlay_bus) mq_script_bus_gc(overlay_bus);
+}
+
+uint32_t Engine::instance_script_errors() const {
+    uint32_t n = 0;
+    for (auto& up : instances)
+        if (up && up->bus) n += mq_script_bus_error_count(up->bus);
+    if (overlay_bus) n += mq_script_bus_error_count(overlay_bus);
+    return n;
+}
+
+void Engine::destroy_instance_content(SceneInstanceRuntime& inst, bool fire_destroy) {
+    std::vector<int> kids = inst.children;
+    for (int c : kids) {
+        if (SceneInstanceRuntime* ci = instance_at(c)) destroy_instance_content(*ci, fire_destroy);
+    }
+    if (fire_destroy && (inst.state == 1 || inst.state == 4)) (void)dispatch_instance_on_destroy(inst.id);
+    if (inst.bus) {
+        if (inst.bus == bus) { bus = nullptr; vm = nullptr; }
+        mq_script_bus_destroy(inst.bus);
+        inst.bus = nullptr;
+    }
+    std::vector<int> owned;
+    for (auto& [eid, owner] : entity_instance)
+        if (owner == inst.id) owned.push_back(eid);
+    std::sort(owned.begin(), owned.end());
+    if (scene) {
+        for (int eid : owned) scene->remove(eid);
+    }
+    for (int eid : owned) {
+        entity_instance.erase(eid);
+        node_events.erase(eid);
+    }
+    inst.roots.clear();
+    inst.state = 2;
+}
+
+void Engine::reset_instances() {
+    active_instance = nullptr;
+    in_overlay = false;
+    for (auto& up : instances) {
+        if (!up) continue;
+        if (up->bus) {
+            if (up->bus == bus) { bus = nullptr; vm = nullptr; }
+            mq_script_bus_destroy(up->bus);
+            up->bus = nullptr;
+        }
+        up->state = 2;
+    }
+    instances.clear();
+    entity_instance.clear();
+    scene_chain.clear();
+    instance_ops.clear();
+    active_instance = nullptr;
+    in_overlay = false;
+    building_instance = 0;
+    building_base.clear();
+}
+
+/* 帧边界：提交动态实例化/卸载/重载请求（docs/32 §7.1）。
+ * 本边界内新产生的请求（如新实例 on_start 里再 scene_instantiate）留到下一帧边界。 */
+void Engine::apply_instance_ops() {
+    if (instance_ops.empty()) return;
+    std::vector<InstanceOp> ops;
+    ops.swap(instance_ops);
+    for (const InstanceOp& op : ops) {
+        SceneInstanceRuntime* inst = instance_at(op.instance);
+        if (!inst) continue;
+        if (op.kind == 0) {                                  // instantiate
+            if (inst->state != 0) continue;
+            /* 动态实例（parent=-1）：自动建一个挂载壳（归属父实例），让子场景根节点
+             * 仍然只有一个统一的 `scene_self_root()`；以后落盘/定位也一致。 */
+            if (inst->attach_entity < 0 && inst->id != 0 && scene) {
+                const int shell = scene->spawn();
+                if (shell >= 0) {
+                    entity_instance[shell] = inst->parent >= 0 ? inst->parent : 0;
+                    inst->attach_entity = shell;
+                    if (Entity* se = scene->at(shell)) {
+                        se->parent = -1;
+                        se->name = "SceneInstance#" + std::to_string(inst->id);
+                    }
+                }
+            }
+            if (inst->attach_entity >= 0 && (!scene || !scene->at(inst->attach_entity))) {
+                inst->state = 3;
+                inst->error = "attach entity was destroyed";
+                scene_last_error = inst->error;
+                continue;
+            }
+            if (!build_instance(*inst, 1)) continue;
+            (void)dispatch_instance_on_start(inst->id);
+        } else if (op.kind == 1) {                            // unload
+            SceneInstanceRuntime* parent = instance_at(inst->parent);
+            if (parent) parent->children.erase(std::remove(parent->children.begin(), parent->children.end(), inst->id),
+                                               parent->children.end());
+            destroy_instance_content(*inst, true);
+            inst->state = 2;
+        } else if (op.kind == 2) {                            // reload（状态重置；失败进入 error）
+            const std::string src = inst->source;
+            destroy_instance_content(*inst, true);
+            inst->children.clear();
+            inst->state = 0;
+            inst->error.clear();
+            inst->source = src;
+            if (build_instance(*inst, 1)) (void)dispatch_instance_on_start(inst->id);
+        }
+    }
+}
+
 
 /* ---- 世界快照（docs/10 §4）：实体/组件用二进制 codec 逐字段序列化。
  * 布局：u32 实体数；每实体 {i32 index, i32 parent, u32 name_len+name,
@@ -4017,10 +4808,13 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 read_f32(d, blob.data(), "b", &b);
                 if (const mq_field_desc* fz = mq_reflect_field(d, "z")) z = *(const int32_t*)(blob.data() + fz->offset);
                 (void)z;
-                // 矩形控件以"中心 + 半径"图元表达（渲染后端当前只有 sprite 图元）
+                // 矩形控件以"中心 + 半尺寸"图元表达（half_w/half_h 都 >0 时渲染器画矩形；
+                // 只填 size 会退化成正方形 —— 96x28 的按钮曾显示成 96x96 方块）
                 mq_renderer_item it{};
                 it.x = e.world_x + x + w * 0.5F; it.y = (float)eng.H - (e.world_y + y) - h * 0.5F;
                 it.size = w * 0.5F > h * 0.5F ? w * 0.5F : h * 0.5F;
+                it.half_w = w * 0.5F;
+                it.half_h = h * 0.5F;
                 it.r = r; it.g = g; it.b = b; it.a = 1.0F;
                 it.texture = -1; it.layer = 1; it.z = z;
                 out.push_back(it);
@@ -4185,19 +4979,63 @@ int runtime_parent(void* user, int entity) {
     return e ? e->parent : -1;
 }
 
-/* 事件 → 脚本回调：映射与参数个数全部由 DSL 声明、codegen 生成（docs/14 §4、docs/19 §8）。 */
-/* 事件 kind → 处理器名（生成的事件表是单一真相）→ 总线广播。
- * 多脚本/多语言下这是**唯一**的事件入口：按声明顺序投给定义了该处理器的每个 VM。 */
+/* 事件 → 脚本回调：映射与参数个数全部由 DSL 声明、codegen 生成（docs/14 §4、docs/19 §8）。
+ * 事件 kind → 处理器名（生成的事件表是单一真相）；docs/32 §4.3 的**作用域路由**：
+ *   · 生命周期/帧回调：按实例树顺序（on_start 后序、update 前序、on_destroy 后序）；
+ *   · 指针/滚轮：root → … → 命中实体的所属实例（祖先链），最后 overlay；未命中/键盘：root + 所有实例；
+ *   · overlay 恒在最后（老场景"主脚本之后"的语义不变）。 */
 int dispatch_event(Engine& eng, int kind, double a, double b, double c, const char* text) {
-    if (!eng.bus) return 0;
     uint32_t n = 0;
     const mq_event_desc* tab = mq_event_table(&n);
     if (!tab || kind < 0 || (uint32_t)kind >= n) return 0;
-    /* Tracy：事件派发 zone 名直接用**事件名**（on_update / on_click / on_key_down …），
-     * 时间线上可直接按事件过滤 / 看每个事件耗时（脚本入口之一）。 */
-    MQ_TRACY_ZONE_NAMED(__tz_evt, script, tab[kind].name);
-    return mq_script_bus_call3(eng.bus, tab[kind].name, a, b, c, text);
+    const char* name = tab[kind].name;
+    MQ_TRACY_ZONE_NAMED(__tz_evt, script, name);
+    int hits = 0;
+
+    if (kind == MQ_EVENT_ON_START) {
+        hits += eng.dispatch_instance_on_start(0);
+        hits += eng.call_overlay_event(name, a, b, c, text);
+        return hits;
+    }
+    if (kind == MQ_EVENT_ON_DESTROY) {
+        hits += eng.dispatch_instance_on_destroy(0);
+        hits += eng.call_overlay_event(name, a, b, c, text);
+        return hits;
+    }
+    if (kind == MQ_EVENT_UPDATE) {
+        std::vector<int> order;
+        eng.collect_instance_preorder(0, order, true);       // 前序；paused/active=false 整棵子树跳过
+        for (int id : order)
+            if (SceneInstanceRuntime* inst = eng.instance_at(id))
+                hits += eng.call_instance_event(*inst, name, a, b, c, text);
+        hits += eng.call_overlay_event(name, a, b, c, text);
+        return hits;
+    }
+
+    /* 输入事件：指针类按 target 的实例祖先链做作用域路由；键盘/文本给全部 active 实例。 */
+    const bool pointerish = kind >= MQ_EVENT_ON_POINTER_DOWN && kind <= MQ_EVENT_ON_CLICK;
+    std::vector<int> order;
+    if (pointerish) {
+        const int target = (int)a;
+        SceneInstanceRuntime* owner = target >= 0 ? eng.instance_of_entity(target) : nullptr;
+        std::vector<int> chain;
+        for (SceneInstanceRuntime* cur = owner; cur; cur = eng.instance_at(cur->parent))
+            chain.push_back(cur->id);
+        std::reverse(chain.begin(), chain.end());            // root → … → owner
+        if (chain.empty() && eng.instance_at(0)) chain.push_back(0);
+        order = chain;
+    } else {
+        eng.collect_instance_preorder(0, order, false);      // 键盘/文本：全部 active（root 在内）
+    }
+    for (int id : order) {
+        SceneInstanceRuntime* inst = eng.instance_at(id);
+        if (!inst || inst->state != 1 || !inst->active) continue;
+        hits += eng.call_instance_event(*inst, name, a, b, c, text);
+    }
+    hits += eng.call_overlay_event(name, a, b, c, text);
+    return hits;
 }
+
 
 void call_script_event(Engine& eng, const mq_input_event* ev) {
     const int kind = mq_event_for_input(ev->type);
@@ -6738,11 +7576,19 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
     return 1.0F;
 }
 
-/* ---- 事件（node.on/off/emit；emit 沿父链冒泡）---- */
+/* ---- 事件（node.on/off/emit；emit 沿父链冒泡，docs/32 §4.2/§4.3）---- */
 float node_on(void* ctx, float id, const char* event, const char* handler) {
     auto* eng = (Engine*)ctx;
-    if (!eng->scene->at((int)id) || !event || !handler) return 0.0F;
-    eng->node_events[(int)id].push_back({ event, handler });
+    if (!eng->scene || !eng->scene->at((int)id) || !event || !handler) return 0.0F;
+    /* 归属：常驻覆盖层 = -2（可监听任意节点，保持旧能力）；否则 = 当前脚本所属实例。
+     * 子实例脚本只能注册自己子树内的节点（docs/32 §4.2：越界显式拒绝，不静默生效）。 */
+    const int owner = eng->in_overlay ? -2 : (eng->active_instance ? eng->active_instance->id : 0);
+    if (owner > 0 && !eng->entity_in_instance_subtree(owner, (int)id)) {
+        std::print(stderr, "runtime: node_on rejected — entity {} is outside scene instance {} scope\n",
+                   (int)id, owner);
+        return 0.0F;
+    }
+    eng->node_events[(int)id].push_back({ event, handler, owner });
     return 1.0F;
 }
 
@@ -6761,16 +7607,21 @@ float node_emit(void* ctx, float id, const char* event) { return node_emit_numbe
 
 float node_emit_number(void* ctx, float id, const char* event, float value) {
     auto* eng = (Engine*)ctx;
-    if (!eng->bus || !event) return 0.0F;
+    if ((!eng->bus && !eng->overlay_bus && eng->instances.empty()) || !event) return 0.0F;
     const std::string ev = event;
     int hits = 0;
-    /* 目标 → 祖先（冒泡）；每层按注册顺序派发（确定性） */
+    /* 目标 → 祖先（冒泡，跨实例边界不截断）；处理器只在其注册者所属实例的 bus 里调用。
+     * 每层按注册顺序派发（确定性）。 */
     for (int cur = (int)id; cur >= 0; ) {
         auto it = eng->node_events.find(cur);
         if (it != eng->node_events.end()) {
             for (const Engine::NodeHandler& h : it->second) {
                 if (h.event != ev) continue;
-                mq_script_bus_call(eng->bus, h.handler.c_str(), (double)cur, (double)value, nullptr);
+                if (h.instance == -2) {
+                    eng->call_overlay_event(h.handler.c_str(), (double)cur, (double)value, 0.0, nullptr);
+                } else if (SceneInstanceRuntime* ci = eng->instance_at(h.instance)) {
+                    eng->call_instance_event(*ci, h.handler.c_str(), (double)cur, (double)value, 0.0, nullptr);
+                }
                 ++hits;
             }
         }
@@ -7538,6 +8389,141 @@ float director_load_scene(void* ctx, const char* path) {
     eng->pending_scene = path;                     // 帧边界生效（docs/10：帧内不加载资源）
     return 1.0F;
 }
+
+/* 场景自省（常驻覆盖层/导航脚本用）：当前场景标题/目录/路径。
+ * 绑定层立即拷贝返回串（std::string 成员的生命周期由引擎保证）。 */
+const char* scene_title(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return eng->scene ? eng->scene->desc.title.c_str() : "";
+}
+const char* scene_dir(void* ctx) { return ((Engine*)ctx)->scn_dir.c_str(); }
+const char* scene_path(void* ctx) { return ((Engine*)ctx)->scn_full_path.c_str(); }
+
+/* ---- 场景实例（docs/32 §7.1）：句柄立即分配，构建/卸载在帧边界（apply_instance_ops） ---- */
+float scene_instantiate(void* ctx, float parent, const char* path) {
+    auto* eng = (Engine*)ctx;
+    if (!path || !*path) { eng->scene_last_error = "scene_instantiate: missing path"; return -1.0F; }
+    const int attach = (int)parent;
+    if (attach >= 0 && (!eng->scene || !eng->scene->at(attach))) {
+        eng->scene_last_error = "scene_instantiate: parent entity not found";
+        return -1.0F;
+    }
+    const std::string base = eng->active_instance ? eng->active_instance->base : std::string();
+    std::string vfs;
+    if (!eng->resolve_instance_path(path, base, vfs)) {
+        eng->scene_last_error = "scene_instantiate: invalid path";
+        return -1.0F;
+    }
+    int parent_inst = 0;
+    if (attach >= 0) {
+        SceneInstanceRuntime* owner = eng->instance_of_entity(attach);
+        if (owner) parent_inst = owner->id;
+    }
+    const int id = eng->create_instance(parent_inst, attach, vfs);
+    if (id < 0) return -1.0F;
+    eng->instance_ops.push_back({ 0, id, attach, vfs });
+    std::print("runtime: scene_instantiate queued #{} '{}' under entity {}\n", id, vfs, attach);
+    return (float)id;
+}
+
+float scene_unload(void* ctx, float instance) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    if (!inst || inst->id == 0 || inst->state == 2 || inst->state == 4) return 0.0F;
+    inst->state = 4;                                // pending unload：立刻停止 update
+    eng->instance_ops.push_back({ 1, inst->id, -1, std::string() });
+    return 1.0F;
+}
+
+float scene_reload(void* ctx, float instance) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    if (!inst || inst->id == 0 || inst->state != 1) return 0.0F;
+    eng->instance_ops.push_back({ 2, inst->id, -1, std::string() });
+    return 1.0F;
+}
+
+void scene_set_instance_paused(void* ctx, float instance, float paused) {
+    auto* eng = (Engine*)ctx;
+    if (SceneInstanceRuntime* inst = eng->instance_at((int)instance)) inst->paused = paused != 0.0F;
+}
+
+void scene_set_instance_active(void* ctx, float instance, float active) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    if (!inst) return;
+    inst->active = active != 0.0F;
+    if (inst->attach_entity >= 0) {
+        if (Entity* e = eng->scene ? eng->scene->at(inst->attach_entity) : nullptr) e->active = inst->active;
+    }
+}
+
+float scene_instance_valid(void* ctx, float instance) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    return inst && inst->state == 1 ? 1.0F : 0.0F;
+}
+float scene_instance_root(void* ctx, float instance) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    if (!inst) return -1.0F;
+    if (inst->attach_entity >= 0) return (float)inst->attach_entity;
+    return inst->roots.empty() ? -1.0F : (float)inst->roots.front();
+}
+float scene_instance_parent(void* ctx, float instance) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    return inst ? (float)inst->parent : -1.0F;
+}
+const char* scene_instance_source(void* ctx, float instance) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    return inst ? inst->source.c_str() : "";
+}
+float scene_instance_paused(void* ctx, float instance) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    return inst && inst->paused ? 1.0F : 0.0F;
+}
+float scene_instance_count(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    int n = 0;
+    for (auto& up : eng->instances) if (up && up->state == 1) ++n;
+    return (float)n;
+}
+float scene_instance_at(void* ctx, float index) {
+    auto* eng = (Engine*)ctx;
+    int i = (int)index, n = 0;
+    for (auto& up : eng->instances) {
+        if (!up || up->state != 1) continue;
+        if (n++ == i) return (float)up->id;
+    }
+    return -1.0F;
+}
+float scene_instance_of(void* ctx, float entity) {
+    auto* eng = (Engine*)ctx;
+    auto it = eng->entity_instance.find((int)entity);
+    return it == eng->entity_instance.end() ? -1.0F : (float)it->second;
+}
+float scene_self(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return eng->active_instance ? (float)eng->active_instance->id : -1.0F;
+}
+float scene_self_root(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    if (!eng->active_instance) return -1.0F;
+    return eng->active_instance->attach_entity >= 0
+               ? (float)eng->active_instance->attach_entity
+               : (eng->active_instance->roots.empty() ? -1.0F : (float)eng->active_instance->roots.front());
+}
+float scene_emit(void* ctx, float instance, const char* event, float value) {
+    auto* eng = (Engine*)ctx;
+    if (!event || !*event) return 0.0F;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    if (!inst || inst->state != 1) return 0.0F;
+    return (float)eng->call_instance_event(*inst, event, 0.0, (double)value, 0.0, nullptr);
+}
+const char* scene_last_error(void* ctx) { return ((Engine*)ctx)->scene_last_error.c_str(); }
 
 
 } // namespace host
@@ -8354,7 +9340,7 @@ extern "C" int mq_control_Scene_expand_prefabs(void* u, const mq_json* params, c
     for (auto& [idx, ent] : e->scene->ents) {
         for (auto& [tid, blob] : ent.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
-            if (!d) continue;
+            if (!d || std::strcmp(d->name, "scn.PrefabInstance") != 0) continue;
             const std::string* src = read_str(d, blob.data(), "source");
             if (!src || src->empty()) continue;
             const mq_field_desc* fd = mq_reflect_field(d, "detached");
@@ -8661,10 +9647,126 @@ extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, 
     return 0;
 }
 
+/* ---- 场景实例控制面（docs/32 §7.2）：查询只读；变更类走与脚本同一条帧边界队列 ---- */
+extern "C" int mq_control_Scene_instances(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::string json = "{\"ok\":true,\"count\":" + std::to_string((int)e->instances.size()) + ",\"instances\":[";
+    bool first = true;
+    for (auto& up : e->instances) {
+        if (!up || up->state == 2) continue;
+        if (!first) json += ',';
+        first = false;
+        char head[256];
+        std::snprintf(head, sizeof head,
+                      "{\"id\":%d,\"parent\":%d,\"attach\":%d,\"paused\":%s,\"active\":%s,\"state\":%d,"
+                      "\"error\":\"%s\",\"source\":",
+                      up->id, up->parent, up->attach_entity, up->paused ? "true" : "false",
+                      up->active ? "true" : "false", up->state, up->error.c_str());
+        json += head;
+        write_json_string_pub(json, up->source);
+        json += ",\"scripts\":[";
+        for (size_t i = 0; i < up->scripts.size(); ++i) {
+            if (i) json += ',';
+            write_json_string_pub(json, up->scripts[i]);
+        }
+        json += "],\"roots\":[";
+        for (size_t i = 0; i < up->roots.size(); ++i) {
+            if (i) json += ',';
+            json += std::to_string(up->roots[i]);
+        }
+        json += "]}";
+    }
+    json += "]}";
+    std::snprintf(out, cap, "%s", json.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Scene_instance_info(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const int id = (int)mq_json_num(mq_json_get(params, "instance"), -1);
+    SceneInstanceRuntime* up = e->instance_at(id);
+    if (!up) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no such instance\"}"); return 0; }
+    std::string json = "{\"ok\":true,\"instance\":{";
+    char head[320];
+    std::snprintf(head, sizeof head,
+                  "\"id\":%d,\"parent\":%d,\"attach\":%d,\"paused\":%s,\"active\":%s,\"state\":%d,"
+                  "\"error\":\"%s\",\"source\":",
+                  up->id, up->parent, up->attach_entity, up->paused ? "true" : "false",
+                  up->active ? "true" : "false", up->state, up->error.c_str());
+    json += head;
+    write_json_string_pub(json, up->source);
+    json += ",\"scripts\":[";
+    for (size_t i = 0; i < up->scripts.size(); ++i) {
+        if (i) json += ',';
+        write_json_string_pub(json, up->scripts[i]);
+    }
+    json += "],\"roots\":[";
+    for (size_t i = 0; i < up->roots.size(); ++i) { if (i) json += ','; json += std::to_string(up->roots[i]); }
+    json += "]}}";
+    std::snprintf(out, cap, "%s", json.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Scene_instantiate(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
+    const int parent = (int)mq_json_num(mq_json_get(params, "parent"), -1);
+    if (!path || !*path) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing path\"}"); return 0; }
+    const float id = host::scene_instantiate(e, (float)parent, path);
+    if (id < 0) {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"%s\"}", e->scene_last_error.c_str());
+        return 0;
+    }
+    std::snprintf(out, cap, "{\"ok\":true,\"instance\":%d,\"deferred\":true}", (int)id);
+    return 0;
+}
+
+extern "C" int mq_control_Scene_unload_instance(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const int id = (int)mq_json_num(mq_json_get(params, "instance"), -1);
+    const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
+    SceneInstanceRuntime* up = e->instance_at(id);
+    if (!up || up->state == 2) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no such instance\"}"); return 0; }
+    if (dry) { std::snprintf(out, cap, "{\"ok\":true,\"dry_run\":true}"); return 0; }
+    if (id == 0) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"root instance cannot be unloaded\"}"); return 0; }
+    const float ok = host::scene_unload(e, (float)id);
+    std::snprintf(out, cap, "{\"ok\":%s,\"deferred\":true}", ok != 0.0F ? "true" : "false");
+    return 0;
+}
+
+extern "C" int mq_control_Scene_reload_instance(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const int id = (int)mq_json_num(mq_json_get(params, "instance"), -1);
+    const float ok = host::scene_reload(e, (float)id);
+    std::snprintf(out, cap, "{\"ok\":%s,\"deferred\":true}", ok != 0.0F ? "true" : "false");
+    return 0;
+}
+
+/* 把 SceneInstance 标记 detached=true（烘焙；与 Scene.expand_prefabs 对齐）。 */
+extern "C" int mq_control_Scene_bake_instances(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
+    const mq_type_desc* sid = mq_reflect_type_by_name(e->reflect, "scn.SceneInstance");
+    int marked = 0;
+    if (sid && e->scene) {
+        for (auto& [eid, ent] : e->scene->ents) {
+            auto it = ent.comps.find(sid->type_id);
+            if (it == ent.comps.end()) continue;
+            const mq_field_desc* f = mq_reflect_field(sid, "detached");
+            if (!f) continue;
+            bool& det = *(bool*)(it->second.data() + f->offset);
+            if (det) continue;
+            if (!dry) det = true;
+            ++marked;
+        }
+    }
+    std::snprintf(out, cap, "{\"ok\":true,\"marked\":%d,\"dry_run\":%s}", marked, dry ? "true" : "false");
+    return 0;
+}
+
 /* World.snapshot：抓当前世界快照（返回字节数与校验和；AI undo/回滚点）。 */
 extern "C" int mq_control_World_snapshot(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
-    if (!e->snap_manual) e->snap_manual = mq_snapshot_create();     // 独立于周期池（不会被 60 帧环覆盖）
     if (!e->world_snapshot(e->snap_manual)) { std::snprintf(out, cap, "{\"ok\":false}"); return 0; }
     size_t n = 0; mq_snapshot_bytes(e->snap_manual, &n);
     std::snprintf(out, cap, "{\"ok\":true,\"bytes\":%zu,\"checksum\":\"%llu\",\"frame\":%llu}",
@@ -9071,6 +10173,10 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
         if (g_crash_fd < 0) g_crash_fd = maque::compat::open_fd(cr, maque::compat::kOpenWriteCreate);
     }
     vfs = mq_vfs_create();
+    if (const char* lim = std::getenv("MAQUE_SCENE_INSTANCE_LIMIT")) {
+        const int v = std::atoi(lim);
+        if (v > 0) instance_limit = v;              // 实例数预算（CI/诊断可调，docs/32 §8）
+    }
     std::string scn_vfs;
     if (!mount_scene_source(vfs, scn_path, scn_vfs, scn_dir)) {
         std::print("runtime: bad scene source '{}'\n", scn_path);
@@ -9155,7 +10261,6 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
             }
         }
     }
-    setup_3d();                                  /* M2：扫描 render.* 3D 组件 + 上传内建 cube */
     input = mq_input_create();
     mq_input_set_hit_test(input, runtime_hit_test, this);
     mq_input_set_parent_fn(input, runtime_parent, this);
@@ -9193,115 +10298,56 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     return true;
 }
 
-/* 场景装配（setup 与 director.loadScene 共用）：解析 → 实例化 → 尺寸/视图 → 物理世界
- * → 脚本 VM/绑定 → 监视 → 资源预解析 → 物理组件建体。切场景同样走此处（docs/12/20）。 */
-bool Engine::load_scene_into(const std::string& scn_path) {
-    MQ_TRACY_ZONE_N(runtime, "scene.load");   // Tracy：场景加载（资源/实体/脚本装配）
-    namespace fs = std::filesystem;
-    /* 场景来源挂载（本地目录 / http(s) URL 目录）——后挂载者优先 → 新场景来源生效 */
-    std::string scn_vfs;
-    if (!mount_scene_source(vfs, scn_path, scn_vfs, scn_dir)) return false;
-    apply_env_mounts(vfs);        // MAQUE_MOUNT 覆盖目录保持最高优先级（幂等，不重复追加）
+/* ---- 窗口 resize / 最大化：自动重建渲染目标（FBO） --------------------------
+ * 渲染目标（离屏回读的颜色目标 / 直呈交换链 / gfx 内部 depth + MSAA）尺寸 =
+ *   设计分辨率 × ss（× 视图数）。
+ * 窗口可 resize/最大化（platform 建窗即带 SDL_WINDOW_RESIZABLE）→ 用户拖拽或系统最大化后
+ * SDL 发 SIZE_CHANGED → runtime 每帧对比窗口逻辑尺寸：
+ *   · **自动倍率**（默认；未设 MAQUE_RENDER_SCALE / ui.Canvas.render_scale）：
+ *     ss 重新取"窗口逻辑宽 / 设计宽" → TW/SHpx/views 全量重建 → gfx 下一帧按新尺寸
+ *     建目标（depth/MSAA 按尺寸失效重建；直呈路径显式 resize_surface）= **自动重建 FBO**；
+ *   · **显式倍率**：目标固定（像素风/固定分辨率），窗口内由 present 等比缩放 + 留边。
+ * headless / MAQUE_WINDOW=0x0 没有窗口 → 整条路径不触发（截图尺寸、文本折行稳定）。
+ */
 
-    std::string text;
-    { void* d = nullptr; size_t n = 0;
-      if (mq_vfs_read(vfs, scn_vfs.c_str(), &d, &n) == MQ_VFS_OK) {
-          text.assign((char*)d, n); mq_vfs_free(d); } }
-    if (text.empty()) return false;
-
-    /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价  onDestroy）---- */
-    if (bus) { mq_script_bus_destroy(bus); bus = nullptr; vm = nullptr; }   // 总线拥有 VM
-    spine_release();                     // Spine 实例随世界一起释放（派生数据，重建即可）
-    agent_paths.clear();
-    node_events.clear();
-    physics_role_bodies.clear();
-    particles.clear();
-    if (audio) {
-        for (auto& kv : audio_clips) mq_audio_clip_release(kv.second);
-        audio_clips.clear();
-        last_listener_master = 1.0F;
-    }
-    director_paused = false;
-    scene_store = Scene();
-    scene = &scene_store;
-    if (!scene->deserialize(*this, text)) return false;
-    scene->instantiate(*this);
-    scene->flatten_world(*this);
-
-    W = scene->desc.width > 0 ? scene->desc.width : 320;
-    H = scene->desc.height > 0 ? scene->desc.height : 240;
-    nviews = scene->desc.views > 0 ? scene->desc.views : 1;
-    /* 启动期覆盖（宿主/CI 用；docs/05、docs/22）：
-     *   MAQUE_WINDOW=WxH  窗口与渲染目标尺寸（世界坐标不变，仅改可视区）
-     *   MAQUE_VIEWS=n     视图数（1 = 单视图；>1 = 并排多视图/立体） */
-    /* **默认窗口 800x650**（用户要求）：世界/渲染目标仍是场景尺寸（W×H），
-     * 窗口内等比缩放 + 居中留边显示 —— 场景比窗口大就缩小，小就放大，都不裁剪。
-     * 之前的默认是"窗口 = 场景尺寸"，大场景（如 spine 的 all.scn 1600x1300）
-     * 在 1080p 屏上会超出显示器，必须改成固定小窗口。
-     *
-     * MAQUE_WINDOW=WxH 覆盖；`0x0` 表示**不建窗口**（CI/无显示环境用），
-     * 所以解析成功时原样接受（含 0），不要被"必须 >0"的校验吃掉语义。 */
-    win_w = 800; win_h = 650;
-    if (const char* ws = std::getenv("MAQUE_WINDOW")) {
-        int ow = 0, oh = 0;
-        if (std::sscanf(ws, "%dx%d", &ow, &oh) == 2) {
-            win_w = ow; win_h = oh;                 // 只改窗口；世界/目标不变 → 窗口内等比缩放显示
-            if (win_w > 0 && win_h > 0) {
-                std::print("runtime: window {}x{} (world {}x{}, scale {:.2f}x)\n",
-                           win_w, win_h, W, H,
-                           std::min((float)win_w / (float)W, (float)win_h / (float)H));
-            } else {
-                std::print("runtime: window disabled (MAQUE_WINDOW={})\n", ws);
-            }
-        } else {
-            std::print(stderr, "runtime: MAQUE_WINDOW='{}' 格式应为 WxH，已忽略\n", ws);
-        }
-    } else {
-        std::print("runtime: window {}x{} (default; world {}x{}, scale {:.2f}x)\n",
-                   win_w, win_h, W, H,
-                   std::min((float)win_w / (float)W, (float)win_h / (float)H));
-    }
-    if (const char* vs = std::getenv("MAQUE_VIEWS")) {
-        const int v = std::atoi(vs);
-        if (v >= 1 && v <= 4) nviews = v;
-    }
-    /* 渲染分辨率倍率：0 → 自动（窗口/设计，上限 4）；1 → 设计分辨率；N → 固定 N 倍 */
-    float rs = 0.0F;
-    if (const char* e = std::getenv("MAQUE_RENDER_SCALE")) rs = (float)std::atof(e);
-    if (rs <= 0.0F && scene && canvas_entity >= 0) {                 /* 画布组件的 render_scale */
+/* 渲染倍率请求：显式来源优先；<=0 表示自动跟随窗口。
+ * 只在装配期解析一次（运行期窗口变化由 sync_window_size 走自动分支）。 */
+void Engine::resolve_render_scale() {
+    render_scale_req = 0.0F;
+    if (const char* e = std::getenv("MAQUE_RENDER_SCALE")) render_scale_req = (float)std::atof(e);
+    if (render_scale_req <= 0.0F && scene && canvas_entity >= 0) {   /* 画布组件的 render_scale */
         if (Entity* ce = scene->at(canvas_entity)) {
             for (auto& [tid, blob] : ce->comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
                 if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
-                read_f32(d, blob.data(), "render_scale", &rs);
+                read_f32(d, blob.data(), "render_scale", &render_scale_req);
                 break;
             }
         }
     }
-    /* 渲染倍率（超采样）：
-     *   · 场景 `render_scale` 显式给了就用它；
-     *   · 否则**跟随真实窗口像素**（窗口/场景比）—— 窗口比设计分辨率大时字才清晰；
-     *   · **没有窗口时保持 1.0**（= 设计分辨率）。判据必须是"真的有窗口"，
-     *     不能只看 `win_w > 0`：`win_w` 现在是**默认 800x650**（不再是场景尺寸），
-     *     离屏/headless 下若仍按它算，渲染目标会被放大成 800x… → 截图尺寸、
-     *     文本折行行数全变（实测 shot_e2e / text_e2e 因此失败）。
-     *   · 嵌入宿主（`mq_host_create`）**根本没有 platform** → 必须先判空，
-     *     否则 `mq_platform_has_window(nullptr)` 直接崩（实测 host_tick/host_multi_instance 0xC0000409）。 */
-    /* 自动超采样：只在"**确实会有窗口**且不是一次性任务"时跟随窗口像素。
-     * 判据不能用 `platform`（此刻还没创建）也不能只看 `win_w`（默认已是 800x650），
-     * 所以看**意图**：headless / 截图 / 不要呈现 → 按设计分辨率 1:1；
-     * 否则（真窗口）→ 渲染目标 = 窗口像素，呈现时 1:1 不缩放 → 清晰。 */
+    /* 自动倍率只在"**确实会有窗口**且不是一次性任务"时跟随窗口像素：
+     * headless / 截图 / present=off → 1.0（= 设计分辨率），否则截图尺寸与文本折行会漂。 */
     const char* present_env = std::getenv("MAQUE_PRESENT");
-    const bool window_intent = !std::getenv("MAQUE_HEADLESS") && !std::getenv("MAQUE_SHOT") &&
-                               !(present_env && (std::strcmp(present_env, "off") == 0 || std::strcmp(present_env, "0") == 0));
-    const bool has_real_window = window_intent && win_w > 0;
-    if (rs <= 0.0F && has_real_window && win_w > 0) rs = (float)win_w / (float)(W > 0 ? W : 1);
+    window_intent = !std::getenv("MAQUE_HEADLESS") && !std::getenv("MAQUE_SHOT") &&
+                    !(present_env && (std::strcmp(present_env, "off") == 0 || std::strcmp(present_env, "0") == 0));
+}
+
+/* 解析 ss + 渲染目标尺寸 + 每视图 view（含场景 Camera 覆盖）。
+ * 装配期调用一次；窗口 resize 时再次调用 = **重建 FBO**。 */
+void Engine::rebuild_render_target() {
+    if (!scene) return;
+    float rs = render_scale_req;
+    if (rs <= 0.0F) {
+        /* 判据必须是"真的有窗口"：装配期 platform 还没创建 → 用 window_intent + win_w。
+         * 不能只看 win_w（默认已是 800x650）：离屏/headless 下若仍按它算，目标会被放大成
+         * 800x… → 截图尺寸、文本折行行数全变（实测 shot_e2e / text_e2e 因此失败）。
+         * 嵌入宿主（mq_host_create）根本没有 platform → 这里判 window_intent，不碰 platform。 */
+        const bool real_window = window || (window_intent && win_w > 0);
+        if (real_window && win_w > 0) rs = (float)win_w / (float)(W > 0 ? W : 1);
+    }
     if (rs <= 0.0F) rs = 1.0F;
-    /* 渲染倍率允许 **< 1**（下限 0.25）：窗口比场景小的时候（如默认窗口 800x650 看
-     * 1600x1300 的 all.scn），按 窗口/场景 倍率渲染 → 渲染目标正好等于窗口像素，
-     * 呈现时 **1:1 不缩放** → 清晰。
-     * 之前下限是 1.0：目标恒为设计分辨率，再被缩小一半显示 → 整帧糊（用户实测反馈）。
-     * ⚠️ 无窗口/headless 时 rs 恒为 1.0（上面已处理），截图尺寸与文本折行不受影响。 */
+    /* 倍率允许 **< 1**（下限 0.25）：窗口比场景小时目标正好等于窗口像素，present 1:1 更清晰；
+     * 上限 4（超采样）。⚠️ 无窗口/headless 时 rs 恒为 1.0（上面已处理）。 */
     ss = rs > 4.0F ? 4.0F : (rs < 0.25F ? 0.25F : rs);
     const int SW = (int)(W * ss + 0.5F), SH = (int)(H * ss + 0.5F);
     TW = SW * nviews;
@@ -9339,6 +10385,184 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             for (auto& v : views) { v.cx = cx; v.cy = cy; v.zoom = (zoom > 0 ? zoom : 1.0F) * ss; v.rot = rot; }
         }
     }
+}
+
+/* 窗口逻辑尺寸变化（用户拖拽 / 最大化 / 宿主 set_window_size）→ 自动重建渲染目标。
+ * 只在有真实窗口时生效；显式倍率时不改目标（present 缩放），但同样打印一行便于诊断。 */
+void Engine::sync_window_size(int32_t log_w, int32_t log_h) {
+    if (!platform || !window) return;
+    if (log_w <= 0 || log_h <= 0) return;              // 最小化/隐藏时部分平台给 0
+    if (win_last_w <= 0) { win_last_w = log_w; win_last_h = log_h; return; }   // 首帧采样
+    if (log_w == win_last_w && log_h == win_last_h) return;
+    const int32_t old_w = win_last_w, old_h = win_last_h;
+    const int old_tw = TW, old_sh = (int)(H * ss + 0.5F);
+    const float old_ss = ss;
+    win_last_w = log_w; win_last_h = log_h;
+    win_w = log_w; win_h = log_h;
+    rebuild_render_target();
+    const int new_sh = (int)(H * ss + 0.5F);
+    if (TW != old_tw || new_sh != old_sh) {
+        /* 直呈：显式重建交换链/中间目标（ABI 约定"下一帧生效"）。
+         * 离屏路径：gfx 每帧按 (TW, SHpx) 建颜色目标，depth/MSAA 缓存按尺寸失效重建。 */
+        if (direct_present && rapi && rself && rapi->resize_surface) {
+            const int32_t rc = rapi->resize_surface(rself, TW, new_sh);
+            if (rc != 0) std::print(stderr, "runtime: resize_surface({}x{}) 失败 rc={}\n", TW, new_sh, rc);
+        }
+        /* 控制面预览缓存与旧尺寸绑定 → 作废（下一帧由渲染路径覆盖） */
+        frame_pixels.clear(); frame_w = frame_h = 0;
+    }
+    std::print("runtime: window resized {}x{} → {}x{}: render target {}x{} → {}x{} (ss {:.3f} → {:.3f}, views={})\n",
+               old_w, old_h, log_w, log_h, old_tw, old_sh, TW, new_sh, old_ss, ss, nviews);
+}
+
+/* CI/演示钩子：MAQUE_WINDOW_EVENT_AT="<frame>:<op>[;...]" —— 在指定模拟帧对**真实窗口**
+ * 下发操作（op = WxH 设尺寸 / max 最大化 / restore 还原），走真实 SDL 窗口事件路径
+ * （SDL_SetWindowSize / SDL_MaximizeWindow → SIZE_CHANGED → 平台队列 → sync_window_size），
+ * 与用户拖拽标题栏/点最大化按钮**同一条链路**。 */
+void Engine::window_event_hooks() {
+    if (!platform || !window) return;
+    const char* spec = std::getenv("MAQUE_WINDOW_EVENT_AT");
+    if (!spec || !*spec) return;
+    std::string s(spec), item;
+    for (size_t i = 0; i <= s.size(); ++i) {
+        if (i < s.size() && s[i] != ';') { item.push_back(s[i]); continue; }
+        const size_t colon = item.find(':');
+        if (colon != std::string::npos) {
+            const int at = std::atoi(item.substr(0, colon).c_str());
+            const std::string op = item.substr(colon + 1);
+            if ((int)frame == at) {
+                if (op == "max") {
+                    const int rc = mq_platform_set_window_maximized(platform, 1);
+                    std::print("runtime: window event frame={} maximize (rc={})\n", (long long)frame, rc);
+                } else if (op == "restore") {
+                    const int rc = mq_platform_set_window_maximized(platform, 0);
+                    std::print("runtime: window event frame={} restore (rc={})\n", (long long)frame, rc);
+                } else {
+                    int w = 0, h = 0;
+                    if (std::sscanf(op.c_str(), "%dx%d", &w, &h) == 2) {
+                        const int rc = mq_platform_set_window_size(platform, w, h);
+                        std::print("runtime: window event frame={} resize {}x{} (rc={})\n", (long long)frame, w, h, rc);
+                    } else {
+                        std::print(stderr, "runtime: MAQUE_WINDOW_EVENT_AT 帧 {} 操作 '{}' 无法识别\n", at, op);
+                    }
+                }
+            }
+        }
+        item.clear();
+    }
+}
+
+/* 场景装配（setup 与 director.loadScene 共用）：解析 → 实例化 → 尺寸/视图 → 物理世界
+ * → 脚本 VM/绑定 → 监视 → 资源预解析 → 物理组件建体。切场景同样走此处（docs/12/20）。 */
+bool Engine::load_scene_into(const std::string& scn_path) {
+    MQ_TRACY_ZONE_N(runtime, "scene.load");   // Tracy：场景加载（资源/实体/脚本装配）
+    namespace fs = std::filesystem;
+    /* 场景来源挂载（本地目录 / http(s) URL 目录）——后挂载者优先 → 新场景来源生效 */
+    std::string scn_vfs;
+    if (!mount_scene_source(vfs, scn_path, scn_vfs, scn_dir)) return false;
+    apply_env_mounts(vfs);        // MAQUE_MOUNT 覆盖目录保持最高优先级（幂等，不重复追加）
+
+    std::string text;
+    { void* d = nullptr; size_t n = 0;
+      if (mq_vfs_read(vfs, scn_vfs.c_str(), &d, &n) == MQ_VFS_OK) {
+          text.assign((char*)d, n); mq_vfs_free(d); } }
+    if (text.empty()) return false;
+
+    /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价  onDestroy）---- */
+    reset_instances();                   // 实例树/全部实例 VM（覆盖层是独立总线，不在此列）
+    spine_release();                     // Spine 实例随世界一起释放（派生数据，重建即可）
+    agent_paths.clear();
+    node_events.clear();
+    physics_role_bodies.clear();
+    particles.clear();
+    if (audio) {
+        for (auto& kv : audio_clips) mq_audio_clip_release(kv.second);
+        audio_clips.clear();
+        last_listener_master = 1.0F;
+    }
+    director_paused = false;
+    scene_store = Scene();
+    scene = &scene_store;
+    scn_vfs_path = scn_vfs;              // 根实例 source（docs/32）
+    scn_full_path = scn_path;
+    /* 根场景 = 0 号实例：先建记录（实体归属/嵌套实例的父链都依赖它），再装配节点树。
+     * 根场景的资源基准 = VFS 根（挂载点就是场景目录）；scene_chain 用于循环实例化检测。 */
+    scene_chain.clear();
+    scene_chain.push_back(scn_vfs);
+    building_instance = 0;
+    building_base.clear();
+    if (create_instance(-1, -1, scn_vfs) < 0) return false;
+    if (SceneInstanceRuntime* root = instance_at(0)) { root->state = 1; }
+    if (!scene->deserialize(*this, text)) return false;
+    scene->instantiate(*this);
+    scene_chain.pop_back();
+    scene->flatten_world(*this);
+    {
+        SceneInstanceRuntime* root = instance_at(0);
+        if (root) {
+            for (auto& [eid, ent] : scene->ents)
+                if (ent.parent < 0 && entity_instance.find(eid) != entity_instance.end()
+                    && entity_instance[eid] == 0)
+                    root->roots.push_back(eid);
+            std::sort(root->roots.begin(), root->roots.end());
+        }
+    }
+    /* 窗口标题跟随场景（director.loadScene 切 demo 时标题栏同步；首次装配时 platform 尚未创建，
+     * 起点标题由 setup 用场景 title 建窗）。MAQUE_TITLE 显式覆盖时不动。 */
+    if (platform && !std::getenv("MAQUE_TITLE")) mq_platform_set_title(platform, scene->desc.title.c_str());
+
+    W = scene->desc.width > 0 ? scene->desc.width : 320;
+    H = scene->desc.height > 0 ? scene->desc.height : 240;
+    nviews = scene->desc.views > 0 ? scene->desc.views : 1;
+    /* 启动期覆盖（宿主/CI 用；docs/05、docs/22）：
+     *   MAQUE_WINDOW=WxH  窗口尺寸（世界坐标不变，仅改可视区）
+     *   MAQUE_VIEWS=n     视图数（1 = 单视图；>1 = 并排多视图/立体） */
+    /* **默认窗口 800x650**（用户要求）：世界/渲染目标仍是场景尺寸（W×H），
+     * 窗口内等比缩放 + 居中留边显示 —— 场景比窗口大就缩小，小就放大，都不裁剪。
+     * 之前的默认是"窗口 = 场景尺寸"，大场景（如 spine 的 all.scn 1600x1300）
+     * 在 1080p 屏上会超出显示器，必须改成固定小窗口。
+     *
+     * MAQUE_WINDOW=WxH 覆盖；`0x0` 表示**不建窗口**（CI/无显示环境用），
+     * 所以解析成功时原样接受（含 0），不要被"必须 >0"的校验吃掉语义。
+     * `director.loadScene` 切场景时窗口已存在 → 沿用**当前**窗口逻辑尺寸
+     * （用户可能刚拖拽/最大化过；默认值/MAQUE_WINDOW 只决定首次建窗）。 */
+    if (platform && window) {
+        int32_t ww = 0, wh = 0;
+        mq_platform_window_size(platform, &ww, &wh);
+        if (ww > 0 && wh > 0) { win_w = ww; win_h = wh; }
+        std::print("runtime: window {}x{} (current; world {}x{}, scale {:.2f}x)\n",
+                   win_w, win_h, W, H,
+                   std::min((float)win_w / (float)W, (float)win_h / (float)H));
+    } else {
+        win_w = 800; win_h = 650;
+        if (const char* ws = std::getenv("MAQUE_WINDOW")) {
+            int ow = 0, oh = 0;
+            if (std::sscanf(ws, "%dx%d", &ow, &oh) == 2) {
+                win_w = ow; win_h = oh;             // 只改窗口；世界/目标不变 → 窗口内等比缩放显示
+                if (win_w > 0 && win_h > 0) {
+                    std::print("runtime: window {}x{} (world {}x{}, scale {:.2f}x)\n",
+                               win_w, win_h, W, H,
+                               std::min((float)win_w / (float)W, (float)win_h / (float)H));
+                } else {
+                    std::print("runtime: window disabled (MAQUE_WINDOW={})\n", ws);
+                }
+            } else {
+                std::print(stderr, "runtime: MAQUE_WINDOW='{}' 格式应为 WxH，已忽略\n", ws);
+            }
+        } else {
+            std::print("runtime: window {}x{} (default; world {}x{}, scale {:.2f}x)\n",
+                       win_w, win_h, W, H,
+                       std::min((float)win_w / (float)W, (float)win_h / (float)H));
+        }
+    }
+    if (const char* vs = std::getenv("MAQUE_VIEWS")) {
+        const int v = std::atoi(vs);
+        if (v >= 1 && v <= 4) nviews = v;
+    }
+    /* 渲染倍率 + 渲染目标（ss/TW/views）：解析一次；窗口 resize 时用同一条路径重建 FBO。 */
+    resolve_render_scale();
+    rebuild_render_target();
+    win_last_w = win_w; win_last_h = win_h;   // resize 检测基线（首帧再按真实窗口校正）
     rng = scene->desc.seed * 2654435761u + 12345u;
     if (physics) { mq_physics_destroy(physics); physics = nullptr; }
     {
@@ -9361,42 +10585,15 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     std::print("runtime: scene '{}' title='{}' script='{}' scripts={} {}x{} views={}\n",
                scn_path, scene->desc.title, scene->desc.script, scene->desc.scripts.size(), W, H, nviews);
 
-    script_path = scene->desc.script;
-    /* 多脚本（多语言）：scripts 非空则按**声明顺序**逐个装载（顺序 = 事件投递顺序） */
+    /* 多脚本（多语言）：scripts 非空则按**声明顺序**逐个装载（顺序 = 事件投递顺序）。
+     * 根场景 = 0 号实例；脚本装载走统一的实例 helper（与嵌套实例同一路径，docs/32）。 */
     std::vector<std::string> load_list;
     if (!scene->desc.scripts.empty()) load_list = scene->desc.scripts;
-    else if (!script_path.empty()) load_list.push_back(script_path);
-    script_paths = load_list;
-    scn_vfs_path = scn_vfs;
-    scn_full_path = scn_path;
-    /* scn_dir = 来源目录（本地路径或 URL 基址），由 mount_scene_source 写入 */
-    /* ---- 脚本 VM：按脚本语言选后端（docs/14「统一后端 ABI」：js / lua）----
-     * 语言由文件扩展名决定（mq_script_lang_for_path），未编入的后端会明确报错而不是静默降级。 */
-    if (!bus) bus = mq_script_bus_create();
-    for (const std::string& path : load_list) {
-        const char* want = mq_script_lang_for_path(path.c_str());
-        mq_script_vm* one = mq_script_vm_create_lang(want);
-        if (!one) {
-            std::print(stderr, "runtime: script backend '{}' unavailable for '{}' (backends: {})\n",
-                       want, path, [] { char b[64] = { 0 }; mq_script_backends(b, sizeof b); return std::string(b); }());
-            return false;
-        }
-        std::print("runtime: script backend '{}' for '{}'\n", mq_script_lang(one), path);
-        mq_script_set_rng(one, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
-        mq_bind_generated(one, this);
-        std::string src;
-        { void* d = nullptr; size_t n = 0;
-          if (mq_vfs_read(vfs, ("/" + path).c_str(), &d, &n) == MQ_VFS_OK) { src.assign((char*)d, n); mq_vfs_free(d); } }
-        if (src.empty()) { std::print("runtime: cannot read script '{}'\n", path); return false; }
-        if (load_list.size() == 1) script_hash = mq_vfs_hash(src.data(), src.size());
-        script_hashes.push_back(mq_vfs_hash(src.data(), src.size()));
-        if (mq_script_eval(one, src.c_str(), path.c_str()) != 0) { std::print("runtime: script error\n"); return false; }
-        mq_script_bus_add(bus, one, path.c_str());
-    }
-    vm = mq_script_bus_vm_at(bus, 0);          /* 便捷指针：只读/自省用途 */
-    if (load_list.size() > 1)
-        std::print("runtime: multi-script bus with {} VM(s) (dispatch order = declaration order)\n",
-                   mq_script_bus_count(bus));
+    else if (!scene->desc.script.empty()) load_list.push_back(scene->desc.script);
+    SceneInstanceRuntime* root_inst = instance_at(0);
+    if (!root_inst) return false;
+    if (!load_instance_scripts(*root_inst, load_list, true)) return false;
+
     if (watcher) { mq_watcher_destroy(watcher); watcher = nullptr; }
     const bool remote_scene = scn_path.rfind("http://", 0) == 0 || scn_path.rfind("https://", 0) == 0;
     const char* watch = std::getenv("MAQUE_WATCH");
@@ -9409,10 +10606,19 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             mq_watcher_add(watcher, (fs::path(scn_dir) / scn_vfs_path.substr(1)).string().c_str());
             for (const std::string& sp : script_paths)          // 监视**全部**脚本（多脚本热重载）
                 mq_watcher_add(watcher, (fs::path(scn_dir) / sp).string().c_str());
+            /* 嵌套场景（docs/32 §5.3）：源 .scn + 各实例脚本都纳入监视（去重由 watcher 处理）。 */
+            for (auto& up : instances) {
+                if (!up || up->id == 0 || up->source.empty()) continue;
+                mq_watcher_add(watcher, (fs::path(scn_dir) / up->source.substr(1)).string().c_str());
+                for (const std::string& sp : up->scripts)
+                    mq_watcher_add(watcher, (fs::path(scn_dir) / vfs_join(up->base, sp).substr(1)).string().c_str());
+            }
             std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
         }
     }
     preload_scene_assets();
+    setup_3d();                                 /* 扫描 render.* 3D 组件 + 上传内建 cube（2D↔3D 切场景需重算） */
+    setup_shader_passes();                      /* 场景资源全屏 shader（.wgsl，相对场景目录；docs/13） */
     spine_setup();                              // Spine：骨架/图集/页纹理装配（装配期做 IO，不在模拟帧内）
     text_setup();                               // 字体（MAQUE_FONT → 系统字体 → 内置 5x7）
     sim_setup();                                // 输入模拟器（MAQUE_SIM / MAQUE_SIM_CLICK）
@@ -9425,13 +10631,24 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             if (platform) mq_platform_set_safe_area(platform, l, t, r, b);
         }
     }
+    /* 常驻覆盖层脚本：本场景声明了就激活/切换（同一路径复用已有 VM → 状态跨场景保留）；
+     * 未声明则保持现有覆盖层 —— director.loadScene 切 demo 时外壳/导航不消失。 */
+    if (!scene->desc.overlay_script.empty()) (void)ensure_overlay_script(scene->desc.overlay_script);
     physics_components_setup();
-    const uint32_t err0 = bus ? mq_script_bus_error_count(bus) : 0;
-    dispatch_event(*this, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr);
-    if (bus && mq_script_bus_error_count(bus) != err0) {
+    /* 生命周期：on_start **后序**（子实例先 ready，根场景最后；overlay 更后）——docs/32 §3.3。 */
+    const uint32_t err0 = instance_script_errors();
+    (void)dispatch_instance_on_start(0);
+    (void)call_overlay_event("on_start", 0.0, 0.0, 0.0, nullptr);
+    {
         char ebuf[512] = { 0 };
-        mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
-        write_crash_context(ebuf[0] ? ebuf : "on_start failed");
+        if (instance_script_errors() != err0) {
+            if (bus) mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
+            if (!ebuf[0] && overlay_bus)
+                mq_script_bus_last_error(overlay_bus, ebuf, (int)sizeof ebuf);
+            if (!ebuf[0])
+                std::snprintf(ebuf, sizeof ebuf, "scene instance script error");
+            write_crash_context(ebuf);
+        }
     }
     return true;
 }
@@ -9450,7 +10667,8 @@ void Engine::teardown() {
     if (ctl_server) { mq_control_server_destroy(ctl_server); ctl_server = nullptr; }
     /* 释放顺序：先释放"依赖 reflect 的资源"（clips 的字符串成员要经反射析构），再销毁 reflect。 */
     if (control) { mq_control_destroy(control); control = nullptr; }
-    if (bus) { mq_script_bus_destroy(bus); bus = nullptr; vm = nullptr; }   // 总线拥有 VM
+    reset_instances();                                                      // 实例树 + 全部主脚本 VM
+    unload_overlay();                                                       // 常驻覆盖层 VM
     if (obs) { mq_obs_destroy(obs); obs = nullptr; }
     if (reflect) {
         const mq_type_desc* ct = mq_reflect_type_by_name(reflect, "asset.AnimationClip");
@@ -9473,6 +10691,7 @@ void Engine::teardown() {
     mq_physics_destroy(physics); physics = nullptr;
     spine_release();                     // Spine 实例/骨架数据（纹理归 tex_cache → 随渲染器销毁）
     mq_input_destroy(input); input = nullptr;
+    destroy_shader_passes();             // 场景资源 shader pass（句柄归渲染器，先于销毁渲染器释放）
     audio_teardown();                    // 先停设备/join 回调，再拆平台（SDL）
     mq_platform_destroy(platform); platform = nullptr;
     if (rapi && rself) { rapi->destroy(rself); rself = nullptr; }
@@ -9643,7 +10862,12 @@ extern "C" int mq_run_scene_ex(const char* scn_path, const char* frames_dir) {
     if (const char* req = std::getenv("MAQUE_CONTROL")) {
         const bool replayed = eng->prepare_replay();
         if (!replayed && std::getenv("MAQUE_RECORD")) mq_input_record_begin(eng->input);
-        auto serve = [&](const char* r) { std::print("{}\n", mq_control_dispatch(eng->control, r)); };
+        /* stdout 接管道时是块缓冲：逐行控制（inspector/e2e 的"写一条读一条"）必须每次响应后
+         * flush，否则对端读不到 → 交互式驱动永久阻塞。 */
+        auto serve = [&](const char* r) {
+            std::print("{}\n", mq_control_dispatch(eng->control, r));
+            std::fflush(stdout);
+        };
         if (std::strcmp(req, "-") == 0) {
             char line[8192];
             while (std::fgets(line, sizeof line, stdin)) { line[std::strcspn(line, "\n")] = 0; if (*line) serve(line); }

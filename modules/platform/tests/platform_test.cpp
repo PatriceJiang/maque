@@ -36,6 +36,22 @@ int main() {
     CHECK(p != nullptr);
     CHECK(mq_platform_has_window(p) == 0);        // headless / dummy
 
+    // ---- 窗口尺寸/最大化 ABI（headless dummy：窗口对象存在但不算真实窗口）----
+    {
+        int32_t ww = -1, wh = -1;
+        mq_platform_window_size(p, &ww, &wh);
+        CHECK(ww == 320 && wh == 240);            // 创建尺寸
+        CHECK(mq_platform_set_window_size(p, 640, 480) == 0);   // dummy 驱动也接受 resize
+        mq_platform_window_size(p, &ww, &wh);
+        CHECK(ww == 640 && wh == 480);            // 立即回读（runtime 当帧就能重建目标）
+        CHECK(mq_platform_set_window_size(p, 0, 0) != 0);       // 非法尺寸
+        CHECK(mq_platform_set_window_size(nullptr, 10, 10) != 0);
+        CHECK(mq_platform_set_window_maximized(p, 1) == 0);     // dummy 下是 no-op，但不报错
+        CHECK(mq_platform_set_window_maximized(p, 0) == 0);
+        CHECK(mq_platform_set_window_maximized(nullptr, 1) != 0);
+        CHECK(mq_platform_set_window_size(p, 320, 240) == 0);   // 还原后续用例的窗口尺寸
+    }
+
     Frame fr;
     fr.reset();
     uint32_t n = mq_platform_poll(p, &fr.f);

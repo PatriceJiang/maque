@@ -100,6 +100,18 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 场景自定义全屏 shader 端到端（render.ShaderPass + Shadertoy Seascape）：
+# WGSL 是场景资源（VFS 根 = 场景目录），非内建 shader。① --shot 日志含 shader pass 加载行 +
+# "runtime: shot" + PPM 640x360 结构断言（颜色丰富/非纯色/天空亮于海面）② frame 1 vs 45 有显著
+# 像素差（time 推进）③ 同帧两次逐字节一致 ④ WGSL 在 scenes/shadertoy/、场景 JSON 挂组件并引用它。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME shadertoy_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/shadertoy_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/shadertoy/seascape.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/shadertoy_e2e")
+    set_tests_properties(shadertoy_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # PBR/迁移渲染回归（docs/31 §11 P3）：①迁移 manifest/compare 指标下限 ②Normal oracle + 镜像 front-face
 # ③已提交 preview.jpg 渲染基线（重渲染 ToyCar/Duck/CompareSpecular 与提交预览比较；无 PIL 时跳过该节）。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
@@ -199,6 +211,14 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/nested_prefab_e2e")
 endif()
 
+# 场景实例（docs/32）：`.scn` 自带行为 → 静态嵌套 + 每实例 VM/生命周期/事件作用域 + 动态实例化/卸载。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME scene_instance_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/scene_instance_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/nested/parent.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/scene_instance_e2e")
+endif()
+
 # Prefab **平级展开**（实体级 `source` 简写）：纯展开指令、不套壳 —— 用于"平级重复对象"
 # （坦克的 20 个履带印/5 个残骸就是这种形态；用 PrefabInstance 组件会改层级并白增空壳实体）。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
@@ -255,6 +275,17 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/window_present_e2e")
     set_tests_properties(window_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 窗口 resize / 最大化端到端（docs/05）：① 运行期 resize（MAQUE_WINDOW_EVENT_AT，走真实 SDL
+# 事件路径）→ 自动倍率下渲染目标（FBO）重建、抓帧尺寸跟随窗口 ② 启动即最大化（MAQUE_WINDOW_MAXIMIZED）
+# ③ 显式 MAQUE_RENDER_SCALE 时目标固定（窗口变化只缩放呈现）④ 连续两次 resize 不崩/无 ASan。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME window_resize_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/window_resize_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/window_resize_e2e")
+    set_tests_properties(window_resize_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
 # 真实输入通路端到端（docs/19）：SDL 事件队列注入 → 平台翻译 → 脚本回调 + 坐标映射
@@ -326,4 +357,19 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/hot_reload_multi_e2e")
     # Windows 上该用例主动 skip（无 stdbuf，无法在进程运行中读日志；脚本内有详细说明）
     set_tests_properties(hot_reload_multi_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# Khronos 画廊端到端（scenes/khronos/index.scn + gallery.js，overlay_script 常驻覆盖层）：
+# ① 入口 149 个模型标题的分页 list（gallery_title/item_N/page_label/page_prev/page_next）
+# ② 点 item_0 → demo 场景（title=MODELS[0]，demo_title/demo_index 文本一致）
+# ③ demo 上一个/下一个在排序列表内循环（首项 prev→末项、末项 next→首项）
+# ④ demo_back → 入口标题 + 列表重建；⑤ page_next/page_prev 改页码文本并还原
+# ⑥ 入口/demo 各抓一帧（Capture.screen 分块 base64 → PPM/PNG）做像素断言（1280x720、
+#    两图显著不同、demo 中央有模型像素、入口有文字像素）。内容缺失时脚本自身 SKIP 77。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME khronos_gallery_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/khronos_gallery_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}"
+             "${CMAKE_CURRENT_BINARY_DIR}/khronos_gallery_e2e")
+    set_tests_properties(khronos_gallery_e2e PROPERTIES TIMEOUT 600 SKIP_RETURN_CODE 77)
 endif()

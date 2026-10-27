@@ -132,3 +132,5 @@
     - { name: on_key_down,     on: key_down, args: [ { name: target, type: float }, { name: key, type: float } ] }
     - { name: on_key_up,       on: key_up, args: [ { name: target, type: float }, { name: key, type: float } ] }
     - { name: on_text,         on: text, args: [ { name: target, type: float }, { name: text, type: string } ] }
+    # 场景实例销毁（docs/32 §3.3）：卸载实例/整场景时派发（后序：子先父后）。
+    - { name: on_destroy,      args: [] }

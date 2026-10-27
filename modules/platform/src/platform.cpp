@@ -118,6 +118,15 @@ struct mq_platform {
     int   have_last = 0;
 };
 
+/* 窗口逻辑尺寸（用户看到的点/像素，DPI 缩放后；与 drawable_size 的设备像素区分）。
+ * 只在窗口存在时写；resize/最大化后立即回读，保证 runtime 当帧就能看到新尺寸。 */
+static void refresh_window_size(mq_platform* p) {
+    if (!p || !p->win) return;
+    int w = 0, h = 0;
+    SDL_GetWindowSize(p->win, &w, &h);
+    if (w > 0 && h > 0) { p->w = w; p->h = h; }
+}
+
 namespace {
 
 /* 入队并更新指针状态（设备与注入共用；delta 在此统一计算）。 */
@@ -298,16 +307,26 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
             SDL_SetHint(SDL_HINT_FRAMEBUFFER_ACCELERATION, "0");
             /* 演示/自动化友好开关（可选）：
              *   MAQUE_WINDOW_POS=x,y    指定窗口位置（默认交给 WM）
-             *   MAQUE_ALWAYS_ON_TOP=1   窗口置顶（演示时不被其它窗口遮挡） */
-            Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+             *   MAQUE_ALWAYS_ON_TOP=1   窗口置顶（演示时不被其它窗口遮挡）
+             * 窗口**默认可 resize / 可最大化**（SDL_WINDOW_RESIZABLE）：用户拖拽/最大化后
+             * SDL 发 SIZE_CHANGED → runtime 自动重建渲染目标（FBO）。 */
+            Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
             if (const char* atop = std::getenv("MAQUE_ALWAYS_ON_TOP"); atop && *atop && *atop != '0')
                 flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+            const char* max_env = std::getenv("MAQUE_WINDOW_MAXIMIZED");
+            const bool start_maximized = max_env && *max_env && *max_env != '0';
+            if (start_maximized) flags |= SDL_WINDOW_MAXIMIZED;
             int wx = SDL_WINDOWPOS_UNDEFINED, wy = SDL_WINDOWPOS_UNDEFINED;
             if (const char* pos = std::getenv("MAQUE_WINDOW_POS"))
                 std::sscanf(pos, "%d,%d", &wx, &wy);
             p->win = SDL_CreateWindow(title ? title : "maque", wx, wy, w, h, flags);
             p->window = p->win != nullptr;
-            if (p->window) std::print("platform: SDL video driver='{}'\n", SDL_GetCurrentVideoDriver());
+            if (p->window) {
+                std::print("platform: SDL video driver='{}'\n", SDL_GetCurrentVideoDriver());
+                /* 某些 WM 忽略创建 flag：显式再最大化一次（幂等），并同步逻辑尺寸 */
+                if (start_maximized) SDL_MaximizeWindow(p->win);
+                refresh_window_size(p);
+            }
         }
         if (p->window) SDL_StartTextInput();
     }
@@ -422,6 +441,35 @@ void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h) {
     if (out_h) *out_h = h;
 }
 
+/* 窗口**逻辑**尺寸（用户拖拽/最大化后用户看到的点尺寸）——渲染倍率按它跟随窗口，
+ * 与 drawable_size（设备像素）分开：HiDPI 下 target = 逻辑宽 × ss，present 再做设备像素缩放。 */
+void mq_platform_window_size(mq_platform* p, int32_t* out_w, int32_t* out_h) {
+    int w = 0, h = 0;
+    if (p && p->win) SDL_GetWindowSize(p->win, &w, &h);
+    if (out_w) *out_w = w;
+    if (out_h) *out_h = h;
+}
+
+/* 程序化 resize：走 **真实** SDL 窗口路径（SIZE_CHANGED → 平台队列 → runtime 重建渲染目标）。
+ * 事件可能异步到达；这里顺手回读并标脏，保证调用方当帧就能看到新尺寸。 */
+int32_t mq_platform_set_window_size(mq_platform* p, int32_t w, int32_t h) {
+    if (!p || !p->win) return 1;
+    if (w <= 0 || h <= 0) return 2;
+    SDL_SetWindowSize(p->win, w, h);
+    refresh_window_size(p);
+    p->resized = 1; p->display_dirty = 1;
+    return 0;
+}
+
+/* 最大化 / 还原（窗口创建时已带 SDL_WINDOW_RESIZABLE，否则多数 WM 不响应最大化）。 */
+int32_t mq_platform_set_window_maximized(mq_platform* p, int32_t on) {
+    if (!p || !p->win) return 1;
+    if (on) SDL_MaximizeWindow(p->win); else SDL_RestoreWindow(p->win);
+    refresh_window_size(p);
+    p->resized = 1; p->display_dirty = 1;
+    return 0;
+}
+
 float mq_platform_content_scale(mq_platform* p) {
     if (!p || !p->win) return 1.0F;
     /* 测试/远程桌面可强制：MAQUE_DPI_SCALE=2 */
@@ -512,6 +560,13 @@ void mq_platform_pump(mq_platform* p) {
                 if (e.window.event == SDL_WINDOWEVENT_RESIZED ||
                     e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                     p->resized = 1; p->display_dirty = 1; p->w = e.window.data1; p->h = e.window.data2;
+                }
+                /* 最大化/还原：SDL2 在不同平台可能只发 MAXIMIZED/RESTORED（或随 SIZE_CHANGED 一起发）。
+                 * 统一标脏并回读窗口逻辑尺寸 → runtime 下一帧重建渲染目标（FBO）。 */
+                if (e.window.event == SDL_WINDOWEVENT_MAXIMIZED ||
+                    e.window.event == SDL_WINDOWEVENT_RESTORED) {
+                    p->resized = 1; p->display_dirty = 1;
+                    refresh_window_size(p);
                 }
                 /* 换显示器（不同 DPI）同样要求重解析画布（docs/17 多显示器适配） */
                 if (e.window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED) p->display_dirty = 1; else if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) p->focused = 1;

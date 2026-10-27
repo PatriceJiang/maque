@@ -225,6 +225,15 @@
       fields:
         - { name: exposure, type: float }
         - { name: tonemap,  type: int32_t }         # 0=none 1=ACES
+    # 场景自带的全屏 shader pass（**场景资源**，不是 assets/builtin/shaders 内建 shader）：
+    # shader = create_shader_pass 返回的句柄（-1 = 无）。引擎提供全屏三角形 VS，
+    # 资源只提供 @fragment fs_main；uniform = group0 binding0 的 32B 结构（见 docs/13）。
+    - record: shader_pass
+      fields:
+        - { name: shader, type: int32_t }
+        - { name: time,   type: float }             # 组件 time（秒）
+        - { name: frame,  type: float }             # 帧号
+        - { name: mouse,  type: "float[4]" }        # xy = 目标像素（原点左上，与 frag_coord 同向）；zw 预留
     # 一帧 3D + 2D 覆盖层：非空 out = 离屏渲染并回读；空 out = 直接呈现到窗口。
     - record: frame3d
       fields:
@@ -253,6 +262,10 @@
         - { name: msaa_samples,   type: int32_t }
         - { name: out,            type: "uint8_t*" }
         - { name: out_size,       type: uint32_t }
+        # 场景资源全屏 shader pass（尾部追加；先于 3D/2D 绘制 = 背景层）。
+        # 空/0 = 无。仅有 pass、没有 3D 组件（view_count=0）时也走 frame3d 通路。
+        - { name: passes,         type: "const mq_renderer_shader_pass*" }
+        - { name: pass_count,     type: uint32_t }
   methods:
     - fn: create
       returns: self
@@ -309,3 +322,12 @@
       returns: int32_t
       args: [ { name: self, type: self } ]
       doc: "提交交换链（直接呈现路径；离屏路径为空操作）"
+    # ---- 场景资源全屏 shader（append-only）----
+    - fn: create_shader_pass
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: wgsl, type: "const char*" }, { name: out_id, type: "int32_t*" } ]
+      doc: "编译场景提供的 WGSL 全屏 pass（需 @fragment fs_main + group0 binding0 的 32B uniform；引擎供全屏 VS）；0=成功"
+    - fn: destroy_shader_pass
+      returns: void
+      args: [ { name: self, type: self }, { name: id, type: int32_t } ]
+      doc: "释放 create_shader_pass 的句柄（场景重载/退出用；无效 id 忽略）"

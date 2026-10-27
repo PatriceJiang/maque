@@ -100,6 +100,18 @@
       fields:
         - { name: source, type: string, default: "" }        # 相对场景目录的资源路径
         - { name: detached, type: bool, default: false }     # true = 已 bake（不再跟随源）
+    # 场景实例（docs/32）：指向一个 .scn，加载/动态实例化为**有行为的子场景**——
+    # 独立 VM 组（该 scn 的 script/scripts）、独立生命周期与事件作用域；docs/32 §5/§7。
+    - struct: SceneInstance
+      fields:
+        - { name: source,   type: string, default: "" }      # 相对父场景目录的 .scn 路径
+        - { name: paused,   type: bool,   default: false }   # 只停行为（update），不隐藏
+        - { name: active,   type: bool,   default: true }    # 等价 node_set_active（含渲染/命中）
+        - { name: detached, type: bool,   default: false }   # true = 已烘焙/自包含（不再按 source 实例化）
+        # 运行期（transient，不序列化）：实例句柄/状态/错误
+        - { name: instance_id, type: int32_t, default: -1, attrs: { transient: true, readonly: true } }
+        - { name: state,       type: int32_t, default: 0,  attrs: { transient: true, readonly: true } }
+        - { name: error,       type: uint16_t, default: 0, attrs: { transient: true, readonly: true } }
     # 导航代理（2D 网格切片；docs/15 持续项）：寻路由确定性 nav 模块完成。
     - struct: NavAgent
       roles: [nav_agent]
@@ -127,6 +139,9 @@
         # 多脚本（多语言）协作：按**声明顺序**创建 VM 并投递事件（确定性）。
         # 留空则用上面的 script；两者都给时 scripts 生效。
         - { name: scripts,  type: "string[]", doc: "多脚本列表（多语言，按声明顺序）" }
+        # 常驻覆盖层脚本（相对场景目录）：加载声明它的场景时载入独立 VM；之后 director_load_scene
+        # 切场景时**不销毁**（主场景脚本仍重建），每次场景装配完成后派发 on_start —— 外壳/HUD/导航用。
+        - { name: overlay_script, type: string, default: "", doc: "常驻覆盖层脚本（跨场景切换保留）" }
         - { name: width,    type: int32_t, default: 320 }
         - { name: height,   type: int32_t, default: 240 }
         - { name: seed,     type: uint32_t, default: 0 }

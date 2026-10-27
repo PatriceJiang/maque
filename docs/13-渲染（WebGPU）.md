@@ -162,3 +162,78 @@ fragment 入口消费。
   （法线，KHR_texture_transform 各贴图可不同）；PBR 贴图运行时生成 CPU mip 链（避免远处高频闪烁）。
 - 无贴图时的缺省绑定：颜色/参数用 1×1 白，法线用 1×1 中性法线 (0.5,0.5,1)（避免法线扰动）。
 - 详细字段/映射/非目标见 plans/19-threejs-materials.md；glTF 扩展由 `tools/gltf_import.py` 导入。
+
+## 场景自定义全屏 shader（render.ShaderPass）
+
+场景可以让「一个 WGSL 文件」直接当全屏背景画：节点挂 `render.ShaderPass`，引擎用一个全屏三角形把它铺满
+渲染目标（**先于 3D/2D 绘制 = 背景层**）。典型用途：Shadertoy 迁移、程序化天空/海洋/噪声背景，以及
+**纯 shader 场景**（没有任何 3D/2D 组件，只靠这条通路出画面）。
+
+### 组件字段（`render.ShaderPass`）
+
+| 字段 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `shader` | string | `""` | WGSL 源文件路径，**相对场景目录**（运行时 VFS 根 = 场景目录），如 `"seascape.wgsl"` |
+| `speed` | float | `1.0` | `time` 推进倍率（每帧 `time += dt * speed`） |
+| `paused` | bool | `false` | `true` = 冻结时间（仍绘制） |
+| `enabled` | bool | `true` | `false` = 不绘制 |
+| `time` | float | `0.0` | 运行期推进的秒数；脚本可读写（可 scrub / 回放） |
+
+### WGSL 资源契约
+
+- **顶点着色器由引擎提供**（全屏三角形）；资源**只提供 fragment 入口**：
+
+  ```wgsl
+  @fragment
+  fn fs_main(@builtin(position) frag_coord: vec4f) -> @location(0) vec4f
+  ```
+
+- 资源必须声明**唯一** uniform：`group(0) binding(0)`，总 **32B**（无其它 bind group、无纹理）：
+
+  ```wgsl
+  struct MqShaderPass {
+      resolution: vec2f,   // offset 0：渲染目标像素尺寸 (宽, 高)
+      time: f32,           // offset 8：组件 time（秒，已按 speed 推进）
+      frame: f32,          // offset 12：帧号
+      mouse: vec4f,        // offset 16：xy = 指针在目标内的像素坐标（原点左上，与 frag_coord 同向）；zw 预留
+  };
+  @group(0) @binding(0) var<uniform> mq_pass: MqShaderPass;
+  ```
+
+  | 偏移 | 字段 | 类型/对齐 |
+  |------|------|-----------|
+  | 0 | `resolution` | vec2f（8B 对齐） |
+  | 8 | `time` | f32 |
+  | 12 | `frame` | f32 |
+  | 16 | `mouse` | vec4f（16B 对齐） |
+  | — | 合计 | **32B** |
+
+- `frag_coord` 是 WebGPU 帧缓冲坐标（**原点左上、y 向下**）；Shadertoy 的 `fragCoord` 原点在**左下**，
+  想逐行照搬 Shadertoy 时在 shader 里翻 y：
+  `let fc = vec2f(frag_coord.x, mq_pass.resolution.y - frag_coord.y);`
+- 路径解析：`shader` 相对**场景目录**（与 `render.MeshRenderer.mesh_path` 同一套 VFS 语义），也接受
+  VFS 路径（如 `builtin:/...`）；场景自有的 shader 建议放场景目录下的 `.wgsl`，随场景一起分发。
+- 失败语义：文件缺失 / WGSL 编译失败 → stderr 明确报错，场景其余部分照常运行（不崩溃）。
+
+### 绘制顺序与限制
+
+- shader pass 作为**背景层**先于 3D / 2D 绘制；**纯 shader 场景允许**没有 `scene.Transform3D` /
+  `render.Camera3D` 等任何 3D 组件。
+- 3D 相机的颜色 clear 会**覆盖**背景：场景里有生效的 `render.Camera3D` clear 时看不到 shader pass
+  （本通路只画背景，不做叠层）。
+- **每个实体一份全屏 pass**（一次全屏 draw）；需要多 pass 串联/反馈 buffer（上一帧、多 buffer 合成）
+  请等后续 frame-graph 能力，本轮不支持。
+- 资源侧限制：**没有 `iChannel*` 纹理**（不能采样音频/上一帧/其它贴图）；**没有 depth 测试与混合状态**，
+  输出按不透明背景色处理。
+- **不热重载 `.wgsl`**：改 shader 需重启或重新加载场景才会生效。
+
+### 示例：Shadertoy Seascape
+
+`scenes/shadertoy/seascape.scn` + `seascape.wgsl`（640x360）把 Shadertoy 名作 **Ms2SD1 "Seascape"**
+迁移为场景资源（天空亮、海面暗且偏青），用于验证这条通路（离屏结构 / 动画 / 确定性）。原作出处与许可：
+
+- 作者：**Alexander Alekseev (TDM)**，2014；Shadertoy 作品 id **Ms2SD1**；
+- 许可：**CC BY-NC-SA 3.0**（署名—非商业性使用—相同方式共享）。
+
+回归测试：`ctest -R shadertoy_e2e`（640x360 离屏结构 + frame 1/45 差异 + 同帧逐字节确定性 +
+WGSL 属场景资源而非内建 shader）。

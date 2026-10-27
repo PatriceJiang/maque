@@ -207,6 +207,13 @@ typedef struct mq_renderer_post {
     int32_t tonemap;
 } mq_renderer_post;
 
+typedef struct mq_renderer_shader_pass {
+    int32_t shader;
+    float time;
+    float frame;
+    float mouse[4];
+} mq_renderer_shader_pass;
+
 typedef struct mq_renderer_frame3d {
     int32_t width;
     int32_t height;
@@ -230,6 +237,8 @@ typedef struct mq_renderer_frame3d {
     int32_t msaa_samples;
     uint8_t* out;
     uint32_t out_size;
+    const mq_renderer_shader_pass* passes;
+    uint32_t pass_count;
 } mq_renderer_frame3d;
 
 #define MQ_RENDERER_API_NAME "maque.renderer"
@@ -250,4 +259,6 @@ typedef struct mq_renderer_v1 {
     void (*destroy_mesh)(void* self, int32_t id);
     int32_t (*render_frame3d)(void* self, const mq_renderer_frame3d* frame);
     int32_t (*present)(void* self);
+    int32_t (*create_shader_pass)(void* self, const char* wgsl, int32_t* out_id);
+    void (*destroy_shader_pass)(void* self, int32_t id);
 } mq_renderer_v1;

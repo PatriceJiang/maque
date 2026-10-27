@@ -1,0 +1,15 @@
+{
+  "title": "nested-parent",
+  "script": "parent.js",
+  "width": 320,
+  "height": 240,
+  "seed": 7,
+  "entities": [
+    { "name": "Left", "components": [
+        { "type": "scn.Transform2D", "x": 80.0, "y": 120.0 },
+        { "type": "scn.SceneInstance", "source": "child.scn" } ] },
+    { "name": "Right", "components": [
+        { "type": "scn.Transform2D", "x": 240.0, "y": 120.0 },
+        { "type": "scn.SceneInstance", "source": "child.scn" } ] }
+  ]
+}

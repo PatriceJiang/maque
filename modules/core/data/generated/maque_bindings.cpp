@@ -360,6 +360,66 @@ int b_host_director_frame(void* user, int, const double* a, double* ret) {
 int b_host_director_load_scene(void* user, const char* s, double* ret) {
   *ret = (double)host::director_load_scene(user, s); return 0;
 }
+int b_host_scene_title(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::scene_title(user)); return 0;
+}
+int b_host_scene_dir(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::scene_dir(user)); return 0;
+}
+int b_host_scene_path(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::scene_path(user)); return 0;
+}
+int b_host_scene_instantiate(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::scene_instantiate(user, (float)a[0], s); return 0;
+}
+int b_host_scene_unload(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_unload(user, (float)a[0]); return 0;
+}
+int b_host_scene_reload(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_reload(user, (float)a[0]); return 0;
+}
+int b_host_scene_set_instance_paused(void* user, int, const double* a, double* ret) {
+  host::scene_set_instance_paused(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_scene_set_instance_active(void* user, int, const double* a, double* ret) {
+  host::scene_set_instance_active(user, (float)a[0], (float)a[1]); return 0;
+}
+int b_host_scene_instance_valid(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_instance_valid(user, (float)a[0]); return 0;
+}
+int b_host_scene_instance_root(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_instance_root(user, (float)a[0]); return 0;
+}
+int b_host_scene_instance_parent(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_instance_parent(user, (float)a[0]); return 0;
+}
+int b_host_scene_instance_source(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::scene_instance_source(user, (float)a[0])); return 0;
+}
+int b_host_scene_instance_paused(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_instance_paused(user, (float)a[0]); return 0;
+}
+int b_host_scene_instance_count(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_instance_count(user); return 0;
+}
+int b_host_scene_instance_at(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_instance_at(user, (float)a[0]); return 0;
+}
+int b_host_scene_instance_of(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_instance_of(user, (float)a[0]); return 0;
+}
+int b_host_scene_self(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_self(user); return 0;
+}
+int b_host_scene_self_root(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::scene_self_root(user); return 0;
+}
+int b_host_scene_emit(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::scene_emit(user, (float)a[0], s[0], (float)a[1]); return 0;
+}  /* kinds=nsn */
+int b_host_scene_last_error(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::scene_last_error(user)); return 0;
+}
 int b_host_tween_start(void* user, int, const double* a, int, const char** s, double* ret) {
   *ret = (double)host::tween_start(user, (float)a[0], s[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
 }  /* kinds=nsnnn */
@@ -979,6 +1039,26 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "director_paused", b_host_director_paused, ctx);
   mq_script_register_num(vm, "director_frame", b_host_director_frame, ctx);
   mq_script_register_str(vm, "director_load_scene", b_host_director_load_scene, ctx);
+  mq_script_register_ret_str(vm, "scene_title", b_host_scene_title, ctx);
+  mq_script_register_ret_str(vm, "scene_dir", b_host_scene_dir, ctx);
+  mq_script_register_ret_str(vm, "scene_path", b_host_scene_path, ctx);
+  mq_script_register_mixed(vm, "scene_instantiate", b_host_scene_instantiate, ctx);
+  mq_script_register_num(vm, "scene_unload", b_host_scene_unload, ctx);
+  mq_script_register_num(vm, "scene_reload", b_host_scene_reload, ctx);
+  mq_script_register_num(vm, "scene_set_instance_paused", b_host_scene_set_instance_paused, ctx);
+  mq_script_register_num(vm, "scene_set_instance_active", b_host_scene_set_instance_active, ctx);
+  mq_script_register_num(vm, "scene_instance_valid", b_host_scene_instance_valid, ctx);
+  mq_script_register_num(vm, "scene_instance_root", b_host_scene_instance_root, ctx);
+  mq_script_register_num(vm, "scene_instance_parent", b_host_scene_instance_parent, ctx);
+  mq_script_register_ret_str(vm, "scene_instance_source", b_host_scene_instance_source, ctx);
+  mq_script_register_num(vm, "scene_instance_paused", b_host_scene_instance_paused, ctx);
+  mq_script_register_num(vm, "scene_instance_count", b_host_scene_instance_count, ctx);
+  mq_script_register_num(vm, "scene_instance_at", b_host_scene_instance_at, ctx);
+  mq_script_register_num(vm, "scene_instance_of", b_host_scene_instance_of, ctx);
+  mq_script_register_num(vm, "scene_self", b_host_scene_self, ctx);
+  mq_script_register_num(vm, "scene_self_root", b_host_scene_self_root, ctx);
+  mq_script_register_multi(vm, "scene_emit", "nsn", b_host_scene_emit, ctx);
+  mq_script_register_ret_str(vm, "scene_last_error", b_host_scene_last_error, ctx);
   mq_script_register_multi(vm, "tween_start", "nsnnn", b_host_tween_start, ctx);
   mq_script_register_num(vm, "tween_stop", b_host_tween_stop, ctx);
   mq_script_register_num(vm, "tween_count", b_host_tween_count, ctx);

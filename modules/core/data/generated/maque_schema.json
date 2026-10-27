@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 247,
-  "api_count": 284,
-  "control_count": 49,
-  "callback_count": 10,
+  "type_count": 249,
+  "api_count": 304,
+  "control_count": 55,
+  "callback_count": 11,
   "module_count": 26,
   "types": [
     {
@@ -9274,6 +9274,64 @@
       ]
     },
     {
+      "name": "render.ShaderPass",
+      "namespace": "render",
+      "kind": "struct",
+      "type_id": 4275420661,
+      "size": null,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
+      "source": "render/render.yaml",
+      "fields": [
+        {
+          "name": "shader",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "paused",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "enabled",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "time",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        }
+      ]
+    },
+    {
       "name": "render.ShadowCastMode",
       "namespace": "render",
       "kind": "enum",
@@ -11276,6 +11334,15 @@
           "attrs": {}
         },
         {
+          "name": "overlay_script",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "width",
           "type": "int32_t",
           "kind": "i32",
@@ -11409,6 +11476,91 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        }
+      ]
+    },
+    {
+      "name": "scn.SceneInstance",
+      "namespace": "scn",
+      "kind": "struct",
+      "type_id": 576957334,
+      "size": null,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
+      "source": "world/scn.yaml",
+      "fields": [
+        {
+          "name": "source",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "paused",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "detached",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "instance_id",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "state",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "error",
+          "type": "uint16_t",
+          "kind": "u16",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
         }
       ]
     },
@@ -17947,6 +18099,311 @@
       "manual": null
     },
     {
+      "name": "host.scene_title",
+      "namespace": "host",
+      "fn": "scene_title",
+      "global": true,
+      "args": [],
+      "returns": "string",
+      "ctx": true,
+      "doc": "当前场景 title（scn.Scene.title）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_dir",
+      "namespace": "host",
+      "fn": "scene_dir",
+      "global": true,
+      "args": [],
+      "returns": "string",
+      "ctx": true,
+      "doc": "当前场景所在目录（相对/绝对，取决于启动参数）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_path",
+      "namespace": "host",
+      "fn": "scene_path",
+      "global": true,
+      "args": [],
+      "returns": "string",
+      "ctx": true,
+      "doc": "当前场景路径（启动/切场景时给出的原始路径）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_instantiate",
+      "namespace": "host",
+      "fn": "scene_instantiate",
+      "global": true,
+      "args": [
+        {
+          "name": "parent",
+          "type": "float"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "实例化一个 .scn（parent=-1 挂到世界根）；返回实例句柄（-1=失败）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_unload",
+      "namespace": "host",
+      "fn": "scene_unload",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "卸载实例（帧边界；先后序 on_destroy 再销毁子树/VM）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_reload",
+      "namespace": "host",
+      "fn": "scene_reload",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_set_instance_paused",
+      "namespace": "host",
+      "fn": "scene_set_instance_paused",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        },
+        {
+          "name": "paused",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_set_instance_active",
+      "namespace": "host",
+      "fn": "scene_set_instance_active",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        },
+        {
+          "name": "active",
+          "type": "float"
+        }
+      ],
+      "returns": "void",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_valid",
+      "namespace": "host",
+      "fn": "scene_instance_valid",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_root",
+      "namespace": "host",
+      "fn": "scene_instance_root",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "实例挂载壳/根实体 id（根实例 = 世界根：-1）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_parent",
+      "namespace": "host",
+      "fn": "scene_instance_parent",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_source",
+      "namespace": "host",
+      "fn": "scene_instance_source",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_paused",
+      "namespace": "host",
+      "fn": "scene_instance_paused",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_count",
+      "namespace": "host",
+      "fn": "scene_instance_count",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_at",
+      "namespace": "host",
+      "fn": "scene_instance_at",
+      "global": true,
+      "args": [
+        {
+          "name": "index",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "按创建/声明顺序取实例句柄（-1=越界）；顺序确定 → 可回放",
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_of",
+      "namespace": "host",
+      "fn": "scene_instance_of",
+      "global": true,
+      "args": [
+        {
+          "name": "entity",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "实体所属实例（-1=未归属/无此实体）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_self",
+      "namespace": "host",
+      "fn": "scene_self",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_self_root",
+      "namespace": "host",
+      "fn": "scene_self_root",
+      "global": true,
+      "args": [],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_emit",
+      "namespace": "host",
+      "fn": "scene_emit",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        },
+        {
+          "name": "event",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.scene_last_error",
+      "namespace": "host",
+      "fn": "scene_last_error",
+      "global": true,
+      "args": [],
+      "returns": "string",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
       "name": "host.tween_start",
       "namespace": "host",
       "fn": "tween_start",
@@ -21187,6 +21644,69 @@
       ]
     },
     {
+      "method": "Scene.instances",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Scene.instance_info",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ]
+    },
+    {
+      "method": "Scene.instantiate",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "parent",
+          "type": "float"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "strict",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "method": "Scene.unload_instance",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ]
+    },
+    {
+      "method": "Scene.reload_instance",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ]
+    },
+    {
+      "method": "Scene.bake_instances",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "dry_run",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "method": "Runtime.step",
       "namespace": "control",
       "args": [
@@ -21637,6 +22157,11 @@
         }
       ],
       "on": "text"
+    },
+    {
+      "name": "on_destroy",
+      "args": [],
+      "on": null
     }
   ],
   "modules": [
@@ -23437,6 +23962,64 @@
             {
               "name": "out_h",
               "type": "int32_t*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_window_size",
+          "returns": "void",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "out_w",
+              "type": "int32_t*",
+              "doc": null
+            },
+            {
+              "name": "out_h",
+              "type": "int32_t*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_set_window_size",
+          "returns": "int32_t",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "w",
+              "type": "int32_t",
+              "doc": null
+            },
+            {
+              "name": "h",
+              "type": "int32_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_platform_set_window_maximized",
+          "returns": "int32_t",
+          "args": [
+            {
+              "name": "p",
+              "type": "mq_platform*",
+              "doc": null
+            },
+            {
+              "name": "on",
+              "type": "int32_t",
               "doc": null
             }
           ]

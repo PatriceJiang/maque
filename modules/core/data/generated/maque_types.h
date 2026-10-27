@@ -2008,6 +2008,14 @@ enum class RichTagType : int32_t {
     Link          = 10,
 };
 
+struct ShaderPass {
+    std::string shader = "";
+    float speed = 1.0F;
+    bool paused = false;
+    bool enabled = true;
+    float time = 0.0F;
+};
+
 enum class ShadowCastMode : int32_t {
     Off         = 0,
     On          = 1,
@@ -2384,6 +2392,7 @@ struct Scene {
     std::string title = "maque scene";
     std::string script = "";
     std::vector<std::string> scripts;
+    std::string overlay_script = "";
     int32_t width = 320;
     int32_t height = 240;
     uint32_t seed = 0;
@@ -2399,6 +2408,16 @@ struct Scene {
     int32_t msaa_samples = 0;
     float gravity_y = -900.0F;
     float restitution = 0.86F;
+};
+
+struct SceneInstance {
+    std::string source = "";
+    bool paused = false;
+    bool active = true;
+    bool detached = false;
+    int32_t instance_id = -1;
+    int32_t state = 0;
+    uint16_t error = 0;
 };
 
 struct Sprite {

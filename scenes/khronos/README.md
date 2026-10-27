@@ -190,3 +190,41 @@ python tools/migrate_gltf_models.py
 # 单个模型 / 重新导入
 python tools/migrate_gltf_models.py --only Box --force
 ```
+
+## 画廊入口（index.scn）
+
+`index.scn` 是本目录的**入口索引**：打开后列出全部 149 个模型的标题（按名称排序、分页），
+点条目进入对应 demo；demo 内显示模型标题与「上一个 / 下一个」（在排序列表内循环），并可返回列表。
+它**不修改**任何 `<Model>/<Model>.scn` 原场景 —— 画廊只是叠加在它们之上的常驻覆盖层 UI
+（`scn.Scene.overlay_script`，见 [docs/20 §4.1](../../docs/20-运行时与资源模型.md)）。
+
+```bash
+# 从仓库根目录启动画廊（Windows 构建目录为 build-win）
+./build-win/samples/player/maque_player scenes/khronos/index.scn
+```
+
+操作：
+
+| 位置 | 操作 | 说明 |
+|---|---|---|
+| 画廊 | 点击条目 | 进入该模型 demo |
+| 画廊 | `上页` / `下页` 按钮，或 `←` / `→` | 翻页（每页 20 项，2 列 × 10 行，共 8 页） |
+| demo | `<` / `>` 按钮，或 `←` / `→` | 上一个 / 下一个（首项再上一个 = 末项，循环） |
+| demo | `返回` 按钮，或 `Esc` / `Backspace` | 回到列表（回到该模型所在页） |
+
+实现（均为内容文件，不含引擎代码）：
+
+- `index.scn` —— 入口场景：`"overlay_script": "gallery.js"`（本身无 3D/2D 内容，UI 全由覆盖层脚本生成）；
+- `gallery.js` —— 常驻覆盖层脚本：按当前场景标题区分画廊 / demo 两种模式，**每次 `on_start()` 重建 UI**
+  （切场景会重置世界，旧实体随之销毁）；每次 `on_start` 打印一行机器可读日志
+  `[gallery] mode=gallery page=N/P items=K` 或 `[gallery] mode=demo title=<Model> index=i count=149`；
+- `tools/gen_khronos_gallery.py` —— 扫描 `<Model>/<Model>.scn`，按目录名排序生成 `gallery.js` 里的
+  `MODELS` 数组（写进 `MODELS:BEGIN` … `MODELS:END` 标记之间；幂等，内容不变时不写文件）：
+
+```bash
+python tools/gen_khronos_gallery.py          # 新增/删除模型后重新生成
+python tools/gen_khronos_gallery.py --check  # 只校验是否过期（过期退出码 1）
+```
+
+> 直接打开某个 demo（如 `.../khronos/ToyCar/ToyCar.scn`）不会显示画廊 UI：覆盖层只在入口
+> `index.scn` 里声明、经画廊进入后常驻；各 demo 场景保持迁移时的原样。

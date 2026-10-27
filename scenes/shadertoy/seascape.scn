@@ -1,0 +1,13 @@
+{
+  "title": "seascape",
+  "width": 640,
+  "height": 360,
+  "entities": [
+    {
+      "name": "seascape",
+      "components": [
+        { "type": "render.ShaderPass", "shader": "seascape.wgsl" }
+      ]
+    }
+  ]
+}

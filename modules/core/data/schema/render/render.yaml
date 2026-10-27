@@ -249,6 +249,16 @@
         - { name: visible, type: bool, default: true }
         - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
         - { name: layer, type: entity_ref, attrs: { ref: RenderLayer, weak: true } }
+    # 场景资源全屏 shader pass（docs/13）：shader 是**场景目录相对**的 .wgsl 路径，
+    # 只要 @fragment fs_main + 32B uniform（group0 binding0）。引擎供全屏三角形 VS。
+    # 绘制顺序：先于 3D/2D（背景层）；没有 3D 组件的纯 shader 场景同样可用。
+    - struct: ShaderPass
+      fields:
+        - { name: shader, type: string, default: "" }     # WGSL 源文件（相对场景目录，VFS 路径）
+        - { name: speed, type: float, default: 1.0F }     # time 推进倍率
+        - { name: paused, type: bool, default: false }    # true = time 冻结
+        - { name: enabled, type: bool, default: true }
+        - { name: time, type: float, default: 0.0F }      # 运行期按 dt*speed 推进（脚本可读写）
     - struct: Light
       fields:
         - { name: type, type: LightType, default: "LightType::Directional" }

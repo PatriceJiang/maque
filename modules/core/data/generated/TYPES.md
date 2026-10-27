@@ -3,7 +3,7 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **247** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **249** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
 ## anim（29） · `world/anim.yaml`
 
@@ -1288,7 +1288,7 @@ role: `physics_body`
 | `Combine` | 1 |
 | `Replace` | 2 |
 
-## render（45） · `render/render.yaml`
+## render（46） · `render/render.yaml`
 
 ### render.Billboard — struct (变长（含动态成员）)
 
@@ -1666,6 +1666,16 @@ role: `ui_text`
 | `links` | string[] | — | transient |
 | `line_count` | int32_t | 0 | transient |
 
+### render.ShaderPass — struct (变长（含动态成员）)
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `shader` | string |  |  |
+| `speed` | float | 1.0F |  |
+| `paused` | bool | false |  |
+| `enabled` | bool | true |  |
+| `time` | float | 0.0F |  |
+
 ### render.ShadowCastMode — enum
 
 | 值 | 数值 |
@@ -1883,7 +1893,7 @@ role: `ui_text`
 | `rotation_quat` | math.Quat | — | transient |
 | `world_dirty` | uint8_t | 1 | transient |
 
-## scn（11） · `world/scn.yaml`
+## scn（12） · `world/scn.yaml`
 
 ### scn.AnimationPlayer — struct (变长（含动态成员）)
 
@@ -2003,6 +2013,7 @@ role: `particle_emitter`
 | `title` | string | maque scene |  |
 | `script` | string |  |  |
 | `scripts` | string[] | — |  |
+| `overlay_script` | string |  |  |
 | `width` | int32_t | 320 |  |
 | `height` | int32_t | 240 |  |
 | `seed` | uint32_t | 0 |  |
@@ -2018,6 +2029,18 @@ role: `particle_emitter`
 | `msaa_samples` | int32_t | 0 |  |
 | `gravity_y` | float | -900.0F |  |
 | `restitution` | float | 0.86F |  |
+
+### scn.SceneInstance — struct (变长（含动态成员）)
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `source` | string |  |  |
+| `paused` | bool | false |  |
+| `active` | bool | true |  |
+| `detached` | bool | false |  |
+| `instance_id` | int32_t | -1 | transient, readonly |
+| `state` | int32_t | 0 | transient, readonly |
+| `error` | uint16_t | 0 | transient, readonly |
 
 ### scn.Sprite — struct (变长（含动态成员）)
 

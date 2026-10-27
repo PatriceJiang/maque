@@ -294,6 +294,22 @@ int main() {
         CHECK(std::string(buf).rfind("zip://", 0) == 0);
     }
 
+    // ---- 同一挂载点重新挂载：**后挂载优先**必须对同源重复挂载也成立 ----
+    // （director.loadScene 每次把新场景目录挂到 "/"，切回之前加载过的目录时旧条目必须重新回到表尾）
+    {
+        put(root / "sceneA" / "s.scn", "A");
+        put(root / "sceneB" / "s.scn", "B");
+        mq_vfs* v2 = mq_vfs_create();
+        CHECK(v2 != nullptr);
+        CHECK(mq_vfs_mount(v2, "/", ("file://" + (root / "sceneA").string()).c_str()) == MQ_VFS_OK);
+        CHECK(readall(v2, "/s.scn") == "A");
+        CHECK(mq_vfs_mount(v2, "/", ("file://" + (root / "sceneB").string()).c_str()) == MQ_VFS_OK);
+        CHECK(readall(v2, "/s.scn") == "B");
+        CHECK(mq_vfs_mount(v2, "/", ("file://" + (root / "sceneA").string()).c_str()) == MQ_VFS_OK);  // 切回
+        CHECK(readall(v2, "/s.scn") == "A");
+        mq_vfs_destroy(v2);
+    }
+
     mq_vfs_destroy(vfs);
     fs::remove_all(root);
 

@@ -1027,6 +1027,14 @@ static const mq_field_desc mq_fields_render_RichText[] = {
     { "line_count", (uint32_t)offsetof(render::RichText, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
 };
 
+static const mq_field_desc mq_fields_render_ShaderPass[] = {
+    { "shader", (uint32_t)offsetof(render::ShaderPass, shader), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "speed", (uint32_t)offsetof(render::ShaderPass, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "paused", (uint32_t)offsetof(render::ShaderPass, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "enabled", (uint32_t)offsetof(render::ShaderPass, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "time", (uint32_t)offsetof(render::ShaderPass, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+};
+
 static const mq_field_desc mq_fields_render_Skybox[] = {
     { "skybox_mode", (uint32_t)offsetof(render::Skybox, skybox_mode), MQ_TK_ENUM, 3367387160u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "skybox_texture", (uint32_t)offsetof(render::Skybox, skybox_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -1266,6 +1274,7 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
     { "title", (uint32_t)offsetof(scn::Scene, title), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "script", (uint32_t)offsetof(scn::Scene, script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "scripts", (uint32_t)offsetof(scn::Scene, scripts), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_Scene_scripts_clear, mq_dyn_scn_Scene_scripts_size, mq_dyn_scn_Scene_scripts_resize, mq_dyn_scn_Scene_scripts_elem },
+    { "overlay_script", (uint32_t)offsetof(scn::Scene, overlay_script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "width", (uint32_t)offsetof(scn::Scene, width), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "height", (uint32_t)offsetof(scn::Scene, height), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "seed", (uint32_t)offsetof(scn::Scene, seed), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -1281,6 +1290,16 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
     { "msaa_samples", (uint32_t)offsetof(scn::Scene, msaa_samples), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "gravity_y", (uint32_t)offsetof(scn::Scene, gravity_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "restitution", (uint32_t)offsetof(scn::Scene, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+};
+
+static const mq_field_desc mq_fields_scn_SceneInstance[] = {
+    { "source", (uint32_t)offsetof(scn::SceneInstance, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "paused", (uint32_t)offsetof(scn::SceneInstance, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "active", (uint32_t)offsetof(scn::SceneInstance, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "detached", (uint32_t)offsetof(scn::SceneInstance, detached), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "instance_id", (uint32_t)offsetof(scn::SceneInstance, instance_id), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "state", (uint32_t)offsetof(scn::SceneInstance, state), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "error", (uint32_t)offsetof(scn::SceneInstance, error), MQ_TK_U16, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_scn_Sprite[] = {
@@ -2582,6 +2601,7 @@ static void mq_defaults_render_RenderLayer(void* p) { new (p) render::RenderLaye
 static void mq_defaults_render_RichRun(void* p) { new (p) render::RichRun{}; }
 static void mq_defaults_render_RichTagType(void* p) { new (p) render::RichTagType{}; }
 static void mq_defaults_render_RichText(void* p) { new (p) render::RichText{}; }
+static void mq_defaults_render_ShaderPass(void* p) { new (p) render::ShaderPass{}; }
 static void mq_defaults_render_ShadowCastMode(void* p) { new (p) render::ShadowCastMode{}; }
 static void mq_defaults_render_ShadowMode(void* p) { new (p) render::ShadowMode{}; }
 static void mq_defaults_render_Skybox(void* p) { new (p) render::Skybox{}; }
@@ -2612,6 +2632,7 @@ static void mq_defaults_scn_NavAgent(void* p) { new (p) scn::NavAgent{}; }
 static void mq_defaults_scn_ParticleEmitter(void* p) { new (p) scn::ParticleEmitter{}; }
 static void mq_defaults_scn_PrefabInstance(void* p) { new (p) scn::PrefabInstance{}; }
 static void mq_defaults_scn_Scene(void* p) { new (p) scn::Scene{}; }
+static void mq_defaults_scn_SceneInstance(void* p) { new (p) scn::SceneInstance{}; }
 static void mq_defaults_scn_Sprite(void* p) { new (p) scn::Sprite{}; }
 static void mq_defaults_scn_SpriteMaterial(void* p) { new (p) scn::SpriteMaterial{}; }
 static void mq_defaults_scn_Transform2D(void* p) { new (p) scn::Transform2D{}; }
@@ -4780,6 +4801,20 @@ extern const mq_type_desc mq_type_render_RichText = {
     mq_defaults_render_RichText,
 };
 
+extern const mq_type_desc mq_type_render_ShaderPass = {
+    "render.ShaderPass",
+    4275420661u,
+    (uint32_t)sizeof(render::ShaderPass),
+    (uint32_t)alignof(render::ShaderPass),
+    5u,
+    mq_fields_render_ShaderPass,
+    4u,
+    0u,
+    0,
+    0u,
+    mq_defaults_render_ShaderPass,
+};
+
 extern const mq_type_desc mq_type_render_ShadowCastMode = {
     "render.ShadowCastMode",
     2098906413u,
@@ -5191,13 +5226,27 @@ extern const mq_type_desc mq_type_scn_Scene = {
     410509289u,
     (uint32_t)sizeof(scn::Scene),
     (uint32_t)alignof(scn::Scene),
-    18u,
+    19u,
     mq_fields_scn_Scene,
     4u,
     0u,
     0,
     0u,
     mq_defaults_scn_Scene,
+};
+
+extern const mq_type_desc mq_type_scn_SceneInstance = {
+    "scn.SceneInstance",
+    576957334u,
+    (uint32_t)sizeof(scn::SceneInstance),
+    (uint32_t)alignof(scn::SceneInstance),
+    7u,
+    mq_fields_scn_SceneInstance,
+    4u,
+    0u,
+    0,
+    0u,
+    mq_defaults_scn_SceneInstance,
 };
 
 extern const mq_type_desc mq_type_scn_Sprite = {
@@ -6289,6 +6338,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_render_RichRun,
     &mq_type_render_RichTagType,
     &mq_type_render_RichText,
+    &mq_type_render_ShaderPass,
     &mq_type_render_ShadowCastMode,
     &mq_type_render_ShadowMode,
     &mq_type_render_Skybox,
@@ -6319,6 +6369,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_scn_ParticleEmitter,
     &mq_type_scn_PrefabInstance,
     &mq_type_scn_Scene,
+    &mq_type_scn_SceneInstance,
     &mq_type_scn_Sprite,
     &mq_type_scn_SpriteMaterial,
     &mq_type_scn_Transform2D,
@@ -6388,7 +6439,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 247u;
+const uint32_t mq_schema_type_count = 249u;
 
 #ifdef __cplusplus
 } // extern "C"

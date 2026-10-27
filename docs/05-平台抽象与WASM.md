@@ -129,10 +129,28 @@ engine.wasm（引擎本体）──→ 启动 VFS ──→ 拉取 game 包 (htt
 - **后端选择**：默认 Windows = `accelerated`（SDL_Renderer = Direct3D，不建 GL/EGL上下文，
   不与渲染插件的 wgpu 争用）；其它平台默认 `software`（`SDL_RENDERER_SOFTWARE`，同样不碰 GL/EGL）。
   `MAQUE_PRESENT=off|software|accelerated` 可覆盖；加速后端创建失败自动 software 回退，再失败则关闭呈现。
-- **世界尺寸 ≠ 窗口尺寸**：`MAQUE_WINDOW` 只改窗口；渲染目标与世界仍是场景尺寸（`scenes/*.scn` 的
-  `width/height`），窗口内按 `min(win/world)` 等比缩放并居中留边；宿主输入把手标坐标映射回世界坐标
-  （与 UI 命中测试同一规则）。
+- **世界尺寸 ≠ 窗口尺寸（渲染目标默认自动跟随窗口）**：`MAQUE_WINDOW` 只改窗口；场景
+  `width/height` 仍是**设计分辨率 / 世界尺寸**，窗口内按画布策略（docs/17）等比缩放 + 居中留边、
+  不裁剪；宿主输入把手标坐标映射回世界坐标（与 UI 命中测试同一规则）。
+  **渲染倍率默认自动跟随窗口**：未设 `MAQUE_RENDER_SCALE` 且场景没有 `ui.Canvas.render_scale`
+  时，`ss = clamp(窗口逻辑宽 / 设计宽, 0.25, 4)`，渲染目标 = `round(设计宽×ss) × round(设计高×ss)`
+  （单视图；再 × 视图数），文字也按 `ss` 栅格化 → 窗口大画面就清晰、窗口小也不糊。
+  离屏 / `headless`（`MAQUE_WINDOW=0x0`、`MAQUE_HEADLESS=1`、`--shot`、`MAQUE_PRESENT=off`）
+  恒取 `ss = 1.0`（= 设计分辨率），截图尺寸与文本折行不随窗口漂移。
+- **窗口可 resize / 最大化，尺寸变化时自动重建渲染目标（FBO）**：创建 game 窗口即带
+  `SDL_WINDOW_RESIZABLE`（用户可拖拽标题栏、点最大化按钮），`MAQUE_WINDOW_MAXIMIZED=1` 启动即最大化。
+  帧首采样 SDL `SIZE_CHANGED` / `MAXIMIZED` / `RESTORED` → 自动倍率下重算 `ss / TW / views` 并
+  **重建渲染目标**：gfx 侧颜色 / 深度 / MSAA 附件按新目标尺寸重建（旧尺寸的缓存失效），直呈路径
+  调用 `resize_surface` 重建交换链，并打印**恰好一行**
+  `runtime: window resized <旧窗口> → <新窗口>: render target <旧目标> → <新目标> (ss <旧> → <新>, views=<n>)`。
+  **显式 `MAQUE_RENDER_SCALE=N` 时目标固定**（像素风 / 固定分辨率），窗口变化只影响 present 的
+  缩放 / 留边（这一行日志仍打印，便于诊断）。headless / `MAQUE_WINDOW=0x0` 没有窗口 → 整条路径不触发。
+  CI 用 `MAQUE_WINDOW_EVENT_AT="<frame>:<op>[;...]"` 在指定模拟帧对**真实窗口**下发操作
+  （`op` = `WxH` / `max` / `restore`），走与用户拖拽 / 点最大化完全相同的 SDL 事件链路
+  （`tests/window_resize_e2e.sh`）。
 - **无窗口/dummy 驱动**（`MAQUE_HEADLESS=1`）时呈现是安全空操作，headless/CI 不受影响。
 - 抓帧：`MAQUE_CAPTURE=<前缀>` 从 **renderer 后台缓冲**（present 之前 = 用户即将看到的整帧，
-  含游戏画面与 ImGui 面板）回读前 3 帧 PPM（`tests/window_present_e2e.sh` /
-  `tests/imgui_present_e2e.sh` 用它做真实窗口路径的像素级断言）。
+  含游戏画面与 ImGui 面板）回读 PPM（默认前 3 帧；`MAQUE_CAPTURE_FRAMES` / `MAQUE_CAPTURE_EVERY`
+  可调）；尺寸 = 窗口绘制区**设备像素**，故窗口 resize / 最大化后新抓帧的尺寸随之变化。
+  `tests/window_present_e2e.sh` / `tests/imgui_present_e2e.sh` / `tests/window_resize_e2e.sh`
+  用它做真实窗口路径的像素级断言。

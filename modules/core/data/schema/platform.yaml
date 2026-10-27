@@ -108,6 +108,17 @@
       - { fn: mq_platform_drawable_size, returns: void,
           args: [ { name: p, type: "mq_platform*" }, { name: out_w, type: "int32_t*" }, { name: out_h, type: "int32_t*" } ],
           doc: "绘制区尺寸（设备像素；HiDPI 下大于窗口逻辑尺寸）" }
+      # 窗口尺寸/最大化（宿主与 CI 控制）：用户拖拽标题栏、点最大化按钮走的是**同一条**
+      # SDL 事件路径（SIZE_CHANGED → runtime 自动重建渲染目标）；这两个函数只是程序化入口。
+      - { fn: mq_platform_window_size, returns: void,
+          args: [ { name: p, type: "mq_platform*" }, { name: out_w, type: "int32_t*" }, { name: out_h, type: "int32_t*" } ],
+          doc: "窗口**逻辑**尺寸（DPI 缩放后用户看到的尺寸；无窗口 → 0）——渲染倍率按它跟随窗口" }
+      - { fn: mq_platform_set_window_size, returns: int32_t,
+          args: [ { name: p, type: "mq_platform*" }, { name: w, type: "int32_t" }, { name: h, type: "int32_t" } ],
+          doc: "设置窗口逻辑尺寸（像素）；0=成功，无窗口/非法尺寸非 0。触发真实 resize 事件 → 渲染目标按新尺寸重建（FBO 重建）" }
+      - { fn: mq_platform_set_window_maximized, returns: int32_t,
+          args: [ { name: p, type: "mq_platform*" }, { name: on, type: "int32_t" } ],
+          doc: "最大化 / 还原窗口（on=0 还原）；0=成功，无窗口非 0。窗口必须可 resize（默认已是 SDL_WINDOW_RESIZABLE）" }
       - { fn: mq_platform_content_scale, returns: float,
           args: [ { name: p, type: "mq_platform*" } ],
           doc: "显示器内容缩放（绘制区/窗口；1.0 = 非 HiDPI）" }
