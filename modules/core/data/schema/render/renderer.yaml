@@ -248,6 +248,9 @@
         - { name: views2d,        type: "const mq_renderer_view*" }
         - { name: view2d_count,   type: uint32_t }
         - { name: bg,             type: "float[4]" }      # 2D 覆盖层清屏色
+        # MSAA 样本数：1=关（默认，保持旧输出逐字节不变）、4=4x（颜色/深度各一张 4x 附件，
+        # pass 结束 resolve 到目标纹理）。runtime 从 scn.Scene.msaa_samples / MAQUE_MSAA 取值。
+        - { name: msaa_samples,   type: int32_t }
         - { name: out,            type: "uint8_t*" }
         - { name: out_size,       type: uint32_t }
   methods:

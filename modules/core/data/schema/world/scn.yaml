@@ -147,6 +147,9 @@
         # 环境贴图（equirectangular，PNG/JPEG；空 = 用内建 studio_env 程序化贴图）。
         # 支持 builtin:/textures/studio_env 与 VFS/远程路径；runtime 按 sRGB + mip 加载，shader IBL 采样。
         - { name: env_texture, type: string, default: "" }
+        # 3D 渲染 MSAA：0/1 = 关（默认，旧场景零变化）、4 = 4x（gfx 不支持时自动回退 1x）。
+        # 环境变量 MAQUE_MSAA 可覆盖本字段（0/1/4）。
+        - { name: msaa_samples, type: int32_t, default: 0 }
         - { name: gravity_y,   type: float, default: -900.0F }  # 重力加速度的 y 分量（像素/秒²，世界 y 向上）
         - { name: restitution, type: float, default: 0.86F }    # 弹性（0..1）
         # entities 不在此：节点树通用（name/children/components），组件按 type 反射反序列化      # 引擎 RNG 种子（确定性）

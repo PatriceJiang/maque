@@ -90,18 +90,28 @@ struct Device {
     WGPUTexture depthTex = nullptr;
     WGPUTextureView depthView = nullptr;
     int32_t depthW = 0, depthH = 0;
+    /* MSAA（M6）：4x 颜色/深度附件 + resolve 到目标纹理；按尺寸/格式/样本数缓存。
+     * 设备不支持 4x 时 ensure_msaa 失败 → 自动回退 1x（不改变旧输出）。 */
+    WGPUTexture msaaTex = nullptr;
+    WGPUTextureView msaaView = nullptr;
+    WGPUTexture msaaDepthTex = nullptr;
+    WGPUTextureView msaaDepthView = nullptr;
+    int32_t msaaW = 0, msaaH = 0;
+    WGPUTextureFormat msaaFormat = WGPUTextureFormat_Undefined;
+    int32_t msaaSamples = 0;
+    bool msaa4Probed = false, msaa4Supported = false;
     WGPUTextureFormat p3dFormat = WGPUTextureFormat_Undefined;   /* 3D 材质管线当前目标格式 */
     WGPUBindGroupLayout p3dCamBgl = nullptr;
     WGPUBindGroupLayout p3dDrawBgl = nullptr;
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
     WGPUPipelineLayout p3dSkyPl = nullptr;       /* envmap 天空背景：仅 group0（camera） */
-    WGPURenderPipeline skyPipeline = nullptr;
+    WGPURenderPipeline skyPipeline[2] = {};   /* [msaa4]：0=1x、1=4x（MSAA 需独立管线） */
     /* 多材质模型管线：[shading_model 0..9][blend 0/1][cull 0..2][mirrored 0/1][layout 0/1]，按需创建（plans/19/20）。
      * mirrored = model 3×3 行列式 < 0（镜像缩放的 glTF 节点）：镜像把三角形绕序翻成 CW，
      * 而 WebGPU 的 frontFace 默认是 CCW，不做补偿时 side=Front 的材质会把正面剔掉/显示背面。
      * layout = 网格顶点布局（0=48B 旧 / 1=56B COLOR_0+TEXCOORD_1），对应 shader entry vs / vs1。 */
-    WGPURenderPipeline p3dMatPipeline[10][2][3][2][2] = {};
+    WGPURenderPipeline p3dMatPipeline[2][10][2][3][2][2] = {};   /* [msaa4][model][blend][side][mir][layout] */
     bool p3dMatWarned[10] = {};
     bool p3dMatLayoutWarned[2] = {};      /* layout 级（vs/vs1 缺失）只告警一次 */
     /* M5c 方向光阴影：1024² depth map + comparison sampler + 1×1 深度占位（避免同 pass 同纹理读写） */
@@ -264,6 +274,41 @@ static bool ensure_depth(Device* dv, int32_t w, int32_t h) {
     return dv->depthView != nullptr;
 }
 
+/* MSAA 附件：颜色（目标格式）+ 深度（Depth32Float）都必须是相同 sampleCount，且 resolve target
+ * 由调用方（render_3d_only）指向真正要读/呈现的目标纹理。任一步失败返回 false → 调用方回退 1x。 */
+static bool ensure_msaa(Device* dv, int32_t w, int32_t h, WGPUTextureFormat fmt, int32_t samples) {
+    if (!dv || w <= 0 || h <= 0 || samples <= 1) return false;
+    if (dv->msaaTex && dv->msaaView && dv->msaaDepthTex && dv->msaaDepthView &&
+        dv->msaaW == w && dv->msaaH == h && dv->msaaFormat == fmt && dv->msaaSamples == samples)
+        return true;
+    if (dv->msaaView) { wgpuTextureViewRelease(dv->msaaView); dv->msaaView = nullptr; }
+    if (dv->msaaTex) { wgpuTextureRelease(dv->msaaTex); dv->msaaTex = nullptr; }
+    if (dv->msaaDepthView) { wgpuTextureViewRelease(dv->msaaDepthView); dv->msaaDepthView = nullptr; }
+    if (dv->msaaDepthTex) { wgpuTextureRelease(dv->msaaDepthTex); dv->msaaDepthTex = nullptr; }
+    dv->msaaW = dv->msaaH = 0; dv->msaaSamples = 0;
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_RenderAttachment;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    td.format = fmt;
+    td.mipLevelCount = 1; td.sampleCount = (uint32_t)samples;
+    dv->msaaTex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!dv->msaaTex) return false;
+    dv->msaaView = wgpuTextureCreateView(dv->msaaTex, nullptr);
+    WGPUTextureDescriptor dd = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    dd.usage = WGPUTextureUsage_RenderAttachment;
+    dd.dimension = WGPUTextureDimension_2D;
+    dd.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    dd.format = WGPUTextureFormat_Depth32Float;
+    dd.mipLevelCount = 1; dd.sampleCount = (uint32_t)samples;
+    dv->msaaDepthTex = wgpuDeviceCreateTexture(dv->device, &dd);
+    if (!dv->msaaDepthTex) return false;
+    dv->msaaDepthView = wgpuTextureCreateView(dv->msaaDepthTex, nullptr);
+    if (!dv->msaaView || !dv->msaaDepthView) return false;
+    dv->msaaW = w; dv->msaaH = h; dv->msaaFormat = fmt; dv->msaaSamples = samples;
+    return true;
+}
+
 /* pbr 管线：按**目标颜色格式**创建（swapchain/离屏各一），depth32 + Cook-Torrance。 */
 /* 材质模型 → fragment entry point / 诊断名（与 assets/builtin/shaders/pbr/ 的入口名一致） */
 static const char* const kMatFsEntry[10] = {
@@ -277,21 +322,23 @@ static const char* const kMatName[10] = {
 static const char* const kMatVsEntry[2] = { "vs", "vs1" };
 
 static void release_material_pipelines(Device* dv) {
-    for (int m = 0; m < 10; ++m)
-        for (int b = 0; b < 2; ++b)
-            for (int c = 0; c < 3; ++c)
-                for (int mir = 0; mir < 2; ++mir)
-                    for (int lay = 0; lay < 2; ++lay)
-                        if (dv->p3dMatPipeline[m][b][c][mir][lay]) {
-                            wgpuRenderPipelineRelease(dv->p3dMatPipeline[m][b][c][mir][lay]);
-                            dv->p3dMatPipeline[m][b][c][mir][lay] = nullptr;
-                        }
+    for (int mi = 0; mi < 2; ++mi)
+        for (int m = 0; m < 10; ++m)
+            for (int b = 0; b < 2; ++b)
+                for (int c = 0; c < 3; ++c)
+                    for (int mir = 0; mir < 2; ++mir)
+                        for (int lay = 0; lay < 2; ++lay)
+                            if (dv->p3dMatPipeline[mi][m][b][c][mir][lay]) {
+                                wgpuRenderPipelineRelease(dv->p3dMatPipeline[mi][m][b][c][mir][lay]);
+                                dv->p3dMatPipeline[mi][m][b][c][mir][lay] = nullptr;
+                            }
 }
 
-static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
+static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4) {
     if (!dv) return;
     const bool have_res = dv->p3dShader && dv->p3dPl && dv->p3dCamBgl && dv->p3dDrawBgl;
     if (have_res && dv->p3dFormat == format) return;
+
     if (!dv->p3dShader) {
         const char* wgsl = mq_builtin_shader_text("pbr");
         if (!wgsl) {
@@ -397,9 +444,12 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
     if (dv->p3dFormat != format) {
         release_material_pipelines(dv);
         dv->p3dFormat = format;
-        if (dv->skyPipeline) { wgpuRenderPipelineRelease(dv->skyPipeline); dv->skyPipeline = nullptr; }
+        for (auto& sp : dv->skyPipeline) {
+            if (sp) { wgpuRenderPipelineRelease(sp); sp = nullptr; }
+        }
     }
-    if (!dv->skyPipeline && dv->p3dSkyPl && dv->p3dShader) {
+    const int msaa_idx = msaa4 ? 1 : 0;
+    if (!dv->skyPipeline[msaa_idx] && dv->p3dSkyPl && dv->p3dShader) {
         WGPUDepthStencilState sky_ds = WGPU_DEPTH_STENCIL_STATE_INIT;
         sky_ds.format = WGPUTextureFormat_Depth32Float;
         sky_ds.depthWriteEnabled = WGPUOptionalBool_False;
@@ -419,8 +469,9 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
         sky_rp.primitive.frontFace = WGPUFrontFace_CCW;
         sky_rp.primitive.cullMode = WGPUCullMode_None;
         sky_rp.depthStencil = &sky_ds;
-        dv->skyPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &sky_rp);
-        if (!dv->skyPipeline) {
+        sky_rp.multisample.count = msaa4 ? 4u : 1u;
+        dv->skyPipeline[msaa_idx] = wgpuDeviceCreateRenderPipeline(dv->device, &sky_rp);
+        if (!dv->skyPipeline[msaa_idx]) {
             static bool warned_sky = false;
             if (!warned_sky) {
                 warned_sky = true;
@@ -501,14 +552,15 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format) {
  * 否则 WebGPU 默认 CCW 会把正反面判反（side=Front 时正面被剔掉）。
  * layout = 网格顶点布局：0=48B 旧（vs） / 1=56B COLOR_0+TEXCOORD_1（vs1）。 */
 static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blend, int side, bool mirrored,
-                                                int layout) {
+                                                int layout, bool msaa4) {
     if (!dv || !dv->p3dShader || !dv->p3dPl) return nullptr;
     model = (model < 0) ? 0 : (model > 9 ? 9 : model);
     side = (side < 0) ? 2 : (side > 2 ? 2 : side);
     layout = (layout == 1) ? 1 : 0;
     const int b = blend ? 1 : 0;
     const int mir = mirrored ? 1 : 0;
-    if (WGPURenderPipeline& cached = dv->p3dMatPipeline[model][b][side][mir][layout]; cached) return cached;
+    const int mi = msaa4 ? 1 : 0;
+    if (WGPURenderPipeline& cached = dv->p3dMatPipeline[mi][model][b][side][mir][layout]; cached) return cached;
     WGPUColorTargetState ct = WGPU_COLOR_TARGET_STATE_INIT;
     ct.format = dv->p3dFormat; ct.writeMask = WGPUColorWriteMask_All;
     WGPUBlendState blend_state = WGPU_BLEND_STATE_INIT;
@@ -545,6 +597,7 @@ static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blen
     WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
     rp.layout = dv->p3dPl; rp.vertex = vs; rp.fragment = &frag;
     rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    rp.multisample.count = msaa4 ? 4u : 1u;
     /* WebGPU 约定：frontFace 默认 CCW（glTF 正面的绕序也是 CCW）；负行列式 model 翻转绕序 →
      * 显式改成 CW，让 cullMode 的"正面/背面"语义仍然成立。 */
     rp.primitive.frontFace = mirrored ? WGPUFrontFace_CW : WGPUFrontFace_CCW;
@@ -552,7 +605,7 @@ static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blen
                           : (side == 1) ? WGPUCullMode_Front : WGPUCullMode_None;
     rp.depthStencil = &ds;
     WGPURenderPipeline pipe = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
-    dv->p3dMatPipeline[model][b][side][mir][layout] = pipe;
+    dv->p3dMatPipeline[mi][model][b][side][mir][layout] = pipe;
     if (!pipe) {
         if (layout == 1) {
             if (!dv->p3dMatLayoutWarned[1]) {
@@ -765,6 +818,10 @@ static void destroy_device(Device* dv) {
     /* M2 3D 资源 */
     if (dv->depthView) wgpuTextureViewRelease(dv->depthView);
     if (dv->depthTex) wgpuTextureRelease(dv->depthTex);
+    if (dv->msaaView) wgpuTextureViewRelease(dv->msaaView);
+    if (dv->msaaTex) wgpuTextureRelease(dv->msaaTex);
+    if (dv->msaaDepthView) wgpuTextureViewRelease(dv->msaaDepthView);
+    if (dv->msaaDepthTex) wgpuTextureRelease(dv->msaaDepthTex);
     release_material_pipelines(dv);
     if (dv->shadowPipeline[0]) wgpuRenderPipelineRelease(dv->shadowPipeline[0]);
     if (dv->shadowPipeline[1]) wgpuRenderPipelineRelease(dv->shadowPipeline[1]);
@@ -773,7 +830,8 @@ static void destroy_device(Device* dv) {
     if (dv->dummyDepth) wgpuTextureRelease(dv->dummyDepth);
     if (dv->shadowView) wgpuTextureViewRelease(dv->shadowView);
     if (dv->shadowTex) wgpuTextureRelease(dv->shadowTex);
-    if (dv->skyPipeline) wgpuRenderPipelineRelease(dv->skyPipeline);
+    if (dv->skyPipeline[0]) wgpuRenderPipelineRelease(dv->skyPipeline[0]);
+    if (dv->skyPipeline[1]) wgpuRenderPipelineRelease(dv->skyPipeline[1]);
     if (dv->p3dSkyPl) wgpuPipelineLayoutRelease(dv->p3dSkyPl);
     if (dv->p3dPl) wgpuPipelineLayoutRelease(dv->p3dPl);
     if (dv->p3dCamBgl) wgpuBindGroupLayoutRelease(dv->p3dCamBgl);
@@ -929,7 +987,20 @@ static int32_t r_caps(void* self, mq_renderer_caps* out) {
         out->max_texture_size = (int32_t)lim.maxTextureDimension2D;
     if (out->max_texture_size <= 0) out->max_texture_size = 2048;
     out->max_lights = 8;       /* 与 shader 的 lights: array<GpuLight,8> 一致（超出部分 runtime 侧应截断并告警） */
-    out->max_samples = 1;      /* M5 MSAA 后再按设备能力填 */
+    out->max_samples = 1;
+    if (!dv->msaa4Probed) {
+        dv->msaa4Probed = true;
+        WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        td.usage = WGPUTextureUsage_RenderAttachment;
+        td.dimension = WGPUTextureDimension_2D;
+        td.size = WGPUExtent3D{ 1, 1, 1 };
+        td.format = WGPUTextureFormat_RGBA8Unorm;
+        td.mipLevelCount = 1; td.sampleCount = 4;
+        WGPUTexture probe = wgpuDeviceCreateTexture(dv->device, &td);
+        dv->msaa4Supported = probe != nullptr;
+        if (probe) wgpuTextureRelease(probe);
+    }
+    if (dv->msaa4Supported) out->max_samples = 4;   /* 4x MSAA（WebGPU 规范的 sampleCount=4） */
     out->target_format = dv->surface ? format_code(dv->surfaceFormat) : 0;
     out->depth_format = 0;     /* Depth32Float（M2） */
     out->direct_present = dv->surface ? 1 : 0;
@@ -937,9 +1008,9 @@ static int32_t r_caps(void* self, mq_renderer_caps* out) {
     /* 诊断（MAQUE_RENDER3D_INFO=1）：每 stage 采样纹理/采样器上限是 PBR 贴图槽数量的硬约束
      *（group0 env 3 张 + group1 材质 15 张 = 18；加 specular 两槽 → 20）。 */
     if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
-        std::print(stderr, "gfx: limits sampledTex/stage={} samplers/stage={} colorAttachmentBytes/sample={}\n",
+        std::print(stderr, "gfx: limits sampledTex/stage={} samplers/stage={} colorAttachmentBytes/sample={} max_samples={}\n",
                    lim.maxSampledTexturesPerShaderStage, lim.maxSamplersPerShaderStage,
-                   lim.maxColorAttachmentBytesPerSample);
+                   lim.maxColorAttachmentBytesPerSample, out->max_samples);
     }
     return 0;
 }
@@ -1571,9 +1642,29 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
     }();
     if (f->view_count == 0 || !f->views) return 0;
     if (f->draw_count > 0 && !f->draws) return 1;     /* 防御：非法帧描述（不做静默降级） */
-    ensure_3d_pipelines(dv, target_format);
+    /* MSAA：仅接受 1/4（WebGPU 规范允许的 sampleCount）；创建失败自动回退 1x。
+     * 管线按 sampleCount 分两份缓存（rp.multisample.count），所以先定样本数再建管线。 */
+    int32_t msaa = (f->msaa_samples == 4) ? 4 : 1;
+    ensure_3d_pipelines(dv, target_format, msaa > 1);
     if (!dv->p3dShader || !dv->p3dPl) return 0;      /* shader 剔除：3D 跳过（原因已打印） */
     if (!ensure_depth(dv, f->width, f->height)) return 2;
+    if (msaa > 1) {
+        static bool logged_msaa = false;
+        if (!logged_msaa) {
+            logged_msaa = true;
+            if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1')
+                std::print(stderr, "gfx: 3D MSAA 4x（{}x{}，pass resolve 到目标）\n", f->width, f->height);
+        }
+    }
+    if (msaa > 1 && !ensure_msaa(dv, f->width, f->height, target_format, msaa)) {
+        static bool warned_msaa = false;
+        if (!warned_msaa) {
+            warned_msaa = true;
+            std::print(stderr, "gfx: 4x MSAA 附件创建失败 → 本帧回退 1x（{}x{} fmt={}）\n",
+                       f->width, f->height, (int)target_format);
+        }
+        msaa = 1;
+    }
     /* group0 的 binding1/2 分别是 depth 纹理与 comparison sampler：主 pass 无论如何都要能绑一组合法资源
      * （未启用阴影时绑 1×1 dummy depth + comparison sampler，z=0 让 shader 提前返回）。
      * 任一缺失只可能来自 GPU 资源创建失败 → 明确跳过 3D 并打印一次（R19：绝不把 filtering sampler 绑到
@@ -1875,12 +1966,13 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         }
 
         WGPURenderPassColorAttachment ca = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
-        ca.view = view;
+        ca.view = (msaa > 1) ? dv->msaaView : view;
+        ca.resolveTarget = (msaa > 1) ? view : nullptr;
         ca.loadOp = vi == 0 ? WGPULoadOp_Clear : WGPULoadOp_Load;
         ca.storeOp = WGPUStoreOp_Store;
         ca.clearValue = WGPUColor{ v.clear_color[0], v.clear_color[1], v.clear_color[2], v.clear_color[3] };
         WGPURenderPassDepthStencilAttachment da = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
-        da.view = dv->depthView;
+        da.view = (msaa > 1) ? dv->msaaDepthView : dv->depthView;
         da.depthLoadOp = WGPULoadOp_Clear;
         da.depthStoreOp = WGPUStoreOp_Store;
         da.depthClearValue = 1.0F;
@@ -1890,8 +1982,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
         wgpuRenderPassEncoderSetBindGroup(pass, 0, camBg, 0, nullptr);
     /* envmap 天空背景：在 opaque 之前画全屏三角形（不写深度；opaque 会覆盖它）。 */
-    if (dv->skyPipeline && f->env.sky_mode == 3 && f->env.env_texture >= 0) {
-        wgpuRenderPassEncoderSetPipeline(pass, dv->skyPipeline);
+    if (dv->skyPipeline[msaa > 1 ? 1 : 0] && f->env.sky_mode == 3 && f->env.env_texture >= 0) {
+        wgpuRenderPassEncoderSetPipeline(pass, dv->skyPipeline[msaa > 1 ? 1 : 0]);
         wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
     }
         /* 不透明先画；透明按"相机→物体"距离从远到近（不写深度、混合管线） */
@@ -1947,12 +2039,12 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             const bool mirrored = mat3_det(d.model) < 0.0F;
             const int layout = (m->vertex_layout == 1) ? 1 : 0;
             WGPURenderPipeline pipe =
-                get_material_pipeline(dv, model, is_blend, side, mirrored, layout);
+                get_material_pipeline(dv, model, is_blend, side, mirrored, layout, msaa > 1);
             /* 玻璃/transmission 近似：同一网格画两遍（先背面 cull front，再正面 cull back），
              * 让单层玻璃也看到背面层，混合后更接近"有厚度的透明体"。 */
             if (is_blend && mat && (mat->flags2 & 0x100000)) {
                 WGPURenderPipeline back_pipe =
-                    get_material_pipeline(dv, model, is_blend, 1, mirrored, layout);
+                    get_material_pipeline(dv, model, is_blend, 1, mirrored, layout, msaa > 1);
                 if (back_pipe) {
                     wgpuRenderPassEncoderSetPipeline(pass, back_pipe);
                     wgpuRenderPassEncoderSetBindGroup(pass, 1, drawBg, 0, nullptr);
@@ -1961,7 +2053,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                     wgpuRenderPassEncoderDrawIndexed(pass, m->index_count, 1, 0, 0, 0);
                 }
                 WGPURenderPipeline front_pipe =
-                    get_material_pipeline(dv, model, is_blend, 0, mirrored, layout);
+                    get_material_pipeline(dv, model, is_blend, 0, mirrored, layout, msaa > 1);
                 if (front_pipe) pipe = front_pipe;
             }
             if (!pipe) {

@@ -418,4 +418,32 @@ sys.exit(0 if right > 1000 and left < 50 else 1)
 PY
     echo "render3d_scene_e2e: (11) KHR_materials_specular 贴图 OK"
 fi
+# ---- (12) MSAA 4x：scene.msaa_samples / MAQUE_MSAA=4 时 4x 附件 + resolve；默认 1x 逐像素不变 ----
+if [ -f "$SPEC_SCN" ]; then
+    ( cd "$ROOT" && timeout 120 env MAQUE_RENDER3D_INFO=1 MAQUE_MSAA=1 "$PLAYER" --shot "$WORK/msaa1.ppm" --frames 2 scenes/pbr/material_specular.scn \
+        >"$WORK/msaa1.txt" 2>&1 ) || { cat "$WORK/msaa1.txt"; fail "MSAA 1x 对照渲染失败"; }
+    ( cd "$ROOT" && timeout 120 env MAQUE_RENDER3D_INFO=1 MAQUE_MSAA=4 "$PLAYER" --shot "$WORK/msaa4.ppm" --frames 2 scenes/pbr/material_specular.scn \
+        >"$WORK/msaa4.txt" 2>&1 ) || { cat "$WORK/msaa4.txt"; fail "MSAA 4x 渲染失败（管线/附件校验）"; }
+    grep -q "3D MSAA 4x" "$WORK/msaa4.txt" || { cat "$WORK/msaa4.txt"; fail "MSAA 4x 未生效（缺 gfx 日志）"; }
+    grep -q "3D MSAA 4x" "$WORK/msaa1.txt" && fail "MAQUE_MSAA=1 不应启用 4x MSAA"
+    "$PY" - "$WORK/msaa1.ppm" "$WORK/msaa4.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); m, dims, _x, px = d.split(b'\n', 3)
+    assert m == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, [(px[i], px[i+1], px[i+2]) for i in range(0, len(px), 3)]
+w, h, a = load(sys.argv[1]); w2, h2, b = load(sys.argv[2])
+assert (w, h) == (w2, h2)
+d = [sum(abs(a[i][k] - b[i][k]) for k in range(3)) for i in range(w * h)]
+n12 = sum(1 for v in d if v > 12)
+def fg(px):
+    return sum(1 for c in px if c[0] > 20 or c[1] > 20 or c[2] > 20)
+fa, fb = fg(a), fg(b)
+print(f'render3d_scene_e2e: MSAA px_diff={n12} max={max(d)} fg {fa}->{fb}')
+# 4x 只应改变边缘像素（数量级：数百~数千），且不改变几何覆盖（±3%）。
+sys.exit(0 if 200 < n12 < 10000 and max(d) >= 100 and abs(fa - fb) <= max(50, fa // 33) else 1)
+PY
+    echo "render3d_scene_e2e: (12) MSAA 4x OK"
+fi
 echo "render3d_scene_e2e: PASS"

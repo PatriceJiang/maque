@@ -227,6 +227,7 @@ typedef struct mq_renderer_frame3d {
     const mq_renderer_view* views2d;
     uint32_t view2d_count;
     float bg[4];
+    int32_t msaa_samples;
     uint8_t* out;
     uint32_t out_size;
 } mq_renderer_frame3d;

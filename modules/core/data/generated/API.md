@@ -413,7 +413,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `draw3d`：mesh: int32_t, material: int32_t, model: float[16], submesh_first: int32_t, submesh_count: int32_t, flags: int32_t, layer: int32_t, sort_key: uint64_t
 - `environment`：sky_mode: int32_t, sky_color: float[4], sky_texture: int32_t, env_color: float[4], env_texture: int32_t, env_irradiance_texture: int32_t, intensity: float, env_sky_color: float[4], env_ground_color: float[4], env_highlight: float, env_rotation: float
 - `post`：exposure: float, tonemap: int32_t
-- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], out: uint8_t*, out_size: uint32_t
+- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|

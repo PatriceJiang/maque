@@ -2015,6 +2015,7 @@ role: `particle_emitter`
 | `env_highlight` | float | 1.0F |  |
 | `env_rotation` | float | 0.0F |  |
 | `env_texture` | string |  |  |
+| `msaa_samples` | int32_t | 0 |  |
 | `gravity_y` | float | -900.0F |  |
 | `restitution` | float | 0.86F |  |
 

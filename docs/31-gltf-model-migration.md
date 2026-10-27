@@ -20,7 +20,7 @@
 | 本批结果 | **148/148 成功**（149 − 手调 ToyCar）；0 blocked、0 failed；整批 472.3s（≈7.9 min，平均 3.2s/模型）；派生资产 ≈983 MB（不入库）；差异分布与 Top 见 §10 |
 | 入库策略 | 入库：`.scn`、`preview.jpg`（800×450）、`README.md`、`compare.json`、`manifest.json`；**不入库**：`assets/`、`textures/`、`preview.png`（派生资产，从 `.deps` 一条命令重生成；入库体积 ≈18.4 MB，约为派生资产的 1.9%） |
 | 对比 | 与官方 `screenshot/` **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio/软阴影/不同机位/透明背景），maque 有 equirect envmap/IBL（`.hdr` RGBE / PNG/JPEG，**GGX 粗糙度预过滤 mip + 漫反射 irradiance**、可见天空背景），但无 EXR/cubemap、真实 transmission、软阴影、动画骨骼。自动指标只用于**筛查**，最终以人工看 preview + 参考图并记录差异归因为准 |
-| 当前主要差距 | 真实 transmission/volume（现为 alpha 近似）、动画/骨骼/morph、KTX2/meshopt、EXR/cubemap 环境贴图、MSAA —— 详见 §5 与 §11 |
+| 当前主要差距 | 真实 transmission/volume（现为 alpha 近似）、动画/骨骼/morph、KTX2/meshopt、EXR/cubemap 环境贴图 —— 详见 §5 与 §11 |
 | 确定性 | 同一输入两次导入**逐字节一致**；同机同构建、同场景同帧两次 `--shot` 的 PNG **SHA256 相同**（已实测）；流水线固定 `--compact`（与默认输出有 6 位小数舍入差异） |
 | 一键复现 | 见 §3；干净 clone 后恢复派生资产的唯一命令：`python tools/migrate_gltf_models.py --force`（会重写 `.scn`，手调模型须排除） |
 | 逐模型对比报告 | `reports/khronos-comparison/index.html`（149 个模型官方参考图 **large 优先** vs 迁移预览，左右对比 + 指标 + 差距 + 人工复核；`python tools/make_migration_report.py` 可重生成） |
@@ -467,6 +467,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
 | 动画（**26 个模型 / 38 个动画**）/ 骨骼蒙皮（7 个模型 / 90 个 skin）/ morph（4 个模型 / 6 个 primitive） | ❌ 不导入（静态渲染；角色为 bind/T-pose；morph 默认权重不生效）；`KHR_animation_pointer`（5）同样不导入 | 动画模型与参考图姿势/形变不同 | README 标注"静态迁移"；动画属独立大项（§11） |
 | 场景根 `env_*` / `env_texture` | ✅ **真 PMREM envmap + IBL（opt-in）**：`env_texture` 写 **Radiance `.hdr`（RGBE）**、PNG/JPEG（`builtin:/textures/studio_env` 或 VFS/远程）时启用；装配期 CPU 预计算 **GGX importance-sample 粗糙度 mip 链**（RGBA16F）+ **余弦卷积漫反射 irradiance**（RGBA16F，64×32）+ **天空背景全屏 pass**；shader 镜面按 roughness 查预过滤 mip、漫反射查 irradiance；`MAQUE_ENV_IBL=1`/`=0` 可强制开关，默认关（保持迁移基线） | 反射/环境光接近 HDRI studio（ToyCar、`scenes/pbr/env_ibl.scn`、`scenes/pbr/env_pmrem.scn`）；无 EXR 解码、无 cubemap kind=1、亮度/曝光未做物理标定 | 后续：EXR、cubemap、默认开启前的光照标定（§11） |
+| MSAA | ✅ **opt-in 4x**：`scn.Scene.msaa_samples=4` 或 `MAQUE_MSAA=4` → 4x 颜色/深度附件 + pass 结束 resolve；默认 0/1 = 关（旧场景逐像素不变）；`gfx caps.max_samples` 探测设备能力，创建失败自动回退 1x | 边缘锯齿明显改善（ToyCar/金属轮廓）；4x 显存/带宽约 4 倍，迁移批量预览默认仍关 | 参考图多为离线抗锯齿渲染，批量预览可后续按需开；MSAA 不解决纹理/高光走样 |
 | 地面/背景板/阴影接收体 | ❌ 自动场景无 | "模型飘在空中"，接触阴影缺失 | 需要时手加地面 + `material_shadow.scn` 范式（§6.4 ⑤） |
 
 ---
@@ -645,7 +646,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 光照/环境 | 多为 **HDRI studio**（IBL、面光、软阴影）；maque 只有方向光 + analytic studio IBL |
 | 机位/背景 | 官方机位/焦距/背景与自动机位不同；部分图为**透明背景**，部分带地面/背景板 |
 | 参考图格式/选择 | **large 优先**：先找 basename 含 `large` 的（`screenshot_large.*`/`screenshot-Large.*`/`large.jpg`…），再 `screenshot.*`，再 basename 含 screenshot，最后第一张图；格式 png/jpg/jpeg/webp/**gif**（gif 用 PIL 取第一帧）。**149 个模型都有 `screenshot/`，148/148 全部生成对比**（86 个用了 large 版、13 个仅有 GIF）。"统计缺失"不是"差异大"——若以后出现无 `screenshot/` 的资产，笔记应标"上游无参考图" |
-| 缺失特性 | transmission/volume（真实折射）、动画/骨骼/morph、MSAA 等（§5） |
+| 缺失特性 | transmission/volume（真实折射）、动画/骨骼/morph 等（§5）；MSAA 已提供 opt-in 4x |
 | 尺寸 | 参考图尺寸各异（150×80 到 1870×1033），本预览固定 1280×720 |
 
 **结论**：自动指标只做**筛查/趋势**，不做 pass/fail；每个模型的验收 = **人工看 preview + 参考图**并记录差异归因。
@@ -705,7 +706,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 差异现象 | 常见原因 | 处置 |
 |---|---|---|
 | 整体偏暗/偏亮 | 无 HDRI（analytic IBL 偏弱）、背景深色、参考图曝光不同 | 判为缺失特性；可手调 `env_*`/`clear_color` 后再比 |
-| 高光/反射平淡，金属像塑料 | 无 HDRI/PMREM、无 MSAA；扩展贴图槽已接（clearcoat/sheen/iridescence/anisotropy） | 缺失特性，记录；后续 HDRI |
+| 高光/反射平淡，金属像塑料 | 无 HDRI/PMREM、默认无 MSAA；扩展贴图槽已接（clearcoat/sheen/iridescence/anisotropy） | 缺失特性，记录；HDRI opt-in 已有 |
 | 玻璃发白/不透/内部不可见 | `KHR_materials_transmission` 未实现 | 缺失特性；GLB 变体无帮助；手调 alpha BLEND 近似 |
 | 布料/车漆纹理"巨大/重复方向错" | `KHR_texture_transform` 逐槽 UV 不同 / UV 集缺失 | 记录；scale/offset/rotation 已支持（ToyCar 已修） |
 | 某张贴图完全没出现 | KTX2/WebP 贴图被跳过、贴图槽不支持、`TEXCOORD_1` 贴错 | 看 `textures/` 是否缺图、README「已知差距」 |
@@ -716,7 +717,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 构图/大小/朝向不同 | 自动机位 vs 官方机位（glTF 相机被忽略） | 手调相机（§6.4）；看 `coverage_ratio`/`framing_notes` 量化 |
 | preview 主体过小（<5%） | 自动机位偏远（薄板/长条/超小模型） | 先看 `framing_notes`，再按 §6.4 ① 拉近/调 fov |
 | preview 主体贴边/被裁 | 自动机位偏近（极端尺度/旋转 AABB 包络偏小） | 按 §6.4 ① 拉远或用 §6.2 公式重算 |
-| 边缘锯齿明显 | 无 MSAA | 缺失特性；不计入迁移缺陷 |
+| 边缘锯齿明显 | 默认无 MSAA（可选 `msaa_samples=4`） | 批量预览为保持基线与性能默认关；需要时按场景开 |
 | 背景/地面不同 | 官方有 backdrop/地面/接触阴影 | 缺失/未生成；可选手加（§6.4 ⑤） |
 | 阴影缺失/方向不同 | 无地面、方向光固定、阴影仅可见 mesh | 缺失特性/场景差异；手加地面或调灯 |
 | 日志有 `[wgpu] error` | 管线/绑定校验失败（多为资产/材质异常） | 查 `build-win/audit/migrate-logs/<Model>.render.log`；记 issue |
@@ -825,6 +826,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | **envmap 只有 LDR 近似、没有 HDR/天空背景** | PNG env 软光箱被截断、背景仍是 clear_color，金属高光不够亮 | ①Radiance `.hdr`（RGBE）解析 → **RGBA16F** 纹理（gfx create_texture2 支持 pixel_format=2/8B 每像素）+ 线性 mip（PMREM 近似，经度 wrap）；②`scenes/pbr/env/studio.hdr`（128×64 HDR，`tools/make_env_hdr.py` 可复算）+ `env_ibl.scn` 引用；③**天空背景 pass**：camera uniform 增加 `inv_vp`（896B），全屏三角形按射线采样 env（独立 sky pipeline，不写深度）；ToyCar/示例场景启用；EXR 暂不支持（会打印并回退 analytic） |
 | **env IBL 只有 box-filter mip + analytic 漫反射** | 中高 roughness 反射能量分布不对（box 平均不是 GGX 波瓣）；漫反射完全不来自 env → 哑光物体在 HDRI 下仍是 studio 常数色 | runtime 装配期 CPU 实现真 PMREM：specular = **GGX importance sampling**（Hammersley，V=N=R，NdotL 加权归一，32→128 样本/texel）生成粗糙度 mip 链；diffuse = **余弦加权半球卷积**（64×32，256 样本）生成 irradiance；两者 RGBA16F。gfx `environment.env_irradiance_texture` + group0 binding5；shader `env_irradiance` 有 env 时查表、无 env 时保持 analytic（148 基线不变）。e2e ⑩ 用 `env_pmrem.scn` 断言天空/镜面锐利度/哑光 env 差异 |
 | **`specularColorFactor` 被 clamp 成 1、specular 贴图丢弃** | `CompareSpecular` 用 10× specularColorFactor + specularColorTexture 做"有无 specular"对照；旧实现 clamp 后两球几乎一样，自动指标反而更高（把缺陷当基准） | ①schema/ABI 新增 `specular_texture/specular_color_texture` + `textures4[2]`，importer 映射两槽；②shader 仅调制电介质 F0（金属 F0=baseColor 不受影响），specularColorFactor **不设上限**（只 clamp ≥0）；③每 stage sampled texture 增至 20，依赖适配器上限（桌面 GPU 通常 ≥128；gfx 创建 device 时向适配器请求上限） |
+| **MSAA 帧崩溃（pipeline/pass 样本数不匹配）** | 4x 附件建好后，材质/天空管线仍是 `multisample.count=1` → `wgpuCommandEncoderFinish` 验证失败、进程 panic 无截图 | 管线缓存加 `[msaa4]` 维（`p3dMatPipeline[2][...]`、`skyPipeline[2]`），`rp.multisample.count=4`；`WGPURenderPassColorAttachment.resolveTarget` 指向真实目标、深度附件也换成 4x；`caps.max_samples` 先探测 4x 纹理是否可建，失败回退 1x（不静默）。e2e ⑫ 用 1x/4x 像素差断言 |
 
 ---
 
@@ -970,6 +972,10 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > ABI `textures4[2]` + flags2 bit21/22 + group1 binding17/18；shader 仅调制**电介质 F0**（金属不受影响），
 > specularColorFactor 允许 >1（CompareSpecular 用 10× 做有无 specular 对照）。3 个用到贴图的模型
 >（CompareSpecular / SpecularTest / AnimationPointerUVs）重导重渲；`gltf_import_e2e` 夹具扩 2 槽断言。
+> **第 15 轮（MSAA 4x）** `frame3d.msaa_samples` + `scn.Scene.msaa_samples`（0/1=关、4=4x，`MAQUE_MSAA` 覆盖）；
+> gfx 新增 4x 颜色/深度附件 + `resolveTarget`，材质/天空管线按 sampleCount 分两份缓存（否则
+> pipeline/pass 样本数不匹配会验证失败），`caps.max_samples` 探测设备能力并自动回退；默认关 → 148 基线
+> 零回归，e2e ⑫ 断言 1x/4x 仅边缘像素变化（1095 px、max 290）且覆盖不变。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -1104,9 +1110,10 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 |---|---|---|---|
 | P2 | **EXR 解码 + cubemap kind=1 + IBL 光照标定** | 全部（当前 opt-in equirect `.hdr`/PNG/JPEG + 真 PMREM GGX/irradiance + 天空 pass） | 现有：`.hdr`（RGBE→RGBA16F）、PNG/JPEG env、内建 studio_env、**GGX importance-sample 粗糙度 mip 预过滤**、**漫反射 irradiance 卷积**、天空背景、ToyCar/`env_ibl.scn`/`env_pmrem.scn` 示例与 e2e；剩余：EXR 解码、cubemap 纹理、默认开启前的光照/曝光标定 |
 | P3 | ✅ **specularTexture/specularColorTexture**（第 14 轮已完成） | 3 个模型实际用到贴图（CompareSpecular / SpecularTest / AnimationPointerUVs） | 已加 `textures4[2]` + flags2 presence bit21/22 + group1 binding17/18；现每 stage 20 张 sampled texture（15+2 材质 + shadow/env/irradiance），依赖适配器上限（桌面 GPU 通常 ≥128） |
+| P3 | ✅ **MSAA 4x（opt-in）**（第 15 轮已完成） | 全部 3D 场景（默认关；按场景/环境变量开） | `scn.Scene.msaa_samples` / `MAQUE_MSAA`；4x 颜色+深度附件、pass resolve、管线按样本数分缓存；`caps.max_samples=4` 探测，失败自动回退；e2e ⑫ |
 | P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | 现有近似：alpha BLEND + volume 薄壁色调 + diffuse BLEND；完整版需 backbuffer 折射 pass + 厚度/吸收/散射模型 |
-| P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 需要动画运行时 + skinning + morph；属独立大项（`plans/12`），迁移可先静态 |
-| P2 | **Draco / KTX2 / meshopt 解码** | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | 第三方解码依赖；当前用 `glTF/` 主变体规避，仅当只有压缩变体时 blocked |
+| P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 独立大项；实现级评估见 `plans/21-gltf-animation-and-compression.md`（S1 蒙皮 7–10 人日 / S2 采样 5–9 / S3 morph 3–5） |
+| P2 | **Draco / KTX2 / meshopt 解码** | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | 评估结论：主变体不阻塞、不做解码器（`plans/21` §B）；当前用 `glTF/` 主变体规避 |
 | P2 | **glTF 自带相机** | 相机 13 个模型 / 38 个 | `--scene` 可选 `--use-gltf-camera`（当前手动机位表 + 自动机位） |
 | P3 | **`TEXCOORD_2+` / 逐贴图独立 UV transform** | TEXCOORD_2 1 个 primitive；14 个 texture_transform 模型中少数逐槽不同 | 更高 UV 集/逐槽矩阵（ABI 低优先级） |
 | P3 | **GPU 实例化** | 大实例数资产（当前 CPU 展开，每实例一个 draw） | renderer 加 instance buffer + drawIndexedInstanced |

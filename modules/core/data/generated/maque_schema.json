@@ -11384,6 +11384,15 @@
           "attrs": {}
         },
         {
+          "name": "msaa_samples",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "gravity_y",
           "type": "float",
           "kind": "f32",

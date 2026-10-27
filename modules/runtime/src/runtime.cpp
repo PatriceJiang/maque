@@ -2385,6 +2385,11 @@ void Engine::step_frame() {
         fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
+        /* MSAA：场景字段 scn.Scene.msaa_samples（0/1=关、4=4x），MAQUE_MSAA 覆盖（0/1/4）。
+         * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。 */
+        int msaa_samples = scene ? scene->desc.msaa_samples : 0;
+        if (const char* msaa_env = std::getenv("MAQUE_MSAA")) msaa_samples = std::atoi(msaa_env);
+        fr.msaa_samples = (msaa_samples >= 4) ? 4 : 1;
         fr.env.sky_mode = 1;
         /* 环境光：scn.Scene.env_color/env_intensity + analytic studio IBL 参数（plans/19）。
          * env_sky_color/env_ground_color 全 0 = 由 env_color 派生（旧场景不改也有半球环境）。 */

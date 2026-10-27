@@ -2396,6 +2396,7 @@ struct Scene {
     float env_highlight = 1.0F;
     float env_rotation = 0.0F;
     std::string env_texture = "";
+    int32_t msaa_samples = 0;
     float gravity_y = -900.0F;
     float restitution = 0.86F;
 };
