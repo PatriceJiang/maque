@@ -386,8 +386,20 @@ tools\win\build.cmd -Sanitize address -RunTests
   `scene_unload/reload`、`scene_set_instance_paused/active`、`scene_instance_*` 查询、`scene_self/self_root`、
   `scene_emit`；控制面 `Scene.instances/instance_info/instantiate/unload_instance/reload_instance/bake_instances`。
   预算：实例数默认 256（`MAQUE_SCENE_INSTANCE_LIMIT`）、嵌套深度 16；循环源链报错不崩。
-  样例 `scenes/nested/`，测试 `ctest -R scene_instance`。⚠️ 序列化（P3：`Scene.save` 保引用/场景字段完整）、
-  嵌套脚本热重载/快照（P4）、嵌套场景内纹理等资源按实例 base 解析仍未完成（见 docs/32 §14）。
+  样例 `scenes/nested/`，测试 `ctest -R 'scene_instance|scene_serialization'`。
+  **序列化（docs/32 §6/§15，已落地）**：`Scene.save` 反射写全部场景字段（`version:2`，旧文件兼容）；
+  未烘焙实例只写 `SceneInstance` 引用、不落子树；`bake_instances`/`detached` 才写自包含内容；
+  连续保存逐字节一致；`load(save(scene))` 的 12 帧 `world_trail` 与原始一致；`World.snapshot/restore`
+  含实例表（VM 状态不落盘，restore 后 on_start 重注册）。
+  快照恢复在**实例结构相同**时保留现有 VM/脚本状态（仅刷新归属/paused/active），结构变化才重建；
+  `scene_set_instance_paused/active` 同步挂载壳组件（`Scene.save` 可持久化）。
+  **热重载**：嵌套脚本按文件只重建**所有使用该文件的存活实例**的槽位；嵌套 `.scn` 源变化帧边界重建实例；
+  嵌套实例实体的组件资源路径按实例 base 改写（prefab/脚本/SceneInstance 路径也按 base）。
+  **切场景资源缓存**：`director.load_scene` 换 VFS 根挂载点前必须 `spine_release()` + `clear_asset_caches()`
+  （tex/material/mesh/env 缓存的键是相对路径，不清会串到上一个场景——khronos gallery 贴图错）；
+  回归 `ctest -R texture_switch`。
+  ⚠️ 剩余：`Meta.stable_id/source_scene` 未赋值；材质文件内部贴图仍按根场景解析；子实例脚本全树可读（D4）。
+  （见 docs/32 §14）
 
 ## 脚本可见 API（docs/18）
 

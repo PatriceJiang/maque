@@ -100,10 +100,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
-# 场景自定义全屏 shader 端到端（render.ShaderPass + Shadertoy Seascape）：
-# WGSL 是场景资源（VFS 根 = 场景目录），非内建 shader。① --shot 日志含 shader pass 加载行 +
-# "runtime: shot" + PPM 640x360 结构断言（颜色丰富/非纯色/天空亮于海面）② frame 1 vs 45 有显著
-# 像素差（time 推进）③ 同帧两次逐字节一致 ④ WGSL 在 scenes/shadertoy/、场景 JSON 挂组件并引用它。
+# 场景自定义全屏 shader 端到端（render.ShaderPass + Shadertoy demo 集：Seascape / Mandelbulb）：
+# WGSL 是场景资源（VFS 根 = 场景目录），非内建 shader。逐场景 ① --shot 日志含该 .wgsl 的
+# shader pass 加载行 + "runtime: shot" + PPM 640x360 结构断言（颜色多样/非平坦；seascape 另断言
+# 天空亮于海面）② frame 1 vs 60 有显著像素差（time 推进）③ 同帧两次逐字节一致 ④ WGSL 在
+# scenes/shadertoy/、场景 JSON 挂组件并引用它（mandelbulb 未入库时该节 SKIP，不阻塞）。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME shadertoy_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/shadertoy_e2e.sh"
              $<TARGET_FILE:maque_player>
@@ -217,6 +218,22 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              $<TARGET_FILE:maque_player>
              "${CMAKE_SOURCE_DIR}/scenes/nested/parent.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/scene_instance_e2e")
+endif()
+
+# 场景实例序列化（docs/32 §6）：v2 全字段 + 保引用不烘焙 + round-trip + bake + 快照实例表。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME scene_serialization_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/scene_serialization_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/nested/parent.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/scene_serialization_e2e")
+endif()
+
+# 切场景纹理缓存回归（docs/32 §5.1）：相对路径相同但内容不同的贴图不得跨场景复用。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME texture_switch_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/texture_switch_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/texswitch"
+             "${CMAKE_CURRENT_BINARY_DIR}/texture_switch_e2e")
 endif()
 
 # Prefab **平级展开**（实体级 `source` 简写）：纯展开指令、不套壳 —— 用于"平级重复对象"

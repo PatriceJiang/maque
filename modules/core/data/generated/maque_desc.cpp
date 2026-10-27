@@ -1271,6 +1271,7 @@ static uint32_t mq_dyn_scn_Scene_scripts_size(const void* f) { return (uint32_t)
 static void mq_dyn_scn_Scene_scripts_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_scn_Scene_scripts_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_scn_Scene[] = {
+    { "version", (uint32_t)offsetof(scn::Scene, version), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "title", (uint32_t)offsetof(scn::Scene, title), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "script", (uint32_t)offsetof(scn::Scene, script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "scripts", (uint32_t)offsetof(scn::Scene, scripts), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_Scene_scripts_clear, mq_dyn_scn_Scene_scripts_size, mq_dyn_scn_Scene_scripts_resize, mq_dyn_scn_Scene_scripts_elem },
@@ -5226,7 +5227,7 @@ extern const mq_type_desc mq_type_scn_Scene = {
     410509289u,
     (uint32_t)sizeof(scn::Scene),
     (uint32_t)alignof(scn::Scene),
-    19u,
+    20u,
     mq_fields_scn_Scene,
     4u,
     0u,

@@ -44,6 +44,7 @@
 #include <vector>
 #include <fstream>
 #include <unordered_map>
+#include <unordered_set>
 #include <filesystem>
 #include <algorithm>
 #include <array>
@@ -101,6 +102,8 @@ void write_json_string_pub(std::string& out, const std::string& s);
 bool keep_open = false;
 /* 组件语义辅助（定义见 host API 之前）：供输入回调使用。 */
 std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role);
+/* VFS 相对路径拼接（定义见场景实例装配段；watcher 等前置代码也要用）。 */
+static std::string vfs_join(const std::string& base, const std::string& rel);
 std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name, const mq_type_desc** out_desc);
 float read_num(const mq_type_desc* d, const void* base, const char* field, float def);
 bool  write_num(const mq_type_desc* d, void* base, const char* field, double v);
@@ -179,7 +182,8 @@ struct SceneInstanceRuntime {
     std::vector<uint64_t> script_hashes;  // 内容哈希（热重载）
     bool paused = false;
     bool active = true;
-    int state = 0;                   // 0=pending 1=active 2=destroyed 3=error
+    bool detached = false;           // 已烘焙：内容属于父场景（保存时写出子树，加载时不再实例化）
+    int state = 0;                   // 0=pending 1=active 2=destroyed 3=error 4=pending-unload
     std::string error;
 };
 
@@ -518,6 +522,7 @@ struct Engine {
     };
     std::vector<InstanceOp> instance_ops;            // 动态请求（帧边界 FIFO）
     std::string scene_last_error;                    // 最近一次实例化/卸载错误
+    std::unordered_set<std::string> instance_warned; // 嵌套场景忽略世界级字段的警告去重
     int  instance_limit = 256;                       // 实例数预算（MAQUE_SCENE_INSTANCE_LIMIT 可调）
     /* 实例/事件辅助（实现见下方） */
     SceneInstanceRuntime* instance_at(int id);
@@ -540,6 +545,15 @@ struct Engine {
     void  destroy_instance_content(SceneInstanceRuntime& inst, bool fire_destroy);
     void  destroy_instances();
     bool  resolve_instance_path(const std::string& rel, const std::string& base, std::string& out_vfs) const;
+    bool  reload_instance_script(int instance_id, const std::string& rel);
+    void  rebase_instance_assets(int instance_id);
+    void  ensure_instance_component(int shell, int instance_id);
+    std::string serialized_instance_source(const SceneInstanceRuntime& inst);
+    /* 快照扩展（docs/32 §6.3）：实例表 + 实体归属；旧快照无此块时保持兼容。
+     * 返回 0=无实例表（旧快照）/1=重建实例 VM/2=结构相同→保留 VM 状态。 */
+    void  encode_instances(SnapshotWriter& w) const;
+    int   restore_instances(const uint8_t* data, size_t n, size_t& off);
+    uint64_t instance_checksum() const;
 
     std::unordered_map<std::string, int> tex_cache;              // 装配期填充；提取期只读
     /* env PMREM 产物缓存：路径 → {specular(预过滤 mip 链), irradiance}；-1 = 加载失败 */
@@ -642,6 +656,7 @@ struct Engine {
     void step_frame();                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
     bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
     void preload_scene_assets();                            // 装配期预解析纹理/材质（extract 只读，docs/13 §8）
+    void clear_asset_caches();                              // 切场景：释放按**相对路径**缓存的纹理/网格（挂载点已换）
     bool reload_script(std::string* err = nullptr, const std::string* only = nullptr);   // 重载脚本（多脚本：按路径）
     /* 常驻覆盖层脚本：激活/切换（同一路径复用已有 VM，状态保留）、卸载、热重载。 */
     bool ensure_overlay_script(const std::string& rel);
@@ -1846,6 +1861,7 @@ bool Engine::world_snapshot(mq_snapshot* snap) {
         w.pod(p.life); w.pod(p.max_life); w.pod(p.size);
         w.pod(p.r); w.pod(p.g); w.pod(p.b);
     }
+    encode_instances(w);                              // 实例表 + 实体归属（docs/32 §6.3）
     void* out = mq_snapshot_begin(snap, w.buf.size() ? w.buf.size() : 1);
     if (!out) return false;
     if (!w.buf.empty()) std::memcpy(out, w.buf.data(), w.buf.size());
@@ -1918,6 +1934,12 @@ void Engine::world_restore(const mq_snapshot* snap) {
                 }
             }
         }
+        /* 实例表（docs/32 §6.3）：结构相同时保留 VM 状态；结构变化才重建并 on_start 重注册。 */
+        const int inst_mode = restore_instances((const uint8_t*)bytes, n, off);
+        if (inst_mode == 1) {
+            (void)dispatch_instance_on_start(0);
+            if (overlay_bus) (void)call_overlay_event("on_start", 0.0, 0.0, 0.0, nullptr);
+        }
     }
     scene->flatten_world(*this);
 }
@@ -1925,6 +1947,7 @@ void Engine::world_restore(const mq_snapshot* snap) {
 /* 世界校验和：场景（实体/组件标量）+ 物理求解器状态 + 粒子（都是模拟状态，docs/10 §5）。 */
 uint64_t Engine::world_checksum() {
     uint64_t h = scene ? scene->checksum(*this) : 1469598103934665603ull;
+    h ^= instance_checksum() * 1099511628211ull;      // 实例结构（docs/32 §6.3/§8）
     if (physics) h ^= mq_physics_checksum(physics) * 1099511628211ull;
     for (auto& p : particles) {
         h ^= (uint64_t)(int64_t)(p.x * 4096.0F); h *= 1099511628211ull;
@@ -3421,6 +3444,32 @@ void Engine::nav_step() {
 
 /* 装配期预解析（docs/13 §8：渲染/提取只读）：把所有实体的纹理与材质引用解析进缓存。
  * 引擎在装配阶段做 IO（合法：不在模拟帧内，docs/10 D7）。 */
+/* 切换场景时**必须**清空资源缓存（docs/32 §5.1 资源基准）：缓存键是组件里的**相对路径**
+ *（如 khronos 每个模型的 "textures/image0.png"），而 VFS 根挂载点已换成新场景目录 ——
+ * 不清会直接命中上一个场景的纹理/网格，表现为“换了场景但贴图还是上一个模型”。 */
+void Engine::clear_asset_caches() {
+    const size_t nt = tex_cache.size(), nm = mesh_cache.size(), ne = env_tex_cache.size();
+    if (rapi && rself) {
+        if (rapi->destroy_texture) {
+            for (auto& [k, id] : tex_cache) if (id >= 0) rapi->destroy_texture(rself, id);
+            for (auto& [k, pair] : env_tex_cache) {
+                if (pair.first >= 0) rapi->destroy_texture(rself, pair.first);
+                if (pair.second >= 0) rapi->destroy_texture(rself, pair.second);
+            }
+        }
+        if (rapi->destroy_mesh) {
+            for (auto& [k, id] : mesh_cache) if (id >= 0) rapi->destroy_mesh(rself, id);
+        }
+    }
+    tex_cache.clear();
+    material_cache.clear();
+    mesh_cache.clear();
+    env_tex_cache.clear();
+    if (nt + nm + ne > 0)
+        std::print("runtime: asset caches cleared on scene switch ({} textures, {} meshes, {} env)\n",
+                   nt, nm, ne);
+}
+
 void Engine::preload_scene_assets() {
     if (!scene) return;
     std::vector<int> ids;
@@ -3501,6 +3550,9 @@ bool Engine::reload_scene() {
     if (mq_vfs_read(vfs, scn_vfs_path.c_str(), &d, &n) != MQ_VFS_OK) return false;
     std::string text((char*)d, n);
     mq_vfs_free(d);
+    /* 场景文件热重载：Spine/资源缓存按旧世界释放（相对路径缓存键在新挂载点下会串场景）。 */
+    spine_release();
+    clear_asset_caches();
     /* 场景文件热重载（docs/32 §5.3）：根实例的 VM 保留（与旧行为一致），
      * 子实例随旧世界销毁并在装配时按新文件重建；实体归属/节点事件重新登记。 */
     for (auto& up : instances) {
@@ -3647,18 +3699,38 @@ uint32_t Engine::poll_watcher() {
             c->eng->reload_overlay_script();
             return 0;
         }
-        bool is_script = false;
-        for (const std::string& sp : c->eng->script_paths) {          // 多脚本：按路径定位改的是哪一个
-            if (p.size() >= sp.size() && p.compare(p.size() - sp.size(), sp.size(), sp) == 0) {
-                c->eng->reload_script(nullptr, &sp);
-                is_script = true;
-                break;
+        /* 脚本热重载（docs/32 §5.3）：根场景与嵌套实例按文件增量，只重建对应实例的那个槽位。 */
+        const auto ends_with = [&](const std::string& full, const std::string& tail) {
+            return !tail.empty() && full.size() >= tail.size() &&
+                   full.compare(full.size() - tail.size(), tail.size(), tail) == 0;
+        };
+        bool handled = false;
+        for (auto& up : c->eng->instances) {
+            if (!up || up->state != 1) continue;
+            for (const std::string& sp : up->scripts) {
+                const std::string local = (std::filesystem::path(c->eng->scn_dir) /
+                                           vfs_join(up->base, sp).substr(1)).string();
+                if (ends_with(p, local)) {
+                    c->eng->reload_instance_script(up->id, sp);
+                    handled = true;
+                    break;
+                }
             }
         }
-        if (is_script) { /* 已处理 */ }
-        else if (!c->eng->scn_vfs_path.empty() &&
-                 p.size() >= c->eng->scn_vfs_path.size() &&
-                 p.compare(p.size() - c->eng->scn_vfs_path.size(), c->eng->scn_vfs_path.size(), c->eng->scn_vfs_path) == 0)
+        if (!handled) {
+            /* 嵌套场景源文件变化：帧边界重建该实例（保留旧实例直到重建成功）。 */
+            for (auto& up : c->eng->instances) {
+                if (!up || up->id == 0 || up->state != 1) continue;
+                const std::string local = (std::filesystem::path(c->eng->scn_dir) / up->source.substr(1)).string();
+                if (ends_with(p, local)) {
+                    c->eng->instance_ops.push_back({ 2, up->id, -1, std::string() });
+                    handled = true;
+                    break;
+                }
+            }
+        }
+        if (!handled && !c->eng->scn_vfs_path.empty() &&
+            ends_with(p, c->eng->scn_vfs_path))
             c->eng->reload_scene();
         return 0;
     }, &cx);
@@ -4120,7 +4192,14 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
                         if (!ci || !eng.build_instance(*ci, (int)eng.scene_chain.size())) {
                             state = 3; err = (uint16_t)(ci ? 2 : 1);
                             if (ci) { ci->state = 3; ci->error = "instance build failed"; }
-                        } else state = 1;
+                        } else {
+                            state = 1;
+                            if (const mq_field_desc* f = mq_reflect_field(sid, "paused"))
+                                ci->paused = *(bool*)(blob.data() + f->offset);
+                            if (const mq_field_desc* f = mq_reflect_field(sid, "active"))
+                                ci->active = *(bool*)(blob.data() + f->offset);
+                            if (!ci->active) { if (Entity* se = eng.scene->at(idx)) se->active = false; }
+                        }
                     }
                     if (const mq_field_desc* f = mq_reflect_field(sid, "instance_id"))
                         *(int32_t*)(blob.data() + f->offset) = (int32_t)iid;
@@ -4381,6 +4460,15 @@ bool Engine::build_instance(SceneInstanceRuntime& inst, int depth) {
     if (!nd.scripts.empty()) rel_scripts = nd.scripts;
     else if (!nd.script.empty()) rel_scripts.push_back(nd.script);
 
+    /* docs/32 §5.1 D1：嵌套场景只有“行为/节点”生效；世界级字段忽略并**显式警告**（每个源一次）。 */
+    if ((nd.width != 320 || nd.height != 240 || nd.seed != 0 || nd.gravity_y != -900.0F ||
+         nd.views != 1 || nd.msaa_samples != 0 || !nd.overlay_script.empty()) &&
+        instance_warned.insert(inst.source).second) {
+        std::print(stderr, "runtime: nested scene '{}' ignores world-level fields "
+                           "(width/height/seed/gravity/views/msaa/overlay_script) — one world only\n",
+                   inst.source);
+    }
+
     scene_chain.push_back(inst.source);
     const int prev_inst = building_instance;
     const std::string prev_base = building_base;
@@ -4404,6 +4492,7 @@ bool Engine::build_instance(SceneInstanceRuntime& inst, int depth) {
     std::sort(inst.roots.begin(), inst.roots.end());
     if (!ok) { inst.state = 3; return false; }
     inst.state = 1;
+    rebase_instance_assets(inst.id);                 // 嵌套场景内资源路径 → 实例 base 前缀
     std::print("runtime: scene instance #{} '{}' built ({} roots, {} scripts)\n",
                inst.id, inst.source, inst.roots.size(), inst.scripts.size());
     mq_obs_event(obs, "runtime", 1, "scene_instance_built");
@@ -4485,8 +4574,10 @@ void Engine::reset_instances() {
     }
     instances.clear();
     entity_instance.clear();
+    node_events.clear();                 // 处理器记录带实例 id，重建实例后必须重注册
     scene_chain.clear();
     instance_ops.clear();
+    instance_warned.clear();
     active_instance = nullptr;
     in_overlay = false;
     building_instance = 0;
@@ -4524,6 +4615,7 @@ void Engine::apply_instance_ops() {
                 continue;
             }
             if (!build_instance(*inst, 1)) continue;
+            if (inst->attach_entity >= 0) ensure_instance_component(inst->attach_entity, inst->id);
             (void)dispatch_instance_on_start(inst->id);
         } else if (op.kind == 1) {                            // unload
             SceneInstanceRuntime* parent = instance_at(inst->parent);
@@ -4538,9 +4630,323 @@ void Engine::apply_instance_ops() {
             inst->state = 0;
             inst->error.clear();
             inst->source = src;
-            if (build_instance(*inst, 1)) (void)dispatch_instance_on_start(inst->id);
+            if (build_instance(*inst, 1)) {
+                if (inst->attach_entity >= 0) ensure_instance_component(inst->attach_entity, inst->id);
+                (void)dispatch_instance_on_start(inst->id);
+            }
         }
     }
+}
+
+
+/* ---- 实例资源基址 / 动态壳组件 / 嵌套脚本热重载 / 快照实例表（docs/32 §5/§6） ---- */
+
+/* 组件里的字符串资源路径字段（显式名单 + PBR 的 *_texture 槽）。 */
+static bool is_instance_asset_field(const std::string& name) {
+    if (name == "texture" || name == "material" || name == "mesh_path" || name == "clip" ||
+        name == "shader" || name == "font" || name == "skeleton" || name == "atlas" ||
+        name == "env_texture")
+        return true;
+    return name.size() > 8 && name.compare(name.size() - 8, 8, "_texture") == 0;
+}
+static bool is_absolute_asset(const std::string& p) {
+    return !p.empty() && (p[0] == '/' || p.rfind("builtin:", 0) == 0 || p.find("://") != std::string::npos ||
+                          p.rfind("mem:", 0) == 0 || p.rfind("zip:", 0) == 0);
+}
+static void snapshot_str(SnapshotWriter& w, const std::string& s) {
+    w.pod((uint32_t)s.size());
+    if (!s.empty()) w.bytes(s.data(), s.size());
+}
+
+/* 实例 source 的**可序列化形式**：根实例相对场景目录；嵌套实例相对父场景 base；
+ * 落在 base 之外的路径保留绝对 VFS 路径（远程/共享资源）。 */
+std::string Engine::serialized_instance_source(const SceneInstanceRuntime& inst) {
+    const std::string& src = inst.source;
+    if (src.empty() || src[0] != '/') return src;
+    if (inst.parent > 0) {
+        const SceneInstanceRuntime* p = instance_at(inst.parent);
+        if (p && !p->base.empty()) {
+            const std::string prefix = "/" + p->base;
+            if (src.rfind(prefix, 0) == 0) return src.substr(prefix.size());
+        }
+        return src;
+    }
+    return src.substr(1);                        // 根场景挂载点 = 场景目录
+}
+
+void Engine::ensure_instance_component(int shell, int instance_id) {
+    if (!scene || !reflect) return;
+    Entity* se = scene->at(shell);
+    SceneInstanceRuntime* inst = instance_at(instance_id);
+    if (!se || !inst) return;
+    const mq_type_desc* sid = mq_reflect_type_by_name(reflect, "scn.SceneInstance");
+    if (!sid) return;
+    if (se->comps.find(sid->type_id) == se->comps.end())
+        attach_component(*this, shell, "scn.SceneInstance");
+    auto it = se->comps.find(sid->type_id);
+    if (it == se->comps.end()) return;
+    std::vector<uint8_t>& blob = it->second;
+    if (const mq_field_desc* f = mq_reflect_field(sid, "source"))
+        *(std::string*)(blob.data() + f->offset) = serialized_instance_source(*inst);
+    if (const mq_field_desc* f = mq_reflect_field(sid, "paused"))
+        *(bool*)(blob.data() + f->offset) = inst->paused;
+    if (const mq_field_desc* f = mq_reflect_field(sid, "active"))
+        *(bool*)(blob.data() + f->offset) = inst->active;
+    if (const mq_field_desc* f = mq_reflect_field(sid, "detached"))
+        *(bool*)(blob.data() + f->offset) = inst->detached;
+    if (const mq_field_desc* f = mq_reflect_field(sid, "instance_id"))
+        *(int32_t*)(blob.data() + f->offset) = inst->id;
+    if (const mq_field_desc* f = mq_reflect_field(sid, "state"))
+        *(int32_t*)(blob.data() + f->offset) = inst->state;
+}
+
+/* 把实例拥有的组件资源路径改写为「实例 base 前缀」——让既有的 VFS 相对根场景目录的
+ * 加载路径（preload / mesh / spine / audio / text）无需逐个改函数即可找到嵌套资源。 */
+void Engine::rebase_instance_assets(int instance_id) {
+    SceneInstanceRuntime* inst = instance_at(instance_id);
+    if (!inst || inst->base.empty() || !scene) return;
+    for (auto& [eid, owner] : entity_instance) {
+        if (owner != instance_id) continue;
+        Entity* e = scene->at(eid);
+        if (!e) continue;
+        for (auto& [tid, blob] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            if (!d) continue;
+            for (uint32_t i = 0; i < d->field_count; ++i) {
+                const mq_field_desc* f = &d->fields[i];
+                if (f->kind != MQ_TK_STRING || !is_instance_asset_field(f->name)) continue;
+                std::string* s = (std::string*)(blob.data() + f->offset);
+                if (s->empty() || is_absolute_asset(*s)) continue;
+                const std::string joined = vfs_join(inst->base, *s);   // "/base/rel"
+                if (joined.size() > 1) *s = joined.substr(1);          // 去前导 '/'（既有代码会补）
+            }
+        }
+    }
+}
+
+bool Engine::reload_instance_script(int instance_id, const std::string& rel) {
+    SceneInstanceRuntime* inst = instance_at(instance_id);
+    if (!inst || !inst->bus || rel.empty()) return false;
+    int slot = -1;
+    for (size_t i = 0; i < inst->scripts.size(); ++i)
+        if (inst->scripts[i] == rel) { slot = (int)i; break; }    // 按文件增量：只重建该槽位
+    if (slot < 0) return false;
+    void* d = nullptr; size_t n = 0;
+    const std::string vpath = vfs_join(inst->base, rel);
+    if (mq_vfs_read(vfs, vpath.c_str(), &d, &n) != MQ_VFS_OK || !d) return false;
+    std::string src((char*)d, n);
+    mq_vfs_free(d);
+    const uint64_t h = mq_vfs_hash(src.data(), src.size());
+    if ((size_t)slot < inst->script_hashes.size() && inst->script_hashes[(size_t)slot] == h) return false;
+    const char* lang = mq_script_lang_for_path(rel.c_str());
+    mq_script_vm* fresh = mq_script_vm_create_lang(lang);
+    if (!fresh) return false;
+    mq_script_set_rng(fresh, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+    mq_bind_generated(fresh, this);
+    SceneInstanceRuntime* prev = active_instance;
+    const bool prev_ov = in_overlay;
+    active_instance = inst;
+    in_overlay = false;
+    const int rc = mq_script_eval(fresh, src.c_str(), rel.c_str());
+    active_instance = prev;
+    in_overlay = prev_ov;
+    if (rc != 0) {                                   // 原子：eval 失败保留旧 VM
+        char ebuf[512] = { 0 };
+        mq_script_last_error(fresh, ebuf, (int)sizeof ebuf);
+        std::print(stderr, "runtime: instance {} script hot reload failed '{}': {} (旧脚本保留)\n",
+                   inst->id, rel, ebuf);
+        mq_script_vm_destroy(fresh);
+        return false;
+    }
+    mq_script_bus_swap(inst->bus, (uint32_t)slot, fresh, rel.c_str());
+    while (inst->script_hashes.size() <= (size_t)slot) inst->script_hashes.push_back(0);
+    inst->script_hashes[(size_t)slot] = h;
+    if (inst->id == 0) {
+        script_hashes = inst->script_hashes;
+        if (!script_hashes.empty()) script_hash = script_hashes.front();
+        vm = mq_script_bus_vm_at(inst->bus, 0);
+    }
+    /* 换入后只对新 VM 派发 on_start（重新注册事件处理器）。 */
+    prev = active_instance; active_instance = inst;
+    (void)mq_event_dispatch(fresh, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr);
+    active_instance = prev;
+    std::print("runtime: hot reload instance #{} script '{}' (slot {})\n", inst->id, rel, slot);
+    mq_obs_event(obs, "runtime", 1, "instance_script_reloaded");
+    return true;
+}
+
+/* 快照扩展：实例表 + 实体归属。放在快照末尾（旧快照没有该块 → 跳过）。 */
+void Engine::encode_instances(SnapshotWriter& w) const {
+    w.pod((uint32_t)0x4D515349u);                  // magic "MQSI"
+    w.pod((uint32_t)1u);                           // 版本
+    uint32_t live = 0;
+    for (auto& up : instances) if (up && up->state != 2) ++live;
+    w.pod(live);
+    for (auto& up : instances) {
+        if (!up || up->state == 2) continue;
+        w.pod((int32_t)up->id);
+        w.pod((int32_t)up->parent);
+        w.pod((int32_t)up->attach_entity);
+        w.pod((int32_t)up->state);
+        w.pod((uint8_t)(up->paused ? 1 : 0));
+        w.pod((uint8_t)(up->active ? 1 : 0));
+        w.pod((uint8_t)(up->detached ? 1 : 0));
+        snapshot_str(w, up->source);
+        snapshot_str(w, up->base);
+        w.pod((uint32_t)up->roots.size());
+        for (int r : up->roots) w.pod((int32_t)r);
+        w.pod((uint32_t)up->scripts.size());
+        for (const auto& s : up->scripts) snapshot_str(w, s);
+    }
+    std::vector<std::pair<int, int>> owners(entity_instance.begin(), entity_instance.end());
+    std::sort(owners.begin(), owners.end());
+    w.pod((uint32_t)owners.size());
+    for (auto& [eid, oid] : owners) { w.pod((int32_t)eid); w.pod((int32_t)oid); }
+}
+
+int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
+    auto need = [&](size_t bytes) { return off + bytes <= n; };
+    uint32_t magic = 0, ver = 0;
+    if (!need(8)) return 0;
+    std::memcpy(&magic, data + off, 4); off += 4;
+    if (magic != 0x4D515349u) { off -= 4; return 0; }
+    std::memcpy(&ver, data + off, 4); off += 4;
+    if (ver != 1) return 0;
+    uint32_t count = 0;
+    if (!need(4)) return 0;
+    std::memcpy(&count, data + off, 4); off += 4;
+    if (count > (uint32_t)std::max(instance_limit * 4, 1024)) return 0;
+
+    /* 先解析到临时表；再决定"保留现有 VM（结构完全相同）"还是重建。 */
+    std::vector<std::unique_ptr<SceneInstanceRuntime>> recs;
+    recs.reserve(count);
+    for (uint32_t i = 0; i < count; ++i) {
+        auto up = std::make_unique<SceneInstanceRuntime>();
+        int32_t id = -1, parent = -1, attach = -1, state = 1;
+        uint8_t paused = 0, active = 1, detached = 0;
+        if (!need(4 * 4 + 3)) return 0;
+        std::memcpy(&id, data + off, 4); off += 4;
+        std::memcpy(&parent, data + off, 4); off += 4;
+        std::memcpy(&attach, data + off, 4); off += 4;
+        std::memcpy(&state, data + off, 4); off += 4;
+        paused = data[off++]; active = data[off++]; detached = data[off++];
+        auto rstr = [&](std::string& out) {
+            uint32_t len = 0;
+            if (!need(4)) return false;
+            std::memcpy(&len, data + off, 4); off += 4;
+            if (!need(len)) return false;
+            out.assign((const char*)data + off, len); off += len;
+            return true;
+        };
+        if (!rstr(up->source) || !rstr(up->base)) return 0;
+        uint32_t rn = 0;
+        if (!need(4)) return 0;
+        std::memcpy(&rn, data + off, 4); off += 4;
+        if (rn > 1u << 20) return 0;
+        for (uint32_t k = 0; k < rn; ++k) {
+            int32_t r = -1;
+            if (!need(4)) return 0;
+            std::memcpy(&r, data + off, 4); off += 4;
+            up->roots.push_back(r);
+        }
+        uint32_t sn = 0;
+        if (!need(4)) return 0;
+        std::memcpy(&sn, data + off, 4); off += 4;
+        if (sn > 1024) return 0;
+        for (uint32_t k = 0; k < sn; ++k) {
+            std::string s;
+            if (!rstr(s)) return 0;
+            up->scripts.push_back(s);
+        }
+        up->id = id; up->parent = parent; up->attach_entity = attach;
+        up->state = state; up->paused = paused != 0; up->active = active != 0; up->detached = detached != 0;
+        recs.push_back(std::move(up));
+    }
+    std::vector<std::pair<int, int>> owners;
+    uint32_t owner_count = 0;
+    if (!need(4)) return 0;
+    std::memcpy(&owner_count, data + off, 4); off += 4;
+    if (owner_count > (1u << 22)) return 0;
+    owners.reserve(owner_count);
+    for (uint32_t i = 0; i < owner_count; ++i) {
+        int32_t eid = -1, oid = -1;
+        if (!need(8)) return 0;
+        std::memcpy(&eid, data + off, 4); off += 4;
+        std::memcpy(&oid, data + off, 4); off += 4;
+        owners.emplace_back(eid, oid);
+    }
+
+    /* 结构相同 → **保留现有 VM/脚本状态**（纯 undo/回滚更自然；docs/32 §6.3）。
+     * 实体表已由 Scene::decode 恢复（id 不变），因此只需刷新归属/暂停/显隐/roots。 */
+    instance_ops.clear();                              // 回滚取消尚未提交的动态增删请求
+    int live_now = 0;
+    for (auto& up : instances) if (up && up->state != 2) ++live_now;
+    bool same = (size_t)live_now == recs.size();
+    for (auto& rec : recs) {
+        if (!same) break;
+        SceneInstanceRuntime* cur = instance_at(rec->id);
+        if (!cur || cur->state == 2) { same = false; break; }
+        if (cur->parent != rec->parent || cur->attach_entity != rec->attach_entity ||
+            cur->source != rec->source || cur->base != rec->base ||
+            cur->scripts != rec->scripts || cur->roots != rec->roots) { same = false; break; }
+    }
+    if (same) {
+        for (auto& rec : recs) {
+            SceneInstanceRuntime* cur = instance_at(rec->id);
+            if (!cur) { same = false; break; }
+            cur->paused = rec->paused;
+            cur->active = rec->active;
+            cur->detached = rec->detached;
+            cur->state = rec->state;
+            cur->roots = rec->roots;
+        }
+        if (same) {
+            entity_instance.clear();
+            for (auto& [eid, oid] : owners) entity_instance[eid] = oid;
+            return 2;                                  // VM 状态保留，无需 on_start
+        }
+    }
+
+    reset_instances();                                 // 结构变化：重建（VM 状态不落盘）
+    instances = std::move(recs);
+    entity_instance.clear();
+    for (auto& [eid, oid] : owners) entity_instance[eid] = oid;
+    for (auto& up : instances) {
+        up->children.clear();
+        if (up->parent > 0) {
+            SceneInstanceRuntime* p = instance_at(up->parent);
+            if (p) p->children.push_back(up->id);
+        }
+    }
+    for (auto& up : instances) {
+        if (!up) continue;
+        if (!up->scripts.empty()) {
+            if (!load_instance_scripts(*up, up->scripts, up->id == 0)) up->state = 3;
+        } else {
+            up->bus = nullptr;
+            up->state = 1;
+        }
+    }
+    return 1;                                          // 已重建 → 调用方派发 on_start
+}
+
+uint64_t Engine::instance_checksum() const {
+    uint64_t h = 1469598103934665603ull;
+    auto mix = [&](uint64_t v) { h ^= v; h *= 1099511628211ull; };
+    for (auto& up : instances) {
+        if (!up || up->state == 2) continue;
+        mix((uint64_t)(uint32_t)up->id);
+        mix((uint64_t)(uint32_t)up->parent);
+        mix((uint64_t)(uint32_t)up->attach_entity);
+        mix((uint64_t)(uint32_t)up->state);
+        mix(up->paused ? 1u : 0u);
+        mix(up->active ? 1u : 0u);
+        for (int r : up->roots) mix((uint64_t)(uint32_t)r);
+    }
+    std::vector<std::pair<int, int>> owners(entity_instance.begin(), entity_instance.end());
+    std::sort(owners.begin(), owners.end());
+    for (auto& [eid, oid] : owners) { mix((uint64_t)(uint32_t)eid); mix((uint64_t)(uint32_t)oid); }
+    return h;
 }
 
 
@@ -7093,7 +7499,12 @@ float load_texture(void* ctx, const char* path) {
     std::string p = (path && path[0] == '/') ? path : ("/" + std::string(path ? path : ""));
     return (float)e->load_texture(p);
 }
-float entity_spawn(void* ctx) { return (float)((Engine*)ctx)->scene->spawn(); }
+float entity_spawn(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    const int id = eng->scene->spawn();
+    if (id >= 0) eng->entity_instance[id] = eng->active_instance ? eng->active_instance->id : 0;
+    return (float)id;
+}
 void  entity_set_pos(void* ctx, float id, float x, float y) {
     auto* e = (Engine*)ctx;
     if (Entity* ent = e->scene->at((int)id)) {
@@ -8445,7 +8856,10 @@ float scene_reload(void* ctx, float instance) {
 
 void scene_set_instance_paused(void* ctx, float instance, float paused) {
     auto* eng = (Engine*)ctx;
-    if (SceneInstanceRuntime* inst = eng->instance_at((int)instance)) inst->paused = paused != 0.0F;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    if (!inst) return;
+    inst->paused = paused != 0.0F;
+    if (inst->attach_entity >= 0) eng->ensure_instance_component(inst->attach_entity, inst->id);
 }
 
 void scene_set_instance_active(void* ctx, float instance, float active) {
@@ -8455,6 +8869,7 @@ void scene_set_instance_active(void* ctx, float instance, float active) {
     inst->active = active != 0.0F;
     if (inst->attach_entity >= 0) {
         if (Entity* e = eng->scene ? eng->scene->at(inst->attach_entity) : nullptr) e->active = inst->active;
+        eng->ensure_instance_component(inst->attach_entity, inst->id);
     }
 }
 
@@ -9310,6 +9725,7 @@ extern "C" int mq_control_Scene_spawn(void* u, const mq_json* params, char* out,
     if (dry) { std::snprintf(out, cap, "{\"ok\":true,\"dry_run\":true,\"would_spawn\":\"%s\"}", name); return 0; }
     const int id = e->scene->spawn();
     if (id < 0) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"spawn failed\"}"); return 0; }
+    e->entity_instance[id] = 0;                 // 控制面编辑：归世界（根实例）
     if (Entity* ent = e->scene->at(id)) {
         ent->name = name;
         ent->parent = (int)parent;
@@ -9572,21 +9988,36 @@ extern "C" int mq_control_Scene_bake(void* u, const mq_json* params, char* out, 
 }
 
 /* Scene.save：把当前世界写回 .scn（编辑器落盘；docs/11 §4）。
- * 组件字段由反射序列化（与 load_json 往返一致）→ 落盘文件可直接再次加载。 */
+ * docs/32 §6.2：场景描述符走**反射**（全部字段零遗漏）；嵌套实例默认**保引用不烘焙**
+ * （只写 SceneInstance 组件，生成的子树不落盘）；detached/已烘焙实例才写子树。 */
 extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
     if (!path) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing path\"}"); return 0; }
+    if (!e->scene || !e->scene_type) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no scene\"}"); return 0; }
 
-    std::string json = "{\n  \"title\": ";
-    write_json_string_pub(json, e->scene->desc.title);
-    json += ",\n  \"script\": ";
-    write_json_string_pub(json, e->scene->desc.script);
-    json += ",\n  \"width\": " + std::to_string(e->scene->desc.width);
-    json += ",\n  \"height\": " + std::to_string(e->scene->desc.height);
-    json += ",\n  \"seed\": " + std::to_string(e->scene->desc.seed);
-    json += ",\n  \"gravity_y\": " + std::to_string(e->scene->desc.gravity_y);
-    json += ",\n  \"restitution\": " + std::to_string(e->scene->desc.restitution);
+    /* 1) 描述符：反射序列化全部字段（含 scripts/overlay_script/env/views/...；docs/32 §6.1） */
+    std::vector<char> dbuf(8192);
+    size_t dneed = mq_persist_write_json(e->reflect, e->scene_type, &e->scene->desc, dbuf.data(), dbuf.size());
+    if (dneed + 1 > dbuf.size()) {
+        dbuf.resize(dneed + 1);
+        dneed = mq_persist_write_json(e->reflect, e->scene_type, &e->scene->desc, dbuf.data(), dbuf.size());
+    }
+    std::string json;
+    if (dneed >= 2 && dbuf[0] == '{') json.assign(dbuf.data(), dneed - 1);   // 去掉最后的 '}'
+    else json = "{\"version\":2";
+
+    /* 2) 实体：只写根实例拥有的节点；未被烘焙的子实例内容不写（由 source 重建）。 */
+    const auto included = [&](int id) {
+        auto it = e->entity_instance.find(id);
+        if (it == e->entity_instance.end()) return true;    // 无归属信息（老场景/宿主手工节点）
+        int owner = it->second;
+        if (owner <= 0) return true;
+        /* 只有**本实例已烘焙**才把内容写进父场景；未烘焙实例的内容由 source 重建，
+         * 即使其祖先已烘焙也不写（否则重载会重复实例化）。 */
+        SceneInstanceRuntime* cur = e->instance_at(owner);
+        return cur && cur->detached;
+    };
     json += ",\n  \"entities\": [";
 
     std::vector<int> ids;
@@ -9620,7 +10051,7 @@ extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, 
         }
         json += "]";
         std::vector<int> kids;
-        for (auto& [k, c] : e->scene->ents) if (c.parent == id) kids.push_back(k);
+        for (auto& [k, c] : e->scene->ents) if (c.parent == id && included(k)) kids.push_back(k);
         std::sort(kids.begin(), kids.end());
         if (!kids.empty()) {
             json += ", \"children\": [";
@@ -9633,6 +10064,7 @@ extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, 
     for (int id : ids) {
         Entity* ent = e->scene->at(id);
         if (!ent || (ent->parent >= 0 && e->scene->at(ent->parent))) continue;   // 仅从根开始
+        if (!included(id)) continue;
         if (!first) json += ",";
         first = false;
         emit(id, 2);
@@ -9650,7 +10082,9 @@ extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, 
 /* ---- 场景实例控制面（docs/32 §7.2）：查询只读；变更类走与脚本同一条帧边界队列 ---- */
 extern "C" int mq_control_Scene_instances(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
-    std::string json = "{\"ok\":true,\"count\":" + std::to_string((int)e->instances.size()) + ",\"instances\":[";
+    int live = 0;
+    for (auto& up : e->instances) if (up && up->state != 2) ++live;
+    std::string json = "{\"ok\":true,\"count\":" + std::to_string(live) + ",\"instances\":[";
     bool first = true;
     for (auto& up : e->instances) {
         if (!up || up->state == 2) continue;
@@ -9757,6 +10191,9 @@ extern "C" int mq_control_Scene_bake_instances(void* u, const mq_json* params, c
             bool& det = *(bool*)(it->second.data() + f->offset);
             if (det) continue;
             if (!dry) det = true;
+            if (!dry) {
+                if (SceneInstanceRuntime* up = e->instance_by_attach(eid)) up->detached = true;
+            }
             ++marked;
         }
     }
@@ -9767,6 +10204,7 @@ extern "C" int mq_control_Scene_bake_instances(void* u, const mq_json* params, c
 /* World.snapshot：抓当前世界快照（返回字节数与校验和；AI undo/回滚点）。 */
 extern "C" int mq_control_World_snapshot(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
+    if (!e->snap_manual) e->snap_manual = mq_snapshot_create();     // 独立于周期池（不被 60 帧环覆盖）
     if (!e->world_snapshot(e->snap_manual)) { std::snprintf(out, cap, "{\"ok\":false}"); return 0; }
     size_t n = 0; mq_snapshot_bytes(e->snap_manual, &n);
     std::snprintf(out, cap, "{\"ok\":true,\"bytes\":%zu,\"checksum\":\"%llu\",\"frame\":%llu}",
@@ -10471,6 +10909,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价  onDestroy）---- */
     reset_instances();                   // 实例树/全部实例 VM（覆盖层是独立总线，不在此列）
     spine_release();                     // Spine 实例随世界一起释放（派生数据，重建即可）
+    clear_asset_caches();                // ⚠️ 纹理/网格缓存键是相对路径，换场景挂载点后必须清空
     agent_paths.clear();
     node_events.clear();
     physics_role_bodies.clear();

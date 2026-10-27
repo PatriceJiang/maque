@@ -134,6 +134,8 @@
         - { name: active,   type: bool,  default: true }
     - struct: Scene
       fields:
+        # 文档版本（docs/32 §6.1）：v1 = 无 version 字段（兼容）；v2 = 完整场景描述 + 实例引用。
+        - { name: version,  type: int32_t, default: 2 }
         - { name: title,    type: string,  default: "maque scene" }
         - { name: script,   type: string,  default: "" }      # 关联脚本资源（相对场景目录）
         # 多脚本（多语言）协作：按**声明顺序**创建 VM 并投递事件（确定性）。

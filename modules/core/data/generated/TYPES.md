@@ -2010,6 +2010,7 @@ role: `particle_emitter`
 
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
+| `version` | int32_t | 2 |  |
 | `title` | string | maque scene |  |
 | `script` | string |  |  |
 | `scripts` | string[] | — |  |

@@ -11307,6 +11307,15 @@
       "source": "world/scn.yaml",
       "fields": [
         {
+          "name": "version",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "title",
           "type": "string",
           "kind": "string",
