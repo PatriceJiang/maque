@@ -1,0 +1,31 @@
+{
+ "title": "probe_normal",
+ "width": 640,
+ "height": 360,
+ "views": 1,
+ "entities": [
+  {
+   "name": "camera",
+   "components": [
+    {"type": "scene.Transform3D", "local": {"position": {"x": 0.0, "y": 0.0, "z": 3.0},
+                                             "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}}},
+    {"type": "render.Camera3D", "fov_y": 45.0, "near": 0.1, "far": 100.0,
+     "clear_color": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0}}
+   ]
+  },
+  {
+   "name": "cube",
+   "components": [
+    {"type": "scene.Transform3D", "local": {"position": {"x": 0.0, "y": 0.0, "z": 0.0},
+                                             "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}}},
+    {"type": "render.MeshRenderer"},
+    {"type": "asset.PbrMaterial", "shading_model": 6, "side": 2}
+   ]
+  }
+ ],
+ "env_color": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0},
+ "env_sky_color": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0},
+ "env_ground_color": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0},
+ "env_intensity": 0.0,
+ "env_highlight": 0.0
+}

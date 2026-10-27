@@ -100,6 +100,15 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# PBR/迁移渲染回归（docs/31 §11 P3）：①迁移 manifest/compare 指标下限 ②Normal oracle + 镜像 front-face
+# ③已提交 preview.jpg 渲染基线（重渲染 ToyCar/Duck/CompareSpecular 与提交预览比较；无 PIL 时跳过该节）。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME pbr_regression_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/pbr_regression_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_CURRENT_BINARY_DIR}/pbr_regression_e2e")
+    set_tests_properties(pbr_regression_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # 材质模型端到端（plans/19-threejs-materials.md）：three.js 材质族 → asset.PbrMaterial.shading_model。
 # ① material_models_e2e：9 个对象（Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/
 #    Depth；Shadow 无遮挡时透明，由 ② 的阴影地面覆盖）离屏截图 → 连通域聚类 + 场景 JSON 定位 →

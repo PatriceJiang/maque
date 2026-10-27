@@ -993,6 +993,11 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 >（Duck / EnvironmentTest / IridescentDishWithOlives / TrafficCone / TransmissionTest）启用并重导重渲：
 > hist 0.388→0.629、0.280→0.421、0.363→0.456、0.332→0.451、0.292→0.444，rgb_delta 均下降；
 > 变差/持平/多相机模型保持自动或手动机位（决策与数据见 §5.4/§11）。
+> **第 19 轮（渲染回归测试）** 新增 `tests/pbr_regression_e2e.sh`（ctest `pbr_regression_e2e`）：
+> ①148 条 manifest + 149 条 comparison 完整性，关键模型 hist 下限（ToyCar/Duck/CompareSpecular/
+> IridescentDishWithOlives）；②Normal oracle（前向法线编码 188/188/255）+ 镜像 scale.x=-1 front-face
+> 可见性；③重渲染 ToyCar/Duck/CompareSpecular 与已提交 `preview.jpg` 比较（mean<6、max<140；无 PIL 跳过）。
+> 覆盖原 findings §11 的 S1/负行列式/对比基线三条；AO/wrap/ACES/mip/双面法线仍由 material_*_e2e 相对断言覆盖。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -1138,8 +1143,8 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 | P3 | **--scene 保护**（输出 `.auto.scn` 或要求 `--force`） | 手调模型 | 流程安全；当前靠 `--exclude` + README 警告 |
 | P3 | **二进制网格格式 / 更大的 `--compact` 压缩** | 大模型（百万顶点级） | 降低文本 JSON 体积与解析成本 |
 | P3 | **per-draw uniform arena**（去掉每帧重建 UB/bind group） | 149 模型批量渲染性能 | `plans/20 §6` 待办 |
-| P3 | **参考图对比落成回归测试** | 全部 | 把 `compare.json` 指标/`verify/findings §11` 的 8 条断言做成 `tests/pbr_regression_e2e.sh`，防止渲染缺陷回潮 |
-| P3 | **迁移回归脚本** | 全部 | 新增模型后重跑 `migrate --only <Model>` + `ctest -R 'gltf_import_e2e|render3d_scene_e2e|material_.*_e2e'` |
+| P3 | ✅ **参考图对比回归测试**（第 19 轮已完成） | 全部 | `tests/pbr_regression_e2e.sh`：manifest/compare 指标下限 + Normal/镜像 oracle + 3 模型 preview.jpg 渲染基线（mean<6）；原 findings §11 的 S1/负行列式/对比基线已覆盖，AO/wrap/ACES/mip/双面法线仍由 material_* 相对断言覆盖（精确 oracle 可后续补） |
+| P3 | **迁移回归脚本** | 全部 | 新增模型后重跑 `migrate --only <Model>` + `ctest -R 'gltf_import_e2e|render3d_scene_e2e|pbr_regression_e2e|material_.*_e2e'` |
 | P3 | **地面/阴影预设** | 参考图有棚拍背景的模型 | 可选 `--with-ground`，或手加 `material_shadow.scn` 范式 |
 
 ---
