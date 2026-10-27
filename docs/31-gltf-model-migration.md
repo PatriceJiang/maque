@@ -311,7 +311,7 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 | 图元 | **只导三角形**（`mode=4`/缺省）；线/点（mode≠4）跳过并打 warning |
 | 索引 | u8/u16/u32、`byteStride`、非索引 primitive 均支持；缺 `POSITION` 的跳过 |
 | 缺 NORMAL | 按**真实 indices** 累积面法线后归一化（不传 indices 是旧 bug，已修） |
-| UV | `TEXCOORD_0/1` 都导入（缺 uv1 复制 uv0）；材质 `uv1_mask` 记录逐贴图用哪套（bit0..7）；`TEXCOORD_2+` 不支持（退回 uv0 并在 README 记 gap） |
+| UV | `TEXCOORD_0/1` 都导入（缺 uv1 复制 uv0）；材质 `uv1_mask` 记录逐贴图用哪套（bit0..7）；`TEXCOORD_2+` 不导入——主变体唯一使用者 MosquitoInAmber 的 `eclats` primitive 带 TEXCOORD_2，但其材质无任何贴图（全 5 个 textureInfo 均 texCoord=0），已核验**无视觉影响** |
 | 贴图 | PNG/JPEG **按字节原样搬运**（不解码）；WebP 用 PIL 转 PNG；KTX2/BasisU 跳过并 warning；命名 `image.name` 或 `image<idx>`（同名去重）；**glTF sampler 非默认时路径追加 `#wrap=clamp,mirror&filter=nearest`**（runtime 解析成 per-texture sampler） |
 | 材质 | `pbrMetallicRoughness`（baseColor/metallic/roughness）+ emissive + `alphaMode/alphaCutoff` + `doubleSided→side`（true=2 双面/false=0 单面剔除） |
 | KHR factor | unlit→`shading_model=2`(Basic)；clearcoat/sheen/iridescence/specular/ior/anisotropy → `shading_model=1`(Physical) + 对应因子；emissive_strength→`emissive_intensity`；normalTexture.scale→`normal_scale(+_y)`；occlusionTexture.strength→`occlusion_strength` |
@@ -412,7 +412,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | 非三角 primitive（线/点/三角带） | ⚠️ 跳过 + warning（**22 个 primitive / 2 个模型**：MeshPrimitiveModes、PrimitiveModeNormalsTest） | 模型缺少线条/点装饰 | 后续补 topology 或明确标注 |
 | 缺 `NORMAL` | ✅ 按真实 indices 生成（45 个 primitive） | — | — |
 | `TANGENT` | ⚠️ 不读；shader 用屏幕空间切线基 | 极端 UV/法线贴图可能与官方略异 | 可接受（审计结论）；后续可加顶点切线 |
-| `TEXCOORD_1` | ✅ 支持（布局 v1：uv1 进顶点；材质 `uv1_mask` 逐槽选择；主变体约 50 处 textureInfo 用 texCoord>0） | — | `TEXCOORD_2+` 仍退回 uv0 并记 gap（1 个 primitive） |
+| `TEXCOORD_1` | ✅ 支持（布局 v1：uv1 进顶点；材质 `uv1_mask` 逐槽选择；主变体约 50 处 textureInfo 用 texCoord>0） | — | `TEXCOORD_2+` 未导入但无使用者（唯一属性不在任何贴图上，见 §5.3 UV 行） |
 | `COLOR_0` 顶点色 | ✅ 支持（布局 v1：f32 RGBA，含 normalized u8/u16；`baseColor × 顶点色`，验证样本 `BoxVertexColors`） | — | — |
 | `KHR_mesh_quantization` / `normalized` 顶点 | ⚠️ 无特殊处理（1 个模型） | 量化网格几何/法线可能异常 | 主 `glTF` 变体通常未量化；导入前检查 `extensionsRequired` |
 | 扁平节点矩阵 / 负缩放（镜像） | ⚠️ 烘焙到 TRS：**镜像符号丢失**（分解出全正 scale） | 镜像件的面朝向/法线可能错 | 已知限制；需要时手改 `.scn` 的 `scale`（负值）+ 材质 `side` |
@@ -461,7 +461,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | 特性 | 现状 | 影响 | 规避/后续 |
 |---|---|---|---|
 | 节点层级 | ⚠️ `--scene` **烘焙为平级实体**（世界变换写入 local）；`KHR_node_visibility`（3 个模型）✅ 隐藏节点/子树已跳过 | 静态可接受；丢失父子关系/脚本按层操控 | 后续保留节点树 + 逐节点 TRS |
-| `EXT_mesh_gpu_instancing`（1 个模型） | ✅ 导入期展开实例（SimpleInstancing 125 实例；上限 4096，超出 warning 截断） | 几何正确；非 GPU 实例化（每个实例一个实体/draw） | 大实例数资产可后续做 GPU 实例化 |
+| `EXT_mesh_gpu_instancing`（1 个模型） | ✅ 导入期展开实例（SimpleInstancing 125 实例；上限 4096，超出 warning 截断） | 几何正确；非 GPU 实例化（每个实例一个实体/draw，125 draw 在本批可接受） | 评估：仅 1/148 模型、单 draw 成本低，暂不做 GPU 实例化（§11） |
 | glTF 自带相机（`cameras`/`node.camera`，**13 个模型 / 38 个相机**） | ⚠️ 忽略（仍用自动机位），但**支持手动机位覆盖**（`MANUAL_CAMERA`，如 Sponza 室内）与 importer `--camera-position/--camera-target/--camera-fov/--camera-distance-scale` | 官方参考常用自带机位 → 构图差异由手调弥补 | 后续可优先用 glTF 相机（§11） |
 | `KHR_lights_punctual`（**12 个模型**） | ✅ 导入为 `render.Light`（directional/point/spot，≤8 盏、方向光优先；spot 内/外锥角、range 保留）；强度为**观感归一化**（directional=2.6×intensity；point/spot 按模型尺度换算，非 cd/lux 物理值）；有灯光时不再追加默认太阳 | 自带布光能还原主体明暗/彩色灯；与官方离线渲染的精确强度/软阴影仍有差异 | 手调 `.scn` 可改 Light 因子；后续接物理单位换算/光追阴影 |
 | `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
@@ -976,6 +976,11 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > gfx 新增 4x 颜色/深度附件 + `resolveTarget`，材质/天空管线按 sampleCount 分两份缓存（否则
 > pipeline/pass 样本数不匹配会验证失败），`caps.max_samples` 探测设备能力并自动回退；默认关 → 148 基线
 > 零回归，e2e ⑫ 断言 1x/4x 仅边缘像素变化（1095 px、max 290）且覆盖不变。
+> **第 16 轮（TEXCOORD_2+ / 逐槽 UV / GPU 实例化评估）** 三项均为 P3，实测后决定不做：
+> ①TEXCOORD_2 唯一使用者 MosquitoInAmber 的该属性未被任何材质贴图引用（无视觉影响）；
+> ②同 UV 集但逐贴图 transform 不同的材质实测 10 模型（最多 AnimationPointerUVs 69 处，且是 pointer 动画），
+> 需 9 槽×3 float 的 uniform 扩展 → 成本大于收益；③GPU 实例化仅 SimpleInstancing 125 实例，
+> CPU 展开 draw 开销可忽略。结论与证据写入 §5.4/§11。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -1115,8 +1120,8 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 | P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 独立大项；实现级评估见 `plans/21-gltf-animation-and-compression.md`（S1 蒙皮 7–10 人日 / S2 采样 5–9 / S3 morph 3–5） |
 | P2 | **Draco / KTX2 / meshopt 解码** | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | 评估结论：主变体不阻塞、不做解码器（`plans/21` §B）；当前用 `glTF/` 主变体规避 |
 | P2 | **glTF 自带相机** | 相机 13 个模型 / 38 个 | `--scene` 可选 `--use-gltf-camera`（当前手动机位表 + 自动机位） |
-| P3 | **`TEXCOORD_2+` / 逐贴图独立 UV transform** | TEXCOORD_2 1 个 primitive；14 个 texture_transform 模型中少数逐槽不同 | 更高 UV 集/逐槽矩阵（ABI 低优先级） |
-| P3 | **GPU 实例化** | 大实例数资产（当前 CPU 展开，每实例一个 draw） | renderer 加 instance buffer + drawIndexedInstanced |
+| P3 | **`TEXCOORD_2+` / 逐贴图独立 UV transform**（已评估，暂不做） | TEXCOORD_2 仅 1 个 primitive（且无贴图引用）；逐槽 transform 冲突实测 10 模型 | 评估：①TEXCOORD_2 零视觉影响（MosquitoInAmber 该属性未被材质引用），不做；②同 UV 集但不同 transform 的材质共 10 模型（AnimationPointerUVs 69 处最多且属 pointer 动画；其余 CarConcept/ToyCar/Sheen* 等 1–5 处）→ 需 9 槽×3 float 的材质 uniform 扩展，收益小于 ABI 成本，保留近似并记录 |
+| P3 | **GPU 实例化**（已评估，暂不做） | 大实例数资产：主变体仅 SimpleInstancing（125 实例；其余模型 ≤10 实例） | 评估：当前 CPU 展开 125 draw 在此批量渲染中开销可忽略（单模型 <1 ms 量级），而实例化需 `frame3d.instances` + `drawIndexedInstanced` + 每实例矩阵 buffer，ABI/管线成本 > 收益；保留 P3 |
 | P2 | **ACES 曲线是否切 three.js RRT/ODT** | 全部（与参考图的系统性色调偏差） | 会整体改变观感基线，需用户拍板（`plans/20 §6`） |
 | P3 | **--scene 保护**（输出 `.auto.scn` 或要求 `--force`） | 手调模型 | 流程安全；当前靠 `--exclude` + README 警告 |
 | P3 | **二进制网格格式 / 更大的 `--compact` 压缩** | 大模型（百万顶点级） | 降低文本 JSON 体积与解析成本 |
