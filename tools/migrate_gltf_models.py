@@ -5,8 +5,8 @@
 对每个模型：
   1. 选主变体（优先 `glTF/<Model>.gltf`，否则 `glTF` 目录下第一个 `.gltf`）；
   2. `tools/gltf_import.py --scene --compact` → `scenes/khronos/<Model>/`
-     （`assets/*.mesh.json` + `textures/*` 为派生资产，体积大 → .gitignore 不入库；
-      可用本脚本/README 里的命令从 `.deps/gltf-assets` 重新生成）；
+     （`GLTF_CAMERA_MODELS` 内的模型额外加 `--use-gltf-camera`；`assets/*.mesh.json` + `textures/*`
+      为派生资产，体积大 → .gitignore 不入库；可用本脚本/README 里的命令从 `.deps/gltf-assets` 重新生成）；
   3. maque_player `--shot` 渲染 1280x720 → 本地 `preview.png`（不入库）+ 提交用 `preview.jpg`（800x450）；
   4. 与官方 `screenshot/` 参考图做定量对比（亮度/直方图/边缘密度/色度）；
   5. 生成 per-model `README.md` 笔记（来源/许可/模型统计/命令/对比/踩坑/已知差距）；
@@ -55,6 +55,18 @@ MANUAL_CAMERA = {
     "Sponza": {"position": (9.5, 1.7, 0.0), "target": (-13.0, 2.2, 0.0),
                "fov": 65.0, "near": 0.05, "far": 100.0,
                "note": "手动机位：主厅内部沿 -X 看（官方参考图为内部视角）"},
+}
+
+# glTF 自带相机（--use-gltf-camera）实测优于自动机位的模型（2026-10，指标 hist/rgb 均改善）。
+# 排除：DiffuseTransmissionPlant（hist 0.846→0.384，官方机位与 glTF 相机不同）、MultiUVTest /
+# NodePerformanceTest（变差）、DirectionalLight / PlaysetLightTest（持平）；多相机模型
+# （Cameras/AnimationPointerUVs/ToyCar/VirtualCity）官方参考多为多视图拼接，不用单相机。
+GLTF_CAMERA_MODELS = {
+    "Duck",
+    "EnvironmentTest",
+    "IridescentDishWithOlives",
+    "TrafficCone",
+    "TransmissionTest",
 }
 
 
@@ -642,6 +654,9 @@ def migrate_one(model, args, models_root, out_root, manifest):
     stats = gltf_stats(gltf_path)
     rec["stats"] = stats
     rec["gaps"] = known_gaps(stats)
+    if model in GLTF_CAMERA_MODELS:
+        rec["gaps"] = [g for g in rec["gaps"] if not g.startswith("未使用 glTF 自带相机")]
+        rec["camera"] = "gltf"
     if "KHR_draco_mesh_compression" in (stats.get("extensions_required") or []):
         rec["status"] = "blocked"
         rec["issues"].append("主变体必需 Draco（无解码器）")
@@ -664,6 +679,8 @@ def migrate_one(model, args, models_root, out_root, manifest):
                     os.remove(p)
         cmd = [sys.executable, IMPORTER, gltf_path, "--out", out_dir, "--name", model,
                "--scene", "--compact"]
+        if model in GLTF_CAMERA_MODELS:
+            cmd.append("--use-gltf-camera")
         cam_scale = getattr(args, "camera_scale", None)
         if isinstance(cam_scale, dict):
             cam_scale = cam_scale.get(model)

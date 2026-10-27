@@ -4,9 +4,9 @@
 > 打开 [index.html](index.html) 查看左右对比（支持搜索/筛选/排序）。
 
 - 模型：**149**（149 个有自动对比；86 个参考图使用 large 版，13 个为 GIF 首帧）
-- 指标中位数：直方图相似度 **0.437**、前景平均亮度差 **+0.088**、
-  前景 RGB 距离 **0.119**、预览前景占比 **16.6%**
-- 自动初判：较接近 **39** / 中等 **43** / 差异较大 **67**
+- 指标中位数：直方图相似度 **0.454**、前景平均亮度差 **+0.088**、
+  前景 RGB 距离 **0.118**、预览前景占比 **16.7%**
+- 自动初判：较接近 **39** / 中等 **48** / 差异较大 **62**
 - 参考图下采样：≤900px、JPEG q82，存于 `ref/`；预览来自 `scenes/khronos/<Model>/preview.jpg`
 - 复现：`python tools/make_migration_report.py`；表格数据：[comparison.csv](comparison.csv)、[comparison.json](comparison.json)
 

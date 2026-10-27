@@ -4053,14 +4053,14 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.1382,
-   "coverage_ratio": 0.245,
-   "framing_notes": [],
-   "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）"
+   "coverage": 0.042,
+   "coverage_ratio": 0.074,
+   "framing_notes": [
+    "预览主体占比过小（<5%）→ 机位过远？"
    ],
-   "hist": 0.3883,
-   "lum": 0.297,
+   "gaps": [],
+   "hist": 0.6294,
+   "lum": 0.2076,
    "model": "Duck",
    "preview": "scenes/khronos/Duck/preview.jpg",
    "readme": "../../scenes/khronos/Duck/README.md",
@@ -4074,7 +4074,7 @@
     127
    ],
    "review": "- 结论：鸭子主体完整（身体/头/嘴可见），黄色本体与橙色嘴的贴图颜色正确，无贴图缺失或破面。当前视角偏后侧，眼睛/正面细节不如官方明显，但可清楚辨认且材质可信。\n- 差异主因：机位/背景：自动机位在模型后侧 3/4，官方为正面近景",
-   "rgb": 0.2301,
+   "rgb": 0.1665,
    "scene": "../../scenes/khronos/Duck/Duck.scn",
    "stats": {
     "alpha_modes": {
@@ -4112,7 +4112,7 @@
     "core",
     "testing"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体占比过小（<5%）→ 机位过远？"
   },
   {
    "coverage": 0.3123,
@@ -4177,14 +4177,12 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.0905,
-   "coverage_ratio": 0.103,
+   "coverage": 0.0637,
+   "coverage_ratio": 0.073,
    "framing_notes": [],
-   "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）"
-   ],
-   "hist": 0.2801,
-   "lum": 0.2143,
+   "gaps": [],
+   "hist": 0.4214,
+   "lum": 0.1997,
    "model": "EnvironmentTest",
    "preview": "scenes/khronos/EnvironmentTest/preview.jpg",
    "readme": "../../scenes/khronos/EnvironmentTest/README.md",
@@ -4198,7 +4196,7 @@
     605
    ],
    "review": "",
-   "rgb": 0.1945,
+   "rgb": 0.18,
    "scene": "../../scenes/khronos/EnvironmentTest/EnvironmentTest.scn",
    "stats": {
     "alpha_modes": {
@@ -4236,7 +4234,7 @@
     "testing",
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
    "coverage": 0.0922,
@@ -5111,19 +5109,18 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0738,
-   "coverage_ratio": 0.132,
+   "coverage": 0.3389,
+   "coverage_ratio": 0.607,
    "framing_notes": [],
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.3634,
-   "lum": 0.1375,
+   "hist": 0.456,
+   "lum": 0.1249,
    "model": "IridescentDishWithOlives",
    "preview": "scenes/khronos/IridescentDishWithOlives/preview.jpg",
    "readme": "../../scenes/khronos/IridescentDishWithOlives/README.md",
@@ -5137,7 +5134,7 @@
     1167
    ],
    "review": "",
-   "rgb": 0.1317,
+   "rgb": 0.1159,
    "scene": "../../scenes/khronos/IridescentDishWithOlives/IridescentDishWithOlives.scn",
    "stats": {
     "alpha_modes": {
@@ -5182,7 +5179,7 @@
     "video",
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
    "coverage": 0.0514,
@@ -8644,17 +8641,18 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
-   "coverage": 0.1762,
-   "coverage_ratio": 0.403,
-   "framing_notes": [],
+   "coverage": 0.5257,
+   "coverage_ratio": 1.204,
+   "framing_notes": [
+    "预览主体贴边/被裁剪 → 机位过近？"
+   ],
    "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_materials_retroreflection 未实现"
    ],
-   "hist": 0.3319,
-   "lum": 0.1021,
+   "hist": 0.451,
+   "lum": 0.1758,
    "model": "TrafficCone",
    "preview": "scenes/khronos/TrafficCone/preview.jpg",
    "readme": "../../scenes/khronos/TrafficCone/README.md",
@@ -8668,7 +8666,7 @@
     542
    ],
    "review": "",
-   "rgb": 0.1648,
+   "rgb": 0.1653,
    "scene": "../../scenes/khronos/TrafficCone/TrafficCone.scn",
    "stats": {
     "alpha_modes": {
@@ -8711,7 +8709,7 @@
    "tags": [
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
    "coverage": 0.1954,
@@ -8850,16 +8848,17 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1954,
-   "coverage_ratio": 0.222,
-   "framing_notes": [],
+   "coverage": 0.6535,
+   "coverage_ratio": 0.744,
+   "framing_notes": [
+    "预览主体贴边/被裁剪 → 机位过近？"
+   ],
    "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.2916,
-   "lum": 0.2046,
+   "hist": 0.4443,
+   "lum": 0.1759,
    "model": "TransmissionTest",
    "preview": "scenes/khronos/TransmissionTest/preview.jpg",
    "readme": "../../scenes/khronos/TransmissionTest/README.md",
@@ -8873,7 +8872,7 @@
     718
    ],
    "review": "",
-   "rgb": 0.212,
+   "rgb": 0.1816,
    "scene": "../../scenes/khronos/TransmissionTest/TransmissionTest.scn",
    "stats": {
     "alpha_modes": {
@@ -8915,7 +8914,7 @@
     "testing",
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
    "coverage": 0.1628,
@@ -9524,17 +9523,17 @@
  "stats": {
   "gif_refs": 13,
   "large_refs": 86,
-  "median_coverage": 0.1656,
-  "median_hist": 0.4371,
+  "median_coverage": 0.1667,
+  "median_hist": 0.4535,
   "median_lum": 0.0879,
-  "median_rgb": 0.1193,
+  "median_rgb": 0.1185,
   "models": 149,
   "preview_missing": 0,
   "ref_missing": 0,
   "verdicts": {
-   "bad": 67,
+   "bad": 62,
    "good": 39,
-   "mid": 43
+   "mid": 48
   },
   "with_compare": 149
  }

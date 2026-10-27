@@ -62,9 +62,9 @@ DirectionalLight,ok,screenshot.png,,,1919x1110,scenes/khronos/DirectionalLight/p
 DispersionTest,ok,screenshot-large.png,large,,2283x1788,scenes/khronos/DispersionTest/preview.jpg,0.7586,0.063,0.067,0.1385,0.159,主体亮度/色调分布较接近（机位/背景可能不同）,2,
 DragonAttenuation,ok,screenshot_large.png,large,,1101x871,scenes/khronos/DragonAttenuation/preview.jpg,0.144,0.3517,0.3509,0.1946,0.207,差异较大（需人工确认：机位/缺失特性/导入问题）,3,yes
 DragonDispersion,ok,screenshot-large.jpg,large,,1640x1183,scenes/khronos/DragonDispersion/preview.jpg,0.4963,0.217,0.2173,0.1581,0.173,中等差异（多为机位/背景/光照/缺失特性）,2,
-Duck,ok,screenshot.png,,,128x127,scenes/khronos/Duck/preview.jpg,0.3883,0.297,0.2301,0.1382,0.245,差异较大（需人工确认：机位/缺失特性/导入问题）,1,yes
+Duck,ok,screenshot.png,,,128x127,scenes/khronos/Duck/preview.jpg,0.6294,0.2076,0.1665,0.042,0.074,中等差异（多为机位/背景/光照/缺失特性）；预览主体占比过小（<5%）→ 机位过远？,0,yes
 EmissiveStrengthTest,ok,screenshot_large_plain.jpg,large,,1290x944,scenes/khronos/EmissiveStrengthTest/preview.jpg,0.07,0.3728,0.3589,0.3123,0.45,差异较大（需人工确认：机位/缺失特性/导入问题）,0,
-EnvironmentTest,ok,screenshot_large.png,large,,1059x605,scenes/khronos/EnvironmentTest/preview.jpg,0.2801,0.2143,0.1945,0.0905,0.103,差异较大（需人工确认：机位/缺失特性/导入问题）,1,
+EnvironmentTest,ok,screenshot_large.png,large,,1059x605,scenes/khronos/EnvironmentTest/preview.jpg,0.4214,0.1997,0.18,0.0637,0.073,中等差异（多为机位/背景/光照/缺失特性）,0,
 FlightHelmet,ok,screenshot.jpg,,,130x130,scenes/khronos/FlightHelmet/preview.jpg,0.8842,-0.2569,0.2604,0.0922,0.106,中等差异（多为机位/背景/光照/缺失特性）,1,yes
 Fox,ok,screenshot.jpg,,,130x130,scenes/khronos/Fox/preview.jpg,0.2818,0.1128,0.0922,0.0685,0.265,差异较大（需人工确认：机位/缺失特性/导入问题）,2,yes
 GlamVelvetSofa,ok,screenshot_large.jpg,large,,989x409,scenes/khronos/GlamVelvetSofa/preview.jpg,0.5332,-0.0654,0.0619,0.1702,0.393,中等差异（多为机位/背景/光照/缺失特性）,5,
@@ -78,7 +78,7 @@ IridescenceDielectricSpheres,ok,screenshot_large.jpg,large,,2000x2000,scenes/khr
 IridescenceLamp,ok,screenshot_Large.jpg,large,,681x1213,scenes/khronos/IridescenceLamp/preview.jpg,0.3235,0.0368,0.0353,0.1279,0.188,差异较大（需人工确认：机位/缺失特性/导入问题）,3,
 IridescenceMetallicSpheres,ok,screenshot_large.jpg,large,,2000x2000,scenes/khronos/IridescenceMetallicSpheres/preview.jpg,0.7977,0.0783,0.1076,0.1622,0.39,主体亮度/色调分布较接近（机位/背景可能不同）,1,
 IridescenceSuzanne,ok,screenshot_large.jpg,large,,2000x800,scenes/khronos/IridescenceSuzanne/preview.jpg,0.5538,0.128,0.1185,0.1138,0.587,中等差异（多为机位/背景/光照/缺失特性）,4,
-IridescentDishWithOlives,ok,screenshot_Large.jpg,large,,1280x1167,scenes/khronos/IridescentDishWithOlives/preview.jpg,0.3634,0.1375,0.1317,0.0738,0.132,差异较大（需人工确认：机位/缺失特性/导入问题）,6,
+IridescentDishWithOlives,ok,screenshot_Large.jpg,large,,1280x1167,scenes/khronos/IridescentDishWithOlives/preview.jpg,0.456,0.1249,0.1159,0.3389,0.607,中等差异（多为机位/背景/光照/缺失特性）,5,
 Lantern,ok,screenshot.jpg,,,130x130,scenes/khronos/Lantern/preview.jpg,0.4371,0.1456,0.1343,0.0514,0.4,中等差异（多为机位/背景/光照/缺失特性）,0,
 LightsPunctualLamp,ok,screenshot.png,,,400x344,scenes/khronos/LightsPunctualLamp/preview.jpg,0.5054,0.0635,0.0647,0.0568,0.453,中等差异（多为机位/背景/光照/缺失特性）,2,
 LightVisibility,ok,screenshot_animated.webp,,,1040x680,scenes/khronos/LightVisibility/preview.jpg,0.0957,0.2743,0.2692,0.4228,0.64,差异较大（需人工确认：机位/缺失特性/导入问题）,4,
@@ -134,10 +134,10 @@ TextureSettingsTest,ok,screenshot.png,,,332x325,scenes/khronos/TextureSettingsTe
 TextureTransformMultiTest,ok,screenshot_large.jpg,large,,930x954,scenes/khronos/TextureTransformMultiTest/preview.jpg,0.8383,0.0662,0.0778,0.258,0.299,主体亮度/色调分布较接近（机位/背景可能不同）,2,
 TextureTransformTest,ok,screenshot.jpg,,,300x220,scenes/khronos/TextureTransformTest/preview.jpg,0.6196,-0.0483,0.0847,0.3148,0.373,主体亮度/色调分布较接近（机位/背景可能不同）,1,
 ToyCar,ok (hand-tuned),toycar_ref.jpg,,,1870x1033,scenes/khronos/ToyCar/preview.jpg,0.6265,0.1919,0.1891,0.8348,1.022,主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？,0,
-TrafficCone,ok,screenshot_Large.jpg,large,,953x542,scenes/khronos/TrafficCone/preview.jpg,0.3319,0.1021,0.1648,0.1762,0.403,差异较大（需人工确认：机位/缺失特性/导入问题）,4,
+TrafficCone,ok,screenshot_Large.jpg,large,,953x542,scenes/khronos/TrafficCone/preview.jpg,0.451,0.1758,0.1653,0.5257,1.204,中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？,3,
 TransmissionOrderTest,ok,screenshot-large.jpg,large,,2027x1366,scenes/khronos/TransmissionOrderTest/preview.jpg,0.3453,0.2243,0.2167,0.1954,0.243,差异较大（需人工确认：机位/缺失特性/导入问题）,3,
 TransmissionRoughnessTest,ok,screenshot-large.png,large,,1673x831,scenes/khronos/TransmissionRoughnessTest/preview.jpg,0.3675,0.1746,0.1548,0.3254,0.354,差异较大（需人工确认：机位/缺失特性/导入问题）,2,
-TransmissionTest,ok,screenshot_large.png,large,,1105x718,scenes/khronos/TransmissionTest/preview.jpg,0.2916,0.2046,0.212,0.1954,0.222,差异较大（需人工确认：机位/缺失特性/导入问题）,3,
+TransmissionTest,ok,screenshot_large.png,large,,1105x718,scenes/khronos/TransmissionTest/preview.jpg,0.4443,0.1759,0.1816,0.6535,0.744,中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？,2,
 TransmissionThinwallTestGrid,ok,screenshot_Large.jpg,large,,1280x600,scenes/khronos/TransmissionThinwallTestGrid/preview.jpg,0.0801,0.3833,0.3841,0.1628,0.289,差异较大（需人工确认：机位/缺失特性/导入问题）,2,yes
 Triangle,ok,screenshot.png,,,176x181,scenes/khronos/Triangle/preview.jpg,0.0126,0.3668,0.3672,0.1656,0.62,差异较大（需人工确认：机位/缺失特性/导入问题）,0,
 TriangleWithoutIndices,ok,screenshot.png,,,176x181,scenes/khronos/TriangleWithoutIndices/preview.jpg,0.0126,0.3668,0.3672,0.1656,0.62,差异较大（需人工确认：机位/缺失特性/导入问题）,0,

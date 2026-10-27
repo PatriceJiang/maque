@@ -12,13 +12,13 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.3543,
-  "preview_mean_lum": 0.4564,
-  "mean_lum_delta": 0.1021,
-  "hist_similarity": 0.3319,
-  "rgb_delta": 0.1648,
+  "preview_mean_lum": 0.5301,
+  "mean_lum_delta": 0.1758,
+  "hist_similarity": 0.451,
+  "rgb_delta": 0.1653,
   "ref_coverage": 0.4368,
-  "preview_coverage": 0.1762,
-  "coverage_ratio": 0.403,
+  "preview_coverage": 0.5257,
+  "coverage_ratio": 1.204,
   "ref_bbox": [
     0,
     0,
@@ -26,10 +26,10 @@
     541
   ],
   "preview_bbox": [
-    257,
-    283,
-    1135,
-    677
+    0,
+    77,
+    1279,
+    719
   ],
   "ref_mean_rgb": [
     151.4,
@@ -37,10 +37,12 @@
     48.2
   ],
   "preview_mean_rgb": [
-    123.2,
-    115.3,
-    107.2
+    157.2,
+    130.7,
+    114.5
   ],
-  "framing_notes": [],
-  "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+  "framing_notes": [
+    "预览主体贴边/被裁剪 → 机位过近？"
+  ],
+  "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
 }

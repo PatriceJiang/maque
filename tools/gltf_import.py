@@ -27,6 +27,8 @@
     position/rotation，传播方向 = 节点 -Z；spot 用内/外锥角）。强度为**观感归一化**（directional≈2.6×
     intensity，point/spot 按模型尺度约几十~几百），有灯光时不再追加默认太阳。
   · KHR_node_visibility.visible=false：跳过该节点及整棵子树（mesh 与灯光都不生成）。
+  · glTF 自带相机：`--use-gltf-camera` 取节点遍历第一个 perspective 相机（yfov/znear/zfar + 节点世界 TRS；
+    引擎仅透视，orthographic 打印警告并回退自动机位）；默认仍自动取景。
   · KHR_texture_transform.rotation（glTF T*R*S 约定，弧度）→ 材质 `uv_rotation`（baseColor 组）/
     `normal_uv_rotation`（normal 组）；仅非 0 写（旧输出零漂移）。
   · EXT_mesh_gpu_instancing：节点的 TRANSLATION/ROTATION(xyzw)/SCALE 实例 accessor → 每个 mesh
@@ -761,6 +763,7 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buff
     gltf_lights = (((js.get("extensions") or {}).get("KHR_lights_punctual") or {})
                    .get("lights") or [])
     light_refs = []                    # [(light_index, world_matrix, node_name)]（节点遍历顺序）
+    camera_refs = []                   # [(camera_index, world_matrix, node_name)]（节点遍历顺序）
     hidden_nodes = 0
     entities = []
     bounds_min = [1e30, 1e30, 1e30]
@@ -781,6 +784,9 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buff
         lref = (node_exts.get("KHR_lights_punctual") or {}).get("light")
         if isinstance(lref, int) and 0 <= lref < len(gltf_lights):
             light_refs.append((lref, world, node.get("name") or f"node{ni}"))
+        cref = node.get("camera")
+        if isinstance(cref, int):
+            camera_refs.append((cref, world, node.get("name") or f"node{ni}"))
         mi = node.get("mesh")
         nm = node.get("name") or f"node{ni}"
         # EXT_mesh_gpu_instancing：节点 mesh 按 N 个实例 TRS 展开（world_i = node world × instance TRS）
@@ -867,10 +873,40 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buff
         light_entities = ordered[:8]
         print(f"gltf_import: KHR_lights_punctual 共 {len(ordered)} 盏 > 8，按方向光优先丢弃 {dropped} 盏",
               file=sys.stderr)
+    # glTF 自带相机（--use-gltf-camera）：取**节点遍历顺序的第一个**相机（glTF 无"激活相机"概念，
+    # 默认场景里通常只有一个；多相机模型通常参考图是多视图拼接，仍走自动机位）。
+    # 引擎只支持透视相机；orthographic 会打印警告并回退自动机位（不静默产出错机位）。
+    camera = camera or {}
+    imported_cam = None
+    if camera.get("use_gltf") and camera_refs:
+        ci, cworld, cname = camera_refs[0]
+        gltf_cams = js.get("cameras") or []
+        cdef = gltf_cams[ci] if 0 <= ci < len(gltf_cams) else {}
+        ctype = str(cdef.get("type") or "perspective")
+        if ctype != "perspective":
+            print(f"gltf_import: 相机 '{cname}' 类型 {ctype}（引擎仅支持 perspective）→ 回退自动机位",
+                  file=sys.stderr)
+        else:
+            p = cdef.get("perspective") or {}
+            fov_y = math.degrees(float(p.get("yfov", 0.7)))
+            cnear = max(1e-4, float(p.get("znear", 0.1)))
+            cfar = float(p.get("zfar", max(cnear * 1000.0, 1000.0)))
+            if not (0.0 < fov_y < 179.0):
+                fov_y = 45.0
+            if cfar <= cnear:
+                cfar = cnear * 1000.0
+            pos, rot, scl = _decompose(cworld)
+            imported_cam = {"name": "camera", "components": [
+                {"type": "scene.Transform3D", "local": {
+                    "position": _vec3(*pos), "rotation": _vec3(*rot)}},
+                {"type": "render.Camera3D", "fov_y": fov_y, "near": cnear, "far": cfar,
+                 "clear_color": _vec4(0.13, 0.13, 0.14, 1.0)},
+            ]}
+            print(f"gltf_import: 使用 glTF 相机 '{cname}' fov={fov_y:.2f}° near={cnear:g} far={cfar:g} "
+                  f"pos=({pos[0]:.4g},{pos[1]:.4g},{pos[2]:.4g})", file=sys.stderr)
     # 自动机位：3/4 视角（左上前），距离按包围盒 8 角点投射进视锥拟合（_fit_camera_distance）。
     # 旧公式固定 -1.2r/+0.55r/+2.1r 对 1 单位立方体太近；只用包围球半径又会对薄板/长条模型过远。
     # CLI 覆盖（迁移手调）：显式 position/target 优先于自动拟合；distance_scale 乘拟合距离。
-    camera = camera or {}
     fov_y = float(camera["fov"]) if camera.get("fov") is not None else 45.0
     aspect = 1280.0 / 720.0
     dirv = (-0.485, 0.222, 0.849)                                  # 归一化后的 3/4 视角方向
@@ -889,12 +925,15 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buff
     cam_far = max(dist * 10.0, (dist + radius) * 8.0)
     pitch, yaw = _look_rotation(eye, look_at)
     lrx, lry = _light_rotation((0.35, -0.85, -0.4))
-    cam = {"name": "camera", "components": [
-        {"type": "scene.Transform3D", "local": {
-            "position": _vec3(*eye), "rotation": _vec3(pitch, yaw, 0.0)}},
-        {"type": "render.Camera3D", "fov_y": fov_y, "near": cam_near, "far": cam_far,
-         "clear_color": _vec4(0.13, 0.13, 0.14, 1.0)},
-    ]}
+    if imported_cam is not None:
+        cam = imported_cam                                   # glTF 相机（不参与自动取景）
+    else:
+        cam = {"name": "camera", "components": [
+            {"type": "scene.Transform3D", "local": {
+                "position": _vec3(*eye), "rotation": _vec3(pitch, yaw, 0.0)}},
+            {"type": "render.Camera3D", "fov_y": fov_y, "near": cam_near, "far": cam_far,
+             "clear_color": _vec4(0.13, 0.13, 0.14, 1.0)},
+        ]}
     sun = {"name": "sun", "components": [
         {"type": "scene.Transform3D", "local": {"rotation": _vec3(lrx, lry, 0.0)}},
         {"type": "render.Light", "intensity": 2.6,
@@ -1057,6 +1096,8 @@ def main(argv):
                     help="相机看向点（默认包围盒中心）")
     ap.add_argument("--camera-fov", type=float, default=None, metavar="DEG",
                     help="相机垂直 FOV（度，默认 45）")
+    ap.add_argument("--use-gltf-camera", action="store_true",
+                    help="用 glTF 自带相机（节点遍历顺序第一个 perspective；orthographic 回退自动机位）")
     args = ap.parse_args(argv)
     camera = {}
     if args.camera_distance_scale is not None:
@@ -1071,8 +1112,12 @@ def main(argv):
         if not (0.0 < args.camera_fov < 179.0):
             ap.error("--camera-fov 必须在 (0, 179) 度之间")
         camera["fov"] = args.camera_fov
+    if args.use_gltf_camera:
+        if camera:
+            ap.error("--use-gltf-camera 不能与 --camera-* 显式机位同时使用")
+        camera["use_gltf"] = True
     if camera and not args.scene:
-        ap.error("--camera-* 只在 --scene 生成场景时生效（请同时加 --scene）")
+        ap.error("--camera-* / --use-gltf-camera 只在 --scene 生成场景时生效（请同时加 --scene）")
     written, images = import_gltf(args.input, args.out, args.name, args.scene, args.compact, camera)
     for w in written:
         print(f"gltf_import: → {w}")

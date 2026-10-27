@@ -3,10 +3,10 @@
  "generated_by": "tools/migrate_gltf_models.py",
  "models_root": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models",
  "provenance": {
-  "git_head": "ade14983f41ac8f56cb7dd0c5df90bafcedb11ee",
-  "importer_sha256": "f5dd488f08a883d3b11954467b21cd95b0a96471ad3d645ac52c3478edca6c9e",
-  "migrate_script_sha256": "73b28a31dffbf71976fa33c2f42cf9b202b326603f7a385373d8ed8e477f1bda",
-  "player_sha256": "d909f9a48662c54c4d52a05093ddb413a9d56e0b06c1e6484ac83a33aa6c131a"
+  "git_head": "539e3712f1da4ac6906c71dabd22c07766ca6b5f",
+  "importer_sha256": "f0a34c694af483e371b5dd2a980c42c73cec2fe118bd440688722ada6404692f",
+  "migrate_script_sha256": "6f88fbf3679d37da3482c206230b846587448985a171a359c8ad6aa2f6108244",
+  "player_sha256": "adb260b5edb354c795597f7d8abf014e9ec75a8b9a210a6b322de5bba827207c"
  },
  "records": [
   {
@@ -7238,7 +7238,7 @@
     "gltf_import: texture → textures/image2.png",
     "gltf_import: OK meshes=33 textures=3"
    ],
-   "import_seconds": 0.15,
+   "import_seconds": 0.2,
    "issues": [
     "参考图与本预览差异：主体亮度/色调分布较接近（机位/背景可能不同）"
    ],
@@ -7256,7 +7256,7 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
     "runtime: 'DiffuseTransmissionTest.scn' exited after 2 frames (quit=1) world_trail=0xfa964a56010b843e"
    ],
-   "render_seconds": 0.82,
+   "render_seconds": 0.85,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\DiffuseTransmissionTest\\glTF\\DiffuseTransmissionTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -7811,24 +7811,27 @@
    ]
   },
   {
+   "camera": "gltf",
    "compare": {
-    "coverage_ratio": 0.245,
-    "framing_notes": [],
-    "hist_similarity": 0.3883,
-    "mean_lum_delta": 0.297,
-    "preview_bbox": [
-     413,
-     146,
-     822,
-     611
+    "coverage_ratio": 0.074,
+    "framing_notes": [
+     "预览主体占比过小（<5%）→ 机位过远？"
     ],
-    "preview_coverage": 0.1382,
+    "hist_similarity": 0.6294,
+    "mean_lum_delta": 0.2076,
+    "preview_bbox": [
+     523,
+     158,
+     735,
+     401
+    ],
+    "preview_coverage": 0.042,
     "preview_mask": "border-bg",
-    "preview_mean_lum": 0.7689,
+    "preview_mean_lum": 0.6795,
     "preview_mean_rgb": [
-     221.1,
-     205.9,
-     24.4
+     203.3,
+     179.8,
+     19.7
     ],
     "preview_size": [
      1280,
@@ -7854,12 +7857,10 @@
      128,
      127
     ],
-    "rgb_delta": 0.2301,
-    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "rgb_delta": 0.1665,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体占比过小（<5%）→ 机位过远？"
    },
-   "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）"
-   ],
+   "gaps": [],
    "import": {
     "mesh_bytes": 281045,
     "mesh_files": 1,
@@ -7870,14 +7871,16 @@
     "gltf_import: scene → E:\\Github\\maque\\scenes\\khronos\\Duck\\Duck.scn entities=1 lights=0 hidden=0 bounds=[-0.6929849851209298, 0.09929369704513924, -0.6132819610845601]..[0.9617989897325856, 1.63969997555688, 0.5392519639599627]",
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\Duck\\assets\\Duck.mesh.json",
     "gltf_import: texture → textures/image0.png",
-    "gltf_import: OK meshes=1 textures=1"
+    "gltf_import: OK meshes=1 textures=1",
+    "gltf_import: 使用 glTF 相机 'node1' fov=37.85° near=1 far=10000 pos=(4.001,4.633,-4.311)"
    ],
-   "import_seconds": 0.11,
+   "import_seconds": 0.12,
    "issues": [
-    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）；预览主体占比过小（<5%）→ 机位过远？",
+    "构图告警：预览主体占比过小（<5%）→ 机位过远？"
    ],
    "model": "Duck",
-   "out_size_bytes": 303251,
+   "out_size_bytes": 303247,
    "preview_jpg": "scenes\\khronos\\Duck\\preview.jpg",
    "preview_png": "scenes\\khronos\\Duck\\preview.png",
    "readme": "scenes\\khronos\\Duck\\README.md",
@@ -7888,9 +7891,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\Duck\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'Duck.scn' exited after 2 frames (quit=1) world_trail=0x6bf0b3b0ae724452"
+    "runtime: 'Duck.scn' exited after 2 frames (quit=1) world_trail=0xbede4e00504def7a"
    ],
-   "render_seconds": 0.58,
+   "render_seconds": 0.55,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\Duck\\glTF\\Duck.gltf",
    "stats": {
     "alpha_modes": {
@@ -8053,24 +8056,25 @@
    ]
   },
   {
+   "camera": "gltf",
    "compare": {
-    "coverage_ratio": 0.103,
+    "coverage_ratio": 0.073,
     "framing_notes": [],
-    "hist_similarity": 0.2801,
-    "mean_lum_delta": 0.2143,
+    "hist_similarity": 0.4214,
+    "mean_lum_delta": 0.1997,
     "preview_bbox": [
-     57,
-     225,
-     982,
-     574
+     205,
+     232,
+     1065,
+     441
     ],
-    "preview_coverage": 0.0905,
+    "preview_coverage": 0.0637,
     "preview_mask": "border-bg",
-    "preview_mean_lum": 0.6451,
+    "preview_mean_lum": 0.6305,
     "preview_mean_rgb": [
-     163.5,
-     164.5,
-     167.8
+     159.7,
+     160.8,
+     164.1
     ],
     "preview_size": [
      1280,
@@ -8096,12 +8100,10 @@
      1059,
      605
     ],
-    "rgb_delta": 0.1945,
-    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "rgb_delta": 0.18,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
-   "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）"
-   ],
+   "gaps": [],
    "import": {
     "mesh_bytes": 1593222,
     "mesh_files": 3,
@@ -8109,19 +8111,19 @@
     "texture_files": 2
    },
    "import_log_tail": [
-    "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\EnvironmentTest\\assets\\EnvironmentTest_0_0.mesh.json",
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\EnvironmentTest\\assets\\EnvironmentTest_1_0.mesh.json",
     "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\EnvironmentTest\\assets\\EnvironmentTest_2_0.mesh.json",
     "gltf_import: texture → textures/tmp_image_pie_b20b_ebb4_317droughness_map2_roughness_tmp_image_pie_b20b_ebb4_317dmetal_map2_metallic_1.png",
     "gltf_import: texture → textures/tmp_image_pie_dc1e_1a22_fbf9roughness_map_roughness_tmp_image_pie_dc1e_1a22_fbf9metal_map_metallic_0.png",
-    "gltf_import: OK meshes=3 textures=2"
+    "gltf_import: OK meshes=3 textures=2",
+    "gltf_import: 使用 glTF 相机 'render_camera_n3d' fov=34.52° near=0.001 far=200 pos=(-0.7599,7.709,27.74)"
    ],
    "import_seconds": 0.25,
    "issues": [
-    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "EnvironmentTest",
-   "out_size_bytes": 1603147,
+   "out_size_bytes": 1603175,
    "preview_jpg": "scenes\\khronos\\EnvironmentTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\EnvironmentTest\\preview.png",
    "readme": "scenes\\khronos\\EnvironmentTest\\README.md",
@@ -8132,9 +8134,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\EnvironmentTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'EnvironmentTest.scn' exited after 2 frames (quit=1) world_trail=0x5fd6b0319c9600b2"
+    "runtime: 'EnvironmentTest.scn' exited after 2 frames (quit=1) world_trail=0x4f6c0b48b467120a"
    ],
-   "render_seconds": 0.93,
+   "render_seconds": 0.9,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\EnvironmentTest\\glTF\\EnvironmentTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -9825,24 +9827,25 @@
    ]
   },
   {
+   "camera": "gltf",
    "compare": {
-    "coverage_ratio": 0.132,
+    "coverage_ratio": 0.607,
     "framing_notes": [],
-    "hist_similarity": 0.3634,
-    "mean_lum_delta": 0.1375,
+    "hist_similarity": 0.456,
+    "mean_lum_delta": 0.1249,
     "preview_bbox": [
-     439,
-     267,
-     840,
-     567
+     245,
+     21,
+     1034,
+     701
     ],
-    "preview_coverage": 0.0738,
+    "preview_coverage": 0.3389,
     "preview_mask": "border-bg",
-    "preview_mean_lum": 0.5471,
+    "preview_mean_lum": 0.5346,
     "preview_mean_rgb": [
-     151.7,
-     138.9,
-     109.9
+     150.8,
+     135.4,
+     102.2
     ],
     "preview_size": [
      1280,
@@ -9868,12 +9871,11 @@
      1280,
      1167
     ],
-    "rgb_delta": 0.1317,
-    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "rgb_delta": 0.1159,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
    },
    "gaps": [
     "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
@@ -9886,19 +9888,19 @@
     "texture_files": 10
    },
    "import_log_tail": [
-    "gltf_import: texture → textures/image4.png",
     "gltf_import: texture → textures/image6.png",
     "gltf_import: texture → textures/image7.png",
     "gltf_import: texture → textures/image8.png",
     "gltf_import: texture → textures/image9.png",
-    "gltf_import: OK meshes=4 textures=10"
+    "gltf_import: OK meshes=4 textures=10",
+    "gltf_import: 使用 glTF 相机 'Camera001' fov=26.23° near=0.1 far=10000 pos=(0.8,0.5,0)"
    ],
-   "import_seconds": 0.34,
+   "import_seconds": 0.3,
    "issues": [
-    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）"
    ],
    "model": "IridescentDishWithOlives",
-   "out_size_bytes": 6561050,
+   "out_size_bytes": 6560993,
    "preview_jpg": "scenes\\khronos\\IridescentDishWithOlives\\preview.jpg",
    "preview_png": "scenes\\khronos\\IridescentDishWithOlives\\preview.png",
    "readme": "scenes\\khronos\\IridescentDishWithOlives\\README.md",
@@ -9909,9 +9911,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\IridescentDishWithOlives\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'IridescentDishWithOlives.scn' exited after 2 frames (quit=1) world_trail=0xb161a3e07e8b9d3e"
+    "runtime: 'IridescentDishWithOlives.scn' exited after 2 frames (quit=1) world_trail=0x910131c718248632"
    ],
-   "render_seconds": 2.01,
+   "render_seconds": 1.87,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\IridescentDishWithOlives\\glTF\\IridescentDishWithOlives.gltf",
    "stats": {
     "alpha_modes": {
@@ -16632,24 +16634,27 @@
    ]
   },
   {
+   "camera": "gltf",
    "compare": {
-    "coverage_ratio": 0.403,
-    "framing_notes": [],
-    "hist_similarity": 0.3319,
-    "mean_lum_delta": 0.1021,
-    "preview_bbox": [
-     257,
-     283,
-     1135,
-     677
+    "coverage_ratio": 1.204,
+    "framing_notes": [
+     "预览主体贴边/被裁剪 → 机位过近？"
     ],
-    "preview_coverage": 0.1762,
+    "hist_similarity": 0.451,
+    "mean_lum_delta": 0.1758,
+    "preview_bbox": [
+     0,
+     77,
+     1279,
+     719
+    ],
+    "preview_coverage": 0.5257,
     "preview_mask": "border-bg",
-    "preview_mean_lum": 0.4564,
+    "preview_mean_lum": 0.5301,
     "preview_mean_rgb": [
-     123.2,
-     115.3,
-     107.2
+     157.2,
+     130.7,
+     114.5
     ],
     "preview_size": [
      1280,
@@ -16675,11 +16680,10 @@
      953,
      542
     ],
-    "rgb_delta": 0.1648,
-    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "rgb_delta": 0.1653,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
    },
    "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
     "KHR_materials_retroreflection 未实现"
@@ -16691,19 +16695,20 @@
     "texture_files": 4
    },
    "import_log_tail": [
-    "gltf_import: → E:\\Github\\maque\\scenes\\khronos\\TrafficCone\\assets\\TrafficCone_3_0.mesh.json",
     "gltf_import: texture → textures/ConeBaseMat_baseColor.png",
     "gltf_import: texture → textures/ConeBaseMat_metallicRoughness.png",
     "gltf_import: texture → textures/asphalt_02_diff_1k.jpg",
     "gltf_import: texture → textures/asphalt_02_rough_1k.jpg",
-    "gltf_import: OK meshes=4 textures=4"
+    "gltf_import: OK meshes=4 textures=4",
+    "gltf_import: 使用 glTF 相机 'Camera' fov=35.80° near=0.01 far=200 pos=(0,0.369,1.19)"
    ],
-   "import_seconds": 0.3,
+   "import_seconds": 0.22,
    "issues": [
-    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？",
+    "构图告警：预览主体贴边/被裁剪 → 机位过近？"
    ],
    "model": "TrafficCone",
-   "out_size_bytes": 2856851,
+   "out_size_bytes": 2856823,
    "preview_jpg": "scenes\\khronos\\TrafficCone\\preview.jpg",
    "preview_png": "scenes\\khronos\\TrafficCone\\preview.png",
    "readme": "scenes\\khronos\\TrafficCone\\README.md",
@@ -16714,9 +16719,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TrafficCone\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TrafficCone.scn' exited after 2 frames (quit=1) world_trail=0x040638aa5b737c52"
+    "runtime: 'TrafficCone.scn' exited after 2 frames (quit=1) world_trail=0xe027a3bfc288dbde"
    ],
-   "render_seconds": 1.33,
+   "render_seconds": 1.08,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TrafficCone\\glTF\\TrafficCone.gltf",
    "stats": {
     "alpha_modes": {
@@ -17018,24 +17023,27 @@
    ]
   },
   {
+   "camera": "gltf",
    "compare": {
-    "coverage_ratio": 0.222,
-    "framing_notes": [],
-    "hist_similarity": 0.2916,
-    "mean_lum_delta": 0.2046,
-    "preview_bbox": [
-     344,
-     204,
-     1005,
-     689
+    "coverage_ratio": 0.744,
+    "framing_notes": [
+     "预览主体贴边/被裁剪 → 机位过近？"
     ],
-    "preview_coverage": 0.1954,
+    "hist_similarity": 0.4443,
+    "mean_lum_delta": 0.1759,
+    "preview_bbox": [
+     53,
+     49,
+     1279,
+     719
+    ],
+    "preview_coverage": 0.6535,
     "preview_mask": "border-bg",
-    "preview_mean_lum": 0.7573,
+    "preview_mean_lum": 0.7285,
     "preview_mean_rgb": [
-     193.1,
-     193.0,
-     192.5
+     185.6,
+     185.7,
+     184.1
     ],
     "preview_size": [
      1280,
@@ -17061,11 +17069,10 @@
      1105,
      718
     ],
-    "rgb_delta": 0.212,
-    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "rgb_delta": 0.1816,
+    "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
    },
    "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
@@ -17076,19 +17083,20 @@
     "texture_files": 8
    },
    "import_log_tail": [
-    "gltf_import: texture → textures/texture177328.png",
     "gltf_import: texture → textures/texture214190.png",
     "gltf_import: texture → textures/texture28577.png",
     "gltf_import: texture → textures/texture4086.png",
     "gltf_import: texture → textures/texture6807.png",
-    "gltf_import: OK meshes=22 textures=8"
+    "gltf_import: OK meshes=22 textures=8",
+    "gltf_import: 使用 glTF 相机 'render_camera_n3d' fov=34.52° near=0.0001 far=3.08379 pos=(-0.07676,0.3394,1.803)"
    ],
-   "import_seconds": 0.99,
+   "import_seconds": 0.93,
    "issues": [
-    "参考图与本预览差异：差异较大（需人工确认：机位/缺失特性/导入问题）"
+    "参考图与本预览差异：中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？",
+    "构图告警：预览主体贴边/被裁剪 → 机位过近？"
    ],
    "model": "TransmissionTest",
-   "out_size_bytes": 7778232,
+   "out_size_bytes": 7778253,
    "preview_jpg": "scenes\\khronos\\TransmissionTest\\preview.jpg",
    "preview_png": "scenes\\khronos\\TransmissionTest\\preview.png",
    "readme": "scenes\\khronos\\TransmissionTest\\README.md",
@@ -17099,9 +17107,9 @@
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"loop_start\"}",
     "runtime: shot 'E:\\Github\\maque\\scenes\\khronos\\TransmissionTest\\preview.png' 1280x720 frame=1",
     "{\"domain\":\"runtime\",\"level\":1,\"event\":\"quit\"}",
-    "runtime: 'TransmissionTest.scn' exited after 2 frames (quit=1) world_trail=0x0fe196e015d4281e"
+    "runtime: 'TransmissionTest.scn' exited after 2 frames (quit=1) world_trail=0xd3debfc0cd9bf282"
    ],
-   "render_seconds": 3.01,
+   "render_seconds": 2.87,
    "source": ".deps\\gltf-assets\\glTF-Sample-Assets-main\\Models\\TransmissionTest\\glTF\\TransmissionTest.gltf",
    "stats": {
     "alpha_modes": {
@@ -18340,5 +18348,5 @@
    ]
   }
  ],
- "total_seconds": 16.4
+ "total_seconds": 11.5
 }

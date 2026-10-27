@@ -41,17 +41,16 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.410 | 0.547 | 差 +0.138 |
-| 前景平均 RGB | [110.6, 104.7, 84.5] | [151.7, 138.9, 109.9] | RGB 距离 0.132 |
-| 亮度直方图相似度 | — | — | 0.36（16 桶交集，1=完全一致） |
-| 前景占比 | 55.9% | 7.4% | 覆盖率比 0.132 |
+| 前景平均亮度 | 0.410 | 0.535 | 差 +0.125 |
+| 前景平均 RGB | [110.6, 104.7, 84.5] | [150.8, 135.4, 102.2] | RGB 距离 0.116 |
+| 亮度直方图相似度 | — | — | 0.46（16 桶交集，1=完全一致） |
+| 前景占比 | 55.9% | 33.9% | 覆盖率比 0.607 |
 
-自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
+自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）
@@ -61,7 +60,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Iri
 ## 已知差距（引擎/导入器层面）
 
 - 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
 - KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
 - KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）

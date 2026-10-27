@@ -34,7 +34,8 @@
 - **只做**：`scenes/khronos/` 下的迁移产物 + 本文档 + 索引；不改引擎源码、不改 `tools/`、不改其他场景。
 - **迁移形态**：**静态展示迁移**——glTF 静态网格 + PBR 材质 → 一个 maque `.scn`
   （自动生成相机/方向光/平级实体），按**本引擎**渲染一张 1280×720 预览。
-  **不迁移**：动画、骨骼蒙皮、morph 动画、glTF 自带相机/灯光（原因见 §5）。
+  **不迁移**：动画、骨骼蒙皮、morph 动画（原因见 §5）；glTF 自带相机/灯光已支持导入
+  （`--use-gltf-camera` 按模型择优使用；灯光见 §5.4）。
 - **不承诺**：与官方参考图相似（见 §7 的对比策略）；那属于"新渲染特性排期"，不是迁移缺陷。
 
 ### 1.2 前置条件
@@ -317,7 +318,7 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 | KHR factor | unlit→`shading_model=2`(Basic)；clearcoat/sheen/iridescence/specular/ior/anisotropy → `shading_model=1`(Physical) + 对应因子；emissive_strength→`emissive_intensity`；normalTexture.scale→`normal_scale(+_y)`；occlusionTexture.strength→`occlusion_strength` |
 | KHR 贴图 | 基础 5 槽 + `clearcoatNormalTexture` + **7 个扩展贴图槽**（clearcoatTexture / clearcoatRoughnessTexture / sheenColorTexture / sheenRoughnessTexture / iridescenceTexture / iridescenceThicknessTexture / anisotropyTexture，ABI `textures3[7]` + schema 路径字段）+ **KHR_materials_specular 2 槽**（specularTexture.A=specularFactor、specularColorTexture.RGB=specularColorFactor，ABI `textures4[2]`；仅作用电介质 F0，factor 可 >1） |
 | KHR_texture_transform | `scale/offset/rotation` → `uv_*` + `uv_rotation`（基础贴图组）与 `normal_uv_*` + `normal_uv_rotation`（法线组）；shader 按 glTF 的 T·R·S 顺序作用（rotation 角由 gfx 打包装进 Draw 的 specular.w/sheen_color.w）；逐贴图独立 transform 仍部分近似（MR/AO/emissive 共用基础组） |
-| 场景 | `--scene`：每个 `(node, primitive)` 一个**平级实体**，世界变换**烘焙**进 `local` TRS；`EXT_mesh_gpu_instancing` 在导入期展开为多实体（实例 TRS = node 世界 × 实例 TRS）；自动相机（包围盒 8 角点视锥拟合，§6.2）+ 一盏太阳（**模型自带 `KHR_lights_punctual` 时改为导入 1~8 盏 Light、不再加太阳**）；`KHR_node_visibility.visible=false` 的节点及子树跳过；背景 `clear_color=(0.13,0.13,0.14)`；忽略 glTF 相机、无地面、不写 `env_*` |
+| 场景 | `--scene`：每个 `(node, primitive)` 一个**平级实体**，世界变换**烘焙**进 `local` TRS；`EXT_mesh_gpu_instancing` 在导入期展开为多实体（实例 TRS = node 世界 × 实例 TRS）；自动相机（包围盒 8 角点视锥拟合，§6.2；`--use-gltf-camera` 时改用 glTF perspective 相机）+ 一盏太阳（**模型自带 `KHR_lights_punctual` 时改为导入 1~8 盏 Light、不再加太阳**）；`KHR_node_visibility.visible=false` 的节点及子树跳过；背景 `clear_color=(0.13,0.13,0.14)`；无地面、不写 `env_*` |
 | 确定性 | mesh JSON 排序键 + 固定缩进；**`--compact` 额外做 6 位小数舍入 + 紧凑分隔符**；同一输入两次导入逐字节一致 |
 
 输出 `<out>/assets/*.mesh.json` 的字段：`name/vertex_stride=48/vertex_layout=0/vertices/indices/bounds_min/bounds_max/materials`；
@@ -462,7 +463,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 |---|---|---|---|
 | 节点层级 | ⚠️ `--scene` **烘焙为平级实体**（世界变换写入 local）；`KHR_node_visibility`（3 个模型）✅ 隐藏节点/子树已跳过 | 静态可接受；丢失父子关系/脚本按层操控 | 后续保留节点树 + 逐节点 TRS |
 | `EXT_mesh_gpu_instancing`（1 个模型） | ✅ 导入期展开实例（SimpleInstancing 125 实例；上限 4096，超出 warning 截断） | 几何正确；非 GPU 实例化（每个实例一个实体/draw，125 draw 在本批可接受） | 评估：仅 1/148 模型、单 draw 成本低，暂不做 GPU 实例化（§11） |
-| glTF 自带相机（`cameras`/`node.camera`，**13 个模型 / 38 个相机**） | ⚠️ 忽略（仍用自动机位），但**支持手动机位覆盖**（`MANUAL_CAMERA`，如 Sponza 室内）与 importer `--camera-position/--camera-target/--camera-fov/--camera-distance-scale` | 官方参考常用自带机位 → 构图差异由手调弥补 | 后续可优先用 glTF 相机（§11） |
+| glTF 自带相机（`cameras`/`node.camera`，**14 个模型 / 45 个相机**） | ✅ **支持使用**（第 18 轮）：importer `--use-gltf-camera` 取节点遍历第一个 **perspective** 相机（fov/znear/zfar + 节点世界变换；orthographic 警告后回退自动机位）。migrate 对实测指标改善的 **5 个模型**（Duck / EnvironmentTest / IridescentDishWithOlives / TrafficCone / TransmissionTest）采用 glTF 相机；多相机模型（Cameras/AnimationPointerUVs/ToyCar/VirtualCity）参考图多为多视图拼接，仍自动机位；另保留 `MANUAL_CAMERA` 手动机位与 `--camera-position/target/fov/distance-scale` 覆盖 | 5 个模型构图显著改善（Duck hist 0.388→0.629、TransmissionTest 0.292→0.444；rgb 均下降）；其余因官方参考机位/多视图差异仍用自动或手动机位 | 引擎仅透视相机；orthographic 与"多相机选哪个"仍无解（§11） |
 | `KHR_lights_punctual`（**12 个模型**） | ✅ 导入为 `render.Light`（directional/point/spot，≤8 盏、方向光优先；spot 内/外锥角、range 保留）；强度为**观感归一化**（directional=2.6×intensity；point/spot 按模型尺度换算，非 cd/lux 物理值）；有灯光时不再追加默认太阳 | 自带布光能还原主体明暗/彩色灯；与官方离线渲染的精确强度/软阴影仍有差异 | 手调 `.scn` 可改 Light 因子；后续接物理单位换算/光追阴影 |
 | `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
 | 动画（**26 个模型 / 38 个动画**）/ 骨骼蒙皮（7 个模型 / 90 个 skin）/ morph（4 个模型 / 6 个 primitive） | ❌ 不导入（静态渲染；角色为 bind/T-pose；morph 默认权重不生效）；`KHR_animation_pointer`（5）同样不导入 | 动画模型与参考图姿势/形变不同 | README 标注"静态迁移"；动画属独立大项（§11） |
@@ -987,6 +988,11 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > 扫描线内通道按**整行**排列。接入 `env_texture` 的 PMREM/天空路径；`tools/make_env_hdr.py` 新增纯 Python EXR
 > 写入（FLOAT/ZIP + HALF/ZIPS），fixture 与 `.hdr` 解码值逐位一致；`env_pmrem_exr*.scn` + e2e ⑬ 断言
 > 与 `.hdr` 渲染 **max_diff=0**。cubemap kind=1 与 IBL 光照标定仍剩。
+> **第 18 轮（glTF 相机）** importer `--use-gltf-camera`：节点遍历第一个 perspective 相机（yfov/znear/zfar
+> + 节点世界 TRS；orthographic 警告回退自动机位）；migrate 新增 `GLTF_CAMERA_MODELS`，对实测指标改善的 5 个模型
+>（Duck / EnvironmentTest / IridescentDishWithOlives / TrafficCone / TransmissionTest）启用并重导重渲：
+> hist 0.388→0.629、0.280→0.421、0.363→0.456、0.332→0.451、0.292→0.444，rgb_delta 均下降；
+> 变差/持平/多相机模型保持自动或手动机位（决策与数据见 §5.4/§11）。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -999,7 +1005,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | `KHR_materials_volume`（近似薄壁色调）/ dispersion / volume_scatter | **25** | 有色玻璃有色调；无厚度吸收/散射/色散（P1 剩余） |
 | `alphaMode=MASK/BLEND 已支持（物体级排序）` | 16 | 信息性 gap（不是阻塞） |
 | `KHR_texture_transform` 已支持 scale/offset/rotation | **14** | 信息性 gap：逐贴图独立 transform 仍部分近似 |
-| 未使用 glTF 自带相机 | **13** | 构图差异的主因之一（Sponza 已手动机位） |
+| 未使用 glTF 自带相机（自动机位） | **9** | 构图差异的主因之一；5 个模型已采用 glTF 相机（第 18 轮），Sponza 手动机位 |
 | `KHR_lights_punctual` 已导入为 Light | **12** | 信息性 gap：自带灯已生效，强度为观感归一化 |
 | `KHR_materials_clearcoat` 贴图已导入（BRDF 近似） | **12** | 清漆贴图已接（P3 仅剩精确 BRDF） |
 | `KHR_materials_iridescence` 近似 | **10** | 虹彩/厚度贴图已接；干涉 BRDF 近似 |
@@ -1125,7 +1131,7 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 | P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | 现有近似：alpha BLEND + volume 薄壁色调 + diffuse BLEND；完整版需 backbuffer 折射 pass + 厚度/吸收/散射模型 |
 | P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 独立大项；实现级评估见 `plans/21-gltf-animation-and-compression.md`（S1 蒙皮 7–10 人日 / S2 采样 5–9 / S3 morph 3–5） |
 | P2 | **Draco / KTX2 / meshopt 解码** | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | 评估结论：主变体不阻塞、不做解码器（`plans/21` §B）；当前用 `glTF/` 主变体规避 |
-| P2 | **glTF 自带相机** | 相机 13 个模型 / 38 个 | `--scene` 可选 `--use-gltf-camera`（当前手动机位表 + 自动机位） |
+| P2 | **glTF 自带相机（部分完成）** | 相机 14 个模型 / 45 个 | ✅ importer `--use-gltf-camera` + migrate 按模型采用（5 个指标改善模型，第 18 轮）；剩余：orthographic 相机（引擎仅透视）、多相机/多视图参考的选择策略 |
 | P3 | **`TEXCOORD_2+` / 逐贴图独立 UV transform**（已评估，暂不做） | TEXCOORD_2 仅 1 个 primitive（且无贴图引用）；逐槽 transform 冲突实测 10 模型 | 评估：①TEXCOORD_2 零视觉影响（MosquitoInAmber 该属性未被材质引用），不做；②同 UV 集但不同 transform 的材质共 10 模型（AnimationPointerUVs 69 处最多且属 pointer 动画；其余 CarConcept/ToyCar/Sheen* 等 1–5 处）→ 需 9 槽×3 float 的材质 uniform 扩展，收益小于 ABI 成本，保留近似并记录 |
 | P3 | **GPU 实例化**（已评估，暂不做） | 大实例数资产：主变体仅 SimpleInstancing（125 实例；其余模型 ≤10 实例） | 评估：当前 CPU 展开 125 draw 在此批量渲染中开销可忽略（单模型 <1 ms 量级），而实例化需 `frame3d.instances` + `drawIndexedInstanced` + 每实例矩阵 buffer，ABI/管线成本 > 收益；保留 P3 |
 | P2 | **ACES 曲线是否切 three.js RRT/ODT** | 全部（与参考图的系统性色调偏差） | 会整体改变观感基线，需用户拍板（`plans/20 §6`） |

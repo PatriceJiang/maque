@@ -42,16 +42,17 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Tra
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.354 | 0.456 | 差 +0.102 |
-| 前景平均 RGB | [151.4, 76.4, 48.2] | [123.2, 115.3, 107.2] | RGB 距离 0.165 |
-| 亮度直方图相似度 | — | — | 0.33（16 桶交集，1=完全一致） |
-| 前景占比 | 43.7% | 17.6% | 覆盖率比 0.403 |
+| 前景平均亮度 | 0.354 | 0.530 | 差 +0.176 |
+| 前景平均 RGB | [151.4, 76.4, 48.2] | [157.2, 130.7, 114.5] | RGB 距离 0.165 |
+| 亮度直方图相似度 | — | — | 0.45（16 桶交集，1=完全一致） |
+| 前景占比 | 43.7% | 52.6% | 覆盖率比 1.204 |
 
-自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
+自动初判：**中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？**
+
+⚠️ 构图告警：预览主体贴边/被裁剪 → 机位过近？
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
 - KHR_materials_retroreflection 未实现
@@ -59,14 +60,13 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Tra
 
 ## 已知差距（引擎/导入器层面）
 
-- 未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）
 - KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）
 - KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
 - KHR_materials_retroreflection 未实现
 
 ## 踩过的坑 / 注意
 
-- 本模型导入/渲染无告警。
+- 构图告警：预览主体贴边/被裁剪 → 机位过近？
 
 <!-- 手动笔记开始（重生成时保留以下内容） -->
 

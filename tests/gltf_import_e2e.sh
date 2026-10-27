@@ -536,6 +536,58 @@ PY
 [ $? -eq 0 ] || exit 1
 echo "gltf_import_e2e: 相机 CLI 显式机位/取景倍率 OK"
 
+# ---- glTF 自带相机（--use-gltf-camera）：perspective 采用、orthographic 回退自动 ----
+CAM_FIXTURE="$FIXDIR/camera.gltf"
+CAM_ORTHO_FIXTURE="$FIXDIR/camera_ortho.gltf"
+[ -f "$CAM_FIXTURE" ] || fail "缺夹具 $CAM_FIXTURE"
+[ -f "$CAM_ORTHO_FIXTURE" ] || fail "缺夹具 $CAM_ORTHO_FIXTURE"
+mkdir -p "$WORK/glcam" "$WORK/glcam_auto" "$WORK/glcam_ortho"
+"$PY" "$TOOL" "$CAM_FIXTURE" --out "$WORK/glcam" --scene --compact --use-gltf-camera \
+    >"$WORK/glcam.log" 2>&1 || { cat "$WORK/glcam.log"; fail "glTF 相机夹具导入失败"; }
+"$PY" "$TOOL" "$CAM_FIXTURE" --out "$WORK/glcam_auto" --scene --compact \
+    >"$WORK/glcam_auto.log" 2>&1 || { cat "$WORK/glcam_auto.log"; fail "glTF 相机（自动机位对照）导入失败"; }
+"$PY" "$TOOL" "$CAM_ORTHO_FIXTURE" --out "$WORK/glcam_ortho" --scene --compact --use-gltf-camera \
+    >"$WORK/glcam_ortho.log" 2>&1 || { cat "$WORK/glcam_ortho.log"; fail "orthographic 相机夹具导入失败"; }
+grep -q "使用 glTF 相机 'cam_node'" "$WORK/glcam.log" || { cat "$WORK/glcam.log"; fail "未走 glTF 相机路径"; }
+grep -q "使用 glTF 相机" "$WORK/glcam_auto.log" && fail "未加 --use-gltf-camera 不应使用 glTF 相机"
+grep -q "回退自动机位" "$WORK/glcam_ortho.log" || { cat "$WORK/glcam_ortho.log"; fail "orthographic 应警告并回退"; }
+"$PY" - "$WORK/glcam" "$WORK/glcam_auto" "$WORK/glcam_ortho" <<'PY' || exit 1
+import json, math, sys
+
+def load(d):
+    scn = json.load(open(d + "/camera.scn", encoding="utf-8")) if False else None
+    import glob
+    path = glob.glob(d + "/*.scn")[0]
+    return json.load(open(path, encoding="utf-8"))
+
+def cameras(scn):
+    out = []
+    for e in scn["entities"]:
+        comps = e["components"]
+        cam = next((c for c in comps if c.get("type") == "render.Camera3D"), None)
+        trs = next((c for c in comps if c.get("type") == "scene.Transform3D"), None)
+        if cam:
+            out.append((trs["local"], cam))
+    return out
+
+trs, cam = cameras(load(sys.argv[1]))[0]
+# fixture：camera 节点在 (0,0,5)、无旋转；yfov=0.6 rad → 34.377°
+assert abs(cam["fov_y"] - math.degrees(0.6)) < 1e-9, cam["fov_y"]
+assert abs(cam["near"] - 0.1) < 1e-9 and abs(cam["far"] - 50.0) < 1e-9, (cam["near"], cam["far"])
+p = trs["position"]
+assert abs(p["x"]) < 1e-9 and abs(p["y"]) < 1e-9 and abs(p["z"] - 5.0) < 1e-9, p
+r = trs["rotation"]
+assert abs(r["x"]) < 1e-9 and abs(r["y"]) < 1e-9 and abs(r["z"]) < 1e-9, r
+# 对照：自动机位不应恰好落在 (0,0,5)；orthographic 回退后同样不是 glTF 机位
+for d in sys.argv[2:]:
+    p = cameras(load(d))[0][0]["position"]
+    assert abs(p["z"] - 5.0) > 1e-6 or abs(p["x"]) > 1e-6 or abs(p["y"]) > 1e-6, p
+print("gltf_import_e2e: glTF 相机 OK")
+PY
+[ $? -eq 0 ] || exit 1
+echo "gltf_import_e2e: glTF 相机（perspective 采用 / orthographic 回退）OK"
+
+
 # ---- 已入库资产漂移基线：cube.gltf → scenes/pbr/assets/cube.mesh.json ----
 CUBE_FIXTURE="$FIXDIR/cube.gltf"
 CUBE_ASSET="$ROOT/scenes/pbr/assets/cube.mesh.json"
