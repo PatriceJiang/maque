@@ -53,6 +53,10 @@
 #include <cstdint>
 #include <cmath>
 #include <chrono>
+#if __has_include(<zlib.h>)
+#include <zlib.h>
+#define MQ_RUNTIME_HAVE_ZLIB 1
+#endif
 #include <thread>
 #include <utility>
 #include <functional>
@@ -836,13 +840,15 @@ static std::vector<uint8_t> build_mip_chain(const uint8_t* src, int w0, int h0, 
 
 /* HDR env 解码 helper 的提前声明（定义在 load_texture_ref 之前）。 */
 static bool parse_radiance_hdr(const uint8_t* d, size_t n, int& W, int& H, std::vector<float>& rgba);
+/* OpenEXR scanline（NONE/RLE/ZIP/ZIPS；half/float 通道）→ 线性 RGBA float。 */
+static bool parse_exr_env(const uint8_t* d, size_t n, int& W, int& H, std::vector<float>& rgba);
 static void make_studio_env_base(std::vector<float>& out, int& w, int& h);
 /* PMREM：GGX 粗糙度预过滤（specular mip 链）+ 余弦卷积（diffuse irradiance）。 */
 static void build_pmrem(const std::vector<float>& base, int w, int h,
                         std::vector<uint8_t>& spec_chain, int& levels,
                         std::vector<uint8_t>& irr, int& irr_w, int& irr_h);
 
-/* envmap 加载（PMREM）：.hdr（RGBE）/ PNG/JPEG / builtin studio → RGBA16F 预过滤 mip 链 + irradiance。
+/* envmap 加载（PMREM）：.hdr（RGBE）/ EXR / PNG/JPEG / builtin studio → RGBA16F 预过滤 mip 链 + irradiance。
  * 全部在装配期 CPU 预计算（确定性；与 GPU/后端无关），失败时 spec/irr 均为 -1 → shader 回退 analytic。 */
 void Engine::load_env_textures(const std::string& path, int32_t& spec_id, int32_t& irr_id) {
     spec_id = irr_id = -1;
@@ -865,6 +871,9 @@ void Engine::load_env_textures(const std::string& path, int32_t& spec_id, int32_
                             (tp.vfs.size() >= 4 &&
                              (tp.vfs.compare(tp.vfs.size() - 4, 4, ".hdr") == 0 ||
                               tp.vfs.compare(tp.vfs.size() - 4, 4, ".HDR") == 0));
+        const bool is_exr = n >= 4 && data && ((const uint8_t*)data)[0] == 0x76 &&
+                            ((const uint8_t*)data)[1] == 0x2f && ((const uint8_t*)data)[2] == 0x31 &&
+                            ((const uint8_t*)data)[3] == 0x01;
         if (is_hdr) {
             const bool ok = parse_radiance_hdr((const uint8_t*)data, n, w, h, base);
             mq_vfs_free(data);
@@ -873,16 +882,32 @@ void Engine::load_env_textures(const std::string& path, int32_t& spec_id, int32_
                 env_tex_cache[path] = { -1, -1 };
                 return;
             }
-        } else {
-            if (n >= 4 && data) {
-                const uint8_t* m = (const uint8_t*)data;
-                if (m[0] == 0x76 && m[1] == 0x2f && m[2] == 0x31 && m[3] == 0x01) {
-                    std::print(stderr, "runtime: env_texture '{}' 是 EXR（EXR 解码暂未支持，回退 analytic）\n", path);
-                    mq_vfs_free(data);
-                    env_tex_cache[path] = { -1, -1 };
-                    return;
-                }
+            if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
+                const size_t c = ((size_t)(h / 2) * (size_t)w + (size_t)(w / 2)) * 4;
+                std::print(stderr, "runtime: env HDR {}x{} p0=({:.4f},{:.4f},{:.4f}) "
+                                   "pc=({:.4f},{:.4f},{:.4f})\n",
+                           w, h, base[0], base[1], base[2],
+                           base[c], base[c + 1], base[c + 2]);
             }
+        } else if (is_exr) {
+            const bool ok = parse_exr_env((const uint8_t*)data, n, w, h, base);
+            mq_vfs_free(data);
+            if (!ok) {
+                std::print(stderr, "runtime: env_texture '{}' EXR 解析失败（仅支持 scanline NONE/RLE/ZIP/ZIPS，"
+                                   "half/float 通道），回退 analytic\n", path);
+                env_tex_cache[path] = { -1, -1 };
+                return;
+            }
+            if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
+                float mx = 0.0F;
+                for (float v : base) mx = std::max(mx, v);
+                const size_t c = ((size_t)(h / 2) * (size_t)w + (size_t)(w / 2)) * 4;
+                std::print(stderr, "runtime: env EXR {}x{} p0=({:.4f},{:.4f},{:.4f}) "
+                                   "pc=({:.4f},{:.4f},{:.4f}) max={:.3f}\n",
+                           w, h, base[0], base[1], base[2],
+                           base[c], base[c + 1], base[c + 2], mx);
+            }
+        } else {
             uint8_t* rgba = nullptr; uint32_t iw = 0, ih = 0;
             char err[128] = { 0 };
             const int rc = mq_image_decode(data, n, &rgba, &iw, &ih, err, sizeof err);
@@ -1154,11 +1179,235 @@ static bool parse_radiance_hdr(const uint8_t* d, size_t n, int& W, int& H, std::
     return true;
 }
 
+/* ---- OpenEXR scanline 解码（envmap 用）----
+ * 支持：单 part scanline、compression NONE/RLE/ZIP(16 行)/ZIPS(1 行)、通道类型 HALF/FLOAT/UINT、
+ * 通道名 R/G/B(/A) 或 Y（灰度）。PIZ/DWAA/B44/深数据/平铺图不支持（返回 false → 调用方回退 analytic）。
+ * 输出线性 RGBA float（EXR 本身是线性域，无需 sRGB 转换）。 */
+struct ExrChannel { std::string name; int type = 2; int bytes = 4; };
+static float exr_half_to_float(uint16_t h) {
+    const uint32_t sign = (uint32_t)(h & 0x8000u) << 16;
+    uint32_t exp = (h >> 10) & 0x1Fu;
+    uint32_t mant = h & 0x3FFu;
+    uint32_t bits;
+    if (exp == 0) {
+        if (mant == 0) bits = sign;                       /* ±0 */
+        else {                                           /* subnormal */
+            exp = 127 - 15 + 1;
+            while ((mant & 0x400u) == 0) { mant <<= 1; --exp; }
+            mant &= 0x3FFu;
+            bits = sign | (exp << 23) | (mant << 13);
+        }
+    } else if (exp == 31) {
+        bits = sign | 0x7F800000u | (mant << 13);         /* inf/NaN */
+    } else {
+        bits = sign | ((exp + 127 - 15) << 23) | (mant << 13);
+    }
+    float f = 0.0F;
+    std::memcpy(&f, &bits, sizeof f);
+    return f;
+}
+/* OpenEXR 的 ZIP/RLE 压缩在 deflate/RLE 之前做了「predictor + 字节交错」两步变换（ImfZip/ImfRle），
+ * 解压后必须逆变换：先按字节累加还原（b[i] = b[i-1] + b[i] - 128），再把数据从中间劈成两半交错。
+ * 少这一步会得到量级离谱的浮点垃圾（EXR 刚接入时踩过）。 */
+static void exr_unpredict_reorder(std::vector<uint8_t>& buf) {
+    const size_t n = buf.size();
+    if (n < 2) return;
+    for (size_t i = 1; i < n; ++i)
+        buf[i] = (uint8_t)((int)buf[i - 1] + (int)buf[i] - 128);
+    std::vector<uint8_t> out(n);
+    const size_t half = (n + 1) / 2;
+    size_t p1 = 0, p2 = half;
+    for (size_t i = 0; i < n; i += 2) {
+        out[i] = buf[p1++];
+        if (i + 1 < n) out[i + 1] = buf[p2++];
+    }
+    buf.swap(out);
+}
+static bool exr_rle_decode(const uint8_t* src, size_t n, size_t expected, std::vector<uint8_t>& out) {
+    out.clear(); out.reserve(expected);
+    size_t i = 0;
+    while (out.size() < expected && i < n) {
+        const int cnt = (int)(int8_t)src[i++];
+        if (cnt < 0) {
+            const size_t lit = (size_t)(-cnt);
+            if (i + lit > n) return false;
+            out.insert(out.end(), src + i, src + i + lit);
+            i += lit;
+        } else {
+            if (i >= n) return false;
+            out.insert(out.end(), (size_t)cnt + 1, src[i++]);
+        }
+    }
+    return out.size() == expected;
+}
+static bool exr_unzip(const uint8_t* src, size_t n, size_t expected, std::vector<uint8_t>& out) {
+#ifdef MQ_RUNTIME_HAVE_ZLIB
+    out.resize(expected);
+    uLongf dst = (uLongf)expected;
+    if (uncompress(out.data(), &dst, src, (uLong)n) != Z_OK) return false;
+    out.resize((size_t)dst);
+    return dst == (uLongf)expected;
+#else
+    (void)src; (void)n; (void)expected; (void)out;
+    return false;
+#endif
+}
+static bool parse_exr_env(const uint8_t* d, size_t n, int& W, int& H, std::vector<float>& rgba) {
+    if (!d || n < 8) return false;
+    if (d[0] != 0x76 || d[1] != 0x2f || d[2] != 0x31 || d[3] != 0x01) return false;
+    uint32_t version = 0;
+    std::memcpy(&version, d + 4, 4);
+    if ((version & 0xFFu) != 2u) return false;            /* version 2 */
+    if (version & 0xFFFFFE00u) return false;              /* tiled/long-names/deep/multipart 不支持 */
+    size_t pos = 8;
+    std::vector<ExrChannel> channels;
+    int compression = -1;
+    int line_order = 0;
+    int xmin = 0, ymin = 0, xmax = -1, ymax = -1;
+    auto need = [&](size_t k) { return pos + k <= n; };
+    while (pos < n) {
+        if (d[pos] == 0) { ++pos; break; }                /* header 结束 */
+        const size_t name_beg = pos;
+        while (pos < n && d[pos] != 0) ++pos;
+        if (pos >= n) return false;
+        std::string name((const char*)d + name_beg, pos - name_beg);
+        ++pos;
+        const size_t type_beg = pos;
+        while (pos < n && d[pos] != 0) ++pos;
+        if (pos >= n) return false;
+        std::string type((const char*)d + type_beg, pos - type_beg);
+        ++pos;
+        if (!need(4)) return false;
+        uint32_t size = 0;
+        std::memcpy(&size, d + pos, 4); pos += 4;
+        if (!need(size)) return false;
+        const uint8_t* v = d + pos;
+        if (name == "channels" && type == "chlist") {
+            size_t q = 0;
+            while (q < size && v[q] != 0) {
+                const size_t nb = q;
+                while (q < size && v[q] != 0) ++q;
+                if (q >= size) return false;
+                ExrChannel ch;
+                ch.name.assign((const char*)v + nb, q - nb);
+                ++q;
+                if (q + 16 > size) return false;           /* type4 + pLinear/reserved4 + x/ySampling8 */
+                int ptype = 0;
+                std::memcpy(&ptype, v + q, 4); q += 4;
+                q += 4;                                    /* pLinear + 3 reserved */
+                int32_t xs = 0, ys = 0;
+                std::memcpy(&xs, v + q, 4); q += 4;
+                std::memcpy(&ys, v + q, 4); q += 4;
+                if (xs != 1 || ys != 1) return false;      /* 子采样通道不支持 */
+                if (ptype < 0 || ptype > 2) return false;
+                ch.type = ptype;
+                ch.bytes = (ptype == 1) ? 2 : 4;
+                channels.push_back(std::move(ch));
+            }
+        } else if (name == "compression") {
+            if (size < 1) return false;
+            compression = v[0];
+        } else if (name == "lineOrder") {
+            if (size < 1) return false;
+            line_order = v[0];
+        } else if (name == "dataWindow") {
+            if (size < 16) return false;
+            std::memcpy(&xmin, v, 4); std::memcpy(&ymin, v + 4, 4);
+            std::memcpy(&xmax, v + 8, 4); std::memcpy(&ymax, v + 12, 4);
+        }
+        pos += size;
+    }
+    if (channels.empty()) return false;
+    if (compression < 0) compression = 0;
+    if (line_order != 0) return false;                    /* 只支持 increasing Y（HDRI 常态） */
+    const int w = xmax - xmin + 1, h = ymax - ymin + 1;
+    if (w <= 0 || h <= 0 || (uint64_t)w * h > 64u * 1024u * 1024u) return false;
+    int lines_per_block = 1;
+    if (compression == 3) lines_per_block = 16;           /* ZIP；ZIPS(2)/RLE(1)/NONE(1) 均为 1 行 */
+    else if (compression > 3) return false;
+    const int blocks = (h + lines_per_block - 1) / lines_per_block;
+    if (!need((size_t)blocks * 8)) return false;
+    std::vector<uint64_t> offsets((size_t)blocks);
+    std::memcpy(offsets.data(), d + pos, (size_t)blocks * 8);
+    size_t bytes_per_pixel = 0;
+    for (const auto& ch : channels) bytes_per_pixel += (size_t)ch.bytes;
+    int ri = -1, gi = -1, bi = -1, ai = -1, yi = -1;
+    for (int i = 0; i < (int)channels.size(); ++i) {
+        if (channels[(size_t)i].name == "R") ri = i;
+        else if (channels[(size_t)i].name == "G") gi = i;
+        else if (channels[(size_t)i].name == "B") bi = i;
+        else if (channels[(size_t)i].name == "A") ai = i;
+        else if (channels[(size_t)i].name == "Y") yi = i;
+    }
+    const bool rgb = ri >= 0 && gi >= 0 && bi >= 0;
+    if (!rgb && yi < 0) return false;
+    auto channel_offset = [&](int c) {
+        size_t off = 0;
+        for (int i = 0; i < c; ++i) off += (size_t)channels[(size_t)i].bytes;
+        return off * (size_t)w;      /* 同一扫描线内按通道整行排列（不是逐像素交错） */
+    };
+    auto sample = [](const uint8_t* p, int type) -> float {
+        if (type == 1) { uint16_t hv = 0; std::memcpy(&hv, p, 2); return exr_half_to_float(hv); }
+        if (type == 2) { float f = 0.0F; std::memcpy(&f, p, 4); return f; }
+        uint32_t u = 0; std::memcpy(&u, p, 4); return (float)u;
+    };
+    W = w; H = h;
+    rgba.assign((size_t)w * h * 4, 0.0f);
+    for (size_t i = 0; i < (size_t)w * h; ++i) rgba[i * 4 + 3] = 1.0f;
+    std::vector<uint8_t> raw, dec;
+    for (int b = 0; b < blocks; ++b) {
+        const uint64_t off = offsets[(size_t)b];
+        if (off > (uint64_t)n || (uint64_t)n - off < 8) return false;
+        int32_t by = 0, dsize = 0;
+        std::memcpy(&by, d + (size_t)off, 4); std::memcpy(&dsize, d + (size_t)off + 4, 4);
+        if (dsize < 0 || (uint64_t)dsize > (uint64_t)n - off - 8) return false;
+        const int nrows = std::min(lines_per_block, h - (by - ymin));
+        if (nrows <= 0 || by < ymin || by > ymax) return false;
+        const size_t expected = (size_t)nrows * w * bytes_per_pixel;
+        const uint8_t* src = d + off + 8;
+        const uint8_t* rows = nullptr;
+        if (compression == 0) {
+            if ((size_t)dsize != expected) return false;
+            rows = src;
+        } else if (compression == 1) {
+            if (!exr_rle_decode(src, (size_t)dsize, expected, dec)) return false;
+            exr_unpredict_reorder(dec);
+            rows = dec.data();
+        } else {
+            if (!exr_unzip(src, (size_t)dsize, expected, dec)) return false;
+            exr_unpredict_reorder(dec);
+            rows = dec.data();
+        }
+        for (int r = 0; r < nrows; ++r) {
+            const uint8_t* row = rows + (size_t)r * w * bytes_per_pixel;
+            for (int x = 0; x < w; ++x) {
+                float* out = &rgba[((size_t)(by - ymin + r) * w + x) * 4];
+                if (rgb) {
+                    out[0] = sample(row + channel_offset(ri) + (size_t)x * channels[(size_t)ri].bytes,
+                                    channels[(size_t)ri].type);
+                    out[1] = sample(row + channel_offset(gi) + (size_t)x * channels[(size_t)gi].bytes,
+                                    channels[(size_t)gi].type);
+                    out[2] = sample(row + channel_offset(bi) + (size_t)x * channels[(size_t)bi].bytes,
+                                    channels[(size_t)bi].type);
+                } else {
+                    const float y = sample(row + channel_offset(yi) + (size_t)x * channels[(size_t)yi].bytes,
+                                           channels[(size_t)yi].type);
+                    out[0] = out[1] = out[2] = y;
+                }
+                if (ai >= 0)
+                    out[3] = sample(row + channel_offset(ai) + (size_t)x * channels[(size_t)ai].bytes,
+                                    channels[(size_t)ai].type);
+            }
+        }
+    }
+    return true;
+}
+
 /* ---- 真正 PMREM（IBL 预过滤，CPU、确定性）----
  * three.js / UE 的 split-sum IBL：镜面 = GGX importance-sample 预过滤的粗糙度 mip 链
  *（V=N=R 假设下按 NdotL 加权归一），漫反射 = 余弦加权半球卷积的 irradiance 贴图。
  * 之前实现是 2×2 box mip 近似：粗糙度增大时只是"更糊"，不是 GGX 能量分布，
- * 且漫反射仍用 analytic —— 这两点在此替换。立方体贴图（cubemap kind=1）与 EXR 仍列后续。 */
+ * 且漫反射仍用 analytic —— 这两点在此替换。EXR 已支持；cubemap kind=1 仍列后续。 */
 static constexpr float kEnvPi = 3.14159265358979f;
 
 static void env_dir_from_uv(float u, float v, float out[3]) {

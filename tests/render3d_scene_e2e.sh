@@ -446,4 +446,37 @@ sys.exit(0 if 200 < n12 < 10000 and max(d) >= 100 and abs(fa - fb) <= max(50, fa
 PY
     echo "render3d_scene_e2e: (12) MSAA 4x OK"
 fi
+# ---- (13) EXR envmap：ZIP/FLOAT 与 ZIPS/HALF 解码后与 RGBE .hdr 渲染逐像素一致 ----
+EXR_SCN="$ROOT/scenes/pbr/env_pmrem_exr.scn"
+EXR_HALF_SCN="$ROOT/scenes/pbr/env_pmrem_exr_half.scn"
+if [ -f "$EXR_SCN" ] && [ -f "$EXR_HALF_SCN" ]; then
+    for pair in "hdr|scenes/pbr/env_pmrem.scn|$WORK/exr_hdr.ppm|env_hdr.txt" \
+                "exr|scenes/pbr/env_pmrem_exr.scn|$WORK/exr_float.ppm|env_float.txt" \
+                "half|scenes/pbr/env_pmrem_exr_half.scn|$WORK/exr_half.ppm|env_half.txt"; do
+        IFS='|' read -r name scn out log <<<"$pair"
+        ( cd "$ROOT" && timeout 120 env MAQUE_RENDER3D_INFO=1 "$PLAYER" --shot "$out" --frames 2 "$scn" >"$WORK/$log" 2>&1 ) \
+            || { cat "$WORK/$log"; fail "EXR envmap 场景渲染失败（$name）"; }
+    done
+    grep -q "env PMREM 'env/studio.exr' 128x64 → 8 mips" "$WORK/env_float.txt" \
+        || { cat "$WORK/env_float.txt"; fail "EXR(studio.exr) 未走 PMREM 路径"; }
+    grep -q "env PMREM 'env/studio_half.exr' 128x64 → 8 mips" "$WORK/env_half.txt" \
+        || { cat "$WORK/env_half.txt"; fail "EXR half(studio_half.exr) 未走 PMREM 路径"; }
+    "$PY" - "$WORK/exr_hdr.ppm" "$WORK/exr_float.ppm" "$WORK/exr_half.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); m, dims, _x, px = d.split(b'\n', 3)
+    assert m == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, [(px[i], px[i+1], px[i+2]) for i in range(0, len(px), 3)]
+w, h, ref = load(sys.argv[1])
+for path in sys.argv[2:]:
+    w2, h2, px = load(path)
+    assert (w, h) == (w2, h2), (path, w2, h2)
+    md = max(sum(abs(ref[i][k] - px[i][k]) for k in range(3)) for i in range(w * h))
+    print(f'render3d_scene_e2e: EXR vs HDR {path} max_diff={md}')
+    # FLOAT/ZIP 与 HALF/ZIPS 都应无损（RGBE 的 8-bit 尾数在 half 里可精确表示）。
+    sys.exit(0 if md <= 1 else 1)
+PY
+    echo "render3d_scene_e2e: (13) EXR envmap（ZIP/FLOAT + ZIPS/HALF）OK"
+fi
 echo "render3d_scene_e2e: PASS"

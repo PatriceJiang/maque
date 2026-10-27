@@ -1,0 +1,76 @@
+{
+ "title": "env_pmrem_exr",
+ "width": 640,
+ "height": 360,
+ "views": 1,
+ "entities": [
+  {
+   "name": "camera",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {"x": 0.0, "y": 1.0, "z": 4.6},
+      "rotation": {"x": -0.22, "y": 0.0, "z": 0.0}
+     }
+    },
+    {
+     "type": "render.Camera3D",
+     "fov_y": 55.0,
+     "near": 0.1,
+     "far": 100.0,
+     "clear_color": {"r": 0.07, "g": 0.08, "b": 0.11, "a": 1.0}
+    }
+   ]
+  },
+  {
+   "name": "sun",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {"rotation": {"x": 0.12, "y": 0.06, "z": 0.0}}
+    },
+    {
+     "type": 0,
+     "intensity": 2.2,
+     "color": {"r": 1.0, "g": 0.96, "b": 0.9, "a": 1.0}
+    }
+   ]
+  },
+  {
+   "name": "cube_smooth_metal",
+   "components": [
+    {"type": "scene.Transform3D",
+     "local": {"position": {"x": -1.7, "y": 0.0, "z": 0.0},
+               "rotation": {"x": 0.35, "y": 0.5, "z": 0.0}}},
+    {"type": "render.MeshRenderer"},
+    {"type": "asset.PbrMaterial", "metallic": 1.0, "roughness": 0.08,
+     "base_color": {"r": 0.95, "g": 0.9, "b": 0.82, "a": 1.0}}
+   ]
+  },
+  {
+   "name": "cube_matte",
+   "components": [
+    {"type": "scene.Transform3D",
+     "local": {"position": {"x": 0.0, "y": 0.0, "z": 0.0},
+               "rotation": {"x": 0.0, "y": 0.4, "z": 0.0}}},
+    {"type": "render.MeshRenderer"},
+    {"type": "asset.PbrMaterial", "metallic": 0.0, "roughness": 0.95,
+     "base_color": {"r": 0.85, "g": 0.85, "b": 0.85, "a": 1.0}}
+   ]
+  },
+  {
+   "name": "cube_rough_metal",
+   "components": [
+    {"type": "scene.Transform3D",
+     "local": {"position": {"x": 1.7, "y": 0.0, "z": 0.0},
+               "rotation": {"x": 0.35, "y": 0.5, "z": 0.0}}},
+    {"type": "render.MeshRenderer"},
+    {"type": "asset.PbrMaterial", "metallic": 1.0, "roughness": 0.9,
+     "base_color": {"r": 0.95, "g": 0.72, "b": 0.25, "a": 1.0}}
+   ]
+  }
+ ],
+ "env_texture": "env/studio.exr",
+ "env_intensity": 1.2
+}
