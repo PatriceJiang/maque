@@ -1,0 +1,246 @@
+# maque —— C++ 编译流水线（Linux + Windows）
+#
+# 目标：在干净 runner 上从零「配置 + 编译」整个工程（含全部单测目标）。
+# 不在 CI 里跑 ctest/gfx：那些用例需要真实 WebGPU 适配器 / 窗口 / 字体，
+# 无 GPU 的托管 runner 上必然失败；编译通过本身已经覆盖所有 C++ 源文件。
+#
+# Linux : GCC 14 + Ninja（C++23 <std::print> 需要 GCC >= 14；ubuntu-24.04 的默认 g++ 是 13，
+#         所以 apt 显式安装 g++-14。若以后 libstdc++ 14 缺特性，可把 runs-on 换成 ubuntu-26.04
+#         用其默认 GCC 15 —— 本机 Linux 侧的完整构建即 GCC 15.2。）
+# Windows: clang-cl + Ninja（tools/win/build.ps1，Release、不开 ASan）
+#
+# 两个平台的 wgpu-native 二进制 SDK 都不入库（.gitignore），由本文件从官方 release 取，
+# 版本必须与 third_party/wgpu-native/include/webgpu/webgpu.h 对齐（当前 v29.0.1.1）。
+name: cpp-build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  WGPU_NATIVE_TAG: v29.0.1.1
+
+jobs:
+  # ---------------------------------------------------------------- Linux
+  linux:
+    name: linux / gcc-14 / release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          # C++23 <print> needs GCC >= 14 (the image's default g++ is 13; g++-14 is in apt).
+          # libcap-dev: libwebsockets.pc on some distros links -lcap.
+          # zstd: fallback CLI for tools/shader_pack.js when node lacks zlib.zstdCompressSync.
+          sudo apt-get install -y --no-install-recommends \
+            gcc-14 g++-14 \
+            libsdl2-dev libcurl4-openssl-dev libwebsockets-dev libcap-dev \
+            zlib1g-dev libzstd-dev libfreetype-dev \
+            ninja-build pkg-config unzip zstd
+
+      - name: Set up Node.js (codegen needs node + yaml)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install codegen dependencies
+        # modules/core/data/package-lock.json is gitignored → plain `npm install`, not `npm ci`.
+        working-directory: modules/core/data
+        run: npm install --no-audit --no-fund
+
+      - name: Fetch wgpu-native (WebGPU binaries are not committed)
+        env:
+          WGPU_SHA256: 95a4d90c071005a98d03eab348beaa6b07e16eb00d1dcdb9f8348f75eb97ec5a
+        run: |
+          set -euo pipefail
+          zip="$RUNNER_TEMP/wgpu-native.zip"
+          url="https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_NATIVE_TAG}/wgpu-linux-x86_64-release.zip"
+          curl -fsSL --retry 3 --retry-delay 2 "$url" -o "$zip"
+          echo "${WGPU_SHA256}  ${zip}" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/wgpu-native" third_party/wgpu-native/lib
+          unzip -q -o "$zip" -d "$RUNNER_TEMP/wgpu-native"
+          find "$RUNNER_TEMP/wgpu-native" -name 'libwgpu_native.so*' \
+            -exec cp -v {} third_party/wgpu-native/lib/ \;
+          test -n "$(find third_party/wgpu-native/lib -maxdepth 1 -name 'libwgpu_native.so*' -print -quit)" \
+            || { echo "::error::wgpu-native .so was not extracted"; exit 1; }
+          ls -l third_party/wgpu-native/lib
+
+      - name: Configure
+        run: |
+          g++-14 --version | head -n 1
+          cmake --version | head -n 1
+          ninja --version
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc-14 \
+            -DCMAKE_CXX_COMPILER=g++-14 \
+            -DMAQUE_BUILD_TESTS=ON
+
+      - name: Verify generated sources are committed (no codegen drift)
+        # modules/core/data/generated/ is a tracked deliverable (AGENTS.md): configuring
+        # regenerates it, so any diff means schema/ and the committed output disagree.
+        run: |
+          set -euo pipefail
+          status="$(git status --porcelain -- modules/core/data/generated)"
+          if [ -n "$status" ]; then
+            echo "$status"
+            git --no-pager diff --stat -- modules/core/data/generated
+            echo "::error::generated/ is stale — run node parser.js and commit the result"
+            exit 1
+          fi
+          echo "OK: generated sources in sync"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Verify build outputs
+        run: |
+          set -euo pipefail
+          test -x build/samples/player/maque_player
+          test -f build/maque_gfx.so
+          # NOTE: no `grep -q` here — with `pipefail`, an early grep exit could
+          # SIGPIPE ldd and turn a successful match into a failed pipeline.
+          ldd build/maque_gfx.so | grep 'libwgpu_native' \
+            || { echo "::error::maque_gfx.so is not linked against libwgpu_native"; exit 1; }
+          echo "OK: player + gfx plugin built"
+
+      - name: Validate schema / codegen
+        working-directory: modules/core/data
+        run: node parser.js --check
+
+  # ---------------------------------------------------------------- Windows
+  windows:
+    name: windows / clang-cl / release
+    runs-on: windows-2025
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js (codegen needs node + yaml)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install codegen dependencies
+        # modules/core/data/package-lock.json is gitignored → plain `npm install`, not `npm ci`.
+        working-directory: modules/core/data
+        run: npm install --no-audit --no-fund
+
+      # 第三方原生依赖（SDL2/curl/lws/zlib/zstd/freetype）由脚本从源码构建，
+      # 耗时且只与脚本自身版本相关 → 按脚本内容哈希缓存 .deps/dist 与下载缓存。
+      - name: Cache prebuilt third-party dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            .deps/dist
+            .deps/cache
+          key: ${{ runner.os }}-maque-deps-v1-${{ hashFiles('tools/win/fetch-deps.ps1') }}
+
+      - name: Fetch/build third-party dependencies
+        run: |
+          $clang = 'C:\Program Files\LLVM\bin\clang-cl.exe'
+          if (-not (Test-Path $clang)) {
+            $clang = (Get-Command clang-cl -ErrorAction Stop).Source
+          }
+          $ninja = (Get-Command ninja -ErrorAction SilentlyContinue).Source
+          if (-not $ninja) {
+            choco install ninja -y --no-progress
+            $chocoNinja = 'C:\ProgramData\chocolatey\bin\ninja.exe'
+            $ninja = if (Test-Path $chocoNinja) { $chocoNinja } else { (Get-Command ninja -ErrorAction Stop).Source }
+          }
+          Write-Host "clang-cl: $clang"
+          Write-Host "ninja   : $ninja"
+          powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\fetch-deps.ps1 -ClangCl $clang -Ninja $ninja -SkipSelfCheck
+          # fetch-deps.ps1 reports per-library failures only in its summary and still
+          # exits 0 — completeness is asserted (with logs) by the next step.
+          if ($LASTEXITCODE -ne 0) { throw "fetch-deps.ps1 failed (exit $LASTEXITCODE)" }
+
+      - name: Verify third-party dependencies
+        run: |
+          # SDL2 (window/input/audio/imgui), zlib (PNG), zstd (packed shaders),
+          # freetype (text), curl (http(s) VFS), libwebsockets (ws://)
+          $required = @(
+            'SDL2-static.lib',
+            'zlibstatic.lib',
+            'zstd_static.lib',
+            'freetype.lib',
+            'libcurl.lib',
+            'websockets_static.lib'
+          )
+          $missing = $required | Where-Object { -not (Test-Path (Join-Path '.deps/dist/lib' $_)) }
+          if ($missing) {
+            Get-ChildItem '.deps/logs' -Filter '*.log' -ErrorAction SilentlyContinue |
+              ForEach-Object { Write-Host "== $($_.Name)"; Get-Content $_.FullName -Tail 30 }
+            throw "missing dependencies: $($missing -join ', ')"
+          }
+          if (-not (Test-Path '.deps/deps.cmake')) { throw "missing .deps/deps.cmake" }
+
+      - name: Fetch wgpu-native (WebGPU binaries are not committed)
+        env:
+          WGPU_SHA256: 7e67d7445c42aeb85e30f88930fd8d7d83ee769e3390aeb1ada75ebf3cf78132
+        run: |
+          $url = "https://github.com/gfx-rs/wgpu-native/releases/download/$env:WGPU_NATIVE_TAG/wgpu-windows-x86_64-msvc-release.zip"
+          $zip = Join-Path $env:RUNNER_TEMP 'wgpu-native.zip'
+          curl.exe -fsSL --retry 3 --retry-delay 2 $url -o $zip
+          if ($LASTEXITCODE -ne 0) { throw "download failed (exit $LASTEXITCODE)" }
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+          if ($hash -ne $env:WGPU_SHA256) {
+            throw "wgpu-native sha256 mismatch: expected $env:WGPU_SHA256, got $hash"
+          }
+          $extract = Join-Path $env:RUNNER_TEMP 'wgpu-native'
+          Expand-Archive -Path $zip -DestinationPath $extract -Force
+          $dest = 'third_party\wgpu-native\lib'
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          # The zip ships BOTH wgpu_native.dll.lib (62 KB import lib) and wgpu_native.lib
+          # (54 MB Rust static lib). maque links the DLL import lib — the same file as
+          # local third_party/wgpu-native/lib/wgpu_native.lib — so copy dll.lib as .lib.
+          $srcDll = Get-ChildItem -Path $extract -Recurse -Filter 'wgpu_native.dll' | Select-Object -First 1
+          $srcImplib = Get-ChildItem -Path $extract -Recurse -Filter 'wgpu_native.dll.lib' | Select-Object -First 1
+          if (-not $srcDll -or -not $srcImplib) {
+            throw 'wgpu-native zip layout unexpected: wgpu_native.dll / wgpu_native.dll.lib not found'
+          }
+          Copy-Item $srcDll.FullName (Join-Path $dest 'wgpu_native.dll') -Force
+          Copy-Item $srcImplib.FullName (Join-Path $dest 'wgpu_native.lib') -Force
+          if ((Get-Item (Join-Path $dest 'wgpu_native.lib')).Length -gt 5MB) {
+            throw 'wgpu_native.lib is the static lib; expected the DLL import lib'
+          }
+          Get-ChildItem $dest | Format-Table Name, Length
+          foreach ($f in @('wgpu_native.dll', 'wgpu_native.lib')) {
+            if (-not (Test-Path (Join-Path $dest $f))) { throw "missing $f after extract" }
+          }
+
+      - name: Configure + build (clang-cl + Ninja, Release, no sanitizer)
+        # MAQUE_BUILD_TESTS defaults to ON, so every test target is compiled too.
+        run: tools\win\build.ps1 -BuildType Release -Sanitize ''
+
+      - name: Verify build outputs
+        run: |
+          $player = 'build-win\samples\player\maque_player.exe'
+          $gfx = 'build-win\maque_gfx.dll'
+          foreach ($f in @($player, $gfx, 'build-win\wgpu_native.dll')) {
+            if (-not (Test-Path $f)) { throw "missing build output: $f" }
+          }
+          Write-Host "OK: player + gfx plugin built"
+
+      - name: Validate schema / codegen
+        working-directory: modules/core/data
+        run: node parser.js --check

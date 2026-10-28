@@ -1,5 +1,7 @@
 # maque
 
+[![cpp-build](https://github.com/PatriceJiang/maque/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/PatriceJiang/maque/actions/workflows/build.yml)
+
 麻雀虽小，五脏俱全。**maque 是一个"可被 AI 自主驱动与观测"的轻量游戏引擎**，
 同时服务**嵌入式**与**独立游戏**，并以 **WASM/浏览器**为一等目标平台。
 
