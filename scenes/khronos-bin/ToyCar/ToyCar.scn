@@ -1,0 +1,116 @@
+{
+  "title": "ToyCar",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.0215,
+              "y": 0.0094,
+              "z": 0.0392
+            },
+            "rotation": {
+              "x": -0.22359477967934147,
+              "y": -0.5191461142465229,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.001,
+          "far": 11.094343946416869,
+          "clear_color": {
+            "r": 0.56,
+            "g": 0.55,
+            "b": 0.54,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.2800606847279503,
+              "y": -2.256525837701183,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.8,
+          "color": {
+            "r": 1.0,
+            "g": 0.97,
+            "b": 0.92,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/ToyCar.glb"
+        }
+      ]
+    }
+  ],
+  "env_color": {
+    "r": 0.42,
+    "g": 0.44,
+    "b": 0.48,
+    "a": 1.0
+  },
+  "env_intensity": 1.0,
+  "env_sky_color": {
+    "r": 0.5,
+    "g": 0.53,
+    "b": 0.6,
+    "a": 1.0
+  },
+  "env_ground_color": {
+    "r": 0.18,
+    "g": 0.16,
+    "b": 0.15,
+    "a": 1.0
+  },
+  "env_highlight": 3.2,
+  "env_rotation": 30.0,
+  "env_texture": "builtin:/textures/studio_env"
+}

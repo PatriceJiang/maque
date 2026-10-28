@@ -1,0 +1,94 @@
+{
+  "title": "UnlitTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.6027424532706793,
+              "y": 1.191358401290909,
+              "z": 4.556140913044962
+            },
+            "rotation": {
+              "x": -0.22326312094374035,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.1073295857018837,
+          "far": 63.85454920974871,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/UnlitTest.glb"
+        }
+      ]
+    }
+  ]
+}

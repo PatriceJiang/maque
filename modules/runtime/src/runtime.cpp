@@ -28,6 +28,7 @@
 #include "ui/mq_imgui.h"              // 引擎侧 ImGui 调试面板：帧管理/绘制数据导出
 #include "ui/mq_imgui_widgets.h"      // ImGui 控件 C ABI（runtime 不直接依赖 ImGui 头）
 #include "core/tracy/mq_tracy.h"      // Tracy 性能分析封装（docs/29；MAQUE_TRACY=OFF 时全部 no-op）
+#include "gltf_model.h"                // 运行时 glTF/GLB 解析（plans/23/24，CPU 侧；无 GPU 依赖）
 
 #include <fstream>
 #include "core/control/mq_control.h"
@@ -661,6 +662,114 @@ struct Engine {
     int32_t cube_mesh = -1;
     /* M4c：.mesh.json 资产缓存（路径 → 渲染器网格句柄；-1 = 加载失败，避免每帧重试） */
     std::unordered_map<std::string, int32_t> mesh_cache;
+    /* ---- 运行时 glTF/GLB 直接加载（plans/23）：mesh_path 指向 .gltf/.glb 时走这里 ----
+     * 装配期解析一次并上传（网格/纹理句柄由本 Engine 持有，切场景统一销毁）。
+     * plans/24：蒙皮/动画/morph/材质扩展/灯光相机全部在装配期解析，模拟帧内只读缓存。 */
+    struct GltfGpuModel {
+        bool failed = false;
+        struct Node {
+            int parent = -1;
+            float t[3] = { 0.0F, 0.0F, 0.0F };
+            float r[4] = { 0.0F, 0.0F, 0.0F, 1.0F };
+            float s[3] = { 1.0F, 1.0F, 1.0F };
+            bool has_matrix = false;
+            float m[16] = { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+                            0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F };
+        };
+        struct Skin {
+            std::vector<int> joints;
+            std::vector<float> inverse_bind;
+        };
+        struct AnimChannel {
+            int node = -1;
+            int path = 0;        /* 0=translation 1=rotation 2=scale 3=weights 4=pointer */
+            int interp = 1;      /* 0=STEP 1=LINEAR 2=CUBICSPLINE */
+            int comps = 0;
+            int pointer_material = -1;
+            int pointer_field = 0;
+            std::vector<float> times;
+            std::vector<float> values;
+        };
+        struct Anim {
+            std::string name;
+            float duration = 0.0F;
+            std::vector<AnimChannel> channels;
+        };
+        struct Light {
+            int node = -1;
+            int type = 0;
+            float color[3] = { 1.0F, 1.0F, 1.0F };
+            float intensity = 1.0F;
+            float range = 0.0F;
+            float inner_cos = 1.0F;
+            float outer_cos = 0.0F;
+        };
+        struct Camera {
+            int node = -1;
+            bool perspective = true;
+            float yfov = 0.6F;
+            float znear = 0.1F;
+            float zfar = 1000.0F;
+        };
+        struct MorphTarget {
+            std::vector<float> positions;
+            std::vector<float> normals;
+        };
+        struct Prim {
+            int32_t mesh = -1;
+            int32_t material = -1;
+            int32_t node = -1;
+            int32_t skin = -1;
+            int layout = 0;               /* 0/1 (无蒙皮) 或 2/3 (蒙皮) */
+            uint32_t vertex_count = 0;
+            uint32_t stride = 0;
+            std::vector<uint8_t> base;    /* 打包后的基础顶点（morph 重算起点；无 morph 时为空） */
+            std::vector<MorphTarget> morph_targets;
+            std::vector<float> default_weights;
+            std::vector<float> applied_weights;
+            std::vector<int32_t> variant_materials; /* KHR_materials_variants 变体 → 材质 */
+            int32_t morph_owner = -1;     /* 共享网格：首个驱动 morph 的实体 */
+            bool warned_shared = false;
+            bool warned_update = false;
+        };
+        std::vector<Prim> prims;
+        std::vector<mq_renderer_pbr_material> mats;
+        std::vector<int32_t> textures;              /* 本模型上传的纹理（clear 时销毁） */
+        std::vector<Node> nodes;
+        std::vector<int> order;                     /* 父先子 */
+        std::vector<Skin> skins;
+        std::vector<Anim> anims;
+        std::vector<Light> lights;
+        std::vector<Camera> cameras;
+        std::vector<std::string> variants;
+        float radius = 1.0F;                        /* 模型包围球半径（灯光观感归一化用） */
+    };
+    /* 每个实体的 glTF 动画状态（按实体，而不是按模型：同模型多实例可各自播放）。 */
+    struct GltfEntityState {
+        std::string path;
+        int clip = 0;
+        float time = 0.0F;
+        float duration = 0.0F;
+        bool inited = false;
+        bool warned_clip = false;
+        std::vector<float> node_local;              /* 10 / 节点：t3 r4 s3 */
+        std::vector<uint8_t> node_animated;         /* 该节点本帧是否被动画覆盖 */
+        std::vector<float> node_world;              /* 16 / 节点 */
+        std::vector<std::vector<float>> node_weights; /* weights 通道：每个节点的 morph 权重 */
+        std::vector<std::vector<float>> palettes;   /* 每个 skin 一份 palette */
+        std::vector<std::vector<float>> morph_weights; /* 每个 primitive 的当前权重 */
+        bool logged = false;
+    };
+    std::unordered_map<std::string, GltfGpuModel> gltf_models;
+    std::unordered_map<int, GltfEntityState> gltf_states;
+    GltfGpuModel* load_gltf_model(const std::string& path);
+    bool read_vfs_file(const std::string& path, std::vector<uint8_t>& out);
+    int32_t upload_texture_rgba(const uint8_t* rgba, int w, int h, bool srgb,
+                                int filter, int wrap_u, int wrap_v);
+    void gltf_state_ensure(int entity, const std::string& path, const GltfGpuModel& gm);
+    void gltf_anim_step(float dt);
+    bool apply_gltf_morph(int entity, GltfGpuModel& gm, size_t prim_idx,
+                          const std::vector<float>& weights);
     /* ---- glTF 动画 / 蒙皮 / morph（plans/22 §6；全部派生缓存，不进快照/校验和）---- */
     std::unordered_map<std::string, GClip> gclips;             /* .clip.json 路径 → 片段 */
     std::unordered_map<std::string, Skeleton> skeletons;       /* .skel.json 路径 → 骨架 */
@@ -674,6 +783,7 @@ struct Engine {
     std::unordered_set<std::string> gltf_warned;               /* 一次性告警去重（skin/joint 解析失败等） */
     bool anim_enabled = true;             /* MAQUE_ANIM=0 → 跳过片段采样（保持 bind pose，A/B 对照） */
     bool skin_enabled = true;             /* MAQUE_SKIN=0 → 调色板填 identity（bind pose 不变量） */
+    bool morph_enabled = true;            /* MAQUE_MORPH=0 → 不应用 morph（基础网格，A/B 对照） */
     bool render3d_info = false;           /* MAQUE_RENDER3D_INFO=1 → 装配/首帧诊断 */
     bool gltf_env_read = false;
     bool gltf_frame_info = false;         /* extract_3d 首帧诊断是否已打印 */
@@ -695,6 +805,30 @@ struct Engine {
     bool  orbit_inited = false;
     float orbit_yaw = 0.0F, orbit_pitch = 0.3F, orbit_dist = 1.0F;
     float orbit_last_x = 0.0F, orbit_last_y = 0.0F;
+
+    /* ---- 引擎选项（F4 ImGui 面板；docs/28）----
+     * 三类过去只能在**启动时**通过场景字段 / 环境变量决定的渲染选项，运行期可热调：
+     *   · MSAA（0=跟随场景/MAQUE_MSAA，1=关，4=4x）
+     *   · 默认太阳光（场景无光源时补的方向光：开关 / 强度 / 传播方向）
+     *   · 主相机 near/far 覆盖
+     * 只在 extract_3d / 成帧时生效，**不写回场景组件/不进快照/校验和**（视图层调试覆盖，docs/10）。
+     * 同一组值也可用 `MAQUE_ENGINE_OPTIONS` 给启动初值（见 engine_options_parse_env）。 */
+    bool  opt_panel = false;                   // F4 面板开关
+    bool  opt_f4_held = false;                 // F4 沿检测（按住只切换一次）
+    bool  opt_opened_imgui = false;            // F4 自己打开的 ImGui（收起面板时恢复"关"→ 不残留 stats）
+    int   opt_msaa = 0;                        // 0=跟随场景(MAQUE_MSAA 次之) 1=关 4=4x
+    bool  opt_sun_enabled = true;              // 场景无光源时是否补默认太阳光
+    float opt_sun_intensity = 1.1F;
+    float opt_sun_dir[3] = { 0.35F, -0.85F, -0.4F };   // 光的**传播方向**（shader 内 normalize）
+    bool  opt_cam_override = false;            // 覆盖主相机 near/far
+    float opt_cam_near = 0.1F, opt_cam_far = 100.0F;   // 未覆盖时跟随场景实际值（面板默认值随之同步）
+    /* 上一帧实际生效值（面板只读回显） */
+    int   opt_last_msaa = 0;
+    bool  opt_last_sun = false;
+    float opt_last_near = 0.1F, opt_last_far = 100.0F;
+    bool  opt_env_parsed = false;
+    void engine_options_parse_env();           // 启动初值 MAQUE_ENGINE_OPTIONS（只解析一次）
+    void engine_options_panel(float show_w, float show_h);   // F4 面板内容（本帧 ImGui 已 begin）
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
@@ -2049,6 +2183,7 @@ int32_t Engine::load_mesh(const std::string& path) {
     auto it = mesh_cache.find(path);
     if (it != mesh_cache.end()) return it->second;
     if (!gltf_env_read) read_gltf_env();
+    const auto t0 = std::chrono::steady_clock::now();
     int32_t id = -1;
     void* data = nullptr;
     size_t n = 0;
@@ -2207,12 +2342,534 @@ int32_t Engine::load_mesh(const std::string& path) {
                                (long long)morph_meshes[mp_key].stride);
             }
             if (id < 0) std::print(stderr, "runtime: mesh 载入失败 '{}'\n", path);
+            else if (render3d_info) {
+                const double ms = std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - t0).count();
+                std::print("runtime: mesh '{}' vertices={} indices={} ({:.1f} ms)\n",
+                           path, vn, in, ms);
+            }
             mesh_layout[path] = (id >= 0) ? vertex_layout : -1;
             mq_json_free(dom);
         }
     }
     mesh_cache[path] = id;
     return id;
+}
+
+/* ---- 运行时 glTF/GLB 直接加载（plans/23/24）----
+ * mesh_path 指向 .gltf/.glb 时不必先跑 Python importer：装配期解析 + 上传一次，之后每帧只读缓存。
+ * 资源（buffer/image）的相对 URI 按**模型文件所在目录**经 VFS 解析（远程挂载同样适用）。 */
+bool Engine::read_vfs_file(const std::string& path, std::vector<uint8_t>& out) {
+    out.clear();
+    if (!vfs) return false;
+    void* data = nullptr;
+    size_t n = 0;
+    if (mq_vfs_read(vfs, path.c_str(), &data, &n) != 0 || !data) return false;
+    out.assign((const uint8_t*)data, (const uint8_t*)data + n);
+    mq_vfs_free(data);
+    return true;
+}
+
+int32_t Engine::upload_texture_rgba(const uint8_t* rgba, int w, int h, bool srgb,
+                                    int filter, int wrap_u, int wrap_v) {
+    if (!rapi || !rself || !rgba || w <= 0 || h <= 0) return -1;
+    int32_t id = -1;
+    if (rapi->create_texture2) {
+        int levels = 1;
+        std::vector<uint8_t> mips = build_mip_chain(rgba, w, h, levels, srgb);
+        mq_renderer_texture_desc td{};
+        td.width = w;
+        td.height = h;
+        td.pixel_format = srgb ? 1 : 0;       /* 1 = RGBA8_SRGB，0 = RGBA8（线性数据） */
+        td.kind = 0;
+        td.mip_levels = levels;
+        td.filter = filter;
+        td.wrap_u = wrap_u;
+        td.wrap_v = wrap_v;
+        td.data = mips.data();
+        td.data_size = (uint64_t)mips.size();
+        if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
+    }
+    if (id < 0 && rapi->create_texture) {
+        id = rapi->create_texture(rself, rgba, (int32_t)w, (int32_t)h);
+    }
+    return id;
+}
+
+Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
+    auto cached = gltf_models.find(path);
+    if (cached != gltf_models.end()) return &cached->second;
+    GltfGpuModel gpu;
+    auto fail = [&](const char* why) -> GltfGpuModel* {
+        std::print(stderr, "runtime: gltf 加载失败 '{}': {}\n", path, why);
+        gpu.failed = true;
+        gltf_models[path] = std::move(gpu);
+        return &gltf_models[path];
+    };
+    std::vector<uint8_t> bytes;
+    if (!read_vfs_file(path, bytes))
+        return fail("读不到文件（mesh_path 相对场景目录 / VFS 根）");
+    const auto start = std::chrono::steady_clock::now();
+    auto readfn = [this](const std::string& p, std::vector<uint8_t>& out) {
+        return read_vfs_file(p, out);
+    };
+    gltf::Model cpu = gltf::parse(path, bytes, readfn);
+    if (cpu.failed || (cpu.primitives.empty() && cpu.lights.empty() && cpu.cameras.empty()))
+        return fail(cpu.error.empty() ? "没有可导入的三角网格/灯光/相机" : cpu.error.c_str());
+
+    /* ---- 图像解码（同一 image 只解码一次）---- */
+    struct Decoded {
+        std::vector<uint8_t> rgba;
+        int w = 0, h = 0;
+        bool ok = false;
+    };
+    std::vector<Decoded> decoded(cpu.images.size());
+    auto decode_image = [&](int idx) -> Decoded* {
+        if (idx < 0 || (size_t)idx >= cpu.images.size()) return nullptr;
+        Decoded& d = decoded[(size_t)idx];
+        if (d.ok) return &d;
+        if (d.w < 0) return nullptr;
+        const gltf::Image& im = cpu.images[(size_t)idx];
+        if (!im.valid || im.bytes.empty()) {
+            d.w = -1;
+            return nullptr;
+        }
+        uint8_t* rgba = nullptr;
+        uint32_t w = 0, h = 0;
+        char err[128] = { 0 };
+        if (mq_image_decode(im.bytes.data(), im.bytes.size(), &rgba, &w, &h, err, sizeof err) != 0) {
+            std::print(stderr, "runtime: gltf '{}' image[{}] 解码失败（{}）\n", path, idx, err);
+            d.w = -1;
+            return nullptr;
+        }
+        d.rgba.assign(rgba, rgba + (size_t)w * (size_t)h * 4u);
+        d.w = (int)w;
+        d.h = (int)h;
+        d.ok = true;
+        mq_image_free(rgba);
+        return &d;
+    };
+
+    /* ---- 纹理上传（同一 image + sampler + sRGB 组合只上传一次）---- */
+    std::unordered_map<uint64_t, int32_t> tex_map;
+    auto tex_for = [&](const gltf::TextureRef& ref, bool srgb) -> int32_t {
+        if (!ref.present) return -1;
+        Decoded* d = decode_image(ref.image);
+        if (!d) return -1;
+        const uint64_t key = ((uint64_t)(uint32_t)ref.image << 32) |
+                             ((uint64_t)(srgb ? 1u : 0u) << 20) |
+                             ((uint64_t)(ref.sampler.filter & 3) << 16) |
+                             ((uint64_t)(ref.sampler.wrap_u & 3) << 8) |
+                             (uint64_t)(ref.sampler.wrap_v & 3);
+        auto hit = tex_map.find(key);
+        if (hit != tex_map.end()) return hit->second;
+        const int32_t id = upload_texture_rgba(d->rgba.data(), d->w, d->h, srgb,
+                                               ref.sampler.filter, ref.sampler.wrap_u,
+                                               ref.sampler.wrap_v);
+        tex_map[key] = id;
+        if (id >= 0) gpu.textures.push_back(id);
+        if (render3d_info) {
+            const std::string& label = cpu.images[(size_t)ref.image].uri;
+            std::print("runtime: gltf texture image={} '{}' srgb={} -> {}\n",
+                       ref.image, label, srgb ? 1 : 0, id);
+        }
+        return id;
+    };
+
+    /* ---- 材质（核心 PBR + KHR 扩展；默认值与 extract_3d 组件路径一致）---- */
+    auto defaults = [&]() {
+        mq_renderer_pbr_material mat{};
+        for (int ti = 0; ti < 5; ++ti) mat.textures[ti] = -1;
+        for (int ti = 0; ti < 3; ++ti) mat.textures2[ti] = -1;
+        for (int ti = 0; ti < 7; ++ti) mat.textures3[ti] = -1;
+        for (int ti = 0; ti < 2; ++ti) {
+            mat.textures4[ti] = -1;
+            mat.textures6[ti] = -1;
+        }
+        mat.textures5[0] = -1;
+        mat.textures7[0] = -1;
+        for (int ti = 0; ti < 2; ++ti) {
+            mat.uv_scale[ti] = 1.0F;
+            mat.uv_offset[ti] = 0.0F;
+            mat.normal_uv_scale[ti] = 1.0F;
+            mat.normal_uv_offset[ti] = 0.0F;
+        }
+        mat.shading_model = 0;
+        mat.side = 2;
+        mat.opacity = 1.0F;
+        mat.emissive_intensity = 1.0F;
+        mat.env_intensity = 1.0F;
+        mat.normal_scale_y = 1.0F;
+        mat.shininess = 30.0F;
+        mat.specular_intensity = 1.0F;
+        mat.ior = 1.5F;
+        mat.specular[0] = mat.specular[1] = mat.specular[2] = 1.0F;
+        mat.sheen_roughness = 0.5F;
+        mat.iridescence_ior = 1.3F;
+        mat.iridescence_thickness_min = 100.0F;
+        mat.iridescence_thickness_max = 400.0F;
+        mat.clearcoat_normal_scale = 1.0F;
+        mat.clearcoat_roughness = 0.03F;
+        mat.toon_steps = 3;
+        mat.base_color[0] = mat.base_color[1] = mat.base_color[2] = mat.base_color[3] = 1.0F;
+        mat.metallic = 0.0F;
+        mat.roughness = 0.6F;
+        mat.normal_scale = 1.0F;
+        mat.occlusion_strength = 1.0F;
+        mat.alpha_cutoff = 0.5F;
+        return mat;
+    };
+
+    gpu.mats.reserve(cpu.materials.size());
+    for (const gltf::Material& m : cpu.materials) {
+        mq_renderer_pbr_material mat = defaults();
+        for (int k = 0; k < 4; ++k) mat.base_color[k] = m.base_color[k];
+        for (int k = 0; k < 3; ++k) mat.emissive[k] = m.emissive[k];
+        mat.metallic = m.metallic;
+        mat.roughness = m.roughness;
+        mat.normal_scale = m.normal_scale;
+        mat.occlusion_strength = m.occlusion_strength;
+        mat.alpha_cutoff = m.alpha_cutoff;
+        mat.alpha_mode = m.alpha_mode;
+        mat.flags = m.double_sided ? 1 : 0;
+        mat.side = m.double_sided ? 2 : 0;
+        mat.shading_model = m.unlit ? 2 : 0;
+        mat.emissive_intensity = m.emissive_strength;
+        int32_t uv1_mask = 0;
+        const int32_t t_base = tex_for(m.base_color_tex, true);
+        const int32_t t_mr = tex_for(m.metallic_roughness_tex, false);
+        const int32_t t_ao = tex_for(m.occlusion_tex, false);
+        const int32_t t_nrm = tex_for(m.normal_tex, false);
+        const int32_t t_em = tex_for(m.emissive_tex, true);
+        if (t_base >= 0) mat.textures[0] = t_base;
+        if (t_mr >= 0) mat.textures[1] = t_mr;
+        if (t_ao >= 0) mat.textures[2] = t_ao;
+        if (t_nrm >= 0) mat.textures[3] = t_nrm;
+        if (t_em >= 0) mat.textures[4] = t_em;
+        if (m.base_color_tex.present && m.base_color_tex.texcoord > 0) uv1_mask |= 1 << 0;
+        if (m.metallic_roughness_tex.present && m.metallic_roughness_tex.texcoord > 0) uv1_mask |= 1 << 1;
+        if (m.occlusion_tex.present && m.occlusion_tex.texcoord > 0) uv1_mask |= 1 << 2;
+        if (m.normal_tex.present && m.normal_tex.texcoord > 0) uv1_mask |= 1 << 3;
+        if (m.emissive_tex.present && m.emissive_tex.texcoord > 0) uv1_mask |= 1 << 4;
+        mat.flags2 |= (uv1_mask & 0xFF) << 4;
+        if (m.base_color_tex.has_transform) {
+            for (int k = 0; k < 2; ++k) {
+                mat.uv_scale[k] = m.base_color_tex.scale[k];
+                mat.uv_offset[k] = m.base_color_tex.offset[k];
+            }
+            mat.uv_rotation = m.base_color_tex.rotation;
+        }
+        if (m.normal_tex.has_transform) {
+            for (int k = 0; k < 2; ++k) {
+                mat.normal_uv_scale[k] = m.normal_tex.scale[k];
+                mat.normal_uv_offset[k] = m.normal_tex.offset[k];
+            }
+            mat.normal_uv_rotation = m.normal_tex.rotation;
+        }
+        /* P4 KHR 材质扩展。 */
+        mat.shading_model = m.unlit ? 2 : (m.physical ? 1 : 0);
+        mat.opacity = m.opacity;
+        mat.clearcoat = m.clearcoat;
+        mat.clearcoat_roughness = m.clearcoat_roughness > 0.0F ? m.clearcoat_roughness : 0.03F;
+        mat.sheen = m.sheen;
+        mat.sheen_roughness = m.sheen > 0.0F ? m.sheen_roughness : 0.5F;
+        for (int k = 0; k < 3; ++k) mat.sheen_color[k] = m.sheen_color[k];
+        mat.iridescence = m.iridescence;
+        mat.iridescence_ior = m.iridescence_ior;
+        mat.iridescence_thickness_min = m.iridescence_thickness_min;
+        mat.iridescence_thickness_max = m.iridescence_thickness_max;
+        mat.specular_intensity = m.specular_intensity;
+        for (int k = 0; k < 3; ++k) mat.specular[k] = m.specular_color[k];
+        mat.ior = m.ior;
+        mat.anisotropy = m.anisotropy;
+        mat.anisotropy_rotation = m.anisotropy_rotation;
+        mat.volume_thickness = m.volume_thickness;
+        mat.attenuation_distance = m.attenuation_distance;
+        for (int k = 0; k < 3; ++k) {
+            mat.attenuation_color[k] = m.attenuation_color[k];
+            mat.diffuse_transmission_color[k] = m.diffuse_transmission_color[k];
+            mat.multiscatter_color[k] = m.multiscatter_color[k];
+        }
+        mat.dispersion = m.dispersion;
+        if (m.alpha_mask_in_blend) mat.flags2 |= 0x80000;
+        if (m.transmission > 0.001F) {
+            mat.anisotropy_rotation = m.transmission;
+            mat.flags2 |= 0x100000;
+        }
+        if (m.diffuse_transmission > 0.001F) {
+            mat.diffuse_transmission_factor = m.diffuse_transmission;
+            mat.flags2 |= 0x1000000;
+        }
+        auto tex3 = [&](const gltf::TextureRef& ref, int slot, bool srgb) {
+            const int tid = tex_for(ref, srgb);
+            if (tid >= 0) {
+                mat.textures3[slot] = tid;
+                mat.flags2 |= 1 << (12 + slot);
+            }
+        };
+        tex3(m.clearcoat_tex, 0, false);
+        tex3(m.clearcoat_roughness_tex, 1, false);
+        tex3(m.sheen_color_tex, 2, true);
+        tex3(m.sheen_roughness_tex, 3, false);
+        tex3(m.iridescence_tex, 4, false);
+        tex3(m.iridescence_thickness_tex, 5, false);
+        tex3(m.anisotropy_tex, 6, false);
+        {
+            const int tid = tex_for(m.clearcoat_normal_tex, false);
+            if (tid >= 0) { mat.textures2[2] = tid; mat.flags2 |= 8; }
+        }
+        {
+            const int tid = tex_for(m.specular_tex, false);
+            if (tid >= 0) { mat.textures4[0] = tid; mat.flags2 |= 1 << 21; }
+            const int tid2 = tex_for(m.specular_color_tex, true);
+            if (tid2 >= 0) { mat.textures4[1] = tid2; mat.flags2 |= 1 << 22; }
+        }
+        {
+            const int tid = tex_for(m.transmission_tex, false);
+            if (tid >= 0) { mat.textures5[0] = tid; mat.flags2 |= 0x800000; }
+        }
+        {
+            const int tid = tex_for(m.diffuse_transmission_tex, false);
+            if (tid >= 0) { mat.textures6[0] = tid; mat.flags2 |= 1 << 25; }
+            const int tid2 = tex_for(m.diffuse_transmission_color_tex, true);
+            if (tid2 >= 0) { mat.textures6[1] = tid2; mat.flags2 |= 1 << 26; }
+        }
+        {
+            const int tid = tex_for(m.volume_thickness_tex, false);
+            if (tid >= 0) { mat.textures7[0] = tid; mat.flags2 |= 0x8000000; }
+        }
+        if (render3d_info)
+            std::print("runtime: gltf material[{}] '{}' shading={} clearcoat={:.3f} sheen={:.3f} "
+                       "iridescence={:.3f} specular={:.3f} ior={:.3f} anisotropy={:.3f} "
+                       "transmission={:.3f} volume={:.3f} diffuse_transmission={:.3f} tex3={} "
+                       "tex4={}/{} tex5={} tex6={}/{} tex7={}\n",
+                       gpu.mats.size(), m.name, mat.shading_model, (double)mat.clearcoat,
+                       (double)mat.sheen, (double)mat.iridescence, (double)mat.specular_intensity,
+                       (double)mat.ior, (double)mat.anisotropy, (double)m.transmission,
+                       (double)mat.volume_thickness, (double)mat.diffuse_transmission_factor,
+                       mat.textures3[0] >= 0 || mat.textures3[1] >= 0 || mat.textures3[2] >= 0 ||
+                               mat.textures3[3] >= 0 || mat.textures3[4] >= 0 ||
+                               mat.textures3[5] >= 0 || mat.textures3[6] >= 0,
+                       mat.textures4[0], mat.textures4[1], mat.textures5[0], mat.textures6[0],
+                       mat.textures6[1], mat.textures7[0]);
+        gpu.mats.push_back(mat);
+    }
+
+    /* ---- 节点 / 蒙皮 / 动画 / 灯光 / 相机 ---- */
+    gpu.nodes.reserve(cpu.nodes.size());
+    for (const gltf::Node& n : cpu.nodes) {
+        GltfGpuModel::Node out;
+        out.parent = n.parent;
+        for (int k = 0; k < 3; ++k) { out.t[k] = n.translation[k]; out.s[k] = n.scale[k]; }
+        for (int k = 0; k < 4; ++k) out.r[k] = n.rotation[k];
+        out.has_matrix = n.has_matrix;
+        std::memcpy(out.m, n.matrix, sizeof out.m);
+        gpu.nodes.push_back(out);
+    }
+    gpu.order = cpu.node_order;
+    gpu.skins.reserve(cpu.skins.size());
+    for (const gltf::Skin& s : cpu.skins) {
+        GltfGpuModel::Skin out;
+        out.joints = s.joints;
+        out.inverse_bind = s.inverse_bind;
+        gpu.skins.push_back(std::move(out));
+    }
+    gpu.anims.reserve(cpu.animations.size());
+    for (const gltf::Animation& a : cpu.animations) {
+        GltfGpuModel::Anim out;
+        out.name = a.name;
+        out.duration = a.duration;
+        out.channels.reserve(a.channels.size());
+        for (const gltf::AnimationChannel& c : a.channels) {
+            GltfGpuModel::AnimChannel oc;
+            oc.node = c.node;
+            oc.path = c.path;
+            oc.interp = c.interp;
+            oc.comps = c.comps;
+            oc.pointer_material = c.pointer_material;
+            oc.pointer_field = c.pointer_field;
+            oc.times = c.times;
+            oc.values = c.values;
+            out.channels.push_back(std::move(oc));
+        }
+        gpu.anims.push_back(std::move(out));
+    }
+    gpu.lights.reserve(cpu.lights.size());
+    for (const gltf::Light& L : cpu.lights) {
+        GltfGpuModel::Light out;
+        out.node = L.node;
+        out.type = L.type;
+        for (int k = 0; k < 3; ++k) out.color[k] = L.color[k];
+        out.intensity = L.intensity;
+        out.range = L.range;
+        const float inner = std::clamp(L.inner_angle, 0.0F, 1.5707963F);
+        const float outer = std::clamp(L.outer_angle, inner, 1.5707963F);
+        out.inner_cos = std::cos(inner);
+        out.outer_cos = std::cos(outer);
+        gpu.lights.push_back(out);
+    }
+    gpu.cameras.reserve(cpu.cameras.size());
+    for (const gltf::Camera& C : cpu.cameras) {
+        GltfGpuModel::Camera out;
+        out.node = C.node;
+        out.perspective = C.perspective;
+        out.yfov = C.yfov;
+        out.znear = C.znear;
+        out.zfar = C.zfar;
+        gpu.cameras.push_back(out);
+    }
+    gpu.variants = cpu.variants;
+    {
+        float radius = 0.0F;
+        for (const gltf::Primitive& p : cpu.primitives) {
+            for (int ci = 0; ci < 8; ++ci) {
+                const float x = (ci & 1) ? p.bounds_max[0] : p.bounds_min[0];
+                const float y = (ci & 2) ? p.bounds_max[1] : p.bounds_min[1];
+                const float z = (ci & 4) ? p.bounds_max[2] : p.bounds_min[2];
+                radius = std::max(radius, std::sqrt(x * x + y * y + z * z));
+            }
+        }
+        gpu.radius = std::max(radius, 1e-3F);
+    }
+    if (render3d_info) {
+        for (size_t i = 0; i < gpu.skins.size(); ++i)
+            std::print("runtime: gltf skin '{}'[{}] joints={}\n",
+                       path, i, (long long)gpu.skins[i].joints.size());
+        for (const auto& a : gpu.anims)
+            std::print("runtime: gltf anim '{}' channels={} duration={:.3f}\n",
+                       a.name, (long long)a.channels.size(), (double)a.duration);
+        for (size_t i = 0; i < gpu.lights.size(); ++i)
+            std::print("runtime: gltf light[{}] node={} type={} intensity={:.3f} range={:.3f} "
+                       "spot_cos={:.3f}/{:.3f}\n",
+                       i, gpu.lights[i].node, gpu.lights[i].type,
+                       (double)gpu.lights[i].intensity, (double)gpu.lights[i].range,
+                       (double)gpu.lights[i].inner_cos, (double)gpu.lights[i].outer_cos);
+        for (size_t i = 0; i < gpu.cameras.size(); ++i)
+            std::print("runtime: gltf camera[{}] node={} perspective={} yfov={:.3f} z=[{:.3f},{:.3f}]\n",
+                       i, gpu.cameras[i].node, gpu.cameras[i].perspective ? 1 : 0,
+                       (double)gpu.cameras[i].yfov, (double)gpu.cameras[i].znear,
+                       (double)gpu.cameras[i].zfar);
+        std::print("runtime: gltf lights={} cameras={} radius={:.3f} variants={}\n",
+                   (long long)gpu.lights.size(), (long long)gpu.cameras.size(),
+                   (double)gpu.radius, (long long)gpu.variants.size());
+    }
+
+    /* ---- 网格上传：无蒙皮 48/56B；蒙皮再追加 joints u16x4 + weights f32x4（stride 72/80）---- */
+    struct PendingMorph { size_t prim = 0; };
+    std::vector<PendingMorph> pending_morph;
+    gpu.prims.reserve(cpu.primitives.size());
+    for (const gltf::Primitive& p : cpu.primitives) {
+        if (!rapi || !rself || !rapi->create_mesh) break;
+        if (p.vertices.empty() || p.indices.empty()) continue;
+        const bool skinned = p.skin >= 0 && !p.joints.empty() && !p.weights.empty();
+        const uint32_t row_floats = (p.vertex_layout == 1) ? 14u : 12u;
+        const uint32_t base_stride = (p.vertex_layout == 1) ? 56u : 48u;
+        if (p.vertices.size() % row_floats != 0) {
+            std::print(stderr, "runtime: gltf '{}' primitive 顶点行宽不符（layout={}）→ 跳过\n",
+                       path, p.vertex_layout);
+            continue;
+        }
+        const uint32_t vn = (uint32_t)(p.vertices.size() / row_floats);
+        const uint32_t stride = base_stride + (skinned ? 24u : 0u);
+        const int layout = p.vertex_layout + (skinned ? 2 : 0);
+        std::vector<uint8_t> packed;
+        const void* vptr = p.vertices.data();
+        uint64_t vbytes = (uint64_t)p.vertices.size() * sizeof(float);
+        if (skinned) {
+            packed.resize((size_t)vn * stride);
+            for (uint32_t i = 0; i < vn; ++i) {
+                uint8_t* dst = packed.data() + (size_t)i * stride;
+                std::memcpy(dst, p.vertices.data() + (size_t)i * row_floats, base_stride);
+                uint16_t* jdst = (uint16_t*)(dst + base_stride);
+                const float* wdst = (const float*)(dst + base_stride + 8);
+                for (int k = 0; k < 4; ++k)
+                    jdst[k] = (uint16_t)p.joints[(size_t)i * 4 + (size_t)k];
+                std::memcpy((void*)wdst, p.weights.data() + (size_t)i * 4, 16);
+            }
+            vptr = packed.data();
+            vbytes = packed.size();
+        }
+        mq_renderer_mesh_gpu md{};
+        md.vertices = vptr;
+        md.vertex_bytes = vbytes;
+        md.vertex_stride = stride;
+        md.vertex_layout = layout;
+        md.indices = p.indices.data();
+        md.index_count = (uint32_t)p.indices.size();
+        for (int k = 0; k < 3; ++k) {
+            md.bounds_min[k] = p.bounds_min[k];
+            md.bounds_max[k] = p.bounds_max[k];
+        }
+        int32_t mesh_id = -1;
+        if (rapi->create_mesh(rself, &md, &mesh_id) != 0 || mesh_id < 0) {
+            std::print(stderr, "runtime: gltf '{}' primitive 上传失败（node={}）\n", path, p.node);
+            continue;
+        }
+        GltfGpuModel::Prim pr;
+        pr.mesh = mesh_id;
+        pr.material = p.material;
+        pr.node = p.node;
+        pr.skin = skinned ? p.skin : -1;
+        pr.layout = layout;
+        pr.vertex_count = vn;
+        pr.stride = stride;
+        pr.default_weights = p.morph_weights;
+        pr.applied_weights = p.morph_weights;
+        pr.variant_materials = p.variant_materials;
+        pr.morph_targets.reserve(p.morph_targets.size());
+        for (const gltf::MorphTarget& mt : p.morph_targets) {
+            GltfGpuModel::MorphTarget out;
+            out.positions = mt.positions;
+            out.normals = mt.normals;
+            pr.morph_targets.push_back(std::move(out));
+        }
+        if (!pr.morph_targets.empty()) {
+            pr.base.resize((size_t)vn * stride);
+            std::memcpy(pr.base.data(), vptr, pr.base.size());
+            pending_morph.push_back(PendingMorph{ gpu.prims.size() });
+        }
+        gpu.prims.push_back(std::move(pr));
+    }
+    if (gpu.prims.empty() && gpu.lights.empty() && gpu.cameras.empty())
+        return fail("没有可上传的网格/灯光/相机");
+
+    bool need_default = false;
+    for (const auto& pr : gpu.prims)
+        if (pr.material < 0 || (size_t)pr.material >= gpu.mats.size()) need_default = true;
+    if (need_default) {
+        gpu.mats.push_back(defaults());
+        const int32_t def = (int32_t)gpu.mats.size() - 1;
+        for (auto& pr : gpu.prims)
+            if (pr.material < 0 || (size_t)pr.material >= gpu.mats.size()) pr.material = def;
+    }
+    if (morph_enabled) {
+        for (const PendingMorph& pm : pending_morph) {
+            GltfGpuModel::Prim& pr = gpu.prims[pm.prim];
+            bool any = false;
+            for (float w : pr.default_weights) if (w != 0.0F) { any = true; break; }
+            if (any) (void)apply_gltf_morph(-1, gpu, pm.prim, pr.default_weights);
+        }
+    }
+
+    const double ms = std::chrono::duration<double, std::milli>(
+                          std::chrono::steady_clock::now() - start).count();
+    if (render3d_info) {
+        size_t n_morph = 0, n_targets = 0;
+        for (const auto& pr : gpu.prims) {
+            if (!pr.morph_targets.empty()) { ++n_morph; n_targets += pr.morph_targets.size(); }
+        }
+        std::print("runtime: gltf model '{}' primitives={} materials={} textures={} nodes={} "
+                   "skins={} anims={} morph_prims={} morph_targets={} ({:.1f} ms)\n",
+                   path, (long long)gpu.prims.size(), (long long)gpu.mats.size(),
+                   (long long)gpu.textures.size(), (long long)gpu.nodes.size(),
+                   (long long)gpu.skins.size(), (long long)gpu.anims.size(),
+                   (long long)n_morph, (long long)n_targets, ms);
+        if (n_morph > 0)
+            std::print("runtime: gltf morph '{}' primitives={} targets={}\n",
+                       path, (long long)n_morph, (long long)n_targets);
+    }
+    gltf_models[path] = std::move(gpu);
+    return &gltf_models[path];
 }
 
 /* ---- glTF 片段 / 蒙皮 / morph 解析与采样（plans/22 §6）----
@@ -2505,7 +3162,7 @@ void Engine::setup_gltf_assets() {
     if (dup > 0)
         std::print(stderr, "runtime: 实体重名 {} 处（例如 '{}'）；按名字解析取最小 id\n",
                    dup, dup_example);
-    int n_skin = 0, n_clip = 0, n_morph = 0;
+    int n_skin = 0, n_clip = 0, n_morph = 0, n_gltf = 0;
     for (int id : ids) {
         Entity* e = scene->at(id);
         if (!e) continue;
@@ -2513,11 +3170,18 @@ void Engine::setup_gltf_assets() {
         if (auto* mb = comp_by_name(*this, id, "render.MeshRenderer", &dmesh)) {
             const std::string* mp = read_str(dmesh, mb->data(), "mesh_path");
             if (mp && !mp->empty()) {
-                (void)load_mesh(*mp);                     /* 缓存；失败只告警一次 */
-                auto mit = morph_meshes.find(*mp);
-                if (mit != morph_meshes.end() && mit->second.mesh >= 0 && !mit->second.targets.empty()) {
-                    entity_morph_mesh[id] = *mp;
-                    ++n_morph;
+                if (gltf::is_gltf_path(*mp)) {
+                    if (auto* gm = load_gltf_model(*mp); gm && !gm->failed) {
+                        gltf_state_ensure(id, *mp, *gm);
+                        ++n_gltf;
+                    }
+                } else {
+                    (void)load_mesh(*mp);                     /* 缓存；失败只告警一次 */
+                    auto mit = morph_meshes.find(*mp);
+                    if (mit != morph_meshes.end() && mit->second.mesh >= 0 && !mit->second.targets.empty()) {
+                        entity_morph_mesh[id] = *mp;
+                        ++n_morph;
+                    }
                 }
             }
             const std::string* sp = read_str(dmesh, mb->data(), "skin_path");
@@ -2537,9 +3201,10 @@ void Engine::setup_gltf_assets() {
             }
         }
     }
-    if (render3d_info || n_skin > 0 || n_clip > 0 || n_morph > 0)
-        std::print("runtime: gltf assets skins={} clips={} morph_meshes={} names={}\n",
-                   n_skin, n_clip, n_morph, (long long)entity_by_name.size());
+    if (!gltf_states.empty()) gltf_anim_step(0.0F);
+    if (render3d_info || n_skin > 0 || n_clip > 0 || n_morph > 0 || n_gltf > 0)
+        std::print("runtime: gltf assets skins={} clips={} morph_meshes={} runtime_gltf={} names={}\n",
+                   n_skin, n_clip, n_morph, n_gltf, (long long)entity_by_name.size());
 }
 
 void Engine::read_gltf_env() {
@@ -2553,6 +3218,7 @@ void Engine::read_gltf_env() {
     };
     anim_enabled = flag("MAQUE_ANIM", true);
     skin_enabled = flag("MAQUE_SKIN", true);
+    morph_enabled = flag("MAQUE_MORPH", true);
     render3d_info = std::getenv("MAQUE_RENDER3D_INFO") != nullptr;
 }
 
@@ -2870,6 +3536,371 @@ static void m4_mul(const float* a, const float* b, float* o) {
             o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] +
                            a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
 }
+
+/* glTF 节点局部 TRS（四元数）→ 列主序 mat4；T * R * S（glTF 规范）。 */
+static void m4_from_qtrs(const float t[3], const float q[4], const float s[3], float* m) {
+    const float x = q[0], y = q[1], z = q[2], w = q[3];
+    const float xx = x * x, yy = y * y, zz = z * z;
+    const float xy = x * y, xz = x * z, yz = y * z;
+    const float wx = w * x, wy = w * y, wz = w * z;
+    m[0] = (1.0F - 2.0F * (yy + zz)) * s[0];
+    m[1] = (2.0F * (xy + wz)) * s[0];
+    m[2] = (2.0F * (xz - wy)) * s[0];
+    m[3] = 0.0F;
+    m[4] = (2.0F * (xy - wz)) * s[1];
+    m[5] = (1.0F - 2.0F * (xx + zz)) * s[1];
+    m[6] = (2.0F * (yz + wx)) * s[1];
+    m[7] = 0.0F;
+    m[8] = (2.0F * (xz + wy)) * s[2];
+    m[9] = (2.0F * (yz - wx)) * s[2];
+    m[10] = (1.0F - 2.0F * (xx + yy)) * s[2];
+    m[11] = 0.0F;
+    m[12] = t[0];
+    m[13] = t[1];
+    m[14] = t[2];
+    m[15] = 1.0F;
+}
+
+/* 动画通道采样：out 长度 = ch.comps（weights 通道可 >4）。 */
+template <typename Ch>
+static void sample_gltf_channel(const Ch& ch, float time, std::vector<float>& out) {
+    const size_t n = ch.times.size();
+    out.assign((size_t)ch.comps, 0.0F);
+    if (n == 0 || ch.comps <= 0 || ch.values.empty()) return;
+    const int comps = ch.comps;
+    const int groups = ch.interp == 2 ? 3 : 1;
+    const size_t fcount = (size_t)comps * (size_t)groups;
+    auto val = [&](size_t key, int grp, int c) -> float {
+        const size_t o = key * fcount + (size_t)grp * (size_t)comps + (size_t)c;
+        return o < ch.values.size() ? ch.values[o] : 0.0F;
+    };
+    size_t i = 0;
+    if (time <= ch.times[0]) {
+        i = 0;
+        if (ch.interp == 0 || n == 1) {
+            for (int c = 0; c < comps; ++c) out[c] = val(0, ch.interp == 2 ? 1 : 0, c);
+            return;
+        }
+    } else if (time >= ch.times[n - 1]) {
+        i = n - 1;
+        if (ch.interp == 0 || n == 1) {
+            for (int c = 0; c < comps; ++c) out[c] = val(i, ch.interp == 2 ? 1 : 0, c);
+            return;
+        }
+    } else {
+        while (i + 1 < n && ch.times[i + 1] <= time) ++i;
+    }
+    if (ch.interp == 0) {
+        for (int c = 0; c < comps; ++c) out[c] = val(i, 0, c);
+        return;
+    }
+    const size_t j = i + 1 < n ? i + 1 : i;
+    const float t0 = ch.times[i];
+    const float t1 = ch.times[j];
+    const float dt = t1 - t0;
+    const float u = dt > 0.0F ? std::clamp((time - t0) / dt, 0.0F, 1.0F) : 0.0F;
+    if (ch.interp == 1) {
+        for (int c = 0; c < comps; ++c)
+            out[c] = val(i, 0, c) + (val(j, 0, c) - val(i, 0, c)) * u;
+        return;
+    }
+    /* CUBICSPLINE：key = (in-tangent, value, out-tangent)，切线按秒缩放。 */
+    const float u2 = u * u, u3 = u2 * u;
+    const float h00 = 2.0F * u3 - 3.0F * u2 + 1.0F;
+    const float h10 = u3 - 2.0F * u2 + u;
+    const float h01 = -2.0F * u3 + 3.0F * u2;
+    const float h11 = u3 - u2;
+    for (int c = 0; c < comps; ++c) {
+        const float p0 = val(i, 1, c);
+        const float p1 = val(j, 1, c);
+        const float m0 = dt * val(i, 2, c);
+        const float m1 = dt * val(j, 0, c);
+        out[c] = h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1;
+    }
+}
+
+bool Engine::apply_gltf_morph(int entity, GltfGpuModel& gm, size_t prim_idx,
+                              const std::vector<float>& weights) {
+    (void)entity;
+    if (prim_idx >= gm.prims.size()) return false;
+    GltfGpuModel::Prim& pr = gm.prims[prim_idx];
+    if (pr.mesh < 0 || pr.morph_targets.empty() || pr.base.empty()) return false;
+    if (!rapi || !rself || !rapi->update_mesh) {
+        if (!pr.warned_update) {
+            pr.warned_update = true;
+            std::print(stderr, "runtime: 渲染器不支持 update_mesh，glTF morph 跳过\n");
+        }
+        return false;
+    }
+    std::vector<uint8_t> out = pr.base;
+    const uint32_t row_floats = pr.layout >= 2 ? (pr.layout == 3 ? 14u : 12u)
+                                               : (pr.layout == 1 ? 14u : 12u);
+    for (uint32_t vi = 0; vi < pr.vertex_count; ++vi) {
+        float* pos = (float*)(out.data() + (size_t)vi * pr.stride);
+        if ((size_t)(vi * row_floats + 2) >= pr.base.size() / sizeof(float)) break;
+        float* nrm = pos + 3;
+        bool normal_touched = false;
+        for (size_t ti = 0; ti < pr.morph_targets.size(); ++ti) {
+            const float w = ti < weights.size() ? weights[ti] : 0.0F;
+            if (w == 0.0F) continue;
+            const GltfGpuModel::MorphTarget& tgt = pr.morph_targets[ti];
+            const size_t o = (size_t)vi * 3;
+            if (o + 2 < tgt.positions.size()) {
+                pos[0] += w * tgt.positions[o];
+                pos[1] += w * tgt.positions[o + 1];
+                pos[2] += w * tgt.positions[o + 2];
+            }
+            if (o + 2 < tgt.normals.size()) {
+                nrm[0] += w * tgt.normals[o];
+                nrm[1] += w * tgt.normals[o + 1];
+                nrm[2] += w * tgt.normals[o + 2];
+                normal_touched = true;
+            }
+        }
+        if (normal_touched) {
+            const float len2 = nrm[0] * nrm[0] + nrm[1] * nrm[1] + nrm[2] * nrm[2];
+            if (len2 > 1.0e-12F) {
+                const float inv = 1.0F / std::sqrt(len2);
+                nrm[0] *= inv; nrm[1] *= inv; nrm[2] *= inv;
+            }
+        }
+    }
+    if (rapi->update_mesh(rself, pr.mesh, out.data(), (uint64_t)out.size()) != 0) {
+        if (!pr.warned_update) {
+            pr.warned_update = true;
+            std::print(stderr, "runtime: glTF update_mesh 失败，morph 跳过\n");
+        }
+        return false;
+    }
+    pr.applied_weights = weights;
+    return true;
+}
+
+void Engine::gltf_state_ensure(int entity, const std::string& path, const GltfGpuModel& gm) {
+    if (gltf_states.find(entity) != gltf_states.end()) return;
+    GltfEntityState st;
+    st.path = path;
+    const size_t n = gm.nodes.size();
+    st.node_local.assign(n * 10, 0.0F);
+    st.node_animated.assign(n, 0);
+    st.node_world.assign(n * 16, 0.0F);
+    st.node_weights.resize(n);
+    for (size_t i = 0; i < n; ++i) {
+        const auto& nd = gm.nodes[i];
+        float* L = &st.node_local[i * 10];
+        for (int k = 0; k < 3; ++k) { L[k] = nd.t[k]; L[7 + k] = nd.s[k]; }
+        for (int k = 0; k < 4; ++k) L[3 + k] = nd.r[k];
+        float lm[16];
+        if (nd.has_matrix) std::memcpy(lm, nd.m, sizeof lm);
+        else m4_from_qtrs(nd.t, nd.r, nd.s, lm);
+        if (nd.parent >= 0 && (size_t)nd.parent < i)
+            m4_mul(&st.node_world[(size_t)nd.parent * 16], lm, &st.node_world[i * 16]);
+        else
+            std::memcpy(&st.node_world[i * 16], lm, sizeof lm);
+    }
+    st.palettes.resize(gm.skins.size());
+    for (size_t si = 0; si < gm.skins.size(); ++si) {
+        const auto& sk = gm.skins[si];
+        st.palettes[si].assign(sk.joints.size() * 16, 0.0F);
+        for (size_t ji = 0; ji < sk.joints.size(); ++ji) {
+            const int jn = sk.joints[ji];
+            if (jn < 0 || (size_t)jn >= n) continue;
+            const float* ibm = sk.inverse_bind.data() + ji * 16;
+            m4_mul(&st.node_world[(size_t)jn * 16], ibm, &st.palettes[si][ji * 16]);
+        }
+    }
+    st.morph_weights.resize(gm.prims.size());
+    for (size_t pi = 0; pi < gm.prims.size(); ++pi)
+        st.morph_weights[pi] = gm.prims[pi].default_weights;
+    if (!gm.anims.empty()) {
+        st.duration = gm.anims.front().duration;
+        st.clip = 0;
+    }
+    st.inited = true;
+    gltf_states[entity] = std::move(st);
+}
+
+void Engine::gltf_anim_step(float dt) {
+    for (auto& kv : gltf_states) {
+        const int entity = kv.first;
+        GltfEntityState& st = kv.second;
+        auto mit = gltf_models.find(st.path);
+        if (mit == gltf_models.end() || mit->second.failed) continue;
+        GltfGpuModel& gm = mit->second;
+        const mq_type_desc* md = nullptr;
+        std::vector<uint8_t>* mb = comp_by_name(*this, entity, "render.MeshRenderer", &md);
+        void* mbase = mb ? mb->data() : nullptr;
+        if (md && mbase) {
+            const std::string* clip_name = read_str(md, mbase, "clip");
+            if (clip_name && !clip_name->empty()) {
+                for (size_t ai = 0; ai < gm.anims.size(); ++ai) {
+                    if (gm.anims[ai].name == *clip_name) { st.clip = (int)ai; break; }
+                }
+            }
+            const float speed = read_num(md, mbase, "speed", 1.0F);
+            const bool playing = read_num(md, mbase, "playing", 1.0F) >= 0.5F;
+            const bool loop = read_num(md, mbase, "loop", 1.0F) >= 0.5F;
+            if (!gm.anims.empty() && st.clip >= 0 && (size_t)st.clip < gm.anims.size())
+                st.duration = gm.anims[(size_t)st.clip].duration;
+            if (playing && !gm.anims.empty()) {
+                st.time += dt * speed;
+                if (loop && st.duration > 0.0F) {
+                    st.time = std::fmod(st.time, st.duration);
+                    if (st.time < 0.0F) st.time += st.duration;
+                } else if (st.time < 0.0F) {
+                    st.time = 0.0F;
+                } else if (st.duration > 0.0F && st.time > st.duration) {
+                    st.time = st.duration;
+                }
+            }
+            write_num(md, mbase, "time", (double)st.time);
+            write_num(md, mbase, "duration", (double)st.duration);
+        }
+        const size_t n = gm.nodes.size();
+        const bool anim_on = anim_enabled && !gm.anims.empty() && st.clip >= 0 &&
+                             (size_t)st.clip < gm.anims.size();
+        auto apply_pointer = [](GltfGpuModel& model, int mi, int field,
+                                const std::vector<float>& v) {
+            if (mi < 0 || (size_t)mi >= model.mats.size() || v.empty()) return;
+            auto& m = model.mats[(size_t)mi];
+            const float a = v[0];
+            const float b = v.size() > 1 ? v[1] : 0.0F;
+            const float c = v.size() > 2 ? v[2] : 0.0F;
+            const float d = v.size() > 3 ? v[3] : 0.0F;
+            switch (field) {
+            case gltf::PF_BASE_COLOR:
+                m.base_color[0] = a; m.base_color[1] = b; m.base_color[2] = c; m.base_color[3] = d;
+                break;
+            case gltf::PF_METALLIC: m.metallic = a; break;
+            case gltf::PF_ROUGHNESS: m.roughness = a; break;
+            case gltf::PF_EMISSIVE: m.emissive[0] = a; m.emissive[1] = b; m.emissive[2] = c; break;
+            case gltf::PF_EMISSIVE_STRENGTH: m.emissive_intensity = a; break;
+            case gltf::PF_ALPHA_CUTOFF: m.alpha_cutoff = a; break;
+            case gltf::PF_CLEARCOAT: m.clearcoat = a; break;
+            case gltf::PF_CLEARCOAT_ROUGHNESS: m.clearcoat_roughness = a; break;
+            case gltf::PF_SHEEN_COLOR: m.sheen_color[0] = a; m.sheen_color[1] = b; m.sheen_color[2] = c; break;
+            case gltf::PF_SHEEN_ROUGHNESS: m.sheen_roughness = a; break;
+            case gltf::PF_IOR: m.ior = a; break;
+            case gltf::PF_TRANSMISSION:
+                m.anisotropy_rotation = a;
+                if (a > 0.001F) m.flags2 |= 0x100000;
+                break;
+            case gltf::PF_VOLUME_THICKNESS: m.volume_thickness = a; break;
+            case gltf::PF_ATTENUATION_DISTANCE: m.attenuation_distance = a; break;
+            case gltf::PF_DIFFUSE_TRANSMISSION:
+                m.diffuse_transmission_factor = a;
+                if (a > 0.001F) m.flags2 |= 0x1000000;
+                break;
+            case gltf::PF_SPECULAR: m.specular_intensity = a; break;
+            case gltf::PF_IRIDESCENCE: m.iridescence = a; break;
+            case gltf::PF_ANISOTROPY: m.anisotropy = a; break;
+            case gltf::PF_DISPERSION: m.dispersion = a; break;
+            default: break;
+            }
+        };
+        for (size_t i = 0; i < n; ++i) {
+            const auto& nd = gm.nodes[i];
+            float* L = &st.node_local[i * 10];
+            for (int k = 0; k < 3; ++k) { L[k] = nd.t[k]; L[7 + k] = nd.s[k]; }
+            for (int k = 0; k < 4; ++k) L[k + 3] = nd.r[k];
+            st.node_animated[i] = 0;
+            st.node_weights[i].clear();
+        }
+        if (anim_on) {
+            const auto& anim = gm.anims[(size_t)st.clip];
+            std::vector<float> vals;
+            for (const auto& ch : anim.channels) {
+                if (ch.path == 4) {
+                    sample_gltf_channel(ch, st.time, vals);
+                    apply_pointer(gm, ch.pointer_material, ch.pointer_field, vals);
+                    continue;
+                }
+                if (ch.node < 0 || (size_t)ch.node >= n) continue;
+                float* L = &st.node_local[(size_t)ch.node * 10];
+                if (ch.path == 0 || ch.path == 1 || ch.path == 2) {
+                    sample_gltf_channel(ch, st.time, vals);
+                    if (ch.path == 0) {
+                        for (int k = 0; k < 3 && k < ch.comps; ++k) L[k] = vals[(size_t)k];
+                    } else if (ch.path == 1) {
+                        for (int k = 0; k < 4 && k < ch.comps; ++k) L[k + 3] = vals[(size_t)k];
+                        const float qx = L[3], qy = L[4], qz = L[5], qw = L[6];
+                        const float ql = std::sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+                        if (ql > 1.0e-8F) { L[3] /= ql; L[4] /= ql; L[5] /= ql; L[6] /= ql; }
+                    } else {
+                        for (int k = 0; k < 3 && k < ch.comps; ++k) L[7 + k] = vals[(size_t)k];
+                    }
+                    st.node_animated[(size_t)ch.node] = 1;
+                } else if (ch.path == 3) {
+                    sample_gltf_channel(ch, st.time, st.node_weights[(size_t)ch.node]);
+                }
+            }
+        }
+        for (int i : gm.order) {
+            if (i < 0 || (size_t)i >= n) continue;
+            const auto& nd = gm.nodes[(size_t)i];
+            float lm[16];
+            if (nd.has_matrix) std::memcpy(lm, nd.m, sizeof lm);
+            else m4_from_qtrs(&st.node_local[(size_t)i * 10], &st.node_local[(size_t)i * 10 + 3],
+                              &st.node_local[(size_t)i * 10 + 7], lm);
+            if (nd.parent >= 0)
+                m4_mul(&st.node_world[(size_t)nd.parent * 16], lm, &st.node_world[(size_t)i * 16]);
+            else
+                std::memcpy(&st.node_world[(size_t)i * 16], lm, sizeof lm);
+        }
+        if (skin_enabled) {
+            for (size_t si = 0; si < gm.skins.size(); ++si) {
+                const auto& sk = gm.skins[si];
+                auto& pal = st.palettes[si];
+                pal.assign(sk.joints.size() * 16, 0.0F);
+                for (size_t ji = 0; ji < sk.joints.size(); ++ji) {
+                    const int jn = sk.joints[ji];
+                    if (jn < 0 || (size_t)jn >= n) continue;
+                    m4_mul(&st.node_world[(size_t)jn * 16], sk.inverse_bind.data() + ji * 16,
+                           &pal[ji * 16]);
+                }
+            }
+        } else {
+            for (auto& pal : st.palettes) {
+                for (size_t ji = 0; ji + 16 <= pal.size(); ji += 16) {
+                    m4_identity(&pal[ji]);
+                }
+            }
+        }
+        if (morph_enabled) {
+            for (size_t pi = 0; pi < gm.prims.size(); ++pi) {
+                auto& pr = gm.prims[pi];
+                if (pr.morph_targets.empty()) continue;
+                const auto& nw = st.node_weights[(size_t)std::max(pr.node, 0)];
+                std::vector<float> w = nw.size() == pr.morph_targets.size() ? nw : pr.default_weights;
+                if (w == pr.applied_weights) {
+                    st.morph_weights[pi] = w;
+                    continue;
+                }
+                if (pr.morph_owner < 0) pr.morph_owner = entity;
+                if (pr.morph_owner != entity) {
+                    if (!pr.warned_shared) {
+                        pr.warned_shared = true;
+                        std::print(stderr, "runtime: glTF morph 网格被多实体共享，仅首实体 '{}' 驱动\n",
+                                   pr.morph_owner);
+                    }
+                    continue;
+                }
+                apply_gltf_morph(entity, gm, pi, w);
+                st.morph_weights[pi] = w;
+            }
+        }
+        if (render3d_info && !st.logged) {
+            st.logged = true;
+            std::print("runtime: gltf anim entity={} '{}' clip={} time={:.3f}/{:.3f} "
+                       "channels={} skins={} morph={}\n",
+                       entity, st.path, st.clip, (double)st.time, (double)st.duration,
+                       gm.anims.empty() ? 0 : (long long)gm.anims[(size_t)std::clamp(st.clip, 0, (int)gm.anims.size() - 1)].channels.size(),
+                       (long long)gm.skins.size(),
+                       (long long)std::count_if(gm.prims.begin(), gm.prims.end(),
+                                                [](const GltfGpuModel::Prim& p) { return !p.morph_targets.empty(); }));
+        }
+    }
+}
 static void read_color(const mq_type_desc* d, const void* base, const char* field, math::Color* out) {
     const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
     if (f) std::memcpy(out, (const uint8_t*)base + f->offset, sizeof *out);
@@ -3059,6 +4090,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     m4_identity(cam_wm);
     bool has_cam_wm = false;
     bool has_cam = false;
+    bool gltf_lights_added = false;
+    bool gltf_light_logged = false;
     float cam_priority = -1.0e9F;
     float fov_y = 60.0F, near_z = 0.1F, far_z = 100.0F, exposure = 1.0F;
     math::Color clear{ 0.06F, 0.06F, 0.09F, 1.0F };
@@ -3119,6 +4152,109 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             out_lights.push_back(L);
         }
         auto* mb = comp_by_name(*this, idx, "render.MeshRenderer", &dmesh);
+        const std::string* gmp = (mb && dmesh) ? read_str(dmesh, mb->data(), "mesh_path") : nullptr;
+        if (mb && dmesh && gmp && !gmp->empty() && gltf::is_gltf_path(*gmp)) {
+            if (read_num(dmesh, mb->data(), "visible", 1.0F) < 0.5F) continue;
+            GltfGpuModel* gm = load_gltf_model(*gmp);
+            if (gm && !gm->failed) {
+                gltf_state_ensure(idx, *gmp, *gm);
+                GltfEntityState& gst = gltf_states[idx];
+                /* plans/24 P6：KHR_materials_variants 选择（组件 variant 名称）。 */
+                int selected_variant = -1;
+                if (!gm->variants.empty()) {
+                    const std::string* vn = read_str(dmesh, mb->data(), "variant");
+                    if (vn && !vn->empty()) {
+                        for (size_t vi = 0; vi < gm->variants.size(); ++vi)
+                            if (gm->variants[vi] == *vn) { selected_variant = (int)vi; break; }
+                    }
+                }
+                /* plans/24 P5：KHR_lights_punctual → frame3d 灯光（按模型尺度归一化）。 */
+                for (const GltfGpuModel::Light& gl : gm->lights) {
+                    if (gl.node < 0) continue;
+                    const size_t nw = (size_t)gl.node * 16u;
+                    if (nw + 16u > gst.node_world.size()) continue;
+                    float lm[16];
+                    m4_mul(wm, &gst.node_world[nw], lm);
+                    mq_renderer_light L{};
+                    L.type = gl.type;
+                    L.pos[0] = lm[12]; L.pos[1] = lm[13]; L.pos[2] = lm[14];
+                    float laz[3];
+                    m4_axis(lm, 2, laz);
+                    L.dir[0] = -laz[0]; L.dir[1] = -laz[1]; L.dir[2] = -laz[2];
+                    for (int k = 0; k < 3; ++k) L.color[k] = gl.color[k];
+                    if (gl.type == 0) {
+                        L.intensity = std::clamp(2.6F * gl.intensity, 0.0F, 20.0F);
+                    } else {
+                        const float dref = std::max(0.5F * gm->radius, 1e-3F);
+                        L.intensity = std::clamp(2.6F * (dref * dref + 1.0F) * gl.intensity,
+                                                 0.0F, 2000.0F);
+                    }
+                    L.range = gl.type == 0 ? 0.0F : gl.range;
+                    L.inner_cos = gl.inner_cos;
+                    L.outer_cos = gl.outer_cos;
+                    out_lights.push_back(L);
+                    gltf_lights_added = true;
+                    if (render3d_info && !gltf_light_logged) {
+                        gltf_light_logged = true;
+                        std::print("runtime: gltf light on entity={} node={} type={} intensity={:.3f}\n",
+                                   idx, gl.node, gl.type, (double)L.intensity);
+                    }
+                }
+                if (!has_cam && !has_cam_wm && !gm->cameras.empty()) {
+                    for (const auto& gc : gm->cameras) {
+                        if (!gc.perspective || gc.node < 0) continue;
+                        const size_t nw = (size_t)gc.node * 16u;
+                        if (nw + 16u > gst.node_world.size()) continue;
+                        m4_mul(wm, &gst.node_world[nw], cam_wm);
+                        has_cam_wm = true;
+                        fov_y = gc.yfov * 57.2957795F;
+                        near_z = std::max(gc.znear, 1e-4F);
+                        far_z = std::max(gc.zfar, near_z + 1.0F);
+                        if (render3d_info)
+                            std::print("runtime: gltf camera entity={} node={} fov={:.2f} near={:.3f} far={:.3f}\n",
+                                       idx, gc.node, (double)fov_y, (double)near_z, (double)far_z);
+                        break;
+                    }
+                }
+                for (size_t pi = 0; pi < gm->prims.size(); ++pi) {
+                    const GltfGpuModel::Prim& gp = gm->prims[pi];
+                    int mat_index = gp.material;
+                    if (selected_variant >= 0 &&
+                        (size_t)selected_variant < gp.variant_materials.size() &&
+                        gp.variant_materials[(size_t)selected_variant] >= 0)
+                        mat_index = gp.variant_materials[(size_t)selected_variant];
+                    if (gp.mesh < 0 || mat_index < 0 || (size_t)mat_index >= gm->mats.size())
+                        continue;
+                    mq_renderer_draw3d dr{};
+                    dr.mesh = gp.mesh;
+                    dr.material = (int32_t)out_mats.size();
+                    out_mats.push_back(gm->mats[(size_t)mat_index]);
+                    dr.skin = -1;
+                    int skin_index = -1;
+                    const bool skinned = gp.skin >= 0 && (size_t)gp.skin < gst.palettes.size() &&
+                                         !gst.palettes[(size_t)gp.skin].empty();
+                    if (skinned) {
+                        const auto& pal = gst.palettes[(size_t)gp.skin];
+                        skin_palettes.push_back(pal);
+                        mq_renderer_skin rs{};
+                        rs.palette = skin_palettes.back().data();
+                        rs.joint_count = (uint32_t)(pal.size() / 16);
+                        out_skins.push_back(rs);
+                        skin_index = (int32_t)out_skins.size() - 1;
+                        std::memcpy(dr.model, wm, sizeof dr.model);
+                    } else if (gp.node >= 0 && (size_t)gp.node * 16u + 16u <= gst.node_world.size()) {
+                        m4_mul(wm, &gst.node_world[(size_t)gp.node * 16u], dr.model);
+                    } else {
+                        std::memcpy(dr.model, wm, sizeof dr.model);
+                    }
+                    dr.skin = skin_index;
+                    dr.layer = 0;
+                    dr.sort_key = (uint64_t)idx;
+                    out_draws.push_back(dr);
+                }
+            }
+            continue;
+        }
         if (mb && dmesh && cube_mesh >= 0) {
             if (read_num(dmesh, mb->data(), "visible", 1.0F) < 0.5F) continue;
             /* M3 材质：同节点的 asset.PbrMaterial 组件（M4 起由共享 .material.json 资产引用） */
@@ -3584,14 +4720,39 @@ void Engine::extract_3d(int32_t tw, int32_t th,
         has_cam_wm = true;
         (void)has_cam;
     }
-    if (out_lights.empty()) {                              /* 无方向光：给一盏默认主光，避免全黑 */
-        mq_renderer_light L{};
-        L.type = 0;
-        L.dir[0] = 0.35F; L.dir[1] = -0.85F; L.dir[2] = -0.4F;
-        L.color[0] = L.color[1] = L.color[2] = 1.0F;
-        L.intensity = 1.1F;
-        out_lights.push_back(L);
+    if (gltf_lights_added) {
+        std::stable_partition(out_lights.begin(), out_lights.end(),
+                              [](const mq_renderer_light& L) { return L.type == 0; });
+        if (out_lights.size() > 8) out_lights.resize(8);
     }
+    opt_last_sun = false;
+    if (out_lights.empty()) {                              /* 无方向光：给一盏默认主光，避免全黑 */
+        /* F4 引擎选项：默认太阳光可关 / 调强度 / 调方向（仅"场景没有任何光源"这条回退路径）。 */
+        if (opt_sun_enabled) {
+            mq_renderer_light L{};
+            L.type = 0;
+            /* 方向全 0 会让 shader 的 normalize 退化 → 给一个合法方向（面板已夹，环境变量入口也兜住） */
+            float dx = opt_sun_dir[0], dy = opt_sun_dir[1], dz = opt_sun_dir[2];
+            if (std::fabs(dx) + std::fabs(dy) + std::fabs(dz) < 1e-4F) dz = -1.0F;
+            L.dir[0] = dx; L.dir[1] = dy; L.dir[2] = dz;
+            L.color[0] = L.color[1] = L.color[2] = 1.0F;
+            L.intensity = opt_sun_intensity;
+            out_lights.push_back(L);
+            opt_last_sun = true;
+        }
+    }
+
+    /* F4 引擎选项：主相机 near/far 覆盖（不写场景组件）。
+     * 覆盖关闭时把**场景实际值**回填进选项字段 —— 面板里一勾选"覆盖"就等同当前画面，不跳变。 */
+    if (opt_cam_override) {
+        near_z = std::max(opt_cam_near, 1e-4F);
+        far_z = std::max(opt_cam_far, near_z + 1e-3F);
+    } else {
+        opt_cam_near = near_z;
+        opt_cam_far = far_z;
+    }
+    opt_last_near = near_z;
+    opt_last_far = far_z;
 
     mq_renderer_view3d v{};
     /* 相机 view 由**世界矩阵**派生（plans/22 §6.3）：默认相机 / 平级场景与旧 m4_view(trs) 逐字节一致 */
@@ -3613,16 +4774,19 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     out_views.push_back(v);
     if (render3d_info && !gltf_frame_info) {
         gltf_frame_info = true;
-        std::print("runtime: 3d frame0 draws={} skins={} morph={} anim_pose={} names={}\n",
+        std::print("runtime: 3d frame0 draws={} skins={} morph={} anim_pose={} names={} "
+                   "lights={} mats={}\n",
                    (long long)out_draws.size(), (long long)out_skins.size(),
                    (long long)morph_meshes.size(), (long long)anim_pose.size(),
-                   (long long)entity_by_name.size());
+                   (long long)entity_by_name.size(), (long long)out_lights.size(),
+                   (long long)out_mats.size());
     }
 }
 
 void Engine::step_frame() {
     MQ_TRACY_ZONE(runtime);                          // Tracy：一次模拟步（含渲染+present）总 zone
     tracy_tick();                                    // Tracy：MAQUE_TRACY 环境启动 + 1Hz CPU/内存采样
+    engine_options_parse_env();                      // F4 引擎选项的启动初值（MAQUE_ENGINE_OPTIONS；只解析一次）
     /* 输入帧缓冲：**必须预分配**（平台按 pointer_cap/key_cap 写入；容量 0 = 静默丢弃全部设备事件）。
      * 这是"真实鼠标/键盘事件永远到不了脚本"的根因（docs/19 §3：宿主预分配语义）。 */
     static constexpr uint32_t kMaxPointers = 16, kMaxKeys = 32;
@@ -3746,6 +4910,40 @@ void Engine::step_frame() {
         }
         if (f2_down && !imgui_f2_held) imgui_toggle();          // 只有上升沿才切换
         imgui_f2_held = f2_down;
+    }
+    /* **F4 引擎级热键**：弹出/收起「引擎选项」面板（MSAA / 默认太阳光 / 主相机 near·far）。
+     * 与 F2 一样沿检测（按住只切一次）。与 F2 的**互不干扰**规则：
+     *   · ImGui 本来关着 → F4 顺手打开它并记住"是 F4 开的"；再按 F4 收起面板时恢复到关
+     *     （不会只关面板却把 stats 留在屏幕上）。
+     *   · ImGui 本来就开着（F2 / MAQUE_IMGUI / 脚本）→ F4 只开关选项面板，**不动** stats 的开关。
+     *   · F2 关整个 ImGui 时 `imgui_enable(false)` 会清掉选项面板状态 → F2 再开不会"复活"F4 面板。 */
+    {
+        bool f4_down = false;
+        for (uint32_t i = 0; i < iframe.key_count; ++i) {
+            const mq_platform_key_event& k = iframe.keys[i];
+            if (k.key != MQ_KEY_F4 || k.repeat) continue;
+            if (k.down) f4_down = true;
+        }
+        if (f4_down && !opt_f4_held) {
+            if (opt_panel) {
+                opt_panel = false;
+                std::print("runtime: engine options panel OFF\n");
+                if (opt_opened_imgui) {          // F4 自己开的 ImGui → 一并恢复关闭
+                    opt_opened_imgui = false;
+                    imgui_enable(false);
+                }
+            } else {
+                opt_panel = true;
+                if (!imgui_on) {
+                    imgui_enable(true);
+                    opt_opened_imgui = true;
+                } else {
+                    opt_opened_imgui = false;    // 已有 ImGui（F2/MAQUE_IMGUI/脚本）→ 收起时保持它开着
+                }
+                std::print("runtime: engine options panel ON\n");
+            }
+        }
+        opt_f4_held = f4_down;
     }
     /* **F3 引擎级热键**：启动 Tracy（若未启动）+ 拉起 profiler GUI（docs/29）。
      * 沿检测同上（按住只触发一次）；已启动也允许再按 F3 —— 只补拉 GUI（不会重复弹窗）。 */
@@ -3911,10 +5109,13 @@ void Engine::step_frame() {
         fr.passes = passes3d.data(); fr.pass_count = (uint32_t)passes3d.size();
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
         /* MSAA：场景字段 scn.Scene.msaa_samples（0/1=关、4=4x），MAQUE_MSAA 覆盖（0/1/4）。
-         * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。 */
+         * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。
+         * F4 引擎选项（opt_msaa > 0）优先级最高：面板上显式选择的 关/4x 覆盖场景与 MAQUE_MSAA。 */
         int msaa_samples = scene ? scene->desc.msaa_samples : 0;
         if (const char* msaa_env = std::getenv("MAQUE_MSAA")) msaa_samples = std::atoi(msaa_env);
+        if (opt_msaa > 0) msaa_samples = opt_msaa;
         fr.msaa_samples = (msaa_samples >= 4) ? 4 : 1;
+        opt_last_msaa = fr.msaa_samples;
         fr.env.sky_mode = 1;
         /* 环境光：scn.Scene.env_color/env_intensity + analytic studio IBL 参数（plans/19）。
          * env_sky_color/env_ground_color 全 0 = 由 env_color 派生（旧场景不改也有半球环境）。 */
@@ -4183,6 +5384,7 @@ bool Engine::load_clip(const std::string& ref) {
 void Engine::anim_step(float dt) {
     if (!scene) return;                                   // 片段首次使用时按需载入（见下）
     if (!gltf_env_read) read_gltf_env();
+    gltf_anim_step(dt);                                   /* plans/24：直读 glTF 的实体级动画/蒙皮/morph */
     /* plans/22 §6.2：派生姿态表每帧重建（纯函数 = (time, clip)；MAQUE_ANIM=0 时保持空表 = bind pose）。 */
     anim_pose.clear();
     morph_weight_override.clear();
@@ -4523,6 +5725,7 @@ void Engine::nav_step() {
 void Engine::clear_asset_caches() {
     const size_t nt = tex_cache.size(), nm = mesh_cache.size(), ne = env_tex_cache.size();
     const size_t ng = gclips.size(), ns = skeletons.size(), nmo = morph_meshes.size();
+    const size_t ngl = gltf_models.size();
     if (rapi && rself) {
         if (rapi->destroy_texture) {
             for (auto& [k, id] : tex_cache) if (id >= 0) rapi->destroy_texture(rself, id);
@@ -4530,15 +5733,23 @@ void Engine::clear_asset_caches() {
                 if (pair.first >= 0) rapi->destroy_texture(rself, pair.first);
                 if (pair.second >= 0) rapi->destroy_texture(rself, pair.second);
             }
+            for (auto& [k, gm] : gltf_models)
+                for (int32_t t : gm.textures)
+                    if (t >= 0) rapi->destroy_texture(rself, t);
         }
         if (rapi->destroy_mesh) {
             for (auto& [k, id] : mesh_cache) if (id >= 0) rapi->destroy_mesh(rself, id);
+            for (auto& [k, gm] : gltf_models)
+                for (const auto& pr : gm.prims)
+                    if (pr.mesh >= 0) rapi->destroy_mesh(rself, pr.mesh);
         }
     }
     tex_cache.clear();
     material_cache.clear();
     mesh_cache.clear();
     env_tex_cache.clear();
+    gltf_models.clear();
+    gltf_states.clear();
     /* plans/22 §6.5：glTF 动画/蒙皮/morph 缓存与名字表也按**相对路径/场景**失效 */
     gclips.clear();
     skeletons.clear();
@@ -4552,10 +5763,10 @@ void Engine::clear_asset_caches() {
     gltf_warned.clear();
     gltf_frame_info = false;
     gltf_anim_info = false;
-    if (nt + nm + ne + ng + ns + nmo > 0)
+    if (nt + nm + ne + ng + ns + nmo + ngl > 0)
         std::print("runtime: asset caches cleared on scene switch ({} textures, {} meshes, {} env, "
-                   "{} clips, {} skeletons, {} morph)\n",
-                   nt, nm, ne, ng, ns, nmo);
+                   "{} clips, {} skeletons, {} morph, {} gltf)\n",
+                   nt, nm, ne, ng, ns, nmo, ngl);
 }
 
 void Engine::preload_scene_assets() {
@@ -7902,6 +9113,11 @@ void Engine::imgui_setup() {
 void Engine::imgui_enable(bool on) {
     if (on == imgui_on && (on ? imgui_inited : !imgui_inited)) return;   // 幂等
     if (!on) {
+        /* F2/脚本关掉整个 ImGui 时**同时收起 F4 面板状态**：
+         * 否则"F4 开着 → F2 关 → F2 再开"会把引擎选项面板又带回来（F2、F4 互相干扰）。 */
+        const bool had_opts = opt_panel;
+        opt_panel = false;
+        opt_opened_imgui = false;
         if (imgui_inited) {
             mq_imgui_shutdown();
             if (imgui_tex >= 0 && rapi && rself && rapi->destroy_texture)
@@ -7914,6 +9130,7 @@ void Engine::imgui_enable(bool on) {
         }
         imgui_on = false;
         std::print("runtime: imgui panel OFF\n");
+        if (had_opts) std::print("runtime: engine options panel OFF\n");
         return;
     }
     imgui_on = true;
@@ -8074,9 +9291,142 @@ void Engine::imgui_frame_begin(float dt) {
             mq_imgui_pop_small_font();
         }
         mq_imgui_end();
+        /* F4 引擎选项面板（与 stats 同帧；默认不显示，按 F4 弹出）。 */
+        if (opt_panel) engine_options_panel(show_w, show_h);
     }
 
     /* 注：③ "不点穿"（清空本帧设备事件）放在调用点 —— iframe 是 step_frame 的局部量。 */
+}
+
+/* ---- F4 引擎选项（docs/28）----------------------------------------------------
+ * 「引擎选项」面板：MSAA / 默认太阳光 / 主相机 near·far。
+ *   · 纯视图层：不写场景组件、不进快照/校验和、不参与模拟（docs/10 确定性不受影响）；
+ *   · 值在 extract_3d / 成帧时读取（Engine 的 opt_* 字段），切场景后仍保留；
+ *   · 启动初值可用 `MAQUE_ENGINE_OPTIONS`（CI/截图/演示不必依赖鼠标拖控件）。
+ * 环境变量格式（逗号分隔；向量分量用 ':'）：
+ *   MAQUE_ENGINE_OPTIONS="msaa=4,sun=0,sun_intensity=2,sun_dir=0.4:-1:-0.2,near=0.01,far=500"
+ * 键：msaa(0|1|4) / sun(0|1) / sun_intensity / sun_dir(x:y:z) / near / far；
+ * near 或 far 任一出场即启用主相机 near/far 覆盖。 */
+void Engine::engine_options_parse_env() {
+    if (opt_env_parsed) return;
+    opt_env_parsed = true;
+    const char* e = std::getenv("MAQUE_ENGINE_OPTIONS");
+    if (!e || !*e) return;
+    std::string s(e), item;
+    for (size_t i = 0; i <= s.size(); ++i) {
+        const char c = i < s.size() ? s[i] : ',';
+        if (c != ',') { if (c != ' ' && c != '\t') item.push_back(c); continue; }
+        if (item.empty()) continue;
+        const size_t eq = item.find('=');
+        const std::string key = eq == std::string::npos ? item : item.substr(0, eq);
+        const std::string val = eq == std::string::npos ? std::string() : item.substr(eq + 1);
+        if (key == "msaa") {
+            const int m = std::atoi(val.c_str());
+            opt_msaa = m >= 4 ? 4 : (m == 1 ? 1 : 0);
+        } else if (key == "sun") {
+            opt_sun_enabled = !(val == "0" || val == "off" || val == "false");
+        } else if (key == "sun_intensity") {
+            opt_sun_intensity = std::clamp((float)std::atof(val.c_str()), 0.0F, 20.0F);
+        } else if (key == "sun_dir") {
+            float x = 0.0F, y = 0.0F, z = 0.0F;
+            if (std::sscanf(val.c_str(), "%f:%f:%f", &x, &y, &z) == 3) {
+                opt_sun_dir[0] = x; opt_sun_dir[1] = y; opt_sun_dir[2] = z;
+            }
+        } else if (key == "near") {
+            opt_cam_near = std::max((float)std::atof(val.c_str()), 1e-4F);
+            opt_cam_override = true;
+        } else if (key == "far") {
+            opt_cam_far = std::max((float)std::atof(val.c_str()), 1e-3F);
+            opt_cam_override = true;
+        }
+        item.clear();
+    }
+    std::print("runtime: engine options (env) msaa={} sun={} intensity={:.2f} cam={}",
+               opt_msaa == 0 ? "scene" : (opt_msaa == 4 ? "4x" : "off"),
+               opt_sun_enabled ? "on" : "off", (double)opt_sun_intensity,
+               opt_cam_override ? "override" : "scene");
+    if (opt_cam_override)
+        std::print(" near={:.3f} far={:.3f}", (double)opt_cam_near, (double)opt_cam_far);
+    std::print("\n");
+}
+
+/* F4 面板内容。调用方保证本帧 ImGui 已 begin（`imgui_frame_begin`）。
+ * 布局：默认贴在 stats 面板右侧；窗口太窄时夹紧在窗口内。
+ * 位置/尺寸用 FirstUseEver 语义（`mq_imgui_begin_at`）→ 用户拖动/缩放后不会被每帧复位。 */
+void Engine::engine_options_panel(float show_w, float show_h) {
+    const float pad = 8.0F * imgui_pixel_scale;
+    const float gap = 8.0F * imgui_pixel_scale;
+    const float w = std::min(imgui_panel_w * 1.30F, std::max(show_w * 0.90F, 120.0F));
+    const float h = std::min(imgui_panel_h * 3.05F, std::max(show_h * 0.85F, 100.0F));
+    float x = imgui_panel_w > 0.0F ? pad + imgui_panel_w + gap : pad;
+    if (x + w > show_w - pad) x = std::max(pad, show_w - w - pad);
+    if (!mq_imgui_begin_at("engine options", x, pad, w, h)) { mq_imgui_end(); return; }
+    mq_imgui_push_small_font();
+    mq_imgui_push_item_width(std::min(w * 0.50F, 150.0F * imgui_pixel_scale));
+
+    mq_imgui_text("选项：只影响本机画面，不改场景");
+    mq_imgui_text_disabled("F4 开关本面板 / F2 开关整个 ImGui");
+    mq_imgui_separator();
+
+    /* ① MSAA：0=跟随场景（与 MAQUE_MSAA），1=关，4=4x */
+    const int msaa_sel = opt_msaa == 4 ? 2 : (opt_msaa == 1 ? 1 : 0);
+    const int new_sel = (int)mq_imgui_combo("MSAA", (float)msaa_sel, "跟随场景,关闭,4x");
+    const int new_msaa = new_sel == 2 ? 4 : (new_sel == 1 ? 1 : 0);
+    if (new_msaa != opt_msaa) {
+        opt_msaa = new_msaa;
+        std::print("runtime: engine option msaa={}\n",
+                   opt_msaa == 4 ? "4x" : (opt_msaa == 1 ? "off" : "scene"));
+    }
+    if (opt_last_msaa >= 4) mq_imgui_text("实际：4x MSAA");
+    else mq_imgui_text("实际：关闭（1x）");
+    mq_imgui_separator();
+
+    /* ② 默认太阳光：**只在场景没有任何光源时**补光（老场景的兜底行为可开关/调参） */
+    mq_imgui_text("默认太阳光（场景无光源时补光）");
+    opt_sun_enabled = mq_imgui_checkbox("启用", opt_sun_enabled ? 1.0F : 0.0F) != 0.0F;
+    opt_sun_intensity = mq_imgui_slider_float("强度", opt_sun_intensity, 0.0F, 4.0F);
+    for (int i = 0; i < 3; ++i) {
+        /* 光的**传播方向**（shader 里 normalize(-dir) 得到入射方向）；分量为 0 会退化 → 夹一下 */
+        static const char* kAxis[3] = { "方向 X", "方向 Y", "方向 Z" };
+        opt_sun_dir[i] = std::clamp(mq_imgui_drag_float(kAxis[i], opt_sun_dir[i], 0.01F), -4.0F, 4.0F);
+    }
+    {
+        const float len = std::fabs(opt_sun_dir[0]) + std::fabs(opt_sun_dir[1]) + std::fabs(opt_sun_dir[2]);
+        if (len < 1e-4F) opt_sun_dir[2] = -1.0F;      // 全 0 → 给一个合法方向（避免 normalize(0)）
+    }
+    if (opt_last_sun) mq_imgui_text("实际：使用默认太阳光");
+    else mq_imgui_text_disabled("实际：未使用（场景已有光源或已关闭）");
+    mq_imgui_separator();
+
+    /* ③ 主相机 near/far 覆盖（覆盖关闭时字段跟随场景实际值，勾选后不跳变） */
+    mq_imgui_text("主相机 near / far");
+    opt_cam_override = mq_imgui_checkbox("覆盖场景相机", opt_cam_override ? 1.0F : 0.0F) != 0.0F;
+    if (opt_cam_override) {
+        opt_cam_near = std::max(mq_imgui_drag_float("near", opt_cam_near, 0.005F), 1e-4F);
+        opt_cam_far = mq_imgui_drag_float("far", opt_cam_far, 0.5F);
+        if (opt_cam_far < opt_cam_near * 1.001F) opt_cam_far = opt_cam_near * 1.001F;
+    } else {
+        mq_imgui_text_disabled("跟随场景相机的 near/far");
+    }
+    {
+        char line[160];
+        std::snprintf(line, sizeof line, "实际：near=%.4f far=%.2f",
+                      (double)opt_last_near, (double)opt_last_far);
+        mq_imgui_text(line);
+    }
+    mq_imgui_separator();
+    if (mq_imgui_button("重置为默认")) {
+        opt_msaa = 0;
+        opt_sun_enabled = true;
+        opt_sun_intensity = 1.1F;
+        opt_sun_dir[0] = 0.35F; opt_sun_dir[1] = -0.85F; opt_sun_dir[2] = -0.4F;
+        opt_cam_override = false;            // near/far 下一帧自动跟随场景
+        std::print("runtime: engine options reset\n");
+    }
+
+    mq_imgui_pop_item_width();
+    mq_imgui_pop_small_font();
+    mq_imgui_end();
 }
 
 /* 结束帧并把命令转成引擎网格图元（在 text_flush 之后、渲染之前调用）。

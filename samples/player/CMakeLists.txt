@@ -79,6 +79,18 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(imgui_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# F4 引擎选项面板端到端（docs/28）：MSAA / 默认太阳光 / 主相机 near·far。
+#   ① F4 沿检测（单次/按住/两次；按 F4 自动开 ImGui）② 面板确实画进像素缓冲（--shot 前后不同）
+#   ③ msaa=4 → gfx "3D MSAA 4x"（且面板选项优先于 MAQUE_MSAA）④ 默认太阳光关闭 → 物体区域变暗
+#   ⑤ far 覆盖 → 物体被裁掉 ⑥ MAQUE_ENGINE_OPTIONS 解析日志与初值生效。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME imgui_engine_options_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/imgui_engine_options_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}"
+             "${CMAKE_CURRENT_BINARY_DIR}/imgui_engine_options_e2e")
+    set_tests_properties(imgui_engine_options_e2e PROPERTIES TIMEOUT 240 SKIP_RETURN_CODE 77)
+endif()
+
 # 3D/PBR 直接呈现端到端（plans/18-pbr-3d.md M1）：MAQUE_PRESENT=wgpu → wgpu swapchain 直呈
 # ① attach_window 成功且不建 SDL_Renderer ② MAQUE_CAPTURE_WGPU 从交换链抓帧断言画面非空
 # ③ 直呈环境下 --shot 仍走离屏回读（截图/CI 路径不受影响）
@@ -180,6 +192,145 @@ if(MAQUE_BUILD_TESTS)
              "${CMAKE_SOURCE_DIR}/tests/data/gltf/triangle.gltf"
              "${CMAKE_CURRENT_BINARY_DIR}/gltf_import_e2e")
     set_tests_properties(gltf_import_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# glTF / GLB **运行时直接加载**端到端（render.MeshRenderer.mesh_path → 模型文件）：
+#   夹具 tests/data/gltf/runtime/（1 node / 2 primitive / 2 material / 1 texture）：
+#   ① model.gltf（外部 model.bin + 外部 textures/checker.png）→ MAQUE_RENDER3D_INFO=1 下的
+#      "runtime: gltf model ... primitives>=2 materials>=2 textures>=1 nodes=*" +
+#      "runtime: gltf texture ..." + PPM 结构（非背景/中心内容/顶部空/红白贴图区+蓝色纯材质区）
+#   ② model.glb（BIN chunk 内嵌 buffer + bufferView 贴图）同样渲染成功
+#   ③ .gltf 与 .glb 两张 PPM 逐像素比较（max channel diff <= 2：两个容器形式应等价）
+#   ④ 缺 model.bin 的失败路径：不崩、stderr 有 "runtime: gltf 加载失败"、像素不异常
+#   ⑤ data: URI（buffer 与贴图内嵌 base64）加载成功且与 ① 渲染一致
+#   全程 --shot 离屏 + MAQUE_WINDOW=0x0 → 无显示环境可跑。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_e2e")
+    set_tests_properties(gltf_runtime_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 运行时直读 glTF 的**蒙皮 / 动画 / morph**端到端（plans/24 P1–P3）：
+#   夹具 tests/data/gltf/runtime_anim/（复用 tests/data/gltf/{skinned,animated,morph}.gltf 原样副本）：
+#   A. 蒙皮：model 日志 skins=1 + `runtime: gltf skin ... joints=2`；bind pose 默认渲染与
+#      MAQUE_SKIN=0（identity palette）**逐字节一致**；PPM 结构（非背景/中心内容）。
+#   B. 动画：anims=1 + clip 'spin'；--shot-seq 1/20/40 三帧两两不同 + 同帧重复逐字节一致；
+#      MAQUE_ANIM=0 时不采样 → 三帧一致。
+#   C. morph：morph_prims=1 + `runtime: gltf morph`；默认 vs MAQUE_MORPH=0 明显不同 +
+#      weights 动画帧不同 + 同帧确定性。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_anim_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_anim_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime_anim"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_anim_e2e")
+    set_tests_properties(gltf_runtime_anim_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 运行时直读 glTF 的 **P4 材质 KHR 扩展映射**端到端（plans/24 P4）：
+#   夹具 tests/data/gltf/runtime_material/（复用 tests/data/gltf/{extensions,ext_material_slots,
+#   diffuse_volume}.gltf 原样副本）：
+#   A. extensions：material[0] 'physical' shading=1 + clearcoat/sheen/iridescence/specular/ior/
+#      anisotropy 因子；material[1] 'unlit' shading=2；贴图上传 >=2；PPM 结构。
+#   B. ext_material_slots：tex3=true + tex4=<a>/<b> 两个非负句柄（扩展贴图槽）+ 贴图上传 >=3。
+#   C. diffuse_volume：milky diffuse_transmission=0.500 + tex6 双槽；amber transmission=1.000。
+#   所有场景：无 gltf 加载失败 / 无 ASan / 截图存在。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_material_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_material_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime_material"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_material_e2e")
+    set_tests_properties(gltf_runtime_material_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 运行时直读 glTF 的 **P5 灯光/相机 + KHR_node_visibility** 端到端（plans/24 P5/P6）：
+#   夹具 tests/data/gltf/runtime_light/（复用 tests/data/gltf/{lights_visibility,camera}.gltf 原样副本）：
+#   A. lights.scn：`gltf lights=9 cameras=0` + `gltf light on entity=... type=0 intensity=2.600`
+#      + frame3d 灯光上限 `3d frame0 draws=1 ... lights=8 mats=1`（隐藏父节点的 mesh/灯都不生成）；PPM 结构。
+#   B. camera.scn（**无 render.Camera3D**）：`3d scene cams=0` + glTF perspective 相机
+#      `fov=34.38 near=0.100 far=50.000`；`3d frame0 draws=1 ... lights=1`；PPM 结构。
+#   两者：无 gltf 加载失败 / 无 ASan / 截图存在。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_light_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_light_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime_light"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_light_e2e")
+    set_tests_properties(gltf_runtime_light_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 运行时直读 glTF 的 **EXT_mesh_gpu_instancing** 端到端（plans/24 P6 部分）：
+#   夹具 tests/data/gltf/runtime_instancing/（复用 tests/data/gltf/instancing.gltf 原样副本）：
+#   5 个实例 → 5 份 primitive + 5 个合成子节点（nodes=6）、5 个 draw / 5 份默认材质；
+#   PPM 结构（相机覆盖 x≈10~16 的实例分布，nonbg>0.03 / center>500）。
+#   无 gltf 加载失败 / 无 ASan / 截图存在。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_instancing_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_instancing_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime_instancing"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_instancing_e2e")
+    set_tests_properties(gltf_runtime_instancing_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 运行时直读 glTF 的 **sparse accessor** 端到端（glTF 2.0 §5.1.2）：
+#   夹具 tests/data/gltf/runtime_sparse/（sparse.gltf 由 Lead 生成；base.gltf 是删除 POSITION.sparse
+#   的确定性对照，同 buffer/indices/材质/相机）：
+#   ① sparse.gltf / ② base.gltf 都能加载（model primitives=1 + 3d frame0 draws=1），
+#   PPM nonbg>0.02 / center>300；③ 两张 PPM 逐字节差异 >1000 字节（实测 28380）→ sparse 覆盖生效。
+#   无 gltf 加载失败 / 无 ASan / 截图存在。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_sparse_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_sparse_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime_sparse"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_sparse_e2e")
+    set_tests_properties(gltf_runtime_sparse_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 运行时直读 glTF 的 **KHR_materials_variants** 端到端（plans/24 P6 部分）：
+#   夹具 tests/data/gltf/runtime_variants/（Lead 生成）：variants.gltf = 三角形 + 2 个 unlit 材质
+#   （default_red / variant_green）+ primitive mapping（变体 0 `green` → material 1）；
+#   default.scn（无 variant → 红）/ green.scn（`render.MeshRenderer.variant="green"` → 绿）：
+#   ① 两场景 `gltf model 'variants.gltf' primitives=1 materials=2` + `variants=1`；
+#   ② PPM nonbg>0.03 / center>500，中心像素颜色 default 红主导 / green 绿主导（±20 容差）；
+#   ③ 两 PPM 逐字节差异 >1000 字节（实测 70296）→ 变体选择生效。
+#   无 gltf 加载失败 / 无 ASan / 截图存在。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_variants_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_variants_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime_variants"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_variants_e2e")
+    set_tests_properties(gltf_runtime_variants_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 运行时直读 glTF 的 **KHR_animation_pointer** 端到端（plans/24 P6 部分）：
+#   夹具 tests/data/gltf/runtime_pointer/（Lead 生成）：三角形 + unlit 材质 + animation `color_anim`
+#   一条 pointer 通道 `/materials/0/pbrMetallicRoughness/baseColorFactor`（0→1s，红→绿）；
+#   `--shot-seq --shot-frames 1,40`：
+#   ① 日志 `gltf anim 'color_anim' channels=1`；两帧 shot 都在，无 gltf 加载失败/ASan；
+#   ② 两帧 PPM nonbg>0.03 / center>500，中心像素颜色 f1 红主导 / f40 绿主导（±20 容差）；
+#   ③ 两帧逐字节差异 >1000 字节（实测 70296）→ pointer 通道逐帧材质更新生效。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_pointer_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_pointer_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime_pointer"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_pointer_e2e")
+    set_tests_properties(gltf_runtime_pointer_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# 运行时直读 glTF 的 **KTX2 / Basis Universal** 纹理解码端到端：
+#   夹具 tests/data/gltf/runtime_ktx2/（Lead 生成，16x16 红绿棋盘）：
+#   A. ktx2.scn + cube_ktx2.gltf + checker_etc1s.ktx2（ETC1S/BasisLZ）
+#   B. uastc.scn + cube_uastc.gltf + checker_uastc.ktx2（UASTC + Zstd）
+#   C. raw.scn + cube_raw.gltf + checker_raw.ktx2（未压缩 RGBA）
+#   ① 各日志都有 `gltf texture image=0 '<...>.ktx2' srgb=1 -> <id>`（id>=0，非 -1）+ model `textures=1`；
+#   ② 各 PPM nonbg>0.03 / center>500，且同时存在红主导/绿主导像素（棋盘纹理真的解码）；
+#   ③ 无 gltf 加载失败 / ASan / `image[0] 解码失败` / `ktx2:` 解码错误。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_runtime_ktx2_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_runtime_ktx2_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/gltf/runtime_ktx2"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_runtime_ktx2_e2e")
+    set_tests_properties(gltf_runtime_ktx2_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
 # glTF 动画 / 蒙皮 / morph 端到端（plans/22-gltf-animation-implementation.md）：

@@ -1,0 +1,54 @@
+{
+ "title": "ktx2",
+ "width": 640,
+ "height": 360,
+ "views": 1,
+ "entities": [
+  {
+   "name": "camera",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {
+       "x": 0,
+       "y": 1.0,
+       "z": 4.0
+      }
+     }
+    },
+    {
+     "type": "render.Camera3D",
+     "fov_y": 45.0,
+     "near": 0.05,
+     "far": 50.0,
+     "clear_color": {
+      "r": 0.1,
+      "g": 0.1,
+      "b": 0.12,
+      "a": 1.0
+     }
+    }
+   ]
+  },
+  {
+   "name": "model",
+   "components": [
+    {
+     "type": "scene.Transform3D",
+     "local": {
+      "position": {
+       "x": 0,
+       "y": 0,
+       "z": 0
+      }
+     }
+    },
+    {
+     "type": "render.MeshRenderer",
+     "mesh_path": "cube_uastc.gltf"
+    }
+   ]
+  }
+ ]
+}

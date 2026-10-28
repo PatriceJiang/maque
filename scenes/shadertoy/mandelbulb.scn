@@ -1,0 +1,13 @@
+{
+  "title": "mandelbulb",
+  "width": 640,
+  "height": 360,
+  "entities": [
+    {
+      "name": "mandelbulb",
+      "components": [
+        { "type": "render.ShaderPass", "shader": "mandelbulb.wgsl" }
+      ]
+    }
+  ]
+}

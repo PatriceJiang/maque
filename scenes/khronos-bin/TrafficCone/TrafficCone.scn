@@ -1,0 +1,106 @@
+{
+  "title": "TrafficCone",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.3690060079097748,
+              "z": 1.190000057220459
+            },
+            "rotation": {
+              "x": -0.12217303470659137,
+              "y": -0.0,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 35.799999402514956,
+          "near": 0.009999999776482582,
+          "far": 200.0,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Point Light_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.3690060079097748,
+              "z": 1.2000000476837158
+            },
+            "rotation": {
+              "x": -0.13255137582817025,
+              "y": 1.8174984582315018e-08,
+              "z": -0.7331403679076676
+            },
+            "scale": {
+              "x": 1.0000000391876571,
+              "y": 1.0000000401818747,
+              "z": 1.000000001337975
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 4.472577852601341,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "range": 0.0
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/TrafficCone.glb"
+        }
+      ]
+    }
+  ]
+}

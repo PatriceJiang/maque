@@ -1,4 +1,4 @@
-﻿# AGENTS.md — 面向 AI 协作者
+# AGENTS.md — 面向 AI 协作者
 
 maque 是一个以 **"引擎即浏览器、游戏即资源"** 为核心理念的轻量游戏引擎（C++23）。
 本文件给自动化协作者提供**构建/测试命令、约定与架构落点**。人读概览见 `README.md`。
@@ -150,6 +150,32 @@ tools\win\build.cmd -Sanitize address -RunTests
   **M4d 贴图槽**：`base_color_texture` / `metallic_roughness_texture`（G=roughness、B=metallic）/
   `occlusion_texture`（R）/ `normal_texture`（切线空间，shader 用屏幕空间导数构造切线基，无需 TANGENT 属性）四条路径 → 运行时加载为纹理句柄；材质未给的槽默认 **-1** → 渲染器绑 1×1 白纹理/中性法线
   （参数乘 1、法线不扰动）。
+- **glTF/GLB 运行时直读（plans/23/24，C++）**：`render.MeshRenderer.mesh_path` 可直接写 `.gltf`/`.glb`
+  （**相对场景目录**）：外部 `.bin` / `data:` URI / GLB 内嵌 BIN、外部或 bufferView 贴图、核心 PBR 材质
+  与 5 个贴图槽；多 primitive → 多 draw（每个 primitive 一份 `mq_renderer_pbr_material`）。
+  **蒙皮/动画/morph 已支持**：节点层级逐帧世界矩阵、`skins`+JOINTS/WEIGHTS+IBM 调色板
+  （`stride 72/80`）、动画 T/R/S + `weights` 通道（STEP/LINEAR/CUBICSPLINE，自动播放首个 clip）、
+  morph targets（默认权重 + 动画权重，CPU `update_mesh`）；`render.MeshRenderer` 追加
+  `clip/playing/loop/speed/time/duration` 字段控制播放（`time` 运行期回写，可脚本读写/跳转）。
+  **材质 KHR 扩展已支持（P4）**：clearcoat/sheen/iridescence/specular/ior/anisotropy 因子 + 7 扩展贴图槽，
+  transmission/volume/diffuse_transmission/dispersion 近似（与离线 importer 同语义）；
+  `runtime: gltf material[...]` 诊断日志（shading/factors/tex 槽）。
+  **灯光/相机（P5）已支持**：`KHR_lights_punctual` → frame3d 灯光（方向/点/聚光，观感归一化、方向光优先、≤8）；
+  场景无 `render.Camera3D` 时用模型首个 perspective 相机（ortho 回退自动机位）。
+  **EXT_mesh_gpu_instancing（P6 部分）**：实例 accessor 展开为合成子节点 + N 份 primitive。
+  **sparse accessor（P6 部分）**：indices/values 覆盖 base（含无 bufferView 的零基数据）。
+  **KHR_node_visibility（P6 部分）**：静态 `visible=false` 隐藏整棵子树（mesh/灯/相机）；动画可见性未做。
+  **KHR_materials_variants（P6 部分）**：`render.MeshRenderer.variant` 按变体名替换 primitive 材质。
+  **KHR_animation_pointer（P6 部分）**：材质数值属性（baseColor/metallic/roughness/emissive/alphaCutoff +
+  KHR 材质扩展因子）逐帧更新；节点/贴图/可见性指针跳过。
+  **KTX2 / Basis Universal 贴图**：image 模块接入 `third_party/basisu`，支持 ETC1S、UASTC(+Zstd)、
+  未压缩 RGBA/RGB/BGRA（统一转 RGBA8）；glTF `KHR_texture_basisu.source` 已解析。
+  **剩余能力见 [plans/24](plans/24-runtime-gltf-capabilities.md) 能力矩阵**：贴图/节点 pointer、动画可见性，
+  KTX2 块格式/cubemap 未做；Draco/meshopt/WebP/AVIF 无解码依赖（明确不支持）。
+  诊断开关：`MAQUE_ANIM=0`（不采样动画）、`MAQUE_SKIN=0`（identity palette）、`MAQUE_MORPH=0`（基础网格）、
+  `MAQUE_RENDER3D_INFO=1`（模型/skin/clip/morph/材质扩展/灯光相机/首帧动画状态日志）。解析/解码/上传全部在装配期
+  （`setup_gltf_assets`），模拟帧内只读 `gltf_models`/`gltf_states` 缓存；切场景统一销毁。外部 URI 按
+  **模型文件所在目录**经 VFS 解析（远程挂载同样适用）。测试：`ctest -R 'gltf_runtime(_anim|_material|_light|_instancing|_sparse|_variants|_pointer|_ktx2)?_e2e'`。
 - **glTF 动画 / 蒙皮 / morph（plans/22，第 29 轮）**：**S1 骨架蒙皮 + S2 关键帧采样 + S3 morph** 已落地。
   importer 对「有 `skins`/`animations`/morph targets」的模型输出**层级场景**（glTF 节点树 1:1；其余模型仍平级烘焙、
   逐字节不变）；派生资产 `assets/skin/*.skel.json`（joint_names + 列主序 inverse_bind）与
@@ -205,8 +231,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   per-texture sampler（REPEAT/filter 恢复）；sRGB 贴图 CPU mip 改**线性域平均**；阴影正交盒按
   mesh bounds 拟合 + `fs_shadow_alpha`（MASK 镂空投影）+ 方向光优先灯序（≤8）；occlusion 改
   `mix(1,ao,strength)`；JPEG 贴图导入；顶点法线用逆转置、镜像缩放补 frontFace。P1 剩余：
-  texCoord 集 / COLOR_0 / 体积多次散射与相位函数 / `KHR_animation_pointer` / Draco-KTX2
-  （动画骨骼 morph 已由 plans/22 支持，见上；KHR 扩展贴图槽、transmission/volume/diffuse_transmission 已接入，见上）。
+  texCoord 集 / COLOR_0 / 体积多次散射与相位函数 / `KHR_animation_pointer` / Draco/meshopt
+  （动画骨骼 morph 已由 plans/22 支持，见上；KHR 扩展贴图槽、transmission/volume/diffuse_transmission、KTX2 已接入，见上）。
   迁移侧（`docs/31`）：官方 HDRI 环境映射在 `tools/khronos_env.json`，手调表（`MANUAL_CAMERA` /
   `MANUAL_ENV` / `MANUAL_LIGHT` / `MANUAL_REFERENCE`）也在 `tools/migrate_gltf_models.py`；渲染时
   `MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env"`（HDRI 不入库，缺失自动回退 analytic IBL）。
@@ -329,7 +355,9 @@ tools\win\build.cmd -Sanitize address -RunTests
   **二进制传输**：控制面是行分隔 JSON → 图集/画面走 **base64 分块**（`offset`/`max`，单块 ≤48KB，客户端在途上限 4 且偏移递增）；
   自建纹理必须 `ImGui::RegisterUserTexture()`（1.92+ 的外部纹理 API），否则后端不创建 SDL_Texture（白图）。
 - **引擎侧 ImGui 调试面板（docs/28）**：`modules/ui/imgui` + `modules/runtime`。**默认不显示**（`MAQUE_IMGUI=1`
-  或游戏内 **F2** 打开）；打开后 stats 面板（FPS/logic/render/draws/tris/frame/target）+ 74 个 `imgui_*` 脚本函数。**帧时序**：脚本阶段只
+  或游戏内 **F2** 打开）；打开后 stats 面板（FPS/logic/render/draws/tris/frame/target）+ 74 个 `imgui_*` 脚本函数。
+  **F4** 弹出**引擎选项**面板（MSAA / 默认太阳光 / 主相机 near·far；`MAQUE_ENGINE_OPTIONS` 给启动初值，
+  只在成帧时生效的视图层覆盖，不写场景/不进快照）。**帧时序**：脚本阶段只
   **录制** ImGui draw list → 引擎渲染到 CPU 像素 → `mq_platform_draw_rect` 游戏帧进 `SDL_Renderer` 后台缓冲 →
   `mq_imgui_backend_render` 官方后端单独一趟 pass 叠画 → `mq_platform_present_ui` **只 present 一次**。
   **窗口呈现唯一通道 = SDL_Renderer，禁止 `SDL_GetWindowSurface`**（SDL2 不允许与 renderer 混用；
@@ -361,6 +389,7 @@ tools\win\build.cmd -Sanitize address -RunTests
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
 - 系统依赖：SDL2 / libcurl / libwebsockets（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev`）。
 - 已 vendored：`third_party/quickjs-ng`（JS 后端）、`third_party/lua`（Lua 5.4 后端）、`third_party/wuffs`、
+  `third_party/basisu`（KTX2/Basis Universal 转码，Apache-2.0）、
   `third_party/imgui`（master；**inspector 与引擎侧 `modules/ui/imgui` 共用**，见 docs/28）。
 
 ## 硬约定（改代码前先读）

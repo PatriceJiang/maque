@@ -1,0 +1,26 @@
+{
+  "title": "gltf_runtime_light_camera",
+  "width": 640,
+  "height": 360,
+  "views": 1,
+  "entities": [
+    {
+      "name": "model",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "camera.gltf" }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        { "type": "scene.Transform3D", "local": { "rotation": { "x": -1.0119793728, "y": -0.7188299996, "z": 0.0 } } },
+        { "type": "render.Light", "type": 0, "intensity": 2.6,
+          "color": { "r": 1.0, "g": 0.96, "b": 0.9, "a": 1.0 } }
+      ]
+    }
+  ]
+}

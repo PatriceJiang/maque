@@ -167,7 +167,8 @@ renderer 记录 `pbr_material` 同步追加扁平字段 + `textures2[3]`（matca
 6. **点光**：`range=0` 视为无限远（three.js 语义）。
 
 仍待做（plans/20 §6）：KHR 扩展贴图槽（clearcoat/sheen/iridescence/specular/anisotropy）、texCoord
-集、COLOR_0、transmission/volume、动画/骨骼/morph、Draco/KTX2/meshopt、ACES 曲线是否切 three.js。
+集、COLOR_0、transmission/volume、动画/骨骼/morph（已由 plans/22/24 支持）、KTX2（runtime 已支持）、
+Draco/meshopt、ACES 曲线是否切 three.js。
 
 ## 7. 验收（DoD）
 

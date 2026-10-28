@@ -1,0 +1,105 @@
+{
+  "title": "AnimationPointerUVs",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -9.194172724956033,
+              "y": 4.797359449552786,
+              "z": 16.261662089928954
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.3838011450322534,
+          "far": 237.4551574780779,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "light rear_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.337860107421875e-06,
+              "y": 2.1971166133880615,
+              "z": -6.0
+            },
+            "rotation": {
+              "x": -3.141592609878405,
+              "y": 1.509958025280855e-07,
+              "z": 3.141592653589793
+            },
+            "scale": {
+              "x": 1.0000000000000113,
+              "y": 1.0000000000000009,
+              "z": 1.0000000000000122
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 0,
+          "intensity": 20.0,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/AnimationPointerUVs.glb"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "title": "USDShaderBallForGltf",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.08594,
+              "y": 0.05979,
+              "z": 0.10243
+            },
+            "rotation": {
+              "x": -0.13961675150812197,
+              "y": 0.6980802793057717,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 40.0,
+          "near": 0.005,
+          "far": 1.0,
+          "clear_color": {
+            "r": 0.85,
+            "g": 0.85,
+            "b": 0.85,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/USDShaderBallForGltf.glb"
+        }
+      ]
+    }
+  ],
+  "env_background": false,
+  "env_texture": "/khronos_env/neutral.hdr",
+  "env_intensity": 0.8429,
+  "env_rotation": 0.0
+}

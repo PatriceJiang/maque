@@ -1,0 +1,128 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "maque-test-fixture-instancing"
+  },
+  "extensionsUsed": [
+    "EXT_mesh_gpu_instancing"
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "inst_node",
+      "mesh": 0,
+      "translation": [
+        10.0,
+        0.0,
+        0.0
+      ],
+      "extensions": {
+        "EXT_mesh_gpu_instancing": {
+          "attributes": {
+            "TRANSLATION": 3,
+            "ROTATION": 4,
+            "SCALE": 5
+          }
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "tri",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 280,
+      "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAABAAIAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAIBAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAIA/AAAAAPQENT8AAAAA8gQ1PwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAgD8AAIA/AACAPwAAgD8AAIA/AACAPwAAAEAAAABAAAAAQAAAgD8AAIA/AACAPwAAgD8AAIA/AACAPw=="
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72,
+      "byteLength": 6
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 80,
+      "byteLength": 60
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 140,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 220,
+      "byteLength": 60
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5123,
+      "count": 3,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC3"
+    }
+  ]
+}

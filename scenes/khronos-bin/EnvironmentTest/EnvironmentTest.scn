@@ -1,0 +1,94 @@
+{
+  "title": "EnvironmentTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.7599077224731445,
+              "y": 7.708760738372803,
+              "z": 27.743375778198242
+            },
+            "rotation": {
+              "x": -0.15445562520559233,
+              "y": -0.009662249440623933,
+              "z": 3.1608235046150735e-08
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 34.515876027228366,
+          "near": 0.0010000000474974513,
+          "far": 200.0,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/EnvironmentTest.glb"
+        }
+      ]
+    }
+  ]
+}

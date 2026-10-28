@@ -1537,6 +1537,13 @@ role: `physics_body`
 | `culling_mask` | uint32_t | 4294967295 | bitmask |
 | `layer` | entity_ref | — | ref: RenderLayer, weak |
 | `skin_path` | string |  |  |
+| `clip` | string |  |  |
+| `playing` | bool | true |  |
+| `loop` | bool | true |  |
+| `speed` | float | 1.0F |  |
+| `time` | float | 0.0F |  |
+| `duration` | float | 0.0F |  |
+| `variant` | string |  |  |
 
 ### render.MotionStreak — struct (变长（含动态成员）)
 

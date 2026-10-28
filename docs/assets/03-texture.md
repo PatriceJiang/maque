@@ -89,6 +89,8 @@ texture:
 - **源字段 ↔ cooked 字段**：`width/height/file_format` 为源级（元数据里可得），`data`/`pixel_format`
   仅存在于 cooked（解码/压缩后的平台形态）。`srgb/filter/wrap` 由导入选项决定并**随平台烘焙**。
 - **`FileFormat` 目前仅 PNG/JPG/GIF**；扩展格式（WebP/KTX2/EXR…）时增量加枚举值（`06 §7`）。
+  **KTX2/Basis Universal** 当前由 runtime glTF 直读链路解码（`modules/image/src/ktx2_decode.cpp`，
+  `KHR_texture_basisu` → RGBA8），不进入本 `FileFormat` cooked 资产枚举。
 
 ## 5. 格式、压缩与 mipmap
 

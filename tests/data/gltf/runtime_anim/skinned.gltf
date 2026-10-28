@@ -1,0 +1,180 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "maque-test-fixture"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "root_joint",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "child_joint",
+      "translation": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "name": "skinned_mesh",
+      "mesh": 0,
+      "skin": 0,
+      "translation": [
+        0.0,
+        0.5,
+        0.0
+      ]
+    }
+  ],
+  "skins": [
+    {
+      "name": "skin0",
+      "joints": [
+        0,
+        1
+      ],
+      "inverseBindMatrices": 6
+    }
+  ],
+  "meshes": [
+    {
+      "name": "quad",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2,
+            "JOINTS_0": 3,
+            "WEIGHTS_0": 4
+          },
+          "indices": 5,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "skin_mat",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8,
+          0.6,
+          0.2,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.6
+      },
+      "doubleSided": false,
+      "alphaMode": "OPAQUE"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 48,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 48,
+      "byteLength": 48,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 96,
+      "byteLength": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 128,
+      "byteLength": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 160,
+      "byteLength": 64,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 224,
+      "byteLength": 12,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 236,
+      "byteLength": 128
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 4,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 2,
+      "type": "MAT4"
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 364,
+      "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAACAPwAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AACAPwAAgD8AAAAAAAAAAAAAAAAAAAAAAAABAAAAAAABAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAPwAAAD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAEAAgABAAMAAgAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL8AAAAAAACAPw=="
+    }
+  ]
+}

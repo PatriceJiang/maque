@@ -1,0 +1,101 @@
+{
+  "title": "MosquitoInAmber",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.104102285969707,
+              "y": 0.04849838145225007,
+              "z": 0.1733849622476475
+            },
+            "rotation": {
+              "x": -0.2232631209437403,
+              "y": -0.5190192589890531,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.004252447449810833,
+          "far": 2.359719518672054,
+          "clear_color": {
+            "r": 0.85,
+            "g": 0.85,
+            "b": 0.85,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "rotation": {
+              "x": -1.0119793728441187,
+              "y": -0.7188299996216244,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "intensity": 2.6,
+          "color": {
+            "r": 1.0,
+            "g": 0.96,
+            "b": 0.9,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/MosquitoInAmber.glb"
+        }
+      ]
+    }
+  ],
+  "env_color": {
+    "r": 0.75,
+    "g": 0.75,
+    "b": 0.75,
+    "a": 1.0
+  },
+  "env_intensity": 2.5
+}

@@ -1,0 +1,105 @@
+{
+  "title": "IridescenceSuzanne",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -3.8270322592349375,
+              "y": 1.7361299424660408,
+              "z": 6.721306076981051
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.1578157632674201,
+          "far": 99.1404727632523,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Light_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 5.0,
+              "y": 5.0,
+              "z": 5.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 0,
+          "intensity": 5.2,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/IridescenceSuzanne.glb"
+        }
+      ]
+    }
+  ]
+}

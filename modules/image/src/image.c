@@ -4,6 +4,10 @@
 
 #include "core/image/mq_image.h"
 
+/* KTX2/Basis Universal（C++，modules/image/src/ktx2_decode.cpp）。 */
+extern int mq_ktx2_decode(const void* data, size_t size, uint8_t** out_rgba,
+                          uint32_t* out_w, uint32_t* out_h, char* err, size_t err_cap);
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -86,6 +90,13 @@ int mq_image_decode(const void* data, size_t size,
     if (out_h) *out_h = 0;
     if (!data || size < 8) { set_err(err, err_cap, "bad input"); return 1; }
     const uint8_t* p = (const uint8_t*)data;
+
+    /* KTX2 标识：AB 4B 54 58 20 32 30 BB 0D 0A 1A 0A */
+    if (size >= 12 && p[0] == 0xAB && p[1] == 'K' && p[2] == 'T' && p[3] == 'X' &&
+        p[4] == ' ' && p[5] == '2' && p[6] == '0' && p[7] == 0xBB &&
+        p[8] == '\r' && p[9] == '\n' && p[10] == 0x1A && p[11] == '\n') {
+        return mq_ktx2_decode(data, size, out_rgba, out_w, out_h, err, err_cap);
+    }
 
     if (p[0] == 0x89 && p[1] == 'P' && p[2] == 'N' && p[3] == 'G') {
         wuffs_png__decoder* d = wuffs_png__decoder__alloc();

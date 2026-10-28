@@ -27,7 +27,7 @@
 | 6 | **P1** | JPEG 贴图被 importer 整张跳过（引擎 image 模块其实支持 JPEG） | **482 张 JPEG**（DamagedHelmet/FlightHelmet/Sponza 等大量资产），GLB 迁移会大面积丢贴图 | ✅ 已修（importer） |
 | 7 | **P1** | KHR 材质扩展的**贴图槽**全部缺失（clearcoat/sheen/iridescence/specular/anisotropy 的 texture），ToyCar 车漆 clearcoat 贴图被丢 | harness 扩展材质：clearcoat 31 模型、sheen 19、iridescence 23、specular 20、anisotropy 15 | ⏳ 待做（需 ABI/schema 追加贴图槽） |
 | 8 | **P1** | 顶点/材质属性缺口：`TEXCOORD_1`（209 个 texture 引用）、`COLOR_0`（78 个 primitive）、`TANGENT` 未用（屏幕空间 TBN 可接受） | 多 UV 集资产、顶点色资产 | ⏳ 待做（顶点布局 48B 需扩展，牵涉 ABI） |
-| 9 | **P1** | 不支持 glTF feature 无法加载：Draco 18 模型（required）、KTX2/BasisU 7、EXT_meshopt 2、WebP 5、KHR_mesh_quantization 10 | 这些模型的 `glTF-Draco`/`glTF-KTX2` 变体无法导入（主 `glTF` 变体通常仍可） | ⏳ 待做（解码器/解压依赖） |
+| 9 | **P1** | 不支持 glTF feature 无法加载：Draco 18 模型（required）、KTX2/BasisU 7、EXT_meshopt 2、WebP 5、KHR_mesh_quantization 10 | 这些模型的 `glTF-Draco`/`glTF-KTX2` 变体无法导入（主 `glTF` 变体通常仍可） | ⏳ 待做（解码器/解压依赖）；**KTX2 runtime 直读已支持**（plans/24 P4），离线 importer 仍跳过 |
 | 10 | **P2** | occlusion 公式 `ao×strength` 而非规范 `mix(1,ao,strength)`；`occlusionTexture.strength` 未导入 | strength≠1 的资产 | ✅ 已修（shader+importer） |
 | 11 | **P2** | 顶点法线用 model 矩阵变换（非均匀缩放下错误）；负行列式（镜像）未处理 | 非均匀缩放/镜像节点（ToyCar 为 1e-4 均匀缩放，未暴露） | ✅ 已修（shader 逆转置 + gfx frontFace） |
 | 12 | **P2** | sRGB 贴图的 CPU mip 在编码值上做 box filter（远处偏暗，实测黑白棋盘 -57% 亮度） | 所有 sRGB albedo/emissive 的 minified 区域 | ✅ 已修（runtime） |
@@ -108,7 +108,7 @@ fallback 白纹理/中性法线；离屏回读/直呈格式；资源释放。
 **缺陷**：M1 doubleSided→side（已修）；M2 normalTexture.scale（已修）；M3 occlusionTexture.strength（已修）；
 M4 KHR 扩展贴图槽全缺；M5 texCoord 集；M6 texture_transform.rotation；M7 逐贴图 UV transform 只保留两组；
 M8 transmission/volume/diffuse_transmission/pbrSpecularGlossiness/variants 无报告；I1 JPEG（已修）；
-I2/I3 KTX2/WebP 无解码器；I4 贴图命名冲突；I5 sampler 状态丢弃；I6 sRGB mip（已修）；G1 缺 NORMAL 索引网格法线错（已修）；
+I2/I3 KTX2（runtime 直读已支持；离线 importer 跳过）/WebP 无解码器；I4 贴图命名冲突；I5 sampler 状态丢弃；I6 sRGB mip（已修）；G1 缺 NORMAL 索引网格法线错（已修）；
 G2 COLOR_0；G3 TEXCOORD_1；G4 morph 默认权重；G5 skin；G6 动画；G7 sparse accessor；G8 Draco/meshopt/quantization；
 G11 负缩放（`_decompose` 丢失）；G12 剪切无法用 TRS 表达；S1 `--scene` 无条件覆盖；S2 忽略 glTF 自带相机；
 S3 自动取景公式；S4 无 env_*；S5 固定方向光、忽略 punctual lights；S6 节点树烘焙为平级；S10 深色背景 vs 参考棚拍；

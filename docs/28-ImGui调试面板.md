@@ -16,6 +16,18 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
   `namespace host`）。
 - **中文**：复用 `scenes/fonts/` 的 TTF，图集一次烘两档字号（标题 + 正文，默认 20/15 逻辑像素）。
 - **F2 开关**：引擎级热键（沿检测，按住不会连续切换）；`MAQUE_IMGUI=1/0` 设定**初始**开关。
+- **F4 引擎选项面板**（默认收起，按 F4 弹出/收起；首次按 F4 会自动打开 ImGui）：运行期热调三类
+  **视图层**渲染选项，**不写场景组件、不进快照/校验和**，只在成帧时生效（切场景后仍保留）：
+  - **MSAA**：跟随场景 / 关闭 / 4x（优先级：面板 > `MAQUE_MSAA` > `scn.Scene.msaa_samples`）；
+  - **默认太阳光**：场景**没有任何光源**时补的那盏方向光的开关 / 强度 / 传播方向（老场景兜底行为可调）；
+  - **主相机 near / far**：覆盖场景相机的近远裁剪面（覆盖关闭时字段自动跟随场景实际值，勾选后不跳变）。
+  启动初值用 `MAQUE_ENGINE_OPTIONS`（CI/截图/演示无需鼠标，见下"使用"）。
+- **F2 / F4 互不干扰**：
+  · F4 只开关「引擎选项」面板 —— ImGui 本来关着时顺手打开它、再按 F4 收起面板时恢复关闭
+    （不会只关面板却把 stats 留在屏幕上）；ImGui 已开（F2 / `MAQUE_IMGUI=1` / 脚本）时
+    F4 只开关面板、**不动** stats 的开关。
+  · F2 关闭整个 ImGui 时会一并收起选项面板状态 → **F2 再开不会"复活"F4 面板**（干净地从 stats 开始）。
+  · 回归：`ctest -R imgui_engine_options_e2e` 的 ⑥（状态日志 + 右侧区域像素对照）。
 
 ### 固定 UI 度量（屏幕分辨率 → 字号/面板大小）
 
@@ -34,14 +46,15 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
 | 层 | 内容 |
 |---|---|
 | `modules/ui/imgui` | ImGui 上下文/帧/控件 C ABI（`mq_imgui.h`、`mq_imgui_widgets.h`）、字体图集、官方 SDL_Renderer 后端 |
-| `modules/runtime` | 生命周期、帧时序、输入转发与隔离、stats 计量、脚本绑定实现 |
+| `modules/runtime` | 生命周期、帧时序、输入转发与隔离、stats 计量、F4 引擎选项面板 |
 | `modules/platform` | **唯一呈现通道 = SDL_Renderer**：游戏帧 → 后台缓冲 →（ImGui pass）→ 单次 present |
 | `schema/runtime/host.yaml` | 74 个 `imgui_*` 脚本函数声明（codegen 生成绑定） |
 
 ## 帧时序（窗口模式）
 
 1. 引擎采样输入 → `imgui_input_feed`（窗口像素坐标）
-2. `imgui_frame_begin`：初始化（惰性）、`ImGui::NewFrame`、画 **stats**
+2. `imgui_frame_begin`：初始化（惰性）、`ImGui::NewFrame`、画 **stats** 与 **F4 引擎选项面板**
+   （两者都是普通 ImGui 窗口；选项面板可交互，stats 常驻显示计量）
 3. 脚本 `update()`：脚本画自己的面板（这一阶段 ImGui 只是**录制 draw list**，不渲染）
 4. 引擎渲染所有图层到 CPU 像素（wgpu 离屏回读）
 5. **呈现（统一 renderer，只 present 一次）**：
@@ -103,6 +116,16 @@ MAQUE_IMGUI_SCALE=1.5 ./build-win/samples/player/maque_player.exe <scene>
 
 # 呈现后端（默认 Windows accelerated / 其它平台 software；两者都支持面板）
 MAQUE_PRESENT=software ./build-win/samples/player/maque_player.exe <scene>
+
+# F4 弹出/收起「引擎选项」面板（MSAA / 默认太阳光 / 主相机 near·far；首次按 F4 会自动开 ImGui）
+./build-win/samples/player/maque_player.exe <scene>
+
+# 引擎选项的启动初值（不必用鼠标；逗号分隔，向量分量用 ':'）
+#   键：msaa=0|1|4、sun=0|1、sun_intensity=<f>、sun_dir=x:y:z、near=<f>、far=<f>
+MAQUE_ENGINE_OPTIONS="msaa=4" ./build-win/samples/player/maque_player.exe <scene>
+MAQUE_ENGINE_OPTIONS="sun=0" ./build-win/samples/player/maque_player.exe <scene>
+MAQUE_ENGINE_OPTIONS="sun_intensity=2.5,sun_dir=0.4:-1:-0.2,near=0.01,far=500" \
+    ./build-win/samples/player/maque_player.exe <scene>
 ```
 
 脚本里画自己的面板：
@@ -130,6 +153,9 @@ if (imgui_enabled()) {
 
 - `ctest -R imgui`：模块单测（字体图集非空、命令几何、坐标映射、参数校验）。
 - `ctest -R imgui_toggle_e2e`：F2 开关的沿检测（单次/按住/两次/反复开关/像素可见）。
+- `ctest -R imgui_engine_options_e2e`：F4 引擎选项面板 —— ① F4 沿检测（单次/按住/两次；自动开 ImGui）
+  ② 面板确实画进像素（`--shot` 前后不同）③ `msaa=4` → gfx `3D MSAA 4x`（且面板选项优先于 `MAQUE_MSAA`）
+  ④ 默认太阳光关闭后物体区域变暗 ⑤ `far` 覆盖把物体裁掉 ⑥ `MAQUE_ENGINE_OPTIONS` 解析日志。
 - `ctest -R imgui_present_e2e`：**修复回归** —— 真实窗口抓帧断言
   ① imgui 开启时游戏区域逐像素可见且不被面板扰动；② 合成指针拖动 stats 后
   面板确实换位置、游戏仍可见；③ `MAQUE_PRESENT=software` 回退路径同样可见；
@@ -153,6 +179,7 @@ if (imgui_enabled()) {
 | 中文字体（TTF + 标题/正文两档字号，默认 20/15） | ✅ | `--shot` 截图里中文正常、stats 用正文字号 |
 | stats 面板（左上角，237x148；F2 / `MAQUE_IMGUI=1` 打开） | ✅ | FPS / logic / render / draws / tris / frame / target 七项 |
 | F2 开关（沿检测） | ✅ | `imgui_toggle_e2e` |
+| **F4 引擎选项面板**（MSAA / 默认太阳光 / 主相机 near·far，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（F4 开关/像素可见/MSAA 4x/太阳光/near·far 效果）；`MAQUE_ENGINE_OPTIONS` 初值 |
 | `MAQUE_PRESENT=software/accelerated` 都能显示面板 | ✅ | `imgui_present_e2e`（software 抓帧） |
 | 输入隔离（面板吃输入时清空本帧设备事件） | ✅ | `imgui_present_e2e` 拖动用合成指针走 `imgui_input_feed` |
 
@@ -162,3 +189,4 @@ if (imgui_enabled()) {
 2. `MAQUE_STATS=0` 开关 stats 面板。
 3. HiDPI：SDL 窗口 DPI 感知（`SDL_HINT_WINDOWS_DPI_AWARENESS=permonitorv2`）+ 面板按帧缓冲比例渲染
    （当前窗口被系统放大时窗口与文字会糊；UI 度量本身已按逻辑分辨率算好）。
+4. 引擎选项扩展：MSAA 支持 2x/8x（gfx 当前只有 1x/4x 管线）、太阳光颜色、`MAQUE_STATS` 同类脚本/控制面接口。

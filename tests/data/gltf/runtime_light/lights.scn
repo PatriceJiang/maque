@@ -1,0 +1,28 @@
+{
+  "title": "gltf_runtime_light_lights",
+  "width": 640,
+  "height": 360,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.5, "y": 0.8, "z": 2.5 },
+            "rotation": { "x": -0.119429, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.Camera3D", "fov_y": 45.0, "near": 0.05, "far": 30.0,
+          "clear_color": { "r": 0.13, "g": 0.13, "b": 0.14, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "lights_visibility.gltf" }
+      ]
+    }
+  ]
+}

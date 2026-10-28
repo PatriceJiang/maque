@@ -1,0 +1,161 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "maque-test-fixture-diffuse-volume"
+  },
+  "extensionsUsed": [
+    "KHR_materials_diffuse_transmission",
+    "KHR_materials_transmission",
+    "KHR_materials_volume"
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "dv_node",
+      "mesh": 0
+    }
+  ],
+  "meshes": [
+    {
+      "name": "dv",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "milky",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8,
+          0.6,
+          0.2,
+          1.0
+        ]
+      },
+      "extensions": {
+        "KHR_materials_diffuse_transmission": {
+          "diffuseTransmissionFactor": 0.5,
+          "diffuseTransmissionTexture": {
+            "index": 0
+          },
+          "diffuseTransmissionColorTexture": {
+            "index": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "amber",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8,
+          0.7,
+          0.6,
+          1.0
+        ]
+      },
+      "extensions": {
+        "KHR_materials_transmission": {
+          "transmissionFactor": 1.0
+        },
+        "KHR_materials_volume": {
+          "attenuationColor": [
+            0.5,
+            0.8,
+            0.9
+          ],
+          "attenuationDistance": 2.0
+        }
+      },
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.4
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 78,
+      "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAABAAIA"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72,
+      "byteLength": 6
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5123,
+      "count": 3,
+      "type": "SCALAR"
+    }
+  ],
+  "images": [
+    {
+      "name": "dt_mask",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4//9/AwAJfAN+TrsbXQAAAABJRU5ErkJggg=="
+    },
+    {
+      "name": "dt_color",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    },
+    {
+      "source": 1
+    }
+  ]
+}

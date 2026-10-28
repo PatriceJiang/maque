@@ -8476,6 +8476,69 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "clip",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "playing",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "loop",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "time",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "duration",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "variant",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },

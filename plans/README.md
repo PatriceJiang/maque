@@ -60,6 +60,8 @@
 | 20 | **PBR 审计修复**（normal 切线基/材质槽/sRGB mip/阴影） | [20-pbr-audit.md](20-pbr-audit.md) | `agent-render3d` | docs/13、plans/18/19 |
 | 21 | **glTF 动画/蒙皮/morph 与压缩扩展评估** | [21-gltf-animation-and-compression.md](21-gltf-animation-and-compression.md) | `agent-render3d` | docs/31、plans/12 |
 | 22 | **glTF 动画/蒙皮/morph 落地实现（S1+S2+S3）** | [22-gltf-animation-implementation.md](22-gltf-animation-implementation.md) | `agent-render3d` | plans/21、docs/31 |
+| 23 | **运行时 glTF/GLB 直读（C++）** | [23-runtime-gltf-loading.md](23-runtime-gltf-loading.md) | `agent-render3d` | docs/20、docs/31、plans/18 |
+| 24 | **运行时 glTF 能力矩阵/进度（蒙皮/动画/morph…）** | [24-runtime-gltf-capabilities.md](24-runtime-gltf-capabilities.md) | `agent-render3d` | plans/22/23、docs/31 |
 
 ## 4. 交付顺序（依赖驱动）
 
@@ -95,6 +97,8 @@
 | 16 | script（quickjs） | ✅ | ✅ | ✅ | 🟡 | 绑定生成 + 事件回调 + 热重载；capability 沙箱待做 |
 | 18 | PBR/3D 渲染（直接呈现） | ✅ | ✅ M4g | 🟡 | 🟡 | M0 接口 · M1 直呈 · M2 3D pass+`render.*` · M3 PBR · M4a albedo · M4b glTF 导入 · M4c 运行时加载 .mesh.json · M4d MR/AO 贴图槽；阴影/法线贴图待做 |
 | 19 | three.js 材质迁移（多着色模型） | ✅ | ✅ M1 | 🟡 | 🟡 | M1 schema/ABI/管线/10 个 fragment entry；M2/M3 场景+Physical 扩展+importer 扩展；Points/Line/Sprite 未做 |
+| 23 | 运行时 glTF/GLB 直读（C++，[plans/23](23-runtime-gltf-loading.md)） | ✅ | — | ✅ | ✅ | `render.MeshRenderer.mesh_path` 直接吃 `.gltf`/`.glb`（外部 bin/data URI/GLB BIN）；静态网格 + 核心 PBR；蒙皮/动画/压缩扩展未做 |
+| 24 | 运行时 glTF 蒙皮/动画/morph+材质+灯光（[plans/24](24-runtime-gltf-capabilities.md)） | ✅ | — | ✅ | 🟡 | P1–P5 已落地；P6 instancing/sparse/node_visibility/materials_variants 已做，animation_pointer 材质数值子集；KTX2/BasisU 已接入；贴图/节点 pointer、块格式 KTX2 与压缩未做 |
 
 **声明即真相（docs/21）**：公开接口全部在 `modules/core/data/schema/` 声明一次 → 生成
 类型头/描述符/JSON（`class_list`）、引擎 API 声明 + JS 绑定（`api_list`）、插件 C vtable（`interface`）、

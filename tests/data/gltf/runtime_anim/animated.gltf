@@ -1,0 +1,234 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "maque-test-fixture"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "pivot",
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "spinner",
+      "mesh": 0,
+      "translation": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "tri",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "anim_mat",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.2,
+          0.7,
+          0.9,
+          1.0
+        ],
+        "metallicFactor": 0.1,
+        "roughnessFactor": 0.4
+      },
+      "doubleSided": false,
+      "alphaMode": "OPAQUE"
+    }
+  ],
+  "animations": [
+    {
+      "name": "spin",
+      "samplers": [
+        {
+          "input": 4,
+          "output": 5,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 6,
+          "output": 7,
+          "interpolation": "LINEAR"
+        },
+        {
+          "input": 8,
+          "output": 9,
+          "interpolation": "STEP"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 0,
+            "path": "rotation"
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "node": 1,
+            "path": "translation"
+          }
+        },
+        {
+          "sampler": 2,
+          "target": {
+            "node": 1,
+            "path": "scale"
+          }
+        }
+      ]
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 36,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36,
+      "byteLength": 36,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72,
+      "byteLength": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 96,
+      "byteLength": 6,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 104,
+      "byteLength": 8
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 112,
+      "byteLength": 32
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 144,
+      "byteLength": 8
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 152,
+      "byteLength": 24
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 176,
+      "byteLength": 8
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 184,
+      "byteLength": 24
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 3,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 3,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 2,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 2,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 2,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5126,
+      "count": 2,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 2,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5126,
+      "count": 2,
+      "type": "VEC3"
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 208,
+      "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAABAAIAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAA8wQ1PwAAAADzBDU/AAAAAAAAgD8AAIA/AAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAAAAPwAAgD8AAIA/AACAPwAAAEAAAABAAAAAQA=="
+    }
+  ]
+}

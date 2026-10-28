@@ -21,7 +21,9 @@
   - `modules/ui/imgui`：直接呈现路径下走 **CPU 像素 → 2D 网格**的既有回退路径（不引入第二套 ImGui 后端）；
   - `asset` / schema：`PbrMaterial`、纹理导入选项、`Mesh` 规范化布局；
   - `tools/gltf_import.py`：离线 glTF/GLB → 引擎文本资产（确定性）。
-- **非目标**：deferred/簇光照、GPU-driven、frame graph 重排、运行时 glTF 解析、HDR 显示器输出、OSX 原生窗口（后续）。
+- **非目标**：deferred/簇光照、GPU-driven、frame graph 重排、HDR 显示器输出、OSX 原生窗口（后续）。
+  **运行时 glTF 解析**已由 [plans/23](23-runtime-gltf-loading.md) 补上（首版：静态网格 + 核心 PBR，
+  无蒙皮/动画；离线 importer 管线仍保留）。
 
 ## 2. 接口层设计（先冻结）
 

@@ -1,10 +1,13 @@
-# maque::image —— 图像解码（Wuffs 单文件）
-add_library(maque_image STATIC src/image.c src/png_write.c)
+# maque::image —— 图像解码（Wuffs 单文件 + KTX2/Basis Universal 转码）
+add_library(maque_image STATIC src/image.c src/png_write.c src/ktx2_decode.cpp)
 add_library(maque::image ALIAS maque_image)
 target_include_directories(maque_image PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_SOURCE_DIR}/third_party/wuffs")
-set_target_properties(maque_image PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON)
+set_target_properties(maque_image PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
+    LINKER_LANGUAGE CXX)
+target_compile_features(maque_image PRIVATE cxx_std_17)
+target_link_libraries(maque_image PUBLIC maque::basisu)
 
 # zlib：PNG 写出（截图/预览）真压缩；缺失时自动退化为 stored deflate（仍是合法 PNG）
 find_package(ZLIB QUIET)

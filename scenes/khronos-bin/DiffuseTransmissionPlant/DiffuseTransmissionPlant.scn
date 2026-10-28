@@ -1,0 +1,143 @@
+{
+  "title": "DiffuseTransmissionPlant",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.8665179661546701,
+              "y": 0.7961823186165825,
+              "z": 1.3445673720462246
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.5190192589890529,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.033832430667011006,
+          "far": 18.64196048730637,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "pointlight_firefly1_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.04120130464434624,
+              "y": 0.3862422108650207,
+              "z": -0.08749894052743912
+            },
+            "rotation": {
+              "x": -1.5707962925663537,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 0.9999999657714589,
+              "z": 0.9999999657714589
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 0.14325480032359228,
+          "color": {
+            "r": 0.7893138527870178,
+            "g": 1.0,
+            "b": 0.48776522278785706,
+            "a": 1.0
+          },
+          "range": 0.0
+        }
+      ]
+    },
+    {
+      "name": "pointlight_firefly2_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.13378867506980896,
+              "y": 0.37315475940704346,
+              "z": 0.015954697504639626
+            },
+            "rotation": {
+              "x": 1.570796418855931,
+              "y": 1.0471975703625311,
+              "z": -3.1415925692960913
+            },
+            "scale": {
+              "x": 0.9999999595450515,
+              "y": 0.9999999730300365,
+              "z": 0.9999999730300326
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 0.14325480032359228,
+          "color": {
+            "r": 0.7893138527870178,
+            "g": 1.0,
+            "b": 0.48776522278785706,
+            "a": 1.0
+          },
+          "range": 0.0
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/DiffuseTransmissionPlant.glb"
+        }
+      ]
+    }
+  ]
+}

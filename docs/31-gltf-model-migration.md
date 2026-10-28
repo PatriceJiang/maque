@@ -20,7 +20,7 @@
 | 本批结果 | **148/148 成功**（149 − 手调 ToyCar）；0 blocked、0 failed；整批 472.3s（≈7.9 min，平均 3.2s/模型）；派生资产 ≈983 MB（不入库）；差异分布与 Top 见 §10 |
 | 入库策略 | 入库：`.scn`、`preview.jpg`（800×450）、`README.md`、`compare.json`、`manifest.json`；**不入库**：`assets/`、`textures/`、`preview.png`（派生资产，从 `.deps` 一条命令重生成；入库体积 ≈18.4 MB，约为派生资产的 1.9%） |
 | 对比 | 与官方 `screenshot/` **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio/软阴影/不同机位/透明背景），maque 有 equirect/cubemap envmap IBL（`.hdr` RGBE / **EXR** / PNG/JPEG，**GGX 粗糙度预过滤 mip + 漫反射 irradiance**、可见天空背景），但无真实 transmission、软阴影。自动指标只用于**筛查**，最终以人工看 preview + 参考图并记录差异归因为准 |
-| 当前主要差距 | 真实体积 transmission/volume（现为屏幕空间折射近似）、KTX2/meshopt、`KHR_animation_pointer`（**动画/骨骼/morph 已由第 29 轮支持**，见 §5.4）—— 详见 §5 与 §11 |
+| 当前主要差距 | 真实体积 transmission/volume（现为屏幕空间折射近似）、Draco/meshopt、`KHR_animation_pointer` 的贴图/节点指针（**动画/骨骼/morph、KTX2 贴图已支持**，见 §5.4）—— 详见 §5 与 §11 |
 | 确定性 | 同一输入两次导入**逐字节一致**；同机同构建、同场景同帧两次 `--shot` 的 PNG **SHA256 相同**（已实测）；流水线固定 `--compact`（与默认输出有 6 位小数舍入差异） |
 | 一键复现 | 见 §3；干净 clone 后恢复派生资产的唯一命令：`python tools/migrate_gltf_models.py --force`（会重写 `.scn`，手调模型须排除） |
 | 逐模型对比报告 | `reports/khronos-comparison/index.html`（149 个模型官方参考图 **large 优先** vs 迁移预览，左右对比 + 指标 + 差距 + 人工复核；`python tools/make_migration_report.py` 可重生成） |
@@ -302,7 +302,7 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 `glTF-WebP/`、`glTF-Meshopt/`、`glTF-JPG-PNG/` 等多个变体。迁移**只取 `glTF/`**：
 
 - `glTF/` 是**未压缩、外部 PNG/JPEG** 的规范主变体，导入器支持面最大（PNG/JPEG 直接搬运）；
-- 压缩/扩展变体需要 Draco/meshopt/KTX2/WebP 解码器，引擎尚无（§5）→ 取那些变体只会 blocked；
+- 压缩/扩展变体需要 Draco/meshopt/WebP 解码器（离线 importer 尚无；KTX2 已由 runtime 直读支持，见 §4.3.1）→ 取那些变体仍可能 blocked；
 - 变体选择规则：`glTF/<Model>.gltf` 精确同名优先，否则 `glTF/` 目录排序第一个 `.gltf`；
   没有 `glTF/` 时回退 `glTF-Binary/` 的第一个 `.glb`（GLB 含内嵌 buffer，importer 支持）。
 
@@ -310,7 +310,7 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 
 | 环节 | 行为 |
 |---|---|
-| 输入 | `.gltf`（JSON + 外部/内嵌 base64 buffer）或 `.glb`（二进制 chunk）；**仅 glTF 2.0** |
+| 输入 | `.gltf`（JSON + 外部/内嵌 base64 buffer）或 `.glb`（二进制 chunk）；**仅 glTF 2.0**。运行时直读见 §4.3.1 |
 | 顶点布局 | **两套**：layout0 48 B（旧：`pos3(12)+normal3(12)+tangent4(16)+uv2(8)`）；layout1 56 B（`pos3+normal3+color4+uv0_2+uv1_2`，`COLOR_0`/`TEXCOORD_1` 任一存在时自动启用）。`TANGENT` 不读（shader 用屏幕空间切线基） |
 | 图元 | **只导三角形**（`mode=4`/缺省）；线/点（mode≠4）跳过并打 warning |
 | 索引 | u8/u16/u32、`byteStride`、非索引 primitive 均支持；缺 `POSITION` 的跳过 |
@@ -320,7 +320,7 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 `DirectionalLight` 的三个测试球即此类资产（源 glTF 法线/绕序一致朝内）：不修则单面剔除后只剩内表面 →
 平行光只在轮廓掠射点亮、阴影贴图把远面判成被遮挡 → 整球发黑 |
 | UV | `TEXCOORD_0/1` 都导入（缺 uv1 复制 uv0）；材质 `uv1_mask` 记录逐贴图用哪套（bit0..7）；`TEXCOORD_2+` 不导入——主变体唯一使用者 MosquitoInAmber 的 `eclats` primitive 带 TEXCOORD_2，但其材质无任何贴图（全 5 个 textureInfo 均 texCoord=0），已核验**无视觉影响** |
-| 贴图 | PNG/JPEG **按字节原样搬运**（不解码）；WebP 用 PIL 转 PNG；KTX2/BasisU 跳过并 warning；命名 `image.name` 或 `image<idx>`（同名去重）；**glTF sampler 非默认时路径追加 `#wrap=clamp,mirror&filter=nearest`**（runtime 解析成 per-texture sampler） |
+| 贴图 | PNG/JPEG **按字节原样搬运**（不解码）；WebP 用 PIL 转 PNG；KTX2/BasisU 离线 importer 跳过并 warning（runtime 直读已支持）；命名 `image.name` 或 `image<idx>`（同名去重）；**glTF sampler 非默认时路径追加 `#wrap=clamp,mirror&filter=nearest`**（runtime 解析成 per-texture sampler） |
 | 材质 | `pbrMetallicRoughness`（baseColor/metallic/roughness）+ emissive + `alphaMode/alphaCutoff` + `doubleSided→side`（true=2 双面/false=0 单面剔除） |
 | KHR factor | unlit→`shading_model=2`(Basic)；clearcoat/sheen/iridescence/specular/ior/anisotropy → `shading_model=1`(Physical) + 对应因子；emissive_strength→`emissive_intensity`；normalTexture.scale→`normal_scale(+_y)`；occlusionTexture.strength→`occlusion_strength` |
 | KHR 贴图 | 基础 5 槽 + `clearcoatNormalTexture` + **7 个扩展贴图槽**（clearcoatTexture / clearcoatRoughnessTexture / sheenColorTexture / sheenRoughnessTexture / iridescenceTexture / iridescenceThicknessTexture / anisotropyTexture，ABI `textures3[7]` + schema 路径字段）+ **KHR_materials_specular 2 槽**（specularTexture.A=specularFactor、specularColorTexture.RGB=specularColorFactor，ABI `textures4[2]`；仅作用电介质 F0，factor 可 >1） |
@@ -338,6 +338,37 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 > `apply_scene_env` / `apply_light_override` / `apply_hdri_env`）已改为**保留重复键**的读写
 > （`json.loads(..., object_pairs_hook=_JsonPairs)` + 自定义 dump），并在写回后校验 `"render.Light"`
 > 数量、变少则回滚该文件 + 警告。其它改 `.scn` 的工具也必须遵守这条约定。
+
+### 4.3.1 运行时直读（plans/23/24）
+
+引擎 runtime 也支持**不经过 importer** 直接加载 `.gltf`/`.glb`：场景里
+`render.MeshRenderer.mesh_path` 写模型路径（相对场景目录）即可。实现与边界见
+[`plans/23-runtime-gltf-loading.md`](../plans/23-runtime-gltf-loading.md) 与能力矩阵
+[`plans/24-runtime-gltf-capabilities.md`](../plans/24-runtime-gltf-capabilities.md)，要点：
+
+- 支持 `.gltf`（外部 `.bin` / `data:` URI / 内嵌）、`.glb`（BIN chunk）、外部/`bufferView` 贴图；
+  URI 按**模型文件所在目录**经 VFS 解析（远程挂载同样适用）。
+- 静态网格 + 核心 PBR（baseColor/MR/normal/occlusion/emissive 5 槽 + alpha/doubleSided）；
+  多 primitive → 多 draw；顶点在 **mesh 空间**，节点世界矩阵逐帧计算（支持动画）。
+- **蒙皮/动画/morph（plans/24 P1–P3 已落地）**：`skins` + `JOINTS_0/WEIGHTS_0` + IBM 调色板
+  （stride 72/80）、动画 T/R/S + `weights` 通道（STEP/LINEAR/CUBICSPLINE，自动播放首个 clip）、
+  morph targets（默认权重 + 动画权重，CPU `update_mesh`）；`render.MeshRenderer` 追加
+  `clip/playing/loop/speed/time/duration` 控制播放。诊断：`MAQUE_ANIM/SKIN/MORPH=0`。
+- **材质 KHR 扩展（plans/24 P4 已落地）**：clearcoat/sheen/iridescence/specular/ior/anisotropy 因子 +
+  7 个扩展贴图槽；transmission/volume/diffuse_transmission/dispersion 近似（与离线 importer 同语义）。
+- **灯光/相机（plans/24 P5 已落地）**：`KHR_lights_punctual` → frame3d 灯光（≤8、方向光优先）；
+  场景无 `render.Camera3D` 时采用 glTF perspective 相机。
+- **instancing / sparse / node_visibility / materials_variants / animation_pointer（plans/24 P6 部分已落地）**：
+  `EXT_mesh_gpu_instancing` 展开为合成子节点 + N 份 primitive；sparse accessor 覆盖 base（含零基数据）；
+  `KHR_node_visibility` 静态隐藏整棵子树；`KHR_materials_variants` 通过 `render.MeshRenderer.variant` 选择；
+  `KHR_animation_pointer` 支持材质数值属性（贴图/节点/可见性指针跳过）。
+- **KTX2 / Basis Universal（runtime 直读已落地）**：image 模块接入 `third_party/basisu`，支持 ETC1S、
+  UASTC(+Zstd) 与未压缩 RGBA/RGB/BGRA；glTF `KHR_texture_basisu.source` 已解析。离线 importer
+  （`tools/gltf_import.py`）仍按原逻辑跳过 KTX2，迁移时优先选 `glTF/` 主变体或走 runtime 直读。
+- **剩余**：贴图/节点 pointer、动画驱动可见性；KTX2 块格式（BC/ASTC/ETC）与 cubemap/array 未做；
+  Draco/meshopt/WebP/AVIF 明确不支持。这些模型仍建议走 importer（plans/22）或原格式。
+- 测试：`ctest -R 'gltf_runtime(_anim|_material|_light|_instancing|_sparse|_variants|_pointer|_ktx2)?_e2e'`
+  （夹具 `tests/data/gltf/runtime*/`）。
 
 ### 4.4 渲染与 preview
 
@@ -444,7 +475,7 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | PNG 贴图 | ✅ 原样搬运（引擎 image 模块解码） | — | — |
 | 贴图编码（主变体 148 模型） | PNG **447** 张、JPEG **237** 张、WebP **13** 张（KTX2 0；WebP 在导入期转 PNG）；全变体扫描另有 KTX2 81、WebP 26 |
 | JPEG 贴图 | ✅ 原样搬运（审计修复 I1；主变体 237 张） | — | — |
-| KTX2 / BasisU | ❌ 无解码器（主变体无命中；全变体扫描 7 个变体/81 张） | 相关贴图缺失（材质只剩因子） | 用 `glTF/` 主变体；根治需 KTX2 解码依赖 |
+| KTX2 / BasisU | ✅ **runtime 直读已支持**（image 模块 `third_party/basisu`；ETC1S/UASTC+Zstd/未压缩）；离线 importer 仍跳过（主变体无命中；全变体扫描 7 个变体/81 张） | runtime 走 `KHR_texture_basisu`；importer 路径贴图缺失（材质只剩因子） | runtime 直读原模型；或换 `glTF/` 主变体 |
 | WebP | ✅ **导入期用 PIL 转 PNG**（主变体 1 个模型 / 13 张：SheenWoodLeatherSofa）；PIL 不可用时跳过并告警 | 无（需 Pillow） | 源图也会被转成 PNG 入库（派生资产） |
 | `KHR_draco_mesh_compression`（required） | ❌ 无解码器 → **blocked**；本批主变体**全部不 required（0 blocked）**（全变体扫描 18 个 Draco 变体） | 只有 Draco 变体时无法迁移 | 主 `glTF` 变体通常存在；没有则记 blocked |
 | `EXT_meshopt_compression` | ❌ 无解压（主变体 1 个模型） | 该模型几何/贴图可能不完整 | 同上 |
@@ -739,7 +770,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 高光/反射平淡，金属像塑料 | 无 HDRI/PMREM、默认无 MSAA；扩展贴图槽已接（clearcoat/sheen/iridescence/anisotropy） | 缺失特性，记录；HDRI opt-in 已有 |
 | 玻璃发白/不透/内部不可见 | `KHR_materials_transmission` 未实现 | 缺失特性；GLB 变体无帮助；手调 alpha BLEND 近似 |
 | 布料/车漆纹理"巨大/重复方向错" | `KHR_texture_transform` 逐槽 UV 不同 / UV 集缺失 | 记录；scale/offset/rotation 已支持（ToyCar 已修） |
-| 某张贴图完全没出现 | KTX2/WebP 贴图被跳过、贴图槽不支持、`TEXCOORD_1` 贴错 | 看 `textures/` 是否缺图、README「已知差距」 |
+| 某张贴图完全没出现 | 离线 importer 跳过 KTX2/WebP、贴图槽不支持、`TEXCOORD_1` 贴错（runtime 直读已支持 KTX2） | 看 `textures/` 是否缺图、README「已知差距」；或改用 runtime 直读 |
 | 角色姿势与参考不同 | 动画已播放（预览固定为第 1 帧 ≈0.017s 的采样姿态），参考图可能是动画的其它帧/状态；或机位不同 | 第 29 轮起动画/骨骼/morph 已导入；用 `--shot-seq --shot-frames 1,30,60` 看多帧确认在动；`MAQUE_ANIM=0` 对照 bind pose |
 | 参考图是动画帧 | 上述原因（姿态时间点不同） | 记录"参考为动画帧"，用多帧截图人工判读 |
 | 模型只有一部分/缺件 | 非三角 primitive 被跳过、缺 mesh/节点、导入 warning | 看 `issues`/导入日志 |
@@ -775,7 +806,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 
 | # | 现象 | 原因 | 解决/规避 |
 |---|---|---|---|
-| I1 | 某模型贴图大片缺失、只剩因子色 | 贴图是 KTX2/BasisU（无解码器）或其它未接扩展贴图 | 换 `glTF/` 主变体；看 `manifest.json.issues`/README；无法根治（§11） |
+| I1 | 某模型贴图大片缺失、只剩因子色 | 离线 importer 仍跳过 KTX2/BasisU（runtime 直读已支持）或其它未接扩展贴图 | 用 runtime 直读原模型；或换 `glTF/` 主变体；看 `manifest.json.issues`/README |
 | I2 | 模型明显缺件（线/点/三角带装饰） | importer 只导三角形，非三角 primitive 跳过 | 已知限制；记录在 README |
 | I3 | 手调 `.scn` 被覆盖 | `gltf_import.py --scene` **无条件写 `<out>/<name>.scn`**；`migrate --force` 会重写它 | 手调模型加入 `--exclude`；刷新素材用不带 `--scene` 的导入（§3.4）；改动及时 `git commit` |
 | I4 | 想只重算指标/重写笔记，不想再渲染 148 次 | 每个模型渲染要 0.5–20s，全量重渲耗时 | `--reuse-preview`（复用 `preview.png` 只重算对比+笔记，秒级） |
@@ -889,7 +920,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 
 | 症状 | 检查 | 修复 |
 |---|---|---|
-| 贴图缺失（README 有 gap） | `textures/` 是否有该图；`issues` 是否提"跳过不支持的贴图"；源变体是否 KTX2（WebP 已支持转码，需 Pillow） | 换 `glTF/` 主变体；无法根治的记 gap |
+| 贴图缺失（README 有 gap） | `textures/` 是否有该图；`issues` 是否提"跳过不支持的贴图"；源变体是否 KTX2（runtime 已支持 KTX2，离线 importer 仍跳过；WebP 在导入期转码） | runtime 直读原模型；或换 `glTF/` 主变体 |
 | 贴图存在但没生效 | `.scn` 材质字段名/路径拼写；路径必须相对场景目录；文件是否真 PNG/JPEG | 修 scn 字段/路径 |
 | 颜色偏暗/偏亮 | 手写贴图槽是否把 MR/AO/normal 放到 sRGB 槽；`env_intensity`/曝光 | 按运行时约定放槽 |
 | 面料/车漆纹理巨大 | `uv_scale/uv_offset/uv_rotation` 字段缺失/为默认 | 检查 `.scn` 材质三字段；rotation 走 `uv_rotation` |
@@ -1283,7 +1314,7 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 | P3 | ✅ **MSAA 4x（opt-in）**（第 15 轮已完成） | 全部 3D 场景（默认关；按场景/环境变量开） | `scn.Scene.msaa_samples` / `MAQUE_MSAA`；4x 颜色+深度附件、pass resolve、管线按样本数分缓存；`caps.max_samples=4` 探测，失败自动回退；e2e ⑫ |
 | P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | **第 20/22–24 轮已完成**：屏幕空间折射 + scene color copy + 逐像素折射（厚度）+ transmissionTexture + dispersion RGB 偏移（第 20 轮）；diffuse transmission 不透明 + 背光透射 + 两贴图槽（第 22–23 轮）；volume 厚度/Beer-Lambert 吸收/thicknessTexture/volume_scatter in-scatter（第 24 轮）。**剩余**：光线追踪级多次折射/散射、相位函数、直呈（surface）路径的折射 |
 | P2 | ✅ **动画 / 骨骼 / morph**（第 29 轮已完成） | 动画 26 个模型、skin 7、morph 4 | `plans/22-gltf-animation-implementation.md`：S1 骨架蒙皮（布局 2/3 + storage palette + 阴影变体）、S2 关键帧采样（`scn.AnimationPlayer.clips`，STEP/LINEAR + quat slerp）、S3 CPU morph；测试 `gltf_{skin,anim,morph}_e2e`。**剩余**：`KHR_animation_pointer`（P3）、CUBICSPLINE 精确切线、状态机/混合 |
-| P2 | **Draco / KTX2 / meshopt 解码** | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | 评估结论：主变体不阻塞、不做解码器（`plans/21` §B）；当前用 `glTF/` 主变体规避 |
+| P2 | **Draco / meshopt 解码**（KTX2 已支持） | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | **KTX2 runtime 直读已由 plans/24 落地**（image+basisu，`gltf_runtime_ktx2_e2e`）；Draco/meshopt 仍不做（`plans/21` §B），离线迁移用 `glTF/` 主变体规避 |
 | P2 | **glTF 自带相机（部分完成）** | 相机 14 个模型 / 45 个 | ✅ importer `--use-gltf-camera` + migrate 按模型采用（5 个指标改善模型，第 18 轮）；剩余：orthographic 相机（引擎仅透视）、多相机/多视图参考的选择策略 |
 | P3 | **`TEXCOORD_2+` / 逐贴图独立 UV transform**（已评估，暂不做） | TEXCOORD_2 仅 1 个 primitive（且无贴图引用）；逐槽 transform 冲突实测 10 模型 | 评估：①TEXCOORD_2 零视觉影响（MosquitoInAmber 该属性未被材质引用），不做；②同 UV 集但不同 transform 的材质共 10 模型（AnimationPointerUVs 69 处最多且属 pointer 动画；其余 CarConcept/ToyCar/Sheen* 等 1–5 处）→ 需 9 槽×3 float 的材质 uniform 扩展，收益小于 ABI 成本，保留近似并记录 |
 | P3 | **GPU 实例化**（已评估，暂不做） | 大实例数资产：主变体仅 SimpleInstancing（125 实例；其余模型 ≤10 实例） | 评估：当前 CPU 展开 125 draw 在此批量渲染中开销可忽略（单模型 <1 ms 量级），而实例化需 `frame3d.instances` + `drawIndexedInstanced` + 每实例矩阵 buffer，ABI/管线成本 > 收益；保留 P3 |

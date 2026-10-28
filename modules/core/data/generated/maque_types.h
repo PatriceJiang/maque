@@ -2145,6 +2145,13 @@ struct MeshRenderer {
     uint32_t culling_mask = 4294967295;
     maque::EntityRef layer;
     std::string skin_path = "";
+    std::string clip = "";
+    bool playing = true;
+    bool loop = true;
+    float speed = 1.0F;
+    float time = 0.0F;
+    float duration = 0.0F;
+    std::string variant = "";
 };
 
 struct MotionStreak {

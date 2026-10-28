@@ -1,0 +1,365 @@
+{
+  "title": "PointLightIntensityTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -4.032320893864192,
+              "y": 0.4379999437434552,
+              "z": 7.073678947575888
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.5190192589890531,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.1662812666000106,
+          "far": 99.44017432143147,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Light 4 - White_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": -2.5,
+              "z": 0.20000000298023224
+            },
+            "rotation": {
+              "x": -1.570796461153735,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000001343588654,
+              "z": 1.0000001343588654
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 13.61172412984421,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "range": 1.125
+        }
+      ]
+    },
+    {
+      "name": "Light 1 - Red_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.25,
+              "y": 0.0,
+              "z": 0.20000000298023224
+            },
+            "rotation": {
+              "x": -1.570796461153735,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000001343588654,
+              "z": 1.0000001343588654
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 13.61172412984421,
+          "color": {
+            "r": 1.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "range": 1.125
+        }
+      ]
+    },
+    {
+      "name": "Light 3 - Blue_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.25,
+              "y": 0.0,
+              "z": 0.20000000298023224
+            },
+            "rotation": {
+              "x": -1.570796461153735,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000001343588654,
+              "z": 1.0000001343588654
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 13.61172412984421,
+          "color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "range": 1.125
+        }
+      ]
+    },
+    {
+      "name": "Light 2 - Green_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.20000000298023224
+            },
+            "rotation": {
+              "x": -1.570796461153735,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000001343588654,
+              "z": 1.0000001343588654
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 13.61172412984421,
+          "color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "range": 1.125
+        }
+      ]
+    },
+    {
+      "name": "Light 5 - Gray_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 2.25,
+              "y": -2.5,
+              "z": 0.20000000298023224
+            },
+            "rotation": {
+              "x": -1.570796461153735,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000001343588654,
+              "z": 1.0000001343588654
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 13.61172412984421,
+          "color": {
+            "r": 0.5,
+            "g": 0.5,
+            "b": 0.5,
+            "a": 1.0
+          },
+          "range": 1.125
+        }
+      ]
+    },
+    {
+      "name": "Light 6 B_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.25,
+              "y": -2.5,
+              "z": 0.20000000298023224
+            },
+            "rotation": {
+              "x": -1.570796461153735,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000001343588654,
+              "z": 1.0000001343588654
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 13.61172412984421,
+          "color": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "range": 1.125
+        }
+      ]
+    },
+    {
+      "name": "Light 6 G_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.25,
+              "y": -2.5,
+              "z": 0.20000000298023224
+            },
+            "rotation": {
+              "x": -1.570796461153735,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000001343588654,
+              "z": 1.0000001343588654
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 13.61172412984421,
+          "color": {
+            "r": 0.0,
+            "g": 1.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "range": 1.125
+        }
+      ]
+    },
+    {
+      "name": "Light 6 R_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -2.25,
+              "y": -2.5,
+              "z": 0.20000000298023224
+            },
+            "rotation": {
+              "x": -1.570796461153735,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0000001343588654,
+              "z": 1.0000001343588654
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 13.61172412984421,
+          "color": {
+            "r": 1.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "range": 1.125
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/PointLightIntensityTest.glb"
+        }
+      ]
+    }
+  ]
+}

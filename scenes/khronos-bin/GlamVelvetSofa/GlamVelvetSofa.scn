@@ -1,0 +1,105 @@
+{
+  "title": "GlamVelvetSofa",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -1.2056401748527206,
+              "y": 0.9366352840111134,
+              "z": 1.9596302943601804
+            },
+            "rotation": {
+              "x": -0.2232631209437403,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.04890262129818499,
+          "far": 29.724262917432444,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Key Light_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -0.3787938928253957,
+              "y": -1.4711276743037347,
+              "z": -5.578801654593714e-16
+            },
+            "scale": {
+              "x": 0.9999999999999999,
+              "y": 1.0,
+              "z": 0.9999999999999999
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 0,
+          "intensity": 7.800000000000001,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/GlamVelvetSofa.glb"
+        }
+      ]
+    }
+  ]
+}

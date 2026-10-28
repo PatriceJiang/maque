@@ -940,6 +940,13 @@ static const mq_field_desc mq_fields_render_MeshRenderer[] = {
     { "culling_mask", (uint32_t)offsetof(render::MeshRenderer, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "layer", (uint32_t)offsetof(render::MeshRenderer, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "skin_path", (uint32_t)offsetof(render::MeshRenderer, skin_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clip", (uint32_t)offsetof(render::MeshRenderer, clip), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "playing", (uint32_t)offsetof(render::MeshRenderer, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "loop", (uint32_t)offsetof(render::MeshRenderer, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "speed", (uint32_t)offsetof(render::MeshRenderer, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "time", (uint32_t)offsetof(render::MeshRenderer, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "duration", (uint32_t)offsetof(render::MeshRenderer, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "variant", (uint32_t)offsetof(render::MeshRenderer, variant), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
 static void mq_dyn_render_MotionStreak_samples_clear(void* f) { static_cast<std::vector<render::StreakSample>*>(f)->clear(); }
@@ -4673,7 +4680,7 @@ extern const mq_type_desc mq_type_render_MeshRenderer = {
     956582135u,
     (uint32_t)sizeof(render::MeshRenderer),
     (uint32_t)alignof(render::MeshRenderer),
-    10u,
+    17u,
     mq_fields_render_MeshRenderer,
     4u,
     0u,

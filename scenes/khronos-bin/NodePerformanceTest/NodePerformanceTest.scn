@@ -1,0 +1,105 @@
+{
+  "title": "NodePerformanceTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -170.31320525186163,
+              "y": 77.16745174700556,
+              "z": 297.2378101412612
+            },
+            "rotation": {
+              "x": -0.22326312094374032,
+              "y": -0.5190192589890529,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 6.996528207884367,
+          "far": 4459.488287821774,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sun_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -1.1613646861517875,
+              "y": 0.17012679428043637,
+              "z": 0.03303721278509463
+            },
+            "scale": {
+              "x": 1.0000000014283286,
+              "y": 1.0000000579228965,
+              "z": 1.000000057961017
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 0,
+          "intensity": 20.0,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/NodePerformanceTest.glb"
+        }
+      ]
+    }
+  ]
+}

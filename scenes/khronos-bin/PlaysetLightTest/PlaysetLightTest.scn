@@ -1,0 +1,142 @@
+{
+  "title": "PlaysetLightTest",
+  "width": 1280,
+  "height": 720,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.9044592009843964,
+              "y": 0.570949696056479,
+              "z": 1.5610978639408781
+            },
+            "rotation": {
+              "x": -0.2232631209437403,
+              "y": -0.519019258989053,
+              "z": 0.0
+            }
+          }
+        },
+        {
+          "type": "render.Camera3D",
+          "fov_y": 45.0,
+          "near": 0.0371542321220937,
+          "far": 22.616295022105312,
+          "clear_color": {
+            "r": 0.13,
+            "g": 0.13,
+            "b": 0.14,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "light1_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.6517573595046997,
+              "y": 0.7440021634101868,
+              "z": 0.6551325917243958
+            },
+            "rotation": {
+              "x": 0.9487643967296576,
+              "y": 0.5275923996454123,
+              "z": 2.182988687888662
+            },
+            "scale": {
+              "x": 0.9999999867442876,
+              "y": 0.9999999911423149,
+              "z": 0.9999999956017599
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 0,
+          "intensity": 20.0,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "LEDlight_light",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": -0.5028327565923741,
+              "y": 0.12783949030563235,
+              "z": -0.5269979334171777
+            },
+            "rotation": {
+              "x": -1.5707963277877912,
+              "y": 8.753581004352544e-09,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0000000659682222,
+              "y": 1.0000000669611169,
+              "z": 1.0000000013990373
+            }
+          }
+        },
+        {
+          "type": "render.Light",
+          "type": 1,
+          "intensity": 2000.0,
+          "color": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          },
+          "range": 0.0
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        },
+        {
+          "type": "render.MeshRenderer",
+          "mesh_path": "assets/PlaysetLightTest.glb"
+        }
+      ]
+    }
+  ]
+}

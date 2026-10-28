@@ -1,0 +1,36 @@
+{
+  "title": "gltf_runtime_material_diffuse_volume",
+  "width": 640,
+  "height": 360,
+  "views": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": -0.251450, "y": 0.843962, "z": 1.315424 },
+            "rotation": { "x": -0.223263, "y": -0.519019, "z": 0.0 } } },
+        { "type": "render.Camera3D", "fov_y": 45.0, "near": 0.05, "far": 30.0,
+          "clear_color": { "r": 0.13, "g": 0.13, "b": 0.14, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "sun",
+      "components": [
+        { "type": "scene.Transform3D", "local": { "rotation": { "x": -1.0119793728, "y": -0.7188299996, "z": 0.0 } } },
+        { "type": "render.Light", "type": 0, "intensity": 2.6,
+          "color": { "r": 1.0, "g": 0.96, "b": 0.9, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "model",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "diffuse_volume.gltf" }
+      ]
+    }
+  ]
+}
