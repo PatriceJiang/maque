@@ -249,6 +249,9 @@
         - { name: visible, type: bool, default: true }
         - { name: culling_mask, type: uint32_t, default: 4294967295, attrs: { bitmask: true } }
         - { name: layer, type: entity_ref, attrs: { ref: RenderLayer, weak: true } }
+        # 骨骼蒙皮（plans/22）：空 = 非蒙皮；非空 = .skel.json 路径（相对场景目录，VFS 根 = 场景目录）。
+        # 蒙皮网格按 glTF 规范忽略节点世界变换（mesh 实体置场景根、local=identity），关节层级由骨架文件解析。
+        - { name: skin_path, type: string, default: "" }
     # 场景资源全屏 shader pass（docs/13）：shader 是**场景目录相对**的 .wgsl 路径，
     # 只要 @fragment fs_main + 32B uniform（group0 binding0）。引擎供全屏三角形 VS。
     # 绘制顺序：先于 3D/2D（背景层）；没有 3D 组件的纯 shader 场景同样可用。

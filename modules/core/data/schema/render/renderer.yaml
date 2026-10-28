@@ -96,7 +96,7 @@
         - { name: width,        type: int32_t }
         - { name: height,       type: int32_t }
         - { name: pixel_format, type: int32_t }  # 0=RGBA8 1=RGBA8_SRGB 2=RGBA16F（3=BC7 预留）
-        - { name: kind,         type: int32_t }  # 0=2D 1=cube（IBL 预留）2=equirect（预留）
+        - { name: kind,         type: int32_t }  # 0=2D 1=cube（第 26 轮：6 面×mip 链，env IBL 用；data 按 mip→6 面连续）2=equirect（预留）
         - { name: mip_levels,   type: int32_t }  # 1 = 无 mip；data 内各 mip 连续存放
         - { name: filter,       type: int32_t }  # 0=nearest 1=linear（含 mip linear）
         - { name: wrap_u,       type: int32_t }  # 0=repeat 1=clamp 2=mirror
@@ -196,6 +196,24 @@
         # specular_color_texture.RGB（sRGB）= specularColorFactor；-1=无。
         # 存在时 runtime 置 flags2 bit21/22；gfx 在 group1 binding 17/18 绑定。
         - { name: textures4,                type: "int32_t[2]" }
+        # 折射/透射（尾部追加）：transmission 贴图槽（-1=无，flags2 bit23 presence）；
+        # volume_thickness/dispersion 供 shader 的折射/色散近似。
+        - { name: volume_thickness, type: float }
+        - { name: dispersion,       type: float }
+        - { name: textures5,        type: "int32_t[1]" }
+        # KHR_materials_diffuse_transmission（尾部追加）：0..1 背光透射强度（flags2 bit24；
+        # 不透明材质，shader 用 du[35] 做背光项，不再 alpha BLEND）。
+        - { name: diffuse_transmission_factor, type: float }
+        - { name: diffuse_transmission_color,  type: "float[3]" }
+        # diffuseTransmissionTexture(A) / diffuseTransmissionColorTexture(RGB,sRGB)（-1=无；
+        # flags2 bit25/26 presence；gfx 在 group1 binding 20/21 绑定）。
+        - { name: textures6,                   type: "int32_t[2]" }
+        # KHR_materials_volume（第 24 轮）：Beer-Lambert 吸收（attenuation_color/dist）、volume_scatter
+        # 的 multiscatter_color、thicknessTexture（-1=无，flags2 bit27；group1 binding 22）。
+        - { name: attenuation_color,    type: "float[3]" }
+        - { name: attenuation_distance, type: float }
+        - { name: multiscatter_color,   type: "float[3]" }
+        - { name: textures7,            type: "int32_t[1]" }
     - record: draw3d
       fields:
         - { name: mesh,          type: int32_t }
@@ -206,15 +224,27 @@
         - { name: flags,         type: int32_t }       # cast/receive shadow 等
         - { name: layer,         type: int32_t }
         - { name: sort_key,      type: uint64_t }
+        # 骨骼蒙皮（plans/22，第 28 轮）：frame3d.skins 下标；-1 = 非蒙皮（旧调用方零行为变化）。
+        - { name: skin,          type: int32_t }
+    # 骨骼调色板（plans/22）：joint_count × 16 列主序 mat4；palette[j] = world(joint_j) × inverse_bind_j。
+    # 每帧由 runtime 生成，frame3d.skins[draw.skin] 引用；非蒙皮 draw 绑 1×mat4 单位 dummy。
+    - record: skin
+      fields:
+        - { name: palette,     type: "const float*" }
+        - { name: joint_count, type: uint32_t }
     - record: environment
       fields:
-        - { name: sky_mode,    type: int32_t }      # 0=color 1=gradient 2=cubemap(预留) 3=equirect(预留)
+        - { name: sky_mode,    type: int32_t }      # 0=color 1=gradient 2=cubemap（第 26 轮）3=equirect
         - { name: sky_color,   type: "float[4]" }
         - { name: sky_texture, type: int32_t }
         - { name: env_color,   type: "float[4]" }
         - { name: env_texture, type: int32_t }
         # 漫反射辐照度贴图（PMREM 卷积产物，equirect RGBA16F；-1=无 → shader 回退 analytic）
         - { name: env_irradiance_texture, type: int32_t }
+        # 立方体环境贴图（第 26 轮，kind=1 cube 句柄）：env_cubemap = GGX 预过滤 mip 链、
+        # env_cubemap_irradiance = 余弦卷积 irradiance cube（16×16×6）；-1=无。非 -1 时 shader/天空走 cube 路径。
+        - { name: env_cubemap, type: int32_t }
+        - { name: env_cubemap_irradiance, type: int32_t }
         - { name: intensity,   type: float }
         # plans/19：analytic studio IBL（天空/地面渐变 + 软光箱高光；env_rotation 弧度，runtime 从场景度转换）
         - { name: env_sky_color,    type: "float[4]" }
@@ -266,6 +296,9 @@
         # 空/0 = 无。仅有 pass、没有 3D 组件（view_count=0）时也走 frame3d 通路。
         - { name: passes,         type: "const mq_renderer_shader_pass*" }
         - { name: pass_count,     type: uint32_t }
+        # 骨骼蒙皮调色板（plans/22；尾部追加）。空/0 = 本帧无蒙皮 draw。
+        - { name: skins,          type: "const mq_renderer_skin*" }
+        - { name: skin_count,     type: uint32_t }
   methods:
     - fn: create
       returns: self
@@ -331,3 +364,8 @@
       returns: void
       args: [ { name: self, type: self }, { name: id, type: int32_t } ]
       doc: "释放 create_shader_pass 的句柄（场景重载/退出用；无效 id 忽略）"
+    # ---- CPU morph 顶点更新（plans/22；append-only）----
+    - fn: update_mesh
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: id, type: int32_t }, { name: vertices, type: "const void*" }, { name: vertex_bytes, type: uint64_t } ]
+      doc: "更新网格顶点（morph 变形；vertex_bytes 必须与创建时一致，stride/layout 不变）；0=成功"

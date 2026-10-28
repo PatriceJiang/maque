@@ -3595,6 +3595,105 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "diffuse_transmission_factor",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "diffuse_transmission_color",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "diffuse_transmission_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "diffuse_transmission_color_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "volume_thickness",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "dispersion",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "transmission_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "attenuation_color",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "attenuation_distance",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "multiscatter_color",
+          "type": "math.Vec3",
+          "kind": "struct",
+          "type_id": 1859510476,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "volume_thickness_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },
@@ -8368,6 +8467,15 @@
             "ref": "RenderLayer",
             "weak": true
           }
+        },
+        {
+          "name": "skin_path",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },
@@ -10657,6 +10765,24 @@
           "count": 0,
           "offset": null,
           "attrs": {}
+        },
+        {
+          "name": "clips",
+          "type": "string[]",
+          "kind": "array_dyn",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "clip_index",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },
@@ -11452,6 +11578,24 @@
         },
         {
           "name": "env_texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_background",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "env_cubemap",
           "type": "string",
           "kind": "string",
           "type_id": 0,

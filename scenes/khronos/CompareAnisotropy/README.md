@@ -38,13 +38,13 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot_Large.jpg`（1559×814）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot_Large.jpg`（1559×814）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 对 README 声明环境的模型注入官方 HDRI（`tools/khronos_env.json`），其余用 analytic studio IBL，无面光/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.386 | 0.347 | 差 -0.039 |
-| 前景平均 RGB | [120.6, 94.7, 71.0] | [122.0, 81.2, 60.5] | RGB 距离 0.033 |
-| 亮度直方图相似度 | — | — | 0.49（16 桶交集，1=完全一致） |
+| 前景平均亮度 | 0.386 | 0.368 | 差 -0.018 |
+| 前景平均 RGB | [120.6, 94.7, 71.0] | [128.2, 86.5, 65.1] | RGB 距离 0.029 |
+| 亮度直方图相似度 | — | — | 0.53（16 桶交集，1=完全一致） |
 | 前景占比 | 70.4% | 17.7% | 覆盖率比 0.252 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
@@ -52,13 +52,13 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
-- KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
-- 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
+- KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射
+- 引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，MSAA 需场景显式开启（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
 - KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似
-- KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）
+- KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射
 
 ## 踩过的坑 / 注意
 

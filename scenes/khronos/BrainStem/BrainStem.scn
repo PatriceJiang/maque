@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "node1_0",
+      "name": "node0",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,10 +83,589 @@
               "z": 1.0
             }
           }
+        }
+      ],
+      "children": [
+        {
+          "name": "node21",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "name": "node2",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 1.5707964172683375,
+                      "y": 1.968925926162036e-10,
+                      "z": -0.0013592304007115843
+                    },
+                    "scale": {
+                      "x": 0.9999999999999277,
+                      "y": 0.9999999218861312,
+                      "z": 0.9999999218861313
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "name": "node3",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 0.9148268103599548,
+                          "z": 0.0
+                        },
+                        "rotation": {
+                          "x": -2.842172552065793e-14,
+                          "y": 0.0013592298854433462,
+                          "z": -1.931583262459452e-17
+                        },
+                        "scale": {
+                          "x": 0.9999999999999861,
+                          "y": 0.9999998807907104,
+                          "z": 0.9999998807906966
+                        }
+                      }
+                    }
+                  ],
+                  "children": [
+                    {
+                      "name": "node12",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": -5.492820174396451e-12,
+                              "y": 0.10747220367193222,
+                              "z": -0.02359149046242237
+                            },
+                            "rotation": {
+                              "x": 3.385670055422453e-08,
+                              "y": 2.3283100447635263e-10,
+                              "z": 3.94144479914759e-18
+                            },
+                            "scale": {
+                              "x": 1.0,
+                              "y": 1.0,
+                              "z": 1.0
+                            }
+                          }
+                        }
+                      ],
+                      "children": [
+                        {
+                          "name": "node20",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": 0.0,
+                                  "y": 0.5242561101913452,
+                                  "z": -0.015727709978818897
+                                },
+                                "rotation": {
+                                  "x": -3.3256750242571804e-08,
+                                  "y": 0.0,
+                                  "z": 0.0
+                                },
+                                "scale": {
+                                  "x": 1.0,
+                                  "y": 1.0,
+                                  "z": 1.0
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "name": "node18",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": -0.41940489411354065,
+                                  "y": 0.3407664895057678,
+                                  "z": -0.013106339611113071
+                                },
+                                "rotation": {
+                                  "x": -0.013667408062201535,
+                                  "y": 0.012761224160085837,
+                                  "z": 1.50223565644077
+                                },
+                                "scale": {
+                                  "x": 0.9999998730426836,
+                                  "y": 0.9999998730300436,
+                                  "z": 0.99999999998736
+                                }
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "name": "node19",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 1.1920899822825961e-07,
+                                      "y": 0.1918196976184845,
+                                      "z": 9.313230187046884e-10
+                                    },
+                                    "rotation": {
+                                      "x": 0.01366750593033863,
+                                      "y": 0.012761100234856982,
+                                      "z": -1.5022356565415709
+                                    },
+                                    "scale": {
+                                      "x": 0.9999998729291341,
+                                      "y": 0.9999998729164727,
+                                      "z": 0.9999999999873387
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "node13",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": 0.4194048047065735,
+                                  "y": 0.3407667875289917,
+                                  "z": -0.0131063899025321
+                                },
+                                "rotation": {
+                                  "x": -0.014115913696299498,
+                                  "y": -0.013535345370582432,
+                                  "z": -1.5287086109924717
+                                },
+                                "scale": {
+                                  "x": 1.0000002997373878,
+                                  "y": 1.0000002997734245,
+                                  "z": 1.0000000000360365
+                                }
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "name": "node14",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 1.1920899822825961e-07,
+                                      "y": 0.1857225000858307,
+                                      "z": 2.7939699442924852e-09
+                                    },
+                                    "rotation": {
+                                      "x": 0.014117213557783118,
+                                      "y": -0.01353392450553789,
+                                      "z": 1.528708439820545
+                                    },
+                                    "scale": {
+                                      "x": 1.0000000186405287,
+                                      "y": 0.9999998994349579,
+                                      "z": 0.9999999403990762
+                                    }
+                                  }
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "name": "node17",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 0.4094892144203186,
+                                          "y": 0.0027067658957093954,
+                                          "z": 0.015727709978818897
+                                        },
+                                        "rotation": {
+                                          "x": 0.0,
+                                          "y": -0.0,
+                                          "z": 6.330099955493079e-10
+                                        },
+                                        "scale": {
+                                          "x": 0.9999998807907104,
+                                          "y": 0.9999998807907104,
+                                          "z": 1.0
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "node16",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 0.411934107542038,
+                                          "y": 0.02158582024276257,
+                                          "z": 0.05764370039105415
+                                        },
+                                        "rotation": {
+                                          "x": 3.385670208892139e-08,
+                                          "y": -1.0715816696736041e-17,
+                                          "z": 6.330099955493079e-10
+                                        },
+                                        "scale": {
+                                          "x": 0.9999998807907104,
+                                          "y": 0.9999998807907104,
+                                          "z": 1.0
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "node15",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 0.41257110238075256,
+                                          "y": -0.021677140146493912,
+                                          "z": 0.055014971643686295
+                                        },
+                                        "rotation": {
+                                          "x": 0.0,
+                                          "y": -0.0,
+                                          "z": 6.33009977768495e-10
+                                        },
+                                        "scale": {
+                                          "x": 0.9999998807907104,
+                                          "y": 1.0,
+                                          "z": 1.0
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "node8",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": -0.1415490955114365,
+                              "y": -0.03931922093033791,
+                              "z": -1.2220500167359203e-08
+                            },
+                            "rotation": {
+                              "x": -2.4221416098642963,
+                              "y": -1.4484936402369863,
+                              "z": -0.6424332966926548
+                            },
+                            "scale": {
+                              "x": 1.0000165091269837,
+                              "y": 1.00001763524182,
+                              "z": 1.0000199614239975
+                            }
+                          }
+                        }
+                      ],
+                      "children": [
+                        {
+                          "name": "node9",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": 7.450580152834618e-09,
+                                  "y": 0.3586178123950958,
+                                  "z": 0.0
+                                },
+                                "rotation": {
+                                  "x": -0.13630237129082637,
+                                  "y": -1.1101277176214006,
+                                  "z": 0.12016041669545148
+                                },
+                                "scale": {
+                                  "x": 1.0000000351904452,
+                                  "y": 1.000000119324452,
+                                  "z": 1.0000000352482483
+                                }
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "name": "node10",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 7.450580152834618e-09,
+                                      "y": 0.39689669013023376,
+                                      "z": -5.5879398885849704e-09
+                                    },
+                                    "rotation": {
+                                      "x": -0.9641767407160154,
+                                      "y": -0.3592400833774007,
+                                      "z": 0.014110014138314895
+                                    },
+                                    "scale": {
+                                      "x": 0.9999998825010283,
+                                      "y": 1.0000000113939624,
+                                      "z": 1.0000000124750938
+                                    }
+                                  }
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "name": "node11",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": -7.450580152834618e-09,
+                                          "y": 0.12854869663715365,
+                                          "z": 0.0
+                                        },
+                                        "rotation": {
+                                          "x": -2.2550957408323855,
+                                          "y": 1.9371461621212375e-07,
+                                          "z": -2.9800493982358157e-08
+                                        },
+                                        "scale": {
+                                          "x": 1.0,
+                                          "y": 1.000000235771239,
+                                          "z": 1.000000593399192
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "node4",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": 0.1415490955114365,
+                              "y": -0.03931922093033791,
+                              "z": -1.2286400341565697e-08
+                            },
+                            "rotation": {
+                              "x": -2.4221416098642963,
+                              "y": 1.4484936402369863,
+                              "z": 0.6424332966926548
+                            },
+                            "scale": {
+                              "x": 1.0000165091269837,
+                              "y": 1.00001763524182,
+                              "z": 1.0000199614239975
+                            }
+                          }
+                        }
+                      ],
+                      "children": [
+                        {
+                          "name": "node5",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": -7.450580152834618e-09,
+                                  "y": 0.3586178123950958,
+                                  "z": 0.0
+                                },
+                                "rotation": {
+                                  "x": -0.13630237129082637,
+                                  "y": 1.1101277176214006,
+                                  "z": -0.12016041669545148
+                                },
+                                "scale": {
+                                  "x": 1.0000000351904452,
+                                  "y": 1.000000119324452,
+                                  "z": 1.0000000352482483
+                                }
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "name": "node6",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": -7.450580152834618e-09,
+                                      "y": 0.39689669013023376,
+                                      "z": -5.5879398885849704e-09
+                                    },
+                                    "rotation": {
+                                      "x": -0.9641767407160154,
+                                      "y": 0.3592400833774007,
+                                      "z": -0.014110014138314895
+                                    },
+                                    "scale": {
+                                      "x": 0.9999998825010283,
+                                      "y": 1.0000000113939624,
+                                      "z": 1.0000000124750938
+                                    }
+                                  }
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "name": "node7",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 7.450580152834618e-09,
+                                          "y": 0.12854869663715365,
+                                          "z": 0.0
+                                        },
+                                        "rotation": {
+                                          "x": -2.2550957408323855,
+                                          "y": -1.9371461621212375e-07,
+                                          "z": 2.9800493982358157e-08
+                                        },
+                                        "scale": {
+                                          "x": 1.0,
+                                          "y": 1.000000235771239,
+                                          "z": 1.000000593399192
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "node1",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "node1_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem.mesh.json"
+          "mesh_path": "assets/BrainStem.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -123,8 +702,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -136,7 +715,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_1.mesh.json"
+          "mesh_path": "assets/BrainStem_0_1.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -173,8 +753,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -186,7 +766,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_2.mesh.json"
+          "mesh_path": "assets/BrainStem_0_2.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -223,8 +804,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -236,7 +817,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_3.mesh.json"
+          "mesh_path": "assets/BrainStem_0_3.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -273,8 +855,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -286,7 +868,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_4.mesh.json"
+          "mesh_path": "assets/BrainStem_0_4.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -323,8 +906,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -336,7 +919,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_5.mesh.json"
+          "mesh_path": "assets/BrainStem_0_5.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -373,8 +957,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -386,7 +970,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_6.mesh.json"
+          "mesh_path": "assets/BrainStem_0_6.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -423,8 +1008,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -436,7 +1021,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_7.mesh.json"
+          "mesh_path": "assets/BrainStem_0_7.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -473,8 +1059,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -486,7 +1072,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_8.mesh.json"
+          "mesh_path": "assets/BrainStem_0_8.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -523,8 +1110,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -536,7 +1123,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_9.mesh.json"
+          "mesh_path": "assets/BrainStem_0_9.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -573,8 +1161,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -586,7 +1174,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_10.mesh.json"
+          "mesh_path": "assets/BrainStem_0_10.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -623,8 +1212,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -636,7 +1225,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_11.mesh.json"
+          "mesh_path": "assets/BrainStem_0_11.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -673,8 +1263,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -686,7 +1276,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_12.mesh.json"
+          "mesh_path": "assets/BrainStem_0_12.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -723,8 +1314,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -736,7 +1327,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_13.mesh.json"
+          "mesh_path": "assets/BrainStem_0_13.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -773,8 +1365,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -786,7 +1378,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_14.mesh.json"
+          "mesh_path": "assets/BrainStem_0_14.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -823,8 +1416,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -836,7 +1429,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_15.mesh.json"
+          "mesh_path": "assets/BrainStem_0_15.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -873,8 +1467,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -886,7 +1480,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_16.mesh.json"
+          "mesh_path": "assets/BrainStem_0_16.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -923,8 +1518,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -936,7 +1531,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_17.mesh.json"
+          "mesh_path": "assets/BrainStem_0_17.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -973,8 +1569,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -986,7 +1582,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_18.mesh.json"
+          "mesh_path": "assets/BrainStem_0_18.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1023,8 +1620,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1036,7 +1633,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_19.mesh.json"
+          "mesh_path": "assets/BrainStem_0_19.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1073,8 +1671,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1086,7 +1684,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_20.mesh.json"
+          "mesh_path": "assets/BrainStem_0_20.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1123,8 +1722,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1136,7 +1735,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_21.mesh.json"
+          "mesh_path": "assets/BrainStem_0_21.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1173,8 +1773,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1186,7 +1786,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_22.mesh.json"
+          "mesh_path": "assets/BrainStem_0_22.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1223,8 +1824,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1236,7 +1837,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_23.mesh.json"
+          "mesh_path": "assets/BrainStem_0_23.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1273,8 +1875,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1286,7 +1888,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_24.mesh.json"
+          "mesh_path": "assets/BrainStem_0_24.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1323,8 +1926,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1336,7 +1939,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_25.mesh.json"
+          "mesh_path": "assets/BrainStem_0_25.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1373,8 +1977,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1386,7 +1990,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_26.mesh.json"
+          "mesh_path": "assets/BrainStem_0_26.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1423,8 +2028,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1436,7 +2041,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_27.mesh.json"
+          "mesh_path": "assets/BrainStem_0_27.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1473,8 +2079,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1486,7 +2092,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_28.mesh.json"
+          "mesh_path": "assets/BrainStem_0_28.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1523,8 +2130,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1536,7 +2143,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_29.mesh.json"
+          "mesh_path": "assets/BrainStem_0_29.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1573,8 +2181,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1586,7 +2194,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_30.mesh.json"
+          "mesh_path": "assets/BrainStem_0_30.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1623,8 +2232,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1636,7 +2245,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_31.mesh.json"
+          "mesh_path": "assets/BrainStem_0_31.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1673,8 +2283,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1686,7 +2296,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_32.mesh.json"
+          "mesh_path": "assets/BrainStem_0_32.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1723,8 +2334,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1736,7 +2347,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_33.mesh.json"
+          "mesh_path": "assets/BrainStem_0_33.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1773,8 +2385,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1786,7 +2398,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_34.mesh.json"
+          "mesh_path": "assets/BrainStem_0_34.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1823,8 +2436,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1836,7 +2449,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_35.mesh.json"
+          "mesh_path": "assets/BrainStem_0_35.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1873,8 +2487,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1886,7 +2500,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_36.mesh.json"
+          "mesh_path": "assets/BrainStem_0_36.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1923,8 +2538,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1936,7 +2551,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_37.mesh.json"
+          "mesh_path": "assets/BrainStem_0_37.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -1973,8 +2589,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -1986,7 +2602,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_38.mesh.json"
+          "mesh_path": "assets/BrainStem_0_38.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2023,8 +2640,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2036,7 +2653,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_39.mesh.json"
+          "mesh_path": "assets/BrainStem_0_39.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2073,8 +2691,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2086,7 +2704,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_40.mesh.json"
+          "mesh_path": "assets/BrainStem_0_40.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2123,8 +2742,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2136,7 +2755,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_41.mesh.json"
+          "mesh_path": "assets/BrainStem_0_41.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2173,8 +2793,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2186,7 +2806,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_42.mesh.json"
+          "mesh_path": "assets/BrainStem_0_42.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2223,8 +2844,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2236,7 +2857,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_43.mesh.json"
+          "mesh_path": "assets/BrainStem_0_43.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2273,8 +2895,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2286,7 +2908,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_44.mesh.json"
+          "mesh_path": "assets/BrainStem_0_44.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2323,8 +2946,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2336,7 +2959,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_45.mesh.json"
+          "mesh_path": "assets/BrainStem_0_45.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2373,8 +2997,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2386,7 +3010,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_46.mesh.json"
+          "mesh_path": "assets/BrainStem_0_46.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2423,8 +3048,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2436,7 +3061,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_47.mesh.json"
+          "mesh_path": "assets/BrainStem_0_47.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2473,8 +3099,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2486,7 +3112,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_48.mesh.json"
+          "mesh_path": "assets/BrainStem_0_48.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2523,8 +3150,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2536,7 +3163,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_49.mesh.json"
+          "mesh_path": "assets/BrainStem_0_49.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2573,8 +3201,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2586,7 +3214,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_50.mesh.json"
+          "mesh_path": "assets/BrainStem_0_50.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2623,8 +3252,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2636,7 +3265,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_51.mesh.json"
+          "mesh_path": "assets/BrainStem_0_51.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2673,8 +3303,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2686,7 +3316,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_52.mesh.json"
+          "mesh_path": "assets/BrainStem_0_52.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2723,8 +3354,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2736,7 +3367,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_53.mesh.json"
+          "mesh_path": "assets/BrainStem_0_53.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2773,8 +3405,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2786,7 +3418,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_54.mesh.json"
+          "mesh_path": "assets/BrainStem_0_54.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2823,8 +3456,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2836,7 +3469,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_55.mesh.json"
+          "mesh_path": "assets/BrainStem_0_55.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2873,8 +3507,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2886,7 +3520,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_56.mesh.json"
+          "mesh_path": "assets/BrainStem_0_56.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2923,8 +3558,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2936,7 +3571,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_57.mesh.json"
+          "mesh_path": "assets/BrainStem_0_57.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -2973,8 +3609,8 @@
               "z": 0.0
             },
             "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
+              "x": 0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -2986,7 +3622,8 @@
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/BrainStem_0_58.mesh.json"
+          "mesh_path": "assets/BrainStem_0_58.mesh.json",
+          "skin_path": "assets/skin/BrainStem.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -3008,6 +3645,22 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
+        {
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/animation0.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

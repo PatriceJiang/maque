@@ -429,6 +429,17 @@ static const mq_field_desc mq_fields_asset_PbrMaterial[] = {
     { "normal_uv_rotation", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "alpha_mask_in_blend", (uint32_t)offsetof(asset::PbrMaterial, alpha_mask_in_blend), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "transmission_factor", (uint32_t)offsetof(asset::PbrMaterial, transmission_factor), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "diffuse_transmission_factor", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_factor), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "diffuse_transmission_color", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "diffuse_transmission_texture", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "diffuse_transmission_color_texture", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "volume_thickness", (uint32_t)offsetof(asset::PbrMaterial, volume_thickness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "dispersion", (uint32_t)offsetof(asset::PbrMaterial, dispersion), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "transmission_texture", (uint32_t)offsetof(asset::PbrMaterial, transmission_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "attenuation_color", (uint32_t)offsetof(asset::PbrMaterial, attenuation_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "attenuation_distance", (uint32_t)offsetof(asset::PbrMaterial, attenuation_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "multiscatter_color", (uint32_t)offsetof(asset::PbrMaterial, multiscatter_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "volume_thickness_texture", (uint32_t)offsetof(asset::PbrMaterial, volume_thickness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_asset_Prefab[] = {
@@ -928,6 +939,7 @@ static const mq_field_desc mq_fields_render_MeshRenderer[] = {
     { "visible", (uint32_t)offsetof(render::MeshRenderer, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "culling_mask", (uint32_t)offsetof(render::MeshRenderer, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "layer", (uint32_t)offsetof(render::MeshRenderer, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "skin_path", (uint32_t)offsetof(render::MeshRenderer, skin_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
 static void mq_dyn_render_MotionStreak_samples_clear(void* f) { static_cast<std::vector<render::StreakSample>*>(f)->clear(); }
@@ -1181,6 +1193,10 @@ static const mq_field_desc mq_fields_scene_Transform3D[] = {
     { "world_dirty", (uint32_t)offsetof(scene::Transform3D, world_dirty), MQ_TK_U8, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
 };
 
+static void mq_dyn_scn_AnimationPlayer_clips_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
+static uint32_t mq_dyn_scn_AnimationPlayer_clips_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
+static void mq_dyn_scn_AnimationPlayer_clips_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
+static void* mq_dyn_scn_AnimationPlayer_clips_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_scn_AnimationPlayer[] = {
     { "clip", (uint32_t)offsetof(scn::AnimationPlayer, clip), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "time", (uint32_t)offsetof(scn::AnimationPlayer, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -1188,6 +1204,8 @@ static const mq_field_desc mq_fields_scn_AnimationPlayer[] = {
     { "loop", (uint32_t)offsetof(scn::AnimationPlayer, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "playing", (uint32_t)offsetof(scn::AnimationPlayer, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "duration", (uint32_t)offsetof(scn::AnimationPlayer, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clips", (uint32_t)offsetof(scn::AnimationPlayer, clips), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_AnimationPlayer_clips_clear, mq_dyn_scn_AnimationPlayer_clips_size, mq_dyn_scn_AnimationPlayer_clips_resize, mq_dyn_scn_AnimationPlayer_clips_elem },
+    { "clip_index", (uint32_t)offsetof(scn::AnimationPlayer, clip_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_scn_Button[] = {
@@ -1288,6 +1306,8 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
     { "env_highlight", (uint32_t)offsetof(scn::Scene, env_highlight), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "env_rotation", (uint32_t)offsetof(scn::Scene, env_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "env_texture", (uint32_t)offsetof(scn::Scene, env_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "env_background", (uint32_t)offsetof(scn::Scene, env_background), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "env_cubemap", (uint32_t)offsetof(scn::Scene, env_cubemap), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "msaa_samples", (uint32_t)offsetof(scn::Scene, msaa_samples), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "gravity_y", (uint32_t)offsetof(scn::Scene, gravity_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "restitution", (uint32_t)offsetof(scn::Scene, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -3477,7 +3497,7 @@ extern const mq_type_desc mq_type_asset_PbrMaterial = {
     460266568u,
     (uint32_t)sizeof(asset::PbrMaterial),
     (uint32_t)alignof(asset::PbrMaterial),
-    61u,
+    72u,
     mq_fields_asset_PbrMaterial,
     4u,
     0u,
@@ -4653,7 +4673,7 @@ extern const mq_type_desc mq_type_render_MeshRenderer = {
     956582135u,
     (uint32_t)sizeof(render::MeshRenderer),
     (uint32_t)alignof(render::MeshRenderer),
-    9u,
+    10u,
     mq_fields_render_MeshRenderer,
     4u,
     0u,
@@ -5129,7 +5149,7 @@ extern const mq_type_desc mq_type_scn_AnimationPlayer = {
     2959465410u,
     (uint32_t)sizeof(scn::AnimationPlayer),
     (uint32_t)alignof(scn::AnimationPlayer),
-    6u,
+    8u,
     mq_fields_scn_AnimationPlayer,
     4u,
     MQ_ROLE_ANIM_PLAYER,
@@ -5227,7 +5247,7 @@ extern const mq_type_desc mq_type_scn_Scene = {
     410509289u,
     (uint32_t)sizeof(scn::Scene),
     (uint32_t)alignof(scn::Scene),
-    20u,
+    22u,
     mq_fields_scn_Scene,
     4u,
     0u,

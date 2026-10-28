@@ -175,6 +175,16 @@ typedef struct mq_renderer_pbr_material {
     float uv_rotation;
     float normal_uv_rotation;
     int32_t textures4[2];
+    float volume_thickness;
+    float dispersion;
+    int32_t textures5[1];
+    float diffuse_transmission_factor;
+    float diffuse_transmission_color[3];
+    int32_t textures6[2];
+    float attenuation_color[3];
+    float attenuation_distance;
+    float multiscatter_color[3];
+    int32_t textures7[1];
 } mq_renderer_pbr_material;
 
 typedef struct mq_renderer_draw3d {
@@ -186,7 +196,13 @@ typedef struct mq_renderer_draw3d {
     int32_t flags;
     int32_t layer;
     uint64_t sort_key;
+    int32_t skin;
 } mq_renderer_draw3d;
+
+typedef struct mq_renderer_skin {
+    const float* palette;
+    uint32_t joint_count;
+} mq_renderer_skin;
 
 typedef struct mq_renderer_environment {
     int32_t sky_mode;
@@ -195,6 +211,8 @@ typedef struct mq_renderer_environment {
     float env_color[4];
     int32_t env_texture;
     int32_t env_irradiance_texture;
+    int32_t env_cubemap;
+    int32_t env_cubemap_irradiance;
     float intensity;
     float env_sky_color[4];
     float env_ground_color[4];
@@ -239,6 +257,8 @@ typedef struct mq_renderer_frame3d {
     uint32_t out_size;
     const mq_renderer_shader_pass* passes;
     uint32_t pass_count;
+    const mq_renderer_skin* skins;
+    uint32_t skin_count;
 } mq_renderer_frame3d;
 
 #define MQ_RENDERER_API_NAME "maque.renderer"
@@ -261,4 +281,5 @@ typedef struct mq_renderer_v1 {
     int32_t (*present)(void* self);
     int32_t (*create_shader_pass)(void* self, const char* wgsl, int32_t* out_id);
     void (*destroy_shader_pass)(void* self, int32_t id);
+    int32_t (*update_mesh)(void* self, int32_t id, const void* vertices, uint64_t vertex_bytes);
 } mq_renderer_v1;

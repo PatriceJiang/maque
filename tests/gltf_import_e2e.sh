@@ -44,7 +44,8 @@
 #     · 夹具 tests/data/gltf/instancing.gltf（node 世界变换 [10,0,0] × 5 个实例 TRS：
 #       TRANSLATION/ROTATION(xyzw)/SCALE）→ 5 个实体、位置/旋转/缩放按「node 世界 × 实例 TRS」；
 #     · 夹具 tests/data/gltf/diffuse_volume.gltf：KHR_materials_diffuse_transmission factor=0.5
-#       → alpha_mode=2 / opacity=0.65；KHR_materials_volume attenuationColor+finite distance
+#       → **不透明** + diffuse_transmission_factor=0.5（第 22 轮：不再 alpha BLEND / opacity 近似）；
+#       KHR_materials_volume attenuationColor+finite distance
 #       → base_color.rgb ×= attenuationColor（amber: [0.8,0.7,0.6]×[0.5,0.8,0.9]=[0.4,0.56,0.54]）。
 #   可选（MAQUE_TOYCAR_SRC=<含 ToyCar.gltf 的源目录>，源模型不入库）：ToyCar 三个
 #     mesh.json 逐字节一致；未设置时跳过（ToyCar 源模型有 KHR 扩展，更新入库后可用此钩子校验）。
@@ -393,16 +394,30 @@ echo "gltf_import_e2e: instancing 确定性 OK"
 import json, sys
 d = sys.argv[1]
 milky = json.load(open(d + "/diffuse_volume.mesh.json", encoding="utf-8"))["materials"][0]
-# KHR_materials_diffuse_transmission factor=0.5 → alpha BLEND + opacity=clamp(1-0.7*0.5)=0.65
-assert milky["alpha_mode"] == 2 and abs(milky["opacity"] - 0.65) < 1e-9, (milky["alpha_mode"], milky.get("opacity"))
+# KHR_materials_diffuse_transmission factor=0.5 → **不透明**材质 + 背光透射字段（第 22 轮：不再 alpha BLEND +
+# opacity；旧近似会把陶瓷/叶片变"幽灵玻璃"）。
+assert milky.get("alpha_mode", 0) == 0 and abs(milky.get("diffuse_transmission_factor", 0.0) - 0.5) < 1e-9, (
+    milky.get("alpha_mode"), milky.get("diffuse_transmission_factor"))
+assert "opacity" not in milky, milky.get("opacity")
+# 透射率贴图（A 通道乘子）与透射色贴图（RGB，sRGB）两槽（第 23 轮完整接入）
+assert milky.get("diffuse_transmission_texture", "").startswith("textures/"), \
+    milky.get("diffuse_transmission_texture")
+assert milky.get("diffuse_transmission_color_texture", "").startswith("textures/"), \
+    milky.get("diffuse_transmission_color_texture")
 assert abs(milky["base_color"]["r"] - 0.8) < 1e-9 and abs(milky["base_color"]["g"] - 0.6) < 1e-9
 amber = json.load(open(d + "/diffuse_volume_0_1.mesh.json", encoding="utf-8"))["materials"][0]
-# transmission factor=1 → alpha BLEND + opacity=0.15；volume attenuationColor [0.5,0.8,0.9] × baseColor [0.8,0.7,0.6]
+# transmission factor=1 → alpha BLEND + opacity=0.15（transmission 近似，旧行为不变）
 assert amber["alpha_mode"] == 2 and abs(amber["opacity"] - 0.15) < 1e-9, (amber["alpha_mode"], amber.get("opacity"))
 assert amber.get("alpha_mask_in_blend") is True, amber.get("alpha_mask_in_blend")
+# 第 24 轮：KHR_materials_volume 改为 Beer-Lambert（attenuation_color/distance 字段），
+# **不再把 attenuationColor 乘进 base_color**（旧薄壁色调 hack 删除）→ baseColor 保持原值 [0.8,0.7,0.6]。
 bc = amber["base_color"]
-assert abs(bc["r"] - 0.4) < 1e-9 and abs(bc["g"] - 0.56) < 1e-9 and abs(bc["b"] - 0.54) < 1e-9, bc
+assert abs(bc["r"] - 0.8) < 1e-9 and abs(bc["g"] - 0.7) < 1e-9 and abs(bc["b"] - 0.6) < 1e-9, bc
 assert abs(bc["a"] - 1.0) < 1e-9, bc
+ac = amber.get("attenuation_color") or {}
+assert abs(ac.get("x", 0) - 0.5) < 1e-6 and abs(ac.get("y", 0) - 0.8) < 1e-6 \
+    and abs(ac.get("z", 0) - 0.9) < 1e-6, ac
+assert abs(amber.get("attenuation_distance", 0) - 2.0) < 1e-6, amber.get("attenuation_distance")
 # 无 texture transform → 不写 rotation 字段
 assert "uv_rotation" not in milky and "normal_uv_rotation" not in amber
 print("gltf_import_e2e: diffuse_transmission/volume 近似 OK")
@@ -612,5 +627,88 @@ if [ -n "${MAQUE_TOYCAR_SRC:-}" ] && [ -f "$MAQUE_TOYCAR_SRC/ToyCar.gltf" ]; the
 else
     echo "gltf_import_e2e: ToyCar 资产基线 skip（未设 MAQUE_TOYCAR_SRC）"
 fi
+
+# ---- 闭合网格“法线/绕序整体朝内”修复（DirectionalLight 同款资产）----
+# ① inside_out.gltf：闭合球壳、法线朝内 + 绕序反转 → 导入后必须翻正（法线朝外、绕序朝外）；
+# ② open_plane.gltf：开放网格平面（法线 -Z）→ 不能被误翻（保持原法线/绕序）。
+"$PY" "$TOOL" "$FIXDIR/inside_out.gltf" --out "$WORK/inside_out" >/dev/null 2>&1 \
+    || fail "inside_out.gltf 导入失败"
+"$PY" "$TOOL" "$FIXDIR/open_plane.gltf" --out "$WORK/open_plane" >/dev/null 2>&1 \
+    || fail "open_plane.gltf 导入失败"
+"$PY" - "$WORK/inside_out" "$WORK/open_plane" <<'PY' || exit 1
+import json, math, sys
+dio, dop = sys.argv[1], sys.argv[2]
+
+def load(d, name):
+    return json.load(open(f"{d}/{name}.mesh.json", encoding="utf-8"))
+
+def radial_stats(m):
+    v = m["vertices"]
+    pos = [p[0:3] for p in v]; nor = [p[3:6] for p in v]
+    mn = [min(p[i] for p in pos) for i in range(3)]
+    mx = [max(p[i] for p in pos) for i in range(3)]
+    c = [(mn[i] + mx[i]) / 2 for i in range(3)]
+    s = 0.0; n = 0; wind = 0
+    for p, q in zip(pos, nor):
+        r = [p[i] - c[i] for i in range(3)]
+        lr = math.sqrt(sum(x * x for x in r)); ln = math.sqrt(sum(x * x for x in q))
+        if lr < 1e-9 or ln < 1e-9:
+            continue
+        s += sum(r[i] * q[i] for i in range(3)) / (lr * ln); n += 1
+    idx = m["indices"]
+    for t in range(0, len(idx), 3):
+        a, b, cc = (pos[idx[t]], pos[idx[t + 1]], pos[idx[t + 2]])
+        u = [b[i] - a[i] for i in range(3)]; w = [cc[i] - a[i] for i in range(3)]
+        fn = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]
+        ct = [sum(pos[idx[t + k]][i] for k in range(3)) / 3 - c[i] for i in range(3)]
+        wind += sum(fn[i] * ct[i] for i in range(3))
+    return s / max(1, n), wind
+
+m = load(dio, "inside_out")
+avg, wind = radial_stats(m)
+assert avg > 0.5, ("inside_out 未翻正（法线仍朝内）", avg)
+assert wind > 0, ("inside_out 未翻正（绕序仍反向）", wind)
+print(f"gltf_import_e2e: inside_out 翻正 OK（avg_cos={avg:.3f}, wind>0）")
+
+mp = load(dop, "open_plane")
+nor = [p[3:6] for p in mp["vertices"]]
+assert all(abs(n[0]) < 1e-9 and abs(n[1]) < 1e-9 and abs(n[2] + 1.0) < 1e-9 for n in nor), nor[:4]
+idx = mp["indices"]
+assert idx[:6] == [0, 1, 8, 1, 9, 8], idx[:6]
+print("gltf_import_e2e: 开放网格未误翻 OK")
+PY
+[ $? -eq 0 ] || exit 1
+
+# 确定性：同输入两次导入逐字节一致（翻正逻辑无随机）
+"$PY" "$TOOL" "$FIXDIR/inside_out.gltf" --out "$WORK/inside_out2" >/dev/null 2>&1 \
+    || fail "inside_out.gltf 第二次导入失败"
+cmp -s "$WORK/inside_out/inside_out.mesh.json" "$WORK/inside_out2/inside_out.mesh.json" \
+    || fail "inside_out 翻正输出不确定"
+echo "gltf_import_e2e: 闭合朝内网格翻正 OK"
+
+# ---- 动画/蒙皮/morph 派生资产确定性（plans/22）----
+# 三个新夹具（skinned/animated/morph）各导入两次 → 目录内全部文件（.mesh.json/.skel.json/.clip.json/.scn）
+# 逐字节一致；同时断言 importer 真的产出了对应资产（防止回归成"静态迁移"）。
+for fx in skinned animated morph; do
+    rm -rf "$WORK/anim_$fx" "$WORK/anim_${fx}2"
+    "$PY" "$TOOL" "$FIXDIR/$fx.gltf" --out "$WORK/anim_$fx" --name Anim --scene --compact \
+        >/dev/null 2>&1 || fail "$fx.gltf 导入失败"
+    "$PY" "$TOOL" "$FIXDIR/$fx.gltf" --out "$WORK/anim_${fx}2" --name Anim --scene --compact \
+        >/dev/null 2>&1 || fail "$fx.gltf 第二次导入失败"
+    diff -r "$WORK/anim_$fx" "$WORK/anim_${fx}2" >/dev/null 2>&1 \
+        || fail "$fx.gltf 两次导入输出不一致（违反确定性）"
+done
+[ -n "$(find "$WORK/anim_skinned/assets/skin" -name '*.skel.json' 2>/dev/null)" ] \
+    || fail "skinned.gltf 未产出 .skel.json"
+[ -n "$(find "$WORK/anim_animated/assets/anim" -name '*.clip.json' 2>/dev/null)" ] \
+    || fail "animated.gltf 未产出 .clip.json"
+"$PY" - "$WORK/anim_morph/assets/Anim.mesh.json" <<'PY' || exit 1
+import json, sys
+m = json.load(open(sys.argv[1], encoding="utf-8"))
+assert "morph" in m and len(m["morph"]["targets"]) == 2, m.get("morph")
+print("gltf_import_e2e: morph 资产 OK")
+PY
+[ $? -eq 0 ] || exit 1
+echo "gltf_import_e2e: 动画/蒙皮/morph 资产确定性 OK"
 
 echo "gltf_import_e2e: PASS"

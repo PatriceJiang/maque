@@ -57,6 +57,9 @@
 | 16 | script（quickjs 为主） | [16-script.md](16-script.md) | `agent-script` | docs/14 |
 | 18 | **PBR 材质系统与 3D 渲染（直接呈现）** | [18-pbr-3d.md](18-pbr-3d.md) | `agent-render3d` | docs/13、components/03/14、assets/01/03 |
 | 19 | **three.js 材质迁移（多着色模型）** | [19-threejs-materials.md](19-threejs-materials.md) | `agent-render3d` | docs/13、assets/01、plans/18 |
+| 20 | **PBR 审计修复**（normal 切线基/材质槽/sRGB mip/阴影） | [20-pbr-audit.md](20-pbr-audit.md) | `agent-render3d` | docs/13、plans/18/19 |
+| 21 | **glTF 动画/蒙皮/morph 与压缩扩展评估** | [21-gltf-animation-and-compression.md](21-gltf-animation-and-compression.md) | `agent-render3d` | docs/31、plans/12 |
+| 22 | **glTF 动画/蒙皮/morph 落地实现（S1+S2+S3）** | [22-gltf-animation-implementation.md](22-gltf-animation-implementation.md) | `agent-render3d` | plans/21、docs/31 |
 
 ## 4. 交付顺序（依赖驱动）
 
@@ -85,7 +88,7 @@
 | 09 | observability | ✅ | ✅ | ✅ | ✅ | `obs`（结构化事件 + 指标 + dump_json） |
 | 10 | control plane | ✅ | ✅ | ✅ | ✅ | `control`（JSON-RPC + MCP 包装 + 方法枚举） |
 | 11 | scene | ✅ | ✅ | ✅ | ✅ | runtime 实体/组件 + UI 命中 + 世界快照 |
-| 12 | animation | ✅ | ✅ | ⬜ | ⬜ | 类型已入 schema；求值器未实现 |
+| 12 | animation | ✅ | ✅ | 🟡 | 🟡 | glTF 动画/蒙皮/morph 子集已落地（[plans/22](22-gltf-animation-implementation.md)：`scn.AnimationPlayer.clips`、骨骼调色板、CPU morph）；完整 `mq_anim` 模块/状态机未做（[plans/12](12-animation.md)） |
 | 13 | physics | ✅ | ✅ | 🟡 | 🟡 | 自研确定性 2D 求解器（Rapier 需 Rust 工具链，见 ADR-0028 降级） |
 | 14 | particle | ✅ | ✅ | ⬜ | ⬜ | 类型已入 schema；发射器未实现 |
 | 15 | renderer（WebGPU/pass 层） | ✅ | ✅ | ✅ | 🟡 | 相机/分层/批处理/alpha 合成已落地；pass 图待做 |
@@ -109,4 +112,6 @@
 `host_tick`、`host_multi_instance`。
 **附加计划**：[17](17-inspector.md) 游戏检查器（ImGui + TCP 控制面，独立进程）；
 [18](18-pbr-3d.md) PBR 材质系统与 3D 渲染（直接呈现；M0 接口冻结已完成）；
-[19](19-threejs-materials.md) three.js 材质迁移（多着色模型：Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/Depth/Shadow）。
+[19](19-threejs-materials.md) three.js 材质迁移（多着色模型：Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/Depth/Shadow）；
+[20](20-pbr-audit.md) PBR 审计修复；[21](21-gltf-animation-and-compression.md) glTF 动画/蒙皮/morph 与压缩扩展评估；
+[22](22-gltf-animation-implementation.md) glTF 动画/蒙皮/morph 落地实现（S1+S2+S3，已落地）。

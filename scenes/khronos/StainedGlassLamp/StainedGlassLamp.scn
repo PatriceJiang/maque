@@ -217,7 +217,8 @@
           "shading_model": 1,
           "ior": 1.4,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.02
         }
       ]
     },
@@ -271,7 +272,8 @@
           "shading_model": 1,
           "ior": 1.52,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.03
         }
       ]
     },
@@ -494,7 +496,8 @@
           "normal_texture": "textures/image14.png",
           "occlusion_texture": "textures/image15.png",
           "emissive_texture": "textures/image16.png",
-          "clearcoat_texture": "textures/image18.png"
+          "clearcoat_texture": "textures/image18.png",
+          "transmission_texture": "textures/image18.png"
         }
       ]
     }

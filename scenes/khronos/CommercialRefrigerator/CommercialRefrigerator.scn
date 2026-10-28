@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "FridgeCase_0",
+      "name": "FridgeCase",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,413 +83,595 @@
               "z": 1.0
             }
           }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CommercialRefrigerator_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "FridgeCase",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image9.jpg",
-          "metallic_roughness_texture": "textures/image4.jpg",
-          "occlusion_texture": "textures/image4.jpg"
         }
-      ]
-    },
-    {
-      "name": "FridgeDoor_0",
-      "components": [
+      ],
+      "children": [
         {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.3763740956783294,
-              "y": 0.3573247194290161,
-              "z": 0.4285686016082764
+          "name": "FridgeCase_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
             },
-            "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
-              "z": 0.0
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/CommercialRefrigerator_0_0.mesh.json"
             },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
+            {
+              "type": "asset.PbrMaterial",
+              "name": "FridgeCase",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 1.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "base_color_texture": "textures/image9.jpg",
+              "metallic_roughness_texture": "textures/image4.jpg",
+              "occlusion_texture": "textures/image4.jpg"
             }
-          }
+          ]
         },
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CommercialRefrigerator_1_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "FridgeCase",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image9.jpg",
-          "metallic_roughness_texture": "textures/image4.jpg",
-          "occlusion_texture": "textures/image4.jpg"
-        }
-      ]
-    },
-    {
-      "name": "FridgeDoorInner_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
+          "name": "FridgeDoor",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.3763740956783294,
+                  "y": -0.4285686016082764,
+                  "z": 0.3573247194290161
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
             }
-          }
+          ],
+          "children": [
+            {
+              "name": "FridgeDoor_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/CommercialRefrigerator_1_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "FridgeCase",
+                  "base_color": {
+                    "r": 1.0,
+                    "g": 1.0,
+                    "b": 1.0,
+                    "a": 1.0
+                  },
+                  "metallic": 1.0,
+                  "roughness": 1.0,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5,
+                  "base_color_texture": "textures/image9.jpg",
+                  "metallic_roughness_texture": "textures/image4.jpg",
+                  "occlusion_texture": "textures/image4.jpg"
+                }
+              ]
+            },
+            {
+              "name": "FridgeDoorInner",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": -0.3763740956783294,
+                      "y": 0.4285686016082764,
+                      "z": -0.3573247194290161
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": -0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "name": "FridgeDoorInner_0",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "rotation": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "scale": {
+                          "x": 1.0,
+                          "y": 1.0,
+                          "z": 1.0
+                        }
+                      }
+                    },
+                    {
+                      "type": "render.MeshRenderer",
+                      "mesh_path": "assets/CommercialRefrigerator_2_0.mesh.json"
+                    },
+                    {
+                      "type": "asset.PbrMaterial",
+                      "name": "FridgeInterior",
+                      "base_color": {
+                        "r": 1.0,
+                        "g": 1.0,
+                        "b": 1.0,
+                        "a": 1.0
+                      },
+                      "metallic": 1.0,
+                      "roughness": 0.75,
+                      "emissive": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                      },
+                      "double_sided": false,
+                      "side": 0,
+                      "alpha_mode": 0,
+                      "alpha_cutoff": 0.5,
+                      "base_color_texture": "textures/image6.jpg",
+                      "metallic_roughness_texture": "textures/image8.jpg",
+                      "occlusion_texture": "textures/image8.jpg",
+                      "emissive_texture": "textures/image7.jpg"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "FridgeGlass",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": -0.3763740956783294,
+                      "y": 0.4285686016082764,
+                      "z": -0.3573247194290161
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": -0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "name": "FridgeGlass_0",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "rotation": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "scale": {
+                          "x": 1.0,
+                          "y": 1.0,
+                          "z": 1.0
+                        }
+                      }
+                    },
+                    {
+                      "type": "render.MeshRenderer",
+                      "mesh_path": "assets/CommercialRefrigerator_3_0.mesh.json"
+                    },
+                    {
+                      "type": "asset.PbrMaterial",
+                      "name": "FridgeGlass",
+                      "base_color": {
+                        "r": 1.0,
+                        "g": 1.0,
+                        "b": 1.0,
+                        "a": 1.0
+                      },
+                      "metallic": 0.0,
+                      "roughness": 0.75,
+                      "emissive": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                      },
+                      "double_sided": true,
+                      "side": 2,
+                      "alpha_mode": 2,
+                      "alpha_cutoff": 0.5,
+                      "shading_model": 1,
+                      "clearcoat": 1.0,
+                      "clearcoat_roughness": 0.0,
+                      "transmission_factor": 1.0,
+                      "opacity": 0.15000000000000002,
+                      "metallic_roughness_texture": "textures/image5.jpg"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         },
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CommercialRefrigerator_2_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
           "name": "FridgeInterior",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 0.75,
-          "emissive": {
-            "x": 1.0,
-            "y": 1.0,
-            "z": 1.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image6.jpg",
-          "metallic_roughness_texture": "textures/image8.jpg",
-          "occlusion_texture": "textures/image8.jpg",
-          "emissive_texture": "textures/image7.jpg"
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "name": "FridgeInterior_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/CommercialRefrigerator_4_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "FridgeInterior",
+                  "base_color": {
+                    "r": 1.0,
+                    "g": 1.0,
+                    "b": 1.0,
+                    "a": 1.0
+                  },
+                  "metallic": 1.0,
+                  "roughness": 0.75,
+                  "emissive": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5,
+                  "base_color_texture": "textures/image6.jpg",
+                  "metallic_roughness_texture": "textures/image8.jpg",
+                  "occlusion_texture": "textures/image8.jpg",
+                  "emissive_texture": "textures/image7.jpg"
+                }
+              ]
+            },
+            {
+              "name": "ChampagneBottles",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": -0.3279202878475189,
+                      "y": -0.20470546185970304,
+                      "z": 1.0919711589813232
+                    },
+                    "rotation": {
+                      "x": 1.570796370506285,
+                      "y": -0.0,
+                      "z": -0.5376959172998965
+                    },
+                    "scale": {
+                      "x": 0.9999999939742565,
+                      "y": 1.0000000000000009,
+                      "z": 0.9999999939742574
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "name": "ChampagneBottles_0",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "rotation": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "scale": {
+                          "x": 1.0,
+                          "y": 1.0,
+                          "z": 1.0
+                        }
+                      }
+                    },
+                    {
+                      "type": "render.MeshRenderer",
+                      "mesh_path": "assets/CommercialRefrigerator_5_0.mesh.json"
+                    },
+                    {
+                      "type": "asset.PbrMaterial",
+                      "name": "ChampagneGlass",
+                      "base_color": {
+                        "r": 0.01568627543747425,
+                        "g": 0.0313725508749485,
+                        "b": 0.01568627543747425,
+                        "a": 1
+                      },
+                      "metallic": 0.0,
+                      "roughness": 0.5,
+                      "emissive": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                      },
+                      "double_sided": false,
+                      "side": 0,
+                      "alpha_mode": 0,
+                      "alpha_cutoff": 0.5,
+                      "metallic_roughness_texture": "textures/image5.jpg",
+                      "normal_texture": "textures/image1.jpg",
+                      "normal_scale": 0.3,
+                      "normal_scale_y": 0.3
+                    }
+                  ]
+                },
+                {
+                  "name": "ChampagneBottles_1",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "rotation": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "scale": {
+                          "x": 1.0,
+                          "y": 1.0,
+                          "z": 1.0
+                        }
+                      }
+                    },
+                    {
+                      "type": "render.MeshRenderer",
+                      "mesh_path": "assets/CommercialRefrigerator_5_1.mesh.json"
+                    },
+                    {
+                      "type": "asset.PbrMaterial",
+                      "name": "ChampagneFoil",
+                      "base_color": {
+                        "r": 0.8666666746139526,
+                        "g": 0.6705882549285889,
+                        "b": 0.4156862795352936,
+                        "a": 1
+                      },
+                      "metallic": 1.0,
+                      "roughness": 0.4,
+                      "emissive": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                      },
+                      "double_sided": false,
+                      "side": 0,
+                      "alpha_mode": 0,
+                      "alpha_cutoff": 0.5,
+                      "normal_texture": "textures/image3.jpg"
+                    }
+                  ]
+                },
+                {
+                  "name": "ChampagneBottles_2",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "rotation": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "scale": {
+                          "x": 1.0,
+                          "y": 1.0,
+                          "z": 1.0
+                        }
+                      }
+                    },
+                    {
+                      "type": "render.MeshRenderer",
+                      "mesh_path": "assets/CommercialRefrigerator_5_2.mesh.json"
+                    },
+                    {
+                      "type": "asset.PbrMaterial",
+                      "name": "ChampagneLabel",
+                      "base_color": {
+                        "r": 1.0,
+                        "g": 1.0,
+                        "b": 1.0,
+                        "a": 1.0
+                      },
+                      "metallic": 1.0,
+                      "roughness": 1.0,
+                      "emissive": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                      },
+                      "double_sided": false,
+                      "side": 0,
+                      "alpha_mode": 0,
+                      "alpha_cutoff": 0.5,
+                      "base_color_texture": "textures/image0.jpg",
+                      "metallic_roughness_texture": "textures/image2.jpg",
+                      "normal_texture": "textures/image1.jpg",
+                      "normal_scale": 0.2,
+                      "normal_scale_y": 0.2
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
-      "name": "FridgeGlass_0",
+      "name": "anim_player",
       "components": [
         {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CommercialRefrigerator_3_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "FridgeGlass",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 0.75,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 2,
-          "alpha_cutoff": 0.5,
-          "shading_model": 1,
-          "clearcoat": 1.0,
-          "clearcoat_roughness": 0.0,
-          "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002,
-          "metallic_roughness_texture": "textures/image5.jpg"
-        }
-      ]
-    },
-    {
-      "name": "FridgeInterior_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": -1.5707963267948966,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CommercialRefrigerator_4_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "FridgeInterior",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 0.75,
-          "emissive": {
-            "x": 1.0,
-            "y": 1.0,
-            "z": 1.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image6.jpg",
-          "metallic_roughness_texture": "textures/image8.jpg",
-          "occlusion_texture": "textures/image8.jpg",
-          "emissive_texture": "textures/image7.jpg"
-        }
-      ]
-    },
-    {
-      "name": "ChampagneBottles_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": -0.3279202878475189,
-              "y": 1.0919711589813232,
-              "z": 0.20470546185970304
-            },
-            "rotation": {
-              "x": 4.371138932474529e-08,
-              "y": -0.5376959172998965,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 0.9999999939742565,
-              "y": 1.0000000000000009,
-              "z": 0.9999999939742574
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CommercialRefrigerator_5_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "ChampagneGlass",
-          "base_color": {
-            "r": 0.01568627543747425,
-            "g": 0.0313725508749485,
-            "b": 0.01568627543747425,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "metallic_roughness_texture": "textures/image5.jpg",
-          "normal_texture": "textures/image1.jpg",
-          "normal_scale": 0.3,
-          "normal_scale_y": 0.3
-        }
-      ]
-    },
-    {
-      "name": "ChampagneBottles_1",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": -0.3279202878475189,
-              "y": 1.0919711589813232,
-              "z": 0.20470546185970304
-            },
-            "rotation": {
-              "x": 4.371138932474529e-08,
-              "y": -0.5376959172998965,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 0.9999999939742565,
-              "y": 1.0000000000000009,
-              "z": 0.9999999939742574
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CommercialRefrigerator_5_1.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "ChampagneFoil",
-          "base_color": {
-            "r": 0.8666666746139526,
-            "g": 0.6705882549285889,
-            "b": 0.4156862795352936,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.4,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "normal_texture": "textures/image3.jpg"
-        }
-      ]
-    },
-    {
-      "name": "ChampagneBottles_2",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": -0.3279202878475189,
-              "y": 1.0919711589813232,
-              "z": 0.20470546185970304
-            },
-            "rotation": {
-              "x": 4.371138932474529e-08,
-              "y": -0.5376959172998965,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 0.9999999939742565,
-              "y": 1.0000000000000009,
-              "z": 0.9999999939742574
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CommercialRefrigerator_5_2.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "ChampagneLabel",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.jpg",
-          "metallic_roughness_texture": "textures/image2.jpg",
-          "normal_texture": "textures/image1.jpg",
-          "normal_scale": 0.2,
-          "normal_scale_y": 0.2
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/animation0.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/Colorful_Studio.hdr",
+  "env_background": false,
+  "env_intensity": 1.0,
+  "env_rotation": 0.0
 }

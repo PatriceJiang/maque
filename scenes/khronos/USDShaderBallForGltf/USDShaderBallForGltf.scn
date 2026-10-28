@@ -11,26 +11,26 @@
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": -0.0921375924241836,
-              "y": 0.08319593752368346,
-              "z": 0.16127895746965076
+              "x": 0.08594,
+              "y": 0.05979,
+              "z": 0.10243
             },
             "rotation": {
-              "x": -0.22326312094374026,
-              "y": -0.519019258989053,
+              "x": -0.13961675150812197,
+              "y": 0.6980802793057717,
               "z": 0.0
             }
           }
         },
         {
           "type": "render.Camera3D",
-          "fov_y": 45.0,
-          "near": 0.0037993485407036933,
-          "far": 2.1218372193361743,
+          "fov_y": 40.0,
+          "near": 0.005,
+          "far": 1.0,
           "clear_color": {
-            "r": 0.13,
-            "g": 0.13,
-            "b": 0.14,
+            "r": 0.85,
+            "g": 0.85,
+            "b": 0.85,
             "a": 1.0
           }
         }
@@ -196,9 +196,9 @@
           "type": "asset.PbrMaterial",
           "name": "material_surface",
           "base_color": {
-            "r": 0.9734452903978066,
-            "g": 0.9911020971136257,
-            "b": 0.982250550332711,
+            "r": 1,
+            "g": 1,
+            "b": 1,
             "a": 1
           },
           "metallic": 0.0,
@@ -214,8 +214,16 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 8.9,
+          "attenuation_color": {
+            "x": 0.9734452903978066,
+            "y": 0.9911020971136257,
+            "z": 0.982250550332711
+          },
+          "attenuation_distance": 0.01,
           "occlusion_texture": "textures/material_ao.png#wrap=clamp,clamp",
-          "occlusion_strength": 0.5
+          "occlusion_strength": 0.5,
+          "volume_thickness_texture": "textures/material_thick.png#wrap=clamp,clamp"
         }
       ]
     },
@@ -270,5 +278,9 @@
         }
       ]
     }
-  ]
+  ],
+  "env_background": false,
+  "env_texture": "/khronos_env/neutral.hdr",
+  "env_intensity": 0.8429,
+  "env_rotation": 0.0
 }

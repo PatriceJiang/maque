@@ -638,6 +638,17 @@ role: `pbr_material`
 | `normal_uv_rotation` | float | 0.0F |  |
 | `alpha_mask_in_blend` | bool | false |  |
 | `transmission_factor` | float | 0.0F |  |
+| `diffuse_transmission_factor` | float | 0.0F |  |
+| `diffuse_transmission_color` | math.Vec3 | {1.0F, 1.0F, 1.0F} |  |
+| `diffuse_transmission_texture` | string |  |  |
+| `diffuse_transmission_color_texture` | string |  |  |
+| `volume_thickness` | float | 0.0F |  |
+| `dispersion` | float | 0.0F |  |
+| `transmission_texture` | string |  |  |
+| `attenuation_color` | math.Vec3 | {1.0F, 1.0F, 1.0F} |  |
+| `attenuation_distance` | float | 0.0F |  |
+| `multiscatter_color` | math.Vec3 | {0.0F, 0.0F, 0.0F} |  |
+| `volume_thickness_texture` | string |  |  |
 
 ### asset.PixelFormat — enum
 
@@ -1525,6 +1536,7 @@ role: `physics_body`
 | `visible` | bool | true |  |
 | `culling_mask` | uint32_t | 4294967295 | bitmask |
 | `layer` | entity_ref | — | ref: RenderLayer, weak |
+| `skin_path` | string |  |  |
 
 ### render.MotionStreak — struct (变长（含动态成员）)
 
@@ -1907,6 +1919,8 @@ role: `anim_player`
 | `loop` | bool | true |  |
 | `playing` | bool | true |  |
 | `duration` | float | 0.0F |  |
+| `clips` | string[] | — |  |
+| `clip_index` | int32_t | 0 |  |
 
 ### scn.Button — struct (变长（含动态成员）)
 
@@ -2027,6 +2041,8 @@ role: `particle_emitter`
 | `env_highlight` | float | 1.0F |  |
 | `env_rotation` | float | 0.0F |  |
 | `env_texture` | string |  |  |
+| `env_background` | bool | true |  |
+| `env_cubemap` | string |  |  |
 | `msaa_samples` | int32_t | 0 |  |
 | `gravity_y` | float | -900.0F |  |
 | `restitution` | float | 0.86F |  |

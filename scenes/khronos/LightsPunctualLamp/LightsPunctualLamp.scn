@@ -379,7 +379,8 @@
           "base_color_texture": "textures/image0.jpg#wrap=clamp,clamp",
           "metallic_roughness_texture": "textures/image3.jpg#wrap=clamp,clamp",
           "normal_texture": "textures/image1.png#wrap=clamp,clamp",
-          "emissive_texture": "textures/image2.jpg#wrap=clamp,clamp"
+          "emissive_texture": "textures/image2.jpg#wrap=clamp,clamp",
+          "transmission_texture": "textures/image6.jpg#wrap=clamp,clamp"
         }
       ]
     }

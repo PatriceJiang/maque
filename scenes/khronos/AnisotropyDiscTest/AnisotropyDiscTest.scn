@@ -694,5 +694,9 @@
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/pisa.hdr",
+  "env_background": false,
+  "env_intensity": 1.1645,
+  "env_rotation": 0.0
 }

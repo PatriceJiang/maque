@@ -17,9 +17,10 @@
 | 顶点 / 三角形 | 3 / 1 |
 | 材质 / 纹理 / 图像 | 0 / 0 / 0 |
 | 动画 / 骨骼 / morph primitive / 相机 | 1 / 0 / 1 / 0 |
+| 动画导入（plans/22） | clip 1 / skin 0 / morph primitive 1（`assets/anim|skin/`，场景自动播放首个片段） |
 | alpha 模式分布 |  |
 
-**导入产物**：`assets/` 1 个 `.mesh.json`（合计 310 B），`textures/` 0 张；场景 `SimpleMorph.scn`。
+**导入产物**：`assets/` 1 个 `.mesh.json`（合计 713 B），`textures/` 0 张；场景 `SimpleMorph.scn`。
 
 ## 生成 / 运行
 
@@ -35,30 +36,32 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sim
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot.png`（374×415）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot.png`（374×415）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 对 README 声明环境的模型注入官方 HDRI（`tools/khronos_env.json`），其余用 analytic studio IBL，无面光/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
 | 前景平均亮度 | 0.745 | 0.860 | 差 +0.115 |
-| 前景平均 RGB | [189.8, 189.8, 189.8] | [219.0, 219.1, 220.1] | RGB 距离 0.116 |
+| 前景平均 RGB | [189.8, 189.8, 189.8] | [219.1, 219.1, 220.1] | RGB 距离 0.116 |
 | 亮度直方图相似度 | — | — | 0.03（16 桶交集，1=完全一致） |
-| 前景占比 | 18.6% | 18.5% | 覆盖率比 0.999 |
+| 前景占比 | 18.6% | 19.6% | 覆盖率比 1.056 |
 
 自动初判：**差异较大（需人工确认：机位/缺失特性/导入问题）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- morph targets 未应用（默认权重不生效）
-- 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
+- 动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）
+- morph targets 已应用（plans/22 S3：CPU 顶点变形，默认权重 + weights 动画；TANGENT 增量忽略）
+- 引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，MSAA 需场景显式开启（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- 动画未导入（静态渲染；角色模型为 bind/T-pose）
-- morph targets 未应用（默认权重不生效）
+- 动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）
+- morph targets 已应用（plans/22 S3：CPU 顶点变形，默认权重 + weights 动画；TANGENT 增量忽略）
 
 ## 踩过的坑 / 注意
 
+- 动画已导入：1 个片段（场景自动播放首个；预览=第 1 帧姿态）
+- morph targets 已应用（默认权重 + weights 动画）
 - 1 个 primitive 无 NORMAL（导入器按索引重建法线）
 
 <!-- 手动笔记开始（重生成时保留以下内容） -->

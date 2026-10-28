@@ -269,9 +269,14 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.825
+          "diffuse_transmission_factor": 0.25,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          }
         }
       ]
     },
@@ -320,9 +325,14 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.65
+          "diffuse_transmission_factor": 0.5,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          }
         }
       ]
     },
@@ -371,9 +381,14 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.4750000000000001
+          "diffuse_transmission_factor": 0.75,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          }
         }
       ]
     },
@@ -422,9 +437,14 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.30000000000000004
+          "diffuse_transmission_factor": 1.0,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          }
         }
       ]
     },
@@ -523,9 +543,14 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.825
+          "diffuse_transmission_factor": 0.25,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     },
@@ -574,9 +599,14 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.65
+          "diffuse_transmission_factor": 0.5,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     },
@@ -625,9 +655,14 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.4750000000000001
+          "diffuse_transmission_factor": 0.75,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     },
@@ -676,9 +711,14 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.30000000000000004
+          "diffuse_transmission_factor": 1.0,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 0.0,
+            "z": 0.0
+          }
         }
       ]
     },
@@ -728,7 +768,8 @@
           "double_sided": true,
           "side": 2,
           "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "alpha_cutoff": 0.5,
+          "diffuse_transmission_texture": "textures/image0.png"
         }
       ]
     },
@@ -777,9 +818,15 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.825
+          "diffuse_transmission_factor": 0.25,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "diffuse_transmission_texture": "textures/image0.png"
         }
       ]
     },
@@ -828,9 +875,15 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.65
+          "diffuse_transmission_factor": 0.5,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "diffuse_transmission_texture": "textures/image0.png"
         }
       ]
     },
@@ -879,9 +932,15 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.4750000000000001
+          "diffuse_transmission_factor": 0.75,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "diffuse_transmission_texture": "textures/image0.png"
         }
       ]
     },
@@ -930,9 +989,15 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.30000000000000004
+          "diffuse_transmission_factor": 1.0,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "diffuse_transmission_texture": "textures/image0.png"
         }
       ]
     },
@@ -983,7 +1048,8 @@
           "side": 2,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image1.png"
+          "base_color_texture": "textures/image1.png",
+          "diffuse_transmission_color_texture": "textures/image2.png"
         }
       ]
     },
@@ -1032,10 +1098,16 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.825,
-          "base_color_texture": "textures/image1.png"
+          "diffuse_transmission_factor": 0.25,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "base_color_texture": "textures/image1.png",
+          "diffuse_transmission_color_texture": "textures/image2.png"
         }
       ]
     },
@@ -1084,10 +1156,16 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.65,
-          "base_color_texture": "textures/image1.png"
+          "diffuse_transmission_factor": 0.5,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "base_color_texture": "textures/image1.png",
+          "diffuse_transmission_color_texture": "textures/image2.png"
         }
       ]
     },
@@ -1136,10 +1214,16 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.4750000000000001,
-          "base_color_texture": "textures/image1.png"
+          "diffuse_transmission_factor": 0.75,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "base_color_texture": "textures/image1.png",
+          "diffuse_transmission_color_texture": "textures/image2.png"
         }
       ]
     },
@@ -1188,10 +1272,16 @@
           },
           "double_sided": true,
           "side": 2,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.30000000000000004,
-          "base_color_texture": "textures/image1.png"
+          "diffuse_transmission_factor": 1.0,
+          "diffuse_transmission_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "base_color_texture": "textures/image1.png",
+          "diffuse_transmission_color_texture": "textures/image2.png"
         }
       ]
     },
@@ -1758,5 +1848,9 @@
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/Cannon_Exterior.hdr",
+  "env_background": false,
+  "env_intensity": 1.0703,
+  "env_rotation": 0.0
 }

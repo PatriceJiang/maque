@@ -12,6 +12,26 @@ fn distribution_ggx(n_dot_h: f32, rough: f32) -> f32 {
   return a2 / (PI * d * d + 1e-6);
 }
 
+/* KHR_materials_anisotropy 的 GGX 法线分布（Khronos 规范实现附录，Burley 各向异性形式）：
+ *   at = mix(alphaRoughness, 1, strength²)，ab = alphaRoughness（alphaRoughness = roughness²）
+ *   D = a2 * (a2 / dot(f,f))² / π，f = (ab·TdotH, at·BdotH, a2·NdotH)
+ * 注意 at ≥ ab：沿切线方向粗糙度更大，高光被拉长成条/弧（roughness→0 时 ab→0，高光退化成一条细弧）。 */
+fn distribution_ggx_aniso(n_dot_h: f32, t_dot_h: f32, b_dot_h: f32, at: f32, ab: f32) -> f32 {
+  let a2 = at * ab;
+  let f = vec3f(ab * t_dot_h, at * b_dot_h, a2 * n_dot_h);
+  let w2 = a2 / max(dot(f, f), 1e-12);
+  return a2 * w2 * w2 / PI;
+}
+
+/* 各向异性 GGX 可见性项（规范附录 V_GGX_anisotropic；已含 1/(4·NdotL·NdotV) 的 BRDF 归一）。
+ * 返回 V*D 里的 V，shader 用 `fresnel * D * V` 直接得镜面 BRDF。 */
+fn visibility_ggx_aniso(n_dot_l: f32, n_dot_v: f32, b_dot_v: f32, t_dot_v: f32,
+                        t_dot_l: f32, b_dot_l: f32, at: f32, ab: f32) -> f32 {
+  let ggx_v = n_dot_l * length(vec3f(at * t_dot_v, ab * b_dot_v, n_dot_v));
+  let ggx_l = n_dot_v * length(vec3f(at * t_dot_l, ab * b_dot_l, n_dot_l));
+  return clamp(0.5 / (ggx_v + ggx_l + 1e-6), 0.0, 1.0);
+}
+
 fn geometry_smith(n_dot_v: f32, n_dot_l: f32, rough: f32) -> f32 {
   let k = (rough + 1.0) * (rough + 1.0) / 8.0;
   let gv = n_dot_v / (n_dot_v * (1.0 - k) + k + 1e-6);
@@ -88,6 +108,14 @@ fn view_normal(n: vec3f) -> vec3f {
   return normalize((cam.view * vec4f(n, 0.0)).xyz);
 }
 
+/* clip 空间位置（mat4 × vec4）→ 屏幕 uv（0..1，y 向下，与 fragCoord / 采样纹理一致）。
+ * transmission 折射用：把玻璃内出射点投影回屏幕，去 scene_color 取背景。 */
+fn ndc_to_uv(c: vec4f) -> vec2f {
+  let inv_w = 1.0 / max(c.w, 1e-4);
+  let ndc = c.xy * inv_w;
+  return vec2f(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5);
+}
+
 /* 精确 sRGB OETF（three.js 输出色彩空间转换；旧版用 pow(1/2.2) 近似）。 */
 fn srgb_encode(c: vec3f) -> vec3f {
   let x = clamp(c, vec3f(0.0), vec3f(1.0));
@@ -156,15 +184,22 @@ fn env_equirect_uv(d: vec3f) -> vec2f {
 }
 
 fn env_sample(d: vec3f, rough: f32) -> vec3f {
+  let r = env_rotate_y(d, cam.env3.w);
+  /* 第 26 轮：cubemap env 优先（同样按 roughness 查 GGX 预过滤 mip；cube 采样直接用方向）。 */
+  if (cam.env4.x > 0.5) {
+    let clevels = f32(textureNumLevels(env_cube));
+    let clod = clamp(rough, 0.0, 1.0) * max(clevels - 1.0, 0.0);
+    return textureSampleLevel(env_cube, env_smp, r, clod).rgb;
+  }
   let levels = f32(textureNumLevels(env_tex));
   let lod = clamp(rough, 0.0, 1.0) * max(levels - 1.0, 0.0);
-  let uv = env_equirect_uv(env_rotate_y(d, cam.env3.w));
+  let uv = env_equirect_uv(r);
   return textureSampleLevel(env_tex, env_smp, uv, lod).rgb;
 }
 
 
 fn env_radiance(d0: vec3f, rough: f32) -> vec3f {
-  if (cam.env_info.y > 0.5) { return env_sample(d0, rough) * cam.env_info.x; }
+  if (cam.env_info.y > 0.5 || cam.env4.x > 0.5) { return env_sample(d0, rough) * cam.env_info.x; }
   let blur = rough * rough;
   let d = normalize(mix(d0, vec3f(0.0, 1.0, 0.0), blur * 0.55));
   let r = env_rotate_y(d, cam.env3.w);
@@ -181,6 +216,10 @@ fn env_radiance(d0: vec3f, rough: f32) -> vec3f {
 /* 环境漫反射辐照度：有 PMREM irradiance 贴图时径向查表（余弦卷积结果）；
  * 否则回退 analytic studio（旧基线，保证 148 个迁移场景逐像素不变）。 */
 fn env_irradiance(n: vec3f) -> vec3f {
+  /* 第 26 轮：cubemap 优先（irradiance cube 按方向查表）。 */
+  if (cam.env4.x > 0.5) {
+    return textureSampleLevel(env_irr_cube, env_smp, env_rotate_y(n, cam.env3.w), 0.0).rgb * cam.env_info.x;
+  }
   if (cam.env_info.z > 0.5) {
     let uv = env_equirect_uv(env_rotate_y(n, cam.env3.w));
     return textureSampleLevel(env_irr_tex, env_smp, uv, 0.0).rgb * cam.env_info.x;
@@ -193,6 +232,20 @@ fn env_irradiance(n: vec3f) -> vec3f {
 }
 
 /* Karis 解析 env BRDF（UE4 近似）：镜面环境项 = env * (f0*A + B)。 */
+/* KHR_materials_volume：Beer-Lambert 透过率
+ * T = exp(-(1 - attenuationColor) * thickness / attenuationDistance)，attenuationDistance <= 0 = 无限（无吸收）。
+ * thickness 与 attenuationDistance 同处模型局部尺度 → 比值无量纲，节点缩放相互抵消。 */
+fn volume_transmittance(thickness: f32, atten: vec3f, dist: f32) -> vec3f {
+  if (dist <= 1e-6) {
+    return vec3f(1.0);
+  }
+  /* 数值保护：极薄介质参数（如 thicknessFactor=8.9 / attenuationDistance=0.01）光程可达数百，
+   * 直接 exp 会归零黑掉（USDShaderBallForGltf 官方参考是通透玻璃）→ 光学深度上限 3.0（T>=0.05）。
+   * 正常玻璃/琥珀的光学深度远小于 3，此上限不改变它们的观感。 */
+  let d = min(max(1.0 - atten, vec3f(0.0)) * (max(thickness, 0.0) / dist), vec3f(3.0));
+  return exp(-d);
+}
+
 fn env_brdf_approx(f0: vec3f, rough: f32, n_dot_v: f32) -> vec3f {
   let c0 = vec4f(-1.0, -0.0275, -0.572, 0.022);
   let c1 = vec4f(1.0, 0.0425, 1.04, -0.04);

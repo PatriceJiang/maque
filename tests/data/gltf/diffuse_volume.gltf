@@ -60,7 +60,13 @@
       },
       "extensions": {
         "KHR_materials_diffuse_transmission": {
-          "diffuseTransmissionFactor": 0.5
+          "diffuseTransmissionFactor": 0.5,
+          "diffuseTransmissionTexture": {
+            "index": 0
+          },
+          "diffuseTransmissionColorTexture": {
+            "index": 1
+          }
         }
       }
     },
@@ -132,6 +138,24 @@
       "componentType": 5123,
       "count": 3,
       "type": "SCALAR"
+    }
+  ],
+  "images": [
+    {
+      "name": "dt_mask",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4//9/AwAJfAN+TrsbXQAAAABJRU5ErkJggg=="
+    },
+    {
+      "name": "dt_color",
+      "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    },
+    {
+      "source": 1
     }
   ]
 }

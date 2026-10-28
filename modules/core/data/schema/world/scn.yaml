@@ -79,6 +79,11 @@
         - { name: loop,     type: bool,    default: true }
         - { name: playing,  type: bool,    default: true }
         - { name: duration, type: float,   default: 0.0F }      # 采样后写回（只读语义）
+        # ---- glTF 片段动画（plans/22，第 28 轮；尾部追加，旧 2D 属性轨道零变化）----
+        # clips 非空 → 走 glTF 通路（节点 TRS / 骨骼 / morph 权重采样，不写回组件字段）；
+        # 空 → 保持旧行为（clip + field_path 属性轨道）。
+        - { name: clips,      type: "string[]" }                # 片段路径数组（相对场景目录）
+        - { name: clip_index, type: int32_t, default: 0 }       # 当前片段下标（越界夹到有效范围）
     # CPU 粒子发射器（docs/15 §4）：确定性（引擎 RNG，参与回放），上限受池大小约束。
     - struct: ParticleEmitter
       roles: [particle_emitter]
@@ -164,6 +169,13 @@
         # 环境贴图（equirectangular，PNG/JPEG；空 = 用内建 studio_env 程序化贴图）。
         # 支持 builtin:/textures/studio_env 与 VFS/远程路径；runtime 按 sRGB + mip 加载，shader IBL 采样。
         - { name: env_texture, type: string, default: "" }
+        # env_texture 是否同时作为**天空背景**渲染：true=画 HDRI 背景（旧行为）；false=只用它做 IBL
+        # 光照/反射，背景仍用相机 clear_color（材料对比图不希望 HDRI 背景盖住参考图背景时用）。
+        - { name: env_background, type: bool, default: true }
+        # 立方体环境贴图（第 26 轮）：写 6 面贴图的**基名**（不含面后缀/扩展名，相对场景目录或 VFS 路径），
+        # 运行时按 `<基名>_px/_nx/_py/_ny/_pz/_nz.(hdr|exr|png|jpg)` 加载 6 面 → GGX 预过滤 cube +
+        # irradiance cube（IBL/天空按方向采样）。非空时优先于 env_texture；加载失败回退 equirect/analytic。
+        - { name: env_cubemap, type: string, default: "" }
         # 3D 渲染 MSAA：0/1 = 关（默认，旧场景零变化）、4 = 4x（gfx 不支持时自动回退 1x）。
         # 环境变量 MAQUE_MSAA 可覆盖本字段（0/1/4）。
         - { name: msaa_samples, type: int32_t, default: 0 }

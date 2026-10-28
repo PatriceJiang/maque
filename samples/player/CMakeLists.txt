@@ -100,6 +100,17 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(render3d_scene_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# KHR_materials_volume 厚度单位端到端（第 28 轮）：thicknessFactor/thicknessTexture 是 mesh 空间厚度、
+# 随节点缩放；attenuationDistance 是世界空间。scenes/pbr/volume_scale.scn 两个同材质 cube（scale 1.0 vs 0.1）
+# → 世界厚度差 10× → 亮度必须显著不同（漏乘节点缩放会一样黑）；另断言同帧两次截图逐字节一致。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME volume_scale_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/volume_scale_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/volume_scale.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/volume_scale_e2e")
+    set_tests_properties(volume_scale_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # 场景自定义全屏 shader 端到端（render.ShaderPass + Shadertoy demo 集：Seascape / Mandelbulb）：
 # WGSL 是场景资源（VFS 根 = 场景目录），非内建 shader。逐场景 ① --shot 日志含该 .wgsl 的
 # shader pass 加载行 + "runtime: shot" + PPM 640x360 结构断言（颜色多样/非平坦；seascape 另断言
@@ -120,6 +131,16 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              $<TARGET_FILE:maque_player>
              "${CMAKE_CURRENT_BINARY_DIR}/pbr_regression_e2e")
     set_tests_properties(pbr_regression_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# cubemap env 端到端（docs/31，第 26 轮）：6 面 cube 资产 → GGX 预过滤 cube + irradiance cube → IBL/天空。
+# ① env CUBEMAP/PMREM 装配日志 ② 同一环境 equirect vs cube 渲染接近（hist≥0.9、mean≤4）
+# ③ cube 渲染确定性 ④ env_cubemap 缺失时 warn + 回退 analytic（exit 0）。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME env_cubemap_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/env_cubemap_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_CURRENT_BINARY_DIR}/env_cubemap_e2e")
+    set_tests_properties(env_cubemap_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
 # 材质模型端到端（plans/19-threejs-materials.md）：three.js 材质族 → asset.PbrMaterial.shading_model。
@@ -159,6 +180,31 @@ if(MAQUE_BUILD_TESTS)
              "${CMAKE_SOURCE_DIR}/tests/data/gltf/triangle.gltf"
              "${CMAKE_CURRENT_BINARY_DIR}/gltf_import_e2e")
     set_tests_properties(gltf_import_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# glTF 动画 / 蒙皮 / morph 端到端（plans/22-gltf-animation-implementation.md）：
+#   夹具 → importer 层级场景 + .skel/.clip/morph 资产 → player 离屏多帧渲染。
+#   ① gltf_skin_e2e：layout=2/72B 顶点、骨架名解析、bind pose palette≈I（MAQUE_SKIN=0 逐字节一致）
+#   ② gltf_anim_e2e：clip 3 轨道、帧 1/20/40 不同、同帧两次一致
+#   ③ gltf_morph_e2e：默认权重生效、weights 动画帧变化、确定性
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME gltf_skin_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_skin_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tools/gltf_import.py"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_skin_e2e")
+    set_tests_properties(gltf_skin_e2e PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_test(NAME gltf_anim_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_anim_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tools/gltf_import.py"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_anim_e2e")
+    set_tests_properties(gltf_anim_e2e PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_test(NAME gltf_morph_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/gltf_morph_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tools/gltf_import.py"
+             "${CMAKE_CURRENT_BINARY_DIR}/gltf_morph_e2e")
+    set_tests_properties(gltf_morph_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
 # 输入/UI/快照/回放端到端（docs/10 §3/§5、docs/19 §9）：注入 → 分发 → 生成 → 回放一致

@@ -1,0 +1,175 @@
+{
+  "note": "官方 Khronos glTF Sample 截图使用的 HDRI 环境（README 明确写出的 23 个模型）。HDRI 文件**不入库**（许可混杂：CC0/CC-BY/CC-BY-NC-SA/无 license；且 1024x512 RGBE 共 16MB），放在 .deps/khronos-env/（gitignored，下载脚本见 maque-test-tmp/hdri_lab/fetch_hdri.ps1）。迁移工具按本表给 .scn 注入 env_texture=/khronos_env/<file>，渲染时用 MAQUE_MOUNT=/khronos_env=<repo>/.deps/khronos-env 挂载；未挂载时 runtime 回退 analytic IBL。",
+  "mount_name": "/khronos_env",
+  "env_dir": ".deps/khronos-env",
+  "rotation_labels": {
+    "+X": 0.0,
+    "+Z": 90.0,
+    "-X": 180.0,
+    "-Z": 270.0
+  },
+  "models": {
+    "AnisotropyBarnLamp": {
+      "env": "Studio Neutral",
+      "env_file": "neutral.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-4.0",
+      "attribution": "Amazon / Khronos glTF-Sample-Environments (CC-BY-4.0)"
+    },
+    "AnisotropyDiscTest": {
+      "env": "Pisa",
+      "env_file": "pisa.hdr",
+      "env_rotation_deg": null,
+      "license": "unknown (no license file)",
+      "attribution": "USC ICT / Khronos glTF-Sample-Environments"
+    },
+    "CarConcept": {
+      "env": "Wide Street",
+      "env_file": "Wide_Street.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "CarbonFibre": {
+      "env": "Wide Street",
+      "env_file": "Wide_Street.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "ChairDamaskPurplegold": {
+      "env": "Wide Street",
+      "env_file": "Wide_Street.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "ChronographWatch": {
+      "env": "Cannon Exterior",
+      "env_file": "Cannon_Exterior.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "ClearCoatCarPaint": {
+      "env": "Wide Street",
+      "env_file": "Wide_Street.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "ClearcoatWicker": {
+      "env": "Colorful Studio",
+      "env_file": "Colorful_Studio.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-4.0",
+      "attribution": "Khronos glTF-Sample-Environments (CC-BY-4.0)"
+    },
+    "CommercialRefrigerator": {
+      "env": "Colorful Studio",
+      "env_file": "Colorful_Studio.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-4.0",
+      "attribution": "Khronos glTF-Sample-Environments (CC-BY-4.0)"
+    },
+    "DiffuseTransmissionTeacup": {
+      "env": "Wide Street",
+      "env_file": "Wide_Street.hdr",
+      "env_rotation_deg": 270.0,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "DiffuseTransmissionTest": {
+      "env": "Cannon Exterior",
+      "env_file": "Cannon_Exterior.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "DragonAttenuation": {
+      "env": "Footprint Court",
+      "env_file": "footprint_court.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-NC-SA-3.0",
+      "attribution": "USC ICT / Khronos glTF-Sample-Environments (CC-BY-NC-SA-3.0)"
+    },
+    "DragonDispersion": {
+      "env": "Studio Neutral",
+      "env_file": "neutral.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-4.0",
+      "attribution": "Amazon / Khronos glTF-Sample-Environments (CC-BY-4.0)"
+    },
+    "GlassBrokenWindow": {
+      "env": "Cannon Exterior",
+      "env_file": "Cannon_Exterior.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "GlassVaseFlowers": {
+      "env": "Cannon Exterior",
+      "env_file": "Cannon_Exterior.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "IORTestGrid": {
+      "env": "Colorful Studio",
+      "env_file": "Colorful_Studio.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-4.0",
+      "attribution": "Khronos glTF-Sample-Environments (CC-BY-4.0)"
+    },
+    "IridescenceLamp": {
+      "env": "Footprint Court",
+      "env_file": "footprint_court.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-NC-SA-3.0",
+      "attribution": "USC ICT / Khronos glTF-Sample-Environments (CC-BY-NC-SA-3.0)"
+    },
+    "PotOfCoals": {
+      "env": "Dining Room",
+      "env_file": "ennis.hdr",
+      "env_rotation_deg": null,
+      "license": "unknown (no license file)",
+      "attribution": "USC ICT / Khronos glTF-Sample-Environments"
+    },
+    "SheenTestGrid": {
+      "env": "Footprint Court",
+      "env_file": "footprint_court.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-NC-SA-3.0",
+      "attribution": "USC ICT / Khronos glTF-Sample-Environments (CC-BY-NC-SA-3.0)"
+    },
+    "SpecularSilkPouf": {
+      "env": "Wide Street",
+      "env_file": "Wide_Street.hdr",
+      "env_rotation_deg": null,
+      "license": "CC0-1.0",
+      "attribution": "Poly Haven (CC0)"
+    },
+    "SunglassesKhronos": {
+      "env": "Studio Neutral",
+      "env_file": "neutral.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-4.0",
+      "attribution": "Amazon / Khronos glTF-Sample-Environments (CC-BY-4.0)"
+    },
+    "TransmissionRoughnessTest": {
+      "env": "Footprint Court",
+      "env_file": "footprint_court.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-NC-SA-3.0",
+      "attribution": "USC ICT / Khronos glTF-Sample-Environments (CC-BY-NC-SA-3.0)"
+    },
+    "USDShaderBallForGltf": {
+      "env": "Studio Neutral",
+      "env_file": "neutral.hdr",
+      "env_rotation_deg": null,
+      "license": "CC-BY-4.0",
+      "attribution": "Amazon / Khronos glTF-Sample-Environments (CC-BY-4.0)",
+      "env_background": true
+    }
+  }
+}

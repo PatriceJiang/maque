@@ -21,10 +21,7 @@
     }
     f0 = mix(f0, iridescence_tint(clamp(thick, 0.0, 2000.0), n_dot_v), ep.iridescence * 0.6);
   }
-  /* anisotropy：近似为沿主方向的粗糙度压缩（观感提示，非精确各向异性 BRDF） */
-  if (ep.anisotropy > 0.001) {
-    s.rough = clamp(s.rough * (1.0 - 0.4 * ep.anisotropy), 0.02, 1.0);
-  }
+  /* anisotropy：真正的各向异性 GGX 在 light_standard 里（s.aniso/s.aniso_dir），不再压缩粗糙度。 */
   var n_cc = s.n;
   if ((flags2_bits() & 8) != 0) {
     n_cc = sample_clearcoat_normal(surface_geo_normal(in.n, ff), in.w, clearcoat_normal_uv(in));
@@ -37,5 +34,9 @@
                   * (cam.ambient.rgb * dr.phys0.w + vec3f(0.12));
   }
   color = color + s.emissive;
+  /* transmission：有 scene color 拷贝（离屏路径）→ 屏幕空间折射；否则回退旧的 Fresnel alpha。 */
+  if ((flags2_bits() & 0x100000) != 0 && cam.env_info.w > 0.5) {
+    return vec4f(transmission_refraction(in, s, color, f0), 1.0);
+  }
   return tone_output(color, s.alpha);
 }

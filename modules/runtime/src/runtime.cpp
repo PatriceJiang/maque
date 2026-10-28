@@ -74,6 +74,11 @@ struct Entity {
      * 位置真相 = Transform 组件里的局部坐标；改位置请经 node/entity API 写组件，
      * 直接改 world_x/y 会在下一帧被覆盖）。 */
     float world_x = 0, world_y = 0;
+    /* 3D 世界矩阵（列主序，派生缓存）：每帧由 flatten_world3d() 从节点树（+ glTF 片段派生姿态）
+     * 重算；不是位置真相（真相在 scene.Transform3D.local / .clip.json 采样里）。
+     * 平级场景 world_m == m4_from_trs(local)，旧场景零漂移（plans/22 §6.3）。 */
+    float world_m[16] = { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+                          0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F };
     /* 节点属性（active/scale/angle/opacity）：active/scale/angle/opacity 影响
      * 自身与子树；z_index 参与 UI/绘制稳定排序。全部进快照与校验和（docs/10）。 */
     bool  active = true;
@@ -82,6 +87,56 @@ struct Entity {
     float opacity = 1.0F;                                  // 0..1
     int   z_index = 0;
     std::unordered_map<uint32_t, std::vector<uint8_t>> comps;   // type_id → blob
+};
+
+/* ---- glTF 片段 / 蒙皮 / morph 运行时状态（plans/22 §6）----
+ * 全部是**派生缓存**：真相仍是场景组件（Transform3D.local / AnimationPlayer 字段 / 资源文件），
+ * 不进快照、不进校验和；切场景由 clear_asset_caches() 统一清空。 */
+struct AnimPose {
+    bool has_pos = false, has_rot = false, has_scale = false;
+    math::Vec3 pos{};
+    math::Vec3 scale{ 1.0F, 1.0F, 1.0F };
+    float rot[4] = { 0.0F, 0.0F, 0.0F, 1.0F };       /* 四元数 (x,y,z,w) */
+};
+/* .clip.json 轨道：path 0=translation 1=rotation 2=scale 3=weights */
+struct GClipTrack {
+    std::string node;
+    int path = 0;
+    bool step = false;                                /* interpolation == "STEP" */
+    uint32_t comps = 0;                               /* 每关键帧浮点个数（3/4/权重数） */
+    std::vector<float> times;
+    std::vector<float> values;                        /* 扁平：keys × comps */
+};
+struct GClip {
+    bool failed = false;                              /* 解析失败（缓存起来避免每帧重试） */
+    std::string name;
+    float duration = 0.0F;
+    std::vector<GClipTrack> tracks;
+};
+/* .skel.json：joint 名 + inverse_bind（列主序 mat4） */
+struct Skeleton {
+    bool failed = false;
+    std::string name;
+    std::vector<std::string> joint_names;
+    std::vector<float> inverse_bind;                  /* joint_count × 16 */
+};
+/* CPU morph：基础顶点（已按 GPU stride 打包）+ 各 target 的 pos/normal 增量 */
+struct MorphTarget {
+    std::vector<float> positions;                     /* 每顶点 3 */
+    std::vector<float> normals;                       /* 每顶点 3（可空） */
+};
+struct MorphMesh {
+    int32_t mesh = -1;
+    uint32_t vertex_count = 0;
+    uint32_t stride = 0;
+    int32_t layout = 0;
+    std::vector<uint8_t> base;                        /* 打包后的基础顶点（morph 重算起点） */
+    std::vector<MorphTarget> targets;
+    std::vector<float> default_weights;
+    std::vector<float> applied_weights;               /* 上次已上传的权重（不变就不重算） */
+    int owner_entity = -1;                            /* 共享 mesh：首实体驱动（其余忽略 + 告警一次） */
+    bool warned_shared = false;
+    bool warned_no_update = false;
 };
 
 struct Engine;
@@ -159,6 +214,8 @@ struct Scene {
     int  count() const { return (int)ents.size(); }
     /* 每帧从**节点树**展平出世界坐标（写进 Entity::world_x/y）；树是唯一模型，这里是派生缓存。 */
     void flatten_world(Engine& eng);
+    /* 每帧从**节点树 + glTF 片段派生姿态**展平出 3D 世界矩阵（写进 Entity::world_m，列主序）。 */
+    void flatten_world3d(Engine& eng);
     uint64_t checksum(Engine& eng);     // 世界状态校验和（确定性；反射驱动）
     void encode(Engine& eng, SnapshotWriter& w);   // 世界 → 字节（二进制 codec）
     size_t decode(Engine& eng, const uint8_t* in, size_t n);
@@ -558,6 +615,8 @@ struct Engine {
     std::unordered_map<std::string, int> tex_cache;              // 装配期填充；提取期只读
     /* env PMREM 产物缓存：路径 → {specular(预过滤 mip 链), irradiance}；-1 = 加载失败 */
     std::unordered_map<std::string, std::pair<int32_t, int32_t>> env_tex_cache;
+    /* 立方体 env（第 26 轮）：6 面基名 → {GGX cube, irradiance cube}；-1 = 加载失败 */
+    std::unordered_map<std::string, std::pair<int32_t, int32_t>> env_cube_cache;
     std::unordered_map<std::string, scn::SpriteMaterial> material_cache;
     /* 音频（docs/30）：默认 **null 后端**（逻辑/脚本可用、CI 静音）；MAQUE_AUDIO=sdl|auto 才开设备。
      * 后端实现可替换（modules/world/audio/src/backend_*.cpp），runtime 只认 C ABI。 */
@@ -602,6 +661,29 @@ struct Engine {
     int32_t cube_mesh = -1;
     /* M4c：.mesh.json 资产缓存（路径 → 渲染器网格句柄；-1 = 加载失败，避免每帧重试） */
     std::unordered_map<std::string, int32_t> mesh_cache;
+    /* ---- glTF 动画 / 蒙皮 / morph（plans/22 §6；全部派生缓存，不进快照/校验和）---- */
+    std::unordered_map<std::string, GClip> gclips;             /* .clip.json 路径 → 片段 */
+    std::unordered_map<std::string, Skeleton> skeletons;       /* .skel.json 路径 → 骨架 */
+    std::unordered_map<std::string, MorphMesh> morph_meshes;   /* mesh_path → morph 数据（CPU 重算用） */
+    std::unordered_map<std::string, int32_t> mesh_layout;      /* mesh_path → vertex_layout（-1=失败） */
+    std::unordered_map<int, AnimPose> anim_pose;               /* 实体 id → 本帧派生姿态（clip 采样） */
+    std::unordered_map<int, std::vector<float>> morph_weight_override;  /* morph mesh 实体 → 动画权重 */
+    std::unordered_map<int, std::string> entity_morph_mesh;    /* morph mesh 实体 → mesh_path（装配期建） */
+    std::unordered_map<std::string, int> entity_by_name;       /* 唯一实体名 → 最小 id（装配期建） */
+    std::vector<std::vector<float>> skin_palettes;             /* 本帧调色板（out_skins.palette 指向这里） */
+    std::unordered_set<std::string> gltf_warned;               /* 一次性告警去重（skin/joint 解析失败等） */
+    bool anim_enabled = true;             /* MAQUE_ANIM=0 → 跳过片段采样（保持 bind pose，A/B 对照） */
+    bool skin_enabled = true;             /* MAQUE_SKIN=0 → 调色板填 identity（bind pose 不变量） */
+    bool render3d_info = false;           /* MAQUE_RENDER3D_INFO=1 → 装配/首帧诊断 */
+    bool gltf_env_read = false;
+    bool gltf_frame_info = false;         /* extract_3d 首帧诊断是否已打印 */
+    bool gltf_anim_info = false;          /* anim_step 首帧姿态诊断是否已打印 */
+    void read_gltf_env();                 /* 一次性读 MAQUE_ANIM / MAQUE_SKIN / MAQUE_RENDER3D_INFO */
+    void setup_gltf_assets();             /* 装配期：名字表 / 骨架 / 片段 / morph 预解析（IO 不在模拟帧内） */
+    bool load_skeleton(const std::string& path);   /* .skel.json → skeletons[path]（失败缓存 failed） */
+    bool load_gclip(const std::string& path);      /* .clip.json → gclips[path]（失败缓存 failed） */
+    void anim_step_gclip(int entity, const mq_type_desc* d, std::vector<uint8_t>& blob, float dt);
+    bool apply_morph(const std::string& path, const std::vector<float>& weights);
     /* 场景资源全屏 shader pass（docs/13）：shader = 场景目录里的 .wgsl（**不是** builtin shader）。
      * 每个实体最多一个 render.ShaderPass；顺序 = 实体 id 序（确定性）。 */
     struct LoadedShaderPass { int entity = -1; int32_t handle = -1; };
@@ -620,6 +702,9 @@ struct Engine {
     /* envmap（PMREM）：.hdr(RGBE) / PNG/JPEG / builtin studio → GGX 粗糙度预过滤 mip 链 +
      * 漫反射 irradiance 贴图；两项都是 RGBA16F，失败时输出 -1（shader 回退 analytic）。 */
     void load_env_textures(const std::string& path, int32_t& spec_id, int32_t& irr_id);
+    /* 第 26 轮：6 面 cubemap env（基名 → _px/_nx/... + .hdr/.exr/.png/.jpg） */
+    void load_env_cubemap(const std::string& prefix, int32_t& spec_id, int32_t& irr_id);
+    bool load_env_image_linear(const std::string& path, int& w, int& h, std::vector<float>& base);
     int32_t load_mesh(const std::string& path);                // M4c：glTF 导入的 .mesh.json → 网格句柄
     int load_texture_srgb(const std::string& path);            // M4g：albedo 贴图按 sRGB 采样（RGBA8_SRGB）
     int load_texture_mips(const std::string& path);            // plans/19：线性数据贴图 + CPU mip 链（抗锯齿）
@@ -636,7 +721,8 @@ struct Engine {
                     std::vector<mq_renderer_view3d>& out_views,
                     std::vector<mq_renderer_light>& out_lights,
                     std::vector<mq_renderer_pbr_material>& out_mats,
-                    std::vector<mq_renderer_draw3d>& out_draws);
+                    std::vector<mq_renderer_draw3d>& out_draws,
+                    std::vector<mq_renderer_skin>& out_skins);
     bool prepare_replay();                                  // 载入回放日志并设定期望校验和（docs/10 §3）
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）
@@ -961,6 +1047,9 @@ static void make_studio_env_base(std::vector<float>& out, int& w, int& h);
 static void build_pmrem(const std::vector<float>& base, int w, int h,
                         std::vector<uint8_t>& spec_chain, int& levels,
                         std::vector<uint8_t>& irr, int& irr_w, int& irr_h);
+static void build_pmrem_cube(const std::vector<std::vector<float>>& base, int w,
+                             std::vector<uint8_t>& spec_chain, int& levels,
+                             std::vector<uint8_t>& irr, int& irr_w);
 
 /* envmap 加载（PMREM）：.hdr（RGBE）/ EXR / PNG/JPEG / builtin studio → RGBA16F 预过滤 mip 链 + irradiance。
  * 全部在装配期 CPU 预计算（确定性；与 GPU/后端无关），失败时 spec/irr 均为 -1 → shader 回退 analytic。 */
@@ -973,77 +1062,9 @@ void Engine::load_env_textures(const std::string& path, int32_t& spec_id, int32_
     std::vector<float> base;
     if (tp.vfs == "builtin:/textures/studio_env") {
         make_studio_env_base(base, w, h);
-    } else {
-        void* data = nullptr; size_t n = 0;
-        if (!vfs || mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) {
-            std::print(stderr, "runtime: env_texture not found '{}'\n", path);
-            env_tex_cache[path] = { -1, -1 };
-            return;
-        }
-        const bool is_hdr = (n >= 4 && data && ((const uint8_t*)data)[0] == '#' &&
-                             ((const uint8_t*)data)[1] == '?') ||
-                            (tp.vfs.size() >= 4 &&
-                             (tp.vfs.compare(tp.vfs.size() - 4, 4, ".hdr") == 0 ||
-                              tp.vfs.compare(tp.vfs.size() - 4, 4, ".HDR") == 0));
-        const bool is_exr = n >= 4 && data && ((const uint8_t*)data)[0] == 0x76 &&
-                            ((const uint8_t*)data)[1] == 0x2f && ((const uint8_t*)data)[2] == 0x31 &&
-                            ((const uint8_t*)data)[3] == 0x01;
-        if (is_hdr) {
-            const bool ok = parse_radiance_hdr((const uint8_t*)data, n, w, h, base);
-            mq_vfs_free(data);
-            if (!ok) {
-                std::print(stderr, "runtime: env_texture '{}' HDR(RGBE) 解析失败，回退 analytic\n", path);
-                env_tex_cache[path] = { -1, -1 };
-                return;
-            }
-            if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
-                const size_t c = ((size_t)(h / 2) * (size_t)w + (size_t)(w / 2)) * 4;
-                std::print(stderr, "runtime: env HDR {}x{} p0=({:.4f},{:.4f},{:.4f}) "
-                                   "pc=({:.4f},{:.4f},{:.4f})\n",
-                           w, h, base[0], base[1], base[2],
-                           base[c], base[c + 1], base[c + 2]);
-            }
-        } else if (is_exr) {
-            const bool ok = parse_exr_env((const uint8_t*)data, n, w, h, base);
-            mq_vfs_free(data);
-            if (!ok) {
-                std::print(stderr, "runtime: env_texture '{}' EXR 解析失败（仅支持 scanline NONE/RLE/ZIP/ZIPS，"
-                                   "half/float 通道），回退 analytic\n", path);
-                env_tex_cache[path] = { -1, -1 };
-                return;
-            }
-            if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
-                float mx = 0.0F;
-                for (float v : base) mx = std::max(mx, v);
-                const size_t c = ((size_t)(h / 2) * (size_t)w + (size_t)(w / 2)) * 4;
-                std::print(stderr, "runtime: env EXR {}x{} p0=({:.4f},{:.4f},{:.4f}) "
-                                   "pc=({:.4f},{:.4f},{:.4f}) max={:.3f}\n",
-                           w, h, base[0], base[1], base[2],
-                           base[c], base[c + 1], base[c + 2], mx);
-            }
-        } else {
-            uint8_t* rgba = nullptr; uint32_t iw = 0, ih = 0;
-            char err[128] = { 0 };
-            const int rc = mq_image_decode(data, n, &rgba, &iw, &ih, err, sizeof err);
-            mq_vfs_free(data);
-            if (rc != 0) {
-                std::print(stderr, "runtime: env_texture '{}' 解码失败: {}\n", path, err);
-                env_tex_cache[path] = { -1, -1 };
-                return;
-            }
-            /* PNG/JPEG 存的是 sRGB 编码值：先解码到线性域再做 PMREM（否则高光/平均亮度错误）。 */
-            w = (int)iw; h = (int)ih;
-            base.assign((size_t)w * h * 4, 1.0f);
-            for (size_t i = 0, np = (size_t)w * h; i < np; ++i) {
-                for (int c = 0; c < 3; ++c) {
-                    const float s = (float)rgba[i * 4 + (size_t)c] / 255.0f;
-                    base[i * 4 + (size_t)c] = (s <= 0.04045f) ? s / 12.92f
-                                                             : std::pow((s + 0.055f) / 1.055f, 2.4f);
-                }
-                base[i * 4 + 3] = 1.0f;
-            }
-            mq_image_free(rgba);
-        }
+    } else if (!load_env_image_linear(path, w, h, base)) {
+        env_tex_cache[path] = { -1, -1 };
+        return;
     }
     if (w <= 0 || h <= 0 || base.empty()) {
         env_tex_cache[path] = { -1, -1 };
@@ -1075,6 +1096,138 @@ void Engine::load_env_textures(const std::string& path, int32_t& spec_id, int32_
         std::print("runtime: env PMREM '{}' {}x{} → {} mips (GGX) + irradiance {}x{} ({:.1f} ms)\n",
                    path, w, h, levels, irr_w, irr_h, ms);
     env_tex_cache[path] = { spec_id, irr_id };
+}
+
+/* env 图片解码（.hdr RGBE / EXR / PNG/JPEG）→ 线性 RGBA float；供 equirect 与 6 面 cube 复用。 */
+bool Engine::load_env_image_linear(const std::string& path, int& w, int& h, std::vector<float>& base) {
+    w = 0; h = 0; base.clear();
+    const TexPathParams tp = parse_tex_path(path);
+    void* data = nullptr; size_t n = 0;
+    if (!vfs || mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) {
+        std::print(stderr, "runtime: env_texture not found '{}'\n", path);
+        return false;
+    }
+    const bool is_hdr = (n >= 4 && data && ((const uint8_t*)data)[0] == '#' &&
+                         ((const uint8_t*)data)[1] == '?') ||
+                        (tp.vfs.size() >= 4 &&
+                         (tp.vfs.compare(tp.vfs.size() - 4, 4, ".hdr") == 0 ||
+                          tp.vfs.compare(tp.vfs.size() - 4, 4, ".HDR") == 0));
+    const bool is_exr = n >= 4 && data && ((const uint8_t*)data)[0] == 0x76 &&
+                        ((const uint8_t*)data)[1] == 0x2f && ((const uint8_t*)data)[2] == 0x31 &&
+                        ((const uint8_t*)data)[3] == 0x01;
+    if (is_hdr) {
+        const bool ok = parse_radiance_hdr((const uint8_t*)data, n, w, h, base);
+        mq_vfs_free(data);
+        if (!ok) {
+            std::print(stderr, "runtime: env_texture '{}' HDR(RGBE) 解析失败，回退 analytic\n", path);
+            return false;
+        }
+        if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
+            const size_t c = ((size_t)(h / 2) * (size_t)w + (size_t)(w / 2)) * 4;
+            std::print(stderr, "runtime: env HDR {}x{} p0=({:.4f},{:.4f},{:.4f}) "
+                               "pc=({:.4f},{:.4f},{:.4f})\n",
+                       w, h, base[0], base[1], base[2], base[c], base[c + 1], base[c + 2]);
+        }
+        return true;
+    }
+    if (is_exr) {
+        const bool ok = parse_exr_env((const uint8_t*)data, n, w, h, base);
+        mq_vfs_free(data);
+        if (!ok) {
+            std::print(stderr, "runtime: env_texture '{}' EXR 解析失败（仅支持 scanline NONE/RLE/ZIP/ZIPS，"
+                               "half/float 通道），回退 analytic\n", path);
+            return false;
+        }
+        if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
+            float mx = 0.0F;
+            for (float v : base) mx = std::max(mx, v);
+            const size_t c = ((size_t)(h / 2) * (size_t)w + (size_t)(w / 2)) * 4;
+            std::print(stderr, "runtime: env EXR {}x{} p0=({:.4f},{:.4f},{:.4f}) "
+                               "pc=({:.4f},{:.4f},{:.4f}) max={:.3f}\n",
+                       w, h, base[0], base[1], base[2], base[c], base[c + 1], base[c + 2], mx);
+        }
+        return true;
+    }
+    uint8_t* rgba = nullptr; uint32_t iw = 0, ih = 0;
+    char err[128] = { 0 };
+    const int rc = mq_image_decode(data, n, &rgba, &iw, &ih, err, sizeof err);
+    mq_vfs_free(data);
+    if (rc != 0) {
+        std::print(stderr, "runtime: env_texture '{}' 解码失败: {}\n", path, err);
+        return false;
+    }
+    /* PNG/JPEG 存的是 sRGB 编码值：先解码到线性域再做 PMREM（否则高光/平均亮度错误）。 */
+    w = (int)iw; h = (int)ih;
+    base.assign((size_t)w * h * 4, 1.0f);
+    for (size_t i = 0, np = (size_t)w * h; i < np; ++i) {
+        for (int c = 0; c < 3; ++c) {
+            const float sv = (float)rgba[i * 4 + (size_t)c] / 255.0f;
+            base[i * 4 + (size_t)c] = (sv <= 0.04045f) ? sv / 12.92f
+                                                       : std::pow((sv + 0.055f) / 1.055f, 2.4f);
+        }
+        base[i * 4 + 3] = 1.0f;
+    }
+    mq_image_free(rgba);
+    return true;
+}
+
+/* 立方体 env 加载（第 26 轮）：基名 + 6 面后缀 → GGX 预过滤 cube（mip 链）+ irradiance cube。
+ * 失败时 spec/irr 均为 -1 → shader 回退 equirect/analytic（不崩）。 */
+void Engine::load_env_cubemap(const std::string& prefix, int32_t& spec_id, int32_t& irr_id) {
+    spec_id = irr_id = -1;
+    auto cached = env_cube_cache.find(prefix);
+    if (cached != env_cube_cache.end()) { spec_id = cached->second.first; irr_id = cached->second.second; return; }
+    static const char* kSuffix[6] = { "_px", "_nx", "_py", "_ny", "_pz", "_nz" };
+    static const char* kExts[5] = { ".hdr", ".exr", ".png", ".jpg", ".jpeg" };
+    std::vector<std::vector<float>> faces(6);
+    int w = 0;
+    bool ok = false;
+    for (const char* ext : kExts) {
+        int fw = 0, fh = 0;
+        bool all = true;
+        for (int f = 0; f < 6; ++f) {
+            const std::string p = prefix + kSuffix[f] + std::string(ext);
+            int iw = 0, ih = 0;
+            std::vector<float> img;
+            if (!load_env_image_linear(p, iw, ih, img)) { all = false; break; }
+            if (f == 0) { fw = iw; fh = ih; }
+            else if (iw != fw || ih != fh) { all = false; break; }
+            faces[(size_t)f] = std::move(img);
+        }
+        if (all && fw > 0 && fw == fh) { w = fw; ok = true; break; }
+    }
+    if (!ok) {
+        std::print(stderr, "runtime: env_cubemap '{}' 6 面加载失败（<基名>_px/_nx/_py/_ny/_pz/_nz + "
+                           ".hdr/.exr/.png/.jpg），回退 equirect/analytic\n", prefix);
+        env_cube_cache[prefix] = { -1, -1 };
+        return;
+    }
+    std::vector<uint8_t> spec_chain, irr;
+    int levels = 1, irr_w = 0;
+    const auto t0 = std::chrono::steady_clock::now();
+    build_pmrem_cube(faces, w, spec_chain, levels, irr, irr_w);
+    const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    if (rapi && rself && rapi->create_texture2) {
+        mq_renderer_texture_desc td{};
+        td.width = w; td.height = w;
+        td.pixel_format = 2;                        /* RGBA16F */
+        td.kind = 1;                                /* cube（6 面 × mip 链） */
+        td.mip_levels = levels;
+        td.filter = 1; td.wrap_u = 1; td.wrap_v = 1;
+        td.data = spec_chain.data(); td.data_size = (uint64_t)spec_chain.size();
+        if (rapi->create_texture2(rself, &td, &spec_id) != 0) spec_id = -1;
+        mq_renderer_texture_desc id_{};
+        id_.width = irr_w; id_.height = irr_w;
+        id_.pixel_format = 2; id_.kind = 1; id_.mip_levels = 1;
+        id_.filter = 1; id_.wrap_u = 1; id_.wrap_v = 1;
+        id_.data = irr.data(); id_.data_size = (uint64_t)irr.size();
+        if (rapi->create_texture2(rself, &id_, &irr_id) != 0) irr_id = -1;
+    }
+    if (spec_id < 0) std::print(stderr, "runtime: env_cubemap '{}' PMREM 上传失败\n", prefix);
+    else
+        std::print("runtime: env CUBEMAP '{}' {}x{} ×6 → {} mips (GGX) + irradiance {}x{}×6 ({:.1f} ms)\n",
+                   prefix, w, w, levels, irr_w, irr_w, ms);
+    env_cube_cache[prefix] = { spec_id, irr_id };
 }
 
 int Engine::load_texture_srgb(const std::string& path) {
@@ -1601,6 +1754,147 @@ static void env_importance_sample_ggx(float xi1, float xi2, const float n[3], fl
     const float sc = sin_theta * std::cos(phi), ss = sin_theta * std::sin(phi);
     for (int i = 0; i < 3; ++i) h[i] = t[i] * sc + b[i] * ss + n[i] * cos_theta;
 }
+/* ---- cubemap env 辅助（第 26 轮）----
+ * 面序：0=+X 1=-X 2=+Y 3=-Y 4=+Z 5=-Z；面内 u 向右、v 向下（图片行 0 = 顶部），
+ * 与 tools/equirect_to_cube.py 的 face_dir 逐式一致；env_face_uv_from_dir 是其逆映射。 */
+static void env_face_dir(int face, float u, float v, float d[3]) {
+    const float s = 2.0f * u - 1.0f, t = 2.0f * v - 1.0f;
+    switch (face) {
+    case 0: d[0] = 1.0f;  d[1] = -t;    d[2] = -s;    break;   /* +X */
+    case 1: d[0] = -1.0f; d[1] = -t;    d[2] = s;     break;   /* -X */
+    case 2: d[0] = s;     d[1] = 1.0f;  d[2] = t;     break;   /* +Y */
+    case 3: d[0] = s;     d[1] = -1.0f; d[2] = -t;    break;   /* -Y */
+    case 4: d[0] = s;     d[1] = -t;    d[2] = 1.0f;  break;   /* +Z */
+    default: d[0] = -s;   d[1] = -t;    d[2] = -1.0f; break;   /* -Z */
+    }
+}
+static void env_face_uv_from_dir(const float d[3], int& face, float& u, float& v) {
+    const float ax = std::fabs(d[0]), ay = std::fabs(d[1]), az = std::fabs(d[2]);
+    const float ma = std::max(ax, std::max(ay, az));
+    if (ma <= 1e-8f) { face = 0; u = 0.5f; v = 0.5f; return; }
+    if (ax >= ay && ax >= az) {
+        if (d[0] >= 0.0f) {
+            face = 0; u = 0.5f * (1.0f - d[2] / ma); v = 0.5f * (1.0f - d[1] / ma);
+        } else {
+            face = 1; u = 0.5f * (1.0f - d[2] / ma); v = 0.5f * (1.0f + d[1] / ma);
+        }
+    } else if (ay >= az) {
+        if (d[1] >= 0.0f) {
+            face = 2; u = 0.5f * (1.0f + d[0] / ma); v = 0.5f * (1.0f + d[2] / ma);
+        } else {
+            face = 3; u = 0.5f * (1.0f - d[0] / ma); v = 0.5f * (1.0f + d[2] / ma);
+        }
+    } else {
+        if (d[2] >= 0.0f) {
+            face = 4; u = 0.5f * (1.0f + d[0] / ma); v = 0.5f * (1.0f - d[1] / ma);
+        } else {
+            face = 5; u = 0.5f * (1.0f + d[0] / ma); v = 0.5f * (1.0f + d[1] / ma);
+        }
+    }
+}
+static void env_sample_cube(const std::vector<std::vector<float>>& faces, int w,
+                            const float dir[3], float out[3]) {
+    float n[3] = { dir[0], dir[1], dir[2] };
+    env_normalize(n);
+    int face = 0;
+    float u = 0.5f, v = 0.5f;
+    env_face_uv_from_dir(n, face, u, v);
+    const std::vector<float>& img = faces[(size_t)face];
+    const float x = u * (float)w - 0.5f, y = v * (float)w - 0.5f;
+    const int x0 = (int)std::floor(x), y0 = (int)std::floor(y);
+    const float fx = x - (float)x0, fy = y - (float)y0;
+    auto px = [&](int xx, int yy, float c[3]) {
+        xx = std::clamp(xx, 0, w - 1);
+        yy = std::clamp(yy, 0, w - 1);
+        const float* p = &img[((size_t)yy * (size_t)w + (size_t)xx) * 4];
+        c[0] = p[0]; c[1] = p[1]; c[2] = p[2];
+    };
+    float c00[3], c10[3], c01[3], c11[3];
+    px(x0, y0, c00); px(x0 + 1, y0, c10); px(x0, y0 + 1, c01); px(x0 + 1, y0 + 1, c11);
+    for (int i = 0; i < 3; ++i)
+        out[i] = (c00[i] * (1.0f - fx) + c10[i] * fx) * (1.0f - fy) +
+                 (c01[i] * (1.0f - fx) + c11[i] * fx) * fy;
+}
+/* cube PMREM：mip0 = 原始 6 面（镜面），mip L = GGX 预过滤（rough = L/(levels-1)），
+ * 另外生成 16×16×6 的余弦卷积 irradiance cube。输出布局 = “每个 mip 依次 6 面”（gfx create_texture2 约定）。 */
+static void build_pmrem_cube(const std::vector<std::vector<float>>& base, int w,
+                             std::vector<uint8_t>& spec_chain, int& levels,
+                             std::vector<uint8_t>& irr, int& irr_w) {
+    levels = 1;
+    for (int sz = w; sz > 1; sz >>= 1) ++levels;
+    spec_chain.clear();
+    for (int f = 0; f < 6; ++f) {
+        for (size_t i = 0, np = (size_t)w * (size_t)w; i < np; ++i) {
+            append_half_rgba(spec_chain, base[(size_t)f][i * 4], base[(size_t)f][i * 4 + 1],
+                             base[(size_t)f][i * 4 + 2]);
+        }
+    }
+    for (int lvl = 1; lvl < levels; ++lvl) {
+        const int ow = std::max(1, w >> lvl);
+        const float rough = (levels > 1) ? (float)lvl / (float)(levels - 1) : 0.0f;
+        const int samples = std::clamp(32 + (int)(rough * 96.0f), 32, 128);
+        for (int f = 0; f < 6; ++f) {
+            for (int y = 0; y < ow; ++y) {
+                for (int x = 0; x < ow; ++x) {
+                    float n[3];
+                    env_face_dir(f, ((float)x + 0.5f) / (float)ow, ((float)y + 0.5f) / (float)ow, n);
+                    env_normalize(n);
+                    float acc[3] = { 0.0f, 0.0f, 0.0f };
+                    float wsum = 0.0f;
+                    for (int s = 0; s < samples; ++s) {
+                        const float xi1 = ((float)s + 0.5f) / (float)samples;
+                        const float xi2 = radical_inverse_vdc((uint32_t)s);
+                        float hv[3], ldir[3];
+                        env_importance_sample_ggx(xi1, xi2, n, std::max(rough, 1e-3f), hv);
+                        const float ndh = env_dot(n, hv);
+                        for (int i = 0; i < 3; ++i) ldir[i] = 2.0f * ndh * hv[i] - n[i];
+                        env_normalize(ldir);
+                        const float ndl = env_dot(n, ldir);
+                        if (ndl <= 0.0f) continue;
+                        float c[3];
+                        env_sample_cube(base, w, ldir, c);
+                        for (int i = 0; i < 3; ++i) acc[i] += c[i] * ndl;
+                        wsum += ndl;
+                    }
+                    if (wsum > 0.0f) { for (int i = 0; i < 3; ++i) acc[i] /= wsum; }
+                    append_half_rgba(spec_chain, acc[0], acc[1], acc[2]);
+                }
+            }
+        }
+    }
+    irr_w = 16;
+    const int irr_samples = 128;
+    irr.clear();
+    for (int f = 0; f < 6; ++f) {
+        for (int y = 0; y < irr_w; ++y) {
+            for (int x = 0; x < irr_w; ++x) {
+                float n[3];
+                env_face_dir(f, ((float)x + 0.5f) / (float)irr_w, ((float)y + 0.5f) / (float)irr_w, n);
+                env_normalize(n);
+                float t[3], b[3];
+                env_basis(n, t, b);
+                float acc[3] = { 0.0f, 0.0f, 0.0f };
+                for (int s = 0; s < irr_samples; ++s) {
+                    const float xi1 = radical_inverse_vdc((uint32_t)s);
+                    const float xi2 = ((float)s + 0.5f) / (float)irr_samples;
+                    const float phi = 2.0f * kEnvPi * xi1;
+                    const float cos_theta = std::sqrt(std::max(0.0f, 1.0f - xi2));
+                    const float sin_theta = std::sqrt(xi2);
+                    const float sc = sin_theta * std::cos(phi), ss = sin_theta * std::sin(phi);
+                    float ldir[3];
+                    for (int i = 0; i < 3; ++i) ldir[i] = t[i] * sc + b[i] * ss + n[i] * cos_theta;
+                    env_normalize(ldir);
+                    float c[3];
+                    env_sample_cube(base, w, ldir, c);
+                    for (int i = 0; i < 3; ++i) acc[i] += c[i];
+                }
+                for (int i = 0; i < 3; ++i) acc[i] /= (float)irr_samples;
+                append_half_rgba(irr, acc[0], acc[1], acc[2]);
+            }
+        }
+    }
+}
+
 static void build_pmrem(const std::vector<float>& base, int w, int h,
                         std::vector<uint8_t>& spec_chain, int& levels,
                         std::vector<uint8_t>& irr, int& irr_w, int& irr_h) {
@@ -1747,11 +2041,14 @@ int Engine::load_texture_ref(const std::string& ref) {
     return load_texture(ref);   // assets（load_texture 内部剥 sampler 后缀）
 }
 
-/* M4c：加载离线导入的 .mesh.json（tools/gltf_import.py 产出，48B 顶点布局）→ 渲染器网格句柄。
- * 只读资产文件；按路径缓存（失败也缓存 -1，避免每帧重试/刷日志）。 */
+/* M4c：加载离线导入的 .mesh.json（tools/gltf_import.py 产出）→ 渲染器网格句柄。
+ * 只读资产文件；按路径缓存（失败也缓存 -1，避免每帧重试/刷日志）。
+ * plans/22 §6.1：vertex_layout 2/3 = 48/56B 基础 + joints u16x4 + weights f32x4（stride 72/80）；
+ * morph 网格额外保存**打包后的基础顶点** + targets/default_weights，创建后立即应用默认权重。 */
 int32_t Engine::load_mesh(const std::string& path) {
     auto it = mesh_cache.find(path);
     if (it != mesh_cache.end()) return it->second;
+    if (!gltf_env_read) read_gltf_env();
     int32_t id = -1;
     void* data = nullptr;
     size_t n = 0;
@@ -1765,22 +2062,27 @@ int32_t Engine::load_mesh(const std::string& path) {
         } else {
             std::vector<float> verts;
             std::vector<uint32_t> idx;
-            /* 顶点布局（plans/20 §COLOR_0/TEXCOORD_1）：
+            /* 顶点布局（plans/22 §5.1）：
              *   0 = 旧 48B：pos3|normal3|tangent4|uv0 2（12 float/顶点）
              *   1 = 新 56B：pos3|normal3|color4|uv0 2|uv1 2（14 float/顶点）
-             * 字段可选（旧资产没有 → 默认 0，零行为变化）。 */
+             *   2 = 48B + joints u16x4 + weights f32x4（stride 72；JSON 行宽仍 12）
+             *   3 = 56B + joints u16x4 + weights f32x4（stride 80；JSON 行宽仍 14）
+             * 蒙皮数据在独立 joints/weights 数组 → 运行时按 GPU stride 打包。 */
             int32_t vertex_layout = 0;
             if (const mq_json* jlay = mq_json_get(dom, "vertex_layout"))
                 vertex_layout = (int32_t)mq_json_num(jlay, 0.0);
-            const uint32_t row_floats = (vertex_layout == 1) ? 14u : 12u;
-            const uint32_t stride = (vertex_layout == 1) ? 56u : 48u;
+            const bool base56 = vertex_layout == 1 || vertex_layout == 3;
+            const uint32_t row_floats = base56 ? 14u : 12u;
+            const uint32_t base_stride = base56 ? 56u : 48u;
+            const bool skinned = vertex_layout >= 2 && vertex_layout <= 3;
+            const uint32_t stride = base_stride + (skinned ? 24u : 0u);
             const mq_json* jv = mq_json_get(dom, "vertices");
             const uint32_t vn = mq_json_len(jv);
             verts.reserve((size_t)vn * row_floats);
             const mq_json* ji = mq_json_get(dom, "indices");
             const uint32_t in = mq_json_len(ji);
             idx.reserve(in);
-            bool ok = vn > 0 && in > 0 && (vertex_layout == 0 || vertex_layout == 1);
+            bool ok = vn > 0 && in > 0 && vertex_layout >= 0 && vertex_layout <= 3;
             if (!ok) std::print(stderr, "runtime: mesh '{}' 无效（vertices={} indices={} vertex_layout={}）\n",
                                 path, vn, in, vertex_layout);
             for (uint32_t i = 0; ok && i < vn; ++i) {
@@ -1791,10 +2093,84 @@ int32_t Engine::load_mesh(const std::string& path) {
             }
             for (uint32_t i = 0; ok && i < in; ++i)
                 idx.push_back((uint32_t)mq_json_num(mq_json_at(ji, i), 0.0));
+            /* 蒙皮属性打包（joints u16x4 + weights f32x4 追加在基础顶点之后） */
+            std::vector<uint8_t> packed;
+            const void* vptr = verts.data();
+            uint64_t vbytes = (uint64_t)verts.size() * sizeof(float);
+            if (ok && skinned) {
+                const mq_json* jj = mq_json_get(dom, "joints");
+                const mq_json* jw = mq_json_get(dom, "weights");
+                ok = mq_json_len(jj) == vn && mq_json_len(jw) == vn;
+                if (!ok) std::print(stderr, "runtime: mesh '{}' 蒙皮数据缺失/长度不符（joints={} weights={} vertices={}）\n",
+                                    path, mq_json_len(jj), mq_json_len(jw), vn);
+                if (ok) {
+                    packed.resize((size_t)vn * stride);
+                    for (uint32_t i = 0; i < vn; ++i) {
+                        uint8_t* dst = packed.data() + (size_t)i * stride;
+                        std::memcpy(dst, verts.data() + (size_t)i * row_floats, base_stride);
+                        const mq_json* jr = mq_json_at(jj, i);
+                        const mq_json* wr = mq_json_at(jw, i);
+                        if (mq_json_len(jr) != 4 || mq_json_len(wr) != 4) { ok = false; break; }
+                        uint16_t* jdst = (uint16_t*)(dst + base_stride);
+                        for (uint32_t k = 0; k < 4; ++k) {
+                            int v = (int)mq_json_num(mq_json_at(jr, k), 0.0);
+                            if (v < 0) v = 0;
+                            if (v > 65535) v = 65535;
+                            jdst[k] = (uint16_t)v;
+                        }
+                        float* wdst = (float*)(dst + base_stride + 8);
+                        for (uint32_t k = 0; k < 4; ++k)
+                            wdst[k] = (float)mq_json_num(mq_json_at(wr, k), 0.0);
+                    }
+                    if (ok) { vptr = packed.data(); vbytes = packed.size(); }
+                }
+            }
+            /* morph（可选）：default_weights + targets（逐顶点 pos/normal 增量；targets ≤ 8） */
+            MorphMesh morph;
+            if (ok) {
+                if (const mq_json* jm = mq_json_get(dom, "morph")) {
+                    const mq_json* jdw = mq_json_get(jm, "default_weights");
+                    const uint32_t ndw = mq_json_len(jdw);
+                    morph.default_weights.reserve(ndw);
+                    for (uint32_t k = 0; k < ndw; ++k)
+                        morph.default_weights.push_back((float)mq_json_num(mq_json_at(jdw, k), 0.0));
+                    const mq_json* jts = mq_json_get(jm, "targets");
+                    const uint32_t nts = mq_json_len(jts);
+                    if (nts > 8)
+                        std::print(stderr, "runtime: mesh '{}' morph targets={} 超出上限 8，后续忽略\n",
+                                   path, nts);
+                    for (uint32_t t = 0; t < nts && t < 8 && ok; ++t) {
+                        const mq_json* jt = mq_json_at(jts, t);
+                        MorphTarget tgt;
+                        const mq_json* jp = mq_json_get(jt, "positions");
+                        const mq_json* jn = mq_json_get(jt, "normals");
+                        if (mq_json_len(jp) != vn) { ok = false; break; }
+                        tgt.positions.reserve((size_t)vn * 3);
+                        for (uint32_t i = 0; i < vn && ok; ++i) {
+                            const mq_json* row = mq_json_at(jp, i);
+                            if (mq_json_len(row) != 3) { ok = false; break; }
+                            for (uint32_t k = 0; k < 3; ++k)
+                                tgt.positions.push_back((float)mq_json_num(mq_json_at(row, k), 0.0));
+                        }
+                        if (ok && mq_json_len(jn) == vn) {
+                            tgt.normals.reserve((size_t)vn * 3);
+                            for (uint32_t i = 0; i < vn && ok; ++i) {
+                                const mq_json* row = mq_json_at(jn, i);
+                                if (mq_json_len(row) != 3) { ok = false; break; }
+                                for (uint32_t k = 0; k < 3; ++k)
+                                    tgt.normals.push_back((float)mq_json_num(mq_json_at(row, k), 0.0));
+                            }
+                        }
+                        if (ok) morph.targets.push_back(std::move(tgt));
+                    }
+                    if (morph.default_weights.size() < morph.targets.size())
+                        morph.default_weights.resize(morph.targets.size(), 0.0F);
+                }
+            }
             if (ok && rapi && rself && rapi->create_mesh) {
                 mq_renderer_mesh_gpu md{};
-                md.vertices = verts.data();
-                md.vertex_bytes = (uint64_t)verts.size() * sizeof(float);
+                md.vertices = vptr;
+                md.vertex_bytes = vbytes;
                 md.vertex_stride = stride;
                 md.vertex_layout = vertex_layout;
                 md.indices = idx.data();
@@ -1807,12 +2183,458 @@ int32_t Engine::load_mesh(const std::string& path) {
                     md.bounds_max[k] = (float)mq_json_num(mq_json_at(bmax, k), 0.0);
                 if (rapi->create_mesh(rself, &md, &id) != 0) id = -1;
             }
+            /* morph：保存打包后的基础顶点（CPU 重算起点），创建后立即应用默认权重 */
+            if (id >= 0 && !morph.targets.empty()) {
+                morph.mesh = id;
+                morph.vertex_count = vn;
+                morph.stride = stride;
+                morph.layout = vertex_layout;
+                morph.base = std::move(packed);
+                if (morph.base.empty()) {
+                    morph.base.resize((size_t)vn * stride);
+                    std::memcpy(morph.base.data(), verts.data(), (size_t)vn * base_stride);
+                }
+                morph.applied_weights = morph.default_weights;
+                const std::string mp_key = path;
+                morph_meshes[mp_key] = std::move(morph);
+                bool any_w = false;
+                for (float w : morph_meshes[mp_key].default_weights) if (w != 0.0F) { any_w = true; break; }
+                if (any_w) (void)apply_morph(mp_key, morph_meshes[mp_key].default_weights);
+                if (render3d_info)
+                    std::print("runtime: morph mesh '{}' targets={} vertices={} stride={}\n",
+                               path, (int)morph_meshes[mp_key].targets.size(),
+                               (long long)morph_meshes[mp_key].vertex_count,
+                               (long long)morph_meshes[mp_key].stride);
+            }
             if (id < 0) std::print(stderr, "runtime: mesh 载入失败 '{}'\n", path);
+            mesh_layout[path] = (id >= 0) ? vertex_layout : -1;
             mq_json_free(dom);
         }
     }
     mesh_cache[path] = id;
     return id;
+}
+
+/* ---- glTF 片段 / 蒙皮 / morph 解析与采样（plans/22 §6）----
+ * 资产是派生文本 JSON（.skel.json / .clip.json），按 VFS 路径缓存；失败也缓存（failed=true），
+ * 成功/失败都只告警一次。装配期预解析（setup_gltf_assets）→ 模拟帧内只读缓存。 */
+
+/* 读组件里的 string[] 字段（反射 container 算子；用于 scn.AnimationPlayer.clips）。 */
+static std::vector<std::string> read_string_array(const mq_field_desc* f, void* field) {
+    std::vector<std::string> out;
+    if (!f || f->kind != MQ_TK_ARRAY_DYN || !f->container_size || !f->container_elem) return out;
+    const uint32_t n = f->container_size(field);
+    out.reserve(n);
+    for (uint32_t i = 0; i < n; ++i) {
+        const std::string* s = (const std::string*)f->container_elem(field, i);
+        if (s && !s->empty()) out.push_back(*s);
+    }
+    return out;
+}
+
+bool Engine::load_skeleton(const std::string& path) {
+    auto it = skeletons.find(path);
+    if (it != skeletons.end()) return !it->second.failed;
+    Skeleton sk;
+    sk.name = path;
+    sk.failed = true;
+    void* data = nullptr;
+    size_t n = 0;
+    if (!vfs || mq_vfs_read(vfs, path.c_str(), &data, &n) != MQ_VFS_OK || !data) {
+        std::print(stderr, "runtime: skeleton 未找到 '{}'\n", path);
+        skeletons[path] = std::move(sk);
+        return false;
+    }
+    mq_json* dom = mq_json_parse((const char*)data, n);
+    mq_vfs_free(data);
+    if (!dom) {
+        std::print(stderr, "runtime: skeleton json 解析失败 '{}'\n", path);
+        skeletons[path] = std::move(sk);
+        return false;
+    }
+    const mq_json* jn = mq_json_get(dom, "joint_names");
+    const mq_json* jb = mq_json_get(dom, "inverse_bind");
+    const uint32_t nj = mq_json_len(jn);
+    const uint32_t nb = mq_json_len(jb);
+    bool ok = nj > 0 && nj == nb;
+    if (!ok)
+        std::print(stderr, "runtime: skeleton '{}' 无效（joint_names={} inverse_bind={}）\n", path, nj, nb);
+    if (ok) {
+        sk.joint_names.reserve(nj);
+        for (uint32_t i = 0; i < nj; ++i) {
+            const char* nm = mq_json_str(mq_json_at(jn, i), "");
+            sk.joint_names.emplace_back(nm ? nm : "");
+        }
+        sk.inverse_bind.resize((size_t)nj * 16);
+        for (uint32_t i = 0; i < nj && ok; ++i) {
+            const mq_json* row = mq_json_at(jb, i);
+            if (mq_json_len(row) != 16) { ok = false; break; }
+            for (uint32_t k = 0; k < 16; ++k)
+                sk.inverse_bind[(size_t)i * 16 + k] = (float)mq_json_num(mq_json_at(row, k), 0.0);
+        }
+        if (!ok) sk.inverse_bind.clear();
+    }
+    const char* nm = mq_json_str(mq_json_get(dom, "name"), nullptr);
+    if (nm && *nm) sk.name = nm;
+    mq_json_free(dom);
+    if (!ok) {
+        skeletons[path] = std::move(sk);
+        return false;
+    }
+    sk.failed = false;
+    const size_t joints = sk.joint_names.size();
+    skeletons[path] = std::move(sk);
+    if (render3d_info)
+        std::print("runtime: skeleton '{}' joints={}\n", path, (long long)joints);
+    return true;
+}
+
+bool Engine::load_gclip(const std::string& path) {
+    auto it = gclips.find(path);
+    if (it != gclips.end()) return !it->second.failed;
+    GClip clip;
+    clip.name = path;
+    clip.failed = true;
+    void* data = nullptr;
+    size_t n = 0;
+    if (!vfs || mq_vfs_read(vfs, path.c_str(), &data, &n) != MQ_VFS_OK || !data) {
+        std::print(stderr, "runtime: clip 未找到 '{}'\n", path);
+        gclips[path] = std::move(clip);
+        return false;
+    }
+    mq_json* dom = mq_json_parse((const char*)data, n);
+    mq_vfs_free(data);
+    if (!dom) {
+        std::print(stderr, "runtime: clip json 解析失败 '{}'\n", path);
+        gclips[path] = std::move(clip);
+        return false;
+    }
+    clip.duration = (float)mq_json_num(mq_json_get(dom, "duration"), 0.0);
+    const mq_json* jtracks = mq_json_get(dom, "tracks");
+    const uint32_t nt = mq_json_len(jtracks);
+    float max_time = 0.0F;
+    for (uint32_t ti = 0; ti < nt; ++ti) {
+        const mq_json* jt = mq_json_at(jtracks, ti);
+        const char* node = mq_json_str(mq_json_get(jt, "node"), "");
+        const char* pathname = mq_json_str(mq_json_get(jt, "path"), "");
+        if (!node || !*node || !pathname) continue;
+        int tp = -1;
+        if (std::strcmp(pathname, "translation") == 0) tp = 0;
+        else if (std::strcmp(pathname, "rotation") == 0) tp = 1;
+        else if (std::strcmp(pathname, "scale") == 0) tp = 2;
+        else if (std::strcmp(pathname, "weights") == 0) tp = 3;
+        if (tp < 0) continue;                          /* 未知通道（pointer 等）跳过 */
+        GClipTrack tr;
+        tr.node = node;
+        tr.path = tp;
+        const char* interp = mq_json_str(mq_json_get(jt, "interpolation"), "LINEAR");
+        tr.step = interp && std::strcmp(interp, "STEP") == 0;
+        const mq_json* jtimes = mq_json_get(jt, "times");
+        const mq_json* jvals = mq_json_get(jt, "values");
+        const uint32_t nk = mq_json_len(jtimes);
+        const uint32_t nv = mq_json_len(jvals);
+        if (nk == 0 || nk != nv) {                     /* 关键帧/值数量不一致：跳过该轨道 */
+            std::print(stderr, "runtime: clip '{}' 轨道 {}/{} 关键帧数不符（{} vs {}），跳过\n",
+                       path, tr.node, pathname, nk, nv);
+            continue;
+        }
+        const uint32_t comps = mq_json_len(mq_json_at(jvals, 0));
+        if (comps == 0 || (tp == 1 && comps != 4) ||
+            ((tp == 0 || tp == 2) && comps != 3)) {
+            std::print(stderr, "runtime: clip '{}' 轨道 {}/{} 分量数 {} 不符，跳过\n",
+                       path, tr.node, pathname, comps);
+            continue;
+        }
+        tr.comps = comps;
+        tr.times.resize(nk);
+        tr.values.resize((size_t)nk * comps);
+        bool ok = true;
+        for (uint32_t k = 0; k < nk && ok; ++k) {
+            tr.times[k] = (float)mq_json_num(mq_json_at(jtimes, k), 0.0);
+            const mq_json* row = mq_json_at(jvals, k);
+            if (mq_json_len(row) != comps) { ok = false; break; }
+            for (uint32_t c = 0; c < comps; ++c)
+                tr.values[(size_t)k * comps + c] = (float)mq_json_num(mq_json_at(row, c), 0.0);
+        }
+        if (!ok) { std::print(stderr, "runtime: clip '{}' 轨道 {}/{} 值行宽不符，跳过\n", path, tr.node, pathname); continue; }
+        if (!tr.times.empty() && tr.times.back() > max_time) max_time = tr.times.back();
+        clip.tracks.push_back(std::move(tr));
+    }
+    const char* nm = mq_json_str(mq_json_get(dom, "name"), nullptr);
+    if (nm && *nm) clip.name = nm;
+    mq_json_free(dom);
+    if (clip.tracks.empty()) {
+        std::print(stderr, "runtime: clip '{}' 无可采样轨道\n", path);
+        gclips[path] = std::move(clip);
+        return false;
+    }
+    if (clip.duration <= 0.0F) clip.duration = max_time;   /* 缺省由关键帧推导 */
+    clip.failed = false;
+    const int ntracks = (int)clip.tracks.size();
+    const float dur = clip.duration;
+    gclips[path] = std::move(clip);
+    if (render3d_info)
+        std::print("runtime: clip '{}' tracks={} duration={:.3f}\n", path, ntracks, (double)dur);
+    return true;
+}
+
+/* 采样一条轨道：STEP 取前关键帧；LINEAR 线性（rotation 用四元数 slerp）。 */
+static void sample_gclip_track(const GClipTrack& tr, float time, std::vector<float>& out) {
+    out.assign(tr.comps, 0.0F);
+    const uint32_t nk = (uint32_t)tr.times.size();
+    if (nk == 0 || tr.comps == 0) return;
+    if (time <= tr.times[0]) {
+        std::memcpy(out.data(), tr.values.data(), sizeof(float) * tr.comps);
+        return;
+    }
+    if (time >= tr.times[nk - 1]) {
+        std::memcpy(out.data(), tr.values.data() + (size_t)(nk - 1) * tr.comps,
+                    sizeof(float) * tr.comps);
+        return;
+    }
+    uint32_t k = 0;
+    while (k + 1 < nk && tr.times[k + 1] <= time) ++k;
+    const float* a = tr.values.data() + (size_t)k * tr.comps;
+    if (tr.step) {
+        std::memcpy(out.data(), a, sizeof(float) * tr.comps);
+        return;
+    }
+    const float* b = tr.values.data() + (size_t)(k + 1) * tr.comps;
+    const float span = tr.times[k + 1] - tr.times[k];
+    float alpha = span > 0.0F ? (time - tr.times[k]) / span : 0.0F;
+    if (alpha < 0.0F) alpha = 0.0F;
+    if (alpha > 1.0F) alpha = 1.0F;
+    if (tr.path == 1 && tr.comps == 4) {
+        /* quat：dot<0 先翻转；dot>0.9995 用 nlerp（近似共线避免除零）；否则 slerp */
+        float qb[4] = { b[0], b[1], b[2], b[3] };
+        float dot = a[0] * qb[0] + a[1] * qb[1] + a[2] * qb[2] + a[3] * qb[3];
+        if (dot < 0.0F) { dot = -dot; for (int i = 0; i < 4; ++i) qb[i] = -qb[i]; }
+        float q[4];
+        if (dot > 0.9995F) {
+            for (int i = 0; i < 4; ++i) q[i] = a[i] + (qb[i] - a[i]) * alpha;
+        } else {
+            const float theta = std::acos(std::min(1.0F, dot));
+            const float s = std::sin(theta);
+            const float wa = std::sin((1.0F - alpha) * theta) / s;
+            const float wb = std::sin(alpha * theta) / s;
+            for (int i = 0; i < 4; ++i) q[i] = a[i] * wa + qb[i] * wb;
+        }
+        const float ql = std::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+        if (ql > 0.0F) { const float inv = 1.0F / ql; for (int i = 0; i < 4; ++i) q[i] *= inv; }
+        std::memcpy(out.data(), q, sizeof q);
+        return;
+    }
+    for (uint32_t c = 0; c < tr.comps; ++c) out[c] = a[c] + (b[c] - a[c]) * alpha;
+}
+
+/* 按权重 CPU 重算 morph 顶点并上传（rapi->update_mesh）。权重没变不应调用（见 extract_3d）。 */
+bool Engine::apply_morph(const std::string& path, const std::vector<float>& weights) {
+    auto it = morph_meshes.find(path);
+    if (it == morph_meshes.end()) return false;
+    MorphMesh& mm = it->second;
+    if (mm.mesh < 0 || mm.targets.empty() || mm.base.empty()) return false;
+    if (!rapi || !rself || !rapi->update_mesh) {
+        if (!mm.warned_no_update) {
+            mm.warned_no_update = true;
+            std::print(stderr, "runtime: 渲染器不支持 update_mesh，morph 跳过 '{}'\n", path);
+        }
+        return false;
+    }
+    std::vector<uint8_t> out = mm.base;
+    for (uint32_t vi = 0; vi < mm.vertex_count; ++vi) {
+        float* pos = (float*)(out.data() + (size_t)vi * mm.stride);
+        float* nrm = pos + 3;
+        bool normal_touched = false;
+        for (size_t ti = 0; ti < mm.targets.size(); ++ti) {
+            const float w = ti < weights.size() ? weights[ti] : 0.0F;
+            if (w == 0.0F) continue;
+            const MorphTarget& tgt = mm.targets[ti];
+            const size_t o = (size_t)vi * 3;
+            if (o + 2 < tgt.positions.size()) {
+                pos[0] += w * tgt.positions[o];
+                pos[1] += w * tgt.positions[o + 1];
+                pos[2] += w * tgt.positions[o + 2];
+            }
+            if (o + 2 < tgt.normals.size()) {
+                nrm[0] += w * tgt.normals[o];
+                nrm[1] += w * tgt.normals[o + 1];
+                nrm[2] += w * tgt.normals[o + 2];
+                normal_touched = true;
+            }
+        }
+        if (normal_touched) {
+            const float len2 = nrm[0] * nrm[0] + nrm[1] * nrm[1] + nrm[2] * nrm[2];
+            if (len2 > 1.0e-12F) {
+                const float inv = 1.0F / std::sqrt(len2);
+                nrm[0] *= inv; nrm[1] *= inv; nrm[2] *= inv;
+            }
+        }
+    }
+    if (rapi->update_mesh(rself, mm.mesh, out.data(), (uint64_t)out.size()) != 0) {
+        if (!mm.warned_no_update) {
+            mm.warned_no_update = true;
+            std::print(stderr, "runtime: update_mesh 失败，morph 跳过 '{}'\n", path);
+        }
+        return false;
+    }
+    mm.applied_weights = weights;
+    return true;
+}
+
+/* 装配期预解析 glTF 运行时资源（plans/22 §6.1）：实体名表 → 骨架/片段/morph 网格。
+ * 装配期做 IO 合法（不在模拟帧内，docs/10 D7）；失败只告警一次（缓存 failed）。 */
+void Engine::setup_gltf_assets() {
+    read_gltf_env();
+    entity_by_name.clear();
+    entity_morph_mesh.clear();
+    if (!scene) return;
+    std::vector<int> ids;
+    ids.reserve(scene->ents.size());
+    for (auto& [k, e] : scene->ents) ids.push_back(k);
+    std::sort(ids.begin(), ids.end());
+    /* 名字表：唯一名 → 最小 id（重名只告警一次；动画轨道/骨架关节按名字引用实体） */
+    int dup = 0;
+    std::string dup_example;
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e || e->name.empty()) continue;
+        auto [nit, inserted] = entity_by_name.emplace(e->name, id);
+        (void)nit;
+        if (!inserted) { ++dup; if (dup_example.empty()) dup_example = e->name; }
+    }
+    if (dup > 0)
+        std::print(stderr, "runtime: 实体重名 {} 处（例如 '{}'）；按名字解析取最小 id\n",
+                   dup, dup_example);
+    int n_skin = 0, n_clip = 0, n_morph = 0;
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        const mq_type_desc* dmesh = nullptr;
+        if (auto* mb = comp_by_name(*this, id, "render.MeshRenderer", &dmesh)) {
+            const std::string* mp = read_str(dmesh, mb->data(), "mesh_path");
+            if (mp && !mp->empty()) {
+                (void)load_mesh(*mp);                     /* 缓存；失败只告警一次 */
+                auto mit = morph_meshes.find(*mp);
+                if (mit != morph_meshes.end() && mit->second.mesh >= 0 && !mit->second.targets.empty()) {
+                    entity_morph_mesh[id] = *mp;
+                    ++n_morph;
+                }
+            }
+            const std::string* sp = read_str(dmesh, mb->data(), "skin_path");
+            if (sp && !sp->empty()) {
+                ++n_skin;
+                (void)load_skeleton(*sp);
+            }
+        }
+        for (auto& [tid, blob] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            if (!d || !(d->role & MQ_ROLE_ANIM_PLAYER)) continue;
+            const mq_field_desc* fc = mq_reflect_field(d, "clips");
+            if (!fc) continue;
+            for (const std::string& cp : read_string_array(fc, blob.data() + fc->offset)) {
+                ++n_clip;
+                (void)load_gclip(cp);
+            }
+        }
+    }
+    if (render3d_info || n_skin > 0 || n_clip > 0 || n_morph > 0)
+        std::print("runtime: gltf assets skins={} clips={} morph_meshes={} names={}\n",
+                   n_skin, n_clip, n_morph, (long long)entity_by_name.size());
+}
+
+void Engine::read_gltf_env() {
+    if (gltf_env_read) return;
+    gltf_env_read = true;
+    auto flag = [](const char* name, bool def) {
+        const char* v = std::getenv(name);
+        if (!v || !*v) return def;
+        return !(v[0] == '0' || v[0] == 'o' || v[0] == 'O' ||
+                 v[0] == 'n' || v[0] == 'N' || v[0] == 'f' || v[0] == 'F');
+    };
+    anim_enabled = flag("MAQUE_ANIM", true);
+    skin_enabled = flag("MAQUE_SKIN", true);
+    render3d_info = std::getenv("MAQUE_RENDER3D_INFO") != nullptr;
+}
+
+/* glTF 片段采样（plans/22 §6.2）：仅处理 clips 非空的 scn.AnimationPlayer（旧 clip 通路不变）。
+ * 推进播放头 → 采样（纯函数）→ 写 Engine::anim_pose（pos/rot/scale）与 morph 权重覆盖。 */
+void Engine::anim_step_gclip(int entity, const mq_type_desc* d, std::vector<uint8_t>& blob, float dt) {
+    const mq_field_desc* fc = mq_reflect_field(d, "clips");
+    if (!fc) return;
+    std::vector<std::string> paths = read_string_array(fc, blob.data() + fc->offset);
+    if (paths.empty()) return;
+    const int32_t ci = (int32_t)read_num(d, blob.data(), "clip_index", 0.0F);
+    const std::string& clip_path = paths[(ci >= 0 && (size_t)ci < paths.size()) ? (size_t)ci : 0];
+    if (!load_gclip(clip_path)) return;
+    auto cit = gclips.find(clip_path);
+    if (cit == gclips.end() || cit->second.failed || cit->second.tracks.empty()) return;
+    const GClip& clip = cit->second;
+    bool playing = true;
+    if (const mq_field_desc* f = mq_reflect_field(d, "playing"))
+        playing = *(const bool*)(blob.data() + f->offset);
+    bool loop = true;
+    if (const mq_field_desc* f = mq_reflect_field(d, "loop"))
+        loop = *(const bool*)(blob.data() + f->offset);
+    float speed = 1.0F;
+    read_f32(d, blob.data(), "speed", &speed);
+    float time = 0.0F;
+    read_f32(d, blob.data(), "time", &time);
+    if (playing) time += dt * speed;
+    if (clip.duration > 0.0F) {
+        if (loop) {
+            /* 取模（fmod 而非反复相减：退化片段 duration 极小时不会卡住；确定性纯函数） */
+            time = std::fmod(time, clip.duration);
+            if (time < 0.0F) time += clip.duration;
+        } else if (time > clip.duration) {
+            time = clip.duration;
+        } else if (time < 0.0F) {
+            time = 0.0F;
+        }
+    }
+    if (const mq_field_desc* f = mq_reflect_field(d, "time"))
+        *(float*)(blob.data() + f->offset) = time;
+    if (const mq_field_desc* f = mq_reflect_field(d, "duration"))
+        *(float*)(blob.data() + f->offset) = clip.duration;
+    if (!anim_enabled) return;                    /* MAQUE_ANIM=0：保持 bind pose（不写派生姿态） */
+    std::vector<float> v;
+    for (const GClipTrack& tr : clip.tracks) {
+        auto hit = entity_by_name.find(tr.node);
+        if (hit == entity_by_name.end()) continue;
+        const int te = hit->second;
+        sample_gclip_track(tr, time, v);
+        if (tr.path == 0 && v.size() >= 3) {
+            AnimPose& p = anim_pose[te];
+            p.has_pos = true;
+            p.pos = math::Vec3{ v[0], v[1], v[2] };
+        } else if (tr.path == 1 && v.size() >= 4) {
+            AnimPose& p = anim_pose[te];
+            p.has_rot = true;
+            std::memcpy(p.rot, v.data(), sizeof p.rot);
+        } else if (tr.path == 2 && v.size() >= 3) {
+            AnimPose& p = anim_pose[te];
+            p.has_scale = true;
+            p.scale = math::Vec3{ v[0], v[1], v[2] };
+        } else if (tr.path == 3) {
+            /* weights：写到该节点（含整棵子树）下所有 morph mesh 实体的权重覆盖 */
+            std::vector<int> stack2{ te };
+            while (!stack2.empty()) {
+                const int cur = stack2.back();
+                stack2.pop_back();
+                if (entity_morph_mesh.find(cur) != entity_morph_mesh.end())
+                    morph_weight_override[cur] = v;
+                std::vector<int> kids;
+                for (auto& [k2, c2] : scene->ents) if (c2.parent == cur) kids.push_back(k2);
+                std::sort(kids.begin(), kids.end());
+                for (int k2 : kids) stack2.push_back(k2);
+            }
+        }
+    }
+    if (render3d_info && !gltf_anim_info) {
+        gltf_anim_info = true;
+        std::print("runtime: anim entity={} clip='{}' tracks={} duration={:.3f} time={:.3f} pose={}\n",
+                   entity, clip_path, (int)clip.tracks.size(), (double)clip.duration,
+                   (double)time, (int)anim_pose.size());
+    }
 }
 
 /* 材质资源：builtin:/ 或 assets（JSON，反射反序列化 scn.SpriteMaterial）。 */
@@ -1999,19 +2821,48 @@ static void m4_perspective(float fovy_rad, float aspect, float zn, float zf, flo
     m[0] = f / aspect; m[5] = f;
     m[10] = zf / (zn - zf); m[11] = -1.0F; m[14] = (zn * zf) / (zn - zf);
 }
-/* 相机世界 TRS → view（R^T * T(-pos)）。 */
-static void m4_view(const math::Transform3D& t, float* m) {
-    math::Transform3D r = t;
-    r.position = math::Vec3{ 0.0F, 0.0F, 0.0F };
-    r.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
+/* 世界矩阵的旋转轴（列 c）：单位化后返回。列长≈1 时**不做除法** ——
+ * 保证平级场景（world_m = m4_from_trs(local)，scale=1）与旧的 Euler 旋转逐字节一致；
+ * 真正带缩放的节点（列长明显偏离 1）才归一化（相机/灯光忽略缩放）。 */
+static void m4_axis(const float* m, int c, float out[3]) {
+    float x = m[c * 4], y = m[c * 4 + 1], z = m[c * 4 + 2];
+    const float len2 = x * x + y * y + z * z;
+    if (std::fabs(std::sqrt(len2) - 1.0F) > 1.0e-4F) {
+        const float inv = len2 > 0.0F ? 1.0F / std::sqrt(len2) : 1.0F;
+        x *= inv; y *= inv; z *= inv;
+    }
+    out[0] = x; out[1] = y; out[2] = z;
+}
+/* 相机世界矩阵 → view（R^T * T(-pos)）；平级场景（scale=1）与旧 m4_view(trs) 逐字节一致。 */
+static void m4_view_from_m(const float* wm, float* m) {
     float R[16];
-    m4_from_trs(r, R);
+    for (int c = 0; c < 3; ++c) m4_axis(wm, c, R + c * 4);
+    R[3] = R[7] = R[11] = 0.0F;
+    R[12] = R[13] = R[14] = 0.0F; R[15] = 1.0F;
     for (int c = 0; c < 3; ++c)
-        for (int rr = 0; rr < 3; ++rr) m[c * 4 + rr] = R[rr * 4 + c];
+        for (int r = 0; r < 3; ++r) m[c * 4 + r] = R[r * 4 + c];
     m[3] = 0.0F; m[7] = 0.0F; m[11] = 0.0F; m[15] = 1.0F;
-    m[12] = -(m[0] * t.position.x + m[4] * t.position.y + m[8] * t.position.z);
-    m[13] = -(m[1] * t.position.x + m[5] * t.position.y + m[9] * t.position.z);
-    m[14] = -(m[2] * t.position.x + m[6] * t.position.y + m[10] * t.position.z);
+    const float px = wm[12], py = wm[13], pz = wm[14];
+    m[12] = -(m[0] * px + m[4] * py + m[8] * pz);
+    m[13] = -(m[1] * px + m[5] * py + m[9] * pz);
+    m[14] = -(m[2] * px + m[6] * py + m[10] * pz);
+}
+/* 四元数 (x,y,z,w) + 平移/缩放 → 列主序 mat4（glTF rotation 轨道；无万向锁）。 */
+static void m4_from_quat_trs(const math::Vec3& pos, const float q_in[4], const math::Vec3& scale, float* m) {
+    float q[4] = { q_in[0], q_in[1], q_in[2], q_in[3] };
+    const float qlen = std::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    if (qlen > 0.0F) { const float inv = 1.0F / qlen; for (int i = 0; i < 4; ++i) q[i] *= inv; }
+    const float x = q[0], y = q[1], z = q[2], w = q[3];
+    const float xx = x * x, yy = y * y, zz = z * z;
+    const float xy = x * y, xz = x * z, yz = y * z;
+    const float wx = w * x, wy = w * y, wz = w * z;
+    m[0] = (1.0F - 2.0F * (yy + zz)) * scale.x; m[1] = (2.0F * (xy + wz)) * scale.x;
+    m[2] = (2.0F * (xz - wy)) * scale.x; m[3] = 0.0F;
+    m[4] = (2.0F * (xy - wz)) * scale.y; m[5] = (1.0F - 2.0F * (xx + zz)) * scale.y;
+    m[6] = (2.0F * (yz + wx)) * scale.y; m[7] = 0.0F;
+    m[8] = (2.0F * (xz + wy)) * scale.z; m[9] = (2.0F * (yz - wx)) * scale.z;
+    m[10] = (1.0F - 2.0F * (xx + yy)) * scale.z; m[11] = 0.0F;
+    m[12] = pos.x; m[13] = pos.y; m[14] = pos.z; m[15] = 1.0F;
 }
 static void m4_mul(const float* a, const float* b, float* o) {
     for (int c = 0; c < 4; ++c)
@@ -2083,6 +2934,8 @@ void Engine::setup_3d() {
     }
     std::print("runtime: 3d scene cams={} meshes={} lights={} cube_mesh={}\n",
                n_cam, n_mesh, n_light, (long long)cube_mesh);
+    /* plans/22 §6.1：实体名表 / 骨架 / 片段 / morph 网格预解析（装配期 IO，不在模拟帧内） */
+    setup_gltf_assets();
 }
 
 /* ==========================================================================
@@ -2181,9 +3034,16 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                         std::vector<mq_renderer_view3d>& out_views,
                         std::vector<mq_renderer_light>& out_lights,
                         std::vector<mq_renderer_pbr_material>& out_mats,
-                        std::vector<mq_renderer_draw3d>& out_draws) {
+                        std::vector<mq_renderer_draw3d>& out_draws,
+                        std::vector<mq_renderer_skin>& out_skins) {
     out_views.clear(); out_lights.clear(); out_mats.clear(); out_draws.clear();
+    out_skins.clear();
+    skin_palettes.clear();                       /* 上一帧调色板已随上一帧渲染用完 */
+    if (!gltf_env_read) read_gltf_env();
     if (!scene || tw <= 0 || th <= 0) return;
+    /* plans/22 §6.3：每帧先由节点树 + 片段派生姿态算世界矩阵（extract 只读派生数据）。
+     * 纯 shader-pass 场景（has_3d=false）没有 3D 组件，不必付这次遍历。 */
+    if (has_3d) scene->flatten_world3d(*this);
     /* 实体 id 排序：unordered_map 迭代顺序不可依赖（确定性） */
     std::vector<int> ids;
     ids.reserve(scene->ents.size());
@@ -2195,6 +3055,9 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     math::Transform3D cam_trs{};
     cam_trs.position = math::Vec3{ 0.0F, 1.6F, 5.0F };
     cam_trs.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
+    float cam_wm[16];                            /* 相机世界矩阵（plans/22：由 world_m 派生 view） */
+    m4_identity(cam_wm);
+    bool has_cam_wm = false;
     bool has_cam = false;
     float cam_priority = -1.0e9F;
     float fov_y = 60.0F, near_z = 0.1F, far_z = 100.0F, exposure = 1.0F;
@@ -2203,6 +3066,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     for (int idx : ids) {
         auto it = scene->ents.find(idx);
         if (it == scene->ents.end()) continue;
+        const float* wm = it->second.world_m;    /* flatten_world3d 的派生结果（列主序） */
         const mq_type_desc* dt = nullptr;
         const mq_type_desc* dcam = nullptr;
         const mq_type_desc* dmesh = nullptr;
@@ -2222,6 +3086,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 has_cam = true;
                 cam_priority = prio;
                 cam_trs = trs;
+                std::memcpy(cam_wm, wm, sizeof cam_wm);   /* 相机用世界矩阵（平级场景 == 旧 trs） */
+                has_cam_wm = true;
                 fov_y = read_num(dcam, cb->data(), "fov_y", 60.0F);
                 near_z = read_num(dcam, cb->data(), "near", 0.1F);
                 far_z = read_num(dcam, cb->data(), "far", 100.0F);
@@ -2245,13 +3111,11 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             const float outer_d = read_num(dlight, lb->data(), "outer_angle", 30.0F);
             L.inner_cos = std::cos(inner_d * kDeg);
             L.outer_cos = std::cos(outer_d * kDeg);
-            math::Transform3D r = trs;
-            r.position = math::Vec3{ 0.0F, 0.0F, 0.0F };
-            r.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
-            float R[16];
-            m4_from_trs(r, R);
-            L.pos[0] = trs.position.x; L.pos[1] = trs.position.y; L.pos[2] = trs.position.z;
-            L.dir[0] = -R[8]; L.dir[1] = -R[9]; L.dir[2] = -R[10];
+            /* plans/22 §6.3：位置/朝向取节点世界矩阵（平级场景与旧 trs 逐字节一致） */
+            float az[3];
+            m4_axis(wm, 2, az);
+            L.pos[0] = wm[12]; L.pos[1] = wm[13]; L.pos[2] = wm[14];
+            L.dir[0] = -az[0]; L.dir[1] = -az[1]; L.dir[2] = -az[2];
             out_lights.push_back(L);
         }
         auto* mb = comp_by_name(*this, idx, "render.MeshRenderer", &dmesh);
@@ -2263,6 +3127,9 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             for (int ti = 0; ti < 3; ++ti) mat.textures2[ti] = -1;  /* matcap / gradient / clearcoat-normal */
             for (int ti = 0; ti < 7; ++ti) mat.textures3[ti] = -1;  /* KHR 扩展 7 槽（clearcoat/sheen/iridescence/anisotropy） */
             for (int ti = 0; ti < 2; ++ti) mat.textures4[ti] = -1;  /* KHR_materials_specular 2 槽（factor/color） */
+            mat.textures5[0] = -1;                                  /* KHR_materials_transmission 贴图槽（R=透射率掩码） */
+            for (int ti = 0; ti < 2; ++ti) mat.textures6[ti] = -1;  /* diffuse transmission（A 乘子 / RGB sRGB 色） */
+            mat.textures7[0] = -1;                                  /* KHR_materials_volume thicknessTexture.G */
             for (int ti = 0; ti < 2; ++ti) {
                 mat.uv_scale[ti] = 1.0F; mat.uv_offset[ti] = 0.0F;       /* KHR_texture_transform 缺省 */
                 mat.normal_uv_scale[ti] = 1.0F; mat.normal_uv_offset[ti] = 0.0F;
@@ -2311,13 +3178,6 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     /* transmission/diffuse 近似把 MASK 改成 BLEND 时保留 alpha 镂空（shader 用 flags2 bit19） */
     if (read_num(dmat, base, "alpha_mask_in_blend", 0.0F) >= 0.5F) mat.flags2 |= 0x80000;
 
-    /* KHR_materials_transmission 近似参数：shader 用 Fresnel 视角 alpha、gfx 画两遍（背面→正面）。
-     * Draw 的 anisotropy_rotation 槽当前 shader 未使用，复用它传 transmission factor（避免扩 uniform）。 */
-    const float transmission_factor = read_num(dmat, base, "transmission_factor", 0.0F);
-    if (transmission_factor > 0.001F) {
-        mat.anisotropy_rotation = transmission_factor;
-        mat.flags2 |= 0x100000;                 /* bit20 = transmission approx */
-    }
                 mat.flags = read_num(dmat, base, "double_sided", 0.0F) >= 0.5F ? 1 : 0;
                 mat.clearcoat = read_num(dmat, base, "clearcoat", 0.0F);
                 mat.clearcoat_roughness = read_num(dmat, base, "clearcoat_roughness", 0.03F);
@@ -2343,6 +3203,59 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 mat.iridescence_thickness_max = read_num(dmat, base, "iridescence_thickness_max", 400.0F);
                 mat.anisotropy = read_num(dmat, base, "anisotropy", 0.0F);
                 mat.anisotropy_rotation = read_num(dmat, base, "anisotropy_rotation", 0.0F);
+                /* KHR_materials_transmission 近似参数：shader 用 Fresnel 视角 alpha、gfx 画两遍（背面→正面）。
+                 * Draw 的 anisotropy_rotation 槽 shader 未使用，复用它传 transmission factor（避免扩 uniform）。
+                 * ⚠️ 必须写在上面读取材质自身 anisotropy_rotation **之后**：否则会被无条件覆盖为 0，
+                 *    shader 收到的 Fresnel 权重恒 0（玻璃退化为均匀半透"幽灵"，CompareDispersion 即此坑）。 */
+                const float transmission_factor = read_num(dmat, base, "transmission_factor", 0.0F);
+                if (transmission_factor > 0.001F) {
+                    mat.anisotropy_rotation = transmission_factor;
+                    mat.flags2 |= 0x100000;             /* bit20 = transmission approx */
+                }
+                /* KHR_materials_volume / KHR_materials_dispersion：折射厚度与色散近似参数
+                 * （gfx 打包进 Draw.clearcoat.z / Draw.alpha.w，材质 uniform 仍是 288B 不扩）。
+                 * 缺省 0 = 无体积折射/色散（旧材质零行为变化）。 */
+                mat.volume_thickness = read_num(dmat, base, "volume_thickness", 0.0F);
+                mat.dispersion = read_num(dmat, base, "dispersion", 0.0F);
+                /* KHR_materials_volume：thicknessFactor/thicknessTexture 给的是 **mesh 空间** 厚度，
+                 * 规范要求随节点变换缩放；attenuationDistance 是**世界空间**。gfx/shader 把它当世界
+                 * 空间厚度用（Beer-Lambert 路径长 + 折射偏移），这里先乘节点世界缩放（非均匀用几何均值
+                 * 近似路径长）。漏乘时小尺度资产（USDShaderBall 节点 scale=0.01）光学厚度 ×100 → 发黑。 */
+                if (mat.volume_thickness > 0.0F) {
+                    const float vscale = std::cbrt(std::abs(trs.scale.x * trs.scale.y * trs.scale.z));
+                    if (vscale > 1.0e-6F) mat.volume_thickness *= vscale;
+                }
+                /* KHR_materials_diffuse_transmission：**不透明**薄壁透光（不再 alpha BLEND，
+                 * 否则陶瓷/叶片会变幽灵玻璃）。factor → shader 背光透射项；flags2 bit24 标记。 */
+                const float diffuse_transmission_factor =
+                    read_num(dmat, base, "diffuse_transmission_factor", 0.0F);
+                if (diffuse_transmission_factor > 0.001F) {
+                    mat.diffuse_transmission_factor = diffuse_transmission_factor;
+                    math::Vec3 dtc{ 1.0F, 1.0F, 1.0F };
+                    if (const mq_field_desc* f = mq_reflect_field(dmat, "diffuse_transmission_color"))
+                        std::memcpy(&dtc, base + f->offset, sizeof dtc);
+                    mat.diffuse_transmission_color[0] = dtc.x;
+                    mat.diffuse_transmission_color[1] = dtc.y;
+                    mat.diffuse_transmission_color[2] = dtc.z;
+                    mat.flags2 |= 0x1000000;            /* bit24 = diffuse transmission approx */
+                }
+                /* KHR_materials_volume（第 24 轮）：Beer-Lambert 吸收（attenuationColor/Distance）+
+                 * thicknessTexture.G（厚度乘子）+ volume_scatter 的 multiscatterColorFactor。 */
+                {
+                    math::Vec3 att{ 1.0F, 1.0F, 1.0F };
+                    if (const mq_field_desc* f = mq_reflect_field(dmat, "attenuation_color"))
+                        std::memcpy(&att, base + f->offset, sizeof att);
+                    mat.attenuation_color[0] = att.x;
+                    mat.attenuation_color[1] = att.y;
+                    mat.attenuation_color[2] = att.z;
+                    mat.attenuation_distance = read_num(dmat, base, "attenuation_distance", 0.0F);
+                    math::Vec3 msc{ 0.0F, 0.0F, 0.0F };
+                    if (const mq_field_desc* f = mq_reflect_field(dmat, "multiscatter_color"))
+                        std::memcpy(&msc, base + f->offset, sizeof msc);
+                    mat.multiscatter_color[0] = msc.x;
+                    mat.multiscatter_color[1] = msc.y;
+                    mat.multiscatter_color[2] = msc.z;
+                }
                 mat.clearcoat_normal_scale = read_num(dmat, base, "clearcoat_normal_scale", 1.0F);
                 mat.toon_steps = (int32_t)read_num(dmat, base, "toon_steps", 3.0F);
                 mat.depth_packing = (int32_t)read_num(dmat, base, "depth_packing", 0.0F);
@@ -2489,6 +3402,47 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     load_spec_tex("specular_texture", 0, false);
                     load_spec_tex("specular_color_texture", 1, true);
                 }
+                /* KHR_materials_transmission 贴图槽（尾部追加）：R = 透射率掩码（0=不透、1=全透）。
+                 * 线性数据贴图 → load_texture_mips（不是 sRGB）；句柄放 textures5[0]，
+                 * 存在时置 flags2 bit23（presence；gfx 在 group1 新 binding 绑定）。空/失败保持 -1、presence=0。 */
+                if (const std::string* texref = read_str(dmat, base, "transmission_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_mips(*texref);
+                        if (tid >= 0) { mat.textures5[0] = tid; mat.flags2 |= 0x800000; }
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: transmission texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
+                /* KHR_materials_diffuse_transmission 两槽（尾部追加）：
+                 * diffuseTransmissionTexture.A = 透射率乘子（线性数据，load_texture_mips）；
+                 * diffuseTransmissionColorTexture.RGB = 透射色（sRGB）。presence = flags2 bit25/26，
+                 * gfx 绑定在 group1 binding 20/21；空/失败保持 -1、presence=0。 */
+                {
+                    auto load_dt_tex = [&](const char* field, int slot, bool srgb) {
+                        const std::string* texref = read_str(dmat, base, field);
+                        if (!texref || texref->empty()) return;
+                        const int tid = srgb ? load_texture_srgb(*texref) : load_texture_mips(*texref);
+                        if (tid >= 0) {
+                            mat.textures6[slot] = tid;
+                            mat.flags2 |= 1 << (25 + slot);          /* presence：bit25/26 */
+                        }
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: pbr diffuse-transmission texture {} '{}' -> {}\n",
+                                       field, *texref, tid);
+                    };
+                    load_dt_tex("diffuse_transmission_texture", 0, false);
+                    load_dt_tex("diffuse_transmission_color_texture", 1, true);
+                }
+                /* KHR_materials_volume thicknessTexture.G（线性数据；flags2 bit27 presence，
+                 * gfx 绑定在 group1 binding 22）。 */
+                if (const std::string* texref = read_str(dmat, base, "volume_thickness_texture")) {
+                    if (!texref->empty()) {
+                        const int tid = load_texture_mips(*texref);
+                        if (tid >= 0) { mat.textures7[0] = tid; mat.flags2 |= 0x8000000; }
+                        if (std::getenv("MAQUE_RENDER3D_INFO"))
+                            std::print("runtime: volume thickness texture '{}' -> {}\n", *texref, tid);
+                    }
+                }
             }
             if (std::getenv("MAQUE_RENDER3D_INFO"))
                 std::print("runtime: 3d material node={} model={} side={} flags2={} tex2=({},{},{})\n",
@@ -2498,18 +3452,99 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             out_mats.push_back(mat);
             /* M4c：mesh_path 非空时用离线导入网格（glTF → .mesh.json），否则内建 cube */
             int32_t mesh_id = cube_mesh;
+            std::string mesh_path_str;
             if (const std::string* mp = read_str(dmesh, mb->data(), "mesh_path")) {
                 if (!mp->empty()) {
+                    mesh_path_str = *mp;
                     const int32_t loaded = load_mesh(*mp);
                     if (loaded >= 0) mesh_id = loaded;
                     if (std::getenv("MAQUE_RENDER3D_INFO"))
                         std::print("runtime: mesh renderer node={} path='{}' → mesh={}\n", idx, *mp, loaded);
                 }
             }
+            /* ---- 蒙皮（plans/22 §6.3）：调色板 palette[j] = world_m(joint) * inverse_bind[j] ----
+             * 蒙皮网格忽略节点变换（glTF 规范）→ dr.model = identity、dr.skin = frame3d.skins 下标。
+             * 解析失败 → 告警一次并回退静态（dr.model = world_m、skin = -1）；
+             * MAQUE_SKIN=0 → 调色板填 identity（bind pose 不变量，用于 e2e A/B 对照）。 */
+            int32_t skin_index = -1;
+            float model_m[16];
+            std::memcpy(model_m, wm, sizeof model_m);
+            const std::string* skin_path = read_str(dmesh, mb->data(), "skin_path");
+            if (skin_path && !skin_path->empty()) {
+                auto lay_it = mesh_layout.find(mesh_path_str);
+                const bool skinned_ok = !mesh_path_str.empty() && lay_it != mesh_layout.end() &&
+                                        lay_it->second >= 2;
+                if (!skinned_ok) {
+                    if (!gltf_warned.count("skin-layout:" + *skin_path)) {
+                        gltf_warned.insert("skin-layout:" + *skin_path);
+                        std::print(stderr, "runtime: 蒙皮网格 '{}/{}' 布局缺失或载入失败，回退静态\n",
+                                   mesh_path_str, *skin_path);
+                    }
+                } else {
+                    const bool sk_loaded = load_skeleton(*skin_path);
+                    auto sit = skeletons.find(*skin_path);
+                    const Skeleton* sk = (sk_loaded && sit != skeletons.end() && !sit->second.failed)
+                                             ? &sit->second : nullptr;
+                    const size_t nj = sk ? sk->joint_names.size() : 0;
+                    const bool sk_valid = sk && nj > 0 && sk->inverse_bind.size() == nj * 16;
+                    bool built = false;
+                    if (sk_valid) {
+                        std::vector<float> pal(nj * 16);
+                        if (!skin_enabled) {
+                            /* MAQUE_SKIN=0：identity 调色板（joint_count 保留）→ bind pose 不变量 */
+                            for (size_t j = 0; j < nj; ++j) m4_identity(pal.data() + j * 16);
+                            built = true;
+                        } else if (!entity_by_name.empty()) {
+                            built = true;
+                            for (size_t j = 0; j < nj; ++j) {
+                                auto jhit = entity_by_name.find(sk->joint_names[j]);
+                                const Entity* je = jhit == entity_by_name.end()
+                                                       ? nullptr : scene->at(jhit->second);
+                                if (!je) { built = false; break; }
+                                m4_mul(je->world_m, sk->inverse_bind.data() + j * 16,
+                                       pal.data() + j * 16);
+                            }
+                        }
+                        if (built) {
+                            skin_palettes.push_back(std::move(pal));
+                            mq_renderer_skin rs{};
+                            rs.palette = skin_palettes.back().data();
+                            rs.joint_count = (uint32_t)nj;
+                            out_skins.push_back(rs);
+                            skin_index = (int32_t)out_skins.size() - 1;
+                            m4_identity(model_m);            /* 蒙皮网格忽略节点世界变换 */
+                        }
+                    }
+                    if (!built && !gltf_warned.count("skin-joint:" + *skin_path)) {
+                        gltf_warned.insert("skin-joint:" + *skin_path);
+                        std::print(stderr, "runtime: 蒙皮 '{}/{}' 关节解析失败，回退静态\n",
+                                   mesh_path_str, *skin_path);
+                    }
+                }
+            }
+            /* ---- CPU morph（plans/22 §6.4）：权重 = 动画覆盖 > 默认；权变才重算 + update_mesh ---- */
+            if (!mesh_path_str.empty()) {
+                auto mit = morph_meshes.find(mesh_path_str);
+                if (mit != morph_meshes.end() && mit->second.mesh >= 0 && !mit->second.targets.empty()) {
+                    MorphMesh& mm = mit->second;
+                    auto oit = morph_weight_override.find(idx);
+                    const std::vector<float>& mw = (oit != morph_weight_override.end())
+                                                       ? oit->second : mm.default_weights;
+                    if (mm.owner_entity < 0) mm.owner_entity = idx;
+                    if (mm.owner_entity == idx) {
+                        if (mm.applied_weights != mw) (void)apply_morph(mesh_path_str, mw);
+                    } else if (!mm.warned_shared) {
+                        mm.warned_shared = true;
+                        std::print(stderr, "runtime: mesh '{}' 被多个实体共享，morph 只取首实体 entity={}\n",
+                                   mesh_path_str, mm.owner_entity);
+                    }
+                }
+            }
             mq_renderer_draw3d dr{};
             dr.mesh = mesh_id;
             dr.material = mat_index;
-            m4_from_trs(trs, dr.model);
+            std::memcpy(dr.model, model_m, sizeof dr.model);
+            dr.skin = skin_index;
             dr.layer = 0;
             dr.sort_key = (uint64_t)idx;
             out_draws.push_back(dr);
@@ -2545,6 +3580,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             cam_trs.rotation = math::Vec3{ std::asin(std::max(-1.0F, std::min(1.0F, fy))),
                                            std::atan2(-fx, -fz), 0.0F };
         }
+        m4_from_trs(cam_trs, cam_wm);        /* Orbit 覆盖相机：世界矩阵 = 绕世界原点环绕 */
+        has_cam_wm = true;
         (void)has_cam;
     }
     if (out_lights.empty()) {                              /* 无方向光：给一盏默认主光，避免全黑 */
@@ -2557,13 +3594,15 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     }
 
     mq_renderer_view3d v{};
+    /* 相机 view 由**世界矩阵**派生（plans/22 §6.3）：默认相机 / 平级场景与旧 m4_view(trs) 逐字节一致 */
+    if (!has_cam_wm) m4_from_trs(cam_trs, cam_wm);
     float view[16], proj[16];
-    m4_view(cam_trs, view);
+    m4_view_from_m(cam_wm, view);
     const float aspect = (float)tw / (float)th;
     m4_perspective(fov_y * 3.14159265F / 180.0F, aspect, near_z, far_z, proj);
     std::memcpy(v.view, view, sizeof view);
     std::memcpy(v.proj, proj, sizeof proj);
-    v.eye[0] = cam_trs.position.x; v.eye[1] = cam_trs.position.y; v.eye[2] = cam_trs.position.z;
+    v.eye[0] = cam_wm[12]; v.eye[1] = cam_wm[13]; v.eye[2] = cam_wm[14];
     v.viewport[0] = 0.0F; v.viewport[1] = 0.0F;
     v.viewport[2] = (float)tw; v.viewport[3] = (float)th;
     v.exposure = exposure;
@@ -2572,6 +3611,13 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     v.clear_color[2] = clear.b; v.clear_color[3] = clear.a;
     v.layer_mask = 0x7FFFFFFF;
     out_views.push_back(v);
+    if (render3d_info && !gltf_frame_info) {
+        gltf_frame_info = true;
+        std::print("runtime: 3d frame0 draws={} skins={} morph={} anim_pose={} names={}\n",
+                   (long long)out_draws.size(), (long long)out_skins.size(),
+                   (long long)morph_meshes.size(), (long long)anim_pose.size(),
+                   (long long)entity_by_name.size());
+    }
 }
 
 void Engine::step_frame() {
@@ -2847,7 +3893,8 @@ void Engine::step_frame() {
         std::vector<mq_renderer_light> lights3d;
         std::vector<mq_renderer_pbr_material> mats3d;
         std::vector<mq_renderer_draw3d> draws3d;
-        extract_3d(TW, SHpx, views3d, lights3d, mats3d, draws3d);
+        std::vector<mq_renderer_skin> skins3d;
+        extract_3d(TW, SHpx, views3d, lights3d, mats3d, draws3d, skins3d);
         std::vector<mq_renderer_shader_pass> passes3d;
         extract_shader_passes(passes3d);
         mq_renderer_frame3d fr{};
@@ -2857,6 +3904,7 @@ void Engine::step_frame() {
         fr.lights = lights3d.data(); fr.light_count = (uint32_t)lights3d.size();
         fr.materials = mats3d.data(); fr.material_count = (uint32_t)mats3d.size();
         fr.draws = draws3d.data(); fr.draw_count = (uint32_t)draws3d.size();
+        fr.skins = skins3d.data(); fr.skin_count = (uint32_t)skins3d.size();
         fr.views2d = views.data(); fr.view2d_count = (uint32_t)views.size();
         fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
@@ -2919,9 +3967,22 @@ void Engine::step_frame() {
             env_tex_id = -1; env_irr_id = -1;
         }
     }
+    /* 立方体环境贴图（第 26 轮）：env_cubemap 非空 → 6 面 cube（优先于 equirect），sky_mode=2。 */
+    int32_t env_cube_id = -1, env_cube_irr_id = -1;
+    if (!scene->desc.env_cubemap.empty()) {
+        load_env_cubemap(scene->desc.env_cubemap, env_cube_id, env_cube_irr_id);
+        if (env_cube_id < 0)
+            std::print(stderr, "runtime: env_cubemap '{}' 不可用，回退 {} IBL\n",
+                       scene->desc.env_cubemap, env_tex_id >= 0 ? "equirect" : "analytic");
+    }
     fr.env.env_texture = env_tex_id;
     fr.env.env_irradiance_texture = env_irr_id;
-    fr.env.sky_mode = (env_tex_id >= 0) ? 3 : 1;
+    fr.env.env_cubemap = env_cube_id;
+    fr.env.env_cubemap_irradiance = env_cube_irr_id;
+    if (env_cube_id >= 0)
+        fr.env.sky_mode = scene->desc.env_background ? 2 : 1;
+    else
+        fr.env.sky_mode = (env_tex_id >= 0 && scene->desc.env_background) ? 3 : 1;
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
         fr.out_size = (uint32_t)pixels.size();
@@ -3121,6 +4182,10 @@ bool Engine::load_clip(const std::string& ref) {
 
 void Engine::anim_step(float dt) {
     if (!scene) return;                                   // 片段首次使用时按需载入（见下）
+    if (!gltf_env_read) read_gltf_env();
+    /* plans/22 §6.2：派生姿态表每帧重建（纯函数 = (time, clip)；MAQUE_ANIM=0 时保持空表 = bind pose）。 */
+    anim_pose.clear();
+    morph_weight_override.clear();
     std::vector<int> ids;
     for (auto& [idx, e] : scene->ents) ids.push_back(idx);
     std::sort(ids.begin(), ids.end());
@@ -3130,6 +4195,14 @@ void Engine::anim_step(float dt) {
         for (auto& [tid, blob] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (!d || !(d->role & MQ_ROLE_ANIM_PLAYER)) continue;
+            /* glTF 片段通路：clips 非空 → 只走新逻辑（旧 clip 通路完全不变） */
+            if (const mq_field_desc* fc = mq_reflect_field(d, "clips")) {
+                if (fc->kind == MQ_TK_ARRAY_DYN && fc->container_size &&
+                    fc->container_size(blob.data() + fc->offset) > 0) {
+                    anim_step_gclip(id, d, blob, dt);
+                    continue;
+                }
+            }
             bool playing = true;
             if (const mq_field_desc* f = mq_reflect_field(d, "playing")) playing = *(const bool*)(blob.data() + f->offset);
             std::string clipref;
@@ -3449,6 +4522,7 @@ void Engine::nav_step() {
  * 不清会直接命中上一个场景的纹理/网格，表现为“换了场景但贴图还是上一个模型”。 */
 void Engine::clear_asset_caches() {
     const size_t nt = tex_cache.size(), nm = mesh_cache.size(), ne = env_tex_cache.size();
+    const size_t ng = gclips.size(), ns = skeletons.size(), nmo = morph_meshes.size();
     if (rapi && rself) {
         if (rapi->destroy_texture) {
             for (auto& [k, id] : tex_cache) if (id >= 0) rapi->destroy_texture(rself, id);
@@ -3465,9 +4539,23 @@ void Engine::clear_asset_caches() {
     material_cache.clear();
     mesh_cache.clear();
     env_tex_cache.clear();
-    if (nt + nm + ne > 0)
-        std::print("runtime: asset caches cleared on scene switch ({} textures, {} meshes, {} env)\n",
-                   nt, nm, ne);
+    /* plans/22 §6.5：glTF 动画/蒙皮/morph 缓存与名字表也按**相对路径/场景**失效 */
+    gclips.clear();
+    skeletons.clear();
+    morph_meshes.clear();
+    mesh_layout.clear();
+    anim_pose.clear();
+    morph_weight_override.clear();
+    entity_morph_mesh.clear();
+    entity_by_name.clear();
+    skin_palettes.clear();
+    gltf_warned.clear();
+    gltf_frame_info = false;
+    gltf_anim_info = false;
+    if (nt + nm + ne + ng + ns + nmo > 0)
+        std::print("runtime: asset caches cleared on scene switch ({} textures, {} meshes, {} env, "
+                   "{} clips, {} skeletons, {} morph)\n",
+                   nt, nm, ne, ng, ns, nmo);
 }
 
 void Engine::preload_scene_assets() {
@@ -5133,6 +6221,50 @@ void Scene::flatten_world(Engine& eng) {
         read_local_pos(eng, *e, &lx, &ly);
         if (pidx >= 0) { if (Entity* pe = at(pidx)) { e->world_x = pe->world_x + lx; e->world_y = pe->world_y + ly; } }
         else { e->world_x = lx; e->world_y = ly; }
+        std::vector<int> kids;
+        for (auto& [k, c] : ents) if (c.parent == idx) kids.push_back(k);
+        std::sort(kids.begin(), kids.end(), std::greater<int>());   // 栈序 → 最小 id 先处理（稳定）
+        for (int k : kids) stack.emplace_back(k, idx);
+    }
+}
+
+/* 3D 世界矩阵（plans/22 §6.3）：遍历顺序与 flatten_world 完全一致（根 id 升序、子 id 升序）。
+ * local = scene.Transform3D.local 叠加 Engine::anim_pose（clips 采样结果）；
+ * 有 rotation 轨道用四元数路径（m4_from_quat_trs，无万向锁），否则走 Euler TRS（m4_from_trs）；
+ * world_m = parent.world_m * local。平级场景 world_m == m4_from_trs(local)，旧场景零漂移。 */
+void Scene::flatten_world3d(Engine& eng) {
+    std::vector<int> roots;
+    for (auto& [idx, e] : ents) if (e.parent < 0 || !at(e.parent)) roots.push_back(idx);
+    std::sort(roots.begin(), roots.end());
+    std::vector<std::pair<int, int>> stack;      // (index, parent index)
+    for (int r : roots) stack.emplace_back(r, -1);
+    while (!stack.empty()) {
+        auto [idx, pidx] = stack.back();
+        stack.pop_back();
+        Entity* e = at(idx);
+        if (!e) continue;
+        math::Transform3D trs{};
+        for (auto& [tid, blob] : e->comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            if (!d || std::strcmp(d->name, "scene.Transform3D") != 0) continue;
+            if (const mq_field_desc* lf = mq_reflect_field(d, "local"))
+                std::memcpy(&trs, blob.data() + lf->offset, sizeof trs);
+            break;
+        }
+        AnimPose* pose = nullptr;
+        auto pit = eng.anim_pose.find(idx);
+        if (pit != eng.anim_pose.end()) pose = &pit->second;
+        if (pose && pose->has_pos) trs.position = pose->pos;
+        if (pose && pose->has_scale) trs.scale = pose->scale;
+        float local[16];
+        if (pose && pose->has_rot) m4_from_quat_trs(trs.position, pose->rot, trs.scale, local);
+        else m4_from_trs(trs, local);
+        if (pidx >= 0) {
+            if (Entity* pe = at(pidx)) m4_mul(pe->world_m, local, e->world_m);
+            else std::memcpy(e->world_m, local, sizeof local);
+        } else {
+            std::memcpy(e->world_m, local, sizeof local);
+        }
         std::vector<int> kids;
         for (auto& [k, c] : ents) if (c.parent == idx) kids.push_back(k);
         std::sort(kids.begin(), kids.end(), std::greater<int>());   // 栈序 → 最小 id 先处理（稳定）

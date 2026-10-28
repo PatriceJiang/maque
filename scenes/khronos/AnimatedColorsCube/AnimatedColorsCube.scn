@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "TestCube_0",
+      "name": "TestCube",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,36 +83,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/AnimatedColorsCube_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "AnimatedColorMaterial",
-          "base_color": {
-            "r": 0.800000011920929,
-            "g": 0.019999999552965164,
-            "b": 0.019999999552965164,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "TestCube_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/AnimatedColorsCube_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "AnimatedColorMaterial",
+              "base_color": {
+                "r": 0.800000011920929,
+                "g": 0.019999999552965164,
+                "b": 0.019999999552965164,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "1-RedCube_0",
+      "name": "1-RedCube",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -133,36 +160,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/AnimatedColorsCube_1_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Red",
-          "base_color": {
-            "r": 0.800000011920929,
-            "g": 0.019999999552965164,
-            "b": 0.019999999552965164,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "1-RedCube_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/AnimatedColorsCube_1_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Red",
+              "base_color": {
+                "r": 0.800000011920929,
+                "g": 0.019999999552965164,
+                "b": 0.019999999552965164,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "2-GreenCube_0",
+      "name": "2-GreenCube",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -183,36 +237,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/AnimatedColorsCube_2_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Green",
-          "base_color": {
-            "r": 0.019999999552965164,
-            "g": 0.800000011920929,
-            "b": 0.019999999552965164,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "2-GreenCube_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/AnimatedColorsCube_2_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Green",
+              "base_color": {
+                "r": 0.019999999552965164,
+                "g": 0.800000011920929,
+                "b": 0.019999999552965164,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "3-BlueCube_0",
+      "name": "3-BlueCube",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -233,31 +314,74 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/AnimatedColorsCube_3_0.mesh.json"
-        },
+          "name": "3-BlueCube_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/AnimatedColorsCube_3_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Blue",
+              "base_color": {
+                "r": 0.019999999552965164,
+                "g": 0.019999999552965164,
+                "b": 0.800000011920929,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
         {
-          "type": "asset.PbrMaterial",
-          "name": "Blue",
-          "base_color": {
-            "r": 0.019999999552965164,
-            "g": 0.019999999552965164,
-            "b": 0.800000011920929,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/Cube_Animation.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

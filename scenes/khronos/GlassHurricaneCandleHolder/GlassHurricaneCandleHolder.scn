@@ -145,8 +145,8 @@
           "type": "asset.PbrMaterial",
           "name": "GlassHurricaneCandleHolder-glass",
           "base_color": {
-            "r": 0.8,
-            "g": 0.95,
+            "r": 1.0,
+            "g": 1.0,
             "b": 1.0,
             "a": 1.0
           },
@@ -163,9 +163,17 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1,
+          "attenuation_color": {
+            "x": 0.8,
+            "y": 0.95,
+            "z": 1.0
+          },
+          "attenuation_distance": 0.001,
           "base_color_texture": "textures/image1.png",
           "metallic_roughness_texture": "textures/image0.png",
-          "occlusion_texture": "textures/image0.png"
+          "occlusion_texture": "textures/image0.png",
+          "volume_thickness_texture": "textures/image2.png"
         }
       ]
     }

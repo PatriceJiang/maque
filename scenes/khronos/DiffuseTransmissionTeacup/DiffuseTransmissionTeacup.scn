@@ -106,13 +106,19 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.30000000000000004,
+          "diffuse_transmission_factor": 1.0,
+          "diffuse_transmission_color": {
+            "x": 0.84,
+            "y": 0.8,
+            "z": 0.74
+          },
           "base_color_texture": "textures/image3.jpg",
           "metallic_roughness_texture": "textures/image5.png",
           "normal_texture": "textures/image4.png",
-          "occlusion_texture": "textures/image5.png"
+          "occlusion_texture": "textures/image5.png",
+          "diffuse_transmission_texture": "textures/image5.png"
         }
       ]
     },
@@ -161,13 +167,19 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "opacity": 0.30000000000000004,
+          "diffuse_transmission_factor": 1.0,
+          "diffuse_transmission_color": {
+            "x": 0.84,
+            "y": 0.8,
+            "z": 0.74
+          },
           "base_color_texture": "textures/image0.jpg",
           "metallic_roughness_texture": "textures/image2.png",
           "normal_texture": "textures/image1.png",
-          "occlusion_texture": "textures/image2.png"
+          "occlusion_texture": "textures/image2.png",
+          "diffuse_transmission_texture": "textures/image2.png"
         }
       ]
     }

@@ -169,6 +169,7 @@
           "ior": 1.6,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.005,
           "base_color_texture": "textures/image0.png",
           "metallic_roughness_texture": "textures/image1.png",
           "occlusion_texture": "textures/image1.png",
@@ -235,5 +236,9 @@
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/footprint_court.hdr",
+  "env_background": false,
+  "env_intensity": 1.0,
+  "env_rotation": 0.0
 }

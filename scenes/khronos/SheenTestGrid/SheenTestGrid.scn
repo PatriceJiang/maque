@@ -1170,5 +1170,9 @@
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/footprint_court.hdr",
+  "env_background": false,
+  "env_intensity": 0.8608,
+  "env_rotation": 0.0
 }

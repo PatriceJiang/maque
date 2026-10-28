@@ -11,22 +11,22 @@
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": -1.8367772900457429,
-              "y": 0.8342283692657018,
-              "z": 3.057656707260448
+              "x": 0.0,
+              "y": -0.0065,
+              "z": 16.6
             },
             "rotation": {
-              "x": -0.2232631209437403,
-              "y": -0.5190192589890529,
+              "x": 0.0,
+              "y": -0.0,
               "z": 0.0
             }
           }
         },
         {
           "type": "render.Camera3D",
-          "fov_y": 45.0,
-          "near": 0.07574339340394817,
-          "far": 44.713327624249125,
+          "fov_y": 4.2395,
+          "near": 0.1,
+          "far": 100.0,
           "clear_color": {
             "r": 0.13,
             "g": 0.13,
@@ -162,7 +162,10 @@
           "shading_model": 1,
           "ior": 2.42,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.5,
+          "attenuation_distance": 1.0,
+          "transmission_texture": "textures/image0.jpg"
         }
       ]
     },
@@ -216,7 +219,11 @@
           "shading_model": 1,
           "ior": 2.42,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.5,
+          "attenuation_distance": 1.0,
+          "dispersion": 5.0,
+          "transmission_texture": "textures/image0.jpg"
         }
       ]
     }

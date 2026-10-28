@@ -55,6 +55,102 @@ MANUAL_CAMERA = {
     "Sponza": {"position": (9.5, 1.7, 0.0), "target": (-13.0, 2.2, 0.0),
                "fov": 65.0, "near": 0.05, "far": 100.0,
                "note": "手动机位：主厅内部沿 -X 看（官方参考图为内部视角）"},
+    # CompareDispersion 官方参考图（1703×863）是平视"铺满"构图：棋盘格填满画面、两球等高居中，
+    # 自动机位（统一 3/4 斜视）完全不是这个构图 → 从官方图反解机位：
+    #   * 方格 139.38px；棋盘格平面 3.0×1.503（UV=16×8 格，格宽 0.1875）→ 平面处 743.3 px/世界；
+    #   * 两球外接框 780px、球心 x=±0.56（间距 1.12 世界）→ 球心深度处 779.5 px/世界；
+    #   * 两处比例差 ⇒ 球心在相机前约 16.6（长焦，fov_y≈4.24°）；官方机位对准模型包围盒中心
+    #     y=-0.0065，所以两球比画面中线略高。
+    # 1280×720 按"水平比例与官方一致"定档：方格 104.75px、球外接框 586px、球心间距 656px；
+    # 官方纵横比 1.973 大于 16:9，垂直方向多露出约 36px 棋盘格（两球上下各留 ~67px），属预期。
+    "CompareDispersion": {"position": (0.0, -0.0065, 16.6), "target": (0.0, -0.0065, 15.6),
+                          "fov": 4.2395, "near": 0.1, "far": 100.0,
+                          "note": "手动机位：官方参考图为平视铺满构图（长焦 fov≈4.24°，棋盘格铺满、两球居中）"},
+    # 官方参考图是正面平视的 7×7 球阵（粗糙度 × 各向异性强度），透视很弱（长焦）。
+    # 自动 3/4 机位看不出"强度→高光拉长"的扫描关系；这里按模型 bounds 正面框住球阵。
+    "AnisotropyStrengthTest": {
+        "position": (-0.385, 2.706, 16.0), "target": (-0.385, 2.706, 0.0),
+        "fov": 30.0, "near": 0.1, "far": 100.0,
+        "clear_color": (0.16, 0.18, 0.22),
+        "note": "手动机位：正面平视 7×7 球阵（官方参考图为平视铺满构图）"},
+    # DirectionalLight 官方截图（IKEA 测试查看器）是浅灰背景 + 纯方向光，没有 IBL：
+    # 机位用 glTF 自带相机（GLTF_CAMERA_MODELS），这里只把背景改成官方浅灰。
+    "DirectionalLight": {"clear_color": (0.88, 0.88, 0.88),
+                         "note": "手动机位：glTF 自带相机 + 官方浅灰背景（0.88）"},
+    # USDShaderBallForGltf 官方 screenshot_large 是 three.js 编辑器特写（球占 ≈90% 画面高、
+    # 平背景、正视开口），自动机位太远。机位按官方构图手工拟合（球心 (0,0.041,0)、半径 0.0446）：
+    # 方位 40° / 仰角 8° / 距离 0.135 / fov 40°，背景 + clear_color 用官方浅灰。
+    "USDShaderBallForGltf": {
+        "position": (0.08594, 0.05979, 0.10243), "target": (0.0, 0.041, 0.0),
+        "fov": 40.0, "near": 0.005, "far": 1.0,
+        "clear_color": (0.85, 0.85, 0.85),
+        "note": "手动机位：官方特写构图（球占 ~90% 画面高、正视开口、浅灰平背景）"},
+    # MosquitoInAmber 官方参考是亮背景棚拍（琥珀透光发亮）：默认深色 clear_color + 解析环境
+    # 在厚度改世界尺度后会让琥珀发暗；这里把背景/环境调亮对齐官方（无需改机位）。
+    "MosquitoInAmber": {"clear_color": (0.85, 0.85, 0.85),
+                        "note": "手动机位：亮棚拍背景（0.85），对齐官方亮背景"},
+    # DamagedHelmet 官方截图（旧 SampleViewer，130×126、透明底）是 3/4 前视特写：自动机位太远且偏上方，
+    # 视角/构图差最大。机位按官方构图拟合（世界包围盒中心 (-0.0025,0,-0.1872)、半径 1.0）：
+    # 方位 60° / 仰角 12° / 距离 2.83 / fov 42°，背景浅灰（官方为透明底，报告里按浅灰合计）。
+    "DamagedHelmet": {
+        "position": (1.8804, 0.3743, 1.6957), "target": (-0.0025, 0.0, -0.1872),
+        "fov": 42.0, "near": 0.01, "far": 100.0,
+        "clear_color": (0.92, 0.92, 0.92),
+        "note": "手动机位：官方 3/4 前视特写（方位 45°/仰角 8°、距离系数 0.95、浅灰底）"},
+}
+
+# 手调场景环境：模型 → `.scn` 顶层 `env_*`（scn.Scene）。用于官方参考图是"暗色影棚+面光"的
+# 材料测试模型——默认 analytic studio（env_color 0.27/1.6）会把测试球打成亮灰，看不出面光弧线/各向异性。
+MANUAL_ENV = {
+    "AnisotropyStrengthTest": {
+        "env_color": (0.036, 0.039, 0.048, 1.0),
+        "env_intensity": 1.0,
+        "env_sky_color": (0.06, 0.063, 0.078, 1.0),
+        "env_ground_color": (0.02, 0.02, 0.024, 1.0),
+        "env_highlight": 0.25,
+        "env_rotation": 0.0,
+        "note": "手调环境：暗色影棚 + 0.25 软光箱（官方参考图为暗色 HDRI studio）",
+    },
+    # 官方截图只有方向光（无 IBL）：把解析 studio 环境整体关掉（intensity/软光箱=0）。
+    "DirectionalLight": {
+        "env_intensity": 0.0,
+        "env_highlight": 0.0,
+        "note": "手调环境：关闭 analytic IBL（官方为纯方向光测试）",
+    },
+    # 官方截图是平背景（three.js 编辑器特写）：HDRI 只做反射/折射来源，不画天空。
+    "USDShaderBallForGltf": {
+        "env_background": False,
+        "note": "手调环境：Studio Neutral HDRI 仅 IBL（不画背景；官方为平背景）",
+    },
+    # 官方参考为亮棚拍：暖白环境光把琥珀打透（hist 0.147→0.79）。
+    "MosquitoInAmber": {
+        "env_color": (0.75, 0.75, 0.75),
+        "env_intensity": 2.5,
+        "note": "手调环境：亮棚拍环境（暖白 0.75 / intensity 2.5），对齐官方亮背景",
+    },
+    # DamagedHelmet：金属占比高，默认 analytic 环境（1.6）整体偏亮发白；官方前景亮度 0.276，
+    # intensity=0.8 时前景亮度 0.294、直方图相似度最好（0.61）。
+    "DamagedHelmet": {
+        "env_intensity": 0.8,
+        "note": "手调环境：analytic 亮度 1.6→0.8（金属高光不过曝，对齐官方亮度/直方图）",
+    },
+}
+
+# 参考图说明（写进 README「踩过的坑」/报告）：官方截图不是单视图渲染（两联图/多机位）时提示读者，
+# 整图指标只能当趋势参考。
+MANUAL_REFERENCE = {
+    "USDShaderBallForGltf": "官方 screenshot_large 是 three.js 编辑器两联图（左 pathtraced / 右 rasterized），"
+                            "整图 hist/rgb 指标只作趋势参考，观感以右侧 rasterized 对照",
+    "DamagedHelmet": "官方 screenshot.png 只有 130×126、带 alpha（旧 SampleViewer 截图），"
+                     "整图 hist/rgb 指标只作趋势参考",
+}
+
+# 手调灯光：模型 → {"intensity_abs": x} 或 {"intensity_scale": k}（作用在光实体的 intensity 字段）。
+# 用于"光强本身就是测试语义"的模型（如 DirectionalLight 的 1.0 流明/㎡ 能量测试）：
+# importer 会按观感把方向光归一化 ×2.6，这类模型要还原成 glTF 原值。
+MANUAL_LIGHT = {
+    "DirectionalLight": {"intensity_abs": 1.0,
+                         "note": "光强按 glTF 原值（1.0；README 的能量测试语义，importer 观感归一化 ×2.6 不适用）"},
 }
 
 # glTF 自带相机（--use-gltf-camera）实测优于自动机位的模型（2026-10，指标 hist/rgb 均改善）。
@@ -67,7 +163,141 @@ GLTF_CAMERA_MODELS = {
     "IridescentDishWithOlives",
     "TrafficCone",
     "TransmissionTest",
+    "DirectionalLight",
 }
+
+
+# 官方 Khronos HDRI 环境（tools/khronos_env.json，README 明确声明环境的 23 个模型）。
+# HDRI 文件不入库（许可混杂 + 16MB）→ 放在 .deps/khronos-env/（gitignored），渲染时用
+# MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env" 挂载；.scn 里写 env_texture="/khronos_env/<file>"，
+# 未挂载时 runtime 自动回退 analytic IBL（不报错）。env_background=false：HDRI 只做 IBL 光照，背景保持
+# 相机 clear_color（材料对比图不希望 HDRI 背景盖住官方参考背景）。
+KH_ENV_JSON = os.path.join(REPO, "tools", "khronos_env.json")
+KH_ENV_DIR = os.path.join(REPO, ".deps", "khronos-env")
+KH_ENV_MOUNT_NAME = "/khronos_env"
+ENV_KEYS = ("env_texture", "env_background", "env_intensity", "env_rotation")
+
+
+class _JsonPairs(list):
+    """JSON 对象：保留键顺序与**重复键**（引擎 .scn 的灯光组件约定 = 两个 "type"：
+    第一个字符串是组件类型、第二个数值是 LightType；普通 dict 会把前者吃掉 → 灯光组件被静默丢弃）。"""
+
+
+def load_scene_pairs(path):
+    with open(path, encoding="utf-8") as f:
+        return json.loads(f.read(), object_pairs_hook=_JsonPairs)
+
+
+def _dump_pairs(v, indent=0):
+    pad = "  " * indent
+    if isinstance(v, _JsonPairs):
+        if not v:
+            return "{}"
+        body = ",\n".join("%s  %s: %s" % (pad, json.dumps(k, ensure_ascii=False), _dump_pairs(val, indent + 1))
+                           for k, val in v)
+        return "{\n%s\n%s}" % (body, pad)
+    if isinstance(v, list):
+        if not v:
+            return "[]"
+        body = ",\n".join("%s  %s" % (pad, _dump_pairs(e, indent + 1)) for e in v)
+        return "[\n%s\n%s]" % (body, pad)
+    return json.dumps(v, ensure_ascii=False)
+
+
+def jget(obj, key, default=None):
+    if isinstance(obj, _JsonPairs):
+        for k, v in obj:
+            if k == key:
+                return v
+    return default
+
+
+def jset(obj, key, value):
+    if not isinstance(obj, _JsonPairs):
+        return
+    for i, (k, _) in enumerate(obj):
+        if k == key:
+            obj[i] = (key, value)
+            return
+    obj.append((key, value))
+
+
+def jdel(obj, key):
+    if isinstance(obj, _JsonPairs):
+        obj[:] = [(k, v) for k, v in obj if k != key]
+
+
+def jset_color(obj, key, rgba):
+    a = float(rgba[3]) if len(rgba) > 3 else 1.0
+    jset(obj, key, _JsonPairs([("r", float(rgba[0])), ("g", float(rgba[1])),
+                               ("b", float(rgba[2])), ("a", a)]))
+
+
+def save_scene_pairs(path, obj, orig_text=None):
+    """写回 .scn；若写回后 "render.Light" 组件数量变少（重复键被破坏）→ 回滚并警告。"""
+    text = _dump_pairs(obj) + "\n"
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+    if orig_text is not None and text.count('"render.Light"') < orig_text.count('"render.Light"'):
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(orig_text)
+        print("migrate: 警告 %s 写回会丢灯光组件（重复 type 键约定）→ 已回滚该文件" % path,
+              file=sys.stderr)
+        return False
+    return True
+
+
+def load_khronos_env():
+    try:
+        doc = json.load(open(KH_ENV_JSON, encoding="utf-8"))
+        return doc.get("models") or {}
+    except (OSError, ValueError):
+        return {}
+
+
+KNOWN_KH_ENV = load_khronos_env()
+
+
+def _scene_env_snapshot(scene_path):
+    try:
+        scn = load_scene_pairs(scene_path)
+    except (OSError, ValueError):
+        return {}
+    return {k: jget(scn, k) for k in ENV_KEYS if jget(scn, k) is not None}
+
+
+def apply_hdri_env(scene_path, spec, intensity=1.0, env_background=None):
+    """把官方 HDRI（仅 IBL、不画背景）写进 .scn：env_texture/env_background/env_intensity/env_rotation。
+
+    env_background 非 None 时优先（MANUAL_ENV 的手调覆盖，例如 USDShaderBallForGltf 官方截图是
+    平背景、只需 HDRI 做反射）。"""
+    try:
+        orig = open(scene_path, encoding="utf-8").read()
+        scn = json.loads(orig, object_pairs_hook=_JsonPairs)
+    except (OSError, ValueError):
+        return False
+    jset(scn, "env_texture", KH_ENV_MOUNT_NAME + "/" + spec["env_file"])
+    # 默认仅 IBL（不画 HDRI 背景）；个别模型（官方参考就是 HDRI 亮背景，如 USDShaderBallForGltf）
+    # 在 khronos_env.json 里写 "env_background": true 才画背景。
+    bg = bool(spec.get("env_background", False)) if env_background is None else bool(env_background)
+    jset(scn, "env_background", bg)
+    jset(scn, "env_intensity", round(float(intensity), 4))
+    jset(scn, "env_rotation", float(spec.get("env_rotation_deg") or 0.0))
+    return save_scene_pairs(scene_path, scn, orig)
+
+
+def restore_scene_env(scene_path, snapshot):
+    """撤销 HDRI 注入、恢复注入前的 env_* 字段（用于「指标变差 → 回退 analytic」）。"""
+    try:
+        orig = open(scene_path, encoding="utf-8").read()
+        scn = json.loads(orig, object_pairs_hook=_JsonPairs)
+    except (OSError, ValueError):
+        return False
+    for k in ENV_KEYS:
+        jdel(scn, k)
+    for k, v in (snapshot or {}).items():
+        jset(scn, k, v)
+    return save_scene_pairs(scene_path, scn, orig)
 
 
 def _look_rotation(eye, target):
@@ -78,42 +308,94 @@ def _look_rotation(eye, target):
 
 
 def apply_camera_override(scene_path, spec):
-    """把 MANUAL_CAMERA 的显式机位写进 .scn（幂等；保持 importer 的 JSON 格式）。"""
+    """把 MANUAL_CAMERA 的显式机位/背景写进 .scn（幂等；保留重复键与 importer 的 JSON 格式）。"""
     if not os.path.isfile(scene_path):
         return False
     try:
-        scn = load_json(scene_path)
-    except Exception:  # noqa: BLE001
+        orig = open(scene_path, encoding="utf-8").read()
+        scn = json.loads(orig, object_pairs_hook=_JsonPairs)
+    except (OSError, ValueError):
         return False
     changed = False
-    for ent in scn.get("entities") or []:
-        comps = ent.get("components") or []
-        is_cam = any(c.get("type") == "render.Camera3D" for c in comps)
-        if not is_cam:
+    move = "position" in spec and "target" in spec
+    pitch, yaw = _look_rotation(spec["position"], spec["target"]) if move else (0.0, 0.0)
+    for ent in jget(scn, "entities") or []:
+        comps = jget(ent, "components") or []
+        if not any(jget(c, "type") == "render.Camera3D" for c in comps):
             continue
-        pitch, yaw = _look_rotation(spec["position"], spec["target"])
         for c in comps:
-            if c.get("type") == "scene.Transform3D":
-                c["local"]["position"] = {"x": spec["position"][0], "y": spec["position"][1],
-                                          "z": spec["position"][2]}
-                c["local"]["rotation"] = {"x": pitch, "y": yaw, "z": 0.0}
-                changed = True
-            elif c.get("type") == "render.Camera3D":
+            t = jget(c, "type")
+            if t == "scene.Transform3D":
+                if move:
+                    local = jget(c, "local") or _JsonPairs()
+                    jset(local, "position", _JsonPairs([("x", float(spec["position"][0])),
+                                                        ("y", float(spec["position"][1])),
+                                                        ("z", float(spec["position"][2]))]))
+                    jset(local, "rotation", _JsonPairs([("x", pitch), ("y", yaw), ("z", 0.0)]))
+                    jset(c, "local", local)
+                    changed = True
+            elif t == "render.Camera3D":
                 if "fov" in spec:
-                    c["fov_y"] = spec["fov"]
+                    jset(c, "fov_y", float(spec["fov"]))
                 if "near" in spec:
-                    c["near"] = spec["near"]
+                    jset(c, "near", float(spec["near"]))
                 if "far" in spec:
-                    c["far"] = spec["far"]
+                    jset(c, "far", float(spec["far"]))
                 if "clear_color" in spec:
-                    r, g, b = spec["clear_color"]
-                    c["clear_color"] = {"r": r, "g": g, "b": b, "a": 1.0}
+                    jset_color(c, "clear_color", spec["clear_color"])
                 changed = True
-    if changed:
-        with open(scene_path, "w", encoding="utf-8", newline="\n") as f:
-            json.dump(scn, f, ensure_ascii=False, indent=2)
-            f.write("\n")
-    return changed
+    return save_scene_pairs(scene_path, scn, orig) if changed else False
+
+
+def apply_light_override(scene_path, spec):
+    """按 MANUAL_LIGHT 调整场景里 render.Light.intensity（绝对值或倍率）。"""
+    if not os.path.isfile(scene_path):
+        return False
+    try:
+        orig = open(scene_path, encoding="utf-8").read()
+        scn = json.loads(orig, object_pairs_hook=_JsonPairs)
+    except (OSError, ValueError):
+        return False
+    changed = False
+    for ent in jget(scn, "entities") or []:
+        for c in jget(ent, "components") or []:
+            if jget(c, "type") != "render.Light":
+                continue
+            if "intensity_abs" in spec:
+                jset(c, "intensity", float(spec["intensity_abs"]))
+                changed = True
+            elif "intensity_scale" in spec:
+                base = jget(c, "intensity", 1.0)
+                jset(c, "intensity", float(base) * float(spec["intensity_scale"]))
+                changed = True
+    return save_scene_pairs(scene_path, scn, orig) if changed else False
+
+
+def apply_scene_env(scene_path, spec):
+    """把 MANUAL_ENV 的 `.scn` 顶层 `env_*` 字段写进场景（幂等；保留重复键）。"""
+    if not os.path.isfile(scene_path):
+        return False
+    try:
+        orig = open(scene_path, encoding="utf-8").read()
+        scn = json.loads(orig, object_pairs_hook=_JsonPairs)
+    except (OSError, ValueError):
+        return False
+    changed = False
+    for key in ("env_color", "env_sky_color", "env_ground_color"):
+        if key in spec:
+            jset_color(scn, key, spec[key])
+            changed = True
+    for key in ("env_intensity", "env_highlight", "env_rotation"):
+        if key in spec:
+            jset(scn, key, float(spec[key]))
+            changed = True
+    if "env_texture" in spec:
+        jset(scn, "env_texture", spec["env_texture"])
+        changed = True
+    if "env_background" in spec:
+        jset(scn, "env_background", bool(spec["env_background"]))
+        changed = True
+    return save_scene_pairs(scene_path, scn, orig) if changed else False
 
 
 def _clamp(v, lo, hi):
@@ -219,7 +501,7 @@ def gltf_stats(gltf_path):
         "gltf": os.path.basename(gltf_path),
         "nodes": 0, "meshes": 0, "primitives": 0, "vertices": 0, "triangles": 0,
         "materials": 0, "textures": 0, "images": 0, "animations": 0, "skins": 0,
-        "morph_prims": 0, "cameras": 0,
+        "morph_prims": 0, "cameras": 0, "anim_channels": 0, "pointer_channels": 0,
         "extensions_used": [], "extensions_required": [],
         "image_kinds": {}, "texcoord_sets": {}, "alpha_modes": {}, "double_sided": 0,
         "no_normal_prims": 0, "color0_prims": 0, "non_tri_prims": 0,
@@ -240,6 +522,11 @@ def gltf_stats(gltf_path):
     st["animations"] = len(js.get("animations") or [])
     st["skins"] = len(js.get("skins") or [])
     st["cameras"] = len(js.get("cameras") or [])
+    for anim in js.get("animations") or []:
+        for ch in anim.get("channels") or []:
+            st["anim_channels"] += 1
+            if ((ch.get("target") or {}).get("extensions") or {}).get("KHR_animation_pointer"):
+                st["pointer_channels"] += 1
 
     accessors = js.get("accessors") or []
     for mesh in js.get("meshes") or []:
@@ -302,11 +589,14 @@ def known_gaps(stats):
     req = set(stats.get("extensions_required") or [])
     gaps = []
     if stats.get("animations"):
-        gaps.append("动画未导入（静态渲染；角色模型为 bind/T-pose）")
+        gaps.append("动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；"
+                    "截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）")
     if stats.get("skins"):
-        gaps.append("骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）")
+        gaps.append("骨骼蒙皮已应用（plans/22 S1：调色板 = 关节世界矩阵 × inverse_bind，"
+                    "蒙皮网格忽略节点变换；法线按调色板 3×3 线性部分近似）")
     if stats.get("morph_prims"):
-        gaps.append("morph targets 未应用（默认权重不生效）")
+        gaps.append("morph targets 已应用（plans/22 S3：CPU 顶点变形，默认权重 + weights 动画；"
+                    "TANGENT 增量忽略）")
     if stats.get("cameras"):
         gaps.append("未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）")
     if stats.get("has_khr_lights"):
@@ -319,11 +609,15 @@ def known_gaps(stats):
     if "KHR_texture_transform" in used:
         gaps.append("KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似")
     if "KHR_materials_transmission" in used:
-        gaps.append("KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）")
+        gaps.append("KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、"
+                    "transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射")
     if "KHR_materials_volume" in used or "KHR_materials_dispersion" in used or "KHR_materials_volume_scatter" in used:
-        gaps.append("KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现")
+        gaps.append("KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 "
+                    "Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；"
+                    "volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）")
     if "KHR_materials_diffuse_transmission" in used:
-        gaps.append("KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）")
+        gaps.append("KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + "
+                    "透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）")
     if "KHR_materials_clearcoat" in used:
         gaps.append("KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似")
     if "KHR_materials_sheen" in used:
@@ -333,7 +627,8 @@ def known_gaps(stats):
     if "KHR_materials_specular" in used:
         gaps.append("KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）")
     if "KHR_materials_anisotropy" in used:
-        gaps.append("KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）")
+        gaps.append("KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ "
+                    "环境反射 bent-normal 近似；非真实多次反射")
     if "KHR_materials_variants" in used:
         gaps.append("KHR_materials_variants：只使用默认材质（不做变体切换）")
     if "KHR_materials_pbrSpecularGlossiness" in used:
@@ -351,7 +646,7 @@ def known_gaps(stats):
     if "EXT_lights_image_based" in used:
         gaps.append("EXT_lights_image_based 未实现（忽略其 IBL 灯光）")
     if "KHR_animation_pointer" in used:
-        gaps.append("KHR_animation_pointer 动画未导入")
+        gaps.append("KHR_animation_pointer 动画未导入（材质/贴图变换/可见性等指针通道；节点 TRS/骨骼/morph 动画已支持）")
     if "KHR_draco_mesh_compression" in req:
         gaps.append("主变体必需 Draco 压缩（无解码器）→ 该变体无法导入")
     if "KHR_mesh_quantization" in req:
@@ -469,9 +764,14 @@ def compare_images(preview_path, reference_path, out_json):
     if result["preview_coverage"] < 0.05:
         notes.append("预览主体占比过小（<5%）→ 机位过远？")
     bbox = cur_st["bbox"]
+    ref_bbox = ref_st["bbox"]
+    # 参考图本身也满画幅时（如 CompareDispersion 的棋盘格铺满），预览贴边是"对齐参考图"而不是机位过近。
+    ref_touches_edge = bool(ref_bbox) and (
+        ref_bbox[0] <= 1 or ref_bbox[1] <= 1
+        or ref_bbox[2] >= ref.size[0] - 2 or ref_bbox[3] >= ref.size[1] - 2)
     if bbox:
         w, h = cur.size
-        if bbox[0] <= 1 or bbox[1] <= 1 or bbox[2] >= w - 2 or bbox[3] >= h - 2:
+        if (bbox[0] <= 1 or bbox[1] <= 1 or bbox[2] >= w - 2 or bbox[3] >= h - 2) and not ref_touches_edge:
             notes.append("预览主体贴边/被裁剪 → 机位过近？")
     result["framing_notes"] = notes
     # 粗略结论（前景统计）
@@ -545,6 +845,11 @@ def write_readme(path, model, meta, stats, gaps, import_info, compare, issues, m
         lines.append("| 图像编码 | %s |" % "、".join("%s×%d" % (k, v) for k, v in sorted(kinds.items())))
     lines.append("| 动画 / 骨骼 / morph primitive / 相机 | %d / %d / %d / %d |" % (
         stats.get("animations", 0), stats.get("skins", 0), stats.get("morph_prims", 0), stats.get("cameras", 0)))
+    if stats.get("animations") or stats.get("skins") or stats.get("morph_prims"):
+        lines.append("| 动画导入（plans/22） | clip %d / skin %d / morph primitive %d（`assets/anim|skin/`，"
+                     "场景自动播放首个片段） |" % (
+                         import_info.get("clip_files", 0), import_info.get("skel_files", 0),
+                         stats.get("morph_prims", 0)))
     used = stats.get("extensions_used") or []
     req = stats.get("extensions_required") or []
     if used:
@@ -576,7 +881,8 @@ def write_readme(path, model, meta, stats, gaps, import_info, compare, issues, m
     if compare and "error" not in compare:
         lines.append("参考图：`screenshot/%s`（%s%s）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，"
                      "否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，"
-                     "常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。" % (
+                     "常带 HDRI studio、软阴影、不同机位/背景；maque 对 README 声明环境的模型注入官方 HDRI"
+                     "（`tools/khronos_env.json`），其余用 analytic studio IBL，无面光/软阴影。" % (
                          compare.get("reference"), "×".join(str(x) for x in compare.get("reference_size", [])),
                          "，含透明背景" if compare.get("reference_has_alpha") else ""))
         lines.append("")
@@ -603,7 +909,8 @@ def write_readme(path, model, meta, stats, gaps, import_info, compare, issues, m
     if (meta or {}).get("screenshot"):
         attrib.append("官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）")
     attrib.extend(gaps)
-    attrib.append("引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）")
+    attrib.append("引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，" 
+                  "MSAA 需场景显式开启（高光与间接光观感差异）")
     for a in attrib:
         lines.append("- %s" % a)
     lines.append("")
@@ -709,14 +1016,45 @@ def migrate_one(model, args, models_root, out_root, manifest):
         if apply_camera_override(scene, MANUAL_CAMERA[model]):
             rec["camera_override"] = MANUAL_CAMERA[model]["note"]
             rec["issues"].append("手动机位：%s" % MANUAL_CAMERA[model]["note"])
+    if model in MANUAL_ENV:
+        if apply_scene_env(scene, MANUAL_ENV[model]):
+            rec["env_override"] = MANUAL_ENV[model].get("note", "")
+            rec["issues"].append("手调环境：%s" % MANUAL_ENV[model].get("note", ""))
+    if model in MANUAL_LIGHT:
+        if apply_light_override(scene, MANUAL_LIGHT[model]):
+            rec["light_override"] = MANUAL_LIGHT[model].get("note", "")
+            rec["issues"].append("手调灯光：%s" % MANUAL_LIGHT[model].get("note", ""))
     # 产物统计
     assets_dir = os.path.join(out_dir, "assets")
     tex_dir = os.path.join(out_dir, "textures")
     mesh_files = [f for f in os.listdir(assets_dir) if f.endswith(".mesh.json")] if os.path.isdir(assets_dir) else []
     tex_files = os.listdir(tex_dir) if os.path.isdir(tex_dir) else []
+    # 动画/蒙皮/morph 派生资产（plans/22）：clips/skeletons 由 importer 写在 assets/anim|skin/。
+    anim_dir = os.path.join(assets_dir, "anim")
+    skin_dir = os.path.join(assets_dir, "skin")
+    clip_files = sorted(f for f in os.listdir(anim_dir) if f.endswith(".clip.json")) if os.path.isdir(anim_dir) else []
+    skel_files = sorted(f for f in os.listdir(skin_dir) if f.endswith(".skel.json")) if os.path.isdir(skin_dir) else []
     import_info = {"mesh_files": len(mesh_files), "mesh_bytes": dir_size(assets_dir) if assets_dir else 0,
-                   "texture_files": len(tex_files), "scene": os.path.basename(scene)}
+                   "texture_files": len(tex_files), "scene": os.path.basename(scene),
+                   "clip_files": len(clip_files), "skel_files": len(skel_files),
+                   "anim_bytes": (dir_size(anim_dir) if os.path.isdir(anim_dir) else 0)
+                                 + (dir_size(skin_dir) if os.path.isdir(skin_dir) else 0)}
     rec["import"] = import_info
+    if clip_files or skel_files or stats.get("morph_prims"):
+        rec["animation"] = {
+            "clips": clip_files,
+            "clip_count": len(clip_files),
+            "skin_count": len(skel_files),
+            "morph_target_prims": stats.get("morph_prims", 0),
+            "anim_channels": stats.get("anim_channels", 0),
+            "pointer_channels": stats.get("pointer_channels", 0),
+        }
+    if clip_files:
+        rec["issues"].append("动画已导入：%d 个片段（场景自动播放首个；预览=第 1 帧姿态）" % len(clip_files))
+    if skel_files:
+        rec["issues"].append("骨骼蒙皮已应用：%d 个骨架" % len(skel_files))
+    if stats.get("morph_prims"):
+        rec["issues"].append("morph targets 已应用（默认权重 + weights 动画）")
     rec["out_size_bytes"] = dir_size(out_dir)
     if stats.get("no_normal_prims"):
         rec["issues"].append("%d 个 primitive 无 NORMAL（导入器按索引重建法线）" % stats["no_normal_prims"])
@@ -730,6 +1068,8 @@ def migrate_one(model, args, models_root, out_root, manifest):
     ref = find_reference_image(model_dir)
     rec["reference"] = os.path.relpath(ref, REPO) if ref else None
     full_png = os.path.join(out_dir, "preview.png")
+    kh_env = None
+    env_snapshot = None
     if not args.no_render:
         reuse = bool(args.reuse_preview) and os.path.isfile(full_png) and not args.force
         if reuse:
@@ -738,6 +1078,15 @@ def migrate_one(model, args, models_root, out_root, manifest):
         else:
             env = dict(os.environ)
             env.update({"MAQUE_PRESENT": "off", "MAQUE_WINDOW": "0x0"})
+            kh_env = (KNOWN_KH_ENV.get(model)
+                      if (KNOWN_KH_ENV and not args.no_hdri_env and os.path.isdir(KH_ENV_DIR)) else None)
+            env_snapshot = None
+            hdri_calib_png = os.path.join(out_dir, "preview_calib.png")
+            if kh_env:
+                env_snapshot = _scene_env_snapshot(scene)
+                apply_hdri_env(scene, kh_env, 1.0,
+                               MANUAL_ENV.get(model, {}).get("env_background"))
+                env["MAQUE_MOUNT"] = KH_ENV_MOUNT_NAME + "=" + KH_ENV_DIR
             t0 = time.time()
             p = subprocess.run([PLAYER, "--shot", full_png, "--shot-frame", "1", scene],
                                cwd=REPO, env=env, capture_output=True, text=True,
@@ -771,6 +1120,57 @@ def migrate_one(model, args, models_root, out_root, manifest):
                 if "[wgpu] error" in render_log:
                     rec["issues"].append("wgpu 校验错误（见 build-win/audit/migrate-logs/%s.render.log）" % model)
                 rec["preview_png"] = os.path.relpath(full_png, REPO)
+        # ---- 官方 HDRI 环境：env_intensity 自动标定 + 指标回退（第 25 轮）----
+        if kh_env and rec.get("status") != "render_failed" and os.path.isfile(full_png) and ref:
+            try:
+                first = compare_images(full_png, ref, os.path.join(REPO, "build-win", "audit", "migrate-logs", model + ".hdri_compare.json"))
+                chosen = first
+                chosen_inten = 1.0
+                if first and "error" not in first and first.get("preview_mean_lum", 0) > 1e-3:
+                    ratio = first["ref_mean_lum"] / max(1e-4, first["preview_mean_lum"])
+                    inten = max(0.05, min(2.5, ratio))
+                    if abs(inten - 1.0) > 0.05:
+                        apply_hdri_env(scene, kh_env, inten,
+                                       MANUAL_ENV.get(model, {}).get("env_background"))
+                        p2 = subprocess.run([PLAYER, "--shot", hdri_calib_png, "--shot-frame", "1", scene],
+                                            cwd=REPO, env=env, capture_output=True, text=True,
+                                            encoding="utf-8", errors="replace", timeout=900)
+                        second = (compare_images(hdri_calib_png, ref, os.path.join(REPO, "build-win", "audit", "migrate-logs", model + ".hdri_compare.json"))
+                                  if p2.returncode == 0 and os.path.isfile(hdri_calib_png) else None)
+                        if second and "error" not in second and \
+                                second["hist_similarity"] > first["hist_similarity"]:
+                            chosen, chosen_inten = second, inten
+                            os.replace(hdri_calib_png, full_png)
+                        else:
+                            apply_hdri_env(scene, kh_env, 1.0,
+                                           MANUAL_ENV.get(model, {}).get("env_background"))
+                        if os.path.isfile(hdri_calib_png):
+                            os.remove(hdri_calib_png)
+                old_hist = None
+                try:
+                    with open(os.path.join(out_dir, "compare.json"), encoding="utf-8") as cf:
+                        old_hist = json.load(cf).get("hist_similarity")
+                except (OSError, ValueError):
+                    old_hist = None
+                if (old_hist is not None and chosen
+                        and chosen.get("hist_similarity", 0) < old_hist - 0.02):
+                    restore_scene_env(scene, env_snapshot)
+                    p3 = subprocess.run([PLAYER, "--shot", full_png, "--shot-frame", "1", scene],
+                                        cwd=REPO, env=env, capture_output=True, text=True,
+                                        encoding="utf-8", errors="replace", timeout=900)
+                    rec["issues"].append("HDRI 环境回退 analytic（官方 env: %s；指标 %.3f < 解析 %.3f）"
+                                         % (kh_env.get("env"), chosen.get("hist_similarity", 0), old_hist))
+                    kh_env = None
+                else:
+                    rec["hdri_env"] = {"env": kh_env.get("env"), "file": kh_env.get("env_file"),
+                                       "intensity": chosen_inten,
+                                       "license": kh_env.get("license"),
+                                       "hist": None if not chosen else chosen.get("hist_similarity")}
+                    rec["issues"].append("官方 HDRI 环境：%s（%s，env_intensity=%.2f；仅 IBL 不开背景）"
+                                         % (kh_env.get("env"), kh_env.get("license"), chosen_inten))
+            except Exception as exc:  # noqa: BLE001
+                rec["issues"].append("HDRI 环境处理失败：%s" % exc)
+
         if rec.get("status") != "render_failed" and os.path.isfile(full_png):
             # 提交用缩略图（JPEG，避免 149 张 PNG 膨胀仓库）
             try:
@@ -785,6 +1185,9 @@ def migrate_one(model, args, models_root, out_root, manifest):
                 cmp_json = os.path.join(out_dir, "compare.json")
                 compare = compare_images(full_png, ref, cmp_json)
                 rec["compare"] = compare
+                if model in MANUAL_REFERENCE:
+                    rec["reference_note"] = MANUAL_REFERENCE[model]
+                    rec["issues"].append("参考图说明：%s" % MANUAL_REFERENCE[model])
                 if compare and "error" not in compare:
                     rec["issues"].append("参考图与本预览差异：%s" % compare.get("verdict"))
                     if compare.get("preview_coverage", 1) < 0.02:
@@ -889,7 +1292,8 @@ def write_index(manifest, out_root):
     lines.append("| 派生资产总大小（本地，不入库） | %s |" % human_size(total_assets))
     lines.append("")
     lines.append("> ⚠️ 与官方 `screenshot/` 对比**不是像素级 pass/fail**：官方图多为离线渲染（常带 HDRI studio、"
-                 "软阴影、不同机位/背景），maque 暂无 HDRI IBL/transmission/软阴影/动画骨骼；"
+                 "软阴影、不同机位/背景），maque 对 README 声明环境的模型已注入官方 HDRI（仅 IBL、不开背景，"
+                 "见 `tools/khronos_env.json`），其余用解析 studio IBL；无面光/软阴影/动画骨骼；"
                  "每个模型的 README 给出定量指标与差异归因。")
     lines.append("")
     lines.append("## 模型列表")
@@ -943,7 +1347,7 @@ def run_auto_framing(args, manifest, models_root, out_root):
     flagged = []
     for r in recs:
         model = r["model"]
-        if model in MANUAL_CAMERA or model == "ToyCar":
+        if model in MANUAL_CAMERA or model in MANUAL_ENV or model == "ToyCar":
             continue
         c = r.get("compare") or {}
         ratio = c.get("coverage_ratio")
@@ -983,6 +1387,8 @@ def main():
     ap.add_argument("--exact", action="store_true", help="--only 精确匹配模型名（默认子串）")
     ap.add_argument("--skip-existing", action="store_true", help="已生成 README 的模型跳过")
     ap.add_argument("--force", action="store_true", help="重新导入（覆盖 assets/scn）")
+    ap.add_argument("--no-hdri-env", action="store_true",
+                    help="不注入 tools/khronos_env.json 的官方 HDRI 环境（默认 .deps/khronos-env 存在时注入）")
     ap.add_argument("--no-render", action="store_true")
     ap.add_argument("--reuse-preview", action="store_true",
                     help="不重渲染，复用已有 preview.png 重算对比/笔记（快）")

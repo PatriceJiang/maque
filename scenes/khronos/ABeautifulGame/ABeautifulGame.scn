@@ -434,6 +434,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -542,6 +548,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -650,6 +662,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -758,6 +776,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -866,6 +890,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -974,6 +1004,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1082,6 +1118,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1190,6 +1232,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1298,6 +1346,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1406,6 +1460,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1514,6 +1574,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1622,6 +1688,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1730,6 +1802,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1838,6 +1916,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -1946,6 +2030,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }
@@ -2054,6 +2144,12 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.2199999988079071,
+          "attenuation_color": {
+            "x": 0.800000011920929,
+            "y": 0.800000011920929,
+            "z": 0.800000011920929
+          },
           "metallic_roughness_texture": "textures/Pawn_ORM.jpg",
           "normal_texture": "textures/Pawn_normal.jpg"
         }

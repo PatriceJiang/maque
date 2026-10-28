@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "Cesium_Milk_Truck_0",
+      "name": "Yup2Zup",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,234 +83,412 @@
               "z": 0.9999999403953588
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CesiumMilkTruck_1_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "truck",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/CesiumMilkTruck.jpg"
+          "name": "Cesium_Milk_Truck",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "name": "Cesium_Milk_Truck_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/CesiumMilkTruck_1_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "truck",
+                  "base_color": {
+                    "r": 1.0,
+                    "g": 1.0,
+                    "b": 1.0,
+                    "a": 1.0
+                  },
+                  "metallic": 0.0,
+                  "roughness": 1.0,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5,
+                  "base_color_texture": "textures/CesiumMilkTruck.jpg"
+                }
+              ]
+            },
+            {
+              "name": "Cesium_Milk_Truck_1",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/CesiumMilkTruck_1_1.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "glass",
+                  "base_color": {
+                    "r": 0,
+                    "g": 0.04050629958510399,
+                    "b": 0.021240700036287308,
+                    "a": 1
+                  },
+                  "metallic": 0.0,
+                  "roughness": 1.0,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
+            },
+            {
+              "name": "Cesium_Milk_Truck_2",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/CesiumMilkTruck_1_2.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "window_trim",
+                  "base_color": {
+                    "r": 0.06400000303983688,
+                    "g": 0.06400000303983688,
+                    "b": 0.06400000303983688,
+                    "a": 1
+                  },
+                  "metallic": 0.0,
+                  "roughness": 1.0,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
+            },
+            {
+              "name": "Node",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 1.432669997215271,
+                      "y": 0.0,
+                      "z": -0.4277220070362091
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": -0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "name": "Wheels",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "rotation": {
+                          "x": 0.0,
+                          "y": -0.1772035345441408,
+                          "z": 0.0
+                        },
+                        "scale": {
+                          "x": 0.9999999996222609,
+                          "y": 1.0,
+                          "z": 0.9999999996222609
+                        }
+                      }
+                    }
+                  ],
+                  "children": [
+                    {
+                      "name": "Wheels_0",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": 0.0,
+                              "y": 0.0,
+                              "z": 0.0
+                            },
+                            "rotation": {
+                              "x": 0.0,
+                              "y": 0.0,
+                              "z": 0.0
+                            },
+                            "scale": {
+                              "x": 1.0,
+                              "y": 1.0,
+                              "z": 1.0
+                            }
+                          }
+                        },
+                        {
+                          "type": "render.MeshRenderer",
+                          "mesh_path": "assets/CesiumMilkTruck_0_0.mesh.json"
+                        },
+                        {
+                          "type": "asset.PbrMaterial",
+                          "name": "wheels",
+                          "base_color": {
+                            "r": 1.0,
+                            "g": 1.0,
+                            "b": 1.0,
+                            "a": 1.0
+                          },
+                          "metallic": 0.0,
+                          "roughness": 1.0,
+                          "emissive": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                          },
+                          "double_sided": false,
+                          "side": 0,
+                          "alpha_mode": 0,
+                          "alpha_cutoff": 0.5,
+                          "base_color_texture": "textures/CesiumMilkTruck.jpg"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Node.001",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": -1.352329969406128,
+                      "y": 0.0,
+                      "z": -0.4277220070362091
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": -0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "name": "Wheels.001",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                        },
+                        "rotation": {
+                          "x": 0.0,
+                          "y": -0.1772035345441408,
+                          "z": 0.0
+                        },
+                        "scale": {
+                          "x": 0.9999999996222609,
+                          "y": 1.0,
+                          "z": 0.9999999996222609
+                        }
+                      }
+                    }
+                  ],
+                  "children": [
+                    {
+                      "name": "Wheels.001_0",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": 0.0,
+                              "y": 0.0,
+                              "z": 0.0
+                            },
+                            "rotation": {
+                              "x": 0.0,
+                              "y": 0.0,
+                              "z": 0.0
+                            },
+                            "scale": {
+                              "x": 1.0,
+                              "y": 1.0,
+                              "z": 1.0
+                            }
+                          }
+                        },
+                        {
+                          "type": "render.MeshRenderer",
+                          "mesh_path": "assets/CesiumMilkTruck_0_0.mesh.json"
+                        },
+                        {
+                          "type": "asset.PbrMaterial",
+                          "name": "wheels",
+                          "base_color": {
+                            "r": 1.0,
+                            "g": 1.0,
+                            "b": 1.0,
+                            "a": 1.0
+                          },
+                          "metallic": 0.0,
+                          "roughness": 1.0,
+                          "emissive": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                          },
+                          "double_sided": false,
+                          "side": 0,
+                          "alpha_mode": 0,
+                          "alpha_cutoff": 0.5,
+                          "base_color_texture": "textures/CesiumMilkTruck.jpg"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cesium_Milk_Truck_1",
+      "name": "anim_player",
       "components": [
         {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": 1.57079626719025,
-              "y": -1.5707963267948966,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 0.9999999403953552,
-              "y": 0.9999999403953588,
-              "z": 0.9999999403953588
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CesiumMilkTruck_1_1.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "glass",
-          "base_color": {
-            "r": 0,
-            "g": 0.04050629958510399,
-            "b": 0.021240700036287308,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Cesium_Milk_Truck_2",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "rotation": {
-              "x": 1.57079626719025,
-              "y": -1.5707963267948966,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 0.9999999403953552,
-              "y": 0.9999999403953588,
-              "z": 0.9999999403953588
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CesiumMilkTruck_1_2.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "window_trim",
-          "base_color": {
-            "r": 0.06400000303983688,
-            "g": 0.06400000303983688,
-            "b": 0.06400000303983688,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Wheels_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.4277219815419916,
-              "z": 1.432669886327267
-            },
-            "rotation": {
-              "x": -3.141592315460227,
-              "y": -1.3935927941028976,
-              "z": -1.5707963267948966
-            },
-            "scale": {
-              "x": 0.9999999503600454,
-              "y": 0.9999999403953588,
-              "z": 0.9999999296751906
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CesiumMilkTruck_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "wheels",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/CesiumMilkTruck.jpg"
-        }
-      ]
-    },
-    {
-      "name": "Wheels.001_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.4277219815419916,
-              "z": -1.352329914295198
-            },
-            "rotation": {
-              "x": -3.141592315460227,
-              "y": -1.3935927941028976,
-              "z": -1.5707963267948966
-            },
-            "scale": {
-              "x": 0.9999999503600454,
-              "y": 0.9999999403953588,
-              "z": 0.9999999296751906
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/CesiumMilkTruck_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "wheels",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/CesiumMilkTruck.jpg"
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/Wheels.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

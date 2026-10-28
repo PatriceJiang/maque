@@ -22,7 +22,7 @@
 | 使用扩展 | `KHR_materials_transmission`、`KHR_materials_volume`、`KHR_materials_ior`、`KHR_materials_dispersion` |
 | alpha 模式分布 | OPAQUE×3 |
 
-**导入产物**：`assets/` 3 个 `.mesh.json`（合计 16.9 KB），`textures/` 1 张；场景 `CompareDispersion.scn`。
+**导入产物**：`assets/` 3 个 `.mesh.json`（合计 17.1 KB），`textures/` 2 张；场景 `CompareDispersion.scn`。
 
 ## 生成 / 运行
 
@@ -38,31 +38,31 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Com
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot_Large.jpg`（1703×863）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot_Large.jpg`（1703×863）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 对 README 声明环境的模型注入官方 HDRI（`tools/khronos_env.json`），其余用 analytic studio IBL，无面光/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.608 | 0.541 | 差 -0.067 |
-| 前景平均 RGB | [154.8, 154.8, 155.0] | [137.7, 137.9, 140.0] | RGB 距离 0.064 |
-| 亮度直方图相似度 | — | — | 0.44（16 桶交集，1=完全一致） |
-| 前景占比 | 83.0% | 19.5% | 覆盖率比 0.235 |
+| 前景平均亮度 | 0.608 | 0.624 | 差 +0.015 |
+| 前景平均 RGB | [154.8, 154.8, 155.0] | [158.3, 158.5, 161.2] | RGB 距离 0.018 |
+| 亮度直方图相似度 | — | — | 0.57（16 桶交集，1=完全一致） |
+| 前景占比 | 83.0% | 80.0% | 覆盖率比 0.964 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
-- 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
+- KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射
+- KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）
+- 引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，MSAA 需场景显式开启（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）
-- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
+- KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射
+- KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）
 
 ## 踩过的坑 / 注意
 
-- 本模型导入/渲染无告警。
+- 手动机位：手动机位：官方参考图为平视铺满构图（长焦 fov≈4.24°，棋盘格铺满、两球居中）
 
 <!-- 手动笔记开始（重生成时保留以下内容） -->
 

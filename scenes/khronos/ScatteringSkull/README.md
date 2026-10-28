@@ -37,27 +37,27 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Sca
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot-large.jpg`（1750×977）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot-large.jpg`（1750×977）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 对 README 声明环境的模型注入官方 HDRI（`tools/khronos_env.json`），其余用 analytic studio IBL，无面光/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.396 | 0.339 | 差 -0.058 |
-| 前景平均 RGB | [66.0, 110.4, 112.7] | [82.5, 87.5, 86.0] | RGB 距离 0.086 |
-| 亮度直方图相似度 | — | — | 0.43（16 桶交集，1=完全一致） |
-| 前景占比 | 31.8% | 12.3% | 覆盖率比 0.386 |
+| 前景平均亮度 | 0.396 | 0.638 | 差 +0.242 |
+| 前景平均 RGB | [66.0, 110.4, 112.7] | [108.6, 176.6, 183.5] | RGB 距离 0.235 |
+| 亮度直方图相似度 | — | — | 0.57（16 桶交集，1=完全一致） |
+| 前景占比 | 31.8% | 12.6% | 覆盖率比 0.396 |
 
 自动初判：**中等差异（多为机位/背景/光照/缺失特性）**
 
 **差异归因**（按本模型实际特征）：
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
-- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
-- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
-- 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
+- KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）
+- KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + 透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）
+- 引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，MSAA 需场景显式开启（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
-- KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现
-- KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）
+- KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）
+- KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + 透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）
 
 ## 踩过的坑 / 注意
 

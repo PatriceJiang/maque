@@ -118,5 +118,9 @@
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/Wide_Street.hdr",
+  "env_background": false,
+  "env_intensity": 2.0852,
+  "env_rotation": 0.0
 }

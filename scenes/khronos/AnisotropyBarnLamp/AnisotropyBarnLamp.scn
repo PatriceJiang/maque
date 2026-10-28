@@ -220,9 +220,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.01
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/neutral.hdr",
+  "env_background": false,
+  "env_intensity": 0.8919,
+  "env_rotation": 0.0
 }

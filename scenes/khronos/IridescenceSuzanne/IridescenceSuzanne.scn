@@ -122,7 +122,8 @@
           "shading_model": 1,
           "iridescence": 1.0,
           "iridescence_ior": 1.33,
-          "ior": 2.0
+          "ior": 2.0,
+          "volume_thickness": 2.0
         }
       ]
     },
@@ -175,7 +176,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "iridescence": 1.0,
-          "iridescence_ior": 1.33
+          "iridescence_ior": 1.33,
+          "volume_thickness": 2.0
         }
       ]
     },
@@ -233,6 +235,7 @@
           "iridescence_thickness_max": 600.0,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 2.0,
           "iridescence_thickness_texture": "textures/image0.png"
         }
       ]

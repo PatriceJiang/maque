@@ -92,9 +92,9 @@
           "type": "asset.PbrMaterial",
           "name": "Dragon with Attenuation",
           "base_color": {
-            "r": 0.75,
-            "g": 0.8,
-            "b": 0.82,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -111,7 +111,16 @@
           "shading_model": 1,
           "ior": 1.75,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 2.2699999809265137,
+          "attenuation_color": {
+            "x": 0.75,
+            "y": 0.8,
+            "z": 0.82
+          },
+          "attenuation_distance": 0.1549999988913536,
+          "dispersion": 2.04,
+          "volume_thickness_texture": "textures/Dragon_ThicknessMap.jpg"
         }
       ]
     },
@@ -166,5 +175,9 @@
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/neutral.hdr",
+  "env_background": false,
+  "env_intensity": 1.0,
+  "env_rotation": 0.0
 }

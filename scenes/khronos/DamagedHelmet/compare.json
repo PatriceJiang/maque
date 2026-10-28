@@ -12,13 +12,13 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.3185,
-  "preview_mean_lum": 0.4215,
-  "mean_lum_delta": 0.1031,
-  "hist_similarity": 0.5791,
-  "rgb_delta": 0.1142,
+  "preview_mean_lum": 0.2605,
+  "mean_lum_delta": -0.0579,
+  "hist_similarity": 0.8167,
+  "rgb_delta": 0.0524,
   "ref_coverage": 0.6073,
-  "preview_coverage": 0.1102,
-  "coverage_ratio": 0.181,
+  "preview_coverage": 0.3894,
+  "coverage_ratio": 0.641,
   "ref_bbox": [
     5,
     4,
@@ -26,10 +26,10 @@
     121
   ],
   "preview_bbox": [
-    419,
-    168,
-    800,
-    606
+    311,
+    40,
+    1035,
+    719
   ],
   "ref_mean_rgb": [
     82.9,
@@ -37,10 +37,12 @@
     68.6
   ],
   "preview_mean_rgb": [
-    96.4,
-    110.1,
-    114.3
+    60.1,
+    67.8,
+    71.8
   ],
-  "framing_notes": [],
-  "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+  "framing_notes": [
+    "预览主体贴边/被裁剪 → 机位过近？"
+  ],
+  "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
 }

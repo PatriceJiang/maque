@@ -1,6 +1,8 @@
 # 21 · glTF 动画/蒙皮/变形 与 压缩扩展解码 —— 评估与落地方案
 
-> 状态：**评估完成（2026-10-27），本轮不实现**。仅新增本文件，未改任何代码/资产、未构建、未跑 ctest。
+> 状态：**已落地（plans/22，第 29 轮，2026-10-28）**：S1/S2/S3 按下文清单实现并通过
+> `ctest -R 'gltf_(skin|anim|morph)_e2e'`；27 个 Khronos 动画/蒙皮/morph 模型已重新迁移。本文保留评估与设计依据
+> （实现契约以 `plans/22-gltf-animation-implementation.md` 为准）。压缩扩展（B 节）仍按本文结论不做。
 > 性质：为 `docs/31-gltf-model-migration.md`（Khronos glTF-Sample-Assets 迁移）的两个 P2 大项给出**实现级**方案、分阶段文件改动、可断言验收与工作量，供 Lead 排期。
 > 关联：`plans/12-animation.md`（完整动画模块设计，未实现）、`docs/31 §5.4`（差距表）、`docs/31 §11`（后续工作表）、`plans/20-pbr-audit.md`（P1 剩余项）。
 

@@ -160,7 +160,8 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "transmission_texture": "textures/texture14184.png"
         }
       ]
     },
@@ -266,7 +267,8 @@
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
-          "base_color_texture": "textures/texture214190.png"
+          "base_color_texture": "textures/texture214190.png",
+          "transmission_texture": "textures/texture14184.png"
         }
       ]
     },
@@ -373,7 +375,8 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
-          "metallic_roughness_texture": "textures/texture177328.png"
+          "metallic_roughness_texture": "textures/texture177328.png",
+          "transmission_texture": "textures/texture14184.png"
         }
       ]
     },
@@ -481,7 +484,8 @@
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/texture214190.png",
-          "metallic_roughness_texture": "textures/texture177328.png"
+          "metallic_roughness_texture": "textures/texture177328.png",
+          "transmission_texture": "textures/texture14184.png"
         }
       ]
     },
@@ -588,7 +592,8 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
-          "metallic_roughness_texture": "textures/texture175763.png"
+          "metallic_roughness_texture": "textures/texture175763.png",
+          "transmission_texture": "textures/texture14184.png"
         }
       ]
     },
@@ -751,7 +756,8 @@
           "opacity": 0.15000000000000002,
           "alpha_mask_in_blend": true,
           "base_color_texture": "textures/texture214190.png",
-          "metallic_roughness_texture": "textures/texture175763.png"
+          "metallic_roughness_texture": "textures/texture175763.png",
+          "transmission_texture": "textures/texture14184.png"
         }
       ]
     },

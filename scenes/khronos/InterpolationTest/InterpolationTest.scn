@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "Cube_0",
+      "name": "Cube",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,36 +83,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube.001_0",
+      "name": "Cube.001",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -133,36 +160,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube.001_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube.002_0",
+      "name": "Cube.002",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -183,36 +237,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube.002_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube.003_0",
+      "name": "Cube.003",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -233,36 +314,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube.003_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube.004_0",
+      "name": "Cube.004",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -283,36 +391,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube.004_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube.005_0",
+      "name": "Cube.005",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -333,36 +468,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube.005_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube.006_0",
+      "name": "Cube.006",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -383,36 +545,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube.006_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube.008_0",
+      "name": "Cube.008",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -433,36 +622,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube.008_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube.009_0",
+      "name": "Cube.009",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -483,36 +699,63 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.8,
-            "g": 0.8,
-            "b": 0.8,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "name": "Cube.009_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.8,
+                "g": 0.8,
+                "b": 0.8,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Plane_0",
+      "name": "Plane",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -533,32 +776,83 @@
               "z": 0.3652838065273077
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/InterpolationTest_1_0.mesh.json"
-        },
+          "name": "Plane_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/InterpolationTest_1_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material.009",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "base_color_texture": "textures/image0.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
         {
-          "type": "asset.PbrMaterial",
-          "name": "Material.009",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png"
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/Step_Scale.clip.json",
+            "assets/anim/Linear_Scale.clip.json",
+            "assets/anim/CubicSpline_Scale.clip.json",
+            "assets/anim/Step_Rotation.clip.json",
+            "assets/anim/CubicSpline_Rotation.clip.json",
+            "assets/anim/Linear_Rotation.clip.json",
+            "assets/anim/Step_Translation.clip.json",
+            "assets/anim/CubicSpline_Translation.clip.json",
+            "assets/anim/Linear_Translation.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

@@ -1,4 +1,4 @@
-# AGENTS.md — 面向 AI 协作者
+﻿# AGENTS.md — 面向 AI 协作者
 
 maque 是一个以 **"引擎即浏览器、游戏即资源"** 为核心理念的轻量游戏引擎（C++23）。
 本文件给自动化协作者提供**构建/测试命令、约定与架构落点**。人读概览见 `README.md`。
@@ -144,12 +144,24 @@ tools\win\build.cmd -Sanitize address -RunTests
   **清漆层（M5e）**：`asset.PbrMaterial.clearcoat/clearcoat_roughness`（KHR_materials_clearcoat 对齐）——
   独立 F0=0.04 的窄高光（roughness 独立于底材），方向光逐灯叠加。
   **阴影（M5c）**：方向光 **1024² shadow map + 3×3 PCF**（`MAQUE_SHADOW=0` 可关闭用于对照）；
-  shadow map 仅作深度附件、采样用独立 view（camera uniform 当前 816B：+light_vp/shadow_params+view+env IBL）。
+  shadow map 仅作深度附件、采样用独立 view（camera uniform 当前 912B：+light_vp/shadow_params+view+env IBL+env4 cubemap 标志）。
   样例 `scenes/pbr/shadows.scn`，e2e ⑨ 用开/关同场景像素差断言。
   **多光源（M5b）**：`render.Light.type` 支持 **Directional(0)/Point(1)/Spot(2)**，最多 8 盏同时生效（点光/聚光带范围衰减与锥角平滑衰减；相机 uniform 640B：8×{pos,dir,color,params}）；样例 `scenes/pbr/lights.scn`，e2e ⑧ 断言红点光/绿聚光的投影差异。
   **M4d 贴图槽**：`base_color_texture` / `metallic_roughness_texture`（G=roughness、B=metallic）/
   `occlusion_texture`（R）/ `normal_texture`（切线空间，shader 用屏幕空间导数构造切线基，无需 TANGENT 属性）四条路径 → 运行时加载为纹理句柄；材质未给的槽默认 **-1** → 渲染器绑 1×1 白纹理/中性法线
   （参数乘 1、法线不扰动）。
+- **glTF 动画 / 蒙皮 / morph（plans/22，第 29 轮）**：**S1 骨架蒙皮 + S2 关键帧采样 + S3 morph** 已落地。
+  importer 对「有 `skins`/`animations`/morph targets」的模型输出**层级场景**（glTF 节点树 1:1；其余模型仍平级烘焙、
+  逐字节不变）；派生资产 `assets/skin/*.skel.json`（joint_names + 列主序 inverse_bind）与
+  `assets/anim/*.clip.json`（node/path/STEP|LINEAR/times/values）由 importer 确定性重生成、随 `assets/` 不入库。
+  顶点布局 2/3 = 48/56B + 24B（joints u16x4 + weights f32x4，stride 72/80）；`gfx` group1 binding 23 = 骨骼调色板
+  readonly-storage（`mq_renderer_skin`，`draw3d.skin` / `frame3d.skins`），阴影 pass 同绑；`update_mesh` 走 CPU morph。
+  场景用 `scn.AnimationPlayer.clips`（glTF 片段数组，`clip_index` 选片段、自动播放首个；空 = 旧 2D 属性轨道）。
+  `Entity::world_m` 每帧由 `flatten_world3d` 从节点树 + 派生姿态累积（**不写回 Transform3D**，避免 quat→Euler 有损）。
+  诊断开关：`MAQUE_ANIM=0`（保持 bind pose）、`MAQUE_SKIN=0`（identity 调色板，用于 bind pose 不变量 A/B）、
+  `MAQUE_RENDER3D_INFO=1`（骨架/clip/palette/morph 装配与首帧日志）。测试：`ctest -R 'gltf_(skin|anim|morph)_e2e'`。
+  已知边界：`KHR_animation_pointer`（材质/贴图/可见性指针通道）、CUBICSPLINE 精确切线、动画状态机/混合未做；
+  蒙皮+动态 `scene_instantiate` 的实体不会重建名字表（skin 回退静态、morph 惰性可用）。
 - **3D 材质模型（plans/19 / 材质迁移）**：`asset.PbrMaterial.shading_model` 选择 10 种 three.js 对齐模型——
   Standard(0)/Physical(1)/Basic(2)/Lambert(3)/Phong(4)/Toon(5)/Normal(6)/Matcap(7)/Depth(8)/Shadow(9)；
   同一个 `pbr` shader 模块的 10 个 fragment 入口实现（`fs_standard`/…/`fs_shadow`），
@@ -158,16 +170,34 @@ tools\win\build.cmd -Sanitize address -RunTests
   `shininess`/`specular_intensity`/`ior`/`sheen`(+color/roughness)/`iridescence`(+ior/thickness)/
   `anisotropy`(+rotation)/`clearcoat_normal_scale`/`toon_steps`/`depth_packing` + 3 个贴图路径
   （`matcap_texture`/`gradient_texture`/`clearcoat_normal_texture`）+ KHR_texture_transform
-  （`uv_scale`/`uv_offset`、`normal_uv_scale`/`normal_uv_offset`）。材质 uniform **288B（72 floats）**，
-  camera uniform **816B（+view 矩阵 + analytic studio IBL 参数）**；贴图槽 8 张。
-  **环境光照**：无 HDRI/PMREM 时用 analytic studio IBL（天空-地面渐变 + 软光箱 + Karis env BRDF），
-  场景用 `scn.Scene.env_sky_color/env_ground_color/env_highlight/env_rotation`（0 色 = 由 env_color 派生）调控；
+  （`uv_scale`/`uv_offset`、`normal_uv_scale`/`normal_uv_offset`）。材质 uniform **336B（84 floats）**，
+  camera uniform **912B（+view 矩阵 + analytic studio IBL 参数 + env4 cubemap 标志）**；贴图槽 8 张（+KHR 扩展槽 12 张）。
+  **环境光照**：`scn.Scene.env_texture`（`.hdr` RGBE/EXR/PNG/JPEG → 装配期 CPU PMREM：GGX 粗糙度 mip 链 +
+  余弦 irradiance + 天空 pass；`env_background=false` 只做 IBL 不画天空）或 `scn.Scene.env_cubemap`
+  （6 面 `<基名>_px/_nx/_py/_ny/_pz/_nz.(hdr|exr|png|jpg)` → `kind=1` cube 纹理/Cube view + GGX cube mip 链 +
+  irradiance cube，shader `texture_cube` 按方向采样，第 26 轮；样例 `scenes/pbr/env_cubemap.scn`）优先；无 env_texture 时用
+  analytic studio IBL（天空-地面渐变 + 软光箱 + Karis env BRDF），场景用
+  `scn.Scene.env_sky_color/env_ground_color/env_highlight/env_rotation`（0 色 = 由 env_color 派生）调控；
   输出用精确 sRGB OETF；PBR 贴图运行时生成 CPU mip 链（抗闪/摩尔纹）。
   内置程序化纹理 `builtin:/textures/toon_ramp`、`builtin:/textures/matcap_studio`。
   样例 `scenes/pbr/material_models.scn`（9 个网格模型）、`material_shadow.scn`（shadow catcher）、
   `material_physical.scn`；测试 `ctest -R 'material_.*_e2e'`。glTF importer 支持
   KHR_materials_unlit/clearcoat/sheen/iridescence/specular/ior/anisotropy/emissive_strength
-  （transmission/IBL/Points/Line/Sprite 未做，见 plans/19 §1）。
+  以及 **transmission/volume/diffuse_transmission/dispersion 近似**：gfx 把 3D 拆成 opaque→copy scene
+  color→blend 两 pass；shader 逐像素折射（thicknessFactor/thicknessTexture.G）+ transmissionTexture 掩码
+  + dispersion RGB 偏移（第 20 轮）；`KHR_materials_volume` 的 attenuationColor/Distance 走 Beer-Lambert
+  逐通道吸收，`KHR_materials_volume_scatter.multiscatterColorFactor` 作各向同性 in-scatter（第 24 轮）；
+  **体积厚度单位（第 28 轮）**：thicknessFactor/thicknessTexture 是 **mesh 空间** 厚度，runtime 提取时乘
+  节点世界缩放（`cbrt(|sx·sy·sz|)`）再交给 shader；attenuationDistance 是世界空间 —— 漏乘会让小尺度资产
+  （USDShaderBall 节点 scale=0.01）光学厚度 ×100、玻璃发黑。回归 `ctest -R volume_scale_e2e`
+  （`scenes/pbr/volume_scale.scn` 两个同材质 cube，scale 1.0 vs 0.1 → 亮度必须差 >0.10）；
+  `KHR_materials_diffuse_transmission` 为不透明材质 + 背光 wrap/环境透射 + 透射率(A)/透射色(RGB) 贴图
+  （第 22–23 轮）；仅单视图离屏目标，直呈 surface 回退 alpha 近似；无多次折射/相位函数。
+  Points/Line/Sprite 未做（见 plans/19 §1）。
+  **网格朝向修复**：导入期对「闭合且法线/绕序整体朝内」的实体网格做保守翻正（法线取反 + 绕序反转；
+  见 docs/31 §4.3）；`.scn` 灯光组件用**重复 `"type"` 键**（字符串组件类型 + 数值 LightType）——
+  任何 Python 脚本改 `.scn` 必须保留重复键（migrate 用 `_JsonPairs` 读写并在丢灯时回滚），
+  普通 `json.load/json.dump` 会把灯光组件静默丢掉。
   附带修复：无 `normal_map` 时改用 1×1 中性法线（旧版误用白纹理导致法线扰动，Standard 观感有小幅变化）。
   **PBR 审计修复（plans/20-pbr-audit.md，2026-10，批量迁移 Khronos Models 前）**：normal map 切线基
   （WebGPU `dpdy` 反号 + T/B **各自**归一化，旧实现小尺度场景法线效果被削 ~85%）；`doubleSided` →
@@ -175,7 +205,11 @@ tools\win\build.cmd -Sanitize address -RunTests
   per-texture sampler（REPEAT/filter 恢复）；sRGB 贴图 CPU mip 改**线性域平均**；阴影正交盒按
   mesh bounds 拟合 + `fs_shadow_alpha`（MASK 镂空投影）+ 方向光优先灯序（≤8）；occlusion 改
   `mix(1,ao,strength)`；JPEG 贴图导入；顶点法线用逆转置、镜像缩放补 frontFace。P1 剩余：
-  KHR 扩展贴图槽 / texCoord 集 / COLOR_0 / transmission-volume / 动画骨骼 morph / Draco-KTX2。
+  texCoord 集 / COLOR_0 / 体积多次散射与相位函数 / `KHR_animation_pointer` / Draco-KTX2
+  （动画骨骼 morph 已由 plans/22 支持，见上；KHR 扩展贴图槽、transmission/volume/diffuse_transmission 已接入，见上）。
+  迁移侧（`docs/31`）：官方 HDRI 环境映射在 `tools/khronos_env.json`，手调表（`MANUAL_CAMERA` /
+  `MANUAL_ENV` / `MANUAL_LIGHT` / `MANUAL_REFERENCE`）也在 `tools/migrate_gltf_models.py`；渲染时
+  `MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env"`（HDRI 不入库，缺失自动回退 analytic IBL）。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

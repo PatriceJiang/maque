@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "node0_0",
+      "name": "node0",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,10 +83,104 @@
               "z": 1.0
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "node1",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "name": "node2",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 1.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "node0_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/SimpleSkin.mesh.json"
+          "mesh_path": "assets/SimpleSkin.mesh.json",
+          "skin_path": "assets/skin/SimpleSkin.skel.json"
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
+        {
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/animation0.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

@@ -12,12 +12,12 @@
   "ref_mask": "border-bg",
   "preview_mask": "border-bg",
   "ref_mean_lum": 0.7498,
-  "preview_mean_lum": 0.8279,
+  "preview_mean_lum": 0.828,
   "mean_lum_delta": 0.0781,
-  "hist_similarity": 0.4841,
+  "hist_similarity": 0.4831,
   "rgb_delta": 0.0782,
   "ref_coverage": 0.1611,
-  "preview_coverage": 0.0684,
+  "preview_coverage": 0.0685,
   "coverage_ratio": 0.425,
   "ref_bbox": [
     66,
@@ -37,7 +37,7 @@
     194.9
   ],
   "preview_mean_rgb": [
-    210.0,
+    210.1,
     210.9,
     217.0
   ],

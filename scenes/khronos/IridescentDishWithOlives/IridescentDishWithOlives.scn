@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "glassDish_0",
+      "name": "glassDish",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,161 +83,272 @@
               "z": 1.000000140472956
             }
           }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/IridescentDishWithOlives_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "glassDish",
-          "base_color": {
-            "r": 1,
-            "g": 1,
-            "b": 1,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.07,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 2,
-          "alpha_cutoff": 0.5,
-          "shading_model": 1,
-          "iridescence": 1.0,
-          "iridescence_thickness_min": 500.0,
-          "iridescence_thickness_max": 550.0,
-          "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002,
-          "occlusion_texture": "textures/image8.png",
-          "iridescence_texture": "textures/image0.png",
-          "iridescence_thickness_texture": "textures/image0.png"
         }
-      ]
-    },
-    {
-      "name": "olives_0",
-      "components": [
+      ],
+      "children": [
         {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
+          "name": "glassDish_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
             },
-            "rotation": {
-              "x": 3.141592653589793,
-              "y": 1.3962632493823262,
-              "z": 3.141592653589793
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/IridescentDishWithOlives_0_0.mesh.json"
             },
-            "scale": {
-              "x": 1.000000140472956,
-              "y": 1.0,
-              "z": 1.000000140472956
+            {
+              "type": "asset.PbrMaterial",
+              "name": "glassDish",
+              "base_color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.07,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 2,
+              "alpha_cutoff": 0.5,
+              "shading_model": 1,
+              "iridescence": 1.0,
+              "iridescence_thickness_min": 500.0,
+              "iridescence_thickness_max": 550.0,
+              "transmission_factor": 1.0,
+              "opacity": 0.15000000000000002,
+              "volume_thickness": 0.01,
+              "occlusion_texture": "textures/image8.png",
+              "iridescence_texture": "textures/image0.png",
+              "iridescence_thickness_texture": "textures/image0.png"
             }
-          }
+          ]
         },
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/IridescentDishWithOlives_1_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
           "name": "olives",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image3.png",
-          "metallic_roughness_texture": "textures/image2.png",
-          "normal_texture": "textures/image1.png",
-          "occlusion_texture": "textures/image2.png"
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "name": "olives_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/IridescentDishWithOlives_1_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "olives",
+                  "base_color": {
+                    "r": 1.0,
+                    "g": 1.0,
+                    "b": 1.0,
+                    "a": 1.0
+                  },
+                  "metallic": 1.0,
+                  "roughness": 1.0,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5,
+                  "base_color_texture": "textures/image3.png",
+                  "metallic_roughness_texture": "textures/image2.png",
+                  "normal_texture": "textures/image1.png",
+                  "occlusion_texture": "textures/image2.png"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
-      "name": "glassCover_0",
+      "name": "glassCover_animation",
       "components": [
         {
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": 0.0005608945648647445,
-              "y": 0.05495684914767416,
-              "z": 0.00039273948124593505
+              "x": -0.142956257,
+              "y": 0.027819138,
+              "z": -0.100098975
             },
             "rotation": {
-              "x": -2.380641863961581,
-              "y": 1.2972462608780746,
-              "z": -2.1253150845706084
+              "x": -1.3471709319051255,
+              "y": 0.5733841036174092,
+              "z": -2.7446098893686908
             },
             "scale": {
-              "x": 0.9999999719324952,
-              "y": 0.9999999103473323,
-              "z": 1.0000000771428672
+              "x": 0.9999999664289276,
+              "y": 0.9999999810839396,
+              "z": 0.9999999246079869
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/IridescentDishWithOlives_2_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
           "name": "glassCover",
-          "base_color": {
-            "r": 1,
-            "g": 1,
-            "b": 1,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 2,
-          "alpha_cutoff": 0.5,
-          "shading_model": 1,
-          "iridescence": 1.0,
-          "iridescence_thickness_min": 500.0,
-          "iridescence_thickness_max": 550.0,
-          "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002,
-          "metallic_roughness_texture": "textures/image10.png",
-          "normal_texture": "textures/image4.png",
-          "normal_scale": 2.0,
-          "normal_scale_y": 2.0,
-          "iridescence_texture": "textures/image6.png",
-          "iridescence_thickness_texture": "textures/image6.png"
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": -0.174517319,
+                  "y": 3.3170604e-08,
+                  "z": 0.0312397238
+                },
+                "rotation": {
+                  "x": -1.5707962806036782,
+                  "y": 7.708721732059858e-08,
+                  "z": 0.785397989085372
+                },
+                "scale": {
+                  "x": 0.9999999958231528,
+                  "y": 0.9999999857393453,
+                  "z": 1.0000001057393446
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "name": "glassCover_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/IridescentDishWithOlives_2_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "glassCover",
+                  "base_color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "metallic": 1.0,
+                  "roughness": 1.0,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 2,
+                  "alpha_cutoff": 0.5,
+                  "shading_model": 1,
+                  "iridescence": 1.0,
+                  "iridescence_thickness_min": 500.0,
+                  "iridescence_thickness_max": 550.0,
+                  "transmission_factor": 1.0,
+                  "opacity": 0.15000000000000002,
+                  "volume_thickness": 0.1,
+                  "metallic_roughness_texture": "textures/image10.png",
+                  "normal_texture": "textures/image4.png",
+                  "normal_scale": 2.0,
+                  "normal_scale_y": 2.0,
+                  "iridescence_texture": "textures/image6.png",
+                  "iridescence_thickness_texture": "textures/image6.png",
+                  "volume_thickness_texture": "textures/image5.png"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
-      "name": "goldLeaf_0",
+      "name": "goldLeaf",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -258,35 +369,103 @@
               "z": 1.000000140472956
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/IridescentDishWithOlives_3_0.mesh.json"
-        },
+          "name": "goldLeaf_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/IridescentDishWithOlives_3_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "goldLeaf",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 1.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.5,
+              "base_color_texture": "textures/image9.png",
+              "metallic_roughness_texture": "textures/image8.png",
+              "normal_texture": "textures/image7.png",
+              "occlusion_texture": "textures/image8.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Camera001",
+      "components": [
         {
-          "type": "asset.PbrMaterial",
-          "name": "goldLeaf",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image9.png",
-          "metallic_roughness_texture": "textures/image8.png",
-          "normal_texture": "textures/image7.png",
-          "occlusion_texture": "textures/image8.png"
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.8,
+              "y": 0.5,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": -0.46213768471427075,
+              "y": 1.5707963267948966,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 0.9991763397679109,
+              "y": 0.9999134960345321,
+              "z": 0.9991763397679109
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
+        {
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/glassCover_rotation.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

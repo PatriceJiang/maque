@@ -227,13 +227,15 @@ fragment 入口消费。
   输出按不透明背景色处理。
 - **不热重载 `.wgsl`**：改 shader 需重启或重新加载场景才会生效。
 
-### 示例：Shadertoy Seascape
+### 示例：Shadertoy demo 集（场景资源）
 
-`scenes/shadertoy/seascape.scn` + `seascape.wgsl`（640x360）把 Shadertoy 名作 **Ms2SD1 "Seascape"**
-迁移为场景资源（天空亮、海面暗且偏青），用于验证这条通路（离屏结构 / 动画 / 确定性）。原作出处与许可：
+`scenes/shadertoy/` 用两个 Shadertoy 名作验证这条通路（均为 640x360，`render.ShaderPass` 单实体）：
 
-- 作者：**Alexander Alekseev (TDM)**，2014；Shadertoy 作品 id **Ms2SD1**；
-- 许可：**CC BY-NC-SA 3.0**（署名—非商业性使用—相同方式共享）。
+- `seascape.scn` + `seascape.wgsl`：Shadertoy **Ms2SD1 "Seascape"**，作者 **Alexander Alekseev (TDM)**，
+  2014；许可 **CC BY-NC-SA 3.0**（署名—非商业性使用—相同方式共享）。画面天空亮、海面暗且偏青。
+- `mandelbulb.scn` + `mandelbulb.wgsl`：Shadertoy **MdXSWn "Mandelbulb"**，作者 **Inigo Quilez**，
+  2013；许可 **CC BY-NC-SA 3.0**（参考其 SIGGRAPH 2012 WebCL 课程实现，作者授权）。
+  画面为光线步进分形 + 渐变背景。
 
-回归测试：`ctest -R shadertoy_e2e`（640x360 离屏结构 + frame 1/45 差异 + 同帧逐字节确定性 +
-WGSL 属场景资源而非内建 shader）。
+回归测试：`ctest -R shadertoy_e2e`（逐 demo：640x360 离屏结构断言 + frame 1/60 差异 +
+同帧逐字节确定性 + WGSL 属场景资源而非内建 shader；单项 demo 缺失时该节 SKIP，不阻塞）。

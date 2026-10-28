@@ -111,7 +111,8 @@
           "shading_model": 1,
           "ior": 1.0,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012
         }
       ]
     },
@@ -267,7 +268,9 @@
           "shading_model": 1,
           "ior": 1.0,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 0.5
         }
       ]
     },
@@ -321,7 +324,9 @@
           "shading_model": 1,
           "ior": 1.0,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 1.0
         }
       ]
     },
@@ -375,7 +380,9 @@
           "shading_model": 1,
           "ior": 1.0,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 2.0
         }
       ]
     },
@@ -429,7 +436,9 @@
           "shading_model": 1,
           "ior": 1.0,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 5.0
         }
       ]
     },
@@ -483,7 +492,8 @@
           "shading_model": 1,
           "ior": 1.3300000429153442,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012
         }
       ]
     },
@@ -537,7 +547,9 @@
           "shading_model": 1,
           "ior": 1.3300000429153442,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 0.5
         }
       ]
     },
@@ -591,7 +603,9 @@
           "shading_model": 1,
           "ior": 1.3300000429153442,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 1.0
         }
       ]
     },
@@ -645,7 +659,9 @@
           "shading_model": 1,
           "ior": 1.3300000429153442,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 2.0
         }
       ]
     },
@@ -699,7 +715,9 @@
           "shading_model": 1,
           "ior": 1.3300000429153442,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 5.0
         }
       ]
     },
@@ -751,7 +769,8 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012
         }
       ]
     },
@@ -803,7 +822,9 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 0.5
         }
       ]
     },
@@ -855,7 +876,9 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 1.0
         }
       ]
     },
@@ -907,7 +930,9 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 2.0
         }
       ]
     },
@@ -959,7 +984,9 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 5.0
         }
       ]
     },
@@ -1013,7 +1040,8 @@
           "shading_model": 1,
           "ior": 1.7599999904632568,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012
         }
       ]
     },
@@ -1067,7 +1095,9 @@
           "shading_model": 1,
           "ior": 1.7599999904632568,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 0.5
         }
       ]
     },
@@ -1121,7 +1151,9 @@
           "shading_model": 1,
           "ior": 1.7599999904632568,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 1.0
         }
       ]
     },
@@ -1175,7 +1207,9 @@
           "shading_model": 1,
           "ior": 1.7599999904632568,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 2.0
         }
       ]
     },
@@ -1229,7 +1263,9 @@
           "shading_model": 1,
           "ior": 1.7599999904632568,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 5.0
         }
       ]
     },
@@ -1283,7 +1319,8 @@
           "shading_model": 1,
           "ior": 2.4200000762939453,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012
         }
       ]
     },
@@ -1337,7 +1374,9 @@
           "shading_model": 1,
           "ior": 2.4200000762939453,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 0.5
         }
       ]
     },
@@ -1391,7 +1430,9 @@
           "shading_model": 1,
           "ior": 2.4200000762939453,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 1.0
         }
       ]
     },
@@ -1445,7 +1486,9 @@
           "shading_model": 1,
           "ior": 2.4200000762939453,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 2.0
         }
       ]
     },
@@ -1499,7 +1542,9 @@
           "shading_model": 1,
           "ior": 2.4200000762939453,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.018478000536561012,
+          "dispersion": 5.0
         }
       ]
     }

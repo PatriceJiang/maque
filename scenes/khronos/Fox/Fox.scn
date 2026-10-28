@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "fox_0",
+      "name": "root",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,10 +83,699 @@
               "z": 1.0
             }
           }
+        }
+      ],
+      "children": [
+        {
+          "name": "_rootJoint",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "name": "b_Root_00",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": -1.570800035717629,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "name": "b_Hip_01",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 0.0,
+                          "y": 26.748403549194336,
+                          "z": 42.93817138671875
+                        },
+                        "rotation": {
+                          "x": 1.5707975411953008,
+                          "y": -1.2076405288362906,
+                          "z": -1.5707965127634893
+                        },
+                        "scale": {
+                          "x": 1.0,
+                          "y": 1.0,
+                          "z": 1.0
+                        }
+                      }
+                    }
+                  ],
+                  "children": [
+                    {
+                      "name": "b_Spine01_02",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": 12.850601196289062,
+                              "y": 0.0,
+                              "z": 0.0
+                            },
+                            "rotation": {
+                              "x": 0.0,
+                              "y": 0.0,
+                              "z": -1.2631477544403162
+                            },
+                            "scale": {
+                              "x": 1.0,
+                              "y": 1.0,
+                              "z": 1.0
+                            }
+                          }
+                        }
+                      ],
+                      "children": [
+                        {
+                          "name": "b_Spine02_03",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": 21.65575408935547,
+                                  "y": -0.000118255615234375,
+                                  "z": 0.0
+                                },
+                                "rotation": {
+                                  "x": 0.0,
+                                  "y": -0.0,
+                                  "z": 0.03482566467786663
+                                },
+                                "scale": {
+                                  "x": 0.9999999999999999,
+                                  "y": 0.9999999999999999,
+                                  "z": 1.0
+                                }
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "name": "b_Neck_04",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 25.64914321899414,
+                                      "y": 0.0,
+                                      "z": 0.0
+                                    },
+                                    "rotation": {
+                                      "x": 0.0,
+                                      "y": -0.0,
+                                      "z": 0.616473876457289
+                                    },
+                                    "scale": {
+                                      "x": 1.0,
+                                      "y": 1.0,
+                                      "z": 1.0
+                                    }
+                                  }
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "name": "b_Head_05",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 13.376960754394531,
+                                          "y": 0.0,
+                                          "z": 0.0
+                                        },
+                                        "rotation": {
+                                          "x": 0.0,
+                                          "y": 0.0,
+                                          "z": -0.8236565613916009
+                                        },
+                                        "scale": {
+                                          "x": 1.0,
+                                          "y": 1.0,
+                                          "z": 1.0
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "b_RightUpperArm_06",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 18.677913665771484,
+                                      "y": -4.297340393066406,
+                                      "z": 6.9675750732421875
+                                    },
+                                    "rotation": {
+                                      "x": 0.0012916008241954172,
+                                      "y": 3.92516211939918e-05,
+                                      "z": -1.585195899346205
+                                    },
+                                    "scale": {
+                                      "x": 1.0,
+                                      "y": 1.0,
+                                      "z": 1.0
+                                    }
+                                  }
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "name": "b_RightForeArm_07",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 23.04512596130371,
+                                          "y": 0.0,
+                                          "z": 0.0
+                                        },
+                                        "rotation": {
+                                          "x": 0.0,
+                                          "y": -0.0,
+                                          "z": 0.07426886741269867
+                                        },
+                                        "scale": {
+                                          "x": 1.0,
+                                          "y": 1.0,
+                                          "z": 1.0
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "children": [
+                                    {
+                                      "name": "b_RightHand_08",
+                                      "components": [
+                                        {
+                                          "type": "scene.Transform3D",
+                                          "local": {
+                                            "position": {
+                                              "x": 19.350055694580078,
+                                              "y": -0.14598655700683594,
+                                              "z": 0.0
+                                            },
+                                            "rotation": {
+                                              "x": -0.028575899896932582,
+                                              "y": -0.0027966506483054253,
+                                              "z": 0.9574041353775375
+                                            },
+                                            "scale": {
+                                              "x": 1.0,
+                                              "y": 1.0,
+                                              "z": 1.0
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "b_LeftUpperArm_09",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 18.67791748046875,
+                                      "y": -4.297344207763672,
+                                      "z": -6.967987060546875
+                                    },
+                                    "rotation": {
+                                      "x": 0.001954643001893457,
+                                      "y": -0.0005305688520725302,
+                                      "z": -1.5849355517700667
+                                    },
+                                    "scale": {
+                                      "x": 1.0,
+                                      "y": 1.0,
+                                      "z": 1.0
+                                    }
+                                  }
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "name": "b_LeftForeArm_010",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 23.045124053955078,
+                                          "y": 0.0,
+                                          "z": 0.0
+                                        },
+                                        "rotation": {
+                                          "x": 0.0,
+                                          "y": -0.0,
+                                          "z": 0.07426886741269867
+                                        },
+                                        "scale": {
+                                          "x": 1.0,
+                                          "y": 1.0,
+                                          "z": 1.0
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "children": [
+                                    {
+                                      "name": "b_LeftHand_011",
+                                      "components": [
+                                        {
+                                          "type": "scene.Transform3D",
+                                          "local": {
+                                            "position": {
+                                              "x": 19.350051879882812,
+                                              "y": -0.14599037170410156,
+                                              "z": 0.0
+                                            },
+                                            "rotation": {
+                                              "x": 0.04223240242625672,
+                                              "y": 0.009678798035506439,
+                                              "z": 0.956608276055282
+                                            },
+                                            "scale": {
+                                              "x": 1.0,
+                                              "y": 1.0,
+                                              "z": 0.9999999999999999
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "b_Tail01_012",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": 4.2603759765625,
+                              "y": 15.958770751953125,
+                              "z": 0.0
+                            },
+                            "rotation": {
+                              "x": 0.0,
+                              "y": -0.0,
+                              "z": 2.760415362743526
+                            },
+                            "scale": {
+                              "x": 1.0,
+                              "y": 1.0,
+                              "z": 1.0
+                            }
+                          }
+                        }
+                      ],
+                      "children": [
+                        {
+                          "name": "b_Tail02_013",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": 12.411918640136719,
+                                  "y": 0.0,
+                                  "z": 0.0
+                                },
+                                "rotation": {
+                                  "x": 0.0,
+                                  "y": 0.0,
+                                  "z": -0.13934704636257012
+                                },
+                                "scale": {
+                                  "x": 1.0,
+                                  "y": 1.0,
+                                  "z": 1.0
+                                }
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "name": "b_Tail03_014",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 24.24032211303711,
+                                      "y": 0.0,
+                                      "z": 0.0
+                                    },
+                                    "rotation": {
+                                      "x": 0.0,
+                                      "y": 0.0,
+                                      "z": -0.10771755940908084
+                                    },
+                                    "scale": {
+                                      "x": 1.0,
+                                      "y": 1.0,
+                                      "z": 1.0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "b_LeftLeg01_015",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": 4.813770294189453,
+                              "y": 5.154018402099609,
+                              "z": -6.968006134033203
+                            },
+                            "rotation": {
+                              "x": -0.00033320483543973256,
+                              "y": 8.348584072415227e-05,
+                              "z": -2.6505924384110937
+                            },
+                            "scale": {
+                              "x": 1.0000000000000002,
+                              "y": 1.0000000000000002,
+                              "z": 0.9999999999999999
+                            }
+                          }
+                        }
+                      ],
+                      "children": [
+                        {
+                          "name": "b_LeftLeg02_016",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": 18.944175720214844,
+                                  "y": 0.0,
+                                  "z": 0.0
+                                },
+                                "rotation": {
+                                  "x": 0.0,
+                                  "y": 0.0,
+                                  "z": -0.7538085117951059
+                                },
+                                "scale": {
+                                  "x": 1.0,
+                                  "y": 1.0,
+                                  "z": 1.0
+                                }
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "name": "b_LeftFoot01_017",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 17.942811965942383,
+                                      "y": 0.0,
+                                      "z": 0.0
+                                    },
+                                    "rotation": {
+                                      "x": 0.0004415262903382598,
+                                      "y": -0.0002277846223534801,
+                                      "z": 0.9525774122187588
+                                    },
+                                    "scale": {
+                                      "x": 1.0,
+                                      "y": 1.0,
+                                      "z": 1.0
+                                    }
+                                  }
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "name": "b_LeftFoot02_018",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 15.779938697814941,
+                                          "y": 0.0,
+                                          "z": 0.0
+                                        },
+                                        "rotation": {
+                                          "x": 0.0,
+                                          "y": -0.0,
+                                          "z": 1.158241570830627
+                                        },
+                                        "scale": {
+                                          "x": 1.0,
+                                          "y": 1.0,
+                                          "z": 1.0
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "b_RightLeg01_019",
+                      "components": [
+                        {
+                          "type": "scene.Transform3D",
+                          "local": {
+                            "position": {
+                              "x": 4.813777923583984,
+                              "y": 5.154026031494141,
+                              "z": 6.967563629150391
+                            },
+                            "rotation": {
+                              "x": 0.0,
+                              "y": -0.0,
+                              "z": -2.6501210928667223
+                            },
+                            "scale": {
+                              "x": 1.0000000000000002,
+                              "y": 1.0000000000000002,
+                              "z": 1.0
+                            }
+                          }
+                        }
+                      ],
+                      "children": [
+                        {
+                          "name": "b_RightLeg02_020",
+                          "components": [
+                            {
+                              "type": "scene.Transform3D",
+                              "local": {
+                                "position": {
+                                  "x": 18.944183349609375,
+                                  "y": 0.0,
+                                  "z": 0.0
+                                },
+                                "rotation": {
+                                  "x": 0.0,
+                                  "y": 0.0,
+                                  "z": -0.7538085672160094
+                                },
+                                "scale": {
+                                  "x": 1.0,
+                                  "y": 1.0,
+                                  "z": 1.0
+                                }
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "name": "b_RightFoot01_021",
+                              "components": [
+                                {
+                                  "type": "scene.Transform3D",
+                                  "local": {
+                                    "position": {
+                                      "x": 17.94281005859375,
+                                      "y": 0.0,
+                                      "z": 0.0
+                                    },
+                                    "rotation": {
+                                      "x": -0.0002728418630751046,
+                                      "y": 0.00014053656253775517,
+                                      "z": 0.9512842084783865
+                                    },
+                                    "scale": {
+                                      "x": 0.9999999999999999,
+                                      "y": 0.9999999999999999,
+                                      "z": 1.0
+                                    }
+                                  }
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "name": "b_RightFoot02_022",
+                                  "components": [
+                                    {
+                                      "type": "scene.Transform3D",
+                                      "local": {
+                                        "position": {
+                                          "x": 15.779935836791992,
+                                          "y": 0.0,
+                                          "z": 0.0
+                                        },
+                                        "rotation": {
+                                          "x": 0.0,
+                                          "y": -0.0,
+                                          "z": 1.158241570830627
+                                        },
+                                        "scale": {
+                                          "x": 1.0,
+                                          "y": 1.0,
+                                          "z": 1.0
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fox",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": -0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "fox_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/Fox.mesh.json"
+          "mesh_path": "assets/Fox.mesh.json",
+          "skin_path": "assets/skin/Fox.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -109,6 +798,24 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "base_color_texture": "textures/image0.png"
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
+        {
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/Survey.clip.json",
+            "assets/anim/Walk.clip.json",
+            "assets/anim/Run.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

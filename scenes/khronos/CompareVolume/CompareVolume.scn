@@ -196,9 +196,9 @@
           "type": "asset.PbrMaterial",
           "name": "glTF Volume",
           "base_color": {
-            "r": 0.15,
+            "r": 1.0,
             "g": 1.0,
-            "b": 0.5,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -214,8 +214,16 @@
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
           "opacity": 0.15000000000000002,
+          "volume_thickness": 0.75,
+          "attenuation_color": {
+            "x": 0.15,
+            "y": 1.0,
+            "z": 0.5
+          },
+          "attenuation_distance": 0.25,
           "metallic_roughness_texture": "textures/image0.jpg",
-          "emissive_texture": "textures/image3.jpg"
+          "emissive_texture": "textures/image3.jpg",
+          "volume_thickness_texture": "textures/image1.jpg"
         }
       ]
     },

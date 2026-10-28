@@ -1,15 +1,15 @@
 {
  "models": [
   {
-   "coverage": 0.1741,
-   "coverage_ratio": 0.191,
+   "coverage": 0.1733,
+   "coverage_ratio": 0.19,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.6969,
-   "lum": -0.051,
+   "hist": 0.6978,
+   "lum": -0.0517,
    "model": "ABeautifulGame",
    "preview": "scenes/khronos/ABeautifulGame/preview.jpg",
    "readme": "../../scenes/khronos/ABeautifulGame/README.md",
@@ -23,7 +23,7 @@
     310
    ],
    "review": "- 结论：整副国际象棋（棋盘+全部棋子+底座）齐全、贴图与雕花细节正确、构图可辨认。玻璃/透明棋子被渲染为不透明白/绿色，官方参考图中的透光与体积吸收观感完全丢失；此外缺环境反射、整体偏暗。属 transmission/volume 已知差距的典型代表。\n- 差异主因：缺失特性：transmission+volume 未实现 + 无 HDRI；机位/背景",
-   "rgb": 0.047,
+   "rgb": 0.0479,
    "scene": "../../scenes/khronos/ABeautifulGame/ABeautifulGame.scn",
    "stats": {
     "alpha_modes": {
@@ -133,15 +133,15 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.209,
-   "coverage_ratio": 0.69,
+   "coverage": 0.2094,
+   "coverage_ratio": 0.691,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "KHR_animation_pointer 动画未导入"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "KHR_animation_pointer 动画未导入（材质/贴图变换/可见性等指针通道；节点 TRS/骨骼/morph 动画已支持）"
    ],
-   "hist": 0.5559,
-   "lum": -0.0374,
+   "hist": 0.5639,
+   "lum": -0.0376,
    "model": "AnimatedColorsCube",
    "preview": "scenes/khronos/AnimatedColorsCube/preview.jpg",
    "readme": "../../scenes/khronos/AnimatedColorsCube/README.md",
@@ -155,12 +155,13 @@
     450
    ],
    "review": "",
-   "rgb": 0.0645,
+   "rgb": 0.0647,
    "scene": "../../scenes/khronos/AnimatedColorsCube/AnimatedColorsCube.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 4
     },
+    "anim_channels": 3,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -179,6 +180,7 @@
     "no_normal_prims": 0,
     "nodes": 4,
     "non_tri_prims": 0,
+    "pointer_channels": 1,
     "primitives": 4,
     "skins": 0,
     "texcoord_sets": {},
@@ -194,14 +196,14 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.2687,
-   "coverage_ratio": 0.288,
+   "coverage": 0.2722,
+   "coverage_ratio": 0.291,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）"
    ],
-   "hist": 0.7252,
-   "lum": 0.1494,
+   "hist": 0.7366,
+   "lum": 0.1423,
    "model": "AnimatedCube",
    "preview": "scenes/khronos/AnimatedCube/preview.jpg",
    "readme": "../../scenes/khronos/AnimatedCube/README.md",
@@ -215,12 +217,13 @@
     130
    ],
    "review": "",
-   "rgb": 0.1387,
+   "rgb": 0.1316,
    "scene": "../../scenes/khronos/AnimatedCube/AnimatedCube.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 1
     },
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -239,6 +242,7 @@
     "no_normal_prims": 0,
     "nodes": 1,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 0,
     "texcoord_sets": {
@@ -256,14 +260,14 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.2687,
-   "coverage_ratio": 0.491,
+   "coverage": 0.2684,
+   "coverage_ratio": 0.49,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "morph targets 未应用（默认权重不生效）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "morph targets 已应用（plans/22 S3：CPU 顶点变形，默认权重 + weights 动画；TANGENT 增量忽略）"
    ],
-   "hist": 0.007,
+   "hist": 0.0072,
    "lum": 0.5348,
    "model": "AnimatedMorphCube",
    "preview": "scenes/khronos/AnimatedMorphCube/preview.jpg",
@@ -284,6 +288,7 @@
     "alpha_modes": {
      "OPAQUE": 1
     },
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -300,6 +305,7 @@
     "no_normal_prims": 0,
     "nodes": 1,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 0,
     "texcoord_sets": {},
@@ -315,14 +321,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1656,
-   "coverage_ratio": 4.182,
+   "coverage": 0.1854,
+   "coverage_ratio": 4.682,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）"
    ],
-   "hist": 0.0049,
-   "lum": 0.3712,
+   "hist": 0.0051,
+   "lum": 0.3695,
    "model": "AnimatedTriangle",
    "preview": "scenes/khronos/AnimatedTriangle/preview.jpg",
    "readme": "../../scenes/khronos/AnimatedTriangle/README.md",
@@ -336,10 +342,11 @@
     204
    ],
    "review": "",
-   "rgb": 0.3715,
+   "rgb": 0.3698,
    "scene": "../../scenes/khronos/AnimatedTriangle/AnimatedTriangle.scn",
    "stats": {
     "alpha_modes": {},
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -356,6 +363,7 @@
     "no_normal_prims": 1,
     "nodes": 1,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 0,
     "texcoord_sets": {},
@@ -372,27 +380,27 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1313,
-   "coverage_ratio": 0.323,
+   "coverage": 0.1487,
+   "coverage_ratio": 0.366,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
-    "KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
+    "KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + 透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
     "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
-    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）",
-    "KHR_animation_pointer 动画未导入",
+    "KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射",
+    "KHR_animation_pointer 动画未导入（材质/贴图变换/可见性等指针通道；节点 TRS/骨骼/morph 动画已支持）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.6484,
-   "lum": -0.0152,
+   "hist": 0.6295,
+   "lum": -0.0475,
    "model": "AnimationPointerUVs",
    "preview": "scenes/khronos/AnimationPointerUVs/preview.jpg",
    "readme": "../../scenes/khronos/AnimationPointerUVs/README.md",
@@ -406,7 +414,7 @@
     1237
    ],
    "review": "",
-   "rgb": 0.0253,
+   "rgb": 0.0369,
    "scene": "../../scenes/khronos/AnimationPointerUVs/AnimationPointerUVs.scn",
    "stats": {
     "alpha_modes": {
@@ -414,6 +422,7 @@
      "MASK": 9,
      "OPAQUE": 70
     },
+    "anim_channels": 103,
     "animations": 1,
     "cameras": 11,
     "color0_prims": 0,
@@ -448,6 +457,7 @@
     "no_normal_prims": 0,
     "nodes": 119,
     "non_tri_prims": 0,
+    "pointer_channels": 103,
     "primitives": 132,
     "skins": 0,
     "texcoord_sets": {
@@ -465,17 +475,17 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.0735,
-   "coverage_ratio": 0.115,
+   "coverage": 0.0721,
+   "coverage_ratio": 0.113,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
-    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
+    "KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射"
    ],
-   "hist": 0.7099,
-   "lum": -0.0975,
+   "hist": 0.8345,
+   "lum": 0.0371,
    "model": "AnisotropyBarnLamp",
    "preview": "scenes/khronos/AnisotropyBarnLamp/preview.jpg",
    "readme": "../../scenes/khronos/AnisotropyBarnLamp/README.md",
@@ -489,7 +499,7 @@
     1202
    ],
    "review": "- 结论：铜质谷仓壁灯完整：墙座、支臂、灯罩、灯泡都在，铜材质与清漆高光可信，朝向合理。与官方近景相比缺少强烈的各向异性拉丝反射，且机位更远，但整体可接受、无导入异常。\n- 差异主因：缺失特性：anisotropy 拉丝高光偏弱、无 HDRI",
-   "rgb": 0.0958,
+   "rgb": 0.0416,
    "scene": "../../scenes/khronos/AnisotropyBarnLamp/AnisotropyBarnLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -536,14 +546,14 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.2377,
-   "coverage_ratio": 0.347,
+   "coverage": 0.2301,
+   "coverage_ratio": 0.335,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
+    "KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射"
    ],
-   "hist": 0.2486,
-   "lum": 0.1144,
+   "hist": 0.6479,
+   "lum": -0.0481,
    "model": "AnisotropyDiscTest",
    "preview": "scenes/khronos/AnisotropyDiscTest/preview.jpg",
    "readme": "../../scenes/khronos/AnisotropyDiscTest/README.md",
@@ -557,7 +567,7 @@
     656
    ],
    "review": "",
-   "rgb": 0.1193,
+   "rgb": 0.0534,
    "scene": "../../scenes/khronos/AnisotropyDiscTest/AnisotropyDiscTest.scn",
    "stats": {
     "alpha_modes": {
@@ -597,17 +607,17 @@
     "extension",
     "testing"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.131,
    "coverage_ratio": 0.421,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
+    "KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射"
    ],
-   "hist": 0.1028,
-   "lum": 0.5071,
+   "hist": 0.1051,
+   "lum": 0.5184,
    "model": "AnisotropyRotationTest",
    "preview": "scenes/khronos/AnisotropyRotationTest/preview.jpg",
    "readme": "../../scenes/khronos/AnisotropyRotationTest/README.md",
@@ -621,7 +631,7 @@
     868
    ],
    "review": "",
-   "rgb": 0.5117,
+   "rgb": 0.5231,
    "scene": "../../scenes/khronos/AnisotropyRotationTest/AnisotropyRotationTest.scn",
    "stats": {
     "alpha_modes": {
@@ -664,14 +674,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1571,
-   "coverage_ratio": 0.411,
+   "coverage": 0.1965,
+   "coverage_ratio": 0.514,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
+    "KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射"
    ],
-   "hist": 0.256,
-   "lum": 0.4758,
+   "hist": 0.5824,
+   "lum": 0.1754,
    "model": "AnisotropyStrengthTest",
    "preview": "scenes/khronos/AnisotropyStrengthTest/preview.jpg",
    "readme": "../../scenes/khronos/AnisotropyStrengthTest/README.md",
@@ -685,7 +695,7 @@
     1120
    ],
    "review": "",
-   "rgb": 0.4795,
+   "rgb": 0.178,
    "scene": "../../scenes/khronos/AnisotropyStrengthTest/AnisotropyStrengthTest.scn",
    "stats": {
     "alpha_modes": {
@@ -725,7 +735,7 @@
     "extension",
     "testing"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
    "coverage": 0.0428,
@@ -795,11 +805,11 @@
    "coverage_ratio": 0.263,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.695,
-   "lum": 0.0937,
+   "hist": 0.7891,
+   "lum": 0.0492,
    "model": "AttenuationTest",
    "preview": "scenes/khronos/AttenuationTest/preview.jpg",
    "readme": "../../scenes/khronos/AttenuationTest/README.md",
@@ -813,7 +823,7 @@
     1158
    ],
    "review": "",
-   "rgb": 0.0836,
+   "rgb": 0.047,
    "scene": "../../scenes/khronos/AttenuationTest/AttenuationTest.scn",
    "stats": {
     "alpha_modes": {
@@ -1213,14 +1223,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.2678,
-   "coverage_ratio": 3.251,
+   "coverage": 0.2809,
+   "coverage_ratio": 3.41,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）"
    ],
    "hist": 0.0121,
-   "lum": 0.5418,
+   "lum": 0.5423,
    "model": "BoxAnimated",
    "preview": "scenes/khronos/BoxAnimated/preview.jpg",
    "readme": "../../scenes/khronos/BoxAnimated/README.md",
@@ -1234,12 +1244,13 @@
     130
    ],
    "review": "",
-   "rgb": 0.5283,
+   "rgb": 0.531,
    "scene": "../../scenes/khronos/BoxAnimated/BoxAnimated.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 2
     },
+    "anim_channels": 2,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -1256,6 +1267,7 @@
     "no_normal_prims": 0,
     "nodes": 4,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 2,
     "skins": 0,
     "texcoord_sets": {},
@@ -1503,15 +1515,15 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.0684,
-   "coverage_ratio": 0.313,
+   "coverage": 0.0692,
+   "coverage_ratio": 0.317,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "骨骼蒙皮已应用（plans/22 S1：调色板 = 关节世界矩阵 × inverse_bind，蒙皮网格忽略节点变换；法线按调色板 3×3 线性部分近似）"
    ],
-   "hist": 0.3041,
-   "lum": 0.274,
+   "hist": 0.242,
+   "lum": 0.3242,
    "model": "BrainStem",
    "preview": "scenes/khronos/BrainStem/preview.jpg",
    "readme": "../../scenes/khronos/BrainStem/README.md",
@@ -1525,12 +1537,13 @@
     130
    ],
    "review": "- 结论：机器人模型完整（躯干/四肢/头部/武器都在），贴图存在，但呈双臂平举的绑定 pose，官方为动画姿态（手臂下垂持物）；且缺少 HDRI，整体比官方亮、脏旧质感弱。属动画/骨骼未实现的预期差异。\n- 差异主因：缺失特性：动画+骨骼未应用 → T/A-pose；整体偏亮偏平",
-   "rgb": 0.2634,
+   "rgb": 0.3167,
    "scene": "../../scenes/khronos/BrainStem/BrainStem.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 59
     },
+    "anim_channels": 57,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -1547,6 +1560,7 @@
     "no_normal_prims": 0,
     "nodes": 22,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 59,
     "skins": 1,
     "texcoord_sets": {},
@@ -1618,14 +1632,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.079,
-   "coverage_ratio": 0.096,
+   "coverage": 0.0851,
+   "coverage_ratio": 0.103,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
+    "KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射"
    ],
-   "hist": 0.3863,
-   "lum": -0.1143,
+   "hist": 0.5663,
+   "lum": -0.0311,
    "model": "CarbonFibre",
    "preview": "scenes/khronos/CarbonFibre/preview.jpg",
    "readme": "../../scenes/khronos/CarbonFibre/README.md",
@@ -1639,7 +1653,7 @@
     900
    ],
    "review": "",
-   "rgb": 0.1115,
+   "rgb": 0.0268,
    "scene": "../../scenes/khronos/CarbonFibre/CarbonFibre.scn",
    "stats": {
     "alpha_modes": {
@@ -1678,21 +1692,21 @@
    "tags": [
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.1376,
-   "coverage_ratio": 0.237,
+   "coverage": 0.1338,
+   "coverage_ratio": 0.231,
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
-   "hist": 0.3038,
-   "lum": 0.1407,
+   "hist": 0.5674,
+   "lum": 0.0239,
    "model": "CarConcept",
    "preview": "scenes/khronos/CarConcept/preview.jpg",
    "readme": "../../scenes/khronos/CarConcept/README.md",
@@ -1706,7 +1720,7 @@
     953
    ],
    "review": "- 结论：红色概念跑车完整、比例与姿态正确，红色车漆 clearcoat 高光可信，轮胎/轮毂结构正常、无破面。车顶/座舱大面积为白色（官方为深色玻璃+彩色虹彩反射），与 clearcoat 高光在没有 HDRI 时被 analytic 环境拉亮有关，属缺失特性/IBL 限制；源资产的 KTX2/Draco 变体未被迁移，不影响主变体观感。\n- 差异主因：缺失特性：transmission/iridescence/无 HDRI → 车顶座舱发白过曝；KTX2 变体未迁移",
-   "rgb": 0.1506,
+   "rgb": 0.0253,
    "scene": "../../scenes/khronos/CarConcept/CarConcept.scn",
    "stats": {
     "alpha_modes": {
@@ -1753,18 +1767,18 @@
     "showcase",
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0614,
-   "coverage_ratio": 0.424,
+   "coverage": 0.0574,
+   "coverage_ratio": 0.396,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "骨骼蒙皮已应用（plans/22 S1：调色板 = 关节世界矩阵 × inverse_bind，蒙皮网格忽略节点变换；法线按调色板 3×3 线性部分近似）"
    ],
-   "hist": 0.6489,
-   "lum": 0.1636,
+   "hist": 0.689,
+   "lum": 0.1542,
    "model": "CesiumMan",
    "preview": "scenes/khronos/CesiumMan/preview.jpg",
    "readme": "../../scenes/khronos/CesiumMan/README.md",
@@ -1778,12 +1792,13 @@
     130
    ],
    "review": "",
-   "rgb": 0.1522,
+   "rgb": 0.1441,
    "scene": "../../scenes/khronos/CesiumMan/CesiumMan.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 1
     },
+    "anim_channels": 57,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -1802,6 +1817,7 @@
     "no_normal_prims": 0,
     "nodes": 22,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 1,
     "texcoord_sets": {
@@ -1824,7 +1840,7 @@
    "coverage_ratio": 0.536,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）"
    ],
    "hist": 0.3665,
    "lum": 0.1711,
@@ -1841,12 +1857,13 @@
     130
    ],
    "review": "- 结论：只看到卡车底盘（车顶朝下、四轮朝上）且右侧被画面裁断，与官方侧视整车的参考图完全不可比。模型几何/贴图都在，但根节点 Yup2Zup 的三轴四元数在导入器 Euler 分解时命中 gimbal lock，按 runtime 的 Rz*Ry*Rx 重组后姿态错误（详见报告与 README 手动笔记）。\n- 差异主因：导入问题+机位/背景：节点变换（Euler 分解 gimbal-lock）导致整车翻倒",
-   "rgb": 0.1636,
+   "rgb": 0.1635,
    "scene": "../../scenes/khronos/CesiumMilkTruck/CesiumMilkTruck.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 4
     },
+    "anim_channels": 2,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -1865,6 +1882,7 @@
     "no_normal_prims": 0,
     "nodes": 6,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 4,
     "skins": 0,
     "texcoord_sets": {
@@ -1883,7 +1901,7 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1115,
+   "coverage": 0.1116,
    "coverage_ratio": 0.228,
    "framing_notes": [],
    "gaps": [
@@ -1891,8 +1909,8 @@
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
     "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
-   "hist": 0.6836,
-   "lum": -0.1547,
+   "hist": 0.7236,
+   "lum": -0.1172,
    "model": "ChairDamaskPurplegold",
    "preview": "scenes/khronos/ChairDamaskPurplegold/preview.jpg",
    "readme": "../../scenes/khronos/ChairDamaskPurplegold/README.md",
@@ -1906,7 +1924,7 @@
     970
    ],
    "review": "",
-   "rgb": 0.1589,
+   "rgb": 0.1033,
    "scene": "../../scenes/khronos/ChairDamaskPurplegold/ChairDamaskPurplegold.scn",
    "stats": {
     "alpha_modes": {
@@ -1952,17 +1970,17 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.128,
-   "coverage_ratio": 0.136,
+   "coverage": 0.1327,
+   "coverage_ratio": 0.141,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
-   "hist": 0.661,
-   "lum": 0.0223,
+   "hist": 0.7326,
+   "lum": -0.004,
    "model": "ChronographWatch",
    "preview": "scenes/khronos/ChronographWatch/preview.jpg",
    "readme": "../../scenes/khronos/ChronographWatch/README.md",
@@ -1976,12 +1994,13 @@
     1176
    ],
    "review": "",
-   "rgb": 0.0196,
+   "rgb": 0.0147,
    "scene": "../../scenes/khronos/ChronographWatch/ChronographWatch.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 29
     },
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -2004,6 +2023,7 @@
     "no_normal_prims": 0,
     "nodes": 14,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 19,
     "skins": 0,
     "texcoord_sets": {
@@ -2030,8 +2050,8 @@
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
-   "hist": 0.7228,
-   "lum": -0.0073,
+   "hist": 0.8231,
+   "lum": -0.0403,
    "model": "ClearCoatCarPaint",
    "preview": "scenes/khronos/ClearCoatCarPaint/preview.jpg",
    "readme": "../../scenes/khronos/ClearCoatCarPaint/README.md",
@@ -2045,7 +2065,7 @@
     809
    ],
    "review": "",
-   "rgb": 0.1059,
+   "rgb": 0.1034,
    "scene": "../../scenes/khronos/ClearCoatCarPaint/ClearCoatCarPaint.scn",
    "stats": {
     "alpha_modes": {
@@ -2222,16 +2242,16 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1294,
-   "coverage_ratio": 0.133,
+   "coverage": 0.1521,
+   "coverage_ratio": 0.157,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似"
    ],
-   "hist": 0.7335,
-   "lum": 0.074,
+   "hist": 0.6552,
+   "lum": -0.006,
    "model": "CommercialRefrigerator",
    "preview": "scenes/khronos/CommercialRefrigerator/preview.jpg",
    "readme": "../../scenes/khronos/CommercialRefrigerator/README.md",
@@ -2245,12 +2265,13 @@
     1244
    ],
    "review": "",
-   "rgb": 0.0748,
+   "rgb": 0.0199,
    "scene": "../../scenes/khronos/CommercialRefrigerator/CommercialRefrigerator.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 6
     },
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -2274,6 +2295,7 @@
     "no_normal_prims": 0,
     "nodes": 6,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 8,
     "skins": 0,
     "texcoord_sets": {
@@ -2423,10 +2445,10 @@
    "framing_notes": [],
    "gaps": [
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
-    "KHR_materials_anisotropy：strength/贴图已导入、只做粗糙度近似（各向异性 BRDF/方向未实现）"
+    "KHR_materials_anisotropy：各向异性 GGX（Khronos 规范实现，strength/旋转/贴图方向）+ 环境反射 bent-normal 近似；非真实多次反射"
    ],
-   "hist": 0.4875,
-   "lum": -0.0392,
+   "hist": 0.5273,
+   "lum": -0.018,
    "model": "CompareAnisotropy",
    "preview": "scenes/khronos/CompareAnisotropy/preview.jpg",
    "readme": "../../scenes/khronos/CompareAnisotropy/README.md",
@@ -2440,7 +2462,7 @@
     814
    ],
    "review": "- 结论：两个铜色球的径向同心环高光可见，glTF logo 与官方位置一致，能看出各向异性方向性；但官方那种强烈的拉丝径向高光与暗环对比在本引擎明显偏弱，属近似实现/IBL 差距。\n- 差异主因：缺失特性：anisotropy 为粗糙度近似 + 无 HDRI（拉丝高光弱）",
-   "rgb": 0.0333,
+   "rgb": 0.0285,
    "scene": "../../scenes/khronos/CompareAnisotropy/CompareAnisotropy.scn",
    "stats": {
     "alpha_modes": {
@@ -2616,15 +2638,15 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1953,
-   "coverage_ratio": 0.235,
+   "coverage": 0.8002,
+   "coverage_ratio": 0.964,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.4386,
-   "lum": -0.0673,
+   "hist": 0.5708,
+   "lum": 0.0153,
    "model": "CompareDispersion",
    "preview": "scenes/khronos/CompareDispersion/preview.jpg",
    "readme": "../../scenes/khronos/CompareDispersion/README.md",
@@ -2638,7 +2660,7 @@
     863
    ],
    "review": "",
-   "rgb": 0.0641,
+   "rgb": 0.0175,
    "scene": "../../scenes/khronos/CompareDispersion/CompareDispersion.scn",
    "stats": {
     "alpha_modes": {
@@ -2748,16 +2770,16 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.1936,
-   "coverage_ratio": 0.212,
+   "coverage": 0.1904,
+   "coverage_ratio": 0.209,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.5279,
-   "lum": 0.0661,
+   "hist": 0.4536,
+   "lum": 0.0959,
    "model": "CompareIor",
    "preview": "scenes/khronos/CompareIor/preview.jpg",
    "readme": "../../scenes/khronos/CompareIor/README.md",
@@ -2771,7 +2793,7 @@
     625
    ],
    "review": "",
-   "rgb": 0.076,
+   "rgb": 0.0985,
    "scene": "../../scenes/khronos/CompareIor/CompareIor.scn",
    "stats": {
     "alpha_modes": {
@@ -3197,14 +3219,14 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1973,
-   "coverage_ratio": 0.219,
+   "coverage": 0.1919,
+   "coverage_ratio": 0.213,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射"
    ],
-   "hist": 0.4038,
-   "lum": 0.0797,
+   "hist": 0.3843,
+   "lum": 0.0702,
    "model": "CompareTransmission",
    "preview": "scenes/khronos/CompareTransmission/preview.jpg",
    "readme": "../../scenes/khronos/CompareTransmission/README.md",
@@ -3218,7 +3240,7 @@
     580
    ],
    "review": "- 结论：棋盘背景、金色细环、白球都正确，但玻璃薄环与厚玻璃球完全不透明，看不到官方参考图中透过玻璃看到的棋盘格与其折射变形。几何/材质参数正确，差异可 100% 归因于 transmission 未实现（README 已知差距）。\n- 差异主因：缺失特性：KHR_materials_transmission 未实现",
-   "rgb": 0.0796,
+   "rgb": 0.07,
    "scene": "../../scenes/khronos/CompareTransmission/CompareTransmission.scn",
    "stats": {
     "alpha_modes": {
@@ -3261,18 +3283,18 @@
     "testing",
     "pbrtest"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1993,
-   "coverage_ratio": 0.207,
+   "coverage": 0.1936,
+   "coverage_ratio": 0.201,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.3515,
-   "lum": 0.0968,
+   "hist": 0.3715,
+   "lum": 0.0658,
    "model": "CompareVolume",
    "preview": "scenes/khronos/CompareVolume/preview.jpg",
    "readme": "../../scenes/khronos/CompareVolume/README.md",
@@ -3286,7 +3308,7 @@
     580
    ],
    "review": "",
-   "rgb": 0.1021,
+   "rgb": 0.0651,
    "scene": "../../scenes/khronos/CompareVolume/CompareVolume.scn",
    "stats": {
     "alpha_modes": {
@@ -3456,9 +3478,9 @@
    "coverage_ratio": 0.938,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
     "KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入",
-    "KHR_animation_pointer 动画未导入"
+    "KHR_animation_pointer 动画未导入（材质/贴图变换/可见性等指针通道；节点 TRS/骨骼/morph 动画已支持）"
    ],
    "hist": 0.3036,
    "lum": -0.0144,
@@ -3481,6 +3503,7 @@
     "alpha_modes": {
      "OPAQUE": 3
     },
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -3502,6 +3525,7 @@
     "no_normal_prims": 0,
     "nodes": 6,
     "non_tri_prims": 0,
+    "pointer_channels": 1,
     "primitives": 3,
     "skins": 0,
     "texcoord_sets": {},
@@ -3516,12 +3540,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1102,
-   "coverage_ratio": 0.181,
-   "framing_notes": [],
+   "coverage": 0.3894,
+   "coverage_ratio": 0.641,
+   "framing_notes": [
+    "预览主体贴边/被裁剪 → 机位过近？"
+   ],
    "gaps": [],
-   "hist": 0.5791,
-   "lum": 0.1031,
+   "hist": 0.8167,
+   "lum": -0.0579,
    "model": "DamagedHelmet",
    "preview": "scenes/khronos/DamagedHelmet/preview.jpg",
    "readme": "../../scenes/khronos/DamagedHelmet/README.md",
@@ -3535,12 +3561,13 @@
     126
    ],
    "review": "- 结论：头盔完整（面罩、护甲、发光片都在），BaseColor/MR/normal/emissive 贴图正确，面罩上发光元素可见，无破面或法线反向。与官方差距主要是整体偏暗、金属高光与环境反射弱（无 HDRI），属引擎光照能力差距而非导入问题。\n- 差异主因：缺失特性：无 HDRI IBL/面光 → 金属反射与整体亮度偏弱",
-   "rgb": 0.1142,
+   "rgb": 0.0524,
    "scene": "../../scenes/khronos/DamagedHelmet/DamagedHelmet.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 1
     },
+    "anim_channels": 0,
     "animations": 0,
     "cameras": 0,
     "color0_prims": 0,
@@ -3559,6 +3586,7 @@
     "no_normal_prims": 0,
     "nodes": 1,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 0,
     "texcoord_sets": {
@@ -3575,21 +3603,21 @@
     "testing",
     "video"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
-   "coverage": 0.0841,
+   "coverage": 0.0842,
    "coverage_ratio": 0.106,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
-    "KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）",
+    "KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + 透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.8462,
-   "lum": -0.0806,
+   "hist": 0.83,
+   "lum": -0.0583,
    "model": "DiffuseTransmissionPlant",
    "preview": "scenes/khronos/DiffuseTransmissionPlant/preview.jpg",
    "readme": "../../scenes/khronos/DiffuseTransmissionPlant/README.md",
@@ -3603,7 +3631,7 @@
     1104
    ],
    "review": "",
-   "rgb": 0.0926,
+   "rgb": 0.072,
    "scene": "../../scenes/khronos/DiffuseTransmissionPlant/DiffuseTransmissionPlant.scn",
    "stats": {
     "alpha_modes": {
@@ -3611,6 +3639,7 @@
      "MASK": 1,
      "OPAQUE": 1
     },
+    "anim_channels": 30,
     "animations": 1,
     "cameras": 2,
     "color0_prims": 0,
@@ -3633,6 +3662,7 @@
     "no_normal_prims": 0,
     "nodes": 17,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 9,
     "skins": 0,
     "texcoord_sets": {
@@ -3650,14 +3680,14 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1438,
+   "coverage": 0.144,
    "coverage_ratio": 0.207,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）"
+    "KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + 透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）"
    ],
-   "hist": 0.4174,
-   "lum": -0.1273,
+   "hist": 0.6534,
+   "lum": 0.1396,
    "model": "DiffuseTransmissionTeacup",
    "preview": "scenes/khronos/DiffuseTransmissionTeacup/preview.jpg",
    "readme": "../../scenes/khronos/DiffuseTransmissionTeacup/README.md",
@@ -3671,7 +3701,7 @@
     1110
    ],
    "review": "",
-   "rgb": 0.121,
+   "rgb": 0.1432,
    "scene": "../../scenes/khronos/DiffuseTransmissionTeacup/DiffuseTransmissionTeacup.scn",
    "stats": {
     "alpha_modes": {
@@ -3712,7 +3742,7 @@
     "showcase",
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.2006,
@@ -3720,10 +3750,10 @@
    "framing_notes": [],
    "gaps": [
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
-    "KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）"
+    "KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + 透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）"
    ],
-   "hist": 0.6722,
-   "lum": -0.1067,
+   "hist": 0.8167,
+   "lum": -0.0164,
    "model": "DiffuseTransmissionTest",
    "preview": "scenes/khronos/DiffuseTransmissionTest/preview.jpg",
    "readme": "../../scenes/khronos/DiffuseTransmissionTest/README.md",
@@ -3737,7 +3767,7 @@
     828
    ],
    "review": "",
-   "rgb": 0.1156,
+   "rgb": 0.0637,
    "scene": "../../scenes/khronos/DiffuseTransmissionTest/DiffuseTransmissionTest.scn",
    "stats": {
     "alpha_modes": {
@@ -3787,15 +3817,14 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1863,
-   "coverage_ratio": 1.302,
+   "coverage": 0.1431,
+   "coverage_ratio": 1.0,
    "framing_notes": [],
    "gaps": [
-    "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）",
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）"
    ],
-   "hist": 0.1098,
-   "lum": 0.3679,
+   "hist": 0.4954,
+   "lum": 0.0554,
    "model": "DirectionalLight",
    "preview": "scenes/khronos/DirectionalLight/preview.jpg",
    "readme": "../../scenes/khronos/DirectionalLight/README.md",
@@ -3809,7 +3838,7 @@
     1110
    ],
    "review": "",
-   "rgb": 0.424,
+   "rgb": 0.0606,
    "scene": "../../scenes/khronos/DirectionalLight/DirectionalLight.scn",
    "stats": {
     "alpha_modes": {
@@ -3846,18 +3875,18 @@
    "tags": [
     "testing"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.1385,
-   "coverage_ratio": 0.159,
+   "coverage": 0.134,
+   "coverage_ratio": 0.154,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.7586,
-   "lum": 0.063,
+   "hist": 0.7608,
+   "lum": 0.0757,
    "model": "DispersionTest",
    "preview": "scenes/khronos/DispersionTest/preview.jpg",
    "readme": "../../scenes/khronos/DispersionTest/README.md",
@@ -3871,7 +3900,7 @@
     1788
    ],
    "review": "",
-   "rgb": 0.067,
+   "rgb": 0.0794,
    "scene": "../../scenes/khronos/DispersionTest/DispersionTest.scn",
    "stats": {
     "alpha_modes": {
@@ -3917,16 +3946,16 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1946,
+   "coverage": 0.1945,
    "coverage_ratio": 0.207,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_variants：只使用默认材质（不做变体切换）"
    ],
-   "hist": 0.144,
-   "lum": 0.3517,
+   "hist": 0.3953,
+   "lum": 0.2017,
    "model": "DragonAttenuation",
    "preview": "scenes/khronos/DragonAttenuation/preview.jpg",
    "readme": "../../scenes/khronos/DragonAttenuation/README.md",
@@ -3940,7 +3969,7 @@
     871
    ],
    "review": "- 结论：龙的轮廓/姿态/鳞片几何完整，棋盘地面与弯曲背景板正确；但整条龙被渲染为不透明纯白，官方是琥珀色半透明体积吸收效果。属于 volume/attenuation 未实现的预期差异，非导入问题。\n- 差异主因：缺失特性：transmission+volume（体积吸收）未实现",
-   "rgb": 0.3509,
+   "rgb": 0.2045,
    "scene": "../../scenes/khronos/DragonAttenuation/DragonAttenuation.scn",
    "stats": {
     "alpha_modes": {
@@ -3985,15 +4014,15 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1581,
-   "coverage_ratio": 0.173,
+   "coverage": 0.1737,
+   "coverage_ratio": 0.19,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.4963,
-   "lum": 0.217,
+   "hist": 0.5814,
+   "lum": 0.1953,
    "model": "DragonDispersion",
    "preview": "scenes/khronos/DragonDispersion/preview.jpg",
    "readme": "../../scenes/khronos/DragonDispersion/README.md",
@@ -4007,7 +4036,7 @@
     1183
    ],
    "review": "",
-   "rgb": 0.2173,
+   "rgb": 0.1942,
    "scene": "../../scenes/khronos/DragonDispersion/DragonDispersion.scn",
    "stats": {
     "alpha_modes": {
@@ -4237,14 +4266,14 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0922,
+   "coverage": 0.0925,
    "coverage_ratio": 0.106,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射"
    ],
-   "hist": 0.8842,
-   "lum": -0.2569,
+   "hist": 0.8753,
+   "lum": -0.2631,
    "model": "FlightHelmet",
    "preview": "scenes/khronos/FlightHelmet/preview.jpg",
    "readme": "../../scenes/khronos/FlightHelmet/README.md",
@@ -4258,7 +4287,7 @@
     130
    ],
    "review": "- 结论：飞行头盔完整：皮革帽体、护目镜、呼吸管、木底座与铭牌都在，贴图方向和细节正确、无缺件。整体明显偏暗偏橄榄色调，护目镜呈不透明黄绿色（transmission 未实现），与官方明亮工作室光照差距较大，属缺失特性/IBL 限制。\n- 差异主因：缺失特性：transmission（镜片）未实现 + 无 HDRI IBL（整体偏暗）",
-   "rgb": 0.2604,
+   "rgb": 0.2667,
    "scene": "../../scenes/khronos/FlightHelmet/FlightHelmet.scn",
    "stats": {
     "alpha_modes": {
@@ -4301,15 +4330,15 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0685,
-   "coverage_ratio": 0.265,
+   "coverage": 0.0593,
+   "coverage_ratio": 0.229,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "骨骼蒙皮已应用（plans/22 S1：调色板 = 关节世界矩阵 × inverse_bind，蒙皮网格忽略节点变换；法线按调色板 3×3 线性部分近似）"
    ],
-   "hist": 0.2818,
-   "lum": 0.1128,
+   "hist": 0.2835,
+   "lum": 0.1,
    "model": "Fox",
    "preview": "scenes/khronos/Fox/preview.jpg",
    "readme": "../../scenes/khronos/Fox/README.md",
@@ -4323,12 +4352,13 @@
     130
    ],
    "review": "- 结论：低模狐狸完整：头部/耳朵/尾巴/四肢齐全，橙白棕三色贴图正确、朝向与官方一致，无破面。动画未应用但 bind/首帧姿态与官方截图相符；主体略小（约 7%），属可接受范围。\n- 差异主因：机位/背景：自动机位偏远；动画未应用（姿态恰与官方静态一致）",
-   "rgb": 0.0922,
+   "rgb": 0.0781,
    "scene": "../../scenes/khronos/Fox/Fox.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 1
     },
+    "anim_channels": 63,
     "animations": 3,
     "cameras": 0,
     "color0_prims": 0,
@@ -4347,6 +4377,7 @@
     "no_normal_prims": 1,
     "nodes": 26,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 1,
     "texcoord_sets": {
@@ -4438,15 +4469,15 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.2723,
-   "coverage_ratio": 0.278,
+   "coverage": 0.1121,
+   "coverage_ratio": 0.115,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.2065,
-   "lum": -0.0362,
+   "hist": 0.2782,
+   "lum": 0.2681,
    "model": "GlassBrokenWindow",
    "preview": "scenes/khronos/GlassBrokenWindow/preview.jpg",
    "readme": "../../scenes/khronos/GlassBrokenWindow/README.md",
@@ -4460,7 +4491,7 @@
     1115
    ],
    "review": "",
-   "rgb": 0.029,
+   "rgb": 0.2742,
    "scene": "../../scenes/khronos/GlassBrokenWindow/GlassBrokenWindow.scn",
    "stats": {
     "alpha_modes": {
@@ -4505,15 +4536,15 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1312,
-   "coverage_ratio": 0.141,
+   "coverage": 0.1086,
+   "coverage_ratio": 0.117,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.5613,
-   "lum": 0.1828,
+   "hist": 0.7535,
+   "lum": 0.0366,
    "model": "GlassHurricaneCandleHolder",
    "preview": "scenes/khronos/GlassHurricaneCandleHolder/preview.jpg",
    "readme": "../../scenes/khronos/GlassHurricaneCandleHolder/README.md",
@@ -4527,7 +4558,7 @@
     930
    ],
    "review": "",
-   "rgb": 0.1866,
+   "rgb": 0.0747,
    "scene": "../../scenes/khronos/GlassHurricaneCandleHolder/GlassHurricaneCandleHolder.scn",
    "stats": {
     "alpha_modes": {
@@ -4570,19 +4601,19 @@
     "showcase",
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1061,
-   "coverage_ratio": 0.112,
+   "coverage": 0.0838,
+   "coverage_ratio": 0.089,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.656,
-   "lum": -0.0235,
+   "hist": 0.8247,
+   "lum": -0.0588,
    "model": "GlassVaseFlowers",
    "preview": "scenes/khronos/GlassVaseFlowers/preview.jpg",
    "readme": "../../scenes/khronos/GlassVaseFlowers/README.md",
@@ -4596,7 +4627,7 @@
     1144
    ],
    "review": "",
-   "rgb": 0.028,
+   "rgb": 0.0704,
    "scene": "../../scenes/khronos/GlassVaseFlowers/GlassVaseFlowers.scn",
    "stats": {
     "alpha_modes": {
@@ -4647,7 +4678,7 @@
    "coverage_ratio": 0.871,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）"
    ],
    "hist": 0.2278,
    "lum": 0.1417,
@@ -4670,6 +4701,7 @@
     "alpha_modes": {
      "OPAQUE": 2
     },
+    "anim_channels": 9,
     "animations": 9,
     "cameras": 0,
     "color0_prims": 0,
@@ -4688,6 +4720,7 @@
     "no_normal_prims": 0,
     "nodes": 10,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 2,
     "skins": 0,
     "texcoord_sets": {
@@ -4705,16 +4738,16 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.164,
+   "coverage": 0.1643,
    "coverage_ratio": 0.176,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
-   "hist": 0.5621,
-   "lum": 0.0262,
+   "hist": 0.596,
+   "lum": -0.13,
    "model": "IORTestGrid",
    "preview": "scenes/khronos/IORTestGrid/preview.jpg",
    "readme": "../../scenes/khronos/IORTestGrid/README.md",
@@ -4728,7 +4761,7 @@
     1080
    ],
    "review": "",
-   "rgb": 0.0427,
+   "rgb": 0.1298,
    "scene": "../../scenes/khronos/IORTestGrid/IORTestGrid.scn",
    "stats": {
     "alpha_modes": {
@@ -4903,16 +4936,16 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1279,
-   "coverage_ratio": 0.188,
+   "coverage": 0.1121,
+   "coverage_ratio": 0.165,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.3235,
-   "lum": 0.0368,
+   "hist": 0.6423,
+   "lum": -0.0231,
    "model": "IridescenceLamp",
    "preview": "scenes/khronos/IridescenceLamp/preview.jpg",
    "readme": "../../scenes/khronos/IridescenceLamp/README.md",
@@ -4926,7 +4959,7 @@
     1213
    ],
    "review": "",
-   "rgb": 0.0353,
+   "rgb": 0.0374,
    "scene": "../../scenes/khronos/IridescenceLamp/IridescenceLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -4969,7 +5002,7 @@
     "showcase",
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.1622,
@@ -5043,12 +5076,12 @@
    "framing_notes": [],
    "gaps": [
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.5538,
-   "lum": 0.128,
+   "hist": 0.532,
+   "lum": 0.1469,
    "model": "IridescenceSuzanne",
    "preview": "scenes/khronos/IridescenceSuzanne/preview.jpg",
    "readme": "../../scenes/khronos/IridescenceSuzanne/README.md",
@@ -5062,7 +5095,7 @@
     800
    ],
    "review": "",
-   "rgb": 0.1185,
+   "rgb": 0.1207,
    "scene": "../../scenes/khronos/IridescenceSuzanne/IridescenceSuzanne.scn",
    "stats": {
     "alpha_modes": {
@@ -5109,18 +5142,18 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.3389,
-   "coverage_ratio": 0.607,
+   "coverage": 0.3233,
+   "coverage_ratio": 0.579,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.456,
-   "lum": 0.1249,
+   "hist": 0.4873,
+   "lum": 0.1862,
    "model": "IridescentDishWithOlives",
    "preview": "scenes/khronos/IridescentDishWithOlives/preview.jpg",
    "readme": "../../scenes/khronos/IridescentDishWithOlives/README.md",
@@ -5134,13 +5167,14 @@
     1167
    ],
    "review": "",
-   "rgb": 0.1159,
+   "rgb": 0.165,
    "scene": "../../scenes/khronos/IridescentDishWithOlives/IridescentDishWithOlives.scn",
    "stats": {
     "alpha_modes": {
      "MASK": 1,
      "OPAQUE": 3
     },
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 1,
     "color0_prims": 3,
@@ -5164,6 +5198,7 @@
     "no_normal_prims": 0,
     "nodes": 6,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 4,
     "skins": 0,
     "texcoord_sets": {
@@ -5242,15 +5277,17 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0568,
-   "coverage_ratio": 0.453,
-   "framing_notes": [],
+   "coverage": 0.0475,
+   "coverage_ratio": 0.379,
+   "framing_notes": [
+    "预览主体占比过小（<5%）→ 机位过远？"
+   ],
    "gaps": [
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射"
    ],
-   "hist": 0.5054,
-   "lum": 0.0635,
+   "hist": 0.6176,
+   "lum": 0.0407,
    "model": "LightsPunctualLamp",
    "preview": "scenes/khronos/LightsPunctualLamp/preview.jpg",
    "readme": "../../scenes/khronos/LightsPunctualLamp/README.md",
@@ -5264,7 +5301,7 @@
     344
    ],
    "review": "",
-   "rgb": 0.0647,
+   "rgb": 0.04,
    "scene": "../../scenes/khronos/LightsPunctualLamp/LightsPunctualLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -5307,17 +5344,17 @@
     "testing",
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？"
   },
   {
    "coverage": 0.4228,
    "coverage_ratio": 0.64,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_node_visibility 已支持：visible=false 的节点及整棵子树不导入",
-    "KHR_animation_pointer 动画未导入"
+    "KHR_animation_pointer 动画未导入（材质/贴图变换/可见性等指针通道；节点 TRS/骨骼/morph 动画已支持）"
    ],
    "hist": 0.0957,
    "lum": 0.2743,
@@ -5338,6 +5375,7 @@
    "scene": "../../scenes/khronos/LightVisibility/LightVisibility.scn",
    "stats": {
     "alpha_modes": {},
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -5361,6 +5399,7 @@
     "no_normal_prims": 0,
     "nodes": 7,
     "non_tri_prims": 0,
+    "pointer_channels": 1,
     "primitives": 1,
     "skins": 0,
     "texcoord_sets": {},
@@ -5375,14 +5414,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.0712,
+   "coverage": 0.0714,
    "coverage_ratio": 0.09,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）"
+    "KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + 透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）"
    ],
-   "hist": 0.4743,
-   "lum": -0.2375,
+   "hist": 0.6365,
+   "lum": 0.0287,
    "model": "MandarinOrange",
    "preview": "scenes/khronos/MandarinOrange/preview.jpg",
    "readme": "../../scenes/khronos/MandarinOrange/README.md",
@@ -5396,7 +5435,7 @@
     1309
    ],
    "review": "",
-   "rgb": 0.2442,
+   "rgb": 0.0665,
    "scene": "../../scenes/khronos/MandarinOrange/MandarinOrange.scn",
    "stats": {
     "alpha_modes": {
@@ -5437,7 +5476,7 @@
     "extension",
     "testing"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.156,
@@ -5505,16 +5544,16 @@
    "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.0684,
+   "coverage": 0.0685,
    "coverage_ratio": 0.425,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
     "KHR_mesh_quantization（量化顶点）导入未特殊处理（数值/法线精度可能异常）",
     "meshopt 压缩未实现",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.4841,
+   "hist": 0.4831,
    "lum": 0.0781,
    "model": "MeshoptCubeTest",
    "preview": "scenes/khronos/MeshoptCubeTest/preview.jpg",
@@ -5535,6 +5574,7 @@
     "alpha_modes": {
      "MASK": 10
     },
+    "anim_channels": 5,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 20,
@@ -5558,6 +5598,7 @@
     "no_normal_prims": 0,
     "nodes": 35,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 35,
     "skins": 0,
     "texcoord_sets": {
@@ -5746,14 +5787,14 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1895,
-   "coverage_ratio": 0.23,
+   "coverage": 0.21,
+   "coverage_ratio": 0.255,
    "framing_notes": [],
    "gaps": [
-    "morph targets 未应用（默认权重不生效）"
+    "morph targets 已应用（plans/22 S3：CPU 顶点变形，默认权重 + weights 动画；TANGENT 增量忽略）"
    ],
-   "hist": 0.4535,
-   "lum": -0.4113,
+   "hist": 0.437,
+   "lum": -0.4347,
    "model": "MorphPrimitivesTest",
    "preview": "scenes/khronos/MorphPrimitivesTest/preview.jpg",
    "readme": "../../scenes/khronos/MorphPrimitivesTest/README.md",
@@ -5767,12 +5808,13 @@
     282
    ],
    "review": "",
-   "rgb": 0.3668,
+   "rgb": 0.3977,
    "scene": "../../scenes/khronos/MorphPrimitivesTest/MorphPrimitivesTest.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 2
     },
+    "anim_channels": 0,
     "animations": 0,
     "cameras": 0,
     "color0_prims": 0,
@@ -5791,6 +5833,7 @@
     "no_normal_prims": 0,
     "nodes": 2,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 2,
     "skins": 0,
     "texcoord_sets": {
@@ -5812,8 +5855,8 @@
    "coverage_ratio": 0.595,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "morph targets 未应用（默认权重不生效）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "morph targets 已应用（plans/22 S3：CPU 顶点变形，默认权重 + weights 动画；TANGENT 增量忽略）"
    ],
    "hist": 0.5865,
    "lum": 0.1027,
@@ -5836,6 +5879,7 @@
     "alpha_modes": {
      "OPAQUE": 2
     },
+    "anim_channels": 3,
     "animations": 3,
     "cameras": 0,
     "color0_prims": 0,
@@ -5854,6 +5898,7 @@
     "no_normal_prims": 0,
     "nodes": 1,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 2,
     "skins": 0,
     "texcoord_sets": {
@@ -5877,11 +5922,11 @@
    "coverage_ratio": 0.195,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.1361,
-   "lum": -0.1556,
+   "hist": 0.7917,
+   "lum": -0.0047,
    "model": "MosquitoInAmber",
    "preview": "scenes/khronos/MosquitoInAmber/preview.jpg",
    "readme": "../../scenes/khronos/MosquitoInAmber/README.md",
@@ -5895,7 +5940,7 @@
     714
    ],
    "review": "",
-   "rgb": 0.1724,
+   "rgb": 0.1312,
    "scene": "../../scenes/khronos/MosquitoInAmber/MosquitoInAmber.scn",
    "stats": {
     "alpha_modes": {
@@ -5940,7 +5985,7 @@
     "showcase",
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.3054,
@@ -6629,16 +6674,16 @@
    "coverage_ratio": 0.164,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
     "KHR_texture_transform 支持 scale/offset/rotation（基础组与法线组）；逐贴图独立 transform 仍部分近似",
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
     "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
-    "KHR_animation_pointer 动画未导入"
+    "KHR_animation_pointer 动画未导入（材质/贴图变换/可见性等指针通道；节点 TRS/骨骼/morph 动画已支持）"
    ],
-   "hist": 0.5317,
-   "lum": -0.019,
+   "hist": 0.5334,
+   "lum": -0.0056,
    "model": "PotOfCoalsAnimationPointer",
    "preview": "scenes/khronos/PotOfCoalsAnimationPointer/preview.jpg",
    "readme": "../../scenes/khronos/PotOfCoalsAnimationPointer/README.md",
@@ -6652,12 +6697,13 @@
     983
    ],
    "review": "",
-   "rgb": 0.0384,
+   "rgb": 0.036,
    "scene": "../../scenes/khronos/PotOfCoalsAnimationPointer/PotOfCoalsAnimationPointer.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 3
     },
+    "anim_channels": 2,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -6689,6 +6735,7 @@
     "no_normal_prims": 0,
     "nodes": 3,
     "non_tri_prims": 0,
+    "pointer_channels": 2,
     "primitives": 3,
     "skins": 0,
     "texcoord_sets": {
@@ -6771,15 +6818,17 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.0625,
-   "coverage_ratio": 0.432,
-   "framing_notes": [],
-   "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）"
+   "coverage": 0.2796,
+   "coverage_ratio": 1.932,
+   "framing_notes": [
+    "预览主体贴边/被裁剪 → 机位过近？"
    ],
-   "hist": 0.3141,
-   "lum": -0.0186,
+   "gaps": [
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "骨骼蒙皮已应用（plans/22 S1：调色板 = 关节世界矩阵 × inverse_bind，蒙皮网格忽略节点变换；法线按调色板 3×3 线性部分近似）"
+   ],
+   "hist": 0.39,
+   "lum": -0.0173,
    "model": "RecursiveSkeletons",
    "preview": "scenes/khronos/RecursiveSkeletons/preview.jpg",
    "readme": "../../scenes/khronos/RecursiveSkeletons/README.md",
@@ -6793,12 +6842,13 @@
     128
    ],
    "review": "- 结论：官方参考图是多根分叉弯曲的骨骼束（84 个 skin 的递归测试），本引擎只渲染出一根竖直白色柱体：所有蒙皮网格都按未蒙皮的节点世界矩阵烘焙后重叠在一起。几何/贴图本身在，但视觉上完全无法与官方对应，属 skin 未实现的最严重案例。\n- 差异主因：缺失特性：skin/骨骼未应用 → 蒙皮网格重叠成一根柱子",
-   "rgb": 0.0165,
+   "rgb": 0.0162,
    "scene": "../../scenes/khronos/RecursiveSkeletons/RecursiveSkeletons.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 1
     },
+    "anim_channels": 840,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 1,
@@ -6815,6 +6865,7 @@
     "no_normal_prims": 1,
     "nodes": 924,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 84,
     "texcoord_sets": {},
@@ -6828,18 +6879,18 @@
     "testing",
     "issues"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）；预览主体贴边/被裁剪 → 机位过近？"
   },
   {
-   "coverage": 0.0738,
-   "coverage_ratio": 0.573,
+   "coverage": 0.074,
+   "coverage_ratio": 0.575,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "骨骼蒙皮已应用（plans/22 S1：调色板 = 关节世界矩阵 × inverse_bind，蒙皮网格忽略节点变换；法线按调色板 3×3 线性部分近似）"
    ],
-   "hist": 0.1672,
-   "lum": 0.2544,
+   "hist": 0.2491,
+   "lum": 0.2474,
    "model": "RiggedFigure",
    "preview": "scenes/khronos/RiggedFigure/preview.jpg",
    "readme": "../../scenes/khronos/RiggedFigure/README.md",
@@ -6853,12 +6904,13 @@
     130
    ],
    "review": "",
-   "rgb": 0.2537,
+   "rgb": 0.2469,
    "scene": "../../scenes/khronos/RiggedFigure/RiggedFigure.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 1
     },
+    "anim_channels": 57,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -6875,6 +6927,7 @@
     "no_normal_prims": 0,
     "nodes": 22,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 1,
     "texcoord_sets": {},
@@ -6894,11 +6947,11 @@
    "coverage_ratio": 0.507,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "骨骼蒙皮已应用（plans/22 S1：调色板 = 关节世界矩阵 × inverse_bind，蒙皮网格忽略节点变换；法线按调色板 3×3 线性部分近似）"
    ],
-   "hist": 0.1031,
-   "lum": 0.4261,
+   "hist": 0.1036,
+   "lum": 0.4202,
    "model": "RiggedSimple",
    "preview": "scenes/khronos/RiggedSimple/preview.jpg",
    "readme": "../../scenes/khronos/RiggedSimple/README.md",
@@ -6912,12 +6965,13 @@
     130
    ],
    "review": "",
-   "rgb": 0.4297,
+   "rgb": 0.4231,
    "scene": "../../scenes/khronos/RiggedSimple/RiggedSimple.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 1
     },
+    "anim_channels": 3,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -6934,6 +6988,7 @@
     "no_normal_prims": 0,
     "nodes": 5,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 1,
     "texcoord_sets": {},
@@ -6949,15 +7004,15 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1228,
-   "coverage_ratio": 0.386,
+   "coverage": 0.1261,
+   "coverage_ratio": 0.396,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
-    "KHR_materials_diffuse_transmission 近似为 alpha BLEND（乳浊半透观感，无散射）"
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
+    "KHR_materials_diffuse_transmission：不透明材质 + 背光透射（factor/colorFactor + 透射率/透射色贴图 + volume 吸收）；无真实散射/厚度（能量拆分按可加近似）"
    ],
-   "hist": 0.4349,
-   "lum": -0.0576,
+   "hist": 0.5683,
+   "lum": 0.2416,
    "model": "ScatteringSkull",
    "preview": "scenes/khronos/ScatteringSkull/preview.jpg",
    "readme": "../../scenes/khronos/ScatteringSkull/README.md",
@@ -6971,7 +7026,7 @@
     977
    ],
    "review": "",
-   "rgb": 0.0863,
+   "rgb": 0.2348,
    "scene": "../../scenes/khronos/ScatteringSkull/ScatteringSkull.scn",
    "stats": {
     "alpha_modes": {
@@ -7221,14 +7276,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1368,
-   "coverage_ratio": 0.219,
+   "coverage": 0.1392,
+   "coverage_ratio": 0.223,
    "framing_notes": [],
    "gaps": [
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似"
    ],
-   "hist": 0.4792,
-   "lum": 0.1284,
+   "hist": 0.507,
+   "lum": 0.0322,
    "model": "SheenTestGrid",
    "preview": "scenes/khronos/SheenTestGrid/preview.jpg",
    "readme": "../../scenes/khronos/SheenTestGrid/README.md",
@@ -7242,7 +7297,7 @@
     930
    ],
    "review": "",
-   "rgb": 0.1826,
+   "rgb": 0.0784,
    "scene": "../../scenes/khronos/SheenTestGrid/SheenTestGrid.scn",
    "stats": {
     "alpha_modes": {
@@ -7532,14 +7587,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1854,
-   "coverage_ratio": 0.999,
+   "coverage": 0.1959,
+   "coverage_ratio": 1.056,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "morph targets 未应用（默认权重不生效）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "morph targets 已应用（plans/22 S3：CPU 顶点变形，默认权重 + weights 动画；TANGENT 增量忽略）"
    ],
-   "hist": 0.0309,
+   "hist": 0.0304,
    "lum": 0.1154,
    "model": "SimpleMorph",
    "preview": "scenes/khronos/SimpleMorph/preview.jpg",
@@ -7558,6 +7613,7 @@
    "scene": "../../scenes/khronos/SimpleMorph/SimpleMorph.scn",
    "stats": {
     "alpha_modes": {},
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -7574,6 +7630,7 @@
     "no_normal_prims": 1,
     "nodes": 1,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 0,
     "texcoord_sets": {},
@@ -7589,14 +7646,14 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1722,
-   "coverage_ratio": 0.211,
+   "coverage": 0.173,
+   "coverage_ratio": 0.212,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
-    "骨骼蒙皮未应用（蒙皮网格按节点世界矩阵烘焙，姿势/形变与官方参考不同）"
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
+    "骨骼蒙皮已应用（plans/22 S1：调色板 = 关节世界矩阵 × inverse_bind，蒙皮网格忽略节点变换；法线按调色板 3×3 线性部分近似）"
    ],
-   "hist": 0.2501,
+   "hist": 0.2432,
    "lum": 0.1973,
    "model": "SimpleSkin",
    "preview": "scenes/khronos/SimpleSkin/preview.jpg",
@@ -7615,6 +7672,7 @@
    "scene": "../../scenes/khronos/SimpleSkin/SimpleSkin.scn",
    "stats": {
     "alpha_modes": {},
+    "anim_channels": 1,
     "animations": 1,
     "cameras": 0,
     "color0_prims": 0,
@@ -7631,6 +7689,7 @@
     "no_normal_prims": 1,
     "nodes": 3,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 1,
     "skins": 1,
     "texcoord_sets": {},
@@ -7828,15 +7887,15 @@
    "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
   },
   {
-   "coverage": 0.1575,
-   "coverage_ratio": 0.23,
+   "coverage": 0.1618,
+   "coverage_ratio": 0.236,
    "framing_notes": [],
    "gaps": [
     "KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似",
     "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）"
    ],
-   "hist": 0.6433,
-   "lum": -0.0101,
+   "hist": 0.7031,
+   "lum": -0.0042,
    "model": "SpecularSilkPouf",
    "preview": "scenes/khronos/SpecularSilkPouf/preview.jpg",
    "readme": "../../scenes/khronos/SpecularSilkPouf/README.md",
@@ -7850,7 +7909,7 @@
     850
    ],
    "review": "",
-   "rgb": 0.0944,
+   "rgb": 0.0232,
    "scene": "../../scenes/khronos/SpecularSilkPouf/SpecularSilkPouf.scn",
    "stats": {
     "alpha_modes": {
@@ -7963,9 +8022,7 @@
   {
    "coverage": 0.7013,
    "coverage_ratio": 0.877,
-   "framing_notes": [
-    "预览主体贴边/被裁剪 → 机位过近？"
-   ],
+   "framing_notes": [],
    "gaps": [
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
@@ -8023,21 +8080,23 @@
    "tags": [
     "core"
    ],
-   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.0524,
-   "coverage_ratio": 0.147,
-   "framing_notes": [],
+   "coverage": 0.0463,
+   "coverage_ratio": 0.13,
+   "framing_notes": [
+    "预览主体占比过小（<5%）→ 机位过远？"
+   ],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_clearcoat：因子/清漆贴图已导入；clearcoat BRDF 为观感近似",
     "KHR_materials_variants：只使用默认材质（不做变体切换）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.648,
-   "lum": 0.0052,
+   "hist": 0.7752,
+   "lum": -0.037,
    "model": "StainedGlassLamp",
    "preview": "scenes/khronos/StainedGlassLamp/preview.jpg",
    "readme": "../../scenes/khronos/StainedGlassLamp/README.md",
@@ -8051,7 +8110,7 @@
     1140
    ],
    "review": "- 结论：整盏彩绘玻璃灯完整：多层玻璃伞罩彩绘图案、珠串流苏、灯柱与底座都在，贴图正确、无缺件，构图可辨认。玻璃不透光、没有官方那种被内部灯光点亮的效果（transmission/emissive 限制），且自动机位偏远（主体约 6%），属于可接受的已知差距。\n- 差异主因：缺失特性：transmission（玻璃罩透光）未实现 + emissive 发光偏弱；机位偏远",
-   "rgb": 0.0197,
+   "rgb": 0.0335,
    "scene": "../../scenes/khronos/StainedGlassLamp/StainedGlassLamp.scn",
    "stats": {
     "alpha_modes": {
@@ -8096,19 +8155,19 @@
     "showcase",
     "extension"
    ],
-   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体占比过小（<5%）→ 机位过远？"
   },
   {
-   "coverage": 0.1613,
-   "coverage_ratio": 0.302,
+   "coverage": 0.161,
+   "coverage_ratio": 0.301,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "KHR_materials_iridescence：薄膜干涉为观感近似（虹彩/厚度贴图已导入）"
    ],
-   "hist": 0.4202,
-   "lum": -0.2186,
+   "hist": 0.5929,
+   "lum": -0.2287,
    "model": "SunglassesKhronos",
    "preview": "scenes/khronos/SunglassesKhronos/preview.jpg",
    "readme": "../../scenes/khronos/SunglassesKhronos/README.md",
@@ -8122,7 +8181,7 @@
     869
    ],
    "review": "",
-   "rgb": 0.269,
+   "rgb": 0.2927,
    "scene": "../../scenes/khronos/SunglassesKhronos/SunglassesKhronos.scn",
    "stats": {
     "alpha_modes": {
@@ -8379,6 +8438,7 @@
      "MASK": 1,
      "OPAQUE": 2
     },
+    "anim_channels": 0,
     "animations": 0,
     "cameras": 0,
     "color0_prims": 0,
@@ -8397,6 +8457,7 @@
     "no_normal_prims": 1,
     "nodes": 3,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 3,
     "skins": 0,
     "texcoord_sets": {
@@ -8611,9 +8672,7 @@
   {
    "coverage": 0.8348,
    "coverage_ratio": 1.022,
-   "framing_notes": [
-    "预览主体贴边/被裁剪 → 机位过近？"
-   ],
+   "framing_notes": [],
    "gaps": [],
    "hist": 0.6265,
    "lum": 0.1919,
@@ -8638,14 +8697,12 @@
     "hand-tuned",
     "showcase"
    ],
-   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）；预览主体贴边/被裁剪 → 机位过近？"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.5257,
    "coverage_ratio": 1.204,
-   "framing_notes": [
-    "预览主体贴边/被裁剪 → 机位过近？"
-   ],
+   "framing_notes": [],
    "gaps": [
     "KHR_lights_punctual 已导入为 Light（≤8 盏、方向光优先；强度为观感归一化、非物理换算；有灯光时不再追加默认太阳）",
     "KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）",
@@ -8709,19 +8766,19 @@
    "tags": [
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.1954,
+   "coverage": 0.1953,
    "coverage_ratio": 0.243,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.3453,
-   "lum": 0.2243,
+   "hist": 0.441,
+   "lum": 0.2,
    "model": "TransmissionOrderTest",
    "preview": "scenes/khronos/TransmissionOrderTest/preview.jpg",
    "readme": "../../scenes/khronos/TransmissionOrderTest/README.md",
@@ -8735,7 +8792,7 @@
     1366
    ],
    "review": "",
-   "rgb": 0.2167,
+   "rgb": 0.1967,
    "scene": "../../scenes/khronos/TransmissionOrderTest/TransmissionOrderTest.scn",
    "stats": {
     "alpha_modes": {
@@ -8778,18 +8835,18 @@
     "extension",
     "testing"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
-   "coverage": 0.3254,
+   "coverage": 0.3256,
    "coverage_ratio": 0.354,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.3675,
-   "lum": 0.1746,
+   "hist": 0.6568,
+   "lum": 0.0649,
    "model": "TransmissionRoughnessTest",
    "preview": "scenes/khronos/TransmissionRoughnessTest/preview.jpg",
    "readme": "../../scenes/khronos/TransmissionRoughnessTest/README.md",
@@ -8803,7 +8860,7 @@
     831
    ],
    "review": "",
-   "rgb": 0.1548,
+   "rgb": 0.048,
    "scene": "../../scenes/khronos/TransmissionRoughnessTest/TransmissionRoughnessTest.scn",
    "stats": {
     "alpha_modes": {
@@ -8845,20 +8902,18 @@
     "testing",
     "extension"
    ],
-   "verdict": "差异较大（需人工确认：机位/缺失特性/导入问题）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.6535,
    "coverage_ratio": 0.744,
-   "framing_notes": [
-    "预览主体贴边/被裁剪 → 机位过近？"
-   ],
+   "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
     "alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）"
    ],
-   "hist": 0.4443,
-   "lum": 0.1759,
+   "hist": 0.5117,
+   "lum": 0.1618,
    "model": "TransmissionTest",
    "preview": "scenes/khronos/TransmissionTest/preview.jpg",
    "readme": "../../scenes/khronos/TransmissionTest/README.md",
@@ -8872,7 +8927,7 @@
     718
    ],
    "review": "",
-   "rgb": 0.1816,
+   "rgb": 0.1581,
    "scene": "../../scenes/khronos/TransmissionTest/TransmissionTest.scn",
    "stats": {
     "alpha_modes": {
@@ -8914,18 +8969,18 @@
     "testing",
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）；预览主体贴边/被裁剪 → 机位过近？"
+   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
   },
   {
    "coverage": 0.1628,
    "coverage_ratio": 0.289,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.0801,
-   "lum": 0.3833,
+   "hist": 0.0752,
+   "lum": 0.3832,
    "model": "TransmissionThinwallTestGrid",
    "preview": "scenes/khronos/TransmissionThinwallTestGrid/preview.jpg",
    "readme": "../../scenes/khronos/TransmissionThinwallTestGrid/README.md",
@@ -8939,7 +8994,7 @@
     600
    ],
    "review": "- 结论：测试板标签（Index of Refraction 1.0/1.33/1.5/1.76/2.42、Thin Wall / Volume Transmission 两行）和 10 个球位布局正确，说明场景结构导入无误；但所有球均为不透明白球，官方为可折射棋盘格的玻璃球，属 transmission 已知差距。\n- 差异主因：缺失特性：transmission/volume（薄壁与体积传输）未实现",
-   "rgb": 0.3841,
+   "rgb": 0.384,
    "scene": "../../scenes/khronos/TransmissionThinwallTestGrid/TransmissionThinwallTestGrid.scn",
    "stats": {
     "alpha_modes": {
@@ -9211,15 +9266,15 @@
    "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
-   "coverage": 0.1366,
-   "coverage_ratio": 0.241,
+   "coverage": 0.336,
+   "coverage_ratio": 0.593,
    "framing_notes": [],
    "gaps": [
-    "KHR_materials_transmission 近似为 alpha BLEND（透光可见背景，但无折射/厚度/吸收）",
-    "KHR_materials_volume 近似为薄壁色调（attenuationColor×baseColor）；dispersion/volume_scatter 未实现"
+    "KHR_materials_transmission：屏幕空间折射近似（opaque pass 颜色拷贝 + 逐像素折射采样、transmissionTexture 掩码、Fresnel 反射）；无真实体积吸收/多次折射",
+    "KHR_materials_volume：thicknessFactor/thicknessTexture.G + attenuationColor/Distance 的 Beer-Lambert 吸收（第 24 轮）；dispersion 用 RGB 折射偏移近似；volume_scatter 的 multiscatterColor 以各向同性 in-scatter 近似（无真实多次散射/相位函数）"
    ],
-   "hist": 0.4976,
-   "lum": 0.0078,
+   "hist": 0.7127,
+   "lum": 0.0581,
    "model": "USDShaderBallForGltf",
    "preview": "scenes/khronos/USDShaderBallForGltf/preview.jpg",
    "readme": "../../scenes/khronos/USDShaderBallForGltf/README.md",
@@ -9233,7 +9288,7 @@
     808
    ],
    "review": "",
-   "rgb": 0.0121,
+   "rgb": 0.0546,
    "scene": "../../scenes/khronos/USDShaderBallForGltf/USDShaderBallForGltf.scn",
    "stats": {
     "alpha_modes": {
@@ -9274,7 +9329,7 @@
     "showcase",
     "extension"
    ],
-   "verdict": "中等差异（多为机位/背景/光照/缺失特性）"
+   "verdict": "主体亮度/色调分布较接近（机位/背景可能不同）"
   },
   {
    "coverage": 0.2236,
@@ -9341,7 +9396,7 @@
    "coverage_ratio": 0.186,
    "framing_notes": [],
    "gaps": [
-    "动画未导入（静态渲染；角色模型为 bind/T-pose）",
+    "动画已导入（plans/22 S2：关键帧采样，片段按 glTF 声明序自动播放；截图取第 1 帧姿态；CUBICSPLINE 按 LINEAR 近似、无动画状态机/混合）",
     "未使用 glTF 自带相机（自动机位，与官方 screenshot 机位不同）"
    ],
    "hist": 0.4688,
@@ -9359,12 +9414,13 @@
     130
    ],
    "review": "",
-   "rgb": 0.137,
+   "rgb": 0.1371,
    "scene": "../../scenes/khronos/VirtualCity/VirtualCity.scn",
    "stats": {
     "alpha_modes": {
      "OPAQUE": 167
     },
+    "anim_channels": 73,
     "animations": 1,
     "cameras": 14,
     "color0_prims": 0,
@@ -9384,6 +9440,7 @@
     "no_normal_prims": 0,
     "nodes": 234,
     "non_tri_prims": 0,
+    "pointer_channels": 0,
     "primitives": 167,
     "skins": 0,
     "texcoord_sets": {
@@ -9523,17 +9580,17 @@
  "stats": {
   "gif_refs": 13,
   "large_refs": 86,
-  "median_coverage": 0.1667,
-  "median_hist": 0.4535,
-  "median_lum": 0.0879,
-  "median_rgb": 0.1185,
+  "median_coverage": 0.173,
+  "median_hist": 0.507,
+  "median_lum": 0.0729,
+  "median_rgb": 0.1121,
   "models": 149,
   "preview_missing": 0,
   "ref_missing": 0,
   "verdicts": {
-   "bad": 62,
-   "good": 39,
-   "mid": 48
+   "bad": 54,
+   "good": 49,
+   "mid": 46
   },
   "with_compare": 149
  }

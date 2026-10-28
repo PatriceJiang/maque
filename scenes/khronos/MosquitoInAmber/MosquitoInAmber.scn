@@ -16,7 +16,7 @@
               "z": 0.1733849622476475
             },
             "rotation": {
-              "x": -0.22326312094374032,
+              "x": -0.2232631209437403,
               "y": -0.5190192589890531,
               "z": 0.0
             }
@@ -28,9 +28,9 @@
           "near": 0.004252447449810833,
           "far": 2.359719518672054,
           "clear_color": {
-            "r": 0.13,
-            "g": 0.13,
-            "b": 0.14,
+            "r": 0.85,
+            "g": 0.85,
+            "b": 0.85,
             "a": 1.0
           }
         }
@@ -112,6 +112,7 @@
           "ior": 1.55,
           "transmission_factor": 0.75,
           "opacity": 0.36250000000000004,
+          "volume_thickness": 0.9,
           "base_color_texture": "textures/image0.jpg",
           "metallic_roughness_texture": "textures/image1.png",
           "normal_texture": "textures/image2.png"
@@ -220,5 +221,12 @@
         }
       ]
     }
-  ]
+  ],
+  "env_color": {
+    "r": 0.75,
+    "g": 0.75,
+    "b": 0.75,
+    "a": 1.0
+  },
+  "env_intensity": 2.5
 }

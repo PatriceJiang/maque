@@ -37,3 +37,6 @@ Testing/
 
 # Python 字节码缓存
 __pycache__/
+
+# 本地调试/渲染实验临时目录（AGENTS：单测临时目录回退目标）
+/maque-test-tmp/

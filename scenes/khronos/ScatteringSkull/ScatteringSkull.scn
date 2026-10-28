@@ -92,9 +92,9 @@
           "type": "asset.PbrMaterial",
           "name": "subsurface_material",
           "base_color": {
-            "r": 0.3678794503211975,
-            "g": 0.4857314527034759,
-            "b": 0.3964099884033203,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -106,12 +106,26 @@
           },
           "double_sided": false,
           "side": 0,
-          "alpha_mode": 2,
+          "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "ior": 1.3799999952316284,
-          "opacity": 0.30000000000000004,
-          "occlusion_texture": "textures/AO-thickness.png"
+          "diffuse_transmission_factor": 1.0,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.3678794503211975,
+            "y": 0.4857314527034759,
+            "z": 0.3964099884033203
+          },
+          "attenuation_distance": 0.016891848295927048,
+          "multiscatter_color": {
+            "x": 0.16827136278152466,
+            "y": 0.5271198749542236,
+            "z": 0.5906253457069397
+          },
+          "dispersion": 0.5699999928474426,
+          "occlusion_texture": "textures/AO-thickness.png",
+          "volume_thickness_texture": "textures/AO-thickness.png"
         }
       ]
     }

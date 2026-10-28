@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "Backplate Khronos_0",
+      "name": "Backplate Khronos",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -74,7 +74,7 @@
             },
             "rotation": {
               "x": -1.5707959553915882,
-              "y": -0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -83,46 +83,73 @@
               "z": 0.9999999657714987
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Backplate Khronos",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image7.png#wrap=clamp,clamp",
-          "metallic_roughness_texture": "textures/image5.png#wrap=clamp,clamp",
-          "uv_scale": {
-            "x": 2.0,
-            "y": 8.0
-          },
-          "uv_offset": {
-            "x": -0.5,
-            "y": -3.6
-          }
+          "name": "Backplate Khronos_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Backplate Khronos",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 1.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "base_color_texture": "textures/image7.png#wrap=clamp,clamp",
+              "metallic_roughness_texture": "textures/image5.png#wrap=clamp,clamp",
+              "uv_scale": {
+                "x": 2.0,
+                "y": 8.0
+              },
+              "uv_offset": {
+                "x": -0.5,
+                "y": -3.6
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Band Carbon Fiber_0",
+      "name": "Band Carbon Fiber",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -143,39 +170,66 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_1_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Band Carbon Fiber Gold",
-          "base_color": {
-            "r": 1.0,
-            "g": 0.72,
-            "b": 0.315,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.4,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "normal_texture": "textures/image6.png",
-          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp",
-          "uv1_mask": 4
+          "name": "Band Carbon Fiber_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_1_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Band Carbon Fiber Gold",
+              "base_color": {
+                "r": 1.0,
+                "g": 0.72,
+                "b": 0.315,
+                "a": 1
+              },
+              "metallic": 1.0,
+              "roughness": 0.4,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "normal_texture": "textures/image6.png",
+              "occlusion_texture": "textures/image4.png#wrap=clamp,clamp",
+              "uv1_mask": 4
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Band Plastic_0",
+      "name": "Band Plastic",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -196,37 +250,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_2_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Band Plastic Gold",
-          "base_color": {
-            "r": 0.03,
-            "g": 0.03,
-            "b": 0.03,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
+          "name": "Band Plastic_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_2_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Band Plastic Gold",
+              "base_color": {
+                "r": 0.03,
+                "g": 0.03,
+                "b": 0.03,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.3,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Bezel Frame_0",
+      "name": "Bezel Frame",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -247,37 +328,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_3_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Bezel Frame Gold",
-          "base_color": {
-            "r": 1.0,
-            "g": 0.72,
-            "b": 0.315,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
+          "name": "Bezel Frame_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_3_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Bezel Frame Gold",
+              "base_color": {
+                "r": 1.0,
+                "g": 0.72,
+                "b": 0.315,
+                "a": 1
+              },
+              "metallic": 1.0,
+              "roughness": 0.3,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Button Metal_0",
+      "name": "Button Metal",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -298,37 +406,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_4_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Button Metal",
-          "base_color": {
-            "r": 0.762,
-            "g": 0.743,
-            "b": 0.787,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
+          "name": "Button Metal_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_4_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Button Metal",
+              "base_color": {
+                "r": 0.762,
+                "g": 0.743,
+                "b": 0.787,
+                "a": 1
+              },
+              "metallic": 1.0,
+              "roughness": 0.3,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Button Plastic_0",
+      "name": "Button Plastic",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -349,37 +484,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_5_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Button Plastic Gold",
-          "base_color": {
-            "r": 0.03,
-            "g": 0.03,
-            "b": 0.03,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
+          "name": "Button Plastic_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_5_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Button Plastic Gold",
+              "base_color": {
+                "r": 0.03,
+                "g": 0.03,
+                "b": 0.03,
+                "a": 1
+              },
+              "metallic": 0.0,
+              "roughness": 0.3,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "occlusion_texture": "textures/image4.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Clasp DGG_0",
+      "name": "Clasp DGG",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -400,48 +562,75 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_6_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Clasp DGG",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image2.png#wrap=clamp,clamp",
-          "metallic_roughness_texture": "textures/image3.png#wrap=clamp,clamp",
-          "occlusion_texture": "textures/image4.png#wrap=clamp,clamp",
-          "uv_scale": {
-            "x": 1.25,
-            "y": 1.75
-          },
-          "uv_offset": {
-            "x": -0.15,
-            "y": -0.4
-          },
-          "uv1_mask": 4
+          "name": "Clasp DGG_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_6_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Clasp DGG",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 1.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "base_color_texture": "textures/image2.png#wrap=clamp,clamp",
+              "metallic_roughness_texture": "textures/image3.png#wrap=clamp,clamp",
+              "occlusion_texture": "textures/image4.png#wrap=clamp,clamp",
+              "uv_scale": {
+                "x": 1.25,
+                "y": 1.75
+              },
+              "uv_offset": {
+                "x": -0.15,
+                "y": -0.4
+              },
+              "uv1_mask": 4
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Glass Face_0",
+      "name": "Glass Face",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -462,50 +651,77 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_7_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Glass Face",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 0.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 2,
-          "alpha_cutoff": 0.5,
-          "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "name": "Glass Face_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_7_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Glass Face",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 0.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 2,
+              "alpha_cutoff": 0.5,
+              "transmission_factor": 1.0,
+              "opacity": 0.15000000000000002
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Hand Hours_0",
+      "name": "Hands",
       "components": [
         {
           "type": "scene.Transform3D",
           "local": {
             "position": {
-              "x": 0.0,
-              "y": -2.0762352248571148e-07,
-              "z": 0.005593135145709027
+              "x": 0.11272376775741576,
+              "y": 0.1582605242729187,
+              "z": 0.7580093741416931
             },
             "rotation": {
               "x": -1.570796629741176,
-              "y": -0.0,
+              "y": 0.0,
               "z": 0.0
             },
             "scale": {
@@ -514,486 +730,621 @@
               "z": 0.9999999657714758
             }
           }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_8_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Plastic",
-          "base_color": {
-            "r": 0.03,
-            "g": 0.03,
-            "b": 0.03,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
         }
-      ]
-    },
-    {
-      "name": "Hand Hours_1",
-      "components": [
+      ],
+      "children": [
         {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0762352248571148e-07,
-              "z": 0.005593135145709027
-            },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
+          "name": "Hand Hours",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": -0.11272376775741576,
+                  "y": 0.7524163126945496,
+                  "z": -0.1582605093717575
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
             }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_8_1.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Metal",
-          "base_color": {
-            "r": 0.762,
-            "g": 0.743,
-            "b": 0.787,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Hand Hours_2",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0762352248571148e-07,
-              "z": 0.005593135145709027
+          ],
+          "children": [
+            {
+              "name": "Hand Hours_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_8_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Plastic",
+                  "base_color": {
+                    "r": 0.03,
+                    "g": 0.03,
+                    "b": 0.03,
+                    "a": 1
+                  },
+                  "metallic": 0.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
+            {
+              "name": "Hand Hours_1",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_8_1.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Metal",
+                  "base_color": {
+                    "r": 0.762,
+                    "g": 0.743,
+                    "b": 0.787,
+                    "a": 1
+                  },
+                  "metallic": 1.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
+            {
+              "name": "Hand Hours_2",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_8_2.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Color Gold",
+                  "base_color": {
+                    "r": 1.0,
+                    "g": 0.72,
+                    "b": 0.315,
+                    "a": 1
+                  },
+                  "metallic": 1.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             }
-          }
+          ]
         },
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_8_2.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Color Gold",
-          "base_color": {
-            "r": 1.0,
-            "g": 0.72,
-            "b": 0.315,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Hand Minutes_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0762352248571148e-07,
-              "z": 0.005593135145709027
-            },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
+          "name": "Hand Minutes",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": -0.11272376775741576,
+                  "y": 0.7524163126945496,
+                  "z": -0.1582605093717575
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
             }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_9_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Plastic",
-          "base_color": {
-            "r": 0.03,
-            "g": 0.03,
-            "b": 0.03,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Hand Minutes_1",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0762352248571148e-07,
-              "z": 0.005593135145709027
+          ],
+          "children": [
+            {
+              "name": "Hand Minutes_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_9_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Plastic",
+                  "base_color": {
+                    "r": 0.03,
+                    "g": 0.03,
+                    "b": 0.03,
+                    "a": 1
+                  },
+                  "metallic": 0.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
+            {
+              "name": "Hand Minutes_1",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_9_1.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Metal",
+                  "base_color": {
+                    "r": 0.762,
+                    "g": 0.743,
+                    "b": 0.787,
+                    "a": 1
+                  },
+                  "metallic": 1.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
+            {
+              "name": "Hand Minutes_2",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_9_2.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Color Gold",
+                  "base_color": {
+                    "r": 1.0,
+                    "g": 0.72,
+                    "b": 0.315,
+                    "a": 1
+                  },
+                  "metallic": 1.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             }
-          }
+          ]
         },
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_9_1.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Metal",
-          "base_color": {
-            "r": 0.762,
-            "g": 0.743,
-            "b": 0.787,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Hand Minutes_2",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0762352248571148e-07,
-              "z": 0.005593135145709027
-            },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
+          "name": "Hand Seconds",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": -0.11272376775741576,
+                  "y": 0.7580093741416931,
+                  "z": -0.1582605093717575
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
             }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_9_2.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Color Gold",
-          "base_color": {
-            "r": 1.0,
-            "g": 0.72,
-            "b": 0.315,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Hand Seconds_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.09317919580565e-07,
-              "z": 7.389000789004285e-08
+          ],
+          "children": [
+            {
+              "name": "Hand Seconds_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_10_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Plastic",
+                  "base_color": {
+                    "r": 0.03,
+                    "g": 0.03,
+                    "b": 0.03,
+                    "a": 1
+                  },
+                  "metallic": 0.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
+            {
+              "name": "Hand Seconds_1",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_10_1.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Metal",
+                  "base_color": {
+                    "r": 0.762,
+                    "g": 0.743,
+                    "b": 0.787,
+                    "a": 1
+                  },
+                  "metallic": 1.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             }
-          }
+          ]
         },
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_10_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Plastic",
-          "base_color": {
-            "r": 0.03,
-            "g": 0.03,
-            "b": 0.03,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Hand Seconds_1",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.09317919580565e-07,
-              "z": 7.389000789004285e-08
-            },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
+          "name": "Hand Setting",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": -0.11272376775741576,
+                  "y": 0.7524163126945496,
+                  "z": -0.1582605093717575
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
             }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_10_1.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Metal",
-          "base_color": {
-            "r": 0.762,
-            "g": 0.743,
-            "b": 0.787,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Hand Setting_0",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0762352248571148e-07,
-              "z": 0.005593135145709027
+          ],
+          "children": [
+            {
+              "name": "Hand Setting_0",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_11_0.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Plastic",
+                  "base_color": {
+                    "r": 0.03,
+                    "g": 0.03,
+                    "b": 0.03,
+                    "a": 1
+                  },
+                  "metallic": 0.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
+            {
+              "name": "Hand Setting_1",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                },
+                {
+                  "type": "render.MeshRenderer",
+                  "mesh_path": "assets/ChronographWatch_11_1.mesh.json"
+                },
+                {
+                  "type": "asset.PbrMaterial",
+                  "name": "Hand Metal",
+                  "base_color": {
+                    "r": 0.762,
+                    "g": 0.743,
+                    "b": 0.787,
+                    "a": 1
+                  },
+                  "metallic": 1.0,
+                  "roughness": 0.3,
+                  "emissive": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  },
+                  "double_sided": false,
+                  "side": 0,
+                  "alpha_mode": 0,
+                  "alpha_cutoff": 0.5
+                }
+              ]
             }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_11_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Plastic",
-          "base_color": {
-            "r": 0.03,
-            "g": 0.03,
-            "b": 0.03,
-            "a": 1
-          },
-          "metallic": 0.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          ]
         }
       ]
     },
     {
-      "name": "Hand Setting_1",
-      "components": [
-        {
-          "type": "scene.Transform3D",
-          "local": {
-            "position": {
-              "x": 0.0,
-              "y": -2.0762352248571148e-07,
-              "z": 0.005593135145709027
-            },
-            "rotation": {
-              "x": -1.570796629741176,
-              "y": -0.0,
-              "z": 0.0
-            },
-            "scale": {
-              "x": 1.0,
-              "y": 0.9999999657714758,
-              "z": 0.9999999657714758
-            }
-          }
-        },
-        {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_11_1.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "Hand Metal",
-          "base_color": {
-            "r": 0.762,
-            "g": 0.743,
-            "b": 0.787,
-            "a": 1
-          },
-          "metallic": 1.0,
-          "roughness": 0.3,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
-        }
-      ]
-    },
-    {
-      "name": "Watch Face_0",
+      "name": "Watch Face",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1014,36 +1365,83 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/ChronographWatch_12_0.mesh.json"
-        },
+          "name": "Watch Face_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/ChronographWatch_12_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Watch Face",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 1.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
+              "metallic_roughness_texture": "textures/image1.png#wrap=clamp,clamp",
+              "occlusion_texture": "textures/image1.png#wrap=clamp,clamp"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
         {
-          "type": "asset.PbrMaterial",
-          "name": "Watch Face",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 1.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png#wrap=clamp,clamp",
-          "metallic_roughness_texture": "textures/image1.png#wrap=clamp,clamp",
-          "occlusion_texture": "textures/image1.png#wrap=clamp,clamp"
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/Anim_0.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/Cannon_Exterior.hdr",
+  "env_background": false,
+  "env_intensity": 1.0,
+  "env_rotation": 0.0
 }

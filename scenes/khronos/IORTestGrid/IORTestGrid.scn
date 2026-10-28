@@ -16,7 +16,7 @@
               "z": 1.044198676021781
             },
             "rotation": {
-              "x": -0.22326312094374032,
+              "x": -0.2232631209437403,
               "y": -0.519019258989053,
               "z": 0.0
             }
@@ -161,7 +161,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "specular_intensity": 0.25,
-          "ior": 2.42
+          "ior": 2.42,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -213,7 +214,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 2.42
+          "ior": 2.42,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -268,7 +270,8 @@
           "specular_intensity": 0.25,
           "ior": 2.42,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -322,7 +325,8 @@
           "shading_model": 1,
           "ior": 2.42,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -375,7 +379,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "specular_intensity": 0.25,
-          "ior": 1.76
+          "ior": 1.76,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -427,7 +432,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.76
+          "ior": 1.76,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -482,7 +488,8 @@
           "specular_intensity": 0.25,
           "ior": 1.76,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -536,7 +543,8 @@
           "shading_model": 1,
           "ior": 1.76,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -588,7 +596,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "specular_intensity": 0.25
+          "specular_intensity": 0.25,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -639,7 +648,8 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
-          "shading_model": 1
+          "shading_model": 1,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -693,7 +703,8 @@
           "shading_model": 1,
           "specular_intensity": 0.25,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -746,7 +757,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -799,7 +811,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "specular_intensity": 0.25,
-          "ior": 1.33
+          "ior": 1.33,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -851,7 +864,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.33
+          "ior": 1.33,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -906,7 +920,8 @@
           "specular_intensity": 0.25,
           "ior": 1.33,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -960,7 +975,8 @@
           "shading_model": 1,
           "ior": 1.33,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -1013,7 +1029,8 @@
           "alpha_cutoff": 0.5,
           "shading_model": 1,
           "specular_intensity": 0.25,
-          "ior": 1.0
+          "ior": 1.0,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -1065,7 +1082,8 @@
           "alpha_mode": 0,
           "alpha_cutoff": 0.5,
           "shading_model": 1,
-          "ior": 1.0
+          "ior": 1.0,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -1120,7 +1138,8 @@
           "specular_intensity": 0.25,
           "ior": 1.0,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -1174,7 +1193,8 @@
           "shading_model": 1,
           "ior": 1.0,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.1
         }
       ]
     },
@@ -1278,5 +1298,9 @@
         }
       ]
     }
-  ]
+  ],
+  "env_texture": "/khronos_env/Colorful_Studio.hdr",
+  "env_background": false,
+  "env_intensity": 1.6415,
+  "env_rotation": 0.0
 }

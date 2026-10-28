@@ -36,7 +36,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pri
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot.png`（720×512）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot.png`（720×512）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 对 README 声明环境的模型注入官方 HDRI（`tools/khronos_env.json`），其余用 analytic studio IBL，无面光/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
@@ -51,7 +51,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pri
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - 非三角形 primitive 被跳过（线/点）
 - alphaMode=MASK 已支持；BLEND 已支持（排序为物体级）
-- 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
+- 引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，MSAA 需场景显式开启（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
@@ -60,22 +60,6 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Pri
 
 ## 踩过的坑 / 注意
 
-- gltf_import: 跳过非三角 primitive mesh=0 prim=0 mode=0
-- gltf_import: 跳过非三角 primitive mesh=1 prim=0 mode=3
-- gltf_import: 跳过非三角 primitive mesh=3 prim=0 mode=0
-- gltf_import: 跳过非三角 primitive mesh=4 prim=0 mode=3
-- gltf_import: 跳过非三角 primitive mesh=6 prim=0 mode=0
-- gltf_import: 跳过非三角 primitive mesh=7 prim=0 mode=3
-- gltf_import: 跳过非三角 primitive mesh=9 prim=0 mode=0
-- gltf_import: 跳过非三角 primitive mesh=10 prim=0 mode=3
-- gltf_import: 跳过非三角 primitive mesh=12 prim=0 mode=0
-- gltf_import: 跳过非三角 primitive mesh=13 prim=0 mode=3
-- gltf_import: 跳过非三角 primitive mesh=15 prim=0 mode=0
-- gltf_import: 跳过非三角 primitive mesh=16 prim=0 mode=3
-- gltf_import: 跳过非三角 primitive mesh=18 prim=0 mode=0
-- gltf_import: 跳过非三角 primitive mesh=19 prim=0 mode=3
-- gltf_import: 跳过非三角 primitive mesh=21 prim=0 mode=0
-- gltf_import: 跳过非三角 primitive mesh=22 prim=0 mode=3
 - 13 个 primitive 无 NORMAL（导入器按索引重建法线）
 - 16 个非三角 primitive 被跳过
 - 大模型：1,050,220 顶点（加载/渲染较慢）

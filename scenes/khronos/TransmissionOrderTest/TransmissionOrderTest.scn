@@ -211,7 +211,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -263,7 +270,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -315,7 +329,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -367,7 +388,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -419,7 +447,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -471,7 +506,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -829,7 +871,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -881,7 +930,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -933,7 +989,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.4000000059604645,
+          "attenuation_color": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },

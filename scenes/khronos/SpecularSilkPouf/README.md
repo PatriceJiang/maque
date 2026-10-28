@@ -38,14 +38,14 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Spe
 
 ## 与官方 screenshot 对比
 
-参考图：`screenshot/screenshot_Large.jpg`（1280×850）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 暂无 HDRI IBL/transmission/软阴影。
+参考图：`screenshot/screenshot_Large.jpg`（1280×850）。以下统计只在前景掩码上计算（参考图有 alpha 用 alpha，否则以边框背景色估计掩码），**不是像素级 pass/fail**：官方图多为离线渲染，常带 HDRI studio、软阴影、不同机位/背景；maque 对 README 声明环境的模型注入官方 HDRI（`tools/khronos_env.json`），其余用 analytic studio IBL，无面光/软阴影。
 
 | 指标 | 参考图 | 本预览 | 说明 |
 |---|---|---|---|
-| 前景平均亮度 | 0.232 | 0.221 | 差 -0.010 |
-| 前景平均 RGB | [94.9, 47.7, 68.0] | [52.5, 54.0, 91.4] | RGB 距离 0.094 |
-| 亮度直方图相似度 | — | — | 0.64（16 桶交集，1=完全一致） |
-| 前景占比 | 68.5% | 15.8% | 覆盖率比 0.23 |
+| 前景平均亮度 | 0.232 | 0.227 | 差 -0.004 |
+| 前景平均 RGB | [94.9, 47.7, 68.0] | [91.0, 45.8, 80.0] | RGB 距离 0.023 |
+| 亮度直方图相似度 | — | — | 0.70（16 桶交集，1=完全一致） |
+| 前景占比 | 68.5% | 16.2% | 覆盖率比 0.236 |
 
 自动初判：**主体亮度/色调分布较接近（机位/背景可能不同）**
 
@@ -53,7 +53,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Spe
 - 官方机位/背景/焦距与本场景自动机位不同（本场景为统一 3/4 视角、中性灰背景）
 - KHR_materials_sheen：因子/颜色/sheen 贴图已导入；sheen BRDF 为观感近似
 - KHR_materials_specular：factor/color/specularTexture/specularColorTexture 已映射（贴图仅作用于电介质 F0；f90 行为未实现）
-- 引擎无 HDRI/PMREM IBL、无软阴影/面光、无 MSAA（高光与间接光观感差异）
+- 引擎光照为方向光硬阴影（无面光/软阴影）；env 为官方 HDRI（有映射的模型）或解析 studio IBL，MSAA 需场景显式开启（高光与间接光观感差异）
 
 ## 已知差距（引擎/导入器层面）
 
@@ -62,7 +62,7 @@ python tools/gltf_import.py .deps/gltf-assets/glTF-Sample-Assets-main/Models/Spe
 
 ## 踩过的坑 / 注意
 
-- 本模型导入/渲染无告警。
+- 官方 HDRI 环境：Wide Street（CC0-1.0，env_intensity=1.00；仅 IBL 不开背景）
 
 <!-- 手动笔记开始（重生成时保留以下内容） -->
 

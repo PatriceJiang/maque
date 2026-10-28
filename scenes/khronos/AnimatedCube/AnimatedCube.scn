@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "AnimatedCube_0",
+      "name": "AnimatedCube",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,32 +83,75 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/AnimatedCube.mesh.json"
-        },
+          "name": "AnimatedCube_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/AnimatedCube.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "AnimatedCube",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 0.079,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5,
+              "base_color_texture": "textures/image0.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
         {
-          "type": "asset.PbrMaterial",
-          "name": "AnimatedCube",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 0.079,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5,
-          "base_color_texture": "textures/image0.png"
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/animation_AnimatedCube.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

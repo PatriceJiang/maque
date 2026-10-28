@@ -17,10 +17,12 @@
   · 不做图像编解码：PNG/JPEG 原样搬运（运行时 image 模块按 magic 解码）；
     其它编码（KTX2/BasisU/WebP）跳过并告警
   · 材质扩展：KHR_materials_{unlit,clearcoat,sheen,iridescence,specular,ior,anisotropy,
-    emissive_strength} → asset.PbrMaterial（只写非默认值）；transmission → alpha BLEND 近似。
+    emissive_strength} → asset.PbrMaterial（只写非默认值）；transmission → alpha BLEND 近似 +
+    transmission_factor/transmission_texture；volume.thicknessFactor → volume_thickness（>0 才写）；
+    dispersion → dispersion（>0 才写）。后三者是 shader 折射/色散近似的参数。
   · KHR 扩展材质贴图槽（plans/20 第 2 轮 + specular）：clearcoat / clearcoat_roughness / sheen_color /
     sheen_roughness / iridescence / iridescence_thickness / anisotropy 7 槽 + specular /
-    specular_color 2 槽 → 字符串字段。UV 近似复用 uv_scale/uv_offset
+    specular_color 2 槽 + transmission 1 槽 → 字符串字段。UV 近似复用 uv_scale/uv_offset
     （TEXCOORD_0；不支持这些槽的逐槽 texCoord/transform）。
   · glTF sampler 非默认时贴图路径追加 `#wrap=U,V&filter=nearest`（runtime 据此建 sampler）。
   · KHR_lights_punctual：`--scene` 时导入为 render.Light 实体（≤8 盏、方向光优先；node 世界变换 →
@@ -34,7 +36,21 @@
   · EXT_mesh_gpu_instancing：节点的 TRANSLATION/ROTATION(xyzw)/SCALE 实例 accessor → 每个 mesh
     primitive 展开 N 个实体（实例世界矩阵 = node 世界矩阵 × 实例 TRS）；>4096 警告并截断。
   · KHR_materials_diffuse_transmission → alpha BLEND 近似（opacity=clamp(1-0.7*factor,0.25,1)）；
-    KHR_materials_volume 的 attenuationColor+finite attenuationDistance → base_color.rgb 乘色调（薄壁近似）。
+    KHR_materials_volume 的 attenuationColor+finite attenuationDistance → base_color.rgb 乘色调（薄壁近似），
+    thicknessFactor（>0）→ volume_thickness；KHR_materials_dispersion 的 dispersion（>0）→ dispersion。
+  · 蒙皮 / morph（plans/22 §2.1，S1+S3）：JOINTS_0/WEIGHTS_0 → "joints"/"weights"（u16 语义；权重归一化
+    sum≈1）；有蒙皮的 primitive 用 vertex_layout 2（48+24B→stride 72）或 3（56+24B→stride 80），
+    vertices 行宽不变。primitive.targets → "morph":{default_weights,targets[{positions,normals}]}
+    （POSITION 必需、NORMAL 有则存、TANGENT 忽略；上限 8 个 target）。
+  · 骨架 / 动画（plans/22 §2.2/§2.3，S1+S2）：每个引用 skin 的节点一份 .skel.json（--scene 写
+    assets/skin/，否则 skin/；joint_names = 全场景唯一节点名，inverse_bind 列主序）；每个 animation
+    一份 .clip.json（--scene 写 assets/anim/，否则 anim/；track = node/path/interpolation/times/values，
+    按 (node, translation<rotation<scale<weights, 原 channel 序) 排序；pointer 通道跳过并汇总，
+    CUBICSPLINE 取关键帧 value 按 LINEAR 近似并计数）。
+  · 层级场景（plans/22 §3）：模型含 skins / animations / 任一 primitive.targets 时 --scene 输出 glTF
+    节点树 1:1 的嵌套 children（节点实体 = 本地 TRS；primitive 子实体 identity；蒙皮 primitive 实体放
+    场景根 + MeshRenderer.skin_path；有片段时追加 anim_player 实体）。无这三类特性的模型仍输出旧的
+    平级 + 世界烘焙结果（逐字节不变）。
 用法：
   python tools/gltf_import.py scene.gltf --out assets/imported
   python tools/gltf_import.py model.glb --out assets/imported --name hero
@@ -287,35 +303,64 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
         m["transmission_factor"] = tf
         approx = max(0.15, min(1.0, 1.0 - 0.85 * tf))
         m["opacity"] = min(float(m.get("opacity", 1.0)), approx)
-    # KHR_materials_diffuse_transmission 近似（乳浊半透）：alpha BLEND + opacity=clamp(1-0.7*factor,0.25,1)。
-    # 「不改 transmission 已有近似」：两者都存在时取 opacity 更小者（min）。
+    # KHR_materials_diffuse_transmission：**不透明的薄壁透光**（陶瓷/叶片/果皮本身不可见"透明"，
+    # 官方参考图是实心材质 + 背光透射）。旧版按 alpha BLEND 近似会把 teacup 变成幽灵玻璃——改为
+    # 写 diffuse_transmission_factor 供 shader 做背光透射项；alphaMode/opacity 保持原样。
     dt = exts.get("KHR_materials_diffuse_transmission") or {}
     try:
         dtf = float(dt.get("diffuseTransmissionFactor", 0.0) or 0.0)
     except (TypeError, ValueError):
         dtf = 0.0
     if dtf > 0.01:
-        m["alpha_mode"] = 2
-        approx = max(0.25, min(1.0, 1.0 - 0.7 * dtf))
-        m["opacity"] = min(float(m.get("opacity", 1.0)), approx)
-    # KHR_materials_volume：薄壁吸收色调近似——仅当 attenuationColor 存在且 attenuationDistance 有限时，
-    # base_color.rgb *= attenuationColor（不改已有 transmission alpha；无厚度/折射/散射模型）。
+        m["diffuse_transmission_factor"] = max(0.0, min(1.0, dtf))
+        dcol = dt.get("diffuseTransmissionColorFactor")
+        if isinstance(dcol, list) and len(dcol) == 3:
+            try:
+                cr, cg, cb = (max(0.0, min(1.0, float(x))) for x in dcol)
+                m["diffuse_transmission_color"] = {"x": cr, "y": cg, "z": cb}
+            except (TypeError, ValueError):
+                pass
+    # KHR_materials_volume：（第 24 轮）厚度/吸收/散射完整接入，替代旧的"base_color × attenuationColor"
+    # 薄壁色调近似：
+    #   thicknessFactor → volume_thickness（折射厚度）；thicknessTexture.G → volume_thickness_texture；
+    #   attenuationColor/attenuationDistance → attenuation_color / attenuation_distance（0=无限=无吸收），
+    #   shader 用 Beer-Lambert：T = exp(-(1-attenuationColor) * thickness / attenuationDistance)。
     vol = exts.get("KHR_materials_volume") or {}
+    try:
+        vol_thickness = float(vol.get("thicknessFactor", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        vol_thickness = 0.0
+    if vol_thickness > 0.0:
+        m["volume_thickness"] = vol_thickness
     ac = vol.get("attenuationColor")
-    ad = vol.get("attenuationDistance")
     if isinstance(ac, list) and len(ac) == 3:
         try:
-            adf = float(ad) if ad is not None else None
+            m["attenuation_color"] = {"x": float(ac[0]), "y": float(ac[1]), "z": float(ac[2])}
         except (TypeError, ValueError):
-            adf = None
-        if adf is not None and math.isfinite(adf) and adf > 0.0:
-            bc = m["base_color"]
-            def _tint(v):
-                return max(0.0, min(1.0, float(v)))
-            m["base_color"] = {"r": bc["r"] * _tint(ac[0]), "g": bc["g"] * _tint(ac[1]),
-                               "b": bc["b"] * _tint(ac[2]), "a": bc["a"]}
-            print(f"gltf_import: material '{m.get('name', '')}' KHR_materials_volume "
-                  f"attenuationColor → base_color 色调近似", file=sys.stderr)
+            pass
+    ad = vol.get("attenuationDistance")
+    try:
+        adf = float(ad) if ad is not None else None
+    except (TypeError, ValueError):
+        adf = None
+    if adf is not None and math.isfinite(adf) and adf > 0.0:
+        m["attenuation_distance"] = adf
+    # KHR_materials_volume_scatter（ScatteringSkull）：multiscatterColorFactor → 多次散射色（0=无散射）。
+    vs = exts.get("KHR_materials_volume_scatter") or {}
+    ms = vs.get("multiscatterColorFactor")
+    if isinstance(ms, list) and len(ms) == 3:
+        try:
+            m["multiscatter_color"] = {"x": float(ms[0]), "y": float(ms[1]), "z": float(ms[2])}
+        except (TypeError, ValueError):
+            pass
+    # KHR_materials_dispersion：dispersion > 0 写材质 dispersion（shader 色散近似；0=关闭，不写）。
+    dsp = exts.get("KHR_materials_dispersion") or {}
+    try:
+        disp = float(dsp.get("dispersion", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        disp = 0.0
+    if disp > 0.0:
+        m["dispersion"] = disp
 
     # glTF sampler → 贴图路径后缀（仅非默认；runtime 据此建 per-texture sampler）。
     # 默认 (repeat, repeat, linear) 不写 → 旧资产路径逐字节不变。
@@ -508,6 +553,20 @@ def material_from_gltf(js, mat, images_out, tex_dir, base_dir, buffers, name_reg
     if "KHR_materials_anisotropy" in exts:
         an2 = exts["KHR_materials_anisotropy"] or {}
         ext_tex_slots += [("anisotropy_texture", an2.get("anisotropyTexture"))]
+    if "KHR_materials_transmission" in exts:
+        # transmissionTexture：R = 透射率掩码（线性数据贴图，0=不透、1=全透；runtime 用 mips 非 sRGB）。
+        tr2 = exts["KHR_materials_transmission"] or {}
+        ext_tex_slots += [("transmission_texture", tr2.get("transmissionTexture"))]
+    if "KHR_materials_diffuse_transmission" in exts:
+        # diffuseTransmissionTexture：A = 透射率乘子（线性数据）；diffuseTransmissionColorTexture：
+        # RGB = 透射色（sRGB）。两者分别乘 factor / colorFactor（KHR 规范）。
+        dt2 = exts["KHR_materials_diffuse_transmission"] or {}
+        ext_tex_slots += [("diffuse_transmission_texture", dt2.get("diffuseTransmissionTexture")),
+                          ("diffuse_transmission_color_texture", dt2.get("diffuseTransmissionColorTexture"))]
+    if "KHR_materials_volume" in exts:
+        # thicknessTexture：G = 厚度乘子（线性数据；乘 thicknessFactor）。
+        vv = exts["KHR_materials_volume"] or {}
+        ext_tex_slots += [("volume_thickness_texture", vv.get("thicknessTexture"))]
     for field, tinfo in ext_tex_slots:
         slot = tex_slot(tinfo)
         if slot:
@@ -748,9 +807,272 @@ def _fit_camera_distance(center, bmin, bmax, dir_unit, fov_y_deg, aspect, margin
     return max(1e-4, dist)
 
 
-def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buffers=None):
-    """glTF 节点树 → maque .scn：每个 (node, primitive) 一个平级实体（世界变换烘焙进 local）。
+# ---- 蒙皮 / 骨架 / 动画资产（plans/22 §2）----
+CLIP_PATH_RANK = {"translation": 0, "rotation": 1, "scale": 2, "weights": 3}
+MORPH_TARGET_LIMIT = 8
 
+
+def _sanitize_file_base(name):
+    """文件名基名清洗：非 [字母数字._-] → '_'（确定性；避免路径/非法字符）。"""
+    base = "".join(ch if (ch.isalnum() or ch in "._-") else "_" for ch in str(name))
+    return base or "unnamed"
+
+
+def _unique_file_base(base, used):
+    """同名追加 _2/_3…（确定性：按遍历顺序）。"""
+    cand = base
+    k = 1
+    while cand in used:
+        k += 1
+        cand = f"{base}_{k}"
+    used.add(cand)
+    return cand
+
+
+def _identity_local():
+    """identity scene.Transform3D.local（层级模式下 primitive 子实体显式写全）。"""
+    return {"position": _vec3(0.0, 0.0, 0.0), "rotation": _vec3(0.0, 0.0, 0.0),
+            "scale": _vec3(1.0, 1.0, 1.0)}
+
+
+def _round_json_floats(v, nd=6):
+    """--compact：递归圆整 JSON 里的 float（int/bool/str 原样；与 mesh 顶点 6 位小数约定一致）。"""
+    if isinstance(v, float):
+        return round(v, nd)
+    if isinstance(v, list):
+        return [_round_json_floats(x, nd) for x in v]
+    if isinstance(v, dict):
+        return {k: _round_json_floats(x, nd) for k, x in v.items()}
+    return v
+
+
+def _write_json_file(path, obj, compact):
+    """派生资产 JSON 落盘（确定性：非 compact 排序键 + 2 缩进；compact 6 位小数 + 紧凑分隔符）。"""
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        if compact:
+            json.dump(_round_json_floats(obj), f, ensure_ascii=False, separators=(",", ":"))
+        else:
+            json.dump(obj, f, ensure_ascii=False, indent=2, sort_keys=True)
+        f.write("\n")
+
+
+def _node_unique_names(js):
+    """node index → 全场景唯一名（node.name 或 node<idx>；重名按文档顺序追加 #2/#3）。
+
+    场景实体名、.skel.json 的 joint_names、.clip.json 的 node 字段共用这一张表（plans/22 §3.2）。
+    """
+    used = set()
+    names = []
+    for idx, node in enumerate(js.get("nodes", [])):
+        node = node or {}
+        base = node.get("name") or f"node{idx}"
+        cand = base
+        k = 1
+        while cand in used:
+            k += 1
+            cand = f"{base}#{k}"
+        used.add(cand)
+        names.append(cand)
+    return names
+
+
+def _has_morph_targets(js):
+    return any(prim.get("targets") for mesh in js.get("meshes", [])
+               for prim in (mesh or {}).get("primitives", []))
+
+
+def emit_skeletons(js, buffers, skel_dir, node_names, prims_meta, compact, rel_prefix):
+    """每个引用 skin 的节点一份 .skel.json（plans/22 §2.2；返回 {node: 相对路径}, [文件路径]）。
+
+    文件名优先用该节点 mesh 的资产名（`<mesh_name>.skel.json`，与 plans/22 一致）；同一 mesh 被多个
+    蒙皮节点共享时（RecursiveSkeletons：84 个 skin 共用 1 个 mesh）追加节点名保证唯一。
+    joint_names 用全场景唯一节点名（= 场景实体名），inverse_bind 为列主序 4x4。
+    """
+    if not (js.get("skins") and node_names):
+        return {}, []
+    os.makedirs(skel_dir, exist_ok=True)
+    mesh_first = {}
+    for meta in prims_meta:
+        mesh_first.setdefault(meta["mi"], meta["mesh_name"])
+    nodes = js.get("nodes", [])
+    used = set()
+    by_node = {}
+    written = []
+    for ni, node in enumerate(nodes):
+        node = node or {}
+        si = node.get("skin")
+        mi = node.get("mesh")
+        if not isinstance(si, int) or not (0 <= si < len(js["skins"])):
+            continue
+        if not isinstance(mi, int):
+            continue                       # skin 只在带 mesh 的节点上生效
+        if mi not in mesh_first:
+            continue                       # 该 mesh 没有可导入的三角 primitive → 不需要骨架文件
+        sk = js["skins"][si] or {}
+        joints = sk.get("joints") or []
+        joint_names = []
+        for j in joints:
+            if isinstance(j, int) and 0 <= j < len(node_names):
+                joint_names.append(node_names[j])
+            else:
+                print(f"gltf_import: skin={si} 含非法关节节点下标 {j!r}（node={ni}）→ 用占位名",
+                      file=sys.stderr)
+                joint_names.append(f"node{j}")
+        acc_idx = sk.get("inverseBindMatrices")
+        ibm = []
+        if isinstance(acc_idx, int) and 0 <= acc_idx < len(js.get("accessors", [])):
+            for r in accessor_values(js, buffers, acc_idx):
+                row = [float(x) for x in r[:16]]
+                ibm.append(row + [0.0] * (16 - len(row)))
+            if len(ibm) != len(joint_names):
+                print(f"gltf_import: skin={si} inverseBindMatrices 数 {len(ibm)} != 关节数 "
+                      f"{len(joint_names)}（node={ni}）→ 截断/补 identity", file=sys.stderr)
+                while len(ibm) < len(joint_names):
+                    ibm.append(_mat_identity())
+                ibm = ibm[:len(joint_names)]
+        else:
+            ibm = [_mat_identity() for _ in joint_names]
+        base = _sanitize_file_base(mesh_first.get(mi, node_names[ni]))
+        if base in used:                   # 共享 mesh 的多个蒙皮节点（不同 skin）→ 加节点名区分
+            base = _sanitize_file_base(f"{mesh_first.get(mi, node_names[ni])}.{node_names[ni]}")
+        base = _unique_file_base(base, used)
+        rec = {"version": 1, "name": node_names[ni], "joint_names": joint_names,
+               "inverse_bind": ibm}
+        path = os.path.join(skel_dir, base + ".skel.json")
+        _write_json_file(path, rec, compact)
+        by_node[ni] = f"{rel_prefix}/{base}.skel.json"
+        written.append(path)
+        print(f"gltf_import: skeleton → {path} joints={len(joint_names)}")
+    return by_node, written
+
+
+def emit_clips(js, buffers, anim_dir, node_names, compact, rel_prefix):
+    """每个 animation 一份 .clip.json（plans/22 §2.3；返回 ([相对路径], [文件路径])）。
+
+    轨道排序 = (node 名, translation<rotation<scale<weights, 原 channel 序)；pointer 通道跳过并 stderr
+    汇总；CUBICSPLINE 取每关键帧 value（不取切线）按 LINEAR 近似并计数；无有效轨道的片段跳过。
+    """
+    animations = js.get("animations") or []
+    if not (animations and node_names):
+        return [], []
+    os.makedirs(anim_dir, exist_ok=True)
+    used = set()
+    rel_paths = []
+    written = []
+    skipped_pointer = 0
+    anim_with_pointer = 0
+    cubic = 0
+    for ai, anim in enumerate(animations):
+        anim = anim or {}
+        raw_name = anim.get("name") or f"animation{ai}"
+        tracks = []
+        anim_has_pointer = False
+        for ch_idx, ch in enumerate(anim.get("channels") or []):
+            ch = ch or {}
+            tgt = ch.get("target") or {}
+            ptr = ((tgt.get("extensions") or {}).get("KHR_animation_pointer") or {}).get("pointer")
+            if ptr is not None:
+                skipped_pointer += 1
+                anim_has_pointer = True
+                continue
+            path = tgt.get("path")
+            if path not in CLIP_PATH_RANK:
+                continue
+            ni = tgt.get("node")
+            if not isinstance(ni, int) or not (0 <= ni < len(node_names)):
+                print(f"gltf_import: 片段 '{raw_name}' 轨道目标节点非法 {ni!r} → 跳过", file=sys.stderr)
+                continue
+            samplers = anim.get("samplers") or []
+            si = ch.get("sampler")
+            if not isinstance(si, int) or not (0 <= si < len(samplers)):
+                continue
+            smp = samplers[si] or {}
+            in_acc, out_acc = smp.get("input"), smp.get("output")
+            if not isinstance(in_acc, int) or not isinstance(out_acc, int):
+                continue
+            try:
+                times = [float(r[0]) for r in accessor_values(js, buffers, in_acc)]
+                rows = [[float(x) for x in r] for r in accessor_values(js, buffers, out_acc)]
+            except (KeyError, IndexError, TypeError, ValueError):
+                print(f"gltf_import: 片段 '{raw_name}' channel {ch_idx} 采样数据无效 → 跳过",
+                      file=sys.stderr)
+                continue
+            if not times or not rows:
+                continue
+            interp = str(smp.get("interpolation") or "LINEAR").upper()
+            if interp == "CUBICSPLINE":
+                # 每关键帧 3 行（in-tangent, value, out-tangent）→ 只取中间 value
+                if len(rows) != 3 * len(times):
+                    print(f"gltf_import: 片段 '{raw_name}' channel {ch_idx} CUBICSPLINE 行数不符 "
+                          f"→ 跳过", file=sys.stderr)
+                    continue
+                rows = [rows[3 * k + 1] for k in range(len(times))]
+                cubic += 1
+                interp = "LINEAR"
+            elif interp not in ("LINEAR", "STEP"):
+                interp = "LINEAR"
+            if path == "weights":
+                # weights 通道：output 为 SCALAR，扁平值数 = 关键帧数 × mesh 的 morph target 数
+                flat = [x for r in rows for x in r]
+                if not flat or len(flat) % len(times):
+                    print(f"gltf_import: 片段 '{raw_name}' channel {ch_idx} weights 值数不是关键帧"
+                          f"整数倍 → 跳过", file=sys.stderr)
+                    continue
+                ncomp = len(flat) // len(times)
+                values = [flat[k * ncomp:(k + 1) * ncomp] for k in range(len(times))]
+            else:
+                if len(rows) != len(times):
+                    print(f"gltf_import: 片段 '{raw_name}' channel {ch_idx} 关键帧/值数不符 → 跳过",
+                          file=sys.stderr)
+                    continue
+                if path in ("translation", "scale"):
+                    if any(len(r) < 3 for r in rows):
+                        continue
+                    values = [r[:3] for r in rows]
+                else:                      # rotation：xyzw
+                    if any(len(r) < 4 for r in rows):
+                        continue
+                    values = [r[:4] for r in rows]
+            tracks.append((node_names[ni], CLIP_PATH_RANK[path], ch_idx, {
+                "node": node_names[ni], "path": path, "interpolation": interp,
+                "times": times, "values": values}))
+        if not tracks:
+            print(f"gltf_import: 跳过片段 '{raw_name}'（无有效轨道；pointer 通道已跳过）",
+                  file=sys.stderr)
+            continue
+        tracks.sort(key=lambda t: (t[0], t[1], t[2]))
+        duration = 0.0
+        for _, _, _, tr in tracks:
+            if tr["times"]:
+                duration = max(duration, tr["times"][-1])
+        base = _unique_file_base(_sanitize_file_base(raw_name), used)
+        rec = {"version": 1, "name": raw_name, "duration": duration,
+               "tracks": [tr for _, _, _, tr in tracks]}
+        path = os.path.join(anim_dir, base + ".clip.json")
+        _write_json_file(path, rec, compact)
+        rel_paths.append(f"{rel_prefix}/{base}.clip.json")
+        written.append(path)
+        print(f"gltf_import: clip → {path} tracks={len(tracks)} duration={duration:g}")
+        if anim_has_pointer:
+            anim_with_pointer += 1
+    if skipped_pointer:
+        print(f"gltf_import: 跳过 KHR_animation_pointer 通道 {skipped_pointer} 条"
+              f"（片段 {anim_with_pointer} 个）", file=sys.stderr)
+    if cubic:
+        print(f"gltf_import: CUBICSPLINE 通道 {cubic} 条 → 取关键帧 value 按 LINEAR 近似",
+              file=sys.stderr)
+    return rel_paths, written
+
+
+def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buffers=None,
+               hierarchy=False, node_names=None, skel_paths=None, clip_paths=None):
+    """glTF 节点树 → maque .scn。
+
+    默认（hierarchy=False，保持旧行为）：每个 (node, primitive) 一个**平级实体**（世界变换烘焙进 local）。
+    hierarchy=True（模型有 skins / animations / morph targets 时自动启用，plans/22 §3.2）：
+    每个 glTF node → 实体（`scene.Transform3D` = 节点本地 TRS）+ 嵌套 `children`；
+    带 mesh 的节点每个 primitive 生成 identity 子实体；蒙皮 primitive 实体放**场景根** +
+    `MeshRenderer.skin_path`（忽略节点世界变换）；有片段时追加 `anim_player` 根实体。
     camera（可选，来自 CLI）：{distance_scale, position[3], target[3], fov}；
     全空/None 时输出与旧版自动取景逐字节一致。
     KHR_lights_punctual：节点引用 → render.Light 实体（最多 8 盏、方向光优先、强度观感归一化），
@@ -829,8 +1151,112 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buff
         for ci in node.get("children", []):
             walk(ci, world, depth + 1)
 
-    for ni in scn_nodes:
-        walk(ni, _mat_identity())
+    # ---- 层级模式（plans/22 §3.2）：glTF node 树 1:1；skinned primitive 实体放场景根 ----
+    skinned_entities = []
+    root_node_entities = []
+    mesh_entity_count = [0]
+
+    def _accum_bounds(w, meta):
+        """世界矩阵 × mesh 局部 bounds 的 8 角点 → 场景 AABB（与平级模式同一取景数学）。"""
+        for i in range(8):
+            sx = meta["bounds_max"][0] if i & 1 else meta["bounds_min"][0]
+            sy = meta["bounds_max"][1] if i & 2 else meta["bounds_min"][1]
+            sz = meta["bounds_max"][2] if i & 4 else meta["bounds_min"][2]
+            wp = _xform_point(w, [sx, sy, sz])
+            for k in range(3):
+                bounds_min[k] = min(bounds_min[k], wp[k])
+                bounds_max[k] = max(bounds_max[k], wp[k])
+
+    def walk_h(ni, parent_world, depth=0):
+        nonlocal hidden_nodes
+        if depth > 128:
+            return None
+        node = nodes[ni] or {}
+        node_exts = node.get("extensions") or {}
+        # KHR_node_visibility：visible=false 的节点及其整棵子树不生成实体（灯光/mesh 都不）
+        if (node_exts.get("KHR_node_visibility") or {}).get("visible", True) is False:
+            hidden_nodes += 1
+            return None
+        local = _node_matrix(node)
+        world = _mat_mul(parent_world, local)
+        ent_name = node_names[ni] if node_names else (node.get("name") or f"node{ni}")
+        # KHR_lights_punctual / camera：仍按节点**世界**变换烘焙到独立根实体
+        lref = (node_exts.get("KHR_lights_punctual") or {}).get("light")
+        if isinstance(lref, int) and 0 <= lref < len(gltf_lights):
+            light_refs.append((lref, world, ent_name))
+        cref = node.get("camera")
+        if isinstance(cref, int):
+            camera_refs.append((cref, world, ent_name))
+        pos, rot, scl = _decompose(local)
+        ent = {"name": ent_name, "components": [
+            {"type": "scene.Transform3D", "local": {
+                "position": _vec3(*pos), "rotation": _vec3(*rot), "scale": _vec3(*scl)}}]}
+        children = []
+        mi = node.get("mesh")
+        skin_idx = node.get("skin")
+        skel_rel = skel_paths.get(ni) if skel_paths else None
+        inst_mats = None
+        if mi is not None and buffers is not None and node_exts.get("EXT_mesh_gpu_instancing"):
+            inst_mats = _instance_matrices(js, buffers, node, ent_name)
+            if not inst_mats:
+                inst_mats = None
+        if mi is not None:
+            for meta in prims_meta:
+                if meta["mi"] != mi:
+                    continue
+                if inst_mats is None:
+                    variants = [(None, world, None)]
+                else:
+                    variants = [(i, _mat_mul(world, im), im) for i, im in enumerate(inst_mats)]
+                for inst_idx, w, im in variants:
+                    _accum_bounds(w, meta)
+                    mesh_name = (f"{ent_name}_{meta['pi']}" if inst_idx is None
+                                 else f"{ent_name}_{inst_idx}_{meta['pi']}")
+                    if im is None:
+                        ent_local = _identity_local()
+                    else:                  # 实例 TRS 作为子实体本地变换（node 变换已在父实体）
+                        ipos, irot, iscl = _decompose(im)
+                        ent_local = {"position": _vec3(*ipos), "rotation": _vec3(*irot),
+                                     "scale": _vec3(*iscl)}
+                    mr = {"type": "render.MeshRenderer",
+                          "mesh_path": "assets/" + meta["mesh_name"] + ".mesh.json"}
+                    # 蒙皮 primitive：忽略节点世界变换（glTF 规范）→ 场景根 + identity + skin_path
+                    skinned_here = bool(meta.get("skinned") and isinstance(skin_idx, int) and skel_rel)
+                    if skinned_here:
+                        mr["skin_path"] = skel_rel
+                        ent_local = _identity_local()
+                    comps = [{"type": "scene.Transform3D", "local": ent_local}, mr]
+                    if meta.get("material"):
+                        comps.append(meta["material"])
+                    mesh_ent = {"name": mesh_name, "components": comps}
+                    mesh_entity_count[0] += 1
+                    if skinned_here:
+                        skinned_entities.append(mesh_ent)
+                    else:
+                        children.append(mesh_ent)
+        for ci in node.get("children", []):
+            child_ent = walk_h(ci, world, depth + 1)
+            if child_ent is not None:
+                children.append(child_ent)
+        if children:
+            ent["children"] = children
+        return ent
+
+    if hierarchy:
+        for ni in scn_nodes:
+            root_ent = walk_h(ni, _mat_identity())
+            if root_ent is not None:
+                root_node_entities.append(root_ent)
+        entities = root_node_entities + skinned_entities
+        if mesh_entity_count[0] == 0:
+            # 纯灯光/visibility/pointer 场景没有 mesh：给自动机位一个单位包围盒兜底
+            bounds_min = [-1.0, -1.0, -1.0]
+            bounds_max = [1.0, 1.0, 1.0]
+            print("gltf_import: hierarchy 场景无 mesh 实体 → 相机取景回退单位包围盒",
+                  file=sys.stderr)
+    else:
+        for ni in scn_nodes:
+            walk(ni, _mat_identity())
     if hidden_nodes:
         print(f"gltf_import: KHR_node_visibility=false 跳过 {hidden_nodes} 个隐藏节点（含整棵子树）",
               file=sys.stderr)
@@ -941,6 +1367,14 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buff
     ]}
     # 有 glTF 灯光时用导入灯光替代默认太阳（避免双主光）；否则保持旧行为（零漂移）。
     scene_entities = ([cam] + light_entities + entities) if light_entities else ([cam, sun] + entities)
+    # 层级模式 + 有片段：追加 anim_player 根实体（scn.AnimationPlayer.clips，plans/22 §3.2 第 5 条）
+    if hierarchy and clip_paths:
+        scene_entities.append({
+            "name": "anim_player",
+            "components": [{"type": "scn.AnimationPlayer", "clips": list(clip_paths),
+                            "clip_index": 0, "playing": True, "loop": True,
+                            "speed": 1.0, "time": 0.0}],
+        })
     scn = {"title": name, "width": 1280, "height": 720, "views": 1,
            "entities": scene_entities}
     dest = os.path.join(out_dir, name + ".scn")
@@ -955,12 +1389,28 @@ def emit_scene(js, out_dir, name, prims_meta, scene_mats=None, camera=None, buff
         f.write("\n")
     print(f"gltf_import: scene → {dest} entities={len(entities)} lights={len(light_entities)} "
           f"hidden={hidden_nodes} bounds={bounds_min}..{bounds_max}")
+    if hierarchy:
+        print(f"gltf_import: hierarchy nodes={len(root_node_entities)} "
+              f"skinned_meshes={len(skinned_entities)} clips={len(clip_paths or [])}")
     return dest
 
 
 def _round_mesh(m):
     m = dict(m)
     m['vertices'] = [[round(float(v), 6) for v in row] for row in m['vertices']]
+    # plans/22 §2.1：--compact 时 joints（int 保持）/ weights / morph 增量同样 6 位小数圆整。
+    if 'joints' in m:
+        m['joints'] = [[int(j) for j in row] for row in m['joints']]
+    if 'weights' in m:
+        m['weights'] = [[round(float(v), 6) for v in row] for row in m['weights']]
+    if 'morph' in m:
+        morph = dict(m['morph'])
+        morph['default_weights'] = [round(float(v), 6) for v in morph['default_weights']]
+        morph['targets'] = [{
+            "positions": [[round(float(v), 6) for v in row] for row in t["positions"]],
+            "normals": [[round(float(v), 6) for v in row] for row in t.get("normals", [])],
+        } for t in morph['targets']]
+        m['morph'] = morph
     return m
 
 
@@ -973,7 +1423,13 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, 
     tex_name_registry = {}
     meshes_out = []
     prims_meta = []
+    # plans/22 §3.1：hierarchy = skins / animations / 任一 primitive.targets 三者之一存在。
+    # 三者都不存在 → 保持旧平级 + 世界烘焙输出（逐字节不变）。
+    hierarchy = (bool(js.get("skins")) or bool(js.get("animations"))
+                 or _has_morph_targets(js))
+    node_names = _node_unique_names(js) if hierarchy else []
     for mi, mesh in enumerate(js.get("meshes", [])):
+        mesh_weights = (mesh or {}).get("weights")
         for pi, prim in enumerate(mesh.get("primitives", [])):
             mode = prim.get("mode", MODE_TRIANGLES)
             if mode != MODE_TRIANGLES:
@@ -1017,9 +1473,95 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, 
             if mat_idx >= 0:
                 mats.append(material_from_gltf(js, js["materials"][mat_idx], images,
                                                tex_dir, base_dir, buffers, tex_name_registry))
+            # ---- 蒙皮顶点（plans/22 §2.1）：JOINTS_0/WEIGHTS_0 → joints/weights（与 vertices 等长）----
+            joints = None
+            weights = None
+            if "JOINTS_1" in attrs or "WEIGHTS_1" in attrs:
+                print(f"gltf_import: 忽略 JOINTS_1/WEIGHTS_1（>4 影响；mesh={mi} prim={pi}，"
+                      f"plans/22 只支持单组）", file=sys.stderr)
+            if "JOINTS_0" in attrs and "WEIGHTS_0" in attrs:
+                jrows = accessor_values(js, buffers, attrs["JOINTS_0"])
+                wrows = accessor_values(js, buffers, attrs["WEIGHTS_0"])
+                wsc = accessor_norm_scale(js, attrs["WEIGHTS_0"])
+                if len(jrows) != n or len(wrows) != n:
+                    print(f"gltf_import: JOINTS_0/WEIGHTS_0 元素数 {len(jrows)}/{len(wrows)} != "
+                          f"顶点数 {n}（mesh={mi} prim={pi}）→ 忽略蒙皮数据", file=sys.stderr)
+                else:
+                    joints, weights = [], []
+                    zero_w = 0
+                    for jr, wr in zip(jrows, wrows):
+                        jrow = [int(x) for x in jr[:4]] + [0] * max(0, 4 - len(jr))
+                        joints.append(jrow[:4])
+                        wrow = [float(x) * wsc for x in wr[:4]] + [0.0] * max(0, 4 - len(wr))
+                        wrow = wrow[:4]
+                        s = sum(wrow)
+                        if s > 1e-8:
+                            wrow = [x / s for x in wrow]      # 归一化：sum≈1
+                        else:
+                            zero_w += 1
+                            wrow = [1.0, 0.0, 0.0, 0.0]       # 全 0 权重 → 退化到 joint0
+                        weights.append(wrow)
+                    if zero_w:
+                        print(f"gltf_import: 蒙皮权重全 0 的顶点 {zero_w} 个（mesh={mi} prim={pi}）"
+                              f"→ 退化为 joint0 权重 1", file=sys.stderr)
+            elif "JOINTS_0" in attrs or "WEIGHTS_0" in attrs:
+                print(f"gltf_import: JOINTS_0/WEIGHTS_0 缺一（mesh={mi} prim={pi}）→ 忽略蒙皮数据",
+                      file=sys.stderr)
+            # ---- morph targets（plans/22 §2.1 / S3）：每个 target 只存 POSITION/NORMAL 增量 ----
+            morph = None
+            targets = prim.get("targets") or []
+            if targets:
+                if len(targets) > MORPH_TARGET_LIMIT:
+                    print(f"gltf_import: mesh={mi} prim={pi} morph target 数 {len(targets)} > "
+                          f"{MORPH_TARGET_LIMIT} → 忽略后 {len(targets) - MORPH_TARGET_LIMIT} 个",
+                          file=sys.stderr)
+                    targets = targets[:MORPH_TARGET_LIMIT]
+                target_list = []
+                tangent_skipped = 0
+                for t in targets:
+                    t = t or {}
+                    if "TANGENT" in t:
+                        tangent_skipped += 1
+                    if "POSITION" in t:
+                        tpos = accessor_values(js, buffers, t["POSITION"])
+                        if len(tpos) != n:
+                            print(f"gltf_import: morph target POSITION 元素数 {len(tpos)} != 顶点数 "
+                                  f"{n}（mesh={mi} prim={pi}）→ 零增量占位", file=sys.stderr)
+                            tpos = [[0.0, 0.0, 0.0]] * n
+                    else:
+                        print(f"gltf_import: morph target 缺 POSITION（mesh={mi} prim={pi}）"
+                              f"→ 零增量占位", file=sys.stderr)
+                        tpos = [[0.0, 0.0, 0.0]] * n
+                    tnor = []
+                    if "NORMAL" in t:
+                        tnor = accessor_values(js, buffers, t["NORMAL"])
+                        if len(tnor) != n:
+                            print(f"gltf_import: morph target NORMAL 元素数 {len(tnor)} != 顶点数 "
+                                  f"{n}（mesh={mi} prim={pi}）→ 忽略法线增量", file=sys.stderr)
+                            tnor = []
+                    target_list.append({
+                        "positions": [[float(x) for x in r[:3]] for r in tpos],
+                        "normals": [[float(x) for x in r[:3]] for r in tnor]})
+                dw = list(mesh_weights) if isinstance(mesh_weights, list) else []
+                if len(dw) != len(target_list):
+                    if dw:
+                        print(f"gltf_import: mesh={mi} weights 长度 {len(dw)} != target 数 "
+                              f"{len(target_list)} → 截断/补 0", file=sys.stderr)
+                    dw = (dw + [0.0] * len(target_list))[:len(target_list)]
+                morph = {"default_weights": [float(x) for x in dw], "targets": target_list}
+                if tangent_skipped:
+                    print(f"gltf_import: mesh={mi} prim={pi} 忽略 {tangent_skipped} 个 morph TANGENT "
+                          f"增量（shader 用屏幕导数构造切线基）", file=sys.stderr)
             # 顶点布局 v1：有 COLOR_0 或材质任一贴图用 TEXCOORD_1 → 14 float / 56B
             # （pos3|normal3|color4|uv0_2|uv1_2）；否则维持旧布局（12 float / 48B，逐字节不变）。
+            # 蒙皮另加 24B（joints u16x4 + weights f32x4）：layout 2 = 48+24 / layout 3 = 56+24。
             layout1 = colors is not None or bool(mats and mats[0].get("uv1_mask", 0))
+            if joints is not None:
+                vertex_layout = 3 if layout1 else 2
+                vertex_stride = 80 if layout1 else 72
+            else:
+                vertex_layout = 1 if layout1 else 0
+                vertex_stride = 56 if layout1 else 48
             verts = []
             for i in range(n):
                 p, nr, uv = positions[i], normals[i], uvs[i]
@@ -1032,20 +1574,34 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, 
                 else:
                     verts.append([p[0], p[1], p[2], nr[0], nr[1], nr[2],
                                   1.0, 0.0, 0.0, 1.0, uv[0], uv[1]])
+            if repair_inside_out_mesh(verts, indices):
+                nm = name if len(js.get("meshes", [])) == 1 and pi == 0 else f"{name}_{mi}_{pi}"
+                print(f"gltf_import: mesh '{nm}' 闭合网格法线/绕序一致朝内 → 已翻正"
+                      f"（法线取反 + 三角形绕序反转）", file=sys.stderr)
             xs = [p[0] for p in positions]; ys = [p[1] for p in positions]; zs = [p[2] for p in positions]
             mesh_name = name if len(js.get("meshes", [])) == 1 and pi == 0 else f"{name}_{mi}_{pi}"
-            meshes_out.append({
+            mesh_rec = {
                 "name": mesh_name,
-                "vertex_stride": 56 if layout1 else 48,
-                "vertex_layout": 1 if layout1 else 0,
+                "vertex_stride": vertex_stride,
+                "vertex_layout": vertex_layout,
                 "vertices": verts,
                 "indices": indices,
                 "bounds_min": [min(xs), min(ys), min(zs)],
                 "bounds_max": [max(xs), max(ys), max(zs)],
                 "materials": mats,
-            })
+            }
+            # 追加字段全部在尾部（紧凑输出时排在 materials 之后）；缺失 = 非蒙皮/非 morph，
+            # 旧模型输出逐字节不变（plans/22 §2.1）。
+            if joints is not None:
+                mesh_rec["joints"] = joints
+                mesh_rec["weights"] = weights
+            if morph is not None:
+                mesh_rec["morph"] = morph
+            meshes_out.append(mesh_rec)
             prims_meta.append({"mi": mi, "pi": pi, "mesh_name": mesh_name,
                                "material": mats[0] if mats else None,
+                               "skinned": joints is not None,
+                               "morph": morph is not None,
                                "bounds_min": [min(xs), min(ys), min(zs)],
                                "bounds_max": [max(xs), max(ys), max(zs)]})
     if not meshes_out:
@@ -1062,9 +1618,84 @@ def import_gltf(path, out_dir, name=None, emit_scene_flag=False, compact=False, 
                 json.dump(m, f, ensure_ascii=False, indent=2, sort_keys=True)
             f.write("\n")
         written.append(dest)
+    # ---- 骨架 / 动画派生资产（plans/22 §2.2/§2.3）：有 skin/animation 才写；--scene 时放 assets/ 下 ----
+    skin_dir = os.path.join(out_dir, "assets", "skin") if emit_scene_flag else os.path.join(out_dir, "skin")
+    anim_dir = os.path.join(out_dir, "assets", "anim") if emit_scene_flag else os.path.join(out_dir, "anim")
+    skel_paths, _skel_written = emit_skeletons(
+        js, buffers, skin_dir, node_names, prims_meta, compact,
+        "assets/skin" if emit_scene_flag else "skin")
+    clip_paths, _clip_written = emit_clips(
+        js, buffers, anim_dir, node_names, compact,
+        "assets/anim" if emit_scene_flag else "anim")
     if emit_scene_flag:
-        emit_scene(js, out_dir, name, prims_meta, camera=camera, buffers=buffers)
+        emit_scene(js, out_dir, name, prims_meta, camera=camera, buffers=buffers,
+                   hierarchy=hierarchy, node_names=node_names,
+                   skel_paths=skel_paths, clip_paths=clip_paths)
     return written, sorted(images)
+
+
+def repair_inside_out_mesh(verts, indices):
+    """闭合实体网格若法线/绕序一致朝内 → 就地翻正（法线取反 + 每个三角形绕序反转），返回 True。
+
+    为什么：glTF-Sample-Assets 里存在 "实心球/实体被整体做成内表面" 的资产（如 DirectionalLight 的
+    三个测试球：源 NORMAL 相对球心一致朝内、三角形绕序也随之内向）。单面材质（doubleSided=false）下
+    正确渲染器会剔掉外表面而只剩内表面：法线朝背 → 平行光只在轮廓掠射处点亮、且阴影贴图把远面判成
+    被近面遮挡 → 整颗球发黑（"DirectionalLight 效果错误"）。
+
+    判定很保守（避免误伤合法的"内表面"资产：房间内壁 Sponza、天空穹顶 VirtualCity 等）：
+      ① 顶点数 ≥ 64、三角形数 ≥ 32；
+      ② 顶点法线相对包围盒中心的平均 cos < -0.75（几乎全部朝内）；
+      ③ 无向边中"恰好被 2 个三角形共享"的比例 ≥ 0.98（近似闭合实体）。
+    """
+    nv = len(verts)
+    idx = indices
+    if nv < 64 or len(idx) < 96:
+        return False
+    pos = [(v[0], v[1], v[2]) for v in verts]
+    nor = [(v[3], v[4], v[5]) for v in verts]
+    mn = [min(p[i] for p in pos) for i in range(3)]
+    mx = [max(p[i] for p in pos) for i in range(3)]
+    c = [(mn[i] + mx[i]) * 0.5 for i in range(3)]
+    dot_sum = 0.0
+    dot_cnt = 0
+    for p, q in zip(pos, nor):
+        r = (p[0] - c[0], p[1] - c[1], p[2] - c[2])
+        lr = math.sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2])
+        ln = math.sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2])
+        if lr < 1e-9 or ln < 1e-9:
+            continue
+        dot_sum += (r[0] * q[0] + r[1] * q[1] + r[2] * q[2]) / (lr * ln)
+        dot_cnt += 1
+    if dot_cnt < 64:
+        return False
+    avg_cos = dot_sum / dot_cnt
+    if avg_cos >= -0.75:
+        return False
+    # 闭合性（无向边计数；顶点按坐标量化合并，容忍 UV 缝处的重复顶点）
+    key = {}
+    q_pos = [None] * nv
+    for i, p in enumerate(pos):
+        k = (round(p[0], 5), round(p[1], 5), round(p[2], 5))
+        q_pos[i] = key.setdefault(k, len(key))
+    edges = {}
+    for t in range(0, len(idx) - 2, 3):
+        a, b, d = q_pos[idx[t]], q_pos[idx[t + 1]], q_pos[idx[t + 2]]
+        for e0, e1 in ((a, b), (b, d), (d, a)):
+            e = (e0, e1) if e0 < e1 else (e1, e0)
+            edges[e] = edges.get(e, 0) + 1
+    if not edges:
+        return False
+    shared2 = sum(1 for v in edges.values() if v == 2)
+    if shared2 / len(edges) < 0.98:
+        return False
+    # 翻正：法线取反 + 每个三角形绕序反转
+    for v in verts:
+        v[3] = -v[3]
+        v[4] = -v[4]
+        v[5] = -v[5]
+    for t in range(0, len(idx) - 2, 3):
+        idx[t + 1], idx[t + 2] = idx[t + 2], idx[t + 1]
+    return True
 
 
 def _parse_vec3(text):
@@ -1084,7 +1715,8 @@ def main(argv):
     ap.add_argument("--out", required=True, help="输出目录")
     ap.add_argument("--name", default=None, help="输出基名（默认取输入文件名）")
     ap.add_argument("--scene", action="store_true",
-                    help="额外生成 <name>.scn（glTF 节点树 → 平级实体，含相机/方向光；可直接用 player 打开）")
+                    help="额外生成 <name>.scn（glTF 节点树；含 skins/animations/morph 时输出层级 children + "
+                         "anim_player，否则旧的平级烘焙实体；含相机/方向光；可直接用 player 打开）")
     ap.add_argument("--compact", action="store_true",
                     help="网格 JSON 紧凑输出（大模型显著减小体积，仍可被运行时解析）")
     # 相机 CLI（只对 --scene 生效；迁移脚本用于自动取景微调 / 手动机位）

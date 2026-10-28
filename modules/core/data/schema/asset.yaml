@@ -331,6 +331,26 @@
         # KHR_materials_transmission 的 transmissionFactor（近似渲染用：shader 做 Fresnel 视角 alpha，
         # gfx 据此把玻璃画两遍：背面→正面；也用于光栅化近似强度）。
         - { name: transmission_factor, type: float, default: 0.0F }
+        # KHR_materials_diffuse_transmission：不透明材质 + 背光透射（0..1；陶瓷/叶片/果皮，不是"透明"；
+        # 旧版 alpha BLEND 近似会把 teacup 变幽灵玻璃，已改为 shader 背光项）。
+        - { name: diffuse_transmission_factor, type: float, default: 0.0F }
+        - { name: diffuse_transmission_color, type: math.Vec3, default: "{1.0F, 1.0F, 1.0F}" }
+        # diffuseTransmissionTexture.A（线性乘子）与 diffuseTransmissionColorTexture.RGB（sRGB 透射色）
+        - { name: diffuse_transmission_texture, type: string, default: "" }
+        - { name: diffuse_transmission_color_texture, type: string, default: "" }
+        # KHR_materials_volume / KHR_materials_transmission / KHR_materials_dispersion（尾部追加）：
+        # volume_thickness = volume.thicknessFactor（折射厚度近似）；dispersion = dispersion 扩展值；
+        # transmission_texture = transmissionTexture 路径（R=透射率掩码：0=不透、1=全透）。
+        - { name: volume_thickness, type: float, default: 0.0F }
+        - { name: dispersion, type: float, default: 0.0F }
+        - { name: transmission_texture, type: string, default: "" }
+        # KHR_materials_volume（第 24 轮完整接入）：attenuationColor/Distance → Beer-Lambert 吸收
+        # （distance 0 = 无限/无吸收）；thicknessTexture.G → 厚度乘子；KHR_materials_volume_scatter 的
+        # multiscatterColorFactor → 多次散射色（0 = 无散射）。
+        - { name: attenuation_color, type: math.Vec3, default: "{1.0F, 1.0F, 1.0F}" }
+        - { name: attenuation_distance, type: float, default: 0.0F }
+        - { name: multiscatter_color, type: math.Vec3, default: "{0.0F, 0.0F, 0.0F}" }
+        - { name: volume_thickness_texture, type: string, default: "" }
     - struct: Scene
       fields:
         - { name: name, type: string }

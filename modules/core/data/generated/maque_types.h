@@ -1787,6 +1787,17 @@ struct PbrMaterial {
     float normal_uv_rotation = 0.0F;
     bool alpha_mask_in_blend = false;
     float transmission_factor = 0.0F;
+    float diffuse_transmission_factor = 0.0F;
+    math::Vec3 diffuse_transmission_color = {1.0F, 1.0F, 1.0F};
+    std::string diffuse_transmission_texture = "";
+    std::string diffuse_transmission_color_texture = "";
+    float volume_thickness = 0.0F;
+    float dispersion = 0.0F;
+    std::string transmission_texture = "";
+    math::Vec3 attenuation_color = {1.0F, 1.0F, 1.0F};
+    float attenuation_distance = 0.0F;
+    math::Vec3 multiscatter_color = {0.0F, 0.0F, 0.0F};
+    std::string volume_thickness_texture = "";
 };
 
 struct SkeletonData {
@@ -2133,6 +2144,7 @@ struct MeshRenderer {
     bool visible = true;
     uint32_t culling_mask = 4294967295;
     maque::EntityRef layer;
+    std::string skin_path = "";
 };
 
 struct MotionStreak {
@@ -2310,6 +2322,8 @@ struct AnimationPlayer {
     bool loop = true;
     bool playing = true;
     float duration = 0.0F;
+    std::vector<std::string> clips;
+    int32_t clip_index = 0;
 };
 
 struct Button {
@@ -2406,6 +2420,8 @@ struct Scene {
     float env_highlight = 1.0F;
     float env_rotation = 0.0F;
     std::string env_texture = "";
+    bool env_background = true;
+    std::string env_cubemap = "";
     int32_t msaa_samples = 0;
     float gravity_y = -900.0F;
     float restitution = 0.86F;

@@ -92,9 +92,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -109,7 +109,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -144,9 +151,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_ThicknessFac_1.5",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -161,7 +168,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.5,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -196,9 +210,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_ThicknessFac_2.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -213,7 +227,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 2.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -248,9 +269,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_ThicknessFac_0.50",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -265,7 +286,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.5,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -300,9 +328,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_ThicknessFac_0.25",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -317,7 +345,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 0.25,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -403,9 +438,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -420,7 +455,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -455,9 +497,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -472,7 +514,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -507,9 +556,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -524,7 +573,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -559,9 +615,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -576,7 +632,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -611,9 +674,9 @@
           "type": "asset.PbrMaterial",
           "name": "R2_and_R4_ThicknessFac_1.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -628,7 +691,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -663,9 +733,9 @@
           "type": "asset.PbrMaterial",
           "name": "R3_ThicknessTex_Mat",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -680,7 +750,15 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 2.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0,
+          "volume_thickness_texture": "textures/ThicknessTexture.png"
         }
       ]
     },
@@ -715,9 +793,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_1.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -732,7 +810,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 1.0
         }
       ]
     },
@@ -767,9 +852,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_1.5",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -784,7 +869,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 0.6666666667
         }
       ]
     },
@@ -819,9 +911,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_2.0",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -836,7 +928,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 0.5
         }
       ]
     },
@@ -871,9 +970,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_0.50",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -888,7 +987,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 2.0
         }
       ]
     },
@@ -923,9 +1029,9 @@
           "type": "asset.PbrMaterial",
           "name": "R5_Attenuation_0.25",
           "base_color": {
-            "r": 0.1,
-            "g": 0.5,
-            "b": 0.9,
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
             "a": 1.0
           },
           "metallic": 0.0,
@@ -940,7 +1046,14 @@
           "alpha_mode": 2,
           "alpha_cutoff": 0.5,
           "transmission_factor": 1.0,
-          "opacity": 0.15000000000000002
+          "opacity": 0.15000000000000002,
+          "volume_thickness": 1.0,
+          "attenuation_color": {
+            "x": 0.1,
+            "y": 0.5,
+            "z": 0.9
+          },
+          "attenuation_distance": 4.0
         }
       ]
     },

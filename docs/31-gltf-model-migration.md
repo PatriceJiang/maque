@@ -19,8 +19,8 @@
 | 批量 | `python tools/migrate_gltf_models.py`：选主变体 → 导入 → headless 截图 → 定量对比 → 写逐模型 README → 重写总索引 + `manifest.json`；单模型失败不中断整批 |
 | 本批结果 | **148/148 成功**（149 − 手调 ToyCar）；0 blocked、0 failed；整批 472.3s（≈7.9 min，平均 3.2s/模型）；派生资产 ≈983 MB（不入库）；差异分布与 Top 见 §10 |
 | 入库策略 | 入库：`.scn`、`preview.jpg`（800×450）、`README.md`、`compare.json`、`manifest.json`；**不入库**：`assets/`、`textures/`、`preview.png`（派生资产，从 `.deps` 一条命令重生成；入库体积 ≈18.4 MB，约为派生资产的 1.9%） |
-| 对比 | 与官方 `screenshot/` **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio/软阴影/不同机位/透明背景），maque 有 equirect envmap/IBL（`.hdr` RGBE / **EXR** / PNG/JPEG，**GGX 粗糙度预过滤 mip + 漫反射 irradiance**、可见天空背景），但无 cubemap、真实 transmission、软阴影、动画骨骼。自动指标只用于**筛查**，最终以人工看 preview + 参考图并记录差异归因为准 |
-| 当前主要差距 | 真实 transmission/volume（现为 alpha 近似）、动画/骨骼/morph、KTX2/meshopt、cubemap 环境贴图 —— 详见 §5 与 §11 |
+| 对比 | 与官方 `screenshot/` **不是像素级 pass/fail**：官方图多为离线渲染（HDRI studio/软阴影/不同机位/透明背景），maque 有 equirect/cubemap envmap IBL（`.hdr` RGBE / **EXR** / PNG/JPEG，**GGX 粗糙度预过滤 mip + 漫反射 irradiance**、可见天空背景），但无真实 transmission、软阴影。自动指标只用于**筛查**，最终以人工看 preview + 参考图并记录差异归因为准 |
+| 当前主要差距 | 真实体积 transmission/volume（现为屏幕空间折射近似）、KTX2/meshopt、`KHR_animation_pointer`（**动画/骨骼/morph 已由第 29 轮支持**，见 §5.4）—— 详见 §5 与 §11 |
 | 确定性 | 同一输入两次导入**逐字节一致**；同机同构建、同场景同帧两次 `--shot` 的 PNG **SHA256 相同**（已实测）；流水线固定 `--compact`（与默认输出有 6 位小数舍入差异） |
 | 一键复现 | 见 §3；干净 clone 后恢复派生资产的唯一命令：`python tools/migrate_gltf_models.py --force`（会重写 `.scn`，手调模型须排除） |
 | 逐模型对比报告 | `reports/khronos-comparison/index.html`（149 个模型官方参考图 **large 优先** vs 迁移预览，左右对比 + 指标 + 差距 + 人工复核；`python tools/make_migration_report.py` 可重生成） |
@@ -32,9 +32,10 @@
 ### 1.1 范围
 
 - **只做**：`scenes/khronos/` 下的迁移产物 + 本文档 + 索引；不改引擎源码、不改 `tools/`、不改其他场景。
-- **迁移形态**：**静态展示迁移**——glTF 静态网格 + PBR 材质 → 一个 maque `.scn`
-  （自动生成相机/方向光/平级实体），按**本引擎**渲染一张 1280×720 预览。
-  **不迁移**：动画、骨骼蒙皮、morph 动画（原因见 §5）；glTF 自带相机/灯光已支持导入
+- **迁移形态**：glTF 网格 + PBR 材质 → 一个 maque `.scn`（自动生成相机/方向光），按**本引擎**渲染一张
+  1280×720 预览。**第 29 轮起**：有 `skins`/`animations`/morph targets 的模型输出**层级场景**并自动播放
+  首个动画片段（见 `plans/22`）；其余模型仍是平级实体 + 世界烘焙。
+  **不迁移**：`KHR_animation_pointer`（材质/贴图/可见性指针通道）；glTF 自带相机/灯光已支持导入
   （`--use-gltf-camera` 按模型择优使用；灯光见 §5.4）。
 - **不承诺**：与官方参考图相似（见 §7 的对比策略）；那属于"新渲染特性排期"，不是迁移缺陷。
 
@@ -77,6 +78,8 @@ scenes/khronos/
   <Model>/
     <Model>.scn                 # 场景（自动生成；可手调，注意 --force 会覆盖，见 §3.5/§8.2）
     assets/<...>.mesh.json      # 导入网格+材质（派生资产，不入库）
+    assets/skin/*.skel.json     # 骨架（joint_names + 列主序 inverse_bind；动画/蒙皮模型才有，派生，不入库）
+    assets/anim/*.clip.json     # glTF 动画片段（node/path/STEP|LINEAR/times/values；派生，不入库）
     textures/*.png|*.jpg        # 从 glTF 原样搬运的贴图（派生资产，不入库）
     preview.png                 # 1280×720 原图（派生，不入库）
     preview.jpg                 # 800×450 提交用缩略图（PIL，质量 82）
@@ -312,17 +315,29 @@ Khronos 每个模型可能有 `glTF/`、`glTF-Binary/`、`glTF-Draco/`、`glTF-K
 | 图元 | **只导三角形**（`mode=4`/缺省）；线/点（mode≠4）跳过并打 warning |
 | 索引 | u8/u16/u32、`byteStride`、非索引 primitive 均支持；缺 `POSITION` 的跳过 |
 | 缺 NORMAL | 按**真实 indices** 累积面法线后归一化（不传 indices 是旧 bug，已修） |
+| 闭合朝内网格 | **整体朝内的闭合实体**（顶点 ≥64、无向边 2-共享比例 ≥98%、顶点法线相对包围盒中心平均 cos < -0.75）
+→ 导入期**翻正**（法线取反 + 每个三角形绕序反转）并打 stderr；开放网格/房间内壁/天空穹顶不动。
+`DirectionalLight` 的三个测试球即此类资产（源 glTF 法线/绕序一致朝内）：不修则单面剔除后只剩内表面 →
+平行光只在轮廓掠射点亮、阴影贴图把远面判成被遮挡 → 整球发黑 |
 | UV | `TEXCOORD_0/1` 都导入（缺 uv1 复制 uv0）；材质 `uv1_mask` 记录逐贴图用哪套（bit0..7）；`TEXCOORD_2+` 不导入——主变体唯一使用者 MosquitoInAmber 的 `eclats` primitive 带 TEXCOORD_2，但其材质无任何贴图（全 5 个 textureInfo 均 texCoord=0），已核验**无视觉影响** |
 | 贴图 | PNG/JPEG **按字节原样搬运**（不解码）；WebP 用 PIL 转 PNG；KTX2/BasisU 跳过并 warning；命名 `image.name` 或 `image<idx>`（同名去重）；**glTF sampler 非默认时路径追加 `#wrap=clamp,mirror&filter=nearest`**（runtime 解析成 per-texture sampler） |
 | 材质 | `pbrMetallicRoughness`（baseColor/metallic/roughness）+ emissive + `alphaMode/alphaCutoff` + `doubleSided→side`（true=2 双面/false=0 单面剔除） |
 | KHR factor | unlit→`shading_model=2`(Basic)；clearcoat/sheen/iridescence/specular/ior/anisotropy → `shading_model=1`(Physical) + 对应因子；emissive_strength→`emissive_intensity`；normalTexture.scale→`normal_scale(+_y)`；occlusionTexture.strength→`occlusion_strength` |
 | KHR 贴图 | 基础 5 槽 + `clearcoatNormalTexture` + **7 个扩展贴图槽**（clearcoatTexture / clearcoatRoughnessTexture / sheenColorTexture / sheenRoughnessTexture / iridescenceTexture / iridescenceThicknessTexture / anisotropyTexture，ABI `textures3[7]` + schema 路径字段）+ **KHR_materials_specular 2 槽**（specularTexture.A=specularFactor、specularColorTexture.RGB=specularColorFactor，ABI `textures4[2]`；仅作用电介质 F0，factor 可 >1） |
 | KHR_texture_transform | `scale/offset/rotation` → `uv_*` + `uv_rotation`（基础贴图组）与 `normal_uv_*` + `normal_uv_rotation`（法线组）；shader 按 glTF 的 T·R·S 顺序作用（rotation 角由 gfx 打包装进 Draw 的 specular.w/sheen_color.w）；逐贴图独立 transform 仍部分近似（MR/AO/emissive 共用基础组） |
-| 场景 | `--scene`：每个 `(node, primitive)` 一个**平级实体**，世界变换**烘焙**进 `local` TRS；`EXT_mesh_gpu_instancing` 在导入期展开为多实体（实例 TRS = node 世界 × 实例 TRS）；自动相机（包围盒 8 角点视锥拟合，§6.2；`--use-gltf-camera` 时改用 glTF perspective 相机）+ 一盏太阳（**模型自带 `KHR_lights_punctual` 时改为导入 1~8 盏 Light、不再加太阳**）；`KHR_node_visibility.visible=false` 的节点及子树跳过；背景 `clear_color=(0.13,0.13,0.14)`；无地面、不写 `env_*` |
+| 场景 | `--scene`：每个 `(node, primitive)` 一个**平级实体**，世界变换**烘焙**进 `local` TRS；**有 `skins`/`animations`/morph targets 的模型例外（第 29 轮）**：输出 glTF 节点树 1:1 的层级 `children`（节点=本地 TRS、mesh primitive=identity 子实体、蒙皮 mesh 实体置场景根 + `skin_path`），有非 pointer 片段时追加 `anim_player`（`scn.AnimationPlayer.clips`）；`EXT_mesh_gpu_instancing` 在导入期展开为多实体（实例 TRS = node 世界 × 实例 TRS）；自动相机（包围盒 8 角点视锥拟合，§6.2；`--use-gltf-camera` 时改用 glTF perspective 相机）+ 一盏太阳（**模型自带 `KHR_lights_punctual` 时改为导入 1~8 盏 Light、不再加太阳**）；`KHR_node_visibility.visible=false` 的节点及子树跳过；背景 `clear_color=(0.13,0.13,0.14)`；无地面、不写 `env_*` |
+| 动画/蒙皮/morph（第 29 轮，plans/22） | `skins[].joints` + `inverseBindMatrices` → `assets/skin/<mesh>.<node>.skel.json`（共享 mesh 的 84 skin 用节点名后缀防覆盖）；`JOINTS_0/WEIGHTS_0` → `.mesh.json` 的 `joints/weights`（布局 2/3 = 48/56B + 24B，weights 归一化）；`animations[].channels` → `assets/anim/<clip>.clip.json`（轨道按 node 名+path 排序；pointer 通道跳过并汇总，纯 pointer 片段不写文件；CUBICSPLINE 取 value 按 LINEAR 近似）；`primitive.targets` → `.mesh.json` 的 `morph{default_weights,targets}`（targets>8 截断；TANGENT 增量忽略） |
 | 确定性 | mesh JSON 排序键 + 固定缩进；**`--compact` 额外做 6 位小数舍入 + 紧凑分隔符**；同一输入两次导入逐字节一致 |
 
 输出 `<out>/assets/*.mesh.json` 的字段：`name/vertex_stride=48/vertex_layout=0/vertices/indices/bounds_min/bounds_max/materials`；
 `materials` 数组是**冗余副本**——运行时只读 `.scn` 节点上的 `asset.PbrMaterial` 组件（**以 scn 为准**）。
+
+> ⚠️ **`.scn` 的灯光组件用重复 `"type"` 键**：第一个字符串 = 组件类型（`"render.Light"`），第二个数值 =
+> `LightType`（0/1/2）。普通 `json.load`+`json.dump` 往返会丢第一个键 → 灯光组件被静默丢弃、渲染退化成
+> 运行时默认主光（DirectionalLight 曾因此变成灰白球）。migrate 的手动覆盖（`apply_camera_override` /
+> `apply_scene_env` / `apply_light_override` / `apply_hdri_env`）已改为**保留重复键**的读写
+> （`json.loads(..., object_pairs_hook=_JsonPairs)` + 自定义 dump），并在写回后校验 `"render.Light"`
+> 数量、变少则回滚该文件 + 警告。其它改 `.scn` 的工具也必须遵守这条约定。
 
 ### 4.4 渲染与 preview
 
@@ -445,12 +460,13 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 | `alphaMode` OPAQUE / MASK / BLEND | ✅；MASK 走 opaque+discard；BLEND 物体级排序（远→近）；transmission/diffuse 近似把 MASK 改 BLEND 时用 `alpha_mask_in_blend` 保留 alpha 镂空 | BLEND 内部三角形不排序 | 可接受；复杂透明件参考图对比时人工判读 |
 | `doubleSided` | ✅ 导入为 `side`（true=2/false=0），shader 背面翻转法线 | — | 手写 `.scn` 必须显式写 `side`（运行时只认它） |
 | `KHR_materials_unlit` | ✅ → Basic（shading_model=2）（6 个模型）；**unlit 不做 ACES**（`output_direct`），颜色与 baseColor 一致 | — | 与 three.js toneMapped=true 有细微差异，按 glTF unlit 语义取色 |
-| clearcoat / sheen / iridescence / specular / **ior** / anisotropy（**因子**） | ✅ → Physical 近似（本批：clearcoat 12、sheen 9、iridescence 10、specular 10、ior 17、anisotropy 7 个模型） | 观感与 three.js/Khronos 规范有差距（近似 BRDF） | — |
-| 上述扩展的**贴图槽** | ✅ 已支持 **9 槽**：clearcoat(R)/clearcoat roughness(G)/sheen color(RGB,sRGB)/sheen roughness(A)/iridescence(R)/iridescence thickness(G)/anisotropy(B) + specular(A=specularFactor)/specularColor(RGB,sRGB)；缺失槽绑 white 且由 flags2 presence 位关闭 | 扩展贴图暂共用基础 `uv_scale/uv_offset` 与 TEXCOORD_0（specular 同） | — |
+| clearcoat / sheen / iridescence / specular / **ior**（**因子**） | ✅ → Physical 近似（本批：clearcoat 12、sheen 9、iridescence 10、specular 10、ior 17 个模型） | 观感与 three.js/Khronos 规范有差距（近似 BRDF） | — |
+| `KHR_materials_anisotropy`（**7**） | ✅ **各向异性 GGX**（第 21 轮，Khronos 规范实现）：`at = mix(roughness², 1, strength²)`、`ab = roughness²`、`anisotropyRotation` 旋转切线方向、方向/强度贴图（RG/B）；无 TANGENT 时用 UV 导数构造切线基；环境反射用规范 bent-normal 近似 + 沿切向多采样 | 低粗糙度 + 高强度时高光被拉成弧/条，`AnisotropyStrengthTest` 的强度×粗糙度扫描正确；环境反射仍基于解析 studio（无真实 HDRI） | — |
+| 上述扩展的**贴图槽** | ✅ 已支持 **12 槽**：clearcoat(R)/clearcoat roughness(G)/sheen color(RGB,sRGB)/sheen roughness(A)/iridescence(R)/iridescence thickness(G)/anisotropy(B) + specular(A=specularFactor)/specularColor(RGB,sRGB) + transmission(A) + diffuseTransmission(A) + diffuseTransmissionColor(RGB,sRGB)；缺失槽绑 white 且由 flags2 presence 位关闭（bit12..18/21..23/25..26） | 扩展贴图暂共用基础 `uv_scale/uv_offset` 与 TEXCOORD_0（specular 同） | — |
 | `KHR_materials_emissive_strength` | ✅ → `emissive_intensity`（5 个模型） | — | — |
-| `KHR_materials_transmission`（**33 个模型 / 124 处**） | ⚠️ **近似为 alpha BLEND**：`alpha_mode=2` + `opacity=clamp(1-0.85·factor, 0.15, 1)`；**Fresnel 视角 alpha**（掠射角更实，`transmission_factor`→flags2 bit20）；**双面两遍绘制**（先背面后正面，单层玻璃也有厚度感）；原 MASK 材质保留镂空（`alpha_mask_in_blend`）；无折射/真实吸收 | 玻璃可透视且有边缘高光、背面层；无真实折射畸变/厚度衰减 | 根治需 backbuffer 折射 pass + volume；BLEND 物体**不再投影** |
-| `KHR_materials_volume`（**25**）/ `dispersion`（4）/ `volume_scatter`（1） | ⚠️ 体积**近似为薄壁色调**：`base_color ×= attenuationColor`（有限 attenuationDistance 时）；dispersion/volume_scatter 未实现 | 琥珀/有色玻璃有色调，但无厚度依赖吸收/色散 | 完整版需 refraction+thickness pass（P1 剩余） |
-| `KHR_materials_diffuse_transmission`（**6**） | ⚠️ 近似为 alpha BLEND（`opacity=clamp(1-0.7f,0.25,1)`） | 叶片/瓷器呈半透观感，但无散射/厚度 | 完整版同 transmission pass |
+| `KHR_materials_transmission`（**33 个模型 / 124 处**） | ✅ **屏幕空间折射近似**（第 20 轮）：`alpha_mode=2` + 折射 pass——gfx 把 3D 拆成「opaque pass → 颜色 copy 成 scene color → blend pass」，shader 按**逐像素视线折射 + 体积厚度**把玻璃内出射点投影回屏幕采样背景（球/管件有真实透镜形变）；`transmissionTexture.R` 调制透射率（黑=不透，故 CompareDispersion 的 glTF logo 为白色不透明）；Fresnel 环境反射叠加；原 MASK 材质保留镂空；仅**单视图 + 离屏目标**（直呈 surface 无 CopySrc → 回退 alpha 近似） | 玻璃可透视且有折射畸变/边缘高光；不是真实光线追踪，折射只采样一次、无体积吸收/多次内反射；BLEND 物体**不再投影** | 根治需 backbuffer 多次折射 + volume 吸收/散射（P1 剩余） |
+| `KHR_materials_volume`（**25**）/ `dispersion`（4）/ `volume_scatter`（1） | ✅ **厚度/吸收/散射完整接入**（第 24 轮）：`thicknessFactor` + `thicknessTexture.G` → 折射路径厚度；`attenuationColor`/`attenuationDistance` → **Beer-Lambert**（`T = exp(-(1-attenuationColor)·thickness/distance)`，逐通道，作用在折射采样与漫透射上，光学深度封顶 3.0 防极薄介质归零；旧「base_color×attenuationColor」薄壁 hack 已删）；**`KHR_materials_volume_scatter` 的 `multiscatterColorFactor`** → 各向同性 in-scatter + 体积介质漫反射色调化（ScatteringSkull 青绿半透）；`KHR_materials_dispersion` 仍是 R/G/B 三 IOR 折射偏移近似 | 有色玻璃/琥珀/牛奶玻璃有真实厚度衰减；色散可见但非光谱积分；散射非多次散射/相位函数 | 更高保真需体积跟踪（多次散射、相位函数）（§11） |
+| `KHR_materials_diffuse_transmission`（**6**） | ✅ **不透明材质 + 背光透射**（第 22–23 轮）：**不再 alpha BLEND**（旧实现让陶瓷/叶片变"幽灵玻璃"）；`factor`/`colorFactor` + **diffuseTransmissionTexture(A) / diffuseTransmissionColorTexture(RGB,sRGB)** 两槽完整接入（`textures6[2]`、flags2 bit25/26、group1 binding 20/21）；shader 加「背光 wrap diffuse + 背面环境辐照」透射项（`Draw.trans`，材质 uniform 288→304B） | 陶瓷/叶片保持实心、有暖调透光；测试板的 factor/colorFactor/透射贴图/透射色贴图四行均可复现；无散射/厚度，能量拆分用可加近似（不压暗前向漫反射） | 完整版需体积散射/厚度 + 规范能量拆分 |
 | `KHR_materials_variants`（**7**） | ❌ 只用默认材质 | 变体切换不生效 | 静态迁移可接受 |
 | `KHR_materials_pbrSpecularGlossiness`（旧扩展，1） | ❌ | 极少数旧资产材质退化 | 优先切 MR 变体 |
 | `KHR_materials_retroreflection`（1） | ❌ | 反光材料（交通标志类）缺失 | 记录 gap |
@@ -461,13 +477,13 @@ blocked+失败明细、复现命令；自动批量记录之外，目录里"有 `
 
 | 特性 | 现状 | 影响 | 规避/后续 |
 |---|---|---|---|
-| 节点层级 | ⚠️ `--scene` **烘焙为平级实体**（世界变换写入 local）；`KHR_node_visibility`（3 个模型）✅ 隐藏节点/子树已跳过 | 静态可接受；丢失父子关系/脚本按层操控 | 后续保留节点树 + 逐节点 TRS |
+| 节点层级 | ✅（第 29 轮）有 `skins`/`animations`/morph targets 的 **27 个模型改用 glTF 节点树 1:1**（嵌套 `children`，节点实体=本地 TRS、mesh primitive 为 identity 子实体、蒙皮 mesh 实体置场景根）；其余 121 个模型仍平级烘焙（逐字节不变） | 动画/骨骼/morph 可正确播放；静态模型保持旧输出 | 非动画模型的层级化保留为 P3（会改 121 个模型的场景与基线） |
 | `EXT_mesh_gpu_instancing`（1 个模型） | ✅ 导入期展开实例（SimpleInstancing 125 实例；上限 4096，超出 warning 截断） | 几何正确；非 GPU 实例化（每个实例一个实体/draw，125 draw 在本批可接受） | 评估：仅 1/148 模型、单 draw 成本低，暂不做 GPU 实例化（§11） |
 | glTF 自带相机（`cameras`/`node.camera`，**14 个模型 / 45 个相机**） | ✅ **支持使用**（第 18 轮）：importer `--use-gltf-camera` 取节点遍历第一个 **perspective** 相机（fov/znear/zfar + 节点世界变换；orthographic 警告后回退自动机位）。migrate 对实测指标改善的 **5 个模型**（Duck / EnvironmentTest / IridescentDishWithOlives / TrafficCone / TransmissionTest）采用 glTF 相机；多相机模型（Cameras/AnimationPointerUVs/ToyCar/VirtualCity）参考图多为多视图拼接，仍自动机位；另保留 `MANUAL_CAMERA` 手动机位与 `--camera-position/target/fov/distance-scale` 覆盖 | 5 个模型构图显著改善（Duck hist 0.388→0.629、TransmissionTest 0.292→0.444；rgb 均下降）；其余因官方参考机位/多视图差异仍用自动或手动机位 | 引擎仅透视相机；orthographic 与"多相机选哪个"仍无解（§11） |
 | `KHR_lights_punctual`（**12 个模型**） | ✅ 导入为 `render.Light`（directional/point/spot，≤8 盏、方向光优先；spot 内/外锥角、range 保留）；强度为**观感归一化**（directional=2.6×intensity；point/spot 按模型尺度换算，非 cd/lux 物理值）；有灯光时不再追加默认太阳 | 自带布光能还原主体明暗/彩色灯；与官方离线渲染的精确强度/软阴影仍有差异 | 手调 `.scn` 可改 Light 因子；后续接物理单位换算/光追阴影 |
 | `KHR_node_visibility`（3 个模型） | ✅ 支持：`visible=false` 的节点及整棵子树不导入（网格/灯光都不生成） | 可见性测试模型不再出现叠影/扩展不支持卡 | 运行时动态切换可见性未做 |
-| 动画（**26 个模型 / 38 个动画**）/ 骨骼蒙皮（7 个模型 / 90 个 skin）/ morph（4 个模型 / 6 个 primitive） | ❌ 不导入（静态渲染；角色为 bind/T-pose；morph 默认权重不生效）；`KHR_animation_pointer`（5）同样不导入 | 动画模型与参考图姿势/形变不同 | README 标注"静态迁移"；动画属独立大项（§11） |
-| 场景根 `env_*` / `env_texture` | ✅ **真 PMREM envmap + IBL（opt-in）**：`env_texture` 写 **Radiance `.hdr`（RGBE）**、**OpenEXR scanline**（NONE/RLE/ZIP/ZIPS，half/float 通道）、PNG/JPEG（`builtin:/textures/studio_env` 或 VFS/远程）时启用；装配期 CPU 预计算 **GGX importance-sample 粗糙度 mip 链**（RGBA16F）+ **余弦卷积漫反射 irradiance**（RGBA16F，64×32）+ **天空背景全屏 pass**；shader 镜面按 roughness 查预过滤 mip、漫反射查 irradiance；`MAQUE_ENV_IBL=1`/`=0` 可强制开关，默认关（保持迁移基线） | 反射/环境光接近 HDRI studio（ToyCar、`scenes/pbr/env_ibl.scn`、`scenes/pbr/env_pmrem.scn`、`env_pmrem_exr*.scn`）；EXR 与 `.hdr` 渲染逐像素一致（e2e ⑬）；无 cubemap kind=1、亮度/曝光未做物理标定 | 后续：cubemap、默认开启前的光照标定（§11） |
+| 动画（**26 个模型 / 38 个动画**）/ 骨骼蒙皮（7 个模型 / 90 个 skin）/ morph（4 个模型 / 6 个 primitive） | ✅ **第 29 轮已支持**（`plans/22`）：importer 输出层级场景 + 派生 `assets/skin/*.skel.json` + `assets/anim/*.clip.json`；runtime 按 `scn.AnimationPlayer.clips` 自动播放首个片段（STEP/LINEAR、quat slerp），关节调色板 = 关节世界矩阵 × inverse_bind（gfx 顶点布局 2/3 + storage palette + 阴影同绑）；morph 走 CPU 顶点更新（默认权重 + weights 动画）。`KHR_animation_pointer`（5）仍不导入 | 角色摆姿势/形变正确；预览=第 1 帧姿态（与参考图的其它动画帧姿势不同属正常） | CUBICSPLINE 按 LINEAR 近似、无状态机/混合；pointer 为 P3（§11） |
+| 场景根 `env_*` / `env_texture` / `env_background` | ✅ **官方 HDRI IBL**（第 25 轮起用于迁移）：`env_texture` 写 **Radiance `.hdr`（RGBE）**、**OpenEXR scanline**（NONE/RLE/ZIP/ZIPS）、PNG/JPEG 时启用；装配期 CPU 预计算 **GGX importance-sample 粗糙度 mip 链** + **余弦卷积漫反射 irradiance** + **天空背景全屏 pass**；`env_background=false` → HDRI 只做 IBL，背景保留相机 `clear_color`。迁移按 `tools/khronos_env.json`（README 明确声明环境的 23 个模型）注入官方 HDRI：**env_intensity 自动标定**（按参考图前景亮度，1~2 轮）+ **指标回退**（hist 比 analytic 差 >0.02 则撤销，最终 17/23 保留）。HDRI 文件不入库（许可混杂 + 体积）→ `.deps/khronos-env/`，渲染时 `MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env"`，未挂载自动回退 analytic | 反射/环境光接近官方 HDRI studio（AnisotropyDiscTest/IridescenceLamp/CarConcept 等 hist +0.2~0.4）；cubemap（第 26 轮：`scn.Scene.env_cubemap` 6 面 → GGX cube + irradiance cube，按方向采样）与 equirect 任选；无面光软阴影 | §11：更多模型缺官方环境信息（126 个 README 未声明） |
 | MSAA | ✅ **opt-in 4x**：`scn.Scene.msaa_samples=4` 或 `MAQUE_MSAA=4` → 4x 颜色/深度附件 + pass 结束 resolve；默认 0/1 = 关（旧场景逐像素不变）；`gfx caps.max_samples` 探测设备能力，创建失败自动回退 1x | 边缘锯齿明显改善（ToyCar/金属轮廓）；4x 显存/带宽约 4 倍，迁移批量预览默认仍关 | 参考图多为离线抗锯齿渲染，批量预览可后续按需开；MSAA 不解决纹理/高光走样 |
 | 地面/背景板/阴影接收体 | ❌ 自动场景无 | "模型飘在空中"，接触阴影缺失 | 需要时手加地面 + `material_shadow.scn` 范式（§6.4 ⑤） |
 
@@ -544,7 +560,18 @@ far  = max(dist * 10, (dist + radius) * 8)
 | 环境 | **不写 `env_*`** → 用场景默认 | `env_color=(0.27,0.28,0.31)`、`env_intensity=1.6`、`env_sky/ground=0`（0=由 env_color 派生）、`env_highlight=1.0`、`env_rotation=0` |
 | 背景 | `clear_color=(0.13,0.13,0.14,1)`（深灰） | 与官方参考（多为浅灰/白棚拍）不同 → 对比时计入归因 |
 | 阴影 | 方向光阴影自动生效（1024² + 3×3 PCF） | 仅对可见 mesh 生效；`MAQUE_SHADOW=0` 可对照 |
-| IBL | **真 PMREM equirect envmap IBL（opt-in）**：`.hdr`（RGBE）/EXR/PNG/JPEG/builtin studio；装配期 **GGX 粗糙度 mip 预过滤 + 漫反射 irradiance 卷积** + Karis env BRDF + **天空背景 pass**；镜面/漫反射都来自 env。默认 analytic studio IBL（148 迁移基线逐像素不变） | 有 HDR 高光/环境反射/可见天空，接近影棚；仍无 cubemap |
+> **官方 HDRI 许可（第 25 轮）**：`tools/khronos_env.json` 引用的 11 个环境来自 Khronos
+> glTF-Sample-Environments（`low_resolution_hdrs` 分支）：Wide Street / Cannon Exterior = CC0；
+> Studio Neutral / Colorful Studio = CC-BY-4.0（需署名）；Footprint Court = CC-BY-NC-SA-3.0
+> （非商业 + 相同方式共享）；Pisa / Dining Room = 无 license 文件（USC ICT 上游）。
+> → **HDRI 一律不入库**，只放 `.deps/khronos-env/`（gitignored，下载脚本
+> `maque-test-tmp/hdri_lab/fetch_hdri.ps1`）；`.scn` 里写挂载路径，未挂载自动回退 analytic。
+> 复现官方对比预览：`python tools/migrate_gltf_models.py --only <Model>`（工具自动
+> `MAQUE_MOUNT=/khronos_env=<repo>/.deps/khronos-env` 并做 env_intensity 标定；`--no-hdri-env` 关闭）。
+> `USDShaderBallForGltf` 官方参考是 HDRI 亮背景 → `khronos_env.json` 里 `env_background: true`，
+> 其余模型保持暗色背景只取 IBL 光照。
+
+| IBL | **官方 HDRI PMREM IBL（第 25 轮）**：`.hdr`（RGBE）/EXR/PNG/JPEG/builtin studio；装配期 **GGX 粗糙度 mip 预过滤 + 漫反射 irradiance 卷积** + Karis env BRDF；`env_background=false` → 仅 IBL 不画天空。23 个 README 声明环境的模型按 `tools/khronos_env.json` 注入官方 HDRI（env_intensity 自动标定 + 指标回退，17 个保留）；其余 126 个用 analytic studio IBL（150 迁移基线默认不变） | 有 HDR 高光/环境反射；接近官方 HDRI studio；cubemap 与 equirect 均支持（第 26 轮 `env_cubemap` 6 面资产）；无面光软阴影 |
 
 ### 6.4 手调教程（preview 不理想时）
 
@@ -586,7 +613,9 @@ far  = max(dist * 10, (dist + radius) * 8)
 **④ 材质**（节点上的 `asset.PbrMaterial` 组件）
 
 - 贴图缺失/贴错先看 README「已知差距」与 `manifest.json` 的 `gaps`，不要瞎调因子；
-- transmission 类玻璃：手调 `alpha_mode=2`(BLEND) + `opacity≈0.3` 近似（ToyCar Glass 即此做法）；
+- transmission 类玻璃：`transmission_factor`（+ 可选 `transmission_texture`/`volume_thickness`/`dispersion`）
+  走屏幕空间折射 pass；纯手写场景若只要"半透"观感也可继续用 `alpha_mode=2`(BLEND) + `opacity≈0.3`
+  （ToyCar Glass 即此做法，非 transmission 扩展不走折射）；
 - clearcoat 车漆：`shading_model=1` + `clearcoat=1` + `clearcoat_roughness≈0.05`；
 - 手写材质必须显式写 `side`（true→2 / false→0），运行时剔除只认 `side`。
 
@@ -647,7 +676,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 光照/环境 | 多为 **HDRI studio**（IBL、面光、软阴影）；maque 只有方向光 + analytic studio IBL |
 | 机位/背景 | 官方机位/焦距/背景与自动机位不同；部分图为**透明背景**，部分带地面/背景板 |
 | 参考图格式/选择 | **large 优先**：先找 basename 含 `large` 的（`screenshot_large.*`/`screenshot-Large.*`/`large.jpg`…），再 `screenshot.*`，再 basename 含 screenshot，最后第一张图；格式 png/jpg/jpeg/webp/**gif**（gif 用 PIL 取第一帧）。**149 个模型都有 `screenshot/`，148/148 全部生成对比**（86 个用了 large 版、13 个仅有 GIF）。"统计缺失"不是"差异大"——若以后出现无 `screenshot/` 的资产，笔记应标"上游无参考图" |
-| 缺失特性 | transmission/volume（真实折射）、动画/骨骼/morph 等（§5）；MSAA 已提供 opt-in 4x |
+| 缺失特性 | transmission/volume（真实折射）、`KHR_animation_pointer` 等（§5）；MSAA 已提供 opt-in 4x；动画/骨骼/morph 第 29 轮已支持 |
 | 尺寸 | 参考图尺寸各异（150×80 到 1870×1033），本预览固定 1280×720 |
 
 **结论**：自动指标只做**筛查/趋势**，不做 pass/fail；每个模型的验收 = **人工看 preview + 参考图**并记录差异归因。
@@ -711,8 +740,8 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | 玻璃发白/不透/内部不可见 | `KHR_materials_transmission` 未实现 | 缺失特性；GLB 变体无帮助；手调 alpha BLEND 近似 |
 | 布料/车漆纹理"巨大/重复方向错" | `KHR_texture_transform` 逐槽 UV 不同 / UV 集缺失 | 记录；scale/offset/rotation 已支持（ToyCar 已修） |
 | 某张贴图完全没出现 | KTX2/WebP 贴图被跳过、贴图槽不支持、`TEXCOORD_1` 贴错 | 看 `textures/` 是否缺图、README「已知差距」 |
-| 角色姿势与参考不同 | 动画/骨骼/morph 未导入（T-pose/bind pose） | 缺失特性，README 标注"静态迁移" |
-| 参考图是动画帧 | 同上 | 同上 |
+| 角色姿势与参考不同 | 动画已播放（预览固定为第 1 帧 ≈0.017s 的采样姿态），参考图可能是动画的其它帧/状态；或机位不同 | 第 29 轮起动画/骨骼/morph 已导入；用 `--shot-seq --shot-frames 1,30,60` 看多帧确认在动；`MAQUE_ANIM=0` 对照 bind pose |
+| 参考图是动画帧 | 上述原因（姿态时间点不同） | 记录"参考为动画帧"，用多帧截图人工判读 |
 | 模型只有一部分/缺件 | 非三角 primitive 被跳过、缺 mesh/节点、导入 warning | 看 `issues`/导入日志 |
 | 模型看起来像灰立方体 | `mesh=-1`（路径/JSON/VFS 根错）→ 回退内建 cube | 按 §9.2 修 |
 | 构图/大小/朝向不同 | 自动机位 vs 官方机位（glTF 相机被忽略） | 手调相机（§6.4）；看 `coverage_ratio`/`framing_notes` 量化 |
@@ -923,6 +952,9 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 ### 10.2 本批迁移结果（`manifest.json` 汇总）
 
 **数据快照**：2026-10-26 第 10 轮（texture_transform.rotation + EXT_mesh_gpu_instancing + diffuse/volume 近似后整批重新导入+渲染，见 `build-win/audit/batch6-round3.log`，整批 **544.3s ≈ 9.1 min**）。
+**第 29 轮（动画/蒙皮/morph）**只对 27 个相关模型做了定向 `--only ... --force` 重跑（74.1s；其余 121 个模型的
+`.scn`/preview/compare 未变），所以本表统计仍是第 27 轮快照；动画模型的最新指标看 `manifest.json` 的
+`records[].compare` 与 `records[].animation`。
 `scenes/khronos/manifest.json` 的 `total_seconds` 只是最后一次写 manifest 的耗时（不含全部渲染）——**真实批量耗时看批量日志**。
 
 | 项 | 值 |
@@ -968,7 +1000,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 >（128×64 `.hdr`/512×256 builtin → 8/10 级 RGBA16F，经度 wrap）+ **余弦卷积漫反射 irradiance**（64×32 RGBA16F）；
 > gfx group0 新增 irradiance 纹理绑定（binding5）/`environment.env_irradiance_texture`；shader `env_irradiance`
 > 改查 irradiance（无 env 时仍走 analytic，148 基线零回归）；新增 `scenes/pbr/env_pmrem.scn` 与 e2e ⑩
->（天空/镜面锐利度/漫反射 env 三项断言）。EXR 已支持（第 17 轮），cubemap kind=1 仍排期。
+>（天空/镜面锐利度/漫反射 env 三项断言）。EXR 已支持（第 17 轮），cubemap kind=1 已支持（第 26 轮，见 §5.4）。
 > **第 14 轮（specular 贴图）** `KHR_materials_specular` 两槽：specularTexture.A=specularFactor（线性）、
 > specularColorTexture.RGB=specularColorFactor（sRGB）→ schema `specular_texture/specular_color_texture` +
 > ABI `textures4[2]` + flags2 bit21/22 + group1 binding17/18；shader 仅调制**电介质 F0**（金属不受影响），
@@ -987,7 +1019,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > R/G/B 或 Y（灰度）；解压后必须做 OpenEXR 的 **predictor + 字节交错逆变换**（否则得到量级离谱的浮点垃圾），
 > 扫描线内通道按**整行**排列。接入 `env_texture` 的 PMREM/天空路径；`tools/make_env_hdr.py` 新增纯 Python EXR
 > 写入（FLOAT/ZIP + HALF/ZIPS），fixture 与 `.hdr` 解码值逐位一致；`env_pmrem_exr*.scn` + e2e ⑬ 断言
-> 与 `.hdr` 渲染 **max_diff=0**。cubemap kind=1 与 IBL 光照标定仍剩。
+> 与 `.hdr` 渲染 **max_diff=0**。cubemap kind=1 已支持（第 26 轮）；IBL 光照标定仍剩。
 > **第 18 轮（glTF 相机）** importer `--use-gltf-camera`：节点遍历第一个 perspective 相机（yfov/znear/zfar
 > + 节点世界 TRS；orthographic 警告回退自动机位）；migrate 新增 `GLTF_CAMERA_MODELS`，对实测指标改善的 5 个模型
 >（Duck / EnvironmentTest / IridescentDishWithOlives / TrafficCone / TransmissionTest）启用并重导重渲：
@@ -998,6 +1030,122 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 > IridescentDishWithOlives）；②Normal oracle（前向法线编码 188/188/255）+ 镜像 scale.x=-1 front-face
 > 可见性；③重渲染 ToyCar/Duck/CompareSpecular 与已提交 `preview.jpg` 比较（mean<6、max<140；无 PIL 跳过）。
 > 覆盖原 findings §11 的 S1/负行列式/对比基线三条；AO/wrap/ACES/mip/双面法线仍由 material_*_e2e 相对断言覆盖。
+> **第 20 轮（transmission P1：屏幕空间折射 + transmissionTexture + dispersion）** gfx 3D 拆分
+> 「opaque pass（clear）→ copy 颜色成 scene color → blend pass（load）」两级 pass（仅单视图 + 离屏目标；
+> 直呈 surface 无 CopySrc → 回退旧 alpha 近似）；camera bind group 新增 binding6（scene color），
+> 材质 group1 新增 binding19（transmissionTexture，`flags2` bit23 presence）。shader 在 fs_standard/
+> fs_physical：`refract()` 逐像素视线折射（IOR + `volume_thickness`）把出射点投影回屏幕采样背景，
+> R/G/B 用不同 IOR ⇒ `KHR_materials_dispersion` 色散；`transmissionTexture.R` 调制透射率（CompareDispersion
+> 的白色 glTF logo）；Fresnel 环境反射叠加；体积厚度 → `Draw.clearcoat.z`、色散 → `Draw.alpha.w`（不扩
+> 288B uniform）。importer/schema/ABI 新增 `transmission_texture`/`volume_thickness`/`dispersion` +
+> `textures5[1]`（struct 296B）。CompareDispersion 手动机位按官方参考图反解（平视长焦 fov 4.24°）；
+> 32 个 transmission 场景重导重渲：CompareDispersion 对比官方 hist 0.44→0.57、rgb_delta 0.064→0.018、
+> 覆盖率比 0.235→0.964；非 transmission 场景逐像素不变（ToyCar/Duck/CompareSpecular diff=0）；
+> 全套 ctest 91 项通过（含 khronos_gallery/pbr_regression/material_*）。
+> **第 21 轮（KHR_materials_anisotropy 各向异性 GGX）** 按 Khronos 规范实现替代旧的"只压缩粗糙度"近似：
+> 10_utils 新增 `distribution_ggx_aniso` / `visibility_ggx_aniso`（`at = mix(roughness²,1,strength²)`、
+> `ab = roughness²`，Burley 各向异性 GGX）；`Surface` 增加 `aniso`/`aniso_dir`（strength × 贴图 B；
+> 方向默认切线 +X，经 `anisotropyRotation` 旋转，贴图 RG 给每像素方向）。无 TANGENT 属性时用
+> `cotangent_frame` 从 UV 导数构造切线基；环境反射按规范 bent-normal 近似 + 沿切向多采样
+> （低粗糙度 + 高强度 → 高光拉成弧/条）。灯光侧 `light_standard` 直接镜面项换各向异性 BRDF；
+> 删掉 fs_physical 的"粗糙度压缩"旧 hack。AnisotropyStrengthTest 增加**手动机位**（正面平视 7×7
+> 球阵，fov 30°）+ **手调环境**（migrate 新增 `MANUAL_ENV`：暗色影棚 + 0.25 软光箱，默认 analytic
+> studio 会把测试球打成亮灰）；7 个 anisotropy 模型重渲：该模型对比官方 hist 0.26→0.58、
+> mean_lum delta 0.476→0.175、rgb 0.479→0.178。其余场景（非 anisotropy 材质）逐像素不变。
+> **第 22 轮（KHR_materials_diffuse_transmission：不透明 + 背光透射）** 修「陶瓷/叶片被 alpha BLEND
+> 近似成透明幽灵」：importer 不再改 `alphaMode/opacity`，改为导入 `diffuse_transmission_factor` /
+> `diffuse_transmission_color`（对齐 glTF 的 factor/colorFactor）；runtime 读入并置 flags2 bit24；
+> gfx 在材质 uniform 尾部追加 `Draw.trans`（288→304B，`du[72..75]`）传 factor/color。shader 在
+> `light_standard` 加「背光 wrap-diffuse + 背面环境辐照」两项透射（乘 factor/colorFactor），材质保持
+> **不透明**（陶瓷有实心观感与暖调透光）。6 个模型重导重渲：DiffuseTransmissionTeacup 由幽灵玻璃变为
+> 实心瓷器（hist 0.42→0.63、亮度差 -0.127→+0.164），DiffuseTransmissionTest 测试板 factor/colorFactor
+> 两行的单调变化恢复（hist 0.82）；透射贴图（条纹/logo 行）与散射/厚度仍未做。
+> **第 23 轮（KHR_materials_diffuse_transmission 完整接入）** 补上两张贴图槽：
+> `diffuseTransmissionTexture.A`（透射率乘子，线性）与 `diffuseTransmissionColorTexture.RGB`（sRGB 透射色）
+> → schema `diffuse_transmission_texture` / `diffuse_transmission_color_texture`、ABI `textures6[2]`
+> （struct 312→320B）、flags2 bit25/26、group1 binding 20/21（材质 bind group 20→22 项）；
+> runtime 分别用 `load_texture_mips` / `load_texture_srgb` 加载；shader 在 surface_common 里
+> `factor *= tex.A`、`color *= colorTex.rgb`。6 个模型重导重渲：DiffuseTransmissionTest 的
+> `diffuseTransmissionTexture`（条纹）与 `diffuseTransmissionColorTexture`（glTF logo）两行与官方一致
+> （hist 0.79）；Teacup 仍为实心瓷器（hist 0.65）。`gltf_import_e2e` 夹具扩两槽断言
+> （`tests/data/gltf/diffuse_volume.gltf` 加 1×1 PNG 透射率/色贴图）。
+> **第 24 轮（KHR_materials_volume 厚度/吸收/散射）** 按规范补齐体积模型：importer 导入
+> `attenuation_color`/`attenuation_distance`/`volume_thickness_texture`（thicknessTexture.G）与
+> `KHR_materials_volume_scatter.multiscatterColorFactor`（`multiscatter_color`），删除旧的
+> 「base_color × attenuationColor」薄壁色调 hack；ABI 追加 4 字段 + `textures7[1]`（struct 320→352B），
+> 材质 uniform 304→336B（`Draw.vol`/`Draw.scatter`），group1 新增 binding 22；shader 加
+> `volume_transmittance()`（Beer-Lambert）作用在折射采样与漫透射上，体积散射以各向同性 in-scatter
+> + 漫反射色调化近似（ScatteringSkull hist 0.18→0.58）。25 个 volume 模型重导重渲：玻璃/琥珀/牛奶玻璃
+> 出现真实厚度衰减（GlassHurricaneCandleHolder 0.56→0.75、AttenuationTest 0.70→0.81、CompareDispersion
+> 0.44→0.57 等）。
+> **第 25 轮（官方 HDRI 环境接入）** 迁移工具新增 `tools/khronos_env.json`（README 明确声明环境的 23 个模型
+> → 官方 Khronos glTF-Sample-Environments HDRI）+ `--no-hdri-env` 开关；引擎 `scn.Scene` 新增
+> `env_background`（HDRI 只做 IBL、不画天空），渲染时用 `MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env"`
+> 挂载（HDRI 不入库：许可混杂 + 16MB）。每个模型自动 **env_intensity 标定**（按参考图前景亮度 1–2 轮）
+> 并做**指标回退**（hist 比 analytic 差 >0.02 撤销）。最终 17/23 保留 HDRI：AnisotropyDiscTest
+> 0.255→0.648、IridescenceLamp 0.320→0.642、CarConcept 0.310→0.567、TransmissionRoughnessTest
+> 0.408→0.657、CarbonFibre 0.418→0.566、ClearCoatCarPaint 0.723→0.823、DragonAttenuation 0.204→0.286
+> 等；6 个（Teacup/DiffuseTransmissionTest/GlassBrokenWindow/PotOfCoals/Sunglasses/ClearcoatWicker）
+> 回退 analytic。
+> **第 26 轮（cubemap 环境贴图）** 完整支持 6 面立方体环境：
+> `scn.Scene.env_cubemap` 写基名 → 运行时按 `<基名>_px/_nx/_py/_ny/_pz/_nz.(hdr|exr|png|jpg)` 加载（面序
+> +X/-X/+Y/-Y/+Z/-Z，u 向右 v 向下；与 `tools/equirect_to_cube.py` 逐式一致）；装配期 CPU 生成
+> **GGX 预过滤 cube mip 链** + **余弦卷积 irradiance cube（16×16×6）**；`create_texture2(kind=1)`
+> 建 6 层纹理 + `Cube` view（ABI `mq_renderer_environment` +`env_cubemap/env_cubemap_irradiance`，
+> struct 92→100B，camera uniform +`env4` 896→912B）；shader group0 新增 binding7/8
+> （`texture_cube`），`env_sample/env_irradiance/天空 pass` 按方向采样（缺失绑 1×1×6 dummy、
+> `env4.x=0` 走 equirect/analytic）。样例：`scenes/pbr/env_cubemap.scn`（studio 环境 6 面，
+> 由 `tools/equirect_to_cube.py` 从 `scenes/pbr/env/studio.hdr` 生成、入库）；e2e `env_cubemap_e2e`：
+> 日志 `env CUBEMAP … mips (GGX) + irradiance`、同环境 equirect vs cube 渲染 hist 0.97/mean 1.26、
+> 确定性逐字节一致、缺失 6 面时 warn + 回退 analytic。
+> **第 27 轮（DirectionalLight 效果修复）** 官方 `screenshot.png`（IKEA 测试查看器）是浅灰背景 + 纯方向光
+> （无 IBL）的黄色球阵。原预览灰白：两个叠加原因 ——
+> ① **源资产三个测试球整体朝内**（NORMAL 与绕序一致朝内）：单面材质剔掉外表面后只剩内表面，法线朝背 →
+> 平行光只在轮廓掠射点亮，阴影贴图又把远面判成被近面遮挡 → 几乎全黑；
+> ② 手调覆盖用 Python `json` 往返 `.scn` 时**丢了灯光组件的重复 `"type"` 键**（`"render.Light"` 字符串 +
+> 数值 LightType 双键约定）→ 灯光组件被静默丢弃，退化成运行时默认主光。
+> 修复：importer 新增「闭合且法线/绕序一致朝内的实体 → 导入期翻正（法线取反 + 绕序反转）」保守判定
+> （顶点≥64、边 2-共享≥98%、平均 cos<-0.75；开放网格/房间内壁/天空穹顶不动；DirectionalLight 三球 avg cos
+> 由 -1.0 变 +1.0）；migrate 场景编辑改为**保留重复键**的 JSON 读写 + 写回后灯光数量校验/回滚；
+> DirectionalLight 加 `glTF 自带相机` + `MANUAL_CAMERA` 浅灰背景（0.88）+ `MANUAL_ENV` 关 analytic IBL +
+> 新增 `MANUAL_LIGHT`（光强按 glTF 原值 1.0，README 能量测试语义）；DiffuseTransmissionTest 因同样
+> round-trip 丢灯的旧问题一并重导修复。对比指标 hist 0.11→0.50、前景 RGB 距离 0.424→0.061；
+> `gltf_import_e2e` 增夹具 `inside_out.gltf`（闭合朝内球壳 → 必翻正）/`open_plane.gltf`（开放网格 → 不得误翻）。
+> **第 28 轮（USDShaderBallForGltf 效果 + KHR_materials_volume 厚度单位）** 官方 `screenshot_large.jpg` 是
+> three.js 编辑器特写（pathtraced | rasterized 两联图、平背景、球占 ≈90% 画面高）；原预览是**近黑玻璃球**
+> （hist 0.42）。根因：`KHR_materials_volume` 的 `thicknessFactor/thicknessTexture` 给的是 **mesh 空间**厚度
+> （规范：随节点变换缩放），而 `attenuationDistance` 是**世界空间** —— 旧实现把 mesh 空间厚度直接当世界空间
+> 路径长用，USD 球节点 `scale=0.01` × `thicknessFactor=8.9` → 光学厚度被放大 100 倍（clamp 后 T≈e⁻³）→ 发黑；
+> 折射偏移同样被放大 100 倍。修复：runtime 提取时 `volume_thickness *= cbrt(|sx·sy·sz|)`（非均匀缩放取几何均值
+> 近似路径长）。连带改善（同因）：AttenuationTest 0.695→0.789、DragonAttenuation 0.144→0.395、
+> DragonDispersion 0.496→0.581；MosquitoInAmber 因厚度正常化后需要亮棚环境（官方参考是亮背景棚拍）
+> → `MANUAL_ENV` 暖白 0.75 / intensity 2.5 + `MANUAL_CAMERA` 浅灰背景，hist 0.137→**0.792**（lum 0.415→0.568，
+> 参考 0.573）。USD 球另加 `MANUAL_CAMERA`（按官方构图拟合：方位 40°/仰角 8°/距离 0.135/fov 40°、浅灰背景）+
+> `MANUAL_ENV env_background=false`（Studio Neutral HDRI 只做 IBL），hist 0.42→**0.71**。
+> **注意**：该模型官方参考是两联图，整图指标只作趋势参考（README 已注明）；`MANUAL_ENV` 新增
+> `env_background` 覆盖（HDRI 注入会尊重它，migrate 三处 `apply_hdri_env` 调用都传覆盖值）。
+> 新增回归 `ctest -R volume_scale_e2e`：`scenes/pbr/volume_scale.scn` 两个同材质 cube（scale 1.0 vs 0.1，
+> 世界厚度差 10×）→ 前景亮度差必须 >0.10；已验证关掉缩放修复时该测试**失败**（鉴别力自检）。
+> **第 29 轮（DamagedHelmet 观感）** 官方 `screenshot.png` 只有 130×126、透明底（旧 SampleViewer 截图）：
+> 自动机位太远且俯视（前景覆盖率 0.11 vs 0.61），且 analytic 环境强度 1.6 让大面积金属发白。
+> 处理：`MANUAL_CAMERA` 按官方构图拟合（世界包围盒中心 (-0.0025,0,-0.1872)/半径 1.0 → 方位 45°、仰角 8°、
+> 距离系数 0.95、fov 42°、浅灰底 0.92）；`MANUAL_ENV` 把 analytic 亮度 1.6→**0.8**（金属高光不过曝）。
+> 指标 hist 0.579→**0.817**、前景 RGB 距离 0.114→**0.052**；`MANUAL_REFERENCE` 注明官方图是 130×126 小图、
+> 整图指标只作趋势参考。细扫脚本按「整图 hist + 前景亮度」选了 az45/el8/×0.95（比 az60/el12 再 +0.01），
+> 说明自动机位拟合流程可复用：包围盒 → 距离系数/方位/仰角网格扫描 → 官方图整图指标排序 → 手调表落盘。
+> **第 29 轮（glTF 动画 / 蒙皮 / morph，plans/22 S1+S2+S3）** importer 读 `skins`/`animations`/`morph targets`：
+> 27 个模型（26 动画 ∪ 7 骨骼 ∪ 4 morph）改用**层级场景**（glTF 节点树 1:1；蒙皮 mesh 按规范忽略节点变换、
+> 置场景根 + `skin_path`），派生 `assets/skin/*.skel.json` 与 `assets/anim/*.clip.json`；
+> 顶点新增布局 2/3（48/56B + joints u16x4 + weights f32x4，stride 72/80）；gfx group1 binding23 = 骨骼调色板
+> readonly-storage（`mq_renderer_skin` + `draw3d.skin`/`frame3d.skins`，阴影 pass 同绑），shader
+> `vs_skin/vs1_skin/vs_shadow_skin/vs_shadow1_skin`；runtime `Entity::world_m` + `flatten_world3d`（派生姿态，
+> 不写回 Transform3D）、`anim_step` STEP/LINEAR + quat slerp、`palette = world(joint) × inverse_bind`、
+> morph CPU 顶点重算 + `update_mesh`；场景 `scn.AnimationPlayer.clips` 自动播放首个片段。
+> 验证：`ctest -R 'gltf_(skin|anim|morph)_e2e'` 全绿（bind pose palette≈I：`MAQUE_SKIN=0` 与默认逐字节一致；
+> 帧 1/20/40 不同；同帧两次一致），`render3d_scene_e2e|pbr_regression_e2e|material_*_e2e|gltf_import_e2e|determinism`
+> 无回归；27 模型定向 `--only ... --force` 重导重渲（74.1s），`manifest.animation` 记录 clips/skins/morph。
+> 已知边界：`KHR_animation_pointer` 仍跳过；CUBICSPLINE 按 LINEAR 近似；无动画状态机/混合；预览=第 1 帧姿态。
+> 回归夹具：`tests/data/gltf/{skinned,animated,morph}.gltf`。
 
 ### 10.3 差距分布（`gaps[]` 的模型计数 Top）
 
@@ -1005,9 +1153,9 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 
 | 差距 | 模型数 | 说明 |
 |---|---|---|
-| `KHR_materials_transmission` **近似** alpha BLEND | **32** | 玻璃可透视，但无折射/厚度/吸收（P1 剩余） |
-| 动画未导入（静态渲染/T-pose） | **26** | 角色/演示动画模型（P2 大项） |
-| `KHR_materials_volume`（近似薄壁色调）/ dispersion / volume_scatter | **25** | 有色玻璃有色调；无厚度吸收/散射/色散（P1 剩余） |
+| `KHR_materials_transmission` 屏幕空间折射近似 | **32** | 玻璃可透视且有折射畸变/厚度；无真实体积吸收/多次折射（P1 剩余） |
+| 动画已导入（关键帧采样，非 gap） | **26** | 第 29 轮：`plans/22` S2；预览=第 1 帧姿态、CUBICSPLINE 近似、无状态机（信息性） |
+| `KHR_materials_volume` / dispersion / volume_scatter | **25** | 厚度/吸收（Beer-Lambert）/thicknessTexture 已接入；散射为非多次散射近似；色散非光谱积分（P1 剩余） |
 | `alphaMode=MASK/BLEND 已支持（物体级排序）` | 16 | 信息性 gap（不是阻塞） |
 | `KHR_texture_transform` 已支持 scale/offset/rotation | **14** | 信息性 gap：逐贴图独立 transform 仍部分近似 |
 | 未使用 glTF 自带相机（自动机位） | **9** | 构图差异的主因之一；5 个模型已采用 glTF 相机（第 18 轮），Sponza 手动机位 |
@@ -1016,12 +1164,12 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 | `KHR_materials_iridescence` 近似 | **10** | 虹彩/厚度贴图已接；干涉 BRDF 近似 |
 | `KHR_materials_specular` 贴图已接（f90 未实现） | **10** | factor/color + specularTexture/specularColorTexture 已映射；仅作用电介质 F0 |
 | `KHR_materials_sheen` 近似 | **9** | sheen 贴图已接；BRDF 近似 |
-| `KHR_materials_anisotropy` 近似 | **7** | 强度/贴图已接；各向异性 BRDF 近似 |
-| 骨骼蒙皮未应用 | **7** | 静态 bind/T-pose（P2 大项） |
+| `KHR_materials_anisotropy` 各向异性 GGX（环境为近似） | **7** | 强度/旋转/方向贴图已接；环境反射为解析 studio + bent-normal 近似 |
+| 骨骼蒙皮已应用（palette = world × inverse_bind） | **7** | 第 29 轮 S1；法线用调色板 3×3 线性部分近似（信息性） |
 | `KHR_materials_variants` 只用默认 | **7** | 变体切换不生效 |
-| `KHR_materials_diffuse_transmission` 近似 alpha BLEND | **6** | 乳浊/半透观感，无散射/厚度 |
-| `KHR_animation_pointer` 动画未导入 | **5** | 指针动画（P2 大项） |
-| morph targets 未应用 | **4** | 默认权重不生效（P2 大项） |
+| `KHR_materials_diffuse_transmission` 不透明 + 背光透射 | **6** | 实心材质 + 暖调透光；factor/color/透射率贴图/透射色贴图均已接入；无散射/厚度 |
+| `KHR_animation_pointer` 动画未导入 | **5** | 材质/贴图变换/可见性指针通道（节点 TRS/骨骼/morph 已支持；P3） |
+| morph targets 已应用（CPU 顶点变形） | **4** | 第 29 轮 S3：默认权重 + weights 动画；TANGENT 增量忽略（信息性） |
 | `KHR_node_visibility` 已支持 | **3** | 信息性 gap：隐藏节点已跳过 |
 | 非三角 primitive 被跳过 | **2** | 线/点装饰缺失 |
 | `EXT_mesh_gpu_instancing` 已导入展开 / quantization / meshopt / WebP | 各 1 | 个别模型（见 §5；instancing 为 CPU 展开，非 GPU 实例化） |
@@ -1035,7 +1183,7 @@ Khronos `Models/<Model>/screenshot/` 的官方图**大多是资产作者在离�
 |---|---|---|
 | transmission / volume | 32 / 25 | `ABeautifulGame`、`ChronographWatch`、`FlightHelmet`、`GlassBrokenWindow`、`GlassHurricaneCandleHolder`、`GlassVaseFlowers`、`MosquitoInAmber`、`StainedGlassLamp`、`SunglassesKhronos`、`TransmissionTest`、`IridescenceLamp`、`DragonAttenuation` |
 | 扩展材质贴图槽（clearcoat/sheen/iridescence/specular/anisotropy） | 约 37 个模型含相关 gap | `ClearCoatCarPaint`、`ClearCoatTest`、`ClearcoatWicker`、`SheenChair`、`SheenCloth`、`GlamVelvetSofa`、`IridescenceAbalone`、`IridescenceDielectricSpheres`、`IridescenceMetallicSpheres`、`AnisotropyDiscTest`、`AnisotropyStrengthTest`、`CarbonFibre`、`SpecularTest` |
-| 动画 / 骨骼 / morph | 26 / 7 / 4 | `BrainStem`、`CesiumMan`、`CesiumMilkTruck`、`Fox`、`RecursiveSkeletons`、`RiggedFigure`、`RiggedSimple`、`SimpleSkin`、`AnimatedMorphCube`、`MorphStressTest`、`AnimationPointerUVs` |
+| 动画 / 骨骼 / morph（✅ 第 29 轮已支持） | 26 / 7 / 4 | `BrainStem`、`CesiumMan`、`CesiumMilkTruck`、`Fox`、`RecursiveSkeletons`、`RiggedFigure`、`RiggedSimple`、`SimpleSkin`、`AnimatedMorphCube`、`MorphStressTest`、`AnimationPointerUVs`（后者仍为 pointer-only 静态） |
 | `TEXCOORD_1+`（多 UV） | 8 | `CarConcept`、`ChairDamaskPurplegold`、`ChronographWatch`、`MorphStressTest`、`MultiUVTest`、`SheenChair`、`SheenWoodLeatherSofa`、`TextureTransformMultiTest` |
 | `COLOR_0` 顶点色 | 8 | `BoxVertexColors`、`CompareBaseColor`、`IridescentDishWithOlives`、`MeshoptCubeTest`、`PrimitiveModeNormalsTest`、`RecursiveSkeletons`、`SheenWoodLeatherSofa`、`VertexColorTest` |
 | 参考图需特殊处理 | 13 个 `.gif`（PIL 取第一帧）+ **12 个无精确参考图**（笔记标注"上游无参考图/统计缺失"，与"有参考但差异大"区分） | 见 §10.2「参考图口径」与 §8.2 I14 |
@@ -1130,11 +1278,11 @@ python tools/make_migration_report.py --max-dim 1200 --quality 85
 
 | 优先级 | 事项 | 影响面（本批样本） | 落点/备注 |
 |---|---|---|---|
-| P2 | **cubemap kind=1 + IBL 光照标定**（EXR 已完成） | 全部（当前 opt-in equirect `.hdr`/EXR/PNG/JPEG + 真 PMREM GGX/irradiance + 天空 pass） | 现有：`.hdr`（RGBE→RGBA16F）、**EXR（NONE/RLE/ZIP/ZIPS、half/float）**、PNG/JPEG env、内建 studio_env、**GGX importance-sample 粗糙度 mip 预过滤**、**漫反射 irradiance 卷积**、天空背景、ToyCar/`env_ibl.scn`/`env_pmrem.scn`/`env_pmrem_exr*.scn` 示例与 e2e ⑬；剩余：cubemap 纹理、默认开启前的光照/曝光标定 |
+| P2 | **IBL 光照标定**（cubemap kind=1 已完成，第 26 轮） | 全部 | 现有：`.hdr`（RGBE→RGBA16F）、**EXR（NONE/RLE/ZIP/ZIPS、half/float）**、PNG/JPEG env、内建 studio_env、**GGX importance-sample 粗糙度 mip 预过滤**、**漫反射 irradiance 卷积**、天空背景、**cubemap（第 26 轮：`scn.Scene.env_cubemap` 6 面 `<基名>_px.._nz`(.hdr/.exr/.png/.jpg) → CPU GGX cube PMREM + irradiance cube + `texture_cube` 方向采样（IBL/天空），`kind=1` cube 纹理/view，样例 `scenes/pbr/env_cubemap.scn`，e2e `env_cubemap_e2e`）**；剩余：默认开启前的光照/曝光标定 |
 | P3 | ✅ **specularTexture/specularColorTexture**（第 14 轮已完成） | 3 个模型实际用到贴图（CompareSpecular / SpecularTest / AnimationPointerUVs） | 已加 `textures4[2]` + flags2 presence bit21/22 + group1 binding17/18；现每 stage 20 张 sampled texture（15+2 材质 + shadow/env/irradiance），依赖适配器上限（桌面 GPU 通常 ≥128） |
 | P3 | ✅ **MSAA 4x（opt-in）**（第 15 轮已完成） | 全部 3D 场景（默认关；按场景/环境变量开） | `scn.Scene.msaa_samples` / `MAQUE_MSAA`；4x 颜色+深度附件、pass resolve、管线按样本数分缓存；`caps.max_samples=4` 探测，失败自动回退；e2e ⑫ |
-| P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | 现有近似：alpha BLEND + volume 薄壁色调 + diffuse BLEND；完整版需 backbuffer 折射 pass + 厚度/吸收/散射模型 |
-| P2 | **动画 / 骨骼 / morph** | 动画 26 个模型、skin 7、morph 4 | 独立大项；实现级评估见 `plans/21-gltf-animation-and-compression.md`（S1 蒙皮 7–10 人日 / S2 采样 5–9 / S3 morph 3–5） |
+| P1 | **transmission / volume / dispersion / diffuse_transmission 完整实现** | transmission 33、volume 25、diffuse_transmission 6、dispersion 4 | **第 20/22–24 轮已完成**：屏幕空间折射 + scene color copy + 逐像素折射（厚度）+ transmissionTexture + dispersion RGB 偏移（第 20 轮）；diffuse transmission 不透明 + 背光透射 + 两贴图槽（第 22–23 轮）；volume 厚度/Beer-Lambert 吸收/thicknessTexture/volume_scatter in-scatter（第 24 轮）。**剩余**：光线追踪级多次折射/散射、相位函数、直呈（surface）路径的折射 |
+| P2 | ✅ **动画 / 骨骼 / morph**（第 29 轮已完成） | 动画 26 个模型、skin 7、morph 4 | `plans/22-gltf-animation-implementation.md`：S1 骨架蒙皮（布局 2/3 + storage palette + 阴影变体）、S2 关键帧采样（`scn.AnimationPlayer.clips`，STEP/LINEAR + quat slerp）、S3 CPU morph；测试 `gltf_{skin,anim,morph}_e2e`。**剩余**：`KHR_animation_pointer`（P3）、CUBICSPLINE 精确切线、状态机/混合 |
 | P2 | **Draco / KTX2 / meshopt 解码** | 主变体：meshopt 1（KTX2/Draco 0；全变体扫描 Draco 18、basisu 7、webp 5、meshopt 2） | 评估结论：主变体不阻塞、不做解码器（`plans/21` §B）；当前用 `glTF/` 主变体规避 |
 | P2 | **glTF 自带相机（部分完成）** | 相机 14 个模型 / 45 个 | ✅ importer `--use-gltf-camera` + migrate 按模型采用（5 个指标改善模型，第 18 轮）；剩余：orthographic 相机（引擎仅透视）、多相机/多视图参考的选择策略 |
 | P3 | **`TEXCOORD_2+` / 逐贴图独立 UV transform**（已评估，暂不做） | TEXCOORD_2 仅 1 个 primitive（且无贴图引用）；逐槽 transform 冲突实测 10 模型 | 评估：①TEXCOORD_2 零视觉影响（MosquitoInAmber 该属性未被材质引用），不做；②同 UV 集但不同 transform 的材质共 10 模型（AnimationPointerUVs 69 处最多且属 pointer 动画；其余 CarConcept/ToyCar/Sheen* 等 1–5 处）→ 需 9 槽×3 float 的材质 uniform 扩展，收益小于 ABI 成本，保留近似并记录 |

@@ -10,5 +10,9 @@
   }
   var color = light_standard(s, f0, n_cc, ep.clearcoat.x, ep.clearcoat.y, dr.phys0.w);
   color = color + s.emissive;
+  /* transmission：有 scene color 拷贝（离屏路径）→ 屏幕空间折射；否则回退旧的 Fresnel alpha。 */
+  if ((flags2_bits() & 0x100000) != 0 && cam.env_info.w > 0.5) {
+    return vec4f(transmission_refraction(in, s, color, f0), 1.0);
+  }
   return tone_output(color, s.alpha);
 }

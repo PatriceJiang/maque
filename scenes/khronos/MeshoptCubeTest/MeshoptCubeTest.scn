@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "RowLabel_0_0",
+      "name": "RowLabel_0",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -83,37 +83,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_0_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "RowLabel_0_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image0.png#wrap=clamp,clamp"
+          "name": "RowLabel_0_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_0_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "RowLabel_0_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image0.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "RowLabel_1_0",
+      "name": "RowLabel_1",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -134,37 +161,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_1_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "RowLabel_1_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image1.png#wrap=clamp,clamp"
+          "name": "RowLabel_1_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_1_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "RowLabel_1_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image1.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "RowLabel_2_0",
+      "name": "RowLabel_2",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -185,37 +239,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_2_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "RowLabel_2_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image2.png#wrap=clamp,clamp"
+          "name": "RowLabel_2_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_2_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "RowLabel_2_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image2.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "RowLabel_3_0",
+      "name": "RowLabel_3",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -236,37 +317,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_3_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "RowLabel_3_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image3.png#wrap=clamp,clamp"
+          "name": "RowLabel_3_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_3_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "RowLabel_3_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image3.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "RowLabel_4_0",
+      "name": "RowLabel_4",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -287,37 +395,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_4_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "RowLabel_4_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image4.png#wrap=clamp,clamp"
+          "name": "RowLabel_4_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_4_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "RowLabel_4_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image4.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "ColLabel_0_0",
+      "name": "ColLabel_0",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -338,37 +473,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_5_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "ColLabel_0_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image5.png#wrap=clamp,clamp"
+          "name": "ColLabel_0_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_5_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "ColLabel_0_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image5.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "ColLabel_1_0",
+      "name": "ColLabel_1",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -389,37 +551,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_6_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "ColLabel_1_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image6.png#wrap=clamp,clamp"
+          "name": "ColLabel_1_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_6_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "ColLabel_1_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image6.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "ColLabel_2_0",
+      "name": "ColLabel_2",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -440,37 +629,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_7_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "ColLabel_2_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image7.png#wrap=clamp,clamp"
+          "name": "ColLabel_2_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_7_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "ColLabel_2_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image7.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "ColLabel_3_0",
+      "name": "ColLabel_3",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -491,37 +707,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_8_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "ColLabel_3_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image8.png#wrap=clamp,clamp"
+          "name": "ColLabel_3_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_8_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "ColLabel_3_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image8.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "ColLabel_4_0",
+      "name": "ColLabel_4",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -542,37 +785,64 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_9_0.mesh.json"
-        },
-        {
-          "type": "asset.PbrMaterial",
-          "name": "ColLabel_4_Mat",
-          "base_color": {
-            "r": 1.0,
-            "g": 1.0,
-            "b": 1.0,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 1.0,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": true,
-          "side": 2,
-          "alpha_mode": 1,
-          "alpha_cutoff": 0.001,
-          "base_color_texture": "textures/image9.png#wrap=clamp,clamp"
+          "name": "ColLabel_4_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_9_0.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "ColLabel_4_Mat",
+              "base_color": {
+                "r": 1.0,
+                "g": 1.0,
+                "b": 1.0,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 1.0,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": true,
+              "side": 2,
+              "alpha_mode": 1,
+              "alpha_cutoff": 0.001,
+              "base_color_texture": "textures/image9.png#wrap=clamp,clamp"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_0_interleaved_u8norm_u8color_u16index_0",
+      "name": "Cube_0_interleaved_u8norm_u8color_u16index",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -593,15 +863,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_10_0.mesh.json"
+          "name": "Cube_0_interleaved_u8norm_u8color_u16index_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_10_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_1_deinterleaved_u8norm_u8color_u16index_0",
+      "name": "Cube_1_deinterleaved_u8norm_u8color_u16index",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -622,15 +919,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_11_0.mesh.json"
+          "name": "Cube_1_deinterleaved_u8norm_u8color_u16index_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_11_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_2_deinterleaved_u16norm_u16color_u16index_0",
+      "name": "Cube_2_deinterleaved_u16norm_u16color_u16index",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -651,15 +975,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_12_0.mesh.json"
+          "name": "Cube_2_deinterleaved_u16norm_u16color_u16index_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_12_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_3_deinterleaved_u8norm_u8color_u32index_0",
+      "name": "Cube_3_deinterleaved_u8norm_u8color_u32index",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -680,15 +1031,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_13_0.mesh.json"
+          "name": "Cube_3_deinterleaved_u8norm_u8color_u32index_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_13_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_4_animated_rotation_0",
+      "name": "Cube_4_animated_rotation",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -709,15 +1087,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_14_0.mesh.json"
+          "name": "Cube_4_animated_rotation_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_14_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_5_interleaved_u8norm_u8color_u16index_compressed_indices_0",
+      "name": "Cube_5_interleaved_u8norm_u8color_u16index_compressed_indices",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -738,15 +1143,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_15_0.mesh.json"
+          "name": "Cube_5_interleaved_u8norm_u8color_u16index_compressed_indices_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_15_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_6_deinterleaved_u8norm_u8color_u16index_compressed_indices_0",
+      "name": "Cube_6_deinterleaved_u8norm_u8color_u16index_compressed_indices",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -767,15 +1199,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_16_0.mesh.json"
+          "name": "Cube_6_deinterleaved_u8norm_u8color_u16index_compressed_indices_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_16_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_7_deinterleaved_u16norm_u16color_u16index_compressed_indices_0",
+      "name": "Cube_7_deinterleaved_u16norm_u16color_u16index_compressed_indices",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -796,15 +1255,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_17_0.mesh.json"
+          "name": "Cube_7_deinterleaved_u16norm_u16color_u16index_compressed_indices_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_17_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_8_deinterleaved_u8norm_u8color_u32index_compressed_indices_0",
+      "name": "Cube_8_deinterleaved_u8norm_u8color_u32index_compressed_indices",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -825,15 +1311,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_18_0.mesh.json"
+          "name": "Cube_8_deinterleaved_u8norm_u8color_u32index_compressed_indices_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_18_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_9_animated_rotation_compressed_indices_0",
+      "name": "Cube_9_animated_rotation_compressed_indices",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -854,15 +1367,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_19_0.mesh.json"
+          "name": "Cube_9_animated_rotation_compressed_indices_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_19_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_10_interleaved_u8norm_u8color_u16index_compressed_triangles_0",
+      "name": "Cube_10_interleaved_u8norm_u8color_u16index_compressed_triangles",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -883,15 +1423,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_20_0.mesh.json"
+          "name": "Cube_10_interleaved_u8norm_u8color_u16index_compressed_triangles_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_20_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_11_deinterleaved_u8norm_u8color_u16index_compressed_triangles_0",
+      "name": "Cube_11_deinterleaved_u8norm_u8color_u16index_compressed_triangles",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -912,15 +1479,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_21_0.mesh.json"
+          "name": "Cube_11_deinterleaved_u8norm_u8color_u16index_compressed_triangles_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_21_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_12_deinterleaved_u16norm_u16color_u16index_compressed_triangles_0",
+      "name": "Cube_12_deinterleaved_u16norm_u16color_u16index_compressed_triangles",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -941,15 +1535,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_22_0.mesh.json"
+          "name": "Cube_12_deinterleaved_u16norm_u16color_u16index_compressed_triangles_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_22_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_13_deinterleaved_u8norm_u8color_u32index_compressed_triangles_0",
+      "name": "Cube_13_deinterleaved_u8norm_u8color_u32index_compressed_triangles",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -970,15 +1591,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_23_0.mesh.json"
+          "name": "Cube_13_deinterleaved_u8norm_u8color_u32index_compressed_triangles_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_23_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_14_animated_rotation_compressed_triangles_0",
+      "name": "Cube_14_animated_rotation_compressed_triangles",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -999,15 +1647,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_24_0.mesh.json"
+          "name": "Cube_14_animated_rotation_compressed_triangles_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_24_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_15_interleaved_u8norm_u8color_u16index_compressed_filtered_0",
+      "name": "Cube_15_interleaved_u8norm_u8color_u16index_compressed_filtered",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1028,15 +1703,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_25_0.mesh.json"
+          "name": "Cube_15_interleaved_u8norm_u8color_u16index_compressed_filtered_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_25_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_16_deinterleaved_u8norm_u8color_u16index_compressed_filtered_0",
+      "name": "Cube_16_deinterleaved_u8norm_u8color_u16index_compressed_filtered",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1057,15 +1759,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_26_0.mesh.json"
+          "name": "Cube_16_deinterleaved_u8norm_u8color_u16index_compressed_filtered_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_26_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_17_deinterleaved_u16norm_u16color_u16index_compressed_filtered_0",
+      "name": "Cube_17_deinterleaved_u16norm_u16color_u16index_compressed_filtered",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1086,15 +1815,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_27_0.mesh.json"
+          "name": "Cube_17_deinterleaved_u16norm_u16color_u16index_compressed_filtered_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_27_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_18_deinterleaved_u8norm_u8color_u32index_compressed_filtered_0",
+      "name": "Cube_18_deinterleaved_u8norm_u8color_u32index_compressed_filtered",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1115,15 +1871,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_28_0.mesh.json"
+          "name": "Cube_18_deinterleaved_u8norm_u8color_u32index_compressed_filtered_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_28_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_19_animated_rotation_compressed_filtered_0",
+      "name": "Cube_19_animated_rotation_compressed_filtered",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1144,15 +1927,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_29_0.mesh.json"
+          "name": "Cube_19_animated_rotation_compressed_filtered_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_29_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_20_interleaved_u8norm_u8color_u16index_compressed_filtered_v1_0",
+      "name": "Cube_20_interleaved_u8norm_u8color_u16index_compressed_filtered_v1",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1173,15 +1983,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_30_0.mesh.json"
+          "name": "Cube_20_interleaved_u8norm_u8color_u16index_compressed_filtered_v1_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_30_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_21_deinterleaved_u8norm_u8color_u16index_compressed_filtered_v1_0",
+      "name": "Cube_21_deinterleaved_u8norm_u8color_u16index_compressed_filtered_v1",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1202,15 +2039,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_31_0.mesh.json"
+          "name": "Cube_21_deinterleaved_u8norm_u8color_u16index_compressed_filtered_v1_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_31_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_22_deinterleaved_u16norm_u16color_u16index_compressed_filtered_v1_0",
+      "name": "Cube_22_deinterleaved_u16norm_u16color_u16index_compressed_filtered_v1",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1231,15 +2095,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_32_0.mesh.json"
+          "name": "Cube_22_deinterleaved_u16norm_u16color_u16index_compressed_filtered_v1_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_32_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_23_deinterleaved_u8norm_u8color_u32index_compressed_filtered_v1_0",
+      "name": "Cube_23_deinterleaved_u8norm_u8color_u32index_compressed_filtered_v1",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1260,15 +2151,42 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_33_0.mesh.json"
+          "name": "Cube_23_deinterleaved_u8norm_u8color_u32index_compressed_filtered_v1_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_33_0.mesh.json"
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Cube_24_animated_rotation_compressed_filtered_v1_0",
+      "name": "Cube_24_animated_rotation_compressed_filtered_v1",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -1289,10 +2207,53 @@
               "z": 1.0
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/MeshoptCubeTest_34_0.mesh.json"
+          "name": "Cube_24_animated_rotation_compressed_filtered_v1_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/MeshoptCubeTest_34_0.mesh.json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
+        {
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/RotateCubes.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

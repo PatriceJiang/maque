@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "Cylinder_0",
+      "name": "Z_UP",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -74,19 +74,151 @@
             },
             "rotation": {
               "x": -1.5707963267948966,
-              "y": -1.5707963267948966,
+              "y": -0.0,
               "z": 0.0
             },
             "scale": {
-              "x": 1.0000000000000009,
-              "y": 1.0000000000000009,
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "name": "Armature",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": -0.0,
+                  "z": -1.5707963705062955
+                },
+                "scale": {
+                  "x": 1.0000000000000009,
+                  "y": 1.0000000000000009,
+                  "z": 1.0
+                }
+              }
+            }
+          ],
+          "children": [
+            {
+              "name": "Bone",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": -1.3597299641787688e-07,
+                      "z": -4.1803297996521
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": -0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "name": "Bone.001",
+                  "components": [
+                    {
+                      "type": "scene.Transform3D",
+                      "local": {
+                        "position": {
+                          "x": 1.2150299863455947e-11,
+                          "y": 0.02797747030854225,
+                          "z": 4.187077045440674
+                        },
+                        "rotation": {
+                          "x": 0.0,
+                          "y": -0.0005798450417617282,
+                          "z": 0.0
+                        },
+                        "scale": {
+                          "x": 0.999999999999994,
+                          "y": 1.0,
+                          "z": 0.999999999999994
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Cylinder",
+              "components": [
+                {
+                  "type": "scene.Transform3D",
+                  "local": {
+                    "position": {
+                      "x": 0.0,
+                      "y": 0.0,
+                      "z": 0.0
+                    },
+                    "rotation": {
+                      "x": 0.0,
+                      "y": -0.0,
+                      "z": 0.0
+                    },
+                    "scale": {
+                      "x": 1.0,
+                      "y": 1.0,
+                      "z": 1.0
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cylinder_0",
+      "components": [
+        {
+          "type": "scene.Transform3D",
+          "local": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "rotation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0,
               "z": 1.0
             }
           }
         },
         {
           "type": "render.MeshRenderer",
-          "mesh_path": "assets/RiggedSimple.mesh.json"
+          "mesh_path": "assets/RiggedSimple.mesh.json",
+          "skin_path": "assets/skin/RiggedSimple.skel.json"
         },
         {
           "type": "asset.PbrMaterial",
@@ -108,6 +240,22 @@
           "side": 0,
           "alpha_mode": 0,
           "alpha_cutoff": 0.5
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
+        {
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/animation0.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }

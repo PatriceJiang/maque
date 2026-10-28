@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "AnimatedMorphCube_0",
+      "name": "AnimatedMorphCube",
       "components": [
         {
           "type": "scene.Transform3D",
@@ -74,7 +74,7 @@
             },
             "rotation": {
               "x": -1.5707960971646564,
-              "y": -0.0,
+              "y": 0.0,
               "z": 3.141592653589793
             },
             "scale": {
@@ -83,31 +83,74 @@
               "z": 99.99999117911464
             }
           }
-        },
+        }
+      ],
+      "children": [
         {
-          "type": "render.MeshRenderer",
-          "mesh_path": "assets/AnimatedMorphCube.mesh.json"
-        },
+          "name": "AnimatedMorphCube_0",
+          "components": [
+            {
+              "type": "scene.Transform3D",
+              "local": {
+                "position": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "rotation": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0.0
+                },
+                "scale": {
+                  "x": 1.0,
+                  "y": 1.0,
+                  "z": 1.0
+                }
+              }
+            },
+            {
+              "type": "render.MeshRenderer",
+              "mesh_path": "assets/AnimatedMorphCube.mesh.json"
+            },
+            {
+              "type": "asset.PbrMaterial",
+              "name": "Material",
+              "base_color": {
+                "r": 0.6038274,
+                "g": 0.6038274,
+                "b": 0.6038274,
+                "a": 1.0
+              },
+              "metallic": 0.0,
+              "roughness": 0.5,
+              "emissive": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "double_sided": false,
+              "side": 0,
+              "alpha_mode": 0,
+              "alpha_cutoff": 0.5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "anim_player",
+      "components": [
         {
-          "type": "asset.PbrMaterial",
-          "name": "Material",
-          "base_color": {
-            "r": 0.6038274,
-            "g": 0.6038274,
-            "b": 0.6038274,
-            "a": 1.0
-          },
-          "metallic": 0.0,
-          "roughness": 0.5,
-          "emissive": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-          },
-          "double_sided": false,
-          "side": 0,
-          "alpha_mode": 0,
-          "alpha_cutoff": 0.5
+          "type": "scn.AnimationPlayer",
+          "clips": [
+            "assets/anim/Square.clip.json"
+          ],
+          "clip_index": 0,
+          "playing": true,
+          "loop": true,
+          "speed": 1.0,
+          "time": 0.0
         }
       ]
     }
