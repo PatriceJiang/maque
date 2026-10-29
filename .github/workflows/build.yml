@@ -51,7 +51,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             gcc-14 g++-14 \
             libsdl2-dev libcurl4-openssl-dev libwebsockets-dev libcap-dev \
-            zlib1g-dev libzstd-dev libfreetype-dev \
+            zlib1g-dev libzstd-dev libfreetype-dev libharfbuzz-dev \
             ninja-build pkg-config unzip zstd
 
       - name: Set up Node.js (codegen needs node + yaml)
@@ -183,6 +183,7 @@ jobs:
             'zlibstatic.lib',
             'zstd_static.lib',
             'freetype.lib',
+            'harfbuzz.lib',
             'libcurl.lib',
             'websockets_static.lib'
           )

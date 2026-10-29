@@ -47,7 +47,7 @@
       - name: mq_text_glyph
         doc: "排版输出的单个字形（位置/左上角为**设计像素**、y 向下；位图 w/h 与 bearing 为设备像素）。"
         fields:
-          - { name: codepoint, type: "uint32_t" }
+          - { name: codepoint, type: "uint32_t", doc: "码点；HarfBuzz shaping 的连字/多码点 cluster 取 cluster 首码点（图集实际按 glyph id 缓存）" }
           - { name: x, type: "float", doc: "笔位置 x（设计像素）" }
           - { name: y, type: "float", doc: "行顶 y（设计像素，y 向下）" }
           - { name: w, type: "float", doc: "字形位图宽（**设备像素**；呈现时除以栅格化倍率换算设计像素）" }
@@ -88,7 +88,7 @@
       - { fn: mq_text_measure, returns: int, args: [ { name: font, type: "mq_font*" }, { name: style, type: "const mq_text_style*" }, { name: text, type: "const char*" }, { name: out_metrics, type: "mq_text_metrics*" } ],
           doc: "只测量（不产生字形）" }
       - { fn: mq_text_layout, returns: int, args: [ { name: font, type: "mq_font*" }, { name: style, type: "const mq_text_style*" }, { name: text, type: "const char*" }, { name: out, type: "mq_text_glyph*" }, { name: cap, type: "uint32_t" }, { name: out_count, type: "uint32_t*" }, { name: out_metrics, type: "mq_text_metrics*" } ],
-          doc: "排版为字形序列（支持 <color>/<size>/<b>/<br/> 富文本标记）" }
+          doc: "排版为字形序列（支持 <color>/<size>/<b>/<i>/<br/> 富文本标记）；启用 HarfBuzz 时每个 run 先 shape（GPOS kerning/GSUB 连字），再按设计像素推进" }
       - { fn: mq_text_strip_markup, returns: int, args: [ { name: text, type: "const char*" }, { name: out, type: "char*" }, { name: cap, type: "uint32_t" } ],
           doc: "去掉富文本标记后的纯文本（供自省/日志）" }
       - { fn: mq_font_atlas, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: out_rgba, type: "uint8_t*" }, { name: cap, type: "size_t" }, { name: out_w, type: "uint32_t*" }, { name: out_h, type: "uint32_t*" } ],

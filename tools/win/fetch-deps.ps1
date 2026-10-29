@@ -1,4 +1,4 @@
-﻿<#
+<#
     tools/win/fetch-deps.ps1 —— maque Windows 第三方原生依赖：一条命令搞定的完整流程
     ────────────────────────────────────────────────────────────────────────────
     下载 → 解压 → （必要的可移植性补丁）→ CMake/Ninja/clang-cl 构建 → 安装到统一前缀
@@ -104,6 +104,11 @@ $Libraries = @(
        Args = @('-DBUILD_SHARED_LIBS=OFF', '-DFT_DISABLE_ZLIB=TRUE', '-DFT_DISABLE_BZIP2=TRUE',
                 '-DFT_DISABLE_PNG=TRUE', '-DFT_DISABLE_HARFBUZZ=TRUE', '-DFT_DISABLE_BROTLI=TRUE')
        Stamp = 'lib\freetype.lib' }
+    @{ Name = 'harfbuzz'; Url = 'https://codeload.github.com/harfbuzz/harfbuzz/tar.gz/refs/tags/10.2.0'
+       File = 'harfbuzz-10.2.0.tar.gz'; Dir = 'harfbuzz-10.2.0'; Sub = ''
+       Args = @('-DHB_HAVE_FREETYPE=ON', '-DHB_BUILD_UTILS=OFF', '-DHB_BUILD_SUBSET=OFF',
+                '-DHB_HAVE_GLIB=OFF', '-DHB_HAVE_ICU=OFF')
+       Stamp = 'lib\harfbuzz.lib' }
     @{ Name = 'zstd'; Url = 'https://codeload.github.com/facebook/zstd/tar.gz/refs/tags/v1.5.7'
        File = 'zstd-1.5.7.tar.gz'; Dir = 'zstd-1.5.7'; Sub = 'build\cmake'
        Args = @('-DZSTD_BUILD_SHARED=OFF', '-DZSTD_BUILD_STATIC=ON', '-DZSTD_BUILD_PROGRAMS=OFF',

@@ -10,7 +10,17 @@
 #include FT_FREETYPE_H
 #endif
 #include <cstring>
+#include <cstdlib>
 #include <string>
+
+/* HarfBuzz shaping 测试开关（Windows/MSVC 用 _putenv_s；其它平台 setenv）。 */
+static void set_shaping_env(bool on) {
+#if defined(_WIN32)
+    _putenv_s("MAQUE_TEXT_SHAPING", on ? "1" : "0");
+#else
+    setenv("MAQUE_TEXT_SHAPING", on ? "1" : "0", 1);
+#endif
+}
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
@@ -778,6 +788,44 @@ int main() {
                                sc, line_base[0], line_base[1], line_base[2], line_base[3], gap0);
                 }
             }
+            /* HarfBuzz shaping：GPOS kerning 与 GSUB 连字必须生效，关掉时退回逐码点等价布局。 */
+#if defined(MAQUE_HAVE_HARFBUZZ)
+            {
+                mq_text_style st = style(32.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+                st.device_scale = 1.0F;
+                st.pixel_snap = 1;
+                set_shaping_env(true);
+                mq_text_metrics fi{};
+                CHECK(mq_text_measure(pf, &st, "fi", &fi) == MQ_TEXT_OK);
+                mq_text_metrics av_on{};
+                CHECK(mq_text_measure(pf, &st, "AV", &av_on) == MQ_TEXT_OK);
+                std::vector<mq_text_glyph> sg(fi.glyph_count ? fi.glyph_count : 1);
+                uint32_t sn = 0;
+                CHECK(mq_text_layout(pf, &st, "fi", sg.data(), (uint32_t)sg.size(), &sn, &fi) == MQ_TEXT_OK);
+                CHECK(sn == 1);                                  /* Alibaba 字体有 fi 连字 */
+                if (sn == 1) {
+                    CHECK(sg[0].w > 0.0F && sg[0].h > 0.0F);
+                    CHECK(sg[0].codepoint == 'f');               /* cluster 首码点 */
+                }
+                /* kerning：AV 的宽度应小于逐码点之和（GPOS pair adjustment） */
+                mq_text_metrics a{}, v{};
+                CHECK(mq_text_measure(pf, &st, "A", &a) == MQ_TEXT_OK);
+                CHECK(mq_text_measure(pf, &st, "V", &v) == MQ_TEXT_OK);
+                CHECK(av_on.width + 0.05F < a.width + v.width);
+                std::print("text_test[shape] fi_glyphs={} AV_on={:.2f} A+V={:.2f}\n",
+                           sn, av_on.width, a.width + v.width);
+
+                set_shaping_env(false);                         /* 关闭 shaping：逐码点回退 */
+                mq_text_metrics fi_off{}, av_off{};
+                CHECK(mq_text_measure(pf, &st, "fi", &fi_off) == MQ_TEXT_OK);
+                CHECK(mq_text_measure(pf, &st, "AV", &av_off) == MQ_TEXT_OK);
+                CHECK(fi_off.glyph_count == 2);
+                CHECK(av_off.width == a.width + v.width);       /* 无 kerning：逐字 advance 之和 */
+                std::print("text_test[shape] off: fi_glyphs={} AV_off={:.2f}\n",
+                           fi_off.glyph_count, av_off.width);
+                set_shaping_env(true);
+            }
+#endif
             mq_font_destroy(pf);
         }
     }

@@ -62,7 +62,7 @@ typedef struct mq_text_style {
 
 /* 排版输出的单个字形（位置/左上角为**设计像素**、y 向下；位图 w/h 与 bearing 为设备像素）。 */
 typedef struct mq_text_glyph {
-    uint32_t codepoint;
+    uint32_t codepoint;   /* 码点；HarfBuzz shaping 的连字/多码点 cluster 取 cluster 首码点（图集实际按 glyph id 缓存） */
     float x;   /* 笔位置 x（设计像素） */
     float y;   /* 行顶 y（设计像素，y 向下） */
     float w;   /* 字形位图宽（**设备像素**；呈现时除以栅格化倍率换算设计像素） */
@@ -105,7 +105,7 @@ float mq_font_height(mq_font* font, float size);
 float mq_font_advance(mq_font* font, uint32_t codepoint, float size);
 /* 只测量（不产生字形） */
 int mq_text_measure(mq_font* font, const mq_text_style* style, const char* text, mq_text_metrics* out_metrics);
-/* 排版为字形序列（支持 <color>/<size>/<b>/<br/> 富文本标记） */
+/* 排版为字形序列（支持 <color>/<size>/<b>/<i>/<br/> 富文本标记）；启用 HarfBuzz 时每个 run 先 shape（GPOS kerning/GSUB 连字），再按设计像素推进 */
 int mq_text_layout(mq_font* font, const mq_text_style* style, const char* text, mq_text_glyph* out, uint32_t cap, uint32_t* out_count, mq_text_metrics* out_metrics);
 /* 去掉富文本标记后的纯文本（供自省/日志） */
 int mq_text_strip_markup(const char* text, char* out, uint32_t cap);

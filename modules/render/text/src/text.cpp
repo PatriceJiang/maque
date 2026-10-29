@@ -13,7 +13,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
+#include <print>
 #include <string>
 #include <vector>
 
@@ -22,6 +24,10 @@
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
 #endif
+#if defined(MAQUE_HAVE_HARFBUZZ)
+#include <harfbuzz/hb.h>
+#include <harfbuzz/hb-ft.h>
+#endif
 
 namespace {
 
@@ -29,9 +35,27 @@ constexpr uint32_t kFirstCp = 32;
 constexpr uint32_t kLastCp = 126;          /* 内置位图字体覆盖 ASCII 可见字符 */
 constexpr uint32_t kGlyphCount = kLastCp - kFirstCp + 1;
 
+/* 读环境变量（避开 MSVC 对 std::getenv 的 deprecation；值只在初始化/诊断用）。 */
+std::string env_value(const char* name) {
+#if defined(_WIN32)
+    char* v = nullptr;
+    size_t n = 0;
+    if (_dupenv_s(&v, &n, name) == 0 && v) {
+        std::string s(v);
+        std::free(v);
+        return s;
+    }
+    return {};
+#else
+    const char* v = std::getenv(name);
+    return v ? std::string(v) : std::string();
+#endif
+}
+
 
 struct Glyph {
-    uint32_t cp = 0;
+    uint32_t cp = 0;              /* 码点（连字/多码点 cluster 取首码点；仅调试/公开 API 展示） */
+    uint32_t gid = 0;             /* HarfBuzz/FreeType 字形索引（图集查找键；内置字体 = cp） */
     int      ax = 0, ay = 0;      /* 图集位置 */
     int      w = 0, h = 0;        /* 位图尺寸 */
     int      bearing_x = 0, bearing_y = 0;
@@ -81,6 +105,10 @@ struct mq_font {
     std::vector<Atlas> atlases;
 #if defined(MAQUE_HAVE_FREETYPE)
     FT_Face face = nullptr;
+#endif
+#if defined(MAQUE_HAVE_HARFBUZZ)
+    /* 按设计 ppem 缓存 hb-ft font（创建时必须 face 尺寸已就绪，否则 scale=0）。 */
+    std::vector<std::pair<float, hb_font_t*>> hb_fonts;
 #endif
     std::vector<uint8_t> builtin_bits;      /* 内置字体：kGlyphCount × 5 字节 */
 };
@@ -164,6 +192,10 @@ extern "C" mq_font* mq_font_load_file(const char* path) {
 
 extern "C" void mq_font_destroy(mq_font* font) {
     if (!font) return;
+#if defined(MAQUE_HAVE_HARFBUZZ)
+    for (auto& e : font->hb_fonts) if (e.second) hb_font_destroy(e.second);
+    font->hb_fonts.clear();
+#endif
 #if defined(MAQUE_HAVE_FREETYPE)
     if (font->face) {
         FT_Library lib = (FT_Library)font->face->generic.data;
@@ -178,7 +210,15 @@ extern "C" void mq_font_destroy(mq_font* font) {
 
 namespace {
 
-const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size, bool bold, bool italic);
+const Glyph* ensure_glyph_gid(mq_font* f, Atlas& a, uint32_t gid, uint32_t cp, float size,
+                              bool bold, bool italic);
+const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size, bool bold, bool italic) {
+#if defined(MAQUE_HAVE_FREETYPE)
+    if (f && f->face && !f->builtin)
+        return ensure_glyph_gid(f, a, FT_Get_Char_Index(f->face, cp), cp, size, bold, italic);
+#endif
+    return ensure_glyph_gid(f, a, cp, cp, size, bold, italic);   /* 内置位图字体：gid = cp */
+}
 
 /* 图集惰性创建：ASCII 预热（常见文本零额外开销、行为与旧版一致），其余码点按需栅格化。 */
 Atlas& atlas_for(mq_font* f, float size) {
@@ -196,15 +236,21 @@ Atlas& atlas_for(mq_font* f, float size) {
     return out;
 }
 
-/* 按需栅格化一个码点并打包：查找键 = (码点, bold, italic)；放不下返回 nullptr（调用方跳过）。
+/* 按需栅格化一个字形并打包：查找键 = (gid, bold, italic)（内置字体用 cp 作 gid）。
+ * 字形索引来自 HarfBuzz；`FT_Load_Char` 只在 codepoint 布局路径里先映射成 gid。
  * 普通样式（bold/italic 均为 false）的栅格化与打包路径与旧实现**完全相同**（逐字节不变）。 */
-const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size, bool bold, bool italic) {
-    for (const auto& g : a.glyphs)
-        if (g.cp == cp && g.bold == bold && g.italic == italic) return &g;
+const Glyph* ensure_glyph_gid(mq_font* f, Atlas& a, uint32_t gid, uint32_t cp, float size,
+                              bool bold, bool italic) {
+    for (const auto& g : a.glyphs) {
+        if (f->builtin ? (g.cp == cp && g.bold == bold && g.italic == italic)
+                       : (g.gid == gid && g.bold == bold && g.italic == italic))
+            return &g;
+    }
     if (a.full) return nullptr;
 
     Glyph g;
     g.cp = cp;
+    g.gid = gid;
     g.bold = bold;
     g.italic = italic;
     std::vector<uint8_t> bmp;                 /* RGBA（白字 + alpha） */
@@ -229,7 +275,7 @@ const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size, bool bo
                 m.yx = 0;       m.yy = 0x10000;
                 FT_Set_Transform(f->face, &m, nullptr);
             }
-            const FT_Error err = FT_Load_Char(f->face, cp, FT_LOAD_DEFAULT);
+            const FT_Error err = FT_Load_Glyph(f->face, gid, FT_LOAD_DEFAULT);
             if (italic) FT_Set_Transform(f->face, nullptr, nullptr);   /* 立即复位，避免污染后续字形 */
             if (err != 0) return nullptr;
             FT_GlyphSlot slot = f->face->glyph;
@@ -241,11 +287,11 @@ const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size, bool bo
             m.xx = 0x10000; m.xy = 0x4000;
             m.yx = 0;       m.yy = 0x10000;
             FT_Set_Transform(f->face, &m, nullptr);
-            const FT_Error err = FT_Load_Char(f->face, cp, FT_LOAD_RENDER);
+            const FT_Error err = FT_Load_Glyph(f->face, gid, FT_LOAD_RENDER);
             FT_Set_Transform(f->face, nullptr, nullptr);               /* 立即复位 */
             if (err != 0) return nullptr;
         } else {
-            if (FT_Load_Char(f->face, cp, FT_LOAD_RENDER) != 0) return nullptr;
+            if (FT_Load_Glyph(f->face, gid, FT_LOAD_RENDER) != 0) return nullptr;
         }
         FT_GlyphSlot sl = f->face->glyph;
         bw = (int)sl->bitmap.width;
@@ -324,14 +370,6 @@ bool is_cjk(uint32_t cp) {
     return (cp >= 0x2E80 && cp <= 0x9FFF) || (cp >= 0xAC00 && cp <= 0xD7AF) ||
            (cp >= 0xF900 && cp <= 0xFAFF) || (cp >= 0xFF00 && cp <= 0xFF60) ||
            (cp >= 0x20000 && cp <= 0x2FA1F);
-}
-
-const Glyph* find_glyph(const Atlas& a, uint32_t cp) {
-    if (cp >= 'a' && cp <= 'z' && a.glyphs.size() && a.glyphs[0].cp == kFirstCp) {
-        /* 内置字体：小写复用大写形状（文档化取舍） */
-    }
-    for (const auto& g : a.glyphs) if (g.cp == cp) return &g;
-    return nullptr;
 }
 
 /* 布局 ppem：逻辑字号 → **设计像素**整数 ppem（FreeType 只接受整数 ppem）。
@@ -607,7 +645,8 @@ struct PlacedGlyph {
     float x0, y0;                   /* 位图左上角（设计像素；已按设备像素网格吸附） */
     float size, device_size;        /* 逻辑字号 / 栅格化 ppem（设备像素，只影响位图） */
     float ascent = 0.0F;            /* 所属 run 的基线（设计像素，相对行顶；行内取 max 对齐） */
-    float raster_advance = 0.0F;    /* 呈现推进（**设备像素**整数）：非整数倍缩放下保证字距均匀 */
+    float raster_advance = 0.0F;    /* 呈现推进（**设备像素**；普通字形整数，kerning 增量可带小数） */
+    float x_off = 0.0F;             /* shaping 的 x 偏移（设计像素） */
     float r, g, b, a;
     int w, h, bearing_x, bearing_y; /* 位图宽高 / FreeType bearing（**设备像素**） */
     int ax = 0, ay = 0;             /* 图集内像素原点 */
@@ -620,6 +659,147 @@ float styled_advance(mq_font* f, uint32_t cp, float layout_size, bool bold) {
     const float a = mq_font_advance(f, cp, layout_size);
     if (!bold) return a;
     return a + (float)(f->builtin ? builtin_scale_of(layout_size) : bold_strength_of(layout_size));
+}
+
+/* ============================ HarfBuzz shaping ============================
+ * 每个排版单元 = 一个 shaped glyph（连字/多码点 cluster 合并为一个单元）。
+ * 这层只产出 **设计像素** 的推进/偏移；位图仍由 FreeType 按 (gid, ppem, 合成样式) 栅格化。
+ * `MAQUE_TEXT_SHAPING=0` 或没有 HarfBuzz 时走旧逐码点路径（逐字节不变）。 */
+bool text_shaping_enabled() {
+#if defined(MAQUE_HAVE_HARFBUZZ)
+    const std::string e = env_value("MAQUE_TEXT_SHAPING");
+    if (e == "0" || e == "off") return false;
+    return true;
+#else
+    return false;
+#endif
+}
+
+struct ShapedCell {
+    uint32_t gid = 0;
+    uint32_t cp = 0;            /* cluster 首码点（公开 API 的 codepoint） */
+    float advance = 0.0F;       /* 设计像素（含 kerning / bold 加宽） */
+    float base_advance = 0.0F;  /* 设计像素：无 kerning 的逐码点推进（连字 = advance） */
+    float x_offset = 0.0F;      /* 设计像素 mark/连写偏移 */
+    bool  break_after = false;  /* 空格 / CJK：WORD 模式的断行机会 */
+    bool  ligature = false;     /* 多码点 cluster 或 gid != 首码点 gid */
+    bool  shaped = false;       /* true = 来自 HarfBuzz（gid 有效）；false = 码点回退 */
+};
+
+/* UTF-8 码点跨度（cluster 字节区间 [begin,end) 内的码点数 + 首码点） */
+void cluster_info(const std::string& s, uint32_t begin, uint32_t end, uint32_t* first_cp, int* cp_count) {
+    *first_cp = 0;
+    *cp_count = 0;
+    uint32_t p = begin;
+    while (p < end) {
+        uint32_t cp = 0;
+        const char* cur = s.data() + p;
+        const char* nx = utf8_next(cur, &cp);
+        if (nx == cur) break;
+        if (*cp_count == 0) *first_cp = cp;
+        ++*cp_count;
+        p = (uint32_t)(nx - s.data());
+    }
+}
+
+bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold, std::vector<ShapedCell>& out) {
+#if defined(MAQUE_HAVE_HARFBUZZ)
+    if (!f || f->builtin || text.empty() || !text_shaping_enabled()) return false;
+    if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(lsize + 0.5F)) != 0) return false;
+    /* hb-ft font 必须在 face 尺寸设置**之后**创建：创建时若 face->size 为空，scale 会是 0，
+     * positions 单位会错（实测 Segoe UI 的 adv 只有一半）。按设计 ppem 缓存。 */
+    hb_font_t* hbf = nullptr;
+    for (auto& e : f->hb_fonts) if (e.first == lsize) { hbf = e.second; break; }
+    if (!hbf) {
+        hbf = hb_ft_font_create_referenced(f->face);
+        if (!hbf) return false;
+        hb_ft_font_set_load_flags(hbf, FT_LOAD_DEFAULT);
+        hb_font_set_scale(hbf, (int)std::lround(lsize * 64.0F), (int)std::lround(lsize * 64.0F));
+        f->hb_fonts.emplace_back(lsize, hbf);
+    }
+    hb_buffer_t* buf = hb_buffer_create();
+    if (!buf) return false;
+    hb_buffer_add_utf8(buf, text.data(), (int)text.size(), 0, (int)text.size());
+    hb_buffer_guess_segment_properties(buf);
+    hb_shape(hbf, buf, nullptr, 0);
+    unsigned n = 0;
+    const hb_glyph_info_t* info = hb_buffer_get_glyph_infos(buf, &n);
+    const hb_glyph_position_t* pos = hb_buffer_get_glyph_positions(buf, &n);
+    if (!info || !pos || n == 0) { hb_buffer_destroy(buf); return false; }
+    const float bold_add = bold ? (float)bold_strength_of(lsize) : 0.0F;
+    out.clear();
+    out.reserve(n);
+    for (unsigned i = 0; i < n; ++i) {
+        ShapedCell c;
+        c.gid = info[i].codepoint;
+        c.shaped = true;
+        const uint32_t begin = info[i].cluster;
+        uint32_t end = (i + 1 < n) ? info[i + 1].cluster : (uint32_t)text.size();
+        if (end < begin) end = begin;                     /* RTL（cluster 逆序）时保守处理 */
+        uint32_t cp = 0;
+        int cp_count = 0;
+        cluster_info(text, begin, end, &cp, &cp_count);
+        c.cp = cp;
+        c.advance = (float)pos[i].x_advance / 64.0F + bold_add;
+        c.x_offset = (float)pos[i].x_offset / 64.0F;
+        c.break_after = false;
+        c.ligature = (cp_count > 1);
+        for (uint32_t p = begin; p < end;) {
+            uint32_t t = 0;
+            const char* cur = text.data() + p;
+            const char* nx = utf8_next(cur, &t);
+            if (nx == cur) break;
+            if (t == ' ' || is_cjk(t)) c.break_after = true;
+            p = (uint32_t)(nx - text.data());
+        }
+        c.base_advance = c.advance;
+        if (!c.ligature && cp) {
+            const float plain = mq_font_advance(f, cp, lsize) + bold_add;
+            const FT_UInt cpg = FT_Get_Char_Index(f->face, cp);
+            if (c.gid != cpg) c.ligature = true;         /* 单码点被替换成其它字形（如竖排/替代形） */
+            c.base_advance = plain;
+        }
+        out.push_back(c);
+    }
+    const int raw0 = n ? pos[0].x_advance : 0;
+    hb_buffer_destroy(buf);
+    if (!env_value("MAQUE_TRACE_SHAPE").empty()) {
+        int xs = 0, ys = 0;
+        hb_font_get_scale(hbf, &xs, &ys);
+        float sum = 0.0F;
+        for (const ShapedCell& c : out) sum += c.advance;
+        std::print(stderr, "[shape] '{}' lsize={} n={} sum={:.1f} hbscale={},{} face_px={} raw0={} first:",
+                   text, lsize, out.size(), sum, xs, ys,
+                   f->face->size ? f->face->size->metrics.height : -1,
+                   raw0);
+        for (size_t i = 0; i < out.size() && i < 12; ++i)
+            std::print(stderr, " [{} cp={} adv={:.2f} base={:.2f} brk={}]",
+                       out[i].gid, out[i].cp, out[i].advance, out[i].base_advance, out[i].break_after);
+        std::print(stderr, "\n");
+    }
+    return !out.empty();
+#else
+    (void)f; (void)text; (void)lsize; (void)bold; (void)out;
+    return false;
+#endif
+}
+
+/* 码点回退：与旧布局路径等价的排版单元（gid 由 ensure_glyph 内部映射）。 */
+void build_fallback_cells(mq_font* f, const std::string& text, float lsize, bool bold,
+                          std::vector<ShapedCell>& out) {
+    out.clear();
+    for (const char* cur = text.c_str(); *cur;) {
+        uint32_t cp = 0;
+        const char* nx = utf8_next(cur, &cp);
+        if (nx == cur) break;
+        cur = nx;
+        ShapedCell c;
+        c.cp = cp;
+        c.advance = styled_advance(f, cp, lsize, bold);
+        c.base_advance = c.advance;
+        c.break_after = (cp == ' ' || is_cjk(cp));
+        out.push_back(c);
+    }
 }
 
 /* 逐字符排版 + 换行 + 对齐（确定性：单向扫描，不回溯）。
@@ -664,23 +844,32 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
         float run_ascent = 0.0F;
         font_extents(f, lsize, &run_ascent);
         Atlas& atlas = atlas_for(f, rsize);
-        std::vector<uint32_t> word;                            /* 词缓冲（码点） */
+        /* HarfBuzz：整个 run 一次 shape（GPOS kerning / GSUB 连字）；失败/关闭时回退逐码点。 */
+        std::vector<ShapedCell> cells;
+        if (!shape_run(f, run.text, lsize, run.bold, cells))
+            build_fallback_cells(f, run.text, lsize, run.bold, cells);
+        std::vector<ShapedCell> word;                          /* 词缓冲（shaped cell） */
 
-        /* 落一个字形：记录设备像素位图 + 设计空间笔位置；x0/y0 留到行结束后按**行基线/设备推进**确定 */
-        auto place = [&](uint32_t cp) {
+        /* 落一个排版单元：记录设备像素位图 + 设计空间笔位置；x0/y0 留到行结束后按**行基线/设备推进**确定 */
+        auto place = [&](const ShapedCell& c) {
             PlacedGlyph g{};
-            g.cp = cp; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = rsize;
+            g.cp = c.cp; g.x = pen_x + c.x_offset; g.y = pen_y; g.size = size; g.device_size = rsize;
             g.ascent = run_ascent;
+            g.x_off = c.x_offset;
             g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
             /* run 级样式（parse_runs 已把样式级 st.bold/st.italic 折叠进 run 初始状态） */
-            const Glyph* gl = ensure_glyph(f, atlas, cp, rsize, run.bold, run.italic);
-            /* 呈现推进 = 设备像素整数 advance（图集 advance 已在粗体时含加宽）；
-             * 关键：不能把设计 advance 直接乘 scale 再逐字吸附 —— 非整数倍缩放会得到
-             * 8/9/8/9… 的字距抖动（肉眼"歪歪扭扭"）。设备整数累计 → 字距均匀。 */
+            const Glyph* gl = c.shaped
+                ? ensure_glyph_gid(f, atlas, c.gid, c.cp, rsize, run.bold, run.italic)
+                : ensure_glyph(f, atlas, c.cp, rsize, run.bold, run.italic);
+            /* 呈现推进 = 图集设备 advance（普通字形） + shaping 的 kerning 增量（设计→设备）。
+             * 不能把设计 advance 直接乘 scale 再逐字吸附 —— 非整数倍缩放会得到 8/9/8/9…
+             * 的字距抖动；普通字形的图集 advance 已是栅格化后的整数，增量只来自 kerning。 */
             const float bold_dev = run.bold
                 ? (float)(f->builtin ? builtin_scale_of(rsize) : bold_strength_of(rsize)) : 0.0F;
-            g.raster_advance = (gl && gl->advance > 0.0F) ? gl->advance
-                                                          : mq_font_advance(f, cp, rsize) + bold_dev;
+            const float base_raster = (gl && gl->advance > 0.0F)
+                ? gl->advance : mq_font_advance(f, c.cp, rsize) + bold_dev;
+            const float delta_design = (c.shaped && !c.ligature) ? (c.advance - c.base_advance) : 0.0F;
+            g.raster_advance = base_raster + delta_design * raster_scale;
             if (gl) {
                 g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
                 g.ax = gl->ax; g.ay = gl->ay;
@@ -691,37 +880,31 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
                 }
             }
             lines.back().glyphs.push_back(g);
-            pen_x += styled_advance(f, cp, lsize, run.bold);    /* 设计像素推进（与渲染倍率无关） */
+            pen_x += c.advance;                                  /* 设计像素推进（含 kerning/连字） */
             line_h = std::max(line_h, mq_font_height(f, lsize));
         };
 
         auto flush_word = [&]() {
             if (word.empty()) return;
             if (st.wrap == MQ_TEXT_WRAP_CHAR) {
-                for (uint32_t cp : word) {
-                    if (max_w > 0.0F && pen_x > 0.0F &&
-                        pen_x + styled_advance(f, cp, lsize, run.bold) > max_w)
+                for (const ShapedCell& c : word) {
+                    if (max_w > 0.0F && pen_x > 0.0F && pen_x + c.advance > max_w)
                         end_line();
-                    place(cp);
+                    place(c);
                 }
             } else {
                 float wsum = 0.0F;
-                for (uint32_t cp : word) wsum += styled_advance(f, cp, lsize, run.bold);
+                for (const ShapedCell& c : word) wsum += c.advance;
                 if (max_w > 0.0F && pen_x > 0.0F && pen_x + wsum > max_w) end_line();
-                for (uint32_t cp : word) place(cp);
+                for (const ShapedCell& c : word) place(c);
             }
             word.clear();
         };
 
-        const char* cur = run.text.c_str();
-        while (*cur) {
-            uint32_t cp = 0;
-            const char* nx = utf8_next(cur, &cp);
-            if (nx == cur) break;
-            cur = nx;
-            word.push_back(cp);
+        for (const ShapedCell& c : cells) {
+            word.push_back(c);
             /* WORD：空格后断行；CJK 逐字可断（无空格语言不会整段溢出） */
-            if (st.wrap == MQ_TEXT_WRAP_WORD && (cp == ' ' || is_cjk(cp))) flush_word();
+            if (st.wrap == MQ_TEXT_WRAP_WORD && c.break_after) flush_word();
         }
         flush_word();                                          /* NONE/CHAR/WORD 统一收尾 */
     }
@@ -765,13 +948,16 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
             const int baseline_dev = (raster_scale == 1.0F)
                 ? (int)std::lround(l.y + l.ascent)            /* 1×：与旧行为逐像素一致 */
                 : line_top_dev + (int)std::lround(l.ascent * raster_scale);
-            int pen_dev = (int)std::floor(dx * raster_scale + 0.5F);
+            /* 设备笔位置用 float 累计：普通字形 advance 是整数（字距均匀），只有 shaping 的
+             * kerning 增量带小数（按 shaping 语义落位）；逐字取整仍只在最终 x0 做一次。 */
+            float pen_dev = std::floor(dx * raster_scale + 0.5F);
             for (PlacedGlyph& g : l.glyphs) {
                 g.x += dx;                                   /* 笔位置（排版语义） */
                 if (st.pixel_snap) {
-                    g.x0 = (float)(pen_dev + g.bearing_x) / raster_scale;
+                    const int x_dev = (int)std::floor(pen_dev + g.x_off * raster_scale + 0.5F);
+                    g.x0 = (float)(x_dev + g.bearing_x) / raster_scale;
                     g.y0 = (float)(baseline_dev - g.bearing_y) / raster_scale;
-                    pen_dev += (int)std::lround(g.raster_advance);
+                    pen_dev += g.raster_advance;
                 } else {
                     /* 不吸附：直接设计像素落位（开发者可关 pixel_snap 做几何精确对照） */
                     g.x0 = g.x + (float)g.bearing_x / raster_scale;

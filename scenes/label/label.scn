@@ -37,19 +37,19 @@
           "align": "ui::Align::Begin", "r": 1.0, "g": 0.5, "b": 0.9, "a": 1.0 } ] },
 
     { "name": "shrink", "components": [
-        { "type": "scn.Label", "x": 20.0, "y": 140.0, "text": "shrink this text to fit the box",
+        { "type": "scn.Label", "x": 20.0, "y": 140.0, "text": "shrink this text to fit the box and wrap more words",
           "font_size": 24.0, "max_width": 140.0, "max_height": 60.0,
           "overflow": "ui::TextOverflow::Shrink", "wrap": "ui::TextWrap::Word",
           "align": "ui::Align::Begin", "r": 0.5, "g": 1.0, "b": 0.4, "a": 1.0 } ] },
 
     { "name": "shrink_control", "components": [
-        { "type": "scn.Label", "x": 200.0, "y": 140.0, "text": "shrink this text to fit the box",
+        { "type": "scn.Label", "x": 200.0, "y": 140.0, "text": "shrink this text to fit the box and wrap more words",
           "font_size": 24.0, "max_width": 140.0,
           "overflow": "ui::TextOverflow::Clip", "wrap": "ui::TextWrap::Word",
           "align": "ui::Align::Begin", "r": 1.0, "g": 0.45, "b": 0.25, "a": 1.0 } ] },
 
     { "name": "clip", "components": [
-        { "type": "scn.Label", "x": 20.0, "y": 70.0, "text": "shrink this text to fit the box",
+        { "type": "scn.Label", "x": 20.0, "y": 70.0, "text": "shrink this text to fit the box and wrap more words",
           "font_size": 24.0, "max_width": 140.0, "max_height": 60.0,
           "overflow": "ui::TextOverflow::Clip", "wrap": "ui::TextWrap::Word",
           "align": "ui::Align::Begin", "r": 0.3, "g": 0.95, "b": 1.0, "a": 1.0 } ] }

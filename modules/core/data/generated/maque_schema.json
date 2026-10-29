@@ -31222,7 +31222,7 @@
             {
               "name": "codepoint",
               "type": "uint32_t",
-              "doc": null
+              "doc": "码点；HarfBuzz shaping 的连字/多码点 cluster 取 cluster 首码点（图集实际按 glyph id 缓存）"
             },
             {
               "name": "x",

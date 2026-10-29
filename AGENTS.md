@@ -28,7 +28,7 @@ cd modules/core/data && node parser.js --check
 ### Windows（clang-cl + Ninja；完整支持）
 
 ```powershell
-# ① 一次性：取第三方依赖（SDL2 / zlib-ng / zstd / freetype / libcurl / libwebsockets）
+# ① 一次性：取第三方依赖（SDL2 / zlib-ng / zstd / freetype / harfbuzz / libcurl / libwebsockets）
 #    下载源码 → 用同一 clang-cl 构建 → 装到 .deps/dist → 生成 .deps/deps.cmake + 自检
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\fetch-deps.ps1
 
@@ -388,7 +388,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   **控制面**：`Audio.info/voices`（只读）、`Audio.play/stop/set_master/set_bus`（变更类；voice 用字符串句柄）。
   测试：`ctest -R 'audio'`（单测 + `audio_e2e`：null/OGG/组件/抓音 + SDL dummy + `audio_control_e2e`）。
 - WebGPU 需 `third_party/wgpu-native/lib/libwgpu_native.so`（二进制**不入库**）。
-- 系统依赖：SDL2 / libcurl / libwebsockets（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev`）。
+- 系统依赖：SDL2 / libcurl / libwebsockets / HarfBuzz（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev libharfbuzz-dev`）。
 - 已 vendored：`third_party/quickjs-ng`（JS 后端）、`third_party/lua`（Lua 5.4 后端）、`third_party/wuffs`、
   `third_party/basisu`（KTX2/Basis Universal 转码，Apache-2.0）、
   `third_party/imgui`（master；**inspector 与引擎侧 `modules/ui/imgui` 共用**，见 docs/28）。
@@ -518,6 +518,17 @@ Shrink 二分找「能装下的最大字号」并写回 transient `fit_font_size
 `mq_font_atlas_generation` 变化 → 宿主刷新纹理（**旧纹理延迟到下一帧释放**，避免帧内悬空）；
 排版按 **UTF-8 码点**（非字节），CJK 逐字可断行；文本图元**两阶段**提交：先全部排版（预热图集），
 再按**最终图集尺寸**算 UV（否则先排的标签会用过期 UV 采样 → 错位/重叠）。
+
+**HarfBuzz shaping（可选依赖，默认开启）**：每个 run 用 **hb-ft**（`hb_ft_font_create_referenced`，
+face 尺寸设置**之后**创建，否则 hb scale=0）做一次 shape —— 得到 GPOS kerning、GSUB 连字（fi/fl/ffi）、
+combining marks/复杂脚本 shaping 的 **glyph id + design-px advance**；字形仍由 FreeType 按
+`(gid, 设备 ppem, 合成 bold/italic)` 栅格化，**图集查找键从码点改为 gid**（`mq_text_glyph.codepoint`
+对连字取 cluster 首码点）。`text_w/text_h/折行`按 shaped advance 计算；关闭方式：
+`-DMAQUE_HARFBUZZ=OFF`（构建期）或 `MAQUE_TEXT_SHAPING=0`（运行期）→ 退回逐码点旧路径（逐字节不变）。
+依赖：Windows 由 `tools/win/fetch-deps.ps1` 构建 harfbuzz 10.2.0；Linux 装 `libharfbuzz-dev`。
+已知边界（P0）：不做 bidi/UAX #14 换行（仍按空格+CJK 贪心、cluster 边界断行）、无字体 fallback、
+每帧每 run 重新 shape（暂未做 shaping cache）；`MAQUE_TRACE_SHAPE=1` 打印每个 run 的 gid/advance/cluster。
+回归：`text_test[shape]`（fi 连字 glyph_count=1、AV kerning 宽度 < A+V、关 shaping 后恢复 2/逐码点和）。
 
 **文本 pixel-perfect（FreeType 集成）**：**排版在「设计像素」空间进行** —— 与窗口大小/渲染倍率无关
 （窗口 resize 只改字形位图分辨率，**不改**折行、行数、text_w/text_h/fit_font_size 与文字相对画布的大小）。
