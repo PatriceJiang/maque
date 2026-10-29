@@ -127,6 +127,11 @@
 - **像素吸附必须作用在"图元中心"**：吸附在顶点着色器里执行，若逐顶点吸附
   （每个顶点都拿自己当中心）会使整个矩形偏移半像素 → 1:1 nearest 下部分行列取错纹素。
   正确做法：中心变换到目标空间 → 吸附 → 再加顶点偏移（`px = pc + kc`）。
+  **吸附用的 half 必须是目标像素尺寸（`half*zoom`）**：`hw` 是设计空间半宽高，若直接
+  `floor(pc-hw+0.5)` 再 `pc=tl+hw`，ss≠1 时图元会按自身半高平移 `half*(1-zoom)`，
+  不同高度字形 baseline 差 1px（khronos 标题的 "baseline 不齐" 根因）。
+- **字形基线归一**：低 ppem 下 FreeType hinted 位图的可见底行（alpha≥128）会落在 baseline-1/-2；
+  栅格化后把贴近基线的字形吸附到 baseline-1（圆笔/直笔一致，标点/重音/降部不动）。
 - **换行（UAX #14 + UAX #29）**：`WORD` wrap 的断行机会由 vendored **libunibreak** 给出
   （`set_linebreaks_utf32` + `set_graphemebreaks_utf32`）：空格、连字符、ZWSP、CJK、禁则、组合字等；
   `CHAR` wrap 逐 cell 断但不拆字素。`MAQUE_TEXT_LINEBREAK=0` 回退旧的“空格 + CJK 贪心”。

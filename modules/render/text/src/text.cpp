@@ -312,6 +312,33 @@ const Glyph* ensure_glyph_gid(mq_font* f, Atlas& a, uint32_t gid, uint32_t cp, f
                     d[0] = d[1] = d[2] = 255;
                     d[3] = sl->bitmap.buffer[(size_t)y * sl->bitmap.pitch + x];
                 }
+            /* 基线归一：FreeType hinted 位图在低 ppem 会把不同字形（直笔/圆笔）的墨迹底行
+             * 舍入到 baseline-1 或 baseline-2，导致同一行文字肉眼"baseline 不齐"。
+             * 这里把**平底字形**的墨迹底行统一吸附到 baseline-1；带 overshoot/降部的字形
+             * （墨迹底行 ≥ baseline）保持原样，不破坏正常的圆笔 overshoot。
+             * “底行”按**可见覆盖**判定（alpha ≥ 128）：圆笔最底下常有一行 alpha≈1/4 的
+             * 极淡 AA，按 any-alpha 会误判为已对齐，实际肉眼看到的底行仍高 1px。 */
+            int ink_bottom = -1;
+            for (int y = bh - 1; y >= 0 && ink_bottom < 0; --y) {
+                uint8_t max_alpha = 0;
+                for (int x = 0; x < bw; ++x) {
+                    const uint8_t a = bmp[((size_t)y * bw + x) * 4 + 3];
+                    if (a > max_alpha) max_alpha = a;
+                }
+                if (max_alpha >= 128) ink_bottom = y;
+            }
+            if (ink_bottom < 0) {                          /* 极细字形：退回 any-alpha */
+                for (int y = bh - 1; y >= 0 && ink_bottom < 0; --y)
+                    for (int x = 0; x < bw; ++x)
+                        if (bmp[((size_t)y * bw + x) * 4 + 3] != 0) { ink_bottom = y; break; }
+            }
+            if (ink_bottom >= 0) {
+                const int rel = ink_bottom - g.bearing_y;   /* 底行相对基线（-1 = 基线上一行） */
+                /* 低 ppem 下 hinted 平底/圆底字形会落在 -2/-1/0 三档，肉眼就是 baseline 抖 1px。
+                 * 把“贴近基线”的字形统一吸附到 baseline-1；标点/重音（rel 远小于 -2）和
+                 * 降部/下划线（rel > 0）保持不动。 */
+                if (rel >= -2 && rel <= 0) g.bearing_y += rel + 1;
+            }
         }
     }
 #endif

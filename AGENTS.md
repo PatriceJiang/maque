@@ -553,6 +553,12 @@ libunibreak（`set_linebreaks_utf32` + `set_graphemebreaks_utf32`），覆盖空
 **非整数倍缩放的字距/基线精度**：`pixel_snap` 下横向按**设备整数 advance 累计**推进、每行基线只吸附**一次**
 （不是把「设计位置×倍率」逐字取整）；否则 1.25×/0.83× 等倍率会出现 14/14/13/14 的字距抖动与逐字基线抖动
 （肉眼"歪歪扭扭"）。同字形设备字距必须完全相等，回归 `label_glyph_grid_e2e`。
+**渲染器 snap 必须用目标像素半尺寸**：textured shader 里 `tl = floor(pc - hw*zoom + 0.5)` 再
+`pc = tl + hw*zoom`（`hw` 是设计空间半宽高）。若误用 `hw` 吸附，ss≠1 时每个图元会按自身半高被平移
+`half*(1-zoom)` → 不同高度字形的 baseline 相差 1px、字距也会抖（这是 khronos 标题 baseline 不齐的根因）。
+**字形基线归一**：FreeType hinted 位图在低 ppem 会把直笔/圆笔的“可见墨迹底行”（alpha ≥ 128）舍入到
+baseline-1/-2；栅格化后把贴近基线的字形统一吸附到 baseline-1（标点/重音/降部不动），避免肉眼 1px 基线抖动。
+回归：`label_glyph_grid_e2e` 新增 `1.1×` 与 `mixbase`（"Kho" 不同字高同行）断言，以及 `text_test[baseline-norm]`。
 渲染侧固定用 **矩形图元 + `filter=nearest` + `snap=1`**（方形会拉伸字形，线性会糊）。
 硬证据：`ctest -R text_pixel` —— 渲染结果与字体模块位图**逐像素一致**（渗出 0、max_diff 0），
 且内置"线性 + 半像素偏移"对照组证明测试有鉴别力；窗口 resize 布局不变性回归见 `label_resize_e2e`。

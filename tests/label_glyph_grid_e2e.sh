@@ -26,7 +26,7 @@ export MAQUE_HEADLESS=1
 
 fail() { echo "label_glyph_grid_e2e: FAIL $*" >&2; exit 1; }
 
-SCALES="1 1.25 1.5 0.833 2.5"
+SCALES="1 1.25 1.5 0.833 1.1 2.5"
 for S in $SCALES; do
     MAQUE_RENDER_SCALE="$S" "$PLAYER" --shot "$WORK/g_$S.ppm" --shot-frame 1 "$SCENE" \
         > "$WORK/run_$S.log" 2>&1 || fail "scale $S 运行失败（$WORK/run_$S.log）"
@@ -37,7 +37,7 @@ done
 import glob, os, sys
 
 work = sys.argv[1]
-scales = [('1', 1.0), ('1.25', 1.25), ('1.5', 1.5), ('0.833', 0.833), ('2.5', 2.5)]
+scales = [('1', 1.0), ('1.25', 1.25), ('1.5', 1.5), ('0.833', 0.833), ('1.1', 1.1), ('2.5', 2.5)]
 bad = []
 def ck(cond, msg):
     if not cond: bad.append(msg)
@@ -84,6 +84,7 @@ white = lambda r, g, b: r > 150 and g > 150 and b > 150
 green = lambda r, g, b: g > 150 and r < 150 and b < 150
 pink  = lambda r, g, b: r > 150 and b > 120 and g < 130
 blue  = lambda r, g, b: b > 150 and r < 0.8 * b and g < 0.9 * b
+yellow = lambda r, g, b: r > 150 and g > 120 and b < 120 and g < 0.95 * r
 
 def row_bands(w, h, px, pred, x0, x1, y0, y1):
     """区域内按行分带（连续墨迹行），返回 [(top,bot)]"""
@@ -148,6 +149,16 @@ for tag, sc in scales:
     mx = color_groups(w, h, px, pink, 0, w, (180 - 4) * sc, (180 + 26) * sc, gap)
     ck(len(mx) >= 2, f'[{tag}] mixed 行应有多段墨迹（实际 {len(mx)}）')
 
+    # ---- mixbase: 同 line 不同高度字形（K/h 升部 + o x-height）基线行必须一致 ----
+    # 行顶（设计 px）= H - 40 = 320；font 24，区域取到 line 底
+    mb = color_groups(w, h, px, yellow, 0, w, (320 - 6) * sc, (320 + 38) * sc, gap)
+    mb = [g for g in mb if g[3] - g[2] >= 2 * sc]
+    ck(len(mb) >= 3, f'[{tag}] mixbase 应有 >=3 个字形（实际 {len(mb)}）')
+    if mb:
+        bottoms = [g[3] for g in mb]
+        ck(max(bottoms) == min(bottoms),
+           f'[{tag}] mixbase 不同字高基线应一致（实际 {bottoms}）')
+
     # ---- lines: 4 行同字号文本 → 行基线间距必须恒定（行高按设备整数累计）----
     # lines 行顶（设计 px）= H - 100 = 260；4 行 * ~22px 行高 = 88
     lb = row_bands(w, h, px, blue, 0, w, (260 - 6) * sc, (260 + 96) * sc)
@@ -179,7 +190,7 @@ for tag, sc in scales:
 if bad:
     print('label_glyph_grid_e2e: FAIL ' + '; '.join(bad), file=sys.stderr)
     sys.exit(1)
-print('label_glyph_grid_e2e: PASS（1/1.25/1.5/0.833/2.5 倍率下字距与基线均均匀）')
+print('label_glyph_grid_e2e: PASS（1/1.25/1.5/0.833/1.1/2.5 倍率下字距与基线均均匀）')
 PY
 
 echo "label_glyph_grid_e2e: ok"

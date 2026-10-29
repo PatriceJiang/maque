@@ -925,6 +925,41 @@ int main() {
                            std::abs(ga[0].x0 - gas[0].x0) <= 1e-3F,
                            second_line_count(gr, nr), tm.width);
             }
+#if defined(MAQUE_HAVE_FREETYPE)
+            /* baseline 归一：平底字母的墨迹底行不得比 baseline-1 再高（否则肉眼基线不齐）。 */
+            {
+                for (float sz : { 16.0F, 18.0F, 24.0F, 31.0F }) {
+                    uint32_t aw = 0, ah = 0;
+                    CHECK(mq_font_atlas_size(pf, sz, &aw, &ah) == MQ_TEXT_OK);
+                    std::vector<uint8_t> rgba((size_t)aw * ah * 4);
+                    CHECK(mq_font_atlas(pf, sz, rgba.data(), rgba.size(), &aw, &ah) == MQ_TEXT_OK);
+                    const uint32_t gc = mq_font_glyph_count(pf, sz);
+                    int bad = 0;
+                    auto is_flat_letter = [](uint32_t cp) {
+                        return cp == 'K' || cp == 'h' || cp == 'r' || cp == 'o' || cp == 'n' ||
+                               cp == 'e' || cp == 'a' || cp == 'm' || cp == 's' || cp == 'd' ||
+                               cp == 'H' || cp == 'M' || cp == 'A' || cp == 'x' || cp == 'u' ||
+                               cp == 'c' || (cp >= '0' && cp <= '9');
+                    };
+                    for (uint32_t i = 0; i < gc; ++i) {
+                        mq_text_glyph gl{};
+                        if (mq_font_glyph_at(pf, sz, i, &gl) != MQ_TEXT_OK) continue;
+                        if (!is_flat_letter(gl.codepoint)) continue;
+                        const int gw = (int)gl.w, gh = (int)gl.h;
+                        if (gw <= 0 || gh <= 0) continue;
+                        int ink_bottom = -1;
+                        for (int y = gh - 1; y >= 0 && ink_bottom < 0; --y)
+                            for (int x = 0; x < gw; ++x)
+                                if (rgba[(((size_t)(gl.ay + y) * aw) + (uint32_t)(gl.ax + x)) * 4 + 3]) {
+                                    ink_bottom = y; break;
+                                }
+                        if (ink_bottom >= 0 && ink_bottom - gl.bearing_y < -1) ++bad;
+                    }
+                    CHECK(bad == 0);
+                    std::print("text_test[baseline-norm] size={:.0f}: glyphs={} off_baseline={}\n", sz, gc, bad);
+                }
+            }
+#endif
             mq_font_destroy(pf);
         }
     }

@@ -27,9 +27,12 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   let kc = vec2f(kc0.x * cr - kc0.y * sr, kc0.x * sr + kc0.y * cr);
   var pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
   // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素（1 纹素 ↔ 1 像素）
+  // 注意 hw 是**设计空间**半尺寸、pc 是目标像素坐标：必须 hw*zoom 后再吸附；否则 ss≠1 时
+  // 每个图元会按自身半宽/半高被平移 half*(1-zoom) → 不同高度字形 baseline 不齐、字距抖动。
   if (inst.snap > 0.5) {
-    let tl = floor(pc - hw + vec2f(0.5));
-    pc = tl + hw;
+    let hw_t = hw * u.zoom;
+    let tl = floor(pc - hw_t + vec2f(0.5));
+    pc = tl + hw_t;
   }
   let px = pc + kc;
   var o: VOut;

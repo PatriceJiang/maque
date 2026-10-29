@@ -21,6 +21,12 @@
           "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
           "r": 1.0, "g": 0.5, "b": 0.8, "a": 1.0 } ] },
 
+    { "name": "mixbase", "components": [
+        { "type": "scn.Label", "x": 260.0, "y": 40.0, "text": "Kho",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 24.0,
+          "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 0.8, "b": 0.2, "a": 1.0 } ] },
+
     { "name": "lines", "components": [
         { "type": "scn.Label", "x": 20.0, "y": 100.0, "text": "HHHH\nHHHH\nHHHH\nHHHH",
           "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 16.0,
