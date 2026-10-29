@@ -27,7 +27,9 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
     （不会只关面板却把 stats 留在屏幕上）；ImGui 已开（F2 / `MAQUE_IMGUI=1` / 脚本）时
     F4 只开关面板、**不动** stats 的开关。
   · F2 关闭整个 ImGui 时会一并收起选项面板状态 → **F2 再开不会"复活"F4 面板**（干净地从 stats 开始）。
-  · 回归：`ctest -R imgui_engine_options_e2e` 的 ⑥（状态日志 + 右侧区域像素对照）。
+  · **两个热键不双触发**：开关面板后 F2/F4 事件从本帧输入里消费掉，不再下发给脚本/玩法
+    （否则"按 F2 开面板"会同时触发游戏自己的 F2 动作）；普通按键与其余功能键不受影响。
+  · 回归：`ctest -R imgui_engine_options_e2e` 的 ⑥（状态日志 + 右侧区域像素对照）与 ⑦（按键路由）。
 
 ### 固定 UI 度量（屏幕分辨率 → 字号/面板大小）
 
@@ -155,7 +157,9 @@ if (imgui_enabled()) {
 - `ctest -R imgui_toggle_e2e`：F2 开关的沿检测（单次/按住/两次/反复开关/像素可见）。
 - `ctest -R imgui_engine_options_e2e`：F4 引擎选项面板 —— ① F4 沿检测（单次/按住/两次；自动开 ImGui）
   ② 面板确实画进像素（`--shot` 前后不同）③ `msaa=4` → gfx `3D MSAA 4x`（且面板选项优先于 `MAQUE_MSAA`）
-  ④ 默认太阳光关闭后物体区域变暗 ⑤ `far` 覆盖把物体裁掉 ⑥ `MAQUE_ENGINE_OPTIONS` 解析日志。
+  ④ 默认太阳光关闭后物体区域变暗 / `sun_intensity=3` 变亮 ⑤ `far`/`near` 覆盖把物体裁掉
+  ⑥ F2/F4 互不干扰（F4 自己开的 ImGui 收起时恢复关闭、不误关 F2 的 stats、F2 再开不复活 F4 面板 +
+  右侧区域像素与"只按 F2"参考图逐像素一致）⑦ 引擎热键不双触发（F2/F4 不再下发给脚本，普通按键仍到达）。
 - `ctest -R imgui_present_e2e`：**修复回归** —— 真实窗口抓帧断言
   ① imgui 开启时游戏区域逐像素可见且不被面板扰动；② 合成指针拖动 stats 后
   面板确实换位置、游戏仍可见；③ `MAQUE_PRESENT=software` 回退路径同样可见；
@@ -179,7 +183,7 @@ if (imgui_enabled()) {
 | 中文字体（TTF + 标题/正文两档字号，默认 20/15） | ✅ | `--shot` 截图里中文正常、stats 用正文字号 |
 | stats 面板（左上角，237x148；F2 / `MAQUE_IMGUI=1` 打开） | ✅ | FPS / logic / render / draws / tris / frame / target 七项 |
 | F2 开关（沿检测） | ✅ | `imgui_toggle_e2e` |
-| **F4 引擎选项面板**（MSAA / 默认太阳光 / 主相机 near·far，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（F4 开关/像素可见/MSAA 4x/太阳光/near·far 效果）；`MAQUE_ENGINE_OPTIONS` 初值 |
+| **F4 引擎选项面板**（MSAA / 默认太阳光 / 主相机 near·far，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（F4 开关/像素可见/MSAA 4x/太阳光/near·far 效果/F2·F4 互不干扰/热键不双触发）；`MAQUE_ENGINE_OPTIONS` 初值 |
 | `MAQUE_PRESENT=software/accelerated` 都能显示面板 | ✅ | `imgui_present_e2e`（software 抓帧） |
 | 输入隔离（面板吃输入时清空本帧设备事件） | ✅ | `imgui_present_e2e` 拖动用合成指针走 `imgui_input_feed` |
 

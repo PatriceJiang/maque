@@ -3,6 +3,7 @@
 
 #include <print>
 #include <array>
+#include <cmath>
 #include <vector>
 #if defined(MAQUE_HAVE_FREETYPE)
 #include <ft2build.h>
@@ -24,6 +25,22 @@ static mq_text_style style(float size, uint32_t wrap, uint32_t align, float max_
     st.max_width = max_w;
     st.r = st.g = st.b = st.a = 1.0F;
     return st;
+}
+
+/* 项目自带 TTF（含中文）；相对路径覆盖两种测试工作目录（build 模块目录 / 仓库根）。 */
+static mq_font* load_project_font(const char** out_path = nullptr) {
+    static const char* const kPaths[] = {
+        "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+        "../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+        "../../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+    };
+    for (const char* p : kPaths) {
+        if (mq_font* f = mq_font_load_file(p)) {
+            if (out_path) *out_path = p;
+            return f;
+        }
+    }
+    return nullptr;
 }
 
 int main() {
@@ -91,6 +108,19 @@ int main() {
         CHECK(nb == nc && nc == ne);
         CHECK(gc[0].x > gb[0].x);
         CHECK(ge[0].x > gc[0].x);
+        /* 对齐必须同时平移位图矩形 x0（runtime 落 quad 用的是 x0；只平移 x 对齐对渲染完全无效 ——
+         * 曾因此让 Begin/Center/End 三个 Label 的墨迹 bbox 完全重合）。 */
+        CHECK(gc[0].x0 > gb[0].x0);
+        CHECK(ge[0].x0 > gc[0].x0);
+        CHECK(std::abs((gc[0].x0 - gb[0].x0) - (gc[0].x - gb[0].x)) < 1e-4F);
+        CHECK(std::abs((ge[0].x0 - gb[0].x0) - (ge[0].x - gb[0].x)) < 1e-4F);
+        /* pixel_snap：对齐平移后 x0 重新吸附回整数像素 */
+        mq_text_style sp = sc; sp.pixel_snap = 1;
+        std::vector<mq_text_glyph> gp(32);
+        uint32_t np = 0;
+        CHECK(mq_text_layout(f, &sp, "abc", gp.data(), (uint32_t)gp.size(), &np, &m) == MQ_TEXT_OK);
+        CHECK(np == nb);
+        for (uint32_t i = 0; i < np; ++i) CHECK(gp[i].x0 == std::floor(gp[i].x0));
     }
 
     // ---- 5) 富文本标记：颜色/字号生效，纯文本剥离正确 ----
@@ -146,6 +176,98 @@ int main() {
         CHECK(std::strcmp(plain, "中文") == 0);
         /* 注：CJK 断行需要含 CJK 字形的字体（内置 5x7 无 CJK → 推进为 1px），
          * 因此该用例放在下方"项目字体"段。 */
+    }
+
+    // ---- 10) 合成粗体/斜体：<b>/<i> 标记 + style.bold/italic（内置位图字体路径）----
+    {
+        // 10a) 标记剥离：<b>/<i> 剥离、大小写不敏感、可嵌套
+        char pi[128] = { 0 };
+        CHECK(mq_text_strip_markup("<i>it</i><B>bo</B>", pi, sizeof pi) == MQ_TEXT_OK);
+        CHECK(std::strcmp(pi, "itbo") == 0);
+        char pn[128] = { 0 };
+        CHECK(mq_text_strip_markup("<b><i>ni</i> x</b>", pn, sizeof pn) == MQ_TEXT_OK);
+        CHECK(std::strcmp(pn, "ni x") == 0);
+
+        const mq_text_style sn = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+        mq_text_style sb = sn; sb.bold = 1;
+        mq_text_style si = sn; si.italic = 1;
+
+        // 10b) 粗体推进加宽；斜体推进不变
+        mq_text_metrics mn{}, mb{}, mi{};
+        CHECK(mq_text_measure(f, &sn, "Bold", &mn) == MQ_TEXT_OK);
+        CHECK(mq_text_measure(f, &sb, "Bold", &mb) == MQ_TEXT_OK);
+        CHECK(mq_text_measure(f, &si, "Bold", &mi) == MQ_TEXT_OK);
+        CHECK(mn.glyph_count == 4 && mb.glyph_count == 4 && mi.glyph_count == 4);
+        CHECK(mb.width > mn.width);                        // 粗体布局更宽
+        CHECK(mi.width == mn.width);                       // 斜体推进不变
+        // style 级与标记级同源：<b>/<i> 与 st.bold/st.italic 结果一致
+        mq_text_metrics mmb{}, mmi{};
+        CHECK(mq_text_measure(f, &sn, "<b>Bold</b>", &mmb) == MQ_TEXT_OK);
+        CHECK(mq_text_measure(f, &sn, "<i>Bold</i>", &mmi) == MQ_TEXT_OK);
+        CHECK(mmb.width == mb.width);
+        CHECK(mmi.width == mi.width);
+
+        std::vector<mq_text_glyph> gn(16), gb(16), gi(16);
+        uint32_t nn = 0, nb = 0, ni = 0;
+        CHECK(mq_text_layout(f, &sn, "Bold", gn.data(), 16, &nn, &mn) == MQ_TEXT_OK);
+        CHECK(mq_text_layout(f, &sb, "Bold", gb.data(), 16, &nb, &mb) == MQ_TEXT_OK);
+        CHECK(mq_text_layout(f, &si, "Bold", gi.data(), 16, &ni, &mi) == MQ_TEXT_OK);
+        CHECK(nn == 4 && nb == 4 && ni == 4);
+        CHECK(gb[1].x - gb[0].x > gn[1].x - gn[0].x);      // 粗体 advance 更宽
+        CHECK(gi[1].x - gi[0].x == gn[1].x - gn[0].x);     // 斜体 advance 不变
+        CHECK(gb[0].w > gn[0].w);                          // 粗体位图水平膨胀
+        CHECK(gi[0].w > gn[0].w);                          // 斜体位图因剪切变宽
+
+        // 10c) 斜体位图内容与普通不同（宽/高/bearing/x0/像素任一不同 → 判定生效且稳定）
+        {
+            uint32_t aw = 0, ah = 0;
+            CHECK(mq_font_atlas(f, 16.0F, nullptr, 0, &aw, &ah) == MQ_TEXT_ERR_CAP);
+            std::vector<uint8_t> atlas((size_t)aw * ah * 4);
+            CHECK(mq_font_atlas(f, 16.0F, atlas.data(), atlas.size(), &aw, &ah) == MQ_TEXT_OK);
+            auto glyph_bits = [&](const mq_text_glyph& g) {
+                std::vector<uint8_t> v((size_t)g.w * (size_t)g.h);
+                for (int y = 0; y < (int)g.h; ++y)
+                    for (int x = 0; x < (int)g.w; ++x)
+                        v[(size_t)y * (size_t)g.w + (size_t)x] =
+                            atlas[(((size_t)(g.ay + y) * aw) + (size_t)(g.ax + x)) * 4 + 3];
+                return v;
+            };
+            const std::vector<uint8_t> bn = glyph_bits(gn[0]), bi = glyph_bits(gi[0]);
+            const bool italic_diff = gi[0].w != gn[0].w || gi[0].h != gn[0].h ||
+                                     gi[0].bearing_x != gn[0].bearing_x || gi[0].x0 != gn[0].x0 ||
+                                     bn != bi;
+            CHECK(italic_diff);                            // 斜体确实不是普通字形
+        }
+
+        // 10d) 带样式字形作为额外条目追加进同一图集 → generation / glyph_count 增长
+        const uint32_t gen0 = mq_font_atlas_generation(f, 16.0F);
+        const uint32_t cnt0 = mq_font_glyph_count(f, 16.0F);
+        mq_text_style sbi = sn; sbi.bold = 1; sbi.italic = 1;
+        mq_text_metrics mbi{};
+        CHECK(mq_text_measure(f, &sbi, "Zz", &mbi) == MQ_TEXT_OK);
+        CHECK(mq_font_glyph_count(f, 16.0F) > cnt0);
+        CHECK(mq_font_atlas_generation(f, 16.0F) > gen0);
+        mq_text_metrics mbi2{};
+        CHECK(mq_text_measure(f, &sn, "<b><i>Zz</i></b>", &mbi2) == MQ_TEXT_OK);
+        CHECK(mbi2.width == mbi.width);                    // 嵌套 <b><i> == style 双置位
+
+        // 10e) 确定性：同一输入两次测量/排版结果一致（styled 路径不引入状态漂移）
+        mq_text_metrics d1{}, d2{};
+        const char* styled = "<b><i>Ab</i></b>";
+        CHECK(mq_text_measure(f, &sbi, styled, &d1) == MQ_TEXT_OK);
+        CHECK(mq_text_measure(f, &sbi, styled, &d2) == MQ_TEXT_OK);
+        CHECK(d1.width == d2.width && d1.height == d2.height && d1.glyph_count == d2.glyph_count);
+        std::vector<mq_text_glyph> q1(8), q2(8);
+        uint32_t qn1 = 0, qn2 = 0;
+        CHECK(mq_text_layout(f, &sbi, styled, q1.data(), 8, &qn1, &d1) == MQ_TEXT_OK);
+        CHECK(mq_text_layout(f, &sbi, styled, q2.data(), 8, &qn2, &d2) == MQ_TEXT_OK);
+        CHECK(qn1 == 2 && qn2 == 2);
+        for (uint32_t i = 0; i < qn1 && i < qn2; ++i) {
+            CHECK(q1[i].codepoint == q2[i].codepoint);
+            CHECK(q1[i].x == q2[i].x && q1[i].x0 == q2[i].x0);
+            CHECK(q1[i].w == q2[i].w && q1[i].h == q2[i].h);
+            CHECK(q1[i].ax == q2[i].ax && q1[i].ay == q2[i].ay);
+        }
     }
 
     mq_font_destroy(f);
@@ -278,6 +400,49 @@ int main() {
             mq_text_metrics m2{};
             CHECK(mq_text_measure(cjk, &st2, many.c_str(), &m2) == MQ_TEXT_OK);
             CHECK(mq_font_glyph_count(cjk, 24.0F) > 95);
+            /* ⑩ 合成粗体/斜体（FreeType 路径）：粗体推进加宽、斜体位图不同；
+             *    并且样式加载后必须复位 transform —— 之后栅格化的**新普通字形**要与
+             *    一个干净字体实例逐位一致（否则斜体剪切会污染后续所有普通字形）。 */
+            {
+                const mq_text_style fsn = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+                mq_text_style fsb = fsn; fsb.bold = 1;
+                mq_text_style fsi = fsn; fsi.italic = 1;
+                mq_text_metrics fmn{}, fmb{}, fmi{};
+                CHECK(mq_text_measure(cjk, &fsn, "Bold", &fmn) == MQ_TEXT_OK);
+                CHECK(mq_text_measure(cjk, &fsb, "Bold", &fmb) == MQ_TEXT_OK);
+                CHECK(mq_text_measure(cjk, &fsi, "Bold", &fmi) == MQ_TEXT_OK);
+                CHECK(fmb.width > fmn.width);                    // FT 合成粗体：推进加宽
+                CHECK(fmi.width == fmn.width);                   // FT 合成斜体：推进不变
+                std::vector<mq_text_glyph> fn(8), fb(8), fi(8);
+                uint32_t cnn = 0, cnb = 0, cni = 0;
+                CHECK(mq_text_layout(cjk, &fsn, "Bold", fn.data(), 8, &cnn, &fmn) == MQ_TEXT_OK);
+                CHECK(mq_text_layout(cjk, &fsb, "Bold", fb.data(), 8, &cnb, &fmb) == MQ_TEXT_OK);
+                CHECK(mq_text_layout(cjk, &fsi, "Bold", fi.data(), 8, &cni, &fmi) == MQ_TEXT_OK);
+                CHECK(cnn == 4 && cnb == 4 && cni == 4);
+                CHECK(fb[1].x - fb[0].x > fn[1].x - fn[0].x);    // 粗体 advance 更宽
+                CHECK(fi[1].x - fi[0].x == fn[1].x - fn[0].x);   // 斜体 advance 不变
+                /* 斜体位图/定位与普通不同（剪切变换生效） */
+                const bool italic_diff = fi[0].w != fn[0].w || fi[0].h != fn[0].h ||
+                                         fi[0].bearing_x != fn[0].bearing_x || fi[0].x0 != fn[0].x0;
+                CHECK(italic_diff);
+                /* transform 复位：样式字形之后再栅格化新码点 'W'（普通），结果必须与干净实例一致 */
+                mq_font* clean = mq_font_load_file(cjk_path);
+                CHECK(clean != nullptr);
+                if (clean) {
+                    std::vector<mq_text_glyph> fw(8), cw(8);
+                    uint32_t nfw = 0, ncw = 0;
+                    mq_text_metrics fmw{}, cmw{};
+                    CHECK(mq_text_layout(cjk, &fsn, "W", fw.data(), 8, &nfw, &fmw) == MQ_TEXT_OK);
+                    CHECK(mq_text_layout(clean, &fsn, "W", cw.data(), 8, &ncw, &cmw) == MQ_TEXT_OK);
+                    CHECK(nfw == 1 && ncw == 1);
+                    CHECK(fw[0].w == cw[0].w && fw[0].h == cw[0].h);
+                    CHECK(fw[0].bearing_x == cw[0].bearing_x && fw[0].bearing_y == cw[0].bearing_y);
+                    CHECK(fw[0].x0 == cw[0].x0 && fw[0].y0 == cw[0].y0);
+                    CHECK(fmw.width == cmw.width);
+                    mq_font_destroy(clean);
+                }
+            }
+
             mq_font_destroy(cjk);
         }
     }
@@ -307,6 +472,313 @@ int main() {
             mq_font_destroy(ff);
         } else {
             std::print("text_test: FreeType 字体不可用，跳过真实字体用例\n");
+        }
+    }
+
+    // ---- 11) 布局空间不变性：device_scale 只是字形栅格化倍率，不参与折行/行高/metrics ----
+    {
+        mq_font* pf = load_project_font();
+        if (!pf) {
+            std::print("text_test: 项目字体不可用，跳过布局不变性/混排基线用例\n");
+        } else {
+            const char* kText = "the quick brown fox jumps over the lazy dog";
+            const float kScales[] = { 1.0F, 1.25F, 2.0F, 2.5F };
+            constexpr size_t kScaleN = sizeof(kScales) / sizeof(kScales[0]);
+
+            /* scale=1 排版为参考；其余倍率的 metrics 与字形 x/y 必须与之**严格相等**（设计像素空间）。 */
+            auto check_invariance = [&](mq_text_style ref_st, const char* label) {
+                ref_st.device_scale = kScales[0];
+                mq_text_metrics ref{};
+                CHECK(mq_text_measure(pf, &ref_st, kText, &ref) == MQ_TEXT_OK);
+                std::vector<mq_text_glyph> ref_g(ref.glyph_count ? ref.glyph_count : 1);
+                uint32_t ref_n = 0;
+                CHECK(mq_text_layout(pf, &ref_st, kText, ref_g.data(), (uint32_t)ref_g.size(), &ref_n,
+                                     &ref) == MQ_TEXT_OK);
+                CHECK(ref_n == ref.glyph_count);
+                std::vector<mq_text_glyph> prev = ref_g;
+                for (size_t k = 0; k < kScaleN; ++k) {
+                    const float sc = kScales[k];
+                    mq_text_style st = ref_st;
+                    st.device_scale = sc;
+                    mq_text_metrics m{};
+                    CHECK(mq_text_measure(pf, &st, kText, &m) == MQ_TEXT_OK);
+                    /* metrics 全是设计像素 → 与栅格化倍率完全无关（用 ==，不是近似） */
+                    CHECK(m.width == ref.width);
+                    CHECK(m.height == ref.height);
+                    CHECK(m.line_count == ref.line_count);
+                    CHECK(m.baseline == ref.baseline);
+                    CHECK(m.ascent == ref.ascent);
+                    CHECK(m.glyph_count == ref.glyph_count);
+                    CHECK(m.device_scale == sc);               /* 仅报告栅格化倍率 */
+                    std::vector<mq_text_glyph> g(m.glyph_count ? m.glyph_count : 1);
+                    uint32_t n = 0;
+                    CHECK(mq_text_layout(pf, &st, kText, g.data(), (uint32_t)g.size(), &n, &m) == MQ_TEXT_OK);
+                    CHECK(n == ref_n);
+                    int w_bad = 0, ratio_bad = 0, x0_bad = 0, xy_bad = 0, y0_bad = 0;
+                    for (uint32_t i = 0; i < n && i < ref_n; ++i) {
+                        /* 设计像素排版位置严格不变；只有设备位图（w/h/bearing）与 x0/y0 吸附随倍率变 */
+                        if (!(g[i].x == ref_g[i].x && g[i].y == ref_g[i].y)) ++xy_bad;
+                        /* x0 与参考倍率的差只应来自设备像素吸附：<= 1 设备像素 = 1/scale 设计像素 */
+                        if (std::abs(g[i].x0 - ref_g[i].x0) > 1.0F / sc + 1e-4F) ++x0_bad;
+                        /* y0 另受 bitmap_top 的 hinting 量化影响（每个 ppem 独立取整），放宽到 2 设计像素 */
+                        if (std::abs(g[i].y0 - ref_g[i].y0) > 2.0F) ++y0_bad;
+                        if (ref_g[i].w > 0 && ref_g[i].h > 0) {
+                            /* 位图分辨率随倍率单调增大、约 1:scale（TrueType hinting ⇒ 非严格比例） */
+                            if (g[i].w < prev[i].w || g[i].h < prev[i].h) ++w_bad;
+                            const float wr = std::abs((float)g[i].w - (float)ref_g[i].w * sc);
+                            const float hr = std::abs((float)g[i].h - (float)ref_g[i].h * sc);
+                            /* 约 1:scale：相对 50% + 2px 绝对余量（小字形 hinting 量化占比大） */
+                            if (wr > 0.5F * (float)ref_g[i].w * sc + 2.0F ||
+                                hr > 0.5F * (float)ref_g[i].h * sc + 2.0F) ++ratio_bad;
+                        }
+                    }
+                    CHECK(xy_bad == 0);                        /* 字形 x/y 与倍率无关 */
+                    CHECK(x0_bad == 0);                        /* x0 只差吸附网格 */
+                    CHECK(y0_bad == 0);                        /* y0 另含 bitmap_top 量化 */
+                    CHECK(w_bad == 0);                         /* w/h 随倍率单调不减 */
+                    CHECK(ratio_bad == 0);                     /* w/h ≈ 1:scale */
+                    prev = g;
+                }
+                std::print("text_test[invariance] {}: lines={} glyphs={} w={:.3f} h={:.3f} baseline={:.3f} "
+                           "ascent={:.3f}\n",
+                           label, ref.line_count, ref.glyph_count, ref.width, ref.height, ref.baseline,
+                           ref.ascent);
+            };
+
+            /* A) 多行：wrap=Word + max_width=120（折行结果必须与倍率无关） */
+            mq_text_style sa = style(12.0F, MQ_TEXT_WRAP_WORD, MQ_TEXT_ALIGN_BEGIN, 120.0F);
+            {
+                mq_text_style t = sa;
+                t.device_scale = 1.0F;
+                mq_text_metrics ma{};
+                CHECK(mq_text_measure(pf, &t, kText, &ma) == MQ_TEXT_OK);
+                CHECK(ma.line_count >= 2);                     /* 确实发生折行，否则用例没意义 */
+            }
+            check_invariance(sa, "wrap=Word/max_width=120");
+
+            /* B) 单行：max_width=0 + align Center */
+            check_invariance(style(12.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_CENTER, 0.0F),
+                             "wrap=None/Center/max_width=0");
+
+            /* C) line_spacing=8：height 同样与倍率无关；且 = 多行无行距高 + 8×(行数-1) */
+            {
+                mq_text_style t = sa;
+                t.device_scale = 1.0F;
+                mq_text_metrics ma{};
+                CHECK(mq_text_measure(pf, &t, kText, &ma) == MQ_TEXT_OK);
+                mq_text_style sl = sa;
+                sl.line_spacing = 8.0F;
+                float h_ref = 0.0F;
+                for (size_t k = 0; k < kScaleN; ++k) {
+                    mq_text_style st = sl;
+                    st.device_scale = kScales[k];
+                    mq_text_metrics m{};
+                    CHECK(mq_text_measure(pf, &st, kText, &m) == MQ_TEXT_OK);
+                    if (k == 0) h_ref = m.height;
+                    else CHECK(m.height == h_ref);
+                }
+                CHECK(std::abs(h_ref - (ma.height + 8.0F * (float)(ma.line_count - 1))) <= 1e-3F);
+                std::print("text_test[invariance+spacing]: lines={} h(no spacing)={:.3f} h(spacing=8)={:.3f}\n",
+                           ma.line_count, ma.height, h_ref);
+            }
+            mq_font_destroy(pf);
+        }
+    }
+
+    // ---- 12) 行内混排字号共享基线（修复前：大字号按自身 ascent 定位 → 整体下移、基线错位）----
+    {
+        mq_font* pf = load_project_font();
+        if (!pf) {
+            std::print("text_test: 项目字体不可用，跳过混排基线用例\n");
+        } else {
+            const char* kMixed = "HH<size=32>H</size>HH";
+            const float kScales[] = { 1.0F, 2.5F };
+            for (float sc : kScales) {
+                mq_text_style st = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+                st.device_scale = sc;
+                mq_text_metrics m{};
+                CHECK(mq_text_measure(pf, &st, kMixed, &m) == MQ_TEXT_OK);
+                CHECK(m.glyph_count == 5);
+                std::vector<mq_text_glyph> g(m.glyph_count);
+                uint32_t n = 0;
+                CHECK(mq_text_layout(pf, &st, kMixed, g.data(), (uint32_t)g.size(), &n, &m) == MQ_TEXT_OK);
+                CHECK(n == 5);
+                /* 基线（设计像素）= y0 + bearing_y/scale；行内所有字号必须共享同一基线 */
+                auto baseline_of = [&](uint32_t i) {
+                    return g[i].y0 + (float)g[i].bearing_y / sc;
+                };
+                const float b0 = baseline_of(0);
+                float dmax = 0.0F;
+                for (uint32_t i = 1; i < n; ++i)
+                    dmax = std::max(dmax, std::abs(baseline_of(i) - b0));
+                CHECK(dmax <= 1e-4F);                          /* 行内共享基线 */
+                /* 32px 字（index 2）：字形顶更高（y0 更小）、位图 h 约 2 倍 */
+                CHECK(g[2].y0 < g[0].y0);
+                CHECK(g[2].h >= g[0].h * 1.6F);
+                CHECK(g[2].h <= g[0].h * 2.4F);
+                /* metrics.baseline = 首行 ascent（取行内最大 run ascent） */
+                CHECK(m.baseline > 0.0F && m.baseline < m.height);
+                mq_text_metrics mp{};
+                CHECK(mq_text_measure(pf, &st, "HHHH", &mp) == MQ_TEXT_OK);
+                CHECK(mp.baseline == m.ascent);                /* 纯基础字号：baseline == metrics.ascent */
+                CHECK(m.baseline > mp.baseline);               /* 混排行 ascent 取 max（32px） */
+                CHECK(m.baseline > mp.baseline + 4.0F);        /* 明显更大，而非差一点 */
+                CHECK(std::abs(m.baseline - b0) <= 1e-4F);     /* 首行基线 == metrics.baseline */
+                std::print("text_test[baseline] scale={:.2f}: baseline={:.3f} ascent16={:.3f} h(big)={} "
+                           "h(small)={} max_inline_diff={:.6f}\n",
+                           sc, m.baseline, mp.baseline, g[2].h, g[0].h, dmax);
+            }
+            mq_font_destroy(pf);
+        }
+    }
+
+    // ---- 13) 显式换行 + 混排：每行独立共享基线；行高由该行最大字号决定（行高栈）----
+    {
+        mq_font* pf = load_project_font();
+        if (!pf) {
+            std::print("text_test: 项目字体不可用，跳过换行混排用例\n");
+        } else {
+            const char* kLines = "A<size=32>B</size>\nC<size=8>D</size>";
+            const float kScales[] = { 1.0F, 2.5F };
+            mq_text_style s16 = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+            mq_text_style s32 = s16;
+            s32.font_size = 32.0F;
+            mq_text_metrics m32{}, m16{};
+            CHECK(mq_text_measure(pf, &s32, "H", &m32) == MQ_TEXT_OK);   /* 行高栈：32px 行 */
+            CHECK(mq_text_measure(pf, &s16, "H", &m16) == MQ_TEXT_OK);
+            for (float sc : kScales) {
+                mq_text_style st = s16;
+                st.device_scale = sc;
+                mq_text_metrics m{};
+                CHECK(mq_text_measure(pf, &st, kLines, &m) == MQ_TEXT_OK);
+                CHECK(m.line_count == 2);
+                CHECK(m.glyph_count == 4);
+                std::vector<mq_text_glyph> g(4);
+                uint32_t n = 0;
+                CHECK(mq_text_layout(pf, &st, kLines, g.data(), (uint32_t)g.size(), &n, &m) == MQ_TEXT_OK);
+                CHECK(n == 4);
+                auto baseline_of = [&](uint32_t i) {
+                    return g[i].y0 + (float)g[i].bearing_y / sc;
+                };
+                /* 行划分：y = 行顶（设计像素），同 y 即同一行 */
+                CHECK(g[0].y == g[1].y);
+                CHECK(g[2].y == g[3].y);
+                const float line1_top = g[0].y, line2_top = g[2].y;
+                const float b1 = baseline_of(0), b1b = baseline_of(1);
+                const float b2 = baseline_of(2), b2b = baseline_of(3);
+                CHECK(std::abs(b1 - b1b) <= 1e-4F);            /* 第一行共享基线 */
+                CHECK(std::abs(b2 - b2b) <= 1e-4F);            /* 第二行共享基线 */
+                /* 行高栈：第二行行顶 − 第一行行顶 = 第一行高 = 该行最大字号的行高 */
+                const float stack = line2_top - line1_top;
+                CHECK(std::abs(stack - m32.height) <= 1e-4F);
+                /* 两行基线差 = 行高栈 + (第二行 ascent − 第一行 ascent)。
+                 * 第一行 ascent = max(ascent16, ascent32) = m32.baseline；第二行 = max(ascent16, ascent8) = m16.baseline。
+                 * 注：spec 的「基线差 == 第一行高」只在两行 max ascent 相同时成立；此处第一行含 32px、第二行最大 16px，
+                 * 故必须带上 ascent 差（否则大字号行会整体下移 —— 正是本次修的 bug）。 */
+                CHECK(std::abs((b2 - b1) - (stack + m16.baseline - m32.baseline)) <= 1e-4F);
+                CHECK(b2 > b1);                                 /* y 向下：第二行基线更低 */
+                CHECK((b2 - b1) < stack);                       /* 且小于行高（ascent 差为负贡献） */
+                CHECK(std::abs(m.baseline - (b1 - line1_top)) <= 1e-4F);   /* metrics.baseline = 首行 ascent */
+                std::print("text_test[newline] scale={:.2f}: line_tops=({:.3f},{:.3f}) stack={:.3f} "
+                           "baselines=({:.3f},{:.3f}) diff={:.3f}\n",
+                           sc, line1_top, line2_top, stack, b1, b2, b2 - b1);
+            }
+            mq_font_destroy(pf);
+        }
+    }
+
+    // ---- 14) 非整数倍缩放的**呈现网格**：设备字距均匀 + 行基线一致（修「歪歪扭扭」）----
+    // 设计 advance 在 1.25×/0.83× 等倍率下不是整数设备像素；若逐字把"设计位置×倍率"取整，
+    // 会出现 8/9/8/9 的字距抖动与逐字基线抖动。修复后：pixel_snap 下横向用设备整数 advance
+    // 累计、行基线只吸附一次。这里直接断言设备网格性质。
+    {
+        mq_font* pf = load_project_font();
+        if (!pf) {
+            std::print("text_test: 项目字体不可用，跳过呈现网格用例\n");
+        } else {
+            for (float sc : { 1.0F, 1.25F, 0.833F, 2.5F }) {
+                mq_text_style st = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+                st.device_scale = sc;
+                st.pixel_snap = 1;
+                mq_text_metrics m{};
+                CHECK(mq_text_measure(pf, &st, "HHHHHHHH", &m) == MQ_TEXT_OK);
+                std::vector<mq_text_glyph> g(m.glyph_count ? m.glyph_count : 1);
+                uint32_t n = 0;
+                CHECK(mq_text_layout(pf, &st, "HHHHHHHH", g.data(), (uint32_t)g.size(), &n, &m) == MQ_TEXT_OK);
+                CHECK(n == 8);
+                /* x0 已落在设备网格：x0×scale 为整数；同字形相邻设备起点差 = 设备 advance（常数） */
+                float gap0 = 0.0F;
+                for (uint32_t i = 0; i < n; ++i) {
+                    const float dx_dev = g[i].x0 * sc;
+                    CHECK(std::abs(dx_dev - (float)std::lround(dx_dev)) <= 1e-3F);
+                    if (i == 1) gap0 = dx_dev - g[0].x0 * sc;
+                    if (i >= 1) {
+                        const float gap = dx_dev - g[i - 1].x0 * sc;
+                        CHECK(gap > 0.0F);
+                        if (i >= 2) CHECK(std::abs(gap - gap0) <= 1e-3F);   /* 字距均匀（不抖动） */
+                    }
+                }
+                /* 同字形基线（设备坐标）= y0×scale + bitmap_top，必须一致 */
+                const float base_dev0 = g[0].y0 * sc + (float)g[0].bearing_y;
+                for (uint32_t i = 1; i < n; ++i)
+                    CHECK(std::abs((g[i].y0 * sc + (float)g[i].bearing_y) - base_dev0) <= 1e-3F);
+                std::print("text_test[grid] scale={:.3f}: device_gap={:.1f} baseline_dev={:.1f}\n",
+                           sc, gap0, base_dev0);
+            }
+            /* 行内混排字号：设备基线也一致（行基线只吸附一次，而不是逐字吸附） */
+            for (float sc : { 1.25F, 2.5F }) {
+                mq_text_style st = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+                st.device_scale = sc;
+                st.pixel_snap = 1;
+                const char* kMixed = "HH<size=32>H</size>HH";
+                mq_text_metrics m{};
+                CHECK(mq_text_measure(pf, &st, kMixed, &m) == MQ_TEXT_OK);
+                std::vector<mq_text_glyph> g(m.glyph_count ? m.glyph_count : 1);
+                uint32_t n = 0;
+                CHECK(mq_text_layout(pf, &st, kMixed, g.data(), (uint32_t)g.size(), &n, &m) == MQ_TEXT_OK);
+                CHECK(n == 5);
+                const float b0 = g[0].y0 * sc + (float)g[0].bearing_y;
+                bool same = true;
+                for (uint32_t i = 1; i < n; ++i)
+                    same = same && std::abs((g[i].y0 * sc + (float)g[i].bearing_y) - b0) <= 1e-3F;
+                CHECK(same);
+            }
+            /* 多行行距：非整数倍 ss 下相邻行**设备基线间距**必须恒定
+             * （呈现按设备整数行高累计；若每行各自 round(行顶×ss)，0.833× 会出现 17/16/17 的"波浪"）。 */
+            {
+                const char* kLines = "HH\nHH\nHH\nHH";
+                for (float sc : { 1.25F, 0.833F, 2.5F }) {
+                    mq_text_style st = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
+                    st.device_scale = sc;
+                    st.pixel_snap = 1;
+                    mq_text_metrics m{};
+                    CHECK(mq_text_measure(pf, &st, kLines, &m) == MQ_TEXT_OK);
+                    std::vector<mq_text_glyph> g(m.glyph_count ? m.glyph_count : 1);
+                    uint32_t n = 0;
+                    CHECK(mq_text_layout(pf, &st, kLines, g.data(), (uint32_t)g.size(), &n, &m) == MQ_TEXT_OK);
+                    CHECK(m.line_count == 4);
+                    /* 每行取一个代表字形（g.y = 设计行顶；同一行的字号一致） */
+                    std::vector<float> line_y, line_base;
+                    for (uint32_t i = 0; i < n; ++i) {
+                        if (!line_y.empty() && g[i].y == line_y.back()) continue;
+                        line_y.push_back(g[i].y);
+                        line_base.push_back(g[i].y0 * sc + (float)g[i].bearing_y);
+                    }
+                    CHECK(line_y.size() == 4);
+                    bool uniform = true;
+                    float gap0 = 0.0F;
+                    for (size_t i = 1; i < line_base.size(); ++i) {
+                        const float gap = line_base[i] - line_base[i - 1];
+                        if (i == 1) gap0 = gap;
+                        else uniform = uniform && std::abs(gap - gap0) <= 1e-3F;
+                    }
+                    CHECK(uniform);
+                    std::print("text_test[linegrid] scale={:.3f}: line_baselines=({:.1f},{:.1f},{:.1f},{:.1f}) "
+                               "device_line_gap={:.1f}\n",
+                               sc, line_base[0], line_base[1], line_base[2], line_base[3], gap0);
+                }
+            }
+            mq_font_destroy(pf);
         }
     }
 

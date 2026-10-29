@@ -4960,6 +4960,19 @@ void Engine::step_frame() {
         }
         tracy_f3_held = f3_down;
     }
+    /* **引擎热键 F2/F4 从本帧输入里消费掉**：热键判断之后，同一批设备事件还会被 input 模块
+     * 派发给脚本/玩法 —— 不消费的话"按 F2 开面板"会同时触发游戏自己的 F2 动作（双触发）。
+     * 注意：ImGui 的输入转发在平台轮询阶段**更早**已经发生，这里只影响脚本可见输入。 */
+    {
+        uint32_t out = 0;
+        for (uint32_t i = 0; i < iframe.key_count; ++i) {
+            const uint32_t k = iframe.keys[i].key;
+            if (k == MQ_KEY_F2 || k == MQ_KEY_F4) continue;   // 引擎调试面板热键（不传给游戏）
+            if (out != i) iframe.keys[out] = iframe.keys[i];
+            ++out;
+        }
+        iframe.key_count = out;
+    }
     /* ImGui：开始一帧（**必须在脚本 update 之前** —— 脚本里要调 imgui_begin/控件/imgui_end）。
      * 内部还会按需初始化、上传字体图集纹理，并在 ImGui 要吃输入时清空本帧设备事件（不点穿）。 */
     imgui_frame_begin(1.0F / 60.0F);
@@ -8153,12 +8166,14 @@ int Engine::glyph_texture(const mq_font* f, float size) {
 void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d,
                           std::vector<mq_renderer_item>& out, float inherit_alpha) {
     std::string text, font_path_comp;
-    float size = 16.0F, r = 1, g = 1, b = 1, a = 1, max_w = 0, line_spacing = 0;
-    int align = 0, wrap = 0;
+    float size = 16.0F, r = 1, g = 1, b = 1, a = 1, max_w = 0, max_h = 0, line_spacing = 0;
+    int align = 0, wrap = 0, overflow = 0;
+    bool bold = false, italic = false;
     if (const std::string* tp = read_str(d, e.comps[d->type_id].data(), "text")) text = *tp;
     if (const std::string* fp = read_str(d, e.comps[d->type_id].data(), "font")) font_path_comp = *fp;
     read_f32(d, e.comps[d->type_id].data(), "font_size", &size);
     read_f32(d, e.comps[d->type_id].data(), "max_width", &max_w);
+    read_f32(d, e.comps[d->type_id].data(), "max_height", &max_h);
     read_f32(d, e.comps[d->type_id].data(), "line_spacing", &line_spacing);
     /* 颜色：scn.Label 用 r/g/b/a；ui.* 用 color（Vec4） */
     if (const mq_field_desc* fc = mq_reflect_field(d, "color")) {
@@ -8174,6 +8189,29 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     if (!mq_reflect_field(d, "align")) align = (int)read_num(d, e.comps[d->type_id].data(), "align_h", 0.0F);
     wrap = (int)read_num(d, e.comps[d->type_id].data(), "wrap", 0.0F);
     if (!mq_reflect_field(d, "wrap")) wrap = (int)read_num(d, e.comps[d->type_id].data(), "wrap_mode", 0.0F);
+    overflow = (int)read_num(d, e.comps[d->type_id].data(), "overflow", 0.0F);
+    bold = read_num(d, e.comps[d->type_id].data(), "bold", 0.0F) >= 0.5F;
+    italic = read_num(d, e.comps[d->type_id].data(), "italic", 0.0F) >= 0.5F;
+    /* 装饰：outline / shadow（字段不存在 → 关闭；ui.* 描边用 outline_color Vec4） */
+    float outline_size = 0.0F, orr = 0.0F, ogg = 0.0F, obb = 0.0F, oaa = 1.0F;
+    read_f32(d, e.comps[d->type_id].data(), "outline_size", &outline_size);
+    if (const mq_field_desc* foc = mq_reflect_field(d, "outline_color")) {
+        const float* v = (const float*)(e.comps[d->type_id].data() + foc->offset);
+        orr = v[0]; ogg = v[1]; obb = v[2]; oaa = v[3];
+    } else {
+        read_f32(d, e.comps[d->type_id].data(), "outline_r", &orr);
+        read_f32(d, e.comps[d->type_id].data(), "outline_g", &ogg);
+        read_f32(d, e.comps[d->type_id].data(), "outline_b", &obb);
+        read_f32(d, e.comps[d->type_id].data(), "outline_a", &oaa);
+    }
+    /* 阴影：偏移为文本空间像素（y 向下）；a=0 关闭。仅 scn.Label 声明这些字段。 */
+    float shx = 0.0F, shy = 0.0F, shr = 0.0F, shg = 0.0F, shb = 0.0F, sha = 0.0F;
+    read_f32(d, e.comps[d->type_id].data(), "shadow_x", &shx);
+    read_f32(d, e.comps[d->type_id].data(), "shadow_y", &shy);
+    read_f32(d, e.comps[d->type_id].data(), "shadow_r", &shr);
+    read_f32(d, e.comps[d->type_id].data(), "shadow_g", &shg);
+    read_f32(d, e.comps[d->type_id].data(), "shadow_b", &shb);
+    read_f32(d, e.comps[d->type_id].data(), "shadow_a", &sha);
     /* parse_tags=false：把标记当纯文本（转义 '<'） */
     if (const mq_field_desc* fpt = mq_reflect_field(d, "parse_tags")) {
         if (!*(const bool*)(e.comps[d->type_id].data() + fpt->offset)) {
@@ -8198,16 +8236,46 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     st.wrap = (uint32_t)(wrap < 0 ? 0 : wrap);
     st.align = (uint32_t)(align < 0 ? 0 : align);
     st.max_width = max_w;
+    st.bold = bold ? 1 : 0;
+    st.italic = italic ? 1 : 0;
     st.r = r; st.g = g; st.b = b; st.a = a * inherit_alpha;
 
-    /* 先测量（写回 transient 字段，供脚本/控制面读取），再排版 */
     /* 字体：标签的 font 字段优先（相对路径按 CWD/场景目录解析），否则默认字体 */
     mq_font* label_font = eng.text_font_for(font_path_comp);
+    /* 排版度量为**设计像素**（text 模块内部与窗口/渲染倍率无关）；inv 只用于把字形位图
+     * 的设备像素尺寸换算回设计像素（位图分辨率随窗口变化，布局不变）。 */
+    const float inv = st.device_scale > 0.0F ? 1.0F / st.device_scale : 1.0F;
+    const float req_size = size;
+
+    /* 高度限制 + Shrink：度量已是设计像素，直接与 max_h 比较。
+     * 先试请求字号；装不下则**二分**找「能装下的最大字号」——高度随字号总体单调增
+     * （字号变小 → 每行更宽、折行更少 → 高度下降），比单步比例缩放更接近恰好装下
+     * （比例缩放会因折行数突变而过缩，文字小到看不清）。16 轮二分 = 0.0004px 精度。 */
+    const bool shrink_mode = max_h > 0.0F && overflow == (int)ui::TextOverflow::Shrink;
     mq_text_metrics m{};
+    if (shrink_mode) {
+        st.font_size = size;
+        const bool ok0 = mq_text_measure(label_font, &st, text.c_str(), &m) == MQ_TEXT_OK;
+        if (!ok0 || m.height > max_h + 0.01F) {
+            float lo = 1.0F, hi = size;             /* lo = 假定装得下，hi = 装不下 */
+            for (int it = 0; it < 16; ++it) {
+                const float mid = (lo + hi) * 0.5F;
+                st.font_size = mid;
+                if (mq_text_measure(label_font, &st, text.c_str(), &m) != MQ_TEXT_OK) break;
+                if (m.height <= max_h + 0.01F) lo = mid; else hi = mid;
+            }
+            size = std::floor(lo * 100.0F) / 100.0F;
+            if (size < 1.0F) size = 1.0F;
+        }
+    }
+    st.font_size = size;
+
+    /* 先测量（写回 transient 字段，供脚本/控制面读取），再排版 */
     const int mrc = mq_text_measure(label_font, &st, text.c_str(), &m);
     if (std::getenv("MAQUE_TRACE_TEXT"))
-        std::print("[text] id={} type={} len={} size={:.0f} wrap={} rc={} lines={}\n",
-                   idx, d->name, text.size(), st.font_size, st.wrap, mrc, m.line_count);
+        std::print("[text] id={} type={} len={} size={:.1f}(req {:.1f}) maxw={:.0f} maxh={:.0f} overflow={} wrap={} rc={} lines={}\n",
+                   idx, d->name, text.size(), st.font_size, req_size, max_w, max_h, overflow, st.wrap, mrc,
+                   m.line_count);
     if (mrc != MQ_TEXT_OK) return;
     std::vector<mq_text_glyph> glyphs(m.glyph_count ? m.glyph_count : 1);
     uint32_t n = 0;
@@ -8218,34 +8286,42 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
                    n ? glyphs[0].x : 0.0F, n ? glyphs[0].y : 0.0F,
                    n ? glyphs[0].w : 0.0F, n ? glyphs[0].h : 0.0F);
     if (lrc != MQ_TEXT_OK) return;
-    /* 度量写回：换算回**设计像素**（与节点坐标同一坐标系；设备像素只用于栅格化） */
-    const float inv = st.device_scale > 0.0F ? 1.0F / st.device_scale : 1.0F;
+    /* 度量写回：text 模块现在直接返回**设计像素**度量（与窗口/渲染倍率无关）。
+     * 宽度/高度限制时夹到限制值（Clip 语义：盒子就是限制尺寸；Shrink 时通常已装下）。 */
+    const float measured_w = m.width, measured_h = m.height;
+    const float shown_w = max_w > 0.0F ? std::min(measured_w, max_w) : measured_w;
+    const float shown_h = max_h > 0.0F ? std::min(measured_h, max_h) : measured_h;
     if (const mq_field_desc* fw = mq_reflect_field(d, "text_w"))
-        *(float*)(e.comps[d->type_id].data() + fw->offset) = m.width * inv;
+        *(float*)(e.comps[d->type_id].data() + fw->offset) = shown_w;
     if (const mq_field_desc* fh = mq_reflect_field(d, "text_h"))
-        *(float*)(e.comps[d->type_id].data() + fh->offset) = m.height * inv;
+        *(float*)(e.comps[d->type_id].data() + fh->offset) = shown_h;
     if (const mq_field_desc* flc = mq_reflect_field(d, "line_count"))
         *(int32_t*)(e.comps[d->type_id].data() + flc->offset) = (int32_t)m.line_count;
     if (const mq_field_desc* fts = mq_reflect_field(d, "text_size")) {
         float* v = (float*)(e.comps[d->type_id].data() + fts->offset);
-        v[0] = m.width * inv; v[1] = m.height * inv;
+        v[0] = shown_w; v[1] = shown_h;
     }
     /* render.RichText 用 content_size 承载实测尺寸 */
     if (const mq_field_desc* fcs = mq_reflect_field(d, "content_size")) {
         float* v = (float*)(e.comps[d->type_id].data() + fcs->offset);
-        v[0] = m.width * inv; v[1] = m.height * inv;
+        v[0] = shown_w; v[1] = shown_h;
     }
+    /* 高度限制 + Shrink 的实际字号（transient；0 = 未生效） */
+    if (const mq_field_desc* ffs = mq_reflect_field(d, "fit_font_size"))
+        *(float*)(e.comps[d->type_id].data() + ffs->offset) = shrink_mode ? st.font_size : 0.0F;
 
     /* 锚点：scn.Label 的 x/y 为左上角偏移；ui.* 以节点位置为左上角 */
     float ox = 0, oy = 0;
     read_f32(d, e.comps[d->type_id].data(), "x", &ox);
     read_f32(d, e.comps[d->type_id].data(), "y", &oy);
-    /* 阶段 1：只收集（纹理与 UV 留到 text_flush，按**最终**图集计算） */
-    for (uint32_t i = 0; i < n; ++i) {
-        const mq_text_glyph& gl = glyphs[i];
-        if (gl.w <= 0.0F || gl.h <= 0.0F) continue;
-        /* 位图尺寸/位置都是**设备像素**（按设备字号栅格化）→ 换算回设计像素再落位，
-         * 否则窗口放大 N 倍时文字会随之变成 N 倍大。 */
+    /* 阶段 1：只收集（纹理与 UV 留到 text_flush，按**最终**图集计算）。
+     * 每个字形按 阴影 → 描边 → 字形本体 的顺序入队（同 z，靠原始下标稳定排序）。 */
+    const float base_a = st.a;                          /* 组件 alpha × 继承 alpha */
+    auto push_quad = [&](const mq_text_glyph& gl, float dx, float dy,
+                         float cr, float cg, float cb, float ca, int zi) {
+        if (gl.w <= 0.0F || gl.h <= 0.0F) return;
+        /* x0/y0 已是**设计像素**（text 模块布局空间）；只有字形位图 w/h 是设备像素
+         * （按渲染倍率栅格化），换算回设计像素后落位 —— 布局与窗口大小无关。 */
         const float half_w = gl.w * 0.5F * inv, half_h = gl.h * 0.5F * inv;
         PendingQuad q{};
         q.font = label_font; q.size = gl.device_size;
@@ -8253,12 +8329,42 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
         q.tw = (int)gl.w; q.th = (int)gl.h;
         q.cp = gl.codepoint;
         /* 锚点 = 位图左上角 (x0,y0)；排版 y 向下、屏幕 y 向下 → 基准翻转后相加 */
-        q.x = e.world_x + ox + gl.x0 * inv + half_w;
-        q.y = (float)eng.H - (e.world_y + oy) + gl.y0 * inv + half_h;
+        q.x = e.world_x + ox + gl.x0 + half_w + dx;
+        q.y = (float)eng.H - (e.world_y + oy) + gl.y0 + half_h + dy;
         q.half_w = half_w; q.half_h = half_h;
-        q.r = gl.r; q.g = gl.g; q.b = gl.b; q.a = gl.a;
-        q.z = 100 + (int)i;
+        q.r = cr; q.g = cg; q.b = cb; q.a = ca;
+        q.z = 100 + zi;
         eng.pending_quads.push_back(q);
+    };
+    /* 描边：8 方向 × rings 环（ring 半径按 outline_size 均分；上限 8 环防止极端参数爆量）。
+     * 用同一字形位图多次偏移绘制（描边色只取 alpha），确定性且与图集无关。 */
+    const int outline_rings = outline_size > 0.0F
+        ? std::clamp((int)std::ceil(outline_size), 1, 8) : 0;
+    const bool has_shadow = sha > 0.0F && (shx != 0.0F || shy != 0.0F);
+    for (uint32_t i = 0; i < n; ++i) {
+        const mq_text_glyph& gl = glyphs[i];
+        if (gl.w <= 0.0F || gl.h <= 0.0F) continue;
+        /* 裁剪（设计像素）：
+         *   · wrap=None + max_width：按宽度限制裁剪（文档语义：盒子就是限制尺寸）；
+         *   · wrap=Word/Char：折行已由排版保证不越界；呈现用设备整数 advance 累计，
+         *     可能比设计宽度多出 <1 设备像素 —— 不能逐字形裁掉，否则窗口非整数倍缩放时
+         *     行尾字形会被误剪。高度超出 max_height 仍然整字形裁剪（Clip 语义）。 */
+        const float gx = gl.x0, gy = gl.y0, gw = gl.w * inv, gh = gl.h * inv;
+        if (max_w > 0.0F && wrap == 0 && gx + gw > max_w + 1.0F) continue;
+        if (max_h > 0.0F && gy + gh > max_h + 0.5F) continue;
+        if (has_shadow) push_quad(gl, shx, shy, shr, shg, shb, sha * base_a, (int)i);
+        if (outline_rings > 0) {
+            const float oa = std::clamp(oaa * base_a, 0.0F, 1.0F);
+            for (int rr = 1; rr <= outline_rings; ++rr) {
+                const float rad = outline_size * (float)rr / (float)outline_rings;
+                for (int k = 0; k < 8; ++k) {
+                    constexpr float kPi4 = 0.7853981633974483F;
+                    const float ang = kPi4 * (float)k;
+                    push_quad(gl, std::cos(ang) * rad, std::sin(ang) * rad, orr, ogg, obb, oa, (int)i);
+                }
+            }
+        }
+        push_quad(gl, 0.0F, 0.0F, gl.r, gl.g, gl.b, gl.a, (int)i);
     }
 }
 

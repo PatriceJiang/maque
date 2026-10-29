@@ -1,0 +1,30 @@
+{
+  "title": "scn.Label glyph grid（非整数倍缩放的呈现网格：字距/行距/基线）",
+  "width": 480,
+  "height": 360,
+  "entities": [
+    { "name": "caps", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 320.0, "text": "HHHHHHHH",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 16.0,
+          "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "xheight", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 250.0, "text": "acemnorsuvwxz",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 16.0,
+          "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
+          "r": 0.4, "g": 1.0, "b": 0.5, "a": 1.0 } ] },
+
+    { "name": "mixed", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 180.0, "text": "the quick brown fox",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 14.0,
+          "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 0.5, "b": 0.8, "a": 1.0 } ] },
+
+    { "name": "lines", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 100.0, "text": "HHHH\nHHHH\nHHHH\nHHHH",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 16.0,
+          "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
+          "r": 0.4, "g": 0.6, "b": 1.0, "a": 1.0 } ] }
+  ]
+}

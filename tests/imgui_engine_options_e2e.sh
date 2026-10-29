@@ -18,7 +18,8 @@
 #      · ImGui 已开（F2）时 F4 只开关选项面板、不关 stats；
 #      · F2 关掉整个 ImGui 会清空选项面板状态 → F2 再开不会"复活"F4 面板（右侧区域像素与
 #        只按 F2 的参考图逐像素一致；对照组 F4 常开则差异 >5000 像素，证明断言有鉴别力）。
-#   ⑦ 每次运行后的日志都不含 `AddressSanitizer`（构建默认 Debug + ASan）。
+#   ⑦ 引擎热键不双触发：F2/F4 在面板开关后**不再下发给脚本**（普通按键仍能到达，作对照）。
+#   ⑧ 每次运行后的日志都不含 `AddressSanitizer`（构建默认 Debug + ASan）。
 #
 # 无显示环境可跑：全程 `MAQUE_WINDOW=0x0 MAQUE_PRESENT=off` + `--shot`/`--frames`。
 # headless 没有真实键盘 → `MAQUE_SIM_KEY_AT="<帧>:<键码>"` 往**本帧设备事件队列**注入按下事件
@@ -86,6 +87,7 @@ SCN="$WORK/imgui_engine_options_e2e.scn"
 cat >"$SCN" <<'JSON'
 {
   "title": "imgui_engine_options_e2e",
+  "script": "keylog.js",
   "width": 640,
   "height": 360,
   "views": 1,
@@ -114,6 +116,14 @@ cat >"$SCN" <<'JSON'
 }
 JSON
 [ -s "$SCN" ] || fail "测试场景写入失败: $SCN"
+
+# 按键探针脚本：记录脚本实际收到的按键（用于验证 F2/F4 引擎热键不再下发给玩法）。
+cat >"$WORK/keylog.js" <<'JS'
+function on_key_down(target, key) {
+    log('e2e_key ' + key);
+}
+JS
+[ -s "$WORK/keylog.js" ] || fail "按键探针脚本写入失败: $WORK/keylog.js"
 
 # ---- ① F4 沿检测 -------------------------------------------------------------
 echo "imgui_engine_options_e2e: ① F4 沿检测（单次/两次/按住）"
@@ -453,9 +463,26 @@ print(f'imgui_engine_options_e2e: F2/F4 互不干扰 右侧区域差异 mix={dif
 sys.exit(0 if (diff_mix <= 10 and diff_ctrl > 5000) else 1)
 PY
 
-# ---- ⑦ 全部日志无 ASan ------------------------------------------------------
+# ---- ⑦ 引擎热键不双触发 -----------------------------------------------------
+echo "imgui_engine_options_e2e: ⑦ 引擎热键 F2/F4 不传给脚本（防双触发）"
+
+# 65 = 'A'（普通按键，应能到达脚本 = 证明输入通路正常）；1002/1004 = F2/F4（引擎热键，应被消费）。
+# 注：设备事件只在**有真实窗口**时经 input 模块下发给脚本（headless 无窗口路径不投递玩法输入）
+# → 本用例单独开一个小窗口（仍 MAQUE_PRESENT=off，不呈现）。
+MAQUE_WINDOW=800x650 MAQUE_SIM_KEY_AT="5:65,10:1002,15:1004" \
+    run "$WORK/key_router.log" "按键路由运行失败" --frames 40 "$SCN"
+grep -qF "e2e_key 65" "$WORK/key_router.log" \
+    || fail "普通按键 65 未到达脚本（输入通路异常，无法验证 F2/F4 是否被消费）"
+if grep -qF "e2e_key 1002" "$WORK/key_router.log"; then
+    fail "F2 仍被下发给脚本（开面板会同时触发游戏自己的 F2 动作）"
+fi
+if grep -qF "e2e_key 1004" "$WORK/key_router.log"; then
+    fail "F4 仍被下发给脚本（开面板会同时触发游戏自己的 F4 动作）"
+fi
+
+# ---- ⑧ 全部日志无 ASan ------------------------------------------------------
 for log in "$WORK"/*.log; do
     [ -e "$log" ] && check_clean "$log"
 done
 
-echo "imgui_engine_options_e2e: ok（F4 沿检测/面板进像素/MSAA/默认太阳光/主相机 near·far/F2 与 F4 互不干扰/无 ASan）"
+echo "imgui_engine_options_e2e: ok（F4 沿检测/面板进像素/MSAA/默认太阳光/主相机 near·far/F2 与 F4 互不干扰/热键不双触发/无 ASan）"

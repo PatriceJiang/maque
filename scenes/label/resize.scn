@@ -1,0 +1,33 @@
+{
+  "title": "scn.Label 窗口 resize 布局不变性",
+  "script": "resize.js",
+  "width": 640,
+  "height": 360,
+  "seed": 41,
+  "entities": [
+    { "name": "wrap", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 330.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 14.0,
+          "max_width": 120.0, "wrap": "ui::TextWrap::Word", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 0.8, "b": 0.2, "a": 1.0 } ] },
+
+    { "name": "shrink", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 110.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 20.0,
+          "max_width": 140.0, "max_height": 60.0, "overflow": "ui::TextOverflow::Shrink",
+          "wrap": "ui::TextWrap::Word", "align": "ui::Align::Begin",
+          "r": 0.3, "g": 0.95, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "mixed", "components": [
+        { "type": "scn.Label", "x": 340.0, "y": 330.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 14.0,
+          "max_width": 160.0, "wrap": "ui::TextWrap::Word", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 0.35, "b": 0.85, "a": 1.0 } ] },
+
+    { "name": "single", "components": [
+        { "type": "scn.Label", "x": 340.0, "y": 110.0, "text": "single line",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 16.0,
+          "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } ] }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "title": "scn.Label stress —— 高度扫描（Shrink / 无限制对照）",
+  "script": "stress.js",
+  "width": 960,
+  "height": 600,
+  "seed": 32,
+  "entities": [
+    { "name": "height_40", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 560.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 20.0,
+          "max_width": 300.0, "max_height": 40.0, "overflow": "ui::TextOverflow::Shrink",
+          "wrap": "ui::TextWrap::Word", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 0.4, "b": 0.4, "a": 1.0 } ] },
+
+    { "name": "height_80", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 470.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 20.0,
+          "max_width": 300.0, "max_height": 80.0, "overflow": "ui::TextOverflow::Shrink",
+          "wrap": "ui::TextWrap::Word", "align": "ui::Align::Begin",
+          "r": 0.4, "g": 0.8, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "height_160", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 380.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 20.0,
+          "max_width": 300.0, "max_height": 160.0, "overflow": "ui::TextOverflow::Shrink",
+          "wrap": "ui::TextWrap::Word", "align": "ui::Align::Begin",
+          "r": 0.5, "g": 1.0, "b": 0.4, "a": 1.0 } ] },
+
+    { "name": "height_control", "components": [
+        { "type": "scn.Label", "x": 480.0, "y": 560.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 20.0,
+          "max_width": 300.0, "wrap": "ui::TextWrap::Word", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 0.85, "b": 0.2, "a": 1.0 } ] }
+  ]
+}

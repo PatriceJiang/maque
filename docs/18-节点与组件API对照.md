@@ -20,11 +20,11 @@
 > | 物理 | physics.RigidBody + physics.Collider → 装配期建体、帧内步进并回写 Transform2D | `nodes_e2e` 下落断言 |
 > | Director | pause/resume/paused/frame/loadScene（帧边界切场景）；控制面 Director 域 | `nodes_e2e` 暂停断言 |
 > | 动作/定时 | Tween（linear/ease_in/ease_out/ease_in_out + tween_complete）、schedule/scheduleOnce/unschedule | `nodes_e2e` |
-> | 文本 | **真实字体渲染**：FreeType 栅格化 → 图集 → 字形 quad（UV 子矩形）；`scn.Label` / `ui.TextLabel` / `render.RichText` 统一排版（换行 None/Word/Char、对齐 Begin/Center/End、行距、实测 text_w/h/line_count）；**富文本标记** `<color=#RRGGBB>` `<size=NN>` `<b>` `<br/>`（`parse_tags=false` 时当纯文本）；内置 5x7 位图字体作为无字体环境回退 | `text_e2e`（含像素断言） |
+> | 文本 | **真实字体渲染**：FreeType 栅格化 → 图集 → 字形 quad（UV 子矩形）；`scn.Label` / `ui.TextLabel` / `render.RichText` 统一排版（换行 None/Word/Char、对齐 Begin/Center/End、行距、实测 text_w/h/line_count）；**排版在设计像素空间**（窗口 resize / 渲染倍率 ss 只改字形栅格化，不改折行、text_w/text_h/line_count 与文字相对画布的布局）；**行内混排字号共享基线**（行基线 = 行顶 + 行内 max ascent → 大字号向上伸出、底部行对齐）；**非整数倍渲染缩放的字距/基线精度**（pixel_snap 下按设备整数 advance 累计、行基线只吸附一次 → 1.25×/0.83× 下字距/基线不抖动）；**宽度限制** `max_width`（换行或整字形裁剪）+ **高度限制** `max_height`（`overflow=ui::TextOverflow::Clip` 裁剪 / `Shrink` 缩字号并写回 `fit_font_size`）；颜色/透明 `r/g/b/a`；`scn.Label` 装饰 `bold`/`italic`/`shadow_x/y`+`shadow_r/g/b/a`/`outline_size`+`outline_r/g/b/a`；**富文本标记** `<color=#RRGGBB>` `<size=NN>` `<b>` `<i>` `<br/>`（`parse_tags=false` 时当纯文本）；内置 5x7 位图字体作为无字体环境回退 | `text_e2e` + 专用 `label_layout_e2e`（换行/对齐/宽高限制；另含 stress 子例：多行显式换行/宽度扫描 120·240·480/高度扫描 40·80·160/1000 字中英混排/混排行内字号共享基线，自动发现 `scenes/label/stress*.scn` 逐个断言）/`label_style_e2e`（颜色/透明/粗斜体/阴影/描边）/`label_resize_e2e`（真实窗口 800x600→1600x1200 resize 前后 metrics 完全相等 + 归一化 ink bbox 不变）/`label_glyph_grid_e2e`（1/1.25/1.5/0.833/2.5 倍率下同字形设备字距完全相等、基线行完全一致），均含像素断言 |
 >
 > **仍未实现**（诚实清单）：3D 相关（MeshRenderer/Light/Billboard/ReflectionProbe/Terrain/Skybox）、
 > 骨骼动画与动画状态机、RichText/Graphics/MotionStreak、ScrollBar/PageView、VideoPlayer/WebView、
-> AudioSource（本机无音频输出设备）、ConstantForce、LabelOutline/Shadow。
+> AudioSource（本机无音频输出设备）、ConstantForce。
 
 ## 1. 对照总表
 
@@ -53,7 +53,7 @@
 | TiledMap | **TileMap** | ✅ |
 | Spine（sp.Skeleton） | **SpineSkeleton** | ✅ |
 | DragonBones | —（留扩展） | 🔶 见 components/09 |
-| LabelOutline / LabelShadow | — | ❌ 缺失（可由 effect 实现） |
+| LabelOutline / LabelShadow | **scn.Label 字段**（`outline_size`+`outline_r/g/b/a`、`shadow_x/y`+`shadow_r/g/b/a`） | ✅ 等价（内建 8 方向描边 / 先画阴影） |
 
 ### UI 交互控件
 | 参考基准 | maque | 说明 |
@@ -115,13 +115,13 @@
 ## 2. 缺失清单（建议补齐）
 
 **A. UI 控件（6）**：`Slider`、`ProgressBar`、`PageView`、`ScrollBar`、`SafeArea`、`UIOpacity`、`BlockInputEvents`（7）
-**B. 2D 渲染（4）**：`RichText`、`Graphics`（矢量）、`MotionStreak`、`LabelOutline/Shadow`
+**B. 2D 渲染（3）**：`RichText`、`Graphics`（矢量）、`MotionStreak`
 **C. 3D 渲染（4）**：`Billboard`、`ReflectionProbe`、`Skybox/Environment`、`Terrain`
 **D. 物理（1）**：`ConstantForce`
 **E. 平台控件（2）**：`VideoPlayer`、`WebView`（各平台能力差异大）
 **F. 资产**：`Mesh`、`Texture`、`Font`、`AnimationClip`、`Skeleton`数据、`Spine`数据
 
-> 合计约 **18 个组件 + 6 类资产**待补。
+> 合计约 **17 个组件 + 6 类资产**待补。
 
 ## 3. 建议与取舍
 

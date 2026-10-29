@@ -1256,10 +1256,22 @@ static const mq_field_desc mq_fields_scn_Label[] = {
     { "outline_r", (uint32_t)offsetof(scn::Label, outline_r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "outline_g", (uint32_t)offsetof(scn::Label, outline_g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "outline_b", (uint32_t)offsetof(scn::Label, outline_b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "outline_a", (uint32_t)offsetof(scn::Label, outline_a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "font", (uint32_t)offsetof(scn::Label, font), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "text_w", (uint32_t)offsetof(scn::Label, text_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
     { "text_h", (uint32_t)offsetof(scn::Label, text_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
     { "line_count", (uint32_t)offsetof(scn::Label, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "max_height", (uint32_t)offsetof(scn::Label, max_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "overflow", (uint32_t)offsetof(scn::Label, overflow), MQ_TK_ENUM, 752426990u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "bold", (uint32_t)offsetof(scn::Label, bold), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "italic", (uint32_t)offsetof(scn::Label, italic), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shadow_x", (uint32_t)offsetof(scn::Label, shadow_x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shadow_y", (uint32_t)offsetof(scn::Label, shadow_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shadow_r", (uint32_t)offsetof(scn::Label, shadow_r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shadow_g", (uint32_t)offsetof(scn::Label, shadow_g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shadow_b", (uint32_t)offsetof(scn::Label, shadow_b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shadow_a", (uint32_t)offsetof(scn::Label, shadow_a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "fit_font_size", (uint32_t)offsetof(scn::Label, fit_font_size), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
 };
 
 static const mq_field_desc mq_fields_scn_NavAgent[] = {
@@ -2464,6 +2476,7 @@ static const mq_enum_value mq_values_ui_TextOverflow[] = {
     { "Clip", (int64_t)0 },
     { "Ellipsis", (int64_t)1 },
     { "Scroll", (int64_t)2 },
+    { "Shrink", (int64_t)3 },
 };
 
 static const mq_enum_value mq_values_ui_TextWrap[] = {
@@ -5198,7 +5211,7 @@ extern const mq_type_desc mq_type_scn_Label = {
     3449142243u,
     (uint32_t)sizeof(scn::Label),
     (uint32_t)alignof(scn::Label),
-    21u,
+    33u,
     mq_fields_scn_Label,
     4u,
     MQ_ROLE_UI_LABEL,
@@ -6169,7 +6182,7 @@ extern const mq_type_desc mq_type_ui_TextOverflow = {
     3u,
     0u,
     mq_values_ui_TextOverflow,
-    3u,
+    4u,
     mq_defaults_ui_TextOverflow,
 };
 

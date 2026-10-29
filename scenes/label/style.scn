@@ -1,0 +1,57 @@
+{
+  "title": "scn.Label 样式回归（颜色/透明/bold/italic/shadow/outline）",
+  "script": "style.js",
+  "width": 640,
+  "height": 360,
+  "seed": 22,
+  "entities": [
+    { "name": "shadow_bg", "components": [
+        { "type": "scn.Transform2D", "x": 320.0, "y": 110.0 },
+        { "type": "scn.Sprite", "width": 560.0, "height": 100.0,
+          "r": 0.5, "g": 0.5, "b": 0.5 } ] },
+
+    { "name": "color", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 336.0, "text": "COLOR",
+          "font_size": 20.0, "r": 1.0, "g": 0.45, "b": 0.5, "a": 1.0 } ] },
+
+    { "name": "alpha_full", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 290.0, "text": "WHITE",
+          "font_size": 20.0, "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "alpha_half", "components": [
+        { "type": "scn.Label", "x": 180.0, "y": 290.0, "text": "WHITE",
+          "font_size": 20.0, "r": 1.0, "g": 1.0, "b": 1.0, "a": 0.5 } ] },
+
+    { "name": "alpha_zero", "components": [
+        { "type": "scn.Label", "x": 340.0, "y": 290.0, "text": "WHITE",
+          "font_size": 20.0, "r": 1.0, "g": 1.0, "b": 1.0, "a": 0.0 } ] },
+
+    { "name": "bold_normal", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 240.0, "text": "BOLD",
+          "font_size": 24.0, "r": 0.4, "g": 1.0, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "bold_on", "components": [
+        { "type": "scn.Label", "x": 180.0, "y": 240.0, "text": "BOLD",
+          "font_size": 24.0, "r": 0.4, "g": 1.0, "b": 1.0, "a": 1.0, "bold": true } ] },
+
+    { "name": "italic_normal", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 195.0, "text": "IIIII",
+          "font_size": 24.0, "r": 1.0, "g": 0.4, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "italic_on", "components": [
+        { "type": "scn.Label", "x": 180.0, "y": 195.0, "text": "IIIII",
+          "font_size": 24.0, "r": 1.0, "g": 0.4, "b": 1.0, "a": 1.0, "italic": true } ] },
+
+    { "name": "shadow", "components": [
+        { "type": "scn.Label", "x": 70.0, "y": 145.0, "text": "SHADOW",
+          "font_size": 24.0, "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0,
+          "shadow_x": 3.0, "shadow_y": 3.0,
+          "shadow_r": 0.0, "shadow_g": 0.0, "shadow_b": 0.0, "shadow_a": 1.0 } ] },
+
+    { "name": "outline", "components": [
+        { "type": "scn.Label", "x": 70.0, "y": 30.0, "text": "OUT",
+          "font_size": 24.0, "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0,
+          "outline_size": 2.0, "outline_r": 1.0, "outline_g": 0.0,
+          "outline_b": 0.0, "outline_a": 1.0 } ] }
+  ]
+}

@@ -1119,6 +1119,7 @@ enum class TextOverflow : int32_t {
     Clip     = 0,
     Ellipsis = 1,
     Scroll   = 2,
+    Shrink   = 3,
 };
 
 enum class TextWrap : int32_t {
@@ -2374,10 +2375,22 @@ struct Label {
     float outline_r = 0.0F;
     float outline_g = 0.0F;
     float outline_b = 0.0F;
+    float outline_a = 1.0F;
     std::string font = "";
     float text_w = 0.0F;
     float text_h = 0.0F;
     int32_t line_count = 0;
+    float max_height = 0.0F;
+    ui::TextOverflow overflow = ui::TextOverflow::Clip;
+    bool bold = false;
+    bool italic = false;
+    float shadow_x = 0.0F;
+    float shadow_y = 0.0F;
+    float shadow_r = 0.0F;
+    float shadow_g = 0.0F;
+    float shadow_b = 0.0F;
+    float shadow_a = 0.0F;
+    float fit_font_size = 0.0F;
 };
 
 struct NavAgent {

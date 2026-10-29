@@ -41,30 +41,32 @@ enum {
     MQ_TEXT_WRAP_CHAR = 2   /* 按字符换行 */
 };
 
-/* 排版参数（struct_size 版本化）。 */
+/* 排版参数（struct_size 版本化）。坐标/度量一律为**设计像素**：布局与窗口大小/渲染倍率无关。 */
 typedef struct mq_text_style {
     uint32_t struct_size;
-    float font_size;   /* 逻辑像素字号；<=0 → 16 */
-    float device_scale;   /* 设备像素缩放（HiDPI/窗口缩放）：栅格化字号 = round(font_size × device_scale)；<=0 → 1 */
-    int32_t pixel_snap;   /* 1 = 字形位置对齐到整数设备像素（pixel-perfect，默认） */
+    float font_size;   /* 逻辑（设计）像素字号；<=0 → 16；布局按 round(font_size) 的整数设计 ppem 计算 */
+    float device_scale;   /* **栅格化**倍率（device px / design px，HiDPI/窗口缩放）：字形位图按 round(font_size × device_scale) 栅格化；**不影响排版/折行/度量**；<=0 → 1 */
+    int32_t pixel_snap;   /* 1 = 字形位图左上角对齐到设备像素网格（pixel-perfect；只影响呈现，不影响布局推进） */
     int32_t hinting;   /* 0 = 默认 hinting（整数笔画、清晰），1 = 关闭 hinting（几何精确） */
-    float line_spacing;
+    float line_spacing;   /* 行距（设计像素） */
     uint32_t wrap;   /* MQ_TEXT_WRAP_* */
     uint32_t align;   /* MQ_TEXT_ALIGN_* */
-    float max_width;   /* <=0 → 不限制 */
+    float max_width;   /* 折行/对齐盒宽（设计像素）；<=0 → 不限制 */
     float r;   /* 默认前景色（可被富文本覆盖） */
     float g;
     float b;
     float a;
+    int32_t bold;   /* 1 = 合成加粗（FreeType 轮廓膨胀；内置位图字体水平加粗）；富文本 <b> 亦置位 */
+    int32_t italic;   /* 1 = 合成斜体（0.25 剪切变换；内置位图字体逐行错位）；富文本 <i> 亦置位 */
 } mq_text_style;
 
-/* 排版输出的单个字形（位置为相对文本框左上角、y 向下）。 */
+/* 排版输出的单个字形（位置/左上角为**设计像素**、y 向下；位图 w/h 与 bearing 为设备像素）。 */
 typedef struct mq_text_glyph {
     uint32_t codepoint;
-    float x;
-    float y;
-    float w;   /* 字形位图宽（像素） */
-    float h;
+    float x;   /* 笔位置 x（设计像素） */
+    float y;   /* 行顶 y（设计像素，y 向下） */
+    float w;   /* 字形位图宽（**设备像素**；呈现时除以栅格化倍率换算设计像素） */
+    float h;   /* 字形位图高（设备像素） */
     int32_t ax;   /* 图集内像素原点 x（渲染侧应按**最终图集尺寸**换算 UV） */
     int32_t ay;   /* 图集内像素原点 y */
     float u0;   /* 图集 UV（按排版时图集尺寸归一化；图集增长后可能过期，建议用 ax/ay） */
@@ -75,23 +77,23 @@ typedef struct mq_text_glyph {
     float g;
     float b;
     float a;
-    float size;   /* 该字形逻辑字号 */
-    float device_size;   /* 实际栅格化字号（设备像素，整数） */
-    float x0;   /* 位图左上角 x（相对文本框原点，设备像素，已像素对齐） */
-    float y0;   /* 位图左上角 y（相对文本框原点，设备像素，已像素对齐；y 向下） */
+    float size;   /* 该字形逻辑字号（设计像素） */
+    float device_size;   /* 实际栅格化 ppem（设备像素，整数；仅用于选图集） */
+    float x0;   /* 位图左上角 x（相对文本框原点，**设计像素**；已按设备像素网格吸附） */
+    float y0;   /* 位图左上角 y（相对文本框原点，**设计像素**；已按设备像素网格吸附；y 向下） */
     int32_t bearing_x;   /* FreeType bitmap_left（设备像素） */
     int32_t bearing_y;   /* FreeType bitmap_top（相对基线，设备像素） */
 } mq_text_glyph;
 
-/* 排版结果度量。 */
+/* 排版结果度量（**设计像素**，与窗口大小/渲染倍率无关）。 */
 typedef struct mq_text_metrics {
-    float width;
-    float height;
+    float width;   /* 文本宽（设计像素） */
+    float height;   /* 文本高（设计像素） */
     uint32_t line_count;
     uint32_t glyph_count;
-    float baseline;   /* 首行基线相对顶部距离（设备像素） */
-    float ascent;   /* 字体 ascent（设备像素） */
-    float device_scale;   /* 本次排版使用的设备缩放 */
+    float baseline;   /* 首行基线相对行顶距离（设计像素；混排字号取行内最大 run ascent） */
+    float ascent;   /* 基础字体 ascent（设计像素） */
+    float device_scale;   /* 本次使用的**栅格化**倍率（不参与排版） */
 } mq_text_metrics;
 
 /* 加载 TTF/OTF；失败返回 NULL（调用方回退到内置位图字体） */

@@ -1983,10 +1983,22 @@ role: `ui_label`
 | `outline_r` | float | 0.0F |  |
 | `outline_g` | float | 0.0F |  |
 | `outline_b` | float | 0.0F |  |
+| `outline_a` | float | 1.0F |  |
 | `font` | string |  | ref: Font |
 | `text_w` | float | 0.0F | transient |
 | `text_h` | float | 0.0F | transient |
 | `line_count` | int32_t | 0 | transient |
+| `max_height` | float | 0.0F | unit: px |
+| `overflow` | ui.TextOverflow | ui::TextOverflow::Clip |  |
+| `bold` | bool | false |  |
+| `italic` | bool | false |  |
+| `shadow_x` | float | 0.0F | unit: px |
+| `shadow_y` | float | 0.0F | unit: px |
+| `shadow_r` | float | 0.0F |  |
+| `shadow_g` | float | 0.0F |  |
+| `shadow_b` | float | 0.0F |  |
+| `shadow_a` | float | 0.0F |  |
+| `fit_font_size` | float | 0.0F | transient |
 
 ### scn.NavAgent — struct (24B)
 
@@ -2839,6 +2851,7 @@ role: `ui_text`
 | `Clip` | 0 |
 | `Ellipsis` | 1 |
 | `Scroll` | 2 |
+| `Shrink` | 3 |
 
 ### ui.TextWrap — enum
 

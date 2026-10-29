@@ -210,6 +210,7 @@
         - { name: Clip, value: 0 }
         - { name: Ellipsis, value: 1 }
         - { name: Scroll, value: 2 }
+        - { name: Shrink, value: 3, doc: "缩小字号以适配高度限制（scn.Label 的 max_height）" }
     - enum: WrapMode
       values:
         - { name: None, value: 0 }

@@ -482,6 +482,36 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/text_e2e")
 endif()
 
+# scn.Label **专用**回归（docs/17/18；与 text_e2e 独立）：
+#   label_layout_e2e：换行（Word/None）/对齐 Begin·Center·End/宽度限制/高度限制（Shrink/Clip）
+#                     → 度量（text_w/text_h/line_count/fit_font_size）+ 像素 bbox/裁剪断言；
+#                     另自动发现 scenes/label/stress*.scn 跑 stress 子例（多行/宽高扫描/1000 字混排/
+#                     行内混排字号共享基线）
+#   label_style_e2e ：颜色/透明 alpha/bold/italic/shadow/outline → PPM 像素断言
+#   label_resize_e2e：真实窗口 resize（800x600 → 1600x1200，ss 1.25 → 2.5）前后 metrics 完全相等 +
+#                     1600x1200 起始交叉比对 + 归一化 ink bbox 差 <0.01（无显示环境 SKIP 77）
+#   label_glyph_grid_e2e：非整数倍渲染缩放（1/1.25/1.5/0.833/2.5）下字距与基线均匀性（防「歪歪扭扭」：
+#                     同字形设备字距必须完全相等、基线行完全一致）
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME label_layout_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/label_layout_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/label/label.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/label_layout_e2e")
+    add_test(NAME label_style_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/label_style_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/label/style.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/label_style_e2e")
+    add_test(NAME label_resize_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/label_resize_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/label/resize.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/label_resize_e2e")
+    add_test(NAME label_glyph_grid_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/label_glyph_grid_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/label/glyph_grid.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/label_glyph_grid_e2e")
+    set_tests_properties(label_resize_e2e PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77)
+endif()
+
 # 窗口呈现端到端（docs/05）：真实窗口 + 呈现路径 + 缩放（无显示环境自动跳过）
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME window_present_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/window_present_e2e.sh"

@@ -11214,6 +11214,15 @@
           "attrs": {}
         },
         {
+          "name": "outline_a",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "font",
           "type": "string",
           "kind": "string",
@@ -11250,6 +11259,113 @@
           "name": "line_count",
           "type": "int32_t",
           "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "transient": true
+          }
+        },
+        {
+          "name": "max_height",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "overflow",
+          "type": "ui.TextOverflow",
+          "kind": "enum",
+          "type_id": 752426990,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "bold",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "italic",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "shadow_x",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "shadow_y",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "shadow_r",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "shadow_g",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "shadow_b",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "shadow_a",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "fit_font_size",
+          "type": "float",
+          "kind": "f32",
           "type_id": 0,
           "count": 0,
           "offset": null,
@@ -16161,6 +16277,10 @@
         {
           "name": "Scroll",
           "value": 2
+        },
+        {
+          "name": "Shrink",
+          "value": 3
         }
       ],
       "fields": []
@@ -31027,17 +31147,17 @@
             {
               "name": "font_size",
               "type": "float",
-              "doc": "逻辑像素字号；<=0 → 16"
+              "doc": "逻辑（设计）像素字号；<=0 → 16；布局按 round(font_size) 的整数设计 ppem 计算"
             },
             {
               "name": "device_scale",
               "type": "float",
-              "doc": "设备像素缩放（HiDPI/窗口缩放）：栅格化字号 = round(font_size × device_scale)；<=0 → 1"
+              "doc": "**栅格化**倍率（device px / design px，HiDPI/窗口缩放）：字形位图按 round(font_size × device_scale) 栅格化；**不影响排版/折行/度量**；<=0 → 1"
             },
             {
               "name": "pixel_snap",
               "type": "int32_t",
-              "doc": "1 = 字形位置对齐到整数设备像素（pixel-perfect，默认）"
+              "doc": "1 = 字形位图左上角对齐到设备像素网格（pixel-perfect；只影响呈现，不影响布局推进）"
             },
             {
               "name": "hinting",
@@ -31047,7 +31167,7 @@
             {
               "name": "line_spacing",
               "type": "float",
-              "doc": null
+              "doc": "行距（设计像素）"
             },
             {
               "name": "wrap",
@@ -31062,7 +31182,7 @@
             {
               "name": "max_width",
               "type": "float",
-              "doc": "<=0 → 不限制"
+              "doc": "折行/对齐盒宽（设计像素）；<=0 → 不限制"
             },
             {
               "name": "r",
@@ -31083,6 +31203,16 @@
               "name": "a",
               "type": "float",
               "doc": null
+            },
+            {
+              "name": "bold",
+              "type": "int32_t",
+              "doc": "1 = 合成加粗（FreeType 轮廓膨胀；内置位图字体水平加粗）；富文本 <b> 亦置位"
+            },
+            {
+              "name": "italic",
+              "type": "int32_t",
+              "doc": "1 = 合成斜体（0.25 剪切变换；内置位图字体逐行错位）；富文本 <i> 亦置位"
             }
           ]
         },
@@ -31097,22 +31227,22 @@
             {
               "name": "x",
               "type": "float",
-              "doc": null
+              "doc": "笔位置 x（设计像素）"
             },
             {
               "name": "y",
               "type": "float",
-              "doc": null
+              "doc": "行顶 y（设计像素，y 向下）"
             },
             {
               "name": "w",
               "type": "float",
-              "doc": "字形位图宽（像素）"
+              "doc": "字形位图宽（**设备像素**；呈现时除以栅格化倍率换算设计像素）"
             },
             {
               "name": "h",
               "type": "float",
-              "doc": null
+              "doc": "字形位图高（设备像素）"
             },
             {
               "name": "ax",
@@ -31167,22 +31297,22 @@
             {
               "name": "size",
               "type": "float",
-              "doc": "该字形逻辑字号"
+              "doc": "该字形逻辑字号（设计像素）"
             },
             {
               "name": "device_size",
               "type": "float",
-              "doc": "实际栅格化字号（设备像素，整数）"
+              "doc": "实际栅格化 ppem（设备像素，整数；仅用于选图集）"
             },
             {
               "name": "x0",
               "type": "float",
-              "doc": "位图左上角 x（相对文本框原点，设备像素，已像素对齐）"
+              "doc": "位图左上角 x（相对文本框原点，**设计像素**；已按设备像素网格吸附）"
             },
             {
               "name": "y0",
               "type": "float",
-              "doc": "位图左上角 y（相对文本框原点，设备像素，已像素对齐；y 向下）"
+              "doc": "位图左上角 y（相对文本框原点，**设计像素**；已按设备像素网格吸附；y 向下）"
             },
             {
               "name": "bearing_x",
@@ -31202,12 +31332,12 @@
             {
               "name": "width",
               "type": "float",
-              "doc": null
+              "doc": "文本宽（设计像素）"
             },
             {
               "name": "height",
               "type": "float",
-              "doc": null
+              "doc": "文本高（设计像素）"
             },
             {
               "name": "line_count",
@@ -31222,17 +31352,17 @@
             {
               "name": "baseline",
               "type": "float",
-              "doc": "首行基线相对顶部距离（设备像素）"
+              "doc": "首行基线相对行顶距离（设计像素；混排字号取行内最大 run ascent）"
             },
             {
               "name": "ascent",
               "type": "float",
-              "doc": "字体 ascent（设备像素）"
+              "doc": "基础字体 ascent（设计像素）"
             },
             {
               "name": "device_scale",
               "type": "float",
-              "doc": "本次排版使用的设备缩放"
+              "doc": "本次使用的**栅格化**倍率（不参与排版）"
             }
           ]
         }

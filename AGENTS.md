@@ -357,7 +357,8 @@ tools\win\build.cmd -Sanitize address -RunTests
 - **引擎侧 ImGui 调试面板（docs/28）**：`modules/ui/imgui` + `modules/runtime`。**默认不显示**（`MAQUE_IMGUI=1`
   或游戏内 **F2** 打开）；打开后 stats 面板（FPS/logic/render/draws/tris/frame/target）+ 74 个 `imgui_*` 脚本函数。
   **F4** 弹出**引擎选项**面板（MSAA / 默认太阳光 / 主相机 near·far；`MAQUE_ENGINE_OPTIONS` 给启动初值，
-  只在成帧时生效的视图层覆盖，不写场景/不进快照）。**帧时序**：脚本阶段只
+  只在成帧时生效的视图层覆盖，不写场景/不进快照）。**F2/F4 互不干扰**且作为引擎热键**不再下发给脚本**
+  （避免开关面板时双触发游戏键）；F4 自己打开的 ImGui 在收起面板时恢复关闭。**帧时序**：脚本阶段只
   **录制** ImGui draw list → 引擎渲染到 CPU 像素 → `mq_platform_draw_rect` 游戏帧进 `SDL_Renderer` 后台缓冲 →
   `mq_imgui_backend_render` 官方后端单独一趟 pass 叠画 → `mq_platform_present_ui` **只 present 一次**。
   **窗口呈现唯一通道 = SDL_Renderer，禁止 `SDL_GetWindowSurface`**（SDL2 不允许与 renderer 混用；
@@ -500,9 +501,16 @@ GC 仅在帧边界推进（`mq_script_frame_boundary`）。加后端见 docs/14�
 
 **文本**：`ui_set_text/ui_get_text/ui_text_width/ui_text_height/ui_text_lines`（对 `scn.Label` /
 `ui.TextLabel` / `render.RichText` 通用，按 role 定位）。排版字段：`font_size` / `align`（或 `align_h`）/
-`wrap`（或 `wrap_mode`）/ `max_width` / `line_spacing`；实测结果写回 transient 字段
-（`text_w`/`text_h`/`line_count` 或 `text_size`/`content_size`）。
-富文本标记：`<color=#RRGGBB>`、`<size=NN>`、`<b>`、`<br/>`；`parse_tags=false` 时按纯文本渲染。
+`wrap`（或 `wrap_mode`）/ `max_width` / `max_height`（高度限制；`overflow=ui::TextOverflow::Clip|Shrink`，
+Shrink 二分找「能装下的最大字号」并写回 transient `fit_font_size`）/ `line_spacing`；实测结果写回 transient
+字段（`text_w`/`text_h`/`line_count` 或 `text_size`/`content_size`），有宽/高限制时夹到限制值
+（`wrap=None` + `max_width` 时按宽度整字形裁剪）。
+**装饰（`scn.Label`）**：`bold` / `italic`（text 模块合成：FreeType 轮廓膨胀 / 0.25 剪切；图集按
+(字号,码点,bold,italic) 缓存，普通样式路径逐字节不变）/ `outline_size`+`outline_r/g/b/a`（8 方向多环偏移描边）/
+`shadow_x/y`+`shadow_r/g/b/a`（**文本空间像素、+y 向下**，先于字形绘制）；`ui.TextLabel`/`render.RichText`
+用 `outline_color` Vec4。专用回归：`ctest -R 'label_layout_e2e|label_style_e2e'`
+（换行/对齐 Begin·Center·End/宽度限制/高度限制 Clip+Shrink/颜色/透明 alpha/粗斜体/阴影/描边，含像素断言）。
+富文本标记：`<color=#RRGGBB>`、`<size=NN>`、`<b>`、`<i>`、`<br/>`；`parse_tags=false` 时按纯文本渲染。
 **字体解析顺序**：`MAQUE_FONT=<ttf>` → **`scenes/fonts/` 下首个 `.ttf`（仓库自带，含中文）** →
 常见系统字体 → 内置 5x7 位图字体（`tools/font_gen.py` 生成）。组件级覆盖：`scn.Label` /
 `ui.TextLabel` / `render.RichText` 的 `font` 字段（相对工作目录或场景目录解析）。
@@ -511,13 +519,20 @@ GC 仅在帧边界推进（`mq_script_frame_boundary`）。加后端见 docs/14�
 排版按 **UTF-8 码点**（非字节），CJK 逐字可断行；文本图元**两阶段**提交：先全部排版（预热图集），
 再按**最终图集尺寸**算 UV（否则先排的标签会用过期 UV 采样 → 错位/重叠）。
 
-**文本 pixel-perfect（FreeType 集成）**：排版在**设备像素**空间进行 ——
-`mq_text_style.device_scale`（= 窗口/目标缩放）决定实际栅格化字号（`round(font_size × scale)`，整数 ppem →
-笔画落在像素网格），`pixel_snap=1` 把笔位置与字形位图左上角吸附到整数像素；
-`mq_text_glyph` 输出位图矩形（`x0/y0` + `w/h`，已按 FreeType `bitmap_left/bitmap_top` 定位）。
+**文本 pixel-perfect（FreeType 集成）**：**排版在「设计像素」空间进行** —— 与窗口大小/渲染倍率无关
+（窗口 resize 只改字形位图分辨率，**不改**折行、行数、text_w/text_h/fit_font_size 与文字相对画布的大小）。
+`mq_text_style.device_scale` 现在只是**栅格化倍率**（`round(font_size × scale)` 设备 ppem →
+笔画落在像素网格），`pixel_snap=1` 只把字形位图左上角吸附到设备像素网格（不影响布局推进）；
+`mq_text_glyph` 的 `x/y/x0/y0` 为**设计像素**（x0/y0 已按设备网格吸附），`w/h` 与 `bearing_x/y` 为设备像素；
+`mq_text_metrics` 的 width/height/baseline/ascent 也全部是设计像素。
+**行内混排字号共享基线**：行基线 = 行顶 + 行内 max(run ascent)，各字形 `y0 = 行顶 + 行基线 − bitmap_top/scale`
+（此前每个 run 用自身 ascent → 大字号字形整体下移、基线错位，已修）。
+**非整数倍缩放的字距/基线精度**：`pixel_snap` 下横向按**设备整数 advance 累计**推进、每行基线只吸附**一次**
+（不是把「设计位置×倍率」逐字取整）；否则 1.25×/0.83× 等倍率会出现 14/14/13/14 的字距抖动与逐字基线抖动
+（肉眼"歪歪扭扭"）。同字形设备字距必须完全相等，回归 `label_glyph_grid_e2e`。
 渲染侧固定用 **矩形图元 + `filter=nearest` + `snap=1`**（方形会拉伸字形，线性会糊）。
 硬证据：`ctest -R text_pixel` —— 渲染结果与字体模块位图**逐像素一致**（渗出 0、max_diff 0），
-且内置"线性 + 半像素偏移"对照组证明测试有鉴别力。
+且内置"线性 + 半像素偏移"对照组证明测试有鉴别力；窗口 resize 布局不变性回归见 `label_resize_e2e`。
 
 **画布 / 分辨率策略（`ui.Canvas`）**：UI 按**设计分辨率**排版，运行时适配任意窗口与显示器。
 `fit_mode`（None/FitWidth/FitHeight/ShowAll/NoBorder/Exact）+ `align` + `min/max_scale` + 安全区；

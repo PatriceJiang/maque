@@ -65,10 +65,27 @@
         - { name: outline_r, type: float, default: 0.0F }
         - { name: outline_g, type: float, default: 0.0F }
         - { name: outline_b, type: float, default: 0.0F }
+        - { name: outline_a, type: float, default: 1.0F }
         - { name: font, type: string, default: "", attrs: { ref: Font } }
         - { name: text_w, type: float, default: 0.0F, attrs: { transient: true } }
         - { name: text_h, type: float, default: 0.0F, attrs: { transient: true } }
         - { name: line_count, type: int32_t, default: 0, attrs: { transient: true } }
+        # ---- 尺寸限制 / 装饰（label 排版完整回归；docs/18）----
+        # max_width：宽度限制（wrap 时换行；wrap=None 时超出部分裁剪），text_w 夹到该值；
+        # max_height：高度限制；overflow=Clip 裁剪超出部分，Shrink 逐级缩小字号直到装下。
+        - { name: max_height, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: overflow, type: "ui.TextOverflow", default: "ui::TextOverflow::Clip" }
+        - { name: bold, type: bool, default: false }
+        - { name: italic, type: bool, default: false }
+        # 阴影：偏移单位为**文本空间像素（y 向下）**；shadow_a=0 关闭。
+        - { name: shadow_x, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: shadow_y, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: shadow_r, type: float, default: 0.0F }
+        - { name: shadow_g, type: float, default: 0.0F }
+        - { name: shadow_b, type: float, default: 0.0F }
+        - { name: shadow_a, type: float, default: 0.0F }
+        # 高度限制 + Shrink 后的实际排版字号（transient；脚本/测试可读；0 = 未生效）
+        - { name: fit_font_size, type: float, default: 0.0F, attrs: { transient: true } }
     # 动画播放器（docs/15 §2）：关键帧采样，写回目标组件的反射字段。
     - struct: AnimationPlayer
       roles: [anim_player]

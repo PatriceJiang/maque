@@ -1,0 +1,57 @@
+{
+  "title": "scn.Label 排版回归（换行/对齐/宽度限制/高度限制）",
+  "script": "label.js",
+  "width": 640,
+  "height": 360,
+  "seed": 21,
+  "entities": [
+    { "name": "wrap_word", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 340.0, "text": "the quick brown fox jumps over the lazy dog",
+          "font_size": 12.0, "max_width": 120.0, "wrap": "ui::TextWrap::Word",
+          "align": "ui::Align::Begin", "r": 1.0, "g": 0.8, "b": 0.2, "a": 1.0 } ] },
+
+    { "name": "wrap_none", "components": [
+        { "type": "scn.Label", "x": 180.0, "y": 340.0, "text": "the quick brown fox jumps over the lazy dog",
+          "font_size": 12.0, "max_width": 120.0, "wrap": "ui::TextWrap::None",
+          "align": "ui::Align::Begin", "r": 0.4, "g": 0.6, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "align_begin", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 260.0, "text": "align",
+          "font_size": 12.0, "max_width": 200.0, "wrap": "ui::TextWrap::None",
+          "align": "ui::Align::Begin", "r": 1.0, "g": 0.35, "b": 0.35, "a": 1.0 } ] },
+
+    { "name": "align_center", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 260.0, "text": "align",
+          "font_size": 12.0, "max_width": 200.0, "wrap": "ui::TextWrap::None",
+          "align": "ui::Align::Center", "r": 0.35, "g": 1.0, "b": 0.35, "a": 1.0 } ] },
+
+    { "name": "align_end", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 260.0, "text": "align",
+          "font_size": 12.0, "max_width": 200.0, "wrap": "ui::TextWrap::None",
+          "align": "ui::Align::End", "r": 0.6, "g": 0.35, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "wrap_limit", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 220.0,
+          "text": "the quick brown fox jumps over the lazy dog and keeps running",
+          "font_size": 12.0, "max_width": 100.0, "wrap": "ui::TextWrap::Word",
+          "align": "ui::Align::Begin", "r": 1.0, "g": 0.5, "b": 0.9, "a": 1.0 } ] },
+
+    { "name": "shrink", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 140.0, "text": "shrink this text to fit the box",
+          "font_size": 24.0, "max_width": 140.0, "max_height": 60.0,
+          "overflow": "ui::TextOverflow::Shrink", "wrap": "ui::TextWrap::Word",
+          "align": "ui::Align::Begin", "r": 0.5, "g": 1.0, "b": 0.4, "a": 1.0 } ] },
+
+    { "name": "shrink_control", "components": [
+        { "type": "scn.Label", "x": 200.0, "y": 140.0, "text": "shrink this text to fit the box",
+          "font_size": 24.0, "max_width": 140.0,
+          "overflow": "ui::TextOverflow::Clip", "wrap": "ui::TextWrap::Word",
+          "align": "ui::Align::Begin", "r": 1.0, "g": 0.45, "b": 0.25, "a": 1.0 } ] },
+
+    { "name": "clip", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 70.0, "text": "shrink this text to fit the box",
+          "font_size": 24.0, "max_width": 140.0, "max_height": 60.0,
+          "overflow": "ui::TextOverflow::Clip", "wrap": "ui::TextWrap::Word",
+          "align": "ui::Align::Begin", "r": 0.3, "g": 0.95, "b": 1.0, "a": 1.0 } ] }
+  ]
+}

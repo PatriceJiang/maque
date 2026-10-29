@@ -1,0 +1,20 @@
+{
+  "title": "scn.Label stress —— 行内混排字号共享基线",
+  "script": "stress.js",
+  "width": 640,
+  "height": 240,
+  "seed": 35,
+  "entities": [
+    { "name": "baseline_mixed", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 220.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 16.0,
+          "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } ] },
+
+    { "name": "baseline_plain", "components": [
+        { "type": "scn.Label", "x": 20.0, "y": 120.0, "text": "",
+          "font": "../fonts/AlibabaPuHuiTi-3-55-Regular.ttf", "font_size": 16.0,
+          "wrap": "ui::TextWrap::None", "align": "ui::Align::Begin",
+          "r": 1.0, "g": 0.85, "b": 0.2, "a": 1.0 } ] }
+  ]
+}

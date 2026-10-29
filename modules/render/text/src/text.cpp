@@ -5,11 +5,14 @@
  *   · 排版只做整数/浮点算术，遍历按码点升序 → 逐位可复现；
  *   · 图集按码点升序做行式打包（确定性），输出 RGBA8（白字 + alpha）；
  *   · 无 FreeType 时回退到内置 5x7 位图字体（保证 headless/CI 亦可用）。
- * 富文本标记：<color=#rrggbb>…</color>、<size=NN>…</size>、<b>…</b>、<br/>（大小写不敏感）。 */
+ * 富文本标记：<color=#rrggbb>…</color>、<size=NN>…</size>、<b>…</b>、<i>…</i>、<br/>（大小写不敏感）。
+ * 合成样式（<b>/<i> 或 style.bold/italic）：图集按 (字号, 码点, bold, italic) 缓存，**同一字号共用一份
+ * Atlas**（带样式字形只是作为额外条目追加，generation 递增）；普通样式路径的像素/推进/换行完全不变。 */
 #include "text/mq_text.h"
 #include "core/tracy/mq_tracy.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -17,6 +20,7 @@
 #if defined(MAQUE_HAVE_FREETYPE)
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_OUTLINE_H
 #endif
 
 namespace {
@@ -32,7 +36,22 @@ struct Glyph {
     int      w = 0, h = 0;        /* 位图尺寸 */
     int      bearing_x = 0, bearing_y = 0;
     float    advance = 0.0F;
+    /* 合成样式位：参与查找键（同码点的普通/粗体/斜体字形各自独立缓存） */
+    bool     bold = false;
+    bool     italic = false;
 };
+
+/* 内置位图字体的放大倍率（与旧实现逐位一致：16px → 2 倍） */
+int builtin_scale_of(float size) {
+    const int scale = (int)(size / 8.0F + 0.5F);
+    return scale < 1 ? 1 : scale;
+}
+
+/* FreeType 合成加粗的笔画加宽量（像素）：约 round(device_size / 16)，至少 1 */
+int bold_strength_of(float device_size) {
+    const int s = (int)(device_size / 16.0F + 0.5F);
+    return s < 1 ? 1 : s;
+}
 
 /* 字形图集：**按需栅格化 + 增量打包**（任意 Unicode，含 CJK，docs/13 §字形管线）。
  *   · 宽固定 kAtlasW、高按需增长到 kAtlasMaxH；行式打包（追加顺序 = 码点出现顺序 → 确定性）
@@ -72,24 +91,36 @@ namespace {
 #include "builtin5x7.inc"
 
 
-/* 内置字体：把 5x7 位图按字号放大为 RGBA8 字形（最近邻，确定性）。 */
-void builtin_glyph_bitmap(const mq_font* f, uint32_t cp, float size, std::vector<uint8_t>& out,
-                          int* out_w, int* out_h) {
-    const int scale = (int)(size / 8.0F + 0.5F);
-    const int s = scale < 1 ? 1 : scale;
+/* 内置字体：把 5x7 位图按字号放大为 RGBA8 字形（最近邻，确定性）。
+ * 合成样式（纯几何变换，不依赖 FreeType）：
+ *   · bold   ：每个点亮像素块向右膨胀 1*s 像素（= 一个源像素的设备宽度），推进同步 +s；
+ *   · italic ：逐行水平剪切（顶行右移最多约 1/4 字高，底行不动），推进不变。
+ * 普通样式（bold/italic 均 false）走与旧实现完全相同的写入路径 → 图集逐字节不变。 */
+void builtin_glyph_bitmap(const mq_font* f, uint32_t cp, float size, bool bold, bool italic,
+                          std::vector<uint8_t>& out, int* out_w, int* out_h) {
+    const int s = builtin_scale_of(size);
     if (cp < kFirstCp || cp > kLastCp) { *out_w = 0; *out_h = 0; out.clear(); return; }
     const uint8_t* col = f->builtin_bits.data() + (size_t)(cp - kFirstCp) * 5;
-    const int w = 5 * s, h = 7 * s;
+    const int base_w = 5 * s, h = 7 * s;
+    /* 斜体：顶行最大右移 max(1, (h-1)/4) 像素（整数、确定性；小字号也至少有 1px 倾斜） */
+    const int shear = italic ? std::max(1, (h - 1) / 4) : 0;
+    const int dilate = bold ? s : 0;                 /* 水平膨胀：1*s 像素 */
+    const int w = base_w + shear + dilate;
     out.assign((size_t)w * h * 4, 0);
     for (int y = 0; y < 7; ++y) {
         for (int x = 0; x < 5; ++x) {
             const bool on = (col[x] >> y) & 1u;
             if (!on) continue;
             for (int dy = 0; dy < s; ++dy) {
+                const int py = y * s + dy;
+                /* 逐设备行错位：顶行右移最多 shear，底行 0（整数除法 → 确定性） */
+                const int row_dx = shear > 0 ? (shear * (h - 1 - py)) / (h - 1) : 0;
                 for (int dx = 0; dx < s; ++dx) {
-                    const int px = x * s + dx, py = y * s + dy;
-                    uint8_t* p = out.data() + ((size_t)py * w + px) * 4;
-                    p[0] = 255; p[1] = 255; p[2] = 255; p[3] = 255;
+                    const int px = x * s + dx + row_dx;
+                    for (int bx = 0; bx <= dilate; ++bx) {
+                        uint8_t* p = out.data() + ((size_t)py * w + (size_t)(px + bx)) * 4;
+                        p[0] = 255; p[1] = 255; p[2] = 255; p[3] = 255;
+                    }
                 }
             }
         }
@@ -147,7 +178,7 @@ extern "C" void mq_font_destroy(mq_font* font) {
 
 namespace {
 
-const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size);
+const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size, bool bold, bool italic);
 
 /* 图集惰性创建：ASCII 预热（常见文本零额外开销、行为与旧版一致），其余码点按需栅格化。 */
 Atlas& atlas_for(mq_font* f, float size) {
@@ -161,34 +192,68 @@ Atlas& atlas_for(mq_font* f, float size) {
     a.valid = true;
     f->atlases.push_back(std::move(a));
     Atlas& out = f->atlases.back();
-    for (uint32_t cp = kFirstCp; cp <= kLastCp; ++cp) (void)ensure_glyph(f, out, cp, sz);
+    for (uint32_t cp = kFirstCp; cp <= kLastCp; ++cp) (void)ensure_glyph(f, out, cp, sz, false, false);
     return out;
 }
 
-/* 按需栅格化一个码点并打包：已存在返回既有；放不下返回 nullptr（调用方跳过）。 */
-const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size) {
-    for (const auto& g : a.glyphs) if (g.cp == cp) return &g;
+/* 按需栅格化一个码点并打包：查找键 = (码点, bold, italic)；放不下返回 nullptr（调用方跳过）。
+ * 普通样式（bold/italic 均为 false）的栅格化与打包路径与旧实现**完全相同**（逐字节不变）。 */
+const Glyph* ensure_glyph(mq_font* f, Atlas& a, uint32_t cp, float size, bool bold, bool italic) {
+    for (const auto& g : a.glyphs)
+        if (g.cp == cp && g.bold == bold && g.italic == italic) return &g;
     if (a.full) return nullptr;
 
     Glyph g;
     g.cp = cp;
+    g.bold = bold;
+    g.italic = italic;
     std::vector<uint8_t> bmp;                 /* RGBA（白字 + alpha） */
     int bw = 0, bh = 0;
     if (f->builtin) {
-        builtin_glyph_bitmap(f, cp, size, bmp, &bw, &bh);
-        g.advance = (float)bw + 1.0F;
+        builtin_glyph_bitmap(f, cp, size, bold, italic, bmp, &bw, &bh);
+        /* 推进：普通/斜体为位图宽 +1（旧行为）；粗体额外 +s（膨胀像素数） */
+        const int s = builtin_scale_of(size);
+        g.advance = (bw > 0 && bh > 0) ? (float)(5 * s + 1 + (bold ? s : 0)) : 1.0F;
         g.bearing_y = bh;
     }
 #if defined(MAQUE_HAVE_FREETYPE)
     else if (f->face) {
         if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(size + 0.5F)) != 0) return nullptr;
-        if (FT_Load_Char(f->face, cp, FT_LOAD_RENDER) != 0) return nullptr;
+        /* 防御性复位：保证普通字形不会被之前样式字形残留的变换污染 */
+        FT_Set_Transform(f->face, nullptr, nullptr);
+        if (bold) {
+            /* 粗体：加载轮廓（不渲染）→ 轮廓膨胀 → 再渲染；strength 单位 26.6 像素 */
+            if (italic) {
+                FT_Matrix m;
+                m.xx = 0x10000; m.xy = 0x4000;      /* x' = x + 0.25*y（16.16 定点剪切） */
+                m.yx = 0;       m.yy = 0x10000;
+                FT_Set_Transform(f->face, &m, nullptr);
+            }
+            const FT_Error err = FT_Load_Char(f->face, cp, FT_LOAD_DEFAULT);
+            if (italic) FT_Set_Transform(f->face, nullptr, nullptr);   /* 立即复位，避免污染后续字形 */
+            if (err != 0) return nullptr;
+            FT_GlyphSlot slot = f->face->glyph;
+            if (slot->format == FT_GLYPH_FORMAT_OUTLINE)
+                (void)FT_Outline_Embolden(&slot->outline, (FT_Pos)(bold_strength_of(size) << 6));
+            if (FT_Render_Glyph(slot, FT_RENDER_MODE_NORMAL) != 0) return nullptr;
+        } else if (italic) {
+            FT_Matrix m;
+            m.xx = 0x10000; m.xy = 0x4000;
+            m.yx = 0;       m.yy = 0x10000;
+            FT_Set_Transform(f->face, &m, nullptr);
+            const FT_Error err = FT_Load_Char(f->face, cp, FT_LOAD_RENDER);
+            FT_Set_Transform(f->face, nullptr, nullptr);               /* 立即复位 */
+            if (err != 0) return nullptr;
+        } else {
+            if (FT_Load_Char(f->face, cp, FT_LOAD_RENDER) != 0) return nullptr;
+        }
         FT_GlyphSlot sl = f->face->glyph;
         bw = (int)sl->bitmap.width;
         bh = (int)sl->bitmap.rows;
         g.bearing_x = sl->bitmap_left;
         g.bearing_y = sl->bitmap_top;
         g.advance = (float)(sl->advance.x >> 6);
+        if (bold) g.advance += (float)bold_strength_of(size);      /* 粗体推进加宽（约 +strength） */
         if (bw > 0 && bh > 0) {
             bmp.assign((size_t)bw * bh * 4, 0);
             for (int y = 0; y < bh; ++y)
@@ -269,20 +334,33 @@ const Glyph* find_glyph(const Atlas& a, uint32_t cp) {
     return nullptr;
 }
 
-/* 设备字号：逻辑字号 × 设备缩放，**取整**（FreeType 整数 ppem → 笔画落在像素网格） */
-float device_size_of(const mq_text_style& st, float logical) {
-    const float sc = st.device_scale > 0.0F ? st.device_scale : 1.0F;
-    float px = logical * sc;
+/* 布局 ppem：逻辑字号 → **设计像素**整数 ppem（FreeType 只接受整数 ppem）。
+ * 排版（advance / 行高 / 基线 / 折行）只用它，因此与窗口大小、渲染倍率无关（docs/13）。 */
+float layout_px_of(float logical) {
+    float px = logical > 0.0F ? logical : 16.0F;
     if (px < 1.0F) px = 1.0F;
     return (float)(int)(px + 0.5F);
 }
 
-/* 字体 ascent（设备像素；用于把 FreeType bitmap_top 换算成位图顶部 y） */
-void font_extents(mq_font* f, float device_size, float* ascent) {
-    *ascent = device_size * 0.8F;                     /* 内置位图字体缺省 */
+/* 栅格化倍率：device px / design px（>=1 为 HiDPI/窗口放大；<=0 视为 1）。 */
+float raster_scale_of(const mq_text_style& st) {
+    return st.device_scale > 0.0F ? st.device_scale : 1.0F;
+}
+
+/* 栅格化 ppem：逻辑字号 × 渲染倍率。只决定字形位图分辨率/清晰度，**不参与排版**
+ * → 改窗口大小（渲染倍率变化）不会改变折行、行数与设计像素度量。 */
+float raster_px_of(float logical, float raster_scale) {
+    float px = (logical > 0.0F ? logical : 16.0F) * (raster_scale > 0.0F ? raster_scale : 1.0F);
+    if (px < 1.0F) px = 1.0F;
+    return (float)(int)(px + 0.5F);
+}
+
+/* 字体 ascent（**设计像素**；入参为设计 px 字号）。 */
+void font_extents(mq_font* f, float design_size, float* ascent) {
+    *ascent = design_size * 0.8F;                     /* 内置位图字体缺省 */
 #if defined(MAQUE_HAVE_FREETYPE)
     if (f && !f->builtin && f->face) {
-        if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(device_size + 0.5F)) == 0)
+        if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(design_size + 0.5F)) == 0)
             *ascent = (float)(f->face->size->metrics.ascender >> 6);
     }
 #endif
@@ -375,8 +453,8 @@ extern "C" float mq_font_advance(mq_font* font, uint32_t codepoint, float size) 
 }
 
 /* ============================ 富文本标记解析 ============================
- * 支持：<color=#rrggbb>…</color>、<size=NN>…</size>、<b>…</b>、<br/>
- * 规则：标签大小写不敏感；未知标签按纯文本输出（不报错）；属性缺失即忽略。
+ * 支持：<color=#rrggbb>…</color>、<size=NN>…</size>、<b>…</b>、<i>…</i>、<br/>
+ * 规则：标签大小写不敏感；未知标签按纯文本输出（不报错）；属性缺失即忽略；可嵌套（栈式恢复）。
  * 解析是确定性的：单遍扫描，无回溯。 */
 
 namespace {
@@ -386,6 +464,7 @@ struct Run {
     float r = 1, g = 1, b = 1, a = 1;
     float size = 0.0F;      /* 0 = 用样式默认字号 */
     bool  bold = false;
+    bool  italic = false;
     bool  line_break = false;
 };
 
@@ -414,12 +493,28 @@ std::string lower(const std::string& s) {
     return o;
 }
 
-/* 解析富文本 → run 序列（栈式处理嵌套标签，最内层生效） */
+/* 解析富文本 → run 序列（栈式处理嵌套标签，最内层生效）
+ * 样式级 st.bold / st.italic 作为初始状态：富文本 <b>/<i> 在 run 上叠加。 */
 void parse_runs(const std::string& in, const mq_text_style& st, std::vector<Run>& out) {
     Run cur;
     cur.r = st.r; cur.g = st.g; cur.b = st.b; cur.a = st.a;
-    struct Saved { bool color = false; float r = 1, g = 1, b = 1; bool size = false; float sz = 0; bool bold = false; };
+    cur.bold = st.bold != 0;
+    cur.italic = st.italic != 0;
+    /* 开标签保存**完整状态**，关闭时整体恢复 → 支持任意嵌套顺序（<b><i>…</i></b> 等） */
+    struct Saved { float r = 1, g = 1, b = 1; float sz = 0; bool bold = false; bool italic = false; };
     std::vector<Saved> stack;
+    auto snapshot = [&]() {
+        Saved s; s.r = cur.r; s.g = cur.g; s.b = cur.b; s.sz = cur.size;
+        s.bold = cur.bold; s.italic = cur.italic;
+        return s;
+    };
+    auto restore = [&]() {
+        if (stack.empty()) return;
+        const Saved s = stack.back();
+        stack.pop_back();
+        cur.r = s.r; cur.g = s.g; cur.b = s.b; cur.size = s.sz;
+        cur.bold = s.bold; cur.italic = s.italic;
+    };
     auto flush = [&]() {
         if (!cur.text.empty()) { out.push_back(cur); cur.text.clear(); }
     };
@@ -437,16 +532,21 @@ void parse_runs(const std::string& in, const mq_text_style& st, std::vector<Run>
             }
             if (body == "b") {
                 flush();
-                if (closing) { if (!stack.empty()) { cur.bold = stack.back().bold; stack.pop_back(); } }
-                else { Saved s; s.color = true; s.r = cur.r; s.g = cur.g; s.b = cur.b; s.size = true; s.sz = cur.size; s.bold = cur.bold; stack.push_back(s); cur.bold = true; }
+                if (closing) restore();
+                else { stack.push_back(snapshot()); cur.bold = true; }
+                i = close + 1; continue;
+            }
+            if (body == "i") {
+                flush();
+                if (closing) restore();
+                else { stack.push_back(snapshot()); cur.italic = true; }
                 i = close + 1; continue;
             }
             if (body.rfind("color", 0) == 0) {
                 flush();
-                if (closing) { if (!stack.empty()) { const Saved s = stack.back(); stack.pop_back(); cur.r = s.r; cur.g = s.g; cur.b = s.b; } }
+                if (closing) restore();
                 else {
-                    Saved s; s.r = cur.r; s.g = cur.g; s.b = cur.b; s.color = true; s.sz = cur.size; s.size = true; s.bold = cur.bold;
-                    stack.push_back(s);
+                    stack.push_back(snapshot());
                     const size_t eq = body.find('=');
                     if (eq != std::string::npos) {
                         float r = cur.r, g = cur.g, b = cur.b;
@@ -457,10 +557,9 @@ void parse_runs(const std::string& in, const mq_text_style& st, std::vector<Run>
             }
             if (body.rfind("size", 0) == 0) {
                 flush();
-                if (closing) { if (!stack.empty()) { const Saved s = stack.back(); stack.pop_back(); cur.size = s.sz; } }
+                if (closing) restore();
                 else {
-                    Saved s; s.r = cur.r; s.g = cur.g; s.b = cur.b; s.color = true; s.sz = cur.size; s.size = true; s.bold = cur.bold;
-                    stack.push_back(s);
+                    stack.push_back(snapshot());
                     const size_t eq = body.find('=');
                     if (eq != std::string::npos) cur.size = (float)std::atof(body.c_str() + eq + 1);
                 }
@@ -504,33 +603,52 @@ namespace {
 
 struct PlacedGlyph {
     uint32_t cp;
-    float x, y;                     /* 笔位置（排版空间） */
-    float x0, y0;                   /* 位图左上角（相对文本框原点，设备像素，已对齐） */
-    float size, device_size;        /* 逻辑字号 / 实际栅格化字号 */
+    float x, y;                     /* 笔位置 / 行顶（**设计像素**） */
+    float x0, y0;                   /* 位图左上角（设计像素；已按设备像素网格吸附） */
+    float size, device_size;        /* 逻辑字号 / 栅格化 ppem（设备像素，只影响位图） */
+    float ascent = 0.0F;            /* 所属 run 的基线（设计像素，相对行顶；行内取 max 对齐） */
+    float raster_advance = 0.0F;    /* 呈现推进（**设备像素**整数）：非整数倍缩放下保证字距均匀 */
     float r, g, b, a;
-    int w, h, bearing_x, bearing_y; /* FreeType bitmap_left / bitmap_top */
+    int w, h, bearing_x, bearing_y; /* 位图宽高 / FreeType bearing（**设备像素**） */
     int ax = 0, ay = 0;             /* 图集内像素原点 */
     float u0, v0, u1, v1;
 };
 
-/* 逐字符测量 + 换行 + 对齐（确定性：单向扫描，不回溯） */
+/* 样式化推进（换行/排版测量用）：单位 = **设计像素**。
+ * 普通样式 == mq_font_advance（旧行为不变）；粗体按布局字号加宽（与位图加粗同源）。 */
+float styled_advance(mq_font* f, uint32_t cp, float layout_size, bool bold) {
+    const float a = mq_font_advance(f, cp, layout_size);
+    if (!bold) return a;
+    return a + (float)(f->builtin ? builtin_scale_of(layout_size) : bold_strength_of(layout_size));
+}
+
+/* 逐字符排版 + 换行 + 对齐（确定性：单向扫描，不回溯）。
+ * 坐标/度量一律在**设计像素**空间 —— 与窗口大小/渲染倍率无关（窗口 resize 只改字形位图分辨率）。
+ * 行内混排不同字号时：行基线 = 行顶 + max(run ascent)，各字号字形按 `bitmap_top` 回落到**同一基线**。 */
 int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
                 std::vector<PlacedGlyph>* out, mq_text_metrics* metrics) {
     const float base = st.font_size > 0.0F ? st.font_size : 16.0F;
+    const float raster_scale = raster_scale_of(st);
+    const float base_layout = layout_px_of(base);
+    const float base_line_h = mq_font_height(f, base_layout);
     std::vector<Run> runs;
     parse_runs(text ? text : "", st, runs);
 
-    const float max_w = st.max_width;
+    const float max_w = st.max_width;                    /* 设计像素 */
     float pen_x = 0.0F, pen_y = 0.0F;
     float line_h = 0.0F;
     uint32_t line_count = 0;
-    struct Line { float width; float y; float height; std::vector<PlacedGlyph> glyphs; };
+    struct Line {
+        float width = 0.0F, y = 0.0F, height = 0.0F, ascent = 0.0F;
+        std::vector<PlacedGlyph> glyphs;
+    };
     std::vector<Line> lines(1);
     lines.back().y = 0.0F;
 
     auto end_line = [&]() {
         lines.back().width = pen_x;
-        pen_y += line_h + st.line_spacing;
+        lines.back().height = line_h > 0.0F ? line_h : base_line_h;
+        pen_y += lines.back().height + st.line_spacing;
         lines.emplace_back();
         lines.back().y = pen_y;
         pen_x = 0.0F;
@@ -538,24 +656,31 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
         ++line_count;
     };
 
-    float ascent = 0.0F;
     for (const Run& run : runs) {
         if (run.line_break) { end_line(); continue; }
         const float size = run.size > 0.0F ? run.size : base;
-        const float dsize = device_size_of(st, size);        /* 设备像素字号（整数） */
-        font_extents(f, dsize, &ascent);
-        if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
+        const float lsize = layout_px_of(size);                /* 布局 ppem（设计像素） */
+        const float rsize = raster_px_of(size, raster_scale);  /* 栅格化 ppem（设备像素） */
+        float run_ascent = 0.0F;
+        font_extents(f, lsize, &run_ascent);
+        Atlas& atlas = atlas_for(f, rsize);
+        std::vector<uint32_t> word;                            /* 词缓冲（码点） */
 
-        Atlas& atlas = atlas_for(f, dsize);
-        std::vector<uint32_t> word;                          /* 词缓冲（码点） */
-
-        /* 落一个字形：按需栅格化 → 位图矩形（含 bearing）→ 像素对齐 */
+        /* 落一个字形：记录设备像素位图 + 设计空间笔位置；x0/y0 留到行结束后按**行基线/设备推进**确定 */
         auto place = [&](uint32_t cp) {
             PlacedGlyph g{};
-            g.cp = cp; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = dsize;
+            g.cp = cp; g.x = pen_x; g.y = pen_y; g.size = size; g.device_size = rsize;
+            g.ascent = run_ascent;
             g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
-            const Glyph* gl = ensure_glyph(f, atlas, cp, dsize);
-            float adv = mq_font_advance(f, cp, dsize);
+            /* run 级样式（parse_runs 已把样式级 st.bold/st.italic 折叠进 run 初始状态） */
+            const Glyph* gl = ensure_glyph(f, atlas, cp, rsize, run.bold, run.italic);
+            /* 呈现推进 = 设备像素整数 advance（图集 advance 已在粗体时含加宽）；
+             * 关键：不能把设计 advance 直接乘 scale 再逐字吸附 —— 非整数倍缩放会得到
+             * 8/9/8/9… 的字距抖动（肉眼"歪歪扭扭"）。设备整数累计 → 字距均匀。 */
+            const float bold_dev = run.bold
+                ? (float)(f->builtin ? builtin_scale_of(rsize) : bold_strength_of(rsize)) : 0.0F;
+            g.raster_advance = (gl && gl->advance > 0.0F) ? gl->advance
+                                                          : mq_font_advance(f, cp, rsize) + bold_dev;
             if (gl) {
                 g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
                 g.ax = gl->ax; g.ay = gl->ay;
@@ -564,28 +689,24 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
                     g.u1 = (float)(gl->ax + gl->w) / (float)atlas.w;
                     g.v1 = (float)(gl->ay + gl->h) / (float)atlas.h;
                 }
-                if (gl->advance > 0.0F) adv = gl->advance;
             }
-            g.x0 = g.x + (float)g.bearing_x;                 /* 位图左上角 = 笔位置 + bearing */
-            g.y0 = g.y + ascent - (float)g.bearing_y;        /* y 向下：基线 − bitmap_top */
-            if (st.pixel_snap) { g.x0 = (float)(int)(g.x0 + 0.5F); g.y0 = (float)(int)(g.y0 + 0.5F); }
             lines.back().glyphs.push_back(g);
-            pen_x += adv;
-            if (st.pixel_snap) pen_x = (float)(int)(pen_x + 0.5F);
-            line_h = std::max(line_h, mq_font_height(f, dsize));
+            pen_x += styled_advance(f, cp, lsize, run.bold);    /* 设计像素推进（与渲染倍率无关） */
+            line_h = std::max(line_h, mq_font_height(f, lsize));
         };
 
         auto flush_word = [&]() {
             if (word.empty()) return;
             if (st.wrap == MQ_TEXT_WRAP_CHAR) {
                 for (uint32_t cp : word) {
-                    if (max_w > 0.0F && pen_x > 0.0F && pen_x + mq_font_advance(f, cp, dsize) > max_w)
+                    if (max_w > 0.0F && pen_x > 0.0F &&
+                        pen_x + styled_advance(f, cp, lsize, run.bold) > max_w)
                         end_line();
                     place(cp);
                 }
             } else {
                 float wsum = 0.0F;
-                for (uint32_t cp : word) wsum += mq_font_advance(f, cp, dsize);
+                for (uint32_t cp : word) wsum += styled_advance(f, cp, lsize, run.bold);
                 if (max_w > 0.0F && pen_x > 0.0F && pen_x + wsum > max_w) end_line();
                 for (uint32_t cp : word) place(cp);
             }
@@ -602,43 +723,82 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
             /* WORD：空格后断行；CJK 逐字可断（无空格语言不会整段溢出） */
             if (st.wrap == MQ_TEXT_WRAP_WORD && (cp == ' ' || is_cjk(cp))) flush_word();
         }
-        flush_word();                                        /* NONE/CHAR/WORD 统一收尾 */
+        flush_word();                                          /* NONE/CHAR/WORD 统一收尾 */
     }
     lines.back().width = pen_x;
-    lines.back().height = line_h;
+    lines.back().height = line_h > 0.0F ? line_h : base_line_h;
     ++line_count;
     if (line_count == 0) line_count = 1;
 
     float max_line_w = 0.0F;
-    for (const Line& l : lines) max_line_w = std::max(max_line_w, l.width);
-    const float base_dev = device_size_of(st, base);
+    for (Line& l : lines) {
+        max_line_w = std::max(max_line_w, l.width);
+        /* 行基线 = 行内最大 run ascent（同屏不同字号共享基线，修此前逐 run 用自身 ascent 的错位） */
+        l.ascent = 0.0F;
+        for (const PlacedGlyph& g : l.glyphs) l.ascent = std::max(l.ascent, g.ascent);
+        if (l.ascent <= 0.0F) {
+            float a = 0.0F;
+            font_extents(f, base_layout, &a);
+            l.ascent = a;
+        }
+    }
     float total_h = 0.0F;
-    for (const Line& l : lines) total_h += (l.height > 0.0F ? l.height : mq_font_height(f, base_dev)) + st.line_spacing;
+    for (const Line& l : lines) total_h += l.height + st.line_spacing;
     if (total_h > 0.0F) total_h -= st.line_spacing;
 
     uint32_t count = 0;
     if (out) {
         out->clear();
-        for (auto& l : lines) {
+        /* 呈现用的**设备行顶**：逐行按设备整数行高累计（与横向设备 advance 同理），
+         * 否则 0.833× 等倍率下「每行各自取整」会让行基线间距 17/16/17 抖动（整体看"波浪状"）。 */
+        int line_top_dev = 0;
+        for (Line& l : lines) {
             const float box_w = max_w > 0.0F ? max_w : max_line_w;
             float dx = 0.0F;
             if (st.align == MQ_TEXT_ALIGN_CENTER) dx = (box_w - l.width) * 0.5F;
             else if (st.align == MQ_TEXT_ALIGN_END) dx = box_w - l.width;
-            for (auto& g : l.glyphs) { g.x += dx; out->push_back(g); }
+            /* 呈现坐标（pixel_snap）：
+             *   · 行基线只吸附**一次** → 行内所有字号/字形共享同一设备像素基线；
+             *   · 行与行之间按**设备整数行高**累计 → 行距均匀，不受非整数倍 ss 的取整抖动影响；
+             *   · 横向用**设备整数 advance** 累计 → 字距均匀（1.25×/0.83× 不会 14/14/13/14）。
+             * 设计语义的 g.x/y 仍保持与渲染倍率无关（g.x += dx 供排版/测试读取）。 */
+            const int baseline_dev = (raster_scale == 1.0F)
+                ? (int)std::lround(l.y + l.ascent)            /* 1×：与旧行为逐像素一致 */
+                : line_top_dev + (int)std::lround(l.ascent * raster_scale);
+            int pen_dev = (int)std::floor(dx * raster_scale + 0.5F);
+            for (PlacedGlyph& g : l.glyphs) {
+                g.x += dx;                                   /* 笔位置（排版语义） */
+                if (st.pixel_snap) {
+                    g.x0 = (float)(pen_dev + g.bearing_x) / raster_scale;
+                    g.y0 = (float)(baseline_dev - g.bearing_y) / raster_scale;
+                    pen_dev += (int)std::lround(g.raster_advance);
+                } else {
+                    /* 不吸附：直接设计像素落位（开发者可关 pixel_snap 做几何精确对照） */
+                    g.x0 = g.x + (float)g.bearing_x / raster_scale;
+                    g.y0 = l.y + l.ascent - (float)g.bearing_y / raster_scale;
+                }
+                out->push_back(g);
+            }
+            if (raster_scale != 1.0F)
+                line_top_dev += (int)std::lround(l.height * raster_scale)
+                              + (int)std::lround(st.line_spacing * raster_scale);
             count += (uint32_t)l.glyphs.size();
         }
     } else {
-        for (auto& l : lines) count += (uint32_t)l.glyphs.size();
+        for (const Line& l : lines) count += (uint32_t)l.glyphs.size();
     }
 
     if (metrics) {
+        /* width/height/baseline/ascent 均为**设计像素**（与窗口/渲染倍率无关）。 */
         metrics->width = max_w > 0.0F ? std::min(max_line_w, max_w) : max_line_w;
         metrics->height = total_h;
         metrics->line_count = line_count;
         metrics->glyph_count = count;
-        metrics->baseline = mq_font_height(f, device_size_of(st, base));
-        font_extents(f, device_size_of(st, base), &metrics->ascent);
-        metrics->device_scale = st.device_scale > 0.0F ? st.device_scale : 1.0F;
+        metrics->baseline = lines.empty() ? 0.0F : lines.front().ascent;   /* 首行基线（行顶→基线前距离） */
+        float base_ascent = 0.0F;
+        font_extents(f, base_layout, &base_ascent);
+        metrics->ascent = base_ascent;
+        metrics->device_scale = raster_scale;              /* 仅报告栅格化倍率（不参与排版） */
     }
     return MQ_TEXT_OK;
 }

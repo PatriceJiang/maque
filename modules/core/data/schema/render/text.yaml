@@ -27,29 +27,31 @@
           - { name: MQ_TEXT_WRAP_CHAR, value: 2, doc: "按字符换行" }
     structs:
       - name: mq_text_style
-        doc: "排版参数（struct_size 版本化）。"
+        doc: "排版参数（struct_size 版本化）。坐标/度量一律为**设计像素**：布局与窗口大小/渲染倍率无关。"
         fields:
           - { name: struct_size, type: "uint32_t" }
-          - { name: font_size, type: "float", doc: "逻辑像素字号；<=0 → 16" }
-          - { name: device_scale, type: "float", doc: "设备像素缩放（HiDPI/窗口缩放）：栅格化字号 = round(font_size × device_scale)；<=0 → 1" }
-          - { name: pixel_snap, type: "int32_t", doc: "1 = 字形位置对齐到整数设备像素（pixel-perfect，默认）" }
+          - { name: font_size, type: "float", doc: "逻辑（设计）像素字号；<=0 → 16；布局按 round(font_size) 的整数设计 ppem 计算" }
+          - { name: device_scale, type: "float", doc: "**栅格化**倍率（device px / design px，HiDPI/窗口缩放）：字形位图按 round(font_size × device_scale) 栅格化；**不影响排版/折行/度量**；<=0 → 1" }
+          - { name: pixel_snap, type: "int32_t", doc: "1 = 字形位图左上角对齐到设备像素网格（pixel-perfect；只影响呈现，不影响布局推进）" }
           - { name: hinting, type: "int32_t", doc: "0 = 默认 hinting（整数笔画、清晰），1 = 关闭 hinting（几何精确）" }
-          - { name: line_spacing, type: "float" }
+          - { name: line_spacing, type: "float", doc: "行距（设计像素）" }
           - { name: wrap, type: "uint32_t", doc: "MQ_TEXT_WRAP_*" }
           - { name: align, type: "uint32_t", doc: "MQ_TEXT_ALIGN_*" }
-          - { name: max_width, type: "float", doc: "<=0 → 不限制" }
+          - { name: max_width, type: "float", doc: "折行/对齐盒宽（设计像素）；<=0 → 不限制" }
           - { name: r, type: "float", doc: "默认前景色（可被富文本覆盖）" }
           - { name: g, type: "float" }
           - { name: b, type: "float" }
           - { name: a, type: "float" }
+          - { name: bold, type: "int32_t", doc: "1 = 合成加粗（FreeType 轮廓膨胀；内置位图字体水平加粗）；富文本 <b> 亦置位" }
+          - { name: italic, type: "int32_t", doc: "1 = 合成斜体（0.25 剪切变换；内置位图字体逐行错位）；富文本 <i> 亦置位" }
       - name: mq_text_glyph
-        doc: "排版输出的单个字形（位置为相对文本框左上角、y 向下）。"
+        doc: "排版输出的单个字形（位置/左上角为**设计像素**、y 向下；位图 w/h 与 bearing 为设备像素）。"
         fields:
           - { name: codepoint, type: "uint32_t" }
-          - { name: x, type: "float" }
-          - { name: y, type: "float" }
-          - { name: w, type: "float", doc: "字形位图宽（像素）" }
-          - { name: h, type: "float" }
+          - { name: x, type: "float", doc: "笔位置 x（设计像素）" }
+          - { name: y, type: "float", doc: "行顶 y（设计像素，y 向下）" }
+          - { name: w, type: "float", doc: "字形位图宽（**设备像素**；呈现时除以栅格化倍率换算设计像素）" }
+          - { name: h, type: "float", doc: "字形位图高（设备像素）" }
           - { name: ax, type: "int32_t", doc: "图集内像素原点 x（渲染侧应按**最终图集尺寸**换算 UV）" }
           - { name: ay, type: "int32_t", doc: "图集内像素原点 y" }
           - { name: u0, type: "float", doc: "图集 UV（按排版时图集尺寸归一化；图集增长后可能过期，建议用 ax/ay）" }
@@ -60,22 +62,22 @@
           - { name: g, type: "float" }
           - { name: b, type: "float" }
           - { name: a, type: "float" }
-          - { name: size, type: "float", doc: "该字形逻辑字号" }
-          - { name: device_size, type: "float", doc: "实际栅格化字号（设备像素，整数）" }
-          - { name: x0, type: "float", doc: "位图左上角 x（相对文本框原点，设备像素，已像素对齐）" }
-          - { name: y0, type: "float", doc: "位图左上角 y（相对文本框原点，设备像素，已像素对齐；y 向下）" }
+          - { name: size, type: "float", doc: "该字形逻辑字号（设计像素）" }
+          - { name: device_size, type: "float", doc: "实际栅格化 ppem（设备像素，整数；仅用于选图集）" }
+          - { name: x0, type: "float", doc: "位图左上角 x（相对文本框原点，**设计像素**；已按设备像素网格吸附）" }
+          - { name: y0, type: "float", doc: "位图左上角 y（相对文本框原点，**设计像素**；已按设备像素网格吸附；y 向下）" }
           - { name: bearing_x, type: "int32_t", doc: "FreeType bitmap_left（设备像素）" }
           - { name: bearing_y, type: "int32_t", doc: "FreeType bitmap_top（相对基线，设备像素）" }
       - name: mq_text_metrics
-        doc: "排版结果度量。"
+        doc: "排版结果度量（**设计像素**，与窗口大小/渲染倍率无关）。"
         fields:
-          - { name: width, type: "float" }
-          - { name: height, type: "float" }
+          - { name: width, type: "float", doc: "文本宽（设计像素）" }
+          - { name: height, type: "float", doc: "文本高（设计像素）" }
           - { name: line_count, type: "uint32_t" }
           - { name: glyph_count, type: "uint32_t" }
-          - { name: baseline, type: "float", doc: "首行基线相对顶部距离（设备像素）" }
-          - { name: ascent, type: "float", doc: "字体 ascent（设备像素）" }
-          - { name: device_scale, type: "float", doc: "本次排版使用的设备缩放" }
+          - { name: baseline, type: "float", doc: "首行基线相对行顶距离（设计像素；混排字号取行内最大 run ascent）" }
+          - { name: ascent, type: "float", doc: "基础字体 ascent（设计像素）" }
+          - { name: device_scale, type: "float", doc: "本次使用的**栅格化**倍率（不参与排版）" }
     fns:
       - { fn: mq_font_load_file, returns: "mq_font*", args: [ { name: path, type: "const char*" } ],
           doc: "加载 TTF/OTF；失败返回 NULL（调用方回退到内置位图字体）" }

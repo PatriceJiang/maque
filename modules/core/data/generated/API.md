@@ -1073,7 +1073,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 
 结构体：
 
-- `mq_text_style`：struct_size: uint32_t, font_size: float, device_scale: float, pixel_snap: int32_t, hinting: int32_t, line_spacing: float, wrap: uint32_t, align: uint32_t, max_width: float, r: float, g: float, b: float, a: float
+- `mq_text_style`：struct_size: uint32_t, font_size: float, device_scale: float, pixel_snap: int32_t, hinting: int32_t, line_spacing: float, wrap: uint32_t, align: uint32_t, max_width: float, r: float, g: float, b: float, a: float, bold: int32_t, italic: int32_t
 - `mq_text_glyph`：codepoint: uint32_t, x: float, y: float, w: float, h: float, ax: int32_t, ay: int32_t, u0: float, v0: float, u1: float, v1: float, r: float, g: float, b: float, a: float, size: float, device_size: float, x0: float, y0: float, bearing_x: int32_t, bearing_y: int32_t
 - `mq_text_metrics`：width: float, height: float, line_count: uint32_t, glyph_count: uint32_t, baseline: float, ascent: float, device_scale: float
 
