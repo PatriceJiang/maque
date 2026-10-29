@@ -537,6 +537,11 @@ libunibreak（`set_linebreaks_utf32` + `set_graphemebreaks_utf32`），覆盖空
 `MAQUE_TEXT_LINEBREAK=0` 回退旧的“空格 + CJK 逐字”规则；第三方源码在 `third_party/libunibreak/`（zlib）。
 回归：`text_test[uax14]`（`a-b`/ZWSP 可断，NBSP/`a(b`/`e◌́` 不可断，CJK>=3 行；关闭后 hyphen/ZWSP 各 1 行）。
 
+**跨 run 换行与行尾空格（布局）**：先对每个 run shape，再把所有 `ShapedCell` 拼成**全局流**统一换行
+（富文本标签切开的词不会在 run 边界断开；UAX #14 对**拼接后的整段文本**计算，空格断行点能看到下个 run 的首字符）；
+行宽/对齐/metrics **不含行尾空格/制表符**（Center/End 不再被尾随空格推偏）。回归 `text_test[layout]`
+（`A ` 与 `A` 居中位置相同/w 相同；`x <b>hel</b>lo` 与 `x hello` 都在词边界换行；`aaa bbb` 首行宽=aaa）。
+
 **文本 pixel-perfect（FreeType 集成）**：**排版在「设计像素」空间进行** —— 与窗口大小/渲染倍率无关
 （窗口 resize 只改字形位图分辨率，**不改**折行、行数、text_w/text_h/fit_font_size 与文字相对画布的大小）。
 `mq_text_style.device_scale` 现在只是**栅格化倍率**（`round(font_size × scale)` 设备 ppem →

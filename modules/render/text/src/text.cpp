@@ -424,17 +424,18 @@ void build_uax_breaks(const std::string& text, UaxBreakMap& m) {
 
 /* 第 i 个码点之后（码点 i 与 i+1 之间）是否是合法的 WORD 断行点。 */
 bool uax_break_after_cp(const UaxBreakMap& m, size_t i) {
-    if (!m.valid || i + 1 >= m.lb.size()) return false;
+    if (!m.valid || i >= m.lb.size()) return false;
     const char lb = m.lb[i];
-    return (lb == LINEBREAK_ALLOWBREAK || lb == LINEBREAK_MUSTBREAK) &&
-           m.gb[i] == GRAPHEMEBREAK_BREAK;
+    const bool grapheme_ok = (i + 1 >= m.gb.size()) ? true : (m.gb[i] == GRAPHEMEBREAK_BREAK);
+    return (lb == LINEBREAK_ALLOWBREAK || lb == LINEBREAK_MUSTBREAK) && grapheme_ok;
 }
 
 /* 字节偏移 byte_end（某个 cluster 的结束）对应的码点边界之后能否断行。 */
 bool uax_break_after_byte(const UaxBreakMap& m, uint32_t byte_end) {
-    if (!m.valid) return false;
+    if (!m.valid || m.byte_off.empty()) return false;
+    /* end == text.size() 也要能报“最后一个字符之后”的断行机会：富文本 run 以空格结尾时，
+     * 断行点落在 run 末尾；若这里返回 false，后续 run 的词会跨断行点粘成一个超长词。 */
     const auto it = std::lower_bound(m.byte_off.begin(), m.byte_off.end(), byte_end);
-    if (it == m.byte_off.end()) return false;      /* 文本末尾：由 flush 收尾 */
     const size_t i = (size_t)(it - m.byte_off.begin());
     if (i == 0) return false;
     return uax_break_after_cp(m, i - 1);
@@ -761,6 +762,7 @@ struct ShapedCell {
     float x_offset = 0.0F;      /* 设计像素 mark/连写偏移 */
     bool  break_after = false;  /* 空格 / CJK / UAX14：WORD 模式的断行机会 */
     bool  grapheme_break = true;/* UAX29：本单元之后是否字素边界（CHAR wrap 用） */
+    uint32_t byte_end = 0;      /* 本单元结束的 UTF-8 字节偏移（相对所在 run；stream 里会加上全局起点） */
     bool  ligature = false;     /* 多码点 cluster 或 gid != 首码点 gid */
     bool  shaped = false;       /* true = 来自 HarfBuzz（gid 有效）；false = 码点回退 */
 };
@@ -782,7 +784,7 @@ void cluster_info(const std::string& s, uint32_t begin, uint32_t end, uint32_t* 
 }
 
 bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold,
-               const UaxBreakMap& uax, std::vector<ShapedCell>& out) {
+               std::vector<ShapedCell>& out) {
 #if defined(MAQUE_HAVE_HARFBUZZ)
     if (!f || f->builtin || text.empty() || !text_shaping_enabled()) return false;
     if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(lsize + 0.5F)) != 0) return false;
@@ -822,23 +824,10 @@ bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold,
         c.cp = cp;
         c.advance = (float)pos[i].x_advance / 64.0F + bold_add;
         c.x_offset = (float)pos[i].x_offset / 64.0F;
+        c.byte_end = end;
         c.break_after = false;
         c.grapheme_break = true;
         c.ligature = (cp_count > 1);
-        if (uax.valid) {
-            c.break_after = uax_break_after_byte(uax, end);
-            c.grapheme_break = uax_grapheme_after_byte(uax, end);
-        } else {
-            /* 回退（MAQUE_TEXT_LINEBREAK=0 或无 libunibreak）：空格/CJK 断行 */
-            for (uint32_t p = begin; p < end;) {
-                uint32_t t = 0;
-                const char* cur = text.data() + p;
-                const char* nx = utf8_next(cur, &t);
-                if (nx == cur) break;
-                if (t == ' ' || is_cjk(t)) c.break_after = true;
-                p = (uint32_t)(nx - text.data());
-            }
-        }
         c.base_advance = c.advance;
         if (!c.ligature && cp) {
             const float plain = mq_font_advance(f, cp, lsize) + bold_add;
@@ -860,8 +849,8 @@ bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold,
                    f->face->size ? f->face->size->metrics.height : -1,
                    raw0);
         for (size_t i = 0; i < out.size() && i < 12; ++i)
-            std::print(stderr, " [{} cp={} adv={:.2f} base={:.2f} brk={}]",
-                       out[i].gid, out[i].cp, out[i].advance, out[i].base_advance, out[i].break_after);
+            std::print(stderr, " [{} cp={} adv={:.2f} base={:.2f} end={}]",
+                       out[i].gid, out[i].cp, out[i].advance, out[i].base_advance, out[i].byte_end);
         std::print(stderr, "\n");
     }
     return !out.empty();
@@ -873,32 +862,21 @@ bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold,
 
 /* 码点回退：与旧布局路径等价的排版单元（gid 由 ensure_glyph 内部映射）。 */
 void build_fallback_cells(mq_font* f, const std::string& text, float lsize, bool bold,
-                          const UaxBreakMap& uax, std::vector<ShapedCell>& out) {
+                          std::vector<ShapedCell>& out) {
     out.clear();
-    if (uax.valid && uax.cps.size() == uax.byte_off.size()) {
-        for (size_t i = 0; i < uax.cps.size(); ++i) {
-            ShapedCell c;
-            c.cp = uax.cps[i];
-            c.advance = styled_advance(f, c.cp, lsize, bold);
-            c.base_advance = c.advance;
-            c.break_after = uax_break_after_cp(uax, i);
-            c.grapheme_break = (i + 1 >= uax.gb.size()) ? true
-                                                        : uax.gb[i] == GRAPHEMEBREAK_BREAK;
-            out.push_back(c);
-        }
-        return;
-    }
     for (const char* cur = text.c_str(); *cur;) {
         uint32_t cp = 0;
         const char* nx = utf8_next(cur, &cp);
         if (nx == cur) break;
-        cur = nx;
         ShapedCell c;
         c.cp = cp;
         c.advance = styled_advance(f, cp, lsize, bold);
         c.base_advance = c.advance;
-        c.break_after = (cp == ' ' || is_cjk(cp));
+        c.byte_end = (uint32_t)(nx - text.data());
+        c.break_after = false;
+        c.grapheme_break = true;
         out.push_back(c);
+        cur = nx;
     }
 }
 
@@ -917,6 +895,7 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
     const float max_w = st.max_width;                    /* 设计像素 */
     float pen_x = 0.0F, pen_y = 0.0F;
     float line_h = 0.0F;
+    float line_visual_w = 0.0F;       /* 行宽：**不含行尾空格/制表符**（对齐/metrics 用） */
     uint32_t line_count = 0;
     struct Line {
         float width = 0.0F, y = 0.0F, height = 0.0F, ascent = 0.0F;
@@ -926,94 +905,153 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
     lines.back().y = 0.0F;
 
     auto end_line = [&]() {
-        lines.back().width = pen_x;
+        lines.back().width = line_visual_w;
         lines.back().height = line_h > 0.0F ? line_h : base_line_h;
         pen_y += lines.back().height + st.line_spacing;
         lines.emplace_back();
         lines.back().y = pen_y;
         pen_x = 0.0F;
         line_h = 0.0F;
+        line_visual_w = 0.0F;
         ++line_count;
     };
 
-    for (const Run& run : runs) {
-        if (run.line_break) { end_line(); continue; }
+    /* 全局排版单元流：先 shape/回退每个 run，再**统一换行**。
+     * 不能按 run 各自换行 —— 富文本标签把同一个词切成多个 run 时，逐 run flush 会在词中间断行。 */
+    struct LayoutCell {
+        ShapedCell cell;
+        const Run* run = nullptr;
+        float size = 0.0F, lsize = 0.0F, rsize = 0.0F, ascent = 0.0F;
+        bool forced_break = false;
+    };
+    /* UAX #14/#29 必须对**拼接后的整段文本**做：run 边界（富文本标签）不是断行边界，
+     * 例如 "x " + <b>"hel"</b> + "lo" 里空格后的断行点要看到下一个 run 的 'h'。 */
+    std::string uax_text;
+    std::vector<uint32_t> run_start(runs.size(), 0);
+    for (size_t i = 0; i < runs.size(); ++i) {
+        if (runs[i].line_break) continue;
+        run_start[i] = (uint32_t)uax_text.size();
+        uax_text += runs[i].text;
+    }
+    UaxBreakMap uax;
+    build_uax_breaks(uax_text, uax);
+
+    std::vector<LayoutCell> stream;
+    for (size_t ri = 0; ri < runs.size(); ++ri) {
+        const Run& run = runs[ri];
+        if (run.line_break) {
+            LayoutCell lb{};
+            lb.run = &run;
+            lb.forced_break = true;
+            stream.push_back(lb);
+            continue;
+        }
         const float size = run.size > 0.0F ? run.size : base;
         const float lsize = layout_px_of(size);                /* 布局 ppem（设计像素） */
         const float rsize = raster_px_of(size, raster_scale);  /* 栅格化 ppem（设备像素） */
         float run_ascent = 0.0F;
         font_extents(f, lsize, &run_ascent);
-        Atlas& atlas = atlas_for(f, rsize);
-        /* HarfBuzz：整个 run 一次 shape（GPOS kerning / GSUB 连字）；失败/关闭时回退逐码点。
-         * 断行机会统一由 UAX #14（libunibreak）+ UAX #29 字素边界给出。 */
-        UaxBreakMap uax;
-        build_uax_breaks(run.text, uax);
+        (void)atlas_for(f, rsize);                             /* 预热该字号图集（顺序确定） */
         std::vector<ShapedCell> cells;
-        if (!shape_run(f, run.text, lsize, run.bold, uax, cells))
-            build_fallback_cells(f, run.text, lsize, run.bold, uax, cells);
-        std::vector<ShapedCell> word;                          /* 词缓冲（shaped cell） */
-
-        /* 落一个排版单元：记录设备像素位图 + 设计空间笔位置；x0/y0 留到行结束后按**行基线/设备推进**确定 */
-        auto place = [&](const ShapedCell& c) {
-            PlacedGlyph g{};
-            g.cp = c.cp; g.x = pen_x + c.x_offset; g.y = pen_y; g.size = size; g.device_size = rsize;
-            g.ascent = run_ascent;
-            g.x_off = c.x_offset;
-            g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
-            /* run 级样式（parse_runs 已把样式级 st.bold/st.italic 折叠进 run 初始状态） */
-            const Glyph* gl = c.shaped
-                ? ensure_glyph_gid(f, atlas, c.gid, c.cp, rsize, run.bold, run.italic)
-                : ensure_glyph(f, atlas, c.cp, rsize, run.bold, run.italic);
-            /* 呈现推进 = 图集设备 advance（普通字形） + shaping 的 kerning 增量（设计→设备）。
-             * 不能把设计 advance 直接乘 scale 再逐字吸附 —— 非整数倍缩放会得到 8/9/8/9…
-             * 的字距抖动；普通字形的图集 advance 已是栅格化后的整数，增量只来自 kerning。 */
-            const float bold_dev = run.bold
-                ? (float)(f->builtin ? builtin_scale_of(rsize) : bold_strength_of(rsize)) : 0.0F;
-            const float base_raster = (gl && gl->advance > 0.0F)
-                ? gl->advance : mq_font_advance(f, c.cp, rsize) + bold_dev;
-            const float delta_design = (c.shaped && !c.ligature) ? (c.advance - c.base_advance) : 0.0F;
-            g.raster_advance = base_raster + delta_design * raster_scale;
-            if (gl) {
-                g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
-                g.ax = gl->ax; g.ay = gl->ay;
-                if (gl->w > 0 && gl->h > 0) {
-                    g.u0 = (float)gl->ax / (float)atlas.w; g.v0 = (float)gl->ay / (float)atlas.h;
-                    g.u1 = (float)(gl->ax + gl->w) / (float)atlas.w;
-                    g.v1 = (float)(gl->ay + gl->h) / (float)atlas.h;
-                }
+        if (!shape_run(f, run.text, lsize, run.bold, cells))
+            build_fallback_cells(f, run.text, lsize, run.bold, cells);
+        for (ShapedCell& c : cells) {
+            c.byte_end += run_start[ri];
+            if (uax.valid) {
+                c.break_after = uax_break_after_byte(uax, c.byte_end);
+                c.grapheme_break = uax_grapheme_after_byte(uax, c.byte_end);
+            } else {                                           /* 无 UAX：旧“空格 + CJK”规则 */
+                c.break_after = (c.cp == ' ' || c.cp == '\t' || is_cjk(c.cp));
+                c.grapheme_break = true;
             }
-            lines.back().glyphs.push_back(g);
-            pen_x += c.advance;                                  /* 设计像素推进（含 kerning/连字） */
-            line_h = std::max(line_h, mq_font_height(f, lsize));
-        };
-
-        auto flush_word = [&]() {
-            if (word.empty()) return;
-            if (st.wrap == MQ_TEXT_WRAP_CHAR) {
-                bool prev_grapheme = true;               /* 当前 cell 之前是否字素边界 */
-                for (const ShapedCell& c : word) {
-                    if (max_w > 0.0F && pen_x > 0.0F && pen_x + c.advance > max_w && prev_grapheme)
-                        end_line();
-                    place(c);
-                    prev_grapheme = c.grapheme_break;
-                }
-            } else {
-                float wsum = 0.0F;
-                for (const ShapedCell& c : word) wsum += c.advance;
-                if (max_w > 0.0F && pen_x > 0.0F && pen_x + wsum > max_w) end_line();
-                for (const ShapedCell& c : word) place(c);
-            }
-            word.clear();
-        };
-
-        for (const ShapedCell& c : cells) {
-            word.push_back(c);
-            /* WORD：空格后断行；CJK 逐字可断（无空格语言不会整段溢出） */
-            if (st.wrap == MQ_TEXT_WRAP_WORD && c.break_after) flush_word();
+            LayoutCell lc{};
+            lc.cell = std::move(c);
+            lc.run = &run;
+            lc.size = size;
+            lc.lsize = lsize;
+            lc.rsize = rsize;
+            lc.ascent = run_ascent;
+            stream.push_back(std::move(lc));
         }
-        flush_word();                                          /* NONE/CHAR/WORD 统一收尾 */
     }
-    lines.back().width = pen_x;
+
+    auto is_space_cell = [](const ShapedCell& c) { return c.cp == ' ' || c.cp == '\t'; };
+    auto place = [&](const LayoutCell& lc) {
+        const Run& run = *lc.run;
+        const ShapedCell& c = lc.cell;
+        Atlas& atlas = atlas_for(f, lc.rsize);
+        PlacedGlyph g{};
+        g.cp = c.cp; g.x = pen_x + c.x_offset; g.y = pen_y; g.size = lc.size;
+        g.device_size = lc.rsize;
+        g.ascent = lc.ascent;
+        g.x_off = c.x_offset;
+        g.r = run.r; g.g = run.g; g.b = run.b; g.a = run.a;
+        const Glyph* gl = c.shaped
+            ? ensure_glyph_gid(f, atlas, c.gid, c.cp, lc.rsize, run.bold, run.italic)
+            : ensure_glyph(f, atlas, c.cp, lc.rsize, run.bold, run.italic);
+        /* 呈现推进 = 图集设备 advance（普通字形） + shaping 的 kerning 增量（设计→设备） */
+        const float bold_dev = run.bold
+            ? (float)(f->builtin ? builtin_scale_of(lc.rsize) : bold_strength_of(lc.rsize)) : 0.0F;
+        const float base_raster = (gl && gl->advance > 0.0F)
+            ? gl->advance : mq_font_advance(f, c.cp, lc.rsize) + bold_dev;
+        const float delta_design = (c.shaped && !c.ligature) ? (c.advance - c.base_advance) : 0.0F;
+        g.raster_advance = base_raster + delta_design * raster_scale;
+        if (gl) {
+            g.w = gl->w; g.h = gl->h; g.bearing_x = gl->bearing_x; g.bearing_y = gl->bearing_y;
+            g.ax = gl->ax; g.ay = gl->ay;
+            if (gl->w > 0 && gl->h > 0) {
+                g.u0 = (float)gl->ax / (float)atlas.w; g.v0 = (float)gl->ay / (float)atlas.h;
+                g.u1 = (float)(gl->ax + gl->w) / (float)atlas.w;
+                g.v1 = (float)(gl->ay + gl->h) / (float)atlas.h;
+            }
+        }
+        lines.back().glyphs.push_back(g);
+        pen_x += c.advance;                                    /* 设计像素推进（含 kerning/连字） */
+        if (!is_space_cell(c)) line_visual_w = pen_x;          /* 行尾空格不计入行宽 */
+        line_h = std::max(line_h, mq_font_height(f, lc.lsize));
+    };
+
+    /* 一个“词” = 从上一断行点到本断行点（UAX#14）之间的 cells；跨 run 连续。 */
+    std::vector<LayoutCell> word;
+    auto word_fit_width = [&]() {
+        float total = 0.0F, trailing_ws = 0.0F;
+        for (const LayoutCell& lc : word) total += lc.cell.advance;
+        for (auto it = word.rbegin(); it != word.rend(); ++it) {
+            if (!is_space_cell(it->cell)) break;
+            trailing_ws += it->cell.advance;
+        }
+        return total - trailing_ws;
+    };
+    auto flush_word = [&]() {
+        if (word.empty()) return;
+        if (max_w > 0.0F && pen_x > 0.0F && pen_x + word_fit_width() > max_w) end_line();
+        for (const LayoutCell& lc : word) place(lc);
+        word.clear();
+    };
+
+    if (st.wrap == MQ_TEXT_WRAP_WORD) {
+        for (const LayoutCell& lc : stream) {
+            if (lc.forced_break) { flush_word(); end_line(); continue; }
+            word.push_back(lc);
+            if (lc.cell.break_after) flush_word();            /* UAX#14 断行机会 */
+        }
+        flush_word();
+    } else if (st.wrap == MQ_TEXT_WRAP_CHAR) {
+        bool prev_grapheme = true;
+        for (const LayoutCell& lc : stream) {
+            if (lc.forced_break) { end_line(); prev_grapheme = true; continue; }
+            if (max_w > 0.0F && pen_x > 0.0F && pen_x + lc.cell.advance > max_w && prev_grapheme)
+                end_line();
+            place(lc);
+            prev_grapheme = lc.cell.grapheme_break;            /* 不拆字素 */
+        }
+    } else {                                                   /* WRAP_NONE */
+        for (const LayoutCell& lc : stream) {
+            if (lc.forced_break) { end_line(); continue; }
+            place(lc);
+        }
+    }
+    lines.back().width = line_visual_w;
     lines.back().height = line_h > 0.0F ? line_h : base_line_h;
     ++line_count;
     if (line_count == 0) line_count = 1;

@@ -878,6 +878,53 @@ int main() {
                 std::print("text_test[uax14] char-wrap combining lines={}\n", cm.line_count);
             }
 #endif
+            /* 布局：行尾空格不计入行宽/对齐；富文本标签切开的词不能跨 run 断开。 */
+            {
+                mq_text_style cst = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_CENTER, 100.0F);
+                cst.device_scale = 1.0F;
+                mq_text_metrics a{}, as{};
+                CHECK(mq_text_measure(pf, &cst, "A", &a) == MQ_TEXT_OK);
+                CHECK(mq_text_measure(pf, &cst, "A ", &as) == MQ_TEXT_OK);
+                CHECK(as.width == a.width);                    /* 行尾空格不增加行宽 */
+                std::vector<mq_text_glyph> ga(4), gas(4);
+                uint32_t na = 0, nas = 0;
+                CHECK(mq_text_layout(pf, &cst, "A", ga.data(), 4, &na, &a) == MQ_TEXT_OK);
+                CHECK(mq_text_layout(pf, &cst, "A ", gas.data(), 4, &nas, &as) == MQ_TEXT_OK);
+                CHECK(na == 1 && nas == 2);
+                CHECK(std::abs(ga[0].x0 - gas[0].x0) <= 1e-3F); /* 尾空格不改变居中位置 */
+
+                mq_text_style wst = style(16.0F, MQ_TEXT_WRAP_WORD, MQ_TEXT_ALIGN_BEGIN, 48.0F);
+                wst.device_scale = 1.0F;
+                std::vector<mq_text_glyph> gp(16), gr(16);
+                uint32_t np = 0, nr = 0;
+                mq_text_metrics mp{}, mr{};
+                CHECK(mq_text_layout(pf, &wst, "x hello", gp.data(), 16, &np, &mp) == MQ_TEXT_OK);
+                CHECK(mq_text_layout(pf, &wst, "x <b>hel</b>lo", gr.data(), 16, &nr, &mr) == MQ_TEXT_OK);
+                CHECK(mp.line_count == 2 && mr.line_count == 2);
+                auto second_line_count = [](const std::vector<mq_text_glyph>& g, uint32_t n) {
+                    if (!n) return uint32_t(0);
+                    float maxy = 0.0F;
+                    for (uint32_t i = 0; i < n; ++i) maxy = std::max(maxy, g[i].y);
+                    uint32_t c = 0;
+                    for (uint32_t i = 0; i < n; ++i) if (g[i].y == maxy) ++c;
+                    return c;
+                };
+                CHECK(second_line_count(gp, np) == 5);         /* 普通文本第二行 hello */
+                CHECK(second_line_count(gr, nr) == 5);         /* 富文本也不在词中断行 */
+                bool first_line2_h = false;
+                for (uint32_t i = 0; i < nr; ++i)
+                    if (gr[i].y > 0.0F) { first_line2_h = (gr[i].codepoint == 'h'); break; }
+                CHECK(first_line2_h);
+
+                mq_text_style tst = style(16.0F, MQ_TEXT_WRAP_WORD, MQ_TEXT_ALIGN_BEGIN, 62.0F);
+                tst.device_scale = 1.0F;
+                mq_text_metrics tm{};
+                CHECK(mq_text_measure(pf, &tst, "aaa bbb", &tm) == MQ_TEXT_OK);
+                CHECK(tm.width == 30.0F);                      /* 第一行 “aaa+尾空格” 行宽 = aaa */
+                std::print("text_test[layout] center x_equal={} rich_line2={} width_trim={}\n",
+                           std::abs(ga[0].x0 - gas[0].x0) <= 1e-3F,
+                           second_line_count(gr, nr), tm.width);
+            }
             mq_font_destroy(pf);
         }
     }

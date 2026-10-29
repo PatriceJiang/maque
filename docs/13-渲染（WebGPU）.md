@@ -130,6 +130,8 @@
 - **换行（UAX #14 + UAX #29）**：`WORD` wrap 的断行机会由 vendored **libunibreak** 给出
   （`set_linebreaks_utf32` + `set_graphemebreaks_utf32`）：空格、连字符、ZWSP、CJK、禁则、组合字等；
   `CHAR` wrap 逐 cell 断但不拆字素。`MAQUE_TEXT_LINEBREAK=0` 回退旧的“空格 + CJK 贪心”。
+- **跨 run 与行尾空格**：每个 run 先 shape，再拼成**全局 cell 流**统一换行/UAX 判定（富文本标签切开的词不会
+  在 run 边界断开）；行宽、对齐、metrics 都不含行尾空格/制表符，避免 Center/End 被尾随空格推偏。
 - **范围**：HarfBuzz 按 run shaping（LTR + CJK）；**不做 bidi**、无字体 fallback；缺字形跳过（不画豆腐块）。
 
 ## 图元：矩形、过滤与像素对齐（pixel-perfect）
