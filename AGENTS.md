@@ -43,6 +43,22 @@ node tests/wasm_p0_smoke.mjs "$PWD/build-wasm/samples/web/maque_web.mjs" \
 - 本机无 emsdk 时可用 `-DMAQUE_HEADLESS_STUBS=ON -DMAQUE_TRACY=OFF -DMAQUE_ENABLE_LUA=OFF`
   编译相同 stub/null 后端，但这不等价于真实 WASM 构建；真实门在 GitHub Actions 的 `wasm` job。
 
+### Android（arm64-v8a）
+
+```bash
+# 首次：固定 SDL2 源码；另按 android/README.md 准备 wgpu-native Android .so
+sh android/setup-deps.sh
+cd android && ./gradlew :app:assembleDebug
+```
+
+- Android Studio 工程与全部平台模板只放在 `android/`；默认把仓库 `scenes/` 的全部内容作为
+  APK assets 根，并在构建期生成 `maque/scenes.json`。
+- 场景路径使用 `asset://<相对路径>`：VFS 后端经 SDL RWops 读取 APK AssetManager，运行时仍以
+  场景目录为资源根。不要把 assets 解压复制到可写目录。
+- Android 静态链接 gfx（仍复用 `mq_module_query` ABI），默认使用离屏 WebGPU + SDL 呈现；
+  未实现 Android Surface 丢失后的 reattach 前，不要强制 `MAQUE_PRESENT=wgpu`。
+- 当前模板固定 `arm64-v8a`、SDK 35、NDK r27d；完整依赖和构建命令见 `android/README.md`。
+
 ### Windows（clang-cl + Ninja；完整支持）
 
 ```powershell
@@ -273,7 +289,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   404→`MQ_VFS_ERR_NOTFOUND`、同 URL 会话内只抓一次）。运行 `./build/samples/player/maque_player https://host/game.scn`
   即"远程游戏即资源"（场景/脚本/资源全走 VFS）；`MAQUE_MOUNT="/cdn=https://cdn.example.com/assets/,/x=../shared"`
   额外挂载（后挂载优先 → 可遮蔽远程目录，是"远程游戏 + 本地覆盖"的开发路径）；远程场景无文件监视热重载。
-  **协议实现按目录分**：`modules/io/vfs/src/{file,mem,zip,url,builtin}/backend.cpp`（核心 `vfs.cpp`
+  **协议实现按目录分**：`modules/io/vfs/src/{file,asset,mem,zip,url,builtin}/backend.cpp`（核心 `vfs.cpp`
   只做实例状态 + 最长前缀匹配 + 分发；共享工具 `util.cpp`，内部接口 `vfs_internal.h`）。
   测试：`ctest -R 'vfs|remote_e2e'`（本地 127.0.0.1 HTTP 服务器，不依赖外网）。
 - **键值存储 / 存档（docs/25、storage 模块）**：`storage.set/get/exists/remove/keys/info`（脚本，JS/Lua 同一套绑定）

@@ -10,7 +10,6 @@
 namespace maque::vfs {
 
 int asset_read(const std::string& dir, const std::string& rel, void** out, size_t* out_size) {
-#if defined(__ANDROID__)
     std::string path;
     if (!dir.empty()) {
         path = dir;
@@ -19,8 +18,9 @@ int asset_read(const std::string& dir, const std::string& rel, void** out, size_
     }
     path += rel;
     while (!path.empty() && path.front() == '/') path.erase(path.begin());
-    if (path.empty()) return MQ_VFS_ERR_ARG;
+    if (path.empty() || !path_is_safe(path)) return MQ_VFS_ERR_ARG;
 
+#if defined(__ANDROID__)
     SDL_RWops* rw = SDL_RWFromFile(path.c_str(), "rb");
     if (!rw) return MQ_VFS_ERR_NOTFOUND;
     const Sint64 length = SDL_RWsize(rw);
@@ -35,8 +35,6 @@ int asset_read(const std::string& dir, const std::string& rel, void** out, size_
     if (read != data.size()) return MQ_VFS_ERR_IO;
     return deliver(data, out, out_size);
 #else
-    (void)dir;
-    (void)rel;
     (void)out;
     (void)out_size;
     return MQ_VFS_ERR_UNSUPPORTED;

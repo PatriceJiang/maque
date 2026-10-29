@@ -209,7 +209,9 @@ int mq_vfs_resolve(mq_vfs* vfs, const char* path, char* out, size_t out_cap) {
         if (rc != MQ_VFS_OK) return rc;
         full = m->source + encoded;
     } else {
-        const char* kind = m->backend == Backend::Mem ? "mem" : m->backend == Backend::Zip ? "zip" : "file";
+        const char* kind = m->backend == Backend::Mem ? "mem"
+                         : m->backend == Backend::Zip ? "zip"
+                         : m->backend == Backend::Asset ? "asset" : "file";
         full = std::string(kind) + "://" + m->source + "/" + rel;
     }
     if (out && out_cap) {

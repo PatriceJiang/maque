@@ -17,9 +17,9 @@ import java.util.Locale;
 
 public final class MainActivity extends Activity {
     static final String EXTRA_SCENE_INDEX = "org.maque.player.SCENE_INDEX";
-    private static final int REQUEST_PLAY_SCENE = 1001;
-    private static final String PREFS = "maque-scenes";
-    private static final String PREF_INDEX = "selected-index";
+    static final String EXTRA_AUTO_LAUNCH = "org.maque.player.AUTO_LAUNCH";
+    static final String PREFS = "maque-scenes";
+    static final String PREF_INDEX = "selected-index";
 
     private List<String> scenes;
     private ListView sceneList;
@@ -35,6 +35,10 @@ public final class MainActivity extends Activity {
                 getSharedPreferences(PREFS, MODE_PRIVATE).getInt(PREF_INDEX, 0), scenes.size());
         setContentView(createContent());
         refreshSelection();
+        if (!scenes.isEmpty() && getIntent().getBooleanExtra(EXTRA_AUTO_LAUNCH, false)) {
+            select(getIntent().getIntExtra(EXTRA_SCENE_INDEX, selectedIndex));
+            sceneList.post(this::launchSelectedScene);
+        }
     }
 
     private View createContent() {
@@ -117,7 +121,7 @@ public final class MainActivity extends Activity {
         boolean available = !scenes.isEmpty();
         openButton.setEnabled(available);
         if (!available) {
-            status.setText("0 scenes");
+            status.setText(R.string.scene_count_empty);
             return;
         }
         sceneList.setItemChecked(selectedIndex, true);
@@ -129,15 +133,7 @@ public final class MainActivity extends Activity {
         if (scenes.isEmpty()) return;
         Intent intent = new Intent(this, MaqueActivity.class);
         intent.putExtra(EXTRA_SCENE_INDEX, selectedIndex);
-        startActivityForResult(intent, REQUEST_PLAY_SCENE);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQUEST_PLAY_SCENE || resultCode != RESULT_OK || data == null) return;
-        select(data.getIntExtra(EXTRA_SCENE_INDEX, selectedIndex));
-        launchSelectedScene();
+        startActivity(intent);
     }
 
     private int dp(int value) {

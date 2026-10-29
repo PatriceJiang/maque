@@ -310,6 +310,21 @@ int main() {
         mq_vfs_destroy(v2);
     }
 
+    // ---- Android APK asset:// 协议：桌面后端明确 UNSUPPORTED，且统一拒绝路径穿越 ----
+    {
+        mq_vfs* apk = mq_vfs_create();
+        CHECK(apk != nullptr);
+        CHECK(mq_vfs_mount(apk, "/apk", "asset://scenes") == MQ_VFS_OK);
+        char resolved[256] = { 0 };
+        CHECK(mq_vfs_resolve(apk, "/apk/ball.scn", resolved, sizeof resolved) == MQ_VFS_OK);
+        CHECK(std::string(resolved) == "asset://scenes/ball.scn");
+        void* data = nullptr;
+        size_t size = 0;
+        CHECK(mq_vfs_read(apk, "/apk/ball.scn", &data, &size) == MQ_VFS_ERR_UNSUPPORTED);
+        CHECK(mq_vfs_read(apk, "asset://../secret.scn", &data, &size) == MQ_VFS_ERR_ARG);
+        mq_vfs_destroy(apk);
+    }
+
     mq_vfs_destroy(vfs);
     fs::remove_all(root);
 

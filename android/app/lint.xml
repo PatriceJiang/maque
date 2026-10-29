@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- SDLActivity ships optional Bluetooth HID and audio-capture paths. Maque does not
+         request those sensitive permissions; keep suppression scoped to pinned SDL sources. -->
+    <issue id="MissingPermission">
+        <ignore path="../.deps/SDL" />
+    </issue>
+    <issue id="UnspecifiedRegisterReceiverFlag">
+        <ignore path="../.deps/SDL" />
+    </issue>
+</lint>

@@ -22,7 +22,7 @@
   **可录制、可回放、可注入**；UI 控件按 role 命中（引擎不认具体组件）。
 - **确定性物理**：自研 2D 求解器（固定步长/固定迭代/按 body.index 稳定排序；C ABI vtable，可换后端）。
 - **快照 / 回滚 / 失步定位**：反射驱动二进制 codec + 快照池；逐帧世界校验和轨迹。
-- **VFS**：`file/mem/zip/builtin/res` 挂载 + **http(s) 目录挂载**（libcurl：整局游戏可经 HTTP 加载）
+- **VFS**：`file/mem/zip/builtin/res` 挂载 + Android APK `asset://` + **http(s) 目录挂载**（libcurl：整局游戏可经 HTTP 加载）
   + 直接 URL + 内容哈希校验；**图像解码** Wuffs。
 - **键值存储 / 存档**：`storage.*` 脚本 API，模式可配（`file://`（默认 `<场景目录>/.maque`）/`mem://`/`http(s)://`/`ws(s)://`）
   + `(uid,session)` 命名空间；控制面可读写（AI/CI 可核对存档）。见 docs/25。
@@ -99,6 +99,7 @@ modules/
   runtime         引擎运行时 ("浏览器")：Engine + Scene + main_loop
   script          脚本 (quickjs)
 samples/player    宿主（仅一行 mq_run_scene；--shot 渲染一张图）
+android/          Android Studio 模板（SDLActivity + scenes 全量 APK assets）
 editors/vscode    .scn 预览插件（本地安装，见该目录 README）
 scenes/           游戏资源 (.scn + .js)
 assets/builtin/   内建资源（shaders/<name>/：一个 shader 一个目录 → 配置期打包为压缩源码）
@@ -116,7 +117,8 @@ plans/            各模块开发计划
 
 ## 状态
 
-**平台**：Linux（GCC/Clang）与 **Windows x64（clang-cl + Ninja）** 均为完整支持目标；
+**平台**：Linux（GCC/Clang）、**Windows x64**（clang-cl + Ninja）与 **Android arm64**
+均为支持目标；Android Studio 模板、APK 场景打包和场景浏览器见 [`android/README.md`](android/README.md)。
 WASM/浏览器见 P3。
 
 M0–M5、M7、M8 与 P1 已完成；M4/M6/M9 见下（细节 `docs/milestones/README.md`）：

@@ -354,7 +354,7 @@ void *mq_platform_sdl_renderer(mq_platform *p) { return p ? (void *)p->ren : nul
  *   kind=1 win32 : display=HINSTANCE, handle=HWND
  *   kind=2 xlib  : display=Display*, handle=X11 Window（转 void*）
  *   kind=3 wl    : display=wl_display*, handle=wl_surface*
- * 其它子系统（dummy/offscreen/WASM）→ 0。 */
+ * 其它子系统（dummy/offscreen/Android/WASM）→ 0。 */
 int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out) {
     if (!p || !out || !p->win) return 0;
     std::memset(out, 0, sizeof *out);
@@ -369,7 +369,7 @@ int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out
         out->handle = (void*)wm.info.win.window;
         return 1;
 #endif
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__ANDROID__)
     case SDL_SYSWM_X11:
         out->kind = 2;
         out->display = (void*)wm.info.x11.display;
@@ -382,7 +382,7 @@ int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out
         return 1;
 #endif
     default:
-        return 0;   /* dummy / offscreen / 未知子系统：不支持直接呈现 */
+        return 0;
     }
 }
 

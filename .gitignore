@@ -29,6 +29,16 @@ Testing/
 # Windows 第三方原生依赖（下载/构建产物，不入库）
 /.deps/
 
+# Android template local dependencies and build output
+/android/.gradle/
+/android/.idea/
+/android/.deps/
+/android/build/
+/android/local.properties
+/android/app/build/
+/android/app/.cxx/
+/android/app/src/main/jniLibs/*/*.so
+
 # Khronos 模型批量迁移：派生资产（mesh.json / 贴图）与 1280x720 原图体积大，不入库；
 # 由 tools/migrate_gltf_models.py 从 .deps/gltf-assets 重新生成（见 scenes/khronos/README.md）。
 /scenes/khronos/*/assets/
