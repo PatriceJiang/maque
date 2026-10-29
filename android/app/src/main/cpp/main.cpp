@@ -24,7 +24,6 @@ void configure_mobile_defaults() {
     const bool emulator = __system_property_get("ro.kernel.qemu", qemu) > 0 && qemu[0] == '1';
     if (emulator) {
         maque::compat::set_env("MAQUE_PRESENT", "accelerated");
-        if (!std::getenv("MAQUE_RENDER_SCALE")) maque::compat::set_env("MAQUE_RENDER_SCALE", "0.5");
         maque::compat::set_env("MAQUE_ANDROID_PRESENT_EVERY", "4");
         SDL_Log("maque_android: present=ANativeWindow CPU fallback (emulator)");
     } else if (!std::getenv("MAQUE_PRESENT")) {

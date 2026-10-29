@@ -17,7 +17,8 @@
 - 真机：WebGPU 先渲染设计分辨率 FBO，再用 blit shader 采样到全尺寸 `ANativeWindow`
   swapchain 的画布 viewport；全程 GPU，无 readback/memcpy。Surface 句柄变化时自动 reattach。
 - AVD：wgpu-native 在 Android Emulator SurfaceView 上持续返回 swapchain acquire timeout，模板按
-  `ro.kernel.qemu=1` 明确使用 `ANativeWindow_lock` CPU fallback；用于功能调试，不代表真机性能。
+  `ro.kernel.qemu=1` 明确使用 `ANativeWindow_lock` CPU fallback；保持窗口自动渲染分辨率，但将
+  Surface 提交节流到约 15 Hz，用于功能调试，不代表真机性能。
 - Android 默认不启动 SDL 文本输入，因此不会自动弹软键盘；需要时显式设置 `MAQUE_TEXT_INPUT=1`。
 
 ## 前置条件

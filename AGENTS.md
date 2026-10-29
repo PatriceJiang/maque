@@ -57,7 +57,7 @@ cd android && ./gradlew :app:assembleDebug
   场景目录为资源根。不要把 assets 解压复制到可写目录。
 - Android 静态链接 gfx（仍复用 `mq_module_query` ABI）。真机：设计分辨率 WebGPU FBO 经 blit shader
   采样到全尺寸 ANativeWindow swapchain（纯 GPU）；Surface 变化按句柄 reattach。AVD 因 wgpu-native WSI
-  acquire timeout 按 `ro.kernel.qemu` 明确回退 ANativeWindow CPU 提交，仅用于功能调试。
+  acquire timeout 按 `ro.kernel.qemu` 明确回退 ANativeWindow CPU 提交（自动窗口分辨率、约 15Hz），仅用于功能调试。
 - Android 默认不 `SDL_StartTextInput`，避免启动即弹 IME；文本输入场景显式设 `MAQUE_TEXT_INPUT=1`。
 - 当前模板固定 `arm64-v8a`、SDK 35、NDK r27d；完整依赖和构建命令见 `android/README.md`。
 
