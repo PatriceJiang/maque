@@ -130,13 +130,25 @@ function(maque_builtin_shaders assets_dir out_dir sources_var include_var)
         endif()
     endif()
 
-    # 手动重打包：cmake --build build --target maque_shaders
-    add_custom_target(maque_shaders
+    # 资产内容变化也必须触发重打包：CONFIGURE_DEPENDS 的 glob 校验只发现文件增删，
+    # 不会发现已有 .wgsl 被修改。用 stamp 显式跟踪资产与打包器，避免二进制继续内嵌旧 shader
+    # （曾导致磁盘源码已修文字吸附、播放器仍复现旧基线/字距问题）。
+    set(pack_stamp "${gen_dir}/maque_shaders.stamp")
+    set(pack_outputs "${pack_stamp}" "${gen_dir}/builtin_shaders.cpp" "${gen_dir}/builtin_shaders.h")
+    foreach(name IN LISTS enabled)
+        list(APPEND pack_outputs "${gen_dir}/${name}.cpp")
+    endforeach()
+    add_custom_command(
+        OUTPUT ${pack_outputs}
         COMMAND "${NODE_EXECUTABLE}" "${packer}" --assets "${assets_dir}" --out "${gen_dir}"
                 --shaders "${enabled_csv}" ${compress_flag}
+        COMMAND "${CMAKE_COMMAND}" -E touch "${pack_stamp}"
+        DEPENDS ${assets} "${packer}"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "maque: 重新打包内建 shader（assets/builtin/shaders → 压缩源码）"
         VERBATIM)
+    add_custom_target(maque_shaders DEPENDS ${pack_outputs})
+    add_dependencies(maque_builtin_shaders maque_shaders)
 
     # 资产变化 → 重新配置（从而重新打包）
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${assets} "${assets_dir}")

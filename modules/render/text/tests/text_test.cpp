@@ -715,7 +715,7 @@ int main() {
         if (!pf) {
             std::print("text_test: 项目字体不可用，跳过呈现网格用例\n");
         } else {
-            for (float sc : { 1.0F, 1.25F, 0.833F, 2.5F }) {
+            for (float sc : { 1.0F, 1.1F, 1.25F, 0.833F, 2.5F }) {
                 mq_text_style st = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
                 st.device_scale = sc;
                 st.pixel_snap = 1;

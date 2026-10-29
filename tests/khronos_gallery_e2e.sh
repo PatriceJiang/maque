@@ -545,7 +545,37 @@ def run(ctl):
           "首页应创建 item_0..item_%d（实际 %s）" % (page_items - 1, item_idx[:25]))
     out("入口 OK：'%s' · %d models / %d 页（首页 %d 项）" % (t, TOTAL, PAGES, page_items))
 
-    # ---- ② 翻页：page_next 改页码文本，page_prev 回到原文本；再测越界循环（第 1 页 prev → 末页）----
+    # ---- ② 悬停：同一行的左右条目必须独立高亮，移出后都恢复基础色 ----
+    base_color = (0.14, 0.17, 0.22)
+    hot_color = (0.25, 0.33, 0.46)
+
+    def item_color(name):
+        return tuple(get_value(ctl, name, "scn.Button." + channel) for channel in ("r", "g", "b"))
+
+    def check_item_color(name, expected):
+        actual = item_color(name)
+        check(all(isinstance(v, (int, float)) for v in actual) and
+              all(abs(a - e) <= 1e-4 for a, e in zip(actual, expected)),
+              "%s 颜色应为 %s（实际 %s）" % (name, expected, actual))
+
+    def hover_item(name):
+        x, y, w, h = button_rect(ctl, name)
+        inject(ctl, 2, x + w / 2.0, y + h / 2.0)
+        step(ctl, 1)
+
+    hover_item("item_0")
+    check_item_color("item_0", hot_color)
+    check_item_color("item_1", base_color)
+    hover_item("item_1")
+    check_item_color("item_0", base_color)
+    check_item_color("item_1", hot_color)
+    inject(ctl, 2, 4, 4)
+    step(ctl, 1)
+    check_item_color("item_0", base_color)
+    check_item_color("item_1", base_color)
+    out("悬停 OK：左右条目独立高亮，移出后恢复")
+
+    # ---- ③ 翻页：page_next 改页码文本，page_prev 回到原文本；再测越界循环（第 1 页 prev → 末页）----
     click(ctl, "page_next")
     label2 = wait_text(ctl, "page_label", expect="2 / %d" % PAGES)
     check(label2 == "2 / %d" % PAGES, "page_next 后 page_label 应为 '2 / %d'（实际 %r）"

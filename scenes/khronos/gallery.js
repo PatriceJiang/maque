@@ -121,8 +121,8 @@ var S = {
   demoIndex: -1,       // 当前 demo 在 MODELS 里的下标
   ui: [],              // 本模式创建的实体 id（重建/翻页时先销毁）
   rowOf: {},           // 条目按钮 id → 页内序号（行优先）
-  rows: [],            // 行号 → 该行所有按钮 id（悬停高亮用）
-  hoverRow: -1,        // 当前悬停行（update 用；-1 = 无）
+  itemButtons: [],     // 页内序号 → 该条目的所有按钮 id（悬停高亮用）
+  hoverItem: -1,       // 当前悬停条目（update 用；-1 = 无）
   pagePrev: -1,
   pageNext: -1,
   demoPrev: -1,
@@ -383,7 +383,7 @@ function buildGallery() {
 
   // 背景（2D 场景；clear 设置的是引擎持久背景色，每帧无需重复）
   clear(C_BG[0], C_BG[1], C_BG[2]);
-  S.hoverRow = -1;
+  S.hoverItem = -1;
 
   makeLabel('gallery_title', 40, 674, S.entryTitle + ' · ' + String(total) + ' models',
             28, C_TITLE);
@@ -405,10 +405,10 @@ function buildGallery() {
     var by = LIST_TOP - row * ROW_PITCH - ROW_H;
     var ids = makeRowButton('item_' + String(i), bx, by, COL_W, ROW_H, C_ROW);
     if (!ids.length) continue;
-    if (!S.rows[row]) S.rows[row] = [];
+    if (!S.itemButtons[i]) S.itemButtons[i] = [];
     for (var k = 0; k < ids.length; k++) {
       S.rowOf[ids[k]] = i;
-      S.rows[row].push(ids[k]);
+      S.itemButtons[i].push(ids[k]);
     }
     // 条目文字（Button 不渲染 label）→ 独立 Label，垂直居中于按钮
     makeLabel('item_label_' + String(i), bx + 14, by + (ROW_H + ITEM_FONT) / 2,
@@ -434,7 +434,7 @@ function buildGallery() {
 function buildDemo(idx) {
   var model = MODELS[idx];
   var total = MODELS.length;
-  S.hoverRow = -1;
+  S.hoverItem = -1;
 
   // 顶部半透明标题栏（世界 y ∈ [H-96, H]）
   makeRect('demo_bar_top', W / 2, H - DEMO_TOP_H / 2, W, DEMO_TOP_H, C_BAR, 0.62);
@@ -469,8 +469,8 @@ function destroyUi() {
   }
   S.ui = [];
   S.rowOf = {};
-  S.rows = [];
-  S.hoverRow = -1;
+  S.itemButtons = [];
+  S.hoverItem = -1;
   S.pagePrev = -1;
   S.pageNext = -1;
   S.demoPrev = -1;
@@ -486,9 +486,9 @@ function rebuildUi() {
 
 // ---- 悬停高亮（可选，纯观感：只改按钮 r/g/b）-----------------------------
 
-function setRowColor(row, hot) {
-  if (row < 0 || row >= S.rows.length) return;
-  var ids = S.rows[row];
+function setItemColor(item, hot) {
+  if (item < 0 || item >= S.itemButtons.length) return;
+  var ids = S.itemButtons[item];
   if (!ids) return;
   var c = hot ? C_ROW_HOT : C_ROW;
   for (var i = 0; i < ids.length; i++) setButtonColor(ids[i], c);
@@ -496,14 +496,14 @@ function setRowColor(row, hot) {
 
 function update(dt) {
   if (S.mode !== 'gallery') return;
-  if (S.rows.length === 0) return;
+  if (S.itemButtons.length === 0) return;
   var hov = apiUiHit();
-  var row = -1;
-  if (hov >= 0 && S.rowOf[hov] !== undefined) row = Math.floor(S.rowOf[hov] / COLS);
-  if (row === S.hoverRow) return;
-  if (S.hoverRow >= 0) setRowColor(S.hoverRow, false);
-  if (row >= 0) setRowColor(row, true);
-  S.hoverRow = row;
+  var item = -1;
+  if (hov >= 0 && S.rowOf[hov] !== undefined) item = S.rowOf[hov];
+  if (item === S.hoverItem) return;
+  if (S.hoverItem >= 0) setItemColor(S.hoverItem, false);
+  if (item >= 0) setItemColor(item, true);
+  S.hoverItem = item;
 }
 
 // ---- 回调 ----------------------------------------------------------------
@@ -519,8 +519,8 @@ function on_start() {
   // 世界刚重置 → 旧 UI 实体已不存在，只需新建；先清空登记表。
   S.ui = [];
   S.rowOf = {};
-  S.rows = [];
-  S.hoverRow = -1;
+  S.itemButtons = [];
+  S.hoverItem = -1;
 
   if (idx >= 0) {
     S.mode = 'demo';
