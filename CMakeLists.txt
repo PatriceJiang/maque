@@ -226,6 +226,7 @@ if(MAQUE_TRACY)
     add_subdirectory(third_party/tracy)
 endif()
 add_subdirectory(third_party/basisu)   # KTX2/Basis Universal 转码（image 模块用）
+add_subdirectory(third_party/libunibreak)   # UAX #14 换行 / UAX #29 字素边界（text 模块用）
 add_subdirectory(modules/core/tracy)
 
 # script 需先于 data（data 生成绑定 TU 依赖 script）

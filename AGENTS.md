@@ -391,6 +391,7 @@ tools\win\build.cmd -Sanitize address -RunTests
 - 系统依赖：SDL2 / libcurl / libwebsockets / HarfBuzz（`libsdl2-dev libcurl4-openssl-dev libwebsockets-dev libharfbuzz-dev`）。
 - 已 vendored：`third_party/quickjs-ng`（JS 后端）、`third_party/lua`（Lua 5.4 后端）、`third_party/wuffs`、
   `third_party/basisu`（KTX2/Basis Universal 转码，Apache-2.0）、
+  `third_party/libunibreak`（UAX #14/29 换行与字素边界，zlib）、
   `third_party/imgui`（master；**inspector 与引擎侧 `modules/ui/imgui` 共用**，见 docs/28）。
 
 ## 硬约定（改代码前先读）
@@ -526,9 +527,15 @@ combining marks/复杂脚本 shaping 的 **glyph id + design-px advance**；字�
 对连字取 cluster 首码点）。`text_w/text_h/折行`按 shaped advance 计算；关闭方式：
 `-DMAQUE_HARFBUZZ=OFF`（构建期）或 `MAQUE_TEXT_SHAPING=0`（运行期）→ 退回逐码点旧路径（逐字节不变）。
 依赖：Windows 由 `tools/win/fetch-deps.ps1` 构建 harfbuzz 10.2.0；Linux 装 `libharfbuzz-dev`。
-已知边界（P0）：不做 bidi/UAX #14 换行（仍按空格+CJK 贪心、cluster 边界断行）、无字体 fallback、
+已知边界（P0）：不做 bidi；UAX #14 换行由 vendored libunibreak 提供（见下一段）；无字体 fallback、
 每帧每 run 重新 shape（暂未做 shaping cache）；`MAQUE_TRACE_SHAPE=1` 打印每个 run 的 gid/advance/cluster。
 回归：`text_test[shape]`（fi 连字 glyph_count=1、AV kerning 宽度 < A+V、关 shaping 后恢复 2/逐码点和）。
+
+**UAX #14 换行 + UAX #29 字素边界（vendored libunibreak）**：`WORD` wrap 的断行机会来自
+libunibreak（`set_linebreaks_utf32` + `set_graphemebreaks_utf32`），覆盖空格/连字符/ZWSP/CJK/
+禁则/组合字等；`CHAR` wrap 仍逐 cell 断，但不会拆字素（emoji ZWJ/combining marks）。
+`MAQUE_TEXT_LINEBREAK=0` 回退旧的“空格 + CJK 逐字”规则；第三方源码在 `third_party/libunibreak/`（zlib）。
+回归：`text_test[uax14]`（`a-b`/ZWSP 可断，NBSP/`a(b`/`e◌́` 不可断，CJK>=3 行；关闭后 hyphen/ZWSP 各 1 行）。
 
 **文本 pixel-perfect（FreeType 集成）**：**排版在「设计像素」空间进行** —— 与窗口大小/渲染倍率无关
 （窗口 resize 只改字形位图分辨率，**不改**折行、行数、text_w/text_h/fit_font_size 与文字相对画布的大小）。

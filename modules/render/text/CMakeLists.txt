@@ -3,7 +3,8 @@ add_library(maque_text STATIC src/text.cpp)
 add_library(maque::text ALIAS maque_text)
 target_include_directories(maque_text PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set_target_properties(maque_text PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
-target_link_libraries(maque_text PUBLIC maque::tracy)   # Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时是空接口）
+target_link_libraries(maque_text PUBLIC maque::tracy maque::unibreak)   # Tracy 埋点 + UAX#14/29
+target_compile_definitions(maque_text PUBLIC MAQUE_HAVE_LIBUNIBREAK=1)
 
 # 可选依赖：系统 FreeType（缺失时回退到内置 5x7 位图字体）
 find_package(Freetype QUIET)

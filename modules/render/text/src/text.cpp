@@ -28,6 +28,10 @@
 #include <harfbuzz/hb.h>
 #include <harfbuzz/hb-ft.h>
 #endif
+#if defined(MAQUE_HAVE_LIBUNIBREAK)
+#include "graphemebreak.h"
+#include "linebreak.h"
+#endif
 
 namespace {
 
@@ -372,6 +376,80 @@ bool is_cjk(uint32_t cp) {
            (cp >= 0x20000 && cp <= 0x2FA1F);
 }
 
+/* ============================ UAX #14 换行 / UAX #29 字素边界 ============================
+ * 由 vendored libunibreak 提供，作为 WORD wrap 的断行机会来源（空格/CJK/hyphen/禁则/组合字都覆盖）。
+ * `MAQUE_TEXT_LINEBREAK=0` 可回退旧的"空格 + CJK 逐字"规则；libunibreak 缺席时同样回退。 */
+struct UaxBreakMap {
+    std::vector<uint32_t> cps;        /* 码点（回退路径也用它，避免重复解码） */
+    std::vector<uint32_t> byte_off;   /* 每个码点的 UTF-8 起始字节 */
+    std::vector<char> lb;             /* set_linebreaks_utf32：lb[i] = 第 i 个码点之后能否断行 */
+    std::vector<char> gb;             /* set_graphemebreaks_utf32：gb[i] = 第 i 个码点之后是否字素边界 */
+    bool valid = false;
+};
+
+bool uax_linebreak_enabled() {
+    const std::string e = env_value("MAQUE_TEXT_LINEBREAK");
+    return !(e == "0" || e == "off");
+}
+
+void build_uax_breaks(const std::string& text, UaxBreakMap& m) {
+    m = UaxBreakMap{};
+#if defined(MAQUE_HAVE_LIBUNIBREAK)
+    if (!uax_linebreak_enabled() || text.empty()) return;
+    std::vector<utf32_t> cps;
+    m.cps.reserve(text.size());
+    m.byte_off.reserve(text.size());
+    for (const char* cur = text.c_str(); *cur;) {
+        uint32_t cp = 0;
+        const char* nx = utf8_next(cur, &cp);
+        if (nx == cur) return;                     /* 非法 UTF-8：回退 */
+        m.byte_off.push_back((uint32_t)(cur - text.data()));
+        m.cps.push_back(cp);
+        cps.push_back((utf32_t)cp);
+        cur = nx;
+    }
+    const size_t n = cps.size();
+    if (!n) return;
+    m.lb.assign(n, LINEBREAK_NOBREAK);
+    m.gb.assign(n, GRAPHEMEBREAK_NOBREAK);
+    init_linebreak();
+    init_graphemebreak();
+    set_linebreaks_utf32(cps.data(), n, nullptr, m.lb.data());
+    set_graphemebreaks_utf32(cps.data(), n, nullptr, m.gb.data());
+    m.valid = true;
+#else
+    (void)text;
+#endif
+}
+
+/* 第 i 个码点之后（码点 i 与 i+1 之间）是否是合法的 WORD 断行点。 */
+bool uax_break_after_cp(const UaxBreakMap& m, size_t i) {
+    if (!m.valid || i + 1 >= m.lb.size()) return false;
+    const char lb = m.lb[i];
+    return (lb == LINEBREAK_ALLOWBREAK || lb == LINEBREAK_MUSTBREAK) &&
+           m.gb[i] == GRAPHEMEBREAK_BREAK;
+}
+
+/* 字节偏移 byte_end（某个 cluster 的结束）对应的码点边界之后能否断行。 */
+bool uax_break_after_byte(const UaxBreakMap& m, uint32_t byte_end) {
+    if (!m.valid) return false;
+    const auto it = std::lower_bound(m.byte_off.begin(), m.byte_off.end(), byte_end);
+    if (it == m.byte_off.end()) return false;      /* 文本末尾：由 flush 收尾 */
+    const size_t i = (size_t)(it - m.byte_off.begin());
+    if (i == 0) return false;
+    return uax_break_after_cp(m, i - 1);
+}
+
+/* 字节偏移 byte_end 对应的码点边界之后是否是字素边界（CHAR wrap 用：可任意断，但不能拆字素）。 */
+bool uax_grapheme_after_byte(const UaxBreakMap& m, uint32_t byte_end) {
+    if (!m.valid) return true;
+    const auto it = std::lower_bound(m.byte_off.begin(), m.byte_off.end(), byte_end);
+    if (it == m.byte_off.end()) return true;       /* 文本末尾 */
+    const size_t i = (size_t)(it - m.byte_off.begin());
+    if (i == 0) return false;
+    return m.gb[i - 1] == GRAPHEMEBREAK_BREAK;
+}
+
 /* 布局 ppem：逻辑字号 → **设计像素**整数 ppem（FreeType 只接受整数 ppem）。
  * 排版（advance / 行高 / 基线 / 折行）只用它，因此与窗口大小、渲染倍率无关（docs/13）。 */
 float layout_px_of(float logical) {
@@ -681,7 +759,8 @@ struct ShapedCell {
     float advance = 0.0F;       /* 设计像素（含 kerning / bold 加宽） */
     float base_advance = 0.0F;  /* 设计像素：无 kerning 的逐码点推进（连字 = advance） */
     float x_offset = 0.0F;      /* 设计像素 mark/连写偏移 */
-    bool  break_after = false;  /* 空格 / CJK：WORD 模式的断行机会 */
+    bool  break_after = false;  /* 空格 / CJK / UAX14：WORD 模式的断行机会 */
+    bool  grapheme_break = true;/* UAX29：本单元之后是否字素边界（CHAR wrap 用） */
     bool  ligature = false;     /* 多码点 cluster 或 gid != 首码点 gid */
     bool  shaped = false;       /* true = 来自 HarfBuzz（gid 有效）；false = 码点回退 */
 };
@@ -702,7 +781,8 @@ void cluster_info(const std::string& s, uint32_t begin, uint32_t end, uint32_t* 
     }
 }
 
-bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold, std::vector<ShapedCell>& out) {
+bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold,
+               const UaxBreakMap& uax, std::vector<ShapedCell>& out) {
 #if defined(MAQUE_HAVE_HARFBUZZ)
     if (!f || f->builtin || text.empty() || !text_shaping_enabled()) return false;
     if (FT_Set_Pixel_Sizes(f->face, 0, (FT_UInt)(lsize + 0.5F)) != 0) return false;
@@ -743,14 +823,21 @@ bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold, std:
         c.advance = (float)pos[i].x_advance / 64.0F + bold_add;
         c.x_offset = (float)pos[i].x_offset / 64.0F;
         c.break_after = false;
+        c.grapheme_break = true;
         c.ligature = (cp_count > 1);
-        for (uint32_t p = begin; p < end;) {
-            uint32_t t = 0;
-            const char* cur = text.data() + p;
-            const char* nx = utf8_next(cur, &t);
-            if (nx == cur) break;
-            if (t == ' ' || is_cjk(t)) c.break_after = true;
-            p = (uint32_t)(nx - text.data());
+        if (uax.valid) {
+            c.break_after = uax_break_after_byte(uax, end);
+            c.grapheme_break = uax_grapheme_after_byte(uax, end);
+        } else {
+            /* 回退（MAQUE_TEXT_LINEBREAK=0 或无 libunibreak）：空格/CJK 断行 */
+            for (uint32_t p = begin; p < end;) {
+                uint32_t t = 0;
+                const char* cur = text.data() + p;
+                const char* nx = utf8_next(cur, &t);
+                if (nx == cur) break;
+                if (t == ' ' || is_cjk(t)) c.break_after = true;
+                p = (uint32_t)(nx - text.data());
+            }
         }
         c.base_advance = c.advance;
         if (!c.ligature && cp) {
@@ -786,8 +873,21 @@ bool shape_run(mq_font* f, const std::string& text, float lsize, bool bold, std:
 
 /* 码点回退：与旧布局路径等价的排版单元（gid 由 ensure_glyph 内部映射）。 */
 void build_fallback_cells(mq_font* f, const std::string& text, float lsize, bool bold,
-                          std::vector<ShapedCell>& out) {
+                          const UaxBreakMap& uax, std::vector<ShapedCell>& out) {
     out.clear();
+    if (uax.valid && uax.cps.size() == uax.byte_off.size()) {
+        for (size_t i = 0; i < uax.cps.size(); ++i) {
+            ShapedCell c;
+            c.cp = uax.cps[i];
+            c.advance = styled_advance(f, c.cp, lsize, bold);
+            c.base_advance = c.advance;
+            c.break_after = uax_break_after_cp(uax, i);
+            c.grapheme_break = (i + 1 >= uax.gb.size()) ? true
+                                                        : uax.gb[i] == GRAPHEMEBREAK_BREAK;
+            out.push_back(c);
+        }
+        return;
+    }
     for (const char* cur = text.c_str(); *cur;) {
         uint32_t cp = 0;
         const char* nx = utf8_next(cur, &cp);
@@ -844,10 +944,13 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
         float run_ascent = 0.0F;
         font_extents(f, lsize, &run_ascent);
         Atlas& atlas = atlas_for(f, rsize);
-        /* HarfBuzz：整个 run 一次 shape（GPOS kerning / GSUB 连字）；失败/关闭时回退逐码点。 */
+        /* HarfBuzz：整个 run 一次 shape（GPOS kerning / GSUB 连字）；失败/关闭时回退逐码点。
+         * 断行机会统一由 UAX #14（libunibreak）+ UAX #29 字素边界给出。 */
+        UaxBreakMap uax;
+        build_uax_breaks(run.text, uax);
         std::vector<ShapedCell> cells;
-        if (!shape_run(f, run.text, lsize, run.bold, cells))
-            build_fallback_cells(f, run.text, lsize, run.bold, cells);
+        if (!shape_run(f, run.text, lsize, run.bold, uax, cells))
+            build_fallback_cells(f, run.text, lsize, run.bold, uax, cells);
         std::vector<ShapedCell> word;                          /* 词缓冲（shaped cell） */
 
         /* 落一个排版单元：记录设备像素位图 + 设计空间笔位置；x0/y0 留到行结束后按**行基线/设备推进**确定 */
@@ -887,10 +990,12 @@ int layout_impl(mq_font* f, const mq_text_style& st, const char* text,
         auto flush_word = [&]() {
             if (word.empty()) return;
             if (st.wrap == MQ_TEXT_WRAP_CHAR) {
+                bool prev_grapheme = true;               /* 当前 cell 之前是否字素边界 */
                 for (const ShapedCell& c : word) {
-                    if (max_w > 0.0F && pen_x > 0.0F && pen_x + c.advance > max_w)
+                    if (max_w > 0.0F && pen_x > 0.0F && pen_x + c.advance > max_w && prev_grapheme)
                         end_line();
                     place(c);
+                    prev_grapheme = c.grapheme_break;
                 }
             } else {
                 float wsum = 0.0F;

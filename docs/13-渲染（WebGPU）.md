@@ -127,8 +127,10 @@
 - **像素吸附必须作用在"图元中心"**：吸附在顶点着色器里执行，若逐顶点吸附
   （每个顶点都拿自己当中心）会使整个矩形偏移半像素 → 1:1 nearest 下部分行列取错纹素。
   正确做法：中心变换到目标空间 → 吸附 → 再加顶点偏移（`px = pc + kc`）。
-- **范围**：HarfBuzz 按 run shaping（LTR + CJK）；换行仍按空格/CJK 贪心、在 cluster 边界断行；
-  **不做 bidi/UAX #14**、无字体 fallback；缺字形跳过（不画豆腐块）。
+- **换行（UAX #14 + UAX #29）**：`WORD` wrap 的断行机会由 vendored **libunibreak** 给出
+  （`set_linebreaks_utf32` + `set_graphemebreaks_utf32`）：空格、连字符、ZWSP、CJK、禁则、组合字等；
+  `CHAR` wrap 逐 cell 断但不拆字素。`MAQUE_TEXT_LINEBREAK=0` 回退旧的“空格 + CJK 贪心”。
+- **范围**：HarfBuzz 按 run shaping（LTR + CJK）；**不做 bidi**、无字体 fallback；缺字形跳过（不画豆腐块）。
 
 ## 图元：矩形、过滤与像素对齐（pixel-perfect）
 

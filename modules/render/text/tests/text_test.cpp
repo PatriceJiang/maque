@@ -22,6 +22,15 @@ static void set_shaping_env(bool on) {
 #endif
 }
 
+/* UAX #14 换行测试开关（关闭 = 旧的“空格 + CJK”贪心规则）。 */
+static void set_linebreak_env(bool on) {
+#if defined(_WIN32)
+    _putenv_s("MAQUE_TEXT_LINEBREAK", on ? "1" : "0");
+#else
+    setenv("MAQUE_TEXT_LINEBREAK", on ? "1" : "0", 1);
+#endif
+}
+
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
     std::print("FAIL {}:{}  {}\n", __FILE__, __LINE__, #cond); ++g_failures; } } while (0)
@@ -824,6 +833,49 @@ int main() {
                 std::print("text_test[shape] off: fi_glyphs={} AV_off={:.2f}\n",
                            fi_off.glyph_count, av_off.width);
                 set_shaping_env(true);
+            }
+#endif
+            /* UAX #14 换行 + UAX #29 字素边界：hyphen/ZWSP 可断、NBSP/括号前/组合字不可断。 */
+#if defined(MAQUE_HAVE_LIBUNIBREAK)
+            {
+                mq_text_style ux = style(16.0F, MQ_TEXT_WRAP_WORD, MQ_TEXT_ALIGN_BEGIN, 10.0F);
+                ux.device_scale = 1.0F;
+                auto lines_of = [&](const char* t) {
+                    mq_text_metrics mm{};
+                    CHECK(mq_text_measure(pf, &ux, t, &mm) == MQ_TEXT_OK);
+                    return mm.line_count;
+                };
+                set_linebreak_env(true);
+                const uint32_t l_hyphen = lines_of("a-b");
+                const uint32_t l_zwsp = lines_of("a\u200Bb");
+                const uint32_t l_nbsp = lines_of("a\u00A0b");
+                const uint32_t l_paren = lines_of("a(b");
+                const uint32_t l_cjk = lines_of("日本語");
+                const uint32_t l_comb = lines_of("e\u0301");
+                CHECK(l_hyphen >= 2);                /* HY：连字符后可断 */
+                CHECK(l_zwsp >= 2);                  /* ZWSP 是可断点 */
+                CHECK(l_nbsp == 1);                  /* NBSP 禁止断行 */
+                CHECK(l_paren == 1);                 /* 开括号前不拆 */
+                CHECK(l_cjk >= 3);                   /* CJK 逐字可断 */
+                CHECK(l_comb == 1);                  /* 组合字素不拆 */
+                std::print("text_test[uax14] lines: hyphen={} zwsp={} nbsp={} paren={} cjk={} comb={}\n",
+                           l_hyphen, l_zwsp, l_nbsp, l_paren, l_cjk, l_comb);
+                set_linebreak_env(false);            /* 回退旧规则：只在空格/CJK 断 */
+                const uint32_t o_hyphen = lines_of("a-b");
+                const uint32_t o_zwsp = lines_of("a\u200Bb");
+                CHECK(o_hyphen == 1);
+                CHECK(o_zwsp == 1);
+                std::print("text_test[uax14] off: hyphen={} zwsp={}\n", o_hyphen, o_zwsp);
+                set_linebreak_env(true);
+                /* CHAR wrap：可以逐 cell 断，但不能拆组合字素（e + combining acute 必须同线）。 */
+                mq_text_style cs = style(16.0F, MQ_TEXT_WRAP_CHAR, MQ_TEXT_ALIGN_BEGIN, 1.0F);
+                cs.device_scale = 1.0F;
+                set_shaping_env(false);              /* 强制逐码点 cell，验证 grapheme 保护 */
+                mq_text_metrics cm{};
+                CHECK(mq_text_measure(pf, &cs, "e\u0301x", &cm) == MQ_TEXT_OK);
+                CHECK(cm.line_count == 2);
+                set_shaping_env(true);
+                std::print("text_test[uax14] char-wrap combining lines={}\n", cm.line_count);
             }
 #endif
             mq_font_destroy(pf);
