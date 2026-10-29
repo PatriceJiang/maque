@@ -299,6 +299,11 @@
         # 骨骼蒙皮调色板（plans/22；尾部追加）。空/0 = 本帧无蒙皮 draw。
         - { name: skins,          type: "const mq_renderer_skin*" }
         - { name: skin_count,     type: uint32_t }
+        # 直呈目标矩形（窗口设备像素）：0 宽/高 = 使用整个 surface。离屏 out 非空时忽略。
+        - { name: present_x,      type: int32_t }
+        - { name: present_y,      type: int32_t }
+        - { name: present_w,      type: int32_t }
+        - { name: present_h,      type: int32_t }
   methods:
     - fn: create
       returns: self

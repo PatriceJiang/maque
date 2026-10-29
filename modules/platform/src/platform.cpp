@@ -17,6 +17,7 @@
 #include "core/compat/mq_env.h"   // setenv/unsetenv 的跨平台封装（Windows 无 setenv）
 
 #include <print>
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -25,6 +26,9 @@
 
 #include <SDL.h>
 #include <SDL_syswm.h>   /* mq_platform_get_native_window：直接呈现要原生句柄（plans/18-pbr-3d.md） */
+#if defined(__ANDROID__)
+#  include <android/native_window.h>
+#endif
 
 #include <deque>
 #include <cstdlib>
@@ -102,6 +106,14 @@ struct mq_platform {
     bool        window = false;
     bool        quit = false;
     int         w = 0, h = 0;
+#if defined(__ANDROID__)
+    const uint8_t* android_frame = nullptr;
+    ANativeWindow* android_window = nullptr;
+    int android_frame_w = 0, android_frame_h = 0;
+    int android_dx = 0, android_dy = 0, android_dw = 0, android_dh = 0;
+    int android_present_every = -1, android_present_seq = 0;
+    bool android_pending = false;
+#endif
     float       mouse_x = 0, mouse_y = 0;
     int         mouse_down = 0;
     int         focused = 1;
@@ -141,7 +153,8 @@ namespace {
  *   ② ImGui 官方后端在**同一个** renderer 后台缓冲上再画一趟（调试面板）
  *   ③ 一次 SDL_RenderPresent 把整帧上屏（抓帧也在这里，回读后台缓冲）
  * 默认后端：Windows 用 accelerated（Direct3D，不建 GL/EGL 上下文 → 不与 wgpu 争用）；
- * 其它平台默认 software（SDL_RENDERER_SOFTWARE 同样不建 GL 上下文）。
+ * 其它平台默认 software（SDL_RENDERER_SOFTWARE 同样不建 GL/EGL 上下文）。
+ * Android 不走本通道：draw/present 直接锁定当前 ANativeWindow 写 CPU RGBA 帧。
  * MAQUE_PRESENT=off|software|accelerated 可显式覆盖。
  */
 static void ensure_present_mode(mq_platform* p) {
@@ -171,7 +184,17 @@ static SDL_Renderer* ensure_renderer(mq_platform* p) {
             p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
             if (p->ren) p->present_mode = 1;
         }
-        if (!p->ren) { p->present_mode = 0; return nullptr; }   // 呈现不可用 → 降级为不呈现
+        if (!p->ren) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "maque: SDL_CreateRenderer failed: %s", SDL_GetError());
+            p->present_mode = 0;
+            return nullptr;
+        }
+#if defined(__ANDROID__)
+        SDL_RendererInfo info{};
+        if (SDL_GetRendererInfo(p->ren, &info) == 0)
+            SDL_Log("maque: present renderer=%s mode=%s", info.name ? info.name : "?",
+                    p->present_mode == 2 ? "accelerated" : "software");
+#endif
     }
     return p->ren;
 }
@@ -206,6 +229,14 @@ static int draw_frame_rect(mq_platform* p, const void* rgba, int32_t w, int32_t 
                            int32_t dx, int32_t dy, int32_t dw, int32_t dh, int32_t filter) {
     MQ_TRACY_ZONE_N(platform, "present.draw");   // Tracy：帧纹理上传 + RenderCopy
     if (!p || !rgba || w <= 0 || h <= 0) return 1;
+#if defined(__ANDROID__)
+    if (dw <= 0 || dh <= 0) return 3;
+    p->android_frame = static_cast<const uint8_t*>(rgba);
+    p->android_frame_w = w; p->android_frame_h = h;
+    p->android_dx = dx; p->android_dy = dy; p->android_dw = dw; p->android_dh = dh;
+    p->android_pending = true;
+    return 0;
+#endif
     SDL_Renderer* ren = ensure_renderer(p);
     if (!ren) return 2;                                  // 无窗口 / present off / renderer 不可用
     if (dw <= 0 || dh <= 0) return 3;
@@ -228,19 +259,117 @@ static int draw_frame_rect(mq_platform* p, const void* rgba, int32_t w, int32_t 
     if (SDL_RenderCopy(ren, p->frame_tex, nullptr, &dst) != 0) return 6;
     if (!p->present_logged) {
         SDL_RendererInfo info{};
-        if (SDL_GetRendererInfo(ren, &info) == 0)
+        if (SDL_GetRendererInfo(ren, &info) == 0) {
             std::print("platform: present via renderer='{}' ({}) frame={}x{} target={},{} {}x{} window={}x{}\n",
                        info.name ? info.name : "?",
                        p->present_mode == 2 ? "accelerated" : "software",
                        w, h, dx, dy, dw, dh, p->w, p->h);
+        }
         p->present_logged = true;
     }
     return 0;
 }
 
+#if defined(__ANDROID__)
+static int present_android_frame(mq_platform* p) {
+    if (!p || !p->win || !p->android_pending || !p->android_frame) return 2;
+    if (p->android_present_every < 0) {
+        p->android_present_every = 1;
+        if (const char* every = std::getenv("MAQUE_ANDROID_PRESENT_EVERY"))
+            p->android_present_every = std::max(1, std::atoi(every));
+    }
+    if ((p->android_present_seq++ % p->android_present_every) != 0) {
+        p->android_pending = false;
+        p->android_frame = nullptr;
+        return 0;
+    }
+    SDL_SysWMinfo wm{};
+    SDL_VERSION(&wm.version);
+    if (!SDL_GetWindowWMInfo(p->win, &wm) || wm.subsystem != SDL_SYSWM_ANDROID || !wm.info.android.window)
+        return 3;
+    ANativeWindow* window = wm.info.android.window;
+    if (p->android_window != window) {
+        if (ANativeWindow_setBuffersGeometry(window, 0, 0, WINDOW_FORMAT_RGBA_8888) != 0) return 4;
+        p->android_window = window;
+    }
+
+    ANativeWindow_Buffer out{};
+    if (ANativeWindow_lock(window, &out, nullptr) != 0) return 4;
+    const int x0 = std::max(0, p->android_dx);
+    const int y0 = std::max(0, p->android_dy);
+    const int x1 = std::min(out.width, p->android_dx + p->android_dw);
+    const int y1 = std::min(out.height, p->android_dy + p->android_dh);
+    const uint8_t* src = p->android_frame;
+
+    if (out.format == WINDOW_FORMAT_RGBA_8888 || out.format == WINDOW_FORMAT_RGBX_8888) {
+        auto* bits = static_cast<uint8_t*>(out.bits);
+        for (int y = 0; y < out.height; ++y)
+            std::memset(bits + (size_t)y * (size_t)out.stride * 4, 0, (size_t)out.stride * 4);
+
+        if (p->android_dw == p->android_frame_w && p->android_dh == p->android_frame_h) {
+            const size_t copy_bytes = (size_t)std::max(0, x1 - x0) * 4;
+            for (int y = y0; y < y1; ++y) {
+                const int sy = y - p->android_dy;
+                const int sx = x0 - p->android_dx;
+                uint8_t* row = bits + (size_t)y * (size_t)out.stride * 4 + (size_t)x0 * 4;
+                const uint8_t* source = src + ((size_t)sy * p->android_frame_w + sx) * 4;
+                std::memcpy(row, source, copy_bytes);
+            }
+        } else {
+            for (int y = y0; y < y1; ++y) {
+                uint8_t* row = bits + (size_t)y * (size_t)out.stride * 4;
+                const int sy = std::clamp((y - p->android_dy) * p->android_frame_h / p->android_dh,
+                                          0, p->android_frame_h - 1);
+                for (int x = x0; x < x1; ++x) {
+                    const int sx = std::clamp((x - p->android_dx) * p->android_frame_w / p->android_dw,
+                                              0, p->android_frame_w - 1);
+                    const uint8_t* s = src + ((size_t)sy * p->android_frame_w + sx) * 4;
+                    uint8_t* d = row + (size_t)x * 4;
+                    d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
+                }
+            }
+        }
+    } else if (out.format == WINDOW_FORMAT_RGB_565) {
+        auto* bits = static_cast<uint16_t*>(out.bits);
+        for (int y = 0; y < out.height; ++y) {
+            uint16_t* row = bits + (size_t)y * (size_t)out.stride;
+            std::fill(row, row + out.stride, 0);
+            if (y < y0 || y >= y1) continue;
+            const int sy = std::clamp((y - p->android_dy) * p->android_frame_h / p->android_dh,
+                                      0, p->android_frame_h - 1);
+            for (int x = x0; x < x1; ++x) {
+                const int sx = std::clamp((x - p->android_dx) * p->android_frame_w / p->android_dw,
+                                          0, p->android_frame_w - 1);
+                const uint8_t* s = src + ((size_t)sy * p->android_frame_w + sx) * 4;
+                row[x] = (uint16_t)(((s[0] >> 3) << 11) | ((s[1] >> 2) << 5) | (s[2] >> 3));
+            }
+        }
+    } else {
+        ANativeWindow_unlockAndPost(window);
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "maque: unsupported ANativeWindow format=%d", out.format);
+        return 5;
+    }
+
+    const int rc = ANativeWindow_unlockAndPost(window);
+    p->android_pending = false;
+    p->android_frame = nullptr;
+    if (!p->present_logged) {
+        SDL_Log("maque: present via ANativeWindow format=%d buffer=%dx%d stride=%d frame=%dx%d target=%d,%d %dx%d",
+                out.format, out.width, out.height, out.stride,
+                p->android_frame_w, p->android_frame_h,
+                p->android_dx, p->android_dy, p->android_dw, p->android_dh);
+        p->present_logged = true;
+    }
+    return rc == 0 ? 0 : 6;
+}
+#endif
+
 /* 提交后台缓冲：抓帧（如需，present 之前）→ 单次 SDL_RenderPresent。 */
 static int present_renderer(mq_platform* p) {
     MQ_TRACY_ZONE_N(platform, "present");        // Tracy：抓帧（如需）+ SDL_RenderPresent
+#if defined(__ANDROID__)
+    return present_android_frame(p);
+#endif
     if (!p || !p->ren) return 2;
     capture_renderer(p);
     SDL_RenderPresent(p->ren);
@@ -311,6 +440,9 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
              * 窗口**默认可 resize / 可最大化**（SDL_WINDOW_RESIZABLE）：用户拖拽/最大化后
              * SDL 发 SIZE_CHANGED → runtime 自动重建渲染目标（FBO）。 */
             Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
+#if defined(__ANDROID__)
+            flags |= SDL_WINDOW_VULKAN;
+#endif
             if (const char* atop = std::getenv("MAQUE_ALWAYS_ON_TOP"); atop && *atop && *atop != '0')
                 flags |= SDL_WINDOW_ALWAYS_ON_TOP;
             const char* max_env = std::getenv("MAQUE_WINDOW_MAXIMIZED");
@@ -328,7 +460,14 @@ mq_platform* mq_platform_create(const char* title, int w, int h) {
                 refresh_window_size(p);
             }
         }
-        if (p->window) SDL_StartTextInput();
+        if (p->window) {
+#if defined(__ANDROID__)
+            const char* text_input = std::getenv("MAQUE_TEXT_INPUT");
+            if (text_input && *text_input && *text_input != '0') SDL_StartTextInput();
+#else
+            SDL_StartTextInput();
+#endif
+        }
     }
     return p;
 }
@@ -344,8 +483,8 @@ void mq_platform_destroy(mq_platform* p) {
 }
 
 /* 真实窗口：SDL dummy 驱动也会返回非空窗口指针，故用驱动名判定。 */
-/* 原生句柄：给官方 ImGui 后端用（它必须拿到真的 SDL_Window/SDL_Renderer）。
- * 呈现统一走 SDL_Renderer（见文件上方「呈现：唯一通道」注释）；不再使用窗口表面。 */
+/* 原生 SDL 句柄：桌面 ImGui 后端使用 SDL_Renderer；Android 正常路径由 wgpu swapchain 呈现，
+ * AVD 功能回退直接写当前 ANativeWindow。 */
 void *mq_platform_sdl_window(mq_platform *p) { return p ? (void *)p->win : nullptr; }
 void *mq_platform_sdl_renderer(mq_platform *p) { return p ? (void *)p->ren : nullptr; }
 
@@ -353,8 +492,9 @@ void *mq_platform_sdl_renderer(mq_platform *p) { return p ? (void *)p->ren : nul
  * 返回 1=可用 0=无窗口/后端不支持（调用方回退离屏 + platform 呈现）。
  *   kind=1 win32 : display=HINSTANCE, handle=HWND
  *   kind=2 xlib  : display=Display*, handle=X11 Window（转 void*）
- *   kind=3 wl    : display=wl_display*, handle=wl_surface*
- * 其它子系统（dummy/offscreen/Android/WASM）→ 0。 */
+ *   kind=3 wl      : display=wl_display*, handle=wl_surface*
+ *   kind=4 android : display=null, handle=ANativeWindow*
+ * 其它子系统（dummy/offscreen/WASM）→ 0。 */
 int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out) {
     if (!p || !out || !p->win) return 0;
     std::memset(out, 0, sizeof *out);
@@ -381,6 +521,13 @@ int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out
         out->handle = (void*)wm.info.wl.surface;
         return 1;
 #endif
+#if defined(__ANDROID__)
+    case SDL_SYSWM_ANDROID:
+        out->kind = 4;
+        out->display = nullptr;
+        out->handle = (void*)wm.info.android.window;
+        return out->handle ? 1 : 0;
+#endif
     default:
         return 0;
     }
@@ -388,7 +535,14 @@ int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out
 
 /* 立即创建 SDL_Renderer：官方 ImGui 后端必须在**第一帧之前**拿到它
  *（否则会先走静态字体图集，之后切后端会撞 ImGui 的动态图集断言）。 */
-void *mq_platform_ensure_renderer(mq_platform *p) { return (void *)ensure_renderer(p); }
+void *mq_platform_ensure_renderer(mq_platform *p) {
+#if defined(__ANDROID__)
+    (void)p;
+    return nullptr;
+#else
+    return (void *)ensure_renderer(p);
+#endif
+}
 
 /* 把游戏帧画进 renderer 后台缓冲（**不 present**）：给"游戏帧 → ImGui pass → 单次 present"
  * 的两阶段呈现用。目标矩形由画布策略给出（缩放/留边）。 */
@@ -417,6 +571,15 @@ int mq_platform_present_rect(mq_platform* p, const void* rgba, int32_t w, int32_
 int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) {
     if (!p || !rgba || w <= 0 || h <= 0) return 1;
     if (!p->win || !p->window) return 2;                  // 无窗口：空操作
+#if defined(__ANDROID__)
+    int ow = 0, oh = 0;
+    SDL_GetWindowSizeInPixels(p->win, &ow, &oh);
+    if (ow <= 0 || oh <= 0) return 4;
+    const float sc = std::min((float)ow / (float)w, (float)oh / (float)h);
+    const int dst_w = (int)((float)w * sc), dst_h = (int)((float)h * sc);
+    return mq_platform_present_rect(p, rgba, w, h, (ow - dst_w) / 2, (oh - dst_h) / 2,
+                                    dst_w, dst_h, -1);
+#else
     SDL_Renderer* ren = ensure_renderer(p);
     if (!ren) return 3;                                   // MAQUE_PRESENT=off / renderer 不可用
     /* 目标尺寸 ≠ 窗口尺寸时按等比 + 居中留边缩放（与宿主输入映射同一规则）。 */
@@ -432,6 +595,7 @@ int mq_platform_present(mq_platform* p, const void* rgba, int32_t w, int32_t h) 
     if (const char* f = std::getenv("MAQUE_PRESENT_FILTER"); f && *f)
         filter = std::strcmp(f, "nearest") == 0 ? 1 : (std::strcmp(f, "linear") == 0 ? 0 : -1);
     return mq_platform_present_rect(p, rgba, w, h, dst_x, dst_y, dst_w, dst_h, filter);
+#endif
 }
 
 void mq_platform_drawable_size(mq_platform* p, int32_t* out_w, int32_t* out_h) {

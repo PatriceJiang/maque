@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <SDL_system.h>
+#include <sys/system_properties.h>
 
 #include "core/compat/mq_env.h"
 #include "runtime/mq_runtime.h"
@@ -19,6 +20,17 @@ void configure_mobile_defaults() {
         }
     }
     if (!std::getenv("MAQUE_AUDIO")) maque::compat::set_env("MAQUE_AUDIO", "auto");
+    char qemu[PROP_VALUE_MAX] = {};
+    const bool emulator = __system_property_get("ro.kernel.qemu", qemu) > 0 && qemu[0] == '1';
+    if (emulator) {
+        maque::compat::set_env("MAQUE_PRESENT", "accelerated");
+        if (!std::getenv("MAQUE_RENDER_SCALE")) maque::compat::set_env("MAQUE_RENDER_SCALE", "0.5");
+        maque::compat::set_env("MAQUE_ANDROID_PRESENT_EVERY", "4");
+        SDL_Log("maque_android: present=ANativeWindow CPU fallback (emulator)");
+    } else if (!std::getenv("MAQUE_PRESENT")) {
+        maque::compat::set_env("MAQUE_PRESENT", "wgpu");
+        SDL_Log("maque_android: present=wgpu GPU blit");
+    }
 }
 
 } // namespace

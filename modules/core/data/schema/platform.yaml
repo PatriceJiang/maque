@@ -92,7 +92,7 @@
           - { name: width, type: "int" }
           - { name: height, type: "int" }
       # 原生窗口句柄（plans/18-pbr-3d.md §2.4）：renderer 用它建 wgpu surface 直接呈现。
-      # kind: 0=none 1=win32 2=xlib 3=wayland；display/handle 含义随 kind。
+      # kind: 0=none 1=win32 2=xlib 3=wayland 4=android；display/handle 含义随 kind。
       - name: mq_platform_native_window
         fields:
           - { name: kind, type: "int32_t" }

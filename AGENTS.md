@@ -55,8 +55,10 @@ cd android && ./gradlew :app:assembleDebug
   APK assets 根，并在构建期生成 `maque/scenes.json`。
 - 场景路径使用 `asset://<相对路径>`：VFS 后端经 SDL RWops 读取 APK AssetManager，运行时仍以
   场景目录为资源根。不要把 assets 解压复制到可写目录。
-- Android 静态链接 gfx（仍复用 `mq_module_query` ABI），默认使用离屏 WebGPU + SDL 呈现；
-  未实现 Android Surface 丢失后的 reattach 前，不要强制 `MAQUE_PRESENT=wgpu`。
+- Android 静态链接 gfx（仍复用 `mq_module_query` ABI）。真机：设计分辨率 WebGPU FBO 经 blit shader
+  采样到全尺寸 ANativeWindow swapchain（纯 GPU）；Surface 变化按句柄 reattach。AVD 因 wgpu-native WSI
+  acquire timeout 按 `ro.kernel.qemu` 明确回退 ANativeWindow CPU 提交，仅用于功能调试。
+- Android 默认不 `SDL_StartTextInput`，避免启动即弹 IME；文本输入场景显式设 `MAQUE_TEXT_INPUT=1`。
 - 当前模板固定 `arm64-v8a`、SDK 35、NDK r27d；完整依赖和构建命令见 `android/README.md`。
 
 ### Windows（clang-cl + Ninja；完整支持）

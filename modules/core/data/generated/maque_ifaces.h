@@ -259,6 +259,10 @@ typedef struct mq_renderer_frame3d {
     uint32_t pass_count;
     const mq_renderer_skin* skins;
     uint32_t skin_count;
+    int32_t present_x;
+    int32_t present_y;
+    int32_t present_w;
+    int32_t present_h;
 } mq_renderer_frame3d;
 
 #define MQ_RENDERER_API_NAME "maque.renderer"

@@ -1,6 +1,10 @@
 # maque::gfx —— WebGPU 渲染插件（.so，实现 DSL 生成的 mq_renderer_v1）
 set(WGPU_NATIVE_ROOT "${CMAKE_SOURCE_DIR}/third_party/wgpu-native"
     CACHE PATH "wgpu-native SDK root (include/webgpu + lib)")
+if(MAQUE_ANDROID AND MAQUE_ANDROID_JNI_LIBS_DIR)
+    set(WGPU_NATIVE_LIB "${MAQUE_ANDROID_JNI_LIBS_DIR}/${ANDROID_ABI}/libwgpu_native.so"
+        CACHE FILEPATH "Android ABI-specific wgpu-native library" FORCE)
+endif()
 find_library(WGPU_NATIVE_LIB NAMES wgpu_native
     PATHS "${WGPU_NATIVE_ROOT}/lib" NO_DEFAULT_PATH)
 
@@ -19,7 +23,7 @@ if(WGPU_NATIVE_LIB)
     endif()
     target_include_directories(maque_gfx PRIVATE "${WGPU_NATIVE_ROOT}/include")
     if(MAQUE_ANDROID)
-        target_link_libraries(maque_gfx PRIVATE ${WGPU_NATIVE_LIB} maque::module maque::schema maque::builtin_shaders)
+        target_link_libraries(maque_gfx PRIVATE ${WGPU_NATIVE_LIB} maque::module maque::schema maque::builtin_shaders log)
     else()
         target_link_libraries(maque_gfx PRIVATE ${WGPU_NATIVE_LIB} maque::module maque::schema maque::builtin_shaders)
     endif()

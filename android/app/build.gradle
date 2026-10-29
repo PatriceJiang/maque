@@ -9,16 +9,20 @@ def scenesDir = new File(repoRoot, "scenes")
 def sdl2Dir = rootProject.file(findProperty("maqueSdl2Dir") ?: ".deps/SDL")
 def generatedAssetsDir = layout.buildDirectory.dir("generated/maqueAssets")
 def sceneIndexFile = generatedAssetsDir.map { it.file("maque/scenes.json") }
-def androidAbi = "arm64-v8a"
-def wgpuNative = file("src/main/jniLibs/${androidAbi}/libwgpu_native.so")
+def androidAbis = (findProperty("maqueAbis") ?: "arm64-v8a")
+        .split(",").collect { it.trim() }.findAll { !it.isEmpty() }
+def jniLibsDir = file("src/main/jniLibs")
 
 tasks.register("validateMaqueAndroidDeps") {
     doLast {
         if (!new File(sdl2Dir, "CMakeLists.txt").isFile()) {
             throw new GradleException("SDL2 source not found at ${sdl2Dir}. See android/README.md.")
         }
-        if (!wgpuNative.isFile()) {
-            throw new GradleException("wgpu-native Android library not found at ${wgpuNative}. See android/README.md.")
+        androidAbis.each { abi ->
+            def wgpuNative = new File(jniLibsDir, "${abi}/libwgpu_native.so")
+            if (!wgpuNative.isFile()) {
+                throw new GradleException("wgpu-native Android library not found at ${wgpuNative}. See android/README.md.")
+            }
         }
     }
 }
@@ -57,7 +61,7 @@ android {
         versionName "0.1.0"
 
         ndk {
-            abiFilters androidAbi
+            abiFilters(*androidAbis)
         }
 
         externalNativeBuild {
@@ -68,7 +72,7 @@ android {
                           "-DMAQUE_HARFBUZZ=OFF",
                           "-DMAQUE_BUILTIN_SHADER_COMPRESS=OFF",
                           "-DMAQUE_SDL2_SOURCE_DIR=${sdl2Dir.absolutePath.replace('\\', '/')}",
-                          "-DWGPU_NATIVE_LIB=${wgpuNative.absolutePath.replace('\\', '/')}"
+                          "-DMAQUE_ANDROID_JNI_LIBS_DIR=${jniLibsDir.absolutePath.replace('\\', '/')}"
                 targets "main"
             }
         }

@@ -525,6 +525,8 @@ struct Engine {
     bool  stat_window_sized = false;
     bool  imgui_backend = false;   // 用官方 SDL_Renderer 后端（与游戏帧共用 renderer、单次 present）
     bool  direct_present = false;  // plans/18 M1：wgpu swapchain 直接呈现（attach_window 成功；不走 CPU readback→SDL）
+    bool  direct_requested = false;
+    void* direct_window_handle = nullptr;
     std::chrono::steady_clock::time_point stat_t0{};   // 本帧起点（算逻辑/整帧耗时）
     int spine_event_depth = 0;                 // 事件推送重入深度（护栏，见 spine_event_cb）
     /* 文本渲染（docs/13/17）：字体实例 + 每 (字体, 字号) 的图集纹理。
@@ -4876,7 +4878,28 @@ void Engine::step_frame(bool render_frame) {
      * 每帧而非"仅尺寸变化"：脚本/控制面可在运行时改 fit_mode / design_* / 安全区，
      * 必须立即生效；纯函数（几次乘法）开销可忽略。窗口/显示器变化同样被覆盖。 */
     canvas_resolve();
-    (void)mq_platform_display_changed;   /* 尺寸变化由每帧解析自然覆盖（保留 API 供宿主查询） */
+    if (platform) (void)mq_platform_display_changed(platform);
+    if (direct_requested && rapi && rself && rapi->attach_window) {
+        mq_platform_native_window nw{};
+        const bool have_native = mq_platform_get_native_window(platform, &nw) != 0 && nw.handle;
+        if (!have_native) {
+            if (direct_present) {
+                mq_renderer_window none{};
+                (void)rapi->attach_window(rself, &none);
+            }
+            direct_present = false;
+            direct_window_handle = nullptr;
+        } else if (!direct_present || nw.handle != direct_window_handle) {
+            mq_renderer_window rw{};
+            rw.kind = nw.kind; rw.display = nw.display; rw.handle = nw.handle; rw.extra = nw.extra;
+            mq_platform_drawable_size(platform, &rw.width, &rw.height);
+            const int32_t rc = rapi->attach_window(rself, &rw);
+            direct_present = rc == 0;
+            direct_window_handle = direct_present ? nw.handle : nullptr;
+            std::print("runtime: direct present reattach kind={} size={}x{} rc={}\n",
+                       rw.kind, rw.width, rw.height, rc);
+        }
+    }
 
     sim_feed(frame);
     /* 测试钩子：`MAQUE_SIM_KEY_AT="<帧>:<键码>[,<帧>:<键码>...]"` —— 向**本帧设备事件队列**
@@ -5133,6 +5156,10 @@ void Engine::step_frame(bool render_frame) {
         fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
         fr.passes = passes3d.data(); fr.pass_count = (uint32_t)passes3d.size();
+        fr.present_x = (int32_t)std::lround(canvas.offset_x);
+        fr.present_y = (int32_t)std::lround(canvas.offset_y);
+        fr.present_w = (int32_t)std::lround(canvas.viewport_w);
+        fr.present_h = (int32_t)std::lround(canvas.viewport_h);
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
         /* MSAA：场景字段 scn.Scene.msaa_samples（0/1=关、4=4x），MAQUE_MSAA 覆盖（0/1/4）。
          * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。
@@ -5216,13 +5243,21 @@ void Engine::step_frame(bool render_frame) {
         const int32_t rc = rapi->render_frame3d(rself, &fr);
         if (rc == 0 && direct3d) {
             if (rapi->present) rapi->present(rself);
-        } else if (rc != 0) {
+        } else if (rc != 0 && !(direct3d && rc == -7)) {
             static bool warned = false;
             if (!warned) {
                 warned = true;
                 std::print(stderr, "runtime: 3D frame 渲染失败 rc={} → 本帧回退 2D\n", rc);
             }
-            has_3d = false;
+            if (direct3d) {
+                mq_renderer_window none{};
+                (void)rapi->attach_window(rself, &none);
+                direct_present = false;
+                direct_requested = false;
+                direct_window_handle = nullptr;
+            } else {
+                has_3d = false;
+            }
         }
     } else if (direct_present && !need_pixels && rapi && rself && rapi->render_frame3d) {
         MQ_TRACY_ZONE_N(render, "frame.direct");
@@ -5235,6 +5270,10 @@ void Engine::step_frame(bool render_frame) {
         f.item_count = (uint32_t)draws.size();
         f.meshes = spine_meshes.data();
         f.mesh_count = (uint32_t)spine_meshes.size();
+        f.present_x = (int32_t)std::lround(canvas.offset_x);
+        f.present_y = (int32_t)std::lround(canvas.offset_y);
+        f.present_w = (int32_t)std::lround(canvas.viewport_w);
+        f.present_h = (int32_t)std::lround(canvas.viewport_h);
         for (int i = 0; i < 4; ++i) f.bg[i] = bg[i];
         f.env.sky_mode = 1;                       /* M1：背景色直出（3D 天空盒在 M3） */
         f.env.env_texture = -1;                   /* 2D 直呈路径无 3D env（避免 0 号纹理被误当 env） */
@@ -5242,13 +5281,17 @@ void Engine::step_frame(bool render_frame) {
         for (int i = 0; i < 4; ++i) f.env.sky_color[i] = bg[i];
         const int32_t rc = rapi->render_frame3d(rself, &f);
         if (rc == 0 && rapi->present) rapi->present(rself);
-        else {
+        else if (rc != -7) {
             static bool warned = false;
             if (!warned) {
                 warned = true;
                 std::print(stderr, "runtime: direct present 失败 rc={} → 回退 SDL 呈现\n", rc);
             }
+            mq_renderer_window none{};
+            (void)rapi->attach_window(rself, &none);
             direct_present = false;
+            direct_requested = false;
+            direct_window_handle = nullptr;
         }
     } else if (rapi && rself) {
         MQ_TRACY_ZONE_N(render, "frame");   // Tracy：渲染插件成帧 + 回读（颜色 = render 模块）
@@ -13318,7 +13361,8 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
             std::print("runtime: renderer caps tex={} lights={} target_fmt={} depth_fmt={} direct_present={} hdr={}\n",
                        caps.max_texture_size, caps.max_lights, caps.target_format, caps.depth_format,
                        caps.direct_present, caps.hdr);
-        if (want_wgpu && window && rapi->attach_window) {
+        direct_requested = want_wgpu && window && rapi->attach_window;
+        if (direct_requested) {
             mq_platform_native_window nw{};
             if (mq_platform_get_native_window(platform, &nw) != 0) {
                 mq_renderer_window rw{};
@@ -13334,6 +13378,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
                 std::print("runtime: direct present attach_window kind={} size={}x{} rc={}（{}）\n",
                            rw.kind, rw.width, rw.height, rc, rc == 0 ? "wgpu swapchain" : "回退离屏+SDL");
                 direct_present = (rc == 0);
+                direct_window_handle = direct_present ? nw.handle : nullptr;
             } else {
                 std::print("runtime: direct present 不可用（platform 未给出原生窗口句柄）\n");
             }
@@ -13487,8 +13532,11 @@ void Engine::sync_window_size(int32_t log_w, int32_t log_h) {
         /* 直呈：显式重建交换链/中间目标（ABI 约定"下一帧生效"）。
          * 离屏路径：gfx 每帧按 (TW, SHpx) 建颜色目标，depth/MSAA 缓存按尺寸失效重建。 */
         if (direct_present && rapi && rself && rapi->resize_surface) {
-            const int32_t rc = rapi->resize_surface(rself, TW, new_sh);
-            if (rc != 0) std::print(stderr, "runtime: resize_surface({}x{}) 失败 rc={}\n", TW, new_sh, rc);
+            int32_t surface_w = 0, surface_h = 0;
+            mq_platform_drawable_size(platform, &surface_w, &surface_h);
+            const int32_t rc = rapi->resize_surface(rself, surface_w, surface_h);
+            if (rc != 0) std::print(stderr, "runtime: resize_surface({}x{}) 失败 rc={}\n",
+                                    surface_w, surface_h, rc);
         }
         /* 控制面预览缓存与旧尺寸绑定 → 作废（下一帧由渲染路径覆盖） */
         frame_pixels.clear(); frame_w = frame_h = 0;

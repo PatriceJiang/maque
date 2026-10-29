@@ -2,6 +2,7 @@ package org.maque.player;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.PixelFormat;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -14,6 +15,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.libsdl.app.SDLActivity;
+import org.libsdl.app.SDLSurface;
 
 import java.util.List;
 
@@ -21,6 +23,13 @@ public final class MaqueActivity extends SDLActivity {
     private List<String> scenes;
     private int sceneIndex;
     private int pendingSceneIndex = -1;
+
+    @Override
+    protected SDLSurface createSDLSurface(android.content.Context context) {
+        SDLSurface surface = super.createSDLSurface(context);
+        surface.getHolder().setFormat(PixelFormat.RGBA_8888);
+        return surface;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

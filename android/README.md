@@ -14,7 +14,11 @@
   回到第一个，第一个场景的 `Prev` 回到最后一个。
 - APK 资源由 VFS 的 `asset://` 只读后端读取，场景引用的脚本、纹理、音频和子场景仍按
   场景目录解析。
-- Android 默认使用离屏 WebGPU + SDL 呈现；窗口/Surface 的暂停、销毁和重建由 SDL2 管理。
+- 真机：WebGPU 先渲染设计分辨率 FBO，再用 blit shader 采样到全尺寸 `ANativeWindow`
+  swapchain 的画布 viewport；全程 GPU，无 readback/memcpy。Surface 句柄变化时自动 reattach。
+- AVD：wgpu-native 在 Android Emulator SurfaceView 上持续返回 swapchain acquire timeout，模板按
+  `ro.kernel.qemu=1` 明确使用 `ANativeWindow_lock` CPU fallback；用于功能调试，不代表真机性能。
+- Android 默认不启动 SDL 文本输入，因此不会自动弹软键盘；需要时显式设置 `MAQUE_TEXT_INPUT=1`。
 
 ## 前置条件
 
@@ -64,6 +68,17 @@ cp .deps/wgpu-android-aarch64-release/lib/libwgpu_native.so \
 ```
 
 该二进制是本机依赖，不入库。不要使用 `wgpu-linux-aarch64` 包替代 Android 包。
+
+本地 x86_64 AVD 调试时，改下载同一 Release 的
+`wgpu-android-x86_64-release.zip`，把其中的 `.so` 放到
+`android/app/src/main/jniLibs/x86_64/libwgpu_native.so`，然后构建：
+
+```bash
+cd android
+./gradlew -PmaqueAbis=x86_64 :app:assembleDebug
+```
+
+`maqueAbis` 接受逗号分隔列表；不指定时仍只构建 `arm64-v8a`。
 
 ## 构建
 

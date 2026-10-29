@@ -5,6 +5,9 @@
 #include "builtin_shaders.h"   // 内建 shader 注册表（配置期由流水线生成）
 
 #include <webgpu/webgpu.h>
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
 
 #include <cstdio>
 #include <print>
@@ -102,6 +105,16 @@ struct Device {
     WGPUTexture surfaceTex = nullptr;              /* 本帧从 swapchain acquire 的纹理 */
     WGPUTextureView surfaceView = nullptr;
     bool surfaceCopySrc = false;                   /* surface caps 允许 CopySrc → 可抓直呈帧（CI 像素断言） */
+    WGPUCompositeAlphaMode surfaceAlphaMode = WGPUCompositeAlphaMode_Auto;
+    WGPUTexture blitTex = nullptr;
+    WGPUTextureView blitView = nullptr;
+    int32_t blitW = 0, blitH = 0;
+    WGPUShaderModule blitShader = nullptr;
+    WGPUBindGroupLayout blitBgl = nullptr;
+    WGPUPipelineLayout blitPl = nullptr;
+    WGPURenderPipeline blitPipeline = nullptr;
+    WGPUTextureFormat blitPipelineFormat = WGPUTextureFormat_Undefined;
+    WGPUSampler blitSampler = nullptr;
     int  captureCount = 0;
     WGPUTextureFormat pipelineFormat = WGPUTextureFormat_RGBA8Unorm;  /* 2D 管线当前目标格式 */
     /* ---- M2 3D 基础：depth + unlit3d 管线（plans/18-pbr-3d.md §4.2）---- */
@@ -176,6 +189,10 @@ static bool poll(WGPUInstance inst, P ready, int timeout_ms = 20000) {
     return true;
 }
 static void on_uncaptured(WGPUDevice const*, WGPUErrorType type, WGPUStringView msg, void*, void*) {
+#if defined(__ANDROID__)
+    __android_log_print(ANDROID_LOG_ERROR, "maque-gfx", "wgpu error %d: %.*s",
+                        (int)type, (int)msg.length, msg.data ? msg.data : "");
+#endif
     std::print(stderr, "[wgpu] error {}: {:.{}}\n", (int)type, msg.data ? msg.data : "", (int)msg.length);
 }
 static void req_adapter_cb(WGPURequestAdapterStatus s, WGPUAdapter a, WGPUStringView, void* u1, void*) {
@@ -840,7 +857,11 @@ static Device* create_device(std::string* out_backend) {
     WGPURequestAdapterOptions aopts = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
     WGPURequestAdapterCallbackInfo aci = WGPU_REQUEST_ADAPTER_CALLBACK_INFO_INIT;
     aci.mode = WGPUCallbackMode_AllowProcessEvents; aci.callback = req_adapter_cb; aci.userdata1 = &dv->adapter;
+#if defined(__ANDROID__)
+    aopts.backendType = WGPUBackendType_Vulkan;
+#else
     aopts.backendType = WGPUBackendType_Undefined;
+#endif
     wgpuInstanceRequestAdapter(dv->instance, &aopts, aci);
     if (!poll(dv->instance, [&]{ return dv->adapter != nullptr; })) { delete dv; return nullptr; }
 
@@ -871,6 +892,7 @@ static Device* create_device(std::string* out_backend) {
      * 打印一行说明、跳过该管线 —— 渲染循环对空管线会跳过对应批次（不崩、不静默）。 */
     const char* solid_wgsl = mq_builtin_shader_text("solid");
     const char* tex_wgsl = mq_builtin_shader_text("textured");
+    const char* blit_wgsl = mq_builtin_shader_text("blit");
     if (!solid_wgsl) std::print(stderr, "gfx: 内建 shader 'solid' 不可用 → 无贴图图元不渲染"
                                        "（剔除开关 MAQUE_SHADER_SOLID=ON 可编回）\n");
     if (!tex_wgsl) std::print(stderr, "gfx: 内建 shader 'textured' 不可用 → 贴图图元不渲染"
@@ -887,6 +909,25 @@ static Device* create_device(std::string* out_backend) {
         dv->solidPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
     }
     if (tex_wgsl) dv->texShader = make_shader(dv->device, tex_wgsl);
+    if (blit_wgsl) dv->blitShader = make_shader(dv->device, blit_wgsl);
+    if (dv->blitShader) {
+        WGPUBindGroupLayoutEntry e[2] = {};
+        e[0].binding = 0; e[0].visibility = WGPUShaderStage_Fragment;
+        e[0].texture.sampleType = WGPUTextureSampleType_Float;
+        e[0].texture.viewDimension = WGPUTextureViewDimension_2D;
+        e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
+        e[1].sampler.type = WGPUSamplerBindingType_Filtering;
+        WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+        bd.entryCount = 2; bd.entries = e;
+        dv->blitBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
+        WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+        pl.bindGroupLayoutCount = 1; pl.bindGroupLayouts = &dv->blitBgl;
+        dv->blitPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
+        WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
+        sd.magFilter = WGPUFilterMode_Linear; sd.minFilter = WGPUFilterMode_Linear;
+        sd.addressModeU = WGPUAddressMode_ClampToEdge; sd.addressModeV = WGPUAddressMode_ClampToEdge;
+        dv->blitSampler = wgpuDeviceCreateSampler(dv->device, &sd);
+    }
     if (dv->texShader) {
         WGPUBindGroupLayoutEntry e[4] = {};
         e[0].binding = 0; e[0].visibility = WGPUShaderStage_Vertex; e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = 48;
@@ -957,6 +998,13 @@ static void destroy_device(Device* dv) {
     if (dv->surfaceView) wgpuTextureViewRelease(dv->surfaceView);
     if (dv->surfaceTex) wgpuTextureRelease(dv->surfaceTex);
     if (dv->surface) wgpuSurfaceRelease(dv->surface);
+    if (dv->blitView) wgpuTextureViewRelease(dv->blitView);
+    if (dv->blitTex) wgpuTextureRelease(dv->blitTex);
+    if (dv->blitPipeline) wgpuRenderPipelineRelease(dv->blitPipeline);
+    if (dv->blitSampler) wgpuSamplerRelease(dv->blitSampler);
+    if (dv->blitPl) wgpuPipelineLayoutRelease(dv->blitPl);
+    if (dv->blitBgl) wgpuBindGroupLayoutRelease(dv->blitBgl);
+    if (dv->blitShader) wgpuShaderModuleRelease(dv->blitShader);
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
     if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
     if (dv->whiteTexView) wgpuTextureViewRelease(dv->whiteTexView);
@@ -1534,7 +1582,7 @@ static bool configure_surface(Device* dv, int32_t w, int32_t h) {
     cfg.width = (uint32_t)w;
     cfg.height = (uint32_t)h;
     cfg.presentMode = WGPUPresentMode_Fifo;
-    cfg.alphaMode = WGPUCompositeAlphaMode_Opaque;
+    cfg.alphaMode = dv->surfaceAlphaMode;
     wgpuSurfaceConfigure(dv->surface, &cfg);
     dv->surfaceWidth = w;
     dv->surfaceHeight = h;
@@ -1544,6 +1592,17 @@ static bool configure_surface(Device* dv, int32_t w, int32_t h) {
 static int32_t r_attach_window(void* self, const mq_renderer_window* win) {
     auto* dv = (Device*)self;
     if (!dv || !win) return -1;
+    if (win->kind == 0) {
+        if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
+        if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
+        if (dv->surface) {
+            wgpuSurfaceUnconfigure(dv->surface);
+            wgpuSurfaceRelease(dv->surface);
+            dv->surface = nullptr;
+        }
+        dv->surfaceWidth = dv->surfaceHeight = 0;
+        return 0;
+    }
     if (win->width <= 0 || win->height <= 0) return -2;
     if (dv->surface) {
         wgpuSurfaceUnconfigure(dv->surface);
@@ -1569,6 +1628,11 @@ static int32_t r_attach_window(void* self, const mq_renderer_window* win) {
         src.surface = win->handle;
         desc.nextInChain = &src.chain;
         dv->surface = wgpuInstanceCreateSurface(dv->instance, &desc);
+    } else if (win->kind == 4) {                /* Android ANativeWindow */
+        WGPUSurfaceSourceAndroidNativeWindow src = WGPU_SURFACE_SOURCE_ANDROID_NATIVE_WINDOW_INIT;
+        src.window = win->handle;
+        desc.nextInChain = &src.chain;
+        dv->surface = wgpuInstanceCreateSurface(dv->instance, &desc);
     } else {
         return -3;                              /* 不支持的窗口系统 */
     }
@@ -1588,9 +1652,106 @@ static int32_t r_attach_window(void* self, const mq_renderer_window* win) {
     }
     dv->surfaceFormat = chosen;
     dv->surfaceCopySrc = (caps.usages & WGPUTextureUsage_CopySrc) != 0;
+    dv->surfaceAlphaMode = caps.alphaModeCount > 0 ? caps.alphaModes[0] : WGPUCompositeAlphaMode_Auto;
     wgpuSurfaceCapabilitiesFreeMembers(caps);
     if (!configure_surface(dv, win->width, win->height)) return -6;
-    ensure_2d_pipelines(dv, dv->surfaceFormat);
+    return 0;
+}
+
+static void capture_surface(Device* dv, int32_t w, int32_t h);
+
+static bool ensure_blit_target(Device* dv, int32_t w, int32_t h) {
+    if (dv->blitTex && dv->blitW == w && dv->blitH == h) return true;
+    if (dv->blitView) { wgpuTextureViewRelease(dv->blitView); dv->blitView = nullptr; }
+    if (dv->blitTex) { wgpuTextureRelease(dv->blitTex); dv->blitTex = nullptr; }
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    td.format = WGPUTextureFormat_RGBA8Unorm;
+    td.mipLevelCount = 1; td.sampleCount = 1;
+    dv->blitTex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!dv->blitTex) return false;
+    dv->blitView = wgpuTextureCreateView(dv->blitTex, nullptr);
+    dv->blitW = w; dv->blitH = h;
+    return dv->blitView != nullptr;
+}
+
+static bool ensure_blit_pipeline(Device* dv, WGPUTextureFormat format) {
+    if (dv->blitPipeline && dv->blitPipelineFormat == format) return true;
+    if (dv->blitPipeline) { wgpuRenderPipelineRelease(dv->blitPipeline); dv->blitPipeline = nullptr; }
+    if (!dv->blitShader || !dv->blitPl) return false;
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = format; target.writeMask = WGPUColorWriteMask_All;
+    WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT;
+    frag.module = dv->blitShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
+    WGPUVertexState vert = WGPU_VERTEX_STATE_INIT;
+    vert.module = dv->blitShader; vert.entryPoint = SV("vs");
+    WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    rp.layout = dv->blitPl; rp.vertex = vert; rp.fragment = &frag;
+    rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    dv->blitPipeline = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
+    dv->blitPipelineFormat = format;
+    return dv->blitPipeline != nullptr;
+}
+
+static int32_t blit_to_surface(Device* dv, const mq_renderer_frame3d* f) {
+    if (!dv->surface || !dv->blitView || !ensure_blit_pipeline(dv, dv->surfaceFormat)) {
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "maque-gfx", "blit setup failed surface=%p view=%p pipeline=%p",
+                            (void*)dv->surface, (void*)dv->blitView, (void*)dv->blitPipeline);
+#endif
+        return -3;
+    }
+    WGPUSurfaceTexture st = WGPU_SURFACE_TEXTURE_INIT;
+    wgpuSurfaceGetCurrentTexture(dv->surface, &st);
+    if (st.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
+        st.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
+        if (st.texture) wgpuTextureRelease(st.texture);
+        if (st.status == WGPUSurfaceGetCurrentTextureStatus_Outdated ||
+            st.status == WGPUSurfaceGetCurrentTextureStatus_Lost)
+            configure_surface(dv, dv->surfaceWidth, dv->surfaceHeight);
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "maque-gfx", "surface acquire failed status=%d", (int)st.status);
+#endif
+        return st.status == WGPUSurfaceGetCurrentTextureStatus_Timeout ? -7 : -4;
+    }
+    dv->surfaceTex = st.texture;
+    dv->surfaceView = wgpuTextureCreateView(st.texture, nullptr);
+
+    WGPUBindGroupEntry entries[2] = {};
+    entries[0].binding = 0; entries[0].textureView = dv->blitView;
+    entries[1].binding = 1; entries[1].sampler = dv->blitSampler;
+    WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+    bgd.layout = dv->blitBgl; bgd.entryCount = 2; bgd.entries = entries;
+    WGPUBindGroup bind = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+    if (!bind) return -5;
+
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    const float black[4] = { 0, 0, 0, 1 };
+    WGPURenderPassEncoder pass = nullptr;
+    begin_pass(enc, dv->surfaceView, WGPULoadOp_Clear, black, &pass);
+    int x = f->present_w > 0 ? f->present_x : 0;
+    int y = f->present_h > 0 ? f->present_y : 0;
+    int w = f->present_w > 0 ? f->present_w : dv->surfaceWidth;
+    int h = f->present_h > 0 ? f->present_h : dv->surfaceHeight;
+    x = std::clamp(x, 0, dv->surfaceWidth);
+    y = std::clamp(y, 0, dv->surfaceHeight);
+    w = std::clamp(w, 0, dv->surfaceWidth - x);
+    h = std::clamp(h, 0, dv->surfaceHeight - y);
+    wgpuRenderPassEncoderSetViewport(pass, (float)x, (float)y, (float)w, (float)h, 0.0F, 1.0F);
+    wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)x, (uint32_t)y, (uint32_t)w, (uint32_t)h);
+    wgpuRenderPassEncoderSetPipeline(pass, dv->blitPipeline);
+    wgpuRenderPassEncoderSetBindGroup(pass, 0, bind, 0, nullptr);
+    wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cmd);
+    wgpuCommandBufferRelease(cmd);
+    wgpuCommandEncoderRelease(enc);
+    wgpuBindGroupRelease(bind);
+    capture_surface(dv, dv->surfaceWidth, dv->surfaceHeight);
     return 0;
 }
 
@@ -1706,65 +1867,35 @@ static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
             wgpuTextureRelease(ctex);
             return rcr;
         }
-        if (!dv->surface) return -3;
-        if (dv->surfaceWidth != f->width || dv->surfaceHeight != f->height)
-            r_resize_surface(dv, f->width, f->height);
-        WGPUSurfaceTexture st3 = WGPU_SURFACE_TEXTURE_INIT;
-        wgpuSurfaceGetCurrentTexture(dv->surface, &st3);
-        if (st3.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
-            st3.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
-            if (st3.texture) wgpuTextureRelease(st3.texture);
-            if (st3.status == WGPUSurfaceGetCurrentTextureStatus_Outdated ||
-                st3.status == WGPUSurfaceGetCurrentTextureStatus_Lost)
-                configure_surface(dv, dv->surfaceWidth, dv->surfaceHeight);
-            return -4;
-        }
-        dv->surfaceTex = st3.texture;
-        dv->surfaceView = wgpuTextureCreateView(st3.texture, nullptr);
-        const int32_t rcp = draw_passes(dv->surfaceTex, dv->surfaceFormat);
-        const int32_t rc3 = has3d ? render_3d_only(dv, dv->surfaceTex, dv->surfaceFormat, f, /*allow_scene_copy=*/false) : 0;
+        if (!dv->surface || !ensure_blit_target(dv, f->width, f->height)) return -3;
+        ensure_2d_pipelines(dv, WGPUTextureFormat_RGBA8Unorm);
+        const int32_t rcp = draw_passes(dv->blitTex, WGPUTextureFormat_RGBA8Unorm);
+        const int32_t rc3 = has3d ? render_3d_only(dv, dv->blitTex, WGPUTextureFormat_RGBA8Unorm,
+                                                   f, /*allow_scene_copy=*/true) : 0;
         const int32_t rc2 = render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                                         f->items, f->item_count, f->meshes, f->mesh_count,
-                                        bg, nullptr, 0, dv->surfaceTex, dv->surfaceFormat, false);
-        if (rcp != 0 || rc3 != 0 || rc2 != 0) {
-            if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
-            if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
-            return -6;
-        }
-        capture_surface(dv, f->width, f->height);
-        return 0;
+                                        bg, nullptr, 0, dv->blitTex, WGPUTextureFormat_RGBA8Unorm, false);
+        if (rcp != 0 || rc3 != 0 || rc2 != 0) return -6;
+        return blit_to_surface(dv, f);
     }
     if (f->out) {
         return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                            f->items, f->item_count, f->meshes, f->mesh_count,
                            bg, f->out, f->out_size);
     }
-    /* 直接呈现：acquire → 渲染 → present（present 由 ABI 的 present 完成） */
-    if (!dv->surface) return -3;
-    if (dv->surfaceWidth != f->width || dv->surfaceHeight != f->height)
-        r_resize_surface(dv, f->width, f->height);
-    WGPUSurfaceTexture st = WGPU_SURFACE_TEXTURE_INIT;
-    wgpuSurfaceGetCurrentTexture(dv->surface, &st);
-    if (st.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
-        st.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
-        if (st.texture) wgpuTextureRelease(st.texture);
-        if (st.status == WGPUSurfaceGetCurrentTextureStatus_Outdated ||
-            st.status == WGPUSurfaceGetCurrentTextureStatus_Lost)
-            configure_surface(dv, dv->surfaceWidth, dv->surfaceHeight);
-        return -4;
-    }
-    dv->surfaceTex = st.texture;
-    dv->surfaceView = wgpuTextureCreateView(st.texture, nullptr);
+    /* 直接呈现：设计分辨率 FBO → GPU blit 到全尺寸 swapchain → present。 */
+    if (!dv->surface || !ensure_blit_target(dv, f->width, f->height)) return -3;
+    ensure_2d_pipelines(dv, WGPUTextureFormat_RGBA8Unorm);
     const int32_t rc = render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                                    f->items, f->item_count, f->meshes, f->mesh_count,
-                                   bg, nullptr, 0, dv->surfaceTex, dv->surfaceFormat);
+                                   bg, nullptr, 0, dv->blitTex, WGPUTextureFormat_RGBA8Unorm);
     if (rc != 0) {
-        if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
-        if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "maque-gfx", "offscreen render failed rc=%d", rc);
+#endif
         return rc;
     }
-    capture_surface(dv, f->width, f->height);   /* MAQUE_CAPTURE_WGPU：CI 抓直呈帧（present 前） */
-    return 0;
+    return blit_to_surface(dv, f);
 }
 static int32_t r_present(void* self) {
     auto* dv = (Device*)self;
