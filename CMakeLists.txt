@@ -8,9 +8,54 @@ project(Maque CXX C ASM)
 
 option(MAQUE_BUILD_TESTS "Build maque unit tests" ON)
 option(MAQUE_WINDOWS_DEPS "Windows: 自动 include .deps/deps.cmake（第三方依赖预置变量）" ON)
+option(MAQUE_WASM "Build the WASM/browser host profile" OFF)
+option(MAQUE_ANDROID "Build the Android SDL host profile" OFF)
+option(MAQUE_HEADLESS_STUBS "Use headless platform and null renderer without Emscripten" OFF)
 # Tracy 性能分析（docs/29）：默认编入客户端（手动启动：F3 / MAQUE_TRACY=1）；
 # OFF = 全部埋点宏展开为 no-op、不链接第三方库（最小构建）。
 option(MAQUE_TRACY "Tracy performance profiler integration (docs/29)" ON)
+
+# Emscripten 必须由 emcmake/SDK 官方 toolchain 选择；MAQUE_WASM 只控制项目目标图。
+if(EMSCRIPTEN)
+    set(MAQUE_WASM ON CACHE BOOL "Build the WASM/browser host profile" FORCE)
+endif()
+if(MAQUE_WASM)
+    if(NOT EMSCRIPTEN)
+        message(FATAL_ERROR "MAQUE_WASM requires the Emscripten SDK toolchain; configure with 'emcmake cmake ... -DMAQUE_WASM=ON'")
+    endif()
+    set(MAQUE_BUILD_TESTS OFF CACHE BOOL "WASM build does not build native tests" FORCE)
+    set(MAQUE_TRACY OFF CACHE BOOL "Tracy is unavailable in the single-thread WASM P0 profile" FORCE)
+    set(MAQUE_ENABLE_LUA OFF CACHE BOOL "WASM P0 builds only the QuickJS backend" FORCE)
+    set(MAQUE_HARFBUZZ OFF CACHE BOOL "WASM P0 uses the built-in text fallback" FORCE)
+    set(MAQUE_BUILTIN_SHADER_COMPRESS OFF CACHE BOOL "WASM P0 does not build native shader compression" FORCE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_CURL ON CACHE BOOL "Do not use native curl in WASM" FORCE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB ON CACHE BOOL "Use the built-in PNG fallback in WASM" FORCE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_PkgConfig ON CACHE BOOL "Do not discover native pkg-config libraries in WASM" FORCE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_Freetype ON CACHE BOOL "Use the built-in bitmap font in WASM P0" FORCE)
+    add_compile_definitions(MQ_PLATFORM_WASM=1)
+    message(STATUS "maque: WASM P0 profile (headless platform + static null renderer)")
+endif()
+
+# Android 由 Gradle/NDK 驱动，使用 SDL2 Java glue + 静态链接的 gfx 实现。游戏资源从
+# APK assets 的 asset:// VFS 后端读取，不依赖应用可写目录或插件绝对路径。
+if(ANDROID)
+    set(MAQUE_ANDROID ON CACHE BOOL "Build the Android SDL host profile" FORCE)
+endif()
+if(MAQUE_ANDROID)
+    if(NOT ANDROID)
+        message(FATAL_ERROR "MAQUE_ANDROID requires the Android NDK toolchain; open android/ in Android Studio or use Gradle")
+    endif()
+    set(MAQUE_BUILD_TESTS OFF CACHE BOOL "Android build does not build host tests" FORCE)
+    set(MAQUE_TRACY OFF CACHE BOOL "Tracy desktop launcher is unavailable on Android" FORCE)
+    set(MAQUE_HARFBUZZ OFF CACHE BOOL "Android template uses the built-in text fallback" FORCE)
+    set(MAQUE_BUILTIN_SHADER_COMPRESS OFF CACHE BOOL "Android embeds shader sources without host zstd" FORCE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_CURL ON CACHE BOOL "Android template omits curl" FORCE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB ON CACHE BOOL "Android uses the built-in PNG fallback" FORCE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_PkgConfig ON CACHE BOOL "Android NDK build does not use host pkg-config" FORCE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_Freetype ON CACHE BOOL "Android template uses packaged or built-in fonts" FORCE)
+    add_compile_definitions(MQ_PLATFORM_ANDROID=1)
+    message(STATUS "maque: Android profile (SDL2 + APK asset VFS + static gfx)")
+endif()
 
 # 确定性 D8（docs/10 §2）：关闭 FMA 收缩 —— 浮点结果不随编译器/优化级别变化。
 # 符号可见性 R8（docs/02）：默认 hidden，跨模块导出只经 MQ_MODULE_EXPORT / extern "C"。
@@ -116,12 +161,7 @@ if(WIN32 AND MAQUE_WINDOWS_DEPS)
     endif()
 endif()
 
-# WASM/浏览器目标（P3，docs/plan-wasm.md）：由 cmake/toolchain-emscripten.cmake 置位。
-# WASM 下渲染插件（wgpu-native .so）与原生网络后端不可用，由宿主 JS 侧承担（docs/05 §3）。
-if(EMSCRIPTEN)
-    message(STATUS "maque: WASM/浏览器目标（主循环归宿主；见 docs/plan-wasm.md）")
-    set(MAQUE_WASM ON)
-endif()
+# WASM profile is resolved immediately after project options so every module sees one flag.
 
 enable_testing()
 
@@ -220,6 +260,19 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/modules/core/compat/include")
 # 全项目可见：各模块 tests/*.cpp 直接 #include "maque_test_fs.h" 即可。
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
+# Android 的 SDL2 同时提供 CMake target 与 SDLActivity Java glue。源码目录由
+# android/gradle.properties 或 Gradle -PmaqueSdl2Dir 指定，默认 android/.deps/SDL。
+if(MAQUE_ANDROID)
+    set(MAQUE_SDL2_SOURCE_DIR "" CACHE PATH "Path to an SDL2 source checkout for Android")
+    if(NOT MAQUE_SDL2_SOURCE_DIR OR NOT EXISTS "${MAQUE_SDL2_SOURCE_DIR}/CMakeLists.txt")
+        message(FATAL_ERROR "maque: Android requires SDL2 source; set MAQUE_SDL2_SOURCE_DIR (see android/README.md)")
+    endif()
+    set(SDL_SHARED ON CACHE BOOL "Build SDL2 shared library" FORCE)
+    set(SDL_STATIC OFF CACHE BOOL "Do not build a duplicate static SDL2" FORCE)
+    set(SDL_TEST OFF CACHE BOOL "Do not build SDL2 tests" FORCE)
+    add_subdirectory("${MAQUE_SDL2_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/third_party/SDL" EXCLUDE_FROM_ALL)
+endif()
+
 # Tracy 封装（docs/29）：第三方客户端源码 vendored（third_party/tracy，仅 public/）。
 # 必须早于所有要埋点的模块（它们 link maque::tracy）。
 if(MAQUE_TRACY)
@@ -234,7 +287,9 @@ add_subdirectory(modules/script)
 add_subdirectory(modules/core/data)
 add_subdirectory(modules/core/reflect)
 add_subdirectory(modules/core/handle)
-add_subdirectory(modules/core/module)
+if(NOT MAQUE_WASM AND NOT MAQUE_HEADLESS_STUBS AND NOT MAQUE_ANDROID)
+    add_subdirectory(modules/core/module)
+endif()
 add_subdirectory(modules/math)
 add_subdirectory(modules/observability)
 add_subdirectory(modules/control)
@@ -259,12 +314,23 @@ add_subdirectory(modules/ui/canvas)
 # 其它程序（tank、flappy）不链接 → 不引入 UI 依赖、二进制不变大。
 add_subdirectory(modules/ui/imgui)
 add_subdirectory(modules/render/text)
-add_subdirectory(modules/render/gfx)
+add_subdirectory(modules/render/null)
+if(NOT MAQUE_WASM AND NOT MAQUE_HEADLESS_STUBS)
+    add_subdirectory(modules/render/gfx)
+endif()
 add_subdirectory(modules/api)
 add_subdirectory(modules/runtime)
-add_subdirectory(samples/player)
-add_subdirectory(samples/inspector)
-add_subdirectory(samples/host)
-add_subdirectory(samples/flappy)   # 独立游戏工程（玩法全在资源里；见该目录 CMakeLists 顶部说明）
-add_subdirectory(samples/tank)     # 独立游戏工程（俯视坦克对战；同样是薄宿主 + 资源化玩法）
-add_subdirectory(samples/spine)    # Spine 2D 素材演示（官方骨架 + ↑/↓ 切动画；docs/27）
+if(MAQUE_WASM)
+    add_subdirectory(samples/web)
+elseif(MAQUE_ANDROID)
+    add_subdirectory(android/app/src/main/cpp)
+elseif(MAQUE_HEADLESS_STUBS)
+    add_subdirectory(samples/host)
+else()
+    add_subdirectory(samples/player)
+    add_subdirectory(samples/inspector)
+    add_subdirectory(samples/host)
+    add_subdirectory(samples/flappy)
+    add_subdirectory(samples/tank)
+    add_subdirectory(samples/spine)
+endif()

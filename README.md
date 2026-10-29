@@ -143,8 +143,9 @@ tools\win\build.cmd -Sanitize "" -BuildType Release -RunTests   # 不带 ASan �
 - **M6** 🟡 确定性 2D 物理求解器（`modules/world/physics`，C ABI vtable + 世代句柄）；
   本机无 Rust 工具链，Rapier 后端按 ADR-0028 走"退化自研求解器"路径，接口不变。
 - **M9** 🟡 帧边界热重载（脚本/场景，`Reload.*` + `dry_run`）；编辑器壳待做。
-- **P3** 🟡 可移植化已完成（宿主主循环接口 + `samples/host` + 多实例验证 + Emscripten 工具链
-  与接线文档 `docs/plan-wasm.md`）；本机无 Emscripten，未产出 `.wasm` 二进制。
+- **P3** 🟡 WASM P0 已接线：官方 Emscripten toolchain + 浏览器裁剪 profile + 静态 null renderer +
+  `mq_host_step` + MEMFS 预载 + 多实例 checksum CI；正式浏览器渲染明确只走 WebGPU，
+  `emdawnwebgpu` canvas 直呈属于下一阶段 P1。见 `docs/plan-wasm.md`。
 
 回归：`ctest --test-dir build`（27 项，含端到端：`player_run`、`determinism`、`control_plane`、
 `ui_e2e`、`hot_reload_e2e`、`anim_e2e`、`editor_e2e`、`host_tick`、`host_multi_instance`）。

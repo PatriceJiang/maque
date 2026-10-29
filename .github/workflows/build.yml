@@ -124,6 +124,48 @@ jobs:
         working-directory: modules/core/data
         run: node parser.js --check
 
+  # ---------------------------------------------------------------- WASM P0
+  wasm:
+    name: wasm / emscripten-4.0.10 / p0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install codegen dependencies
+        working-directory: modules/core/data
+        run: npm install --no-audit --no-fund
+
+      - name: Set up Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '4.0.10'
+          actions-cache-folder: emsdk-cache
+
+      - name: Configure WASM P0
+        run: |
+          emcc --version
+          emcmake cmake -S . -B build-wasm -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DMAQUE_WASM=ON
+
+      - name: Build Web host
+        run: cmake --build build-wasm --target maque_web --parallel
+
+      - name: Run deterministic WASM smoke
+        run: node tests/wasm_p0_smoke.mjs "$PWD/build-wasm/samples/web/maque_web.mjs" /scenes/anim/anim.scn 60
+
+      - name: Verify generated sources are committed
+        run: git diff --exit-code -- modules/core/data/generated
+
   # ---------------------------------------------------------------- Windows
   windows:
     name: windows / clang-cl / release

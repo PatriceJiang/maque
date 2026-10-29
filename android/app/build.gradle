@@ -1,0 +1,120 @@
+import groovy.json.JsonOutput
+
+plugins {
+    id "com.android.application"
+}
+
+def repoRoot = rootProject.projectDir.parentFile
+def scenesDir = new File(repoRoot, "scenes")
+def sdl2Dir = rootProject.file(findProperty("maqueSdl2Dir") ?: ".deps/SDL")
+def generatedAssetsDir = layout.buildDirectory.dir("generated/maqueAssets")
+def sceneIndexFile = generatedAssetsDir.map { it.file("maque/scenes.json") }
+def androidAbi = "arm64-v8a"
+def wgpuNative = file("src/main/jniLibs/${androidAbi}/libwgpu_native.so")
+
+tasks.register("validateMaqueAndroidDeps") {
+    doLast {
+        if (!new File(sdl2Dir, "CMakeLists.txt").isFile()) {
+            throw new GradleException("SDL2 source not found at ${sdl2Dir}. See android/README.md.")
+        }
+        if (!wgpuNative.isFile()) {
+            throw new GradleException("wgpu-native Android library not found at ${wgpuNative}. See android/README.md.")
+        }
+    }
+}
+
+tasks.register("generateMaqueSceneIndex") {
+    inputs.dir(scenesDir)
+    outputs.file(sceneIndexFile)
+    doLast {
+        if (!scenesDir.isDirectory()) {
+            throw new GradleException("Scene directory not found: ${scenesDir}")
+        }
+        def paths = fileTree(scenesDir) {
+            include "**/*.scn"
+        }.files.collect { file ->
+            scenesDir.toPath().relativize(file.toPath()).toString().replace(File.separatorChar, '/' as char)
+        }.sort()
+        def output = sceneIndexFile.get().asFile
+        output.parentFile.mkdirs()
+        output.setText(JsonOutput.prettyPrint(JsonOutput.toJson([
+            version: 1,
+            scenes : paths
+        ])) + "\n", "UTF-8")
+    }
+}
+
+android {
+    namespace "org.maque.player"
+    compileSdk 35
+    ndkVersion "27.2.12479018"
+
+    defaultConfig {
+        applicationId "org.maque.player"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "0.1.0"
+
+        ndk {
+            abiFilters androidAbi
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DMAQUE_ANDROID=ON",
+                          "-DMAQUE_BUILD_TESTS=OFF",
+                          "-DMAQUE_TRACY=OFF",
+                          "-DMAQUE_HARFBUZZ=OFF",
+                          "-DMAQUE_BUILTIN_SHADER_COMPRESS=OFF",
+                          "-DMAQUE_SDL2_SOURCE_DIR=${sdl2Dir.absolutePath.replace('\\', '/')}",
+                          "-DWGPU_NATIVE_LIB=${wgpuNative.absolutePath.replace('\\', '/')}"
+                targets "main"
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs += new File(sdl2Dir, "android-project/app/src/main/java")
+            assets.srcDir scenesDir
+            assets.srcDir generatedAssetsDir
+            jniLibs.srcDirs = ["src/main/jniLibs"]
+        }
+    }
+
+    androidResources {
+        noCompress += [
+            "scn", "js", "lua", "json", "glb", "gltf", "bin", "mesh",
+            "png", "jpg", "jpeg", "ttf", "ogg", "mp3", "wav", "atlas",
+            "skel", "ktx2", "hdr", "exr", "wgsl"
+        ]
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file("../../CMakeLists.txt")
+            version "3.22.1"
+        }
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn("validateMaqueAndroidDeps", "generateMaqueSceneIndex")
+}

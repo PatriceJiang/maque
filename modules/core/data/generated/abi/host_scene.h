@@ -34,6 +34,8 @@ typedef struct mq_host_desc {
 
 mq_host_scene* mq_host_scene_create(const char* scn_path, const mq_host_desc* desc);
 void mq_host_scene_destroy(mq_host_scene* s);
+/* 推进一个固定 1/60 模拟帧；不额外渲染或回读像素（浏览器 rAF accumulator 使用） */
+int mq_host_step(mq_host_scene* s);
 int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size);
 void mq_host_size(mq_host_scene* s, int* w, int* h);
 void mq_host_push_pointer(mq_host_scene* s, int type, int button, float x, float y);

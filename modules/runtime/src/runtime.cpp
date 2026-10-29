@@ -38,6 +38,12 @@
 #include "maque_control.h"
 #include "maque_events.h"                 // 生成：mq_renderer_v1（插件接口 ABI）
 #include "core/module/mq_module.h"          // mq_host（dlopen 加载插件）
+#ifdef MQ_RENDERER_STATIC_NULL
+#include "render/null/mq_renderer_null.h"
+#endif
+#ifdef MQ_RENDERER_STATIC_GFX
+extern "C" void* mq_module_query(const char* name, uint32_t min_version);
+#endif
 #include "maque_types.h"
 
 #include <print>
@@ -873,7 +879,7 @@ struct Engine {
     void particles_step(float dt);                          // 确定性粒子推进（docs/15 §4）
     bool setup(const std::string& scn_path, const char* renderer_override);   // 加载并装配引擎
     void teardown();                                        // 释放全部实例资源（幂等）
-    void step_frame();                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
+         void step_frame(bool render_frame = true);                // 推进一个模拟帧（单一帧序，docs/10 D1）                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
     bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
     void preload_scene_assets();                            // 装配期预解析纹理/材质（extract 只读，docs/13 §8）
     void clear_asset_caches();                              // 切场景：释放按**相对路径**缓存的纹理/网格（挂载点已换）
@@ -4783,7 +4789,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     }
 }
 
-void Engine::step_frame() {
+void Engine::step_frame(bool render_frame) {
     MQ_TRACY_ZONE(runtime);                          // Tracy：一次模拟步（含渲染+present）总 zone
     tracy_tick();                                    // Tracy：MAQUE_TRACY 环境启动 + 1Hz CPU/内存采样
     engine_options_parse_env();                      // F4 引擎选项的启动初值（MAQUE_ENGINE_OPTIONS；只解析一次）
@@ -5084,6 +5090,13 @@ void Engine::step_frame() {
         int textured = 0, solid = 0;
         for (const auto& it : draws) (it.texture >= 0 ? textured : solid)++;
         std::print("[text] draws={} textured={} solid={}\n", draws.size(), textured, solid);
+    }
+    if (!render_frame) {
+        stat_calls = (int)(draws.size() + spine_meshes.size());
+        stat_tris = (int)draws.size() * 2;
+        for (const auto& sm : spine_meshes) stat_tris += (int)(sm.index_count / 3);
+        ++frame;
+        return;
     }
     // ⑤ 渲染（只读快照 → 渲染不回写，docs/13 §8）
     const int SWpx = (int)(W * ss + 0.5F), SHpx = (int)(H * ss + 0.5F);
@@ -6067,7 +6080,13 @@ bool Engine::prepare_replay() {
 
 /* 控制面 Runtime.step：确定性推进 n 帧（AI/CI 驱动同一帧序）。 */
 bool Engine::run_frames(uint64_t n) {
-    for (uint64_t i = 0; i < n && !quit; ++i) step_frame();
+    for (uint64_t i = 0; i < n && !quit; ++i) {
+#ifdef MQ_RENDERER_STATIC_NULL
+        step_frame(false);
+#else
+        step_frame(true);
+#endif
+    }
     return !quit;
 }
 
@@ -8456,6 +8475,9 @@ void Engine::storage_setup() {
     const bool remote = scn_full_path.rfind("http://", 0) == 0 || scn_full_path.rfind("https://", 0) == 0;
     std::string spec;
     if (spec_env && *spec_env) spec = spec_env;
+#ifdef MQ_PLATFORM_WASM
+    else spec = "mem://";
+#else
     else if (!remote) {
         /* 默认：**场景目录**旁的 .maque（跑 `scenes/sokoban/sokoban.scn` → scenes/sokoban/.maque；
          * 场景就在 CWD 时 → <CWD>/.maque）。远程场景没有可写目录 → 交给模块的 XDG 兜底。 */
@@ -8463,8 +8485,9 @@ void Engine::storage_setup() {
         const auto abs = std::filesystem::absolute(std::filesystem::path(scn_dir.empty() ? "." : scn_dir) / ".maque", ec);
         spec = "file://" + (ec ? (std::filesystem::path(scn_dir.empty() ? "." : scn_dir) / ".maque").string() : abs.string());
     } else {
-        spec = "file://";                        // 远程场景：模块用 XDG 数据目录兜底（可持久）
+        spec = "file://";
     }
+#endif
 
     storage = mq_storage_create(spec.c_str(), uid, session);
     if (!storage) {
@@ -13131,24 +13154,36 @@ extern "C" int mq_control_Replay_log(void* u, const mq_json*, char* out, size_t 
 
 /* 场景来源 → VFS 根挂载（docs/04 §4/§5）：
  *   · 本地路径 → 挂 file://<场景目录> 到 "/"
- *   · http(s)://…  → 挂 URL 目录（基址 = 场景 URL 的父目录）到 "/"（远程游戏即资源）
- * 输出场景在 VFS 里的路径（"/<文件名>"）与来源目录（本地路径 / URL 基址）。
+ *   · http(s)://…  → 挂 URL 目录（基址 = 场景 URL 的父目录）到 "/"
+ *   · asset://… → 挂 Android APK asset 目录到 "/"
+ * 输出场景在 VFS 里的路径（"/<文件名>"）与来源目录。
  * 返回 false：路径非法或挂载失败（未链接 libcurl 时 URL 挂载返回 UNSUPPORTED）。 */
 bool mount_scene_source(mq_vfs* vfs, const std::string& scn_path, std::string& vfs_path, std::string& dir_out) {
     if (!vfs || scn_path.empty()) return false;
     const bool remote = scn_path.rfind("http://", 0) == 0 || scn_path.rfind("https://", 0) == 0;
-    std::string dir, file;
+    const bool asset = scn_path.rfind("asset://", 0) == 0;
+    std::string dir, file, source;
     if (remote) {
         const size_t slash = scn_path.find_last_of('/');
         if (slash == std::string::npos || slash + 1 >= scn_path.size()) return false;
         dir = scn_path.substr(0, slash + 1);                  // 含结尾 '/' —— URL 基址
         file = scn_path.substr(slash + 1);
+        source = dir;
+    } else if (asset) {
+        std::string logical = scn_path.substr(8);
+        while (!logical.empty() && logical.front() == '/') logical.erase(logical.begin());
+        const size_t slash = logical.find_last_of('/');
+        file = slash == std::string::npos ? logical : logical.substr(slash + 1);
+        if (file.empty()) return false;
+        const std::string base = slash == std::string::npos ? std::string() : logical.substr(0, slash + 1);
+        dir = "asset://" + base;
+        source = dir;
     } else {
         const std::filesystem::path scnp(scn_path);
         dir = scnp.parent_path().empty() ? std::string(".") : scnp.parent_path().string();
         file = scnp.filename().string();
+        source = "file://" + dir;
     }
-    const std::string source = remote ? dir : ("file://" + dir);
     const int rc = mq_vfs_mount(vfs, "/", source.c_str());
     if (rc != MQ_VFS_OK) {
         std::print(stderr, "runtime: mount scene source '{}' failed (rc={})\n", source, rc);
@@ -13220,12 +13255,28 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     scene_type = mq_reflect_type_by_name(reflect, "scn.Scene");
     if (!scene_type) { std::print("runtime: no scn.Scene type\n"); return false; }
 
+#ifdef MQ_RENDERER_STATIC_NULL
+    (void)renderer_override;
+    const char* plugin = "static:null";
+    rapi = mq_renderer_null_api();
+    if (!rapi) {
+        std::print("runtime: static null renderer unavailable\n");
+        return false;
+    }
+#elif defined(MQ_RENDERER_STATIC_GFX)
+    (void)renderer_override;
+    const char* plugin = "static:gfx";
+    rapi = (const mq_renderer_v1*)mq_module_query(MQ_RENDERER_API_NAME, 1);
+    if (!rapi) {
+        std::print("runtime: static gfx renderer unavailable\n");
+        return false;
+    }
+#else
     const char* plugin = renderer_override ? renderer_override : std::getenv("MAQUE_RENDERER");
 #ifdef MQ_RENDERER_DEFAULT
     if (!plugin) plugin = MQ_RENDERER_DEFAULT;
 #endif
-    /* 平台默认插件文件名：Windows 是 maque_gfx.dll，类 UNIX 是 libmaque_gfx.so。
-     * （写死 .so 会让 Windows 上永远「cannot load renderer plugin」。） */
+    /* 平台默认插件文件名：Windows 是 maque_gfx.dll，类 UNIX 是 libmaque_gfx.so。 */
 #if defined(_WIN32)
     if (!plugin) plugin = "maque_gfx.dll";
 #else
@@ -13238,10 +13289,11 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
         std::print("runtime: cannot load renderer plugin '{}'\n", plugin);
         return false;
     }
+#endif
     const char* backend = nullptr;
     rself = rapi->create(&backend);
     if (!rself) { std::print("runtime: renderer create failed\n"); return false; }
-    std::print("runtime: renderer plugin '{}' backend='{}'\n", plugin, backend ? backend : "?");
+    std::print("runtime: renderer '{}' backend='{}'\n", plugin, backend ? backend : "?");
 
     audio_setup();                               // 音频实例先于场景：脚本 on_start 可 audio_play
     obs = mq_obs_create();                       // 场景装配期即可能产生事件（脚本错误等）
@@ -13353,9 +13405,13 @@ void Engine::resolve_render_scale() {
     }
     /* 自动倍率只在"**确实会有窗口**且不是一次性任务"时跟随窗口像素：
      * headless / 截图 / present=off → 1.0（= 设计分辨率），否则截图尺寸与文本折行会漂。 */
+#ifdef MQ_RENDERER_STATIC_NULL
+    window_intent = false;
+#else
     const char* present_env = std::getenv("MAQUE_PRESENT");
     window_intent = !std::getenv("MAQUE_HEADLESS") && !std::getenv("MAQUE_SHOT") &&
                     !(present_env && (std::strcmp(present_env, "off") == 0 || std::strcmp(present_env, "0") == 0));
+#endif
 }
 
 /* 解析 ss + 渲染目标尺寸 + 每视图 view（含场景 Camera 覆盖）。
@@ -13722,7 +13778,10 @@ void Engine::teardown() {
     audio_teardown();                    // 先停设备/join 回调，再拆平台（SDL）
     mq_platform_destroy(platform); platform = nullptr;
     if (rapi && rself) { rapi->destroy(rself); rself = nullptr; }
-    mq_host_destroy(host); host = nullptr;
+#if !defined(MQ_RENDERER_STATIC_NULL) && !defined(MQ_RENDERER_STATIC_GFX)
+    mq_host_destroy(host);
+#endif
+    host = nullptr;
     mq_vfs_destroy(vfs); vfs = nullptr;
     if (storage) { mq_storage_destroy(storage); storage = nullptr; }
 }
@@ -13957,10 +14016,16 @@ extern "C" void mq_host_scene_destroy(mq_host_scene* s) {
     maque::tracy::shutdown();
 }
 
+extern "C" int mq_host_step(mq_host_scene* s) {
+    if (!s || !s->eng) return 1;
+    s->eng->step_frame(false);
+    return 0;
+}
+
 extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
     if (!s || !s->eng) return 1;
+    s->eng->step_frame(true);
     Engine& e = *s->eng;
-    e.step_frame();                                   // 帧序与 mq_run_scene 完全一致
     // 渲染该帧到宿主缓冲（step_frame 内部已渲染；这里补一次输出到调用方缓冲）
     std::vector<mq_renderer_item> draws;
     std::vector<mq_renderer_mesh> meshes;

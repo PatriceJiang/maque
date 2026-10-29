@@ -1198,6 +1198,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 |------|------|------|
 | `mq_host_scene_create` | mq_host_scene* | scn_path: const char*, desc: const mq_host_desc* |
 | `mq_host_scene_destroy` | void | s: mq_host_scene* |
+| `mq_host_step` | int | s: mq_host_scene* |
 | `mq_host_tick` | int | s: mq_host_scene*, out: uint8_t*, out_size: size_t |
 | `mq_host_size` | void | s: mq_host_scene*, w: int*, h: int* |
 | `mq_host_push_pointer` | void | s: mq_host_scene*, type: int, button: int, x: float, y: float |

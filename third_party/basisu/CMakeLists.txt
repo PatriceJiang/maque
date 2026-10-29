@@ -6,9 +6,11 @@ target_include_directories(maque_basisu PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/tran
 target_compile_features(maque_basisu PUBLIC cxx_std_17)
 target_compile_definitions(maque_basisu PUBLIC BASISD_SUPPORT_KTX2=1)
 
-# KTX2 的 UASTC Zstd 超压缩需要 libzstd；找不到就关闭该分支（ETC1S 仍可用）。
-find_library(ZSTD_LIBRARY NAMES zstd zstd_static libzstd)
-find_path(ZSTD_INCLUDE_DIR NAMES zstd.h)
+# KTX2 UASTC Zstd is disabled in the minimal WASM profile; ETC1S still works.
+if(NOT MAQUE_WASM AND NOT EMSCRIPTEN)
+    find_library(ZSTD_LIBRARY NAMES zstd zstd_static libzstd)
+    find_path(ZSTD_INCLUDE_DIR NAMES zstd.h)
+endif()
 if(ZSTD_LIBRARY AND ZSTD_INCLUDE_DIR)
     target_compile_definitions(maque_basisu PUBLIC BASISD_SUPPORT_KTX2_ZSTD=1)
     target_include_directories(maque_basisu PUBLIC "${ZSTD_INCLUDE_DIR}")

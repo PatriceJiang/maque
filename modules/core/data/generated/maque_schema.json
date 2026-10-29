@@ -32532,6 +32532,17 @@
           ]
         },
         {
+          "name": "mq_host_step",
+          "returns": "int",
+          "args": [
+            {
+              "name": "s",
+              "type": "mq_host_scene*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_host_tick",
           "returns": "int",
           "args": [

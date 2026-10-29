@@ -24,6 +24,7 @@
     fns:
       - { fn: mq_host_scene_create, returns: "mq_host_scene*", args: [ { name: scn_path, type: "const char*" }, { name: desc, type: "const mq_host_desc*" } ] }
       - { fn: mq_host_scene_destroy, returns: "void", args: [ { name: s, type: "mq_host_scene*" } ] }
+      - { fn: mq_host_step, returns: "int", args: [ { name: s, type: "mq_host_scene*" } ], doc: "推进一个固定 1/60 模拟帧；不额外渲染或回读像素（浏览器 rAF accumulator 使用）" }
       - { fn: mq_host_tick, returns: "int", args: [ { name: s, type: "mq_host_scene*" }, { name: out, type: "uint8_t*" }, { name: out_size, type: "size_t" } ] }
       - { fn: mq_host_size, returns: "void", args: [ { name: s, type: "mq_host_scene*" }, { name: w, type: "int*" }, { name: h, type: "int*" } ] }
       - { fn: mq_host_push_pointer, returns: "void", args: [ { name: s, type: "mq_host_scene*" }, { name: type, type: "int" }, { name: button, type: "int" }, { name: x, type: "float" }, { name: y, type: "float" } ] }

@@ -7,7 +7,8 @@
  *   mem/backend.cpp       mem://      内存命名空间（键 = "namespace/rel"）
  *   zip/backend.cpp       zip://      归档（stored；挂载时解析一次中央目录）
  *   url/backend.cpp       http(s)://  libcurl 抓取 + 会话内容缓存 + 逐段 percent-encode
- *   builtin/backend.cpp   builtin:    引擎内建资源（程序化生成，区别于 assets）
+ *   asset/backend.cpp    asset://   Android APK assets（SDL RWops）
+ *   builtin/backend.cpp  builtin:   引擎内建资源（程序化生成，区别于 assets）
  *
  * 后端约定：
  *   · rel = 挂载点之后的相对路径（无前导 '/'）；返回 MQ_VFS_ERR_*；
@@ -26,7 +27,7 @@
 namespace maque::vfs {
 
 /* 挂载点的后端类型（协议）。 */
-enum class Backend { File, Mem, Zip, Url };
+enum class Backend { File, Mem, Zip, Url, Asset };
 
 struct Mount {
     std::string mountpoint;   // 归一化，以 '/' 开头
@@ -55,6 +56,10 @@ bool path_is_safe(const std::string& p);
 
 /* 读 <dir>/<rel>；不存在 → NOTFOUND，打不开 → IO。 */
 int file_read(const std::string& dir, const std::string& rel, void** out, size_t* out_size);
+
+/* ---- asset://（asset/backend.cpp，Android APK assets）---- */
+
+int asset_read(const std::string& dir, const std::string& rel, void** out, size_t* out_size);
 
 /* ---- mem://（mem/backend.cpp）---- */
 

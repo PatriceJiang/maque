@@ -25,6 +25,24 @@ cd modules/core/data && node parser.js --check
 
 - `-DMAQUE_BUILD_TESTS=ON|OFF` 控制测试（默认 ON）。
 
+### WASM / 浏览器（P0）
+
+```bash
+# 先 source emsdk_env.sh；必须用 SDK 官方 toolchain，不要用宿主 clang 冒充
+emcmake cmake -S . -B build-wasm -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DMAQUE_WASM=ON
+cmake --build build-wasm --target maque_web --parallel
+node tests/wasm_p0_smoke.mjs "$PWD/build-wasm/samples/web/maque_web.mjs" \
+  /scenes/anim/anim.scn 60
+```
+
+- P0 是 **headless 确定性门**：静态 null renderer + MEMFS 预载，验证场景/QuickJS/物理/checksum；
+  页面入口在 `build-wasm/samples/web/index.html`，必须通过 HTTP(S) 打开。
+- 正式浏览器渲染 **只支持 WebGPU**：P1 使用 `emdawnwebgpu` canvas 直呈；不做 WebGL、
+  SDL_Renderer 或 CPU 软件光栅回退。完整状态见 `docs/plan-wasm.md`。
+- 本机无 emsdk 时可用 `-DMAQUE_HEADLESS_STUBS=ON -DMAQUE_TRACY=OFF -DMAQUE_ENABLE_LUA=OFF`
+  编译相同 stub/null 后端，但这不等价于真实 WASM 构建；真实门在 GitHub Actions 的 `wasm` job。
+
 ### Windows（clang-cl + Ninja；完整支持）
 
 ```powershell

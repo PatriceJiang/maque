@@ -15,7 +15,7 @@
 | M8 | 可观测/控制面（AI 加载·调试·预览·采集） | ✅ 结构化事件/指标 + JSON-RPC + MCP 包装 + 快照/回放/校验和 | — |
 | M9 | 热重载/编辑器最小化 | 🟡 帧边界热重载（脚本/场景）+ dry_run + 控制面编辑面；编辑器壳待做 | — |
 | P1 | AI 五指标收尾（输入即数据/快照/回滚/自省） | ✅ 录制回放逐帧一致、世界快照往返、Types.describe/Scene.entities | — |
-| P3 | WASM/浏览器目标 | 🟡 可移植化完成（宿主主循环接口 + 工具链 + 接线文档）；未产出 .wasm | [plan-wasm](../../docs/plan-wasm.md) |
+| P3 | WASM/浏览器目标 | 🟡 P0 已接线（Emscripten 构建 + MEMFS + 静态 null renderer + checksum smoke）；P1 WebGPU-only 直呈待实现 | [plan-wasm](../../docs/plan-wasm.md) |
 
 **原则**：脚本（quickjs）是一等公民（M2 起）；确定性贯穿；每个切片都可由脚本驱动。
 

@@ -23,7 +23,7 @@ if(MAQUE_BUILD_TESTS)
     add_executable(maque_image_test tests/image_test.cpp)
 maque_deploy_asan(maque_image_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_image_test PRIVATE maque::image)
+    target_include_directories(maque_image_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
     add_test(NAME image COMMAND maque_image_test)
 endif()
 target_include_directories(maque_image PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
-target_include_directories(maque_image_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）

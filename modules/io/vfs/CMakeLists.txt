@@ -13,6 +13,7 @@ add_library(maque_vfs STATIC
     src/vfs.cpp
     src/util.cpp
     src/file/backend.cpp
+    src/asset/backend.cpp
     src/mem/backend.cpp
     src/zip/backend.cpp
     src/url/backend.cpp
@@ -22,6 +23,15 @@ target_include_directories(maque_vfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include
 target_include_directories(maque_vfs PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set_target_properties(maque_vfs PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(maque_vfs PUBLIC maque::tracy)   # Tracy 埋点（docs/29；MAQUE_TRACY=OFF 时是空接口）
+if(MAQUE_ANDROID)
+    if(TARGET SDL2::SDL2)
+        target_link_libraries(maque_vfs PRIVATE SDL2::SDL2)
+    elseif(TARGET SDL2)
+        target_link_libraries(maque_vfs PRIVATE SDL2)
+    else()
+        message(FATAL_ERROR "maque: Android asset VFS requires the SDL2 CMake target")
+    endif()
+endif()
 
 # libcurl：URL(http/https/file) 抓取 + http(s) 目录挂载（docs/04 §4）
 find_package(CURL QUIET)

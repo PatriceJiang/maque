@@ -122,8 +122,9 @@ int mq_vfs_read(mq_vfs* vfs, const char* path, void** out, size_t* out_size) {
 
     // builtin: 内建资源（引擎提供，区分于 assets）
     if (std::strncmp(path, "builtin:", 8) == 0) return builtin_read(v->builtins, path + 8, out, out_size);
-    // file:// 直读本地文件（不经挂载）；res:// 为资源根别名（docs/20）
+    // file:// 直读本地文件、asset:// 直读 APK asset（不经挂载）；res:// 为资源根别名
     if (std::strncmp(path, "file://", 7) == 0) return file_read("", path + 7, out, out_size);
+    if (std::strncmp(path, "asset://", 8) == 0) return asset_read("", path + 8, out, out_size);
     std::string p = path;
     if (p.rfind("res://", 0) == 0) p = p.substr(5);
 
@@ -151,6 +152,8 @@ int mq_vfs_read(mq_vfs* vfs, const char* path, void** out, size_t* out_size) {
             if (rc != MQ_VFS_OK) return rc;
             return url_read(v->urls, m->source + encoded, out, out_size);
         }
+        case Backend::Asset:
+            return asset_read(m->source, rel, out, out_size);
         case Backend::File:
         default:
             // mem:// 名字直接命中（无挂载点时的语法糖）

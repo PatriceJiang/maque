@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>maque WASM P0</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; font: 16px/1.5 system-ui; background: #151719; color: #f2f4f5; }
+    main { width: min(680px, calc(100% - 40px)); }
+    output { display: block; margin-top: 16px; padding: 12px; background: #23272a; border: 1px solid #3b4247; font-family: ui-monospace, monospace; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>maque WASM P0</h1>
+    <p>Headless scene simulation using QuickJS, physics, and a static null renderer.</p>
+    <output id="status">loading...</output>
+  </main>
+  <script type="module">
+    import { runMaqueP0 } from './bootstrap.mjs';
+    const status = document.querySelector('#status');
+    runMaqueP0({
+      onFrame: ({ frame, checksum }) => {
+        status.textContent = `frame=${frame}\nchecksum=${checksum}`;
+      },
+      onError: (error) => { status.textContent = error.stack || String(error); },
+    }).catch((error) => { status.textContent = error.stack || String(error); });
+  </script>
+</body>
+</html>

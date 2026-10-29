@@ -278,7 +278,7 @@ void queue_key(mq_platform* p, const mq_platform_key_event& in) {
 static bool maque_should_force_headless() {
     const char* hl = std::getenv("MAQUE_HEADLESS");
     if (hl && *hl && *hl != '0') return true;
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__ANDROID__)
     return false;
 #else
     return !std::getenv("DISPLAY") && !std::getenv("WAYLAND_DISPLAY");

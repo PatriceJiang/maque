@@ -11,14 +11,27 @@ if(WGPU_NATIVE_LIB)
                           "${CMAKE_BINARY_DIR}/generated/builtin_shaders"
                           BUILTIN_SHADER_SOURCES BUILTIN_SHADER_DIR)
 
-    add_library(maque_gfx MODULE src/gfx.cpp)
+    if(MAQUE_ANDROID)
+        add_library(maque_gfx STATIC src/gfx.cpp)
+        add_library(maque::gfx ALIAS maque_gfx)
+    else()
+        add_library(maque_gfx MODULE src/gfx.cpp)
+    endif()
     target_include_directories(maque_gfx PRIVATE "${WGPU_NATIVE_ROOT}/include")
-    target_link_libraries(maque_gfx PRIVATE ${WGPU_NATIVE_LIB} maque::module maque::schema maque::builtin_shaders)
+    if(MAQUE_ANDROID)
+        target_link_libraries(maque_gfx PRIVATE ${WGPU_NATIVE_LIB} maque::schema maque::builtin_shaders)
+    else()
+        target_link_libraries(maque_gfx PRIVATE ${WGPU_NATIVE_LIB} maque::module maque::schema maque::builtin_shaders)
+    endif()
     set_target_properties(maque_gfx PROPERTIES
         CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON
-        PREFIX "" OUTPUT_NAME "maque_gfx"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-        BUILD_RPATH "${WGPU_NATIVE_ROOT}/lib")
+        POSITION_INDEPENDENT_CODE ON)
+    if(NOT MAQUE_ANDROID)
+        set_target_properties(maque_gfx PROPERTIES
+            PREFIX "" OUTPUT_NAME "maque_gfx"
+            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+            BUILD_RPATH "${WGPU_NATIVE_ROOT}/lib")
+    endif()
     # Windows：MODULE 走 RUNTIME 目录；显式指到构建根，与 Linux 的 .so 位置保持一致
     #（MQ_RENDERER_DEFAULT 注入的是 $<TARGET_FILE:maque_gfx> 绝对路径，故两者都可用）。
     if(WIN32)

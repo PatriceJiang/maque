@@ -14,8 +14,8 @@ maque_deploy_asan(maque_persist_test)   # Windows：ASan 运行时 DLL 放到 ex
     add_executable(maque_snapshot_test tests/snapshot_test.cpp)
 maque_deploy_asan(maque_snapshot_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_snapshot_test PRIVATE maque::persist)
+    target_include_directories(maque_persist_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
+    target_include_directories(maque_snapshot_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
     add_test(NAME snapshot COMMAND maque_snapshot_test)
 endif()
 target_include_directories(maque_persist PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
-target_include_directories(maque_persist_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
-target_include_directories(maque_snapshot_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）

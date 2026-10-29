@@ -34,6 +34,6 @@ maque_deploy_asan(maque_host_test)   # Windows：ASan 运行时 DLL 放到 exe �
     target_link_libraries(maque_host_test PRIVATE maque::module)
     add_dependencies(maque_host_test maque_test_module)
     add_test(NAME module COMMAND maque_host_test "$<TARGET_FILE:maque_test_module>")
+    target_include_directories(maque_test_module PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
 endif()
 target_include_directories(maque_module PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
-target_include_directories(maque_test_module PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）

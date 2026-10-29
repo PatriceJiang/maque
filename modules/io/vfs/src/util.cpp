@@ -24,11 +24,13 @@ std::string normalize_mount(const std::string& m) {
 }
 
 std::string strip_scheme(const std::string& src, Backend* backend) {
-    const char* kFile = "file://";
-    const char* kMem  = "mem://";
-    const char* kZip  = "zip://";
-    if (src.rfind(kMem, 0) == 0)  { if (backend) *backend = Backend::Mem; return src.substr(6); }
-    if (src.rfind(kZip, 0) == 0)  { if (backend) *backend = Backend::Zip; return src.substr(6); }
+    const char* kFile  = "file://";
+    const char* kMem   = "mem://";
+    const char* kZip   = "zip://";
+    const char* kAsset = "asset://";
+    if (src.rfind(kMem, 0) == 0)   { if (backend) *backend = Backend::Mem; return src.substr(6); }
+    if (src.rfind(kZip, 0) == 0)   { if (backend) *backend = Backend::Zip; return src.substr(6); }
+    if (src.rfind(kAsset, 0) == 0) { if (backend) *backend = Backend::Asset; return src.substr(8); }
     if (src.rfind(kFile, 0) == 0) return src.substr(7);
     return src;
 }

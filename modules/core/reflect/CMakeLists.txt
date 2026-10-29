@@ -12,7 +12,7 @@ if(MAQUE_BUILD_TESTS)
     add_executable(maque_reflect_test tests/reflect_test.cpp)
 maque_deploy_asan(maque_reflect_test)   # Windows：ASan 运行时 DLL 放到 exe 旁
     target_link_libraries(maque_reflect_test PRIVATE maque::reflect)
+    target_include_directories(maque_reflect_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
     add_test(NAME reflect COMMAND maque_reflect_test)
 endif()
 target_include_directories(maque_reflect PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
-target_include_directories(maque_reflect_test PUBLIC "${MAQUE_GEN_DIR}")   # DSL 生成的 ABI 头（docs/21）
