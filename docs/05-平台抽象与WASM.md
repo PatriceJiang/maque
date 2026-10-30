@@ -129,25 +129,25 @@ engine.wasm（引擎本体）──→ 启动 VFS ──→ 拉取 game 包 (htt
 - **后端选择**：默认 Windows = `accelerated`（SDL_Renderer = Direct3D，不建 GL/EGL上下文，
   不与渲染插件的 wgpu 争用）；其它平台默认 `software`（`SDL_RENDERER_SOFTWARE`，同样不碰 GL/EGL）。
   `MAQUE_PRESENT=off|software|accelerated` 可覆盖；加速后端创建失败自动 software 回退，再失败则关闭呈现。
-- **世界尺寸 ≠ 窗口尺寸（渲染目标默认自动跟随窗口）**：`MAQUE_WINDOW` 只改窗口；场景
-  `width/height` 仍是**设计分辨率 / 世界尺寸**，窗口内按画布策略（docs/17）等比缩放 + 居中留边、
-  不裁剪；宿主输入把手标坐标映射回世界坐标（与 UI 命中测试同一规则）。
-  **渲染倍率默认自动跟随窗口**：未设 `MAQUE_RENDER_SCALE` 且场景没有 `ui.Canvas.render_scale`
-  时，`ss = clamp(窗口逻辑宽 / 设计宽, 0.25, 4)`，渲染目标 = `round(设计宽×ss) × round(设计高×ss)`
-  （单视图；再 × 视图数），文字也按 `ss` 栅格化 → 窗口大画面就清晰、窗口小也不糊。
-  离屏 / `headless`（`MAQUE_WINDOW=0x0`、`MAQUE_HEADLESS=1`、`--shot`、`MAQUE_PRESENT=off`）
-  恒取 `ss = 1.0`（= 设计分辨率），截图尺寸与文本折行不随窗口漂移。
-- **窗口可 resize / 最大化，尺寸变化时自动重建渲染目标（FBO）**：创建 game 窗口即带
-  `SDL_WINDOW_RESIZABLE`（用户可拖拽标题栏、点最大化按钮），`MAQUE_WINDOW_MAXIMIZED=1` 启动即最大化。
-  帧首采样 SDL `SIZE_CHANGED` / `MAXIMIZED` / `RESTORED` → 自动倍率下重算 `ss / TW / views` 并
-  **重建渲染目标**：gfx 侧颜色 / 深度 / MSAA 附件按新目标尺寸重建（旧尺寸的缓存失效），直呈路径
-  调用 `resize_surface` 重建交换链，并打印**恰好一行**
-  `runtime: window resized <旧窗口> → <新窗口>: render target <旧目标> → <新目标> (ss <旧> → <新>, views=<n>)`。
-  **显式 `MAQUE_RENDER_SCALE=N` 时目标固定**（像素风 / 固定分辨率），窗口变化只影响 present 的
-  缩放 / 留边（这一行日志仍打印，便于诊断）。headless / `MAQUE_WINDOW=0x0` 没有窗口 → 整条路径不触发。
-  CI 用 `MAQUE_WINDOW_EVENT_AT="<frame>:<op>[;...]"` 在指定模拟帧对**真实窗口**下发操作
-  （`op` = `WxH` / `max` / `restore`），走与用户拖拽 / 点最大化完全相同的 SDL 事件链路
-  （`tests/window_resize_e2e.sh`）。
+- **设计分辨率 ≠ 渲染分辨率**：`MAQUE_WINDOW` 只改窗口；场景 `width/height` 是世界/UI 的
+  **参考坐标系**，不用于分配主颜色附件。`ui.Canvas` 把设计坐标映射到 drawable 中的 viewport，输入使用
+  同一映射返回世界坐标。默认 `scn.Scene.render_scale=1`，主渲染目标等于窗口 drawable 的设备像素尺寸；
+  `MAQUE_RENDER_SCALE=N` 可覆盖为 `round(drawable × N)`。`ui.Canvas.render_scale>0` 仅作为旧场景兼容入口。
+  无窗口 / headless / 截图以 `设计宽×views × 设计高` 作为虚拟屏幕，所以默认截图尺寸仍稳定为设计尺寸。
+- **WGPU 条件直呈**：当主目标尺寸等于 surface 且不要求 CPU 回读时，3D/2D 直接以 acquired swapchain
+  texture 为颜色附件，随后 `wgpuSurfacePresent`，不创建中间颜色纹理、不执行最终 blit。只有
+  `render_scale != 1`（或后续真正需要采样整帧的后效）使目标与 surface 不同时，才分配中间目标并用
+  blit shader 缩放到 surface。MSAA 可直接 resolve 到最终目标，不要求额外 blit；transmission 自己的
+  scene-color copy 是材质 pass 内部依赖，不等同于最终呈现 blit。显式 SDL `software|accelerated` 模式仍走
+  RGBA8 回读、`SDL_UpdateTexture`、`SDL_RenderCopy` 的兼容呈现链。
+- **窗口可 resize / 最大化，尺寸变化时自动重建渲染目标**：创建 game 窗口即带
+  `SDL_WINDOW_RESIZABLE`，`MAQUE_WINDOW_MAXIMIZED=1` 可启动即最大化。帧首收到窗口事件后重新读取
+  drawable；目标尺寸更新为 `drawable × render_scale`，gfx 的深度/MSAA缓存按尺寸失效，WGPU surface
+  通过 `resize_surface` 重配，并打印：
+  `runtime: window resized <旧窗口> → <新窗口>: render target <旧目标> → <新目标> (render_scale <N>, views=<n>)`。
+  因为倍率相对屏幕，显式 `render_scale=0.5` 在 resize 后仍保持“屏幕一半”，而不是固定为某个设计尺寸。
+  CI 用 `MAQUE_WINDOW_EVENT_AT="<frame>:<op>[;...]"` 下发真实 resize/maximize/restore 事件，
+  `tests/window_resize_e2e.sh` 同时验证原生目标与 0.5 倍目标。
 - **无窗口/dummy 驱动**（`MAQUE_HEADLESS=1`）时呈现是安全空操作，headless/CI 不受影响。
 - 抓帧：`MAQUE_CAPTURE=<前缀>` 从 **renderer 后台缓冲**（present 之前 = 用户即将看到的整帧，
   含游戏画面与 ImGui 面板）回读 PPM（默认前 3 帧；`MAQUE_CAPTURE_FRAMES` / `MAQUE_CAPTURE_EVERY`

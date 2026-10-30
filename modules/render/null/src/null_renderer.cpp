@@ -179,6 +179,15 @@ uint64_t null_resource_bytes(void* self) {
     return n;
 }
 
+/* 按类拆分（docs/29）：null 后端只有 CPU 像素“纹理”，网格没有真实缓冲 → buffer=0。 */
+int32_t null_resource_bytes2(void* self, mq_renderer_resource_usage* out) {
+    if (!out) return 1;
+    std::memset(out, 0, sizeof *out);
+    out->struct_size = static_cast<uint32_t>(sizeof *out);
+    out->texture_bytes = null_resource_bytes(self);
+    return 0;
+}
+
 int32_t null_create_render_texture(void* self, const mq_renderer_render_texture_desc* desc, int32_t* out_id) {
     auto* r = static_cast<NullRenderer*>(self);
     if (out_id) *out_id = -1;
@@ -253,6 +262,8 @@ const mq_renderer_v1 kApi = {
     null_configure_render_texture,
     null_render_to_texture,
     null_read_texture,
+    /* ---- GPU 资源按类拆分（追加；docs/29）---- */
+    null_resource_bytes2,
 };
 
 } // namespace

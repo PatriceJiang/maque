@@ -2084,6 +2084,7 @@ role: `particle_emitter`
 | `seed` | uint32_t | 0 |  |
 | `views` | int32_t | 1 |  |
 | `eye_sep` | float | 0.0F |  |
+| `render_scale` | float | 1.0F | range: 0.25,4 |
 | `env_color` | math.Color | {0.27F, 0.28F, 0.31F, 1.0F} |  |
 | `env_intensity` | float | 1.6F |  |
 | `env_sky_color` | math.Color | {0.0F, 0.0F, 0.0F, 1.0F} |  |
@@ -2300,7 +2301,7 @@ role: `ui_canvas`
 | `fit_mode` | FitMode | FitMode::ShowAll |  |
 | `align` | Align | Align::Center |  |
 | `dpi_scale` | bool | true |  |
-| `render_scale` | float | 0.0F | range: 0,8 |
+| `render_scale` | float | 0.0F | range: 0,4 |
 | `min_scale` | float | 0.0F | unit: px, doc: 缩放下限（0=不限） |
 | `max_scale` | float | 0.0F | unit: px, doc: 缩放上限（0=不限） |
 | `scale` | float | 1.0F | transient |

@@ -105,7 +105,12 @@ struct Device {
     WGPUSampler sampler = nullptr;
     WGPUSampler samplerNearest = nullptr;      /* 字形/像素画：nearest */
     std::string backend;
-    uint64_t resource_bytes = 0;               /* 存活 Texture / MeshGpu 的 GPU 字节估算 */
+    /* 存活 GPU 资源的字节估算（docs/29 内存域 texture/gpu 的单一来源）：
+     *   texture_bytes = 所有 Texture（含字形/ImGui 图集、RenderTexture、env cube）
+     *   buffer_bytes  = 所有 MeshGpu（顶点 + 索引 + wire 索引）
+     * 旧 resource_bytes = 两者之和（ABI 语义不变）。 */
+    uint64_t texture_bytes = 0;
+    uint64_t buffer_bytes = 0;
     std::vector<Texture*> textures;
     /* ---- 直接呈现（plans/18-pbr-3d.md §4.1）：attach_window 成功后非空（M1）---- */
     WGPUSurface surface = nullptr;
@@ -1159,7 +1164,7 @@ static int32_t r_create_texture(void* self, const uint8_t* rgba, int32_t w, int3
     WGPUExtent3D sz = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
     wgpuQueueWriteTexture(dv->queue, &dst, rgba, (size_t)w * h * 4, &layout, &sz);
     t->gpu_bytes = mip_texture_bytes((uint32_t)w, (uint32_t)h, 1, 1, 4);
-    dv->resource_bytes += t->gpu_bytes;
+    dv->texture_bytes += t->gpu_bytes;
     dv->textures.push_back(t);
     return (int32_t)dv->textures.size() - 1;
 }
@@ -1168,7 +1173,7 @@ static void r_destroy_texture(void* self, int32_t id) {
     if (!dv || id < 0 || id >= (int)dv->textures.size()) return;
     Texture* t = dv->textures[(size_t)id];
     if (t) {
-        dv->resource_bytes -= t->gpu_bytes;
+        dv->texture_bytes -= t->gpu_bytes;
         /* per-texture sampler（create_texture2 每张贴图一个）也必须释放，否则 destroy 一次漏一个 GPU 对象。 */
         if (t->sampler) wgpuSamplerRelease(t->sampler);
         if (t->view) wgpuTextureViewRelease(t->view);
@@ -1326,7 +1331,7 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
         }
         tc->gpu_bytes = mip_texture_bytes((uint32_t)d->width, (uint32_t)d->height, mips, 6,
                                           tc->format == WGPUTextureFormat_RGBA16Float ? 8u : 4u);
-        dv->resource_bytes += tc->gpu_bytes;
+        dv->texture_bytes += tc->gpu_bytes;
         dv->textures.push_back(tc);
         *out_id = (int32_t)dv->textures.size() - 1;
         return 0;
@@ -1385,7 +1390,7 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
     }
     t->gpu_bytes = mip_texture_bytes((uint32_t)d->width, (uint32_t)d->height, mips, 1,
                                      t->format == WGPUTextureFormat_RGBA16Float ? 8u : 4u);
-    dv->resource_bytes += t->gpu_bytes;
+    dv->texture_bytes += t->gpu_bytes;
     dv->textures.push_back(t);
     *out_id = (int32_t)dv->textures.size() - 1;
     return 0;
@@ -1462,7 +1467,7 @@ static int32_t r_create_render_texture(void* self, const mq_renderer_render_text
     if (!dv || !out_id || !valid_render_texture_desc(d)) return -1;
     auto* t = new Texture();
     if (!build_render_texture(dv, d, *t)) { delete t; return -2; }
-    dv->resource_bytes += t->gpu_bytes;
+    dv->texture_bytes += t->gpu_bytes;
     dv->textures.push_back(t);
     *out_id = (int32_t)dv->textures.size() - 1;
     return 0;
@@ -1476,10 +1481,10 @@ static int32_t r_configure_render_texture(void* self, int32_t id,
     if (!current || !current->render_target) return -2;
     Texture next;
     if (!build_render_texture(dv, d, next)) return -3;   /* 失败保留旧目标和句柄内容 */
-    dv->resource_bytes -= current->gpu_bytes;
+    dv->texture_bytes -= current->gpu_bytes;
     release_texture_resources(current);
     *current = next;
-    dv->resource_bytes += current->gpu_bytes;
+    dv->texture_bytes += current->gpu_bytes;
     return 0;
 }
 
@@ -1544,7 +1549,7 @@ static int32_t r_create_mesh(void* self, const mq_renderer_mesh_gpu* data, int32
                  + (uint64_t)(m->index_count + m->wire_index_count) * sizeof(uint32_t);
     std::memcpy(m->bounds_min, data->bounds_min, sizeof m->bounds_min);
     std::memcpy(m->bounds_max, data->bounds_max, sizeof m->bounds_max);
-    dv->resource_bytes += m->gpu_bytes;
+    dv->buffer_bytes += m->gpu_bytes;
     dv->meshes.push_back(m);
     *out_id = (int32_t)dv->meshes.size() - 1;
     return 0;
@@ -1554,7 +1559,7 @@ static void r_destroy_mesh(void* self, int32_t id) {
     if (!dv || id < 0 || id >= (int)dv->meshes.size()) return;
     MeshGpu* m = dv->meshes[(size_t)id];
     if (m) {
-        dv->resource_bytes -= m->gpu_bytes;
+        dv->buffer_bytes -= m->gpu_bytes;
         if (m->vbo) wgpuBufferRelease(m->vbo);
         if (m->ibo) wgpuBufferRelease(m->ibo);
         if (m->wire_ibo) wgpuBufferRelease(m->wire_ibo);
@@ -1565,7 +1570,19 @@ static void r_destroy_mesh(void* self, int32_t id) {
 
 static uint64_t r_resource_bytes(void* self) {
     const auto* dv = (const Device*)self;
-    return dv ? dv->resource_bytes : 0;
+    return dv ? (dv->texture_bytes + dv->buffer_bytes) : 0;
+}
+
+/* 按类拆分（docs/29 内存域 texture/gpu；旧 resource_bytes = 两者之和）。 */
+static int32_t r_resource_bytes2(void* self, mq_renderer_resource_usage* out) {
+    const auto* dv = (const Device*)self;
+    if (!dv || !out) return -1;
+    std::memset(out, 0, sizeof *out);
+    out->struct_size = (uint32_t)sizeof *out;
+    out->texture_bytes = dv->texture_bytes;
+    out->buffer_bytes = dv->buffer_bytes;
+    out->other_bytes = 0;
+    return 0;
 }
 
 /* CPU morph（plans/22 §5.4）：更新现有网格的顶点缓冲 —— 大小必须与创建时**逐字节一致**
@@ -1863,14 +1880,8 @@ static bool ensure_blit_pipeline(Device* dv, WGPUTextureFormat format) {
     return dv->blitPipeline != nullptr;
 }
 
-static int32_t blit_to_surface(Device* dv, const mq_renderer_frame3d* f) {
-    if (!dv->surface || !dv->blitView || !ensure_blit_pipeline(dv, dv->surfaceFormat)) {
-#if defined(__ANDROID__)
-        __android_log_print(ANDROID_LOG_ERROR, "maque-gfx", "blit setup failed surface=%p view=%p pipeline=%p",
-                            (void*)dv->surface, (void*)dv->blitView, (void*)dv->blitPipeline);
-#endif
-        return -3;
-    }
+static int32_t acquire_surface(Device* dv) {
+    if (!dv || !dv->surface) return -3;
     WGPUSurfaceTexture st = WGPU_SURFACE_TEXTURE_INIT;
     wgpuSurfaceGetCurrentTexture(dv->surface, &st);
     if (st.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
@@ -1885,10 +1896,24 @@ static int32_t blit_to_surface(Device* dv, const mq_renderer_frame3d* f) {
         return st.status == WGPUSurfaceGetCurrentTextureStatus_Timeout ? -7 : -4;
     }
     dv->surfaceTex = st.texture;
-    dv->surfaceView = wgpuTextureCreateView(st.texture, nullptr);
+    return 0;
+}
+
+static int32_t blit_to_surface(Device* dv, const mq_renderer_frame3d* f, WGPUTextureView source_view) {
+    if (!dv->surface || !source_view || !ensure_blit_pipeline(dv, dv->surfaceFormat)) {
+#if defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "maque-gfx", "blit setup failed surface=%p view=%p pipeline=%p",
+                            (void*)dv->surface, (void*)source_view, (void*)dv->blitPipeline);
+#endif
+        return -3;
+    }
+    const int32_t acquire_rc = acquire_surface(dv);
+    if (acquire_rc != 0) return acquire_rc;
+    dv->surfaceView = wgpuTextureCreateView(dv->surfaceTex, nullptr);
+    if (!dv->surfaceView) return -5;
 
     WGPUBindGroupEntry entries[2] = {};
-    entries[0].binding = 0; entries[0].textureView = dv->blitView;
+    entries[0].binding = 0; entries[0].textureView = source_view;
     entries[1].binding = 1; entries[1].sampler = dv->blitSampler;
     WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
     bgd.layout = dv->blitBgl; bgd.entryCount = 2; bgd.entries = entries;
@@ -1994,7 +2019,7 @@ static int32_t r_resize_surface(void* self, int32_t w, int32_t h) {
 /* 把统一 frame3d（也可只有 2D）画进调用方给定的颜色目标；不回读、不 present。
  * queue submit 的先后顺序就是 RenderTexture 生产者→消费者的可见性顺序。 */
 static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextureFormat format,
-                                      const mq_renderer_frame3d* f) {
+                                      const mq_renderer_frame3d* f, bool allow_scene_copy = true) {
     if (!dv || !target || !f || f->width <= 0 || f->height <= 0) return -1;
     float bg[4];
     std::memcpy(bg, f->bg, sizeof bg);
@@ -2011,7 +2036,7 @@ static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextur
         }
     }
     if (has3d) {
-        const int32_t rc = render_3d_only(dv, target, format, f, /*allow_scene_copy=*/true);
+        const int32_t rc = render_3d_only(dv, target, format, f, allow_scene_copy);
         if (rc != 0) return rc;
     }
     return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
@@ -2026,7 +2051,8 @@ static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
     if (f->width <= 0 || f->height <= 0) return -2;
     if (f->out) {
         WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
-        td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+        td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc |
+                   WGPUTextureUsage_TextureBinding;
         td.dimension = WGPUTextureDimension_2D;
         td.size = WGPUExtent3D{ (uint32_t)f->width, (uint32_t)f->height, 1 };
         td.format = WGPUTextureFormat_RGBA8Unorm;
@@ -2034,13 +2060,47 @@ static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
         WGPUTexture ctex = wgpuDeviceCreateTexture(dv->device, &td);
         if (!ctex) return -5;
         const int32_t rc = render_frame_to_target(dv, ctex, WGPUTextureFormat_RGBA8Unorm, f);
-        const int32_t out_rc = rc == 0
+        int32_t out_rc = rc == 0
             ? readback_rgba8(dv, ctex, f->width, f->height, f->out, f->out_size) : -6;
+        if (out_rc == 0 && f->present_after_readback && dv->surface) {
+            WGPUTextureView source_view = wgpuTextureCreateView(ctex, nullptr);
+            out_rc = source_view ? blit_to_surface(dv, f, source_view) : -5;
+            if (source_view) wgpuTextureViewRelease(source_view);
+        }
         wgpuTextureRelease(ctex);
         return out_rc;
     }
-    /* 直接呈现：设计分辨率 FBO → GPU blit 到全尺寸 swapchain → present。 */
-    if (!dv->surface || !ensure_blit_target(dv, f->width, f->height)) return -3;
+    if (!dv->surface) return -3;
+    const bool full_surface =
+        f->width == dv->surfaceWidth && f->height == dv->surfaceHeight &&
+        (f->present_w <= 0 ||
+         (f->present_x == 0 && f->present_y == 0 &&
+          f->present_w == dv->surfaceWidth && f->present_h == dv->surfaceHeight));
+    if (full_surface) {
+        const int32_t acquire_rc = acquire_surface(dv);
+        if (acquire_rc != 0) return acquire_rc;
+        /* surface 只有声明 CopySrc 时才能作为 transmission 的 scene-color copy 源。 */
+        const int32_t rc = render_frame_to_target(dv, dv->surfaceTex, dv->surfaceFormat, f,
+                                                  dv->surfaceCopySrc);
+        if (rc != 0) {
+            wgpuTextureRelease(dv->surfaceTex);
+            dv->surfaceTex = nullptr;
+            return rc;
+        }
+        capture_surface(dv, dv->surfaceWidth, dv->surfaceHeight);
+        if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
+            static bool logged_direct = false;
+            if (!logged_direct) {
+                logged_direct = true;
+                std::print("gfx: present path direct-to-surface {}x{} (blit=0)\n",
+                           f->width, f->height);
+            }
+        }
+        return 0;
+    }
+
+    /* 输出倍率 != 1（或调用方显式给子矩形）时才被动引入中间目标与缩放 blit。 */
+    if (!ensure_blit_target(dv, f->width, f->height)) return -3;
     ensure_2d_pipelines(dv, WGPUTextureFormat_RGBA8Unorm);
     const int32_t rc = render_frame_to_target(dv, dv->blitTex, WGPUTextureFormat_RGBA8Unorm, f);
     if (rc != 0) {
@@ -2049,7 +2109,15 @@ static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
 #endif
         return rc;
     }
-    return blit_to_surface(dv, f);
+    if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
+        static bool logged_blit = false;
+        if (!logged_blit) {
+            logged_blit = true;
+            std::print("gfx: present path scaled {}x{} -> {}x{} (blit=1)\n",
+                       f->width, f->height, dv->surfaceWidth, dv->surfaceHeight);
+        }
+    }
+    return blit_to_surface(dv, f, dv->blitView);
 }
 
 /* 持久 RenderTexture 成帧。直接反馈（目标同时出现在 sampled 槽）在后端再做一层防护：
@@ -2484,11 +2552,12 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
     }();
     if (f->view_count == 0 || !f->views) return 0;
     if (f->draw_count > 0 && !f->draws) return 1;     /* 防御：非法帧描述（不做静默降级） */
-    const int render_mode = (f->render_mode == 1 || f->render_mode == 2) ? f->render_mode : 0;
+    const int render_mode =
+        (f->render_mode == 1 || f->render_mode == 2 || f->render_mode == 3) ? f->render_mode : 0;
     if (dv->lastRenderMode != render_mode) {
         dv->lastRenderMode = render_mode;
         if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
-            static const char* const names[3] = { "rendered", "solid", "wireframe" };
+            static const char* const names[4] = { "rendered", "solid", "wireframe", "textured" };
             std::print("gfx: 3D render mode {}\n", names[render_mode]);
         }
     }
@@ -2578,7 +2647,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
      * 现在：把每个可绘制 draw 的 mesh 局部 bounds 8 角点 × model 变换到世界，再变换到光源视空间求 AABB，
      * 用 AABB 的 x/y 当作正交盒、z 当作 near/far。视锥随场景走，与模型尺度无关。
      * 无任何有效 mesh（bounds 非法/网格缺失）时回退旧启发式，保证老场景仍有合理阴影。 */
-    const bool shadow_ready = shadow_on && has_shadow_light && dv->shadowView &&
+    const bool shadow_ready = render_mode == 0 && shadow_on && has_shadow_light && dv->shadowView &&
                               (dv->shadowPipeline[0] || dv->shadowPipeline[1] ||
                                dv->shadowPipeline[2] || dv->shadowPipeline[3]);
     float shadow_vp[16] = {};
@@ -2689,7 +2758,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         /* ---- 透明/折射拆分准备（plans/19 P1 transmission）----
          * 不透明先画；transmission 近似材质需要采样"位于其背后的不透明场景"做折射近似 →
          * opaque 画完把颜色 copy 成 scene color 纹理，再开第二个 pass 画 blend 列表（screen-space 折射）。
-         * 仅离屏目标支持（--shot 与 SDL 呈现的 ctex 都有 CopySrc）；直呈 surface 无 CopySrc → 旧 alpha 回退。 */
+         * 普通离屏目标始终允许；直呈 surface 仅在 capabilities 声明 CopySrc 时允许，否则回退旧 alpha。 */
         std::vector<const mq_renderer_draw3d*> opaque_list, blend_list;
         opaque_list.reserve(f->draw_count);
         blend_list.reserve(f->draw_count);
@@ -2722,7 +2791,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             if (mm && (mm->flags2 & 0x100000)) { has_transmission = true; break; }
         }
         /* 折射只在「单视图 + 离屏目标 + 至少一个 transmission 材质」时启用（多视图下整目标 copy 语义不成立）。 */
-        bool refraction = allow_scene_copy && has_transmission && f->view_count == 1 && dv->whiteTexView;
+        bool refraction = render_mode == 0 && allow_scene_copy && has_transmission &&
+                          f->view_count == 1 && dv->whiteTexView;
         WGPUTexture scene_tex = nullptr;
         WGPUTextureView scene_view = nullptr;
         if (refraction) {
@@ -2949,7 +3019,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
                     ? &f->materials[d.material] : nullptr;
             float du[kMatUniformFloats] = {};
             pack_draw_uniform(du, d.model, mat);
-            if (render_mode != 0) du[19] = 1.0F;       /* 调试模式统一按不透明基色显示 */
+            if (render_mode == 1 || render_mode == 2)
+                du[19] = 1.0F;                 /* solid/wireframe 统一按不透明基色显示；textured 保留贴图 alpha */
             WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
             dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
             dbd.size = sizeof du;
@@ -2964,8 +3035,12 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
             dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 24; dbgd.entries = dbe;
             WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
-            const bool is_blend = render_mode == 0 && mat && mat->alpha_mode == 2;
-            const int model = render_mode == 1 ? 10 : (render_mode == 2 ? 11 : (mat ? mat->shading_model : 0));
+            const bool keep_material_alpha = render_mode == 0 || render_mode == 3;
+            const bool is_blend = keep_material_alpha && mat && mat->alpha_mode == 2;
+            const int model = render_mode == 1 ? 10
+                            : render_mode == 2 ? 11
+                            : render_mode == 3 ? 2
+                            : (mat ? mat->shading_model : 0);
             const int side = render_mode != 0 ? 2 : (mat ? mat->side : 2);
             /* 负行列式（镜像缩放）：NDC 绕序翻转，管线用 frontFace=CW 补偿（R9）。 */
             const bool mirrored = mat3_det(d.model) < 0.0F;
@@ -3235,12 +3310,19 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
     for (uint32_t vi = 0; vi < nviews; ++vi) {
         const mq_renderer_view& v = views[vi];
         const float zoom = v.zoom > 0.0F ? v.zoom : 1.0F;
-        /* u.size = **单视图**尺寸，不是整个渲染目标尺寸。
-         * 依据（实测，非推测）：多视图下传入总宽时，view0 的 px 计算会得到 TW/2 而实际画面把内容
-         * 画在 TW/2+SW/2 —— 即 shader 侧的分母/居中项用的是"每个视图自己的宽高"。
-         * 几何自洽：sprite 的 px = (x-cam)*zoom + size/2 + pan + view，而 view 是该视图在目标里的
-         * 像素原点 → 传入单视图尺寸 + 各视图 view 偏移，多视图与单视图才等价。 */
-        float uni[12] = { (float)TW, (float)TH, v.vx, v.vy, v.cx, v.cy, zoom, v.rot, v.pan, v.eye, 0.0F, 0.0F };
+        const float zoom_y = v.zoom_y > 0.0F ? v.zoom_y : zoom;
+        /* shader 在整个目标中心建立设计坐标；view 平移量是 viewport 中心相对目标中心。
+         * viewport 左上角只用于 scissor，不能直接作为平移，否则 letterbox/multiview 会重复偏移。 */
+        const float view_tx = v.vx + v.vw * 0.5F - (float)TW * 0.5F;
+        const float view_ty = v.vy + v.vh * 0.5F - (float)TH * 0.5F;
+        float uni[12] = { (float)TW, (float)TH, view_tx, view_ty, v.cx, v.cy,
+                          zoom, v.rot, v.pan, v.eye, zoom_y, 0.0F };
+        const int view_x0 = std::clamp((int)std::floor(v.vx), 0, TW);
+        const int view_y0 = std::clamp((int)std::floor(v.vy), 0, TH);
+        const int view_x1 = std::clamp((int)std::ceil(v.vx + v.vw), 0, TW);
+        const int view_y1 = std::clamp((int)std::ceil(v.vy + v.vh), 0, TH);
+        const int view_sw = std::max(0, view_x1 - view_x0);
+        const int view_sh = std::max(0, view_y1 - view_y0);
         WGPUBuffer ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
         wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, sizeof uni);
 
@@ -3306,7 +3388,8 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 }
                 /* 裁剪矩形：`clip_w/h > 0` 时用网格自带的（ImGui 的 scissor），否则用整个视图。
                  * 两者取**交集**并夹到视图内，避免越界（WebGPU 要求 scissor 在附件范围内）。 */
-                int sx = v.vx, sy = v.vy, sw = v.vw, sh = v.vh;
+                int sx = view_x0, sy = view_y0, sw = view_sw, sh = view_sh;
+                if (sw <= 0 || sh <= 0) continue;
                 if (m.clip_w > 0.0F && m.clip_h > 0.0F) {
                     const int cx = (int)(m.clip_x + 0.5F), cy = (int)(m.clip_y + 0.5F);
                     const int cw = (int)(m.clip_w + 0.5F), ch = (int)(m.clip_h + 0.5F);
@@ -3361,7 +3444,9 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
                 bg_cache.push_back({ bkey, bgroup });
             }
-            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)v.vx, (uint32_t)v.vy, (uint32_t)v.vw, (uint32_t)v.vh);
+            if (view_sw <= 0 || view_sh <= 0) continue;
+            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)view_x0, (uint32_t)view_y0,
+                                                (uint32_t)view_sw, (uint32_t)view_sh);
             wgpuRenderPassEncoderSetPipeline(pass, textured ? dv->texPipeline : dv->solidPipeline);
             wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
             wgpuRenderPassEncoderDraw(pass, 6, c.count, 0, c.first);
@@ -3446,7 +3531,9 @@ static const mq_renderer_v1 g_api = {
     /* ---- GPU 资源占用估算（追加）---- */
     r_resource_bytes,
     /* ---- RenderTexture（追加）---- */
-    r_create_render_texture, r_configure_render_texture, r_render_to_texture, r_read_texture
+    r_create_render_texture, r_configure_render_texture, r_render_to_texture, r_read_texture,
+    /* ---- GPU 资源按类拆分（追加；docs/29）---- */
+    r_resource_bytes2
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {

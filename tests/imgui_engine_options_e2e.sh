@@ -9,7 +9,8 @@
 #      含 `msaa=4x`；默认（不设）不应出现该 gfx 行；`MAQUE_MSAA=0` + 选项 msaa=4 仍 4x
 #      （面板选项优先级最高）。注：gfx 的 MSAA 诊断行只在 `MAQUE_RENDER3D_INFO=1` 下打印，
 #      故本组三次运行都带该诊断开关（否则 4x 生效但日志不可见）。
-#   ④ 渲染模式：rendered 与 solid 着色不同；wireframe 只画线段，非背景像素明显少于 solid。
+#   ④ 渲染模式：rendered 与 solid 着色不同；textured 采样 base-color 纹理且不受太阳光影响；
+#      wireframe 只画线段，非背景像素明显少于 solid。
 #   ⑤ 图层开关：3d=0 隐藏 cube 但保留 Sprite；2d=0 隐藏 Sprite 但保留 cube 和 F4 面板。
 #   ⑥ 默认太阳光：场景无 render.Light 时引擎补一盏默认方向光 → 关掉它
 #      （`MAQUE_ENGINE_OPTIONS="sun=0"`）后物体像素平均亮度显著变暗（Δ > 5.0），
@@ -112,7 +113,10 @@ cat >"$SCN" <<'JSON'
             "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
             "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
             "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
-        { "type": "render.MeshRenderer" }
+        { "type": "render.MeshRenderer" },
+        { "type": "asset.PbrMaterial",
+          "base_color_texture": "builtin:/textures/checker",
+          "base_color": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } }
       ]
     }
   ]
@@ -232,9 +236,9 @@ grep -qF "gfx: 3D MSAA 4x" "$WORK/msaa_prec.log" \
     || fail "MAQUE_MSAA=0 + 选项 msaa=4 仍应出现 'gfx: 3D MSAA 4x'（选项优先级最高）"
 
 # ---- ④ 渲染模式 -------------------------------------------------------------
-echo "imgui_engine_options_e2e: ④ rendered / solid / wireframe"
+echo "imgui_engine_options_e2e: ④ rendered / textured / solid / wireframe"
 
-for mode in rendered solid wireframe; do
+for mode in rendered textured solid wireframe; do
     MAQUE_RENDER3D_INFO=1 MAQUE_ENGINE_OPTIONS="mode=$mode" \
         run "$WORK/mode_$mode.log" "渲染模式 $mode 运行失败" \
         --shot "$WORK/mode_$mode.ppm" --frames 3 "$SCN"
@@ -245,8 +249,18 @@ for mode in rendered solid wireframe; do
     [ -s "$WORK/mode_$mode.ppm" ] || fail "渲染模式 $mode 截图未生成"
 done
 
-"$PY" - "$WORK/mode_rendered.ppm" "$WORK/mode_solid.ppm" "$WORK/mode_wireframe.ppm" <<'PY' \
-    || fail "rendered / solid / wireframe 像素断言不满足"
+# textured 是纯纹理无光照：关闭默认太阳光后必须逐像素不变。
+MAQUE_RENDER3D_INFO=1 MAQUE_ENGINE_OPTIONS="mode=textured,sun=0" \
+    run "$WORK/mode_textured_sun0.log" "textured + sun=0 运行失败" \
+    --shot "$WORK/mode_textured_sun0.ppm" --frames 3 "$SCN"
+grep -qF "engine options (env) mode=textured" "$WORK/mode_textured_sun0.log" \
+    || fail "textured + sun=0 缺环境变量解析日志"
+grep -qF "sun=off" "$WORK/mode_textured_sun0.log" \
+    || fail "textured + sun=0 解析日志应含 sun=off"
+
+"$PY" - "$WORK/mode_rendered.ppm" "$WORK/mode_textured.ppm" "$WORK/mode_solid.ppm" \
+    "$WORK/mode_wireframe.ppm" "$WORK/mode_textured_sun0.ppm" <<'PY' \
+    || fail "rendered / textured / solid / wireframe 像素断言不满足"
 import sys
 
 
@@ -260,10 +274,10 @@ def load(p):
     return w, h, px
 
 
-w, h, rendered = load(sys.argv[1])
-w2, h2, solid = load(sys.argv[2])
-w3, h3, wire = load(sys.argv[3])
-assert (w, h) == (640, 360) and (w2, h2) == (w, h) and (w3, h3) == (w, h)
+images = [load(p) for p in sys.argv[1:]]
+w, h = images[0][0], images[0][1]
+assert (w, h) == (640, 360) and all(im[:2] == (w, h) for im in images)
+rendered, textured, solid, wire, textured_sun0 = [im[2] for im in images]
 bg = rendered[(2 * w + 2) * 3:(2 * w + 2) * 3 + 3]
 
 
@@ -272,16 +286,35 @@ def nonbg(px):
                if abs(px[i] - bg[0]) + abs(px[i + 1] - bg[1]) + abs(px[i + 2] - bg[2]) > 25)
 
 
+def diff(a, b, threshold=12):
+    return sum(1 for i in range(0, len(a), 3)
+               if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1])
+                  + abs(a[i + 2] - b[i + 2]) > threshold)
+
+
 n_rendered = nonbg(rendered)
+n_textured = nonbg(textured)
 n_solid = nonbg(solid)
 n_wire = nonbg(wire)
-diff = sum(1 for i in range(0, len(rendered), 3)
-           if abs(rendered[i] - solid[i]) + abs(rendered[i + 1] - solid[i + 1])
-              + abs(rendered[i + 2] - solid[i + 2]) > 12)
-print(f'imgui_engine_options_e2e: 渲染模式 非背景 rendered={n_rendered} solid={n_solid} '
-      f'wireframe={n_wire} rendered/solid差异={diff}')
-ok = (diff > 500 and n_rendered > 1000 and n_solid > 1000
-      and 50 < n_wire < n_solid * 0.65)
+rendered_solid_diff = diff(rendered, solid)
+textured_solid_diff = diff(textured, solid)
+textured_sun_diff = diff(textured, textured_sun0, threshold=0)
+# 内建 checker 的橙色格满足 R > G > B；solid 不采样纹理且保持灰阶。
+textured_orange = sum(1 for i in range(0, len(textured), 3)
+                      if textured[i] - textured[i + 1] > 20
+                      and textured[i + 1] - textured[i + 2] > 20)
+solid_orange = sum(1 for i in range(0, len(solid), 3)
+                   if solid[i] - solid[i + 1] > 20
+                   and solid[i + 1] - solid[i + 2] > 20)
+print(f'imgui_engine_options_e2e: 渲染模式 非背景 rendered={n_rendered} textured={n_textured} '
+      f'solid={n_solid} wireframe={n_wire} rendered/solid差异={rendered_solid_diff} '
+      f'textured/solid差异={textured_solid_diff} checker橙色={textured_orange}/{solid_orange} '
+      f'textured sun差异={textured_sun_diff}')
+ok = (rendered_solid_diff > 500 and textured_solid_diff > 500
+      and n_rendered > 1000 and n_textured > 1000 and n_solid > 1000
+      and 50 < n_wire < n_solid * 0.65
+      and textured_orange > 200 and solid_orange < 20
+      and textured_sun_diff == 0)
 sys.exit(0 if ok else 1)
 PY
 
@@ -674,4 +707,4 @@ for log in "$WORK"/*.log; do
     [ -e "$log" ] && check_clean "$log"
 done
 
-echo "imgui_engine_options_e2e: ok（F4 沿检测/面板独立/渲染模式/3D 与 2D 开关/MSAA/默认太阳光/相机覆盖/F2 与 F4 互不干扰/热键不双触发/无 ASan）"
+echo "imgui_engine_options_e2e: ok（F4 沿检测/面板独立/rendered·textured·solid·wireframe/3D 与 2D 开关/MSAA/默认太阳光/相机覆盖/F2 与 F4 互不干扰/热键不双触发/无 ASan）"

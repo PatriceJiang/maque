@@ -16,8 +16,10 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
   `namespace host`）。
 - **中文**：复用 `scenes/fonts/` 的 TTF，图集一次烘两档字号（标题 + 正文，默认 20/15 逻辑像素）。
 - **F2 开关**：引擎级热键（沿检测，按住不会连续切换）；`MAQUE_IMGUI=1/0` 设定**初始**开关。
-- **F4 引擎选项面板**（默认收起，按 F4 弹出/收起；首次按 F4 会自动打开 ImGui）：运行期热调三类
+- **F4 引擎选项面板**（默认收起，按 F4 弹出/收起；首次按 F4 会自动打开 ImGui）：运行期热调
   **视图层**渲染选项，**不写场景组件、不进快照/校验和**，只在成帧时生效（切场景后仍保留）：
+  - **渲染模式**：`rendered`（完整材质）/ `textured`（base-color 贴图，无光照）/ `solid` / `wireframe`；
+  - **游戏图层**：独立显示/隐藏 3D 与 2D/UI，F4 面板自身不受影响；
   - **MSAA**：跟随场景 / 关闭 / 4x（优先级：面板 > `MAQUE_MSAA` > `scn.Scene.msaa_samples`）；
   - **默认太阳光**：场景**没有任何光源**时补的那盏方向光的开关 / 强度 / 传播方向（老场景兜底行为可调）；
   - **主相机 near / far**：覆盖场景相机的近远裁剪面（覆盖关闭时字段自动跟随场景实际值，勾选后不跳变）。
@@ -119,11 +121,13 @@ MAQUE_IMGUI_SCALE=1.5 ./build-win/samples/player/maque_player.exe <scene>
 # 呈现后端（默认 Windows accelerated / 其它平台 software；两者都支持面板）
 MAQUE_PRESENT=software ./build-win/samples/player/maque_player.exe <scene>
 
-# F4 弹出/收起「引擎选项」面板（MSAA / 默认太阳光 / 主相机 near·far；首次按 F4 会自动开 ImGui）
+# F4 弹出/收起「引擎选项」面板（渲染模式/图层/MSAA/默认太阳光/主相机 near·far；首次按 F4 会自动开 ImGui）
 ./build-win/samples/player/maque_player.exe <scene>
 
 # 引擎选项的启动初值（不必用鼠标；逗号分隔，向量分量用 ':'）
-#   键：msaa=0|1|4、sun=0|1、sun_intensity=<f>、sun_dir=x:y:z、near=<f>、far=<f>
+#   键：mode=rendered|textured|solid|wireframe、3d=0|1、2d=0|1、msaa=0|1|4、
+#       sun=0|1、sun_intensity=<f>、sun_dir=x:y:z、near=<f>、far=<f>
+MAQUE_ENGINE_OPTIONS="mode=textured" ./build-win/samples/player/maque_player.exe <scene>
 MAQUE_ENGINE_OPTIONS="msaa=4" ./build-win/samples/player/maque_player.exe <scene>
 MAQUE_ENGINE_OPTIONS="sun=0" ./build-win/samples/player/maque_player.exe <scene>
 MAQUE_ENGINE_OPTIONS="sun_intensity=2.5,sun_dir=0.4:-1:-0.2,near=0.01,far=500" \
@@ -155,11 +159,9 @@ if (imgui_enabled()) {
 
 - `ctest -R imgui`：模块单测（字体图集非空、命令几何、坐标映射、参数校验）。
 - `ctest -R imgui_toggle_e2e`：F2 开关的沿检测（单次/按住/两次/反复开关/像素可见）。
-- `ctest -R imgui_engine_options_e2e`：F4 引擎选项面板 —— ① F4 沿检测（单次/按住/两次；自动开 ImGui）
-  ② 面板确实画进像素（`--shot` 前后不同）③ `msaa=4` → gfx `3D MSAA 4x`（且面板选项优先于 `MAQUE_MSAA`）
-  ④ 默认太阳光关闭后物体区域变暗 / `sun_intensity=3` 变亮 ⑤ `far`/`near` 覆盖把物体裁掉
-  ⑥ F2/F4 互不干扰（F4 自己开的 ImGui 收起时恢复关闭、不误关 F2 的 stats、F2 再开不复活 F4 面板 +
-  右侧区域像素与"只按 F2"参考图逐像素一致）⑦ 引擎热键不双触发（F2/F4 不再下发给脚本，普通按键仍到达）。
+- `ctest -R imgui_engine_options_e2e`：F4 引擎选项面板 —— F4 沿检测与面板像素、MSAA、
+  `rendered/textured/solid/wireframe`（`textured` 采样 base-color 贴图且开关太阳光逐像素不变）、
+  3D 与 2D/UI 图层开关、默认太阳光、near/far 覆盖、F2/F4 状态隔离及热键路由。
 - `ctest -R imgui_present_e2e`：**修复回归** —— 真实窗口抓帧断言
   ① imgui 开启时游戏区域逐像素可见且不被面板扰动；② 合成指针拖动 stats 后
   面板确实换位置、游戏仍可见；③ `MAQUE_PRESENT=software` 回退路径同样可见；
@@ -183,7 +185,7 @@ if (imgui_enabled()) {
 | 中文字体（TTF + 标题/正文两档字号，默认 20/15） | ✅ | `--shot` 截图里中文正常、stats 用正文字号 |
 | stats 面板（左上角，237x148；F2 / `MAQUE_IMGUI=1` 打开） | ✅ | FPS / logic / render / draws / tris / frame / target 七项 |
 | F2 开关（沿检测） | ✅ | `imgui_toggle_e2e` |
-| **F4 引擎选项面板**（MSAA / 默认太阳光 / 主相机 near·far，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（F4 开关/像素可见/MSAA 4x/太阳光/near·far 效果/F2·F4 互不干扰/热键不双触发）；`MAQUE_ENGINE_OPTIONS` 初值 |
+| **F4 引擎选项面板**（rendered/textured/solid/wireframe、3D/2D 图层、MSAA、默认太阳光、主相机 near·far，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（含 textured 纹理采样与无光照像素断言）；`MAQUE_ENGINE_OPTIONS` 初值 |
 | `MAQUE_PRESENT=software/accelerated` 都能显示面板 | ✅ | `imgui_present_e2e`（software 抓帧） |
 | 输入隔离（面板吃输入时清空本帧设备事件） | ✅ | `imgui_present_e2e` 拖动用合成指针走 `imgui_input_feed` |
 

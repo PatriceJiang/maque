@@ -305,8 +305,9 @@ struct Engine {
     mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
     mq_control*         control = nullptr;                 // 控制平面（JSON-RPC）
     mq_control_server*  ctl_server = nullptr;              // 控制端点（inspector attach；plans/17 §3）
-    std::vector<uint8_t> frame_pixels;                     // 最近一帧 RGBA（Capture.screen 用）
+    std::vector<uint8_t> frame_pixels;                     // 最近一次按需回读的 RGBA（Capture.screen）
     int frame_w = 0, frame_h = 0;
+    bool frame_capture_requested = false;                  // 控制面请求下一渲染帧回读
     bool                inspect_read_only = true;          // 默认只读（D2）；MAQUE_INSPECT_RW=1 开启编辑
     mq_platform*        platform = nullptr;                // 窗口/设备输入（headless 时 dummy）
     mq_input*           input = nullptr;                   // 确定性输入流（录制/回放）
@@ -360,6 +361,9 @@ struct Engine {
     void tracy_tick();                                      // 帧首：env 启动 + 1Hz CPU/内存采样
     void tracy_start(const char* why);                      // 启动 client + 配置基础数据曲线
     void tracy_launch_gui();                                // 拉起 tracy-profiler（F3）
+    /* Tracy 内存域采样（docs/29 §10）：节点树 / GPU 纹理与缓冲 / 字图集。
+     * 由 memory_due() 节流（默认 1s），delta 型域（script/heap）由分配器钩子维护。 */
+    void memory_sample();
     int                 hover = -1;                         // 悬停实体（上帧命中）
     int                 capture = -1;                       // 指针捕获（拖拽中）
     float               mouse_x = 0, mouse_y = 0;
@@ -413,11 +417,11 @@ struct Engine {
     void canvas_setup();                  // 装配期：定位画布实体
     void storage_setup();                 // 装配期：建键值存储（默认 <场景目录>/.maque；MAQUE_STORAGE/UID/SESSION 覆盖）
     void canvas_resolve();                // 每帧/尺寸变化：重解析 + 写回 transient 字段
-    /* ---- 窗口尺寸 / 渲染目标（FBO）重建 ----
-     * 窗口可 resize / 最大化：SDL SIZE_CHANGED → sync_window_size() → auto 倍率时
-     * 重建 ss/TW/views（= 新 FBO），直呈路径同步 resize_surface；显式倍率时目标固定。 */
-    void resolve_render_scale();          // 读 MAQUE_RENDER_SCALE / ui.Canvas.render_scale + window_intent
-    void rebuild_render_target();         // 解析 ss + TW + 每视图 view（装配期与窗口 resize 共用）
+    /* ---- 窗口尺寸 / 渲染目标重建 ----
+     * drawable 决定默认颜色附件尺寸；Canvas 只负责设计坐标到目标 viewport 的映射。 */
+    void resolve_render_scale();          // Scene/Canvas/MAQUE_RENDER_SCALE → 相对屏幕输出倍率
+    void rebuild_render_target();         // drawable × render_scale → TW/TH
+    void update_main_views();             // Canvas 映射 → 2D viewport/scissor/zoom
     void sync_window_size(int32_t log_w, int32_t log_h);   // 窗口逻辑尺寸变化 → 重建渲染目标
     void window_event_hooks();            // CI/演示：MAQUE_WINDOW_EVENT_AT（真实 SDL 窗口路径）
     mq_sim* sim = nullptr;
@@ -679,19 +683,17 @@ struct Engine {
     uint32_t rng = 0;
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
-    int W = 0, H = 0, nviews = 1, TW = 0;
-    /* 渲染分辨率倍率（超采样，docs/17 §渲染分辨率）：渲染目标 = 设计分辨率 × ss。
-     * ss = 0 → 自动跟随窗口像素（上限 4）；1 → 设计分辨率（像素风）；N → 固定 N 倍。
-     * 文字按目标像素栅格化（device_scale = ss）→ ss 越接近"窗口/设计"，文字越平滑（无锯齿）。 */
+    int W = 0, H = 0, nviews = 1, TW = 0, TH = 0;
+    /* 主输出倍率与设计坐标映射是两件事：
+     *   render_scale_req = 渲染目标像素 / 屏幕 drawable 像素（默认 1）；
+     *   ss = 渲染目标像素 / 设计坐标单位（由 Canvas 映射再乘输出倍率，仅用于 2D/文字栅格化）。 */
+    float render_scale_req = 1.0F;
     float ss = 1.0F;
-    /* 显式渲染倍率请求（MAQUE_RENDER_SCALE 或 ui.Canvas.render_scale）；<=0 = 自动跟随窗口。
-     * 窗口 resize 时：自动模式重建渲染目标（FBO）；显式模式目标固定、由 present 缩放呈现。 */
-    float render_scale_req = 0.0F;
-    /* 启动期"确实会有真实窗口"的意图（headless / --shot / present=off → false）。
-     * 装配期 platform 还没创建，只能靠意图判断"是否按窗口像素算倍率"。 */
+    /* 启动期是否存在可见输出；无窗口/截图以设计分辨率作为虚拟屏幕基准。 */
     bool  window_intent = false;
     int   win_last_w = 0, win_last_h = 0;         // 上次采样的窗口逻辑尺寸（0 = 尚未采样）
-    int win_w = 0, win_h = 0;                     // 窗口逻辑尺寸（MAQUE_WINDOW 可覆盖；世界等比缩放显示）
+    int   drawable_last_w = 0, drawable_last_h = 0; // 上次 drawable 设备像素尺寸
+    int win_w = 0, win_h = 0;                     // 窗口逻辑尺寸（MAQUE_WINDOW 可覆盖）
     std::vector<mq_renderer_view> views;
     /* 相机节点 RenderTexture：GPU 句柄仍在 renderer 的公共纹理命名空间；uri 进入 tex_cache，
      * 因而 Sprite/网格/PBR 不需要第二套纹理类型。状态是派生资源，不进快照/校验和。 */
@@ -881,7 +883,7 @@ struct Engine {
 
     /* ---- 引擎选项（F4 ImGui 面板；docs/28）----
      * 运行期可热调的纯视图选项：
-     *   · rendered / solid / wireframe 渲染模式，以及游戏 3D、2D/UI 图层开关
+     *   · rendered / textured / solid / wireframe 渲染模式，以及游戏 3D、2D/UI 图层开关
      *   · MSAA（0=跟随场景/MAQUE_MSAA，1=关，4=4x）
      *   · 默认太阳光（场景无光源时补的方向光：开关 / 强度 / 传播方向）
      *   · 主相机 near/far 覆盖
@@ -891,7 +893,7 @@ struct Engine {
     bool  opt_f4_held = false;                 // F4 沿检测（按住只切换一次）
     bool  opt_opened_imgui = false;            // F4 自己打开的 ImGui（收起面板时恢复"关"→ 不残留 stats）
     int   opt_msaa = 0;                        // 0=跟随场景(MAQUE_MSAA 次之) 1=关 4=4x
-    int   opt_render_mode = 0;                 // 0=rendered 1=solid 2=wireframe
+    int   opt_render_mode = 0;                 // 0=rendered 1=solid 2=wireframe 3=textured
     bool  opt_3d_enabled = true;               // 游戏 3D 层（不影响 F4 面板）
     bool  opt_2d_enabled = true;               // 游戏 2D/UI 层（不影响 F4 面板）
     bool  opt_sun_enabled = true;              // 场景无光源时是否补默认太阳光
@@ -4315,14 +4317,7 @@ bool Engine::make_camera_view2d(int entity, int width, int height, mq_renderer_v
         if (layer_mask) if (const mq_field_desc* f = mq_reflect_field(d, "layer_mask"))
             *layer_mask = *(const uint32_t*)(b->data() + f->offset);
         const float zx = std::max(zoom.x, 1e-5F);
-        if (std::fabs(zoom.y - zoom.x) > 1e-5F) {
-            static bool warned_zoom = false;
-            if (!warned_zoom) {
-                warned_zoom = true;
-                std::print(stderr, "runtime: Camera2D.zoom 当前渲染 ABI 仅支持等比缩放；使用 zoom.x={}（zoom.y={}）\n",
-                           (double)zoom.x, (double)zoom.y);
-            }
-        }
+        const float zy = std::max(zoom.y, 1e-5F);
         const float nx = std::clamp(viewport.x, 0.0F, 1.0F);
         const float ny = std::clamp(viewport.y, 0.0F, 1.0F);
         const float nw = std::clamp(viewport.width, 0.0F, 1.0F - nx);
@@ -4337,9 +4332,10 @@ bool Engine::make_camera_view2d(int entity, int width, int height, mq_renderer_v
         const float camera_y = (float)H - (e->world_y + offset.y);
         view.cx = camera_x;
         view.cy = camera_y;
-        view.pan = (view.vw - (float)width) * 0.5F;
-        view.eye = (view.vh - (float)height) * 0.5F;
+        view.pan = 0.0F;
+        view.eye = 0.0F;
         view.zoom = zx;
+        view.zoom_y = zy;
         view.rot = angle * 3.14159265358979323846F / 180.0F;
         return true;
     }
@@ -4350,6 +4346,7 @@ bool Engine::make_camera_view2d(int entity, int width, int height, mq_renderer_v
         view.cx = x;
         view.cy = (float)H - y;
         view.zoom = std::max(read_num(d, b->data(), "zoom", 1.0F), 1e-5F);
+        view.zoom_y = view.zoom;
         view.rot = read_num(d, b->data(), "rotation", 0.0F);
         return true;
     }
@@ -4678,9 +4675,11 @@ void Engine::shader_pass_step(float dt) {
 void Engine::extract_shader_passes(std::vector<mq_renderer_shader_pass>& out) {
     out.clear();
     if (!scene || loaded_shader_passes.empty()) return;
-    /* 指针位置：世界坐标（设计分辨率像素、y 向上）→ 渲染目标像素（原点左上，与 frag_coord 同向）。 */
-    const float mx = mouse_x * ss;
-    const float my = ((float)H - mouse_y) * ss;
+    /* 指针：世界设计坐标 → 屏幕 Canvas → 渲染目标像素。 */
+    const float rx = canvas.window_w > 0.0F ? (float)TW / canvas.window_w : render_scale_req;
+    const float ry = canvas.window_h > 0.0F ? (float)TH / canvas.window_h : render_scale_req;
+    const float mx = (canvas.offset_x + mouse_x * canvas.scale_x) * rx;
+    const float my = (canvas.offset_y + ((float)H - mouse_y) * canvas.scale_y) * ry;
     for (const auto& p : loaded_shader_passes) {
         const mq_type_desc* d = nullptr;
         auto* blob = comp_by_name(*this, p.entity, "render.ShaderPass", &d);
@@ -5792,16 +5791,18 @@ void Engine::step_frame(bool render_frame) {
         return;
     }
     // ⑤ 渲染（只读快照 → 渲染不回写，docs/13 §8）
-    const int SWpx = (int)(W * ss + 0.5F), SHpx = (int)(H * ss + 0.5F);
+    const int SHpx = TH;
     const auto stat_render0 = std::chrono::steady_clock::now();
     {
         MQ_TRACY_ZONE_N(render, "render_textures");
         render_camera_textures(draws, spine_meshes);
     }
-    std::vector<uint8_t> pixels((size_t)TW * SHpx * 4);
-    /* 直接呈现（plans/18 M1）：wgpu 交换链直呈，**不经 CPU readback**。
-     * 截图/抓帧（--shot / --shot-seq / frames_dir）仍走离屏回读（out 非空）→ CI 像素断言不变。 */
-    const bool need_pixels = !shot_path.empty() || !shot_seq.empty() || !frames_dir.empty();
+    /* CPU 像素只为离线输出、按需控制面抓帧或 SDL 呈现分配；WGPU 直呈常态保持空。 */
+    const bool explicit_readback = !shot_path.empty() || !shot_seq.empty() || !frames_dir.empty();
+    const bool inspector_readback = ctl_server != nullptr;
+    const bool need_pixels = explicit_readback || inspector_readback || frame_capture_requested || !direct_present;
+    std::vector<uint8_t> pixels;
+    if (need_pixels) pixels.resize((size_t)TW * SHpx * 4);
     if ((has_3d || has_shader_pass) && rapi && rself && rapi->render_frame3d) {
         /* M2：3D 场景 = 3D pass + 2D 覆盖层同帧（直呈时 out=null → present；否则离屏回读）
          * docs/13：场景自带全屏 shader pass 也走这条通路（纯 shader 场景 view_count=0 同样支持）。 */
@@ -5836,10 +5837,10 @@ void Engine::step_frame(bool render_frame) {
         fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
         fr.passes = passes3d.data(); fr.pass_count = (uint32_t)passes3d.size();
-        fr.present_x = (int32_t)std::lround(canvas.offset_x);
-        fr.present_y = (int32_t)std::lround(canvas.offset_y);
-        fr.present_w = (int32_t)std::lround(canvas.viewport_w);
-        fr.present_h = (int32_t)std::lround(canvas.viewport_h);
+        fr.present_x = 0;
+        fr.present_y = 0;
+        fr.present_w = 0;                         /* 0 = 整个 surface；目标等于屏幕时可直接渲染 */
+        fr.present_h = 0;
         fr.render_mode = opt_render_mode;
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
         /* MSAA：场景字段 scn.Scene.msaa_samples（0/1=关、4=4x），MAQUE_MSAA 覆盖（0/1/4）。
@@ -5921,16 +5922,18 @@ void Engine::step_frame(bool render_frame) {
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
         fr.out_size = (uint32_t)pixels.size();
+        fr.present_after_readback = direct_present && inspector_readback ? 1 : 0;
+        const bool present_frame = direct3d || fr.present_after_readback != 0;
         const int32_t rc = rapi->render_frame3d(rself, &fr);
-        if (rc == 0 && direct3d) {
+        if (rc == 0 && present_frame) {
             if (rapi->present) rapi->present(rself);
-        } else if (rc != 0 && !(direct3d && rc == -7)) {
+        } else if (rc != 0 && !(present_frame && rc == -7)) {
             static bool warned = false;
             if (!warned) {
                 warned = true;
                 std::print(stderr, "runtime: 3D frame 渲染失败 rc={} → 本帧回退 2D\n", rc);
             }
-            if (direct3d) {
+            if (present_frame) {
                 mq_renderer_window none{};
                 (void)rapi->attach_window(rself, &none);
                 direct_present = false;
@@ -5940,7 +5943,7 @@ void Engine::step_frame(bool render_frame) {
                 has_3d = false;
             }
         }
-    } else if (direct_present && !need_pixels && rapi && rself && rapi->render_frame3d) {
+    } else if (direct_present && rapi && rself && rapi->render_frame3d) {
         MQ_TRACY_ZONE_N(render, "frame.direct");
         mq_renderer_frame3d f{};
         f.width = TW;
@@ -5951,18 +5954,22 @@ void Engine::step_frame(bool render_frame) {
         f.item_count = (uint32_t)draws.size();
         f.meshes = spine_meshes.data();
         f.mesh_count = (uint32_t)spine_meshes.size();
-        f.present_x = (int32_t)std::lround(canvas.offset_x);
-        f.present_y = (int32_t)std::lround(canvas.offset_y);
-        f.present_w = (int32_t)std::lround(canvas.viewport_w);
-        f.present_h = (int32_t)std::lround(canvas.viewport_h);
+        f.present_x = 0;
+        f.present_y = 0;
+        f.present_w = 0;
+        f.present_h = 0;
+        f.out = need_pixels ? pixels.data() : nullptr;
+        f.out_size = (uint32_t)pixels.size();
+        f.present_after_readback = inspector_readback ? 1 : 0;
         for (int i = 0; i < 4; ++i) f.bg[i] = bg[i];
         f.env.sky_mode = 1;                       /* M1：背景色直出（3D 天空盒在 M3） */
         f.env.env_texture = -1;                   /* 2D 直呈路径无 3D env（避免 0 号纹理被误当 env） */
         f.env.env_irradiance_texture = -1;
         for (int i = 0; i < 4; ++i) f.env.sky_color[i] = bg[i];
+        const bool present_frame = !need_pixels || f.present_after_readback != 0;
         const int32_t rc = rapi->render_frame3d(rself, &f);
-        if (rc == 0 && rapi->present) rapi->present(rself);
-        else if (rc != -7) {
+        if (rc == 0 && present_frame && rapi->present) rapi->present(rself);
+        else if (rc != 0 && !(present_frame && rc == -7)) {
             static bool warned = false;
             if (!warned) {
                 warned = true;
@@ -6008,9 +6015,9 @@ void Engine::step_frame(bool render_frame) {
      * 无窗口 / MAQUE_PRESENT=off 时各步骤均为安全空操作。 */
     if (!direct_present && platform && window && rapi && rself) {
         MQ_TRACY_ZONE_N(platform, "present");   // Tracy：上传纹理 + ImGui pass + 单次 present
-        /* 目标矩形按**画布策略**（缩放/留边由分辨率策略决定；整倍放大用最近邻） */
-        const int dx = (int)(canvas.offset_x + 0.5F), dy = (int)(canvas.offset_y + 0.5F);
-        const int dw = (int)(canvas.viewport_w + 0.5F), dh = (int)(canvas.viewport_h + 0.5F);
+        /* 渲染目标已经包含 Canvas viewport/留边；这里只做目标到 drawable 的最终输出缩放。 */
+        const int dx = 0, dy = 0;
+        const int dw = (int)(canvas.window_w + 0.5F), dh = (int)(canvas.window_h + 0.5F);
         mq_platform_draw_rect(platform, pixels.data(), TW, SHpx, dx, dy, dw, dh, -1);
         if (imgui_on && imgui_backend) mq_imgui_backend_render();   // ② ImGui 独立 pass（叠在游戏帧上）
         mq_platform_present_ui(platform);                            // ③ 单次 present（含抓帧）
@@ -6041,6 +6048,13 @@ void Engine::step_frame(bool render_frame) {
     MQ_TRACY_PLOT("fps", stat_fps);
     MQ_TRACY_PLOT("draws", stat_calls);
     MQ_TRACY_PLOT("entities", scene ? (double)scene->count() : 0.0);
+    /* Tracy：内存域（docs/29 §10）。每 MAQUE_TRACY_MEM_INTERVAL（默认 1s）采样一次：
+     * node / texture / gpu / font 是"读当前真相"的采样型域；script / heap 由分配器钩子实时记账。
+     * memory_due 在关闭（MAQUE_TRACY_MEM=0）或未编入时恒 false → 连采样都不做。 */
+    if (maque::tracy::memory_due(dt)) {
+        memory_sample();
+        maque::tracy::memory_publish();
+    }
     if (!frames_dir.empty()) {
         char fn[64]; std::snprintf(fn, sizeof(fn), "/frame_%04d.ppm", (int)frame);
         write_ppm(frames_dir + fn, TW, SHpx, pixels);
@@ -6064,10 +6078,11 @@ void Engine::step_frame(bool render_frame) {
         /* 从第 shot_every 帧开始，每 shot_every 帧一张（第 0 帧通常还没布局完）。 */
         if ((int)frame > 0 && (int)frame % shot_every == 0) write_seq_shot(pixels, TW, SHpx);
     }
-    if (ctl_server) {                     // 预览：保留最近一帧（仅在开了端点时）
+    if ((ctl_server || frame_capture_requested) && !pixels.empty()) {
         frame_pixels = pixels;
         frame_w = TW;
         frame_h = SHpx;
+        frame_capture_requested = false;
     }
     ++frame;
 }
@@ -7687,11 +7702,11 @@ bool Engine::build_instance(SceneInstanceRuntime& inst, int depth) {
 
     /* docs/32 §5.1 D1：嵌套场景只有“行为/节点”生效；世界级字段忽略并**显式警告**（每个源一次）。 */
     if ((nd.width != 320 || nd.height != 240 || nd.seed != 0 || nd.gravity_y != -900.0F ||
-         nd.views != 1 || nd.msaa_samples != 0 || !nd.overlay_script.empty() ||
+         nd.views != 1 || nd.render_scale != 1.0F || nd.msaa_samples != 0 || !nd.overlay_script.empty() ||
          !nd.global_script.empty()) &&
         instance_warned.insert(inst.source).second) {
         std::print(stderr, "runtime: nested scene '{}' ignores world-level fields "
-                           "(width/height/seed/gravity/views/msaa/overlay_script/global_script) — one world only\n",
+                           "(width/height/seed/gravity/views/render_scale/msaa/overlay_script/global_script) — one world only\n",
                    inst.source);
     }
 
@@ -8832,14 +8847,30 @@ void window_to_world(const Engine& eng, float* x, float* y) {
     float dx = 0.0F, dy = 0.0F;
     if (mq_canvas_window_to_design(&eng.canvas, *x, *y, &dx, &dy) != 0) return;
     const int views = eng.nviews > 0 ? eng.nviews : 1;
-    *x = dx / (float)views;
+    if (views > 1 && eng.W > 0) {
+        const int view = std::clamp((int)std::floor(dx / (float)eng.W), 0, views - 1);
+        dx -= (float)(view * eng.W);
+    }
+    *x = dx;
     *y = (float)eng.H - dy;                         // 设计 y 向下 → 世界 y 向上
 }
 
 /* 设备事件：位置映射 + 方向量翻转（指针位移 dy 与滚轮 scroll_y 同属 y 轴方向） */
 void device_event_to_world(const Engine& eng, mq_platform_pointer_event* p) {
+    float sx = 1.0F, sy = 1.0F;
+    if (eng.platform && eng.window) {
+        int32_t lw = 0, lh = 0, dw = 0, dh = 0;
+        mq_platform_window_size(eng.platform, &lw, &lh);
+        mq_platform_drawable_size(eng.platform, &dw, &dh);
+        if (lw > 0 && dw > 0) sx = (float)dw / (float)lw;
+        if (lh > 0 && dh > 0) sy = (float)dh / (float)lh;
+    }
+    p->x *= sx;
+    p->y *= sy;
     window_to_world(eng, &p->x, &p->y);
-    p->dy = -p->dy;
+    if (eng.canvas.scale_x > 0.0F) p->dx = p->dx * sx / eng.canvas.scale_x;
+    if (eng.canvas.scale_y > 0.0F) p->dy = -p->dy * sy / eng.canvas.scale_y;
+    else p->dy = -p->dy;
     p->scroll_y = -p->scroll_y;
 }
 
@@ -9240,7 +9271,7 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
      * 注意不是画布的窗口缩放：窗口放大由 present 做（整倍 → 最近邻，保持锐利）；
      * 若按窗口缩放栅格化（如 3x 出 36px 字形），再画进 320x240 的目标就是**降采样 3 倍** →
      * 笔画丢失、文字发虚/乱码（曾如此）。超采样目标（目标 > 设计）时才 > 1。 */
-    st.device_scale = eng.ss;   /* 字形按**渲染目标像素**栅格化（目标 = 设计 × ss，见 Engine::ss） */
+    st.device_scale = eng.ss;   /* 设计单位 → 当前渲染目标像素，仅影响字形栅格化 */
     st.pixel_snap = 1;                                  /* pixel-perfect：字形对齐整数像素 */
     st.line_spacing = line_spacing;
     st.wrap = (uint32_t)(wrap < 0 ? 0 : wrap);
@@ -9508,9 +9539,8 @@ void Engine::storage_setup() {
 }
 
 /* ---- 画布与分辨率策略（docs/17）----
- * 设计分辨率 = 场景 width/height（或 ui.Canvas.design_*）；渲染目标即设计分辨率；
- * 画布策略决定"设计 → 绘制区（设备像素）"的缩放与留边，供 呈现 / 输入映射 / 文字栅格化 三方共用。
- * 没有 ui.Canvas 实体时按 ShowAll + 居中兜底（与既有行为一致）。 */
+ * 设计分辨率只定义世界/UI 参考坐标；Canvas 解析到屏幕设备像素，再由 render_scale 映射进
+ * 实际颜色附件。没有 ui.Canvas 实体时按 ShowAll + 居中兜底。 */
 void Engine::canvas_setup() {
     canvas_entity = -1;
     if (!scene) return;
@@ -9532,8 +9562,9 @@ void Engine::canvas_setup() {
 void Engine::canvas_resolve() {
     mq_canvas_desc desc{};
     desc.struct_size = (uint32_t)sizeof desc;
-    /* 设计分辨率：画布组件优先，其次场景尺寸（向后兼容） */
-    desc.design_w = (float)W;
+    /* 每个 view 使用一份设计宽度；多视图在屏幕中横向并排。 */
+    const int view_count = std::max(1, nviews);
+    desc.design_w = (float)W * (float)view_count;
     desc.design_h = (float)H;
     desc.fit = MQ_CANVAS_FIT_SHOW_ALL;
     desc.align = MQ_CANVAS_ALIGN_CENTER;
@@ -9548,7 +9579,10 @@ void Engine::canvas_resolve() {
                 if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
                 const float dw = read_num(d, blob.data(), "design_width", 0.0F);
                 const float dh = read_num(d, blob.data(), "design_height", 0.0F);
-                if (dw > 0.0F && dh > 0.0F) { desc.design_w = dw; desc.design_h = dh; }
+                if (dw > 0.0F && dh > 0.0F) {
+                    desc.design_w = dw * (float)view_count;
+                    desc.design_h = dh;
+                }
                 desc.fit = (int32_t)read_num(d, blob.data(), "fit_mode", (float)MQ_CANVAS_FIT_SHOW_ALL);
                 desc.align = (int32_t)read_num(d, blob.data(), "align", (float)MQ_CANVAS_ALIGN_CENTER);
                 desc.min_scale = read_num(d, blob.data(), "min_scale", 0.0F);
@@ -9562,10 +9596,8 @@ void Engine::canvas_resolve() {
     } else if (platform && window) {
         desc.dpi_scale = mq_platform_content_scale(platform);
     }
-    /* 绘制区 = 窗口**设备像素**（HiDPI 下大于逻辑尺寸）；
-     * 无窗口（headless/CI）→ 取渲染目标的**单视图**尺寸（= 设计分辨率，缩放 1） */
-    const int views = nviews > 0 ? nviews : 1;
-    desc.window_w = (float)(TW / views);
+    /* 绘制区 = 窗口 drawable 设备像素；无窗口时使用设计尺寸构造虚拟屏幕。 */
+    desc.window_w = (float)W * (float)view_count;
     desc.window_h = (float)H;
     if (platform && window) {
         int32_t dw = 0, dh = 0;
@@ -9575,6 +9607,7 @@ void Engine::canvas_resolve() {
     const int rc = mq_canvas_resolve(&desc, &canvas);
     if (rc != 0 && std::getenv("MAQUE_TRACE_CANVAS"))
         std::print(stderr, "runtime: canvas resolve fallback (rc={})\n", rc);
+    update_main_views();
     /* 回写 transient 字段 */
     if (canvas_entity >= 0) {
         Entity* e = scene->at(canvas_entity);
@@ -10206,11 +10239,9 @@ void Engine::imgui_setup() {
     /* 直接呈现（plans/18 M1）：窗口归 wgpu 交换链所有，不能再建 SDL_Renderer（SDL2 不允许混用）→
      * ImGui 走 CPU 像素 → 2D 网格的既有回退链，随 render_frame3d 的 meshes 提交。 */
     if (pre_ren) mq_imgui_set_backend_mode(1);
-    /* 像素倍率：
-     *   · 官方后端：显示空间 = 窗口**设备像素** → 只按 UI 缩放 × DPI 缩放；
-     *   · 网格链：显示空间 = **渲染目标像素**（设计分辨率 × 渲染倍率）→ 再乘 ss，
-     *     这样 --shot 里面板与画面的比例和窗口模式一致。 */
-    const float ps = imgui_ui_scale * imgui_content_scale * (pre_ren ? 1.0F : (ss > 0.0F ? ss : 1.0F));
+    /* 像素倍率：官方后端工作在 drawable 像素；网格链还需乘主输出 render_scale。 */
+    const float ps = imgui_ui_scale * imgui_content_scale *
+                     (pre_ren ? 1.0F : std::max(render_scale_req, 0.25F));
     imgui_pixel_scale = ps > 0.0F ? ps : 1.0F;
     imgui_input_scale = imgui_content_scale;
     if (mq_imgui_init_with_fonts(font_path.empty() ? nullptr : font_path.c_str(),
@@ -10350,7 +10381,7 @@ void Engine::imgui_frame_begin(float dt) {
     if (!imgui_inited) imgui_setup();
     if (!imgui_inited) return;
     const int target_w = TW;
-    const int target_h = (int)(H * ss + 0.5F);
+    const int target_h = TH;
     if (target_w <= 0 || target_h <= 0) return;
 
     /* 字体图集（**静态路径**）：必须在 `mq_imgui_begin_frame` **之前** Build + 上传。
@@ -10431,6 +10462,20 @@ void Engine::imgui_frame_begin(float dt) {
                 else
                     std::snprintf(line, sizeof line, "VRAM ~%.2f MiB", stat_vram_bytes / (1024.0 * 1024.0));
                 mq_imgui_text(line);
+                /* 内存域（docs/29 §10）：明细一行 + 分区（冷暖）一行；关闭时显示 "off"。 */
+                {
+                    char memline[224];
+                    if (maque::tracy::memory_available() && maque::tracy::memory_enabled()) {
+                        maque::tracy::memory_format(memline, sizeof memline);
+                        std::snprintf(line, sizeof line, "MEM %s", memline);
+                        mq_imgui_text(line);
+                        maque::tracy::memory_area_format(memline, sizeof memline);
+                        std::snprintf(line, sizeof line, "MEM %s", memline);
+                        mq_imgui_text(line);
+                    } else {
+                        mq_imgui_text("MEM off");
+                    }
+                }
                 std::snprintf(line, sizeof line, "frame %llu  target %dx%d",
                               (unsigned long long)frame, target_w, target_h);
                 mq_imgui_text(line);
@@ -10451,8 +10496,8 @@ void Engine::imgui_frame_begin(float dt) {
  *   · 值在 extract_3d / 成帧时读取（Engine 的 opt_* 字段），切场景后仍保留；
  *   · 启动初值可用 `MAQUE_ENGINE_OPTIONS`（CI/截图/演示不必依赖鼠标拖控件）。
  * 环境变量格式（逗号分隔；向量分量用 ':'）：
- *   MAQUE_ENGINE_OPTIONS="mode=wireframe,3d=1,2d=0,msaa=4,sun=0,near=0.01,far=500"
- * 键：mode(rendered|solid|wireframe) / 3d(0|1) / 2d(0|1) / msaa(0|1|4) /
+ *   MAQUE_ENGINE_OPTIONS="mode=textured,3d=1,2d=0,msaa=4,sun=0,near=0.01,far=500"
+ * 键：mode(rendered|textured|solid|wireframe) / 3d(0|1) / 2d(0|1) / msaa(0|1|4) /
  * sun(0|1) / sun_intensity / sun_dir(x:y:z) / near / far；
  * near 或 far 任一出场即启用主相机 near/far 覆盖。 */
 void Engine::engine_options_parse_env() {
@@ -10469,7 +10514,7 @@ void Engine::engine_options_parse_env() {
         const std::string key = eq == std::string::npos ? item : item.substr(0, eq);
         const std::string val = eq == std::string::npos ? std::string() : item.substr(eq + 1);
         if (key == "mode") {
-            opt_render_mode = val == "wireframe" ? 2 : (val == "solid" ? 1 : 0);
+            opt_render_mode = val == "wireframe" ? 2 : (val == "solid" ? 1 : (val == "textured" ? 3 : 0));
         } else if (key == "3d") {
             opt_3d_enabled = !(val == "0" || val == "off" || val == "false");
         } else if (key == "2d") {
@@ -10495,7 +10540,7 @@ void Engine::engine_options_parse_env() {
         }
         item.clear();
     }
-    static const char* const kModeNames[3] = { "rendered", "solid", "wireframe" };
+    static const char* const kModeNames[4] = { "rendered", "solid", "wireframe", "textured" };
     std::print("runtime: engine options (env) mode={} 3d={} 2d={} msaa={} sun={} intensity={:.2f} cam={}",
                kModeNames[opt_render_mode], opt_3d_enabled ? "on" : "off", opt_2d_enabled ? "on" : "off",
                opt_msaa == 0 ? "scene" : (opt_msaa == 4 ? "4x" : "off"),
@@ -10525,12 +10570,17 @@ void Engine::engine_options_panel(float show_w, float show_h) {
     mq_imgui_separator();
 
     /* ① 调试渲染与游戏图层：只改提交路径，不隐藏 F4 面板自身。 */
-    const int mode_sel = opt_render_mode == 2 ? 0 : (opt_render_mode == 1 ? 1 : 2);
-    const int new_mode_sel = (int)mq_imgui_combo("渲染模式", (float)mode_sel, "wireframe,solid,rendered");
-    const int new_mode = new_mode_sel == 0 ? 2 : (new_mode_sel == 1 ? 1 : 0);
+    const int mode_sel = opt_render_mode == 2 ? 0
+                       : opt_render_mode == 1 ? 1
+                       : opt_render_mode == 3 ? 2 : 3;
+    const int new_mode_sel = (int)mq_imgui_combo("渲染模式", (float)mode_sel,
+                                                  "wireframe,solid,textured,rendered");
+    const int new_mode = new_mode_sel == 0 ? 2
+                       : new_mode_sel == 1 ? 1
+                       : new_mode_sel == 2 ? 3 : 0;
     if (new_mode != opt_render_mode) {
         opt_render_mode = new_mode;
-        static const char* const kModeNames[3] = { "rendered", "solid", "wireframe" };
+        static const char* const kModeNames[4] = { "rendered", "solid", "wireframe", "textured" };
         std::print("runtime: engine option mode={}\n", kModeNames[opt_render_mode]);
     }
     const bool old_3d = opt_3d_enabled, old_2d = opt_2d_enabled;
@@ -10709,16 +10759,17 @@ void Engine::tracy_start(const char* why) {
         std::print(stderr, "runtime: [tracy] 本构建未编入 Tracy（MAQUE_TRACY=OFF）\n");
         return;
     }
-    /* 基础数据曲线：颜色与模块色一致（frametime=蓝 / logic=绿 / render=棕 / present=紫 …）。 */
-    MQ_TRACY_PLOT_CONFIG("frametime", 0, false, true, 0x4E79A7);
-    MQ_TRACY_PLOT_CONFIG("logic", 0, false, true, 0x59A14F);
-    MQ_TRACY_PLOT_CONFIG("render", 0, false, true, 0x9C755F);
-    MQ_TRACY_PLOT_CONFIG("present", 0, false, true, 0xB07AA1);
-    MQ_TRACY_PLOT_CONFIG("fps", 0, false, true, 0xEDC948);
+    /* 基础数据曲线：颜色与模块/分区色一致（frametime=System 蓝 / logic=Script 绿 /
+     * render=3D 红 / present=System 紫 …；内存域曲线在 memory_publish 首次上报时配置）。 */
+    MQ_TRACY_PLOT_CONFIG("frametime", 0, false, true, maque::tracy::color(maque::tracy::Module::runtime));
+    MQ_TRACY_PLOT_CONFIG("logic", 0, false, true, maque::tracy::color(maque::tracy::Module::script));
+    MQ_TRACY_PLOT_CONFIG("render", 0, false, true, maque::tracy::color(maque::tracy::Module::render));
+    MQ_TRACY_PLOT_CONFIG("present", 0, false, true, maque::tracy::color(maque::tracy::Module::platform));
+    MQ_TRACY_PLOT_CONFIG("fps", 0, false, true, maque::tracy::color(maque::tracy::Module::ui));
     MQ_TRACY_PLOT_CONFIG("draws", 0, false, true, 0x9E9E9E);
-    MQ_TRACY_PLOT_CONFIG("entities", 0, false, true, 0x8CD17D);
-    MQ_TRACY_PLOT_CONFIG("cpu", 2 /*percentage*/, false, true, 0xF28E2B);
-    MQ_TRACY_PLOT_CONFIG("memory", 1 /*memory*/, false, true, 0x76B7B2);
+    MQ_TRACY_PLOT_CONFIG("entities", 0, false, true, maque::tracy::color(maque::tracy::Mem::node));
+    MQ_TRACY_PLOT_CONFIG("cpu", 2 /*percentage*/, false, true, maque::tracy::color(maque::tracy::Module::input));
+    MQ_TRACY_PLOT_CONFIG("memory", 1 /*memory*/, false, true, maque::tracy::area_color(maque::tracy::Area::system));
     maque::tracy::thread_name("main");
     MQ_TRACY_MESSAGE("Tracy client started");
     const char* port = std::getenv("MAQUE_TRACY_PORT");
@@ -10764,6 +10815,69 @@ void Engine::tracy_tick() {
         MQ_TRACY_PLOT("cpu", cpu);
         MQ_TRACY_PLOT("memory", (double)mem);
     }
+}
+
+/* ---- Tracy 内存域采样（docs/29 §10）----
+ * 采样型域每 MAQUE_TRACY_MEM_INTERVAL（默认 1s）刷新一次；每个域只有一个写入者：
+ *   · node    = 场景实体表 + 组件 blob + 名字/树/实例元数据（**估算**：map 桶开销按 3 指针/节点计）
+ *   · texture = 渲染器 texture_bytes（含字形/ImGui 图集、RenderTexture、env cube）
+ *   · gpu     = 渲染器 buffer_bytes（网格顶点/索引；旧插件只有总量时回退到 gpu）
+ *   · font    = 文本模块 mq_font_memory_bytes（CPU 侧图集/字形表）
+ * delta 型域（script / heap）由各自的分配器钩子维护，这里不碰。 */
+void Engine::memory_sample() {
+    /* ---- 节点树 ---- */
+    uint64_t node = 0;
+    if (scene) {
+        node += sizeof(Scene);
+        node += (uint64_t)scene->desc.title.capacity() + scene->desc.script.capacity() +
+                scene->desc.overlay_script.capacity() + scene->desc.global_script.capacity() +
+                scene->desc.env_texture.capacity() + scene->desc.env_cubemap.capacity();
+        node += (uint64_t)scene->desc.scripts.capacity() * sizeof(std::string);
+        for (const auto& s : scene->desc.scripts) node += (uint64_t)s.capacity();
+        node += (uint64_t)scene->text_.capacity();
+        node += (uint64_t)scene->ents.size() * (sizeof(void*) * 3 + sizeof(Entity));   // 桶+链表节点估算
+        for (const auto& [id, e] : scene->ents) {
+            (void)id;
+            node += (uint64_t)e.name.capacity();
+            node += (uint64_t)e.comps.size() *
+                    (sizeof(uint32_t) + sizeof(std::vector<uint8_t>) + sizeof(void*) * 2);
+            for (const auto& [tid, blob] : e.comps) { (void)tid; node += (uint64_t)blob.capacity(); }
+        }
+    }
+    for (const auto& inst : instances) {
+        if (!inst) continue;
+        node += sizeof(SceneInstanceRuntime);
+        node += (uint64_t)inst->source.capacity() + inst->base.capacity() + inst->params.capacity() +
+                inst->error.capacity();
+        node += (uint64_t)inst->roots.capacity() * sizeof(int) +
+                (uint64_t)inst->children.capacity() * sizeof(int);
+        node += (uint64_t)inst->scripts.capacity() * sizeof(std::string) +
+                (uint64_t)inst->script_hashes.capacity() * sizeof(uint64_t);
+        for (const auto& s : inst->scripts) node += (uint64_t)s.capacity();
+    }
+    maque::tracy::memory_set(maque::tracy::Mem::node, node);
+
+    /* ---- 字体/图集（CPU 侧）---- */
+    uint64_t font = 0;
+    for (const auto& fe : fonts) font += mq_font_memory_bytes(fe.font);
+    font += mq_imgui_font_atlas_bytes();    /* 调试面板的静态图集（未打开/官方后端自管 → 0） */
+    maque::tracy::memory_set(maque::tracy::Mem::font, font);
+
+    /* ---- GPU：纹理 / 缓冲（渲染器是唯一真相）---- */
+    uint64_t tex = 0, buf = 0;
+    bool split = false;
+    if (rapi && rself && MQ_RENDERER_HAS(rapi, resource_bytes2)) {
+        mq_renderer_resource_usage u{};
+        u.struct_size = (uint32_t)sizeof u;
+        if (rapi->resource_bytes2(rself, &u) == 0) {
+            tex = u.texture_bytes;
+            buf = u.buffer_bytes + u.other_bytes;
+            split = true;
+        }
+    }
+    if (!split) buf = stat_vram_bytes;     /* 旧插件：只有总量 → 记到 gpu（texture 保持 0） */
+    maque::tracy::memory_set(maque::tracy::Mem::texture, tex);
+    maque::tracy::memory_set(maque::tracy::Mem::gpu, buf);
 }
 
 /* UI 组件语义（role 驱动；引擎不认具体类型名，docs/17）：
@@ -13300,6 +13414,7 @@ extern "C" int mq_control_Font_atlas(void* u, const mq_json* params, char* out, 
 /* Capture.screen：最近一帧渲染结果（PPM → base64 分块）——实时预览面板 */
 extern "C" int mq_control_Capture_screen(void* u, const mq_json* params, char* out, size_t cap) {
     auto* eng = (Engine*)u;
+    eng->frame_capture_requested = true;
     const size_t offset = (size_t)mq_json_num(mq_json_get(params, "offset"), 0);
     size_t max_bytes = (size_t)mq_json_num(mq_json_get(params, "max"), 24 * 1024);
     if (max_bytes == 0 || max_bytes > (1u << 20)) max_bytes = 24 * 1024;
@@ -14555,6 +14670,11 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     if (const char* ts = std::getenv("MAQUE_TITLE"); ts && *ts) win_title = ts;
     platform = mq_platform_create(win_title.c_str(), win_w, win_h);
     window = mq_platform_has_window(platform) != 0;
+    /* load_scene_into 发生在建窗前，只能用逻辑尺寸预估；现在用真实 drawable 校正 TW/TH。 */
+    if (window) {
+        mq_platform_drawable_size(platform, &drawable_last_w, &drawable_last_h);
+        rebuild_render_target();
+    }
     /* ---- 3D/PBR：能力自省 + 直接呈现探测（plans/18-pbr-3d.md M0）----
      *   · caps 总是调用（记录适配器能力，MAQUE_RENDER3D_INFO/wgpu 时打印）；
      *   · 直接呈现只在显式 MAQUE_PRESENT=wgpu 时尝试：M1 接通前 attach_window 明确返回失败
@@ -14630,35 +14750,32 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     return true;
 }
 
-/* ---- 窗口 resize / 最大化：自动重建渲染目标（FBO） --------------------------
- * 渲染目标（离屏回读的颜色目标 / 直呈交换链 / gfx 内部 depth + MSAA）尺寸 =
- *   设计分辨率 × ss（× 视图数）。
- * 窗口可 resize/最大化（platform 建窗即带 SDL_WINDOW_RESIZABLE）→ 用户拖拽或系统最大化后
- * SDL 发 SIZE_CHANGED → runtime 每帧对比窗口逻辑尺寸：
- *   · **自动倍率**（默认；未设 MAQUE_RENDER_SCALE / ui.Canvas.render_scale）：
- *     ss 重新取"窗口逻辑宽 / 设计宽" → TW/SHpx/views 全量重建 → gfx 下一帧按新尺寸
- *     建目标（depth/MSAA 按尺寸失效重建；直呈路径显式 resize_surface）= **自动重建 FBO**；
- *   · **显式倍率**：目标固定（像素风/固定分辨率），窗口内由 present 等比缩放 + 留边。
- * headless / MAQUE_WINDOW=0x0 没有窗口 → 整条路径不触发（截图尺寸、文本折行稳定）。
- */
-
-/* 渲染倍率请求：显式来源优先；<=0 表示自动跟随窗口。
- * 只在装配期解析一次（运行期窗口变化由 sync_window_size 走自动分支）。 */
+/* ---- 窗口 resize / 最大化：屏幕、渲染目标与设计坐标分层 --------------------
+ *   · Scene.width/height：世界与 UI 的参考坐标，不分配颜色附件；
+ *   · drawable：屏幕设备像素，默认就是主颜色附件尺寸；
+ *   · render_scale：相对 drawable 的独立输出倍率，只有 !=1 时主目标才与屏幕不同；
+ *   · Canvas：把设计坐标映射到目标内的 viewport/scissor，不参与目标分辨率选择。
+ * 无窗口的截图/嵌入宿主没有 drawable，以设计尺寸（多视图横向并排）作为虚拟屏幕。 */
 void Engine::resolve_render_scale() {
-    render_scale_req = 0.0F;
-    if (const char* e = std::getenv("MAQUE_RENDER_SCALE")) render_scale_req = (float)std::atof(e);
-    if (render_scale_req <= 0.0F && scene && canvas_entity >= 0) {   /* 画布组件的 render_scale */
+    render_scale_req = scene && scene->desc.render_scale > 0.0F ? scene->desc.render_scale : 1.0F;
+    /* 旧场景兼容：Canvas.render_scale 曾是唯一入口；显式 >0 时继续生效。 */
+    if (scene && canvas_entity >= 0) {
         if (Entity* ce = scene->at(canvas_entity)) {
             for (auto& [tid, blob] : ce->comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
                 if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
-                read_f32(d, blob.data(), "render_scale", &render_scale_req);
+                float legacy = 0.0F;
+                read_f32(d, blob.data(), "render_scale", &legacy);
+                if (legacy > 0.0F) render_scale_req = legacy;
                 break;
             }
         }
     }
-    /* 自动倍率只在"**确实会有窗口**且不是一次性任务"时跟随窗口像素：
-     * headless / 截图 / present=off → 1.0（= 设计分辨率），否则截图尺寸与文本折行会漂。 */
+    if (const char* e = std::getenv("MAQUE_RENDER_SCALE")) {
+        const float value = (float)std::atof(e);
+        if (value > 0.0F) render_scale_req = value;
+    }
+    render_scale_req = std::clamp(render_scale_req, 0.25F, 4.0F);
 #ifdef MQ_RENDERER_STATIC_NULL
     window_intent = false;
 #else
@@ -14668,45 +14785,64 @@ void Engine::resolve_render_scale() {
 #endif
 }
 
-/* 解析 ss + 渲染目标尺寸 + 每视图 view（含场景 Camera 覆盖）。
- * 装配期调用一次；窗口 resize 时再次调用 = **重建 FBO**。 */
 void Engine::rebuild_render_target() {
     if (!scene) return;
-    float rs = render_scale_req;
-    if (rs <= 0.0F) {
-        /* 判据必须是"真的有窗口"：装配期 platform 还没创建 → 用 window_intent + win_w。
-         * 不能只看 win_w（默认已是 800x650）：离屏/headless 下若仍按它算，目标会被放大成
-         * 800x… → 截图尺寸、文本折行行数全变（实测 shot_e2e / text_e2e 因此失败）。
-         * 嵌入宿主（mq_host_create）根本没有 platform → 这里判 window_intent，不碰 platform。 */
-        const bool real_window = window || (window_intent && win_w > 0);
-        if (real_window && win_w > 0) rs = (float)win_w / (float)(W > 0 ? W : 1);
+    int32_t screen_w = std::max(1, W * std::max(1, nviews));
+    int32_t screen_h = std::max(1, H);
+    if (window_intent) {
+        int32_t dw = 0, dh = 0;
+        if (platform && window) mq_platform_drawable_size(platform, &dw, &dh);
+        if (dw > 0 && dh > 0) {
+            screen_w = dw;
+            screen_h = dh;
+        } else if (win_w > 0 && win_h > 0) {
+            /* 建窗前只有逻辑尺寸可用；平台创建后会用真实 drawable 再重建一次。 */
+            screen_w = win_w;
+            screen_h = win_h;
+        }
     }
-    if (rs <= 0.0F) rs = 1.0F;
-    /* 倍率允许 **< 1**（下限 0.25）：窗口比场景小时目标正好等于窗口像素，present 1:1 更清晰；
-     * 上限 4（超采样）。⚠️ 无窗口/headless 时 rs 恒为 1.0（上面已处理）。 */
-    ss = rs > 4.0F ? 4.0F : (rs < 0.25F ? 0.25F : rs);
-    const int SW = (int)(W * ss + 0.5F), SH = (int)(H * ss + 0.5F);
-    TW = SW * nviews;
-    views.assign((size_t)nviews, mq_renderer_view{});
-    for (int i = 0; i < nviews; ++i) {
+    TW = std::max(1, (int)std::lround((float)screen_w * render_scale_req));
+    TH = std::max(1, (int)std::lround((float)screen_h * render_scale_req));
+    /* Canvas 尚未解析时给文本/装配期一个保守倍率；帧首 canvas_resolve 会写入精确值。 */
+    const float per_view_w = (float)TW / (float)std::max(1, nviews);
+    ss = std::min(per_view_w / (float)std::max(1, W), (float)TH / (float)std::max(1, H));
+    if (!(ss > 0.0F)) ss = 1.0F;
+    views.assign((size_t)std::max(1, nviews), mq_renderer_view{});
+}
+
+void Engine::update_main_views() {
+    if (!scene || TW <= 0 || TH <= 0) return;
+    const int count = std::max(1, nviews);
+    if ((int)views.size() != count) views.assign((size_t)count, mq_renderer_view{});
+    const float ww = canvas.window_w > 0.0F ? canvas.window_w : (float)TW / render_scale_req;
+    const float wh = canvas.window_h > 0.0F ? canvas.window_h : (float)TH / render_scale_req;
+    const float rx = (float)TW / std::max(ww, 1.0F);
+    const float ry = (float)TH / std::max(wh, 1.0F);
+    const float whole_x = canvas.offset_x * rx;
+    const float whole_y = canvas.offset_y * ry;
+    const float whole_w = (canvas.viewport_w > 0.0F ? canvas.viewport_w : ww) * rx;
+    const float whole_h = (canvas.viewport_h > 0.0F ? canvas.viewport_h : wh) * ry;
+    const float view_w = whole_w / (float)count;
+    const float design_zoom_x = view_w / (float)std::max(1, W);
+    const float design_zoom_y = whole_h / (float)std::max(1, H);
+    ss = std::min(design_zoom_x, design_zoom_y);
+    if (!(ss > 0.0F)) ss = 1.0F;
+
+    for (int i = 0; i < count; ++i) {
         mq_renderer_view& v = views[(size_t)i];
         v = mq_renderer_view{};
-        v.vx = (float)(i * SW); v.vy = 0;
-        v.vw = (float)SW; v.vh = (float)SH;
-        /* pan 必须留在 0，**不要**再放 i*SW。
-         * shader 里 `pan` 与 `view` 是两个独立的像素平移项：
-         *     pc = … + vec2f(u.size.x*0.5, u.size.y*0.5) + vec2f(u.pan, u.eye) + u.view
-         * 而 `view` 已经是该视图在渲染目标里的像素原点（v.vx）。
-         * 两个都设成 i*SW 会把偏移**叠加两次**：
-         *   · view 0：vx=0 → 看不出问题（但内容仍被视图边界裁掉，表现为"只画一半"）
-         *   · view 1：偏移 320+320=640 → 整幅被推到画布右侧之外 → **完全不绘制**
-         * `pan` 的用途是"整体平移画面"（如跟随相机），不是视图定位；视图定位只由 vx/vy 负责。 */
+        v.vx = whole_x + view_w * (float)i;
+        v.vy = whole_y;
+        v.vw = view_w;
+        v.vh = whole_h;
         v.pan = 0.0F;
-        v.eye = (i - (nviews - 1) * 0.5F) * scene->desc.eye_sep;
-        v.cx = W * 0.5F; v.cy = H * 0.5F;
-        v.zoom = ss;                          /* 世界 → 目标：按倍率放大（设计分辨率 × ss） */
+        v.eye = (i - (count - 1) * 0.5F) * scene->desc.eye_sep;
+        v.cx = W * 0.5F;
+        v.cy = H * 0.5F;
+        v.zoom = design_zoom_x;
+        v.zoom_y = design_zoom_y;
     }
-    for (auto& [idx, e] : scene->ents) {                   // 场景声明的 Camera 覆盖视图相机
+    for (auto& [idx, e] : scene->ents) {
         if (comp_by_name(*this, idx, "render.RenderTexture", nullptr)) continue;
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
@@ -14719,40 +14855,55 @@ void Engine::rebuild_render_target() {
             read_f32(d, blob.data(), "y", &cy);
             read_f32(d, blob.data(), "zoom", &zoom);
             read_f32(d, blob.data(), "rotation", &rot);
-            for (auto& v : views) { v.cx = cx; v.cy = cy; v.zoom = (zoom > 0 ? zoom : 1.0F) * ss; v.rot = rot; }
+            for (auto& v : views) {
+                v.cx = cx;
+                v.cy = cy;
+                const float camera_zoom = std::max(zoom, 1.0e-5F);
+                v.zoom *= camera_zoom;
+                v.zoom_y = (v.zoom_y > 0.0F ? v.zoom_y : v.zoom) * camera_zoom;
+                v.rot = rot;
+            }
         }
     }
 }
 
-/* 窗口逻辑尺寸变化（用户拖拽 / 最大化 / 宿主 set_window_size）→ 自动重建渲染目标。
- * 只在有真实窗口时生效；显式倍率时不改目标（present 缩放），但同样打印一行便于诊断。 */
+/* 窗口事件给逻辑尺寸；实际目标始终从 drawable 设备像素重算。 */
 void Engine::sync_window_size(int32_t log_w, int32_t log_h) {
     if (!platform || !window) return;
-    if (log_w <= 0 || log_h <= 0) return;              // 最小化/隐藏时部分平台给 0
-    if (win_last_w <= 0) { win_last_w = log_w; win_last_h = log_h; return; }   // 首帧采样
-    if (log_w == win_last_w && log_h == win_last_h) return;
-    const int32_t old_w = win_last_w, old_h = win_last_h;
-    const int old_tw = TW, old_sh = (int)(H * ss + 0.5F);
-    const float old_ss = ss;
-    win_last_w = log_w; win_last_h = log_h;
-    win_w = log_w; win_h = log_h;
-    rebuild_render_target();
-    const int new_sh = (int)(H * ss + 0.5F);
-    if (TW != old_tw || new_sh != old_sh) {
-        /* 直呈：显式重建交换链/中间目标（ABI 约定"下一帧生效"）。
-         * 离屏路径：gfx 每帧按 (TW, SHpx) 建颜色目标，depth/MSAA 缓存按尺寸失效重建。 */
-        if (direct_present && rapi && rself && rapi->resize_surface) {
-            int32_t surface_w = 0, surface_h = 0;
-            mq_platform_drawable_size(platform, &surface_w, &surface_h);
-            const int32_t rc = rapi->resize_surface(rself, surface_w, surface_h);
-            if (rc != 0) std::print(stderr, "runtime: resize_surface({}x{}) 失败 rc={}\n",
-                                    surface_w, surface_h, rc);
-        }
-        /* 控制面预览缓存与旧尺寸绑定 → 作废（下一帧由渲染路径覆盖） */
-        frame_pixels.clear(); frame_w = frame_h = 0;
+    if (log_w <= 0 || log_h <= 0) return;
+    int32_t surface_w = 0, surface_h = 0;
+    mq_platform_drawable_size(platform, &surface_w, &surface_h);
+    if (surface_w <= 0 || surface_h <= 0) return;
+    if (win_last_w <= 0) {
+        win_last_w = log_w; win_last_h = log_h;
+        drawable_last_w = surface_w; drawable_last_h = surface_h;
+        return;
     }
-    std::print("runtime: window resized {}x{} → {}x{}: render target {}x{} → {}x{} (ss {:.3f} → {:.3f}, views={})\n",
-               old_w, old_h, log_w, log_h, old_tw, old_sh, TW, new_sh, old_ss, ss, nviews);
+    const bool logical_changed = log_w != win_last_w || log_h != win_last_h;
+    const bool drawable_changed = surface_w != drawable_last_w || surface_h != drawable_last_h;
+    if (!logical_changed && !drawable_changed) return;
+    const int32_t old_w = win_last_w, old_h = win_last_h;
+    const int old_tw = TW, old_th = TH;
+    win_last_w = log_w;
+    win_last_h = log_h;
+    drawable_last_w = surface_w;
+    drawable_last_h = surface_h;
+    win_w = log_w;
+    win_h = log_h;
+    rebuild_render_target();
+
+    if (direct_present && rapi && rself && rapi->resize_surface) {
+        const int32_t rc = rapi->resize_surface(rself, surface_w, surface_h);
+        if (rc != 0) std::print(stderr, "runtime: resize_surface({}x{}) 失败 rc={}\n",
+                                surface_w, surface_h, rc);
+    }
+    if (TW != old_tw || TH != old_th) {
+        frame_pixels.clear();
+        frame_w = frame_h = 0;
+    }
+    std::print("runtime: window resized {}x{} → {}x{}: render target {}x{} → {}x{} "
+               "(render_scale {:.3f}, views={})\n",
+               old_w, old_h, log_w, log_h, old_tw, old_th, TW, TH, render_scale_req, nviews);
 }
 
 /* CI/演示钩子：MAQUE_WINDOW_EVENT_AT="<frame>:<op>[;...]" —— 在指定模拟帧对**真实窗口**
@@ -14904,7 +15055,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         const int v = std::atoi(vs);
         if (v >= 1 && v <= 4) nviews = v;
     }
-    /* 渲染倍率 + 渲染目标（ss/TW/views）：解析一次；窗口 resize 时用同一条路径重建 FBO。 */
+    canvas_setup();                             // 先定位当前场景画布；render_scale 兼容入口依赖它
     resolve_render_scale();
     rebuild_render_target();
     win_last_w = win_w; win_last_h = win_h;   // resize 检测基线（首帧再按真实窗口校正）
@@ -14968,7 +15119,6 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     spine_setup();                              // Spine：骨架/图集/页纹理装配（装配期做 IO，不在模拟帧内）
     text_setup();                               // 字体（MAQUE_FONT → 系统字体 → 内置 5x7）
     sim_setup();                                // 输入模拟器（MAQUE_SIM / MAQUE_SIM_CLICK）
-    canvas_setup();                             // 画布（分辨率策略，docs/17）
     storage_setup();                            // 键值存储（docs/25：默认 <场景目录>/.maque）
     if (const char* sa = std::getenv("MAQUE_SAFE_AREA")) {   // "l,t,r,b"（设备像素；测试/刘海屏）
         float l = 0, t = 0, r = 0, b = 0;
@@ -15300,10 +15450,8 @@ extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
     std::vector<mq_renderer_item> draws;
     std::vector<mq_renderer_mesh> meshes;
     if (e.scene) { e.scene->extract(e, draws); e.spine_extract(meshes); }
-    /* 渲染目标是 **缩放后** 的像素尺寸（W×ss, H×ss），与 step_frame 的 SHpx 同口径；
-     * 之前误用 e.H → 窗口缩放（ss≠1）时 views 是 800x600、目标却按 800x240 建 → wgpu 报
-     * "Scissor Rect ... is not contained in the render target" 直接 abort（嵌入宿主必现）。 */
-    const int SHpx = (int)(e.H * e.ss + 0.5F);
+    /* 宿主缓冲尺寸就是当前实际渲染目标；无窗口时默认等于设计尺寸 × render_scale。 */
+    const int SHpx = e.TH;
     if (!out || out_size < (size_t)e.TW * (size_t)SHpx * 4) return 2;
     MQ_TRACY_ZONE_N(render, "frame");   // Tracy：宿主侧补渲染（mq_host_tick 的额外一次成帧）
     float bg[4] = { e.bg[0], e.bg[1], e.bg[2], e.bg[3] };
@@ -15319,7 +15467,7 @@ extern "C" int mq_host_tick(mq_host_scene* s, uint8_t* out, size_t out_size) {
 extern "C" void mq_host_size(mq_host_scene* s, int* w, int* h) {
     if (!s || !s->eng) return;
     if (w) *w = s->eng->TW;
-    if (h) *h = (int)(s->eng->H * s->eng->ss + 0.5F);   // 缩放后的目标高度（与 mq_host_tick 一致）
+    if (h) *h = s->eng->TH;
 }
 
 extern "C" void mq_host_push_pointer(mq_host_scene* s, int type, int button, float x, float y) {

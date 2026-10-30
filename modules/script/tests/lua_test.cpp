@@ -3,6 +3,8 @@
 #include "core/script/mq_script.h"
 
 #include <print>
+#include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -34,6 +36,25 @@ static int host_setpos(void*, int nnum, const double* nums, int nstr, const char
 static uint32_t g_rng_state = 12345;
 static uint32_t test_rng(void*) { g_rng_state = g_rng_state * 1664525u + 1013904223u; return g_rng_state; }
 
+struct ByteState { int releases = 0; };
+static void host_bytes_release(void* user, void* data) {
+    ++static_cast<ByteState*>(user)->releases;
+    std::free(data);
+}
+static int host_bytes(void* user, int nnum, const double* nums, int nbytes,
+                      const void** bytes, const size_t* sizes, mq_script_bytes_result* ret) {
+    if (!user || !ret || nnum != 1 || nbytes != 1) return 1;
+    auto* out = static_cast<uint8_t*>(std::malloc(sizes[0]));
+    if (!out && sizes[0] != 0) return 1;
+    const auto* in = static_cast<const uint8_t*>(bytes[0]);
+    for (size_t i = 0; i < sizes[0]; ++i) out[i] = (uint8_t)(in[i] + (int)nums[0]);
+    ret->data = out;
+    ret->size = sizes[0];
+    ret->release = host_bytes_release;
+    ret->release_user = user;
+    return 0;
+}
+
 int main() {
     // ---- 1) 后端选择：语言 id 与扩展名 ----
     CHECK(std::strcmp(mq_script_lang_for_path("game.lua"), "lua") == 0);
@@ -59,6 +80,8 @@ int main() {
     CHECK(mq_script_register_ret_str(lua, "ent_name", host_name, nullptr) == 0);
     CHECK(mq_script_register_multi(lua, "set_pos", "nn", host_setpos, nullptr) == 0);
     CHECK(mq_script_register_num(lua, "hud.score", host_add, nullptr) == 0);   // 命名空间
+    ByteState byte_state;
+    CHECK(mq_script_register_bytes(lua, "host_bytes", "bn", host_bytes, &byte_state) == 0);
 
     const char* src = R"(
         frames = 0
@@ -77,6 +100,11 @@ int main() {
         function with_str(a, s)
             return a + #s
         end
+        function bytes_binary()
+            local r = host_bytes(string.char(0, 127, 128, 255), 1)
+            return #r == 4 and string.byte(r, 1) == 1 and string.byte(r, 2) == 128
+                and string.byte(r, 3) == 129 and string.byte(r, 4) == 0 and 1 or 0
+        end
     )";
     CHECK(mq_script_eval(lua, src, "test.lua") == 0);
     CHECK(mq_script_has(lua, "on_start") == 1);
@@ -90,6 +118,8 @@ int main() {
     CHECK(ret == 2.0);
     CHECK(mq_script_call1s(lua, "with_str", 10.0, "abcd", &ret) == 0);
     CHECK(ret == 14.0);                                   // 10 + #"abcd"
+    CHECK(mq_script_call0(lua, "bytes_binary", &ret) == 0 && ret == 1.0);
+    CHECK(byte_state.releases == 1);
     // 命名空间函数真的被调用（返回值未用，但不应报错）
     CHECK(mq_script_call1(lua, "missing", 1.0, &ret) == 1);   // 不存在 → 1
 

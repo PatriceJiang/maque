@@ -231,6 +231,11 @@ int mq_imgui_font_dirty(void) {
 uint64_t mq_imgui_font_texture(void) { return g_font_tex; }
 uint32_t mq_imgui_font_generation(void) { return g_font_gen; }
 
+uint64_t mq_imgui_font_atlas_bytes(void) {
+    if (!g_ready || !g_font_built || !g_font_px) return 0;
+    return (uint64_t)g_font_w * (uint64_t)g_font_h * 4u;
+}
+
 void mq_imgui_input_pointer(float x, float y, int down, float wheel) {
     g_ptr_x = x;
     g_ptr_y = y;

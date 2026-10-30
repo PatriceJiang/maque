@@ -9,6 +9,20 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
                              "${CMAKE_CURRENT_BINARY_DIR}/frames")
 endif()
 
+# 声明式脚本绑定面：schema 中每个 api 在 JS/Lua 都必须可调用。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx AND MAQUE_ENABLE_LUA)
+    add_test(NAME bindings_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/bindings_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${MAQUE_BINDING_PROBE_DIR}"
+             "${CMAKE_CURRENT_BINARY_DIR}/bindings_e2e")
+
+    add_test(NAME compression_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/compression_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/tests/data/compression"
+             "${CMAKE_CURRENT_BINARY_DIR}/compression_e2e")
+    set_tests_properties(compression_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # 确定性：同场景跑两次，world_trail 必须一致（docs/10）
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME determinism COMMAND "${MAQUE_BASH}" -c
@@ -51,6 +65,16 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/samples"
              "${CMAKE_CURRENT_BINARY_DIR}/tracy_e2e")
     set_tests_properties(tracy_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+# Tracy 内存域端到端（docs/29 §10）：script/node/texture/gpu/font 五个域 + 冷暖分区；
+# 不依赖 profiler GUI（文本报告路径）；MAQUE_TRACY_MEM=0 时零输出。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME tracy_mem_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/tracy_mem_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes"
+             "${CMAKE_CURRENT_BINARY_DIR}/tracy_mem_e2e")
+    set_tests_properties(tracy_mem_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 240)
 endif()
 
 # 音频端到端（docs/30）：脚本 audio_* → VFS 解码 → 混音器逻辑时钟/状态机；
@@ -497,7 +521,7 @@ endif()
 #                     另自动发现 scenes/label/stress*.scn 跑 stress 子例（多行/宽高扫描/1000 字混排/
 #                     行内混排字号共享基线）
 #   label_style_e2e ：颜色/透明 alpha/bold/italic/shadow/outline → PPM 像素断言
-#   label_resize_e2e：真实窗口 resize（800x600 → 1600x1200，ss 1.25 → 2.5）前后 metrics 完全相等 +
+#   label_resize_e2e：真实窗口 resize（800x600 → 1600x1200，目标同尺寸、render_scale=1）前后 metrics 完全相等 +
 #                     1600x1200 起始交叉比对 + 归一化 ink bbox 差 <0.01（无显示环境 SKIP 77）
 #   label_glyph_grid_e2e：非整数倍渲染缩放（1/1.25/1.5/0.833/2.5）下字距与基线均匀性（防「歪歪扭扭」：
 #                     同字形设备字距必须完全相等、基线行完全一致）

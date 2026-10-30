@@ -1,6 +1,6 @@
 struct U {
   size: vec2f, view: vec2f, cam: vec2f,
-  zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
+  zoom: f32, rot: f32, pan: f32, eye: f32, zoom_y: f32, pad: f32,
 };
 @group(0) @binding(0) var<uniform> u: U;
 struct Inst { pos: vec2f, radius: f32, rot: f32, color: vec4f, uv: vec4f, half: vec2f, shape: f32, snap: f32 };
@@ -21,16 +21,17 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   /* 顶点 = **中心** + 顶点偏移。吸附必须作用在"图元中心"上（且只算一次），
    * 否则逐顶点吸附会把每个顶点按"自己是中心"平移 → 整个矩形偏移半像素
    * （1:1 nearest 下表现为部分行/列取错纹素 → 文字发虚/乱码；块状图元看不出来）。 */
-  let center = (inst.pos - u.cam) * u.zoom;
+  let zoom = vec2f(u.zoom, select(u.zoom, u.zoom_y, u.zoom_y > 0.0));
+  let center = (inst.pos - u.cam) * zoom;
   var cc = vec2f(center.x * cr - center.y * sr, center.x * sr + center.y * cr);
-  let kc0 = corner * u.zoom;
+  let kc0 = corner * zoom;
   let kc = vec2f(kc0.x * cr - kc0.y * sr, kc0.x * sr + kc0.y * cr);
   var pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
   // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素（1 纹素 ↔ 1 像素）
   // 注意 hw 是**设计空间**半尺寸、pc 是目标像素坐标：必须 hw*zoom 后再吸附；否则 ss≠1 时
   // 每个图元会按自身半宽/半高被平移 half*(1-zoom) → 不同高度字形 baseline 不齐、字距抖动。
   if (inst.snap > 0.5) {
-    let hw_t = hw * u.zoom;
+    let hw_t = hw * zoom;
     let tl = floor(pc - hw_t + vec2f(0.5));
     pc = tl + hw_t;
   }

@@ -101,3 +101,5 @@
           doc: "按索引取已栅格化字形（码点 + 图集矩形；inspector 图集面板用）" }
       - { fn: mq_font_atlas_size, returns: int, args: [ { name: font, type: "mq_font*" }, { name: size, type: "float" }, { name: out_w, type: "uint32_t*" }, { name: out_h, type: "uint32_t*" } ],
           doc: "图集当前尺寸（不复制像素；增长中）" }
+      - { fn: mq_font_memory_bytes, returns: "uint64_t", args: [ { name: font, type: "const mq_font*" } ],
+          doc: "该字体占用的 CPU 字节（字号图集 RGBA + 字形表 + 内置位图 + 路径；不含 FreeType 内部缓存）。docs/29 内存域 `font` 的单一来源" }

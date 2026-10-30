@@ -1,10 +1,40 @@
 # maque::api —— 引擎 API 实现（匹配生成的 maque_api.h 声明）
-add_library(maque_api STATIC src/api.cpp)
+add_library(maque_api STATIC src/api.cpp src/compression.cpp)
 target_include_directories(maque_api PUBLIC "${MAQUE_GEN_DIR}")   # maque_bind.h（DSL 生成，docs/21）
 add_library(maque::api ALIAS maque_api)
 target_include_directories(maque_api PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(maque_api PUBLIC maque::schema maque::script)
+
+find_package(ZLIB QUIET)
+if(ZLIB_FOUND)
+    target_link_libraries(maque_api PUBLIC ZLIB::ZLIB)
+    target_compile_definitions(maque_api PRIVATE MQ_API_HAVE_ZLIB=1)
+    message(STATUS "maque: script zlib API enabled (${ZLIB_VERSION_STRING})")
+else()
+    message(STATUS "maque: script zlib API unavailable")
+endif()
+
+if(NOT MAQUE_WASM AND NOT MAQUE_ANDROID)
+    find_path(ZSTD_INCLUDE_DIR NAMES zstd.h)
+    find_library(ZSTD_LIBRARY NAMES zstd zstd_static libzstd)
+endif()
+if(NOT MAQUE_WASM AND NOT MAQUE_ANDROID AND ZSTD_INCLUDE_DIR AND ZSTD_LIBRARY)
+    target_include_directories(maque_api PRIVATE "${ZSTD_INCLUDE_DIR}")
+    target_link_libraries(maque_api PUBLIC "${ZSTD_LIBRARY}")
+    target_compile_definitions(maque_api PRIVATE MQ_API_HAVE_ZSTD=1)
+    message(STATUS "maque: script zstd API enabled (${ZSTD_LIBRARY})")
+else()
+    message(STATUS "maque: script zstd API unavailable")
+endif()
+
 set_target_properties(maque_api PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+
+if(MAQUE_BUILD_TESTS)
+    add_executable(maque_compression_test tests/compression_test.cpp)
+    maque_deploy_asan(maque_compression_test)
+    target_link_libraries(maque_compression_test PRIVATE maque::api)
+    add_test(NAME compression COMMAND maque_compression_test)
+endif()
 
 # 生成的脚本绑定 TU（从 schema/ 的 api_list 生成；调用引擎 API）
 get_property(MAQUE_GEN_DIR GLOBAL PROPERTY MAQUE_GEN_DIR)

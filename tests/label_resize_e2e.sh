@@ -8,12 +8,12 @@
 # resize.js 在第 3 帧（resize 前）与第 9 帧（resize 后）各 log 一行 `label_resize_summary {json}`。
 #
 # 覆盖：
-#   ① run A：MAQUE_WINDOW=800x600（ss=1.25, target 800x450）+ 第 6 帧真实窗口 resize 到
-#      1600x1200（ss=2.5, target 1600x900）→ 日志有 `runtime: window resized ...`；
+#   ① run A：MAQUE_WINDOW=800x600（target 800x600）+ 第 6 帧真实窗口 resize 到
+#      1600x1200（target 1600x1200）→ 日志有 `runtime: window resized ...`；
 #      stage3 与 stage9 的**所有 metrics 逐字段完全相等**。
-#   ② run B：MAQUE_WINDOW=1600x1200（初始 ss=2.5）→ stage3 metrics 与 run A 的 stage3/stage9 完全相等
-#      （不同初始窗口/不同 ss 下布局一致）。
-#   ③ 像素（相对 canvas 不变）：run A 的 frames PPM 尺寸随 target 变化（800x450 → 1600x900）；
+#   ② run B：MAQUE_WINDOW=1600x1200 → stage3 metrics 与 run A 的 stage3/stage9 完全相等
+#      （不同屏幕/栅格倍率下设计空间布局一致）。
+#   ③ 像素（相对 canvas 不变）：run A 的 frames PPM 尺寸随 target 变化（800x600 → 1600x1200）；
 #      `wrap` 黄色 ink 的**归一化 bbox**（x/w,y/h,w/h）resize 前后差 < 0.01。
 # 无显示环境 exit 77（CTest SKIP_RETURN_CODE）；真实窗口创建偶发失败时重试一次。
 set -u
@@ -135,12 +135,12 @@ cmp_cases(s3, s9, 'run A resize 前后（stage3 vs stage9）')
 cmp_cases(s3, b3, 'run A stage3 vs run B stage3（不同初始 ss）')
 cmp_cases(s9, b3, 'run A stage9 vs run B stage3（不同初始 ss）')
 
-# resize 日志：窗口 800x600 → 1600x1200，render target 800x450 → 1600x900，ss 1.25 → 2.5
+# resize 日志：窗口和渲染目标均为 800x600 → 1600x1200，render_scale=1
 alog = read_text(f'{work}/a.log')
 m = re.search(r'window resized\s+800x600\s*(?:→|->)\s*1600x1200'
-              r'.*?render target\s+800x450\s*(?:→|->)\s*1600x900'
-              r'.*?ss\s+1\.250\s*(?:→|->)\s*2\.500', alog)
-ck(m is not None, 'run A 日志缺 `window resized 800x600 → 1600x1200: render target 800x450 → 1600x900 (ss 1.250 → 2.500 ...)`')
+              r'.*?render target\s+800x600\s*(?:→|->)\s*1600x1200'
+              r'.*?render_scale\s+1\.000', alog)
+ck(m is not None, 'run A 日志缺 `window resized 800x600 → 1600x1200: render target 800x600 → 1600x1200 (render_scale 1.000 ...)`')
 m_ev = re.search(r'window event frame=6 resize 1600x1200', alog)
 ck(m_ev is not None, 'run A 日志缺 `window event frame=6 resize 1600x1200`')
 
@@ -184,12 +184,12 @@ for p in frames:
         continue
     w, h, _ = ppm
     sizes.add((w, h))
-    if (w, h) == (800, 450):
+    if (w, h) == (800, 600):
         before = p
-    if (w, h) == (1600, 900):
+    if (w, h) == (1600, 1200):
         after = p
-ck((800, 450) in sizes, f'frames 缺 resize 前尺寸 800x450（实际 {sorted(sizes)}）')
-ck((1600, 900) in sizes, f'frames 缺 resize 后尺寸 1600x900（实际 {sorted(sizes)}）')
+ck((800, 600) in sizes, f'frames 缺 resize 前尺寸 800x600（实际 {sorted(sizes)}）')
+ck((1600, 1200) in sizes, f'frames 缺 resize 后尺寸 1600x1200（实际 {sorted(sizes)}）')
 if before and after:
     bb = yellow_bbox(before)
     ba = yellow_bbox(after)
@@ -209,9 +209,9 @@ if before and after:
               f'PPM {bb[0]}x{bb[1]} → {ba[0]}x{ba[1]}）')
 else:
     if not before:
-        bad.append('未找到 resize 前帧（800x450）')
+        bad.append('未找到 resize 前帧（800x600）')
     if not after:
-        bad.append('未找到 resize 后帧（1600x900）')
+        bad.append('未找到 resize 后帧（1600x1200）')
 
 if bad:
     print('label_resize_e2e: FAIL ' + '; '.join(bad), file=sys.stderr)

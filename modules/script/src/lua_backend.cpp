@@ -12,6 +12,7 @@
  *   · GC 停用自动步进，改为**帧边界**固定步数（frame_boundary），避免 GC 时机影响确定性。 */
 #include "vm_base.h"
 #include "core/tracy/mq_tracy.h"
+#include "vm_mem.h"
 
 #if defined(MAQUE_HAVE_LUA)
 extern "C" {
@@ -50,6 +51,7 @@ int register_ret_str(mq_script_vm*, const char*, mq_script_ret_str_fn, void*) { 
 int register_mixed(mq_script_vm*, const char*, mq_script_mixed_fn, void*) { return 1; }
 int register_multi(mq_script_vm*, const char*, const char*, mq_script_multi_fn, void*) { return 1; }
 int register_multi_ret_str(mq_script_vm*, const char*, const char*, mq_script_multi_ret_str_fn, void*) { return 1; }
+int register_bytes(mq_script_vm*, const char*, const char*, mq_script_bytes_fn, void*) { return 1; }
 void frame_boundary(mq_script_vm*) {}
 
 #else  /* MAQUE_HAVE_LUA */
@@ -57,14 +59,15 @@ void frame_boundary(mq_script_vm*) {}
 namespace {
 
 struct HostFn {
-    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr } kind = Num;
+    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr, Bytes } kind = Num;
     mq_script_num_fn     num = nullptr;
     mq_script_str_fn     str = nullptr;
     mq_script_ret_str_fn ret_str = nullptr;
     mq_script_mixed_fn   mixed = nullptr;
     mq_script_multi_fn   multi = nullptr;
     mq_script_multi_ret_str_fn multi_ret_str = nullptr;
-    std::string kinds;                 /* 逐参数 'n' / 's' */
+    mq_script_bytes_fn bytes = nullptr;
+    std::string kinds;                 /* 逐参数 'n' / 's' / 'b' */
     void* user = nullptr;
 };
 
@@ -98,6 +101,37 @@ int trampoline(lua_State* L) {
     HostFn* h = host_of(L);
     if (!h) { lua_pushnumber(L, 0.0); return 1; }
     const int argc = lua_gettop(L);
+    if (h->kind == HostFn::Bytes) {
+        double nums[16] = { 0 };
+        const void* bytes[16] = { nullptr };
+        size_t sizes[16] = { 0 };
+        int nnum = 0, nbytes = 0;
+        if ((size_t)argc < h->kinds.size()) {
+            lua_pushnil(L); lua_pushstring(L, "not enough arguments"); return 2;
+        }
+        for (size_t i = 0; i < h->kinds.size(); ++i) {
+            if (h->kinds[i] == 'b') {
+                if (lua_type(L, (int)i + 1) != LUA_TSTRING) {
+                    lua_pushnil(L); lua_pushstring(L, "bytes argument must be a string"); return 2;
+                }
+                size_t size = 0;
+                const char* data = lua_tolstring(L, (int)i + 1, &size);
+                bytes[nbytes] = data;
+                sizes[nbytes++] = size;
+            } else {
+                nums[nnum++] = lua_tonumber(L, (int)i + 1);
+            }
+        }
+        mq_script_bytes_result result{};
+        const int rc = h->bytes ? h->bytes(h->user, nnum, nums, nbytes, bytes, sizes, &result) : 1;
+        if (rc != 0 || (result.size != 0 && !result.data)) {
+            if (result.release) result.release(result.release_user, result.data);
+            lua_pushnil(L); lua_pushstring(L, "host bytes function failed"); return 2;
+        }
+        lua_pushlstring(L, result.data ? static_cast<const char*>(result.data) : "", result.size);
+        if (result.release) result.release(result.release_user, result.data);
+        return 1;
+    }
     double nums[16] = { 0 };
     const char* strs[16] = { nullptr };
     int nnum = 0, nstr = 0;
@@ -122,6 +156,7 @@ int trampoline(lua_State* L) {
             rc = h->multi_ret_str ? h->multi_ret_str(h->user, nnum, nums, nstr, strs, sbuf, (int)sizeof sbuf) : 0;
             break;
         case HostFn::Num:       rc = h->num ? h->num(h->user, nnum, nums, &ret) : 0; break;
+        case HostFn::Bytes:     rc = 1; break;
     }
     if (rc != 0) { lua_pushnil(L); lua_pushstring(L, "host function failed"); return 2; }
     if (h->kind == HostFn::RetStr || h->kind == HostFn::MultiRetStr) { lua_pushstring(L, sbuf); return 1; }
@@ -272,10 +307,35 @@ void sandbox(LuaVm* vm) {
 
 } // namespace
 
+#if MQ_TRACY_MEMORY_ENABLED
+/* Lua 自定义分配器（docs/29 §10.2）：签名 (ud, ptr, osize, nsize)，osize 由 Lua 提供；
+ * 这里仍用 malloc usable size 记账，与 QuickJS 口径一致（跨 VM 相加不会错位）。 */
+static void* lua_tracked_alloc(void* /*ud*/, void* ptr, size_t /*osize*/, size_t nsize) {
+    if (nsize == 0) {
+        maque::script::mem::tracked_free(ptr);
+        return nullptr;
+    }
+    if (!ptr) return maque::script::mem::tracked_malloc(nsize);
+    return maque::script::mem::tracked_realloc(ptr, nsize);
+}
+
+/* luaL_newstate 会装 panic handler；用 lua_newstate 时自己补一个，行为保持一致。 */
+static int lua_panic(lua_State* L) {
+    const char* msg = lua_tostring(L, -1);
+    std::print(stderr, "[script] lua PANIC: {}\n", msg ? msg : "(unknown)");
+    return 0;
+}
+#endif
+
 mq_script_vm* vm_create(void) {
     auto* vm = new LuaVm();
     vm->lang = "lua";
+#if MQ_TRACY_MEMORY_ENABLED
+    vm->L = lua_newstate(lua_tracked_alloc, nullptr);
+    if (vm->L) lua_atpanic(vm->L, lua_panic);
+#else
     vm->L = luaL_newstate();
+#endif
     if (!vm->L) { delete vm; return nullptr; }
     *static_cast<mq_script_vm**>(lua_getextraspace(vm->L)) = vm;   /* 反向指针：宿主函数取回 VM */
     luaL_openlibs(vm->L);                            /* 先开标准库，再按白名单收窄 */
@@ -336,6 +396,15 @@ int register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds
     if (!vm || !name) return 1;
     LuaVm* v = S(vm);
     HostFn h; h.kind = HostFn::MultiRetStr; h.multi_ret_str = fn; h.user = user; h.kinds = kinds ? kinds : "";
+    v->fns.push_back(h);
+    return register_common(v, name, (int)v->fns.size() - 1, true);
+}
+
+int register_bytes(mq_script_vm* vm, const char* name, const char* kinds,
+                   mq_script_bytes_fn fn, void* user) {
+    if (!vm || !name || !fn) return 1;
+    LuaVm* v = S(vm);
+    HostFn h; h.kind = HostFn::Bytes; h.bytes = fn; h.user = user; h.kinds = kinds ? kinds : "";
     v->fns.push_back(h);
     return register_common(v, name, (int)v->fns.size() - 1, true);
 }

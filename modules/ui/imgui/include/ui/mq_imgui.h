@@ -102,6 +102,9 @@ uint32_t mq_imgui_font_generation(void);
  * 用 destroy+create 即可；图集不大且只在有新字形时发生）。上传后调
  * mq_imgui_set_font_texture() 把状态标回 OK。 */
 int mq_imgui_font_dirty(void);
+/* 字体图集占用的 CPU 字节（**只读**；docs/29 内存域 `font` 的附加项）。
+ * 静态图集路径 = 已 Build 的 RGBA32 像素；官方后端（自管动态图集）或尚未 Build → 0。 */
+uint64_t mq_imgui_font_atlas_bytes(void);
 
 /* 输入（窗口像素坐标）。宿主每帧喂入；未调用的输入保持上一帧状态。 */
 void mq_imgui_input_pointer(float x, float y, int down, float wheel);

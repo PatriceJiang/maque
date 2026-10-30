@@ -16,6 +16,7 @@ typedef struct mq_renderer_view {
     float cy;
     float zoom;
     float rot;
+    float zoom_y;
 } mq_renderer_view;
 
 typedef struct mq_renderer_item {
@@ -264,6 +265,7 @@ typedef struct mq_renderer_frame3d {
     int32_t present_w;
     int32_t present_h;
     int32_t render_mode;
+    int32_t present_after_readback;
 } mq_renderer_frame3d;
 
 typedef struct mq_renderer_render_texture_desc {
@@ -276,6 +278,13 @@ typedef struct mq_renderer_render_texture_desc {
     int32_t wrap_v;
     float clear_color[4];
 } mq_renderer_render_texture_desc;
+
+typedef struct mq_renderer_resource_usage {
+    uint32_t struct_size;
+    uint64_t texture_bytes;
+    uint64_t buffer_bytes;
+    uint64_t other_bytes;
+} mq_renderer_resource_usage;
 
 #define MQ_RENDERER_API_NAME "maque.renderer"
 typedef struct mq_renderer_v1 {
@@ -303,4 +312,5 @@ typedef struct mq_renderer_v1 {
     int32_t (*configure_render_texture)(void* self, int32_t id, const mq_renderer_render_texture_desc* desc);
     int32_t (*render_to_texture)(void* self, int32_t id, const mq_renderer_frame3d* frame);
     int32_t (*read_texture)(void* self, int32_t id, uint8_t* out, uint32_t out_size);
+    int32_t (*resource_bytes2)(void* self, mq_renderer_resource_usage* out);
 } mq_renderer_v1;

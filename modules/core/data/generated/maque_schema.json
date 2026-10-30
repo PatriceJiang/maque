@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_by": "parser.js",
   "type_count": 252,
-  "api_count": 319,
+  "api_count": 325,
   "control_count": 57,
   "callback_count": 11,
   "module_count": 26,
@@ -11882,6 +11882,20 @@
           "attrs": {}
         },
         {
+          "name": "render_scale",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0.25,
+              4
+            ]
+          }
+        },
+        {
           "name": "env_color",
           "type": "math.Color",
           "kind": "struct",
@@ -13001,7 +13015,7 @@
           "attrs": {
             "range": [
               0,
-              8
+              4
             ]
           }
         },
@@ -16774,6 +16788,100 @@
       "returns": "string",
       "ctx": true,
       "doc": "自省：JSON {mode, root, ns}（AI/调试）",
+      "manual": null
+    },
+    {
+      "name": "zstd.available",
+      "namespace": "zstd",
+      "fn": "available",
+      "global": false,
+      "args": [],
+      "returns": "bool",
+      "ctx": false,
+      "doc": "当前构建是否链接 libzstd",
+      "manual": null
+    },
+    {
+      "name": "zstd.compress",
+      "namespace": "zstd",
+      "fn": "compress",
+      "global": false,
+      "args": [
+        {
+          "name": "data",
+          "type": "bytes"
+        },
+        {
+          "name": "level",
+          "type": "int32_t"
+        }
+      ],
+      "returns": "bytes",
+      "ctx": false,
+      "doc": "压缩字节；level=0 使用 zstd 默认级别；失败或输入超过 64 MiB 返回空 bytes",
+      "manual": null
+    },
+    {
+      "name": "zstd.decompress",
+      "namespace": "zstd",
+      "fn": "decompress",
+      "global": false,
+      "args": [
+        {
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "returns": "bytes",
+      "ctx": false,
+      "doc": "解压 zstd frame；输出上限 64 MiB；失败返回空 bytes",
+      "manual": null
+    },
+    {
+      "name": "zlib.available",
+      "namespace": "zlib",
+      "fn": "available",
+      "global": false,
+      "args": [],
+      "returns": "bool",
+      "ctx": false,
+      "doc": "当前构建是否链接 zlib/zlib-ng compatibility API",
+      "manual": null
+    },
+    {
+      "name": "zlib.compress",
+      "namespace": "zlib",
+      "fn": "compress",
+      "global": false,
+      "args": [
+        {
+          "name": "data",
+          "type": "bytes"
+        },
+        {
+          "name": "level",
+          "type": "int32_t"
+        }
+      ],
+      "returns": "bytes",
+      "ctx": false,
+      "doc": "生成 zlib 包装的 deflate 流；level=-1 使用库默认值，0..9 对应 zlib 级别；失败或输入超过 64 MiB 返回空 bytes",
+      "manual": null
+    },
+    {
+      "name": "zlib.decompress",
+      "namespace": "zlib",
+      "fn": "decompress",
+      "global": false,
+      "args": [
+        {
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "returns": "bytes",
+      "ctx": false,
+      "doc": "解压 zlib 包装的 deflate 流；输出上限 64 MiB；失败返回空 bytes",
       "manual": null
     },
     {
@@ -28175,7 +28283,7 @@
     {
       "module": "script",
       "abi_name": "maque.script",
-      "version": 1,
+      "version": 2,
       "language": "c",
       "header": "abi/script.h",
       "fns": [
@@ -28970,9 +29078,81 @@
               "doc": null
             }
           ]
+        },
+        {
+          "name": "mq_script_register_bytes",
+          "returns": "int",
+          "args": [
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            },
+            {
+              "name": "name",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "kinds",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "fn",
+              "type": "mq_script_bytes_fn",
+              "doc": null
+            },
+            {
+              "name": "user",
+              "type": "void*",
+              "doc": null
+            }
+          ]
         }
       ],
-      "structs": [],
+      "structs": [
+        {
+          "name": "mq_script_bytes_view",
+          "fields": [
+            {
+              "name": "data",
+              "type": "const void*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "size_t",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_bytes_result",
+          "fields": [
+            {
+              "name": "data",
+              "type": "void*",
+              "doc": null
+            },
+            {
+              "name": "size",
+              "type": "size_t",
+              "doc": null
+            },
+            {
+              "name": "release",
+              "type": "void (*)(void* user, void* data)",
+              "doc": null
+            },
+            {
+              "name": "release_user",
+              "type": "void*",
+              "doc": null
+            }
+          ]
+        }
+      ],
       "enums": []
     },
     {
@@ -31611,6 +31791,17 @@
               "doc": null
             }
           ]
+        },
+        {
+          "name": "mq_font_memory_bytes",
+          "returns": "uint64_t",
+          "args": [
+            {
+              "name": "font",
+              "type": "const mq_font*",
+              "doc": null
+            }
+          ]
         }
       ],
       "structs": [
@@ -33953,6 +34144,20 @@
       "imports": []
     },
     {
+      "path": "data/zstd.yaml",
+      "namespaces": [
+        "zstd"
+      ],
+      "imports": []
+    },
+    {
+      "path": "data/zlib.yaml",
+      "namespaces": [
+        "zlib"
+      ],
+      "imports": []
+    },
+    {
       "path": "image.yaml",
       "namespaces": [
         "image"
@@ -34134,6 +34339,8 @@
         "platform.yaml",
         "data/persist.yaml",
         "data/persist_binary.yaml",
+        "data/zstd.yaml",
+        "data/zlib.yaml",
         "image.yaml",
         "world/anim.yaml",
         "script.yaml",

@@ -21,6 +21,8 @@
     - platform.yaml
     - data/persist.yaml
     - data/persist_binary.yaml
+    - data/zstd.yaml
+    - data/zlib.yaml
     - image.yaml
     - world/anim.yaml
     - script.yaml

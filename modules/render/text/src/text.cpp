@@ -17,6 +17,7 @@
 #include <cstring>
 #include <print>
 #include <string>
+#include <utility>
 #include <vector>
 
 #if defined(MAQUE_HAVE_FREETYPE)
@@ -563,6 +564,26 @@ extern "C" uint32_t mq_font_glyph_count(mq_font* font, float size) {
     if (!font) return 0;
     Atlas& a = atlas_for(font, size);
     return (uint32_t)a.glyphs.size();
+}
+
+/* docs/29 内存域 `font`：CPU 侧字体/图集字节（**只读，不触发图集创建**）。
+ * 口径：字体对象 + 路径 + 内置位图 + 每字号图集 RGBA 容量 + 字形表容量 + hb 字体句柄表；
+ * 不含 FreeType 的 face/驱动内部缓存（第三方库自己管理，无法精确归属到单个字体）。 */
+extern "C" uint64_t mq_font_memory_bytes(const mq_font* font) {
+    if (!font) return 0;
+    const mq_font* f = font;
+    uint64_t n = sizeof(mq_font);
+    n += (uint64_t)f->path.capacity();
+    n += (uint64_t)f->builtin_bits.capacity();
+    n += (uint64_t)f->atlases.capacity() * sizeof(Atlas);
+    for (const auto& a : f->atlases) {
+        n += (uint64_t)a.rgba.capacity();
+        n += (uint64_t)a.glyphs.capacity() * sizeof(Glyph);
+    }
+#if defined(MAQUE_HAVE_HARFBUZZ)
+    n += (uint64_t)f->hb_fonts.capacity() * sizeof(std::pair<float, hb_font_t*>);
+#endif
+    return n;
 }
 
 extern "C" float mq_font_height(mq_font* font, float size) {

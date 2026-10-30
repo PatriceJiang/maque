@@ -82,6 +82,12 @@ int main() {
     for (size_t i = 3; i < a1.size(); i += 4) if (a1[i] > 0) { any_ink = true; break; }
     CHECK(any_ink);                                     // 图集里确有字形像素
 
+    // 字体内存域（docs/29 §10.5）：只读统计；图集创建后必须非零，且不会因查询而增长
+    const uint64_t font_mem0 = mq_font_memory_bytes(f);
+    CHECK(font_mem0 > 0);
+    CHECK(mq_font_memory_bytes(f) == font_mem0);
+    CHECK(mq_font_memory_bytes(nullptr) == 0);
+
     // ---- 2) 排版：单行测量与字形数 ----
     {
         mq_text_style st = style(16.0F, MQ_TEXT_WRAP_NONE, MQ_TEXT_ALIGN_BEGIN, 0.0F);
@@ -266,6 +272,7 @@ int main() {
         CHECK(mq_text_measure(f, &sbi, "Zz", &mbi) == MQ_TEXT_OK);
         CHECK(mq_font_glyph_count(f, 16.0F) > cnt0);
         CHECK(mq_font_atlas_generation(f, 16.0F) > gen0);
+        CHECK(mq_font_memory_bytes(f) >= font_mem0);       // 字形/图集增长不会让统计变小
         mq_text_metrics mbi2{};
         CHECK(mq_text_measure(f, &sn, "<b><i>Zz</i></b>", &mbi2) == MQ_TEXT_OK);
         CHECK(mbi2.width == mbi.width);                    // 嵌套 <b><i> == style 双置位

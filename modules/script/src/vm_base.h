@@ -31,6 +31,8 @@ int register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, vo
 int register_multi(mq_script_vm* vm, const char* name, const char* kinds, mq_script_multi_fn fn, void* user);
 int register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds,
                            mq_script_multi_ret_str_fn fn, void* user);
+int register_bytes(mq_script_vm* vm, const char* name, const char* kinds,
+                   mq_script_bytes_fn fn, void* user);
 void frame_boundary(mq_script_vm* vm);      /* 帧边界钩子（GC 等，docs/10 D7） */
 } // namespace maque::script::js
 
@@ -57,5 +59,7 @@ int register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, vo
 int register_multi(mq_script_vm* vm, const char* name, const char* kinds, mq_script_multi_fn fn, void* user);
 int register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds,
                            mq_script_multi_ret_str_fn fn, void* user);
+int register_bytes(mq_script_vm* vm, const char* name, const char* kinds,
+                   mq_script_bytes_fn fn, void* user);
 void frame_boundary(mq_script_vm* vm);
 } // namespace maque::script::lua

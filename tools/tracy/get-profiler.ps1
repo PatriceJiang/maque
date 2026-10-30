@@ -1,4 +1,4 @@
-# 下载 Tracy Profiler 的官方可执行文件（GUI `tracy-profiler.exe` + CLI `tracy-capture.exe`）。
+﻿# 下载 Tracy Profiler 的官方可执行文件（GUI `tracy-profiler.exe` + CLI `tracy-capture.exe`）。
 #
 # 为什么二进制不入库：
 #   · 仓库只 vendored 客户端源码（third_party/tracy/public，见 docs/29）；

@@ -56,8 +56,9 @@ cd android && ./gradlew :app:assembleDebug
 - 场景路径使用 `asset://<相对路径>`：VFS 后端经 SDL RWops 读取 APK AssetManager，运行时仍以
   场景目录为资源根。不要把 assets 解压复制到可写目录。
 - Android 静态链接 gfx（仍复用 `mq_module_query` ABI）。SDL SurfaceView 只管输入/生命周期，独立
-  Render SurfaceView 专供 wgpu；真机的设计分辨率 FBO 经 blit shader 采样到全尺寸 ANativeWindow
-  swapchain（纯 GPU），acquired texture 必须在 `wgpuSurfacePresent` **之后**释放，Surface 变化按句柄 reattach。AVD 因 wgpu-native WSI
+  Render SurfaceView 专供 wgpu；真机默认 `render_scale=1` 直接绘制到全尺寸 ANativeWindow swapchain，
+  只有渲染目标与 surface 分辨率不同时才经 blit shader 缩放（纯 GPU）。acquired texture 必须在
+  `wgpuSurfacePresent` **之后**释放，Surface 变化按句柄 reattach。AVD 因 wgpu-native WSI
   acquire timeout 按 `ro.kernel.qemu` 明确回退 ANativeWindow CPU 提交（自动窗口分辨率、约 15Hz），仅用于功能调试。
 - Android 默认不 `SDL_StartTextInput`，避免启动即弹 IME；文本输入场景显式设 `MAQUE_TEXT_INPUT=1`。
 - 当前模板固定 `arm64-v8a`、SDK 35、NDK r27d；完整依赖和构建命令见 `android/README.md`。
@@ -133,13 +134,13 @@ tools\win\build.cmd -Sanitize address -RunTests
 - **窗口（宿主启动期覆盖）**：**默认窗口 800x650**（场景 `width/height` 是设计分辨率/世界尺寸；
   窗口内**等比缩放 + 居中留边**显示 —— 场景比窗口大就缩小、小就放大，都不裁剪；输入坐标自动映射回
   世界坐标）。`MAQUE_WINDOW=WxH` 覆盖尺寸，**`0x0` = 不建窗口**（CI/无显示环境）。
-  渲染倍率：`MAQUE_RENDER_SCALE=N` 显式固定（`1` = 设计分辨率/像素风）；**未设时自动跟随窗口**：
-  `ss = clamp(窗口逻辑宽 / 设计宽, 0.25, 4)`，渲染目标 = `round(设计宽×ss) × round(设计高×ss)` × 视图数，
-  文字按 ss 栅格化；离屏/headless 恒 1.0（否则截图尺寸与文本折行行数会随窗口大小漂移）。
+  渲染倍率：`scn.Scene.render_scale` / `MAQUE_RENDER_SCALE=N` 相对窗口 drawable 的设备像素，`1` =
+  原生屏幕分辨率（默认），`0.5` = 两轴各一半、约 1/4 像素；设计分辨率只作为世界/UI 坐标参考。
+  有窗口时渲染目标 = `round(drawable × render_scale)`；无窗口/截图以设计尺寸 × 视图数作为虚拟屏幕基准。
   **窗口默认可 resize / 可最大化**（用户拖拽标题栏、点最大化按钮；`MAQUE_WINDOW_MAXIMIZED=1` 启动即最大化）
-  → SDL `SIZE_CHANGED` → runtime **自动重建渲染目标（FBO）**并打印一行
-  `runtime: window resized ...`（gfx 侧 depth/MSAA/颜色目标按新尺寸重建，直呈路径 `resize_surface`）；
-  显式 `MAQUE_RENDER_SCALE` 时目标固定、窗口变化只缩放呈现。CI 用
+  → SDL `SIZE_CHANGED` → runtime **自动重建渲染目标**并打印一行
+  `runtime: window resized ...`（gfx 侧 depth/MSAA 按新尺寸重建，直呈路径 `resize_surface`）；
+  `render_scale` 在 resize 后仍保持相对屏幕比例。CI 用
   `MAQUE_WINDOW_EVENT_AT="<frame>:<op>[;...]"`（op = `WxH` / `max` / `restore`）在指定帧对**真实窗口**
   下发操作（同一条 SDL 事件路径，`ctest -R window_resize_e2e`）。
   `MAQUE_TITLE=<标题>`；`MAQUE_VIEWS=n`；`MAQUE_PRESENT=off|software|accelerated`（默认 Windows accelerated=Direct3D /
@@ -150,9 +151,10 @@ tools\win\build.cmd -Sanitize address -RunTests
   `MAQUE_IMGUI_POINTER="frame:x:y:type[;...]"`（type 0=move 1=down 2=up）把合成指针事件压进
   **本帧设备事件队列**，与真实鼠标同一条路径 → CI 验证 ImGui 面板拖动（`imgui_present_e2e`）。
   示例：`MAQUE_WINDOW=800x600 MAQUE_TITLE=MaqueEngine ./build/samples/player/maque_player scenes/ball.scn`
-- **3D/PBR 与直接呈现（plans/18-pbr-3d.md）**：`MAQUE_PRESENT=wgpu` → 渲染插件建 **wgpu swapchain 直呈**
-  （不建 SDL_Renderer、不走 CPU readback；ImGui 面板走 CPU 像素→2D 网格链叠加）；**默认仍是 SDL 路径**
-  （老 2D 行为不变）。`MAQUE_CAPTURE_WGPU=<前缀>` + `MAQUE_CAPTURE_FRAMES=N` 从**交换链纹理**回读前 N 帧 PPM
+- **3D/PBR 与直接呈现（plans/18-pbr-3d.md）**：`MAQUE_PRESENT=wgpu` → 渲染插件建 **wgpu swapchain 直呈**。
+  渲染目标与 surface 同尺寸时直接以 acquired texture 为颜色附件（无最终 blit）；`render_scale != 1` 或整帧
+  回读/后效需要中间目标时才引入离屏纹理和 blit。该模式不建 SDL_Renderer、不走常态 CPU readback，
+  ImGui 面板走 CPU 像素→2D 网格链叠加；**默认仍是 SDL 路径**（老 2D 行为不变）。`MAQUE_CAPTURE_WGPU=<前缀>` + `MAQUE_CAPTURE_FRAMES=N` 从**交换链纹理**回读前 N 帧 PPM
   （要求 surface 支持 CopySrc）→ CI 直呈像素断言（`ctest -R render3d_present_e2e`）；`MAQUE_RENDER3D_INFO=1`
   打印 renderer caps；`--shot/--shot-seq` 在直呈模式下仍走离屏回读。3D pass/PBR 尚未实现（M2–M4）。
 - **3D 组件（plans/18 M2）**：**已声明接口直接可用**——节点挂 `scene.Transform3D` + `render.Camera3D` /
@@ -313,7 +315,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   - `--shot-every 20 --shot-count 4`：每 20 帧一张、共 4 张后退出（`MAQUE_SHOT_EVERY`/`MAQUE_SHOT_COUNT`）。
   - `--frames N`：最多跑 N 帧（`MAQUE_MAX_FRAMES`）。**到上限属于正常结束（退出码 0）**，
     不是失败 —— 之前返回 1，在脚本里看起来像出错。
-  PNG 由 image 模块写出（zlib 可用则真压缩，否则 stored deflate）；尺寸 = 渲染目标（设计分辨率 × 视图 × `MAQUE_RENDER_SCALE`；未设时 1.0，与窗口无关）。
+  PNG 由 image 模块写出（zlib 可用则真压缩，否则 stored deflate）；无窗口截图尺寸 = 虚拟屏幕
+  （设计分辨率 × 视图数）× `render_scale`，默认 1；有窗口的普通渲染目标 = drawable × `render_scale`。
   测试：`ctest -R shot_e2e`（PNG 有效性/确定性/PPM/错误路径/**批量截图**/`--frames` 退出码）。VSCode 预览插件：`editors/vscode/`（`install.sh` 装到本地扩展目录；
   文档在该目录 README）。绑定面一致性：`ctest -R bindings_e2e`（schema → JS/Lua 探针，逐条检查可调用性）。
 - **内建 shader（assets/builtin/shaders/）**：**一个 shader 一个目录**（目录名 = shader 名，
@@ -355,6 +358,12 @@ tools\win\build.cmd -Sanitize address -RunTests
   埋点**只用** `modules/core/tracy` 的 `MQ_TRACY_*` 宏（模块颜色/命名/开关一处管理，
   `#include "core/tracy/mq_tracy.h"`）；只加在**外层入口**，不要进热内循环；新增模块色改
   `mq_tracy.h` 的 `Module`/`color()`。`-DMAQUE_TRACY=OFF` 时全部宏 no-op。
+  **内存域（docs/29 §10）**：`script / node / texture / gpu / font / heap` 六条曲线 + `mem/area/*`
+  （UI/3D 暖色、System/Script 冷色）；`MAQUE_TRACY_MEM_REPORT=1` 打印文本表（无 GUI 也能看），
+  `MAQUE_TRACY_MEM=0` 运行时关闭；`-DMAQUE_TRACY_MEMORY=OFF` 编译期剔除；
+  `-DMAQUE_TRACY_ALLOC=ON` 才启用全局 new/delete 拦截（+16B/块，Windows+ASan 不兼容）。
+  `MQ_TRACY_MEM_ADD/SUB/SET/ZONE/DELTA`、`MQ_TRACY_ALLOC_EVENT/FREE_EVENT`、`MQ_TRACY_LOCKABLE` 等宏
+  见 `mq_tracy.h`；测试 `ctest -R 'tracy|tracy_mem'`。
   ⚠️ Tracy 客户端配置必须含 **`TRACY_NO_CRASH_HANDLER`**（与 ASan 冲突：不关时 Debug+ASan 下
   `tracy-capture` 只能收到 3 帧/0 zone，关掉才正常）。
   无 GUI 抓 trace：`MAQUE_TRACY=1 MAQUE_WINDOW=0x0 ./maque_player <scene> &` +
@@ -393,7 +402,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   自建纹理必须 `ImGui::RegisterUserTexture()`（1.92+ 的外部纹理 API），否则后端不创建 SDL_Texture（白图）。
 - **引擎侧 ImGui 调试面板（docs/28）**：`modules/ui/imgui` + `modules/runtime`。**默认不显示**（`MAQUE_IMGUI=1`
   或游戏内 **F2** 打开）；打开后 stats 面板（FPS/logic/render/draws/tris/frame/target）+ 74 个 `imgui_*` 脚本函数。
-  **F4** 弹出**引擎选项**面板（MSAA / 默认太阳光 / 主相机 near·far；`MAQUE_ENGINE_OPTIONS` 给启动初值，
+  **F4** 弹出**引擎选项**面板（rendered/textured/solid/wireframe、3D/2D 图层、MSAA、默认太阳光、
+  主相机 near·far；其中 textured = base-color 贴图且无光照；`MAQUE_ENGINE_OPTIONS` 给启动初值，
   只在成帧时生效的视图层覆盖，不写场景/不进快照）。**F2/F4 互不干扰**且作为引擎热键**不再下发给脚本**
   （避免开关面板时双触发游戏键）；F4 自己打开的 ImGui 在收起面板时恢复关闭。**帧时序**：脚本阶段只
   **录制** ImGui draw list → 引擎渲染到 CPU 像素 → `mq_platform_draw_rect` 游戏帧进 `SDL_Renderer` 后台缓冲 →
@@ -624,7 +634,7 @@ baseline-1/-2；栅格化后把贴近基线的字形统一吸附到 baseline-1�
 ## 常见改动怎么做
 
 - **加一个数据类型/组件**：编辑 `modules/core/data/schema/<模块>.yaml` 的 `class_list` → 重构建（自动重生成）。
-- **加一个引擎接口**：在 `api_list` 加 `fn/args/returns`（标量/string）；实现放 `modules/api/src/api.cpp`；
+- **加一个引擎接口**：在 `api_list` 加 `fn/args/returns`（标量/string/bytes）；实现放 `modules/api/src/`；
   要内联实现则用 `manual: "<header>"` 并把头放到 `modules/api/include/`。
 - **加一个模块**：`modules/<area>/<name>/`，含 `include/`、`src/`、`tests/`、`CMakeLists.txt`；
   在根 `CMakeLists.txt` `add_subdirectory`；导出 `maque::<name>` 静态库 + `add_test`。

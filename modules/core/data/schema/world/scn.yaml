@@ -178,6 +178,9 @@
         - { name: seed,     type: uint32_t, default: 0 }
         - { name: views,    type: int32_t, default: 1 }         # 同屏视图数（VR: 2）
         - { name: eye_sep,  type: float,   default: 0.0F }      # 眼距/视差（像素）
+        # 主输出渲染倍率：相对窗口 drawable/swapchain 的设备像素；1 = 原生屏幕分辨率。
+        # 无窗口（截图/嵌入宿主）时以设计分辨率为虚拟屏幕基准。环境变量 MAQUE_RENDER_SCALE 优先。
+        - { name: render_scale, type: float, default: 1.0F, attrs: { range: [0.25, 4] }, doc: "主输出渲染倍率（相对屏幕设备像素；1=原生分辨率）" }
         # 物理（docs/15 §3）：求解器由引擎侧确定性模块提供，场景只声明参数
         # ⚠️ 场景里**一切 y 都是世界坐标（y 向上）**，重力也是：屏幕向下 = 世界 −y = 负值。
         #    默认 −900 → 物体向屏幕下方掉；要反重力（向上加速）写正值。

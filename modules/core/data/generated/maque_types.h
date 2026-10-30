@@ -269,6 +269,14 @@ namespace watcher {
 
 } // namespace watcher
 
+namespace zlib {
+
+} // namespace zlib
+
+namespace zstd {
+
+} // namespace zstd
+
 namespace anim {
 
 enum class AnimParamType : int32_t {
@@ -2458,6 +2466,7 @@ struct Scene {
     uint32_t seed = 0;
     int32_t views = 1;
     float eye_sep = 0.0F;
+    float render_scale = 1.0F;
     math::Color env_color = {0.27F, 0.28F, 0.31F, 1.0F};
     float env_intensity = 1.6F;
     math::Color env_sky_color = {0.0F, 0.0F, 0.0F, 1.0F};

@@ -14,6 +14,14 @@ option(MAQUE_HEADLESS_STUBS "Use headless platform and null renderer without Ems
 # Tracy 性能分析（docs/29）：默认编入客户端（手动启动：F3 / MAQUE_TRACY=1）；
 # OFF = 全部埋点宏展开为 no-op、不链接第三方库（最小构建）。
 option(MAQUE_TRACY "Tracy performance profiler integration (docs/29)" ON)
+# 内存记账子开关（docs/29 §10）：
+#   · MEMORY：按域统计脚本/节点/纹理/GPU/字体（计数器开销；默认 ON）
+#   · ALLOC ：全局 operator new/delete 拦截 → heap 域 + Tracy Memory 视图（默认 OFF：
+#              每块 +16B 头，属于性能剖析构建选项，不适合长期 Release）
+#   · LOCKS ：锁追踪（MQ_TRACY_LOCKABLE；默认 ON，不用的模块零成本）
+option(MAQUE_TRACY_MEMORY "Tracy per-domain memory accounting (docs/29)" ON)
+option(MAQUE_TRACY_ALLOC "Tracy global new/delete interception (docs/29; profiling builds only)" OFF)
+option(MAQUE_TRACY_LOCKS "Tracy lock tracking (docs/29)" ON)
 
 # Emscripten 必须由 emcmake/SDK 官方 toolchain 选择；MAQUE_WASM 只控制项目目标图。
 if(EMSCRIPTEN)

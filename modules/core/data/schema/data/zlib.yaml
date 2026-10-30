@@ -1,0 +1,10 @@
+# zlib —— modules/api（脚本二进制压缩接口）
+- namespace: zlib
+  version: 1
+  api_list:
+    - { fn: available, returns: bool,
+        doc: "当前构建是否链接 zlib/zlib-ng compatibility API" }
+    - { fn: compress, args: [ { name: data, type: bytes }, { name: level, type: int32_t } ], returns: bytes,
+        doc: "生成 zlib 包装的 deflate 流；level=-1 使用库默认值，0..9 对应 zlib 级别；失败或输入超过 64 MiB 返回空 bytes" }
+    - { fn: decompress, args: [ { name: data, type: bytes } ], returns: bytes,
+        doc: "解压 zlib 包装的 deflate 流；输出上限 64 MiB；失败返回空 bytes" }

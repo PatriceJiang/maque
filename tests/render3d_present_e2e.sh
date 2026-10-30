@@ -23,15 +23,19 @@ fail() { echo "render3d_present_e2e: FAIL $*" >&2; exit 1; }
 
 rm -rf "$WORK"; mkdir -p "$WORK"
 unset MAQUE_HEADLESS MAQUE_PRESENT MAQUE_CAPTURE MAQUE_CAPTURE_WGPU MAQUE_CAPTURE_FRAMES \
-      MAQUE_MAX_FRAMES MAQUE_IMGUI MAQUE_SHOT MAQUE_SHOT_SEQ 2>/dev/null || true
+      MAQUE_MAX_FRAMES MAQUE_IMGUI MAQUE_SHOT MAQUE_SHOT_SEQ MAQUE_RENDER_SCALE \
+      MAQUE_RENDER3D_INFO 2>/dev/null || true
 
 # ---- ① + ②：wgpu 交换链直接呈现 + 抓交换链帧 ----
-MAQUE_PRESENT=wgpu MAQUE_WINDOW=640x480 MAQUE_CAPTURE_WGPU="$WORK/direct" MAQUE_CAPTURE_FRAMES=2 \
+MAQUE_PRESENT=wgpu MAQUE_WINDOW=640x480 MAQUE_RENDER3D_INFO=1 \
+    MAQUE_CAPTURE_WGPU="$WORK/direct" MAQUE_CAPTURE_FRAMES=2 \
     timeout 90 "$PLAYER" --frames 5 "$SCN" >"$WORK/out.txt" 2>&1 \
     || { cat "$WORK/out.txt"; fail "wgpu 直呈运行失败（exit != 0）"; }
 grep -q "direct present attach_window .*rc=0" "$WORK/out.txt" \
     || { cat "$WORK/out.txt"; fail "attach_window 未成功（surface/swapchain 建不起来）"; }
 if grep -q "present via renderer=" "$WORK/out.txt"; then fail "直呈模式仍走了 SDL 呈现路径"; fi
+grep -q "present path direct-to-surface 640x480 (blit=0)" "$WORK/out.txt" \
+    || { cat "$WORK/out.txt"; fail "渲染分辨率等于 surface 时仍未走无 blit 直呈"; }
 grep -q "capture(wgpu surface)" "$WORK/out.txt" \
     || { cat "$WORK/out.txt"; fail "未抓到直呈帧（surface 不支持 CopySrc？）"; }
 [ -s "$WORK/direct_0.ppm" ] || fail "缺直呈帧 PPM"
@@ -52,11 +56,19 @@ sys.exit(0 if diff > 500 else 1)
 PY
 echo "render3d_present_e2e: ① wgpu swapchain 直接呈现 + 帧内容 OK"
 
-# ---- ③：直呈环境下 --shot 仍可离屏回读（截图路径） ----
+# ---- ③：render_scale 改变目标尺寸时才被动启用 blit ----
+MAQUE_PRESENT=wgpu MAQUE_WINDOW=640x480 MAQUE_RENDER_SCALE=0.5 MAQUE_RENDER3D_INFO=1 \
+    timeout 90 "$PLAYER" --frames 3 "$SCN" >"$WORK/scaled.txt" 2>&1 \
+    || { cat "$WORK/scaled.txt"; fail "render_scale=0.5 运行失败"; }
+grep -q "present path scaled 320x240 -> 640x480 (blit=1)" "$WORK/scaled.txt" \
+    || { cat "$WORK/scaled.txt"; fail "目标与 surface 不同却未启用条件 blit"; }
+echo "render3d_present_e2e: ② 条件 blit（320x240 → 640x480）OK"
+
+# ---- ④：直呈环境下 --shot 仍可离屏回读（截图路径） ----
 MAQUE_PRESENT=wgpu MAQUE_WINDOW=640x480 timeout 90 "$PLAYER" --shot "$WORK/shot.png" --frames 5 "$SCN" \
     >"$WORK/shot.txt" 2>&1 \
     || { cat "$WORK/shot.txt"; fail "--shot 在直呈模式下失败"; }
 grep -q "runtime: shot" "$WORK/shot.txt" || { cat "$WORK/shot.txt"; fail "截图未写入"; }
 [ -s "$WORK/shot.png" ] || fail "截图 PNG 为空"
-echo "render3d_present_e2e: ② 直呈模式下 --shot 离屏回读 OK"
+echo "render3d_present_e2e: ③ 直呈模式下 --shot 离屏回读 OK"
 echo "render3d_present_e2e: PASS"

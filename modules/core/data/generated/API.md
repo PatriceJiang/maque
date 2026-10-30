@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **319** 个 · 控制面方法 **57** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
+统计：脚本 API **325** 个 · 控制面方法 **57** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -37,6 +37,22 @@
 | `storage.exists` | key: string | float | ctx · 键是否存在 |
 | `storage.keys` | — | string | ctx · 键列表（JSON 数组字符串） |
 | `storage.info` | — | string | ctx · 自省：JSON {mode, root, ns}（AI/调试） |
+
+### zstd · `data/zstd.yaml`
+
+| 函数 | 参数 | 返回 | 说明 |
+|------|------|------|------|
+| `zstd.available` | — | bool | 当前构建是否链接 libzstd |
+| `zstd.compress` | data: bytes, level: int32_t | bytes | 压缩字节；level=0 使用 zstd 默认级别；失败或输入超过 64 MiB 返回空 bytes |
+| `zstd.decompress` | data: bytes | bytes | 解压 zstd frame；输出上限 64 MiB；失败返回空 bytes |
+
+### zlib · `data/zlib.yaml`
+
+| 函数 | 参数 | 返回 | 说明 |
+|------|------|------|------|
+| `zlib.available` | — | bool | 当前构建是否链接 zlib/zlib-ng compatibility API |
+| `zlib.compress` | data: bytes, level: int32_t | bytes | 生成 zlib 包装的 deflate 流；level=-1 使用库默认值，0..9 对应 zlib 级别；失败或输入超过 64 MiB 返回空 bytes |
+| `zlib.decompress` | data: bytes | bytes | 解压 zlib 包装的 deflate 流；输出上限 64 MiB；失败返回空 bytes |
 
 ### host（全局，无前缀） · `runtime/host.yaml`
 
@@ -444,7 +460,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 记录（POD）：
 
-- `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float
+- `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float, zoom_y: float
 - `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
 - `mesh`：vertices: const float*, uvs: const float*, colors: const float*, dark_colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float, z: int32_t
 - `window`：kind: int32_t, display: void*, handle: void*, extra: void*, width: int32_t, height: int32_t
@@ -459,8 +475,9 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `environment`：sky_mode: int32_t, sky_color: float[4], sky_texture: int32_t, env_color: float[4], env_texture: int32_t, env_irradiance_texture: int32_t, env_cubemap: int32_t, env_cubemap_irradiance: int32_t, intensity: float, env_sky_color: float[4], env_ground_color: float[4], env_highlight: float, env_rotation: float
 - `post`：exposure: float, tonemap: int32_t
 - `shader_pass`：shader: int32_t, time: float, frame: float, mouse: float[4]
-- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t, render_mode: int32_t
+- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t, render_mode: int32_t, present_after_readback: int32_t
 - `render_texture_desc`：struct_size: uint32_t, width: int32_t, height: int32_t, pixel_format: int32_t, filter: int32_t, wrap_u: int32_t, wrap_v: int32_t, clear_color: float[4]
+- `resource_usage`：struct_size: uint32_t, texture_bytes: uint64_t, buffer_bytes: uint64_t, other_bytes: uint64_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -487,6 +504,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `configure_render_texture` | self: self, id: int32_t, desc: const mq_renderer_render_texture_desc* | int32_t |
 | `render_to_texture` | self: self, id: int32_t, frame: const mq_renderer_frame3d* | int32_t |
 | `read_texture` | self: self, id: int32_t, out: uint8_t*, out_size: uint32_t | int32_t |
+| `resource_bytes2` | self: self, out: mq_renderer_resource_usage* | int32_t |
 
 ## 5. 模块 C ABI（module_abi）
 
@@ -885,9 +903,14 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_spine_attachment_sequence_info` | int | inst: mq_spine_instance*, slot_index: int, out: mq_spine_sequence_info* |
 | `mq_spine_instance_set_sequence_index` | int | inst: mq_spine_instance*, slot_index: int, frame: int |
 
-### script — `maque.script` v1
+### script — `maque.script` v2
 
 头文件：`build/modules/core/data/generated/abi/script.h` · 宏：`MQ_SCRIPT_ABI_VERSION` / `_IFACE_NAME`
+
+结构体：
+
+- `mq_script_bytes_view`：data: const void*, size: size_t
+- `mq_script_bytes_result`：data: void*, size: size_t, release: void (*)(void* user, void* data), release_user: void*
 
 | 函数 | 返回 | 参数 |
 |------|------|------|
@@ -930,6 +953,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_script_register_mixed` | int | vm: mq_script_vm*, name: const char*, fn: mq_script_mixed_fn, user: void* |
 | `mq_script_register_multi` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_fn, user: void* |
 | `mq_script_register_multi_ret_str` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_multi_ret_str_fn, user: void* |
+| `mq_script_register_bytes` | int | vm: mq_script_vm*, name: const char*, kinds: const char*, fn: mq_script_bytes_fn, user: void* |
 
 ### asset — `maque.asset` v1
 
@@ -1115,6 +1139,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_font_glyph_count` | uint32_t | font: mq_font*, size: float |
 | `mq_font_glyph_at` | int | font: mq_font*, size: float, index: uint32_t, out: mq_text_glyph* |
 | `mq_font_atlas_size` | int | font: mq_font*, size: float, out_w: uint32_t*, out_h: uint32_t* |
+| `mq_font_memory_bytes` | uint64_t | font: const mq_font* |
 
 ### input — `maque.input` v1
 

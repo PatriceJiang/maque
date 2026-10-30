@@ -50,6 +50,7 @@
         - { name: init_err, type: uint16_t, default: 0, attrs: { transient: true, readonly: true } }
   module_abi:
     module: script
+    version: 2
     abi_name: "maque.script"
     includes: [ "<stddef.h>", "<stdint.h>" ]
     opaque: [ mq_script_vm, mq_script_bus ]
@@ -62,6 +63,21 @@
       - { name: mq_script_multi_fn, type: "int (*)(void* user, int nnum, const double* nums, int nstr, const char** strs, double* ret)",
           doc: "通用编组：任意数值/字符串组合（docs/21 §6.1）" }
       - { name: mq_script_multi_ret_str_fn, type: "int (*)(void* user, int nnum, const double* nums, int nstr, const char** strs, char* ret, int ret_cap)" }
+      - { name: mq_script_bytes_fn, type: "int (*)(void* user, int nnum, const double* nums, int nbytes, const void** bytes, const size_t* byte_sizes, mq_script_bytes_result* ret)",
+          doc: "二进制编组：kinds 用 n/b 描述数值/字节参数；结果带长度与释放回调" }
+    structs:
+      - name: mq_script_bytes_view
+        doc: "只读二进制视图；data 仅在同步宿主调用期间有效"
+        fields:
+          - { name: data, type: "const void*" }
+          - { name: size, type: "size_t" }
+      - name: mq_script_bytes_result
+        doc: "脚本二进制返回值；VM 复制到 Uint8Array/Lua string 后调用 release（若非 NULL）"
+        fields:
+          - { name: data, type: "void*" }
+          - { name: size, type: "size_t" }
+          - { name: release, type: "void (*)(void* user, void* data)" }
+          - { name: release_user, type: "void*" }
     fns:
       - { fn: mq_script_vm_create, returns: "mq_script_vm*", args: [  ],
           doc: "按默认后端创建 VM（等价 mq_script_vm_create_lang(NULL)）" }
@@ -120,6 +136,8 @@
       - { fn: mq_script_register_mixed, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: fn, type: "mq_script_mixed_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_register_multi, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: fn, type: "mq_script_multi_fn" }, { name: user, type: "void*" } ] }
       - { fn: mq_script_register_multi_ret_str, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: fn, type: "mq_script_multi_ret_str_fn" }, { name: user, type: "void*" } ] }
+      - { fn: mq_script_register_bytes, returns: "int", args: [ { name: vm, type: "mq_script_vm*" }, { name: name, type: "const char*" }, { name: kinds, type: "const char*" }, { name: fn, type: "mq_script_bytes_fn" }, { name: user, type: "void*" } ],
+          doc: "注册二进制函数：JS bytes=Uint8Array/ArrayBuffer/UTF-8 string，Lua bytes=二进制 string" }
   # 脚本事件回调（docs/14 §4、docs/19 §8）：引擎按声明调用，名字与参数统一来自 DSL
   callbacks:
     - { name: on_start,        args: [] }

@@ -1,15 +1,38 @@
 #include "core/script/mq_script.h"
 #include "core/tracy/mq_tracy.h"
+#include "vm_mem.h"
 #include <print>
 
 #include "quickjs.h"
 
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
+/* ---- 脚本内存域（docs/29 §10.2）：QuickJS 自定义分配器 ----
+ * JS_NewRuntime2 的 5 个回调；只有 MQ_TRACY_MEMORY_ENABLED 时存在（否则用默认 JS_NewRuntime）。
+ * js_malloc_usable_size 用于 QuickJS 自身的 malloc_size 统计，这里返回 malloc 实际块大小。 */
+#if MQ_TRACY_MEMORY_ENABLED
+namespace {
+
+void* qjs_calloc(void* /*opaque*/, size_t count, size_t size) {
+    return maque::script::mem::tracked_calloc(count, size);
+}
+void* qjs_malloc(void* /*opaque*/, size_t size) { return maque::script::mem::tracked_malloc(size); }
+void qjs_free(void* /*opaque*/, void* ptr) { maque::script::mem::tracked_free(ptr); }
+void* qjs_realloc(void* /*opaque*/, void* ptr, size_t size) {
+    return maque::script::mem::tracked_realloc(ptr, size);
+}
+size_t qjs_usable(const void* ptr) { return maque::script::mem::usable_size(ptr); }
+
+const JSMallocFunctions kQjsMalloc = { qjs_calloc, qjs_malloc, qjs_free, qjs_realloc, qjs_usable };
+
+} // namespace
+#endif
+
 struct HostFn {
-    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr } kind = Num;
+    enum Kind { Num, Str, RetStr, Mixed, Multi, MultiRetStr, Bytes } kind = Num;
     bool is_str = false;                       /* Str：单字符串参数 */
     mq_script_num_fn    num = nullptr;
     mq_script_str_fn    str = nullptr;
@@ -17,7 +40,8 @@ struct HostFn {
     mq_script_mixed_fn   mixed = nullptr;      /* 数值参数 + 尾部字符串 */
     mq_script_multi_fn   multi = nullptr;      /* 通用：任意数值/字符串组合 */
     mq_script_multi_ret_str_fn multi_ret_str = nullptr;
-    const char* kinds = "";                    /* 逐参数 'n' / 's' */
+    mq_script_bytes_fn bytes = nullptr;        /* bytes → Uint8Array（VM 复制后释放宿主结果） */
+    const char* kinds = "";                    /* 逐参数 'n' / 's' / 'b' */
     void* user = nullptr;
 };
 
@@ -75,6 +99,61 @@ static JSValue multi_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueC
     if (rc != 0) return JS_EXCEPTION;
     if (h.kind == HostFn::MultiRetStr) return JS_NewString(ctx, sbuf);
     return JS_NewFloat64(ctx, ret);
+}
+
+static JSValue bytes_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
+    auto* vm = S(static_cast<mq_script_vm*>(JS_GetContextOpaque(ctx)));
+    if (!vm || magic < 0 || magic >= (int)S(vm)->fns.size()) return JS_UNDEFINED;
+    HostFn& h = S(vm)->fns[(size_t)magic];
+    double nums[16] = { 0 };
+    const void* bytes[16] = { nullptr };
+    size_t sizes[16] = { 0 };
+    const char* strings[16] = { nullptr };
+    int nnum = 0, nbytes = 0, nstrings = 0;
+    const size_t expected = std::strlen(h.kinds);
+    if ((size_t)argc < expected) return JS_ThrowTypeError(ctx, "not enough arguments");
+    for (size_t i = 0; i < expected; ++i) {
+        if (h.kinds[i] == 'b') {
+            size_t size = 0;
+            uint8_t* data = nullptr;
+            if (JS_IsString(argv[i])) {
+                const char* text = JS_ToCStringLen(ctx, &size, argv[i]);
+                if (!text) goto fail;
+                strings[nstrings++] = text;
+                data = (uint8_t*)text;
+            } else if (JS_IsArrayBuffer(argv[i])) {
+                data = JS_GetArrayBuffer(ctx, &size, argv[i]);
+            } else {
+                data = JS_GetUint8Array(ctx, &size, argv[i]);
+            }
+            if (!data && size != 0) goto fail;
+            if (!data && !JS_IsArrayBuffer(argv[i]) && !JS_IsString(argv[i])) {
+                for (int j = 0; j < nstrings; ++j) JS_FreeCString(ctx, strings[j]);
+                return JS_ThrowTypeError(ctx, "bytes argument must be Uint8Array, ArrayBuffer, or string");
+            }
+            bytes[nbytes] = data;
+            sizes[nbytes++] = size;
+        } else {
+            double value = 0.0;
+            if (JS_ToFloat64(ctx, &value, argv[i])) goto fail;
+            nums[nnum++] = value;
+        }
+    }
+    {
+        mq_script_bytes_result result{};
+        const int rc = h.bytes ? h.bytes(h.user, nnum, nums, nbytes, bytes, sizes, &result) : 1;
+        for (int i = 0; i < nstrings; ++i) JS_FreeCString(ctx, strings[i]);
+        if (rc != 0 || (result.size != 0 && !result.data)) {
+            if (result.release) result.release(result.release_user, result.data);
+            return JS_ThrowInternalError(ctx, "host bytes function failed");
+        }
+        JSValue out = JS_NewUint8ArrayCopy(ctx, static_cast<const uint8_t*>(result.data), result.size);
+        if (result.release) result.release(result.release_user, result.data);
+        return out;
+    }
+fail:
+    for (int i = 0; i < nstrings; ++i) JS_FreeCString(ctx, strings[i]);
+    return JS_EXCEPTION;
 }
 
 static JSValue host_trampoline(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv, int magic) {
@@ -138,7 +217,12 @@ namespace maque::script::js {
 mq_script_vm* vm_create(void) {
     auto* vm = new JsVm();
     vm->lang = "js";                       // 公共首部：后端自省
+#if MQ_TRACY_MEMORY_ENABLED
+    /* 内存记账开启时用带记账的分配器（关掉 MAQUE_TRACY_MEM 也仍用它：账本可随时打开）。 */
+    S(vm)->rt = JS_NewRuntime2(&kQjsMalloc, nullptr);
+#else
     S(vm)->rt = JS_NewRuntime();
+#endif
     if (!S(vm)->rt) { delete vm; return nullptr; }
     S(vm)->ctx = JS_NewContext(S(vm)->rt);
     if (!S(vm)->ctx) { JS_FreeRuntime(S(vm)->rt); delete vm; return nullptr; }
@@ -157,9 +241,11 @@ void vm_destroy(mq_script_vm* vm) {
 }
 
 /* 支持 "ns.fn" 形式：在全局上创建/复用命名空间对象后挂函数。 */
-static int register_common(mq_script_vm* vm, const char* name, int magic, bool multi = false) {
-    JSValue fn = JS_NewCFunctionMagic(S(vm)->ctx, multi ? multi_trampoline : host_trampoline, name,
-                                      multi ? 8 : 4, JS_CFUNC_generic_magic, magic);
+static int register_common(mq_script_vm* vm, const char* name, int magic, int trampoline = 0) {
+    JSCFunctionMagic* call = trampoline == 2 ? bytes_trampoline
+                          : trampoline == 1 ? multi_trampoline : host_trampoline;
+    JSValue fn = JS_NewCFunctionMagic(S(vm)->ctx, call, name,
+                                      trampoline ? 8 : 4, JS_CFUNC_generic_magic, magic);
     JSValue global = JS_GetGlobalObject(S(vm)->ctx);
     std::string n(name);
     auto dot = n.rfind('.');
@@ -216,7 +302,15 @@ int register_multi_ret_str(mq_script_vm* vm, const char* name, const char* kinds
     if (!vm) return 1;
     HostFn h; h.kind = HostFn::MultiRetStr; h.multi_ret_str = fn; h.user = user; h.kinds = intern_kinds(vm, kinds);
     S(vm)->fns.push_back(h);
-    return register_common(vm, name, (int)S(vm)->fns.size() - 1, true);
+    return register_common(vm, name, (int)S(vm)->fns.size() - 1, 1);
+}
+
+int register_bytes(mq_script_vm* vm, const char* name, const char* kinds,
+                   mq_script_bytes_fn fn, void* user) {
+    if (!vm || !name || !fn) return 1;
+    HostFn h; h.kind = HostFn::Bytes; h.bytes = fn; h.user = user; h.kinds = intern_kinds(vm, kinds);
+    S(vm)->fns.push_back(h);
+    return register_common(vm, name, (int)S(vm)->fns.size() - 1, 2);
 }
 
 int register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, void* user) {

@@ -96,7 +96,8 @@ $env:MAQUE_PRESENT='wgpu'
 ```
 
 Linux/macOS 把 `.\build-win\...` 换成 `./build/samples/player/maque_player`。
-截图尺寸 = 渲染目标（设计分辨率 640×360 × 视图数 × `MAQUE_RENDER_SCALE`，未设时 1.0）。
+截图尺寸 = 虚拟屏幕尺寸（无窗口时为设计分辨率 640×360 × 视图数）× `MAQUE_RENDER_SCALE`；
+有窗口交互运行时主目标则是 drawable 设备像素 × `render_scale`。
 
 两个 shader 的负载差别很大：Seascape 是少量 noise/高度图求交（很快）；
 Mandelbulb 是逐像素 raymarch（每步 4 次 DE + 更细的 3 次梯度采样 + 阴影光线），

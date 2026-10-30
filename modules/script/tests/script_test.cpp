@@ -3,6 +3,8 @@
 #include <print>
 
 #include <cstdio>
+#include <cstdlib>
+#include <cstdint>
 #include <cstring>
 
 static int g_failures = 0;
@@ -18,6 +20,25 @@ static int host_len(void*, const char* s, double* ret) {
 static uint32_t s_rng_state = 1u;
 static uint32_t host_rng(void*) { s_rng_state = s_rng_state * 1664525u + 1013904223u; return s_rng_state; }
 
+struct ByteState { int releases = 0; };
+static void host_bytes_release(void* user, void* data) {
+    ++static_cast<ByteState*>(user)->releases;
+    std::free(data);
+}
+static int host_bytes(void* user, int nnum, const double* nums, int nbytes,
+                      const void** bytes, const size_t* sizes, mq_script_bytes_result* ret) {
+    if (!user || !ret || nnum != 1 || nbytes != 1) return 1;
+    auto* out = static_cast<uint8_t*>(std::malloc(sizes[0]));
+    if (!out && sizes[0] != 0) return 1;
+    const auto* in = static_cast<const uint8_t*>(bytes[0]);
+    for (size_t i = 0; i < sizes[0]; ++i) out[i] = (uint8_t)(in[i] + (int)nums[0]);
+    ret->data = out;
+    ret->size = sizes[0];
+    ret->release = host_bytes_release;
+    ret->release_user = user;
+    return 0;
+}
+
 int main() {
     mq_script_vm* vm = mq_script_vm_create();
     CHECK(vm != nullptr);
@@ -25,12 +46,20 @@ int main() {
 
     CHECK(mq_script_register_num(vm, "host_add", host_add, nullptr) == 0);
     CHECK(mq_script_register_str(vm, "host_len", host_len, nullptr) == 0);
+    ByteState byte_state;
+    CHECK(mq_script_register_bytes(vm, "host_bytes", "bn", host_bytes, &byte_state) == 0);
 
     const char* src =
         "let n = 0;\n"
         "function on_start() { n = host_add(2, 3); }\n"
         "function value() { return n; }\n"
-        "function slen() { return host_len('hello'); }\n";
+        "function slen() { return host_len('hello'); }\n"
+        "function bytes_u8() { let r=host_bytes(new Uint8Array([0,127,128,255]),1);"
+        " return r instanceof Uint8Array && r.length===4 && r[0]===1 && r[1]===128 && r[2]===129 && r[3]===0 ? 1 : 0; }\n"
+        "function bytes_ab() { let a=new Uint8Array([0,255]); let r=host_bytes(a.buffer,2);"
+        " return r.length===2 && r[0]===2 && r[1]===1 ? 1 : 0; }\n"
+        "function bytes_text() { let r=host_bytes('A\\0B',0);"
+        " return r.length===3 && r[0]===65 && r[1]===0 && r[2]===66 ? 1 : 0; }\n";
     CHECK(mq_script_eval(vm, src, "test.js") == 0);
     CHECK(mq_script_has(vm, "on_start"));
     CHECK(!mq_script_has(vm, "nope"));
@@ -39,6 +68,10 @@ int main() {
     CHECK(mq_script_call0(vm, "on_start", &r) == 0);
     CHECK(mq_script_call0(vm, "value", &r) == 0 && r == 5.0);
     CHECK(mq_script_call0(vm, "slen", &r) == 0 && r == 5.0);
+    CHECK(mq_script_call0(vm, "bytes_u8", &r) == 0 && r == 1.0);
+    CHECK(mq_script_call0(vm, "bytes_ab", &r) == 0 && r == 1.0);
+    CHECK(mq_script_call0(vm, "bytes_text", &r) == 0 && r == 1.0);
+    CHECK(byte_state.releases == 3);
 
     // 调用不存在的函数
     CHECK(mq_script_call0(vm, "missing", &r) != 0);

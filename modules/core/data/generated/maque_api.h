@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "core/script/mq_script.h"
+
 #include "math.custom.h"
 
 namespace math {
@@ -17,6 +19,18 @@ namespace storage {
   float exists(void* ctx, const char* key);
   const char* keys(void* ctx);
   const char* info(void* ctx);
+}
+
+namespace zstd {
+  bool available();
+  mq_script_bytes_result compress(mq_script_bytes_view data, int32_t level);
+  mq_script_bytes_result decompress(mq_script_bytes_view data);
+}
+
+namespace zlib {
+  bool available();
+  mq_script_bytes_result compress(mq_script_bytes_view data, int32_t level);
+  mq_script_bytes_result decompress(mq_script_bytes_view data);
 }
 
 namespace host {

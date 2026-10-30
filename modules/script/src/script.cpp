@@ -185,5 +185,12 @@ int mq_script_register_multi_ret_str(mq_script_vm* vm, const char* name, const c
     return is_lua(vm) ? maque::script::lua::register_multi_ret_str(vm, name, kinds, fn, user)
                       : maque::script::js::register_multi_ret_str(vm, name, kinds, fn, user);
 }
+int mq_script_register_bytes(mq_script_vm* vm, const char* name, const char* kinds,
+                             mq_script_bytes_fn fn, void* user) {
+    MQ_TRACY_ZONE_N(script, "register");
+    if (!vm) return 1;
+    return is_lua(vm) ? maque::script::lua::register_bytes(vm, name, kinds, fn, user)
+                      : maque::script::js::register_bytes(vm, name, kinds, fn, user);
+}
 
 } // extern "C"

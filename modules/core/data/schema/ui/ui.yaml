@@ -271,9 +271,9 @@
         - { name: fit_mode,      type: FitMode, default: "FitMode::ShowAll" }
         - { name: align,         type: Align, default: "Align::Center", doc: "留边/裁剪时画布在窗口中的对齐" }
         - { name: dpi_scale,     type: bool, default: true, doc: "是否让绘制区跟随显示器内容缩放（HiDPI）" }
-        # 渲染分辨率倍率（超采样）：0 = 自动（跟随窗口像素，上限 4）；1 = 设计分辨率（像素风，放大有锯齿）；
-        # N = 固定 N 倍。文字按**渲染目标像素**栅格化 → 目标越接近窗口分辨率，文字越平滑
-        - { name: render_scale,  type: float, default: 0.0F, attrs: { range: [0, 8] }, doc: "渲染分辨率倍率（0=自动跟随窗口像素）" }
+        # 兼容入口：主输出倍率现由 scn.Scene.render_scale 声明，含义同为相对屏幕设备像素；
+        # 0 = 未指定（使用 Scene/默认 1），>0 时作为旧场景覆盖。不要用 Camera viewport 表达渲染分辨率。
+        - { name: render_scale,  type: float, default: 0.0F, attrs: { range: [0, 4] }, doc: "兼容的主输出倍率覆盖（相对屏幕设备像素；0=未指定）" }
         - { name: min_scale,     type: float, default: 0.0F, attrs: { unit: px, doc: "缩放下限（0=不限）" } }
         - { name: max_scale,     type: float, default: 0.0F, attrs: { unit: px, doc: "缩放上限（0=不限）" } }
         # ---- 解析结果（transient：每帧由引擎写回）----

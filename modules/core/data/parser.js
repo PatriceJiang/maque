@@ -446,11 +446,32 @@ function parseApiDef(nsName, def) {
   const args = Array.isArray(def.args)
     ? def.args.map((a) => ({ name: String(a.name), type: String(a.type) }))
     : []
+  if (args.length > 16) {
+    throw new SchemaError(`api "${nsName}.${def.fn}" has ${args.length} args; script ABI limit is 16`)
+  }
+  const names = new Set()
+  for (const arg of args) {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(arg.name) || names.has(arg.name)) {
+      throw new SchemaError(`invalid or duplicate api arg "${arg.name}" in "${nsName}.${def.fn}"`)
+    }
+    names.add(arg.name)
+    if (!API_SCALARS.has(arg.type) && arg.type !== 'string' && arg.type !== 'bytes') {
+      throw new SchemaError(`unsupported api arg type "${arg.type}" in "${nsName}.${def.fn}"`)
+    }
+  }
+  const returns = def.returns === undefined ? 'void' : String(def.returns)
+  if (returns !== 'void' && returns !== 'string' && returns !== 'bytes' && !API_SCALARS.has(returns)) {
+    throw new SchemaError(`unsupported api return type "${returns}" in "${nsName}.${def.fn}"`)
+  }
+  if ((returns === 'bytes' || args.some((a) => a.type === 'bytes')) &&
+      !(returns === 'bytes' && args.every((a) => a.type === 'bytes' || API_SCALARS.has(a.type)))) {
+    throw new SchemaError(`api "${nsName}.${def.fn}": bytes bindings require a bytes return and only bytes/numeric args`)
+  }
   return {
     ns: nsName,
     name: String(def.fn),
     args,
-    returns: def.returns === undefined ? 'void' : String(def.returns),
+    returns,
     // MANUAL：实现的头文件（生成器只 include，不重复声明；docs/21）
     manual: def.manual === undefined || def.manual === null ? null : String(def.manual),
     // ctx：函数首参为实例上下文 void* ctx（宿主 API；绑定注册时注入）
@@ -1909,9 +1930,10 @@ function genInterfacesHeader(interfaces) {
 // 函数接口：标量类型映射到 C++ / 数值编组。
 const API_SCALARS = new Set(['float', 'double', 'bool', 'int8_t', 'uint8_t',
   'int16_t', 'uint16_t', 'int32_t', 'uint32_t', 'int64_t', 'uint64_t'])
-function apiCppType(t) {
+function apiCppType(t, isReturn = false) {
   if (API_SCALARS.has(t)) return t
   if (t === 'string') return 'const char*'
+  if (t === 'bytes') return isReturn ? 'mq_script_bytes_result' : 'mq_script_bytes_view'
   return null
 }
 function apiNumeric(t) { return t === 'void' || API_SCALARS.has(t) }
@@ -1929,6 +1951,12 @@ function genApiHeader(namespaces) {
   lines.push('')
   lines.push('#pragma once')
   lines.push('')
+  const hasBytes = namespaces.some((ns) => (ns.apis || []).some((fn) =>
+    fn.returns === 'bytes' || (fn.args || []).some((a) => a.type === 'bytes')))
+  if (hasBytes) {
+    lines.push('#include "core/script/mq_script.h"')
+    lines.push('')
+  }
   // MANUAL：收集需要在头文件中内联实现的外部头
   const manualIncludes = new Set()
   for (const ns of namespaces)
@@ -1939,16 +1967,16 @@ function genApiHeader(namespaces) {
     if (!ns.apis || ns.apis.length === 0) continue
     const declared = ns.apis.filter((fn) => {
       if (fn.manual) return false                     // 由 manual 头提供声明+实现
-      const rt = fn.returns === 'void' ? 'void' : apiCppType(fn.returns)
-      return rt !== null && fn.args.every((a) => apiCppType(a.type) !== null)
+      const rt = fn.returns === 'void' ? 'void' : apiCppType(fn.returns, true)
+      return rt !== null && fn.args.every((a) => apiCppType(a.type, false) !== null)
     })
     if (declared.length === 0) continue
     lines.push(`namespace ${ns.name} {`)
     for (const fn of declared) {
       const ps = []
       if (fn.ctx) ps.push('void* ctx')
-      for (const a of fn.args) ps.push(`${apiCppType(a.type)} ${a.name}`)
-      const ret = fn.returns === 'void' ? 'void' : apiCppType(fn.returns)
+      for (const a of fn.args) ps.push(`${apiCppType(a.type, false)} ${a.name}`)
+      const ret = fn.returns === 'void' ? 'void' : apiCppType(fn.returns, true)
       lines.push(`  ${ret} ${fn.name}(${ps.join(', ')});`)
     }
     lines.push('}')
@@ -1967,12 +1995,21 @@ function genBindingsSource(namespaces) {
   lines.push('#include <cstdio>')
   lines.push('')
   lines.push('namespace {')
+  lines.push('')
 
   // 分类：str 绑定（单个 string 参数）；num 绑定（全标量）
   const fns = []
   for (const ns of namespaces) {
     for (const fn of ns.apis || []) {
       const args = fn.args || []
+      const bytesBinding = fn.returns === 'bytes' &&
+                           args.every((a) => a.type === 'bytes' || API_SCALARS.has(a.type))
+      if (fn.returns === 'bytes' || args.some((a) => a.type === 'bytes')) {
+        if (!bytesBinding) throw new SchemaError(`unsupported bytes binding shape: ${ns.name}.${fn.name}`)
+        fns.push({ ns: ns.name, global: !!ns.global, fn, bytesBinding: true,
+                   strBinding: false, mixedBinding: false, multiBinding: false, retStr: false })
+        continue
+      }
       const retStr = fn.returns === 'string'
       /* 返回字符串的 api 只能走 ret_str / multi_ret_str（str/mixed 的返回是 double）——
        * 含字符串参数的（如 storage.get(key) → string）必须落到 multi_ret_str，否则会被静默丢弃。 */
@@ -1995,9 +2032,23 @@ function genBindingsSource(namespaces) {
       fns.push({ ns: ns.name, global: !!ns.global, fn, strBinding, mixedBinding, multiBinding, retStr })
     }
   }
-  for (const { ns, fn, strBinding, mixedBinding, multiBinding } of fns) {
+  for (const { ns, fn, bytesBinding, strBinding, mixedBinding, multiBinding } of fns) {
     const sym = `b_${ns}_${fn.name}`
-    if (strBinding) {
+    if (bytesBinding) {
+      const parts = []
+      if (fn.ctx) parts.push('user')
+      let ni = 0, bi = 0
+      for (const a of fn.args) {
+        parts.push(a.type === 'bytes'
+          ? `mq_script_bytes_view{b[${bi}], z[${bi++}]}`
+          : apiCast(a.type, `a[${ni++}]`))
+      }
+      lines.push(`int ${sym}(void* user, int, const double* a, int, const void** b, const size_t* z, mq_script_bytes_result* ret) {`)
+      lines.push('  if (!ret) return 1;')
+      lines.push(`  *ret = ${ns}::${fn.name}(${parts.join(', ')});`)
+      lines.push('  return ret->size != 0 && !ret->data ? 1 : 0;')
+      lines.push(`}  /* kinds=${fn.args.map((a) => (a.type === 'bytes' ? 'b' : 'n')).join('')} */`)
+    } else if (strBinding) {
       lines.push(`int ${sym}(void* user, const char* s, double* ret) {`)
       const args = fn.ctx ? 'user, s' : 's'
       const call = `${ns}::${fn.name}(${args})`
@@ -2054,11 +2105,13 @@ function genBindingsSource(namespaces) {
   lines.push('} // namespace')
   lines.push('')
   lines.push('extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {')
-  for (const { ns, global, fn, strBinding, mixedBinding, multiBinding } of fns) {
+  for (const { ns, global, fn, bytesBinding, strBinding, mixedBinding, multiBinding } of fns) {
     const sym = `b_${ns}_${fn.name}`
     const user = fn.ctx ? 'ctx' : 'nullptr'
-    const kinds = multiBinding ? fn.args.map((a) => (a.type === 'string' ? 's' : 'n')).join('') : null
-    const reg = strBinding ? 'mq_script_register_str'
+    const kinds = bytesBinding ? fn.args.map((a) => (a.type === 'bytes' ? 'b' : 'n')).join('')
+                : multiBinding ? fn.args.map((a) => (a.type === 'string' ? 's' : 'n')).join('') : null
+    const reg = bytesBinding ? 'mq_script_register_bytes'
+              : strBinding ? 'mq_script_register_str'
               : mixedBinding ? 'mq_script_register_mixed'
               : multiBinding ? (fn.returns === 'string' ? 'mq_script_register_multi_ret_str'
                                                         : 'mq_script_register_multi')

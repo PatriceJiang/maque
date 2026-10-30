@@ -119,6 +119,8 @@ uint32_t mq_font_glyph_count(mq_font* font, float size);
 int mq_font_glyph_at(mq_font* font, float size, uint32_t index, mq_text_glyph* out);
 /* 图集当前尺寸（不复制像素；增长中） */
 int mq_font_atlas_size(mq_font* font, float size, uint32_t* out_w, uint32_t* out_h);
+/* 该字体占用的 CPU 字节（字号图集 RGBA + 字形表 + 内置位图 + 路径；不含 FreeType 内部缓存）。docs/29 内存域 `font` 的单一来源 */
+uint64_t mq_font_memory_bytes(const mq_font* font);
 
 #ifdef __cplusplus
 }

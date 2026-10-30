@@ -322,6 +322,19 @@ int main() {
         CHECK(api->create_mesh(self, &bad, &dummy) != 0);
         bad = md; bad.vertices = nullptr;
         CHECK(api->create_mesh(self, &bad, &dummy) != 0);
+
+        // GPU 资源按类拆分（docs/29 §10.4）：texture + buffer 必须等于旧 resource_bytes 总量。
+        const bool has_res2 = api->header.struct_size >=
+            offsetof(mq_renderer_v1, resource_bytes2) + sizeof(api->resource_bytes2);
+        CHECK(has_res2);
+        if (has_res2) {
+            mq_renderer_resource_usage usage{};
+            usage.struct_size = (uint32_t)sizeof usage;
+            CHECK(api->resource_bytes2(self, &usage) == 0);
+            CHECK(usage.other_bytes == 0);
+            CHECK(usage.texture_bytes + usage.buffer_bytes == api->resource_bytes(self));
+        }
+
         // kind=0 是显式 detach：无 surface 时也应幂等成功，runtime 用它从直呈回退离屏。
         mq_renderer_window win{};
         CHECK(api->attach_window(self, &win) == 0);

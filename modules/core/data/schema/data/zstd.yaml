@@ -1,0 +1,10 @@
+# zstd —— modules/api（脚本二进制压缩接口）
+- namespace: zstd
+  version: 1
+  api_list:
+    - { fn: available, returns: bool,
+        doc: "当前构建是否链接 libzstd" }
+    - { fn: compress, args: [ { name: data, type: bytes }, { name: level, type: int32_t } ], returns: bytes,
+        doc: "压缩字节；level=0 使用 zstd 默认级别；失败或输入超过 64 MiB 返回空 bytes" }
+    - { fn: decompress, args: [ { name: data, type: bytes } ], returns: bytes,
+        doc: "解压 zstd frame；输出上限 64 MiB；失败返回空 bytes" }

@@ -17,8 +17,9 @@
         - { name: eye,  type: float }
         - { name: cx,   type: float }      # 相机中心（世界坐标）
         - { name: cy,   type: float }
-        - { name: zoom, type: float }      # 缩放（1 = 1:1）
+        - { name: zoom, type: float }      # 横向缩放（1 = 1:1）
         - { name: rot,  type: float }      # 旋转（弧度）
+        - { name: zoom_y, type: float }    # 纵向缩放（<=0 回退 zoom；尾部追加，兼容旧调用方）
     - record: item
       fields:
         - { name: x,        type: float }
@@ -304,8 +305,12 @@
         - { name: present_y,      type: int32_t }
         - { name: present_w,      type: int32_t }
         - { name: present_h,      type: int32_t }
-        # F4 调试渲染模式（尾部追加）：0=rendered（默认，完整材质）/ 1=solid / 2=wireframe。
+        # F4 调试渲染模式（尾部追加）：0=rendered（默认，完整材质）/ 1=solid /
+        # 2=wireframe / 3=textured（base-color 贴图，无光照）。
         - { name: render_mode,    type: int32_t }
+        # out 非空时仍把同一离屏结果 blit 到 surface 并由调用方 present；Inspector 实时预览用。
+        # 0 = 纯离屏回读（截图）；1 = 回读 + 呈现。尾部追加，旧调用方默认 0。
+        - { name: present_after_readback, type: int32_t }
     # 持久可采样离屏目标描述；独立 struct_size 允许将来在记录尾部安全扩展。
     # 首版仅支持 2D、单 mip；usage 固定包含 sampled/color-attachment/copy-src。
     - record: render_texture_desc
@@ -318,6 +323,13 @@
         - { name: wrap_u,       type: int32_t }  # 0=repeat 1=clamp 2=mirror
         - { name: wrap_v,       type: int32_t }
         - { name: clear_color,  type: "float[4]" }
+    # GPU 资源字节按类拆分（docs/29 §10；append-only，旧调用方用 resource_bytes 总量）。
+    - record: resource_usage
+      fields:
+        - { name: struct_size,   type: uint32_t }
+        - { name: texture_bytes, type: uint64_t }  # 存活纹理（含字形/ImGui 图集、RenderTexture、env cube）
+        - { name: buffer_bytes,  type: uint64_t }  # 网格顶点/索引等 GPU 缓冲
+        - { name: other_bytes,   type: uint64_t }  # 预留（当前恒 0；帧临时附件不计）
   methods:
     - fn: create
       returns: self
@@ -410,3 +422,8 @@
       returns: int32_t
       args: [ { name: self, type: self }, { name: id, type: int32_t }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]
       doc: "把 RenderTexture 的 RGBA8 内容回读到 CPU；普通上传纹理或缓冲不足时明确失败"
+    # ---- GPU 字节按类拆分（append-only；docs/29 内存域 texture/gpu）----
+    - fn: resource_bytes2
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: out, type: "mq_renderer_resource_usage*" } ]
+      doc: "按类拆分的 GPU 字节估算（0=成功）：纹理（含 RenderTexture/cube/env）与缓冲（网格顶点/索引）。旧插件无此方法时调用方回退 resource_bytes"

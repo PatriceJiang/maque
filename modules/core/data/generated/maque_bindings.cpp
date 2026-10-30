@@ -6,6 +6,7 @@
 #include <cstdio>
 
 namespace {
+
 int b_math_clamp(void* user, int, const double* a, double* ret) {
   *ret = (double)math::clamp((float)a[0], (float)a[1], (float)a[2]); return 0;
 }
@@ -33,6 +34,32 @@ int b_storage_keys(void* user, int, const double* a, char* ret, int cap) {
 int b_storage_info(void* user, int, const double* a, char* ret, int cap) {
   std::snprintf(ret, (size_t)cap, "%s", storage::info(user)); return 0;
 }
+int b_zstd_available(void* user, int, const double* a, double* ret) {
+  *ret = (double)zstd::available(); return 0;
+}
+int b_zstd_compress(void* user, int, const double* a, int, const void** b, const size_t* z, mq_script_bytes_result* ret) {
+  if (!ret) return 1;
+  *ret = zstd::compress(mq_script_bytes_view{b[0], z[0]}, (int32_t)a[0]);
+  return ret->size != 0 && !ret->data ? 1 : 0;
+}  /* kinds=bn */
+int b_zstd_decompress(void* user, int, const double* a, int, const void** b, const size_t* z, mq_script_bytes_result* ret) {
+  if (!ret) return 1;
+  *ret = zstd::decompress(mq_script_bytes_view{b[0], z[0]});
+  return ret->size != 0 && !ret->data ? 1 : 0;
+}  /* kinds=b */
+int b_zlib_available(void* user, int, const double* a, double* ret) {
+  *ret = (double)zlib::available(); return 0;
+}
+int b_zlib_compress(void* user, int, const double* a, int, const void** b, const size_t* z, mq_script_bytes_result* ret) {
+  if (!ret) return 1;
+  *ret = zlib::compress(mq_script_bytes_view{b[0], z[0]}, (int32_t)a[0]);
+  return ret->size != 0 && !ret->data ? 1 : 0;
+}  /* kinds=bn */
+int b_zlib_decompress(void* user, int, const double* a, int, const void** b, const size_t* z, mq_script_bytes_result* ret) {
+  if (!ret) return 1;
+  *ret = zlib::decompress(mq_script_bytes_view{b[0], z[0]});
+  return ret->size != 0 && !ret->data ? 1 : 0;
+}  /* kinds=b */
 int b_host_screen_w(void* user, int, const double* a, double* ret) {
   *ret = (double)host::screen_w(user); return 0;
 }
@@ -975,6 +1002,12 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_str(vm, "storage.exists", b_storage_exists, ctx);
   mq_script_register_ret_str(vm, "storage.keys", b_storage_keys, ctx);
   mq_script_register_ret_str(vm, "storage.info", b_storage_info, ctx);
+  mq_script_register_num(vm, "zstd.available", b_zstd_available, nullptr);
+  mq_script_register_bytes(vm, "zstd.compress", "bn", b_zstd_compress, nullptr);
+  mq_script_register_bytes(vm, "zstd.decompress", "b", b_zstd_decompress, nullptr);
+  mq_script_register_num(vm, "zlib.available", b_zlib_available, nullptr);
+  mq_script_register_bytes(vm, "zlib.compress", "bn", b_zlib_compress, nullptr);
+  mq_script_register_bytes(vm, "zlib.decompress", "b", b_zlib_decompress, nullptr);
   mq_script_register_num(vm, "screen_w", b_host_screen_w, ctx);
   mq_script_register_num(vm, "screen_h", b_host_screen_h, ctx);
   mq_script_register_num(vm, "rng", b_host_rng, ctx);

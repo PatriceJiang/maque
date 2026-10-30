@@ -28,7 +28,7 @@
 //      所以未启用该特性的素材（spineboy / tank / flappy）不会回归。
 struct U {
   size: vec2f, view: vec2f, cam: vec2f,
-  zoom: f32, rot: f32, pan: f32, eye: f32, pad: vec2f,
+  zoom: f32, rot: f32, pan: f32, eye: f32, zoom_y: f32, pad: f32,
 };
 @group(0) @binding(0) var<uniform> u: U;
 @group(0) @binding(1) var t: texture_2d<f32>;
@@ -45,7 +45,8 @@ struct VOut {
               @location(2) col: vec4f, @location(3) col2: vec4f) -> VOut {
   // 与 textured 的顶点变换逐项对应：相机平移 → 缩放 → 相机旋转 → 居中/平移/视口偏移。
   let cr = cos(-u.rot); let sr = sin(-u.rot);
-  let c = (pos - u.cam) * u.zoom;
+  let zoom = vec2f(u.zoom, select(u.zoom, u.zoom_y, u.zoom_y > 0.0));
+  let c = (pos - u.cam) * zoom;
   let cc = vec2f(c.x * cr - c.y * sr, c.x * sr + c.y * cr);
   let pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
   var o: VOut;

@@ -269,6 +269,24 @@ const SPRITE = `- imports: [../vec.yaml]
   check('未使用 import → 告警', warnings.some((w) => w.includes('未被使用')), warnings.join(' | '))
 }
 
+// ---- 7. api_list 类型与脚本 ABI 上限：fail closed，不允许生成器静默漏绑 ----
+{
+  const bytes = parseSchemaDocument([{
+    namespace: 'codec', version: 1,
+    api_list: [{ fn: 'compress', args: [{ name: 'data', type: 'bytes' }, { name: 'level', type: 'int32_t' }], returns: 'bytes' }],
+  }])
+  check('bytes API 可解析', bytes[0].apis[0].returns === 'bytes' && bytes[0].apis[0].args[0].type === 'bytes')
+  expectThrow('未知 API 参数类型 → 报错', () => parseSchemaDocument([{
+    namespace: 'bad', api_list: [{ fn: 'f', args: [{ name: 'x', type: 'ArrayBuffer' }], returns: 'void' }],
+  }]), 'unsupported api arg type')
+  expectThrow('重复 API 参数名 → 报错', () => parseSchemaDocument([{
+    namespace: 'bad', api_list: [{ fn: 'f', args: [{ name: 'x', type: 'float' }, { name: 'x', type: 'float' }] }],
+  }]), 'duplicate api arg')
+  expectThrow('API 参数超过 16 个 → 报错', () => parseSchemaDocument([{
+    namespace: 'bad', api_list: [{ fn: 'f', args: Array.from({ length: 17 }, (_, i) => ({ name: `x${i}`, type: 'float' })) }],
+  }]), 'script ABI limit is 16')
+}
+
 if (fails.length > 0) {
   for (const f of fails) console.error(`FAIL: ${f}`)
   console.error(`\n${fails.length} failed, ${pass} passed`)
