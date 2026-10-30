@@ -237,8 +237,8 @@ int32_t null_read_texture(void* self, int32_t id, uint8_t* out, uint32_t out_siz
     return 0;
 }
 
-const mq_renderer_v1 kApi = {
-    { static_cast<uint32_t>(sizeof(mq_renderer_v1)), MQ_ABI_VERSION },
+const mq_renderer_v2 kApi = {
+    { static_cast<uint32_t>(sizeof(mq_renderer_v2)), MQ_RENDERER_API_VERSION },
     null_create,
     null_destroy,
     null_destroy_texture,
@@ -268,4 +268,4 @@ const mq_renderer_v1 kApi = {
 
 } // namespace
 
-extern "C" const mq_renderer_v1* mq_renderer_null_api(void) { return &kApi; }
+extern "C" const mq_renderer_v2* mq_renderer_null_api(void) { return &kApi; }

@@ -7,7 +7,7 @@
 #
 # 驱动方式（确定性的帧推进，参考 tests/ui_e2e.sh）：
 #   MAQUE_HEADLESS=1 MAQUE_CONTROL=-  → stdin 逐行 JSON-RPC，不进主循环，由 Runtime.step 推进；
-#   MAQUE_INSPECT=<随机端口>           → 引擎每帧保留最近一帧像素（Capture.screen 才可用；不必真连）。
+#   MAQUE_INSPECT=<随机端口>           → 开控制端点；Capture.screen 首次请求触发下一帧回读。
 #   MAQUE_WINDOW=0x0 MAQUE_PRESENT=off → 软件渲染离屏路径（无显示环境可跑）。
 #
 # 用法（两种参数形式都支持，便于手工跑与 CTest 注册）：
@@ -166,7 +166,7 @@ class Control:
         env.update({
             "MAQUE_HEADLESS": "1",
             "MAQUE_CONTROL": "-",
-            "MAQUE_INSPECT": str(free_port()),   # 仅让引擎保留最近一帧（Capture.screen）
+            "MAQUE_INSPECT": str(free_port()),   # 控制端点；Capture.screen 请求时才回读下一帧
             "MAQUE_PRESENT": "off",
             "MAQUE_WINDOW": "0x0",
             "MAQUE_PACE": "0",
@@ -425,7 +425,14 @@ def capture(ctl, tag):
     total = 0
     w = h = 0
     while True:
-        r = ctl.request("Capture.screen", {"offset": offset, "max": 48 * 1024, "max_dim": 0})
+        r = None
+        for _attempt in range(20):
+            r = ctl.request("Capture.screen", {"offset": offset, "max": 48 * 1024, "max_dim": 0})
+            if isinstance(r, dict) and r.get("ok"):
+                break
+            if offset != 0:
+                break
+            time.sleep(0.05)
         if not isinstance(r, dict) or not r.get("ok"):
             fail("Capture.screen 失败（%s）: %r —— MAQUE_INSPECT 端点可能没建起来" % (tag, r))
         w, h, total = int(r["w"]), int(r["h"]), int(r["total"])

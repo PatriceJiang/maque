@@ -86,7 +86,7 @@ struct RenderArgs {
     float dr = 0.0F, dg = 0.0F, db = 0.0F, da = 1.0F;
 };
 
-bool render_stripes(const mq_renderer_v1* api, void* self, int tex, const RenderArgs& a,
+bool render_stripes(const mq_renderer_v2* api, void* self, int tex, const RenderArgs& a,
                     const float bg[4], Canvas& cv) {
     std::vector<float> verts((size_t)NTEX * 4 * 2), uvs((size_t)NTEX * 4 * 2);
     std::vector<float> cols((size_t)NTEX * 4 * 4), darks;
@@ -134,7 +134,7 @@ int main() {
     mq_host* host = mq_host_create();
     mq_loaded_module* mod = nullptr;
     if (mq_host_load(host, MQ_GFX_PATH, &mod) != 0) { std::print("twocolor_test: SKIP (no plugin)\n"); return 0; }
-    auto* api = (const mq_renderer_v1*)mq_host_query(host, MQ_RENDERER_API_NAME, 1);
+    auto* api = (const mq_renderer_v2*)mq_host_query(host, MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION);
     CHECK(api != nullptr);
     if (!api) return 1;
     const char* backend = nullptr;

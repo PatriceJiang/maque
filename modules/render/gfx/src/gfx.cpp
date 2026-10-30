@@ -1,4 +1,4 @@
-/* WebGPU 渲染后端：作为插件 .so 实现 DSL 生成的 mq_renderer_v1（maque_ifaces.h）。
+/* WebGPU 渲染后端：作为插件 .so 实现 DSL 生成的 mq_renderer_v2（maque_ifaces.h）。
  * 仅导出 mq_module_query；运行时经 maque::module(dlopen) 加载。 */
 #include "maque_ifaces.h"
 #include "core/module/mq_module.h"
@@ -152,6 +152,11 @@ struct Device {
     WGPUShaderModule p3dShader = nullptr;
     WGPUPipelineLayout p3dSkyPl = nullptr;       /* envmap 天空背景：仅 group0（camera） */
     WGPURenderPipeline skyPipeline[2] = {};   /* [msaa4]：0=1x、1=4x（MSAA 需独立管线） */
+    WGPUShaderModule viewClearShader = nullptr;
+    WGPUBindGroupLayout viewClearBgl = nullptr;
+    WGPUPipelineLayout viewClearPl = nullptr;
+    WGPURenderPipeline viewClearPipeline[2][2] = {};       /* [with_depth][msaa4] */
+    WGPUTextureFormat viewClearFormat[2][2] = {};
     /* 多材质模型管线：[shading_model 0..11][blend 0/1][cull 0..2][mirrored 0/1][layout 0..3]，按需创建。
      * 10/11 是 F4 内部 solid/wireframe 入口，不是场景材质模型。wireframe 另用 LineList 管线缓存。
      * mirrored = model 3×3 行列式 < 0（镜像缩放的 glTF 节点）：镜像把三角形绕序翻成 CW，
@@ -231,6 +236,60 @@ static WGPUShaderModule make_shader(WGPUDevice dev, const char* wgsl) {
 }
 
 /* 释放一个场景全屏 pass 的 GPU 对象（槽位由调用方决定是否保留）。 */
+static WGPURenderPipeline view_clear_pipeline(Device* dv, WGPUTextureFormat format,
+                                                bool with_depth, bool msaa4) {
+    const int di = with_depth ? 1 : 0;
+    const int mi = msaa4 ? 1 : 0;
+    if (dv->viewClearPipeline[di][mi] && dv->viewClearFormat[di][mi] == format)
+        return dv->viewClearPipeline[di][mi];
+    if (dv->viewClearPipeline[di][mi]) {
+        wgpuRenderPipelineRelease(dv->viewClearPipeline[di][mi]);
+        dv->viewClearPipeline[di][mi] = nullptr;
+    }
+    if (!dv->viewClearShader) {
+        static const char* kWgsl = R"(
+struct O { @builtin(position) p: vec4f };
+@vertex fn vs(@builtin(vertex_index) i: u32) -> O {
+  var ps = array<vec2f, 3>(vec2f(-1.0,-1.0), vec2f(3.0,-1.0), vec2f(-1.0,3.0));
+  var o: O; o.p = vec4f(ps[i], 0.0, 1.0); return o;
+}
+@group(0) @binding(0) var<uniform> color: vec4f;
+@fragment fn fs() -> @location(0) vec4f { return color; }
+)";
+        dv->viewClearShader = make_shader(dv->device, kWgsl);
+        WGPUBindGroupLayoutEntry e = WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT;
+        e.binding = 0; e.visibility = WGPUShaderStage_Fragment;
+        e.buffer.type = WGPUBufferBindingType_Uniform; e.buffer.minBindingSize = 16;
+        WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+        bd.entryCount = 1; bd.entries = &e;
+        dv->viewClearBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
+        WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+        pl.bindGroupLayoutCount = 1; pl.bindGroupLayouts = &dv->viewClearBgl;
+        dv->viewClearPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
+    }
+    if (!dv->viewClearShader || !dv->viewClearPl) return nullptr;
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = format; target.writeMask = WGPUColorWriteMask_All;
+    WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT;
+    frag.module = dv->viewClearShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
+    WGPUVertexState vert = WGPU_VERTEX_STATE_INIT;
+    vert.module = dv->viewClearShader; vert.entryPoint = SV("vs");
+    WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    rp.layout = dv->viewClearPl; rp.vertex = vert; rp.fragment = &frag;
+    rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    WGPUDepthStencilState ds = WGPU_DEPTH_STENCIL_STATE_INIT;
+    if (with_depth) {
+        ds.format = WGPUTextureFormat_Depth32Float;
+        ds.depthWriteEnabled = WGPUOptionalBool_False;
+        ds.depthCompare = WGPUCompareFunction_Always;
+        rp.depthStencil = &ds;
+    }
+    rp.multisample.count = msaa4 ? 4u : 1u;
+    dv->viewClearPipeline[di][mi] = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
+    dv->viewClearFormat[di][mi] = format;
+    return dv->viewClearPipeline[di][mi];
+}
+
 static void release_shader_pass(ShaderPassGpu* sp) {
     if (!sp) return;
     for (int i = 0; i < sp->pipe_count; ++i)
@@ -1059,6 +1118,12 @@ static void destroy_device(Device* dv) {
     if (dv->shadowTex) wgpuTextureRelease(dv->shadowTex);
     if (dv->skyPipeline[0]) wgpuRenderPipelineRelease(dv->skyPipeline[0]);
     if (dv->skyPipeline[1]) wgpuRenderPipelineRelease(dv->skyPipeline[1]);
+    for (int di = 0; di < 2; ++di)
+        for (int mi = 0; mi < 2; ++mi)
+            if (dv->viewClearPipeline[di][mi]) wgpuRenderPipelineRelease(dv->viewClearPipeline[di][mi]);
+    if (dv->viewClearPl) wgpuPipelineLayoutRelease(dv->viewClearPl);
+    if (dv->viewClearBgl) wgpuBindGroupLayoutRelease(dv->viewClearBgl);
+    if (dv->viewClearShader) wgpuShaderModuleRelease(dv->viewClearShader);
     if (dv->p3dSkyPl) wgpuPipelineLayoutRelease(dv->p3dSkyPl);
     if (dv->p3dPl) wgpuPipelineLayoutRelease(dv->p3dPl);
     if (dv->p3dCamBgl) wgpuBindGroupLayoutRelease(dv->p3dCamBgl);
@@ -1117,6 +1182,22 @@ static void begin_pass(WGPUCommandEncoder enc, WGPUTextureView view, WGPULoadOp 
     WGPURenderPassDescriptor rp = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
     rp.colorAttachmentCount = 1; rp.colorAttachments = &ca;
     *out = wgpuCommandEncoderBeginRenderPass(enc, &rp);
+}
+
+static int32_t clear_texture(Device* dv, WGPUTexture texture, const float color[4]) {
+    WGPUTextureView view = wgpuTextureCreateView(texture, nullptr);
+    if (!view) return -1;
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    WGPURenderPassEncoder pass = nullptr;
+    begin_pass(enc, view, WGPULoadOp_Clear, color, &pass);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cmd);
+    wgpuCommandBufferRelease(cmd);
+    wgpuCommandEncoderRelease(enc);
+    wgpuTextureViewRelease(view);
+    return 0;
 }
 
 } // namespace maque::gfx
@@ -2025,8 +2106,10 @@ static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextur
     std::memcpy(bg, f->bg, sizeof bg);
     const bool has3d = f->view_count > 0 && f->views != nullptr;
     const bool has_passes = f->pass_count > 0 && f->passes != nullptr;
+    bool target_initialized = false;
     if (has_passes) {
         const int32_t prc = render_shader_passes(dv, target, format, f->width, f->height, f);
+        target_initialized = prc == 0;
         if (prc != 0) {
             static bool warned = false;
             if (!warned) {
@@ -2036,6 +2119,10 @@ static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextur
         }
     }
     if (has3d) {
+        if (!target_initialized) {
+            const float black[4] = { 0.0F, 0.0F, 0.0F, 1.0F };
+            if (clear_texture(dv, target, black) != 0) return -2;
+        }
         const int32_t rc = render_3d_only(dv, target, format, f, allow_scene_copy);
         if (rc != 0) return rc;
     }
@@ -2993,9 +3080,9 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         WGPURenderPassColorAttachment ca = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
         ca.view = (msaa > 1) ? dv->msaaView : view;
         ca.resolveTarget = (msaa > 1) ? view : nullptr;
-        ca.loadOp = (vi == 0 && v.clear_mode <= 1) ? WGPULoadOp_Clear : WGPULoadOp_Load;
+        ca.loadOp = (msaa > 1) ? WGPULoadOp_Clear : WGPULoadOp_Load;
         ca.storeOp = WGPUStoreOp_Store;
-        ca.clearValue = WGPUColor{ v.clear_color[0], v.clear_color[1], v.clear_color[2], v.clear_color[3] };
+        ca.clearValue = WGPUColor{ 0.0, 0.0, 0.0, 1.0 };
         WGPURenderPassDepthStencilAttachment da = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
         da.view = (msaa > 1) ? dv->msaaDepthView : dv->depthView;
         da.depthLoadOp = v.clear_mode == 3 ? WGPULoadOp_Load : WGPULoadOp_Clear;
@@ -3078,6 +3165,28 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             wgpuBufferRelease(dbuf);
             if (skin_buf) wgpuBufferRelease(skin_buf);
         };
+        auto draw_view_clear = [&](WGPURenderPassEncoder p) {
+            if (v.clear_mode > 1) return;
+            WGPURenderPipeline pipe = view_clear_pipeline(dv, target_format, true, msaa > 1);
+            if (!pipe) return;
+            WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+            bd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+            bd.size = 16;
+            WGPUBuffer ub = wgpuDeviceCreateBuffer(dv->device, &bd);
+            wgpuQueueWriteBuffer(dv->queue, ub, 0, v.clear_color, 16);
+            WGPUBindGroupEntry be = WGPU_BIND_GROUP_ENTRY_INIT;
+            be.binding = 0; be.buffer = ub; be.size = 16;
+            WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+            bgd.layout = dv->viewClearBgl; bgd.entryCount = 1; bgd.entries = &be;
+            WGPUBindGroup bg = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+            if (bg) {
+                wgpuRenderPassEncoderSetPipeline(p, pipe);
+                wgpuRenderPassEncoderSetBindGroup(p, 0, bg, 0, nullptr);
+                wgpuRenderPassEncoderDraw(p, 3, 1, 0, 0);
+                wgpuBindGroupRelease(bg);
+            }
+            wgpuBufferRelease(ub);
+        };
         /* envmap 天空背景：在 opaque 之前画全屏三角形（不写深度；opaque 会覆盖它）。 */
         auto draw_sky = [&](WGPURenderPassEncoder p) {
             if (v.clear_mode == 0 && dv->skyPipeline[msaa > 1 ? 1 : 0] &&
@@ -3091,6 +3200,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             /* 旧路径：单 pass，opaque → blend（不透明先画；透明按"相机→物体"远→近，不写深度、混合管线）。 */
             WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
             apply_viewport(pass);
+            draw_view_clear(pass);
             wgpuRenderPassEncoderSetBindGroup(pass, 0, camBg, 0, nullptr);
             draw_sky(pass);
             for (const mq_renderer_draw3d* dpp : opaque_list) draw_one(pass, dpp, /*allow_two_pass=*/true);
@@ -3101,6 +3211,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             /* pass A：不透明（clear）→ 拷成 scene color → pass B（load）画 blend/transmission。 */
             WGPURenderPassEncoder passA = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
             apply_viewport(passA);
+            draw_view_clear(passA);
             wgpuRenderPassEncoderSetBindGroup(passA, 0, camBg, 0, nullptr);
             draw_sky(passA);
             for (const mq_renderer_draw3d* dpp : opaque_list) draw_one(passA, dpp, /*allow_two_pass=*/true);
@@ -3327,8 +3438,35 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         wgpuQueueWriteBuffer(dv->queue, ubuf, 0, uni, sizeof uni);
 
         WGPURenderPassEncoder pass = nullptr;
-        begin_pass(enc, view, cleared ? WGPULoadOp_Load : (clear_first ? WGPULoadOp_Clear : WGPULoadOp_Load), bg, &pass);
+        const float black[4] = { 0.0F, 0.0F, 0.0F, 1.0F };
+        begin_pass(enc, view, cleared ? WGPULoadOp_Load : (clear_first ? WGPULoadOp_Clear : WGPULoadOp_Load),
+                   black, &pass);
         cleared = true;
+        if (clear_first && view_sw > 0 && view_sh > 0) {
+            WGPURenderPipeline clear_pipe = view_clear_pipeline(
+                dv, target ? target_format : WGPUTextureFormat_RGBA8Unorm, false, false);
+            if (clear_pipe) {
+                WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+                bd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+                bd.size = 16;
+                WGPUBuffer clear_ub = wgpuDeviceCreateBuffer(dv->device, &bd);
+                wgpuQueueWriteBuffer(dv->queue, clear_ub, 0, bg, 16);
+                WGPUBindGroupEntry be = WGPU_BIND_GROUP_ENTRY_INIT;
+                be.binding = 0; be.buffer = clear_ub; be.size = 16;
+                WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+                bgd.layout = dv->viewClearBgl; bgd.entryCount = 1; bgd.entries = &be;
+                WGPUBindGroup clear_bg = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+                if (clear_bg) {
+                    wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)view_x0, (uint32_t)view_y0,
+                                                        (uint32_t)view_sw, (uint32_t)view_sh);
+                    wgpuRenderPassEncoderSetPipeline(pass, clear_pipe);
+                    wgpuRenderPassEncoderSetBindGroup(pass, 0, clear_bg, 0, nullptr);
+                    wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+                    wgpuBindGroupRelease(clear_bg);
+                }
+                wgpuBufferRelease(clear_ub);
+            }
+        }
 
         /* 每视图 bind group 缓存（uniform buffer 每视图一个，所以不能跨视图复用）。
          * key: 0 = solid；1<<32 | tex<<1 | nearest = textured；2<<32 | tex = mesh。 */
@@ -3518,8 +3656,8 @@ static int32_t r_render_mesh_views(void* self, int32_t TW, int32_t TH,
 
 } // extern "C"
 
-static const mq_renderer_v1 g_api = {
-    { (uint32_t)sizeof(mq_renderer_v1), MQ_ABI_VERSION },
+static const mq_renderer_v2 g_api = {
+    { (uint32_t)sizeof(mq_renderer_v2), MQ_RENDERER_API_VERSION },
     r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views, r_render_mesh_views,
     /* ---- 3D / 直接呈现（追加；plans/18-pbr-3d.md）---- */
     r_attach_window, r_resize_surface, r_caps, r_create_texture2, r_create_mesh, r_destroy_mesh,
@@ -3537,7 +3675,7 @@ static const mq_renderer_v1 g_api = {
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {
-    if (min_version > MQ_ABI_VERSION) return nullptr;
+    if (min_version > MQ_RENDERER_API_VERSION) return nullptr;
     if (name && std::strcmp(name, MQ_RENDERER_API_NAME) == 0) return (void*)&g_api;
     return nullptr;
 }

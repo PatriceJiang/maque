@@ -67,7 +67,7 @@ assert raw.count('CHILD_START') == 2, '快照恢复结构相同却重建了实�
 scn = json.load(open(sys.argv[2], encoding='utf-8'))
 assert scn['version'] == 2, scn.get('version')
 for k in ('script', 'scripts', 'overlay_script', 'width', 'height', 'seed', 'gravity_y',
-          'env_color', 'env_intensity', 'views', 'msaa_samples'):
+          'env_color', 'env_intensity', 'views', 'render_scale', 'msaa_samples'):
     assert k in scn, f'场景描述符丢字段 {k}'
 ents = scn['entities']
 assert len(ents) == 2, f'未烘焙实例应只写引用，实际 root entities={len(ents)}'

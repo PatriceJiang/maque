@@ -154,7 +154,12 @@ tools\win\build.cmd -Sanitize address -RunTests
 - **3D/PBR 与直接呈现（plans/18-pbr-3d.md）**：`MAQUE_PRESENT=wgpu` → 渲染插件建 **wgpu swapchain 直呈**。
   渲染目标与 surface 同尺寸时直接以 acquired texture 为颜色附件（无最终 blit）；`render_scale != 1` 或整帧
   回读/后效需要中间目标时才引入离屏纹理和 blit。该模式不建 SDL_Renderer、不走常态 CPU readback，
-  ImGui 面板走 CPU 像素→2D 网格链叠加；**默认仍是 SDL 路径**（老 2D 行为不变）。`MAQUE_CAPTURE_WGPU=<前缀>` + `MAQUE_CAPTURE_FRAMES=N` 从**交换链纹理**回读前 N 帧 PPM
+  ImGui 面板走 CPU 像素→2D 网格链叠加。
+  **呈现模式 `MAQUE_PRESENT=auto`（默认）| `sdl` | `wgpu` | `off`**：`auto` 在没有像素消费者时**优先直呈**
+  （省掉每帧一次 GPU→CPU 回读与随之而来的抖动），`attach_window` 失败自动回退 SDL；
+  `MAQUE_CAPTURE`（从 SDL renderer 后台缓冲抓帧）会强制 `sdl`，`MAQUE_CAPTURE_WGPU` 仍走直呈。
+  控制面 `Capture.screen` 只在请求的下一帧回读（`frame_capture_requested`），不再"开着 inspector 就每帧回读"。
+  `MAQUE_CAPTURE_WGPU=<前缀>` + `MAQUE_CAPTURE_FRAMES=N` 从**交换链纹理**回读前 N 帧 PPM
   （要求 surface 支持 CopySrc）→ CI 直呈像素断言（`ctest -R render3d_present_e2e`）；`MAQUE_RENDER3D_INFO=1`
   打印 renderer caps；`--shot/--shot-seq` 在直呈模式下仍走离屏回读。3D pass/PBR 尚未实现（M2–M4）。
 - **3D 组件（plans/18 M2）**：**已声明接口直接可用**——节点挂 `scene.Transform3D` + `render.Camera3D` /
@@ -328,17 +333,24 @@ tools\win\build.cmd -Sanitize address -RunTests
   测试：`ctest -R builtin_shaders`（注册表 = 开关 + 解压文本与磁盘资产逐字节一致）。
 - **墙钟限速（游戏速度 = 真实时间）**：主循环是固定步长（`dt = 1/60`），
   **真窗口**下按墙钟推进游戏时间 —— 机器比实时快就 `sleep` 压到 1x，
-  比实时慢（渲染重，实测每帧 ~29 ms）就一轮补几步（上限 8 步，超出丢弃 → 变慢而不卡死）。
+  比实时慢（渲染重，实测每帧 ~29 ms）就一轮补几步（上限 8 步，超出重锚丢弃 → 变慢而不卡死）。
+  **时间基准是绝对的**：目标墙钟时刻 = `pace_start + frame×dt`，跑完睡到"下一帧应开始"的时刻，
+  睡眠过冲下一轮用更短睡眠吸收（不累积漂移）；落后 >8 步才重锚。
+  **补步只让最后一步成帧**：中间步只推进模拟（`step_frame(false)`，不渲染/present/不刷 FPS/不发 Tracy FrameMark），
+  所以一屏一帧最多渲染一次 —— 旧实现每步都 render+present，补 2 步 = 渲染两帧 → 越补越慢，
+  Tracy 里就是 22/15/21/11 ms 长短帧成对抖动。逐帧输出（`--shot-seq`/`MAQUE_CAPTURE`/`MAQUE_FRAMES`）自动退回
+  "每步都成帧"（否则帧号与画面对不上）。
   以下情形**不限速**（保持"尽快出结果"，测试/CI 依赖它）：无窗口（`MAQUE_HEADLESS=1` 等）、
   `--shot`/`MAQUE_SHOT`、录制/回放。显式覆盖 `MAQUE_PACE=0|off` / `1|on`；
   诊断 `MAQUE_TRACE_PACE=1` 打印"墙钟 / 仿真 / 速率 / 睡觉 / 重锚定次数"。
+  **Tracy 的 Frame 时间 = 上一轮 sleep + 本轮成帧工作量**（FrameMark 在 present 之后），不是纯场景耗时。
   （历史坑：完全不限速时动画跟着机器速度跑，实测窗口下 **2.7 倍速**；
   只 sleep 不补步时，渲染慢的机器上又变成 **0.58 倍速**。）
 - **两类图元：textured（实例化矩形/圆）与 mesh（任意三角网格）**：
   - `textured`：一个实例 = 一个矩形/圆，逐实例一次变换 —— 精灵/字形/UI 用。
   - `mesh`：**逐顶点** pos/uv/color + 索引缓冲 —— 骨骼动画（Spine）那种"一帧一变形的网格"用。
     顶点缓冲 stride 32B（pos.xy / uv.xy / col.rgba，见 `assets/builtin/shaders/mesh/shader.wgsl` 顶部），
-    提交走 `mq_renderer_v1::render_mesh_views(self, tw, th, views, nviews, items, count, meshes, mesh_count, bg, out, out_size)`。
+    提交走 `mq_renderer_v2::render_mesh_views(self, tw, th, views, nviews, items, count, meshes, mesh_count, bg, out, out_size)`。
   - 两者**共用同一份相机 uniform 布局**（48B：size/view/cam/zoom/rot/pan/eye），且顶点都已是
     "渲染目标像素空间、y 向下"→ 变换逐项一致（**不要再翻 y**）。
   - 剔除开关：`-DMAQUE_SHADER_MESH=OFF` 时不生成/不链接，gfx 取不到时打印原因并跳过网格图元。

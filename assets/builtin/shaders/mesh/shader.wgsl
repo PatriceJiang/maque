@@ -46,8 +46,9 @@ struct VOut {
   // 与 textured 的顶点变换逐项对应：相机平移 → 缩放 → 相机旋转 → 居中/平移/视口偏移。
   let cr = cos(-u.rot); let sr = sin(-u.rot);
   let zoom = vec2f(u.zoom, select(u.zoom, u.zoom_y, u.zoom_y > 0.0));
-  let c = (pos - u.cam) * zoom;
-  let cc = vec2f(c.x * cr - c.y * sr, c.x * sr + c.y * cr);
+  let c = pos - u.cam;
+  let cc0 = vec2f(c.x * cr - c.y * sr, c.x * sr + c.y * cr);
+  let cc = cc0 * zoom;
   let pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
   var o: VOut;
   o.p = vec4f(pc.x / u.size.x * 2.0 - 1.0, 1.0 - pc.y / u.size.y * 2.0, 0., 1.);

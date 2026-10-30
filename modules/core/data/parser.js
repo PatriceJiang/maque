@@ -1880,7 +1880,8 @@ function parseInterfaces(root) {
       args: (m.args || []).map((a) => ({ name: String(a.name), type: String(a.type) })),
       returns: m.returns === undefined ? 'void' : String(m.returns),
     }))
-    out.push({ name: String(e.interface), version: Number(e.version || 1), records, methods, scalars: C_SCALARS })
+    out.push({ name: String(e.interface), apiName: String(e.abi_name || `maque.${e.interface}`),
+      version: Number(e.version || 1), records, methods, scalars: C_SCALARS })
   }
   return out
 }
@@ -1913,7 +1914,8 @@ function genInterfacesHeader(interfaces) {
       lines.push(`} mq_${it.name}_${r.name};`)
       lines.push('')
     }
-    lines.push(`#define MQ_${it.name.toUpperCase()}_API_NAME "maque.${it.name}"`)
+    lines.push(`#define MQ_${it.name.toUpperCase()}_API_NAME "${it.apiName}"`)
+    lines.push(`#define MQ_${it.name.toUpperCase()}_API_VERSION ${V}u`)
     lines.push(`typedef struct mq_${it.name}_v${V} {`)
     lines.push('    mq_api_header header;')
     for (const m of it.methods) {

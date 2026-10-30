@@ -101,7 +101,7 @@ modules/
   platform        平台层 (SDL2 窗口/输入)
   data/persist    持久化/反序列化 + JSON DOM
   image           图像解码 (Wuffs)
-  render/gfx      WebGPU 渲染插件（.so，实现 DSL 生成的 mq_renderer_v1）
+  render/gfx      WebGPU 渲染插件（.so，实现 DSL 生成的 mq_renderer_v2）
   api             引擎 API 实现 + 生成绑定
   runtime         引擎运行时 ("浏览器")：Engine + Scene + main_loop
   script          脚本 (quickjs)

@@ -52,7 +52,7 @@ int main() {
     mq_host* host = mq_host_create();
     mq_loaded_module* mod = nullptr;
     if (mq_host_load(host, MQ_GFX_PATH, &mod) != 0) { std::print("text_pixel_test: SKIP (no plugin)\n"); return 0; }
-    auto* api = (const mq_renderer_v1*)mq_host_query(host, MQ_RENDERER_API_NAME, 1);
+    auto* api = (const mq_renderer_v2*)mq_host_query(host, MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION);
     CHECK(api != nullptr);
     if (!api) return 1;
     const char* backend = nullptr;

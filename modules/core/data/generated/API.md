@@ -456,7 +456,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 跨 `.so` 的唯一函数表；宿主经 `maque::module`(dlopen) 加载并校验版本/结构大小。
 
-### renderer v1 — `undefined`
+### renderer v2 — `maque.renderer.v2`
 
 记录（POD）：
 

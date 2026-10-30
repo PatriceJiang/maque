@@ -38,7 +38,7 @@ int main() {
     mq_host* host = mq_host_create();
     mq_loaded_module* mod = nullptr;
     if (mq_host_load(host, MQ_GFX_PATH, &mod) != 0) { std::print("gfx_test: SKIP (no plugin)\n"); return 0; }
-    auto* api = (const mq_renderer_v1*)mq_host_query(host, MQ_RENDERER_API_NAME, 1);
+    auto* api = (const mq_renderer_v2*)mq_host_query(host, MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION);
     CHECK(api != nullptr);
     if (!api) return 1;
 
@@ -209,7 +209,7 @@ int main() {
     // ---- 7) 3D/PBR 资源层（plans/18-pbr-3d.md M0）：caps / 纹理 v2 / 网格上传 ----
     //     这些方法只在表尾追加；老插件的 struct_size 更小 → 调用前用 struct_size 守卫。
     const bool has_3d_api = api->header.struct_size >=
-        offsetof(mq_renderer_v1, present) + sizeof(api->present);
+        offsetof(mq_renderer_v2, present) + sizeof(api->present);
     CHECK(has_3d_api);
     if (has_3d_api) {
         mq_renderer_caps caps{};
@@ -239,7 +239,7 @@ int main() {
 
         // RenderTexture：pass A 画红色目标，pass B 把同一句柄当普通 Texture 显示（首帧即生效）。
         const bool has_rt_api = api->header.struct_size >=
-            offsetof(mq_renderer_v1, read_texture) + sizeof(api->read_texture);
+            offsetof(mq_renderer_v2, read_texture) + sizeof(api->read_texture);
         CHECK(has_rt_api);
         if (has_rt_api) {
             mq_renderer_render_texture_desc rd{};
@@ -325,7 +325,7 @@ int main() {
 
         // GPU 资源按类拆分（docs/29 §10.4）：texture + buffer 必须等于旧 resource_bytes 总量。
         const bool has_res2 = api->header.struct_size >=
-            offsetof(mq_renderer_v1, resource_bytes2) + sizeof(api->resource_bytes2);
+            offsetof(mq_renderer_v2, resource_bytes2) + sizeof(api->resource_bytes2);
         CHECK(has_res2);
         if (has_res2) {
             mq_renderer_resource_usage usage{};

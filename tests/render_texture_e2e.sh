@@ -127,4 +127,28 @@ assert d > 2000, ('2d text rotation 未生效（monitor 区域无变化）', d)
 print('render_texture_e2e: 2d text rotation diff px', d)
 PY
 
-echo "render_texture_e2e: ok（Camera2D text rotation + Camera3D duck/fox + Texture/screenshot）"
+# 热重载（MAQUE_WATCH / Reload.scene）：Camera3D RenderTexture + glTF 必须能销毁重建。
+# 回归点：
+#   ① 根场景是 Engine 内嵌的 scene_store，旧实现 reload_scene() 对它 `delete scene` ——
+#      对非堆地址调用 operator delete（ASan: attempting free on address which was not
+#      malloc()-ed；Release: 堆损坏 0xC0000374）。reload 后的堆场景必须由 scene_owned 持有。
+#   ② 相机 RenderTexture 的目标/URI 别名/renderer 句柄随旧世界释放；新目标不得让
+#      resource_bytes 增长（泄漏一个 128x128 RT 都会体现在 vram 上）。
+RELOAD_IN="$WORK/reload.in"
+cat >"$RELOAD_IN" <<'JSON'
+{"jsonrpc":"2.0","id":1,"method":"Runtime.step","params":{"frames":30}}
+{"jsonrpc":"2.0","id":2,"method":"Reload.scene","params":{}}
+{"jsonrpc":"2.0","id":3,"method":"Runtime.step","params":{"frames":30}}
+{"jsonrpc":"2.0","id":4,"method":"Reload.scene","params":{}}
+{"jsonrpc":"2.0","id":5,"method":"Runtime.step","params":{"frames":30}}
+JSON
+MAQUE_CONTROL=- MAQUE_TRACE_STATS=1 timeout 90 "$PLAYER" "$SCENE3D" <"$RELOAD_IN" >"$WORK/reload.log" 2>&1 \
+  || { cat "$WORK/reload.log"; fail "RenderTexture 场景热重载崩溃（bad-free/堆损坏）"; }
+[ "$(grep -c '"reloaded":true' "$WORK/reload.log")" -eq 2 ] \
+  || { cat "$WORK/reload.log"; fail "Reload.scene 未成功执行两次"; }
+VRAM_LIST="$(grep -o 'vram_bytes=[0-9]*' "$WORK/reload.log" | cut -d= -f2 | sort -u | tr '\n' ' ')"
+[ "$(echo "$VRAM_LIST" | wc -w)" -eq 1 ] \
+  || { cat "$WORK/reload.log"; fail "热重载后 VRAM 变化（纹理/网格泄漏）：$VRAM_LIST"; }
+echo "render_texture_e2e: hot reload x2 vram_bytes=$VRAM_LIST"
+
+echo "render_texture_e2e: ok（Camera2D text rotation + Camera3D duck/fox + Texture/screenshot + hot reload）"

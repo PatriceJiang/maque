@@ -119,16 +119,14 @@ engine.wasm（引擎本体）──→ 启动 VFS ──→ 拉取 game 包 (htt
 
 ## 呈现（窗口输出）
 
-- 平台层的**唯一呈现通道 = `SDL_Renderer`**：`mq_platform_draw_rect` 把宿主渲染出的 RGBA8 帧
-  上传为流式纹理并画进 renderer 后台缓冲；`mq_platform_present_ui`（+ 可选抓帧）只
-  `SDL_RenderPresent` 一次。`mq_platform_present_rect` / `mq_platform_present` 是"画 + 立即 present"
-  的单阶段便捷包装。给 ImGui 面板留的扩展点是：**画完游戏帧、present 之前**在同一后台缓冲上再画一趟
-  （ImGui 官方 SDL_Renderer 后端），这样游戏画面与调试面板天然同屏、同步、只交换一次。
-  ⚠️ **不能再用 `SDL_GetWindowSurface`**：SDL2 不允许同一窗口混用 window surface 与 renderer。
-  历史上混用导致"ImGui 一开、游戏画面就不上屏"（游戏帧写窗口表面后被 renderer present 覆盖）。
-- **后端选择**：默认 Windows = `accelerated`（SDL_Renderer = Direct3D，不建 GL/EGL上下文，
-  不与渲染插件的 wgpu 争用）；其它平台默认 `software`（`SDL_RENDERER_SOFTWARE`，同样不碰 GL/EGL）。
-  `MAQUE_PRESENT=off|software|accelerated` 可覆盖；加速后端创建失败自动 software 回退，再失败则关闭呈现。
+- **两条窗口呈现通道**：默认 `MAQUE_PRESENT=auto`，没有 SDL 像素消费者时优先由 gfx 直接写 WGPU
+  swapchain；`attach_window` 失败自动回退 SDL。`MAQUE_PRESENT=wgpu` 强制直呈，`sdl|software|accelerated`
+  强制兼容路径，`off` 关闭呈现。`MAQUE_CAPTURE` 依赖 SDL renderer 后台缓冲，因此会强制 SDL；
+  `MAQUE_CAPTURE_WGPU` 从 swapchain 抓帧。
+- **SDL 兼容通道**：`mq_platform_draw_rect` 把宿主 RGBA8 帧上传为流式纹理并画进 renderer 后台缓冲；
+  `mq_platform_present_ui`（+ 可选抓帧）只 `SDL_RenderPresent` 一次。给 ImGui 面板的扩展点是：游戏帧后、
+  present 前在同一后台缓冲再画一趟。Windows 默认 SDL backend 为 accelerated，其他平台为 software，
+  加速创建失败自动回退 software。⚠️ 不得混用 `SDL_GetWindowSurface` 与 SDL_Renderer。
 - **设计分辨率 ≠ 渲染分辨率**：`MAQUE_WINDOW` 只改窗口；场景 `width/height` 是世界/UI 的
   **参考坐标系**，不用于分配主颜色附件。`ui.Canvas` 把设计坐标映射到 drawable 中的 viewport，输入使用
   同一映射返回世界坐标。默认 `scn.Scene.render_scale=1`，主渲染目标等于窗口 drawable 的设备像素尺寸；
@@ -139,7 +137,8 @@ engine.wasm（引擎本体）──→ 启动 VFS ──→ 拉取 game 包 (htt
   `render_scale != 1`（或后续真正需要采样整帧的后效）使目标与 surface 不同时，才分配中间目标并用
   blit shader 缩放到 surface。MSAA 可直接 resolve 到最终目标，不要求额外 blit；transmission 自己的
   scene-color copy 是材质 pass 内部依赖，不等同于最终呈现 blit。显式 SDL `software|accelerated` 模式仍走
-  RGBA8 回读、`SDL_UpdateTexture`、`SDL_RenderCopy` 的兼容呈现链。
+  RGBA8 回读、`SDL_UpdateTexture`、`SDL_RenderCopy` 的兼容呈现链。控制面 `Capture.screen` 首次请求只标记
+  下一帧回读；该帧离屏一次并同时 blit/present，完成后恢复 direct-to-surface，不因开启 Inspector 常态回读。
 - **窗口可 resize / 最大化，尺寸变化时自动重建渲染目标**：创建 game 窗口即带
   `SDL_WINDOW_RESIZABLE`，`MAQUE_WINDOW_MAXIMIZED=1` 可启动即最大化。帧首收到窗口事件后重新读取
   drawable；目标尺寸更新为 `drawable × render_scale`，gfx 的深度/MSAA缓存按尺寸失效，WGPU surface

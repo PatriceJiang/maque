@@ -36,7 +36,7 @@
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
 #include "maque_ifaces.h"
 #include "maque_control.h"
-#include "maque_events.h"                 // 生成：mq_renderer_v1（插件接口 ABI）
+#include "maque_events.h"                 // 生成：mq_renderer_v2（插件接口 ABI）
 #include "core/module/mq_module.h"          // mq_host（dlopen 加载插件）
 #ifdef MQ_RENDERER_STATIC_NULL
 #include "render/null/mq_renderer_null.h"
@@ -77,7 +77,7 @@ extern "C" void* mq_module_query(const char* name, uint32_t min_version);
 namespace {
 
 #define MQ_RENDERER_HAS(api, member) \
-    ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v1, member) + sizeof((api)->member) && \
+    ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v2, member) + sizeof((api)->member) && \
      (api)->member)
 
 struct Entity {
@@ -273,7 +273,7 @@ struct SnapshotWriter {
 
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
-    const mq_renderer_v1* rapi = nullptr;                 // 渲染器插件接口
+    const mq_renderer_v2* rapi = nullptr;                 // 渲染器插件接口
     void*               rself = nullptr;                  // 渲染器实例
     mq_vfs*             vfs = nullptr;
     /* 多脚本/多语言（docs/14 §多 VM）：**事件总线**持有全部 VM 并负责按声明顺序投递。
@@ -350,7 +350,6 @@ struct Engine {
      * 若完全不等待，游戏速度就变成"机器多快就多快"（实测窗口下 2.7 倍速）。
      * 两个方向都要处理：机器比实时快 → sleep 压到 1x；机器比实时慢（渲染重）→ 一轮补几步。 */
     bool                pace_wall_clock = false;            // 真窗口且非自动化时置 true
-    double              pace_accum = 0.0;                   // 已累计但尚未消费的墙钟秒数
     bool                trace_hits = false;                 // MAQUE_HITS=1：命中轨迹打印（调试）
     /* ---- Tracy 性能分析（docs/29）----
      * 客户端**手动启动**：F3（并顺手拉起 profiler GUI）或启动期 MAQUE_TRACY=1（等外部连）。
@@ -414,6 +413,8 @@ struct Engine {
     float canvas_safe[4] = { 0, 0, 0, 0 }; // 安全区内缩（设备像素；平台层可设置）
     int canvas_entity = -1;               // 场景里的 ui.Canvas（-1 = 无 → 用场景尺寸兜底）
     bool canvas_active = false;
+    bool canvas_use_dpi = true;             // true: Canvas window 空间=drawable；false: 逻辑窗口像素
+    bool canvas_design_warned = false;       // Canvas.design_* 与 Scene 设计尺寸冲突只报一次
     void canvas_setup();                  // 装配期：定位画布实体
     void storage_setup();                 // 装配期：建键值存储（默认 <场景目录>/.maque；MAQUE_STORAGE/UID/SESSION 覆盖）
     void canvas_resolve();                // 每帧/尺寸变化：重解析 + 写回 transient 字段
@@ -5421,15 +5422,27 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     const float vy = std::clamp(camera_viewport.y, 0.0F, 1.0F);
     const float vw = std::clamp(camera_viewport.width, 0.0F, 1.0F - vx);
     const float vh = std::clamp(camera_viewport.height, 0.0F, 1.0F - vy);
-    const float aspect = ((float)tw * std::max(vw, 1e-5F)) /
-                         ((float)th * std::max(vh, 1e-5F));
+    float root_x = 0.0F, root_y = 0.0F, root_w = (float)tw, root_h = (float)th;
+    if (camera_entity < 0 && canvas.window_w > 0.0F && canvas.window_h > 0.0F) {
+        const float rx = (float)tw / canvas.window_w;
+        const float ry = (float)th / canvas.window_h;
+        root_x = canvas.offset_x * rx;
+        root_y = canvas.offset_y * ry;
+        root_w = canvas.viewport_w * rx;
+        root_h = canvas.viewport_h * ry;
+    }
+    const float pixel_w = std::max(1.0F, vw * root_w);
+    const float pixel_h = std::max(1.0F, vh * root_h);
+    const float aspect = pixel_w / pixel_h;
     if (projection == 1) m4_orthographic(ortho_height, aspect, near_z, far_z, proj);
     else m4_perspective(fov_y * 3.14159265F / 180.0F, aspect, near_z, far_z, proj);
     std::memcpy(v.view, view, sizeof view);
     std::memcpy(v.proj, proj, sizeof proj);
     v.eye[0] = cam_wm[12]; v.eye[1] = cam_wm[13]; v.eye[2] = cam_wm[14];
-    v.viewport[0] = vx * tw; v.viewport[1] = vy * th;
-    v.viewport[2] = std::max(1.0F, vw * tw); v.viewport[3] = std::max(1.0F, vh * th);
+    v.viewport[0] = root_x + vx * root_w;
+    v.viewport[1] = root_y + vy * root_h;
+    v.viewport[2] = pixel_w;
+    v.viewport[3] = pixel_h;
     v.exposure = exposure;
     v.clear_mode = clear_mode;
     v.clear_color[0] = clear.r; v.clear_color[1] = clear.g;
@@ -5459,8 +5472,10 @@ void Engine::step_frame(bool render_frame) {
     static thread_local mq_platform_key_event iframe_keys[kMaxKeys]{};
     iframe.pointers = iframe_pointers; iframe.pointer_cap = kMaxPointers;
     iframe.keys = iframe_keys;         iframe.key_cap = kMaxKeys;
-    /* 帧起点 + FPS（按上一帧总耗时；首帧为 0）*/
-    {
+    /* 帧起点 + FPS（按**上一次成帧**的总耗时；首帧为 0）。
+     * 补步的中间步不上屏（主循环只让最后一步 render_frame）→ 这里也不能刷新 stat_t0，
+     * 否则帧间隔会被算成"半步"，fps 曲线被补步拉成方波。 */
+    if (render_frame) {
         const auto now = std::chrono::steady_clock::now();
         if (stat_t0.time_since_epoch().count() != 0) {
             const double total_ms = std::chrono::duration<double, std::milli>(now - stat_t0).count();
@@ -5799,7 +5814,9 @@ void Engine::step_frame(bool render_frame) {
     }
     /* CPU 像素只为离线输出、按需控制面抓帧或 SDL 呈现分配；WGPU 直呈常态保持空。 */
     const bool explicit_readback = !shot_path.empty() || !shot_seq.empty() || !frames_dir.empty();
-    const bool inspector_readback = ctl_server != nullptr;
+    /* 控制面只在**真的有人要像素**时才回读：Capture.screen 会置 frame_capture_requested。
+     * 旧实现 ctl_server 非空就每帧回读 —— 开着 inspector 的直呈会话等于白丢一次 GPU 同步。 */
+    const bool inspector_readback = ctl_server != nullptr && frame_capture_requested;
     const bool need_pixels = explicit_readback || inspector_readback || frame_capture_requested || !direct_present;
     std::vector<uint8_t> pixels;
     if (need_pixels) pixels.resize((size_t)TW * SHpx * 4);
@@ -5922,7 +5939,7 @@ void Engine::step_frame(bool render_frame) {
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
         fr.out_size = (uint32_t)pixels.size();
-        fr.present_after_readback = direct_present && inspector_readback ? 1 : 0;
+        fr.present_after_readback = direct_present && need_pixels ? 1 : 0;
         const bool present_frame = direct3d || fr.present_after_readback != 0;
         const int32_t rc = rapi->render_frame3d(rself, &fr);
         if (rc == 0 && present_frame) {
@@ -5960,7 +5977,7 @@ void Engine::step_frame(bool render_frame) {
         f.present_h = 0;
         f.out = need_pixels ? pixels.data() : nullptr;
         f.out_size = (uint32_t)pixels.size();
-        f.present_after_readback = inspector_readback ? 1 : 0;
+        f.present_after_readback = need_pixels ? 1 : 0;
         for (int i = 0; i < 4; ++i) f.bg[i] = bg[i];
         f.env.sky_mode = 1;                       /* M1：背景色直出（3D 天空盒在 M3） */
         f.env.env_texture = -1;                   /* 2D 直呈路径无 3D env（避免 0 号纹理被误当 env） */
@@ -6643,7 +6660,7 @@ bool Engine::reload_scene() {
     const size_t instance_mark = instances.size();
     /* 热重载：新世界沿用旧世界的实体 id 水位 —— `Scene::spawn` 的"永不复用"契约
      * 必须跨场景重建也成立，否则常驻脚本持有的旧 id 会别名到新场景实体。 */
-    Scene* fresh = new Scene();
+    auto fresh = std::make_unique<Scene>();
     fresh->next_id = scene ? scene->next_id : 0;
     scene_chain.clear();
     scene_chain.push_back(scn_vfs_path);
@@ -6652,8 +6669,14 @@ bool Engine::reload_scene() {
     fresh->deserialize(*this, text);
     fresh->instantiate(*this);
     scene_chain.pop_back();
-    delete scene;                       // 重建世界（编辑器/AI 场景迭代路径）
-    scene = fresh;
+    /* 旧场景的所有权：根场景默认是 Engine **内嵌**的 scene_store（不是 new 出来的），
+     * 只能重置内容 —— `delete &scene_store` 对非堆地址调用 operator delete，
+     * 在 ASan 下是 "attempting free on address which was not malloc()-ed"，
+     * 在 Release 下直接破坏堆。热重载建立的堆场景由 scene_owned 持有，
+     * 下一次替换时由 unique_ptr 释放（否则 scene_owned 为空 → 整棵 Scene 泄漏）。 */
+    if (scene == &scene_store) scene_store = Scene();
+    scene_owned = std::move(fresh);
+    scene = scene_owned.get();
     scene->flatten_world(*this);
     if (SceneInstanceRuntime* root = instance_at(0)) {
         for (auto& [eid, ent] : scene->ents)
@@ -7126,16 +7149,20 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
         if (v == "0" || v == "off") pace_wall_clock = false;
         else if (v == "1" || v == "on") pace_wall_clock = true;
     }
-    pace_accum = 0.0;
-    /* 墙钟限速用"下一个应执行的时刻"模型（比累加器直观且不会双重计时）：
-     * 每步把目标时刻推后 dt，然后睡到该时刻。若落后太多（掉帧），重新锚定到"现在 + dt"，
-     * 丢弃积压 —— 宁可让游戏时间变慢，也不要越睡越久追不上（死亡螺旋）。 */
-    auto pace_next = std::chrono::steady_clock::now();
-    auto pace_last = pace_next;
-    const auto pace_start = pace_next;
+    /* 墙钟限速：**绝对时间基准**（仿真时间 = frame × dt，目标墙钟时刻 = pace_start + 仿真时间）。
+     * 每轮按"落后多少"决定补几步（1..8），跑完睡到"下一帧应开始"的时刻：
+     *   · deadline 固定推进 → 睡眠过冲下一轮用更短的睡眠吸收，不累积漂移；
+     *   · 补步只让**最后一步**成帧（见下）→ 补步不再"越补越慢"；
+     *   · 落后超过 8 步（卡顿/断点/挂起）才重锚：丢弃积压，宁可让游戏时间变慢，也不爆追。 */
+    auto pace_start = std::chrono::steady_clock::now();
+    const auto pace_t0 = pace_start;              // 真实起点（诊断用；pace_start 会因重锚前移）
     double pace_sleep = 0.0;
     uint64_t pace_reanchor = 0;
     uint64_t pace_steps = 0;
+    /* 逐帧输出（截图/抓帧/逐帧导出）必须**每帧都成帧**，不允许把两步合成一帧 —— 否则
+     * `--shot-frame N` / `MAQUE_CAPTURE` 的帧号与画面会对不上。 */
+    const bool per_frame_output = !shot_path.empty() || !shot_seq.empty() || !frames_dir.empty() ||
+                                  std::getenv("MAQUE_CAPTURE") != nullptr;
 
     for (; frame < cap && !quit; ) {
         MQ_TRACY_ZONE_N(runtime, "loop");   // Tracy：一轮主循环（含可能的多步补偿 + 墙钟 sleep）
@@ -7150,36 +7177,40 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
          *   · 机器比实时快 → 只跑 1 步会让动画跟着快（实测 2.7x）→ 用 sleep 压到 1x；
          *   · 机器比实时慢（渲染每帧 ~29ms 实测）→ 只跑 1 步会让动画跟着慢（实测 0.58x）
          *     → 这一轮多补几步，让**游戏时间始终跟墙钟走**。
-         * 上限 8 步：超出的部分直接丢弃（宁可让游戏时间变慢，也不要越补越久追不上）。 */
+         * 上限 8 步、超出即重锚（见上）。 */
         int steps_this_frame = 1;
-        if (pace_wall_clock) {
-            constexpr auto kStep = std::chrono::milliseconds(1000 / 60);
+        if (pace_wall_clock && !per_frame_output) {
+            constexpr double kDt = 1.0 / 60.0;
             const auto now = std::chrono::steady_clock::now();
-            pace_accum += std::chrono::duration<double>(now - pace_last).count();
-            pace_last = now;
-            if (pace_accum > 8.0 / 60.0) { pace_accum = 8.0 / 60.0; ++pace_reanchor; }
-            steps_this_frame = static_cast<int>(pace_accum / (1.0 / 60.0));
+            double lag = std::chrono::duration<double>(now - pace_start).count() - (double)frame * kDt;
+            if (lag > 8.0 * kDt) {                       // 落后太多：重锚（丢弃积压）
+                pace_start += std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                    std::chrono::duration<double>(lag - 8.0 * kDt));
+                lag = 8.0 * kDt;
+                ++pace_reanchor;
+            }
+            steps_this_frame = 1 + (int)std::floor(lag / kDt);
             if (steps_this_frame < 1) steps_this_frame = 1;
             if (steps_this_frame > 8) steps_this_frame = 8;
-            pace_accum -= steps_this_frame * (1.0 / 60.0);
-            if (pace_accum < 0.0) pace_accum = 0.0;
         }
         for (int s = 0; s < steps_this_frame && frame < cap && !quit; ++s) {
             if (stop_frame && frame > stop_frame) break;
-            step_frame();
+            /* 补步：只有**最后一步**成帧（渲染 + present + Tracy FrameMark），中间步只推进模拟。
+             * 旧实现每步都完整 render+present → 补 2 步 = 渲染两帧，越补越慢；
+             * Tracy 里就表现为 22.25/15.32/21.42/11.59ms 这种"长短帧成对"的抖动。 */
+            step_frame(s + 1 == steps_this_frame);
             ++pace_steps;
         }
         if (pace_wall_clock) {
-            /* 还有余量说明比实时快 → 睡到下一帧的时间点（下轮重算，避免睡多）。 */
-            constexpr auto kStep = std::chrono::milliseconds(1000 / 60);
+            /* 睡到"下一帧应开始"的绝对时刻；落后（due 已过）就不睡，由上一段的补步追。 */
+            const auto due = pace_start + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                                               std::chrono::duration<double>((double)frame / 60.0));
             const auto now = std::chrono::steady_clock::now();
-            if (pace_next > now) {
-                const auto d = pace_next - now;
+            if (due > now) {
+                const auto d = due - now;
                 pace_sleep += std::chrono::duration<double>(d).count();
                 std::this_thread::sleep_for(d);
             }
-            pace_next = std::chrono::steady_clock::now() + kStep;
-            pace_last = std::chrono::steady_clock::now();
         }
         if (g_signal_hit) {                              // 收到终止信号 → 落盘上下文后退出
             write_crash_context(g_signal_name ? g_signal_name : "signal");
@@ -7206,7 +7237,8 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     mq_obs_gauge_set(obs, "frames_total", (double)frame);
     if (const char* pt = std::getenv("MAQUE_TRACE_PACE")) {
         (void)pt;
-        const double wall = std::chrono::duration<double>(std::chrono::steady_clock::now() - pace_start).count();
+        /* 墙钟从**真实起点**算（pace_start 会因重锚前移，用它算速率会虚高）。 */
+        const double wall = std::chrono::duration<double>(std::chrono::steady_clock::now() - pace_t0).count();
         std::print("[pace] frames={} 墙钟={:.3f}s 仿真={:.3f}s 速率={:.2f}x wall_clock={} 睡觉={:.3f}s 重锚定={} 次\n",
                    (long long)frame, wall, (double)frame / 60.0, wall > 0 ? (frame / 60.0) / wall : 0.0,
                    pace_wall_clock ? 1 : 0, pace_sleep, (long long)pace_reanchor);
@@ -8858,7 +8890,7 @@ void window_to_world(const Engine& eng, float* x, float* y) {
 /* 设备事件：位置映射 + 方向量翻转（指针位移 dy 与滚轮 scroll_y 同属 y 轴方向） */
 void device_event_to_world(const Engine& eng, mq_platform_pointer_event* p) {
     float sx = 1.0F, sy = 1.0F;
-    if (eng.platform && eng.window) {
+    if (eng.canvas_use_dpi && eng.platform && eng.window) {
         int32_t lw = 0, lh = 0, dw = 0, dh = 0;
         mq_platform_window_size(eng.platform, &lw, &lh);
         mq_platform_drawable_size(eng.platform, &dw, &dh);
@@ -9543,6 +9575,7 @@ void Engine::storage_setup() {
  * 实际颜色附件。没有 ui.Canvas 实体时按 ShowAll + 居中兜底。 */
 void Engine::canvas_setup() {
     canvas_entity = -1;
+    canvas_design_warned = false;
     if (!scene) return;
     for (auto& [idx, e] : scene->ents) {
         for (auto& [tid, blob] : e.comps) {
@@ -9569,6 +9602,7 @@ void Engine::canvas_resolve() {
     desc.fit = MQ_CANVAS_FIT_SHOW_ALL;
     desc.align = MQ_CANVAS_ALIGN_CENTER;
     desc.dpi_scale = 1.0F;
+    canvas_use_dpi = true;
     desc.safe_left = canvas_safe[0]; desc.safe_top = canvas_safe[1];
     desc.safe_right = canvas_safe[2]; desc.safe_bottom = canvas_safe[3];
     if (canvas_entity >= 0) {
@@ -9579,15 +9613,20 @@ void Engine::canvas_resolve() {
                 if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
                 const float dw = read_num(d, blob.data(), "design_width", 0.0F);
                 const float dh = read_num(d, blob.data(), "design_height", 0.0F);
-                if (dw > 0.0F && dh > 0.0F) {
-                    desc.design_w = dw * (float)view_count;
-                    desc.design_h = dh;
+                if (dw > 0.0F && dh > 0.0F &&
+                    (std::fabs(dw - (float)W) > 1.0e-4F || std::fabs(dh - (float)H) > 1.0e-4F) &&
+                    !canvas_design_warned) {
+                    canvas_design_warned = true;
+                    std::print(stderr, "runtime: ui.Canvas.design {}x{} 与 Scene 设计坐标 {}x{} 不一致，"
+                                       "已忽略 Canvas.design_*（Scene.width/height 是唯一坐标基准）\n",
+                               dw, dh, W, H);
                 }
                 desc.fit = (int32_t)read_num(d, blob.data(), "fit_mode", (float)MQ_CANVAS_FIT_SHOW_ALL);
                 desc.align = (int32_t)read_num(d, blob.data(), "align", (float)MQ_CANVAS_ALIGN_CENTER);
                 desc.min_scale = read_num(d, blob.data(), "min_scale", 0.0F);
                 desc.max_scale = read_num(d, blob.data(), "max_scale", 0.0F);
                 const bool dpi = read_num(d, blob.data(), "dpi_scale", 1.0F) != 0.0F;
+                canvas_use_dpi = dpi;
                 desc.dpi_scale = (dpi && platform && window) ? mq_platform_content_scale(platform) : 1.0F;
                 /* 写回解析结果（transient）：脚本/控制面可读 */
                 break;
@@ -9596,12 +9635,13 @@ void Engine::canvas_resolve() {
     } else if (platform && window) {
         desc.dpi_scale = mq_platform_content_scale(platform);
     }
-    /* 绘制区 = 窗口 drawable 设备像素；无窗口时使用设计尺寸构造虚拟屏幕。 */
+    /* Canvas 绘制区按 dpi_scale 选择 drawable 设备像素或逻辑窗口像素；无窗口用虚拟设计屏幕。 */
     desc.window_w = (float)W * (float)view_count;
     desc.window_h = (float)H;
     if (platform && window) {
         int32_t dw = 0, dh = 0;
-        mq_platform_drawable_size(platform, &dw, &dh);
+        if (canvas_use_dpi) mq_platform_drawable_size(platform, &dw, &dh);
+        else mq_platform_window_size(platform, &dw, &dh);
         if (dw > 0 && dh > 0) { desc.window_w = (float)dw; desc.window_h = (float)dh; }
     }
     const int rc = mq_canvas_resolve(&desc, &canvas);
@@ -13414,8 +13454,8 @@ extern "C" int mq_control_Font_atlas(void* u, const mq_json* params, char* out, 
 /* Capture.screen：最近一帧渲染结果（PPM → base64 分块）——实时预览面板 */
 extern "C" int mq_control_Capture_screen(void* u, const mq_json* params, char* out, size_t cap) {
     auto* eng = (Engine*)u;
-    eng->frame_capture_requested = true;
     const size_t offset = (size_t)mq_json_num(mq_json_get(params, "offset"), 0);
+    if (offset == 0) eng->frame_capture_requested = true;
     size_t max_bytes = (size_t)mq_json_num(mq_json_get(params, "max"), 24 * 1024);
     if (max_bytes == 0 || max_bytes > (1u << 20)) max_bytes = 24 * 1024;
     if (eng->frame_pixels.empty() || eng->frame_w <= 0 || eng->frame_h <= 0) {
@@ -14633,7 +14673,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
 #elif defined(MQ_RENDERER_STATIC_GFX)
     (void)renderer_override;
     const char* plugin = "static:gfx";
-    rapi = (const mq_renderer_v1*)mq_module_query(MQ_RENDERER_API_NAME, 1);
+    rapi = (const mq_renderer_v2*)mq_module_query(MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION);
     if (!rapi) {
         std::print("runtime: static gfx renderer unavailable\n");
         return false;
@@ -14652,7 +14692,7 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     host = mq_host_create();
     mq_loaded_module* rmod = nullptr;
     if (mq_host_load(host, plugin, &rmod) != 0 ||
-        !(rapi = (const mq_renderer_v1*)mq_host_query(host, MQ_RENDERER_API_NAME, 1))) {
+        !(rapi = (const mq_renderer_v2*)mq_host_query(host, MQ_RENDERER_API_NAME, MQ_RENDERER_API_VERSION))) {
         std::print("runtime: cannot load renderer plugin '{}'\n", plugin);
         return false;
     }
@@ -14677,12 +14717,19 @@ bool Engine::setup(const std::string& scn_path, const char* renderer_override) {
     }
     /* ---- 3D/PBR：能力自省 + 直接呈现探测（plans/18-pbr-3d.md M0）----
      *   · caps 总是调用（记录适配器能力，MAQUE_RENDER3D_INFO/wgpu 时打印）；
-     *   · 直接呈现只在显式 MAQUE_PRESENT=wgpu 时尝试：M1 接通前 attach_window 明确返回失败
-     *     → 保持现有「离屏 + platform(SDL_Renderer) 呈现」路径，老 2D 行为不变。 */
+     *   · 呈现模式：`auto`（默认）| `sdl` | `wgpu` | `off`
+     *       - auto：没有"必须读 renderer 后台缓冲像素"的消费者时**优先** wgpu 交换链直呈，
+     *         省掉每帧 GPU→CPU 回读（回读是每帧一次 GPU 同步点，桌面/浏览器抢 GPU 就抖）；
+     *         attach 失败自动回退 SDL。`MAQUE_CAPTURE`（SDL 平台抓帧）只能走 SDL。
+     *       - sdl：强制 SDL_Renderer 呈现（老行为，像素可抓）。
+     *       - wgpu：强制直呈（render3d_present 用例）。 */
     if (rapi->caps && rself) {
         const bool want_wgpu = [] {
             const char* p = std::getenv("MAQUE_PRESENT");
-            return p && std::strcmp(p, "wgpu") == 0;
+            if (p && (std::strcmp(p, "wgpu") == 0)) return true;
+            if (p && *p && std::strcmp(p, "auto") != 0) return false;   // off/software/accelerated/sdl
+            const char* cap = std::getenv("MAQUE_CAPTURE");             // SDL 抓帧：必须走 renderer
+            return !(cap && *cap);
         }();
         const char* info = std::getenv("MAQUE_RENDER3D_INFO");
         mq_renderer_caps caps{};
@@ -14976,6 +15023,9 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     /* 实体 id 水位跨场景保留：旧场景的 id 永不复用（常驻脚本/快照引用的陈旧 id 必须
      * 保持无效，绝不能别名到新场景的同号实体）。 */
     const int preserved_entity_id = scene ? scene->next_id : 0;
+    /* 热重载可能已把根场景换成堆上的 scene_owned；切场景/重装配必须释放它，
+     * 否则旧的整棵 Scene 从 scene_store 之外泄漏（且下一个 reload 会再叠一层）。 */
+    scene_owned.reset();
     scene_store = Scene();
     scene_store.next_id = preserved_entity_id;
     scene = &scene_store;
@@ -15185,6 +15235,13 @@ void Engine::teardown() {
     mq_snapshot_destroy(snap_manual); snap_manual = nullptr;
     mq_snapshot_pool_destroy(snaps); snaps = nullptr;
     mq_watcher_destroy(watcher); watcher = nullptr;
+    /* 场景 blob 的**动态成员**（string/vector）析构要查反射类型表：必须在
+     * mq_reflect_destroy 之前销毁根场景，否则 destroy_blob 取不到类型描述，
+     * 只 clear() 掉 blob 而**跳过 std::string 析构** —— 组件里所有路径/名字的
+     * 堆缓冲在退出时泄漏（scene_owned 里的热重载场景同理，整棵对象一起释放）。 */
+    if (scene == &scene_store) scene_store = Scene();
+    scene_owned.reset();
+    scene = nullptr;
     if (reflect) { mq_reflect_destroy(reflect); reflect = nullptr; }
     if (sim) { mq_sim_destroy(sim); sim = nullptr; }
     if (font) { mq_font_destroy(font); font = nullptr; }

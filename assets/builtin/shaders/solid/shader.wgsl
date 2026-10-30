@@ -20,10 +20,11 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
    * 否则逐顶点吸附会把每个顶点按"自己是中心"平移 → 整个矩形偏移半像素
    * （1:1 nearest 下表现为部分行/列取错纹素 → 文字发虚/乱码；块状图元看不出来）。 */
   let zoom = vec2f(u.zoom, select(u.zoom, u.zoom_y, u.zoom_y > 0.0));
-  let center = (inst.pos - u.cam) * zoom;
-  var cc = vec2f(center.x * cr - center.y * sr, center.x * sr + center.y * cr);
-  let kc0 = corner * zoom;
-  let kc = vec2f(kc0.x * cr - kc0.y * sr, kc0.x * sr + kc0.y * cr);
+  let center = inst.pos - u.cam;
+  let cc0 = vec2f(center.x * cr - center.y * sr, center.x * sr + center.y * cr);
+  var cc = cc0 * zoom;
+  let kc0 = vec2f(corner.x * cr - corner.y * sr, corner.x * sr + corner.y * cr);
+  let kc = kc0 * zoom;
   var pc = cc + vec2f(u.size.x * 0.5, u.size.y * 0.5) + vec2f(u.pan, u.eye) + u.view;
   // 像素对齐（pixel-perfect）：把矩形**左上角**吸附到整数目标像素（1 纹素 ↔ 1 像素）
   if (inst.snap > 0.5) {

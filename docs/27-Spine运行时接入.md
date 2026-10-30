@@ -104,7 +104,7 @@ runtime + maque::gfx              纹理页解码上传（image 模块）；网�
 | 模块实现 | `modules/anim/spine2d/src/spine2d.cpp` + `spine_extension.cpp`（宿主扩展点 `getDefaultExtension`） |
 | C ABI | `generated/abi/spine2d.h`（骨架数据/实例/图集页/绘制批次/绘制数据 + 40 余函数） |
 | runtime 接线 | `Engine::spine_setup/spine_step/spine_extract` + 12 个 `spine_*` 脚本 API（`schema/runtime/host.yaml`） |
-| **网格图元** | `mq_renderer_v1::render_mesh_views(...)` + 内建 shader `assets/builtin/shaders/mesh/shader.wgsl`（顶点 stride 32B：pos.xy/uv.xy/col.rgba；与 textured 共用 48B 相机 uniform；网格与精灵**统一按 (layer,z) 排序**，可互相遮挡） |
+| **网格图元** | `mq_renderer_v2::render_mesh_views(...)` + 内建 shader `assets/builtin/shaders/mesh/shader.wgsl`（顶点 stride 32B：pos.xy/uv.xy/col.rgba；与 textured 共用 48B 相机 uniform；网格与精灵**统一按 (layer,z) 排序**，可互相遮挡） |
 | 独立工程 | `samples/spine/`（`main.cpp` 50 行薄宿主 / `spine.scn` / `dragon.scn` / `spine.js` / `art/` / `README.md`） |
 | 测试 | 模块单测 `spine2d`；e2e `spine_smoke` / `spine_e2e` / `spine_dragon`（`tests/spine_e2e.sh`）；gfx 单测新增网格图元用例 |
 | 官方素材 | `tests/data/spine/` 与 `samples/spine/art/`（含 `LICENSE-spine-runtimes.txt`） |

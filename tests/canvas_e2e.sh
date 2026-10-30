@@ -104,6 +104,15 @@ cat > "$WORK/req.txt" <<'EOF'
 {"jsonrpc":"2.0","id":5,"method":"Scene.set","params":{"id":0,"path":"fit_mode","value":4}}
 {"jsonrpc":"2.0","id":6,"method":"Runtime.step","params":{"frames":2}}
 {"jsonrpc":"2.0","id":7,"method":"Scene.get","params":{"id":0,"path":"scale"}}
+{"jsonrpc":"2.0","id":8,"method":"Scene.set","params":{"id":0,"path":"fit_mode","value":3}}
+{"jsonrpc":"2.0","id":9,"method":"Scene.set","params":{"id":0,"path":"design_width","value":960}}
+{"jsonrpc":"2.0","id":10,"method":"Scene.set","params":{"id":0,"path":"design_height","value":540}}
+{"jsonrpc":"2.0","id":11,"method":"Runtime.step","params":{"frames":2}}
+{"jsonrpc":"2.0","id":12,"method":"Scene.get","params":{"id":0,"path":"scale"}}
+{"jsonrpc":"2.0","id":13,"method":"Scene.set","params":{"id":0,"path":"fit_mode","value":5}}
+{"jsonrpc":"2.0","id":14,"method":"Runtime.step","params":{"frames":2}}
+{"jsonrpc":"2.0","id":15,"method":"Scene.get","params":{"id":0,"path":"scale_x"}}
+{"jsonrpc":"2.0","id":16,"method":"Scene.get","params":{"id":0,"path":"scale_y"}}
 EOF
 MAQUE_WINDOW=800x600 MAQUE_CONTROL=- MAQUE_VIEWS=1 MAQUE_MAX_FRAMES=40 \
   "$PLAYER" "$SCENE" < "$WORK/req.txt" > "$WORK/fit.log" 2>&1 || true
@@ -121,7 +130,7 @@ def val(i):
     r = res.get(i)
     if isinstance(r, dict): return float(r.get('value', 0))
     return float(r) if r is not None else None
-fw, fwy, nb = val(3), val(4), val(7)
+fw, fwy, nb, canonical, exact_x, exact_y = val(3), val(4), val(7), val(12), val(15), val(16)
 # FitWidth：scale 由宽度决定 = 800/480；垂直方向仍按 align=Center 居中留边
 #   off_y = (600 - 270*scale)/2 = 75
 # NoBorder：铺满取 max(800/480, 600/270) = 600/270 = 2.222（两侧裁剪）
@@ -132,7 +141,14 @@ if fwy is None or abs(fwy - expect_fwy) > 1.0:
     print(f"canvas_e2e: FAIL FitWidth off_y={fwy}（期望居中留边 {expect_fwy:.1f}）", file=sys.stderr); sys.exit(1)
 if nb is None or abs(nb - 600/270) > 1e-3:
     print(f"canvas_e2e: FAIL NoBorder scale={nb}（期望 {600/270:.3f}）", file=sys.stderr); sys.exit(1)
-print(f"canvas_e2e: fit 切换 ok（FitWidth scale={fw:.3f} off_y={fwy:.0f} → NoBorder scale={nb:.3f}）")
+if canonical is None or abs(canonical - 800/480) > 1e-3:
+    print(f"canvas_e2e: FAIL Canvas.design_* 冲突后 scale={canonical}（应仍按 Scene 480x270 得 {800/480:.3f}）",
+          file=sys.stderr); sys.exit(1)
+if exact_x is None or exact_y is None or abs(exact_x - 800/480) > 1e-3 or abs(exact_y - 600/270) > 1e-3:
+    print(f"canvas_e2e: FAIL Exact scale=({exact_x},{exact_y})（期望 {800/480:.3f},{600/270:.3f}）",
+          file=sys.stderr); sys.exit(1)
+print(f"canvas_e2e: fit/设计基准 ok（FitWidth {fw:.3f} → NoBorder {nb:.3f}；"
+      f"冲突 design_* 后 {canonical:.3f}；Exact=({exact_x:.3f},{exact_y:.3f})）")
 PY
 
 echo "canvas_e2e: ok（留边/整数缩放/竖屏/输入映射/安全区/fit 切换 全部通过）"

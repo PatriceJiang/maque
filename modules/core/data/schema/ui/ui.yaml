@@ -266,8 +266,8 @@
       roles: [ ui_canvas ]
       doc: "UI 根与分辨率策略：解析后的度量每帧写回 transient 字段（脚本/控制面可读）"
       fields:
-        - { name: design_width,  type: float, default: 0.0F, attrs: { unit: px } }
-        - { name: design_height, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: design_width,  type: float, default: 0.0F, attrs: { unit: px }, doc: "兼容字段：0 或与 scn.Scene.width 相同；Scene.width 是唯一设计坐标基准" }
+        - { name: design_height, type: float, default: 0.0F, attrs: { unit: px }, doc: "兼容字段：0 或与 scn.Scene.height 相同" }
         - { name: fit_mode,      type: FitMode, default: "FitMode::ShowAll" }
         - { name: align,         type: Align, default: "Align::Center", doc: "留边/裁剪时画布在窗口中的对齐" }
         - { name: dpi_scale,     type: bool, default: true, doc: "是否让绘制区跟随显示器内容缩放（HiDPI）" }

@@ -73,6 +73,9 @@ grep -q '"ax"' "$WORK/glyphs.log" || fail "Font.glyphs 未返回图集矩形"
 "$INSPECTOR" --connect "$PORT" --headless "Font.atlas|{\"index\":$IDX,\"size\":$SIZE,\"offset\":0,\"max\":64}" > "$WORK/atlas.log" 2>&1
 grep -q '"total"' "$WORK/atlas.log" || fail "Font.atlas 未返回总长"
 grep -q '"data":"UDY' "$WORK/atlas.log" || fail "Font.atlas 首块不是 PPM 头（base64 P6）"
+# Capture.screen 首次请求只标记下一帧回读；第二次取得已完成帧（避免开 inspector 即每帧同步）。
+"$INSPECTOR" --connect "$PORT" --headless 'Capture.screen|{"offset":0,"max":64,"max_dim":480}' > "$WORK/screen_warm.log" 2>&1 || true
+sleep 0.1
 "$INSPECTOR" --connect "$PORT" --headless 'Capture.screen|{"offset":0,"max":64,"max_dim":480}' > "$WORK/screen.log" 2>&1
 grep -q '"data":"UDY' "$WORK/screen.log" || fail "Capture.screen 未返回 PPM"
 grep -q '"w": *[1-9]' "$WORK/screen.log" || fail "Capture.screen 尺寸异常"

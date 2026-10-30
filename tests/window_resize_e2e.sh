@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 窗口 resize / 最大化端到端（docs/05）：真实窗口 + 屏幕分辨率渲染目标。
-#   设计分辨率 320x240 只作为世界/UI 坐标参考；默认 render_scale=1 时目标跟随 drawable：
-#   800x650 窗口 → 800x650 目标，resize 到 1000x700 → 1000x700 目标。
+#   设计分辨率 320x240 只作为世界/UI 坐标参考；默认 render_scale=1 时目标跟随 drawable。
+#   在 1x DPI 上：800x650 窗口 → 800x650 目标，resize 到 1000x700 → 1000x700 目标。
 #
 # 覆盖：
 #   ① 运行期 resize 一次：目标与窗口设备像素同步变化，抓帧尺寸同步且非黑；
@@ -81,6 +81,7 @@ run_player "$WORK/fixed.log" env "${BASE[@]}" MAQUE_RENDER_SCALE=0.5 \
 
 # ---- ④ 连续两次 resize：1000x700（帧 3）→ 900x600（帧 6）----
 run_player "$WORK/multi.log" env "${BASE[@]}" \
+    MAQUE_CAPTURE="$WORK/multi" MAQUE_CAPTURE_EVERY=1 MAQUE_CAPTURE_FRAMES=12 \
     MAQUE_MAX_FRAMES=12 MAQUE_WINDOW_EVENT_AT="3:1000x700;6:900x600" \
     timeout 90 "$PLAYER" "$SCENE" || fail "连续 resize 运行失败（日志 $WORK/multi.log）"
 
@@ -194,7 +195,7 @@ def capture_sizes(prefix):
     return sizes
 
 
-# ================= ① 运行期 resize：自动重建渲染目标 =================
+# ================= ① 运行期 resize：目标跟随 drawable =================
 resize_log = f'{work}/resize.log'
 if not re.search(r'window event frame=4 resize 1000x700', read_text(resize_log)):
     fail('resize：日志缺 `window event frame=4 resize 1000x700`（MAQUE_WINDOW_EVENT_AT 未下发？）')
@@ -208,10 +209,6 @@ if (ln['old_w'], ln['old_h']) != (800, 650):
     fail(f"resize：旧窗口 {ln['old_w']}x{ln['old_h']}（应 800x650）")
 if (ln['new_w'], ln['new_h']) != (1000, 700):
     fail(f"resize：新窗口 {ln['new_w']}x{ln['new_h']}（应 1000x700）")
-if (ln['old_tw'], ln['old_sh']) != (800, 650):
-    fail(f"resize：旧渲染目标 {ln['old_tw']}x{ln['old_sh']}（应等于 drawable 800x650）")
-if (ln['new_tw'], ln['new_sh']) != (1000, 700):
-    fail(f"resize：新渲染目标 {ln['new_tw']}x{ln['new_sh']}（应等于 drawable 1000x700）")
 if abs(ln['render_scale'] - 1.0) > 0.01:
     fail(f"resize：render_scale={ln['render_scale']:.3f}（默认应为 1.0）")
 if ln['views'] != 1:
@@ -220,17 +217,19 @@ if ln['views'] != 1:
 sizes = capture_sizes(f'{work}/resize')
 if not sizes:
     fail('resize：未产生窗口抓帧')
-if (800, 650) not in sizes:
-    fail(f'resize：抓帧尺寸 {sorted(set(sizes))} 缺 resize 前的 800x650')
-if (1000, 700) not in sizes:
-    fail(f'resize：抓帧尺寸 {sorted(set(sizes))} 缺 resize 后的 1000x700')
-extra = sorted(set(sizes) - {(800, 650), (1000, 700)})
+old_target = (ln['old_tw'], ln['old_sh'])
+new_target = (ln['new_tw'], ln['new_sh'])
+if old_target not in sizes:
+    fail(f'resize：抓帧尺寸 {sorted(set(sizes))} 缺 resize 前目标 {old_target}')
+if new_target not in sizes:
+    fail(f'resize：抓帧尺寸 {sorted(set(sizes))} 缺 resize 后目标 {new_target}')
+extra = sorted(set(sizes) - {old_target, new_target})
 if extra:
-    fail(f'resize：抓帧出现非预期的中间尺寸 {extra}（应只有 800x650 / 1000x700）')
-if sizes[-1] != (1000, 700):
-    fail(f'resize：最后一张抓帧 {sizes[-1][0]}x{sizes[-1][1]}（resize 后应为 1000x700）')
+    fail(f'resize：抓帧出现非预期的中间尺寸 {extra}（应只有 {old_target} / {new_target}）')
+if sizes[-1] != new_target:
+    fail(f'resize：最后一张抓帧 {sizes[-1][0]}x{sizes[-1][1]}（应为 resize 后目标 {new_target}）')
 check_last_frame(f'{work}/resize', 'resize')
-print(f'window_resize_e2e: ① resize ok（目标 800x650 → 1000x700，render_scale=1；'
+print(f'window_resize_e2e: ① resize ok（目标 {old_target} → {new_target}，render_scale=1；'
       f'抓帧 {len(sizes)} 张：{sizes[0][0]}x{sizes[0][1]} … {sizes[-1][0]}x{sizes[-1][1]}）')
 
 # ================= ② 启动即最大化 =================
@@ -246,15 +245,11 @@ if last['new_w'] <= 800:
     fail(f"最大化：最后一次窗口尺寸 {last['new_w']}x{last['new_h']}（W 应 >800）")
 if abs(last['render_scale'] - 1.0) > 0.01:
     fail(f"最大化：render_scale {last['render_scale']:.3f}（默认应为 1.0）")
-if (last['new_tw'], last['new_sh']) != (last['new_w'], last['new_h']):
-    fail(f"最大化：目标 {last['new_tw']}x{last['new_sh']} ≠ drawable "
-         f"{last['new_w']}x{last['new_h']}")
 if last['views'] != 1:
     fail(f"最大化：views={last['views']}（MAQUE_VIEWS=1 未生效）")
 caps, (cw, ch) = check_last_frame(f'{work}/max', '最大化')
-if (cw, ch) != (last['new_w'], last['new_h']):
-    fail(f"最大化：最后抓帧 {cw}x{ch} ≠ 窗口绘制区 {last['new_w']}x{last['new_h']}"
-         f"（抓帧应等于窗口设备像素；若日志与抓帧 width 相等即可）")
+if (cw, ch) != (last['new_tw'], last['new_sh']):
+    fail(f"最大化：最后抓帧 {cw}x{ch} ≠ 渲染目标 {last['new_tw']}x{last['new_sh']}")
 print(f"window_resize_e2e: ② 最大化 ok（800x650 → {last['new_w']}x{last['new_h']}，"
       f"目标 {last['new_tw']}x{last['new_sh']}，render_scale=1，抓帧 {cw}x{ch}）")
 
@@ -268,26 +263,23 @@ ln = lines[0]
 if (ln['old_w'], ln['old_h'], ln['new_w'], ln['new_h']) != (800, 650, 1000, 700):
     fail(f"输出倍率：窗口 {ln['old_w']}x{ln['old_h']} → {ln['new_w']}x{ln['new_h']}"
          f"（应 800x650 → 1000x700）")
-if (ln['old_tw'], ln['old_sh']) != (400, 325) or (ln['new_tw'], ln['new_sh']) != (500, 350):
-    fail(f"输出倍率：MAQUE_RENDER_SCALE=0.5 时目标应为 drawable 一半，"
-         f"实际 {ln['old_tw']}x{ln['old_sh']} → {ln['new_tw']}x{ln['new_sh']}")
 if abs(ln['render_scale'] - 0.5) > 0.01:
     fail(f"输出倍率：render_scale={ln['render_scale']:.3f}（应为 0.5）")
 
 sizes = capture_sizes(f'{work}/fixed')
 if not sizes:
     fail('输出倍率：未产生窗口抓帧')
-if (800, 650) not in sizes:
-    fail(f'输出倍率：抓帧尺寸 {sorted(set(sizes))} 缺 800x650（present 应仍跟随窗口）')
-if (1000, 700) not in sizes:
-    fail(f'输出倍率：抓帧尺寸 {sorted(set(sizes))} 缺 1000x700（present 应仍跟随窗口）')
-extra = sorted(set(sizes) - {(800, 650), (1000, 700)})
+old_surface, new_surface = sizes[0], sizes[-1]
+want_old = (int(old_surface[0] * 0.5 + 0.5), int(old_surface[1] * 0.5 + 0.5))
+want_new = (int(new_surface[0] * 0.5 + 0.5), int(new_surface[1] * 0.5 + 0.5))
+if (ln['old_tw'], ln['old_sh']) != want_old or (ln['new_tw'], ln['new_sh']) != want_new:
+    fail(f"输出倍率：0.5 目标应为 drawable 一半 {want_old} → {want_new}，实际 "
+         f"{ln['old_tw']}x{ln['old_sh']} → {ln['new_tw']}x{ln['new_sh']}")
+extra = sorted(set(sizes) - {old_surface, new_surface})
 if extra:
     fail(f'输出倍率：抓帧出现非预期尺寸 {extra}')
-if sizes[-1] != (1000, 700):
-    fail(f'输出倍率：最后一张抓帧 {sizes[-1][0]}x{sizes[-1][1]}（应 1000x700）')
 check_last_frame(f'{work}/fixed', '输出倍率')
-print(f'window_resize_e2e: ③ render_scale=0.5 ok（目标 400x325 → 500x350；抓帧 {len(sizes)} 张 '
+print(f'window_resize_e2e: ③ render_scale=0.5 ok（目标 {want_old} → {want_new}；抓帧 {len(sizes)} 张 '
       f'{sizes[0][0]}x{sizes[0][1]} … {sizes[-1][0]}x{sizes[-1][1]}）')
 
 # ================= ④ 连续两次 resize =================
@@ -303,8 +295,11 @@ if not re.search(r'window event frame=6 resize 900x600', read_text(multi_log)):
 last = lines[-1]
 if (last['new_w'], last['new_h']) != (900, 600):
     fail(f"连续 resize：最后一次窗口 {last['new_w']}x{last['new_h']}（应 900x600）")
-if (last['new_tw'], last['new_sh']) != (900, 600):
-    fail(f"连续 resize：最后渲染目标 {last['new_tw']}x{last['new_sh']}（应等于 drawable 900x600）")
+multi_sizes = capture_sizes(f'{work}/multi')
+if not multi_sizes:
+    fail('连续 resize：未产生窗口抓帧')
+if (last['new_tw'], last['new_sh']) != multi_sizes[-1]:
+    fail(f"连续 resize：最后渲染目标 {last['new_tw']}x{last['new_sh']} ≠ 最后 drawable {multi_sizes[-1]}")
 if abs(last['render_scale'] - 1.0) > 0.01:
     fail(f"连续 resize：render_scale={last['render_scale']:.3f}（默认应为 1.0）")
 
@@ -314,7 +309,7 @@ for name, log in (('resize', resize_log), ('最大化', max_log), ('输出倍率
     for needle in ('AddressSanitizer', 'heap-buffer-overflow', 'SEGV'):
         if needle in txt:
             fail(f'{name}：日志含崩溃/ASan 迹象 `{needle}`（见 {log}）')
-print(f'window_resize_e2e: ④ 连续 resize ok（{len(lines)} 行；最后 900x600 → 目标 900x600，'
+print(f'window_resize_e2e: ④ 连续 resize ok（{len(lines)} 行；最后逻辑窗口 900x600，目标 {multi_sizes[-1]}，'
       f'render_scale=1，exit 0、无 ASan）')
 PY
 

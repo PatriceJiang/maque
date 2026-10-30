@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-const mq_renderer_v1* mq_renderer_null_api(void);
+const mq_renderer_v2* mq_renderer_null_api(void);
 
 #ifdef __cplusplus
 }

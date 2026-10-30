@@ -307,7 +307,7 @@ typedef struct mq_renderer_resource_usage {
 int32_t (*resource_bytes2)(void* self, mq_renderer_resource_usage* out);  /* 0=成功 */
 ```
 
-- 追加在 `mq_renderer_v1` **表尾**（`read_texture` 之后），旧插件按 `header.struct_size` 判定不存在；
+- 追加在 `mq_renderer_v2` **表尾**（`read_texture` 之后），调用方按 `header.struct_size` 判定不存在；
   `resource_bytes` 语义不变（= texture + buffer）。
 - gfx：`Device::texture_bytes` / `buffer_bytes` 在创建/销毁/重建处同步；
   null renderer：`texture_bytes` = 存活像素，`buffer_bytes` = 0。

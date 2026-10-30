@@ -240,7 +240,7 @@ glTF --(tools/gltf_import.py, 离线)--> <M>.mesh.json (vertices/indices/bounds/
 - **管线键**：`p3dMatPipeline[10][2][3][2][2]` → 追加 `[2]` skin 维（或拆成 `[...,2][2]`）；`shadowPipeline[2]` → `[2][2]`。shader 入口：`vs_skin`/`vs1_skin`/`vs_shadow_skin`/`vs_shadow1_skin`（4 个新入口），fragment 入口全部复用。
 - **draw/model**：蒙皮 draw 的 `model` = identity（规范）；`frame3d` 追加 `skins` 数组（`mq_renderer_skin{palette, joint_count}`）+ `draw3d` 追加 `skin` 索引（-1=无）。
 - **阴影**：`vs_shadow_skin` 同样做 skin 变换（否则角色影子停在 bind pose）；阴影 pass 与主 pass 共用 group1 布局，binding 19 照绑。
-- **ABI 版本**：全部为 `renderer.yaml` 结构尾部追加；`mq_renderer_v1` 版本保持 1（既有 append-only 规则），gfx 需容忍旧调用方传 `skin_vertices=nullptr`、`frame3d.skins==nullptr`。
+- **ABI 版本**：本轮当时按 v1 表尾追加；后续分辨率重构改变了 `view[]` 元素 stride 与 `frame3d` 布局，已升级为独立 `maque.renderer.v2`，禁止新旧二进制混用。
 - **morph（S3）用 CPU 路径**：4 个模型顶点数 3/24/30/1528，GPU morph 无收益；新增 ABI `update_mesh(self, mesh_id, vertices, vertex_bytes)`（gfx VBO 已带 `CopyDst`，见 `r_create_mesh` 1020–1025 行）+ runtime 保留 morph 网格的 CPU 顶点副本。morph + skin 组合在数据上天然兼容（先 CPU 改顶点，再 shader skin），但本批样本没有组合用例。
 
 ### 3.5 模块归属（runtime 内建 vs `plans/12` 模块）

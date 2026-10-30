@@ -273,6 +273,9 @@ function on_start() {
 - 动态增删组件、改名、resize 在固定帧边界同步；
 - resize 失败保留旧物理纹理和旧尺寸，不留下半初始化句柄；
 - 节点销毁、组件移除、场景热重载、`director.load_scene` 和引擎退出都会释放目标及 URI 别名；
+- 根场景默认是 `Engine` 的内嵌对象（`scene_store`）：热重载只重置其内容，不能 `delete`；
+  reload 建立的堆场景由 `scene_owned` 持有，切场景/退出时释放。场景 blob 的动态成员（string/vector）
+  必须在 `reflect` 销毁**之前**析构，否则组件里的路径/名字缓冲会随反射表一起泄漏；
 - `resource_bytes()` 把持久 RenderTexture 计入 VRAM 估算；depth/MSAA 等帧临时附件不计入；
 - null renderer 保留句柄、尺寸、清屏和回读语义，用于 headless/WASM P0；它不执行真实几何光栅化。
 

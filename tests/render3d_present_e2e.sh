@@ -34,7 +34,7 @@ MAQUE_PRESENT=wgpu MAQUE_WINDOW=640x480 MAQUE_RENDER3D_INFO=1 \
 grep -q "direct present attach_window .*rc=0" "$WORK/out.txt" \
     || { cat "$WORK/out.txt"; fail "attach_window 未成功（surface/swapchain 建不起来）"; }
 if grep -q "present via renderer=" "$WORK/out.txt"; then fail "直呈模式仍走了 SDL 呈现路径"; fi
-grep -q "present path direct-to-surface 640x480 (blit=0)" "$WORK/out.txt" \
+grep -Eq "present path direct-to-surface [0-9]+x[0-9]+ \(blit=0\)" "$WORK/out.txt" \
     || { cat "$WORK/out.txt"; fail "渲染分辨率等于 surface 时仍未走无 blit 直呈"; }
 grep -q "capture(wgpu surface)" "$WORK/out.txt" \
     || { cat "$WORK/out.txt"; fail "未抓到直呈帧（surface 不支持 CopySrc？）"; }
@@ -51,18 +51,40 @@ diff = 0
 for i in range(0, len(px), 3):
     if abs(px[i] - bg[0]) + abs(px[i + 1] - bg[1]) + abs(px[i + 2] - bg[2]) > 30:
         diff += 1
-print(f'render3d_present_e2e: 交换链帧 {w}x{h} bg={tuple(bg)} non-bg={diff}')
+# cube.scn 设计 16:9，测试窗口 4:3：Camera3D 必须与 2D Canvas 共用居中的 16:9 viewport。
+content_h = min(h, int(round(w * 9 / 16)))
+bar = max(0, (h - content_h) // 2)
+def rgb(x, y):
+    i = (y * w + x) * 3
+    return tuple(px[i:i+3])
+if bar > 1:
+    assert max(rgb(w // 2, bar // 2)) <= 2, ('top bar not black', rgb(w // 2, bar // 2), w, h)
+    assert max(rgb(w // 2, h - 1 - bar // 2)) <= 2, ('bottom bar not black', rgb(w // 2, h - 1 - bar // 2), w, h)
+    assert sum(rgb(w // 2, bar)) > 10, ('content starts black', rgb(w // 2, bar), bar)
+print(f'render3d_present_e2e: 交换链帧 {w}x{h} bars={bar}px bg={tuple(bg)} non-bg={diff}')
 sys.exit(0 if diff > 500 else 1)
 PY
 echo "render3d_present_e2e: ① wgpu swapchain 直接呈现 + 帧内容 OK"
 
 # ---- ③：render_scale 改变目标尺寸时才被动启用 blit ----
 MAQUE_PRESENT=wgpu MAQUE_WINDOW=640x480 MAQUE_RENDER_SCALE=0.5 MAQUE_RENDER3D_INFO=1 \
+    MAQUE_CAPTURE_WGPU="$WORK/scaled" MAQUE_CAPTURE_FRAMES=1 \
     timeout 90 "$PLAYER" --frames 3 "$SCN" >"$WORK/scaled.txt" 2>&1 \
     || { cat "$WORK/scaled.txt"; fail "render_scale=0.5 运行失败"; }
-grep -q "present path scaled 320x240 -> 640x480 (blit=1)" "$WORK/scaled.txt" \
+grep -Eq "present path scaled [0-9]+x[0-9]+ -> [0-9]+x[0-9]+ \(blit=1\)" "$WORK/scaled.txt" \
     || { cat "$WORK/scaled.txt"; fail "目标与 surface 不同却未启用条件 blit"; }
-echo "render3d_present_e2e: ② 条件 blit（320x240 → 640x480）OK"
+[ -s "$WORK/scaled_0.ppm" ] || fail "条件 blit 未产生 surface 抓帧"
+"$PY" - "$WORK/scaled_0.ppm" <<'PY' || exit 1
+import sys
+raw = open(sys.argv[1], 'rb').read()
+magic, dims, _maxv, px = raw.split(b'\n', 3)
+assert magic == b'P6'
+w, h = map(int, dims.split())
+nonblack = sum(1 for i in range(0, len(px), 3) if px[i] + px[i+1] + px[i+2] > 12)
+assert nonblack > w * h * 0.2, (w, h, nonblack)
+print(f'render3d_present_e2e: 条件 blit surface {w}x{h} nonblack={nonblack}')
+PY
+echo "render3d_present_e2e: ② 条件 blit surface 像素 OK"
 
 # ---- ④：直呈环境下 --shot 仍可离屏回读（截图路径） ----
 MAQUE_PRESENT=wgpu MAQUE_WINDOW=640x480 timeout 90 "$PLAYER" --shot "$WORK/shot.png" --frames 5 "$SCN" \

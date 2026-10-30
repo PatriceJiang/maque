@@ -286,8 +286,9 @@ typedef struct mq_renderer_resource_usage {
     uint64_t other_bytes;
 } mq_renderer_resource_usage;
 
-#define MQ_RENDERER_API_NAME "maque.renderer"
-typedef struct mq_renderer_v1 {
+#define MQ_RENDERER_API_NAME "maque.renderer.v2"
+#define MQ_RENDERER_API_VERSION 2u
+typedef struct mq_renderer_v2 {
     mq_api_header header;
     void* (*create)(const char** out_backend);
     void (*destroy)(void* self);
@@ -313,4 +314,4 @@ typedef struct mq_renderer_v1 {
     int32_t (*render_to_texture)(void* self, int32_t id, const mq_renderer_frame3d* frame);
     int32_t (*read_texture)(void* self, int32_t id, uint8_t* out, uint32_t out_size);
     int32_t (*resource_bytes2)(void* self, mq_renderer_resource_usage* out);
-} mq_renderer_v1;
+} mq_renderer_v2;

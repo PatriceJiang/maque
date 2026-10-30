@@ -1,11 +1,12 @@
 # renderer —— 渲染插件接口（C vtable）· modules/render/gfx
 # 插件接口 ABI（由 DSL 生成 C vtable；docs/02/21）。opaque self = void*。
 #
-# 版本化（docs/02）：本接口 version 保持 1 —— 新能力**只在表尾追加**（记录/方法），
-# 既有记录字段与方法签名不变；调用方用 mq_api_header.struct_size 判断新方法是否存在。
+# 版本化（docs/02）：v2 因 `view` 数组元素 stride 与 `frame3d` 布局变化使用独立 ABI 名称；
+# v2 内后续能力仍只在表尾追加，记录数组元素字段不得再无版本地改变。
 # 3D/PBR 扩展见 plans/18-pbr-3d.md §2（直接呈现 / 网格 GPU 资源 / PBR 帧描述）。
 - interface: renderer
-  version: 1
+  version: 2
+  abi_name: "maque.renderer.v2"
   records:
     - record: view
       fields:
