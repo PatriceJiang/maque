@@ -484,11 +484,20 @@ tools\win\build.cmd -Sanitize address -RunTests
   `scn.SceneInstance{source}` 即加载期实例化**带行为的子场景**（每实例独立 `mq_script_bus`/VM、生命周期与事件作用域；
   根场景 = 0 号实例）。`on_start` 后序（子先父）、`update` 前序（父先子，paused 跳过）、`on_destroy` 后序；
   `node_on` 记录 owner_instance（子实例只能注册自己子树；越界拒绝），`node_emit` 冒泡但只调处理器所属实例的 VM。
-  动态接口（脚本 / 控制面）：`scene_instantiate(parent,path)`（句柄立即分配、帧边界构建）、
+  动态接口（脚本 / 控制面）：`scene_instantiate(parent,path,params)`（句柄立即分配、帧边界构建）、
   `scene_unload/reload`、`scene_set_instance_paused/active`、`scene_instance_*` 查询、`scene_self/self_root`、
   `scene_emit`；控制面 `Scene.instances/instance_info/instantiate/unload_instance/reload_instance/bake_instances`。
+  **实例参数（docs/32 §16.2）**：`scn.SceneInstance.params`（JSON）+ `scene_instantiate` 第三参数 →
+  子场景 `scene_self_params()` 读取；`scene_instance_params` / `scene_set_instance_params`（构建前生效）。
+  **全局脚本（§16.1）**：`scn.Scene.global_script` 独立 VM/总线，跨 `director_load_scene` 保留，
+  派发在实例之后、overlay 之前；`global_emit(event,value)` 显式调用其命名处理器（跨场景服务入口）。
+  **全局状态（§16.3）**：`global_set/get/set_text/get_text/has/remove/clear/keys`，Engine 内唯一一份、
+  所有 VM 共享、跨场景保留；空状态不进 `world_checksum`；快照 `MQGL` 块先于实例表恢复。
+  动态实例自动建的挂载壳由 `owns_shell` 在卸载时删除（§16.4）；实体 id 水位跨场景/热重载/回滚保留
+  （常驻脚本持有的陈旧 id 绝不别名新场景实体）。
   预算：实例数默认 256（`MAQUE_SCENE_INSTANCE_LIMIT`）、嵌套深度 16；循环源链报错不崩。
-  样例 `scenes/nested/`，测试 `ctest -R 'scene_instance|scene_serialization'`。
+  样例 `scenes/nested/` 与 **`scenes/td/`（小小塔防：3 塔/4 敌人/3 关卡/菜单 + 全局脚本/状态）**，
+  测试 `ctest -R 'scene_instance|scene_serialization|td_e2e'`。
   **序列化（docs/32 §6/§15，已落地）**：`Scene.save` 反射写全部场景字段（`version:2`，旧文件兼容）；
   未烘焙实例只写 `SceneInstance` 引用、不落子树；`bake_instances`/`detached` 才写自包含内容；
   连续保存逐字节一致；`load(save(scene))` 的 12 帧 `world_trail` 与原始一致；`World.snapshot/restore`

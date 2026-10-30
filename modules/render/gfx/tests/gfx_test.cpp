@@ -237,6 +237,67 @@ int main() {
         api->destroy_texture(self, tex2);
         CHECK(api->has_texture(self, tex2) == 0);
 
+        // RenderTexture：pass A 画红色目标，pass B 把同一句柄当普通 Texture 显示（首帧即生效）。
+        const bool has_rt_api = api->header.struct_size >=
+            offsetof(mq_renderer_v1, read_texture) + sizeof(api->read_texture);
+        CHECK(has_rt_api);
+        if (has_rt_api) {
+            mq_renderer_render_texture_desc rd{};
+            rd.struct_size = sizeof rd;
+            rd.width = 64; rd.height = 64; rd.pixel_format = 0;
+            rd.filter = 1; rd.wrap_u = rd.wrap_v = 1;
+            rd.clear_color[0] = 0.0F; rd.clear_color[1] = 0.0F;
+            rd.clear_color[2] = 0.0F; rd.clear_color[3] = 0.0F;
+            int32_t rt = -1;
+            const uint64_t bytes0 = api->resource_bytes ? api->resource_bytes(self) : 0;
+            CHECK(api->create_render_texture(self, &rd, &rt) == 0);
+            CHECK(rt >= 0 && api->has_texture(self, rt) == 1);
+            mq_renderer_item red = sprite(32.0F, 32.0F, 30.0F, 1.0F, 0.0F, 0.0F);
+            mq_renderer_view rv{};
+            rv.vw = 64; rv.vh = 64; rv.cx = 32; rv.cy = 32; rv.zoom = 1.0F;
+            mq_renderer_frame3d rf{};
+            rf.width = 64; rf.height = 64;
+            rf.views2d = &rv; rf.view2d_count = 1;
+            rf.items = &red; rf.item_count = 1;
+            rf.bg[3] = 1.0F;
+            CHECK(api->render_to_texture(self, rt, &rf) == 0);
+            std::vector<uint8_t> rtpx(64u * 64u * 4u);
+            CHECK(api->read_texture(self, rt, rtpx.data(), (uint32_t)rtpx.size()) == 0);
+            CHECK(rtpx[(32u * 64u + 32u) * 4u] > 220);
+
+            mq_renderer_item display = sprite(160.0F, 120.0F, 50.0F, 1.0F, 1.0F, 1.0F);
+            display.texture = rt;
+            display.half_w = 50.0F; display.half_h = 50.0F;
+            mq_renderer_view mainv{};
+            mainv.vw = 320; mainv.vh = 240; mainv.cx = 160; mainv.cy = 120; mainv.zoom = 1.0F;
+            cv.clear();
+            CHECK(api->render_views(self, 320, 240, &mainv, 1, &display, 1, bg,
+                                    cv.px.data(), (uint32_t)cv.px.size()) == 0);
+            CHECK(cv.at(160, 120, 0) > 220 && cv.at(160, 120, 1) < 40 && cv.at(160, 120, 2) < 40);
+
+            // 目标直接采样自身：后端必须剔除该批次，只留下蓝色 clear，不能触发 WebGPU validation。
+            mq_renderer_item self_sample = display;
+            self_sample.x = 32; self_sample.y = 32; self_sample.half_w = 30; self_sample.half_h = 30;
+            rf.items = &self_sample; rf.item_count = 1;
+            rf.bg[0] = 0.0F; rf.bg[1] = 0.0F; rf.bg[2] = 1.0F; rf.bg[3] = 1.0F;
+            CHECK(api->render_to_texture(self, rt, &rf) == 0);
+            CHECK(api->read_texture(self, rt, rtpx.data(), (uint32_t)rtpx.size()) == 0);
+            const size_t center = (32u * 64u + 32u) * 4u;
+            CHECK(rtpx[center] < 30 && rtpx[center + 1] < 30 && rtpx[center + 2] > 220);
+
+            rd.width = 32; rd.height = 16;
+            CHECK(api->configure_render_texture(self, rt, &rd) == 0);
+            CHECK(api->has_texture(self, rt) == 1);                    // 原位替换，句柄不变
+            rf.width = 32; rf.height = 16;
+            rv.vw = 32; rv.vh = 16; rv.cx = 16; rv.cy = 8;
+            red.x = 16; red.y = 8; red.size = 7;
+            rf.items = &red; rf.item_count = 1;
+            CHECK(api->render_to_texture(self, rt, &rf) == 0);
+            api->destroy_texture(self, rt);
+            CHECK(api->has_texture(self, rt) == 0);
+            if (api->resource_bytes) CHECK(api->resource_bytes(self) == bytes0);
+        }
+
         // 网格上传：单三角形，规范布局 pos3/normal3/tangent4/uv2 = 48B
         const float verts48[36] = {
             // pos3              normal3          tangent4           uv2

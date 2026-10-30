@@ -1008,6 +1008,20 @@ static const mq_field_desc mq_fields_render_RenderLayer[] = {
     { "blend", (uint32_t)offsetof(render::RenderLayer, blend), MQ_TK_ENUM, 3958457383u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
+static const mq_field_desc mq_fields_render_RenderTexture[] = {
+    { "name", (uint32_t)offsetof(render::RenderTexture, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "width", (uint32_t)offsetof(render::RenderTexture, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "height", (uint32_t)offsetof(render::RenderTexture, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "update_mode", (uint32_t)offsetof(render::RenderTexture, update_mode), MQ_TK_ENUM, 1562192302u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "filter", (uint32_t)offsetof(render::RenderTexture, filter), MQ_TK_ENUM, 4056136834u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "include_ui", (uint32_t)offsetof(render::RenderTexture, include_ui), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "enabled", (uint32_t)offsetof(render::RenderTexture, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clear_color", (uint32_t)offsetof(render::RenderTexture, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "texture", (uint32_t)offsetof(render::RenderTexture, texture), MQ_TK_STRING, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "ready", (uint32_t)offsetof(render::RenderTexture, ready), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "last_frame", (uint32_t)offsetof(render::RenderTexture, last_frame), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+};
+
 static const mq_field_desc mq_fields_render_RichRun[] = {
     { "tag", (uint32_t)offsetof(render::RichRun, tag), MQ_TK_ENUM, 2818671041u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "text_begin", (uint32_t)offsetof(render::RichRun, text_begin), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -1313,6 +1327,7 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
     { "script", (uint32_t)offsetof(scn::Scene, script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "scripts", (uint32_t)offsetof(scn::Scene, scripts), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_Scene_scripts_clear, mq_dyn_scn_Scene_scripts_size, mq_dyn_scn_Scene_scripts_resize, mq_dyn_scn_Scene_scripts_elem },
     { "overlay_script", (uint32_t)offsetof(scn::Scene, overlay_script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "global_script", (uint32_t)offsetof(scn::Scene, global_script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "width", (uint32_t)offsetof(scn::Scene, width), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "height", (uint32_t)offsetof(scn::Scene, height), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "seed", (uint32_t)offsetof(scn::Scene, seed), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -1334,6 +1349,7 @@ static const mq_field_desc mq_fields_scn_Scene[] = {
 
 static const mq_field_desc mq_fields_scn_SceneInstance[] = {
     { "source", (uint32_t)offsetof(scn::SceneInstance, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "params", (uint32_t)offsetof(scn::SceneInstance, params), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "paused", (uint32_t)offsetof(scn::SceneInstance, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "active", (uint32_t)offsetof(scn::SceneInstance, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "detached", (uint32_t)offsetof(scn::SceneInstance, detached), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -2148,6 +2164,16 @@ static const mq_enum_value mq_values_render_ProbeUpdateMode[] = {
     { "Interval", (int64_t)2 },
 };
 
+static const mq_enum_value mq_values_render_RenderTextureFilter[] = {
+    { "Nearest", (int64_t)0 },
+    { "Linear", (int64_t)1 },
+};
+
+static const mq_enum_value mq_values_render_RenderTextureUpdateMode[] = {
+    { "EveryFrame", (int64_t)0 },
+    { "OnDemand", (int64_t)1 },
+};
+
 static const mq_enum_value mq_values_render_RichTagType[] = {
     { "Text", (int64_t)0 },
     { "Color", (int64_t)1 },
@@ -2639,6 +2665,9 @@ static void mq_defaults_render_ProbeSource(void* p) { new (p) render::ProbeSourc
 static void mq_defaults_render_ProbeUpdateMode(void* p) { new (p) render::ProbeUpdateMode{}; }
 static void mq_defaults_render_ReflectionProbe(void* p) { new (p) render::ReflectionProbe{}; }
 static void mq_defaults_render_RenderLayer(void* p) { new (p) render::RenderLayer{}; }
+static void mq_defaults_render_RenderTexture(void* p) { new (p) render::RenderTexture{}; }
+static void mq_defaults_render_RenderTextureFilter(void* p) { new (p) render::RenderTextureFilter{}; }
+static void mq_defaults_render_RenderTextureUpdateMode(void* p) { new (p) render::RenderTextureUpdateMode{}; }
 static void mq_defaults_render_RichRun(void* p) { new (p) render::RichRun{}; }
 static void mq_defaults_render_RichTagType(void* p) { new (p) render::RichTagType{}; }
 static void mq_defaults_render_RichText(void* p) { new (p) render::RichText{}; }
@@ -4800,6 +4829,48 @@ extern const mq_type_desc mq_type_render_RenderLayer = {
     mq_defaults_render_RenderLayer,
 };
 
+extern const mq_type_desc mq_type_render_RenderTexture = {
+    "render.RenderTexture",
+    2253190608u,
+    (uint32_t)sizeof(render::RenderTexture),
+    (uint32_t)alignof(render::RenderTexture),
+    11u,
+    mq_fields_render_RenderTexture,
+    4u,
+    0u,
+    0,
+    0u,
+    mq_defaults_render_RenderTexture,
+};
+
+extern const mq_type_desc mq_type_render_RenderTextureFilter = {
+    "render.RenderTextureFilter",
+    4056136834u,
+    (uint32_t)sizeof(render::RenderTextureFilter),
+    (uint32_t)alignof(render::RenderTextureFilter),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_render_RenderTextureFilter,
+    2u,
+    mq_defaults_render_RenderTextureFilter,
+};
+
+extern const mq_type_desc mq_type_render_RenderTextureUpdateMode = {
+    "render.RenderTextureUpdateMode",
+    1562192302u,
+    (uint32_t)sizeof(render::RenderTextureUpdateMode),
+    (uint32_t)alignof(render::RenderTextureUpdateMode),
+    0u,
+    0,
+    3u,
+    0u,
+    mq_values_render_RenderTextureUpdateMode,
+    2u,
+    mq_defaults_render_RenderTextureUpdateMode,
+};
+
 extern const mq_type_desc mq_type_render_RichRun = {
     "render.RichRun",
     2859154460u,
@@ -5267,7 +5338,7 @@ extern const mq_type_desc mq_type_scn_Scene = {
     410509289u,
     (uint32_t)sizeof(scn::Scene),
     (uint32_t)alignof(scn::Scene),
-    22u,
+    23u,
     mq_fields_scn_Scene,
     4u,
     0u,
@@ -5281,7 +5352,7 @@ extern const mq_type_desc mq_type_scn_SceneInstance = {
     576957334u,
     (uint32_t)sizeof(scn::SceneInstance),
     (uint32_t)alignof(scn::SceneInstance),
-    7u,
+    8u,
     mq_fields_scn_SceneInstance,
     4u,
     0u,
@@ -6376,6 +6447,9 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_render_ProbeUpdateMode,
     &mq_type_render_ReflectionProbe,
     &mq_type_render_RenderLayer,
+    &mq_type_render_RenderTexture,
+    &mq_type_render_RenderTextureFilter,
+    &mq_type_render_RenderTextureUpdateMode,
     &mq_type_render_RichRun,
     &mq_type_render_RichTagType,
     &mq_type_render_RichText,
@@ -6480,7 +6554,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 249u;
+const uint32_t mq_schema_type_count = 252u;
 
 #ifdef __cplusplus
 } // extern "C"

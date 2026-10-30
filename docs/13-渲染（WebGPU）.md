@@ -80,6 +80,59 @@
 - 这是文档 11 §6 的 `Renderer.capture_frame`：**无 GUI 也能预览**，AI 可交叉判断正确性。
 - 同样用于 CI 的**图像回归测试**（与基准帧比对）。
 
+### 6.1 相机 RenderTexture
+
+`render.RenderTexture` 是挂在相机节点上的组件，不内嵌第二套相机字段。支持三种现有相机：
+
+- `scn.Camera`：旧 2D 相机；
+- `render.Camera2D`：位置取同节点 2D 世界变换，使用 `zoom/offset/viewport/layer_mask/clear_color`；
+  当前 2D renderer 是等比缩放 ABI，`zoom.x != zoom.y` 时明确告警并使用 `zoom.x`；
+- `render.Camera3D`：位置/朝向取同节点 `scene.Transform3D`，支持 Perspective/Orthographic、viewport、
+  clear mode 与 culling mask。
+
+同节点挂 RenderTexture 后，该相机不再参与主画面的相机选择，只负责自己的离屏目标。GPU 目标同时具有
+`RenderAttachment | TextureBinding | CopySrc`，进入普通纹理句柄空间，因此 Sprite、网格和 PBR 贴图槽都不需要
+专用材质类型。
+
+| 字段 | 默认 | 语义 |
+|------|------|------|
+| `name` | 节点名 | 实例内唯一的纹理名；节点名也为空时用 `camera-<id>` |
+| `width/height` | `0/0` | `0` 跟随场景设计分辨率；非零为固定像素尺寸，不随窗口缩放 |
+| `update_mode` | `EveryFrame` | `EveryFrame` 每帧更新；`OnDemand` 首帧更新，之后仅标脏时更新 |
+| `filter` | `Linear` | 采样过滤；像素画/监控小窗可用 `Nearest` |
+| `include_ui` | `false` | 2D 相机默认只拍世界层；开启后包含游戏 UI，永不包含引擎 ImGui |
+| `enabled` | `true` | 关闭时保留上一帧纹理内容，不提交该相机 pass |
+| `clear_color` | 透明黑 | `scn.Camera` 的目标清屏色；Camera2D/Camera3D 使用相机自身的 clear color |
+| `texture/ready/last_frame` | transient | 运行期只读状态，不写入场景保存/快照 |
+
+**纹理引用**：根场景可写短形式 `rendertexture://minimap`；运行时规范形式为
+`rendertexture://<scene-instance-id>/minimap`。短引用在纹理解析时按消费者所属实例限定作用域，且不会把运行期实例 id
+写回场景；两个子场景里的同名目标不会串用，bake/save 后重新作为根场景加载也不会断链。`camera_texture(camera)` 返回规范 URI，可直接交给 `node_set_string(..., "texture", uri)`。
+
+**帧序与依赖**：脚本/动画/展平完成后先执行 RenderTexture pass，再画主帧，所以主画面首帧即可采样本帧相机结果，
+没有 CPU 回读。多个目标按纹理依赖排序；跨目标依赖环按相机 entity id 固定顺序执行，环中较早目标读取较晚目标的
+上一帧，较晚目标可读取较早目标的本帧。目标对自身的采样批次由后端剔除，绝不把同一 WebGPU 纹理同时绑定为
+attachment 和 sampled texture。目标创建及 resize 后先清屏，上一帧语义不会读取未初始化显存。
+
+**脚本截图接口**：
+
+```js
+const camera = entity_find("capture_camera");
+const texture = camera_texture(camera);     // rendertexture://0/minimap
+camera_update(camera);                      // 标脏 OnDemand 目标
+camera_capture(camera, "shots/minimap.png"); // 当前渲染帧更新后写 PNG；其它扩展写 PPM
+```
+
+`camera_capture` 是延迟到本帧 RenderTexture 完成后的冷路径回读，不会为截图建立另一套相机或重复渲染。控制面提供
+`Capture.camera(camera, offset, max, max_dim)`（最新目标的 PPM/base64 分块）与变更类
+`Capture.camera_save(camera, path)`（请求下一渲染帧更新后落盘）。
+
+首版颜色目标固定为单 mip `RGBA8Unorm`；RenderTexture 可绑定到 PBR 槽，但它表达的是已渲染颜色，不适合作为
+normal/MR 等数据贴图。PBR 当前每个材质共用一个 sampler；材质含 RenderTexture 时优先采用该 RT 的过滤设置，
+否则采用第一张有效静态贴图的 sampler。逐帧路径保持 GPU→GPU，只有显式截图/控制面抓取才做 GPU→CPU readback。
+
+样例：`scenes/render_texture/render_texture.scn`；回归：`ctest -R render_texture_e2e`。
+
 ## 7. 观测
 
 - **WebGPU timestamp queries** → pass 级 GPU 耗时（文档 09 §3）。

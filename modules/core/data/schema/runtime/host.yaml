@@ -12,6 +12,14 @@
     - { fn: log,           ctx: true, args: [ { name: msg,  type: string } ] }
     - { fn: cfg,           ctx: true, args: [ { name: path, type: string } ], returns: float }
     - { fn: load_texture,  ctx: true, args: [ { name: path, type: string } ], returns: float }
+    # 相机节点挂 render.RenderTexture 后：取得可直接写入任意 texture 字段的 URI、请求按需更新、异步落盘截图。
+    # camera_capture 在本帧相机目标更新后写 PNG/PPM，返回 1=已排队、0=节点/组件/路径无效。
+    - { fn: camera_texture, ctx: true, args: [ { name: camera, type: float } ], returns: string,
+        doc: "返回 rendertexture://<scene-instance-id>/<name> 规范 URI；可直接赋给 Sprite/材质的 texture 字段" }
+    - { fn: camera_update, ctx: true, args: [ { name: camera, type: float } ], returns: float,
+        doc: "把 OnDemand RenderTexture 标脏；下一次渲染帧更新" }
+    - { fn: camera_capture, ctx: true, args: [ { name: camera, type: float }, { name: path, type: string } ], returns: float,
+        doc: "请求相机截图（.png 为 PNG，其余为 PPM）；强制更新 RenderTexture 后在本帧末落盘" }
     - { fn: entity_spawn,  ctx: true, returns: float, doc: "新建节点（返回单调 id）；entity_* 是 node_* 的**扁平别名**（按 id 直接寻址，同一模型）" }
     - { fn: entity_set_pos,ctx: true, args: [ { name: id, type: float }, { name: x, type: float }, { name: y, type: float } ], doc: "写 Transform 组件（世界坐标）；不要直接改 Entity::world_x/y（那是每帧展平的派生缓存）" }
     - { fn: entity_x,      ctx: true, args: [ { name: id, type: float } ], returns: float, doc: "读世界坐标（派生缓存；改位置用 entity_set_pos / node_set_position）" }
@@ -149,8 +157,11 @@
 
     # ---- 场景实例（docs/32）：`.scn` = 节点树 + 行为；每个实例独立 VM/生命周期/事件作用域 ----
     # 变更类：句柄**立即分配**，实体/VM/on_start 在**下一个帧边界**完成（docs/32 §7）。
-    - { fn: scene_instantiate, ctx: true, args: [ { name: parent, type: float }, { name: path, type: string } ], returns: float,
-        doc: "实例化一个 .scn（parent=-1 挂到世界根）；返回实例句柄（-1=失败）" }
+    # params（JSON 文本，可空）= 父场景 → 子场景的**实例参数**；子场景在 on_start 用
+    # scene_self_params() 读取（docs/32 §16.2）。帧边界构建前写入，故子脚本一定能看到。
+    - { fn: scene_instantiate, ctx: true, args: [ { name: parent, type: float }, { name: path, type: string },
+                                                  { name: params, type: string } ], returns: float,
+        doc: "实例化一个 .scn（parent=-1 挂到世界根；params=JSON 参数，可省略）；返回实例句柄（-1=失败）" }
     - { fn: scene_unload, ctx: true, args: [ { name: instance, type: float } ], returns: float,
         doc: "卸载实例（帧边界；先后序 on_destroy 再销毁子树/VM）" }
     - { fn: scene_reload, ctx: true, args: [ { name: instance, type: float } ], returns: float }
@@ -171,10 +182,38 @@
     # 当前脚本上下文（在回调里调用）：所属实例 + 挂载壳
     - { fn: scene_self,      ctx: true, returns: float }
     - { fn: scene_self_root, ctx: true, returns: float }
+    # 实例参数（docs/32 §16.2）：父场景声明 `scn.SceneInstance.params` 或 scene_instantiate 的
+    # 第三参数；子场景脚本按自己的实例读取（根实例/无参数 → ""）。
+    - { fn: scene_self_params, ctx: true, returns: string,
+        doc: "当前实例的参数字符串（JSON；无 → \"\"）—— 子场景 on_start 读取父场景传入的配置" }
+    - { fn: scene_instance_params, ctx: true, args: [ { name: instance, type: float } ], returns: string,
+        doc: "任意实例的参数字符串（只读）" }
+    - { fn: scene_set_instance_params, ctx: true, args: [ { name: instance, type: float },
+                                                         { name: params, type: string } ], returns: float,
+        doc: "改写实例参数（在帧边界构建前设置 → 子场景 on_start 可见；已构建实例需 scene_reload 生效）" }
     # 跨实例事件：直接调用指定实例 VM 组里定义了 event 的处理器
     - { fn: scene_emit, ctx: true, args: [ { name: instance, type: float }, { name: event, type: string },
                                           { name: value, type: float } ], returns: float }
     - { fn: scene_last_error, ctx: true, returns: string }
+
+    # ---- 全局脚本 / 全局状态（docs/32 §16）----
+    # 全局脚本 = `scn.Scene.global_script`：独立 VM/总线，跨 director_load_scene **保留**，
+    # 每次场景装配后收 on_start、每帧 update、输入事件（在实例之后、覆盖层之前）。
+    # 全局状态 = 本 Engine 实例内**唯一一份**键值（所有 VM 共享；不进 VM 堆，跨场景保留）；
+    # 数值与文本分开存，键按字典序（确定性）。进 world_checksum 与世界快照。
+    - { fn: global_emit, ctx: true, args: [ { name: event, type: string }, { name: value, type: float } ], returns: float,
+        doc: "调用全局脚本中名为 event 的处理器（跨场景服务入口；返回命中数）" }
+    - { fn: global_set, ctx: true, args: [ { name: name, type: string }, { name: value, type: float } ], returns: float }
+    - { fn: global_get, ctx: true, args: [ { name: name, type: string } ], returns: float,
+        doc: "读全局数值（不存在 → 0）" }
+    - { fn: global_set_text, ctx: true, args: [ { name: name, type: string }, { name: value, type: string } ], returns: float }
+    - { fn: global_get_text, ctx: true, args: [ { name: name, type: string } ], returns: string,
+        doc: "读全局文本（不存在 → \"\"）" }
+    - { fn: global_has, ctx: true, args: [ { name: name, type: string } ], returns: float }
+    - { fn: global_remove, ctx: true, args: [ { name: name, type: string } ], returns: float,
+        doc: "删除一个键（数值与文本都删）；返回 1=原本存在" }
+    - { fn: global_clear, ctx: true, doc: "清空全部全局状态（重开游戏/测试用）" }
+    - { fn: global_keys, ctx: true, returns: string, doc: "JSON 数组：全部键（字典序，确定性）" }
 
     # ---- 常用 API 续：Tween / schedule / destroy / find(path) ----
     # Tween（确定性：固定步长推进，完成时派发 tween_complete）

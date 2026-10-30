@@ -55,6 +55,7 @@ ctest --test-dir build --output-on-failure
 # 4) 运行示例（加载 .scn + .js/.lua，经 WebGPU 渲染）
 ./build/samples/player/maque_player scenes/ball.scn        # 弹跳球（点击生成球）
 ./build/samples/player/maque_player scenes/sokoban/sokoban.scn   # 推箱子（WASD/箭头 · R 重开 · Z 撤销 · N 下一关）
+./build/samples/player/maque_player scenes/td/menu.scn     # 小小塔防（场景组合：3 塔 / 4 敌人 / 3 关卡 + 全局脚本）
 ./build/samples/player/maque_player scenes/lua/lua.scn     # 同一份逻辑的 Lua 版弹跳球
 ```
 
@@ -63,6 +64,7 @@ ctest --test-dir build --output-on-failure
 > |------|----------|
 > | `ball.scn` | 下落弹跳 + 点击生成（物理直觉、输入、确定性） |
 > | `sokoban/sokoban.scn` | **推箱子**：网格关卡、键盘驱动、撤销、关卡推进（JS） |
+> | `td/menu.scn` | **小小塔防**：菜单 + 3 关卡 + 3 塔/4 敌人独立 `.scn` + 全局脚本/全局状态（scn 组合示例） |
 > | `ui.scn` | UI 控件（按钮/进度条/滑杆/复选）与命中测试 |
 > | `text/text.scn` | 文本：Label / TextLabel / RichText（富文本标记、换行、像素级精确） |
 > | `nodes/nodes.scn` | 节点/组件/事件/补间/定时器 API |

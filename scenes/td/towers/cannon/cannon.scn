@@ -1,0 +1,22 @@
+{
+  "title": "TD Tower · Cannon",
+  "script": "cannon.js",
+  "entities": [
+    { "name": "Tower", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 } ],
+      "children": [
+        { "name": "Ring", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 15.0, "r": 0.24, "g": 0.14, "b": 0.08 } ] },
+        { "name": "Base", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 13.0, "r": 0.44, "g": 0.26, "b": 0.12 } ] },
+        { "name": "Core", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 4.5, "r": 1.00, "g": 0.72, "b": 0.30 } ] },
+        { "name": "Head", "components": [
+            { "type": "scn.Transform2D", "x": 9.0, "y": 0.0 },
+            { "type": "scn.Sprite", "width": 18.0, "height": 12.0, "r": 0.72, "g": 0.52, "b": 0.26 } ] }
+      ] }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "title": "render_texture",
+  "script": "render_texture.js",
+  "width": 320,
+  "height": 240,
+  "views": 1,
+  "entities": [
+    {
+      "name": "capture_camera",
+      "components": [
+        { "type": "scn.Transform2D", "x": 80.0, "y": 120.0 },
+        { "type": "render.Camera2D", "zoom": { "x": 1.0, "y": 1.0 },
+          "viewport": { "x": 0.25, "y": 0.25, "width": 0.5, "height": 0.5 },
+          "layer_mask": 1, "active": true,
+          "clear_color": { "r": 0.02, "g": 0.03, "b": 0.05, "a": 1.0 } },
+        { "type": "render.RenderTexture", "name": "minimap", "width": 160, "height": 120,
+          "update_mode": 1, "filter": 0, "include_ui": false, "enabled": true,
+          "clear_color": { "r": 0.02, "g": 0.03, "b": 0.05, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "captured_red",
+      "components": [
+        { "type": "scn.Transform2D", "x": 80.0, "y": 120.0 },
+        { "type": "scn.Sprite", "width": 52.0, "height": 52.0, "r": 1.0, "g": 0.08, "b": 0.05 }
+      ]
+    },
+    {
+      "name": "outside_green",
+      "components": [
+        { "type": "scn.Transform2D", "x": 260.0, "y": 175.0 },
+        { "type": "scn.Sprite", "width": 44.0, "height": 44.0, "r": 0.05, "g": 0.95, "b": 0.12 }
+      ]
+    },
+    {
+      "name": "monitor",
+      "components": [
+        { "type": "scn.Transform2D", "x": 235.0, "y": 65.0 },
+        { "type": "scn.Sprite", "width": 144.0, "height": 108.0, "r": 1.0, "g": 1.0, "b": 1.0,
+          "texture": "rendertexture://minimap" }
+      ]
+    }
+  ]
+}

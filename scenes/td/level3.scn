@@ -1,0 +1,69 @@
+{
+  "title": "小小塔防 · 第 3 关",
+  "script": "level3.js",
+  "global_script": "global.js",
+  "width": 480,
+  "height": 320,
+  "seed": 13,
+  "entities": [
+    { "name": "Background", "components": [
+        { "type": "scn.Transform2D", "x": 240.0, "y": 160.0 },
+        { "type": "scn.Sprite", "width": 480.0, "height": 320.0, "r": 0.08, "g": 0.06, "b": 0.09 } ] },
+    { "name": "Path1", "components": [
+        { "type": "scn.Transform2D", "x": 83.0, "y": 250.0 },
+        { "type": "scn.Sprite", "width": 134.0, "height": 24.0, "r": 0.26, "g": 0.20, "b": 0.24 } ] },
+    { "name": "Path2", "components": [
+        { "type": "scn.Transform2D", "x": 150.0, "y": 170.0 },
+        { "type": "scn.Sprite", "width": 24.0, "height": 160.0, "r": 0.26, "g": 0.20, "b": 0.24 } ] },
+    { "name": "Path3", "components": [
+        { "type": "scn.Transform2D", "x": 215.0, "y": 90.0 },
+        { "type": "scn.Sprite", "width": 130.0, "height": 24.0, "r": 0.26, "g": 0.20, "b": 0.24 } ] },
+    { "name": "Path4", "components": [
+        { "type": "scn.Transform2D", "x": 280.0, "y": 170.0 },
+        { "type": "scn.Sprite", "width": 24.0, "height": 160.0, "r": 0.26, "g": 0.20, "b": 0.24 } ] },
+    { "name": "Path5", "components": [
+        { "type": "scn.Transform2D", "x": 340.0, "y": 250.0 },
+        { "type": "scn.Sprite", "width": 120.0, "height": 24.0, "r": 0.26, "g": 0.20, "b": 0.24 } ] },
+    { "name": "Path6", "components": [
+        { "type": "scn.Transform2D", "x": 400.0, "y": 155.0 },
+        { "type": "scn.Sprite", "width": 24.0, "height": 190.0, "r": 0.26, "g": 0.20, "b": 0.24 } ] },
+    { "name": "Path7", "components": [
+        { "type": "scn.Transform2D", "x": 432.0, "y": 60.0 },
+        { "type": "scn.Sprite", "width": 64.0, "height": 24.0, "r": 0.26, "g": 0.20, "b": 0.24 } ] },
+    { "name": "Spawn", "components": [
+        { "type": "scn.Transform2D", "x": 16.0, "y": 250.0 },
+        { "type": "scn.Sprite", "radius": 8.0, "r": 1.00, "g": 0.62, "b": 0.25 } ] },
+    { "name": "Goal", "components": [
+        { "type": "scn.Transform2D", "x": 464.0, "y": 60.0 },
+        { "type": "scn.Sprite", "radius": 10.0, "r": 0.95, "g": 0.28, "b": 0.26 } ] },
+    { "name": "WP0", "components": [ { "type": "scn.Transform2D", "x": 16.0, "y": 250.0 } ] },
+    { "name": "WP1", "components": [ { "type": "scn.Transform2D", "x": 150.0, "y": 250.0 } ] },
+    { "name": "WP2", "components": [ { "type": "scn.Transform2D", "x": 150.0, "y": 90.0 } ] },
+    { "name": "WP3", "components": [ { "type": "scn.Transform2D", "x": 280.0, "y": 90.0 } ] },
+    { "name": "WP4", "components": [ { "type": "scn.Transform2D", "x": 280.0, "y": 250.0 } ] },
+    { "name": "WP5", "components": [ { "type": "scn.Transform2D", "x": 400.0, "y": 250.0 } ] },
+    { "name": "WP6", "components": [ { "type": "scn.Transform2D", "x": 400.0, "y": 60.0 } ] },
+    { "name": "WP7", "components": [ { "type": "scn.Transform2D", "x": 464.0, "y": 60.0 } ] },
+    { "name": "TowerA", "components": [
+        { "type": "scn.Transform2D", "x": 100.0, "y": 180.0 },
+        { "type": "scn.SceneInstance", "source": "towers/arrow/arrow.scn", "params": "{\"tier\": 2}" } ] },
+    { "name": "TowerB", "components": [
+        { "type": "scn.Transform2D", "x": 200.0, "y": 60.0 },
+        { "type": "scn.SceneInstance", "source": "towers/cannon/cannon.scn", "params": "{\"tier\": 1}" } ] },
+    { "name": "TowerC", "components": [
+        { "type": "scn.Transform2D", "x": 330.0, "y": 150.0 },
+        { "type": "scn.SceneInstance", "source": "towers/frost/frost.scn", "params": "{\"tier\": 1}" } ] },
+    { "name": "TowerD", "components": [
+        { "type": "scn.Transform2D", "x": 440.0, "y": 150.0 },
+        { "type": "scn.SceneInstance", "source": "towers/arrow/arrow.scn", "params": "{\"tier\": 2}" } ] },
+    { "name": "TowerE", "components": [
+        { "type": "scn.Transform2D", "x": 340.0, "y": 220.0 },
+        { "type": "scn.SceneInstance", "source": "towers/cannon/cannon.scn", "params": "{\"tier\": 2}" } ] },
+    { "name": "LevelName", "components": [
+        { "type": "scn.Label", "x": 22.0, "y": 30.0, "text": "第 3 关 · 王城终局", "font_size": 15.0,
+          "r": 1.00, "g": 0.82, "b": 0.88, "a": 1.0 } ] },
+    { "name": "Hint", "components": [
+        { "type": "scn.Label", "x": 22.0, "y": 12.0, "text": "", "font_size": 10.0,
+          "r": 0.66, "g": 0.55, "b": 0.62, "a": 1.0 } ] }
+  ]
+}

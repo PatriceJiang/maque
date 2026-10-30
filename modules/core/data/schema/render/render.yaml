@@ -20,6 +20,16 @@
       values:
         - { name: Perspective, value: 0 }
         - { name: Orthographic, value: 1 }
+    # 相机节点的离屏输出更新策略。OnDemand 首帧仍会生成一次；之后由 camera_update/
+    # camera_capture 或组件尺寸变化标脏，避免静态预览每帧重复渲染。
+    - enum: RenderTextureUpdateMode
+      values:
+        - { name: EveryFrame, value: 0 }
+        - { name: OnDemand, value: 1 }
+    - enum: RenderTextureFilter
+      values:
+        - { name: Nearest, value: 0 }
+        - { name: Linear, value: 1 }
     - enum: ClearMode
       values:
         - { name: Skybox, value: 0 }
@@ -236,6 +246,22 @@
         - { name: clear_mode, type: ClearMode, default: "ClearMode::Skybox" }
         - { name: clear_color, type: math.Color }
         - { name: exposure, type: float, default: 1.0F }
+    # 挂在任意相机节点（scn.Camera / render.Camera2D / render.Camera3D）上，把该相机输出变成
+    # 可采样纹理。对外引用统一为 `rendertexture://<name>`；name 为空时使用节点名。
+    # width/height=0 跟随场景设计分辨率。截图复用此目标，不另走一套相机/渲染语义。
+    - struct: RenderTexture
+      fields:
+        - { name: name, type: string, default: "" }
+        - { name: width, type: uint32_t, default: 0, attrs: { unit: px } }
+        - { name: height, type: uint32_t, default: 0, attrs: { unit: px } }
+        - { name: update_mode, type: RenderTextureUpdateMode, default: "RenderTextureUpdateMode::EveryFrame" }
+        - { name: filter, type: RenderTextureFilter, default: "RenderTextureFilter::Linear" }
+        - { name: include_ui, type: bool, default: false }
+        - { name: enabled, type: bool, default: true }
+        - { name: clear_color, type: math.Color, default: "{0.0F, 0.0F, 0.0F, 0.0F}" }
+        - { name: texture, type: string, default: "", attrs: { transient: true, readonly: true } }
+        - { name: ready, type: bool, default: false, attrs: { transient: true, readonly: true } }
+        - { name: last_frame, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }
     - struct: MeshRenderer
       fields:
         - { name: mesh, type: "asset_ref<Mesh>", attrs: { ref: Mesh } }

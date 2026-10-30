@@ -57,6 +57,15 @@ int b_host_cfg(void* user, const char* s, double* ret) {
 int b_host_load_texture(void* user, const char* s, double* ret) {
   *ret = (double)host::load_texture(user, s); return 0;
 }
+int b_host_camera_texture(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::camera_texture(user, (float)a[0])); return 0;
+}
+int b_host_camera_update(void* user, int, const double* a, double* ret) {
+  *ret = (double)host::camera_update(user, (float)a[0]); return 0;
+}
+int b_host_camera_capture(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::camera_capture(user, (float)a[0], s); return 0;
+}
 int b_host_entity_spawn(void* user, int, const double* a, double* ret) {
   *ret = (double)host::entity_spawn(user); return 0;
 }
@@ -369,9 +378,9 @@ int b_host_scene_dir(void* user, int, const double* a, char* ret, int cap) {
 int b_host_scene_path(void* user, int, const double* a, char* ret, int cap) {
   std::snprintf(ret, (size_t)cap, "%s", host::scene_path(user)); return 0;
 }
-int b_host_scene_instantiate(void* user, int, const double* a, const char* s, double* ret) {
-  *ret = (double)host::scene_instantiate(user, (float)a[0], s); return 0;
-}
+int b_host_scene_instantiate(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::scene_instantiate(user, (float)a[0], s[0], s[1]); return 0;
+}  /* kinds=nss */
 int b_host_scene_unload(void* user, int, const double* a, double* ret) {
   *ret = (double)host::scene_unload(user, (float)a[0]); return 0;
 }
@@ -414,11 +423,47 @@ int b_host_scene_self(void* user, int, const double* a, double* ret) {
 int b_host_scene_self_root(void* user, int, const double* a, double* ret) {
   *ret = (double)host::scene_self_root(user); return 0;
 }
+int b_host_scene_self_params(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::scene_self_params(user)); return 0;
+}
+int b_host_scene_instance_params(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::scene_instance_params(user, (float)a[0])); return 0;
+}
+int b_host_scene_set_instance_params(void* user, int, const double* a, const char* s, double* ret) {
+  *ret = (double)host::scene_set_instance_params(user, (float)a[0], s); return 0;
+}
 int b_host_scene_emit(void* user, int, const double* a, int, const char** s, double* ret) {
   *ret = (double)host::scene_emit(user, (float)a[0], s[0], (float)a[1]); return 0;
 }  /* kinds=nsn */
 int b_host_scene_last_error(void* user, int, const double* a, char* ret, int cap) {
   std::snprintf(ret, (size_t)cap, "%s", host::scene_last_error(user)); return 0;
+}
+int b_host_global_emit(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::global_emit(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_global_set(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::global_set(user, s[0], (float)a[0]); return 0;
+}  /* kinds=sn */
+int b_host_global_get(void* user, const char* s, double* ret) {
+  *ret = (double)host::global_get(user, s); return 0;
+}
+int b_host_global_set_text(void* user, int, const double* a, int, const char** s, double* ret) {
+  *ret = (double)host::global_set_text(user, s[0], s[1]); return 0;
+}  /* kinds=ss */
+int b_host_global_get_text(void* user, int, const double* a, int, const char** s, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::global_get_text(user, s[0])); return 0;
+}  /* kinds=s */
+int b_host_global_has(void* user, const char* s, double* ret) {
+  *ret = (double)host::global_has(user, s); return 0;
+}
+int b_host_global_remove(void* user, const char* s, double* ret) {
+  *ret = (double)host::global_remove(user, s); return 0;
+}
+int b_host_global_clear(void* user, int, const double* a, double* ret) {
+  host::global_clear(user); return 0;
+}
+int b_host_global_keys(void* user, int, const double* a, char* ret, int cap) {
+  std::snprintf(ret, (size_t)cap, "%s", host::global_keys(user)); return 0;
 }
 int b_host_tween_start(void* user, int, const double* a, int, const char** s, double* ret) {
   *ret = (double)host::tween_start(user, (float)a[0], s[0], (float)a[1], (float)a[2], (float)a[3]); return 0;
@@ -938,6 +983,9 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_str(vm, "log", b_host_log, ctx);
   mq_script_register_str(vm, "cfg", b_host_cfg, ctx);
   mq_script_register_str(vm, "load_texture", b_host_load_texture, ctx);
+  mq_script_register_ret_str(vm, "camera_texture", b_host_camera_texture, ctx);
+  mq_script_register_num(vm, "camera_update", b_host_camera_update, ctx);
+  mq_script_register_mixed(vm, "camera_capture", b_host_camera_capture, ctx);
   mq_script_register_num(vm, "entity_spawn", b_host_entity_spawn, ctx);
   mq_script_register_num(vm, "entity_set_pos", b_host_entity_set_pos, ctx);
   mq_script_register_num(vm, "entity_x", b_host_entity_x, ctx);
@@ -1042,7 +1090,7 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_ret_str(vm, "scene_title", b_host_scene_title, ctx);
   mq_script_register_ret_str(vm, "scene_dir", b_host_scene_dir, ctx);
   mq_script_register_ret_str(vm, "scene_path", b_host_scene_path, ctx);
-  mq_script_register_mixed(vm, "scene_instantiate", b_host_scene_instantiate, ctx);
+  mq_script_register_multi(vm, "scene_instantiate", "nss", b_host_scene_instantiate, ctx);
   mq_script_register_num(vm, "scene_unload", b_host_scene_unload, ctx);
   mq_script_register_num(vm, "scene_reload", b_host_scene_reload, ctx);
   mq_script_register_num(vm, "scene_set_instance_paused", b_host_scene_set_instance_paused, ctx);
@@ -1057,8 +1105,20 @@ extern "C" void mq_bind_generated(mq_script_vm* vm, void* ctx) {
   mq_script_register_num(vm, "scene_instance_of", b_host_scene_instance_of, ctx);
   mq_script_register_num(vm, "scene_self", b_host_scene_self, ctx);
   mq_script_register_num(vm, "scene_self_root", b_host_scene_self_root, ctx);
+  mq_script_register_ret_str(vm, "scene_self_params", b_host_scene_self_params, ctx);
+  mq_script_register_ret_str(vm, "scene_instance_params", b_host_scene_instance_params, ctx);
+  mq_script_register_mixed(vm, "scene_set_instance_params", b_host_scene_set_instance_params, ctx);
   mq_script_register_multi(vm, "scene_emit", "nsn", b_host_scene_emit, ctx);
   mq_script_register_ret_str(vm, "scene_last_error", b_host_scene_last_error, ctx);
+  mq_script_register_multi(vm, "global_emit", "sn", b_host_global_emit, ctx);
+  mq_script_register_multi(vm, "global_set", "sn", b_host_global_set, ctx);
+  mq_script_register_str(vm, "global_get", b_host_global_get, ctx);
+  mq_script_register_multi(vm, "global_set_text", "ss", b_host_global_set_text, ctx);
+  mq_script_register_multi_ret_str(vm, "global_get_text", "s", b_host_global_get_text, ctx);
+  mq_script_register_str(vm, "global_has", b_host_global_has, ctx);
+  mq_script_register_str(vm, "global_remove", b_host_global_remove, ctx);
+  mq_script_register_num(vm, "global_clear", b_host_global_clear, ctx);
+  mq_script_register_ret_str(vm, "global_keys", b_host_global_keys, ctx);
   mq_script_register_multi(vm, "tween_start", "nsnnn", b_host_tween_start, ctx);
   mq_script_register_num(vm, "tween_stop", b_host_tween_stop, ctx);
   mq_script_register_num(vm, "tween_count", b_host_tween_count, ctx);

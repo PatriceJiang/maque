@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 249,
-  "api_count": 304,
-  "control_count": 55,
+  "type_count": 252,
+  "api_count": 319,
+  "control_count": 57,
   "callback_count": 11,
   "module_count": 26,
   "types": [
@@ -9122,6 +9122,177 @@
       ]
     },
     {
+      "name": "render.RenderTexture",
+      "namespace": "render",
+      "kind": "struct",
+      "type_id": 2253190608,
+      "size": null,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
+      "source": "render/render.yaml",
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "width",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "height",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "update_mode",
+          "type": "RenderTextureUpdateMode",
+          "kind": "enum",
+          "type_id": 1562192302,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "filter",
+          "type": "RenderTextureFilter",
+          "kind": "enum",
+          "type_id": 4056136834,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "include_ui",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "enabled",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "clear_color",
+          "type": "math.Color",
+          "kind": "struct",
+          "type_id": 2997158578,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "texture",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "ready",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "last_frame",
+          "type": "uint32_t",
+          "kind": "u32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "render.RenderTextureFilter",
+      "namespace": "render",
+      "kind": "enum",
+      "type_id": 4056136834,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "render/render.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "Nearest",
+          "value": 0
+        },
+        {
+          "name": "Linear",
+          "value": 1
+        }
+      ],
+      "fields": []
+    },
+    {
+      "name": "render.RenderTextureUpdateMode",
+      "namespace": "render",
+      "kind": "enum",
+      "type_id": 1562192302,
+      "size": 4,
+      "align": 4,
+      "pod": true,
+      "has_dynamic": false,
+      "source": "render/render.yaml",
+      "underlying": "int32_t",
+      "values": [
+        {
+          "name": "EveryFrame",
+          "value": 0
+        },
+        {
+          "name": "OnDemand",
+          "value": 1
+        }
+      ],
+      "fields": []
+    },
+    {
       "name": "render.RichRun",
       "namespace": "render",
       "kind": "struct",
@@ -11657,6 +11828,15 @@
           "attrs": {}
         },
         {
+          "name": "global_script",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "width",
           "type": "int32_t",
           "kind": "i32",
@@ -11824,6 +12004,15 @@
       "fields": [
         {
           "name": "source",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "params",
           "type": "string",
           "kind": "string",
           "type_id": 0,
@@ -16704,6 +16893,58 @@
       "manual": null
     },
     {
+      "name": "host.camera_texture",
+      "namespace": "host",
+      "fn": "camera_texture",
+      "global": true,
+      "args": [
+        {
+          "name": "camera",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": "返回 rendertexture://<scene-instance-id>/<name> 规范 URI；可直接赋给 Sprite/材质的 texture 字段",
+      "manual": null
+    },
+    {
+      "name": "host.camera_update",
+      "namespace": "host",
+      "fn": "camera_update",
+      "global": true,
+      "args": [
+        {
+          "name": "camera",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "把 OnDemand RenderTexture 标脏；下一次渲染帧更新",
+      "manual": null
+    },
+    {
+      "name": "host.camera_capture",
+      "namespace": "host",
+      "fn": "camera_capture",
+      "global": true,
+      "args": [
+        {
+          "name": "camera",
+          "type": "float"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "请求相机截图（.png 为 PNG，其余为 PPM）；强制更新 RenderTexture 后在本帧末落盘",
+      "manual": null
+    },
+    {
       "name": "host.entity_spawn",
       "namespace": "host",
       "fn": "entity_spawn",
@@ -18480,11 +18721,15 @@
         {
           "name": "path",
           "type": "string"
+        },
+        {
+          "name": "params",
+          "type": "string"
         }
       ],
       "returns": "float",
       "ctx": true,
-      "doc": "实例化一个 .scn（parent=-1 挂到世界根）；返回实例句柄（-1=失败）",
+      "doc": "实例化一个 .scn（parent=-1 挂到世界根；params=JSON 参数，可省略）；返回实例句柄（-1=失败）",
       "manual": null
     },
     {
@@ -18705,6 +18950,53 @@
       "manual": null
     },
     {
+      "name": "host.scene_self_params",
+      "namespace": "host",
+      "fn": "scene_self_params",
+      "global": true,
+      "args": [],
+      "returns": "string",
+      "ctx": true,
+      "doc": "当前实例的参数字符串（JSON；无 → \"\"）—— 子场景 on_start 读取父场景传入的配置",
+      "manual": null
+    },
+    {
+      "name": "host.scene_instance_params",
+      "namespace": "host",
+      "fn": "scene_instance_params",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": "任意实例的参数字符串（只读）",
+      "manual": null
+    },
+    {
+      "name": "host.scene_set_instance_params",
+      "namespace": "host",
+      "fn": "scene_set_instance_params",
+      "global": true,
+      "args": [
+        {
+          "name": "instance",
+          "type": "float"
+        },
+        {
+          "name": "params",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "改写实例参数（在帧边界构建前设置 → 子场景 on_start 可见；已构建实例需 scene_reload 生效）",
+      "manual": null
+    },
+    {
       "name": "host.scene_emit",
       "namespace": "host",
       "fn": "scene_emit",
@@ -18737,6 +19029,152 @@
       "returns": "string",
       "ctx": true,
       "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.global_emit",
+      "namespace": "host",
+      "fn": "global_emit",
+      "global": true,
+      "args": [
+        {
+          "name": "event",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "调用全局脚本中名为 event 的处理器（跨场景服务入口；返回命中数）",
+      "manual": null
+    },
+    {
+      "name": "host.global_set",
+      "namespace": "host",
+      "fn": "global_set",
+      "global": true,
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.global_get",
+      "namespace": "host",
+      "fn": "global_get",
+      "global": true,
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "读全局数值（不存在 → 0）",
+      "manual": null
+    },
+    {
+      "name": "host.global_set_text",
+      "namespace": "host",
+      "fn": "global_set_text",
+      "global": true,
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.global_get_text",
+      "namespace": "host",
+      "fn": "global_get_text",
+      "global": true,
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "string",
+      "ctx": true,
+      "doc": "读全局文本（不存在 → \"\"）",
+      "manual": null
+    },
+    {
+      "name": "host.global_has",
+      "namespace": "host",
+      "fn": "global_has",
+      "global": true,
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": null,
+      "manual": null
+    },
+    {
+      "name": "host.global_remove",
+      "namespace": "host",
+      "fn": "global_remove",
+      "global": true,
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "returns": "float",
+      "ctx": true,
+      "doc": "删除一个键（数值与文本都删）；返回 1=原本存在",
+      "manual": null
+    },
+    {
+      "name": "host.global_clear",
+      "namespace": "host",
+      "fn": "global_clear",
+      "global": true,
+      "args": [],
+      "returns": "void",
+      "ctx": true,
+      "doc": "清空全部全局状态（重开游戏/测试用）",
+      "manual": null
+    },
+    {
+      "name": "host.global_keys",
+      "namespace": "host",
+      "fn": "global_keys",
+      "global": true,
+      "args": [],
+      "returns": "string",
+      "ctx": true,
+      "doc": "JSON 数组：全部键（字典序，确定性）",
       "manual": null
     },
     {
@@ -21845,6 +22283,42 @@
       ]
     },
     {
+      "method": "Capture.camera",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "camera",
+          "type": "float"
+        },
+        {
+          "name": "offset",
+          "type": "float"
+        },
+        {
+          "name": "max",
+          "type": "float"
+        },
+        {
+          "name": "max_dim",
+          "type": "float"
+        }
+      ]
+    },
+    {
+      "method": "Capture.camera_save",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "camera",
+          "type": "float"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "method": "Types.describe",
       "namespace": "control",
       "args": []
@@ -22004,6 +22478,10 @@
         },
         {
           "name": "path",
+          "type": "string"
+        },
+        {
+          "name": "params",
           "type": "string"
         },
         {

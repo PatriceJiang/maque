@@ -1,0 +1,22 @@
+{
+  "title": "TD Tower · Frost",
+  "script": "frost.js",
+  "entities": [
+    { "name": "Tower", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 } ],
+      "children": [
+        { "name": "Ring", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 14.0, "r": 0.08, "g": 0.20, "b": 0.28 } ] },
+        { "name": "Base", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 12.0, "r": 0.20, "g": 0.46, "b": 0.62 } ] },
+        { "name": "Core", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 5.0, "r": 0.72, "g": 0.95, "b": 1.00 } ] },
+        { "name": "Head", "components": [
+            { "type": "scn.Transform2D", "x": 10.0, "y": 0.0 },
+            { "type": "scn.Sprite", "width": 20.0, "height": 5.0, "r": 0.62, "g": 0.88, "b": 1.00 } ] }
+      ] }
+  ]
+}

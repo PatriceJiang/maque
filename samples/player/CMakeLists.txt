@@ -34,6 +34,15 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/shot_e2e")
 endif()
 
+# RenderTexture：相机节点离屏成帧 → 同一 GPU 纹理被 Sprite 首帧采样；camera_capture 复用目标回读截图。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME render_texture_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/render_texture_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/render_texture/render_texture.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/render_texture_e2e")
+    set_tests_properties(render_texture_e2e PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
 # Tracy 性能分析端到端（docs/29）：默认不启动客户端；MAQUE_TRACY=1 时 tracy-capture 能抓到
 # 帧/zone；F3 启动客户端并拉起 profiler 进程（CI 用 capture 二进制当假 profiler）。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
@@ -572,6 +581,17 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              $<TARGET_FILE:maque_player>
              "${CMAKE_SOURCE_DIR}/scenes/sokoban/sokoban.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/sokoban_e2e")
+endif()
+
+# 小小塔防（scn 组合示例）：独立菜单/3 关卡/3 塔/4 敌人场景 + 全局脚本/全局状态。
+#   ① 菜单→第 1 关（静态塔 params）② 直接通关→global_emit→解锁→回菜单 ③ 确定性
+#   ④ 锁定/重置 ⑤ 第 2/3 关独立装载 ⑥ 7 个塔/敌人场景单独运行 + --shot。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME td_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/td_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/td/menu.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/td_e2e")
+    set_tests_properties(td_e2e PROPERTIES TIMEOUT 900)
 endif()
 
 # 远程加载端到端（docs/04）：VFS 挂 http 目录 —— 场景/脚本经 HTTP 抓取 + 与本地轨迹一致

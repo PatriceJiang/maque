@@ -221,7 +221,7 @@
         - { name: model,         type: "float[16]" }
         - { name: submesh_first, type: int32_t }
         - { name: submesh_count, type: int32_t }
-        - { name: flags,         type: int32_t }       # cast/receive shadow 等
+        - { name: flags,         type: int32_t }       # cast/receive shadow 等；bit30=layer 字段是有效 culling mask
         - { name: layer,         type: int32_t }
         - { name: sort_key,      type: uint64_t }
         # 骨骼蒙皮（plans/22，第 28 轮）：frame3d.skins 下标；-1 = 非蒙皮（旧调用方零行为变化）。
@@ -306,6 +306,18 @@
         - { name: present_h,      type: int32_t }
         # F4 调试渲染模式（尾部追加）：0=rendered（默认，完整材质）/ 1=solid / 2=wireframe。
         - { name: render_mode,    type: int32_t }
+    # 持久可采样离屏目标描述；独立 struct_size 允许将来在记录尾部安全扩展。
+    # 首版仅支持 2D、单 mip；usage 固定包含 sampled/color-attachment/copy-src。
+    - record: render_texture_desc
+      fields:
+        - { name: struct_size,  type: uint32_t }
+        - { name: width,        type: int32_t }
+        - { name: height,       type: int32_t }
+        - { name: pixel_format, type: int32_t }  # 0=RGBA8（首版唯一支持）
+        - { name: filter,       type: int32_t }  # 0=nearest 1=linear
+        - { name: wrap_u,       type: int32_t }  # 0=repeat 1=clamp 2=mirror
+        - { name: wrap_v,       type: int32_t }
+        - { name: clear_color,  type: "float[4]" }
   methods:
     - fn: create
       returns: self
@@ -380,4 +392,21 @@
     - fn: resource_bytes
       returns: uint64_t
       args: [ { name: self, type: self } ]
-      doc: "当前存活纹理与网格顶点/索引缓冲的字节数估算；不含驱动对齐、render target 与每帧临时资源"
+      doc: "当前存活纹理、RenderTexture 与网格顶点/索引缓冲的字节数估算；不含驱动对齐与每帧临时资源"
+    # ---- 可采样离屏目标（RenderTexture；append-only）----
+    - fn: create_render_texture
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: desc, type: "const mq_renderer_render_texture_desc*" }, { name: out_id, type: "int32_t*" } ]
+      doc: "创建同时具备 RenderAttachment/TextureBinding/CopySrc 的 2D 纹理；句柄可用于所有普通纹理槽"
+    - fn: configure_render_texture
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: id, type: int32_t }, { name: desc, type: "const mq_renderer_render_texture_desc*" } ]
+      doc: "原位调整 RenderTexture 尺寸/过滤，句柄保持稳定；仅支持单 mip RGBA8 2D"
+    - fn: render_to_texture
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: id, type: int32_t }, { name: frame, type: "const mq_renderer_frame3d*" } ]
+      doc: "把统一 frame3d（可仅含 2D）渲染到 RenderTexture；目标自身的采样引用会被剔除以禁止反馈环"
+    - fn: read_texture
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: id, type: int32_t }, { name: out, type: "uint8_t*" }, { name: out_size, type: uint32_t } ]
+      doc: "把 RenderTexture 的 RGBA8 内容回读到 CPU；普通上传纹理或缓冲不足时明确失败"

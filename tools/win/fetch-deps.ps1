@@ -284,6 +284,9 @@ function Invoke-Build($lib) {
 # 2) SDL2：Windows 上 SDL_main.h 把应用 main 改名为 SDL_main，需要 SDL2main 的
 #    main/WinMain 垫片；maque 用裸路径链接（没有 imported target），所以把
 #    SDL2-static.lib + SDL2main.lib 合并成单个 SDL2-static-full.lib。
+# 3) SDL 2.32.10 的 SDL_endian.h 在 clang-cl 下无条件定义 `_m_prefetch`；clang-cl 21
+#    已把它视作 builtin，C++ 消费者会报 "definition of builtin function"。给垫片增加
+#    `__has_builtin(_m_prefetch)` 守卫（只改 .deps/dist 安装头，源码包保持原样）。
 function Invoke-Fixups {
     Write-Host "--- 后处理 ---"
     $lib = Join-Path $Dist 'lib'
@@ -302,6 +305,24 @@ function Invoke-Fixups {
         & $llvmLib /nologo /out:$sdlFull $sdlStatic $sdlMain 2>&1 | Out-Null
         if (Test-Path $sdlFull) { Write-Host "  SDL2-static-full.lib <- SDL2-static.lib + SDL2main.lib" }
         else { Write-Host "  FAIL SDL2 merge" }
+    }
+
+    $sdlEndian = Join-Path $Dist 'include\SDL2\SDL_endian.h'
+    if (Test-Path $sdlEndian) {
+        $txt = [System.IO.File]::ReadAllText($sdlEndian)
+        if (-not $txt.Contains('maque: clang-cl 21 already provides _m_prefetch')) {
+            $old = "#ifndef __PRFCHWINTRIN_H`r`n#define __PRFCHWINTRIN_H`r`nstatic __inline__ void __attribute__((__always_inline__, __nodebug__))`r`n_m_prefetch(void *__P)`r`n{`r`n  __builtin_prefetch(__P, 0, 3 /* _MM_HINT_T0 */);`r`n}`r`n#endif /* __PRFCHWINTRIN_H */"
+            if (-not $txt.Contains($old)) { $old = $old -replace "`r`n", "`n" }
+            if ($txt.Contains($old)) {
+                $newline = if ($old.Contains("`r`n")) { "`r`n" } else { "`n" }
+                $new = "#ifndef __PRFCHWINTRIN_H${newline}#if !__has_builtin(_m_prefetch) /* maque: clang-cl 21 already provides _m_prefetch */${newline}#define __PRFCHWINTRIN_H${newline}static __inline__ void __attribute__((__always_inline__, __nodebug__))${newline}_m_prefetch(void *__P)${newline}{${newline}  __builtin_prefetch(__P, 0, 3 /* _MM_HINT_T0 */);${newline}}${newline}#endif${newline}#endif /* __PRFCHWINTRIN_H */"
+                $txt = $txt.Replace($old, $new)
+                [System.IO.File]::WriteAllText($sdlEndian, $txt, (New-Object System.Text.UTF8Encoding($false)))
+                Write-Host "  SDL_endian.h: guard clang-cl builtin _m_prefetch"
+            } else {
+                Write-Host "  WARN SDL_endian.h patch anchor not found"
+            }
+        }
     }
 }
 
@@ -785,16 +806,27 @@ int main(void) {
 
 function Invoke-SelfCheck {
     Write-Host "--- 独立自检（编译 + 链接 + 运行）---"
+    Write-SelfCheck
     $bdir = Join-Path $SelfDir 'build'
     Remove-Item -Recurse -Force $bdir -ErrorAction SilentlyContinue
-    & cmake -S $SelfDir -B $bdir -G Ninja "-DCMAKE_MAKE_PROGRAM=$NinjaArg" `
+    $configureOutput = & cmake -S $SelfDir -B $bdir -G Ninja "-DCMAKE_MAKE_PROGRAM=$NinjaArg" `
         "-DCMAKE_C_COMPILER=$ClangClArg" "-DCMAKE_CXX_COMPILER=$ClangClArg" `
-        -DCMAKE_BUILD_TYPE=Release -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL *>&1 |
-        Select-String -Pattern 'selfcheck:' | ForEach-Object { Write-Host "  $($_.Line)" }
-    & cmake --build $bdir --parallel *>&1 | Select-Object -Last 3 | ForEach-Object { Write-Host "  $_" }
-    if ($LASTEXITCODE -ne 0) { Write-Host "  自检构建失败"; return $false }
-    & ctest --test-dir $bdir --output-on-failure *>&1 | Select-Object -Last 10 | ForEach-Object { Write-Host "  $_" }
-    $ok = ($LASTEXITCODE -eq 0)
+        -DCMAKE_BUILD_TYPE=Release -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL *>&1
+    $configureRc = $LASTEXITCODE
+    $configureOutput | Select-String -Pattern 'selfcheck:' | ForEach-Object { Write-Host "  $($_.Line)" }
+    if ($configureRc -ne 0) {
+        $configureOutput | Select-Object -Last 15 | ForEach-Object { Write-Host "  $_" }
+        Write-Host "  自检配置失败 rc=$configureRc"
+        return $false
+    }
+    $buildOutput = & cmake --build $bdir --parallel *>&1
+    $buildRc = $LASTEXITCODE
+    $buildOutput | Select-Object -Last 3 | ForEach-Object { Write-Host "  $_" }
+    if ($buildRc -ne 0) { Write-Host "  自检构建失败 rc=$buildRc"; return $false }
+    $testOutput = & ctest --test-dir $bdir --output-on-failure *>&1
+    $testRc = $LASTEXITCODE
+    $testOutput | Select-Object -Last 10 | ForEach-Object { Write-Host "  $_" }
+    $ok = ($testRc -eq 0)
     Write-Host ("  自检结果: " + $(if ($ok) { 'PASS' } else { 'FAIL' }))
     return $ok
 }
@@ -824,3 +856,11 @@ Write-Output "  prefix     $Dist"
 Write-Output "  deps.cmake $(Join-Path $Deps 'deps.cmake')"
 Write-Output ""
 Write-Output "下一步：cmake -S `"$Repo`" -B build -G Ninja -DMAQUE_WINDOWS_DEPS=ON -DCMAKE_BUILD_TYPE=Debug"
+
+$failed = $false
+foreach ($value in $results.Values) {
+    if ([string]$value -like 'fail(*)') { $failed = $true; break }
+}
+if ($selfOk -eq $false) { $failed = $true }
+if ($failed) { exit 1 }
+exit 0

@@ -1,0 +1,28 @@
+{
+  "title": "TD Enemy · Flyer",
+  "script": "flyer.js",
+  "entities": [
+    { "name": "Enemy", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 } ],
+      "children": [
+        { "name": "WingL", "components": [
+            { "type": "scn.Transform2D", "x": -8.0, "y": 2.0 },
+            { "type": "scn.Sprite", "width": 12.0, "height": 4.0, "r": 0.55, "g": 0.45, "b": 0.85 } ] },
+        { "name": "WingR", "components": [
+            { "type": "scn.Transform2D", "x": 8.0, "y": 2.0 },
+            { "type": "scn.Sprite", "width": 12.0, "height": 4.0, "r": 0.55, "g": 0.45, "b": 0.85 } ] },
+        { "name": "Body", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 8.0, "r": 0.72, "g": 0.55, "b": 1.00 } ] },
+        { "name": "Eye", "components": [
+            { "type": "scn.Transform2D", "x": 3.0, "y": 2.0 },
+            { "type": "scn.Sprite", "radius": 1.8, "r": 0.95, "g": 1.00, "b": 0.95 } ] },
+        { "name": "HpBg", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 14.0 },
+            { "type": "scn.Sprite", "width": 22.0, "height": 4.0, "r": 0.16, "g": 0.18, "b": 0.22 } ] },
+        { "name": "HpFill", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 14.0 },
+            { "type": "scn.Sprite", "width": 20.0, "height": 2.6, "r": 0.35, "g": 0.90, "b": 0.45 } ] }
+      ] }
+  ]
+}

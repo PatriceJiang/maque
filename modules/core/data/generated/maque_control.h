@@ -22,6 +22,10 @@ int mq_control_Font_glyphs(void* user, const mq_json* params, char* out, size_t 
 int mq_control_Font_atlas(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Capture.screen(offset: float, max: float, max_dim: float) */
 int mq_control_Capture_screen(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Capture.camera(camera: float, offset: float, max: float, max_dim: float) */
+int mq_control_Capture_camera(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Capture.camera_save(camera: float, path: string) */
+int mq_control_Capture_camera_save(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Types.describe() */
 int mq_control_Types_describe(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.info() */
@@ -48,7 +52,7 @@ int mq_control_Scene_save(void* user, const mq_json* params, char* out, size_t o
 int mq_control_Scene_instances(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.instance_info(instance: float) */
 int mq_control_Scene_instance_info(void* user, const mq_json* params, char* out, size_t out_cap);
-/* Scene.instantiate(parent: float, path: string, strict: bool) */
+/* Scene.instantiate(parent: float, path: string, params: string, strict: bool) */
 int mq_control_Scene_instantiate(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Scene.unload_instance(instance: float) */
 int mq_control_Scene_unload_instance(void* user, const mq_json* params, char* out, size_t out_cap);

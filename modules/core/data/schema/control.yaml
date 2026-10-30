@@ -13,7 +13,7 @@
                       Replay.seek, Input.sim_load, Input.sim_stop, Input.inject,
                       Reload.script, Reload.scene, Reload.files,
                       Storage.put, Storage.remove,
-                      Audio.play, Audio.stop, Audio.set_master, Audio.set_bus ]
+                      Audio.play, Audio.stop, Audio.set_master, Audio.set_bus, Capture.camera_save ]
   control_list:
     # ---- 自省（A1）----
     - { method: Control.info,  args: [] }
@@ -25,6 +25,11 @@
     # ---- 画面抓帧（实时预览面板；PPM + base64 分块）----
     - { method: Capture.screen, args: [ { name: offset, type: float }, { name: max, type: float },
                                         { name: max_dim, type: float } ] }
+    - { method: Capture.camera, args: [ { name: camera, type: float }, { name: offset, type: float },
+                                        { name: max, type: float }, { name: max_dim, type: float } ],
+        summary: "读取指定相机 RenderTexture 的最新画面（PPM + base64 分块）" }
+    - { method: Capture.camera_save, args: [ { name: camera, type: float }, { name: path, type: string } ],
+        summary: "把指定相机 RenderTexture 的最新画面保存为 PNG/PPM" }
     - { method: Types.describe, args: [] }
     - { method: Scene.info, args: [] }
     - { method: Scene.entities, args: [] }
@@ -47,8 +52,8 @@
     - { method: Scene.instances, args: [], summary: "场景实例树（id/source/parent/root/paused/state/error/scripts）" }
     - { method: Scene.instance_info, args: [ { name: instance, type: float } ], summary: "单实例详情" }
     - { method: Scene.instantiate, args: [ { name: parent, type: float }, { name: path, type: string },
-                                           { name: strict, type: bool } ],
-        summary: "动态实例化 .scn（帧边界生效；返回实例句柄）" }
+                                           { name: params, type: string }, { name: strict, type: bool } ],
+        summary: "动态实例化 .scn（帧边界生效；params 透传给子场景；返回实例句柄）" }
     - { method: Scene.unload_instance, args: [ { name: instance, type: float } ] }
     - { method: Scene.reload_instance, args: [ { name: instance, type: float } ] }
     - { method: Scene.bake_instances, args: [ { name: dry_run, type: bool } ],

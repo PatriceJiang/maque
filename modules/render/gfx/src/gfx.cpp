@@ -37,6 +37,8 @@ static_assert(offsetof(mq_renderer_draw3d, model) == 8, "draw3d.model 必须在 
 static_assert(offsetof(mq_renderer_draw3d, sort_key) == 88, "draw3d.sort_key 必须在 offset 88");
 static_assert(offsetof(mq_renderer_draw3d, skin) == 96, "draw3d.skin 必须在 offset 96（帧索引，-1 = 非蒙皮）");
 static_assert(sizeof(mq_renderer_skin) == 16, "mq_renderer_skin 布局漂移（palette 指针 + joint_count）");
+static_assert(sizeof(mq_renderer_render_texture_desc) == 44, "RenderTexture desc 布局漂移");
+static_assert(offsetof(mq_renderer_render_texture_desc, clear_color) == 28, "RenderTexture clear_color 偏移漂移");
 
 /* 内建 shader 来自**资产** assets/builtin/shaders/<name>/（不是内联字面量）：
  * 配置期由 cmake/shader_pack.cmake + tools/shader_pack.js 打包成压缩源码（zstd），
@@ -50,7 +52,9 @@ struct Texture {
     WGPUSampler sampler = nullptr;                        /* create_texture2 的 filter/wrap（M3 PBR 采样用） */
     WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm;
     uint64_t gpu_bytes = 0;                               /* 全 mip / 全 cube 面的资源字节估算 */
+    int32_t width = 0, height = 0;
     bool cube = false;                                    /* kind=1：环境 cube（6 层 + Cube view，第 26 轮） */
+    bool render_target = false;                           /* RenderAttachment + TextureBinding + CopySrc */
 };
 
 /* 3D 网格（plans/18-pbr-3d.md）：create_mesh 一次性上传，GPU 常驻。
@@ -1147,6 +1151,7 @@ static int32_t r_create_texture(void* self, const uint8_t* rgba, int32_t w, int3
     td.mipLevelCount = 1; td.sampleCount = 1;
     t->tex = wgpuDeviceCreateTexture(dv->device, &td);
     t->view = wgpuTextureCreateView(t->tex, nullptr);
+    t->width = w; t->height = h;
     WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
     dst.texture = t->tex; dst.aspect = WGPUTextureAspect_All;
     WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
@@ -1266,6 +1271,7 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
         if (d->width != d->height) return -6;
         auto* tc = new Texture();
         tc->cube = true;
+        tc->width = d->width; tc->height = d->height;
         tc->format = format_from_code(d->pixel_format);
         WGPUTextureDescriptor ctd = WGPU_TEXTURE_DESCRIPTOR_INIT;
         ctd.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
@@ -1327,6 +1333,7 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
     }
 
     auto* t = new Texture();
+    t->width = d->width; t->height = d->height;
     t->format = format_from_code(d->pixel_format);
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
     td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
@@ -1381,6 +1388,98 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
     dv->resource_bytes += t->gpu_bytes;
     dv->textures.push_back(t);
     *out_id = (int32_t)dv->textures.size() - 1;
+    return 0;
+}
+
+/* RenderTexture：公共纹理句柄同时作为颜色附件和后续 pass 的 sampled texture。
+ * 物理纹理始终单采样；frame.msaa_samples=4 时 render_3d_only 使用临时 MSAA 附件 resolve 到这里。 */
+static bool valid_render_texture_desc(const mq_renderer_render_texture_desc* d) {
+    return d && d->struct_size >= sizeof(mq_renderer_render_texture_desc) &&
+           d->width > 0 && d->height > 0 && d->pixel_format == 0;
+}
+
+static void release_texture_resources(Texture* t) {
+    if (!t) return;
+    if (t->sampler) { wgpuSamplerRelease(t->sampler); t->sampler = nullptr; }
+    if (t->view) { wgpuTextureViewRelease(t->view); t->view = nullptr; }
+    if (t->tex) { wgpuTextureRelease(t->tex); t->tex = nullptr; }
+}
+
+static bool build_render_texture(Device* dv, const mq_renderer_render_texture_desc* d, Texture& out) {
+    if (!dv || !valid_render_texture_desc(d)) return false;
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding |
+               WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)d->width, (uint32_t)d->height, 1 };
+    td.format = WGPUTextureFormat_RGBA8Unorm;
+    td.mipLevelCount = 1;
+    td.sampleCount = 1;
+    out.tex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!out.tex) return false;
+    out.view = wgpuTextureCreateView(out.tex, nullptr);
+    if (!out.view) { release_texture_resources(&out); return false; }
+    WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
+    sd.addressModeU = wrap_from_code(d->wrap_u);
+    sd.addressModeV = wrap_from_code(d->wrap_v);
+    sd.addressModeW = WGPUAddressMode_ClampToEdge;
+    const bool nearest = d->filter == 0;
+    sd.magFilter = nearest ? WGPUFilterMode_Nearest : WGPUFilterMode_Linear;
+    sd.minFilter = sd.magFilter;
+    sd.mipmapFilter = nearest ? WGPUMipmapFilterMode_Nearest : WGPUMipmapFilterMode_Linear;
+    sd.maxAnisotropy = 1;
+    out.sampler = wgpuDeviceCreateSampler(dv->device, &sd);
+    if (!out.sampler) { release_texture_resources(&out); return false; }
+    out.format = WGPUTextureFormat_RGBA8Unorm;
+    out.width = d->width;
+    out.height = d->height;
+    out.render_target = true;
+    out.gpu_bytes = (uint64_t)d->width * (uint64_t)d->height * 4u;
+
+    /* 首次被另一目标采样前必须有确定内容，不能依赖未初始化 GPU 内存。 */
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    WGPURenderPassColorAttachment ca = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+    ca.view = out.view;
+    ca.loadOp = WGPULoadOp_Clear;
+    ca.storeOp = WGPUStoreOp_Store;
+    ca.clearValue = WGPUColor{ d->clear_color[0], d->clear_color[1], d->clear_color[2], d->clear_color[3] };
+    WGPURenderPassDescriptor rpd = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+    rpd.colorAttachmentCount = 1;
+    rpd.colorAttachments = &ca;
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cmd);
+    wgpuCommandBufferRelease(cmd);
+    wgpuCommandEncoderRelease(enc);
+    return true;
+}
+
+static int32_t r_create_render_texture(void* self, const mq_renderer_render_texture_desc* d, int32_t* out_id) {
+    auto* dv = (Device*)self;
+    if (out_id) *out_id = -1;
+    if (!dv || !out_id || !valid_render_texture_desc(d)) return -1;
+    auto* t = new Texture();
+    if (!build_render_texture(dv, d, *t)) { delete t; return -2; }
+    dv->resource_bytes += t->gpu_bytes;
+    dv->textures.push_back(t);
+    *out_id = (int32_t)dv->textures.size() - 1;
+    return 0;
+}
+
+static int32_t r_configure_render_texture(void* self, int32_t id,
+                                          const mq_renderer_render_texture_desc* d) {
+    auto* dv = (Device*)self;
+    if (!dv || !valid_render_texture_desc(d) || id < 0 || id >= (int32_t)dv->textures.size()) return -1;
+    Texture* current = dv->textures[(size_t)id];
+    if (!current || !current->render_target) return -2;
+    Texture next;
+    if (!build_render_texture(dv, d, next)) return -3;   /* 失败保留旧目标和句柄内容 */
+    dv->resource_bytes -= current->gpu_bytes;
+    release_texture_resources(current);
+    *current = next;
+    dv->resource_bytes += current->gpu_bytes;
     return 0;
 }
 
@@ -1892,21 +1991,17 @@ static int32_t r_resize_surface(void* self, int32_t w, int32_t h) {
     return configure_surface(dv, w, h) ? 0 : -3;
 }
 
-/* 一帧：M1 仅 2D 覆盖层（3D pass 在 M2/M3）。out 非空 → 离屏回读（--shot/CI）；空 → 直接呈现。 */
-static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
-    auto* dv = (Device*)self;
-    if (!dv || !f) return -1;
-    if (f->width <= 0 || f->height <= 0) return -2;
-    float bg[4] = { 0.0F, 0.0F, 0.0F, 1.0F };
-    if (f->bg[0] != 0.0F || f->bg[1] != 0.0F || f->bg[2] != 0.0F || f->bg[3] != 0.0F)
-        std::memcpy(bg, f->bg, sizeof bg);
-    /* ---- 3D 与场景全屏 shader pass 共用同一条成帧路径 ----
-     * 顺序：shader pass（背景）→ 3D（其 clear 会覆盖背景）→ 2D 覆盖层（clear_first=false 叠加）。 */
-    const bool has3d = f->draw_count > 0 && f->view_count > 0 && f->views != nullptr;
+/* 把统一 frame3d（也可只有 2D）画进调用方给定的颜色目标；不回读、不 present。
+ * queue submit 的先后顺序就是 RenderTexture 生产者→消费者的可见性顺序。 */
+static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextureFormat format,
+                                      const mq_renderer_frame3d* f) {
+    if (!dv || !target || !f || f->width <= 0 || f->height <= 0) return -1;
+    float bg[4];
+    std::memcpy(bg, f->bg, sizeof bg);
+    const bool has3d = f->view_count > 0 && f->views != nullptr;
     const bool has_passes = f->pass_count > 0 && f->passes != nullptr;
-    auto draw_passes = [&](WGPUTexture target, WGPUTextureFormat fmt) {
-        if (!has_passes) return 0;
-        const int32_t prc = render_shader_passes(dv, target, fmt, f->width, f->height, f);
+    if (has_passes) {
+        const int32_t prc = render_shader_passes(dv, target, format, f->width, f->height, f);
         if (prc != 0) {
             static bool warned = false;
             if (!warned) {
@@ -1914,50 +2009,40 @@ static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
                 std::print(stderr, "gfx: 场景 shader pass 绘制失败 rc={}（本帧继续渲染其余图层）\n", prc);
             }
         }
-        return 0;   /* pass 失败不阻断 3D/2D（与内建 shader 剔除时的降级语义一致） */
-    };
-    if (has3d || has_passes) {
-        if (f->out) {
-            WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
-            td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
-            td.dimension = WGPUTextureDimension_2D;
-            td.size = WGPUExtent3D{ (uint32_t)f->width, (uint32_t)f->height, 1 };
-            td.format = WGPUTextureFormat_RGBA8Unorm;
-            td.mipLevelCount = 1; td.sampleCount = 1;
-            WGPUTexture ctex = wgpuDeviceCreateTexture(dv->device, &td);
-            if (!ctex) return -5;
-            const int32_t rcp = draw_passes(ctex, WGPUTextureFormat_RGBA8Unorm);
-            const int32_t rc3 = has3d ? render_3d_only(dv, ctex, WGPUTextureFormat_RGBA8Unorm, f, /*allow_scene_copy=*/true) : 0;
-            const int32_t rc2 = render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
-                                            f->items, f->item_count, f->meshes, f->mesh_count,
-                                            bg, nullptr, 0, ctex, WGPUTextureFormat_RGBA8Unorm, false);
-            const int32_t rcr = (rcp == 0 && rc3 == 0 && rc2 == 0)
-                ? readback_rgba8(dv, ctex, f->width, f->height, f->out, f->out_size) : -6;
-            wgpuTextureRelease(ctex);
-            return rcr;
-        }
-        if (!dv->surface || !ensure_blit_target(dv, f->width, f->height)) return -3;
-        ensure_2d_pipelines(dv, WGPUTextureFormat_RGBA8Unorm);
-        const int32_t rcp = draw_passes(dv->blitTex, WGPUTextureFormat_RGBA8Unorm);
-        const int32_t rc3 = has3d ? render_3d_only(dv, dv->blitTex, WGPUTextureFormat_RGBA8Unorm,
-                                                   f, /*allow_scene_copy=*/true) : 0;
-        const int32_t rc2 = render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
-                                        f->items, f->item_count, f->meshes, f->mesh_count,
-                                        bg, nullptr, 0, dv->blitTex, WGPUTextureFormat_RGBA8Unorm, false);
-        if (rcp != 0 || rc3 != 0 || rc2 != 0) return -6;
-        return blit_to_surface(dv, f);
     }
+    if (has3d) {
+        const int32_t rc = render_3d_only(dv, target, format, f, /*allow_scene_copy=*/true);
+        if (rc != 0) return rc;
+    }
+    return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
+                       f->items, f->item_count, f->meshes, f->mesh_count,
+                       bg, nullptr, 0, target, format, !(has3d || has_passes));
+}
+
+/* 一帧：out 非空 → 离屏回读（--shot/CI）；空 → 直接呈现。 */
+static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
+    auto* dv = (Device*)self;
+    if (!dv || !f) return -1;
+    if (f->width <= 0 || f->height <= 0) return -2;
     if (f->out) {
-        return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
-                           f->items, f->item_count, f->meshes, f->mesh_count,
-                           bg, f->out, f->out_size);
+        WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+        td.dimension = WGPUTextureDimension_2D;
+        td.size = WGPUExtent3D{ (uint32_t)f->width, (uint32_t)f->height, 1 };
+        td.format = WGPUTextureFormat_RGBA8Unorm;
+        td.mipLevelCount = 1; td.sampleCount = 1;
+        WGPUTexture ctex = wgpuDeviceCreateTexture(dv->device, &td);
+        if (!ctex) return -5;
+        const int32_t rc = render_frame_to_target(dv, ctex, WGPUTextureFormat_RGBA8Unorm, f);
+        const int32_t out_rc = rc == 0
+            ? readback_rgba8(dv, ctex, f->width, f->height, f->out, f->out_size) : -6;
+        wgpuTextureRelease(ctex);
+        return out_rc;
     }
     /* 直接呈现：设计分辨率 FBO → GPU blit 到全尺寸 swapchain → present。 */
     if (!dv->surface || !ensure_blit_target(dv, f->width, f->height)) return -3;
     ensure_2d_pipelines(dv, WGPUTextureFormat_RGBA8Unorm);
-    const int32_t rc = render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
-                                   f->items, f->item_count, f->meshes, f->mesh_count,
-                                   bg, nullptr, 0, dv->blitTex, WGPUTextureFormat_RGBA8Unorm);
+    const int32_t rc = render_frame_to_target(dv, dv->blitTex, WGPUTextureFormat_RGBA8Unorm, f);
     if (rc != 0) {
 #if defined(__ANDROID__)
         __android_log_print(ANDROID_LOG_ERROR, "maque-gfx", "offscreen render failed rc=%d", rc);
@@ -1966,6 +2051,68 @@ static int32_t r_render_frame3d(void* self, const mq_renderer_frame3d* f) {
     }
     return blit_to_surface(dv, f);
 }
+
+/* 持久 RenderTexture 成帧。直接反馈（目标同时出现在 sampled 槽）在后端再做一层防护：
+ * 2D/mesh 自引用批次剔除；PBR/env 自引用槽替换为缺省纹理。跨目标依赖顺序由 runtime 校验。 */
+static int32_t r_render_to_texture(void* self, int32_t id, const mq_renderer_frame3d* f) {
+    auto* dv = (Device*)self;
+    if (!dv || !f || id < 0 || id >= (int32_t)dv->textures.size()) return -1;
+    Texture* target = dv->textures[(size_t)id];
+    if (!target || !target->render_target || !target->tex) return -2;
+    if (f->width != target->width || f->height != target->height || f->out) return -3;
+
+    mq_renderer_frame3d safe = *f;
+    std::vector<mq_renderer_item> items;
+    if (f->items && f->item_count) {
+        items.reserve(f->item_count);
+        for (uint32_t i = 0; i < f->item_count; ++i)
+            if (f->items[i].texture != id) items.push_back(f->items[i]);
+        safe.items = items.data();
+        safe.item_count = (uint32_t)items.size();
+    }
+    std::vector<mq_renderer_mesh> meshes;
+    if (f->meshes && f->mesh_count) {
+        meshes.reserve(f->mesh_count);
+        for (uint32_t i = 0; i < f->mesh_count; ++i)
+            if (f->meshes[i].texture != id) meshes.push_back(f->meshes[i]);
+        safe.meshes = meshes.data();
+        safe.mesh_count = (uint32_t)meshes.size();
+    }
+    std::vector<mq_renderer_pbr_material> materials;
+    if (f->materials && f->material_count) {
+        materials.assign(f->materials, f->materials + f->material_count);
+        for (auto& m : materials) {
+            auto clear_slots = [&](int32_t* slots, int n) {
+                for (int i = 0; i < n; ++i) if (slots[i] == id) slots[i] = -1;
+            };
+            clear_slots(m.textures, 5);
+            clear_slots(m.textures2, 3);
+            clear_slots(m.textures3, 7);
+            clear_slots(m.textures4, 2);
+            clear_slots(m.textures5, 1);
+            clear_slots(m.textures6, 2);
+            clear_slots(m.textures7, 1);
+        }
+        safe.materials = materials.data();
+    }
+    if (safe.env.sky_texture == id) safe.env.sky_texture = -1;
+    if (safe.env.env_texture == id) safe.env.env_texture = -1;
+    if (safe.env.env_irradiance_texture == id) safe.env.env_irradiance_texture = -1;
+    if (safe.env.env_cubemap == id) safe.env.env_cubemap = -1;
+    if (safe.env.env_cubemap_irradiance == id) safe.env.env_cubemap_irradiance = -1;
+    return render_frame_to_target(dv, target->tex, target->format, &safe);
+}
+
+static int32_t r_read_texture(void* self, int32_t id, uint8_t* out, uint32_t out_size) {
+    auto* dv = (Device*)self;
+    if (!dv || !out || id < 0 || id >= (int32_t)dv->textures.size()) return -1;
+    Texture* t = dv->textures[(size_t)id];
+    if (!t || !t->render_target || t->format != WGPUTextureFormat_RGBA8Unorm) return -2;
+    const uint64_t needed = (uint64_t)t->width * (uint64_t)t->height * 4u;
+    if (needed > out_size) return -3;
+    return readback_rgba8(dv, t->tex, t->width, t->height, out, out_size);
+}
+
 static int32_t r_present(void* self) {
     auto* dv = (Device*)self;
     if (!dv) return -1;
@@ -2168,14 +2315,31 @@ static WGPUTextureView material_tex_view(Device* dv, int32_t handle, WGPUTexture
     return fallback;
 }
 
-/* 材质贴图采样器：优先用该材质**第一张有效贴图**的 per-texture sampler。
- * 为什么：create_texture2 按 desc.wrap_u/wrap_v/filter 建了独立 sampler（runtime 传 wrap=0=Repeat、
- * filter=1=linear），glTF 的 REPEAT/MIRRORED_REPEAT/NEAREST 就存在这里；旧实现把所有贴图统一绑
- * 全局 ClampToEdge+linear 采样器 → UV>1（平铺、KHR_texture_transform）被 clamp 成边缘拉伸、
- * NEAREST 被线性糊掉（审计 R1）。同一材质的各贴图通常共用同一批 sampler 语义，取第一张有效贴图的
- * sampler 即可覆盖绝大多数资产；找不到（材质无贴图）才回退全局 sampler。 */
+/* 材质贴图采样器：RenderTexture sampler 优先，否则用**第一张有效静态贴图**的 sampler。
+ * create_texture2 / create_render_texture 都按描述符创建独立 sampler；PBR 当前 bind layout 只有一个
+ * sampler，无法逐槽绑定。优先 RT 可保证动态画面的 nearest/linear 与声明一致；没有 RT 时继续采用
+ * 第一张静态贴图的 wrap/filter，避免旧的全局 ClampToEdge+linear 让 UV>1 拉伸或 NEAREST 变糊。 */
 static WGPUSampler material_sampler(Device* dv, const mq_renderer_pbr_material* mat) {
     if (dv && mat) {
+        /* 当前 PBR bind layout 只有一个 sampler；若材质含 RenderTexture，优先采用它的过滤设置，
+         * 不让槽位顺序决定 RT 的 nearest/linear。其余静态贴图沿用同一材质 sampler 约定。 */
+        auto render_target_sampler = [&](int32_t h) -> WGPUSampler {
+            if (h < 0 || (size_t)h >= dv->textures.size()) return nullptr;
+            Texture* t = dv->textures[(size_t)h];
+            return t && t->render_target ? t->sampler : nullptr;
+        };
+        auto scan_rt = [&](const int32_t* slots, int count) -> WGPUSampler {
+            for (int i = 0; i < count; ++i)
+                if (WGPUSampler s = render_target_sampler(slots[i])) return s;
+            return nullptr;
+        };
+        if (WGPUSampler s = scan_rt(mat->textures, 5)) return s;
+        if (WGPUSampler s = scan_rt(mat->textures2, 3)) return s;
+        if (WGPUSampler s = scan_rt(mat->textures3, 7)) return s;
+        if (WGPUSampler s = scan_rt(mat->textures4, 2)) return s;
+        if (WGPUSampler s = scan_rt(mat->textures5, 1)) return s;
+        if (WGPUSampler s = scan_rt(mat->textures6, 2)) return s;
+        if (WGPUSampler s = scan_rt(mat->textures7, 1)) return s;
         for (int i = 0; i < 5; ++i) {                       /* albedo→mr→ao→normal→emissive */
             const int32_t h = mat->textures[i];
             if (h < 0 || (size_t)h >= dv->textures.size()) continue;
@@ -2331,6 +2495,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
     /* MSAA：仅接受 1/4（WebGPU 规范允许的 sampleCount）；创建失败自动回退 1x。
      * 管线按 sampleCount 分两份缓存（rp.multisample.count），所以先定样本数再建管线。 */
     int32_t msaa = (f->msaa_samples == 4) ? 4 : 1;
+    for (uint32_t i = 0; i < f->view_count; ++i)
+        if (f->views[i].clear_mode >= 2) { msaa = 1; break; }
     ensure_3d_pipelines(dv, target_format, msaa > 1);
     if (!dv->p3dShader || !dv->p3dPl) return 0;      /* shader 剔除：3D 跳过（原因已打印） */
     if (!ensure_depth(dv, f->width, f->height)) return 2;
@@ -2500,6 +2666,24 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
 
     for (uint32_t vi = 0; vi < f->view_count; ++vi) {
         const mq_renderer_view3d& v = f->views[vi];
+        float viewport[4] = { v.viewport[0], v.viewport[1], v.viewport[2], v.viewport[3] };
+        if (viewport[2] <= 0.0F || viewport[3] <= 0.0F) {
+            viewport[0] = viewport[1] = 0.0F;
+            viewport[2] = (float)f->width; viewport[3] = (float)f->height;
+        }
+        viewport[0] = std::clamp(viewport[0], 0.0F, (float)f->width);
+        viewport[1] = std::clamp(viewport[1], 0.0F, (float)f->height);
+        viewport[2] = std::clamp(viewport[2], 0.0F, (float)f->width - viewport[0]);
+        viewport[3] = std::clamp(viewport[3], 0.0F, (float)f->height - viewport[1]);
+        if (viewport[2] <= 0.0F || viewport[3] <= 0.0F) continue;
+        const uint32_t sx = (uint32_t)std::floor(viewport[0]);
+        const uint32_t sy = (uint32_t)std::floor(viewport[1]);
+        const uint32_t ex = (uint32_t)std::ceil(viewport[0] + viewport[2]);
+        const uint32_t ey = (uint32_t)std::ceil(viewport[1] + viewport[3]);
+        auto apply_viewport = [&](WGPURenderPassEncoder pass) {
+            wgpuRenderPassEncoderSetViewport(pass, viewport[0], viewport[1], viewport[2], viewport[3], 0.0F, 1.0F);
+            wgpuRenderPassEncoderSetScissorRect(pass, sx, sy, ex - sx, ey - sy);
+        };
         float vp[16];
         mat4_mul(v.proj, v.view, vp);                /* vp = proj * view */
         /* ---- 透明/折射拆分准备（plans/19 P1 transmission）----
@@ -2511,6 +2695,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         blend_list.reserve(f->draw_count);
         for (uint32_t di = 0; di < f->draw_count; ++di) {
             const mq_renderer_draw3d& d = f->draws[di];
+            const uint32_t draw_mask = (d.flags & 0x40000000) ? (uint32_t)d.layer : 0xFFFFFFFFu;
+            if ((draw_mask & (uint32_t)v.layer_mask) == 0) continue;
             const mq_renderer_pbr_material* mm =
                 (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
                     ? &f->materials[d.material] : nullptr;
@@ -2685,6 +2871,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             wgpuRenderPassEncoderSetBindGroup(spass, 0, sbg, 0, nullptr);
             for (uint32_t di = 0; di < f->draw_count; ++di) {
                 const mq_renderer_draw3d& d = f->draws[di];
+                const uint32_t draw_mask = (d.flags & 0x40000000) ? (uint32_t)d.layer : 0xFFFFFFFFu;
+                if ((draw_mask & (uint32_t)v.layer_mask) == 0) continue;
                 const mq_renderer_pbr_material* smat =
                     (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
                         ? &f->materials[d.material] : nullptr;
@@ -2735,12 +2923,12 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         WGPURenderPassColorAttachment ca = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
         ca.view = (msaa > 1) ? dv->msaaView : view;
         ca.resolveTarget = (msaa > 1) ? view : nullptr;
-        ca.loadOp = WGPULoadOp_Clear;
+        ca.loadOp = (vi == 0 && v.clear_mode <= 1) ? WGPULoadOp_Clear : WGPULoadOp_Load;
         ca.storeOp = WGPUStoreOp_Store;
         ca.clearValue = WGPUColor{ v.clear_color[0], v.clear_color[1], v.clear_color[2], v.clear_color[3] };
         WGPURenderPassDepthStencilAttachment da = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
         da.view = (msaa > 1) ? dv->msaaDepthView : dv->depthView;
-        da.depthLoadOp = WGPULoadOp_Clear;
+        da.depthLoadOp = v.clear_mode == 3 ? WGPULoadOp_Load : WGPULoadOp_Clear;
         da.depthStoreOp = WGPUStoreOp_Store;
         da.depthClearValue = 1.0F;
         WGPURenderPassDescriptor rpd = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
@@ -2817,7 +3005,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         };
         /* envmap 天空背景：在 opaque 之前画全屏三角形（不写深度；opaque 会覆盖它）。 */
         auto draw_sky = [&](WGPURenderPassEncoder p) {
-            if (dv->skyPipeline[msaa > 1 ? 1 : 0] &&
+            if (v.clear_mode == 0 && dv->skyPipeline[msaa > 1 ? 1 : 0] &&
                 ((f->env.sky_mode == 3 && f->env.env_texture >= 0) ||
                  (f->env.sky_mode == 2 && f->env.env_cubemap >= 0))) {
                 wgpuRenderPassEncoderSetPipeline(p, dv->skyPipeline[msaa > 1 ? 1 : 0]);
@@ -2826,8 +3014,8 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         };
         if (!refraction) {
             /* 旧路径：单 pass，opaque → blend（不透明先画；透明按"相机→物体"远→近，不写深度、混合管线）。 */
-            ca.loadOp = vi == 0 ? WGPULoadOp_Clear : WGPULoadOp_Load;
             WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
+            apply_viewport(pass);
             wgpuRenderPassEncoderSetBindGroup(pass, 0, camBg, 0, nullptr);
             draw_sky(pass);
             for (const mq_renderer_draw3d* dpp : opaque_list) draw_one(pass, dpp, /*allow_two_pass=*/true);
@@ -2837,6 +3025,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         } else {
             /* pass A：不透明（clear）→ 拷成 scene color → pass B（load）画 blend/transmission。 */
             WGPURenderPassEncoder passA = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
+            apply_viewport(passA);
             wgpuRenderPassEncoderSetBindGroup(passA, 0, camBg, 0, nullptr);
             draw_sky(passA);
             for (const mq_renderer_draw3d* dpp : opaque_list) draw_one(passA, dpp, /*allow_two_pass=*/true);
@@ -2854,6 +3043,7 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             da.depthLoadOp = WGPULoadOp_Load;
             WGPUBindGroup camBgB = make_cam_bg(scene_view);
             WGPURenderPassEncoder passB = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
+            apply_viewport(passB);
             wgpuRenderPassEncoderSetBindGroup(passB, 0, camBgB, 0, nullptr);
             for (const mq_renderer_draw3d* dpp : blend_list) draw_one(passB, dpp, /*allow_two_pass=*/false);
             wgpuRenderPassEncoderEnd(passB);
@@ -3106,7 +3296,9 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                     WGPUBindGroupEntry be[3] = {};
                     be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
                     be[1].binding = 1; be[1].textureView = dv->textures[c.texture]->view;
-                    be[2].binding = 2; be[2].sampler = dv->sampler;
+                    be[2].binding = 2;
+                    be[2].sampler = dv->textures[c.texture]->sampler
+                                        ? dv->textures[c.texture]->sampler : dv->sampler;
                     WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
                     bgd.layout = dv->meshBgl; bgd.entryCount = 3; bgd.entries = be;
                     bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
@@ -3252,7 +3444,9 @@ static const mq_renderer_v1 g_api = {
     /* ---- CPU morph 顶点更新（追加；plans/22 §5.4）---- */
     r_update_mesh,
     /* ---- GPU 资源占用估算（追加）---- */
-    r_resource_bytes
+    r_resource_bytes,
+    /* ---- RenderTexture（追加）---- */
+    r_create_render_texture, r_configure_render_texture, r_render_to_texture, r_read_texture
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {

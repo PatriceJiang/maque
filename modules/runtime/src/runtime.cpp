@@ -50,6 +50,7 @@ extern "C" void* mq_module_query(const char* name, uint32_t min_version);
 #include <string>
 #include <vector>
 #include <fstream>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <filesystem>
@@ -59,6 +60,7 @@ extern "C" void* mq_module_query(const char* name, uint32_t min_version);
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
+#include <cstddef>
 #include <cmath>
 #include <chrono>
 #if __has_include(<zlib.h>)
@@ -73,6 +75,10 @@ extern "C" void* mq_module_query(const char* name, uint32_t min_version);
 #include "core/compat/mq_posix_io.h"   // 崩溃路径的低层 fd I/O（POSIX open/write/pwrite ↔ Windows _open/_write）
 
 namespace {
+
+#define MQ_RENDERER_HAS(api, member) \
+    ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v1, member) + sizeof((api)->member) && \
+     (api)->member)
 
 struct Entity {
     std::string name;
@@ -167,6 +173,8 @@ std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role);
 /* VFS 相对路径拼接（定义见场景实例装配段；watcher 等前置代码也要用）。 */
 static std::string vfs_join(const std::string& base, const std::string& rel);
 std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name, const mq_type_desc** out_desc);
+void accumulate_node_attrs(Engine& eng, int idx, float& angle_deg, float& scale, float& opacity);
+bool node_active_effective(Engine& eng, int idx);
 float read_num(const mq_type_desc* d, const void* base, const char* field, float def);
 bool  write_num(const mq_type_desc* d, void* base, const char* field, double v);
 void  slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px);
@@ -239,6 +247,7 @@ struct SceneInstanceRuntime {
     int attach_entity = -1;          // 父世界里的挂载壳实体（根 = -1）
     std::string source;              // VFS 路径（"/dir/x.scn"；根 = scn_vfs_path）
     std::string base;                // 资源解析基准（相对 VFS 根；根场景 = ""）
+    std::string params;              // 实例参数（JSON 文本；docs/32 §16.2）
     std::vector<int> roots;          // 本实例的顶层实体（parent == attach_entity 且 owner==id）
     std::vector<int> children;       // 子实例（创建/声明顺序）
     mq_script_bus* bus = nullptr;    // 本实例的 VM 组（总线拥有 VM）
@@ -247,6 +256,7 @@ struct SceneInstanceRuntime {
     bool paused = false;
     bool active = true;
     bool detached = false;           // 已烘焙：内容属于父场景（保存时写出子树，加载时不再实例化）
+    bool owns_shell = false;         // 动态实例自动建的挂载壳（卸载时一并删除）
     int state = 0;                   // 0=pending 1=active 2=destroyed 3=error 4=pending-unload
     std::string error;
 };
@@ -279,6 +289,18 @@ struct Engine {
     std::string         overlay_rel;         // 声明路径（相对场景目录）
     std::string         overlay_abs;         // 本地文件路径（热重载/watch 用）
     uint64_t            overlay_hash = 0;
+    /* 全局脚本（scn.Scene.global_script，docs/32 §16.1）：游戏级服务层 VM/总线。
+     * 与 overlay 一样跨 director_load_scene 保留，但语义是"游戏服务"（进度/存档/跨场景规则），
+     * 生命周期在实例之后、覆盖层之前；其他 VM 用 global_emit(event, value) 显式寻址。 */
+    mq_script_bus*      global_bus = nullptr;
+    std::string         global_rel;
+    std::string         global_abs;
+    uint64_t            global_hash = 0;
+    /* 全局状态（docs/32 §16.3）：本 Engine 实例内唯一一份键值，所有 VM 共享。
+     * 用有序 map（确定性遍历/校验和/快照）；数值与文本分开存，同键可同时存在两种值。 */
+    std::map<std::string, double>      global_nums;
+    std::map<std::string, std::string> global_texts;
+    std::string         global_ret;          // global_get_text 的返回缓冲（绑定立即复制）
     mq_reflect_ctx*     reflect = nullptr;                 // per-instance
     mq_obs_ctx*         obs = nullptr;                     // 可观测（事件/指标）
     mq_control*         control = nullptr;                 // 控制平面（JSON-RPC）
@@ -582,6 +604,7 @@ struct Engine {
     std::vector<std::string> scene_chain;            // 正在装配的 .scn 链（循环实例化检测）
     SceneInstanceRuntime* active_instance = nullptr; // 当前脚本所属实例（回调内有效）
     bool in_overlay = false;                         // 当前脚本是常驻覆盖层（node_on 归属 -2）
+    bool in_global = false;                          // 当前脚本是全局脚本（node_on 归属 -3）
     int building_instance = 0;                       // 装配中的实例（load_entity 打归属）
     std::string building_base;                       // 装配中的资源基准
     struct InstanceOp {
@@ -607,6 +630,7 @@ struct Engine {
     void  collect_instance_postorder(int id, std::vector<int>& out) const;
     int   call_instance_event(SceneInstanceRuntime& inst, const char* name, double a, double b, double c, const char* text);
     int   call_overlay_event(const char* name, double a, double b, double c, const char* text);
+    int   call_global_event(const char* name, double a, double b, double c, const char* text);
     int   dispatch_instance_on_start(int id);
     int   dispatch_instance_on_destroy(int id);
     void  gc_all_instance_scripts();
@@ -668,6 +692,40 @@ struct Engine {
     int   win_last_w = 0, win_last_h = 0;         // 上次采样的窗口逻辑尺寸（0 = 尚未采样）
     int win_w = 0, win_h = 0;                     // 窗口逻辑尺寸（MAQUE_WINDOW 可覆盖；世界等比缩放显示）
     std::vector<mq_renderer_view> views;
+    /* 相机节点 RenderTexture：GPU 句柄仍在 renderer 的公共纹理命名空间；uri 进入 tex_cache，
+     * 因而 Sprite/网格/PBR 不需要第二套纹理类型。状态是派生资源，不进快照/校验和。 */
+    struct RenderTextureState {
+        int entity = -1;
+        int32_t handle = -1;
+        int32_t width = 0, height = 0;
+        int32_t filter = 1;
+        int32_t update_mode = 0;
+        std::string name;
+        std::string uri;
+        bool is_3d = false;
+        bool include_ui = false;
+        bool enabled = true;
+        bool dirty = true;
+        bool ready = false;
+        uint64_t last_frame = 0;
+        std::vector<uint8_t> capture_pixels;   /* Capture.camera 分块期间复用，避免每块重复 GPU readback */
+        uint64_t capture_frame = UINT64_MAX;
+    };
+    struct CameraCaptureRequest { int entity = -1; std::string path; };
+    std::vector<RenderTextureState> render_textures;
+    std::vector<CameraCaptureRequest> camera_captures;
+    RenderTextureState* render_texture_for(int entity);
+    const RenderTextureState* render_texture_for(int entity) const;
+    void setup_render_textures();
+    void sync_render_textures();
+    void destroy_render_textures();
+    void render_camera_textures(const std::vector<mq_renderer_item>& draws,
+                                const std::vector<mq_renderer_mesh>& meshes);
+    bool read_camera_texture(RenderTextureState& rt, bool refresh);
+    bool save_camera_texture(int entity, const std::string& path);
+    bool make_camera_view2d(int entity, int width, int height, mq_renderer_view& view,
+                            uint32_t* layer_mask = nullptr);
+    void fill_frame_environment(mq_renderer_frame3d& fr);
     /* M2 3D（plans/18-pbr-3d.md）：场景含 render.* 3D 组件 → 走 mq_renderer_frame3d；
      * cube_mesh = 内建立方体网格句柄（M2 尚无 mesh 资产管线，M4 换成 glTF mesh 资产）。 */
     bool    has_3d = false;
@@ -851,6 +909,7 @@ struct Engine {
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
+    std::string scoped_texture_ref(int entity, const std::string& ref) const;
     /* envmap（PMREM）：.hdr(RGBE) / PNG/JPEG / builtin studio → GGX 粗糙度预过滤 mip 链 +
      * 漫反射 irradiance 贴图；两项都是 RGBA16F，失败时输出 -1（shader 回退 analytic）。 */
     void load_env_textures(const std::string& path, int32_t& spec_id, int32_t& irr_id);
@@ -874,7 +933,8 @@ struct Engine {
                     std::vector<mq_renderer_light>& out_lights,
                     std::vector<mq_renderer_pbr_material>& out_mats,
                     std::vector<mq_renderer_draw3d>& out_draws,
-                    std::vector<mq_renderer_skin>& out_skins);
+                    std::vector<mq_renderer_skin>& out_skins,
+                    int camera_entity = -1, bool allow_orbit = true);
     bool prepare_replay();                                  // 载入回放日志并设定期望校验和（docs/10 §3）
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）
@@ -900,6 +960,10 @@ struct Engine {
     bool ensure_overlay_script(const std::string& rel);
     void unload_overlay();
     bool reload_overlay_script();
+    /* 全局脚本（docs/32 §16.1）：与覆盖层同形，但语义是游戏级服务（先于覆盖层派发）。 */
+    bool ensure_global_script(const std::string& rel);
+    void unload_global();
+    bool reload_global_script();
     bool reload_scene();                                    // 重载场景（重建世界，docs/08）
     bool load_scene_into(const std::string& scn_path);       // 场景装配（setup / director.loadScene 共用）
     uint32_t poll_watcher();                                // 帧边界检查资源变化
@@ -911,6 +975,9 @@ struct Engine {
     bool world_snapshot(mq_snapshot* snap);                 // 世界 → 快照（反射驱动，docs/10 §4）
     void world_restore(const mq_snapshot* snap);            // 快照 → 世界
     uint64_t world_checksum();                              // 世界校验和：场景 + 物理 + 粒子（docs/10 §5）
+    uint64_t global_checksum();                             // 全局状态校验和（空 → 中立值）
+    void encode_globals(SnapshotWriter& w) const;           // 快照块：全局状态（docs/32 §16.3）
+    int  restore_globals(const uint8_t* data, size_t n, size_t& off);
     uint64_t world_trail() const;                           // 校验和轨迹（失步定位）
 };
 
@@ -1086,6 +1153,16 @@ static TexPathParams parse_tex_path(const std::string& ref) {
         pos = amp + 1;
     }
     return p;
+}
+
+std::string Engine::scoped_texture_ref(int entity, const std::string& ref) const {
+    static constexpr const char* kRt = "rendertexture://";
+    if (ref.rfind(kRt, 0) != 0) return ref;
+    const std::string tail = ref.substr(std::strlen(kRt));
+    if (tail.find('/') != std::string::npos) return ref;       /* 已是规范 URI */
+    auto it = entity_instance.find(entity);
+    const int owner = it == entity_instance.end() ? 0 : it->second;
+    return std::string(kRt) + std::to_string(owner) + "/" + tail;
 }
 
 int Engine::load_texture(const std::string& path) {
@@ -1383,6 +1460,10 @@ void Engine::load_env_cubemap(const std::string& prefix, int32_t& spec_id, int32
 }
 
 int Engine::load_texture_srgb(const std::string& path) {
+    if (path.rfind("rendertexture://", 0) == 0) {
+        auto rt = tex_cache.find(path);
+        return rt == tex_cache.end() ? -1 : rt->second;
+    }
     const TexPathParams tp = parse_tex_path(path);
     /* builtin: 是程序化纹理（checker 等），沿用既有 UNorm 路径，不做 sRGB 解码 */
     if (tp.vfs.rfind("builtin:", 0) == 0) return load_texture_ref(path);
@@ -1420,6 +1501,10 @@ int Engine::load_texture_srgb(const std::string& path) {
 
 /* plans/19：线性数据贴图（MR/AO/normal/clearcoat normal）+ CPU mip 链；采样 RGBA8Unorm。 */
 int Engine::load_texture_mips(const std::string& path) {
+    if (path.rfind("rendertexture://", 0) == 0) {
+        auto rt = tex_cache.find(path);
+        return rt == tex_cache.end() ? -1 : rt->second;
+    }
     const TexPathParams tp = parse_tex_path(path);
     if (tp.vfs.rfind("builtin:", 0) == 0) return load_texture_ref(path);
     const std::string key = "mip:" + path;
@@ -3369,6 +3454,7 @@ bool Engine::world_snapshot(mq_snapshot* snap) {
         w.pod(p.life); w.pod(p.max_life); w.pod(p.size);
         w.pod(p.r); w.pod(p.g); w.pod(p.b);
     }
+    encode_globals(w);                                // 全局状态（docs/32 §16.3；旧快照无此块）
     encode_instances(w);                              // 实例表 + 实体归属（docs/32 §6.3）
     void* out = mq_snapshot_begin(snap, w.buf.size() ? w.buf.size() : 1);
     if (!out) return false;
@@ -3442,20 +3528,47 @@ void Engine::world_restore(const mq_snapshot* snap) {
                 }
             }
         }
+        /* 全局状态（docs/32 §16.3）：必须在实例 on_start 之前恢复（脚本可能读它）。
+         * 旧快照没有该块 → restore_globals 探测 magic 失败、原样跳过。 */
+        (void)restore_globals((const uint8_t*)bytes, n, off);
         /* 实例表（docs/32 §6.3）：结构相同时保留 VM 状态；结构变化才重建并 on_start 重注册。 */
         const int inst_mode = restore_instances((const uint8_t*)bytes, n, off);
         if (inst_mode == 1) {
             (void)dispatch_instance_on_start(0);
+            if (global_bus) (void)call_global_event("on_start", 0.0, 0.0, 0.0, nullptr);
             if (overlay_bus) (void)call_overlay_event("on_start", 0.0, 0.0, 0.0, nullptr);
         }
     }
     scene->flatten_world(*this);
 }
 
+/* 全局状态校验和（docs/32 §16.3）：空 → 0（老场景的 world_trail 零变化）。
+ * 键有序（std::map）→ 遍历确定；数值按位混入（-0.0 与 +0.0 不同，符合快照字节语义）。 */
+uint64_t Engine::global_checksum() {
+    if (global_nums.empty() && global_texts.empty()) return 0;
+    uint64_t h = 1469598103934665603ull;
+    auto mix_bytes = [&](const std::string& s) {
+        for (char c : s) { h ^= (uint8_t)c; h *= 1099511628211ull; }
+    };
+    for (auto& [k, v] : global_nums) {
+        mix_bytes(k);
+        uint64_t bits = 0;
+        std::memcpy(&bits, &v, sizeof bits);
+        h ^= bits; h *= 1099511628211ull;
+    }
+    for (auto& [k, v] : global_texts) {
+        h ^= 0x9E3779B97F4A7C15ull; h *= 1099511628211ull;   // 数值/文本段分开
+        mix_bytes(k);
+        mix_bytes(v);
+    }
+    return h;
+}
+
 /* 世界校验和：场景（实体/组件标量）+ 物理求解器状态 + 粒子（都是模拟状态，docs/10 §5）。 */
 uint64_t Engine::world_checksum() {
     uint64_t h = scene ? scene->checksum(*this) : 1469598103934665603ull;
     h ^= instance_checksum() * 1099511628211ull;      // 实例结构（docs/32 §6.3/§8）
+    h ^= global_checksum() * 1099511628211ull;        // 全局状态（空 → 0，零回归）
     if (physics) h ^= mq_physics_checksum(physics) * 1099511628211ull;
     for (auto& p : particles) {
         h ^= (uint64_t)(int64_t)(p.x * 4096.0F); h *= 1099511628211ull;
@@ -3506,6 +3619,17 @@ static void m4_perspective(float fovy_rad, float aspect, float zn, float zf, flo
     const float f = 1.0F / std::tan(fovy_rad * 0.5F);
     m[0] = f / aspect; m[5] = f;
     m[10] = zf / (zn - zf); m[11] = -1.0F; m[14] = (zn * zf) / (zn - zf);
+}
+/* 正交投影（ortho_height = 垂直可见范围；右手系，WebGPU z∈[0,1]）。 */
+static void m4_orthographic(float height, float aspect, float zn, float zf, float* m) {
+    std::memset(m, 0, sizeof(float) * 16);
+    const float hh = std::max(height * 0.5F, 1e-5F);
+    const float hw = std::max(hh * aspect, 1e-5F);
+    m[0] = 1.0F / hw;
+    m[5] = 1.0F / hh;
+    m[10] = 1.0F / (zn - zf);
+    m[14] = zn / (zn - zf);
+    m[15] = 1.0F;
 }
 /* 世界矩阵的旋转轴（列 c）：单位化后返回。列长≈1 时**不做除法** ——
  * 保证平级场景（world_m = m4_from_trs(local)，scale=1）与旧的 Euler 旋转逐字节一致；
@@ -3955,6 +4079,183 @@ static void build_cube(std::vector<float>& verts, std::vector<uint32_t>& indices
     }
 }
 
+Engine::RenderTextureState* Engine::render_texture_for(int entity) {
+    for (auto& rt : render_textures) if (rt.entity == entity) return &rt;
+    return nullptr;
+}
+const Engine::RenderTextureState* Engine::render_texture_for(int entity) const {
+    for (const auto& rt : render_textures) if (rt.entity == entity) return &rt;
+    return nullptr;
+}
+
+void Engine::destroy_render_textures() {
+    for (auto& rt : render_textures) {
+        auto erase_key = [&](const std::string& key) {
+            auto it = tex_cache.find(key);
+            if (it != tex_cache.end() && it->second == rt.handle) tex_cache.erase(it);
+        };
+        erase_key(rt.uri);
+        const int owner = entity_instance.count(rt.entity) ? entity_instance[rt.entity] : 0;
+        if (owner == 0) erase_key("rendertexture://" + rt.name);
+        if (rt.handle >= 0 && MQ_RENDERER_HAS(rapi, destroy_texture)) rapi->destroy_texture(rself, rt.handle);
+    }
+    render_textures.clear();
+    camera_captures.clear();
+}
+
+void Engine::setup_render_textures() {
+    destroy_render_textures();
+    sync_render_textures();
+}
+
+void Engine::sync_render_textures() {
+    if (!scene || !reflect) return;
+    const mq_type_desc* rtd = mq_reflect_type_by_name(reflect, "render.RenderTexture");
+    if (!rtd) return;
+    const bool supported = MQ_RENDERER_HAS(rapi, create_render_texture) &&
+                           MQ_RENDERER_HAS(rapi, configure_render_texture) &&
+                           MQ_RENDERER_HAS(rapi, render_to_texture) &&
+                           MQ_RENDERER_HAS(rapi, read_texture);
+    if (!supported) {
+        static bool warned = false;
+        if (!warned) {
+            warned = true;
+            std::print(stderr, "runtime: renderer 不支持 RenderTexture ABI（需要 create/configure/render/read）\n");
+        }
+    }
+    std::vector<int> ids;
+    for (const auto& [id, e] : scene->ents)
+        if (e.comps.find(rtd->type_id) != e.comps.end()) ids.push_back(id);
+    std::sort(ids.begin(), ids.end());
+    std::unordered_set<int> live(ids.begin(), ids.end());
+
+    /* 先清理已销毁节点/已移除组件，且从 tex_cache 擦除别名，避免句柄重复释放。 */
+    for (size_t i = 0; i < render_textures.size();) {
+        RenderTextureState& rt = render_textures[i];
+        if (live.count(rt.entity)) { ++i; continue; }
+        auto erase_key = [&](const std::string& key) {
+            auto it = tex_cache.find(key);
+            if (it != tex_cache.end() && it->second == rt.handle) tex_cache.erase(it);
+        };
+        erase_key(rt.uri);
+        const int owner = entity_instance.count(rt.entity) ? entity_instance[rt.entity] : 0;
+        if (owner == 0) erase_key("rendertexture://" + rt.name);
+        if (rt.handle >= 0 && MQ_RENDERER_HAS(rapi, destroy_texture)) rapi->destroy_texture(rself, rt.handle);
+        render_textures.erase(render_textures.begin() + (ptrdiff_t)i);
+    }
+
+    std::unordered_set<std::string> used;
+    for (int id : ids) {
+        Entity* e = scene->at(id);
+        if (!e) continue;
+        std::vector<uint8_t>& blob = e->comps[rtd->type_id];
+        const mq_type_desc* dummy = nullptr;
+        const bool has3d_camera = comp_by_name(*this, id, "render.Camera3D", &dummy) != nullptr;
+        const bool has2d_camera = comp_by_name(*this, id, "render.Camera2D", &dummy) != nullptr ||
+                                  comp_by_name(*this, id, "scn.Camera", &dummy) != nullptr;
+        const std::string* configured = read_str(rtd, blob.data(), "name");
+        std::string name = configured && !configured->empty() ? *configured : e->name;
+        if (name.empty()) name = "camera-" + std::to_string(id);
+        const int owner = entity_instance.count(id) ? entity_instance[id] : 0;
+        const std::string uri = "rendertexture://" + std::to_string(owner) + "/" + name;
+        const bool valid_target = (has3d_camera || has2d_camera) && supported;
+        const bool duplicate = valid_target && !used.insert(uri).second;
+        RenderTextureState* rt = render_texture_for(id);
+
+        auto write_transients = [&](const std::string& texture, bool ready, uint64_t rendered) {
+            if (const mq_field_desc* f = mq_reflect_field(rtd, "texture"))
+                *(std::string*)(blob.data() + f->offset) = texture;
+            if (const mq_field_desc* f = mq_reflect_field(rtd, "ready"))
+                *(bool*)(blob.data() + f->offset) = ready;
+            if (const mq_field_desc* f = mq_reflect_field(rtd, "last_frame"))
+                *(uint32_t*)(blob.data() + f->offset) = (uint32_t)rendered;
+        };
+        if (duplicate || (!has3d_camera && !has2d_camera) || !supported) {
+            if (duplicate)
+                std::print(stderr, "runtime: RenderTexture '{}' 在实例 {} 内重名（entity={} 跳过）\n", name, owner, id);
+            else if (!has3d_camera && !has2d_camera)
+                std::print(stderr, "runtime: RenderTexture entity={} 必须与 scn.Camera/render.Camera2D/Camera3D 同节点\n", id);
+            if (rt) {
+                auto erase_key = [&](const std::string& key) {
+                    auto it = tex_cache.find(key);
+                    if (it != tex_cache.end() && it->second == rt->handle) tex_cache.erase(it);
+                };
+                erase_key(rt->uri);
+                erase_key("rendertexture://" + rt->name);
+                if (rt->handle >= 0 && MQ_RENDERER_HAS(rapi, destroy_texture)) rapi->destroy_texture(rself, rt->handle);
+                render_textures.erase(std::remove_if(render_textures.begin(), render_textures.end(),
+                                                     [&](const RenderTextureState& s) { return s.entity == id; }),
+                                      render_textures.end());
+            }
+            write_transients("", false, 0);
+            continue;
+        }
+
+        const int32_t requested_w = (int32_t)read_num(rtd, blob.data(), "width", 0.0F);
+        const int32_t requested_h = (int32_t)read_num(rtd, blob.data(), "height", 0.0F);
+        const int32_t width = std::max(1, requested_w > 0 ? requested_w : W);
+        const int32_t height = std::max(1, requested_h > 0 ? requested_h : H);
+        const int32_t filter = (int32_t)read_num(rtd, blob.data(), "filter", 1.0F);
+        math::Color cc{ 0.0F, 0.0F, 0.0F, 0.0F };
+        read_color(rtd, blob.data(), "clear_color", &cc);
+        mq_renderer_render_texture_desc desc{};
+        desc.struct_size = sizeof desc;
+        desc.width = width; desc.height = height; desc.pixel_format = 0;
+        desc.filter = filter; desc.wrap_u = 1; desc.wrap_v = 1;
+        desc.clear_color[0] = cc.r; desc.clear_color[1] = cc.g;
+        desc.clear_color[2] = cc.b; desc.clear_color[3] = cc.a;
+
+        if (!rt) {
+            int32_t handle = -1;
+            if (rapi->create_render_texture(rself, &desc, &handle) != 0 || handle < 0) {
+                std::print(stderr, "runtime: RenderTexture '{}' 创建失败（{}x{}）\n", uri, width, height);
+                write_transients("", false, 0);
+                continue;
+            }
+            RenderTextureState state;
+            state.entity = id; state.handle = handle; state.width = width; state.height = height;
+            state.filter = filter; state.name = name; state.uri = uri; state.is_3d = has3d_camera;
+            render_textures.push_back(std::move(state));
+            rt = &render_textures.back();
+            std::print("runtime: RenderTexture '{}' {}x{} handle={} camera={}\n",
+                       uri, width, height, (long long)handle, has3d_camera ? "3d" : "2d");
+        } else {
+            if (rt->uri != uri) {
+                auto it = tex_cache.find(rt->uri);
+                if (it != tex_cache.end() && it->second == rt->handle) tex_cache.erase(it);
+                if (owner == 0) {
+                    const std::string old_short = "rendertexture://" + rt->name;
+                    it = tex_cache.find(old_short);
+                    if (it != tex_cache.end() && it->second == rt->handle) tex_cache.erase(it);
+                }
+                rt->uri = uri; rt->name = name;
+            }
+            if (rt->width != width || rt->height != height || rt->filter != filter) {
+                if (rapi->configure_render_texture(rself, rt->handle, &desc) == 0) {
+                    rt->width = width; rt->height = height; rt->filter = filter;
+                    rt->dirty = true; rt->ready = false; rt->capture_pixels.clear();
+                } else {
+                    std::print(stderr, "runtime: RenderTexture '{}' 重配 {}x{} 失败，保留旧目标 {}x{}\n",
+                               uri, width, height, rt->width, rt->height);
+                }
+            }
+            if (rt->is_3d != has3d_camera) rt->dirty = true;
+            rt->is_3d = has3d_camera;
+        }
+        rt->update_mode = (int32_t)read_num(rtd, blob.data(), "update_mode", 0.0F);
+        const bool include_ui = read_num(rtd, blob.data(), "include_ui", 0.0F) >= 0.5F;
+        const bool enabled = read_num(rtd, blob.data(), "enabled", 1.0F) >= 0.5F;
+        if (rt->include_ui != include_ui || (!rt->enabled && enabled)) rt->dirty = true;
+        rt->include_ui = include_ui;
+        rt->enabled = enabled;
+        tex_cache[rt->uri] = rt->handle;
+        if (owner == 0) tex_cache["rendertexture://" + rt->name] = rt->handle;
+        write_transients(rt->uri, rt->ready, rt->last_frame);
+    }
+    std::sort(render_textures.begin(), render_textures.end(),
+              [](const RenderTextureState& a, const RenderTextureState& b) { return a.entity < b.entity; });
+}
+
 void Engine::setup_3d() {
     has_3d = false;
     if (!scene) return;
@@ -3990,6 +4291,316 @@ void Engine::setup_3d() {
                n_cam, n_mesh, n_light, (long long)cube_mesh);
     /* plans/22 §6.1：实体名表 / 骨架 / 片段 / morph 网格预解析（装配期 IO，不在模拟帧内） */
     setup_gltf_assets();
+}
+
+bool Engine::make_camera_view2d(int entity, int width, int height, mq_renderer_view& view,
+                                uint32_t* layer_mask) {
+    Entity* e = scene ? scene->at(entity) : nullptr;
+    if (!e || !node_active_effective(*this, entity)) return false;
+    if (layer_mask) *layer_mask = 0xFFFFFFFFu;
+    view = mq_renderer_view{};
+    view.vw = (float)width; view.vh = (float)height;
+    const mq_type_desc* d = nullptr;
+    if (auto* b = comp_by_name(*this, entity, "render.Camera2D", &d); b && d) {
+        if (read_num(d, b->data(), "active", 1.0F) < 0.5F) return false;
+        math::Vec2 zoom{ 1.0F, 1.0F }, offset{};
+        math::Rect viewport{ 0.0F, 0.0F, 1.0F, 1.0F };
+        if (const mq_field_desc* f = mq_reflect_field(d, "zoom"))
+            std::memcpy(&zoom, b->data() + f->offset, sizeof zoom);
+        if (const mq_field_desc* f = mq_reflect_field(d, "offset"))
+            std::memcpy(&offset, b->data() + f->offset, sizeof offset);
+        if (const mq_field_desc* f = mq_reflect_field(d, "viewport"))
+            std::memcpy(&viewport, b->data() + f->offset, sizeof viewport);
+        if (layer_mask) if (const mq_field_desc* f = mq_reflect_field(d, "layer_mask"))
+            *layer_mask = *(const uint32_t*)(b->data() + f->offset);
+        const float zx = std::max(zoom.x, 1e-5F);
+        if (std::fabs(zoom.y - zoom.x) > 1e-5F) {
+            static bool warned_zoom = false;
+            if (!warned_zoom) {
+                warned_zoom = true;
+                std::print(stderr, "runtime: Camera2D.zoom 当前渲染 ABI 仅支持等比缩放；使用 zoom.x={}（zoom.y={}）\n",
+                           (double)zoom.x, (double)zoom.y);
+            }
+        }
+        const float nx = std::clamp(viewport.x, 0.0F, 1.0F);
+        const float ny = std::clamp(viewport.y, 0.0F, 1.0F);
+        const float nw = std::clamp(viewport.width, 0.0F, 1.0F - nx);
+        const float nh = std::clamp(viewport.height, 0.0F, 1.0F - ny);
+        if (nw <= 0.0F || nh <= 0.0F) return false;
+        view.vx = nx * width; view.vy = ny * height;
+        view.vw = std::max(1.0F, nw * width); view.vh = std::max(1.0F, nh * height);
+        float angle = 0.0F, scale = 1.0F, opacity = 1.0F;
+        accumulate_node_attrs(*this, entity, angle, scale, opacity);
+        (void)scale; (void)opacity;
+        const float camera_x = e->world_x + offset.x;
+        const float camera_y = (float)H - (e->world_y + offset.y);
+        view.cx = camera_x;
+        view.cy = camera_y;
+        view.pan = (view.vw - (float)width) * 0.5F;
+        view.eye = (view.vh - (float)height) * 0.5F;
+        view.zoom = zx;
+        view.rot = angle * 3.14159265358979323846F / 180.0F;
+        return true;
+    }
+    if (auto* b = comp_by_name(*this, entity, "scn.Camera", &d); b && d) {
+        if (read_num(d, b->data(), "active", 1.0F) < 0.5F) return false;
+        const float x = read_num(d, b->data(), "x", e->world_x);
+        const float y = read_num(d, b->data(), "y", e->world_y);
+        view.cx = x;
+        view.cy = (float)H - y;
+        view.zoom = std::max(read_num(d, b->data(), "zoom", 1.0F), 1e-5F);
+        view.rot = read_num(d, b->data(), "rotation", 0.0F);
+        return true;
+    }
+    return false;
+}
+
+void Engine::fill_frame_environment(mq_renderer_frame3d& fr) {
+    fr.env = mq_renderer_environment{};
+    fr.env.sky_texture = -1;
+    fr.env.env_texture = -1;
+    fr.env.env_irradiance_texture = -1;
+    fr.env.env_cubemap = -1;
+    fr.env.env_cubemap_irradiance = -1;
+    fr.env.sky_mode = 1;
+    if (!scene) return;
+    float env_col[3] = { scene->desc.env_color.r, scene->desc.env_color.g, scene->desc.env_color.b };
+    float sky_col[3] = { scene->desc.env_sky_color.r, scene->desc.env_sky_color.g, scene->desc.env_sky_color.b };
+    float ground_col[3] = { scene->desc.env_ground_color.r, scene->desc.env_ground_color.g, scene->desc.env_ground_color.b };
+    const bool sky_zero = sky_col[0] == 0.0F && sky_col[1] == 0.0F && sky_col[2] == 0.0F;
+    const bool ground_zero = ground_col[0] == 0.0F && ground_col[1] == 0.0F && ground_col[2] == 0.0F;
+    for (int i = 0; i < 3; ++i) {
+        if (sky_zero) sky_col[i] = env_col[i] * 1.15F;
+        if (ground_zero) ground_col[i] = env_col[i] * 0.45F;
+        fr.env.env_color[i] = env_col[i];
+        fr.env.env_sky_color[i] = sky_col[i];
+        fr.env.env_ground_color[i] = ground_col[i];
+    }
+    fr.env.env_color[3] = fr.env.env_sky_color[3] = fr.env.env_ground_color[3] = 1.0F;
+    fr.env.intensity = scene->desc.env_intensity;
+    fr.env.env_highlight = scene->desc.env_highlight;
+    fr.env.env_rotation = scene->desc.env_rotation * 3.14159265F / 180.0F;
+
+    std::string env_path = scene->desc.env_texture;
+    const char* env_force = std::getenv("MAQUE_ENV_IBL");
+    if (env_force && env_force[0] == '1') env_path = "builtin:/textures/studio_env";
+    if (env_force && env_force[0] == '0') env_path.clear();
+    if (!env_path.empty()) load_env_textures(env_path, fr.env.env_texture, fr.env.env_irradiance_texture);
+    if (!scene->desc.env_cubemap.empty())
+        load_env_cubemap(scene->desc.env_cubemap, fr.env.env_cubemap, fr.env.env_cubemap_irradiance);
+    if (fr.env.env_cubemap >= 0) fr.env.sky_mode = scene->desc.env_background ? 2 : 1;
+    else if (fr.env.env_texture >= 0 && scene->desc.env_background) fr.env.sky_mode = 3;
+}
+
+bool Engine::read_camera_texture(RenderTextureState& rt, bool refresh) {
+    if (!rt.ready || rt.handle < 0 || !MQ_RENDERER_HAS(rapi, read_texture)) return false;
+    if (!refresh && !rt.capture_pixels.empty()) return true;
+    rt.capture_pixels.assign((size_t)rt.width * (size_t)rt.height * 4u, 0);
+    const int32_t rc = rapi->read_texture(rself, rt.handle, rt.capture_pixels.data(),
+                                          (uint32_t)rt.capture_pixels.size());
+    if (rc != 0) { rt.capture_pixels.clear(); return false; }
+    rt.capture_frame = rt.last_frame;
+    return true;
+}
+
+bool Engine::save_camera_texture(int entity, const std::string& path) {
+    RenderTextureState* rt = render_texture_for(entity);
+    if (!rt || !rt->ready || rt->handle < 0 || path.empty() || !MQ_RENDERER_HAS(rapi, read_texture)) return false;
+    std::vector<uint8_t> pixels((size_t)rt->width * (size_t)rt->height * 4u, 0);
+    if (rapi->read_texture(rself, rt->handle, pixels.data(), (uint32_t)pixels.size()) != 0) return false;
+    const bool png = path.size() > 4 && path.compare(path.size() - 4, 4, ".png") == 0;
+    const int rc = png ? mq_image_write_png(path.c_str(), (uint32_t)rt->width, (uint32_t)rt->height,
+                                             pixels.data(), (uint32_t)rt->width * 4u)
+                       : (write_ppm(path, rt->width, rt->height, pixels) ? 0 : 1);
+    if (rc == 0)
+        std::print("runtime: camera shot '{}' {}x{} camera={} frame={}\n",
+                   path, rt->width, rt->height, entity, (unsigned long long)rt->last_frame);
+    else
+        std::print(stderr, "runtime: camera shot 写入失败 '{}' camera={}\n", path, entity);
+    return rc == 0;
+}
+
+void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
+                                    const std::vector<mq_renderer_mesh>& meshes) {
+    if (render_textures.empty() || !MQ_RENDERER_HAS(rapi, render_to_texture)) return;
+    /* 截图请求会强制 OnDemand 目标在本帧更新。 */
+    for (const auto& req : camera_captures)
+        if (RenderTextureState* rt = render_texture_for(req.entity)) rt->dirty = true;
+
+    /* 依赖排序：A 的可见 2D 输入采样 B，则 B 先于 A。同一环内按实体 id 继续，语义为
+     * “较早目标读环中较晚目标的上一帧，较晚目标可读较早目标的本帧”，确定且无同-pass 反馈。 */
+    std::unordered_map<int32_t, size_t> by_handle;
+    for (size_t i = 0; i < render_textures.size(); ++i) by_handle[render_textures[i].handle] = i;
+    std::vector<std::vector<size_t>> edges(render_textures.size());
+    std::vector<int> indegree(render_textures.size(), 0);
+    for (size_t i = 0; i < render_textures.size(); ++i) {
+        std::unordered_set<size_t> deps;
+        uint32_t dep_2d_mask = 0xFFFFFFFFu;
+        uint32_t dep_3d_mask = 0xFFFFFFFFu;
+        if (!render_textures[i].is_3d) {
+            const mq_type_desc* camera_desc = nullptr;
+            if (auto* camera = comp_by_name(*this, render_textures[i].entity, "render.Camera2D", &camera_desc);
+                camera && camera_desc) {
+                if (const mq_field_desc* f = mq_reflect_field(camera_desc, "layer_mask"))
+                    dep_2d_mask = *(const uint32_t*)(camera->data() + f->offset);
+            }
+        } else {
+            const mq_type_desc* camera_desc = nullptr;
+            if (auto* camera = comp_by_name(*this, render_textures[i].entity, "render.Camera3D", &camera_desc);
+                camera && camera_desc) {
+                if (const mq_field_desc* f = mq_reflect_field(camera_desc, "culling_mask"))
+                    dep_3d_mask = *(const uint32_t*)(camera->data() + f->offset);
+            }
+        }
+        auto consider = [&](int32_t texture, int layer) {
+            if (texture < 0 || layer < 0 || layer > (render_textures[i].include_ui ? 1 : 0)) return;
+            if (!render_textures[i].is_3d && layer < 32 && (dep_2d_mask & (1u << layer)) == 0) return;
+            auto it = by_handle.find(texture);
+            if (it != by_handle.end() && it->second != i) deps.insert(it->second);
+        };
+        if (!render_textures[i].is_3d) {
+            for (const auto& item : draws) consider(item.texture, item.layer);
+            for (const auto& mesh : meshes) consider(mesh.texture, mesh.layer);
+        } else {
+            if (render_textures[i].include_ui) {
+                for (const auto& item : draws) if (item.layer == 1) consider(item.texture, item.layer);
+                for (const auto& mesh : meshes) if (mesh.layer == 1) consider(mesh.texture, mesh.layer);
+            }
+            /* 3D 材质在 per-camera extract_3d 中生成；这里直接扫描 PBR 的字符串贴图槽，
+             * 把 rendertexture:// 引用提前加入 pass 依赖。 */
+            for (const auto& [eid, ent] : scene->ents) for (const auto& [tid, blob] : ent.comps) {
+                const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+                if (!d || std::strcmp(d->name, "asset.PbrMaterial") != 0) continue;
+                const mq_type_desc* mesh_desc = nullptr;
+                auto* mesh_blob = comp_by_name(*this, eid, "render.MeshRenderer", &mesh_desc);
+                if (!mesh_blob || !mesh_desc || !node_active_effective(*this, eid) ||
+                    read_num(mesh_desc, mesh_blob->data(), "visible", 1.0F) < 0.5F) continue;
+                uint32_t mesh_mask = 0xFFFFFFFFu;
+                if (const mq_field_desc* f = mq_reflect_field(mesh_desc, "culling_mask"))
+                    mesh_mask = *(const uint32_t*)(mesh_blob->data() + f->offset);
+                if ((mesh_mask & dep_3d_mask) == 0) continue;
+                for (uint32_t fi = 0; fi < d->field_count; ++fi) {
+                    const mq_field_desc& f = d->fields[fi];
+                    if (f.kind != MQ_TK_STRING || std::string(f.name).find("texture") == std::string::npos) continue;
+                    const std::string& ref = *(const std::string*)(blob.data() + f.offset);
+                    auto hit = tex_cache.find(scoped_texture_ref(eid, ref));
+                    if (hit != tex_cache.end()) consider(hit->second, 0);
+                }
+            }
+        }
+        for (size_t dep : deps) { edges[dep].push_back(i); ++indegree[i]; }
+    }
+    std::vector<size_t> order;
+    for (size_t produced = 0; produced < render_textures.size();) {
+        size_t pick = render_textures.size();
+        for (size_t i = 0; i < render_textures.size(); ++i)
+            if (indegree[i] == 0 && std::find(order.begin(), order.end(), i) == order.end() &&
+                (pick == render_textures.size() || render_textures[i].entity < render_textures[pick].entity)) pick = i;
+        if (pick == render_textures.size()) break;
+        order.push_back(pick); ++produced; indegree[pick] = -1;
+        for (size_t to : edges[pick]) --indegree[to];
+    }
+    if (order.size() != render_textures.size()) {
+        static bool warned_cycle = false;
+        if (!warned_cycle) {
+            warned_cycle = true;
+            std::print(stderr, "runtime: RenderTexture 依赖含环 → 环内按相机 entity id 使用确定的上一帧/本帧顺序\n");
+        }
+        std::vector<size_t> rest;
+        for (size_t i = 0; i < render_textures.size(); ++i)
+            if (std::find(order.begin(), order.end(), i) == order.end()) rest.push_back(i);
+        std::sort(rest.begin(), rest.end(), [&](size_t a, size_t b) {
+            return render_textures[a].entity < render_textures[b].entity;
+        });
+        order.insert(order.end(), rest.begin(), rest.end());
+    }
+
+    for (size_t oi : order) {
+        RenderTextureState& rt = render_textures[oi];
+        const bool capture_due = std::any_of(camera_captures.begin(), camera_captures.end(),
+                                             [&](const CameraCaptureRequest& r) { return r.entity == rt.entity; });
+        if ((!rt.enabled && !capture_due) || !node_active_effective(*this, rt.entity)) continue;
+        if (rt.update_mode != 0 && !rt.dirty) continue;
+        const mq_type_desc* rtd = nullptr;
+        auto* rtb = comp_by_name(*this, rt.entity, "render.RenderTexture", &rtd);
+        if (!rtb || !rtd) continue;
+        mq_renderer_frame3d fr{};
+        fr.width = rt.width; fr.height = rt.height;
+        fr.env.sky_texture = fr.env.env_texture = fr.env.env_irradiance_texture = -1;
+        fr.env.env_cubemap = fr.env.env_cubemap_irradiance = -1;
+        fr.msaa_samples = scene && scene->desc.msaa_samples >= 4 ? 4 : 1;
+        math::Color cc{};
+        read_color(rtd, rtb->data(), "clear_color", &cc);
+        fr.bg[0] = cc.r; fr.bg[1] = cc.g; fr.bg[2] = cc.b; fr.bg[3] = cc.a;
+
+        std::vector<mq_renderer_item> target_items;
+        std::vector<mq_renderer_mesh> target_meshes;
+        auto keep_layer = [&](int layer) { return layer == 0 || (rt.include_ui && layer == 1); };
+        if (!rt.is_3d) {
+            const mq_type_desc* camera2d_desc = nullptr;
+            if (auto* camera2d = comp_by_name(*this, rt.entity, "render.Camera2D", &camera2d_desc);
+                camera2d && camera2d_desc) {
+                math::Color camera_clear{};
+                read_color(camera2d_desc, camera2d->data(), "clear_color", &camera_clear);
+                fr.bg[0] = camera_clear.r; fr.bg[1] = camera_clear.g;
+                fr.bg[2] = camera_clear.b; fr.bg[3] = camera_clear.a;
+            }
+            mq_renderer_view view{};
+            uint32_t camera_mask = 0xFFFFFFFFu;
+            if (!make_camera_view2d(rt.entity, rt.width, rt.height, view, &camera_mask)) continue;
+            auto keep_2d = [&](int layer) {
+                return keep_layer(layer) && layer >= 0 && layer < 32 && (camera_mask & (1u << layer)) != 0;
+            };
+            for (const auto& item : draws) if (keep_2d(item.layer)) target_items.push_back(item);
+            for (const auto& mesh : meshes) if (keep_2d(mesh.layer)) target_meshes.push_back(mesh);
+            fr.views2d = &view; fr.view2d_count = 1;
+            fr.items = target_items.data(); fr.item_count = (uint32_t)target_items.size();
+            fr.meshes = target_meshes.data(); fr.mesh_count = (uint32_t)target_meshes.size();
+            const int32_t rc = rapi->render_to_texture(rself, rt.handle, &fr);
+            if (rc != 0) { std::print(stderr, "runtime: RenderTexture '{}' 2D render rc={}\n", rt.uri, rc); continue; }
+        } else {
+            std::vector<mq_renderer_view3d> v3;
+            std::vector<mq_renderer_light> l3;
+            std::vector<mq_renderer_pbr_material> m3;
+            std::vector<mq_renderer_draw3d> d3;
+            std::vector<mq_renderer_skin> s3;
+            extract_3d(rt.width, rt.height, v3, l3, m3, d3, s3, rt.entity, false);
+            if (v3.empty()) continue;
+            if (rt.include_ui) {
+                for (const auto& item : draws) if (item.layer == 1) target_items.push_back(item);
+                for (const auto& mesh : meshes) if (mesh.layer == 1) target_meshes.push_back(mesh);
+            }
+            std::vector<mq_renderer_shader_pass> passes;
+            extract_shader_passes(passes);
+            fr.views = v3.data(); fr.view_count = (uint32_t)v3.size();
+            fr.lights = l3.data(); fr.light_count = (uint32_t)l3.size();
+            fr.materials = m3.data(); fr.material_count = (uint32_t)m3.size();
+            fr.draws = d3.data(); fr.draw_count = (uint32_t)d3.size();
+            fr.skins = s3.data(); fr.skin_count = (uint32_t)s3.size();
+            fr.items = target_items.data(); fr.item_count = (uint32_t)target_items.size();
+            fr.meshes = target_meshes.data(); fr.mesh_count = (uint32_t)target_meshes.size();
+            fr.views2d = nullptr; fr.view2d_count = 0;
+            fr.passes = passes.data(); fr.pass_count = (uint32_t)passes.size();
+            fill_frame_environment(fr);
+            const int32_t rc = rapi->render_to_texture(rself, rt.handle, &fr);
+            if (rc != 0) { std::print(stderr, "runtime: RenderTexture '{}' 3D render rc={}\n", rt.uri, rc); continue; }
+        }
+        rt.ready = true;
+        rt.dirty = false;
+        rt.last_frame = frame;
+        if (const mq_field_desc* f = mq_reflect_field(rtd, "ready")) *(bool*)(rtb->data() + f->offset) = true;
+        if (const mq_field_desc* f = mq_reflect_field(rtd, "last_frame")) *(uint32_t*)(rtb->data() + f->offset) = (uint32_t)frame;
+    }
+    for (const auto& req : camera_captures) {
+        RenderTextureState* rt = render_texture_for(req.entity);
+        if (rt && rt->ready && rt->last_frame == frame) {
+            (void)save_camera_texture(req.entity, req.path);
+        } else {
+            std::print(stderr, "runtime: camera shot 跳过 '{}' camera={}（本帧 RenderTexture 更新失败）\n",
+                       req.path, req.entity);
+        }
+    }
+    camera_captures.clear();
 }
 
 /* ==========================================================================
@@ -4089,7 +4700,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                         std::vector<mq_renderer_light>& out_lights,
                         std::vector<mq_renderer_pbr_material>& out_mats,
                         std::vector<mq_renderer_draw3d>& out_draws,
-                        std::vector<mq_renderer_skin>& out_skins) {
+                        std::vector<mq_renderer_skin>& out_skins,
+                        int camera_entity, bool allow_orbit) {
     out_views.clear(); out_lights.clear(); out_mats.clear(); out_draws.clear();
     out_skins.clear();
     skin_palettes.clear();                       /* 上一帧调色板已随上一帧渲染用完 */
@@ -4116,7 +4728,11 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     bool gltf_lights_added = false;
     bool gltf_light_logged = false;
     float cam_priority = -1.0e9F;
-    float fov_y = 60.0F, near_z = 0.1F, far_z = 100.0F, exposure = 1.0F;
+    float fov_y = 60.0F, ortho_height = 2.0F, near_z = 0.1F, far_z = 100.0F, exposure = 1.0F;
+    int32_t projection = 0;
+    int32_t clear_mode = 1;
+    int32_t camera_mask = -1;
+    math::Rect camera_viewport{ 0.0F, 0.0F, 1.0F, 1.0F };
     math::Color clear{ 0.06F, 0.06F, 0.09F, 1.0F };
 
     for (int idx : ids) {
@@ -4135,19 +4751,29 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 std::memcpy(&trs, tb->data() + lf->offset, sizeof trs);
         }
         auto* cb = comp_by_name(*this, idx, "render.Camera3D", &dcam);
-        if (cb && dcam) {
+        const bool rt_camera = comp_by_name(*this, idx, "render.RenderTexture", nullptr) != nullptr;
+        if (cb && dcam && (camera_entity < 0 || idx == camera_entity) &&
+            !(camera_entity < 0 && rt_camera)) {
             const float active = read_num(dcam, cb->data(), "active", 1.0F);
             const float prio = read_num(dcam, cb->data(), "priority", 0.0F);
-            if (active >= 0.5F && (!has_cam || prio > cam_priority)) {
+            if (active >= 0.5F && node_active_effective(*this, idx) &&
+                (!has_cam || prio > cam_priority)) {
                 has_cam = true;
                 cam_priority = prio;
                 cam_trs = trs;
                 std::memcpy(cam_wm, wm, sizeof cam_wm);   /* 相机用世界矩阵（平级场景 == 旧 trs） */
                 has_cam_wm = true;
+                projection = (int32_t)read_num(dcam, cb->data(), "projection", 0.0F);
                 fov_y = read_num(dcam, cb->data(), "fov_y", 60.0F);
+                ortho_height = read_num(dcam, cb->data(), "ortho_height", 2.0F);
                 near_z = read_num(dcam, cb->data(), "near", 0.1F);
                 far_z = read_num(dcam, cb->data(), "far", 100.0F);
                 exposure = read_num(dcam, cb->data(), "exposure", 1.0F);
+                clear_mode = (int32_t)read_num(dcam, cb->data(), "clear_mode", 1.0F);
+                if (const mq_field_desc* f = mq_reflect_field(dcam, "culling_mask"))
+                    camera_mask = (int32_t)*(const uint32_t*)(cb->data() + f->offset);
+                if (const mq_field_desc* f = mq_reflect_field(dcam, "viewport"))
+                    std::memcpy(&camera_viewport, cb->data() + f->offset, sizeof camera_viewport);
                 read_color(dcam, cb->data(), "clear_color", &clear);
             }
         }
@@ -4271,7 +4897,10 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                         std::memcpy(dr.model, wm, sizeof dr.model);
                     }
                     dr.skin = skin_index;
-                    dr.layer = 0;
+                    dr.flags |= 0x40000000;            /* draw.layer 是有效 culling mask（旧调用方无此位） */
+                    dr.layer = -1;
+                    if (const mq_field_desc* f = mq_reflect_field(dmesh, "culling_mask"))
+                        dr.layer = (int32_t)*(const uint32_t*)(mb->data() + f->offset);
                     dr.sort_key = (uint64_t)idx;
                     out_draws.push_back(dr);
                 }
@@ -4451,7 +5080,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 /* M4：PBR 贴图槽（albedo / metallic-roughness / occlusion）；normal 在 M5（需要切线空间） */
                 if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_srgb(*texref);
+                        const int tid = load_texture_srgb(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[0] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr albedo texture '{}' -> {}\n", *texref, tid);
@@ -4459,7 +5088,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "metallic_roughness_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_mips(*texref);
+                        const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[1] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr mr texture '{}' -> {}\n", *texref, tid);
@@ -4467,7 +5096,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "occlusion_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_mips(*texref);
+                        const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[2] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr ao texture '{}' -> {}\n", *texref, tid);
@@ -4475,7 +5104,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "normal_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_mips(*texref);
+                        const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[3] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr normal texture '{}' -> {}\n", *texref, tid);
@@ -4483,7 +5112,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "emissive_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_srgb(*texref);
+                        const int tid = load_texture_srgb(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[4] = tid;
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr emissive texture '{}' -> {}\n", *texref, tid);
@@ -4495,7 +5124,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     mat.normal_uv_rotation = read_num(dmat, base, "normal_uv_rotation", 0.0F);
     if (const std::string* texref = read_str(dmat, base, "matcap_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_srgb(*texref);
+                        const int tid = load_texture_srgb(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures2[0] = tid; mat.flags2 |= 2; }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: matcap texture '{}' -> {}\n", *texref, tid);
@@ -4503,7 +5132,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "gradient_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_ref(*texref);
+                        const int tid = load_texture_ref(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures2[1] = tid; mat.flags2 |= 4; }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: toon gradient texture '{}' -> {}\n", *texref, tid);
@@ -4511,7 +5140,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 if (const std::string* texref = read_str(dmat, base, "clearcoat_normal_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_mips(*texref);
+                        const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures2[2] = tid; mat.flags2 |= 8; }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: clearcoat normal texture '{}' -> {}\n", *texref, tid);
@@ -4528,7 +5157,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     auto load_ext_tex = [&](const char* field, int slot, bool srgb) {
                         const std::string* texref = read_str(dmat, base, field);
                         if (!texref || texref->empty()) return;
-                        const int tid = srgb ? load_texture_srgb(*texref) : load_texture_mips(*texref);
+                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, *texref)) : load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) {
                             mat.textures3[slot] = tid;
                             mat.flags2 |= 1 << (12 + slot);          /* presence：bit12..18 */
@@ -4550,7 +5179,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     auto load_spec_tex = [&](const char* field, int slot, bool srgb) {
                         const std::string* texref = read_str(dmat, base, field);
                         if (!texref || texref->empty()) return;
-                        const int tid = srgb ? load_texture_srgb(*texref) : load_texture_mips(*texref);
+                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, *texref)) : load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) {
                             mat.textures4[slot] = tid;
                             mat.flags2 |= 1 << (21 + slot);          /* presence：bit21/22 */
@@ -4566,7 +5195,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                  * 存在时置 flags2 bit23（presence；gfx 在 group1 新 binding 绑定）。空/失败保持 -1、presence=0。 */
                 if (const std::string* texref = read_str(dmat, base, "transmission_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_mips(*texref);
+                        const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures5[0] = tid; mat.flags2 |= 0x800000; }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: transmission texture '{}' -> {}\n", *texref, tid);
@@ -4580,7 +5209,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     auto load_dt_tex = [&](const char* field, int slot, bool srgb) {
                         const std::string* texref = read_str(dmat, base, field);
                         if (!texref || texref->empty()) return;
-                        const int tid = srgb ? load_texture_srgb(*texref) : load_texture_mips(*texref);
+                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, *texref)) : load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) {
                             mat.textures6[slot] = tid;
                             mat.flags2 |= 1 << (25 + slot);          /* presence：bit25/26 */
@@ -4596,7 +5225,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                  * gfx 绑定在 group1 binding 22）。 */
                 if (const std::string* texref = read_str(dmat, base, "volume_thickness_texture")) {
                     if (!texref->empty()) {
-                        const int tid = load_texture_mips(*texref);
+                        const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures7[0] = tid; mat.flags2 |= 0x8000000; }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: volume thickness texture '{}' -> {}\n", *texref, tid);
@@ -4704,21 +5333,24 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             dr.material = mat_index;
             std::memcpy(dr.model, model_m, sizeof dr.model);
             dr.skin = skin_index;
-            dr.layer = 0;
+            dr.flags |= 0x40000000;            /* draw.layer 是有效 culling mask（旧调用方无此位） */
+            dr.layer = -1;
+            if (const mq_field_desc* f = mq_reflect_field(dmesh, "culling_mask"))
+                dr.layer = (int32_t)*(const uint32_t*)(mb->data() + f->offset);
             dr.sort_key = (uint64_t)idx;
             out_draws.push_back(dr);
         }
     }
 
-    /* OrbitControls：绕世界原点环绕（从场景相机初始化半径/角度；MAQUE_ORBIT 可显式覆盖） */
-    if (const char* oo = std::getenv("MAQUE_ORBIT")) {
+    /* OrbitControls：仅主相机绕世界原点环绕；RenderTexture 相机保持节点自身变换。 */
+    if (allow_orbit) if (const char* oo = std::getenv("MAQUE_ORBIT")) {
         float oy = 0.0F, op = 0.3F, od = 1.0F;
         if (std::sscanf(oo, "%f,%f,%f", &oy, &op, &od) >= 1) {
             orbit_yaw = oy; orbit_pitch = op; orbit_dist = od > 0.0F ? od : 1.0F;
             orbit_enabled = true; orbit_inited = true;
         }
     }
-    if (orbit_enabled) {
+    if (allow_orbit && orbit_enabled) {
         if (!orbit_inited) {
             const float ex = cam_trs.position.x, ey = cam_trs.position.y, ez = cam_trs.position.z;
             float d = std::sqrt(ex * ex + ey * ey + ez * ez);
@@ -4767,33 +5399,42 @@ void Engine::extract_3d(int32_t tw, int32_t th,
 
     /* F4 引擎选项：主相机 near/far 覆盖（不写场景组件）。
      * 覆盖关闭时把**场景实际值**回填进选项字段 —— 面板里一勾选"覆盖"就等同当前画面，不跳变。 */
-    if (opt_cam_override) {
+    if (allow_orbit && opt_cam_override) {
         near_z = std::max(opt_cam_near, 1e-4F);
         far_z = std::max(opt_cam_far, near_z + 1e-3F);
-    } else {
+    } else if (allow_orbit) {
         opt_cam_near = near_z;
         opt_cam_far = far_z;
     }
-    opt_last_near = near_z;
-    opt_last_far = far_z;
+    if (allow_orbit) {
+        opt_last_near = near_z;
+        opt_last_far = far_z;
+    }
 
     mq_renderer_view3d v{};
+    if (camera_entity >= 0 && !has_cam) return;       /* RenderTexture 必须由同节点的有效 Camera3D 驱动 */
     /* 相机 view 由**世界矩阵**派生（plans/22 §6.3）：默认相机 / 平级场景与旧 m4_view(trs) 逐字节一致 */
     if (!has_cam_wm) m4_from_trs(cam_trs, cam_wm);
     float view[16], proj[16];
     m4_view_from_m(cam_wm, view);
-    const float aspect = (float)tw / (float)th;
-    m4_perspective(fov_y * 3.14159265F / 180.0F, aspect, near_z, far_z, proj);
+    const float vx = std::clamp(camera_viewport.x, 0.0F, 1.0F);
+    const float vy = std::clamp(camera_viewport.y, 0.0F, 1.0F);
+    const float vw = std::clamp(camera_viewport.width, 0.0F, 1.0F - vx);
+    const float vh = std::clamp(camera_viewport.height, 0.0F, 1.0F - vy);
+    const float aspect = ((float)tw * std::max(vw, 1e-5F)) /
+                         ((float)th * std::max(vh, 1e-5F));
+    if (projection == 1) m4_orthographic(ortho_height, aspect, near_z, far_z, proj);
+    else m4_perspective(fov_y * 3.14159265F / 180.0F, aspect, near_z, far_z, proj);
     std::memcpy(v.view, view, sizeof view);
     std::memcpy(v.proj, proj, sizeof proj);
     v.eye[0] = cam_wm[12]; v.eye[1] = cam_wm[13]; v.eye[2] = cam_wm[14];
-    v.viewport[0] = 0.0F; v.viewport[1] = 0.0F;
-    v.viewport[2] = (float)tw; v.viewport[3] = (float)th;
+    v.viewport[0] = vx * tw; v.viewport[1] = vy * th;
+    v.viewport[2] = std::max(1.0F, vw * tw); v.viewport[3] = std::max(1.0F, vh * th);
     v.exposure = exposure;
-    v.clear_mode = 1;
+    v.clear_mode = clear_mode;
     v.clear_color[0] = clear.r; v.clear_color[1] = clear.g;
     v.clear_color[2] = clear.b; v.clear_color[3] = clear.a;
-    v.layer_mask = 0x7FFFFFFF;
+    v.layer_mask = camera_mask;
     out_views.push_back(v);
     if (render3d_info && !gltf_frame_info) {
         gltf_frame_info = true;
@@ -5107,6 +5748,7 @@ void Engine::step_frame(bool render_frame) {
         { MQ_TRACY_ZONE_N(anim, "spine.extract"); spine_extract(spine_meshes); }
         { MQ_TRACY_ZONE_N(text, "text.flush"); text_flush(draws); }   // 文本阶段 2：图集纹理 + 最终 UV
     }
+    if (scene) sync_render_textures();                  // 动态组件/尺寸/name 变化统一在帧边界提交
     /* F4 的 2D/UI 开关只隐藏游戏层；随后提取的 ImGui 网格必须保留，否则调试面板也会消失。 */
     if (!opt_2d_enabled) { draws.clear(); spine_meshes.clear(); }
     /* stats：只计游戏每帧逻辑提交量，调试 ImGui 面板自身不计入。
@@ -5151,6 +5793,10 @@ void Engine::step_frame(bool render_frame) {
     // ⑤ 渲染（只读快照 → 渲染不回写，docs/13 §8）
     const int SWpx = (int)(W * ss + 0.5F), SHpx = (int)(H * ss + 0.5F);
     const auto stat_render0 = std::chrono::steady_clock::now();
+    {
+        MQ_TRACY_ZONE_N(render, "render_textures");
+        render_camera_textures(draws, spine_meshes);
+    }
     std::vector<uint8_t> pixels((size_t)TW * SHpx * 4);
     /* 直接呈现（plans/18 M1）：wgpu 交换链直呈，**不经 CPU readback**。
      * 截图/抓帧（--shot / --shot-seq / frames_dir）仍走离屏回读（out 非空）→ CI 像素断言不变。 */
@@ -5827,13 +6473,19 @@ void Engine::nav_step() {
  *（如 khronos 每个模型的 "textures/image0.png"），而 VFS 根挂载点已换成新场景目录 ——
  * 不清会直接命中上一个场景的纹理/网格，表现为“换了场景但贴图还是上一个模型”。 */
 void Engine::clear_asset_caches() {
+    destroy_render_textures();   /* 先擦除 tex_cache 中的虚拟 URI/别名并释放一次，避免下方重复销毁 */
     const size_t nt = tex_cache.size(), nm = mesh_cache.size(), ne = env_tex_cache.size();
+    const size_t nec = env_cube_cache.size();
     const size_t ng = gclips.size(), ns = skeletons.size(), nmo = morph_meshes.size();
     const size_t ngl = gltf_models.size();
     if (rapi && rself) {
         if (rapi->destroy_texture) {
             for (auto& [k, id] : tex_cache) if (id >= 0) rapi->destroy_texture(rself, id);
             for (auto& [k, pair] : env_tex_cache) {
+                if (pair.first >= 0) rapi->destroy_texture(rself, pair.first);
+                if (pair.second >= 0) rapi->destroy_texture(rself, pair.second);
+            }
+            for (auto& [k, pair] : env_cube_cache) {
                 if (pair.first >= 0) rapi->destroy_texture(rself, pair.first);
                 if (pair.second >= 0) rapi->destroy_texture(rself, pair.second);
             }
@@ -5856,6 +6508,7 @@ void Engine::clear_asset_caches() {
     material_cache.clear();
     mesh_cache.clear();
     env_tex_cache.clear();
+    env_cube_cache.clear();
     gltf_models.clear();
     gltf_states.clear();
     /* plans/22 §6.5：glTF 动画/蒙皮/morph 缓存与名字表也按**相对路径/场景**失效 */
@@ -5871,10 +6524,10 @@ void Engine::clear_asset_caches() {
     gltf_warned.clear();
     gltf_frame_info = false;
     gltf_anim_info = false;
-    if (nt + nm + ne + ng + ns + nmo + ngl > 0)
-        std::print("runtime: asset caches cleared on scene switch ({} textures, {} meshes, {} env, "
+    if (nt + nm + ne + nec + ng + ns + nmo + ngl > 0)
+        std::print("runtime: asset caches cleared on scene switch ({} textures, {} meshes, {} env, {} env_cube, "
                    "{} clips, {} skeletons, {} morph, {} gltf)\n",
-                   nt, nm, ne, ng, ns, nmo, ngl);
+                   nt, nm, ne, nec, ng, ns, nmo, ngl);
 }
 
 void Engine::preload_scene_assets() {
@@ -5890,12 +6543,12 @@ void Engine::preload_scene_assets() {
             if (!d) continue;
             if (d->role & MQ_ROLE_SPRITE) {
                 if (const std::string* tp = read_str(d, blob.data(), "texture"); tp && !tp->empty())
-                    load_texture_ref(*tp);
+                    load_texture_ref(scoped_texture_ref(id, *tp));
                 if (const std::string* mp = read_str(d, blob.data(), "material"); mp && !mp->empty()) {
                     scn::SpriteMaterial m{};
                     if (load_material(*mp, m)) {
                         material_cache[*mp] = m;
-                        if (!m.texture.empty()) load_texture_ref(m.texture);
+                        if (!m.texture.empty()) load_texture_ref(scoped_texture_ref(id, m.texture));
                     }
                 }
             }
@@ -5972,7 +6625,10 @@ bool Engine::reload_scene() {
     entity_instance.clear();
     node_events.clear();
     const size_t instance_mark = instances.size();
+    /* 热重载：新世界沿用旧世界的实体 id 水位 —— `Scene::spawn` 的"永不复用"契约
+     * 必须跨场景重建也成立，否则常驻脚本持有的旧 id 会别名到新场景实体。 */
     Scene* fresh = new Scene();
+    fresh->next_id = scene ? scene->next_id : 0;
     scene_chain.clear();
     scene_chain.push_back(scn_vfs_path);
     building_instance = 0;
@@ -5994,9 +6650,12 @@ bool Engine::reload_scene() {
         SceneInstanceRuntime* up = instance_at((int)i);
         if (up && up->state == 1 && up->parent == 0) (void)dispatch_instance_on_start(up->id);
     }
+    setup_render_textures();               // 相机离屏目标/URI 随新世界重建
+    preload_scene_assets();                // 新世界的 Sprite/材质引用重新解析
     setup_3d();                         // 重载可能改变 2D/3D 组成 → 重算 has_3d/cube_mesh
     setup_shader_passes();              // 场景资源 shader pass（.wgsl）随场景重载重建
-    /* 热重载重建了世界：覆盖层 UI 实体属于旧世界 → 让常驻脚本重建（VM 状态保留）。 */
+    /* 热重载重建了世界：全局/覆盖层 UI 实体属于旧世界 → 让常驻脚本重建（VM 状态保留）。 */
+    if (global_bus) mq_script_bus_call3(global_bus, "on_start", 0.0, 0.0, 0.0, nullptr);
     if (overlay_bus) mq_script_bus_call3(overlay_bus, "on_start", 0.0, 0.0, 0.0, nullptr);
     ++reloads;
     mq_obs_event(obs, "runtime", 1, "scene_reloaded");
@@ -6091,6 +6750,126 @@ bool Engine::reload_overlay_script() {
     return true;
 }
 
+/* ---- 全局脚本（scn.Scene.global_script，docs/32 §16.1）----
+ * 与覆盖层同形：独立 VM/总线、跨场景保留、每次装配后 on_start。差别在**语义与顺序**：
+ * 它是游戏级服务（进度/存档/跨场景规则），生命周期在实例之后、覆盖层之前；
+ * 其他 VM 可用 global_emit(event, value) 显式调用它的命名处理器。
+ * 同一路径复用已有 VM（跨场景状态保留）；不同路径 → 换脚本（状态重置）。 */
+void Engine::unload_global() {
+    if (global_bus) { mq_script_bus_destroy(global_bus); global_bus = nullptr; }
+    global_rel.clear();
+    global_abs.clear();
+    global_hash = 0;
+}
+
+bool Engine::ensure_global_script(const std::string& rel) {
+    if (rel.empty()) return false;
+    if (global_bus && rel == global_rel) return true;
+    unload_global();
+    void* d = nullptr; size_t n = 0;
+    const std::string vpath = "/" + rel;
+    if (mq_vfs_read(vfs, vpath.c_str(), &d, &n) != MQ_VFS_OK || !d) {
+        std::print(stderr, "runtime: global script not found '{}'\n", rel);
+        mq_obs_event(obs, "runtime", 3, "global_script_missing");
+        return false;
+    }
+    std::string src((char*)d, n);
+    mq_vfs_free(d);
+    const char* lang = mq_script_lang_for_path(rel.c_str());
+    mq_script_vm* one = mq_script_vm_create_lang(lang);
+    if (!one) {
+        std::print(stderr, "runtime: global script backend '{}' unavailable for '{}'\n", lang, rel);
+        mq_obs_event(obs, "runtime", 3, "global_script_backend");
+        return false;
+    }
+    mq_script_set_rng(one, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+    mq_bind_generated(one, this);
+    /* 顶层代码（默认值/初始化）也在"全局脚本上下文"里执行：node_on 归属 -3，
+     * 且不能误以为自己是某个场景实例。 */
+    SceneInstanceRuntime* prev = active_instance;
+    const bool prev_g = in_global;
+    const bool prev_ov = in_overlay;
+    active_instance = nullptr;
+    in_global = true;
+    in_overlay = false;
+    const int rc = mq_script_eval(one, src.c_str(), rel.c_str());
+    active_instance = prev;
+    in_global = prev_g;
+    in_overlay = prev_ov;
+    if (rc != 0) {
+        char ebuf[512] = { 0 };
+        mq_script_last_error(one, ebuf, (int)sizeof ebuf);
+        std::print(stderr, "runtime: global script eval failed '{}': {}\n", rel, ebuf);
+        mq_script_vm_destroy(one);
+        mq_obs_event(obs, "runtime", 3, "global_script_failed");
+        return false;
+    }
+    global_bus = mq_script_bus_create();
+    if (!global_bus) { mq_script_vm_destroy(one); return false; }
+    mq_script_bus_add(global_bus, one, rel.c_str());
+    global_rel = rel;
+    global_abs = scn_dir.empty() ? rel : (std::filesystem::path(scn_dir) / rel).string();
+    global_hash = mq_vfs_hash(src.data(), src.size());
+    if (watcher) mq_watcher_add(watcher, global_abs.c_str());
+    std::print("runtime: global script '{}' active (persists across scene loads)\n", rel);
+    mq_obs_event(obs, "runtime", 1, "global_script_loaded");
+    return true;
+}
+
+bool Engine::reload_global_script() {
+    if (!global_bus || global_abs.empty() || !scene) return false;
+    std::ifstream f(global_abs, std::ios::binary);
+    if (!f) return false;
+    std::string src((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    if (src.empty()) return false;
+    const uint64_t h = mq_vfs_hash(src.data(), src.size());
+    if (h == global_hash) return false;
+    const char* lang = mq_script_lang_for_path(global_rel.c_str());
+    mq_script_vm* fresh = mq_script_vm_create_lang(lang);
+    if (!fresh) return false;
+    mq_script_set_rng(fresh, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+    mq_bind_generated(fresh, this);
+    SceneInstanceRuntime* prev = active_instance;
+    const bool prev_g = in_global;
+    const bool prev_ov = in_overlay;
+    active_instance = nullptr;
+    in_global = true;
+    in_overlay = false;
+    const int rc = mq_script_eval(fresh, src.c_str(), global_rel.c_str());
+    active_instance = prev;
+    in_global = prev_g;
+    in_overlay = prev_ov;
+    if (rc != 0) {
+        char ebuf[512] = { 0 };
+        std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "eval failed";
+        mq_script_vm_destroy(fresh);
+        std::print(stderr, "runtime: global hot reload failed '{}': {} (旧脚本保留)\n", global_rel, e);
+        return false;
+    }
+    mq_script_bus_swap(global_bus, 0, fresh, global_rel.c_str());
+    global_hash = h;
+    /* 换入后只对新 VM 派发 on_start（重建 HUD / 重新注册事件）；上下文标记为全局脚本，
+     * 否则 on_start 里的 node_on/entity_spawn 会落到错误的作用域。 */
+    SceneInstanceRuntime* prev2 = active_instance;
+    const bool prev2_g = in_global;
+    const bool prev2_ov = in_overlay;
+    active_instance = nullptr;
+    in_global = true;
+    in_overlay = false;
+    const int hs = mq_event_dispatch(fresh, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr);
+    active_instance = prev2;
+    in_global = prev2_g;
+    in_overlay = prev2_ov;
+    if (hs != 0) {
+        char ebuf[512] = { 0 };
+        std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "on_start failed";
+        std::print(stderr, "runtime: global hot reload on_start failed '{}': {}\n", global_rel, e);
+    }
+    std::print("runtime: hot reload global script '{}' ({} bytes)\n", global_rel, src.size());
+    mq_obs_event(obs, "runtime", 1, "global_script_reloaded");
+    return true;
+}
+
 uint32_t Engine::poll_watcher() {
     if (!watcher) return 0;
     struct Ctx { Engine* eng; };
@@ -6099,7 +6878,13 @@ uint32_t Engine::poll_watcher() {
         auto* c = (Ctx*)ud;
         if (kind == MQ_WATCH_REMOVED) return 0;
         const std::string p = path ? path : "";
-        /* 常驻覆盖层脚本优先（它不在 script_paths 里，跨场景保留）。 */
+        /* 全局脚本 / 常驻覆盖层脚本优先（它们不在 script_paths 里，跨场景保留）。 */
+        if (!c->eng->global_abs.empty() && p.size() >= c->eng->global_abs.size() &&
+            p.compare(p.size() - c->eng->global_abs.size(), c->eng->global_abs.size(),
+                      c->eng->global_abs) == 0) {
+            c->eng->reload_global_script();
+            return 0;
+        }
         if (!c->eng->overlay_abs.empty() && p.size() >= c->eng->overlay_abs.size() &&
             p.compare(p.size() - c->eng->overlay_abs.size(), c->eng->overlay_abs.size(),
                       c->eng->overlay_abs) == 0) {
@@ -6602,6 +7387,11 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
                     if (iid < 0) { state = 3; err = 1; }
                     else {
                         SceneInstanceRuntime* ci = eng.instance_at(iid);
+                        /* 静态实例参数（docs/32 §16.2）：构建前写入，子场景 on_start 可见。 */
+                        if (ci) {
+                            if (const std::string* pp = read_str(sid, blob.data(), "params"))
+                                ci->params = *pp;
+                        }
                         if (!ci || !eng.build_instance(*ci, (int)eng.scene_chain.size())) {
                             state = 3; err = (uint16_t)(ci ? 2 : 1);
                             if (ci) { ci->state = 3; ci->error = "instance build failed"; }
@@ -6715,11 +7505,14 @@ int Engine::call_instance_event(SceneInstanceRuntime& inst, const char* name,
     if (!inst.bus || !name) return 0;
     SceneInstanceRuntime* prev = active_instance;
     const bool prev_ov = in_overlay;
+    const bool prev_g = in_global;
     active_instance = &inst;
     in_overlay = false;
+    in_global = false;
     const int hits = mq_script_bus_call3(inst.bus, name, a, b, c, text);
     active_instance = prev;
     in_overlay = prev_ov;
+    in_global = prev_g;
     return hits;
 }
 
@@ -6727,11 +7520,29 @@ int Engine::call_overlay_event(const char* name, double a, double b, double c, c
     if (!overlay_bus || !name) return 0;
     SceneInstanceRuntime* prev = active_instance;
     const bool prev_ov = in_overlay;
+    const bool prev_g = in_global;
     active_instance = nullptr;
     in_overlay = true;
+    in_global = false;
     const int hits = mq_script_bus_call3(overlay_bus, name, a, b, c, text);
     active_instance = prev;
     in_overlay = prev_ov;
+    in_global = prev_g;
+    return hits;
+}
+
+int Engine::call_global_event(const char* name, double a, double b, double c, const char* text) {
+    if (!global_bus || !name) return 0;
+    SceneInstanceRuntime* prev = active_instance;
+    const bool prev_ov = in_overlay;
+    const bool prev_g = in_global;
+    active_instance = nullptr;
+    in_overlay = false;
+    in_global = true;
+    const int hits = mq_script_bus_call3(global_bus, name, a, b, c, text);
+    active_instance = prev;
+    in_overlay = prev_ov;
+    in_global = prev_g;
     return hits;
 }
 
@@ -6875,10 +7686,11 @@ bool Engine::build_instance(SceneInstanceRuntime& inst, int depth) {
 
     /* docs/32 §5.1 D1：嵌套场景只有“行为/节点”生效；世界级字段忽略并**显式警告**（每个源一次）。 */
     if ((nd.width != 320 || nd.height != 240 || nd.seed != 0 || nd.gravity_y != -900.0F ||
-         nd.views != 1 || nd.msaa_samples != 0 || !nd.overlay_script.empty()) &&
+         nd.views != 1 || nd.msaa_samples != 0 || !nd.overlay_script.empty() ||
+         !nd.global_script.empty()) &&
         instance_warned.insert(inst.source).second) {
         std::print(stderr, "runtime: nested scene '{}' ignores world-level fields "
-                           "(width/height/seed/gravity/views/msaa/overlay_script) — one world only\n",
+                           "(width/height/seed/gravity/views/msaa/overlay_script/global_script) — one world only\n",
                    inst.source);
     }
 
@@ -6936,6 +7748,7 @@ int Engine::dispatch_instance_on_destroy(int id) {
 void Engine::gc_all_instance_scripts() {
     for (auto& up : instances)
         if (up && up->bus) mq_script_bus_gc(up->bus);
+    if (global_bus) mq_script_bus_gc(global_bus);
     if (overlay_bus) mq_script_bus_gc(overlay_bus);
 }
 
@@ -6943,6 +7756,7 @@ uint32_t Engine::instance_script_errors() const {
     uint32_t n = 0;
     for (auto& up : instances)
         if (up && up->bus) n += mq_script_bus_error_count(up->bus);
+    if (global_bus) n += mq_script_bus_error_count(global_bus);
     if (overlay_bus) n += mq_script_bus_error_count(overlay_bus);
     return n;
 }
@@ -6969,6 +7783,13 @@ void Engine::destroy_instance_content(SceneInstanceRuntime& inst, bool fire_dest
         entity_instance.erase(eid);
         node_events.erase(eid);
     }
+    /* 动态实例自动建的挂载壳属于**父**实例；卸载子实例后必须一并删除，
+     * 否则每波敌人都会在世界根留下一个空壳（组合机制的资源泄漏，docs/32 §16.4）。 */
+    if (inst.owns_shell && inst.attach_entity >= 0 && scene) {
+        scene->remove(inst.attach_entity);
+        inst.attach_entity = -1;
+    }
+    inst.owns_shell = false;
     inst.roots.clear();
     inst.state = 2;
 }
@@ -6976,6 +7797,7 @@ void Engine::destroy_instance_content(SceneInstanceRuntime& inst, bool fire_dest
 void Engine::reset_instances() {
     active_instance = nullptr;
     in_overlay = false;
+    in_global = false;
     for (auto& up : instances) {
         if (!up) continue;
         if (up->bus) {
@@ -6993,6 +7815,7 @@ void Engine::reset_instances() {
     instance_warned.clear();
     active_instance = nullptr;
     in_overlay = false;
+    in_global = false;
     building_instance = 0;
     building_base.clear();
 }
@@ -7015,6 +7838,7 @@ void Engine::apply_instance_ops() {
                 if (shell >= 0) {
                     entity_instance[shell] = inst->parent >= 0 ? inst->parent : 0;
                     inst->attach_entity = shell;
+                    inst->owns_shell = true;
                     if (Entity* se = scene->at(shell)) {
                         se->parent = -1;
                         se->name = "SceneInstance#" + std::to_string(inst->id);
@@ -7101,6 +7925,8 @@ void Engine::ensure_instance_component(int shell, int instance_id) {
     std::vector<uint8_t>& blob = it->second;
     if (const mq_field_desc* f = mq_reflect_field(sid, "source"))
         *(std::string*)(blob.data() + f->offset) = serialized_instance_source(*inst);
+    if (const mq_field_desc* f = mq_reflect_field(sid, "params"))
+        *(std::string*)(blob.data() + f->offset) = inst->params;
     if (const mq_field_desc* f = mq_reflect_field(sid, "paused"))
         *(bool*)(blob.data() + f->offset) = inst->paused;
     if (const mq_field_desc* f = mq_reflect_field(sid, "active"))
@@ -7129,7 +7955,10 @@ void Engine::rebase_instance_assets(int instance_id) {
                 const mq_field_desc* f = &d->fields[i];
                 if (f->kind != MQ_TK_STRING || !is_instance_asset_field(f->name)) continue;
                 std::string* s = (std::string*)(blob.data() + f->offset);
-                if (s->empty() || is_absolute_asset(*s)) continue;
+                if (s->empty()) continue;
+                static constexpr const char* kRt = "rendertexture://";
+                if (s->rfind(kRt, 0) == 0) continue;  /* 运行期按 consumer instance 解析，不改写持久化文本 */
+                if (is_absolute_asset(*s)) continue;
                 const std::string joined = vfs_join(inst->base, *s);   // "/base/rel"
                 if (joined.size() > 1) *s = joined.substr(1);          // 去前导 '/'（既有代码会补）
             }
@@ -7188,10 +8017,64 @@ bool Engine::reload_instance_script(int instance_id, const std::string& rel) {
     return true;
 }
 
+/* 快照扩展：全局状态块（docs/32 §16.3）。放在实例表**之前**：restore 时先恢复状态，
+ * 再重建实例 VM 并派发 on_start（脚本能读到恢复后的全局状态）。
+ * 旧快照没有该块 → restore_globals 探测 magic 失败，原样跳过。 */
+void Engine::encode_globals(SnapshotWriter& w) const {
+    w.pod((uint32_t)0x4D51474Cu);                  // magic "MQGL"
+    w.pod((uint32_t)1u);                           // 版本
+    w.pod((uint32_t)global_nums.size());
+    for (auto& [k, v] : global_nums) { snapshot_str(w, k); w.pod(v); }
+    w.pod((uint32_t)global_texts.size());
+    for (auto& [k, v] : global_texts) { snapshot_str(w, k); snapshot_str(w, v); }
+}
+
+int Engine::restore_globals(const uint8_t* data, size_t n, size_t& off) {
+    auto need = [&](size_t bytes) { return off + bytes <= n; };
+    uint32_t magic = 0, ver = 0;
+    if (!need(8)) return 0;
+    std::memcpy(&magic, data + off, 4); off += 4;
+    if (magic != 0x4D51474Cu) { off -= 4; return 0; }      // 旧快照：无该块
+    std::memcpy(&ver, data + off, 4); off += 4;
+    if (ver != 1) return 0;
+    auto rstr = [&](std::string& out) {
+        uint32_t len = 0;
+        if (!need(4)) return false;
+        std::memcpy(&len, data + off, 4); off += 4;
+        if (!need(len) || len > (1u << 20)) return false;
+        out.assign((const char*)data + off, len); off += len;
+        return true;
+    };
+    uint32_t nums = 0;
+    if (!need(4)) return 0;
+    std::memcpy(&nums, data + off, 4); off += 4;
+    if (nums > (1u << 20)) return 0;
+    std::map<std::string, double> new_nums;
+    for (uint32_t i = 0; i < nums; ++i) {
+        std::string k; double v = 0;
+        if (!rstr(k) || !need(8)) return 0;
+        std::memcpy(&v, data + off, 8); off += 8;
+        new_nums[std::move(k)] = v;
+    }
+    uint32_t texts = 0;
+    if (!need(4)) return 0;
+    std::memcpy(&texts, data + off, 4); off += 4;
+    if (texts > (1u << 20)) return 0;
+    std::map<std::string, std::string> new_texts;
+    for (uint32_t i = 0; i < texts; ++i) {
+        std::string k, v;
+        if (!rstr(k) || !rstr(v)) return 0;
+        new_texts[std::move(k)] = std::move(v);
+    }
+    global_nums = std::move(new_nums);
+    global_texts = std::move(new_texts);
+    return 1;
+}
+
 /* 快照扩展：实例表 + 实体归属。放在快照末尾（旧快照没有该块 → 跳过）。 */
 void Engine::encode_instances(SnapshotWriter& w) const {
     w.pod((uint32_t)0x4D515349u);                  // magic "MQSI"
-    w.pod((uint32_t)1u);                           // 版本
+    w.pod((uint32_t)2u);                           // 版本（v2 = +params；v1 仍可读）
     uint32_t live = 0;
     for (auto& up : instances) if (up && up->state != 2) ++live;
     w.pod(live);
@@ -7204,8 +8087,10 @@ void Engine::encode_instances(SnapshotWriter& w) const {
         w.pod((uint8_t)(up->paused ? 1 : 0));
         w.pod((uint8_t)(up->active ? 1 : 0));
         w.pod((uint8_t)(up->detached ? 1 : 0));
+        w.pod((uint8_t)(up->owns_shell ? 1 : 0));
         snapshot_str(w, up->source);
         snapshot_str(w, up->base);
+        snapshot_str(w, up->params);
         w.pod((uint32_t)up->roots.size());
         for (int r : up->roots) w.pod((int32_t)r);
         w.pod((uint32_t)up->scripts.size());
@@ -7224,7 +8109,7 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
     std::memcpy(&magic, data + off, 4); off += 4;
     if (magic != 0x4D515349u) { off -= 4; return 0; }
     std::memcpy(&ver, data + off, 4); off += 4;
-    if (ver != 1) return 0;
+    if (ver != 1 && ver != 2) return 0;                 // v1 = 无 params/owns_shell（旧快照）
     uint32_t count = 0;
     if (!need(4)) return 0;
     std::memcpy(&count, data + off, 4); off += 4;
@@ -7236,13 +8121,17 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
     for (uint32_t i = 0; i < count; ++i) {
         auto up = std::make_unique<SceneInstanceRuntime>();
         int32_t id = -1, parent = -1, attach = -1, state = 1;
-        uint8_t paused = 0, active = 1, detached = 0;
+        uint8_t paused = 0, active = 1, detached = 0, owns_shell = 0;
         if (!need(4 * 4 + 3)) return 0;
         std::memcpy(&id, data + off, 4); off += 4;
         std::memcpy(&parent, data + off, 4); off += 4;
         std::memcpy(&attach, data + off, 4); off += 4;
         std::memcpy(&state, data + off, 4); off += 4;
         paused = data[off++]; active = data[off++]; detached = data[off++];
+        if (ver >= 2) {
+            if (!need(1)) return 0;
+            owns_shell = data[off++];
+        }
         auto rstr = [&](std::string& out) {
             uint32_t len = 0;
             if (!need(4)) return false;
@@ -7252,6 +8141,7 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
             return true;
         };
         if (!rstr(up->source) || !rstr(up->base)) return 0;
+        if (ver >= 2 && !rstr(up->params)) return 0;
         uint32_t rn = 0;
         if (!need(4)) return 0;
         std::memcpy(&rn, data + off, 4); off += 4;
@@ -7273,6 +8163,7 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
         }
         up->id = id; up->parent = parent; up->attach_entity = attach;
         up->state = state; up->paused = paused != 0; up->active = active != 0; up->detached = detached != 0;
+        up->owns_shell = owns_shell != 0;
         recs.push_back(std::move(up));
     }
     std::vector<std::pair<int, int>> owners;
@@ -7300,7 +8191,7 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
         SceneInstanceRuntime* cur = instance_at(rec->id);
         if (!cur || cur->state == 2) { same = false; break; }
         if (cur->parent != rec->parent || cur->attach_entity != rec->attach_entity ||
-            cur->source != rec->source || cur->base != rec->base ||
+            cur->source != rec->source || cur->base != rec->base || cur->params != rec->params ||
             cur->scripts != rec->scripts || cur->roots != rec->roots) { same = false; break; }
     }
     if (same) {
@@ -7312,6 +8203,7 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
             cur->detached = rec->detached;
             cur->state = rec->state;
             cur->roots = rec->roots;
+            cur->owns_shell = rec->owns_shell;
         }
         if (same) {
             entity_instance.clear();
@@ -7354,6 +8246,11 @@ uint64_t Engine::instance_checksum() const {
         mix((uint64_t)(uint32_t)up->state);
         mix(up->paused ? 1u : 0u);
         mix(up->active ? 1u : 0u);
+        /* 参数是实例组成的一部分（静态/动态都算）；空串不混入 → 老场景 checksum 零变化。 */
+        if (!up->params.empty()) {
+            mix(0x9E3779B97F4A7C15ull);
+            for (unsigned char c : up->params) mix((uint64_t)c);
+        }
         for (int r : up->roots) mix((uint64_t)(uint32_t)r);
     }
     std::vector<std::pair<int, int>> owners(entity_instance.begin(), entity_instance.end());
@@ -7401,6 +8298,7 @@ void Scene::encode(Engine& eng, SnapshotWriter& w) {
 
 size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
     this->eng = &eng;
+    const int id_floor = next_id;      // 回滚也不回收已发放的 id（单调契约）
     size_t pos = 0;
     auto take = [&](void* dst, size_t bytes) -> bool {
         if (pos + bytes > n) return false;
@@ -7454,6 +8352,7 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
         ents[k] = std::move(e);
         if (k + 1 > next_id) next_id = k + 1;
     }
+    if (id_floor > next_id) next_id = id_floor;
     return pos;
 }
 
@@ -7716,7 +8615,8 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 }
             int tex = -1;
             if (!texref.empty()) {
-                auto ti = eng.tex_cache.find(texref);
+                const std::string resolved = eng.scoped_texture_ref(idx, texref);
+                auto ti = eng.tex_cache.find(resolved);
                 tex = ti == eng.tex_cache.end() ? -1 : ti->second;
             }
             mq_renderer_item it{};
@@ -7733,6 +8633,10 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
             it.r = r; it.g = g; it.b = b;
             it.a = node_opacity;
             it.texture = tex;
+            if (tex >= 0) {
+                for (const auto& rt : eng.render_textures)
+                    if (rt.handle == tex) { it.filter = rt.filter == 0 ? 1 : 0; break; }
+            }
             it.layer = 0;                                        // 世界层
             it.z = (int)idx;                                     // 稳定序（按实体 id，禁指针序）
             out.push_back(it);
@@ -7857,11 +8761,13 @@ int dispatch_event(Engine& eng, int kind, double a, double b, double c, const ch
 
     if (kind == MQ_EVENT_ON_START) {
         hits += eng.dispatch_instance_on_start(0);
+        hits += eng.call_global_event(name, a, b, c, text);
         hits += eng.call_overlay_event(name, a, b, c, text);
         return hits;
     }
     if (kind == MQ_EVENT_ON_DESTROY) {
         hits += eng.dispatch_instance_on_destroy(0);
+        hits += eng.call_global_event(name, a, b, c, text);
         hits += eng.call_overlay_event(name, a, b, c, text);
         return hits;
     }
@@ -7871,6 +8777,7 @@ int dispatch_event(Engine& eng, int kind, double a, double b, double c, const ch
         for (int id : order)
             if (SceneInstanceRuntime* inst = eng.instance_at(id))
                 hits += eng.call_instance_event(*inst, name, a, b, c, text);
+        hits += eng.call_global_event(name, a, b, c, text);   // 全局服务先于覆盖层（先算状态，再画 HUD）
         hits += eng.call_overlay_event(name, a, b, c, text);
         return hits;
     }
@@ -7895,6 +8802,7 @@ int dispatch_event(Engine& eng, int kind, double a, double b, double c, const ch
         if (!inst || inst->state != 1 || !inst->active) continue;
         hits += eng.call_instance_event(*inst, name, a, b, c, text);
     }
+    hits += eng.call_global_event(name, a, b, c, text);
     hits += eng.call_overlay_event(name, a, b, c, text);
     return hits;
 }
@@ -10230,8 +11138,50 @@ void  log(void*, const char* msg) { std::print("[game] {}\n", msg ? msg : ""); }
 float cfg(void* ctx, const char* path) { return (float)cfg_field((Engine*)ctx, path); }
 float load_texture(void* ctx, const char* path) {
     auto* e = (Engine*)ctx;
-    std::string p = (path && path[0] == '/') ? path : ("/" + std::string(path ? path : ""));
+    std::string p = path ? path : "";
+    static constexpr const char* kRt = "rendertexture://";
+    if (p.rfind(kRt, 0) == 0) {
+        const std::string tail = p.substr(std::strlen(kRt));
+        if (tail.find('/') == std::string::npos) {
+            const int owner = e->active_instance ? e->active_instance->id : 0;
+            p = std::string(kRt) + std::to_string(owner) + "/" + tail;
+        }
+        return (float)e->load_texture(p);
+    }
+    if (p.empty() || p[0] != '/') p.insert(p.begin(), '/');
     return (float)e->load_texture(p);
+}
+const char* camera_texture(void* ctx, float camera) {
+    auto* e = (Engine*)ctx;
+    const int id = (int)camera;
+    if (const Engine::RenderTextureState* rt = e->render_texture_for(id)) {
+        e->script_ret = rt->uri;
+        return e->script_ret.c_str();
+    }
+    const mq_type_desc* d = nullptr;
+    auto* b = comp_by_name(*e, id, "render.RenderTexture", &d);
+    Entity* ent = e->scene ? e->scene->at(id) : nullptr;
+    if (!b || !d || !ent) { e->script_ret.clear(); return e->script_ret.c_str(); }
+    const std::string* configured = read_str(d, b->data(), "name");
+    const std::string name = configured && !configured->empty() ? *configured
+                                                                 : (!ent->name.empty() ? ent->name : "camera-" + std::to_string(id));
+    const int owner = e->entity_instance.count(id) ? e->entity_instance[id] : 0;
+    e->script_ret = "rendertexture://" + std::to_string(owner) + "/" + name;
+    return e->script_ret.c_str();
+}
+float camera_update(void* ctx, float camera) {
+    auto* e = (Engine*)ctx;
+    const int id = (int)camera;
+    if (Engine::RenderTextureState* rt = e->render_texture_for(id)) { rt->dirty = true; return 1.0F; }
+    return comp_by_name(*e, id, "render.RenderTexture", nullptr) ? 1.0F : 0.0F;
+}
+float camera_capture(void* ctx, float camera, const char* path) {
+    auto* e = (Engine*)ctx;
+    const int id = (int)camera;
+    if (!path || !*path || !comp_by_name(*e, id, "render.RenderTexture", nullptr)) return 0.0F;
+    if (Engine::RenderTextureState* rt = e->render_texture_for(id)) rt->dirty = true;
+    e->camera_captures.push_back({ id, path });
+    return 1.0F;
 }
 float entity_spawn(void* ctx) {
     auto* eng = (Engine*)ctx;
@@ -10697,7 +11647,8 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
     if (!blob || !d) return 0.0F;
     const mq_field_desc* f = mq_reflect_field(d, field ? field : "");
     if (!f || f->kind != MQ_TK_STRING) return 0.0F;
-    *(std::string*)(blob->data() + f->offset) = value ? value : "";
+    std::string assigned = value ? value : "";
+    *(std::string*)(blob->data() + f->offset) = assigned;
     /* 改了资源引用就**当场解析并缓存**。
      * 为什么必须在这里做：渲染提取（Scene::extract）是**只读**的（docs/13 §8 / docs/15 §1：
      * 不得触发加载），它只查 material_cache / tex_cache。装配期会预解析场景自带实体的资源，
@@ -10705,16 +11656,16 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
      *（实测：动态生成的水管全是 sprite 默认蓝色，而不是贴图的绿色）。
      * 所以"赋值即解析"是这条路径上唯一能补齐的时机。 */
     if (d->role & MQ_ROLE_SPRITE) {
-        const std::string ref = value ? value : "";
+        const std::string& ref = assigned;
         if (!ref.empty()) {
             if (f == mq_reflect_field(d, "material")) {
                 scn::SpriteMaterial m{};
                 if (eng->load_material(ref, m)) {
                     eng->material_cache[ref] = m;
-                    if (!m.texture.empty()) eng->load_texture_ref(m.texture);
+                    if (!m.texture.empty()) eng->load_texture_ref(eng->scoped_texture_ref((int)id, m.texture));
                 }
             } else if (f == mq_reflect_field(d, "texture")) {
-                eng->load_texture_ref(ref);
+                eng->load_texture_ref(eng->scoped_texture_ref((int)id, ref));
             }
         }
     }
@@ -10725,9 +11676,12 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
 float node_on(void* ctx, float id, const char* event, const char* handler) {
     auto* eng = (Engine*)ctx;
     if (!eng->scene || !eng->scene->at((int)id) || !event || !handler) return 0.0F;
-    /* 归属：常驻覆盖层 = -2（可监听任意节点，保持旧能力）；否则 = 当前脚本所属实例。
+    /* 归属：全局脚本 = -3、常驻覆盖层 = -2（两者都可监听任意节点，保持旧能力）；
+     * 否则 = 当前脚本所属实例。
      * 子实例脚本只能注册自己子树内的节点（docs/32 §4.2：越界显式拒绝，不静默生效）。 */
-    const int owner = eng->in_overlay ? -2 : (eng->active_instance ? eng->active_instance->id : 0);
+    const int owner = eng->in_global ? -3
+                      : eng->in_overlay ? -2
+                      : (eng->active_instance ? eng->active_instance->id : 0);
     if (owner > 0 && !eng->entity_in_instance_subtree(owner, (int)id)) {
         std::print(stderr, "runtime: node_on rejected — entity {} is outside scene instance {} scope\n",
                    (int)id, owner);
@@ -10752,7 +11706,7 @@ float node_emit(void* ctx, float id, const char* event) { return node_emit_numbe
 
 float node_emit_number(void* ctx, float id, const char* event, float value) {
     auto* eng = (Engine*)ctx;
-    if ((!eng->bus && !eng->overlay_bus && eng->instances.empty()) || !event) return 0.0F;
+    if ((!eng->bus && !eng->overlay_bus && !eng->global_bus && eng->instances.empty()) || !event) return 0.0F;
     const std::string ev = event;
     int hits = 0;
     /* 目标 → 祖先（冒泡，跨实例边界不截断）；处理器只在其注册者所属实例的 bus 里调用。
@@ -10762,7 +11716,9 @@ float node_emit_number(void* ctx, float id, const char* event, float value) {
         if (it != eng->node_events.end()) {
             for (const Engine::NodeHandler& h : it->second) {
                 if (h.event != ev) continue;
-                if (h.instance == -2) {
+                if (h.instance == -3) {
+                    eng->call_global_event(h.handler.c_str(), (double)cur, (double)value, 0.0, nullptr);
+                } else if (h.instance == -2) {
                     eng->call_overlay_event(h.handler.c_str(), (double)cur, (double)value, 0.0, nullptr);
                 } else if (SceneInstanceRuntime* ci = eng->instance_at(h.instance)) {
                     eng->call_instance_event(*ci, h.handler.c_str(), (double)cur, (double)value, 0.0, nullptr);
@@ -11545,7 +12501,7 @@ const char* scene_dir(void* ctx) { return ((Engine*)ctx)->scn_dir.c_str(); }
 const char* scene_path(void* ctx) { return ((Engine*)ctx)->scn_full_path.c_str(); }
 
 /* ---- 场景实例（docs/32 §7.1）：句柄立即分配，构建/卸载在帧边界（apply_instance_ops） ---- */
-float scene_instantiate(void* ctx, float parent, const char* path) {
+float scene_instantiate(void* ctx, float parent, const char* path, const char* params) {
     auto* eng = (Engine*)ctx;
     if (!path || !*path) { eng->scene_last_error = "scene_instantiate: missing path"; return -1.0F; }
     const int attach = (int)parent;
@@ -11566,6 +12522,9 @@ float scene_instantiate(void* ctx, float parent, const char* path) {
     }
     const int id = eng->create_instance(parent_inst, attach, vfs);
     if (id < 0) return -1.0F;
+    /* 参数在**入队时**就写入实例记录：帧边界构建 → 子场景 on_start 一定能读到
+     * （docs/32 §16.2；省略第三参数时 params 为空串）。 */
+    if (SceneInstanceRuntime* inst = eng->instance_at(id); inst && params) inst->params = params;
     eng->instance_ops.push_back({ 0, id, attach, vfs });
     std::print("runtime: scene_instantiate queued #{} '{}' under entity {}\n", id, vfs, attach);
     return (float)id;
@@ -11673,6 +12632,89 @@ float scene_emit(void* ctx, float instance, const char* event, float value) {
     return (float)eng->call_instance_event(*inst, event, 0.0, (double)value, 0.0, nullptr);
 }
 const char* scene_last_error(void* ctx) { return ((Engine*)ctx)->scene_last_error.c_str(); }
+
+/* ---- 实例参数（docs/32 §16.2）：父场景 → 子场景的配置 ---- */
+const char* scene_self_params(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    return eng->active_instance ? eng->active_instance->params.c_str() : "";
+}
+const char* scene_instance_params(void* ctx, float instance) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    return inst ? inst->params.c_str() : "";
+}
+float scene_set_instance_params(void* ctx, float instance, const char* params) {
+    auto* eng = (Engine*)ctx;
+    SceneInstanceRuntime* inst = eng->instance_at((int)instance);
+    if (!inst || !params) return 0.0F;
+    inst->params = params;
+    if (inst->attach_entity >= 0) eng->ensure_instance_component(inst->attach_entity, inst->id);
+    return 1.0F;
+}
+
+/* ---- 全局脚本 / 全局状态（docs/32 §16）---- */
+float global_emit(void* ctx, const char* event, float value) {
+    auto* eng = (Engine*)ctx;
+    if (!event || !*event) return 0.0F;
+    return (float)eng->call_global_event(event, 0.0, (double)value, 0.0, nullptr);
+}
+float global_set(void* ctx, const char* name, float value) {
+    auto* eng = (Engine*)ctx;
+    if (!name || !*name) return 0.0F;
+    eng->global_nums[name] = (double)value;
+    return 1.0F;
+}
+float global_get(void* ctx, const char* name) {
+    auto* eng = (Engine*)ctx;
+    if (!name) return 0.0F;
+    auto it = eng->global_nums.find(name);
+    return it == eng->global_nums.end() ? 0.0F : (float)it->second;
+}
+float global_set_text(void* ctx, const char* name, const char* value) {
+    auto* eng = (Engine*)ctx;
+    if (!name || !*name) return 0.0F;
+    eng->global_texts[name] = value ? value : "";
+    return 1.0F;
+}
+const char* global_get_text(void* ctx, const char* name) {
+    auto* eng = (Engine*)ctx;
+    if (!name) return "";
+    auto it = eng->global_texts.find(name);
+    return it == eng->global_texts.end() ? "" : it->second.c_str();
+}
+float global_has(void* ctx, const char* name) {
+    auto* eng = (Engine*)ctx;
+    if (!name) return 0.0F;
+    return (eng->global_nums.count(name) || eng->global_texts.count(name)) ? 1.0F : 0.0F;
+}
+float global_remove(void* ctx, const char* name) {
+    auto* eng = (Engine*)ctx;
+    if (!name) return 0.0F;
+    const bool had = eng->global_nums.erase(name) + eng->global_texts.erase(name) > 0;
+    return had ? 1.0F : 0.0F;
+}
+void global_clear(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    eng->global_nums.clear();
+    eng->global_texts.clear();
+}
+const char* global_keys(void* ctx) {
+    auto* eng = (Engine*)ctx;
+    std::vector<std::string> keys;
+    keys.reserve(eng->global_nums.size() + eng->global_texts.size());
+    for (auto& [k, v] : eng->global_nums) keys.push_back(k);
+    for (auto& [k, v] : eng->global_texts)
+        if (!eng->global_nums.count(k)) keys.push_back(k);
+    std::sort(keys.begin(), keys.end());
+    eng->global_ret.clear();
+    eng->global_ret += '[';
+    for (size_t i = 0; i < keys.size(); ++i) {
+        if (i) eng->global_ret += ',';
+        write_json_string_pub(eng->global_ret, keys[i]);
+    }
+    eng->global_ret += ']';
+    return eng->global_ret.c_str();
+}
 
 
 } // namespace host
@@ -12296,6 +13338,75 @@ extern "C" int mq_control_Capture_screen(void* u, const mq_json* params, char* o
     return 0;
 }
 
+/* Capture.camera：按需回读指定相机的最新 RenderTexture，并以 PPM/base64 分块返回。 */
+extern "C" int mq_control_Capture_camera(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* eng = (Engine*)u;
+    const int camera = (int)mq_json_num(mq_json_get(params, "camera"), -1);
+    Engine::RenderTextureState* rt = eng->render_texture_for(camera);
+    if (!rt || !rt->ready) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"camera texture not ready\"}"); return 0; }
+    const size_t offset = (size_t)mq_json_num(mq_json_get(params, "offset"), 0);
+    size_t max_bytes = (size_t)mq_json_num(mq_json_get(params, "max"), 24 * 1024);
+    if (max_bytes == 0 || max_bytes > (1u << 20)) max_bytes = 24 * 1024;
+    if (offset > 0 && rt->capture_pixels.empty()) {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"snapshot expired; restart at offset 0\"}");
+        return 0;
+    }
+    if (!eng->read_camera_texture(*rt, offset == 0)) {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"readback failed\"}"); return 0;
+    }
+    const int src_w = rt->width, src_h = rt->height;
+    const int max_dim = (int)mq_json_num(mq_json_get(params, "max_dim"), 0);
+    int w = src_w, h = src_h;
+    std::vector<uint8_t> small;
+    const uint8_t* src = rt->capture_pixels.data();
+    if (max_dim > 0 && (src_w > max_dim || src_h > max_dim)) {
+        const int f = src_w > src_h ? (src_w + max_dim - 1) / max_dim : (src_h + max_dim - 1) / max_dim;
+        w = std::max(1, src_w / f); h = std::max(1, src_h / f);
+        small.assign((size_t)w * h * 4u, 0);
+        for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
+            uint32_t acc[4] = { 0, 0, 0, 0 }, n = 0;
+            for (int dy = 0; dy < f; ++dy) for (int dx = 0; dx < f; ++dx) {
+                const int sx = x * f + dx, sy = y * f + dy;
+                if (sx >= src_w || sy >= src_h) continue;
+                const uint8_t* p = src + ((size_t)sy * src_w + sx) * 4u;
+                for (int c = 0; c < 4; ++c) acc[c] += p[c];
+                ++n;
+            }
+            for (int c = 0; c < 4; ++c) small[((size_t)y * w + x) * 4u + c] = (uint8_t)(acc[c] / std::max(1u, n));
+        }
+        src = small.data();
+    }
+    char header[48];
+    const int hlen = std::snprintf(header, sizeof header, "P6\n%d %d\n255\n", w, h);
+    const size_t total = (size_t)hlen + (size_t)w * h * 3u;
+    auto byte_at = [&](size_t i) -> uint8_t {
+        if (i < (size_t)hlen) return (uint8_t)header[i];
+        const size_t p = i - (size_t)hlen, px = p / 3u, ch = p % 3u;
+        return src[px * 4u + ch];
+    };
+    const size_t take = std::min(max_bytes, offset < total ? total - offset : 0);
+    std::string raw; raw.reserve(take);
+    for (size_t i = 0; i < take; ++i) raw += (char)byte_at(offset + i);
+    const std::string b64 = b64_encode((const uint8_t*)raw.data(), raw.size());
+    std::snprintf(out, cap, "{\"ok\":true,\"camera\":%d,\"w\":%d,\"h\":%d,\"frame\":%llu,"
+                            "\"total\":%zu,\"offset\":%zu,\"size\":%zu,\"data\":\"%s\"}",
+                  camera, w, h, (unsigned long long)rt->capture_frame, total, offset, take, b64.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Capture_camera_save(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* eng = (Engine*)u;
+    const int camera = (int)mq_json_num(mq_json_get(params, "camera"), -1);
+    const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
+    if (!path || !*path || !comp_by_name(*eng, camera, "render.RenderTexture", nullptr)) {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"bad camera/path\"}"); return 0;
+    }
+    if (Engine::RenderTextureState* rt = eng->render_texture_for(camera)) rt->dirty = true;
+    eng->camera_captures.push_back({ camera, path });
+    std::snprintf(out, cap, "{\"ok\":true,\"deferred\":true,\"camera\":%d}", camera);
+    return 0;
+}
+
 /* Scene.emit：宿主/工具 → 脚本事件（与脚本内 node_emit_number 同一路径）。
  * 多语言下按**处理器名**路由：哪个 VM 注册了该处理器就由谁处理（跨语言/宿主→脚本共用一条路）。 */
 extern "C" int mq_control_Scene_emit(void* u, const mq_json* params, char* out, size_t cap) {
@@ -12878,9 +13989,10 @@ extern "C" int mq_control_Scene_instance_info(void* u, const mq_json* params, ch
 extern "C" int mq_control_Scene_instantiate(void* u, const mq_json* params, char* out, size_t cap) {
     auto* e = (Engine*)u;
     const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
+    const char* iparams = mq_json_str(mq_json_get(params, "params"), nullptr);
     const int parent = (int)mq_json_num(mq_json_get(params, "parent"), -1);
     if (!path || !*path) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing path\"}"); return 0; }
-    const float id = host::scene_instantiate(e, (float)parent, path);
+    const float id = host::scene_instantiate(e, (float)parent, path, iparams);
     if (id < 0) {
         std::snprintf(out, cap, "{\"ok\":false,\"error\":\"%s\"}", e->scene_last_error.c_str());
         return 0;
@@ -13578,6 +14690,7 @@ void Engine::rebuild_render_target() {
         v.zoom = ss;                          /* 世界 → 目标：按倍率放大（设计分辨率 × ss） */
     }
     for (auto& [idx, e] : scene->ents) {                   // 场景声明的 Camera 覆盖视图相机
+        if (comp_by_name(*this, idx, "render.RenderTexture", nullptr)) continue;
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (!d || !(d->role & MQ_ROLE_CAMERA)) continue;
@@ -13692,7 +14805,11 @@ bool Engine::load_scene_into(const std::string& scn_path) {
         last_listener_master = 1.0F;
     }
     director_paused = false;
+    /* 实体 id 水位跨场景保留：旧场景的 id 永不复用（常驻脚本/快照引用的陈旧 id 必须
+     * 保持无效，绝不能别名到新场景的同号实体）。 */
+    const int preserved_entity_id = scene ? scene->next_id : 0;
     scene_store = Scene();
+    scene_store.next_id = preserved_entity_id;
     scene = &scene_store;
     scn_vfs_path = scn_vfs;              // 根实例 source（docs/32）
     scn_full_path = scn_path;
@@ -13827,6 +14944,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             std::print("runtime: hot reload watching {} file(s)\n", mq_watcher_count(watcher));
         }
     }
+    setup_render_textures();                       /* 相机离屏目标先分配：消费者预载时 URI 已可解析 */
     preload_scene_assets();
     setup_3d();                                 /* 扫描 render.* 3D 组件 + 上传内建 cube（2D↔3D 切场景需重算） */
     setup_shader_passes();                      /* 场景资源全屏 shader（.wgsl，相对场景目录；docs/13） */
@@ -13842,18 +14960,23 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             if (platform) mq_platform_set_safe_area(platform, l, t, r, b);
         }
     }
-    /* 常驻覆盖层脚本：本场景声明了就激活/切换（同一路径复用已有 VM → 状态跨场景保留）；
-     * 未声明则保持现有覆盖层 —— director.loadScene 切 demo 时外壳/导航不消失。 */
+    /* 全局脚本 / 常驻覆盖层脚本：本场景声明了就激活/切换（同一路径复用已有 VM → 状态跨场景保留）；
+     * 未声明则保持现有实例 —— director.loadScene 切场景时游戏服务/外壳不消失。 */
+    if (!scene->desc.global_script.empty()) (void)ensure_global_script(scene->desc.global_script);
     if (!scene->desc.overlay_script.empty()) (void)ensure_overlay_script(scene->desc.overlay_script);
     physics_components_setup();
-    /* 生命周期：on_start **后序**（子实例先 ready，根场景最后；overlay 更后）——docs/32 §3.3。 */
+    /* 生命周期：on_start **后序**（子实例先 ready，根场景最后）；然后全局脚本，最后覆盖层
+     * —— 全局服务在 HUD 之前拿到本场景状态（docs/32 §16.1）。 */
     const uint32_t err0 = instance_script_errors();
     (void)dispatch_instance_on_start(0);
+    (void)call_global_event("on_start", 0.0, 0.0, 0.0, nullptr);
     (void)call_overlay_event("on_start", 0.0, 0.0, 0.0, nullptr);
     {
         char ebuf[512] = { 0 };
         if (instance_script_errors() != err0) {
             if (bus) mq_script_bus_last_error(bus, ebuf, (int)sizeof ebuf);
+            if (!ebuf[0] && global_bus)
+                mq_script_bus_last_error(global_bus, ebuf, (int)sizeof ebuf);
             if (!ebuf[0] && overlay_bus)
                 mq_script_bus_last_error(overlay_bus, ebuf, (int)sizeof ebuf);
             if (!ebuf[0])
@@ -13879,6 +15002,7 @@ void Engine::teardown() {
     /* 释放顺序：先释放"依赖 reflect 的资源"（clips 的字符串成员要经反射析构），再销毁 reflect。 */
     if (control) { mq_control_destroy(control); control = nullptr; }
     reset_instances();                                                      // 实例树 + 全部主脚本 VM
+    unload_global();                                                        // 全局脚本 VM
     unload_overlay();                                                       // 常驻覆盖层 VM
     if (obs) { mq_obs_destroy(obs); obs = nullptr; }
     if (reflect) {
@@ -13902,6 +15026,7 @@ void Engine::teardown() {
     mq_physics_destroy(physics); physics = nullptr;
     spine_release();                     // Spine 实例/骨架数据（纹理归 tex_cache → 随渲染器销毁）
     mq_input_destroy(input); input = nullptr;
+    destroy_render_textures();           // 相机离屏目标（公共纹理句柄）
     destroy_shader_passes();             // 场景资源 shader pass（句柄归渲染器，先于销毁渲染器释放）
     audio_teardown();                    // 先停设备/join 回调，再拆平台（SDL）
     if (rapi && rself) { rapi->destroy(rself); rself = nullptr; }

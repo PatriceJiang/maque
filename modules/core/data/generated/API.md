@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **304** 个 · 控制面方法 **55** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
+统计：脚本 API **319** 个 · 控制面方法 **57** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -50,6 +50,9 @@
 | `log` | msg: string | void | ctx |
 | `cfg` | path: string | float | ctx |
 | `load_texture` | path: string | float | ctx |
+| `camera_texture` | camera: float | string | ctx · 返回 rendertexture://<scene-instance-id>/<name> 规范 URI；可直接赋给 Sprite/材质的 texture 字段 |
+| `camera_update` | camera: float | float | ctx · 把 OnDemand RenderTexture 标脏；下一次渲染帧更新 |
+| `camera_capture` | camera: float, path: string | float | ctx · 请求相机截图（.png 为 PNG，其余为 PPM）；强制更新 RenderTexture 后在本帧末落盘 |
 | `entity_spawn` | — | float | ctx · 新建节点（返回单调 id）；entity_* 是 node_* 的**扁平别名**（按 id 直接寻址，同一模型） |
 | `entity_set_pos` | id: float, x: float, y: float | void | ctx · 写 Transform 组件（世界坐标）；不要直接改 Entity::world_x/y（那是每帧展平的派生缓存） |
 | `entity_x` | id: float | float | ctx · 读世界坐标（派生缓存；改位置用 entity_set_pos / node_set_position） |
@@ -154,7 +157,7 @@
 | `scene_title` | — | string | ctx · 当前场景 title（scn.Scene.title） |
 | `scene_dir` | — | string | ctx · 当前场景所在目录（相对/绝对，取决于启动参数） |
 | `scene_path` | — | string | ctx · 当前场景路径（启动/切场景时给出的原始路径） |
-| `scene_instantiate` | parent: float, path: string | float | ctx · 实例化一个 .scn（parent=-1 挂到世界根）；返回实例句柄（-1=失败） |
+| `scene_instantiate` | parent: float, path: string, params: string | float | ctx · 实例化一个 .scn（parent=-1 挂到世界根；params=JSON 参数，可省略）；返回实例句柄（-1=失败） |
 | `scene_unload` | instance: float | float | ctx · 卸载实例（帧边界；先后序 on_destroy 再销毁子树/VM） |
 | `scene_reload` | instance: float | float | ctx |
 | `scene_set_instance_paused` | instance: float, paused: float | void | ctx |
@@ -169,8 +172,20 @@
 | `scene_instance_of` | entity: float | float | ctx · 实体所属实例（-1=未归属/无此实体） |
 | `scene_self` | — | float | ctx |
 | `scene_self_root` | — | float | ctx |
+| `scene_self_params` | — | string | ctx · 当前实例的参数字符串（JSON；无 → ""）—— 子场景 on_start 读取父场景传入的配置 |
+| `scene_instance_params` | instance: float | string | ctx · 任意实例的参数字符串（只读） |
+| `scene_set_instance_params` | instance: float, params: string | float | ctx · 改写实例参数（在帧边界构建前设置 → 子场景 on_start 可见；已构建实例需 scene_reload 生效） |
 | `scene_emit` | instance: float, event: string, value: float | float | ctx |
 | `scene_last_error` | — | string | ctx |
+| `global_emit` | event: string, value: float | float | ctx · 调用全局脚本中名为 event 的处理器（跨场景服务入口；返回命中数） |
+| `global_set` | name: string, value: float | float | ctx |
+| `global_get` | name: string | float | ctx · 读全局数值（不存在 → 0） |
+| `global_set_text` | name: string, value: string | float | ctx |
+| `global_get_text` | name: string | string | ctx · 读全局文本（不存在 → ""） |
+| `global_has` | name: string | float | ctx |
+| `global_remove` | name: string | float | ctx · 删除一个键（数值与文本都删）；返回 1=原本存在 |
+| `global_clear` | — | void | ctx · 清空全部全局状态（重开游戏/测试用） |
+| `global_keys` | — | string | ctx · JSON 数组：全部键（字典序，确定性） |
 | `tween_start` | id: float, field: string, to: float, duration: float, easing: float | float | ctx |
 | `tween_stop` | id: float | float | ctx |
 | `tween_count` | id: float | float | ctx |
@@ -350,6 +365,8 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Font.glyphs` | index: float, size: float | number, number |
 | `Font.atlas` | index: float, size: float, offset: float, max: float | number, number, number, number |
 | `Capture.screen` | offset: float, max: float, max_dim: float | number, number, number |
+| `Capture.camera` | camera: float, offset: float, max: float, max_dim: float | number, number, number, number |
+| `Capture.camera_save` | camera: float, path: string | number, string |
 | `Types.describe` | — | — |
 | `Scene.info` | — | — |
 | `Scene.entities` | — | — |
@@ -363,7 +380,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Scene.save` | path: string | string |
 | `Scene.instances` | — | — |
 | `Scene.instance_info` | instance: float | number |
-| `Scene.instantiate` | parent: float, path: string, strict: bool | number, string, boolean |
+| `Scene.instantiate` | parent: float, path: string, params: string, strict: bool | number, string, string, boolean |
 | `Scene.unload_instance` | instance: float | number |
 | `Scene.reload_instance` | instance: float | number |
 | `Scene.bake_instances` | dry_run: bool | boolean |
@@ -443,6 +460,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `post`：exposure: float, tonemap: int32_t
 - `shader_pass`：shader: int32_t, time: float, frame: float, mouse: float[4]
 - `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t, render_mode: int32_t
+- `render_texture_desc`：struct_size: uint32_t, width: int32_t, height: int32_t, pixel_format: int32_t, filter: int32_t, wrap_u: int32_t, wrap_v: int32_t, clear_color: float[4]
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -465,6 +483,10 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `destroy_shader_pass` | self: self, id: int32_t | void |
 | `update_mesh` | self: self, id: int32_t, vertices: const void*, vertex_bytes: uint64_t | int32_t |
 | `resource_bytes` | self: self | uint64_t |
+| `create_render_texture` | self: self, desc: const mq_renderer_render_texture_desc*, out_id: int32_t* | int32_t |
+| `configure_render_texture` | self: self, id: int32_t, desc: const mq_renderer_render_texture_desc* | int32_t |
+| `render_to_texture` | self: self, id: int32_t, frame: const mq_renderer_frame3d* | int32_t |
+| `read_texture` | self: self, id: int32_t, out: uint8_t*, out_size: uint32_t | int32_t |
 
 ## 5. 模块 C ABI（module_abi）
 

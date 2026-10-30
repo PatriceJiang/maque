@@ -1,0 +1,55 @@
+{
+  "title": "小小塔防 · 第 1 关",
+  "script": "level1.js",
+  "global_script": "global.js",
+  "width": 480,
+  "height": 320,
+  "seed": 11,
+  "entities": [
+    { "name": "Background", "components": [
+        { "type": "scn.Transform2D", "x": 240.0, "y": 160.0 },
+        { "type": "scn.Sprite", "width": 480.0, "height": 320.0, "r": 0.055, "g": 0.085, "b": 0.065 } ] },
+    { "name": "Path1", "components": [
+        { "type": "scn.Transform2D", "x": 78.0, "y": 72.0 },
+        { "type": "scn.Sprite", "width": 126.0, "height": 26.0, "r": 0.20, "g": 0.26, "b": 0.24 } ] },
+    { "name": "Path2", "components": [
+        { "type": "scn.Transform2D", "x": 140.0, "y": 145.0 },
+        { "type": "scn.Sprite", "width": 26.0, "height": 146.0, "r": 0.20, "g": 0.26, "b": 0.24 } ] },
+    { "name": "Path3", "components": [
+        { "type": "scn.Transform2D", "x": 219.0, "y": 218.0 },
+        { "type": "scn.Sprite", "width": 158.0, "height": 26.0, "r": 0.20, "g": 0.26, "b": 0.24 } ] },
+    { "name": "Path4", "components": [
+        { "type": "scn.Transform2D", "x": 298.0, "y": 165.0 },
+        { "type": "scn.Sprite", "width": 26.0, "height": 106.0, "r": 0.20, "g": 0.26, "b": 0.24 } ] },
+    { "name": "Path5", "components": [
+        { "type": "scn.Transform2D", "x": 381.0, "y": 112.0 },
+        { "type": "scn.Sprite", "width": 166.0, "height": 26.0, "r": 0.20, "g": 0.26, "b": 0.24 } ] },
+    { "name": "Spawn", "components": [
+        { "type": "scn.Transform2D", "x": 16.0, "y": 72.0 },
+        { "type": "scn.Sprite", "radius": 8.0, "r": 1.00, "g": 0.62, "b": 0.25 } ] },
+    { "name": "Goal", "components": [
+        { "type": "scn.Transform2D", "x": 464.0, "y": 112.0 },
+        { "type": "scn.Sprite", "radius": 10.0, "r": 0.95, "g": 0.28, "b": 0.26 } ] },
+    { "name": "WP0", "components": [ { "type": "scn.Transform2D", "x": 16.0, "y": 72.0 } ] },
+    { "name": "WP1", "components": [ { "type": "scn.Transform2D", "x": 140.0, "y": 72.0 } ] },
+    { "name": "WP2", "components": [ { "type": "scn.Transform2D", "x": 140.0, "y": 218.0 } ] },
+    { "name": "WP3", "components": [ { "type": "scn.Transform2D", "x": 298.0, "y": 218.0 } ] },
+    { "name": "WP4", "components": [ { "type": "scn.Transform2D", "x": 298.0, "y": 112.0 } ] },
+    { "name": "WP5", "components": [ { "type": "scn.Transform2D", "x": 464.0, "y": 112.0 } ] },
+    { "name": "TowerA", "components": [
+        { "type": "scn.Transform2D", "x": 82.0, "y": 150.0 },
+        { "type": "scn.SceneInstance", "source": "towers/arrow/arrow.scn", "params": "{\"tier\": 1}" } ] },
+    { "name": "TowerB", "components": [
+        { "type": "scn.Transform2D", "x": 238.0, "y": 168.0 },
+        { "type": "scn.SceneInstance", "source": "towers/arrow/arrow.scn", "params": "{\"tier\": 2}" } ] },
+    { "name": "TowerC", "components": [
+        { "type": "scn.Transform2D", "x": 366.0, "y": 174.0 },
+        { "type": "scn.SceneInstance", "source": "towers/cannon/cannon.scn", "params": "{\"tier\": 1}" } ] },
+    { "name": "LevelName", "components": [
+        { "type": "scn.Label", "x": 22.0, "y": 30.0, "text": "第 1 关 · 松林小径", "font_size": 15.0,
+          "r": 0.90, "g": 0.95, "b": 0.72, "a": 1.0 } ] },
+    { "name": "Hint", "components": [
+        { "type": "scn.Label", "x": 22.0, "y": 12.0, "text": "", "font_size": 10.0,
+          "r": 0.55, "g": 0.62, "b": 0.55, "a": 1.0 } ] }
+  ]
+}

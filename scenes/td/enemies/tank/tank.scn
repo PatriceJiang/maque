@@ -1,0 +1,28 @@
+{
+  "title": "TD Enemy · Tank",
+  "script": "tank.js",
+  "entities": [
+    { "name": "Enemy", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 } ],
+      "children": [
+        { "name": "Body", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 13.0, "r": 0.46, "g": 0.55, "b": 0.68 } ] },
+        { "name": "Armor", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": -3.0 },
+            { "type": "scn.Sprite", "width": 22.0, "height": 6.0, "r": 0.24, "g": 0.30, "b": 0.40 } ] },
+        { "name": "EyeL", "components": [
+            { "type": "scn.Transform2D", "x": -4.0, "y": 5.0 },
+            { "type": "scn.Sprite", "radius": 2.0, "r": 1.00, "g": 0.55, "b": 0.30 } ] },
+        { "name": "EyeR", "components": [
+            { "type": "scn.Transform2D", "x": 4.0, "y": 5.0 },
+            { "type": "scn.Sprite", "radius": 2.0, "r": 1.00, "g": 0.55, "b": 0.30 } ] },
+        { "name": "HpBg", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 19.0 },
+            { "type": "scn.Sprite", "width": 26.0, "height": 4.0, "r": 0.16, "g": 0.18, "b": 0.22 } ] },
+        { "name": "HpFill", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 19.0 },
+            { "type": "scn.Sprite", "width": 24.0, "height": 2.6, "r": 0.35, "g": 0.90, "b": 0.45 } ] }
+      ] }
+  ]
+}

@@ -2006,6 +2006,16 @@ enum class ProbeUpdateMode : int32_t {
     Interval   = 2,
 };
 
+enum class RenderTextureFilter : int32_t {
+    Nearest = 0,
+    Linear  = 1,
+};
+
+enum class RenderTextureUpdateMode : int32_t {
+    EveryFrame = 0,
+    OnDemand   = 1,
+};
+
 enum class RichTagType : int32_t {
     Text          = 0,
     Color         = 1,
@@ -2204,6 +2214,20 @@ struct RenderLayer {
     bool follow_viewport = true;
     math::Vec2 offset;
     render::BlendMode blend = BlendMode::Alpha;
+};
+
+struct RenderTexture {
+    std::string name = "";
+    uint32_t width = 0;
+    uint32_t height = 0;
+    render::RenderTextureUpdateMode update_mode = RenderTextureUpdateMode::EveryFrame;
+    render::RenderTextureFilter filter = RenderTextureFilter::Linear;
+    bool include_ui = false;
+    bool enabled = true;
+    math::Color clear_color = {0.0F, 0.0F, 0.0F, 0.0F};
+    std::string texture = "";
+    bool ready = false;
+    uint32_t last_frame = 0;
 };
 
 struct RichRun {
@@ -2428,6 +2452,7 @@ struct Scene {
     std::string script = "";
     std::vector<std::string> scripts;
     std::string overlay_script = "";
+    std::string global_script = "";
     int32_t width = 320;
     int32_t height = 240;
     uint32_t seed = 0;
@@ -2449,6 +2474,7 @@ struct Scene {
 
 struct SceneInstance {
     std::string source = "";
+    std::string params = "";
     bool paused = false;
     bool active = true;
     bool detached = false;

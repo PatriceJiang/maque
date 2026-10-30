@@ -266,6 +266,17 @@ typedef struct mq_renderer_frame3d {
     int32_t render_mode;
 } mq_renderer_frame3d;
 
+typedef struct mq_renderer_render_texture_desc {
+    uint32_t struct_size;
+    int32_t width;
+    int32_t height;
+    int32_t pixel_format;
+    int32_t filter;
+    int32_t wrap_u;
+    int32_t wrap_v;
+    float clear_color[4];
+} mq_renderer_render_texture_desc;
+
 #define MQ_RENDERER_API_NAME "maque.renderer"
 typedef struct mq_renderer_v1 {
     mq_api_header header;
@@ -288,4 +299,8 @@ typedef struct mq_renderer_v1 {
     void (*destroy_shader_pass)(void* self, int32_t id);
     int32_t (*update_mesh)(void* self, int32_t id, const void* vertices, uint64_t vertex_bytes);
     uint64_t (*resource_bytes)(void* self);
+    int32_t (*create_render_texture)(void* self, const mq_renderer_render_texture_desc* desc, int32_t* out_id);
+    int32_t (*configure_render_texture)(void* self, int32_t id, const mq_renderer_render_texture_desc* desc);
+    int32_t (*render_to_texture)(void* self, int32_t id, const mq_renderer_frame3d* frame);
+    int32_t (*read_texture)(void* self, int32_t id, uint8_t* out, uint32_t out_size);
 } mq_renderer_v1;

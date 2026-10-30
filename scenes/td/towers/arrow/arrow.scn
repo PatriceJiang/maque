@@ -1,0 +1,22 @@
+{
+  "title": "TD Tower · Arrow",
+  "script": "arrow.js",
+  "entities": [
+    { "name": "Tower", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 } ],
+      "children": [
+        { "name": "Ring", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 14.0, "r": 0.10, "g": 0.20, "b": 0.14 } ] },
+        { "name": "Base", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 12.0, "r": 0.18, "g": 0.34, "b": 0.24 } ] },
+        { "name": "Core", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 4.0, "r": 0.85, "g": 1.00, "b": 0.70 } ] },
+        { "name": "Head", "components": [
+            { "type": "scn.Transform2D", "x": 12.0, "y": 0.0 },
+            { "type": "scn.Sprite", "width": 24.0, "height": 6.0, "r": 0.52, "g": 0.95, "b": 0.52 } ] }
+      ] }
+  ]
+}

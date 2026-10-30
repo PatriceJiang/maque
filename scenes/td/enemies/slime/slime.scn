@@ -1,0 +1,25 @@
+{
+  "title": "TD Enemy · Slime",
+  "script": "slime.js",
+  "entities": [
+    { "name": "Enemy", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 } ],
+      "children": [
+        { "name": "Body", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 },
+            { "type": "scn.Sprite", "radius": 9.0, "r": 0.36, "g": 0.85, "b": 0.44 } ] },
+        { "name": "EyeL", "components": [
+            { "type": "scn.Transform2D", "x": -3.0, "y": 3.0 },
+            { "type": "scn.Sprite", "radius": 2.2, "r": 0.95, "g": 1.00, "b": 0.92 } ] },
+        { "name": "EyeR", "components": [
+            { "type": "scn.Transform2D", "x": 3.0, "y": 3.0 },
+            { "type": "scn.Sprite", "radius": 2.2, "r": 0.95, "g": 1.00, "b": 0.92 } ] },
+        { "name": "HpBg", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 15.0 },
+            { "type": "scn.Sprite", "width": 22.0, "height": 4.0, "r": 0.16, "g": 0.18, "b": 0.22 } ] },
+        { "name": "HpFill", "components": [
+            { "type": "scn.Transform2D", "x": 0.0, "y": 15.0 },
+            { "type": "scn.Sprite", "width": 20.0, "height": 2.6, "r": 0.35, "g": 0.90, "b": 0.45 } ] }
+      ] }
+  ]
+}

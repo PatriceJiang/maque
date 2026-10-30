@@ -3,7 +3,7 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **249** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **252** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
 ## anim（29） · `world/anim.yaml`
 
@@ -1299,7 +1299,7 @@ role: `physics_body`
 | `Combine` | 1 |
 | `Replace` | 2 |
 
-## render（46） · `render/render.yaml`
+## render（49） · `render/render.yaml`
 
 ### render.Billboard — struct (变长（含动态成员）)
 
@@ -1632,6 +1632,36 @@ role: `physics_body`
 | `follow_viewport` | bool | true |  |
 | `offset` | math.Vec2 | — | unit: px |
 | `blend` | BlendMode | BlendMode::Alpha |  |
+
+### render.RenderTexture — struct (变长（含动态成员）)
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `name` | string |  |  |
+| `width` | uint32_t | 0 | unit: px |
+| `height` | uint32_t | 0 | unit: px |
+| `update_mode` | RenderTextureUpdateMode | RenderTextureUpdateMode::EveryFrame |  |
+| `filter` | RenderTextureFilter | RenderTextureFilter::Linear |  |
+| `include_ui` | bool | false |  |
+| `enabled` | bool | true |  |
+| `clear_color` | math.Color | {0.0F, 0.0F, 0.0F, 0.0F} |  |
+| `texture` | string |  | transient, readonly |
+| `ready` | bool | false | transient, readonly |
+| `last_frame` | uint32_t | 0 | transient, readonly |
+
+### render.RenderTextureFilter — enum
+
+| 值 | 数值 |
+|----|------|
+| `Nearest` | 0 |
+| `Linear` | 1 |
+
+### render.RenderTextureUpdateMode — enum
+
+| 值 | 数值 |
+|----|------|
+| `EveryFrame` | 0 |
+| `OnDemand` | 1 |
 
 ### render.RichRun — struct (36B)
 
@@ -2048,6 +2078,7 @@ role: `particle_emitter`
 | `script` | string |  |  |
 | `scripts` | string[] | — |  |
 | `overlay_script` | string |  |  |
+| `global_script` | string |  |  |
 | `width` | int32_t | 320 |  |
 | `height` | int32_t | 240 |  |
 | `seed` | uint32_t | 0 |  |
@@ -2071,6 +2102,7 @@ role: `particle_emitter`
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
 | `source` | string |  |  |
+| `params` | string |  |  |
 | `paused` | bool | false |  |
 | `active` | bool | true |  |
 | `detached` | bool | false |  |

@@ -1,0 +1,38 @@
+{
+  "title": "render_texture_3d",
+  "width": 320,
+  "height": 240,
+  "views": 1,
+  "entities": [
+    {
+      "name": "capture_camera_3d",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 4.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
+        { "type": "render.Camera3D", "projection": 1, "ortho_height": 3.0,
+          "near": 0.1, "far": 100.0, "clear_mode": 1, "culling_mask": 1,
+          "clear_color": { "r": 0.9, "g": 0.05, "b": 0.12, "a": 1.0 } },
+        { "type": "render.RenderTexture", "name": "camera3d", "width": 64, "height": 64,
+          "update_mode": 0, "filter": 0, "enabled": true }
+      ]
+    },
+    {
+      "name": "culled_cube",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.2, "y": 1.2, "z": 1.2 } } },
+        { "type": "render.MeshRenderer", "culling_mask": 2 }
+      ]
+    },
+    {
+      "name": "monitor_3d",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160.0, "y": 120.0 },
+        { "type": "scn.Sprite", "width": 120.0, "height": 120.0, "r": 1.0, "g": 1.0, "b": 1.0,
+          "texture": "rendertexture://camera3d" }
+      ]
+    }
+  ]
+}

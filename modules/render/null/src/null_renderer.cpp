@@ -3,12 +3,21 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <utility>
 #include <vector>
 
 namespace {
 
+struct NullTexture {
+    bool alive = false;
+    bool render_target = false;
+    int32_t width = 0;
+    int32_t height = 0;
+    std::vector<uint8_t> pixels;
+};
+
 struct NullRenderer {
-    std::vector<uint8_t> textures;
+    std::vector<NullTexture> textures;
     std::vector<uint8_t> meshes;
     std::vector<uint8_t> shader_passes;
 };
@@ -44,6 +53,25 @@ bool valid_handle(const std::vector<T>& slots, int32_t id) {
     return id >= 0 && static_cast<size_t>(id) < slots.size() && slots[static_cast<size_t>(id)] != 0;
 }
 
+int32_t allocate_texture(NullRenderer* r, int32_t w, int32_t h, bool render_target,
+                         const uint8_t* pixels = nullptr) {
+    if (!r || w <= 0 || h <= 0) return -1;
+    NullTexture t;
+    t.alive = true;
+    t.render_target = render_target;
+    t.width = w;
+    t.height = h;
+    t.pixels.assign((size_t)w * (size_t)h * 4u, 0);
+    if (pixels) std::memcpy(t.pixels.data(), pixels, t.pixels.size());
+    r->textures.push_back(std::move(t));
+    return static_cast<int32_t>(r->textures.size() - 1);
+}
+
+bool valid_texture(const NullRenderer* r, int32_t id) {
+    return r && id >= 0 && static_cast<size_t>(id) < r->textures.size() &&
+           r->textures[static_cast<size_t>(id)].alive;
+}
+
 void* null_create(const char** out_backend) {
     static constexpr char kName[] = "null";
     if (out_backend) *out_backend = kName;
@@ -54,18 +82,20 @@ void null_destroy(void* self) { delete static_cast<NullRenderer*>(self); }
 
 void null_destroy_texture(void* self, int32_t id) {
     auto* r = static_cast<NullRenderer*>(self);
-    if (r && valid_handle(r->textures, id)) r->textures[static_cast<size_t>(id)] = 0;
+    if (valid_texture(r, id)) {
+        r->textures[static_cast<size_t>(id)].alive = false;
+        r->textures[static_cast<size_t>(id)].pixels.clear();
+    }
 }
 
 int32_t null_create_texture(void* self, const uint8_t* rgba, int32_t w, int32_t h) {
     auto* r = static_cast<NullRenderer*>(self);
     if (!r || !rgba || w <= 0 || h <= 0) return -1;
-    return allocate_handle(r->textures);
+    return allocate_texture(r, w, h, false, rgba);
 }
 
 int32_t null_has_texture(void* self, int32_t id) {
-    auto* r = static_cast<NullRenderer*>(self);
-    return r && valid_handle(r->textures, id) ? 1 : 0;
+    return valid_texture(static_cast<NullRenderer*>(self), id) ? 1 : 0;
 }
 
 int32_t null_render_views(void*, int32_t w, int32_t h,
@@ -99,8 +129,8 @@ int32_t null_create_texture2(void* self, const mq_renderer_texture_desc* desc, i
     auto* r = static_cast<NullRenderer*>(self);
     if (out_id) *out_id = -1;
     if (!r || !desc || !out_id || desc->width <= 0 || desc->height <= 0) return 1;
-    *out_id = allocate_handle(r->textures);
-    return 0;
+    *out_id = allocate_texture(r, desc->width, desc->height, false, nullptr);
+    return *out_id >= 0 ? 0 : 1;
 }
 
 int32_t null_create_mesh(void* self, const mq_renderer_mesh_gpu* data, int32_t* out_id) {
@@ -141,6 +171,63 @@ int32_t null_update_mesh(void* self, int32_t id, const void* vertices, uint64_t 
     return r && valid_handle(r->meshes, id) && vertices && vertex_bytes > 0 ? 0 : 1;
 }
 
+uint64_t null_resource_bytes(void* self) {
+    const auto* r = static_cast<const NullRenderer*>(self);
+    if (!r) return 0;
+    uint64_t n = 0;
+    for (const auto& t : r->textures) if (t.alive) n += t.pixels.size();
+    return n;
+}
+
+int32_t null_create_render_texture(void* self, const mq_renderer_render_texture_desc* desc, int32_t* out_id) {
+    auto* r = static_cast<NullRenderer*>(self);
+    if (out_id) *out_id = -1;
+    if (!r || !desc || !out_id || desc->struct_size < sizeof(*desc) ||
+        desc->width <= 0 || desc->height <= 0 || desc->pixel_format != 0) return 1;
+    *out_id = allocate_texture(r, desc->width, desc->height, true);
+    if (*out_id < 0) return 1;
+    NullTexture& t = r->textures[(size_t)*out_id];
+    fill(t.width, t.height, desc->clear_color, t.pixels.data(), (uint32_t)t.pixels.size());
+    return 0;
+}
+
+int32_t null_configure_render_texture(void* self, int32_t id,
+                                      const mq_renderer_render_texture_desc* desc) {
+    auto* r = static_cast<NullRenderer*>(self);
+    if (!valid_texture(r, id) || !desc || desc->struct_size < sizeof(*desc) ||
+        desc->width <= 0 || desc->height <= 0 || desc->pixel_format != 0) return 1;
+    NullTexture& t = r->textures[(size_t)id];
+    if (!t.render_target) return 1;
+    t.width = desc->width;
+    t.height = desc->height;
+    t.pixels.assign((size_t)t.width * (size_t)t.height * 4u, 0);
+    fill(t.width, t.height, desc->clear_color, t.pixels.data(), (uint32_t)t.pixels.size());
+    return 0;
+}
+
+int32_t null_render_to_texture(void* self, int32_t id, const mq_renderer_frame3d* frame) {
+    auto* r = static_cast<NullRenderer*>(self);
+    if (!valid_texture(r, id) || !frame) return 1;
+    NullTexture& t = r->textures[(size_t)id];
+    if (!t.render_target || frame->width != t.width || frame->height != t.height || frame->out) return 1;
+    if (frame->view_count > 0 && frame->views) {
+        const mq_renderer_view3d& view = frame->views[0];
+        if (view.clear_mode <= 1)
+            return fill(t.width, t.height, view.clear_color, t.pixels.data(), (uint32_t)t.pixels.size());
+        return 0;   /* DepthOnly/None 保留已有颜色；null 不执行几何 draw */
+    }
+    return fill(t.width, t.height, frame->bg, t.pixels.data(), (uint32_t)t.pixels.size());
+}
+
+int32_t null_read_texture(void* self, int32_t id, uint8_t* out, uint32_t out_size) {
+    auto* r = static_cast<NullRenderer*>(self);
+    if (!valid_texture(r, id) || !out) return 1;
+    const NullTexture& t = r->textures[(size_t)id];
+    if (!t.render_target || t.pixels.size() > out_size) return 1;
+    std::memcpy(out, t.pixels.data(), t.pixels.size());
+    return 0;
+}
+
 const mq_renderer_v1 kApi = {
     { static_cast<uint32_t>(sizeof(mq_renderer_v1)), MQ_ABI_VERSION },
     null_create,
@@ -161,6 +248,11 @@ const mq_renderer_v1 kApi = {
     null_create_shader_pass,
     null_destroy_shader_pass,
     null_update_mesh,
+    null_resource_bytes,
+    null_create_render_texture,
+    null_configure_render_texture,
+    null_render_to_texture,
+    null_read_texture,
 };
 
 } // namespace

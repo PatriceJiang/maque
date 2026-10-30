@@ -127,6 +127,9 @@
     - struct: SceneInstance
       fields:
         - { name: source,   type: string, default: "" }      # 相对父场景目录的 .scn 路径
+        # 实例参数（docs/32 §16.2）：父场景 → 子场景的配置（JSON 文本）。
+        # 子场景用 scene_self_params() 读取；构建后修改需 scene_reload 才重新生效。
+        - { name: params,   type: string, default: "" }
         - { name: paused,   type: bool,   default: false }   # 只停行为（update），不隐藏
         - { name: active,   type: bool,   default: true }    # 等价 node_set_active（含渲染/命中）
         - { name: detached, type: bool,   default: false }   # true = 已烘焙/自包含（不再按 source 实例化）
@@ -166,6 +169,10 @@
         # 常驻覆盖层脚本（相对场景目录）：加载声明它的场景时载入独立 VM；之后 director_load_scene
         # 切场景时**不销毁**（主场景脚本仍重建），每次场景装配完成后派发 on_start —— 外壳/HUD/导航用。
         - { name: overlay_script, type: string, default: "", doc: "常驻覆盖层脚本（跨场景切换保留）" }
+        # 全局脚本（docs/32 §16.1）：跨 director_load_scene 保留的**服务层** VM（游戏存档/进度/
+        # 跨场景规则）；每次场景装配后收 on_start，每帧 update，先于覆盖层。只允许根场景声明。
+        # 与 overlay_script 的区别：overlay = 视图/HUD；global = 游戏级服务，可被全局事件寻址。
+        - { name: global_script, type: string, default: "", doc: "全局脚本（跨场景保留；全局服务）" }
         - { name: width,    type: int32_t, default: 320 }
         - { name: height,   type: int32_t, default: 240 }
         - { name: seed,     type: uint32_t, default: 0 }
