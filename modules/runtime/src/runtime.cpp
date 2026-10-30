@@ -7157,6 +7157,7 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
     auto pace_start = std::chrono::steady_clock::now();
     const auto pace_t0 = pace_start;              // 真实起点（诊断用；pace_start 会因重锚前移）
     double pace_sleep = 0.0;
+    double pace_step_cost = 0.0;                  // 上一轮实测的"单步成本"（秒）→ 补步预算
     uint64_t pace_reanchor = 0;
     uint64_t pace_steps = 0;
     /* 逐帧输出（截图/抓帧/逐帧导出）必须**每帧都成帧**，不允许把两步合成一帧 —— 否则
@@ -7183,16 +7184,32 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
             constexpr double kDt = 1.0 / 60.0;
             const auto now = std::chrono::steady_clock::now();
             double lag = std::chrono::duration<double>(now - pace_start).count() - (double)frame * kDt;
-            if (lag > 8.0 * kDt) {                       // 落后太多：重锚（丢弃积压）
+            const auto drop_backlog = [&](bool stall) {
+                /* 丢弃积压 = 把"当前时刻"重新锚成仿真时刻（游戏时间变慢，但不再爆追）。 */
                 pace_start += std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-                    std::chrono::duration<double>(lag - 8.0 * kDt));
-                lag = 8.0 * kDt;
-                ++pace_reanchor;
+                    std::chrono::duration<double>(lag));
+                lag = 0.0;
+                if (stall) ++pace_reanchor;
+            };
+            if (lag > 8.0 * kDt) {
+                drop_backlog(true);                  // 卡顿/断点/挂起
+            } else if (pace_step_cost > kDt && lag > kDt) {
+                /* 上一轮单步成本已超过 dt：这台机器本来就跑不动 1x，补步只会越补越慢 →
+                 * 丢掉积压，按"每轮 1 步"的最快速度跑（Tracy 里看速率 <1x 是事实，不是抖动）。 */
+                drop_backlog(false);
             }
             steps_this_frame = 1 + (int)std::floor(lag / kDt);
+            /* 补步预算：一轮最多多做 ≈1 帧的工作量。上一轮实测单步成本已经 ≈dt 时，多跑一步只会
+             * 把这一轮拖得更长（"越补越慢"的自激：Debug+ASan 下重文本场景实测 0.52x / 29 次重锚）。 */
+            if (pace_step_cost > 0.0) {
+                const int budget = (int)(kDt / pace_step_cost);
+                if (steps_this_frame - 1 > budget) steps_this_frame = budget + 1;
+            }
             if (steps_this_frame < 1) steps_this_frame = 1;
             if (steps_this_frame > 8) steps_this_frame = 8;
         }
+        const auto pace_work0 = std::chrono::steady_clock::now();
+        int pace_ran = 0;
         for (int s = 0; s < steps_this_frame && frame < cap && !quit; ++s) {
             if (stop_frame && frame > stop_frame) break;
             /* 补步：只有**最后一步**成帧（渲染 + present + Tracy FrameMark），中间步只推进模拟。
@@ -7200,7 +7217,11 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
              * Tracy 里就表现为 22.25/15.32/21.42/11.59ms 这种"长短帧成对"的抖动。 */
             step_frame(s + 1 == steps_this_frame);
             ++pace_steps;
+            ++pace_ran;
         }
+        if (pace_wall_clock && pace_ran > 0)
+            pace_step_cost = std::chrono::duration<double>(
+                                 std::chrono::steady_clock::now() - pace_work0).count() / pace_ran;
         if (pace_wall_clock) {
             /* 睡到"下一帧应开始"的绝对时刻；落后（due 已过）就不睡，由上一段的补步追。 */
             const auto due = pace_start + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
