@@ -14,8 +14,9 @@
   回到第一个，第一个场景的 `Prev` 回到最后一个。
 - APK 资源由 VFS 的 `asset://` 只读后端读取，场景引用的脚本、纹理、音频和子场景仍按
   场景目录解析。
-- 真机：WebGPU 先渲染设计分辨率 FBO，再用 blit shader 采样到全尺寸 `ANativeWindow`
-  swapchain 的画布 viewport；全程 GPU，无 readback/memcpy。Surface 句柄变化时自动 reattach。
+- 真机：SDL SurfaceView 只负责输入/生命周期，独立 RGBA Render SurfaceView 专供 wgpu；WebGPU
+  先渲染设计分辨率 FBO，再用 blit shader 采样到全尺寸 ANativeWindow swapchain 的画布 viewport，
+  全程 GPU、无 readback/memcpy。Surface 句柄变化时自动 reattach，acquired texture 在 present 后释放。
 - AVD：wgpu-native 在 Android Emulator SurfaceView 上持续返回 swapchain acquire timeout，模板按
   `ro.kernel.qemu=1` 明确使用 `ANativeWindow_lock` CPU fallback；保持窗口自动渲染分辨率，但将
   Surface 提交节流到约 15 Hz，用于功能调试，不代表真机性能。

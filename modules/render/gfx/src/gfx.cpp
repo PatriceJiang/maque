@@ -1902,8 +1902,9 @@ static int32_t r_present(void* self) {
     if (!dv) return -1;
     if (!dv->surface) return 0;               /* 离屏路径：空操作 */
     if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
+    const WGPUStatus status = wgpuSurfacePresent(dv->surface);
     if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
-    return wgpuSurfacePresent(dv->surface) == WGPUStatus_Success ? 0 : -2;
+    return status == WGPUStatus_Success ? 0 : -2;
 }
 
 /* 网格顶点（与 assets/builtin/shaders/mesh/shader.wgsl 的顶点布局严格一致：stride 48B）

@@ -13824,8 +13824,8 @@ void Engine::teardown() {
     mq_input_destroy(input); input = nullptr;
     destroy_shader_passes();             // 场景资源 shader pass（句柄归渲染器，先于销毁渲染器释放）
     audio_teardown();                    // 先停设备/join 回调，再拆平台（SDL）
-    mq_platform_destroy(platform); platform = nullptr;
     if (rapi && rself) { rapi->destroy(rself); rself = nullptr; }
+    mq_platform_destroy(platform); platform = nullptr;
 #if !defined(MQ_RENDERER_STATIC_NULL) && !defined(MQ_RENDERER_STATIC_GFX)
     mq_host_destroy(host);
 #endif

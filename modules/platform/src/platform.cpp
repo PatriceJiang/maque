@@ -27,7 +27,10 @@
 #include <SDL.h>
 #include <SDL_syswm.h>   /* mq_platform_get_native_window：直接呈现要原生句柄（plans/18-pbr-3d.md） */
 #if defined(__ANDROID__)
+#  include <SDL_system.h>
 #  include <android/native_window.h>
+#  include <android/native_window_jni.h>
+#  include <jni.h>
 #endif
 
 #include <deque>
@@ -140,6 +143,36 @@ static void refresh_window_size(mq_platform* p) {
 }
 
 namespace {
+
+#if defined(__ANDROID__)
+static ANativeWindow* android_render_window(mq_platform* p) {
+    if (!p) return nullptr;
+    auto* env = static_cast<JNIEnv*>(SDL_AndroidGetJNIEnv());
+    jobject activity = static_cast<jobject>(SDL_AndroidGetActivity());
+    if (!env || !activity) return nullptr;
+    jclass cls = env->GetObjectClass(activity);
+    jmethodID method = cls ? env->GetMethodID(cls, "getMaqueRenderSurface", "()Landroid/view/Surface;") : nullptr;
+    jobject surface = method ? env->CallObjectMethod(activity, method) : nullptr;
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        surface = nullptr;
+    }
+    ANativeWindow* current = surface ? ANativeWindow_fromSurface(env, surface) : nullptr;
+    if (surface) env->DeleteLocalRef(surface);
+    if (cls) env->DeleteLocalRef(cls);
+    env->DeleteLocalRef(activity);
+
+    if (current == p->android_window) {
+        if (current) ANativeWindow_release(current); // fromSurface acquired one extra ref.
+        return p->android_window;
+    }
+    if (p->android_window) ANativeWindow_release(p->android_window);
+    p->android_window = current;
+    p->present_logged = false;
+    p->display_dirty = 1;
+    return p->android_window;
+}
+#endif
 
 /* 入队并更新指针状态（设备与注入共用；delta 在此统一计算）。 */
 
@@ -283,15 +316,10 @@ static int present_android_frame(mq_platform* p) {
         p->android_frame = nullptr;
         return 0;
     }
-    SDL_SysWMinfo wm{};
-    SDL_VERSION(&wm.version);
-    if (!SDL_GetWindowWMInfo(p->win, &wm) || wm.subsystem != SDL_SYSWM_ANDROID || !wm.info.android.window)
-        return 3;
-    ANativeWindow* window = wm.info.android.window;
-    if (p->android_window != window) {
-        if (ANativeWindow_setBuffersGeometry(window, 0, 0, WINDOW_FORMAT_RGBA_8888) != 0) return 4;
-        p->android_window = window;
-    }
+    ANativeWindow* window = android_render_window(p);
+    if (!window) return 3;
+    if (!p->present_logged &&
+        ANativeWindow_setBuffersGeometry(window, 0, 0, WINDOW_FORMAT_RGBA_8888) != 0) return 4;
 
     ANativeWindow_Buffer out{};
     if (ANativeWindow_lock(window, &out, nullptr) != 0) return 4;
@@ -476,6 +504,9 @@ void mq_platform_destroy(mq_platform* p) {
     if (p && p->frame_tex) { SDL_DestroyTexture(p->frame_tex); p->frame_tex = nullptr; }
     if (p && p->ren) { SDL_DestroyRenderer(p->ren); p->ren = nullptr; }
     if (!p) return;
+#if defined(__ANDROID__)
+    if (p->android_window) { ANativeWindow_release(p->android_window); p->android_window = nullptr; }
+#endif
     if (p->window) SDL_StopTextInput();
     if (p->win) SDL_DestroyWindow(p->win);
     if (p->sdl) SDL_Quit();
@@ -498,6 +529,16 @@ void *mq_platform_sdl_renderer(mq_platform *p) { return p ? (void *)p->ren : nul
 int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out) {
     if (!p || !out || !p->win) return 0;
     std::memset(out, 0, sizeof *out);
+#if defined(__ANDROID__)
+    ANativeWindow* render_window = android_render_window(p);
+    if (render_window) {
+        out->kind = 4;
+        out->display = nullptr;
+        out->handle = (void*)render_window;
+        return 1;
+    }
+    return 0;
+#else
     SDL_SysWMinfo wm{};
     SDL_VERSION(&wm.version);
     if (!SDL_GetWindowWMInfo(p->win, &wm)) return 0;
@@ -521,16 +562,10 @@ int mq_platform_get_native_window(mq_platform* p, mq_platform_native_window* out
         out->handle = (void*)wm.info.wl.surface;
         return 1;
 #endif
-#if defined(__ANDROID__)
-    case SDL_SYSWM_ANDROID:
-        out->kind = 4;
-        out->display = nullptr;
-        out->handle = (void*)wm.info.android.window;
-        return out->handle ? 1 : 0;
-#endif
     default:
         return 0;
     }
+#endif
 }
 
 /* 立即创建 SDL_Renderer：官方 ImGui 后端必须在**第一帧之前**拿到它

@@ -9,6 +9,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.Surface;
+import android.view.SurfaceView;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -23,6 +26,7 @@ public final class MaqueActivity extends SDLActivity {
     private List<String> scenes;
     private int sceneIndex;
     private int pendingSceneIndex = -1;
+    private SurfaceView renderSurface;
 
     @Override
     protected SDLSurface createSDLSurface(android.content.Context context) {
@@ -37,6 +41,7 @@ public final class MaqueActivity extends SDLActivity {
         sceneIndex = SceneCatalog.wrap(
                 getIntent().getIntExtra(MainActivity.EXTRA_SCENE_INDEX, 0), scenes.size());
         super.onCreate(savedInstanceState);
+        addRenderSurface();
         addSceneNavigation();
     }
 
@@ -44,6 +49,25 @@ public final class MaqueActivity extends SDLActivity {
     protected String[] getArguments() {
         if (scenes == null || scenes.isEmpty()) return new String[] { "asset://ball.scn" };
         return new String[] { "asset://" + scenes.get(sceneIndex) };
+    }
+
+    public Surface getMaqueRenderSurface() {
+        if (renderSurface == null) return null;
+        Surface surface = renderSurface.getHolder().getSurface();
+        return surface != null && surface.isValid() ? surface : null;
+    }
+
+    private void addRenderSurface() {
+        renderSurface = new SurfaceView(this);
+        renderSurface.getHolder().setFormat(PixelFormat.RGBA_8888);
+        renderSurface.setZOrderMediaOverlay(true);
+        renderSurface.setFocusable(false);
+        renderSurface.setFocusableInTouchMode(false);
+        renderSurface.setOnTouchListener((view, event) ->
+                mSurface != null && mSurface.onTouch(mSurface, event));
+        renderSurface.setOnGenericMotionListener(getMotionListener());
+        addContentView(renderSurface, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     private void addSceneNavigation() {
