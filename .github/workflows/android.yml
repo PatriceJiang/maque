@@ -69,11 +69,15 @@ jobs:
 
       - name: Set up Android SDK tools
         uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+          log-accepted-android-sdk-licenses: false
 
       - name: Install Android SDK, NDK and CMake
         run: |
           yes | sdkmanager --licenses >/dev/null
           sdkmanager \
+            "platform-tools" \
             "platforms;android-${ANDROID_API}" \
             "build-tools;${ANDROID_BUILD_TOOLS}" \
             "ndk;${ANDROID_NDK}" \
