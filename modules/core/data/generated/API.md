@@ -442,7 +442,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `environment`：sky_mode: int32_t, sky_color: float[4], sky_texture: int32_t, env_color: float[4], env_texture: int32_t, env_irradiance_texture: int32_t, env_cubemap: int32_t, env_cubemap_irradiance: int32_t, intensity: float, env_sky_color: float[4], env_ground_color: float[4], env_highlight: float, env_rotation: float
 - `post`：exposure: float, tonemap: int32_t
 - `shader_pass`：shader: int32_t, time: float, frame: float, mouse: float[4]
-- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t
+- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t, render_mode: int32_t
 
 | 方法 | 参数 | 返回 |
 |------|------|------|
@@ -464,6 +464,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `create_shader_pass` | self: self, wgsl: const char*, out_id: int32_t* | int32_t |
 | `destroy_shader_pass` | self: self, id: int32_t | void |
 | `update_mesh` | self: self, id: int32_t, vertices: const void*, vertex_bytes: uint64_t | int32_t |
+| `resource_bytes` | self: self | uint64_t |
 
 ## 5. 模块 C ABI（module_abi）
 

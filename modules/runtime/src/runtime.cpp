@@ -452,6 +452,7 @@ struct Engine {
      * 绘制时机：脚本 update 之前 begin、**引擎所有图层（含 ui pass）之后** extract →
      * 网格以 layer=MQ_IMGUI_LAYER 提交，天然在最上层；且写进同一像素缓冲 → 截图可见。 */
     bool imgui_on = false;                     // 是否启用（MAQUE_IMGUI=1 / 脚本 imgui_set_enabled）
+    bool imgui_stats = false;                  // F2 stats；F4 只开选项面板时不显示
     bool imgui_inited = false;
     int imgui_tex = -1;                        // 字体图集纹理（gfx 纹理 id；-1=未上传）
     uint32_t imgui_tex_gen = 0;                // 图集代数（变化 → 重传）
@@ -469,8 +470,9 @@ struct Engine {
     std::vector<std::string> imgui_id_stack;                    // push_id 栈
     bool imgui_demo = false;                                   // show_demo 状态
     void imgui_setup();                        // 惰性初始化（首帧/首次脚本调用）
-    /* 开关面板（脚本 `imgui_set_enabled` 与**引擎级 F2 热键**共用同一条实现）。 */
-    void imgui_enable(bool on);
+    /* 开关面板（脚本 `imgui_set_enabled` 与**引擎级 F2 热键**共用同一条实现）。
+     * F4 传 show_stats=false：复用 ImGui 上下文，但不打开 F2 的 stats。 */
+    void imgui_enable(bool on, bool show_stats = true);
     void imgui_toggle() { imgui_enable(!imgui_on); }
     /* 本帧输入转发：**窗口像素**原始事件（iframe 是 step_frame 的局部量 → 传参进来）。
      * 只记绝对位置/按键状态（ImGui 的 IO 需要持续状态，不是增量）。 */
@@ -521,7 +523,9 @@ struct Engine {
     void imgui_fake_input(mq_platform_pointer_event* ptrs, uint32_t& count, uint32_t cap);
     /* stats 面板用的计量（显示上一帧的值：开帧时就要有数）。 */
     float stat_logic_ms = 0, stat_render_ms = 0, stat_present_ms = 0, stat_fps = 0;
-    int   stat_calls = 0, stat_tris = 0;
+    int   stat_calls = 0, stat_ui_calls = 0, stat_3d_calls = 0;
+    int   stat_tris = 0, stat_verts = 0;
+    uint64_t stat_vram_bytes = 0;
     bool  stat_window_sized = false;
     bool  imgui_backend = false;   // 用官方 SDL_Renderer 后端（与游戏帧共用 renderer、单次 present）
     bool  direct_present = false;  // plans/18 M1：wgpu swapchain 直接呈现（attach_window 成功；不走 CPU readback→SDL）
@@ -670,6 +674,8 @@ struct Engine {
     int32_t cube_mesh = -1;
     /* M4c：.mesh.json 资产缓存（路径 → 渲染器网格句柄；-1 = 加载失败，避免每帧重试） */
     std::unordered_map<std::string, int32_t> mesh_cache;
+    struct MeshStats { uint32_t vertex_count = 0, index_count = 0; };
+    std::unordered_map<int32_t, MeshStats> mesh_stats;   // 网格句柄 → stats 几何计数（含内建 cube / glTF）
     /* ---- 运行时 glTF/GLB 直接加载（plans/23）：mesh_path 指向 .gltf/.glb 时走这里 ----
      * 装配期解析一次并上传（网格/纹理句柄由本 Engine 持有，切场景统一销毁）。
      * plans/24：蒙皮/动画/morph/材质扩展/灯光相机全部在装配期解析，模拟帧内只读缓存。 */
@@ -815,7 +821,8 @@ struct Engine {
     float orbit_last_x = 0.0F, orbit_last_y = 0.0F;
 
     /* ---- 引擎选项（F4 ImGui 面板；docs/28）----
-     * 三类过去只能在**启动时**通过场景字段 / 环境变量决定的渲染选项，运行期可热调：
+     * 运行期可热调的纯视图选项：
+     *   · rendered / solid / wireframe 渲染模式，以及游戏 3D、2D/UI 图层开关
      *   · MSAA（0=跟随场景/MAQUE_MSAA，1=关，4=4x）
      *   · 默认太阳光（场景无光源时补的方向光：开关 / 强度 / 传播方向）
      *   · 主相机 near/far 覆盖
@@ -825,6 +832,9 @@ struct Engine {
     bool  opt_f4_held = false;                 // F4 沿检测（按住只切换一次）
     bool  opt_opened_imgui = false;            // F4 自己打开的 ImGui（收起面板时恢复"关"→ 不残留 stats）
     int   opt_msaa = 0;                        // 0=跟随场景(MAQUE_MSAA 次之) 1=关 4=4x
+    int   opt_render_mode = 0;                 // 0=rendered 1=solid 2=wireframe
+    bool  opt_3d_enabled = true;               // 游戏 3D 层（不影响 F4 面板）
+    bool  opt_2d_enabled = true;               // 游戏 2D/UI 层（不影响 F4 面板）
     bool  opt_sun_enabled = true;              // 场景无光源时是否补默认太阳光
     float opt_sun_intensity = 1.1F;
     float opt_sun_dir[3] = { 0.35F, -0.85F, -0.4F };   // 光的**传播方向**（shader 内 normalize）
@@ -2325,6 +2335,7 @@ int32_t Engine::load_mesh(const std::string& path) {
                 for (uint32_t k = 0; k < 3 && k < mq_json_len(bmax); ++k)
                     md.bounds_max[k] = (float)mq_json_num(mq_json_at(bmax, k), 0.0);
                 if (rapi->create_mesh(rself, &md, &id) != 0) id = -1;
+                if (id >= 0) mesh_stats[id] = { vn, (uint32_t)idx.size() };
             }
             /* morph：保存打包后的基础顶点（CPU 重算起点），创建后立即应用默认权重 */
             if (id >= 0 && !morph.targets.empty()) {
@@ -2813,6 +2824,7 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
             std::print(stderr, "runtime: gltf '{}' primitive 上传失败（node={}）\n", path, p.node);
             continue;
         }
+        mesh_stats[mesh_id] = { vn, (uint32_t)p.indices.size() };
         GltfGpuModel::Prim pr;
         pr.mesh = mesh_id;
         pr.material = p.material;
@@ -3969,7 +3981,10 @@ void Engine::setup_3d() {
         md.bounds_min[0] = md.bounds_min[1] = md.bounds_min[2] = -0.6F;
         md.bounds_max[0] = md.bounds_max[1] = md.bounds_max[2] = 0.6F;
         int32_t id = -1;
-        if (rapi->create_mesh(rself, &md, &id) == 0) cube_mesh = id;
+        if (rapi->create_mesh(rself, &md, &id) == 0) {
+            cube_mesh = id;
+            mesh_stats[id] = { (uint32_t)(verts.size() / 12), (uint32_t)indices.size() };
+        }
     }
     std::print("runtime: 3d scene cams={} meshes={} lights={} cube_mesh={}\n",
                n_cam, n_mesh, n_light, (long long)cube_mesh);
@@ -4940,7 +4955,7 @@ void Engine::step_frame(bool render_frame) {
         if (f2_down && !imgui_f2_held) imgui_toggle();          // 只有上升沿才切换
         imgui_f2_held = f2_down;
     }
-    /* **F4 引擎级热键**：弹出/收起「引擎选项」面板（MSAA / 默认太阳光 / 主相机 near·far）。
+    /* **F4 引擎级热键**：弹出/收起「引擎选项」面板；首次只开选项，不附带 F2 stats。
      * 与 F2 一样沿检测（按住只切一次）。与 F2 的**互不干扰**规则：
      *   · ImGui 本来关着 → F4 顺手打开它并记住"是 F4 开的"；再按 F4 收起面板时恢复到关
      *     （不会只关面板却把 stats 留在屏幕上）。
@@ -4964,7 +4979,7 @@ void Engine::step_frame(bool render_frame) {
             } else {
                 opt_panel = true;
                 if (!imgui_on) {
-                    imgui_enable(true);
+                    imgui_enable(true, false);   // F4 不附带打开 F2 stats
                     opt_opened_imgui = true;
                 } else {
                     opt_opened_imgui = false;    // 已有 ImGui（F2/MAQUE_IMGUI/脚本）→ 收起时保持它开着
@@ -5092,6 +5107,21 @@ void Engine::step_frame(bool render_frame) {
         { MQ_TRACY_ZONE_N(anim, "spine.extract"); spine_extract(spine_meshes); }
         { MQ_TRACY_ZONE_N(text, "text.flush"); text_flush(draws); }   // 文本阶段 2：图集纹理 + 最终 UV
     }
+    /* F4 的 2D/UI 开关只隐藏游戏层；随后提取的 ImGui 网格必须保留，否则调试面板也会消失。 */
+    if (!opt_2d_enabled) { draws.clear(); spine_meshes.clear(); }
+    /* stats：只计游戏每帧逻辑提交量，调试 ImGui 面板自身不计入。
+     * UI drawcall = 图元 + Spine／网格批次；图元固定 4 顶点 / 2 三角形。 */
+    stat_ui_calls = (int)(draws.size() + spine_meshes.size());
+    stat_3d_calls = 0;
+    stat_calls = stat_ui_calls;
+    stat_verts = (int)draws.size() * 4;
+    stat_tris = (int)draws.size() * 2;
+    for (const auto& sm : spine_meshes) {
+        stat_verts += (int)sm.vertex_count;
+        stat_tris += (int)(sm.index_count / 3);
+    }
+    /* VRAM 是后端存活的纹理 + 网格缓冲估算；不是驱动/OS 的整进程显存使用量。 */
+    stat_vram_bytes = (rapi && rself && rapi->resource_bytes) ? rapi->resource_bytes(rself) : 0;
     /* ImGui：结束帧 → 绘制命令转成网格图元（**grid 链模式**；官方后端模式下唤醒 Render）。
      * 放在这里（脚本/暂停分支之外）是刻意的：
      *   · 每帧都必须 end，暂停/无场景帧也不能漏（否则 ImGui 帧状态错乱、面板冻结）；
@@ -5115,18 +5145,11 @@ void Engine::step_frame(bool render_frame) {
         std::print("[text] draws={} textured={} solid={}\n", draws.size(), textured, solid);
     }
     if (!render_frame) {
-        stat_calls = (int)(draws.size() + spine_meshes.size());
-        stat_tris = (int)draws.size() * 2;
-        for (const auto& sm : spine_meshes) stat_tris += (int)(sm.index_count / 3);
         ++frame;
         return;
     }
     // ⑤ 渲染（只读快照 → 渲染不回写，docs/13 §8）
     const int SWpx = (int)(W * ss + 0.5F), SHpx = (int)(H * ss + 0.5F);
-    /* stats：drawcall = 提交项数（图元 + 网格批次）；三角形 = 图元 2 个/项 + 网格索引/3。 */
-    stat_calls = (int)(draws.size() + spine_meshes.size());
-    stat_tris = (int)draws.size() * 2;
-    for (const auto& sm : spine_meshes) stat_tris += (int)(sm.index_count / 3);
     const auto stat_render0 = std::chrono::steady_clock::now();
     std::vector<uint8_t> pixels((size_t)TW * SHpx * 4);
     /* 直接呈现（plans/18 M1）：wgpu 交换链直呈，**不经 CPU readback**。
@@ -5142,15 +5165,25 @@ void Engine::step_frame(bool render_frame) {
         std::vector<mq_renderer_draw3d> draws3d;
         std::vector<mq_renderer_skin> skins3d;
         extract_3d(TW, SHpx, views3d, lights3d, mats3d, draws3d, skins3d);
+        if (opt_3d_enabled) {
+            stat_3d_calls = (int)draws3d.size();
+            for (const auto& dr : draws3d) {
+                auto it = mesh_stats.find(dr.mesh);
+                if (it == mesh_stats.end()) continue;
+                stat_verts += (int)it->second.vertex_count;
+                stat_tris += (int)(it->second.index_count / 3);
+            }
+        }
+        stat_calls = stat_ui_calls + stat_3d_calls;
         std::vector<mq_renderer_shader_pass> passes3d;
         extract_shader_passes(passes3d);
         mq_renderer_frame3d fr{};
         fr.width = TW;
         fr.height = SHpx;
-        fr.views = views3d.data(); fr.view_count = (uint32_t)views3d.size();
+        fr.views = views3d.data(); fr.view_count = opt_3d_enabled ? (uint32_t)views3d.size() : 0;
         fr.lights = lights3d.data(); fr.light_count = (uint32_t)lights3d.size();
         fr.materials = mats3d.data(); fr.material_count = (uint32_t)mats3d.size();
-        fr.draws = draws3d.data(); fr.draw_count = (uint32_t)draws3d.size();
+        fr.draws = draws3d.data(); fr.draw_count = opt_3d_enabled ? (uint32_t)draws3d.size() : 0;
         fr.skins = skins3d.data(); fr.skin_count = (uint32_t)skins3d.size();
         fr.views2d = views.data(); fr.view2d_count = (uint32_t)views.size();
         fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
@@ -5160,6 +5193,7 @@ void Engine::step_frame(bool render_frame) {
         fr.present_y = (int32_t)std::lround(canvas.offset_y);
         fr.present_w = (int32_t)std::lround(canvas.viewport_w);
         fr.present_h = (int32_t)std::lround(canvas.viewport_h);
+        fr.render_mode = opt_render_mode;
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
         /* MSAA：场景字段 scn.Scene.msaa_samples（0/1=关、4=4x），MAQUE_MSAA 覆盖（0/1/4）。
          * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。
@@ -5343,11 +5377,12 @@ void Engine::step_frame(bool render_frame) {
         stat_present_ms = stat_present_ms > 0 ? (float)(stat_present_ms * 0.9 + pms * 0.1) : (float)pms;
         if (const char* ts = std::getenv("MAQUE_TRACE_STATS"); ts && *ts && *ts != '0' && frame % 30 == 0)
             std::print("[stats] frame={} fps={:.1f} total={:.1f}ms logic={:.1f} render={:.1f} present={:.1f} "
-                       "draws={} tris={} target={}x{} imgui={}\n",
+                       "draws={} ui_draws={} 3d_draws={} tris={} verts={} vram_bytes={} target={}x{} imgui={}\n",
                        (long long)frame, stat_fps,
                        stat_logic_ms + stat_render_ms + stat_present_ms,
                        stat_logic_ms, stat_render_ms, stat_present_ms,
-                       stat_calls, stat_tris, TW, SHpx, imgui_on ? 1 : 0);
+                       stat_calls, stat_ui_calls, stat_3d_calls, stat_tris, stat_verts, stat_vram_bytes,
+                       TW, SHpx, imgui_on ? 1 : 0);
     }
     /* Tracy：**基础数据**（帧时间/逻辑/渲染/呈现/FPS/draw/实体）+ 帧标记。
      * 未启动 Tracy 时全部 no-op（每次只是一个原子读 + 返回）。 */
@@ -5813,6 +5848,10 @@ void Engine::clear_asset_caches() {
                     if (pr.mesh >= 0) rapi->destroy_mesh(rself, pr.mesh);
         }
     }
+    for (const auto& [k, id] : mesh_cache) mesh_stats.erase(id);
+    for (const auto& [k, gm] : gltf_models)
+        for (const auto& pr : gm.prims) mesh_stats.erase(pr.mesh);
+    /* cube_mesh 跨场景保留，其 stats 也保留；其余句柄随缓存销毁同步失效。 */
     tex_cache.clear();
     material_cache.clear();
     mesh_cache.clear();
@@ -9282,7 +9321,8 @@ void Engine::imgui_setup() {
 }
 
 /* 开关面板：关掉时释放上下文 + 字体纹理（不占 GPU/输入）；再开会重新初始化。 */
-void Engine::imgui_enable(bool on) {
+void Engine::imgui_enable(bool on, bool show_stats) {
+    imgui_stats = on && show_stats;                 // F4 可复用 ImGui 上下文而不显示 F2 stats
     if (on == imgui_on && (on ? imgui_inited : !imgui_inited)) return;   // 幂等
     if (!on) {
         /* F2/脚本关掉整个 ImGui 时**同时收起 F4 面板状态**：
@@ -9377,6 +9417,7 @@ void Engine::imgui_frame_begin(float dt) {
         const char* e = std::getenv("MAQUE_IMGUI");
         if (e && *e && std::strcmp(e, "0") != 0) {
             imgui_on = true;
+            imgui_stats = true;
             std::print("runtime: imgui on (MAQUE_IMGUI) (F2 toggles)\n");
         }
     }
@@ -9437,33 +9478,42 @@ void Engine::imgui_frame_begin(float dt) {
      *   有些窗口又偏小"的修复点）；只有窗口小到放不下时才按比例收缩。
      * · 位置/尺寸只在**首帧**设一次（FirstUseEver）——之后用户拖动/缩放不被复位。 */
     if (mq_imgui_ready()) {
-        if (!stat_window_sized) {
-            const float pad = 8.0F * imgui_pixel_scale;
-            const float min_w = 80.0F * imgui_pixel_scale;
-            const float min_h = 60.0F * imgui_pixel_scale;
-            const float w = std::min(imgui_panel_w, show_w * 0.85F);
-            const float h = std::min(imgui_panel_h, show_h * 0.75F);
-            mq_imgui_set_pos(pad, pad);
-            mq_imgui_set_size(w > min_w ? w : min_w, h > min_h ? h : min_h);
-            stat_window_sized = true;
+        if (imgui_stats) {
+            if (!stat_window_sized) {
+                const float pad = 8.0F * imgui_pixel_scale;
+                const float min_w = 80.0F * imgui_pixel_scale;
+                const float min_h = 60.0F * imgui_pixel_scale;
+                const float w = std::min(imgui_panel_w, show_w * 0.85F);
+                const float h = std::min(imgui_panel_h, show_h * 0.75F);
+                mq_imgui_set_pos(pad, pad);
+                mq_imgui_set_size(w > min_w ? w : min_w, h > min_h ? h : min_h);
+                stat_window_sized = true;
+            }
+            if (mq_imgui_begin_overlay("stats")) {
+                mq_imgui_push_small_font();     // 内容用正文字号（图集烘了标题/正文两档）
+                char line[160];
+                std::snprintf(line, sizeof line, "FPS %.0f  (%.1f ms)",
+                              stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);
+                mq_imgui_text(line);
+                std::snprintf(line, sizeof line, "logic %.1f ms  render %.1f ms", stat_logic_ms, stat_render_ms);
+                mq_imgui_text(line);
+                std::snprintf(line, sizeof line, "UI draw %d  3D draw %d", stat_ui_calls, stat_3d_calls);
+                mq_imgui_text(line);
+                std::snprintf(line, sizeof line, "tris %d  verts %d", stat_tris, stat_verts);
+                mq_imgui_text(line);
+                if (stat_vram_bytes < 1024u * 1024u)
+                    std::snprintf(line, sizeof line, "VRAM ~%.1f KiB", stat_vram_bytes / 1024.0);
+                else
+                    std::snprintf(line, sizeof line, "VRAM ~%.2f MiB", stat_vram_bytes / (1024.0 * 1024.0));
+                mq_imgui_text(line);
+                std::snprintf(line, sizeof line, "frame %llu  target %dx%d",
+                              (unsigned long long)frame, target_w, target_h);
+                mq_imgui_text(line);
+                mq_imgui_pop_small_font();
+            }
+            mq_imgui_end();
         }
-        if (mq_imgui_begin_overlay("stats")) {
-            mq_imgui_push_small_font();     // 内容用正文字号（图集烘了标题/正文两档）
-            char line[160];
-            std::snprintf(line, sizeof line, "FPS %.0f  (%.1f ms)",
-                          stat_fps, stat_fps > 0 ? 1000.0F / stat_fps : 0.0F);
-            mq_imgui_text(line);
-            std::snprintf(line, sizeof line, "logic %.1f ms  render %.1f ms", stat_logic_ms, stat_render_ms);
-            mq_imgui_text(line);
-            std::snprintf(line, sizeof line, "draws %d  tris %d", stat_calls, stat_tris);
-            mq_imgui_text(line);
-            std::snprintf(line, sizeof line, "frame %llu  target %dx%d",
-                          (unsigned long long)frame, target_w, target_h);
-            mq_imgui_text(line);
-            mq_imgui_pop_small_font();
-        }
-        mq_imgui_end();
-        /* F4 引擎选项面板（与 stats 同帧；默认不显示，按 F4 弹出）。 */
+        /* F4 引擎选项面板可独立显示；只有 F2 / 脚本 / MAQUE_IMGUI 才打开 stats。 */
         if (opt_panel) engine_options_panel(show_w, show_h);
     }
 
@@ -9471,13 +9521,14 @@ void Engine::imgui_frame_begin(float dt) {
 }
 
 /* ---- F4 引擎选项（docs/28）----------------------------------------------------
- * 「引擎选项」面板：MSAA / 默认太阳光 / 主相机 near·far。
+ * 「引擎选项」面板：渲染模式 / 游戏 3D、2D/UI 图层 / MSAA / 默认太阳光 / 主相机 near·far。
  *   · 纯视图层：不写场景组件、不进快照/校验和、不参与模拟（docs/10 确定性不受影响）；
  *   · 值在 extract_3d / 成帧时读取（Engine 的 opt_* 字段），切场景后仍保留；
  *   · 启动初值可用 `MAQUE_ENGINE_OPTIONS`（CI/截图/演示不必依赖鼠标拖控件）。
  * 环境变量格式（逗号分隔；向量分量用 ':'）：
- *   MAQUE_ENGINE_OPTIONS="msaa=4,sun=0,sun_intensity=2,sun_dir=0.4:-1:-0.2,near=0.01,far=500"
- * 键：msaa(0|1|4) / sun(0|1) / sun_intensity / sun_dir(x:y:z) / near / far；
+ *   MAQUE_ENGINE_OPTIONS="mode=wireframe,3d=1,2d=0,msaa=4,sun=0,near=0.01,far=500"
+ * 键：mode(rendered|solid|wireframe) / 3d(0|1) / 2d(0|1) / msaa(0|1|4) /
+ * sun(0|1) / sun_intensity / sun_dir(x:y:z) / near / far；
  * near 或 far 任一出场即启用主相机 near/far 覆盖。 */
 void Engine::engine_options_parse_env() {
     if (opt_env_parsed) return;
@@ -9492,7 +9543,13 @@ void Engine::engine_options_parse_env() {
         const size_t eq = item.find('=');
         const std::string key = eq == std::string::npos ? item : item.substr(0, eq);
         const std::string val = eq == std::string::npos ? std::string() : item.substr(eq + 1);
-        if (key == "msaa") {
+        if (key == "mode") {
+            opt_render_mode = val == "wireframe" ? 2 : (val == "solid" ? 1 : 0);
+        } else if (key == "3d") {
+            opt_3d_enabled = !(val == "0" || val == "off" || val == "false");
+        } else if (key == "2d") {
+            opt_2d_enabled = !(val == "0" || val == "off" || val == "false");
+        } else if (key == "msaa") {
             const int m = std::atoi(val.c_str());
             opt_msaa = m >= 4 ? 4 : (m == 1 ? 1 : 0);
         } else if (key == "sun") {
@@ -9513,7 +9570,9 @@ void Engine::engine_options_parse_env() {
         }
         item.clear();
     }
-    std::print("runtime: engine options (env) msaa={} sun={} intensity={:.2f} cam={}",
+    static const char* const kModeNames[3] = { "rendered", "solid", "wireframe" };
+    std::print("runtime: engine options (env) mode={} 3d={} 2d={} msaa={} sun={} intensity={:.2f} cam={}",
+               kModeNames[opt_render_mode], opt_3d_enabled ? "on" : "off", opt_2d_enabled ? "on" : "off",
                opt_msaa == 0 ? "scene" : (opt_msaa == 4 ? "4x" : "off"),
                opt_sun_enabled ? "on" : "off", (double)opt_sun_intensity,
                opt_cam_override ? "override" : "scene");
@@ -9529,7 +9588,7 @@ void Engine::engine_options_panel(float show_w, float show_h) {
     const float pad = 8.0F * imgui_pixel_scale;
     const float gap = 8.0F * imgui_pixel_scale;
     const float w = std::min(imgui_panel_w * 1.30F, std::max(show_w * 0.90F, 120.0F));
-    const float h = std::min(imgui_panel_h * 3.05F, std::max(show_h * 0.85F, 100.0F));
+    const float h = std::min(imgui_panel_h * 3.65F, std::max(show_h * 0.85F, 100.0F));
     float x = imgui_panel_w > 0.0F ? pad + imgui_panel_w + gap : pad;
     if (x + w > show_w - pad) x = std::max(pad, show_w - w - pad);
     if (!mq_imgui_begin_at("engine options", x, pad, w, h)) { mq_imgui_end(); return; }
@@ -9537,10 +9596,28 @@ void Engine::engine_options_panel(float show_w, float show_h) {
     mq_imgui_push_item_width(std::min(w * 0.50F, 150.0F * imgui_pixel_scale));
 
     mq_imgui_text("选项：只影响本机画面，不改场景");
-    mq_imgui_text_disabled("F4 开关本面板 / F2 开关整个 ImGui");
+    mq_imgui_text_disabled("F4 开关本面板 / F2 开关 stats");
     mq_imgui_separator();
 
-    /* ① MSAA：0=跟随场景（与 MAQUE_MSAA），1=关，4=4x */
+    /* ① 调试渲染与游戏图层：只改提交路径，不隐藏 F4 面板自身。 */
+    const int mode_sel = opt_render_mode == 2 ? 0 : (opt_render_mode == 1 ? 1 : 2);
+    const int new_mode_sel = (int)mq_imgui_combo("渲染模式", (float)mode_sel, "wireframe,solid,rendered");
+    const int new_mode = new_mode_sel == 0 ? 2 : (new_mode_sel == 1 ? 1 : 0);
+    if (new_mode != opt_render_mode) {
+        opt_render_mode = new_mode;
+        static const char* const kModeNames[3] = { "rendered", "solid", "wireframe" };
+        std::print("runtime: engine option mode={}\n", kModeNames[opt_render_mode]);
+    }
+    const bool old_3d = opt_3d_enabled, old_2d = opt_2d_enabled;
+    opt_3d_enabled = mq_imgui_checkbox("3D", opt_3d_enabled ? 1.0F : 0.0F) != 0.0F;
+    opt_2d_enabled = mq_imgui_checkbox("2D / UI", opt_2d_enabled ? 1.0F : 0.0F) != 0.0F;
+    if (old_3d != opt_3d_enabled)
+        std::print("runtime: engine option 3d={}\n", opt_3d_enabled ? "on" : "off");
+    if (old_2d != opt_2d_enabled)
+        std::print("runtime: engine option 2d={}\n", opt_2d_enabled ? "on" : "off");
+    mq_imgui_separator();
+
+    /* ② MSAA：0=跟随场景（与 MAQUE_MSAA），1=关，4=4x */
     const int msaa_sel = opt_msaa == 4 ? 2 : (opt_msaa == 1 ? 1 : 0);
     const int new_sel = (int)mq_imgui_combo("MSAA", (float)msaa_sel, "跟随场景,关闭,4x");
     const int new_msaa = new_sel == 2 ? 4 : (new_sel == 1 ? 1 : 0);
@@ -9553,7 +9630,7 @@ void Engine::engine_options_panel(float show_w, float show_h) {
     else mq_imgui_text("实际：关闭（1x）");
     mq_imgui_separator();
 
-    /* ② 默认太阳光：**只在场景没有任何光源时**补光（老场景的兜底行为可开关/调参） */
+    /* ③ 默认太阳光：**只在场景没有任何光源时**补光（老场景的兜底行为可开关/调参） */
     mq_imgui_text("默认太阳光（场景无光源时补光）");
     opt_sun_enabled = mq_imgui_checkbox("启用", opt_sun_enabled ? 1.0F : 0.0F) != 0.0F;
     opt_sun_intensity = mq_imgui_slider_float("强度", opt_sun_intensity, 0.0F, 4.0F);
@@ -9570,7 +9647,7 @@ void Engine::engine_options_panel(float show_w, float show_h) {
     else mq_imgui_text_disabled("实际：未使用（场景已有光源或已关闭）");
     mq_imgui_separator();
 
-    /* ③ 主相机 near/far 覆盖（覆盖关闭时字段跟随场景实际值，勾选后不跳变） */
+    /* ④ 主相机 near/far 覆盖（覆盖关闭时字段跟随场景实际值，勾选后不跳变） */
     mq_imgui_text("主相机 near / far");
     opt_cam_override = mq_imgui_checkbox("覆盖场景相机", opt_cam_override ? 1.0F : 0.0F) != 0.0F;
     if (opt_cam_override) {
@@ -9588,6 +9665,9 @@ void Engine::engine_options_panel(float show_w, float show_h) {
     }
     mq_imgui_separator();
     if (mq_imgui_button("重置为默认")) {
+        opt_render_mode = 0;
+        opt_3d_enabled = true;
+        opt_2d_enabled = true;
         opt_msaa = 0;
         opt_sun_enabled = true;
         opt_sun_intensity = 1.1F;

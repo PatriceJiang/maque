@@ -263,6 +263,7 @@ typedef struct mq_renderer_frame3d {
     int32_t present_y;
     int32_t present_w;
     int32_t present_h;
+    int32_t render_mode;
 } mq_renderer_frame3d;
 
 #define MQ_RENDERER_API_NAME "maque.renderer"
@@ -286,4 +287,5 @@ typedef struct mq_renderer_v1 {
     int32_t (*create_shader_pass)(void* self, const char* wgsl, int32_t* out_id);
     void (*destroy_shader_pass)(void* self, int32_t id);
     int32_t (*update_mesh)(void* self, int32_t id, const void* vertices, uint64_t vertex_bytes);
+    uint64_t (*resource_bytes)(void* self);
 } mq_renderer_v1;

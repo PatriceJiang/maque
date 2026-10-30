@@ -304,6 +304,8 @@
         - { name: present_y,      type: int32_t }
         - { name: present_w,      type: int32_t }
         - { name: present_h,      type: int32_t }
+        # F4 调试渲染模式（尾部追加）：0=rendered（默认，完整材质）/ 1=solid / 2=wireframe。
+        - { name: render_mode,    type: int32_t }
   methods:
     - fn: create
       returns: self
@@ -374,3 +376,8 @@
       returns: int32_t
       args: [ { name: self, type: self }, { name: id, type: int32_t }, { name: vertices, type: "const void*" }, { name: vertex_bytes, type: uint64_t } ]
       doc: "更新网格顶点（morph 变形；vertex_bytes 必须与创建时一致，stride/layout 不变）；0=成功"
+    # ---- GPU 资源占用估算（append-only）----
+    - fn: resource_bytes
+      returns: uint64_t
+      args: [ { name: self, type: self } ]
+      doc: "当前存活纹理与网格顶点/索引缓冲的字节数估算；不含驱动对齐、render target 与每帧临时资源"

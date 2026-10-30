@@ -3,23 +3,26 @@
 #   ① F4 沿检测：单次按下 → `runtime: engine options panel ON` 恰好一次，
 #      且首次按 F4 会顺手打开整个 ImGui（日志同时出现 `runtime: imgui panel ON`）；
 #      两次按下 → ON/OFF 各一次；按住多帧（连续 keydown）→ ON 仍只一次。
-#   ② 面板确实进像素：同场景 `--shot` 不按 F4 vs 第 5 帧按 F4 → 抓图差异像素 > 500。
+#   ② 面板确实进像素且 F4 不附带 stats：同场景 `--shot` 不按 F4 vs 第 5 帧按 F4，
+#      右侧选项区域差异 > 500，左侧 stats 区域保持一致。
 #   ③ MSAA：`MAQUE_ENGINE_OPTIONS="msaa=4"` → gfx 打 `gfx: 3D MSAA 4x` 且环境变量解析日志
 #      含 `msaa=4x`；默认（不设）不应出现该 gfx 行；`MAQUE_MSAA=0` + 选项 msaa=4 仍 4x
 #      （面板选项优先级最高）。注：gfx 的 MSAA 诊断行只在 `MAQUE_RENDER3D_INFO=1` 下打印，
 #      故本组三次运行都带该诊断开关（否则 4x 生效但日志不可见）。
-#   ④ 默认太阳光：场景无 render.Light 时引擎补一盏默认方向光 → 关掉它
+#   ④ 渲染模式：rendered 与 solid 着色不同；wireframe 只画线段，非背景像素明显少于 solid。
+#   ⑤ 图层开关：3d=0 隐藏 cube 但保留 Sprite；2d=0 隐藏 Sprite 但保留 cube 和 F4 面板。
+#   ⑥ 默认太阳光：场景无 render.Light 时引擎补一盏默认方向光 → 关掉它
 #      （`MAQUE_ENGINE_OPTIONS="sun=0"`）后物体像素平均亮度显著变暗（Δ > 5.0），
 #      且两图不同像素 > 500；`sun_intensity=3` 比默认更亮（Δ > 2.0）。
-#   ⑤ 主相机 near/far 覆盖：`far=0.5` / `near=20` 把物体裁掉（非背景占比 < 0.005），
+#   ⑦ 主相机 near/far 覆盖：`far=0.5` / `near=20` 把物体裁掉（非背景占比 < 0.005），
 #      默认非背景占比 > 0.03；日志含 `cam=override` 及 `far=0.500` / `near=20.000`。
-#   ⑥ F2/F4 互不干扰：
+#   ⑧ F2/F4 互不干扰：
 #      · F4 自己打开的 ImGui 在收起面板时恢复关闭（不会把 stats 留在屏上）；
 #      · ImGui 已开（F2）时 F4 只开关选项面板、不关 stats；
 #      · F2 关掉整个 ImGui 会清空选项面板状态 → F2 再开不会"复活"F4 面板（右侧区域像素与
 #        只按 F2 的参考图逐像素一致；对照组 F4 常开则差异 >5000 像素，证明断言有鉴别力）。
-#   ⑦ 引擎热键不双触发：F2/F4 在面板开关后**不再下发给脚本**（普通按键仍能到达，作对照）。
-#   ⑧ 每次运行后的日志都不含 `AddressSanitizer`（构建默认 Debug + ASan）。
+#   ⑨ 引擎热键不双触发：F2/F4 在面板开关后**不再下发给脚本**（普通按键仍能到达，作对照）。
+#   ⑩ 每次运行后的日志都不含 `AddressSanitizer`（构建默认 Debug + ASan）。
 #
 # 无显示环境可跑：全程 `MAQUE_WINDOW=0x0 MAQUE_PRESENT=off` + `--shot`/`--frames`。
 # headless 没有真实键盘 → `MAQUE_SIM_KEY_AT="<帧>:<键码>"` 往**本帧设备事件队列**注入按下事件
@@ -187,12 +190,19 @@ w, h, a = load(sys.argv[1])
 w2, h2, b = load(sys.argv[2])
 assert (w, h) == (640, 360), f'尺寸 {w}x{h} != 设计分辨率 640x360'
 assert (w2, h2) == (w, h), f'两图尺寸不同: {w2}x{h2} vs {w}x{h}'
-diff = 0
-for i in range(0, len(a), 3):
-    if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12:
-        diff += 1
-print(f'imgui_engine_options_e2e: 面板像素 {w}x{h} 差异像素={diff}')
-sys.exit(0 if diff > 500 else 1)
+left_diff = 0
+right_diff = 0
+for y in range(h):
+    for x in range(w):
+        i = (y * w + x) * 3
+        if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12:
+            if x < 240:
+                left_diff += 1
+            else:
+                right_diff += 1
+print(f'imgui_engine_options_e2e: 面板像素 {w}x{h} 左侧差异={left_diff} 右侧差异={right_diff}')
+# F4 只开选项面板：右侧必须变化，左侧不得出现 F2 stats。
+sys.exit(0 if right_diff > 500 and left_diff <= 10 else 1)
 PY
 
 # ---- ③ MSAA -----------------------------------------------------------------
@@ -212,7 +222,7 @@ MAQUE_RENDER3D_INFO=1 MAQUE_ENGINE_OPTIONS="msaa=4" run "$WORK/msaa_env.log" "MA
 [ -s "$WORK/msaa_env.ppm" ] || fail "msaa=4 截图未生成"
 grep -qF "gfx: 3D MSAA 4x" "$WORK/msaa_env.log" \
     || { cat "$WORK/msaa_env.log" >&2; fail "MAQUE_ENGINE_OPTIONS=msaa=4 未启用 4x MSAA（缺 gfx 日志）"; }
-grep -qF "engine options (env) msaa=4x" "$WORK/msaa_env.log" \
+grep -qF "mode=rendered 3d=on 2d=on msaa=4x" "$WORK/msaa_env.log" \
     || fail "缺环境变量解析日志（应在 'runtime: engine options (env)' 行含 msaa=4x）"
 
 # 优先级：面板/环境选项覆盖 MAQUE_MSAA（MAQUE_MSAA=0 也不能把 4x 压掉）。
@@ -221,8 +231,187 @@ MAQUE_RENDER3D_INFO=1 MAQUE_MSAA=0 MAQUE_ENGINE_OPTIONS="msaa=4" run "$WORK/msaa
 grep -qF "gfx: 3D MSAA 4x" "$WORK/msaa_prec.log" \
     || fail "MAQUE_MSAA=0 + 选项 msaa=4 仍应出现 'gfx: 3D MSAA 4x'（选项优先级最高）"
 
-# ---- ④ 默认太阳光 -----------------------------------------------------------
-echo "imgui_engine_options_e2e: ④ 默认太阳光（关掉后物体变暗）"
+# ---- ④ 渲染模式 -------------------------------------------------------------
+echo "imgui_engine_options_e2e: ④ rendered / solid / wireframe"
+
+for mode in rendered solid wireframe; do
+    MAQUE_RENDER3D_INFO=1 MAQUE_ENGINE_OPTIONS="mode=$mode" \
+        run "$WORK/mode_$mode.log" "渲染模式 $mode 运行失败" \
+        --shot "$WORK/mode_$mode.ppm" --frames 3 "$SCN"
+    grep -qF "engine options (env) mode=$mode" "$WORK/mode_$mode.log" \
+        || fail "渲染模式 $mode 缺环境变量解析日志"
+    grep -qF "gfx: 3D render mode $mode" "$WORK/mode_$mode.log" \
+        || fail "渲染模式 $mode 未传到 gfx"
+    [ -s "$WORK/mode_$mode.ppm" ] || fail "渲染模式 $mode 截图未生成"
+done
+
+"$PY" - "$WORK/mode_rendered.ppm" "$WORK/mode_solid.ppm" "$WORK/mode_wireframe.ppm" <<'PY' \
+    || fail "rendered / solid / wireframe 像素断言不满足"
+import sys
+
+
+def load(p):
+    d = open(p, 'rb').read()
+    parts = d.split(b'\n', 3)
+    assert len(parts) == 4 and parts[0] == b'P6', f'{p}: 不是 P6 PPM'
+    w, h = map(int, parts[1].split())
+    px = parts[3]
+    assert len(px) == w * h * 3
+    return w, h, px
+
+
+w, h, rendered = load(sys.argv[1])
+w2, h2, solid = load(sys.argv[2])
+w3, h3, wire = load(sys.argv[3])
+assert (w, h) == (640, 360) and (w2, h2) == (w, h) and (w3, h3) == (w, h)
+bg = rendered[(2 * w + 2) * 3:(2 * w + 2) * 3 + 3]
+
+
+def nonbg(px):
+    return sum(1 for i in range(0, len(px), 3)
+               if abs(px[i] - bg[0]) + abs(px[i + 1] - bg[1]) + abs(px[i + 2] - bg[2]) > 25)
+
+
+n_rendered = nonbg(rendered)
+n_solid = nonbg(solid)
+n_wire = nonbg(wire)
+diff = sum(1 for i in range(0, len(rendered), 3)
+           if abs(rendered[i] - solid[i]) + abs(rendered[i + 1] - solid[i + 1])
+              + abs(rendered[i + 2] - solid[i + 2]) > 12)
+print(f'imgui_engine_options_e2e: 渲染模式 非背景 rendered={n_rendered} solid={n_solid} '
+      f'wireframe={n_wire} rendered/solid差异={diff}')
+ok = (diff > 500 and n_rendered > 1000 and n_solid > 1000
+      and 50 < n_wire < n_solid * 0.65)
+sys.exit(0 if ok else 1)
+PY
+
+# ---- ⑤ 游戏 3D / 2D/UI 图层开关 ---------------------------------------------
+echo "imgui_engine_options_e2e: ⑤ 3D / 2D/UI 独立开关"
+
+LAYER_SCN="$WORK/imgui_engine_layers_e2e.scn"
+"$PY" - "$SCN" "$LAYER_SCN" <<'PY' || fail "无法生成图层开关测试场景"
+import json
+import sys
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    doc = json.load(f)
+doc['entities'].append({
+    'name': '2d_marker',
+    'components': [
+        {'type': 'scn.Transform2D', 'x': 70.0, 'y': 55.0},
+        {'type': 'scn.Sprite', 'width': 80.0, 'height': 50.0,
+         'r': 1.0, 'g': 0.1, 'b': 0.1},
+    ],
+})
+with open(sys.argv[2], 'w', encoding='utf-8', newline='\n') as f:
+    json.dump(doc, f, ensure_ascii=False, indent=2)
+    f.write('\n')
+PY
+
+run "$WORK/layers_base.log" "图层基线运行失败" --shot "$WORK/layers_base.ppm" --frames 3 "$LAYER_SCN"
+MAQUE_ENGINE_OPTIONS="3d=0" run "$WORK/layers_no3d.log" "3d=0 运行失败" \
+    --shot "$WORK/layers_no3d.ppm" --frames 3 "$LAYER_SCN"
+MAQUE_ENGINE_OPTIONS="2d=0" run "$WORK/layers_no2d.log" "2d=0 运行失败" \
+    --shot "$WORK/layers_no2d.ppm" --frames 3 "$LAYER_SCN"
+MAQUE_SIM_KEY_AT="5:1004" MAQUE_ENGINE_OPTIONS="2d=0" run "$WORK/layers_no2d_f4.log" "2d=0 + F4 运行失败" \
+    --shot "$WORK/layers_no2d_f4.ppm" --shot-frame 25 "$LAYER_SCN"
+grep -qF "mode=rendered 3d=off 2d=on" "$WORK/layers_no3d.log" || fail "3d=0 解析日志不符"
+grep -qF "mode=rendered 3d=on 2d=off" "$WORK/layers_no2d.log" || fail "2d=0 解析日志不符"
+
+"$PY" - "$WORK/layers_base.ppm" "$WORK/layers_no3d.ppm" "$WORK/layers_no2d.ppm" \
+    "$WORK/layers_no2d_f4.ppm" <<'PY' || fail "3D / 2D/UI 图层开关像素断言不满足"
+import sys
+
+
+def load(p):
+    d = open(p, 'rb').read()
+    parts = d.split(b'\n', 3)
+    assert len(parts) == 4 and parts[0] == b'P6'
+    w, h = map(int, parts[1].split())
+    px = parts[3]
+    assert len(px) == w * h * 3
+    return w, h, px
+
+
+images = [load(p) for p in sys.argv[1:]]
+w, h = images[0][0], images[0][1]
+assert (w, h) == (640, 360) and all(im[:2] == (w, h) for im in images)
+base, no3d, no2d, no2d_f4 = [im[2] for im in images]
+bg = base[(2 * w + 2) * 3:(2 * w + 2) * 3 + 3]
+cube = (180, 60, 460, 300)
+sprite = (15, 265, 125, 345)
+
+
+def indices(box):
+    x0, y0, x1, y1 = box
+    return ((y * w + x) * 3 for y in range(y0, y1) for x in range(x0, x1))
+
+
+def nonbg(px, box):
+    return sum(1 for i in indices(box)
+               if abs(px[i] - bg[0]) + abs(px[i + 1] - bg[1]) + abs(px[i + 2] - bg[2]) > 25)
+
+
+def diff(a, b, box, threshold=12):
+    return sum(1 for i in indices(box)
+               if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > threshold)
+
+
+counts = (nonbg(base, cube), nonbg(no3d, cube), nonbg(base, sprite), nonbg(no2d, sprite))
+panel_diff = diff(no2d, no2d_f4, (240, 0, w, h))
+# 无 3D 视图时清屏色走 2D 默认值（与相机 clear_color 略有差异）；只比较 Sprite 自身的明显变化。
+sprite_keep = diff(base, no3d, sprite, 20)
+cube_keep = diff(base, no2d, cube)
+f4_sprite = nonbg(no2d_f4, sprite)
+f4_sprite_diff = diff(no2d, no2d_f4, sprite)
+print(f'imgui_engine_options_e2e: 图层 cube 开/3d关={counts[0]}/{counts[1]} '
+      f'Sprite 开/2d关={counts[2]}/{counts[3]} F4差异={panel_diff} '
+      f'保留差异 Sprite={sprite_keep} cube={cube_keep} F4下Sprite={f4_sprite}/{f4_sprite_diff}')
+ok = (counts[0] > 1000 and counts[1] < 20 and counts[2] > 1000 and counts[3] < 20
+      and sprite_keep <= 10 and cube_keep <= 10
+      and f4_sprite < 20 and f4_sprite_diff <= 10 and panel_diff > 500)
+sys.exit(0 if ok else 1)
+PY
+
+# stats 同样按游戏图层分类；基线额外打开 F2，验证调试面板自身不进入 draw/几何计数。
+# VRAM 则统计真实存活资源，因此 F2 的字体图集应计入；图层开关只隐藏绘制，不释放资产。
+echo "imgui_engine_options_e2e: ⑤b stats（UI/3D drawcall、顶点、三角形、显存）"
+MAQUE_TRACE_STATS=1 MAQUE_SIM_KEY_AT="5:1002" run "$WORK/stats_base.log" "stats 基线运行失败" \
+    --frames 31 "$LAYER_SCN"
+MAQUE_TRACE_STATS=1 MAQUE_ENGINE_OPTIONS="3d=0" run "$WORK/stats_no3d.log" "stats 3d=0 运行失败" \
+    --frames 31 "$LAYER_SCN"
+MAQUE_TRACE_STATS=1 MAQUE_ENGINE_OPTIONS="2d=0" run "$WORK/stats_no2d.log" "stats 2d=0 运行失败" \
+    --frames 31 "$LAYER_SCN"
+grep -qF "draws=2 ui_draws=1 3d_draws=1 tris=14 verts=28" "$WORK/stats_base.log" \
+    || { cat "$WORK/stats_base.log" >&2; fail "stats 基线应为 UI=1/3D=1、28 顶点、14 三角形（含 F2 面板也不变）"; }
+grep -qF "draws=1 ui_draws=1 3d_draws=0 tris=2 verts=4" "$WORK/stats_no3d.log" \
+    || { cat "$WORK/stats_no3d.log" >&2; fail "stats 3d=0 应只剩 UI Sprite：4 顶点、2 三角形"; }
+grep -qF "draws=1 ui_draws=0 3d_draws=1 tris=12 verts=24" "$WORK/stats_no2d.log" \
+    || { cat "$WORK/stats_no2d.log" >&2; fail "stats 2d=0 应只剩 3D cube：24 顶点、12 三角形"; }
+
+"$PY" - "$WORK/stats_base.log" "$WORK/stats_no3d.log" "$WORK/stats_no2d.log" <<'PY' \
+    || fail "stats VRAM 资源字节断言不满足"
+import re
+import sys
+
+
+def last_vram(path):
+    text = open(path, encoding='utf-8', errors='replace').read()
+    values = re.findall(r'\[stats\].*?vram_bytes=(\d+)', text)
+    assert values, f'{path}: 缺 vram_bytes'
+    return int(values[-1])
+
+
+base, no3d, no2d = [last_vram(p) for p in sys.argv[1:]]
+# 内建 cube：24×48B 顶点 + 36×4B 三角形索引 + 72×4B wireframe 索引 = 1584B。
+# 不打开调试面板时没有其它外部纹理；切换图层只影响提交，不应释放这 1584B。
+cube_bytes = 24 * 48 + 36 * 4 + 72 * 4
+print(f'imgui_engine_options_e2e: VRAM base(F2)={base} no3d={no3d} no2d={no2d} cube={cube_bytes}')
+sys.exit(0 if no3d == cube_bytes and no2d == cube_bytes and base > cube_bytes else 1)
+PY
+
+# ---- ⑥ 默认太阳光 -----------------------------------------------------------
+echo "imgui_engine_options_e2e: ⑥ 默认太阳光（关掉后物体变暗）"
 
 run "$WORK/sun_on.log" "默认太阳光渲染失败" \
     --shot "$WORK/sun_on.ppm" --frames 3 "$SCN"
@@ -325,8 +514,8 @@ print(f'imgui_engine_options_e2e: 太阳光强度 默认={mean_a:.2f} '
 sys.exit(0 if mean_b > mean_a + 2.0 else 1)
 PY
 
-# ---- ⑤ 主相机 near/far 覆盖 -------------------------------------------------
-echo "imgui_engine_options_e2e: ⑤ 主相机 near/far 覆盖"
+# ---- ⑦ 主相机 near/far 覆盖 -------------------------------------------------
+echo "imgui_engine_options_e2e: ⑦ 主相机 near/far 覆盖"
 
 run "$WORK/cam_base.log" "相机基线渲染失败" \
     --shot "$WORK/cam_base.ppm" --frames 3 "$SCN"
@@ -381,8 +570,8 @@ ok = ratio_base > 0.03 and ratio_far < 0.005 and ratio_near < 0.005
 sys.exit(0 if ok else 1)
 PY
 
-# ---- ⑥ F2/F4 互不干扰 ------------------------------------------------------
-echo "imgui_engine_options_e2e: ⑥ F2/F4 互不干扰（状态不复活 / 不误关 stats）"
+# ---- ⑧ F2/F4 互不干扰 ------------------------------------------------------
+echo "imgui_engine_options_e2e: ⑧ F2/F4 互不干扰（状态不复活 / 不误关 stats）"
 
 # 参考：只按 F2 开 ImGui（无 F4 面板）。
 MAQUE_SIM_KEY_AT="5:1002" run "$WORK/f2_only.log" "F2 参考运行失败" \
@@ -463,8 +652,8 @@ print(f'imgui_engine_options_e2e: F2/F4 互不干扰 右侧区域差异 mix={dif
 sys.exit(0 if (diff_mix <= 10 and diff_ctrl > 5000) else 1)
 PY
 
-# ---- ⑦ 引擎热键不双触发 -----------------------------------------------------
-echo "imgui_engine_options_e2e: ⑦ 引擎热键 F2/F4 不传给脚本（防双触发）"
+# ---- ⑨ 引擎热键不双触发 -----------------------------------------------------
+echo "imgui_engine_options_e2e: ⑨ 引擎热键 F2/F4 不传给脚本（防双触发）"
 
 # 65 = 'A'（普通按键，应能到达脚本 = 证明输入通路正常）；1002/1004 = F2/F4（引擎热键，应被消费）。
 # 注：设备事件只在**有真实窗口**时经 input 模块下发给脚本（headless 无窗口路径不投递玩法输入）
@@ -480,9 +669,9 @@ if grep -qF "e2e_key 1004" "$WORK/key_router.log"; then
     fail "F4 仍被下发给脚本（开面板会同时触发游戏自己的 F4 动作）"
 fi
 
-# ---- ⑧ 全部日志无 ASan ------------------------------------------------------
+# ---- ⑩ 全部日志无 ASan ------------------------------------------------------
 for log in "$WORK"/*.log; do
     [ -e "$log" ] && check_clean "$log"
 done
 
-echo "imgui_engine_options_e2e: ok（F4 沿检测/面板进像素/MSAA/默认太阳光/主相机 near·far/F2 与 F4 互不干扰/热键不双触发/无 ASan）"
+echo "imgui_engine_options_e2e: ok（F4 沿检测/面板独立/渲染模式/3D 与 2D 开关/MSAA/默认太阳光/相机覆盖/F2 与 F4 互不干扰/热键不双触发/无 ASan）"

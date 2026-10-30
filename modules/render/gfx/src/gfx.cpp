@@ -49,6 +49,7 @@ struct Texture {
     WGPUTextureView view = nullptr;
     WGPUSampler sampler = nullptr;                        /* create_texture2 的 filter/wrap（M3 PBR 采样用） */
     WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm;
+    uint64_t gpu_bytes = 0;                               /* 全 mip / 全 cube 面的资源字节估算 */
     bool cube = false;                                    /* kind=1：环境 cube（6 层 + Cube view，第 26 轮） */
 };
 
@@ -62,10 +63,13 @@ struct Texture {
 struct MeshGpu {
     WGPUBuffer vbo = nullptr;
     WGPUBuffer ibo = nullptr;
+    WGPUBuffer wire_ibo = nullptr;                        /* F4 wireframe：每三角形展开成 3 条线段 */
+    uint32_t wire_index_count = 0;
     uint32_t index_count = 0;
     int32_t vertex_layout = 0;
     uint32_t vertex_stride = 48;                          /* 48/56/72/80（管线内烘焙，绘制时不传） */
     uint64_t vertex_bytes = 0;                            /* update_mesh（CPU morph）按此校验大小 */
+    uint64_t gpu_bytes = 0;                               /* vbo + ibo + wire_ibo */
     float bounds_min[3] = { 0, 0, 0 };
     float bounds_max[3] = { 0, 0, 0 };
 };
@@ -97,6 +101,7 @@ struct Device {
     WGPUSampler sampler = nullptr;
     WGPUSampler samplerNearest = nullptr;      /* 字形/像素画：nearest */
     std::string backend;
+    uint64_t resource_bytes = 0;               /* 存活 Texture / MeshGpu 的 GPU 字节估算 */
     std::vector<Texture*> textures;
     /* ---- 直接呈现（plans/18-pbr-3d.md §4.1）：attach_window 成功后非空（M1）---- */
     WGPUSurface surface = nullptr;
@@ -138,13 +143,16 @@ struct Device {
     WGPUShaderModule p3dShader = nullptr;
     WGPUPipelineLayout p3dSkyPl = nullptr;       /* envmap 天空背景：仅 group0（camera） */
     WGPURenderPipeline skyPipeline[2] = {};   /* [msaa4]：0=1x、1=4x（MSAA 需独立管线） */
-    /* 多材质模型管线：[shading_model 0..9][blend 0/1][cull 0..2][mirrored 0/1][layout 0..3]，按需创建（plans/19/20/22）。
+    /* 多材质模型管线：[shading_model 0..11][blend 0/1][cull 0..2][mirrored 0/1][layout 0..3]，按需创建。
+     * 10/11 是 F4 内部 solid/wireframe 入口，不是场景材质模型。wireframe 另用 LineList 管线缓存。
      * mirrored = model 3×3 行列式 < 0（镜像缩放的 glTF 节点）：镜像把三角形绕序翻成 CW，
      * 而 WebGPU 的 frontFace 默认是 CCW，不做补偿时 side=Front 的材质会把正面剔掉/显示背面。
      * layout = 网格顶点布局（0=48B / 1=56B / 2=72B 蒙皮 / 3=80B 蒙皮+布局1），
      *          对应 shader entry vs / vs1 / vs_skin / vs1_skin。 */
-    WGPURenderPipeline p3dMatPipeline[2][10][2][3][2][4] = {};   /* [msaa4][model][blend][side][mir][layout] */
-    bool p3dMatWarned[10] = {};
+    WGPURenderPipeline p3dMatPipeline[2][12][2][3][2][4] = {};   /* [msaa4][model][blend][side][mir][layout] */
+    WGPURenderPipeline p3dWirePipeline[2][4] = {};               /* [msaa4][layout] */
+    bool p3dMatWarned[12] = {};
+    int32_t lastRenderMode = -1;                                 /* 诊断：仅在模式变化时打印 */
     bool p3dMatLayoutWarned[4] = {};      /* layout 级（vs/vs1/vs_skin/vs1_skin 缺失）只告警一次 */
     /* M5c 方向光阴影：1024² depth map + comparison sampler + 1×1 深度占位（避免同 pass 同纹理读写） */
     WGPUTexture shadowTex = nullptr;
@@ -368,12 +376,14 @@ static bool ensure_msaa(Device* dv, int32_t w, int32_t h, WGPUTextureFormat fmt,
 
 /* pbr 管线：按**目标颜色格式**创建（swapchain/离屏各一），depth32 + Cook-Torrance。 */
 /* 材质模型 → fragment entry point / 诊断名（与 assets/builtin/shaders/pbr/ 的入口名一致） */
-static const char* const kMatFsEntry[10] = {
+static const char* const kMatFsEntry[12] = {
     "fs_standard", "fs_physical", "fs_basic", "fs_lambert", "fs_phong",
     "fs_toon", "fs_normal", "fs_matcap", "fs_depth", "fs_shadow",
+    "fs_debug_solid", "fs_debug_wireframe",
 };
-static const char* const kMatName[10] = {
+static const char* const kMatName[12] = {
     "Standard", "Physical", "Basic", "Lambert", "Phong", "Toon", "Normal", "Matcap", "Depth", "Shadow",
+    "DebugSolid", "DebugWireframe",
 };
 /* 顶点布局 → vertex entry（plans/20/22）：0=48B（vs）/ 1=56B COLOR_0+TEXCOORD_1（vs1）/
  * 2=72B 蒙皮（vs_skin）/ 3=80B 蒙皮+布局1（vs1_skin）。 */
@@ -382,8 +392,8 @@ static const char* const kMatVsEntry[4] = { "vs", "vs1", "vs_skin", "vs1_skin" }
 static const char* const kShadowVsEntry[4] = { "vs_shadow", "vs_shadow1", "vs_shadow_skin", "vs_shadow1_skin" };
 
 static void release_material_pipelines(Device* dv) {
-    for (int mi = 0; mi < 2; ++mi)
-        for (int m = 0; m < 10; ++m)
+    for (int mi = 0; mi < 2; ++mi) {
+        for (int m = 0; m < 12; ++m)
             for (int b = 0; b < 2; ++b)
                 for (int c = 0; c < 3; ++c)
                     for (int mir = 0; mir < 2; ++mir)
@@ -392,6 +402,11 @@ static void release_material_pipelines(Device* dv) {
                                 wgpuRenderPipelineRelease(dv->p3dMatPipeline[mi][m][b][c][mir][lay]);
                                 dv->p3dMatPipeline[mi][m][b][c][mir][lay] = nullptr;
                             }
+        for (int lay = 0; lay < 4; ++lay) {
+            if (dv->p3dWirePipeline[mi][lay]) wgpuRenderPipelineRelease(dv->p3dWirePipeline[mi][lay]);
+            dv->p3dWirePipeline[mi][lay] = nullptr;
+        }
+    }
 }
 
 static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4) {
@@ -648,15 +663,17 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
  * 否则 WebGPU 默认 CCW 会把正反面判反（side=Front 时正面被剔掉）。
  * layout = 网格顶点布局：0=48B / 1=56B COLOR_0+TEXCOORD_1 / 2=72B 蒙皮 / 3=80B 蒙皮+布局1。 */
 static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blend, int side, bool mirrored,
-                                                int layout, bool msaa4) {
+                                                int layout, bool msaa4, bool wireframe = false) {
     if (!dv || !dv->p3dShader || !dv->p3dPl) return nullptr;
-    model = (model < 0) ? 0 : (model > 9 ? 9 : model);
+    model = (model < 0) ? 0 : (model > 11 ? 11 : model);
     side = (side < 0) ? 2 : (side > 2 ? 2 : side);
     layout = (layout < 0 || layout > 3) ? 0 : layout;
     const int b = blend ? 1 : 0;
     const int mir = mirrored ? 1 : 0;
     const int mi = msaa4 ? 1 : 0;
-    if (WGPURenderPipeline& cached = dv->p3dMatPipeline[mi][model][b][side][mir][layout]; cached) return cached;
+    WGPURenderPipeline* cache = wireframe ? &dv->p3dWirePipeline[mi][layout]
+                                         : &dv->p3dMatPipeline[mi][model][b][side][mir][layout];
+    if (*cache) return *cache;
     WGPUColorTargetState ct = WGPU_COLOR_TARGET_STATE_INIT;
     ct.format = dv->p3dFormat; ct.writeMask = WGPUColorWriteMask_All;
     WGPUBlendState blend_state = WGPU_BLEND_STATE_INIT;
@@ -710,16 +727,17 @@ static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blen
     vs.bufferCount = 1; vs.buffers = &vbl;
     WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
     rp.layout = dv->p3dPl; rp.vertex = vs; rp.fragment = &frag;
-    rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    rp.primitive.topology = wireframe ? WGPUPrimitiveTopology_LineList : WGPUPrimitiveTopology_TriangleList;
     rp.multisample.count = msaa4 ? 4u : 1u;
     /* WebGPU 约定：frontFace 默认 CCW（glTF 正面的绕序也是 CCW）；负行列式 model 翻转绕序 →
      * 显式改成 CW，让 cullMode 的"正面/背面"语义仍然成立。 */
     rp.primitive.frontFace = mirrored ? WGPUFrontFace_CW : WGPUFrontFace_CCW;
-    rp.primitive.cullMode = (side == 0) ? WGPUCullMode_Back
+    rp.primitive.cullMode = wireframe ? WGPUCullMode_None
+                          : (side == 0) ? WGPUCullMode_Back
                           : (side == 1) ? WGPUCullMode_Front : WGPUCullMode_None;
     rp.depthStencil = &ds;
     WGPURenderPipeline pipe = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
-    dv->p3dMatPipeline[mi][model][b][side][mir][layout] = pipe;
+    *cache = pipe;
     if (!pipe) {
         if (layout != 0) {
             if (!dv->p3dMatLayoutWarned[layout]) {
@@ -984,6 +1002,7 @@ static void destroy_device(Device* dv) {
         if (!m) continue;
         if (m->vbo) wgpuBufferRelease(m->vbo);
         if (m->ibo) wgpuBufferRelease(m->ibo);
+        if (m->wire_ibo) wgpuBufferRelease(m->wire_ibo);
         delete m;
     }
     for (auto* sp : dv->shaderPasses) release_shader_pass(sp);
@@ -1105,6 +1124,17 @@ static void* r_create(const char** out_backend) {
 }
 static void r_destroy(void* self) { destroy_device((Device*)self); }
 
+/* 只估算显式上传资源的实际数据量；驱动 padding / 对齐与临时目标不在此接口范围内。 */
+static uint64_t mip_texture_bytes(uint32_t w, uint32_t h, int32_t mips, uint32_t layers, uint32_t bpp) {
+    uint64_t bytes = 0;
+    for (int32_t lvl = 0; lvl < mips; ++lvl) {
+        bytes += (uint64_t)w * h * layers * bpp;
+        w = std::max(1u, w >> 1);
+        h = std::max(1u, h >> 1);
+    }
+    return bytes;
+}
+
 static int32_t r_create_texture(void* self, const uint8_t* rgba, int32_t w, int32_t h) {
     auto* dv = (Device*)self;
     if (!dv || w <= 0 || h <= 0 || !rgba) return -1;
@@ -1123,6 +1153,8 @@ static int32_t r_create_texture(void* self, const uint8_t* rgba, int32_t w, int3
     layout.bytesPerRow = (uint32_t)w * 4; layout.rowsPerImage = (uint32_t)h;
     WGPUExtent3D sz = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
     wgpuQueueWriteTexture(dv->queue, &dst, rgba, (size_t)w * h * 4, &layout, &sz);
+    t->gpu_bytes = mip_texture_bytes((uint32_t)w, (uint32_t)h, 1, 1, 4);
+    dv->resource_bytes += t->gpu_bytes;
     dv->textures.push_back(t);
     return (int32_t)dv->textures.size() - 1;
 }
@@ -1131,6 +1163,7 @@ static void r_destroy_texture(void* self, int32_t id) {
     if (!dv || id < 0 || id >= (int)dv->textures.size()) return;
     Texture* t = dv->textures[(size_t)id];
     if (t) {
+        dv->resource_bytes -= t->gpu_bytes;
         /* per-texture sampler（create_texture2 每张贴图一个）也必须释放，否则 destroy 一次漏一个 GPU 对象。 */
         if (t->sampler) wgpuSamplerRelease(t->sampler);
         if (t->view) wgpuTextureViewRelease(t->view);
@@ -1285,6 +1318,9 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
                 h = std::max(1u, h >> 1);
             }
         }
+        tc->gpu_bytes = mip_texture_bytes((uint32_t)d->width, (uint32_t)d->height, mips, 6,
+                                          tc->format == WGPUTextureFormat_RGBA16Float ? 8u : 4u);
+        dv->resource_bytes += tc->gpu_bytes;
         dv->textures.push_back(tc);
         *out_id = (int32_t)dv->textures.size() - 1;
         return 0;
@@ -1340,6 +1376,9 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
             h = std::max(1u, h >> 1);
         }
     }
+    t->gpu_bytes = mip_texture_bytes((uint32_t)d->width, (uint32_t)d->height, mips, 1,
+                                     t->format == WGPUTextureFormat_RGBA16Float ? 8u : 4u);
+    dv->resource_bytes += t->gpu_bytes;
     dv->textures.push_back(t);
     *out_id = (int32_t)dv->textures.size() - 1;
     return 0;
@@ -1378,12 +1417,35 @@ static int32_t r_create_mesh(void* self, const mq_renderer_mesh_gpu* data, int32
         if (!m->ibo) { wgpuBufferRelease(m->vbo); delete m; return -6; }
         wgpuQueueWriteBuffer(dv->queue, m->ibo, 0, data->indices, (size_t)bytes);
     }
+    /* WebGPU 核心没有 polygon-mode=line：预展开三角形的 3 条边，wireframe 时用 LineList 绘制。 */
+    {
+        std::vector<uint32_t> wire;
+        wire.reserve((size_t)(data->index_count / 3u) * 6u);
+        for (uint32_t i = 0; i + 2 < data->index_count; i += 3) {
+            const uint32_t a = data->indices[i], b = data->indices[i + 1], c = data->indices[i + 2];
+            wire.insert(wire.end(), { a, b, b, c, c, a });
+        }
+        if (!wire.empty()) {
+            WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+            bd.usage = WGPUBufferUsage_Index | WGPUBufferUsage_CopyDst;
+            bd.size = wire.size() * sizeof(uint32_t);
+            m->wire_ibo = wgpuDeviceCreateBuffer(dv->device, &bd);
+            if (!m->wire_ibo) {
+                wgpuBufferRelease(m->ibo); wgpuBufferRelease(m->vbo); delete m; return -7;
+            }
+            wgpuQueueWriteBuffer(dv->queue, m->wire_ibo, 0, wire.data(), (size_t)bd.size);
+            m->wire_index_count = (uint32_t)wire.size();
+        }
+    }
     m->index_count = data->index_count;
     m->vertex_layout = data->vertex_layout;
     m->vertex_stride = want_stride;
     m->vertex_bytes = data->vertex_bytes;
+    m->gpu_bytes = data->vertex_bytes
+                 + (uint64_t)(m->index_count + m->wire_index_count) * sizeof(uint32_t);
     std::memcpy(m->bounds_min, data->bounds_min, sizeof m->bounds_min);
     std::memcpy(m->bounds_max, data->bounds_max, sizeof m->bounds_max);
+    dv->resource_bytes += m->gpu_bytes;
     dv->meshes.push_back(m);
     *out_id = (int32_t)dv->meshes.size() - 1;
     return 0;
@@ -1393,11 +1455,18 @@ static void r_destroy_mesh(void* self, int32_t id) {
     if (!dv || id < 0 || id >= (int)dv->meshes.size()) return;
     MeshGpu* m = dv->meshes[(size_t)id];
     if (m) {
+        dv->resource_bytes -= m->gpu_bytes;
         if (m->vbo) wgpuBufferRelease(m->vbo);
         if (m->ibo) wgpuBufferRelease(m->ibo);
+        if (m->wire_ibo) wgpuBufferRelease(m->wire_ibo);
         delete m;
     }
     dv->meshes[(size_t)id] = nullptr;   /* 槽位保留（id 稳定） */
+}
+
+static uint64_t r_resource_bytes(void* self) {
+    const auto* dv = (const Device*)self;
+    return dv ? dv->resource_bytes : 0;
 }
 
 /* CPU morph（plans/22 §5.4）：更新现有网格的顶点缓冲 —— 大小必须与创建时**逐字节一致**
@@ -2251,6 +2320,14 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
     }();
     if (f->view_count == 0 || !f->views) return 0;
     if (f->draw_count > 0 && !f->draws) return 1;     /* 防御：非法帧描述（不做静默降级） */
+    const int render_mode = (f->render_mode == 1 || f->render_mode == 2) ? f->render_mode : 0;
+    if (dv->lastRenderMode != render_mode) {
+        dv->lastRenderMode = render_mode;
+        if (const char* info = std::getenv("MAQUE_RENDER3D_INFO"); info && info[0] == '1') {
+            static const char* const names[3] = { "rendered", "solid", "wireframe" };
+            std::print("gfx: 3D render mode {}\n", names[render_mode]);
+        }
+    }
     /* MSAA：仅接受 1/4（WebGPU 规范允许的 sampleCount）；创建失败自动回退 1x。
      * 管线按 sampleCount 分两份缓存（rp.multisample.count），所以先定样本数再建管线。 */
     int32_t msaa = (f->msaa_samples == 4) ? 4 : 1;
@@ -2677,11 +2754,14 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             if (d.mesh < 0 || d.mesh >= (int)dv->meshes.size()) return;
             MeshGpu* m = dv->meshes[(size_t)d.mesh];
             if (!m || !m->vbo || !m->ibo || m->index_count == 0) return;
+            const bool use_wire = render_mode == 2;
+            if (use_wire && (!m->wire_ibo || m->wire_index_count == 0)) return;
             const mq_renderer_pbr_material* mat =
                 (f->materials && d.material >= 0 && (uint32_t)d.material < f->material_count)
                     ? &f->materials[d.material] : nullptr;
             float du[kMatUniformFloats] = {};
             pack_draw_uniform(du, d.model, mat);
+            if (render_mode != 0) du[19] = 1.0F;       /* 调试模式统一按不透明基色显示 */
             WGPUBufferDescriptor dbd = WGPU_BUFFER_DESCRIPTOR_INIT;
             dbd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
             dbd.size = sizeof du;
@@ -2696,16 +2776,16 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             WGPUBindGroupDescriptor dbgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
             dbgd.layout = dv->p3dDrawBgl; dbgd.entryCount = 24; dbgd.entries = dbe;
             WGPUBindGroup drawBg = wgpuDeviceCreateBindGroup(dv->device, &dbgd);
-            const bool is_blend = mat && mat->alpha_mode == 2;
-            const int model = mat ? mat->shading_model : 0;
-            const int side = mat ? mat->side : 2;
+            const bool is_blend = render_mode == 0 && mat && mat->alpha_mode == 2;
+            const int model = render_mode == 1 ? 10 : (render_mode == 2 ? 11 : (mat ? mat->shading_model : 0));
+            const int side = render_mode != 0 ? 2 : (mat ? mat->side : 2);
             /* 负行列式（镜像缩放）：NDC 绕序翻转，管线用 frontFace=CW 补偿（R9）。 */
             const bool mirrored = mat3_det(d.model) < 0.0F;
             WGPURenderPipeline pipe =
-                get_material_pipeline(dv, model, is_blend, side, mirrored, layout, msaa > 1);
+                get_material_pipeline(dv, model, is_blend, side, mirrored, layout, msaa > 1, use_wire);
             /* 玻璃/transmission 近似（无折射回退）：同一网格画两遍（先背面 cull front，再正面 cull back），
              * 让单层玻璃也看到背面层，混合后更接近"有厚度的透明体"。 */
-            if (allow_two_pass && is_blend && mat && (mat->flags2 & 0x100000)) {
+            if (render_mode == 0 && allow_two_pass && is_blend && mat && (mat->flags2 & 0x100000)) {
                 WGPURenderPipeline back_pipe =
                     get_material_pipeline(dv, model, is_blend, 1, mirrored, layout, msaa > 1);
                 if (back_pipe) {
@@ -2728,8 +2808,9 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
             wgpuRenderPassEncoderSetPipeline(p, pipe);
             wgpuRenderPassEncoderSetBindGroup(p, 1, drawBg, 0, nullptr);
             wgpuRenderPassEncoderSetVertexBuffer(p, 0, m->vbo, 0, WGPU_WHOLE_SIZE);
-            wgpuRenderPassEncoderSetIndexBuffer(p, m->ibo, WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
-            wgpuRenderPassEncoderDrawIndexed(p, m->index_count, 1, 0, 0, 0);
+            wgpuRenderPassEncoderSetIndexBuffer(p, use_wire ? m->wire_ibo : m->ibo,
+                                                WGPUIndexFormat_Uint32, 0, WGPU_WHOLE_SIZE);
+            wgpuRenderPassEncoderDrawIndexed(p, use_wire ? m->wire_index_count : m->index_count, 1, 0, 0, 0);
             wgpuBindGroupRelease(drawBg);
             wgpuBufferRelease(dbuf);
             if (skin_buf) wgpuBufferRelease(skin_buf);
@@ -3169,7 +3250,9 @@ static const mq_renderer_v1 g_api = {
     /* ---- 场景资源全屏 shader pass（追加；docs/13）---- */
     r_create_shader_pass, r_destroy_shader_pass,
     /* ---- CPU morph 顶点更新（追加；plans/22 §5.4）---- */
-    r_update_mesh
+    r_update_mesh,
+    /* ---- GPU 资源占用估算（追加）---- */
+    r_resource_bytes
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {
