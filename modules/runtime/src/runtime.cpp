@@ -386,10 +386,16 @@ struct Engine {
     /* 每个 NavAgent 的路径缓存（按实体 id；path 为 [x,y] 交错世界坐标） */
     struct AgentPath { std::vector<float> path; uint32_t index = 0; };
     std::unordered_map<int, AgentPath> agent_paths;
-    /* 节点事件表（entity → [(event, handler, owner_instance)]；注册序即派发序，确定性）。
-     * owner_instance：注册该处理器的脚本所属实例（0=根，-2=常驻覆盖层）；派发只调它自己的 bus。 */
-    struct NodeHandler { std::string event; std::string handler; int instance = 0; };
+    /* 节点事件表（entity → [(event, handler, owner_instance, script_slot)]；注册序即派发序，确定性）。
+     * owner_instance：注册该处理器的脚本所属实例（0=根，-2=常驻覆盖层）；派发只调它自己的 bus。
+     * script_slot：注册时该 handler 函数所在 VM 在所属 bus 里的槽位（-1=无法判定）。
+     * 热重载某个脚本槽位前必须按 (owner, slot) 摘掉旧注册 —— 否则 on_start 每次重载都
+     * 再 add 一份：同一事件被调用 N 次，且处理器字符串随重载次数无界增长（内存泄漏）。 */
+    struct NodeHandler { std::string event; std::string handler; int instance = 0; int slot = -1; };
     std::unordered_map<int, std::vector<NodeHandler>> node_events;
+    int  script_slot_for_handler(const char* handler) const;
+    void purge_node_handlers(int instance, int slot, mq_script_vm* fresh, mq_script_bus* bus,
+                             bool single_vm);
     bool director_paused = false;                  // director.pause()：跳过模拟，仅保留采样/渲染
     uint64_t script_frames = 0;                    // 脚本 update 实际执行次数（对照暂停）
     /* Tween（补间）：确定性固定步长推进；写入反射字段路径（与动画同一机制） */
@@ -6619,6 +6625,9 @@ bool Engine::reload_script(std::string* err, const std::string* only) {
             return false;
         }
         mq_script_bus_swap(bus, (uint32_t)i, fresh, sp.c_str());
+        /* 旧 VM 的 node_on 注册先摘掉：on_start 只应重新注册一份（否则每次热更叠加，
+         * 同一事件调用 N 次，处理器字符串也不断增长）。 */
+        purge_node_handlers(0, (int)i, fresh, bus, mq_script_bus_count(bus) == 1);
         /* 换入后**只对新 VM** 派发 on_start：脚本重新初始化并重新注册它的事件处理器。
          * （不加这一步，热更后的脚本会失去 node_on 注册 → 收不到任何事件，功能静默失效。） */
         if (mq_event_dispatch(fresh, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
@@ -6707,6 +6716,8 @@ bool Engine::reload_scene() {
  * 外壳/HUD/导航的 JS 状态跨场景保留；UI 实体仍属于当前世界（切场景即销毁），
  * 所以每次场景装配完成后由 on_start 让脚本重建 UI。 */
 void Engine::unload_overlay() {
+    /* 覆盖层 VM 即将销毁：它注册的节点事件必须先摘掉（换覆盖层脚本/退出时不留陈旧处理器）。 */
+    purge_node_handlers(-2, -1, nullptr, nullptr, true);
     if (overlay_bus) { mq_script_bus_destroy(overlay_bus); overlay_bus = nullptr; }
     overlay_rel.clear();
     overlay_abs.clear();
@@ -6777,9 +6788,21 @@ bool Engine::reload_overlay_script() {
         return false;
     }
     mq_script_bus_swap(overlay_bus, 0, fresh, overlay_rel.c_str());
+    purge_node_handlers(-2, 0, fresh, overlay_bus, true);
     overlay_hash = h;
-    /* 换入后只对新 VM 派发 on_start：重建 UI 并重新初始化。 */
-    if (mq_event_dispatch(fresh, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr) != 0) {
+    /* 换入后只对新 VM 派发 on_start：重建 UI 并重新初始化。与常规派发一样标记
+     * in_overlay 上下文 —— 否则 on_start 里的 node_on 会按根实例登记（归属/总线都错）。 */
+    SceneInstanceRuntime* prev = active_instance;
+    const bool prev_ov = in_overlay;
+    const bool prev_g = in_global;
+    active_instance = nullptr;
+    in_overlay = true;
+    in_global = false;
+    const int hs = mq_event_dispatch(fresh, MQ_EVENT_ON_START, 0.0, 0.0, 0.0, nullptr);
+    active_instance = prev;
+    in_overlay = prev_ov;
+    in_global = prev_g;
+    if (hs != 0) {
         char ebuf[512] = { 0 };
         std::string e = mq_script_last_error(fresh, ebuf, (int)sizeof ebuf) == 0 ? ebuf : "on_start failed";
         std::print(stderr, "runtime: overlay hot reload on_start failed '{}': {}\n", overlay_rel, e);
@@ -6795,6 +6818,8 @@ bool Engine::reload_overlay_script() {
  * 其他 VM 可用 global_emit(event, value) 显式调用它的命名处理器。
  * 同一路径复用已有 VM（跨场景状态保留）；不同路径 → 换脚本（状态重置）。 */
 void Engine::unload_global() {
+    /* 同 unload_overlay：全局脚本的节点事件随它的 VM 一起失效。 */
+    purge_node_handlers(-3, -1, nullptr, nullptr, true);
     if (global_bus) { mq_script_bus_destroy(global_bus); global_bus = nullptr; }
     global_rel.clear();
     global_abs.clear();
@@ -6886,6 +6911,7 @@ bool Engine::reload_global_script() {
         return false;
     }
     mq_script_bus_swap(global_bus, 0, fresh, global_rel.c_str());
+    purge_node_handlers(-3, 0, fresh, global_bus, true);
     global_hash = h;
     /* 换入后只对新 VM 派发 on_start（重建 HUD / 重新注册事件）；上下文标记为全局脚本，
      * 否则 on_start 里的 node_on/entity_spawn 会落到错误的作用域。 */
@@ -8070,6 +8096,8 @@ bool Engine::reload_instance_script(int instance_id, const std::string& rel) {
         return false;
     }
     mq_script_bus_swap(inst->bus, (uint32_t)slot, fresh, rel.c_str());
+    /* 同上：先摘掉该脚本槽位的旧注册，再让新 VM 的 on_start 重新注册一份。 */
+    purge_node_handlers(inst->id, slot, fresh, inst->bus, mq_script_bus_count(inst->bus) == 1);
     while (inst->script_hashes.size() <= (size_t)slot) inst->script_hashes.push_back(0);
     inst->script_hashes[(size_t)slot] = h;
     if (inst->id == 0) {
@@ -11296,6 +11324,43 @@ void Engine::refresh_contacts() {
     }
 }
 
+/* 注册 handler 时判定它属于哪个脚本槽位：在同实例 bus 里找**定义了该全局函数**的 VM。
+ * 绝大多数脚本用 `function on_xxx()` 声明处理器，按名可唯一判定；多脚本同名处理器
+ * 取声明顺序第一个（与 bus 的派发顺序一致）。判不出 → -1（单脚本总线仍会被整体清理）。 */
+int Engine::script_slot_for_handler(const char* handler) const {
+    if (!handler || !*handler) return -1;
+    mq_script_bus* b = in_global ? global_bus
+                      : in_overlay ? overlay_bus
+                      : (active_instance && active_instance->bus ? active_instance->bus : bus);
+    if (!b) return -1;
+    const uint32_t n = mq_script_bus_count(b);
+    for (uint32_t i = 0; i < n; ++i)
+        if (mq_script_has(mq_script_bus_vm_at(b, i), handler)) return (int)i;
+    return -1;
+}
+
+/* 热重载前清理旧 VM 的节点事件注册：按 (实例, 脚本槽位) 精确摘除；
+ * 单脚本总线直接清空该实例的全部注册（覆盖 handler 无法按名判定/已被删除的情况）；
+ * 多脚本且槽位未知时，只清理新 VM 里仍存在的同名 handler（避免误删其它脚本的注册）。 */
+void Engine::purge_node_handlers(int instance, int slot, mq_script_vm* fresh, mq_script_bus* b,
+                                 bool single_vm) {
+    for (auto it = node_events.begin(); it != node_events.end();) {
+        auto& v = it->second;
+        std::erase_if(v, [&](const NodeHandler& h) {
+            if (h.instance != instance) return false;
+            if (single_vm) return true;
+            if (slot >= 0 && h.slot == slot) return true;
+            if (h.slot >= 0) return false;
+            /* 槽位未知：新 VM 仍定义同名处理器 → 视为被它替换；新 VM 没有、
+             * 且整条总线也没有任何 VM 定义它 → 旧脚本遗留的注册（新代码已删掉该 handler）。 */
+            if (fresh && mq_script_has(fresh, h.handler.c_str())) return true;
+            return b && !mq_script_bus_has(b, h.handler.c_str());
+        });
+        if (v.empty()) it = node_events.erase(it);
+        else ++it;
+    }
+}
+
 } // namespace
 
 namespace host {
@@ -11879,7 +11944,7 @@ float node_on(void* ctx, float id, const char* event, const char* handler) {
                    (int)id, owner);
         return 0.0F;
     }
-    eng->node_events[(int)id].push_back({ event, handler, owner });
+    eng->node_events[(int)id].push_back({ event, handler, owner, eng->script_slot_for_handler(handler) });
     return 1.0F;
 }
 

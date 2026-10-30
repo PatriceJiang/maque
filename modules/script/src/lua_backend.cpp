@@ -378,7 +378,11 @@ int register_ret_str(mq_script_vm* vm, const char* name, mq_script_ret_str_fn fn
 int register_mixed(mq_script_vm* vm, const char* name, mq_script_mixed_fn fn, void* user) {
     if (!vm || !name) return 1;
     LuaVm* v = S(vm);
-    HostFn h; h.kind = HostFn::Mixed; h.mixed = fn; h.user = user; h.kinds = "s";
+    /* mixed = 任意个数值 + **一个字符串**（字符串通常是末尾参数）。不能写死 kinds="s"：
+     * 那会把第一个数值参数按字符串 marshal（lua_tostring 还会改写栈上的值），
+     * 于是 node_emit(0,"ping") 变成 node_emit("0", 0)。留空 → trampoline 按 Lua 实参类型
+     * 拆分（number→nums，string→strs），n...、n...s 都正确。 */
+    HostFn h; h.kind = HostFn::Mixed; h.mixed = fn; h.user = user; h.kinds.clear();
     v->fns.push_back(h);
     return register_common(v, name, (int)v->fns.size() - 1, false);
 }

@@ -409,6 +409,15 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(hot_reload_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 脚本热重载的**处理器注册**回归（docs/14 §热重载）：node_on 不能随每次重载叠加，
+# 否则同一事件被重复派发、处理器字符串无界增长。用 MAQUE_WATCH + 追加内容触发，
+# 不依赖 FIFO → Windows 也能跑。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME script_reload_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/script_reload_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_CURRENT_BINARY_DIR}/script_reload_e2e")
+endif()
+
 # 动画/粒子端到端（docs/15 §2/§4、docs/10 §5）：关键帧采样 + 粒子发射 + 确定性 + 回滚保真
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME anim_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/anim_e2e.sh"
