@@ -138,7 +138,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\fetch-deps.ps1
 
 # 配置 + 构建 + 测试（默认 Debug + AddressSanitizer）
 tools\win\build.cmd -RunTests
-tools\win\build.cmd -Sanitize "" -BuildType Release -RunTests   # 不带 ASan 的 Release
+tools\win\build.cmd -NoSanitize -BuildType Release -RunTests   # 不带 ASan 的 Release
 ```
 
 - 依赖装到 `.deps/dist`（**不入库**），并按同一 clang-cl + `/MD` 构建，避免运行时不匹配；

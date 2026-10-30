@@ -18,7 +18,7 @@
 
 .EXAMPLE
   # 不带 sanitizer 的 Release 构建 + 跑测试
-  pwsh -File tools/win/build.ps1 -BuildType Release -Sanitize '' -RunTests
+  pwsh -File tools/win/build.ps1 -BuildType Release -NoSanitize -RunTests
 
 .EXAMPLE
   # 只跑测试
@@ -29,8 +29,10 @@ param(
     [string]   $BuildDir   = 'build-win',
     [ValidateSet('Debug','Release','RelWithDebInfo','MinSizeRel')]
     [string]   $BuildType  = 'Debug',
-    # 空字符串 = 关闭 sanitizer；Windows 仅支持 address
+    # 空字符串 = 关闭 sanitizer；Windows 仅支持 address。
+    # 从 build.cmd 调用时空参数会被 powershell.exe 吞掉，优先使用 -NoSanitize。
     [string]   $Sanitize   = 'address',
+    [switch]   $NoSanitize,
     [switch]   $RunTests,
     [switch]   $NoConfigure,
     [switch]   $NoBuild,
@@ -38,6 +40,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($NoSanitize) { $Sanitize = '' }
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 Set-Location $repo
 

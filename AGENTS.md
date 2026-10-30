@@ -72,7 +72,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\fetch-deps.ps1
 # ② 配置 + 构建 + 测试（一条命令；默认 Debug + ASan）
 tools\win\build.cmd                 # 配置 + 构建
 tools\win\build.cmd -RunTests       # 再跑 ctest
-tools\win\build.cmd -Sanitize "" -BuildType Release -RunTests   # 不带 ASan 的 Release
+tools\win\build.cmd -NoSanitize -BuildType Release -RunTests   # 不带 ASan 的 Release
 
 # 或手工（等价）：
 cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Debug `

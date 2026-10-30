@@ -322,9 +322,9 @@ int main() {
         CHECK(api->create_mesh(self, &bad, &dummy) != 0);
         bad = md; bad.vertices = nullptr;
         CHECK(api->create_mesh(self, &bad, &dummy) != 0);
-        // 无窗口时 attach_window 必须明确失败（调用方回退离屏）
+        // kind=0 是显式 detach：无 surface 时也应幂等成功，runtime 用它从直呈回退离屏。
         mq_renderer_window win{};
-        CHECK(api->attach_window(self, &win) != 0);
+        CHECK(api->attach_window(self, &win) == 0);
     }
 
     api->destroy(self);
