@@ -661,9 +661,20 @@ baseline-1/-2；栅格化后把贴近基线的字形统一吸附到 baseline-1�
 - 格式/静态检查：`.clang-format`、`.clang-tidy`（导出 `compile_commands.json`）。
 - 经典用法：先加/改接口与测试，再实现。
 
+## Bug 记录（docs/bugs/）
+
+- **内存 / 崩溃 / 性能**类 bug 一旦发现（无论是否已修）都必须建档：`docs/bugs/NNN-短名.md`
+  （三位递增、不复用编号），并在 `docs/bugs/README.md` 的索引里登记；模板/字段见该 README。
+- 必填：症状与影响面、类型、状态（`open` / `fixed` / `wontfix`）、最小复现、根因、
+  修复或临时规避、回归测试与证据。
+- 修复提交引用 bug 编号；修复后状态改 `fixed` 并写 `ctest -R ...`；未修标 `open`，
+  写清下一步与已知边界（禁止用猜测填空；未量化要标明）。
+- 其它类型（功能/正确性）bug **建议**记录，尤其是跨语言、跨平台、热重载、序列化这类难复现问题。
+
 ## 文档地图
 
 - 设计文档：`docs/`（根文档 `docs/00-设计哲学与约束.md`；索引 `docs/README.md`）。
+- Bug 档案：`docs/bugs/`（内存/崩溃/性能必录；索引 `docs/bugs/README.md`）。
 - 接口绑定机制：`docs/21-接口声明与绑定生成.md`；**API 参考（自动生成）**：`docs/api/README.md` → `modules/core/data/generated/API.md`。
 - 运行时/资源模型：`docs/20-运行时与资源模型.md`。
 - 里程碑/路线图：`docs/milestones/00-路线图.md`。
