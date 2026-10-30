@@ -1,0 +1,154 @@
+# maque Android arm64-v8a build and packaging gate.
+#
+# This job intentionally checks out Git LFS objects: the default Android package must
+# contain the real contents of scenes/, not pointer files. APK upload is opt-in because
+# the full scene bundle is currently ~678 MiB.
+name: android-build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      upload_apk:
+        description: Upload the full debug APK artifact
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  SDL_TAG: release-2.32.10
+  WGPU_NATIVE_TAG: v29.0.1.1
+  WGPU_ANDROID_AARCH64_SHA256: 721741f1b05a20c1738166bedf7a5efb2ba4b382da689526d3fc33de22bdd573
+  ANDROID_API: '35'
+  ANDROID_BUILD_TOOLS: '35.0.0'
+  ANDROID_NDK: '27.3.13750724'
+  ANDROID_CMAKE: '3.22.1'
+
+jobs:
+  android:
+    name: android / arm64-v8a / debug
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Reclaim runner disk space
+        run: |
+          # The checked-out LFS scene tree, NDK build and APK coexist during packaging.
+          # Remove unrelated hosted-runner SDKs while keeping the Android SDK intact.
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+          df -h /
+
+      - name: Check out source and scene LFS objects
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Android SDK tools
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK, NDK and CMake
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager \
+            "platforms;android-${ANDROID_API}" \
+            "build-tools;${ANDROID_BUILD_TOOLS}" \
+            "ndk;${ANDROID_NDK}" \
+            "cmake;${ANDROID_CMAKE}"
+
+      - name: Install schema/codegen dependencies
+        working-directory: modules/core/data
+        run: npm install --no-audit --no-fund
+
+      - name: Cache SDL2 source checkout
+        uses: actions/cache@v4
+        with:
+          path: android/.deps/SDL
+          key: android-sdl2-${{ env.SDL_TAG }}
+
+      - name: Fetch pinned SDL2 source
+        run: sh android/setup-deps.sh
+
+      - name: Fetch official Android wgpu-native
+        run: |
+          set -euo pipefail
+          zip="$RUNNER_TEMP/wgpu-android-aarch64.zip"
+          out="$RUNNER_TEMP/wgpu-android-aarch64"
+          url="https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_NATIVE_TAG}/wgpu-android-aarch64-release.zip"
+          curl -fsSL --retry 3 --retry-delay 2 "$url" -o "$zip"
+          echo "${WGPU_ANDROID_AARCH64_SHA256}  ${zip}" | sha256sum -c -
+          mkdir -p "$out" android/app/src/main/jniLibs/arm64-v8a
+          unzip -q -o "$zip" -d "$out"
+          lib="$(find "$out" -path '*/lib/libwgpu_native.so' -print -quit)"
+          header="$(find "$out" -path '*/include/webgpu/webgpu.h' -print -quit)"
+          test -n "$lib" || { echo '::error::libwgpu_native.so missing from release archive'; exit 1; }
+          test -n "$header" || { echo '::error::webgpu.h missing from release archive'; exit 1; }
+          python3 - "$header" <<'PY'
+          import pathlib
+          import sys
+          committed = pathlib.Path("third_party/wgpu-native/include/webgpu/webgpu.h").read_bytes()
+          released = pathlib.Path(sys.argv[1]).read_bytes()
+          if committed.replace(b"\r\n", b"\n") != released.replace(b"\r\n", b"\n"):
+              raise SystemExit("::error::committed webgpu.h does not match the wgpu-native release")
+          PY
+          cp "$lib" android/app/src/main/jniLibs/arm64-v8a/libwgpu_native.so
+          file android/app/src/main/jniLibs/arm64-v8a/libwgpu_native.so
+
+      - name: Build and lint Android app
+        working-directory: android
+        run: |
+          ./gradlew --no-daemon --stacktrace \
+            -PmaqueAbis=arm64-v8a \
+            :app:assembleDebug \
+            :app:lintDebug
+
+      - name: Verify APK scene assets, index and native ABI
+        run: |
+          python3 tests/android_apk_verify.py \
+            android/app/build/outputs/apk/debug/app-debug.apk \
+            scenes
+
+      - name: Verify generated sources are committed
+        run: git diff --exit-code -- modules/core/data/generated
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lint-report
+          path: android/app/build/reports/lint-results-debug.html
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload debug APK
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_apk }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: maque-android-arm64-v8a-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3

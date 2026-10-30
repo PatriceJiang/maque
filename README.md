@@ -1,6 +1,11 @@
 # maque
 
-[![cpp-build](https://github.com/PatriceJiang/maque/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/PatriceJiang/maque/actions/workflows/build.yml)
+| Platform | CI status |
+|---|---|
+| Linux x86_64 | [![Linux CI](https://img.shields.io/github/actions/workflow/status/PatriceJiang/maque/build.yml?branch=main&label=Linux)](https://github.com/PatriceJiang/maque/actions/workflows/build.yml) |
+| Windows x64 | [![Windows CI](https://img.shields.io/github/actions/workflow/status/PatriceJiang/maque/build.yml?branch=main&label=Windows)](https://github.com/PatriceJiang/maque/actions/workflows/build.yml) |
+| WASM / Emscripten | [![WASM CI](https://img.shields.io/github/actions/workflow/status/PatriceJiang/maque/build.yml?branch=main&label=WASM)](https://github.com/PatriceJiang/maque/actions/workflows/build.yml) |
+| Android arm64-v8a | [![Android CI](https://img.shields.io/github/actions/workflow/status/PatriceJiang/maque/android.yml?branch=main&label=Android)](https://github.com/PatriceJiang/maque/actions/workflows/android.yml) |
 
 麻雀虽小，五脏俱全。**maque 是一个"可被 AI 自主驱动与观测"的轻量游戏引擎**，
 同时服务**嵌入式**与**独立游戏**，并以 **WASM/浏览器**为一等目标平台。
