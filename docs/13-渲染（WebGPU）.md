@@ -82,6 +82,9 @@
 
 ### 6.1 相机 RenderTexture
 
+> 完整使用手册、场景示例、截图协议、性能建议和排错见
+> [33 · RenderTexture：相机离屏纹理与截图](33-RenderTexture相机离屏纹理.md)。
+
 `render.RenderTexture` 是挂在相机节点上的组件，不内嵌第二套相机字段。支持三种现有相机：
 
 - `scn.Camera`：旧 2D 相机；
@@ -131,7 +134,8 @@ camera_capture(camera, "shots/minimap.png"); // 当前渲染帧更新后写 PNG�
 normal/MR 等数据贴图。PBR 当前每个材质共用一个 sampler；材质含 RenderTexture 时优先采用该 RT 的过滤设置，
 否则采用第一张有效静态贴图的 sampler。逐帧路径保持 GPU→GPU，只有显式截图/控制面抓取才做 GPU→CPU readback。
 
-样例：`scenes/render_texture/render_texture.scn`；回归：`ctest -R render_texture_e2e`。
+样例：`scenes/render_texture/render_texture.scn`、`render_texture_2d.scn`、`render_texture_3d.scn`、
+`render_texture_cube.scn`；回归：`ctest -R render_texture_e2e`。
 
 ## 7. 观测
 

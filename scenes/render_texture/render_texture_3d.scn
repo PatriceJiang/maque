@@ -5,33 +5,119 @@
   "views": 1,
   "entities": [
     {
-      "name": "capture_camera_3d",
+      "name": "main_camera",
       "components": [
         { "type": "scene.Transform3D", "local": {
-            "position": { "x": 0.0, "y": 0.0, "z": 4.0 },
+            "position": { "x": 0.0, "y": 1.6, "z": 5.0 },
             "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 } } },
-        { "type": "render.Camera3D", "projection": 1, "ortho_height": 3.0,
-          "near": 0.1, "far": 100.0, "clear_mode": 1, "culling_mask": 1,
-          "clear_color": { "r": 0.9, "g": 0.05, "b": 0.12, "a": 1.0 } },
-        { "type": "render.RenderTexture", "name": "camera3d", "width": 64, "height": 64,
+        { "type": "render.Camera3D", "fov_y": 60.0, "near": 0.1, "far": 100.0,
+          "clear_mode": 1, "culling_mask": 4,
+          "clear_color": { "r": 0.02, "g": 0.025, "b": 0.04, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "camera_duck",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 2.8007909835400205, "y": 3.2448479804952133, "z": -3.017546166683445 },
+            "rotation": { "x": 2.4713861906995986, "y": 0.7539821723292661, "z": 3.141592653589793 } } },
+        { "type": "render.Camera3D", "fov_y": 37.8491654365455, "near": 0.6, "far": 10000.0,
+          "clear_mode": 1, "culling_mask": 1,
+          "clear_color": { "r": 0.05, "g": 0.06, "b": 0.09, "a": 1.0 } },
+        { "type": "render.RenderTexture", "name": "duck", "width": 128, "height": 128,
           "update_mode": 0, "filter": 0, "enabled": true }
       ]
     },
     {
-      "name": "culled_cube",
+      "name": "camera_fox",
       "components": [
         { "type": "scene.Transform3D", "local": {
-            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
-            "scale": { "x": 1.2, "y": 1.2, "z": 1.2 } } },
-        { "type": "render.MeshRenderer", "culling_mask": 2 }
+            "position": { "x": -74.88742107990884, "y": 63.82290730586874, "z": 123.04028669710695 },
+            "rotation": { "x": -0.2232631209437403, "y": -0.519019258989053, "z": 0.0 } } },
+        { "type": "render.Camera3D", "fov_y": 45.0, "near": 3.0, "far": 2349.212131093166,
+          "clear_mode": 1, "culling_mask": 2,
+          "clear_color": { "r": 0.09, "g": 0.05, "b": 0.08, "a": 1.0 } },
+        { "type": "render.RenderTexture", "name": "fox", "width": 128, "height": 128,
+          "update_mode": 0, "filter": 0, "enabled": true }
       ]
     },
     {
-      "name": "monitor_3d",
+      "name": "sun",
       "components": [
-        { "type": "scn.Transform2D", "x": 160.0, "y": 120.0 },
-        { "type": "scn.Sprite", "width": 120.0, "height": 120.0, "r": 1.0, "g": 1.0, "b": 1.0,
-          "texture": "rendertexture://camera3d" }
+        { "type": "scene.Transform3D", "local": {
+            "rotation": { "x": -1.0119793728441187, "y": -0.7188299996216244, "z": 0.0 } } },
+        { "type": "render.Light", "type": 0, "intensity": 2.6,
+          "color": { "r": 1.0, "g": 0.96, "b": 0.9, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "duck",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/Duck.glb", "culling_mask": 1,
+          "cast_shadow": 0, "receive_shadow": false }
+      ]
+    },
+    {
+      "name": "fox",
+      "components": [
+        { "type": "scene.Transform3D", "local": {
+            "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "scale": { "x": 1.0, "y": 1.0, "z": 1.0 } } },
+        { "type": "render.MeshRenderer", "mesh_path": "assets/Fox.glb", "culling_mask": 2,
+          "cast_shadow": 0, "receive_shadow": false }
+      ]
+    },
+    {
+      "name": "duck_frame",
+      "components": [
+        { "type": "scn.Transform2D", "x": 84.0, "y": 120.0 },
+        { "type": "scn.Sprite", "width": 136.0, "height": 136.0,
+          "r": 0.12, "g": 0.14, "b": 0.18 }
+      ]
+    },
+    {
+      "name": "duck_monitor",
+      "components": [
+        { "type": "scn.Transform2D", "x": 84.0, "y": 120.0 },
+        { "type": "scn.Sprite", "width": 128.0, "height": 128.0,
+          "r": 1.0, "g": 1.0, "b": 1.0, "texture": "rendertexture://duck" }
+      ]
+    },
+    {
+      "name": "fox_frame",
+      "components": [
+        { "type": "scn.Transform2D", "x": 236.0, "y": 120.0 },
+        { "type": "scn.Sprite", "width": 136.0, "height": 136.0,
+          "r": 0.12, "g": 0.14, "b": 0.18 }
+      ]
+    },
+    {
+      "name": "fox_monitor",
+      "components": [
+        { "type": "scn.Transform2D", "x": 236.0, "y": 120.0 },
+        { "type": "scn.Sprite", "width": 128.0, "height": 128.0,
+          "r": 1.0, "g": 1.0, "b": 1.0, "texture": "rendertexture://fox" }
+      ]
+    },
+    {
+      "name": "duck_caption",
+      "components": [
+        { "type": "scn.Transform2D", "x": 52.0, "y": 26.0 },
+        { "type": "scn.Label", "text": "Duck", "font_size": 14.0, "max_width": 64.0,
+          "align": "ui::Align::Center", "r": 0.85, "g": 0.9, "b": 1.0, "a": 1.0 }
+      ]
+    },
+    {
+      "name": "fox_caption",
+      "components": [
+        { "type": "scn.Transform2D", "x": 204.0, "y": 26.0 },
+        { "type": "scn.Label", "text": "Fox", "font_size": 14.0, "max_width": 64.0,
+          "align": "ui::Align::Center", "r": 1.0, "g": 0.85, "b": 0.9, "a": 1.0 }
       ]
     }
   ]

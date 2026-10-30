@@ -3,7 +3,8 @@
 > 归属模块：`renderer`（文档 01/13）。
 > 上游：`13`（WebGPU / T1 pass 层 / DrawList / 分层 2D·3D·UI）、`12 §5`（根级 layer/viewport）、
 > `06`（反射 = 组件形状唯一真相）、`07`（句柄/asset_ref 强引用计数）、`08`（资产加载）。
-> 本文只定义 7 个渲染组件的**数据形状**；渲染解释与 pass 编排见文档 13。
+> 本文定义 8 个渲染组件的**数据形状**；渲染解释与 pass 编排见文档 13，
+> RenderTexture 完整使用手册见文档 33。
 
 ## 0. 通用约定（本类共同遵守）
 
@@ -15,7 +16,7 @@
 - **配对校验**：`Sprite/TileMap/Camera2D` 要求同节点存在 `Transform2D`；`Camera3D/MeshRenderer/Light`
   要求 `Transform3D`。缺失 = 校验错误（编辑期报错，运行期提取时跳过该节点）。
 - **全局/单例语义**：`Camera2D/Camera3D` 每图层**建议唯一 active**；同一 `RenderLayer` 内多相机按
-  `priority` 择一，冲突由校验告警（12 §8）。
+  `priority` 择一，冲突由校验告警（12 §8）。同节点挂 `RenderTexture` 的相机退出主相机竞争，只驱动离屏目标。
 - **缓存字段一律 `transient`**：世界矩阵缓存、提取结果（DrawList 项）、烘焙网格、pass 中间目标
   **不序列化、运行时派生**，反序列化后由引擎重建。
 
@@ -157,6 +158,44 @@
 
 ---
 
+## RenderTexture
+
+- **归属模块 / 上游文档**：`renderer`；`13 §6.1`、[33](../33-RenderTexture相机离屏纹理.md)。
+- **说明**：与 `scn.Camera`、`render.Camera2D` 或 `render.Camera3D` **同节点挂载**，把该相机输出变成
+  可被 Sprite、2D mesh 或 PBR 颜色贴图槽采样的 GPU 纹理。同节点相机不再参与主画面相机选择。
+- **依赖类型 / enum**：
+
+```yaml
+- enum: RenderTextureUpdateMode
+  values: [ { name: EveryFrame, value: 0 }, { name: OnDemand, value: 1 } ]
+- enum: RenderTextureFilter
+  values: [ { name: Nearest, value: 0 }, { name: Linear, value: 1 } ]
+```
+
+| 字段 | 类型 | 默认 | attrs | 说明 |
+|------|------|------|-------|------|
+| `name` | `string` | `""` | | 实例内唯一名；空时用节点名，再空则用 `camera-<id>` |
+| `width` | `uint32_t` | `0` | `unit:px` | 目标宽；0 跟随场景设计宽度 |
+| `height` | `uint32_t` | `0` | `unit:px` | 目标高；0 跟随场景设计高度 |
+| `update_mode` | `RenderTextureUpdateMode` | `EveryFrame` | | 每帧更新或按需更新 |
+| `filter` | `RenderTextureFilter` | `Linear` | | 普通纹理采样过滤 |
+| `include_ui` | `bool` | `false` | | 允许 Camera2D 收集游戏 UI；仍受 `layer_mask` 限制 |
+| `enabled` | `bool` | `true` | | 自动提交开关；关闭时保留上次内容 |
+| `clear_color` | `Color` | `{0,0,0,0}` | | `scn.Camera` 路径清屏色；新相机用自身 clear color |
+| `texture` | `string` | `""` | `transient,readonly` | 运行期规范 URI：`rendertexture://<instance>/<name>` |
+| `ready` | `bool` | `false` | `transient,readonly` | 至少成功渲染一次 |
+| `last_frame` | `uint32_t` | `0` | `transient,readonly` | 最后成功更新帧号 |
+
+- **句柄/引用**：场景持久化只保存逻辑 name 和短 URI `rendertexture://name`；GPU 句柄不公开、不序列化。
+  短 URI 按消费者所属 SceneInstance 解析，子场景同名目标互不串用。
+- **生命周期 / 确定性**：创建/resize 后先确定性清屏；依赖按生产者到消费者排序；自采样批次剔除；
+  环按 entity id 稳定顺序使用本帧/上一帧。resize 保持纹理句柄稳定，节点/组件/场景销毁统一释放。
+- **序列化**：除 `texture/ready/last_frame` 外全部持久化；RenderTexture 属视图资源，不进入模拟 checksum。
+- **截图**：脚本用 `camera_texture/camera_update/camera_capture`；控制面用 `Capture.camera` 与
+  `Capture.camera_save`。详细分块协议和限制见文档 33。
+
+---
+
 ## MeshRenderer
 
 - **归属模块 / 上游文档**：`renderer`；`13 §2/§5`、`08`。
@@ -273,6 +312,7 @@
 | `Camera2D` | 2D 图层 | `priority` 择一 | 正交视图矩阵 | 否 |
 | `MeshRenderer` | 3D 世界 | mesh + 材质 + Transform3D | 网格/实例项 | 否 |
 | `Camera3D` | 3D 世界 | `priority` 择一 | 视图/投影矩阵 | 否 |
+| `RenderTexture` | 离屏相机分支 | 相机 + 可见 item/mesh/材质依赖 | 可采样颜色目标 | 仅 transient 状态 |
 | `Light` | 3D 世界 | 光色/锥角/阴影 | 光照列表/集群 | 否 |
 | `RenderLayer` | 分支锚点 | `order`/`kind`/相机 | pass 分支与合成 | 否 |
 

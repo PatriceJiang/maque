@@ -1,0 +1,64 @@
+{
+  "title": "render_texture_2d",
+  "script": "render_texture_2d.js",
+  "width": 320,
+  "height": 240,
+  "views": 1,
+  "entities": [
+    {
+      "name": "capture_camera_2d",
+      "components": [
+        { "type": "scn.Transform2D", "x": 78.0, "y": 128.0 },
+        { "type": "render.Camera2D", "zoom": { "x": 1.0, "y": 1.0 },
+          "viewport": { "x": 0.0, "y": 0.0, "width": 1.0, "height": 1.0 },
+          "layer_mask": 2, "active": true,
+          "clear_color": { "r": 0.03, "g": 0.05, "b": 0.085, "a": 1.0 } },
+        { "type": "render.RenderTexture", "name": "text", "width": 160, "height": 160,
+          "update_mode": 0, "filter": 0, "include_ui": true, "enabled": true,
+          "clear_color": { "r": 0.03, "g": 0.05, "b": 0.085, "a": 1.0 } }
+      ]
+    },
+    {
+      "name": "rotating_text",
+      "components": [
+        { "type": "scn.Transform2D", "x": 78.0, "y": 128.0 },
+        { "type": "scn.Label", "text": "ROTATE", "font_size": 34.0, "bold": true,
+          "r": 0.35, "g": 0.95, "b": 1.0, "a": 1.0,
+          "outline_size": 1.0, "outline_r": 0.02, "outline_g": 0.1, "outline_b": 0.2, "outline_a": 1.0,
+          "shadow_x": 2.0, "shadow_y": 2.0, "shadow_r": 0.0, "shadow_g": 0.0, "shadow_b": 0.0, "shadow_a": 0.55 }
+      ]
+    },
+    {
+      "name": "monitor_frame",
+      "components": [
+        { "type": "scn.Transform2D", "x": 236.0, "y": 128.0 },
+        { "type": "scn.Sprite", "width": 168.0, "height": 168.0,
+          "r": 0.10, "g": 0.12, "b": 0.16 }
+      ]
+    },
+    {
+      "name": "monitor",
+      "components": [
+        { "type": "scn.Transform2D", "x": 236.0, "y": 128.0 },
+        { "type": "scn.Sprite", "width": 160.0, "height": 160.0,
+          "r": 1.0, "g": 1.0, "b": 1.0, "texture": "rendertexture://text" }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        { "type": "scn.Transform2D", "x": 10.0, "y": 18.0 },
+        { "type": "scn.Label", "text": "2D camera -> RenderTexture -> Sprite", "font_size": 9.0,
+          "r": 0.62, "g": 0.68, "b": 0.78, "a": 1.0 }
+      ]
+    },
+    {
+      "name": "hint_uri",
+      "components": [
+        { "type": "scn.Transform2D", "x": 190.0, "y": 26.0 },
+        { "type": "scn.Label", "text": "rendertexture://text", "font_size": 9.0,
+          "r": 0.55, "g": 0.75, "b": 0.85, "a": 1.0 }
+      ]
+    }
+  ]
+}

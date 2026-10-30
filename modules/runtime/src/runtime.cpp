@@ -574,6 +574,7 @@ struct Engine {
         uint32_t cp;                                // 码点（跟踪用）
         float x, y, half_w, half_h;                 // 设计空间位置与半尺寸
         float r, g, b, a; int z;
+        float rotation; int snap;                   // 节点旋转（屏幕空间弧度）与像素吸附
     };
     std::vector<PendingQuad> pending_quads;
     void text_flush(std::vector<mq_renderer_item>& out);        // 阶段 2
@@ -9323,6 +9324,17 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     float ox = 0, oy = 0;
     read_f32(d, e.comps[d->type_id].data(), "x", &ox);
     read_f32(d, e.comps[d->type_id].data(), "y", &oy);
+    /* 节点旋转（node_set_angle + 父链累积）：轴心 = **节点位置**（与 Sprite 一致，
+     * x/y 偏移只做平移）。世界 y 向上、屏幕 y 向下 → 取负；旋转量同时作用于字形位置与
+     * 字形自身朝向（整块文本刚体旋转）。angle=0 时 cos=1/sin=0 精确，走旧路径逐字节不变。 */
+    float node_angle = 0.0F, node_scale = 1.0F, node_opacity = 1.0F;
+    accumulate_node_attrs(eng, idx, node_angle, node_scale, node_opacity);
+    (void)node_scale; (void)node_opacity;
+    const float rot = -node_angle * 3.14159265358979323846F / 180.0F;
+    const float rot_cs = std::cos(rot), rot_sn = std::sin(rot);
+    const bool rotated = rot_sn != 0.0F || rot_cs != 1.0F;
+    const float pivot_x = e.world_x;
+    const float pivot_y = (float)eng.H - e.world_y;
     /* 阶段 1：只收集（纹理与 UV 留到 text_flush，按**最终**图集计算）。
      * 每个字形按 阴影 → 描边 → 字形本体 的顺序入队（同 z，靠原始下标稳定排序）。 */
     const float base_a = st.a;                          /* 组件 alpha × 继承 alpha */
@@ -9338,8 +9350,12 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
         q.tw = (int)gl.w; q.th = (int)gl.h;
         q.cp = gl.codepoint;
         /* 锚点 = 位图左上角 (x0,y0)；排版 y 向下、屏幕 y 向下 → 基准翻转后相加 */
-        q.x = e.world_x + ox + gl.x0 + half_w + dx;
-        q.y = (float)eng.H - (e.world_y + oy) + gl.y0 + half_h + dy;
+        const float lx = ox + gl.x0 + half_w + dx;
+        const float ly = -oy + gl.y0 + half_h + dy;
+        q.x = pivot_x + (rotated ? lx * rot_cs - ly * rot_sn : lx);
+        q.y = pivot_y + (rotated ? lx * rot_sn + ly * rot_cs : ly);
+        q.rotation = rot;
+        q.snap = rotated ? 0 : 1;                        /* 旋转后不能再按轴对齐左上角吸附 */
         q.half_w = half_w; q.half_h = half_h;
         q.r = cr; q.g = cg; q.b = cb; q.a = ca;
         q.z = 100 + zi;
@@ -9393,7 +9409,8 @@ void Engine::text_flush(std::vector<mq_renderer_item>& out) {
         it.half_w = q.half_w; it.half_h = q.half_h;
         it.size = q.half_w > q.half_h ? q.half_w : q.half_h;   /* 兼容字段 */
         it.filter = 1;                                          /* 1 纹素 = 1 像素 */
-        it.snap = 1;                                            /* 左上角吸附整数像素 */
+        it.rotation = q.rotation;
+        it.snap = q.snap;                                       /* 未旋转 → 左上角吸附整数像素 */
         it.r = q.r; it.g = q.g; it.b = q.b; it.a = q.a;
         it.texture = tex;
         it.uv0 = (float)q.ax / (float)aw;
