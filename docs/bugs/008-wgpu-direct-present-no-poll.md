@@ -57,6 +57,14 @@ RSS 随帧数线性增长。该构建的 `wgpuInstanceWaitAny` 未实现（AGENT
 - `render_texture_3d.scn`（1280×720，直呈）：修复后 WorkingSet 189–190.5 MB 抖动 < 1.5 MB（20 s），
   不再单调上涨。
 - `[mem]` 六域与 `resource_bytes` 保持平台期（本泄漏不在引擎账本内，不能只看 `mem.*`）。
+- **Debug+ASan 构建不能直接看 RSS 判泄漏**：ASan quarantine 会保留已 free 的内存。
+  同一 Fox 场景（1280×720 直呈）：
+  - 默认 ASan：RSS 约 +7.5 MB/s（看起来像 008 复发）；
+  - `ASAN_OPTIONS=quarantine_size_mb=0:thread_local_quarantine_size_kb=0`：12 s 内稳定在
+    **257.7 MB**（`257,708,032 B` 连续不变）；
+  - Release（`build-win-release`）：修复后 187,551,744 B 连续 12 s 不变。
+  所以 Tracy 截图若基线是 600+ MB、CPU 30–80%，先确认是不是 ASan Debug 构建；
+  泄漏度量用 Release，或至少加 quarantine=0 对照。
 - 相关代码：[gfx.cpp](../../modules/render/gfx/src/gfx.cpp) 的 `r_present`。
 
 ## 相关

@@ -262,6 +262,10 @@ ctest --test-dir build-win -R 'tracy' --output-on-failure     # 单测 + 两个 
   多实例宿主共用一个 client/端口，限制同 §8）。模拟逻辑不读这些计数器，因此不进校验和/不影响确定性。
 - **关闭时（`MAQUE_TRACY_MEM=0`）**：所有记账函数立即返回，不采样、不推曲线、不打印；
   已记录值保留（需要干净基线用 `memory_reset()`）。
+- **ASan Debug 构建的 RSS 不能直接判泄漏**：ASan quarantine 保留已 free 内存，逐帧短命分配会让
+  `memory` 曲线持续上涨。用 Release 构建，或加
+  `ASAN_OPTIONS=quarantine_size_mb=0:thread_local_quarantine_size_kb=0` 做对照
+  （见 docs/bugs/008 的 Fox/Box 数据）。
 - 未编入（`MQ_TRACY_MEMORY_ENABLED=0`）：宏是 inline no-op，调用点不用改，零状态零开销。
 
 ### 10.1.1 控制面读取（`Perf.get`，不需要 GUI/日志解析）
