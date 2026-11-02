@@ -211,8 +211,14 @@ static SDL_Renderer* ensure_renderer(mq_platform* p) {
     ensure_present_mode(p);
     if (p->present_mode == 0) return nullptr;
     if (!p->ren) {
-        const Uint32 flags = p->present_mode == 2 ? SDL_RENDERER_ACCELERATED : SDL_RENDERER_SOFTWARE;
-        p->ren = SDL_CreateRenderer(p->win, -1, flags);
+        /* 加速路径显式请求 vsync：SDL_RenderPresent 不应快于屏幕刷新（否则撕裂/无谓 CPU）。
+         * 个别驱动拒绝 PRESENTVSYNC 时退回不带该 flag 的加速 renderer，再退回软件。 */
+        const Uint32 accel = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
+        p->ren = SDL_CreateRenderer(p->win, -1,
+                                    p->present_mode == 2 ? accel : SDL_RENDERER_SOFTWARE);
+        if (!p->ren && p->present_mode == 2) {
+            p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_ACCELERATED);
+        }
         if (!p->ren && p->present_mode == 2) {           // 加速不可用 → 软件回退
             p->ren = SDL_CreateRenderer(p->win, -1, SDL_RENDERER_SOFTWARE);
             if (p->ren) p->present_mode = 1;
