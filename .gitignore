@@ -1,4 +1,5 @@
 # build output
+
 /build/
 /build-*/
 compile_commands.json
@@ -52,3 +53,5 @@ __pycache__/
 /maque-test-tmp/
 
 # khronos-bin：runtime 直读 .glb 对照资产（经 Git LFS 提交）
+
+.kimi-tmp

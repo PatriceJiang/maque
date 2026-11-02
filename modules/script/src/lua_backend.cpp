@@ -33,6 +33,11 @@ namespace maque::script::lua {
 /* 未编入 Lua：保持接口存在（调用方据 vm_create 返回 nullptr 判定不可用） */
 mq_script_vm* vm_create(void) { return nullptr; }
 void vm_destroy(mq_script_vm*) {}
+mq_script_module* module_load(mq_script_vm*, const char*, const char*) { return nullptr; }
+void module_destroy(mq_script_module*) {}
+int module_has(mq_script_module*, const char*) { return 0; }
+int module_call(mq_script_module*, const char*, int, const double*, const char*, double*) { return 1; }
+mq_script_module* current_module(mq_script_vm*) { return nullptr; }
 int eval(mq_script_vm*, const char*, const char*) { return 1; }
 int has(mq_script_vm*, const char*) { return 0; }
 int call0(mq_script_vm*, const char*, double*) { return 1; }
@@ -78,6 +83,11 @@ struct LuaVm : mq_script_vm {
     mq_script_rng_fn rng = nullptr;
     void* rng_user = nullptr;
     std::string last_error;
+    mq_script_module* current_module = nullptr;
+};
+
+struct LuaModule : mq_script_module {
+    int env_ref = LUA_NOREF;             /* 模块 _ENV 的 registry 强引用 */
 };
 
 LuaVm* S(mq_script_vm* vm) { return static_cast<LuaVm*>(vm); }
@@ -349,6 +359,104 @@ void vm_destroy(mq_script_vm* vm) {
     LuaVm* v = S(vm);
     if (v->L) lua_close(v->L);
     delete v;
+}
+
+mq_script_module* current_module(mq_script_vm* vm) {
+    return vm ? S(vm)->current_module : nullptr;
+}
+
+mq_script_module* module_load(mq_script_vm* vm, const char* src, const char* filename) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "lua.module.load");
+    MQ_TRACY_ZONE_TEXT(mq_zone, filename);
+    if (!vm || !src) return nullptr;
+    LuaVm* v = S(vm);
+    lua_State* L = v->L;
+    const std::string chunk_name = filename ? std::string("@") + filename : "@<module>";
+    if (luaL_loadbuffer(L, src, std::strlen(src), chunk_name.c_str()) != LUA_OK) {
+        set_error(v, lua_tostring(L, -1));
+        lua_pop(L, 1);
+        return nullptr;
+    }
+
+    /* chunk → 独立 _ENV → metatable.__index → 共享宿主全局。rawget 回调时只看本模块环境。 */
+    lua_newtable(L);                                      /* chunk, env */
+    lua_newtable(L);                                      /* chunk, env, meta */
+    lua_pushglobaltable(L);
+    lua_setfield(L, -2, "__index");
+    lua_setmetatable(L, -2);                              /* chunk, env */
+    lua_pushvalue(L, -1);
+    (void)lua_setupvalue(L, -3, 1);                       /* chunk._ENV = env */
+    lua_pushvalue(L, -1);
+    auto* module = new LuaModule();
+    module->vm = vm;
+    module->env_ref = luaL_ref(L, LUA_REGISTRYINDEX);     /* chunk, env */
+    lua_pop(L, 1);                                        /* chunk */
+
+    mq_script_module* prev = v->current_module;
+    v->current_module = module;
+    const bool ok = pcall_fn(v, 0, 0, "module");
+    v->current_module = prev;
+    if (!ok) {
+        luaL_unref(L, LUA_REGISTRYINDEX, module->env_ref);
+        delete module;
+        return nullptr;
+    }
+    return module;
+}
+
+void module_destroy(mq_script_module* base) {
+    if (!base || !base->vm) return;
+    auto* module = static_cast<LuaModule*>(base);
+    LuaVm* v = S(base->vm);
+    if (v->current_module == base) v->current_module = nullptr;
+    luaL_unref(v->L, LUA_REGISTRYINDEX, module->env_ref);
+    delete module;
+}
+
+bool push_module_function(LuaModule* module, const char* fn) {
+    lua_State* L = S(module->vm)->L;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, module->env_ref);    /* env */
+    const char* dot = std::strrchr(fn, '.');
+    const size_t first_len = dot ? (size_t)(dot - fn) : std::strlen(fn);
+    lua_pushlstring(L, fn, first_len);
+    lua_rawget(L, -2);                                    /* env, value；不继承 VM 全局函数 */
+    lua_remove(L, -2);                                    /* value */
+    if (dot) {
+        if (!lua_istable(L, -1)) { lua_pop(L, 1); return false; }
+        lua_getfield(L, -1, dot + 1);
+        lua_remove(L, -2);
+    }
+    if (!lua_isfunction(L, -1)) { lua_pop(L, 1); return false; }
+    return true;
+}
+
+int module_has(mq_script_module* base, const char* fn) {
+    if (!base || !base->vm || !fn) return 0;
+    auto* module = static_cast<LuaModule*>(base);
+    if (!push_module_function(module, fn)) return 0;
+    lua_pop(S(base->vm)->L, 1);
+    return 1;
+}
+
+int module_call(mq_script_module* base, const char* fn, int nnum, const double* nums,
+                const char* text, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "lua.module.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
+    if (ret) *ret = 0.0;
+    if (!base || !base->vm || !fn || nnum < 0 || (nnum > 0 && !nums)) return 1;
+    auto* module = static_cast<LuaModule*>(base);
+    LuaVm* v = S(base->vm);
+    if (!push_module_function(module, fn)) return 1;
+    for (int i = 0; i < nnum; ++i) lua_pushnumber(v->L, nums[i]);
+    if (text) lua_pushstring(v->L, text);
+    mq_script_module* prev = v->current_module;
+    v->current_module = base;
+    const bool ok = pcall_fn(v, nnum + (text ? 1 : 0), 1, fn);
+    v->current_module = prev;
+    if (!ok) return 2;
+    if (ret) *ret = lua_tonumber(v->L, -1);
+    lua_pop(v->L, 1);
+    return 0;
 }
 
 int register_num(mq_script_vm* vm, const char* name, mq_script_num_fn fn, void* user) {

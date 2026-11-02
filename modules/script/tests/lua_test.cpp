@@ -235,6 +235,40 @@ int main() {
         CHECK(mq_script_call0(lua, "count", &v) == 0 && v == 2.0);
     }
 
+    // ---- 9) 同 VM 模块：独立 _ENV、同名函数和状态隔离，销毁互不影响 ----
+    {
+        const char* module_src = R"(
+            n = 0
+            value = 1
+            function bump() n = n + 1 return n end
+            function host() return host_add(n, 5) end
+            function with_text(a, s) return a + #s end
+            function set_global(v) value = v end
+            function get_global() return value end
+        )";
+        mq_script_module* ma = mq_script_module_load(lua, module_src, "module-a.lua");
+        mq_script_module* mb = mq_script_module_load(lua, module_src, "module-b.lua");
+        CHECK(ma && mb && ma != mb);
+        CHECK(mq_script_current_module(lua) == nullptr);
+        CHECK(mq_script_module_has(ma, "bump") == 1);
+        CHECK(mq_script_module_has(ma, "on_update") == 0);   // 不继承 VM 全局脚本函数
+        double v = 0;
+        CHECK(mq_script_module_call(ma, "bump", 0, nullptr, nullptr, &v) == 0 && v == 1.0);
+        CHECK(mq_script_module_call(ma, "bump", 0, nullptr, nullptr, &v) == 0 && v == 2.0);
+        CHECK(mq_script_module_call(mb, "bump", 0, nullptr, nullptr, &v) == 0 && v == 1.0);
+        CHECK(mq_script_module_call(ma, "host", 0, nullptr, nullptr, &v) == 0 && v == 7.0);
+        const double arg = 10.0;
+        CHECK(mq_script_module_call(ma, "with_text", 1, &arg, "abcd", &v) == 0 && v == 14.0);
+        CHECK(mq_script_module_call(ma, "set_global", 1, &arg, nullptr, nullptr) == 0);
+        CHECK(mq_script_module_call(ma, "get_global", 0, nullptr, nullptr, &v) == 0 && v == 10.0);
+        CHECK(mq_script_module_call(mb, "get_global", 0, nullptr, nullptr, &v) == 0 && v == 1.0);
+        CHECK(mq_script_current_module(lua) == nullptr);
+        CHECK(mq_script_module_load(lua, "function broken( end", "bad-module.lua") == nullptr);
+        mq_script_module_destroy(ma);
+        CHECK(mq_script_module_call(mb, "bump", 0, nullptr, nullptr, &v) == 0 && v == 2.0);
+        mq_script_module_destroy(mb);
+    }
+
     mq_script_vm_destroy(lua);
     mq_script_vm_destroy(js);
     if (g_failures == 0) { std::print("lua_test: all checks passed\n"); return 0; }

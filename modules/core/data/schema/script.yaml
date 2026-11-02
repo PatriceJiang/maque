@@ -53,7 +53,7 @@
     version: 2
     abi_name: "maque.script"
     includes: [ "<stddef.h>", "<stdint.h>" ]
-    opaque: [ mq_script_vm, mq_script_bus ]
+    opaque: [ mq_script_vm, mq_script_module, mq_script_bus ]
     typedefs:
       - { name: mq_script_rng_fn, type: "uint32_t (*)(void* user)" }
       - { name: mq_script_num_fn, type: "int (*)(void* user, int argc, const double* argv, double* ret)" }
@@ -90,6 +90,17 @@
       - { fn: mq_script_lang, returns: "const char*", args: [ { name: vm, type: "mq_script_vm*" } ],
           doc: "该 VM 的后端语言 id" }
       - { fn: mq_script_vm_destroy, returns: "void", args: [ { name: vm, type: "mq_script_vm*" } ] }
+      # ---- 同 VM 模块实例：独立词法/全局环境，供单 VM runtime 按文件和场景实例隔离 ----
+      - { fn: mq_script_module_load, returns: "mq_script_module*", args: [ { name: vm, type: "mq_script_vm*" }, { name: src, type: "const char*" }, { name: filename, type: "const char*" } ],
+          doc: "在同一 VM 内加载并执行独立模块；失败返回 NULL，错误由 mq_script_last_error 读取。模块必须先于 VM 销毁" }
+      - { fn: mq_script_module_destroy, returns: "void", args: [ { name: module, type: "mq_script_module*" } ],
+          doc: "销毁模块并释放其环境/闭包引用，不销毁所属 VM" }
+      - { fn: mq_script_module_has, returns: int, args: [ { name: module, type: "mq_script_module*" }, { name: fn, type: "const char*" } ],
+          doc: "只在该模块环境内查找脚本函数，不回退到其他模块或 VM 全局函数" }
+      - { fn: mq_script_module_call, returns: int, args: [ { name: module, type: "mq_script_module*" }, { name: fn, type: "const char*" }, { name: nnum, type: int }, { name: nums, type: "const double*" }, { name: text, type: "const char*" }, { name: ret, type: "double*" } ],
+          doc: "调用模块函数：数值参数依序传入；text 非 NULL 时作为末尾字符串参数；成功 0、不存在 1、执行错误 2" }
+      - { fn: mq_script_current_module, returns: "mq_script_module*", args: [ { name: vm, type: "mq_script_vm*" } ],
+          doc: "当前正在加载/执行的模块；宿主函数用它识别调用者，空闲时返回 NULL" }
       # ---- 事件总线（多 VM / 跨语言协作，docs/14 §多 VM、docs/19 §事件）----
       # 语义：**按加入顺序**逐 VM 投递；只投给定义了该处理器的 VM；每个 VM 独立保护调用（错误隔离）。
       - { fn: mq_script_bus_create, returns: "mq_script_bus*", args: [  ],

@@ -139,6 +139,39 @@ int main() {
         mq_script_vm_destroy(b);
     }
 
+    // ---- 同 VM 模块：同名函数/词法状态/globalThis 均按模块隔离 ----
+    {
+        const char* module_src =
+            "let n = 0;\n"
+            "globalThis.value = 1;\n"
+            "function bump() { ++n; return n; }\n"
+            "function host() { return host_add(n, 5); }\n"
+            "function with_text(a, s) { return a + s.length; }\n"
+            "function set_global(v) { globalThis.value = v; }\n"
+            "function get_global() { return globalThis.value; }\n";
+        mq_script_module* ma = mq_script_module_load(vm, module_src, "module-a.js");
+        mq_script_module* mb = mq_script_module_load(vm, module_src, "module-b.js");
+        CHECK(ma && mb && ma != mb);
+        CHECK(mq_script_current_module(vm) == nullptr);
+        CHECK(mq_script_module_has(ma, "bump") == 1);
+        CHECK(mq_script_module_has(ma, "missing_module_fn") == 0);
+        double v = 0;
+        CHECK(mq_script_module_call(ma, "bump", 0, nullptr, nullptr, &v) == 0 && v == 1.0);
+        CHECK(mq_script_module_call(ma, "bump", 0, nullptr, nullptr, &v) == 0 && v == 2.0);
+        CHECK(mq_script_module_call(mb, "bump", 0, nullptr, nullptr, &v) == 0 && v == 1.0);
+        CHECK(mq_script_module_call(ma, "host", 0, nullptr, nullptr, &v) == 0 && v == 7.0);
+        const double arg = 10.0;
+        CHECK(mq_script_module_call(ma, "with_text", 1, &arg, "abcd", &v) == 0 && v == 14.0);
+        CHECK(mq_script_module_call(ma, "set_global", 1, &arg, nullptr, nullptr) == 0);
+        CHECK(mq_script_module_call(ma, "get_global", 0, nullptr, nullptr, &v) == 0 && v == 10.0);
+        CHECK(mq_script_module_call(mb, "get_global", 0, nullptr, nullptr, &v) == 0 && v == 1.0);
+        CHECK(mq_script_current_module(vm) == nullptr);
+        CHECK(mq_script_module_load(vm, "function ( {", "bad-module.js") == nullptr);
+        mq_script_module_destroy(ma);
+        CHECK(mq_script_module_call(mb, "bump", 0, nullptr, nullptr, &v) == 0 && v == 2.0);
+        mq_script_module_destroy(mb);
+    }
+
     mq_script_gc(vm);
     mq_script_vm_destroy(vm);
 

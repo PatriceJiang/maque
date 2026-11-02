@@ -28353,6 +28353,101 @@
           ]
         },
         {
+          "name": "mq_script_module_load",
+          "returns": "mq_script_module*",
+          "args": [
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            },
+            {
+              "name": "src",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "filename",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_module_destroy",
+          "returns": "void",
+          "args": [
+            {
+              "name": "module",
+              "type": "mq_script_module*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_module_has",
+          "returns": "int",
+          "args": [
+            {
+              "name": "module",
+              "type": "mq_script_module*",
+              "doc": null
+            },
+            {
+              "name": "fn",
+              "type": "const char*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_module_call",
+          "returns": "int",
+          "args": [
+            {
+              "name": "module",
+              "type": "mq_script_module*",
+              "doc": null
+            },
+            {
+              "name": "fn",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "nnum",
+              "type": "int",
+              "doc": null
+            },
+            {
+              "name": "nums",
+              "type": "const double*",
+              "doc": null
+            },
+            {
+              "name": "text",
+              "type": "const char*",
+              "doc": null
+            },
+            {
+              "name": "ret",
+              "type": "double*",
+              "doc": null
+            }
+          ]
+        },
+        {
+          "name": "mq_script_current_module",
+          "returns": "mq_script_module*",
+          "args": [
+            {
+              "name": "vm",
+              "type": "mq_script_vm*",
+              "doc": null
+            }
+          ]
+        },
+        {
           "name": "mq_script_bus_create",
           "returns": "mq_script_bus*",
           "args": []

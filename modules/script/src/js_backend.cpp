@@ -56,6 +56,12 @@ struct JsVm : mq_script_vm {
     void*            rng_user = nullptr;
     std::string      last_error;         /* 最近错误（per-instance，ADR-0014） */
     std::vector<std::string*> kinds_store;   /* kinds 字符串存储（VM 释放时一并回收） */
+    mq_script_module* current_module = nullptr; /* 当前模块加载/调用栈顶 */
+};
+
+struct JsModule : mq_script_module {
+    JSValue exports = JS_UNDEFINED;      /* { has, call }；闭包持有模块词法环境 */
+    JSValue global = JS_UNDEFINED;       /* 模块专属 globalThis，原型为共享宿主全局 */
 };
 
 /* 公共指针 → 后端实例（公共首部在偏移 0；标准布局） */
@@ -326,6 +332,129 @@ int register_ret_str(mq_script_vm* vm, const char* name, mq_script_ret_str_fn fn
     HostFn h; h.kind = HostFn::RetStr; h.ret_str = fn; h.user = user;
     S(vm)->fns.push_back(h);
     return register_common(vm, name, (int)S(vm)->fns.size() - 1);
+}
+
+mq_script_module* current_module(mq_script_vm* vm) {
+    return vm ? S(vm)->current_module : nullptr;
+}
+
+mq_script_module* module_load(mq_script_vm* vm, const char* src, const char* filename) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "js.module.load");
+    MQ_TRACY_ZONE_TEXT(mq_zone, filename);
+    if (!vm || !src) return nullptr;
+    JsVm* v = S(vm);
+    auto* module = new JsModule();
+    module->vm = vm;
+    module->global = JS_NewObject(v->ctx);
+    JSValue host_global = JS_GetGlobalObject(v->ctx);
+    const int prototype_rc = JS_SetPrototype(v->ctx, module->global, host_global);
+    JS_FreeValue(v->ctx, host_global);
+    if (JS_IsUndefined(module->global) || prototype_rc < 0) {
+        throw_and_print(v->ctx);
+        JS_FreeValue(v->ctx, module->global);
+        delete module;
+        return nullptr;
+    }
+
+    /* 保持普通顶层脚本写法：var/let/函数声明都在闭包内；globalThis 则指向模块自己的对象。
+     * 末尾返回的 has/call 通过直接 eval 解析该闭包内的任意处理器名（包括动态 node_on 名称）。 */
+    const std::string prefix = "(function(globalThis) {\"use strict\";";
+    const std::string suffix = R"JS(
+return {
+  has: function(name) {
+    let f;
+    try { f = eval(name); } catch (_) { f = undefined; }
+    if (typeof f !== "function" && !name.includes(".")) f = globalThis[name];
+    return typeof f === "function";
+  },
+  call: function(name, args) {
+    let f;
+    try { f = eval(name); } catch (_) { f = undefined; }
+    if (typeof f !== "function" && !name.includes(".")) f = globalThis[name];
+    if (typeof f !== "function") throw new ReferenceError("script function not found: " + name);
+    return f(...args);
+  }
+};
+}))JS";
+    const std::string wrapped = prefix + src + suffix;
+    JSValue factory = JS_Eval(v->ctx, wrapped.c_str(), wrapped.size(),
+                              filename ? filename : "<module>", JS_EVAL_TYPE_GLOBAL);
+    if (JS_IsException(factory)) {
+        throw_and_print(v->ctx);
+        JS_FreeValue(v->ctx, module->global);
+        delete module;
+        return nullptr;
+    }
+    mq_script_module* prev = v->current_module;
+    v->current_module = module;
+    JSValue exports = JS_Call(v->ctx, factory, module->global, 1, &module->global);
+    v->current_module = prev;
+    JS_FreeValue(v->ctx, factory);
+    if (JS_IsException(exports)) {
+        throw_and_print(v->ctx);
+        JS_FreeValue(v->ctx, module->global);
+        delete module;
+        return nullptr;
+    }
+    module->exports = exports;
+    return module;
+}
+
+void module_destroy(mq_script_module* base) {
+    if (!base || !base->vm) return;
+    auto* module = static_cast<JsModule*>(base);
+    JsVm* v = S(base->vm);
+    if (v->current_module == base) v->current_module = nullptr;
+    JS_FreeValue(v->ctx, module->exports);
+    JS_FreeValue(v->ctx, module->global);
+    delete module;
+}
+
+int module_has(mq_script_module* base, const char* fn) {
+    if (!base || !base->vm || !fn) return 0;
+    auto* module = static_cast<JsModule*>(base);
+    JsVm* v = S(base->vm);
+    JSValue has = JS_GetPropertyStr(v->ctx, module->exports, "has");
+    JSValue name = JS_NewString(v->ctx, fn);
+    mq_script_module* prev = v->current_module;
+    v->current_module = base;
+    JSValue result = JS_Call(v->ctx, has, module->exports, 1, &name);
+    v->current_module = prev;
+    JS_FreeValue(v->ctx, name);
+    JS_FreeValue(v->ctx, has);
+    if (JS_IsException(result)) { throw_and_print(v->ctx); return 0; }
+    const int ok = JS_ToBool(v->ctx, result);
+    JS_FreeValue(v->ctx, result);
+    return ok;
+}
+
+int module_call(mq_script_module* base, const char* fn, int nnum, const double* nums,
+                const char* text, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "js.module.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
+    if (ret) *ret = 0.0;
+    if (!base || !base->vm || !fn || nnum < 0 || (nnum > 0 && !nums)) return 1;
+    if (!module_has(base, fn)) return 1;
+    auto* module = static_cast<JsModule*>(base);
+    JsVm* v = S(base->vm);
+    JSValue call = JS_GetPropertyStr(v->ctx, module->exports, "call");
+    JSValue name = JS_NewString(v->ctx, fn);
+    JSValue args = JS_NewArray(v->ctx);
+    for (int i = 0; i < nnum; ++i)
+        JS_SetPropertyUint32(v->ctx, args, (uint32_t)i, JS_NewFloat64(v->ctx, nums[i]));
+    if (text) JS_SetPropertyUint32(v->ctx, args, (uint32_t)nnum, JS_NewString(v->ctx, text));
+    JSValue argv[2] = { name, args };
+    mq_script_module* prev = v->current_module;
+    v->current_module = base;
+    JSValue result = JS_Call(v->ctx, call, module->exports, 2, argv);
+    v->current_module = prev;
+    JS_FreeValue(v->ctx, args);
+    JS_FreeValue(v->ctx, name);
+    JS_FreeValue(v->ctx, call);
+    if (JS_IsException(result)) { throw_and_print(v->ctx); return 2; }
+    if (ret) { double value = 0.0; JS_ToFloat64(v->ctx, &value, result); *ret = value; }
+    JS_FreeValue(v->ctx, result);
+    return 0;
 }
 
 int eval(mq_script_vm* vm, const char* src, const char* filename) {

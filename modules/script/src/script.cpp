@@ -67,6 +67,42 @@ void mq_script_vm_destroy(mq_script_vm* vm) {
     else maque::script::js::vm_destroy(vm);
 }
 
+mq_script_module* mq_script_module_load(mq_script_vm* vm, const char* src, const char* filename) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "module.load");
+    MQ_TRACY_ZONE_TEXT(mq_zone, filename);
+    if (!vm || !src) return nullptr;
+    return is_lua(vm) ? maque::script::lua::module_load(vm, src, filename)
+                      : maque::script::js::module_load(vm, src, filename);
+}
+
+void mq_script_module_destroy(mq_script_module* module) {
+    if (!module || !module->vm) return;
+    if (is_lua(module->vm)) maque::script::lua::module_destroy(module);
+    else maque::script::js::module_destroy(module);
+}
+
+int mq_script_module_has(mq_script_module* module, const char* fn) {
+    if (!module || !module->vm || !fn) return 0;
+    return is_lua(module->vm) ? maque::script::lua::module_has(module, fn)
+                              : maque::script::js::module_has(module, fn);
+}
+
+int mq_script_module_call(mq_script_module* module, const char* fn, int nnum, const double* nums,
+                          const char* text, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "module.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
+    if (ret) *ret = 0.0;
+    if (!module || !module->vm || !fn || nnum < 0 || (nnum > 0 && !nums)) return 1;
+    return is_lua(module->vm) ? maque::script::lua::module_call(module, fn, nnum, nums, text, ret)
+                              : maque::script::js::module_call(module, fn, nnum, nums, text, ret);
+}
+
+mq_script_module* mq_script_current_module(mq_script_vm* vm) {
+    if (!vm) return nullptr;
+    return is_lua(vm) ? maque::script::lua::current_module(vm)
+                      : maque::script::js::current_module(vm);
+}
+
 int mq_script_eval(mq_script_vm* vm, const char* src, const char* filename) {
     MQ_TRACY_ZONE_NAMED(mq_zone, script, filename);
     if (!vm) return 1;

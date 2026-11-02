@@ -920,6 +920,11 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_script_backends` | int | out: char*, cap: int |
 | `mq_script_lang` | const char* | vm: mq_script_vm* |
 | `mq_script_vm_destroy` | void | vm: mq_script_vm* |
+| `mq_script_module_load` | mq_script_module* | vm: mq_script_vm*, src: const char*, filename: const char* |
+| `mq_script_module_destroy` | void | module: mq_script_module* |
+| `mq_script_module_has` | int | module: mq_script_module*, fn: const char* |
+| `mq_script_module_call` | int | module: mq_script_module*, fn: const char*, nnum: int, nums: const double*, text: const char*, ret: double* |
+| `mq_script_current_module` | mq_script_module* | vm: mq_script_vm* |
 | `mq_script_bus_create` | mq_script_bus* | — |
 | `mq_script_bus_add` | int | bus: mq_script_bus*, vm: mq_script_vm*, name: const char* |
 | `mq_script_bus_count` | uint32_t | bus: mq_script_bus* |

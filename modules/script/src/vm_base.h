@@ -9,9 +9,20 @@ struct mq_script_vm {
     const char* lang = nullptr;      /* 后端语言 id："js" / "lua" */
 };
 
+/* 同一 VM 内的独立脚本实例。模块由调用方销毁，且必须先于所属 VM 销毁。 */
+struct mq_script_module {
+    mq_script_vm* vm = nullptr;
+};
+
 namespace maque::script::js {
 mq_script_vm* vm_create(void);
 void vm_destroy(mq_script_vm* vm);
+mq_script_module* module_load(mq_script_vm* vm, const char* src, const char* filename);
+void module_destroy(mq_script_module* module);
+int module_has(mq_script_module* module, const char* fn);
+int module_call(mq_script_module* module, const char* fn, int nnum, const double* nums,
+                const char* text, double* ret);
+mq_script_module* current_module(mq_script_vm* vm);
 int eval(mq_script_vm* vm, const char* src, const char* filename);
 int has(mq_script_vm* vm, const char* fn);
 int call0(mq_script_vm* vm, const char* fn, double* ret);
@@ -40,6 +51,12 @@ namespace maque::script::lua {
 /* 与 js 后端同形（未编入 Lua 时 create 返回 nullptr） */
 mq_script_vm* vm_create(void);
 void vm_destroy(mq_script_vm* vm);
+mq_script_module* module_load(mq_script_vm* vm, const char* src, const char* filename);
+void module_destroy(mq_script_module* module);
+int module_has(mq_script_module* module, const char* fn);
+int module_call(mq_script_module* module, const char* fn, int nnum, const double* nums,
+                const char* text, double* ret);
+mq_script_module* current_module(mq_script_vm* vm);
 int eval(mq_script_vm* vm, const char* src, const char* filename);
 int has(mq_script_vm* vm, const char* fn);
 int call0(mq_script_vm* vm, const char* fn, double* ret);

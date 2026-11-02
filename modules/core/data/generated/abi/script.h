@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 typedef struct mq_script_vm mq_script_vm;
+typedef struct mq_script_module mq_script_module;
 typedef struct mq_script_bus mq_script_bus;
 typedef struct mq_script_bytes_view mq_script_bytes_view;
 typedef struct mq_script_bytes_result mq_script_bytes_result;
@@ -52,6 +53,16 @@ int mq_script_backends(char* out, int cap);
 /* 该 VM 的后端语言 id */
 const char* mq_script_lang(mq_script_vm* vm);
 void mq_script_vm_destroy(mq_script_vm* vm);
+/* 在同一 VM 内加载并执行独立模块；失败返回 NULL，错误由 mq_script_last_error 读取。模块必须先于 VM 销毁 */
+mq_script_module* mq_script_module_load(mq_script_vm* vm, const char* src, const char* filename);
+/* 销毁模块并释放其环境/闭包引用，不销毁所属 VM */
+void mq_script_module_destroy(mq_script_module* module);
+/* 只在该模块环境内查找脚本函数，不回退到其他模块或 VM 全局函数 */
+int mq_script_module_has(mq_script_module* module, const char* fn);
+/* 调用模块函数：数值参数依序传入；text 非 NULL 时作为末尾字符串参数；成功 0、不存在 1、执行错误 2 */
+int mq_script_module_call(mq_script_module* module, const char* fn, int nnum, const double* nums, const char* text, double* ret);
+/* 当前正在加载/执行的模块；宿主函数用它识别调用者，空闲时返回 NULL */
+mq_script_module* mq_script_current_module(mq_script_vm* vm);
 /* 创建事件总线（多脚本/多语言）；总线**拥有**其 VM，销毁总线即销毁全部 VM */
 mq_script_bus* mq_script_bus_create(void);
 /* 加入 VM（顺序 = 脚本声明顺序 = 投递顺序 → 确定性）；name 为脚本路径（自省） */
