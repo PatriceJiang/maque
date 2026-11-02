@@ -27,6 +27,7 @@
 | [004](004-render-target-attachment-churn.md) | RenderTexture 多尺寸导致 depth/MSAA 每帧重建 | 性能 | open | 待补 |
 | [005](005-windows-scene-watch-path.md) | Windows 场景热重载路径分隔符不匹配 | 功能 | open | 待补 |
 | [006](006-imgui-present-clipping-font-glyph.md) | WGPU 直呈 ImGui 裁剪错误与静态图集缺字 | 正确性 | fixed | `imgui`、`imgui_present_e2e` |
+| [007](007-scene-instance-slot-leak.md) | 场景实例槽位 / 动态壳映射泄漏（卸载不回收） | 内存 + 正确性 | fixed | `scene_instance_e2e` |
 
 ## 模板
 

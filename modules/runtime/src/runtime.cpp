@@ -609,9 +609,13 @@ struct Engine {
 
     /* ---- 场景实例（docs/32）----
      * instances[id] = 实例；id 单调、永不复用（陈旧句柄可判定）；根场景 = 0。
+     * **卸载即从表里移除**（不留墓碑）：历史实例不占内存、不占 instance_limit 预算。
+     * 用有序 map（而不是 id=下标的 vector）：遍历顺序 = id 顺序 = 创建顺序，确定性不变；
+     * 同时 id 可以继续单调增长，不必为了下标连续而保留已销毁的槽位。
      * entity_instance：实体 → 所属实例（运行期归属，不序列化；save/snapshot 用它过滤）。
      * active_instance / in_overlay：脚本上下文（派发期间设置、嵌套调用保存恢复）。 */
-    std::vector<std::unique_ptr<SceneInstanceRuntime>> instances;
+    std::map<int, std::unique_ptr<SceneInstanceRuntime>> instances;
+    int next_instance_id = 1;                        // 根实例固定 0；其余从 1 起单调递增
     std::unordered_map<int, int> entity_instance;
     std::vector<std::string> scene_chain;            // 正在装配的 .scn 链（循环实例化检测）
     SceneInstanceRuntime* active_instance = nullptr; // 当前脚本所属实例（回调内有效）
@@ -633,7 +637,7 @@ struct Engine {
     SceneInstanceRuntime* instance_at(int id);
     SceneInstanceRuntime* instance_of_entity(int entity);
     SceneInstanceRuntime* instance_by_attach(int entity);
-    int   create_instance(int parent, int attach, const std::string& vfs_source);
+    int   create_instance(int parent, int attach, const std::string& vfs_source, int forced_id = -1);
     bool  entity_in_instance_subtree(int instance, int entity) const;
     void  reset_instances();
     bool  build_instance(SceneInstanceRuntime& inst, int depth);
@@ -649,7 +653,8 @@ struct Engine {
     uint32_t instance_script_errors() const;
     void  apply_instance_ops();
     void  destroy_instance_content(SceneInstanceRuntime& inst, bool fire_destroy);
-    void  destroy_instances();
+    /* 移除 state==2 的记录（卸载/热重载后调用）。keep_id 用于"原地重建"：保留被重建的那条记录。 */
+    void  prune_destroyed_instances(int keep_id = -1);
     bool  resolve_instance_path(const std::string& rel, const std::string& base, std::string& out_vfs) const;
     bool  reload_instance_script(int instance_id, const std::string& rel);
     void  rebase_instance_assets(int instance_id);
@@ -6657,16 +6662,21 @@ bool Engine::reload_scene() {
     clear_asset_caches();
     /* 场景文件热重载（docs/32 §5.3）：根实例的 VM 保留（与旧行为一致），
      * 子实例随旧世界销毁并在装配时按新文件重建；实体归属/节点事件重新登记。 */
-    for (auto& up : instances) {
-        if (up && up->id != 0 && up->state == 1) destroy_instance_content(*up, true);
+    for (auto& [id, up] : instances) {
+        (void)id;
+        if (!up || up->id == 0) continue;
+        /* 正常子实例：后序 on_destroy；error/pending 也走内容销毁（可能已建了一半总线/实体）。 */
+        destroy_instance_content(*up, up->state == 1);
     }
+    prune_destroyed_instances();              // 旧子实例记录随内容一起释放（否则每次热重载叠一层）
+    instance_ops.clear();                     // 旧世界的动态增删请求不得落到新世界
     if (SceneInstanceRuntime* root = instance_at(0)) {
         root->children.clear();
         root->roots.clear();
     }
     entity_instance.clear();
     node_events.clear();
-    const size_t instance_mark = instances.size();
+    const int instance_mark = next_instance_id;   // 本次重载新建的子实例 id 从这个水位开始
     /* 热重载：新世界沿用旧世界的实体 id 水位 —— `Scene::spawn` 的"永不复用"契约
      * 必须跨场景重建也成立，否则常驻脚本持有的旧 id 会别名到新场景实体。 */
     auto fresh = std::make_unique<Scene>();
@@ -6693,11 +6703,13 @@ bool Engine::reload_scene() {
                 root->roots.push_back(eid);
         std::sort(root->roots.begin(), root->roots.end());
     }
-    /* 新装配出的子实例需要一次 on_start（后序）；根实例保持"世界重建但 VM 状态不丢"的旧语义。 */
-    for (size_t i = instance_mark; i < instances.size(); ++i) {
-        SceneInstanceRuntime* up = instance_at((int)i);
-        if (up && up->state == 1 && up->parent == 0) (void)dispatch_instance_on_start(up->id);
+    /* 新装配出的子实例需要一次 on_start（后序）；根实例保持"世界重建但 VM 状态不丢"的旧语义。
+     * 先收集 id 再派发：on_start 里可能继续 scene_instantiate，不能边遍历边改表。 */
+    std::vector<int> fresh_children;
+    for (auto& [id, up] : instances) {
+        if (id >= instance_mark && up && up->state == 1 && up->parent == 0) fresh_children.push_back(id);
     }
+    for (int id : fresh_children) (void)dispatch_instance_on_start(id);
     setup_render_textures();               // 相机离屏目标/URI 随新世界重建
     preload_scene_assets();                // 新世界的 Sprite/材质引用重新解析
     setup_3d();                         // 重载可能改变 2D/3D 组成 → 重算 has_3d/cube_mesh
@@ -6962,7 +6974,8 @@ uint32_t Engine::poll_watcher() {
                    full.compare(full.size() - tail.size(), tail.size(), tail) == 0;
         };
         bool handled = false;
-        for (auto& up : c->eng->instances) {
+        for (auto& [iid, up] : c->eng->instances) {
+            (void)iid;
             if (!up || up->state != 1) continue;
             for (const std::string& sp : up->scripts) {
                 const std::string local = (std::filesystem::path(c->eng->scn_dir) /
@@ -6976,7 +6989,8 @@ uint32_t Engine::poll_watcher() {
         }
         if (!handled) {
             /* 嵌套场景源文件变化：帧边界重建该实例（保留旧实例直到重建成功）。 */
-            for (auto& up : c->eng->instances) {
+            for (auto& [iid, up] : c->eng->instances) {
+                (void)iid;
                 if (!up || up->id == 0 || up->state != 1) continue;
                 const std::string local = (std::filesystem::path(c->eng->scn_dir) / up->source.substr(1)).string();
                 if (ends_with(p, local)) {
@@ -7540,8 +7554,8 @@ void Scene::instantiate(Engine& eng) {
  * ===================================================================================== */
 
 SceneInstanceRuntime* Engine::instance_at(int id) {
-    if (id < 0 || id >= (int)instances.size()) return nullptr;
-    return instances[(size_t)id].get();
+    auto it = instances.find(id);
+    return it == instances.end() ? nullptr : it->second.get();
 }
 
 SceneInstanceRuntime* Engine::instance_of_entity(int entity) {
@@ -7550,8 +7564,10 @@ SceneInstanceRuntime* Engine::instance_of_entity(int entity) {
 }
 
 SceneInstanceRuntime* Engine::instance_by_attach(int entity) {
-    for (auto& up : instances)
+    for (auto& [id, up] : instances) {
+        (void)id;
         if (up && up->attach_entity == entity && up->state != 2) return up.get();
+    }
     return nullptr;
 }
 
@@ -7567,7 +7583,8 @@ bool Engine::entity_in_instance_subtree(int instance, int entity) const {
     return false;
 }
 
-int Engine::create_instance(int parent, int attach, const std::string& vfs_source) {
+int Engine::create_instance(int parent, int attach, const std::string& vfs_source, int forced_id) {
+    /* 预算按**存活**实例数：已卸载的记录已经从表里移除，不占名额（否则长局游戏会被历史实例耗尽）。 */
     if ((int)instances.size() >= std::max(1, instance_limit)) {
         scene_last_error = "instance limit reached";
         std::print(stderr, "runtime: scene instance limit reached ({}) — '{}' skipped\n",
@@ -7576,14 +7593,19 @@ int Engine::create_instance(int parent, int attach, const std::string& vfs_sourc
         return -1;
     }
     auto up = std::make_unique<SceneInstanceRuntime>();
-    const int id = (int)instances.size();
+    const int id = forced_id >= 0 ? forced_id : next_instance_id++;
+    if (id >= next_instance_id) next_instance_id = id + 1;   // 水位只增不减（陈旧句柄绝不复用）
     up->id = id;
     up->parent = parent;
     up->attach_entity = attach;
     up->source = vfs_source;
     up->base = vfs_dirname(vfs_source);
     up->state = 0;
-    instances.push_back(std::move(up));
+    const auto inserted = instances.emplace(id, std::move(up)).second;
+    if (!inserted) {                                        // id 冲突（快照/重复创建）：不覆盖已有实例
+        scene_last_error = "duplicate instance id";
+        return -1;
+    }
     SceneInstanceRuntime* parent_inst = instance_at(parent);
     if (parent_inst) parent_inst->children.push_back(id);
     return id;
@@ -7642,8 +7664,9 @@ int Engine::call_global_event(const char* name, double a, double b, double c, co
 }
 
 void Engine::collect_instance_preorder(int id, std::vector<int>& out, bool skip_paused) const {
-    if (id < 0 || id >= (int)instances.size() || !instances[(size_t)id]) return;
-    const SceneInstanceRuntime* inst = instances[(size_t)id].get();
+    auto it = instances.find(id);
+    if (it == instances.end() || !it->second) return;
+    const SceneInstanceRuntime* inst = it->second.get();
     if (inst->state != 1) return;
     if (!inst->active) return;
     if (skip_paused && inst->paused) return;
@@ -7652,8 +7675,9 @@ void Engine::collect_instance_preorder(int id, std::vector<int>& out, bool skip_
 }
 
 void Engine::collect_instance_postorder(int id, std::vector<int>& out) const {
-    if (id < 0 || id >= (int)instances.size() || !instances[(size_t)id]) return;
-    const SceneInstanceRuntime* inst = instances[(size_t)id].get();
+    auto it = instances.find(id);
+    if (it == instances.end() || !it->second) return;
+    const SceneInstanceRuntime* inst = it->second.get();
     if (inst->state != 1) return;
     for (int c : inst->children) collect_instance_postorder(c, out);
     out.push_back(id);
@@ -7841,16 +7865,20 @@ int Engine::dispatch_instance_on_destroy(int id) {
 }
 
 void Engine::gc_all_instance_scripts() {
-    for (auto& up : instances)
+    for (auto& [id, up] : instances) {
+        (void)id;
         if (up && up->bus) mq_script_bus_gc(up->bus);
+    }
     if (global_bus) mq_script_bus_gc(global_bus);
     if (overlay_bus) mq_script_bus_gc(overlay_bus);
 }
 
 uint32_t Engine::instance_script_errors() const {
     uint32_t n = 0;
-    for (auto& up : instances)
+    for (auto& [id, up] : instances) {
+        (void)id;
         if (up && up->bus) n += mq_script_bus_error_count(up->bus);
+    }
     if (global_bus) n += mq_script_bus_error_count(global_bus);
     if (overlay_bus) n += mq_script_bus_error_count(overlay_bus);
     return n;
@@ -7880,20 +7908,33 @@ void Engine::destroy_instance_content(SceneInstanceRuntime& inst, bool fire_dest
     }
     /* 动态实例自动建的挂载壳属于**父**实例；卸载子实例后必须一并删除，
      * 否则每波敌人都会在世界根留下一个空壳（组合机制的资源泄漏，docs/32 §16.4）。 */
-    if (inst.owns_shell && inst.attach_entity >= 0 && scene) {
-        scene->remove(inst.attach_entity);
+    if (inst.owns_shell && inst.attach_entity >= 0) {
+        const int shell = inst.attach_entity;
+        if (scene) scene->remove(shell);
+        entity_instance.erase(shell);        // 归属映射也必须清：实体删除不会自动清 Engine 侧的表
+        node_events.erase(shell);            // 壳上的事件处理器随壳消失
         inst.attach_entity = -1;
     }
     inst.owns_shell = false;
     inst.roots.clear();
+    inst.children.clear();                   // 子孙已递归销毁；释放 id 列表（记录随后由 prune 移除）
     inst.state = 2;
+}
+
+void Engine::prune_destroyed_instances(int keep_id) {
+    for (auto it = instances.begin(); it != instances.end();) {
+        const bool destroyed = !it->second || it->second->state == 2;
+        if (destroyed && it->first != keep_id) it = instances.erase(it);
+        else ++it;
+    }
 }
 
 void Engine::reset_instances() {
     active_instance = nullptr;
     in_overlay = false;
     in_global = false;
-    for (auto& up : instances) {
+    for (auto& [id, up] : instances) {
+        (void)id;
         if (!up) continue;
         if (up->bus) {
             if (up->bus == bus) { bus = nullptr; vm = nullptr; }
@@ -7955,9 +7996,13 @@ void Engine::apply_instance_ops() {
                                                parent->children.end());
             destroy_instance_content(*inst, true);
             inst->state = 2;
+            prune_destroyed_instances();                      // 释放本实例（含被递归销毁的子孙）的记录
+            inst = nullptr;                                   // erase 后指针失效
+            continue;
         } else if (op.kind == 2) {                            // reload（状态重置；失败进入 error）
             const std::string src = inst->source;
             destroy_instance_content(*inst, true);
+            prune_destroyed_instances(inst->id);          // 旧子实例记录释放；保留被重建的本条
             inst->children.clear();
             inst->state = 0;
             inst->error.clear();
@@ -8173,9 +8218,13 @@ void Engine::encode_instances(SnapshotWriter& w) const {
     w.pod((uint32_t)0x4D515349u);                  // magic "MQSI"
     w.pod((uint32_t)2u);                           // 版本（v2 = +params；v1 仍可读）
     uint32_t live = 0;
-    for (auto& up : instances) if (up && up->state != 2) ++live;
+    for (auto& [id, up] : instances) {
+        (void)id;
+        if (up && up->state != 2) ++live;
+    }
     w.pod(live);
-    for (auto& up : instances) {
+    for (auto& [id, up] : instances) {
+        (void)id;
         if (!up || up->state == 2) continue;
         w.pod((int32_t)up->id);
         w.pod((int32_t)up->parent);
@@ -8281,7 +8330,10 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
      * 实体表已由 Scene::decode 恢复（id 不变），因此只需刷新归属/暂停/显隐/roots。 */
     instance_ops.clear();                              // 回滚取消尚未提交的动态增删请求
     int live_now = 0;
-    for (auto& up : instances) if (up && up->state != 2) ++live_now;
+    for (auto& [id, up] : instances) {
+        (void)id;
+        if (up && up->state != 2) ++live_now;
+    }
     bool same = (size_t)live_now == recs.size();
     for (auto& rec : recs) {
         if (!same) break;
@@ -8310,17 +8362,23 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
     }
 
     reset_instances();                                 // 结构变化：重建（VM 状态不落盘）
-    instances = std::move(recs);
+    for (auto& rec : recs) {
+        const int id = rec->id;
+        if (id >= next_instance_id) next_instance_id = id + 1;   // 恢复后水位仍单调
+        instances.emplace(id, std::move(rec));
+    }
     entity_instance.clear();
     for (auto& [eid, oid] : owners) entity_instance[eid] = oid;
-    for (auto& up : instances) {
+    for (auto& [id, up] : instances) {
+        (void)id;
         up->children.clear();
         if (up->parent > 0) {
             SceneInstanceRuntime* p = instance_at(up->parent);
             if (p) p->children.push_back(up->id);
         }
     }
-    for (auto& up : instances) {
+    for (auto& [id, up] : instances) {
+        (void)id;
         if (!up) continue;
         if (!up->scripts.empty()) {
             if (!load_instance_scripts(*up, up->scripts, up->id == 0)) up->state = 3;
@@ -8335,7 +8393,8 @@ int Engine::restore_instances(const uint8_t* data, size_t n, size_t& off) {
 uint64_t Engine::instance_checksum() const {
     uint64_t h = 1469598103934665603ull;
     auto mix = [&](uint64_t v) { h ^= v; h *= 1099511628211ull; };
-    for (auto& up : instances) {
+    for (auto& [id, up] : instances) {
+        (void)id;
         if (!up || up->state == 2) continue;
         mix((uint64_t)(uint32_t)up->id);
         mix((uint64_t)(uint32_t)up->parent);
@@ -10933,7 +10992,8 @@ void Engine::memory_sample() {
             for (const auto& [tid, blob] : e.comps) { (void)tid; node += (uint64_t)blob.capacity(); }
         }
     }
-    for (const auto& inst : instances) {
+    for (const auto& [iid, inst] : instances) {
+        (void)iid;
         if (!inst) continue;
         node += sizeof(SceneInstanceRuntime);
         node += (uint64_t)inst->source.capacity() + inst->base.capacity() + inst->params.capacity() +
@@ -12853,13 +12913,17 @@ float scene_instance_paused(void* ctx, float instance) {
 float scene_instance_count(void* ctx) {
     auto* eng = (Engine*)ctx;
     int n = 0;
-    for (auto& up : eng->instances) if (up && up->state == 1) ++n;
+    for (auto& [id, up] : eng->instances) {
+        (void)id;
+        if (up && up->state == 1) ++n;
+    }
     return (float)n;
 }
 float scene_instance_at(void* ctx, float index) {
     auto* eng = (Engine*)ctx;
     int i = (int)index, n = 0;
-    for (auto& up : eng->instances) {
+    for (auto& [id, up] : eng->instances) {
+        (void)id;
         if (!up || up->state != 1) continue;
         if (n++ == i) return (float)up->id;
     }
@@ -14186,10 +14250,14 @@ extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, 
 extern "C" int mq_control_Scene_instances(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
     int live = 0;
-    for (auto& up : e->instances) if (up && up->state != 2) ++live;
+    for (auto& [id, up] : e->instances) {
+        (void)id;
+        if (up && up->state != 2) ++live;
+    }
     std::string json = "{\"ok\":true,\"count\":" + std::to_string(live) + ",\"instances\":[";
     bool first = true;
-    for (auto& up : e->instances) {
+    for (auto& [id, up] : e->instances) {
+        (void)id;
         if (!up || up->state == 2) continue;
         if (!first) json += ',';
         first = false;
@@ -15123,7 +15191,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     scene_chain.push_back(scn_vfs);
     building_instance = 0;
     building_base.clear();
-    if (create_instance(-1, -1, scn_vfs) < 0) return false;
+    if (create_instance(-1, -1, scn_vfs, 0) < 0) return false;   // 根实例固定 id=0
     if (SceneInstanceRuntime* root = instance_at(0)) { root->state = 1; }
     if (!scene->deserialize(*this, text)) return false;
     scene->instantiate(*this);
@@ -15239,7 +15307,8 @@ bool Engine::load_scene_into(const std::string& scn_path) {
             for (const std::string& sp : script_paths)          // 监视**全部**脚本（多脚本热重载）
                 mq_watcher_add(watcher, (fs::path(scn_dir) / sp).string().c_str());
             /* 嵌套场景（docs/32 §5.3）：源 .scn + 各实例脚本都纳入监视（去重由 watcher 处理）。 */
-            for (auto& up : instances) {
+            for (auto& [iid, up] : instances) {
+                (void)iid;
                 if (!up || up->id == 0 || up->source.empty()) continue;
                 mq_watcher_add(watcher, (fs::path(scn_dir) / up->source.substr(1)).string().c_str());
                 for (const std::string& sp : up->scripts)

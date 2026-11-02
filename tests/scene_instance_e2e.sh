@@ -107,5 +107,52 @@ assert all(i['parent'] == 0 for i in child_src), res
 print('scene_instance_e2e: 控制面 ok')
 PY
 
+# ---- ⑥ 动态实例 churn：卸载必须回收槽位（>256 次 spawn/unload 不能触发实例上限） ----
+# 回归 docs/bugs/007：旧实现只把记录标成 state=2，历史实例永久占内存与 instance_limit 名额。
+cat > "$WORK/churn.scn" <<'EOF'
+{
+  "title": "instance-churn",
+  "script": "churn.js",
+  "width": 320,
+  "height": 240,
+  "seed": 3,
+  "entities": []
+}
+EOF
+cat > "$WORK/churn.js" <<'EOF'
+'use strict';
+var frames = 0, prev = -1, spawned = 0, failed = 0;
+function update(dt) {
+  frames++;
+  if (frames < 2) return;
+  if (prev >= 0) { scene_unload(prev); prev = -1; }
+  var id = scene_instantiate(-1, 'child.scn');
+  if (id < 0) { failed++; log('STRESS_FAIL frame=' + frames + ' err=' + scene_last_error()); }
+  else { prev = id; spawned++; }
+  if (frames % 100 == 0)
+    log('STRESS frame=' + frames + ' spawned=' + spawned + ' failed=' + failed +
+        ' count=' + scene_instance_count());
+}
+EOF
+timeout 120 "$PLAYER" --frames 400 "$WORK/churn.scn" > "$WORK/churn.log" 2>&1
+RC=$?
+[ "$RC" -eq 0 ] || { tail -40 "$WORK/churn.log"; fail "instance churn exit=$RC"; }
+grep -q "scene instance limit reached" "$WORK/churn.log" && {
+  tail -40 "$WORK/churn.log"; fail "churn 触发了 instance limit（卸载的实例未回收槽位）"; }
+grep -q "STRESS_FAIL" "$WORK/churn.log" && {
+  tail -40 "$WORK/churn.log"; fail "churn 中 scene_instantiate 失败"; }
+"$PY" - "$WORK/churn.log" <<'PY' || { tail -40 "$WORK/churn.log"; fail "churn 日志断言失败"; }
+import re, sys
+lines = [l for l in open(sys.argv[1], encoding='utf-8', errors='replace') if 'STRESS frame=400' in l]
+assert lines, '缺 frame=400 的 STRESS 汇总行'
+m = re.search(r'spawned=(\d+) failed=(\d+) count=(\d+)', lines[-1])
+assert m, lines[-1]
+spawned, failed, count = map(int, m.groups())
+assert failed == 0, f'churn 失败次数应为 0，实际 {failed}'
+assert spawned >= 390, f'400 帧应完成约 399 次实例化，实际 {spawned}'
+assert count <= 2, f'churn 结束时应只剩根实例（或一个 pending 子实例），实际 {count}'
+print('scene_instance_e2e: churn ok')
+PY
+
 echo "scene_instance_e2e: ok"
 exit 0
