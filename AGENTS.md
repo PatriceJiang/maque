@@ -429,10 +429,13 @@ tools\win\build.cmd -Sanitize address -RunTests
   **UI 度量固定 = 屏幕分辨率派生**（`imgui_resolve_metrics`：`ui_scale = 屏幕逻辑高/1080`，
   正文 15、标题 = 正文×4/3，面板 = 正文×16×正文×10；`MAQUE_IMGUI_SCALE` / `MAQUE_IMGUI_FONT_SIZE`
   = 正文字号 覆盖）：**窗口大小/场景分辨率/视图数不参与**，别再用 `win_w/TW` 当字体倍率
-  （会把面板大小绑到窗口 → "标题太大/有的窗口又偏小"）。官方后端显示空间 = 绘制区**设备像素**，
-  鼠标逻辑坐标按 content_scale 换算。
+  （会把面板大小绑到窗口 → "标题太大/有的窗口又偏小"）。**显示空间 = 实际画到的像素空间**：
+  官方后端 = 绘制区**设备像素**，网格链（直呈/无窗口）= **渲染目标像素 TW×TH**（gfx 对
+  `MQ_IMGUI_LAYER` 用恒等视图）；鼠标事件是窗口**逻辑**像素 → 统一乘 `imgui_show_scale()`
+  （显示/逻辑），**不要**按 Canvas 的 offset/scale 反算（那样直呈下点击/拖动会整体偏移，
+  见 docs/bugs/010）。
   测试：`ctest -R 'imgui|imgui_present_e2e'`（后者断言游戏上屏 + 拖动后位置变化 +
-  换窗口后 UI 度量逐字一致 + software 回退）。
+  换窗口后 UI 度量逐字一致 + software 回退 + 直呈的 F4 对照与拖动）。
 - **音频（docs/30）**：`modules/world/audio` **分层**——`maque_audio_core`（Mixer/解码，无 SDL）
   + `maque_audio`（C ABI 门面 + **可替换设备后端**）。只有 `src/backend_sdl.cpp` / `backend_null.cpp`
   碰设备；换 miniaudio/SoLoud 只需实现 `AudioDevice` 接口 + CMake 加一个源文件，核心/解码/ABI/runtime 不动。

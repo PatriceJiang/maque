@@ -255,7 +255,68 @@ print(f'imgui_present_e2e: WGPU 直呈 F4 对照 region=({x0},{y0})-({x1},{y1}) 
 sys.exit(0 if ratio < 0.02 else 1)
 PY
 
+# ---- ⑦ WGPU 直呈：合成指针拖动 stats（指针必须按 ImGui **显示空间**换算）----
+# 回归 docs/bugs/010：直呈下 ImGui 顶点是屏幕空间（gfx 用恒等视图绘制该层），
+# 指针若还按 Canvas 的 offset/scale 反算（旧实现），320x240 场景放进 800x650 窗口
+# （zoom=2.5）时拖动/点击会整体偏移 —— 面板根本拖不动、F4 控件也点不中。
+# 抓第 8 个 present（= 第 7 帧，拖动事件在第 2..5 帧已注入完）。
+DRAG_DIRECT=(MAQUE_WINDOW=800x650 MAQUE_CAPTURE_FRAMES=8 MAQUE_MAX_FRAMES=12)
+run_player "$WORK/drag_wgpu.log" env "${DRAG_DIRECT[@]}" MAQUE_PRESENT=wgpu MAQUE_IMGUI=1 \
+    MAQUE_CAPTURE_WGPU="$WORK/wgpu_drag" \
+    MAQUE_IMGUI_POINTER="2:$DRAG_X:$DRAG_Y:1;3:$DRAG_X:$DRAG_MID:0;4:$DRAG_X:$DRAG_END:0;5:$DRAG_X:$DRAG_END:2" \
+    timeout 60 "$PLAYER" "$SCN" || fail "WGPU 直呈拖动运行失败"
+run_player "$WORK/off_wgpu.log" env "${DRAG_DIRECT[@]}" MAQUE_PRESENT=wgpu MAQUE_IMGUI=0 \
+    MAQUE_CAPTURE_WGPU="$WORK/wgpu_off" timeout 60 "$PLAYER" "$SCN" || fail "WGPU 直呈基线运行失败"
+grep -q "direct present attach_window .*rc=0" "$WORK/drag_wgpu.log" || fail "拖动用例未进入 WGPU 直呈"
+[ -f "$WORK/wgpu_drag_7.ppm" ] || fail "WGPU 直呈拖动抓帧缺失"
+[ -f "$WORK/wgpu_off_7.ppm" ] || fail "WGPU 直呈基线抓帧缺失"
+
+"$PY" - "$WORK" "$UI_SCALE" "$PANEL_W" "$PANEL_H" "$DRAG_DY" <<'PY' || fail "WGPU 直呈拖动失败（鼠标映射不在 ImGui 显示空间）"
+import sys
+
+work = sys.argv[1]
+ui_scale = float(sys.argv[2])
+panel_w = float(sys.argv[3])
+panel_h = float(sys.argv[4])
+drag_dy = float(sys.argv[5])
+
+
+def load(name):
+    parts = open(f'{work}/{name}', 'rb').read().split(b'\n', 3)
+    assert len(parts) == 4 and parts[0] == b'P6'
+    w, h = map(int, parts[1].split())
+    assert len(parts[3]) == w * h * 3
+    return w, h, parts[3]
+
+
+w, h, drag = load('wgpu_drag_7.ppm')
+_, _, off = load('wgpu_off_7.ppm')
+assert (w, h) == (800, 650), f'WGPU 直呈抓帧尺寸 {w}x{h}（应 800x650）'
+pad = 8.0 * ui_scale
+# 与 ③ 同一套矩形：旧位置上半条带（拖动后应恢复成游戏画面）+ 新位置整块（应出现面板）。
+OLD = (pad + 2, pad + 2, pad + panel_w - 8, pad + 2 + drag_dy * 0.5)
+NEW = (pad + 2, pad + drag_dy + 2, pad + panel_w - 8, pad + drag_dy + panel_h - 8)
+
+
+def diff(a, b, x0, y0, x1, y1, thr=12):
+    n = 0
+    for y in range(max(0, int(y0)), min(h, int(y1))):
+        row = y * w * 3
+        for x in range(max(0, int(x0)), min(w, int(x1))):
+            i = row + x * 3
+            if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > thr:
+                n += 1
+    return n
+
+
+old_diff = diff(drag, off, *OLD)
+new_area = (NEW[2] - NEW[0]) * (NEW[3] - NEW[1])
+new_diff = diff(drag, off, *NEW)
+print(f'imgui_present_e2e: WGPU 直呈拖动 旧区 {old_diff}（应≈0） 新区 {new_diff}/{new_area:.0f}（应 >40%）')
+sys.exit(0 if old_diff < 100 and new_diff > new_area * 0.4 else 1)
+PY
+
 # 反向断言：统一呈现后不再调用窗口表面路径（SDL2 不允许与 renderer 混用）
 grep -q "window surface" "$WORK/on.log" && fail "仍在用 SDL_GetWindowSurface（与 renderer 混用）"
 
-echo "imgui_present_e2e: ok（游戏上屏 + stats 可拖动 + 固定 UI 度量 + software 回退 + WGPU 直呈 F4 坐标）"
+echo "imgui_present_e2e: ok（游戏上屏 + stats 可拖动 + 固定 UI 度量 + software 回退 + WGPU 直呈 F4 坐标 + 直呈拖动）"
