@@ -154,5 +154,47 @@ assert count <= 2, f'churn 结束时应只剩根实例（或一个 pending 子�
 print('scene_instance_e2e: churn ok')
 PY
 
+# ---- ⑦ 控制面内存接口：400 帧 churn 后 Perf.get 的 node/script 必须回到平台期 ----
+# docs/29 §10：mem.* 是运行时唯一的内存观测接口（无需 Tracy GUI / 解析日志）。
+# 修复 docs/bugs/007 前，node 会随每次 spawn/unload 线性增长（400 帧约 +85 KiB）。
+cat > "$WORK/churn_mem.jsonl" <<'EOF'
+{"jsonrpc":"2.0","id":1,"method":"Runtime.step","params":{"frames":10}}
+{"jsonrpc":"2.0","id":2,"method":"Perf.get"}
+{"jsonrpc":"2.0","id":3,"method":"Runtime.step","params":{"frames":390}}
+{"jsonrpc":"2.0","id":4,"method":"Perf.get"}
+EOF
+env MAQUE_CONTROL=- "$PLAYER" "$WORK/churn.scn" < "$WORK/churn_mem.jsonl" > "$WORK/churn_mem.log" 2>&1
+RC=$?
+[ "$RC" -eq 0 ] || { tail -40 "$WORK/churn_mem.log"; fail "churn 内存查询 exit=$RC"; }
+"$PY" - "$WORK/churn_mem.log" <<'PY' || { tail -60 "$WORK/churn_mem.log"; fail "churn 内存断言失败"; }
+import json, sys
+
+resps = {}
+for line in open(sys.argv[1], encoding='utf-8', errors='replace'):
+    line = line.strip()
+    if not line.startswith('{"jsonrpc"'):
+        continue
+    obj = json.loads(line)
+    resps[obj.get('id')] = obj.get('result') or {}
+
+assert 2 in resps and 4 in resps, f'缺 Perf.get 响应: {sorted(resps)}'
+m0 = resps[2].get('metrics') or {}
+m1 = resps[4].get('metrics') or {}
+required = ['mem.script', 'mem.node', 'mem.texture', 'mem.gpu', 'mem.font', 'mem.heap', 'mem.tracked']
+for k in required:
+    assert k in m0 and k in m1, f'缺内存 gauge {k}: {sorted(m0)} / {sorted(m1)}'
+# 采样型域必须存在峰值/分配计数键（控制面接口契约；heap 无分配时 allocs/frees 允许为 0）。
+for k in ['mem.peak.script', 'mem.peak.node', 'mem.script.allocs', 'mem.script.frees']:
+    assert k in m1, f'缺 {k}: {sorted(m1)}'
+
+node0, node1 = float(m0['mem.node']), float(m1['mem.node'])
+script0, script1 = float(m0['mem.script']), float(m1['mem.script'])
+# 10 → 400 帧：实例记录/实体都回到同一规模；允许小量分配抖动（8 KiB / 64 KiB）。
+assert node1 - node0 < 8192, f'node 内存增长 {node1 - node0:.0f} B（> 8 KiB）: {node0:.0f} → {node1:.0f}'
+assert script1 - script0 < 65536, f'script 内存增长 {script1 - script0:.0f} B（> 64 KiB）: {script0:.0f} → {script1:.0f}'
+assert float(m1['mem.tracked']) > 0, m1
+print(f'scene_instance_e2e: memory ok (node {node0:.0f}->{node1:.0f} B, script {script0:.0f}->{script1:.0f} B)')
+PY
+
 echo "scene_instance_e2e: ok"
 exit 0

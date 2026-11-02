@@ -84,6 +84,9 @@ frame=100..700  spawned=698  failed=0  count=1
 
 - `tests/scene_instance_e2e.sh` 新增 churn 段：连续 400 次 spawn/unload 后
   `failed=0`、无 `scene instance limit`、`Scene.instances` 只剩根实例（`ctest -R scene_instance_e2e` 通过）。
+- 新增控制面内存硬门（同上用例）：`Runtime.step 10` → `Perf.get` → `Runtime.step 390` → `Perf.get`，
+  断言 `mem.node` 增长 < 8 KiB、`mem.script` 增长 < 64 KiB。实测 **node 2189 → 2205 B、
+  script 523488 → 523488 B**；接口说明见 `docs/29 §10.1.1`。
 - 修复前后 `[mem] node` 曲线对比（见「症状」）。
 - 关联回归（全部通过）：`scene_instance_e2e`、`scene_serialization_e2e`、`td_e2e`、
   `multilang_e2e`、`prefab_e2e`/`nested_prefab_e2e`/`inline_prefab_e2e`、`render_texture_e2e`、

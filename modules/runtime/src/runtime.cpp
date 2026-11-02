@@ -11027,6 +11027,34 @@ void Engine::memory_sample() {
     if (!split) buf = stat_vram_bytes;     /* 旧插件：只有总量 → 记到 gpu（texture 保持 0） */
     maque::tracy::memory_set(maque::tracy::Mem::texture, tex);
     maque::tracy::memory_set(maque::tracy::Mem::gpu, buf);
+
+    /* ---- 控制面快照（Perf.get / CI 泄漏门）----
+     * 与 Tracy 内存域同一份真相：采样型域用刚算出的值，delta 型域（script/heap）读分配器账本。
+     * 键名带 `mem.` 前缀，避免与既有 metrics（entities/draws/...）冲突；值是字节数。
+     * 这是**当前值 + 峰值 + 分配/释放次数**，够做"跑 N 帧后回到基线"的断言；需要调用栈/逐块
+     * 归因时仍走 Tracy（MAQUE_TRACY=1 + Memory 视图）。 */
+    auto gauge = [&](const char* name, uint64_t value) {
+        mq_obs_gauge_set(obs, name, (double)value);
+    };
+    auto gauge_domain = [&](const char* name, maque::tracy::Mem m) {
+        const maque::tracy::MemInfo info = maque::tracy::memory_info(m);
+        char key[64];
+        std::snprintf(key, sizeof key, "mem.%s", name);
+        gauge(key, info.bytes);
+        std::snprintf(key, sizeof key, "mem.peak.%s", name);
+        gauge(key, info.peak);
+        std::snprintf(key, sizeof key, "mem.%s.allocs", name);
+        gauge(key, info.allocs);
+        std::snprintf(key, sizeof key, "mem.%s.frees", name);
+        gauge(key, info.frees);
+    };
+    gauge_domain("script", maque::tracy::Mem::script);
+    gauge_domain("node", maque::tracy::Mem::node);
+    gauge_domain("texture", maque::tracy::Mem::texture);
+    gauge_domain("gpu", maque::tracy::Mem::gpu);
+    gauge_domain("font", maque::tracy::Mem::font);
+    gauge_domain("heap", maque::tracy::Mem::heap);
+    gauge("mem.tracked", maque::tracy::memory_total());
 }
 
 /* UI 组件语义（role 驱动；引擎不认具体类型名，docs/17）：
@@ -13457,7 +13485,21 @@ void audio_bus_volume(void* ctx, const char* bus, float volume) {
 
 /* ---- 控制平面方法（引擎能力，docs/11） ---- */
 extern "C" int mq_control_Perf_get(void* u, const mq_json*, char* out, size_t cap) {
-    std::snprintf(out, cap, "%s", mq_obs_dump_json(((Engine*)u)->obs));
+    auto* e = (Engine*)u;
+    /* 查询时刷新一次内存域（采样型域是"读当前真相"，delta 型域直接读账本）→ 控制面
+     * 永远拿到最新值，不受 MAQUE_TRACY_MEM_INTERVAL 的采样节流影响。 */
+    if (e) {
+        e->memory_sample();
+        /* 进程常驻内存（WorkingSet/RSS）：覆盖"没有进任何域"的堆/映射增长。
+         * 只在查询时取一次，避免与 Tracy 的 1Hz CPU 采样争用 ps_prev 时间戳。 */
+        if (e->platform) {
+            double cpu_percent = 0.0;
+            uint64_t rss = 0;
+            if (mq_platform_process_stats(e->platform, &cpu_percent, &rss) == 0)
+                mq_obs_gauge_set(e->obs, "mem.rss", (double)rss);
+        }
+    }
+    std::snprintf(out, cap, "%s", mq_obs_dump_json(e ? e->obs : nullptr));
     return 0;
 }
 extern "C" int mq_control_Scene_info(void* u, const mq_json*, char* out, size_t cap) {

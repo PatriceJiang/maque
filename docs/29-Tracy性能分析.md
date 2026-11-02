@@ -264,6 +264,23 @@ ctest --test-dir build-win -R 'tracy' --output-on-failure     # 单测 + 两个 
   已记录值保留（需要干净基线用 `memory_reset()`）。
 - 未编入（`MQ_TRACY_MEMORY_ENABLED=0`）：宏是 inline no-op，调用点不用改，零状态零开销。
 
+### 10.1.1 控制面读取（`Perf.get`，不需要 GUI/日志解析）
+
+`Perf.get` 在返回前刷新一次 `Engine::memory_sample()`，因此 `result.metrics` 里永远是最新值
+（不受 `MAQUE_TRACY_MEM_INTERVAL` 节流；delta 型域直接读分配器账本）：
+
+| key | 含义 |
+|-----|------|
+| `mem.script` / `mem.node` / `mem.texture` / `mem.gpu` / `mem.font` / `mem.heap` | 六个域的当前字节 |
+| `mem.peak.<域>` | 该域历史峰值（采样型域在 `memory_set` 时更新） |
+| `mem.<域>.allocs` / `.frees` | 该域分配/释放**次数**（采样型域恒 0；`heap` 需 `MAQUE_TRACY_ALLOC`） |
+| `mem.tracked` | 前 5 个域之和（不含 `heap`，口径同 `memory_total()`） |
+| `mem.rss` | 进程 WorkingSet/RSS（覆盖未进任何域的堆/映射；平台后端失败时保留上次值） |
+
+用途：CI/e2e 直接断言"跑 N 帧后内存回到基线"，不必解析 `[mem]` 文本。示例见
+`tests/scene_instance_e2e.sh` 的 churn 内存门（10 → 400 帧比较 `mem.node` / `mem.script`）。
+
+
 ### 10.2 每个域的单一写入者
 
 | 域 | 写入者 | 口径 |
