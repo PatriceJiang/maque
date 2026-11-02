@@ -151,4 +151,17 @@ VRAM_LIST="$(grep -o 'vram_bytes=[0-9]*' "$WORK/reload.log" | cut -d= -f2 | sort
   || { cat "$WORK/reload.log"; fail "热重载后 VRAM 变化（纹理/网格泄漏）：$VRAM_LIST"; }
 echo "render_texture_e2e: hot reload x2 vram_bytes=$VRAM_LIST"
 
+# depth/MSAA 附件缓存（docs/bugs/004）：RenderTexture 128² 与主目标 320×240 交替时，
+# 旧实现是 Device 级单槽 → 每帧至少 2 次 depth 重建（wgpu 直呈下还表现为进程内存持续增长）。
+# 修复后 60 帧内 depth 只应为“不同尺寸的个数”建一次；阈值 8 给窗口/离屏切换留余量。
+env MAQUE_TRACE_GPU_ALLOC=1 timeout 90 "$PLAYER" --frames 60 "$SCENE3D" >"$WORK/attach.log" 2>&1 \
+  || { cat "$WORK/attach.log"; fail "附件缓存诊断运行失败"; }
+DEPTH_CREATES=$(grep -c 'gfx: gpu attachment create depth ' "$WORK/attach.log" || true)
+MSAA_CREATES=$(grep -c 'gfx: gpu attachment create msaa ' "$WORK/attach.log" || true)
+[ "${DEPTH_CREATES:-0}" -le 8 ] \
+  || { cat "$WORK/attach.log"; fail "60 帧 depth 附件重建 ${DEPTH_CREATES} 次（应只按尺寸建一次）"; }
+[ "${MSAA_CREATES:-0}" -le 4 ] \
+  || { cat "$WORK/attach.log"; fail "60 帧 MSAA 附件重建 ${MSAA_CREATES} 次"; }
+echo "render_texture_e2e: attachment cache depth=${DEPTH_CREATES} msaa=${MSAA_CREATES} (60 frames)"
+
 echo "render_texture_e2e: ok（Camera2D text rotation + Camera3D duck/fox + Texture/screenshot + hot reload）"

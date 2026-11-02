@@ -24,10 +24,11 @@
 | [001](001-scene-lifecycle-leak.md) | 场景生命周期泄漏 / 热重载 bad-free | 内存 + 崩溃 | fixed | `render_texture_e2e` |
 | [002](002-node-on-hot-reload-leak.md) | 脚本热重载 `node_on` 注册泄漏 / 重复派发 | 内存 + 正确性 | fixed | `script_reload_e2e` |
 | [003](003-lua-mixed-binding.md) | Lua mixed 绑定参数错位（`node_emit` 等） | 正确性 | fixed | `bindings_e2e` |
-| [004](004-render-target-attachment-churn.md) | RenderTexture 多尺寸导致 depth/MSAA 每帧重建 | 性能 | open | 待补 |
+| [004](004-render-target-attachment-churn.md) | RenderTexture 多尺寸导致 depth/MSAA 每帧重建 | 性能 + 内存 | fixed | `render_texture_e2e` |
 | [005](005-windows-scene-watch-path.md) | Windows 场景热重载路径分隔符不匹配 | 功能 | open | 待补 |
 | [006](006-imgui-present-clipping-font-glyph.md) | WGPU 直呈 ImGui 裁剪错误与静态图集缺字 | 正确性 | fixed | `imgui`、`imgui_present_e2e` |
 | [007](007-scene-instance-slot-leak.md) | 场景实例槽位 / 动态壳映射泄漏（卸载不回收） | 内存 + 正确性 | fixed | `scene_instance_e2e` |
+| [008](008-wgpu-direct-present-no-poll.md) | wgpu 直呈路径不排空事件队列 → 延迟销毁资源累积 | 内存 | fixed | 手动 RSS（直呈 1280×720） |
 
 ## 模板
 

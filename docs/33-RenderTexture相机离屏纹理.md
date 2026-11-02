@@ -277,6 +277,10 @@ function on_start() {
   reload 建立的堆场景由 `scene_owned` 持有，切场景/退出时释放。场景 blob 的动态成员（string/vector）
   必须在 `reflect` 销毁**之前**析构，否则组件里的路径/名字缓冲会随反射表一起泄漏；
 - `resource_bytes()` 把持久 RenderTexture 计入 VRAM 估算；depth/MSAA 等帧临时附件不计入；
+- depth/MSAA 附件按 `(w,h[,fmt,samples])` 缓存（最多 4 组）：RenderTexture（如 128²）与主目标
+  （如 320×240）各占一组，不再随每帧切换互相驱逐、反复创建/销毁（docs/bugs/004）；
+- wgpu 直呈在每次 `present` 后调用 `wgpuInstanceProcessEvents` 排空延迟销毁队列；
+  否则逐帧短命 buffer/bind group 会累积（docs/bugs/008）；
 - null renderer 保留句柄、尺寸、清屏和回读语义，用于 headless/WASM P0；它不执行真实几何光栅化。
 
 ## 11. 格式、采样与限制

@@ -132,6 +132,30 @@ struct Device {
     int  captureCount = 0;
     WGPUTextureFormat pipelineFormat = WGPUTextureFormat_RGBA8Unorm;  /* 2D 管线当前目标格式 */
     /* ---- M2 3D 基础：depth + unlit3d 管线（plans/18-pbr-3d.md §4.2）---- */
+    /* depth/MSAA 附件按 `(w,h[,fmt,samples])` 缓存（最多 kAttachmentCacheSlots 组）。
+     * 旧实现只有一组槽位：RenderTexture（128²）与主目标（320×240）交替时每帧互相驱逐，
+     * 每帧创建/销毁 depth（bug 004）。除了 GPU churn，wgpu-native 在未 poll 的直呈路径上
+     * 会推迟释放被销毁纹理 → 进程内存随帧数增长。缓存命中后同一尺寸只建一次。 */
+    static constexpr size_t kAttachmentCacheSlots = 4;
+    struct DepthAttachment {
+        int32_t w = 0, h = 0;
+        WGPUTexture tex = nullptr;
+        WGPUTextureView view = nullptr;
+        uint64_t used = 0;
+    };
+    struct MsaaAttachment {
+        int32_t w = 0, h = 0;
+        WGPUTextureFormat format = WGPUTextureFormat_Undefined;
+        int32_t samples = 0;
+        WGPUTexture color = nullptr, depth = nullptr;
+        WGPUTextureView colorView = nullptr, depthView = nullptr;
+        uint64_t used = 0;
+    };
+    std::vector<DepthAttachment> depthCache;
+    std::vector<MsaaAttachment> msaaCache;
+    uint64_t attachmentTick = 0;
+    int32_t depthCreates = 0, msaaCreates = 0;   // MAQUE_TRACE_GPU_ALLOC 诊断
+    /* 当前选中的附件（DepthAttachment/MsaaAttachment 的别名，不拥有资源）。 */
     WGPUTexture depthTex = nullptr;
     WGPUTextureView depthView = nullptr;
     int32_t depthW = 0, depthH = 0;
@@ -388,11 +412,21 @@ static void ensure_2d_pipelines(Device* dv, WGPUTextureFormat format) {
 }
 
 /* ---- M2 3D 基础（plans/18-pbr-3d.md §4.2）：depth 纹理 / unlit3d 管线 / 离屏回读 ---- */
+static void release_depth_attachment(Device::DepthAttachment& a) {
+    if (a.view) { wgpuTextureViewRelease(a.view); a.view = nullptr; }
+    if (a.tex) { wgpuTextureRelease(a.tex); a.tex = nullptr; }
+}
+
 static bool ensure_depth(Device* dv, int32_t w, int32_t h) {
     if (!dv || w <= 0 || h <= 0) return false;
-    if (dv->depthTex && dv->depthW == w && dv->depthH == h) return true;
-    if (dv->depthView) { wgpuTextureViewRelease(dv->depthView); dv->depthView = nullptr; }
-    if (dv->depthTex) { wgpuTextureRelease(dv->depthTex); dv->depthTex = nullptr; }
+    const uint64_t tick = ++dv->attachmentTick;
+    for (auto& a : dv->depthCache) {
+        if (a.tex && a.w == w && a.h == h) {
+            a.used = tick;
+            dv->depthTex = a.tex; dv->depthView = a.view; dv->depthW = w; dv->depthH = h;
+            return a.view != nullptr;
+        }
+    }
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
     td.usage = WGPUTextureUsage_RenderAttachment;
     td.dimension = WGPUTextureDimension_2D;
@@ -400,44 +434,87 @@ static bool ensure_depth(Device* dv, int32_t w, int32_t h) {
     td.format = WGPUTextureFormat_Depth32Float;
     td.mipLevelCount = 1;
     td.sampleCount = 1;
-    dv->depthTex = wgpuDeviceCreateTexture(dv->device, &td);
-    if (!dv->depthTex) return false;
-    dv->depthView = wgpuTextureCreateView(dv->depthTex, nullptr);
-    dv->depthW = w; dv->depthH = h;
-    return dv->depthView != nullptr;
+    WGPUTexture tex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!tex) return false;
+    WGPUTextureView view = wgpuTextureCreateView(tex, nullptr);
+    if (!view) { wgpuTextureRelease(tex); return false; }
+    ++dv->depthCreates;
+    if (const char* trace = std::getenv("MAQUE_TRACE_GPU_ALLOC"); trace && *trace && std::strcmp(trace, "0") != 0)
+        std::print("gfx: gpu attachment create depth {}x{} (#{})\n", w, h, dv->depthCreates);
+    if (dv->depthCache.size() >= Device::kAttachmentCacheSlots) {
+        auto victim = std::min_element(dv->depthCache.begin(), dv->depthCache.end(),
+                                       [](const Device::DepthAttachment& a, const Device::DepthAttachment& b) {
+                                           return a.used < b.used;
+                                       });
+        release_depth_attachment(*victim);
+        dv->depthCache.erase(victim);
+    }
+    dv->depthCache.push_back(Device::DepthAttachment{ w, h, tex, view, tick });
+    dv->depthTex = tex; dv->depthView = view; dv->depthW = w; dv->depthH = h;
+    return true;
+}
+
+static void release_msaa_attachment(Device::MsaaAttachment& a) {
+    if (a.colorView) { wgpuTextureViewRelease(a.colorView); a.colorView = nullptr; }
+    if (a.depthView) { wgpuTextureViewRelease(a.depthView); a.depthView = nullptr; }
+    if (a.color) { wgpuTextureRelease(a.color); a.color = nullptr; }
+    if (a.depth) { wgpuTextureRelease(a.depth); a.depth = nullptr; }
 }
 
 /* MSAA 附件：颜色（目标格式）+ 深度（Depth32Float）都必须是相同 sampleCount，且 resolve target
  * 由调用方（render_3d_only）指向真正要读/呈现的目标纹理。任一步失败返回 false → 调用方回退 1x。 */
 static bool ensure_msaa(Device* dv, int32_t w, int32_t h, WGPUTextureFormat fmt, int32_t samples) {
     if (!dv || w <= 0 || h <= 0 || samples <= 1) return false;
-    if (dv->msaaTex && dv->msaaView && dv->msaaDepthTex && dv->msaaDepthView &&
-        dv->msaaW == w && dv->msaaH == h && dv->msaaFormat == fmt && dv->msaaSamples == samples)
-        return true;
-    if (dv->msaaView) { wgpuTextureViewRelease(dv->msaaView); dv->msaaView = nullptr; }
-    if (dv->msaaTex) { wgpuTextureRelease(dv->msaaTex); dv->msaaTex = nullptr; }
-    if (dv->msaaDepthView) { wgpuTextureViewRelease(dv->msaaDepthView); dv->msaaDepthView = nullptr; }
-    if (dv->msaaDepthTex) { wgpuTextureRelease(dv->msaaDepthTex); dv->msaaDepthTex = nullptr; }
-    dv->msaaW = dv->msaaH = 0; dv->msaaSamples = 0;
+    const uint64_t tick = ++dv->attachmentTick;
+    for (auto& a : dv->msaaCache) {
+        if (a.color && a.depth && a.w == w && a.h == h && a.format == fmt && a.samples == samples) {
+            a.used = tick;
+            dv->msaaTex = a.color; dv->msaaView = a.colorView;
+            dv->msaaDepthTex = a.depth; dv->msaaDepthView = a.depthView;
+            dv->msaaW = w; dv->msaaH = h; dv->msaaFormat = fmt; dv->msaaSamples = samples;
+            return a.colorView && a.depthView;
+        }
+    }
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
     td.usage = WGPUTextureUsage_RenderAttachment;
     td.dimension = WGPUTextureDimension_2D;
     td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
     td.format = fmt;
     td.mipLevelCount = 1; td.sampleCount = (uint32_t)samples;
-    dv->msaaTex = wgpuDeviceCreateTexture(dv->device, &td);
-    if (!dv->msaaTex) return false;
-    dv->msaaView = wgpuTextureCreateView(dv->msaaTex, nullptr);
+    WGPUTexture color = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!color) return false;
+    WGPUTextureView colorView = wgpuTextureCreateView(color, nullptr);
     WGPUTextureDescriptor dd = WGPU_TEXTURE_DESCRIPTOR_INIT;
     dd.usage = WGPUTextureUsage_RenderAttachment;
     dd.dimension = WGPUTextureDimension_2D;
     dd.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
     dd.format = WGPUTextureFormat_Depth32Float;
     dd.mipLevelCount = 1; dd.sampleCount = (uint32_t)samples;
-    dv->msaaDepthTex = wgpuDeviceCreateTexture(dv->device, &dd);
-    if (!dv->msaaDepthTex) return false;
-    dv->msaaDepthView = wgpuTextureCreateView(dv->msaaDepthTex, nullptr);
-    if (!dv->msaaView || !dv->msaaDepthView) return false;
+    WGPUTexture depth = wgpuDeviceCreateTexture(dv->device, &dd);
+    WGPUTextureView depthView = depth ? wgpuTextureCreateView(depth, nullptr) : nullptr;
+    if (!colorView || !depth || !depthView) {
+        if (colorView) wgpuTextureViewRelease(colorView);
+        if (depthView) wgpuTextureViewRelease(depthView);
+        if (depth) wgpuTextureRelease(depth);
+        wgpuTextureRelease(color);
+        return false;
+    }
+    ++dv->msaaCreates;
+    if (const char* trace = std::getenv("MAQUE_TRACE_GPU_ALLOC"); trace && *trace && std::strcmp(trace, "0") != 0)
+        std::print("gfx: gpu attachment create msaa {}x{} fmt={} samples={} (#{})\n",
+                   w, h, (int)fmt, samples, dv->msaaCreates);
+    if (dv->msaaCache.size() >= Device::kAttachmentCacheSlots) {
+        auto victim = std::min_element(dv->msaaCache.begin(), dv->msaaCache.end(),
+                                       [](const Device::MsaaAttachment& a, const Device::MsaaAttachment& b) {
+                                           return a.used < b.used;
+                                       });
+        release_msaa_attachment(*victim);
+        dv->msaaCache.erase(victim);
+    }
+    dv->msaaCache.push_back(Device::MsaaAttachment{ w, h, fmt, samples, color, depth,
+                                                    colorView, depthView, tick });
+    dv->msaaTex = color; dv->msaaView = colorView;
+    dv->msaaDepthTex = depth; dv->msaaDepthView = depthView;
     dv->msaaW = w; dv->msaaH = h; dv->msaaFormat = fmt; dv->msaaSamples = samples;
     return true;
 }
@@ -1101,13 +1178,21 @@ static void destroy_device(Device* dv) {
     if (dv->neutralNormalView) wgpuTextureViewRelease(dv->neutralNormalView);
     if (dv->neutralNormalTex) wgpuTextureRelease(dv->neutralNormalTex);
     if (dv->dummySkinBuf) wgpuBufferRelease(dv->dummySkinBuf);
-    /* M2 3D 资源 */
-    if (dv->depthView) wgpuTextureViewRelease(dv->depthView);
-    if (dv->depthTex) wgpuTextureRelease(dv->depthTex);
-    if (dv->msaaView) wgpuTextureViewRelease(dv->msaaView);
-    if (dv->msaaTex) wgpuTextureRelease(dv->msaaTex);
-    if (dv->msaaDepthView) wgpuTextureViewRelease(dv->msaaDepthView);
-    if (dv->msaaDepthTex) wgpuTextureRelease(dv->msaaDepthTex);
+    /* M2 3D 资源：depth/MSAA 附件缓存（每项拥有自己的纹理/view）。 */
+    for (auto& a : dv->depthCache) release_depth_attachment(a);
+    dv->depthCache.clear();
+    for (auto& a : dv->msaaCache) release_msaa_attachment(a);
+    dv->msaaCache.clear();
+    dv->depthTex = nullptr;
+    dv->depthView = nullptr;
+    dv->msaaTex = nullptr;
+    dv->msaaView = nullptr;
+    dv->msaaDepthTex = nullptr;
+    dv->msaaDepthView = nullptr;
+    if (const char* trace = std::getenv("MAQUE_TRACE_GPU_ALLOC"); trace && *trace && std::strcmp(trace, "0") != 0)
+        std::print("gfx: gpu attachment creates depth={} msaa={} (cache={}/{} slots)\n",
+                   dv->depthCreates, dv->msaaCreates, Device::kAttachmentCacheSlots,
+                   Device::kAttachmentCacheSlots);
     release_material_pipelines(dv);
     for (int lay = 0; lay < 4; ++lay)
         if (dv->shadowPipeline[lay]) wgpuRenderPipelineRelease(dv->shadowPipeline[lay]);
@@ -2275,6 +2360,10 @@ static int32_t r_present(void* self) {
     if (dv->surfaceView) { wgpuTextureViewRelease(dv->surfaceView); dv->surfaceView = nullptr; }
     const WGPUStatus status = wgpuSurfacePresent(dv->surface);
     if (dv->surfaceTex) { wgpuTextureRelease(dv->surfaceTex); dv->surfaceTex = nullptr; }
+    /* 直呈路径没有 readback 的 map/poll 同步：每帧把 wgpu 的事件队列排空一次，
+     * 让 `wgpuTextureRelease`/`wgpuBufferRelease` 的延迟销毁真正回收（否则长跑 RSS/VRAM 缓慢增长）。
+     * 只做非阻塞 ProcessEvents（该构建的 WaitAny 未实现，见 AGENTS）。 */
+    if (status == WGPUStatus_Success && dv->instance) wgpuInstanceProcessEvents(dv->instance);
     return status == WGPUStatus_Success ? 0 : -2;
 }
 
