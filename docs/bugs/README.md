@@ -26,6 +26,7 @@
 | [003](003-lua-mixed-binding.md) | Lua mixed 绑定参数错位（`node_emit` 等） | 正确性 | fixed | `bindings_e2e` |
 | [004](004-render-target-attachment-churn.md) | RenderTexture 多尺寸导致 depth/MSAA 每帧重建 | 性能 | open | 待补 |
 | [005](005-windows-scene-watch-path.md) | Windows 场景热重载路径分隔符不匹配 | 功能 | open | 待补 |
+| [006](006-imgui-present-clipping-font-glyph.md) | WGPU 直呈 ImGui 裁剪错误与静态图集缺字 | 正确性 | fixed | `imgui`、`imgui_present_e2e` |
 
 ## 模板
 
