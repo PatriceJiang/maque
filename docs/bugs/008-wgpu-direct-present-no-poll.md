@@ -47,8 +47,13 @@ RSS 随帧数线性增长。该构建的 `wgpuInstanceWaitAny` 未实现（AGENT
 - `r_present()` 在 `wgpuSurfacePresent` 成功、surface texture 释放后调用一次
   `wgpuInstanceProcessEvents(dv->instance)`（非阻塞），排空本帧的延迟销毁队列；
 - 仅直呈路径需要；离屏/headless 没有 surface，资源在 device 销毁时统一回收；
+- **同时消除逐帧 create/release 的短命对象**（否则 poll 只是在比赛回收）：
+  - 相机 uniform（912B）、view-clear（16B）改成设备级持久 buffer + 缓存 bind group；
+  - 每个 draw 的材质 uniform（336B）、调色板 buffer、bind group 按 draw 下标做槽位缓存
+    （key = 材质贴图句柄 + 蒙皮关节数），每帧只 `wgpuQueueWriteBuffer`；
+  - 阴影 pass 的相机 bind group 也缓存（`shadowCamBg`）。
 - 与 [004](004-render-target-attachment-churn.md) 配套：004 消除 depth/MSAA 的每帧重建（源头），
-  本条负责把仍然逐帧创建的 uniform/bind group/palette 等短命资源及时回收（排水）。
+  本条负责把仍然逐帧创建的 uniform/bind group/palette 等短命资源复用/回收（源头 + 排水）。
 
 ## 回归与证据
 
@@ -56,6 +61,8 @@ RSS 随帧数线性增长。该构建的 `wgpuInstanceWaitAny` 未实现（AGENT
   修复后 187,551,744 B **连续 12 s 完全不变**；GPU `memory.used` 1071 MiB 平台期。
 - `render_texture_3d.scn`（1280×720，直呈）：修复后 WorkingSet 189–190.5 MB 抖动 < 1.5 MB（20 s），
   不再单调上涨。
+- Box（1280×720，直呈）6×1000 帧采样：`170.19 → 171.11 → 172.29 → 172.43 → 170.64 → 170.04 MB` ——
+  前 ~1000 帧是管线/分配器 warmup（可涨 5–7 MB），之后平台期/回落；判断泄漏要跳过 warmup。
 - `[mem]` 六域与 `resource_bytes` 保持平台期（本泄漏不在引擎账本内，不能只看 `mem.*`）。
 - **Debug+ASan 构建不能直接看 RSS 判泄漏**：ASan quarantine 会保留已 free 的内存。
   同一 Fox 场景（1280×720 直呈）：
