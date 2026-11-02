@@ -559,6 +559,10 @@ struct Engine {
     int   stat_calls = 0, stat_ui_calls = 0, stat_3d_calls = 0;
     int   stat_tris = 0, stat_verts = 0;
     uint64_t stat_vram_bytes = 0;
+    /* 静态帧跳过：视觉输入（draws/views/3D 帧数据）不变时不再提交 GPU。
+     * 只看"能让画面变化"的数据；脚本状态/物理等非视觉逻辑仍每帧推进。 */
+    uint64_t idle_render_hash = 0;
+    uint32_t idle_render_frames = 0;
     bool  stat_window_sized = false;
     bool  imgui_backend = false;   // 用官方 SDL_Renderer 后端（与游戏帧共用 renderer、单次 present）
     bool  direct_present = false;  // plans/18 M1：wgpu swapchain 直接呈现（attach_window 成功；不走 CPU readback→SDL）
@@ -849,6 +853,8 @@ struct Engine {
     };
     std::unordered_map<std::string, GltfGpuModel> gltf_models;
     std::unordered_map<int, GltfEntityState> gltf_states;
+    /* 运行期 glTF 是否含逐帧变化（动画/蒙皮/morph）；静态 glTF 不阻塞 idle 跳帧。 */
+    bool gltf_dynamic = false;
     GltfGpuModel* load_gltf_model(const std::string& path);
     bool read_vfs_file(const std::string& path, std::vector<uint8_t>& out);
     int32_t upload_texture_rgba(const uint8_t* rgba, int w, int h, bool srgb,
@@ -3320,6 +3326,14 @@ void Engine::setup_gltf_assets() {
                 (void)load_gclip(cp);
             }
         }
+    }
+    gltf_dynamic = false;
+    for (const auto& [gp, gm] : gltf_models) {
+        (void)gp;
+        if (gm.failed) continue;
+        if (!gm.anims.empty() || !gm.skins.empty()) gltf_dynamic = true;
+        for (const auto& pr : gm.prims)
+            if (!pr.morph_targets.empty()) gltf_dynamic = true;
     }
     if (!gltf_states.empty()) gltf_anim_step(0.0F);
     if (render3d_info || n_skin > 0 || n_clip > 0 || n_morph > 0 || n_gltf > 0)
@@ -5947,6 +5961,46 @@ void Engine::step_frame(bool render_frame) {
         fr.env.sky_mode = scene->desc.env_background ? 2 : 1;
     else
         fr.env.sky_mode = (env_tex_id >= 0 && scene->desc.env_background) ? 3 : 1;
+        /* 静态帧跳过（docs/29 / docs/bugs/009）：画面输入完全不变时不再提交 GPU。
+         * 只对"没有逐帧动画/外部像素消费者/覆盖层"的 3D 直呈帧启用；脚本/物理仍每帧推进。
+         * 每 60 帧强制重画一次，兜住窗口 expose/驱动 surface 变化。 */
+        bool skip3d = false;
+        {
+            const bool idle_ok =
+                direct_present && !need_pixels && !frame_capture_requested &&
+                !std::getenv("MAQUE_CAPTURE_WGPU") &&
+                !imgui_on && !imgui_backend && !has_shader_pass &&
+                !gltf_dynamic && spines.empty() && particles.empty() &&
+                morph_meshes.empty() && skins3d.empty() &&
+                render_textures.empty() && spine_meshes.empty() &&
+                iframe.pointer_count == 0 && iframe.key_count == 0 && !iframe.resized;
+            if (idle_ok) {
+                uint64_t h = 1469598103934665603ull;
+                auto mix = [&](const void* p, size_t n) {
+                    const uint8_t* b = (const uint8_t*)p;
+                    for (size_t i = 0; i < n; ++i) { h ^= b[i]; h *= 1099511628211ull; }
+                };
+                auto mixv = [&](const auto& v) { mix(v.data(), v.size() * sizeof(v[0])); };
+                mix(&TW, sizeof TW); mix(&SHpx, sizeof SHpx);
+                mix(bg, sizeof bg); mix(&opt_render_mode, sizeof opt_render_mode);
+                mix(&fr.msaa_samples, sizeof fr.msaa_samples);
+                mix(&fr.env, sizeof fr.env);
+                mixv(views); mixv(draws);
+                mixv(views3d); mixv(lights3d); mixv(mats3d); mixv(draws3d);
+                mixv(skins3d); mixv(passes3d);
+                if (h == idle_render_hash && idle_render_frames < 60) {
+                    skip3d = true;
+                    ++idle_render_frames;
+                } else {
+                    idle_render_hash = h;
+                    idle_render_frames = 0;
+                }
+            } else {
+                idle_render_hash = 0;
+                idle_render_frames = 0;
+            }
+        }
+        if (!skip3d) {
         const bool direct3d = direct_present && !need_pixels;
         fr.out = direct3d ? nullptr : pixels.data();
         fr.out_size = (uint32_t)pixels.size();
@@ -5971,6 +6025,7 @@ void Engine::step_frame(bool render_frame) {
                 has_3d = false;
             }
         }
+        }  /* !skip3d */
     } else if (direct_present && rapi && rself && rapi->render_frame3d) {
         MQ_TRACY_ZONE_N(render, "frame.direct");
         mq_renderer_frame3d f{};
@@ -5994,6 +6049,36 @@ void Engine::step_frame(bool render_frame) {
         f.env.env_texture = -1;                   /* 2D 直呈路径无 3D env（避免 0 号纹理被误当 env） */
         f.env.env_irradiance_texture = -1;
         for (int i = 0; i < 4; ++i) f.env.sky_color[i] = bg[i];
+        bool skip2d = false;
+        {
+            const bool idle_ok =
+                direct_present && !need_pixels && !frame_capture_requested &&
+                !std::getenv("MAQUE_CAPTURE_WGPU") &&
+                !imgui_on && !imgui_backend && !has_shader_pass &&
+                spine_meshes.empty() && particles.empty() && render_textures.empty() &&
+                iframe.pointer_count == 0 && iframe.key_count == 0 && !iframe.resized;
+            if (idle_ok) {
+                uint64_t h = 1099511628211ull;
+                auto mix = [&](const void* p, size_t n) {
+                    const uint8_t* b = (const uint8_t*)p;
+                    for (size_t i = 0; i < n; ++i) { h ^= b[i]; h *= 1099511628211ull; }
+                };
+                auto mixv = [&](const auto& v) { mix(v.data(), v.size() * sizeof(v[0])); };
+                mix(&TW, sizeof TW); mix(&SHpx, sizeof SHpx); mix(bg, sizeof bg);
+                mixv(views); mixv(draws);
+                if (h == idle_render_hash && idle_render_frames < 60) {
+                    skip2d = true;
+                    ++idle_render_frames;
+                } else {
+                    idle_render_hash = h;
+                    idle_render_frames = 0;
+                }
+            } else {
+                idle_render_hash = 0;
+                idle_render_frames = 0;
+            }
+        }
+        if (!skip2d) {
         const bool present_frame = !need_pixels || f.present_after_readback != 0;
         const int32_t rc = rapi->render_frame3d(rself, &f);
         if (rc == 0 && present_frame && rapi->present) rapi->present(rself);
@@ -6009,6 +6094,7 @@ void Engine::step_frame(bool render_frame) {
             direct_requested = false;
             direct_window_handle = nullptr;
         }
+        }  /* !skip2d */
     } else if (rapi && rself) {
         MQ_TRACY_ZONE_N(render, "frame");   // Tracy：渲染插件成帧 + 回读（颜色 = render 模块）
         /* 有网格（骨骼动画）时走 render_mesh_views（图元 + 网格一次成帧、统一 layer/z 排序）；
