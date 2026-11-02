@@ -198,13 +198,17 @@ struct Device {
     WGPUTextureFormat msaaFormat = WGPUTextureFormat_Undefined;
     int32_t msaaSamples = 0;
     bool msaa4Probed = false, msaa4Supported = false;
-    WGPUTextureFormat p3dFormat = WGPUTextureFormat_Undefined;   /* 3D 材质管线当前目标格式 */
+    /* 3D 材质管线按**目标格式**各缓存一套（最多 2 种）：RenderTexture 是 RGBA8Unorm、
+     * 主 surface 可能是 BGRA8Unorm；旧实现单槽会在 RT/主 pass 之间每帧释放重建全部管线。 */
+    WGPUTextureFormat p3dFormats[2] = { WGPUTextureFormat_Undefined, WGPUTextureFormat_Undefined };
+    int p3dFormatCount = 0;
+    int p3dFormatIndex = 0;
     WGPUBindGroupLayout p3dCamBgl = nullptr;
     WGPUBindGroupLayout p3dDrawBgl = nullptr;
     WGPUPipelineLayout p3dPl = nullptr;
     WGPUShaderModule p3dShader = nullptr;
     WGPUPipelineLayout p3dSkyPl = nullptr;       /* envmap 天空背景：仅 group0（camera） */
-    WGPURenderPipeline skyPipeline[2] = {};   /* [msaa4]：0=1x、1=4x（MSAA 需独立管线） */
+    WGPURenderPipeline skyPipeline[2][2] = {};   /* [格式槽][msaa4]：0=1x、1=4x（MSAA 需独立管线） */
     WGPUShaderModule viewClearShader = nullptr;
     WGPUBindGroupLayout viewClearBgl = nullptr;
     WGPUPipelineLayout viewClearPl = nullptr;
@@ -216,8 +220,8 @@ struct Device {
      * 而 WebGPU 的 frontFace 默认是 CCW，不做补偿时 side=Front 的材质会把正面剔掉/显示背面。
      * layout = 网格顶点布局（0=48B / 1=56B / 2=72B 蒙皮 / 3=80B 蒙皮+布局1），
      *          对应 shader entry vs / vs1 / vs_skin / vs1_skin。 */
-    WGPURenderPipeline p3dMatPipeline[2][12][2][3][2][4] = {};   /* [msaa4][model][blend][side][mir][layout] */
-    WGPURenderPipeline p3dWirePipeline[2][4] = {};               /* [msaa4][layout] */
+    WGPURenderPipeline p3dMatPipeline[2][2][12][2][3][2][4] = {};   /* [格式槽][msaa4][model][blend][side][mir][layout] */
+    WGPURenderPipeline p3dWirePipeline[2][2][4] = {};               /* [格式槽][msaa4][layout] */
     bool p3dMatWarned[12] = {};
     int32_t lastRenderMode = -1;                                 /* 诊断：仅在模式变化时打印 */
     bool p3dMatLayoutWarned[4] = {};      /* layout 级（vs/vs1/vs_skin/vs1_skin 缺失）只告警一次 */
@@ -565,21 +569,30 @@ static const char* const kMatVsEntry[4] = { "vs", "vs1", "vs_skin", "vs1_skin" }
 static const char* const kShadowVsEntry[4] = { "vs_shadow", "vs_shadow1", "vs_shadow_skin", "vs_shadow1_skin" };
 
 static void release_material_pipelines(Device* dv) {
-    for (int mi = 0; mi < 2; ++mi) {
-        for (int m = 0; m < 12; ++m)
-            for (int b = 0; b < 2; ++b)
-                for (int c = 0; c < 3; ++c)
-                    for (int mir = 0; mir < 2; ++mir)
-                        for (int lay = 0; lay < 4; ++lay)
-                            if (dv->p3dMatPipeline[mi][m][b][c][mir][lay]) {
-                                wgpuRenderPipelineRelease(dv->p3dMatPipeline[mi][m][b][c][mir][lay]);
-                                dv->p3dMatPipeline[mi][m][b][c][mir][lay] = nullptr;
-                            }
-        for (int lay = 0; lay < 4; ++lay) {
-            if (dv->p3dWirePipeline[mi][lay]) wgpuRenderPipelineRelease(dv->p3dWirePipeline[mi][lay]);
-            dv->p3dWirePipeline[mi][lay] = nullptr;
+    for (int fi = 0; fi < 2; ++fi)
+        for (int mi = 0; mi < 2; ++mi) {
+            for (int m = 0; m < 12; ++m)
+                for (int b = 0; b < 2; ++b)
+                    for (int c = 0; c < 3; ++c)
+                        for (int mir = 0; mir < 2; ++mir)
+                            for (int lay = 0; lay < 4; ++lay)
+                                if (dv->p3dMatPipeline[fi][mi][m][b][c][mir][lay]) {
+                                    wgpuRenderPipelineRelease(dv->p3dMatPipeline[fi][mi][m][b][c][mir][lay]);
+                                    dv->p3dMatPipeline[fi][mi][m][b][c][mir][lay] = nullptr;
+                                }
+            for (int lay = 0; lay < 4; ++lay) {
+                if (dv->p3dWirePipeline[fi][mi][lay]) wgpuRenderPipelineRelease(dv->p3dWirePipeline[fi][mi][lay]);
+                dv->p3dWirePipeline[fi][mi][lay] = nullptr;
+            }
         }
-    }
+}
+
+static void release_sky_pipelines(Device* dv) {
+    for (int fi = 0; fi < 2; ++fi)
+        for (int mi = 0; mi < 2; ++mi) {
+            if (dv->skyPipeline[fi][mi]) wgpuRenderPipelineRelease(dv->skyPipeline[fi][mi]);
+            dv->skyPipeline[fi][mi] = nullptr;
+        }
 }
 
 static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4) {
@@ -594,8 +607,24 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
         }
         return;
     }
+    int fi = -1;
+    for (int i = 0; i < dv->p3dFormatCount; ++i)
+        if (dv->p3dFormats[i] == format) { fi = i; break; }
+    if (fi < 0) {
+        if (dv->p3dFormatCount < 2) {
+            fi = dv->p3dFormatCount++;
+            dv->p3dFormats[fi] = format;
+        } else {
+            /* 第三种目标格式（理论上只有 RT RGBA8 + surface + 极少离屏格式）：整体重建。 */
+            release_material_pipelines(dv);
+            release_sky_pipelines(dv);
+            dv->p3dFormats[0] = format;
+            dv->p3dFormatCount = 1;
+            fi = 0;
+        }
+    }
+    dv->p3dFormatIndex = fi;
     const bool have_res = dv->p3dShader && dv->p3dPl && dv->p3dCamBgl && dv->p3dDrawBgl;
-    if (have_res && dv->p3dFormat == format) return;
 
     if (!dv->p3dShader) {
         const char* wgsl = mq_builtin_shader_text("pbr");
@@ -716,15 +745,8 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
         dv->p3dSkyPl = wgpuDeviceCreatePipelineLayout(dv->device, &spl);
     }
     if (!dv->p3dShader || !dv->p3dPl) return;
-    if (dv->p3dFormat != format) {
-        release_material_pipelines(dv);
-        dv->p3dFormat = format;
-        for (auto& sp : dv->skyPipeline) {
-            if (sp) { wgpuRenderPipelineRelease(sp); sp = nullptr; }
-        }
-    }
     const int msaa_idx = msaa4 ? 1 : 0;
-    if (!dv->skyPipeline[msaa_idx] && dv->p3dSkyPl && dv->p3dShader) {
+    if (!dv->skyPipeline[fi][msaa_idx] && dv->p3dSkyPl && dv->p3dShader) {
         WGPUDepthStencilState sky_ds = WGPU_DEPTH_STENCIL_STATE_INIT;
         sky_ds.format = WGPUTextureFormat_Depth32Float;
         sky_ds.depthWriteEnabled = WGPUOptionalBool_False;
@@ -745,8 +767,8 @@ static void ensure_3d_pipelines(Device* dv, WGPUTextureFormat format, bool msaa4
         sky_rp.primitive.cullMode = WGPUCullMode_None;
         sky_rp.depthStencil = &sky_ds;
         sky_rp.multisample.count = msaa4 ? 4u : 1u;
-        dv->skyPipeline[msaa_idx] = wgpuDeviceCreateRenderPipeline(dv->device, &sky_rp);
-        if (!dv->skyPipeline[msaa_idx]) {
+        dv->skyPipeline[fi][msaa_idx] = wgpuDeviceCreateRenderPipeline(dv->device, &sky_rp);
+        if (!dv->skyPipeline[fi][msaa_idx]) {
             static bool warned_sky = false;
             if (!warned_sky) {
                 warned_sky = true;
@@ -844,11 +866,12 @@ static WGPURenderPipeline get_material_pipeline(Device* dv, int model, bool blen
     const int b = blend ? 1 : 0;
     const int mir = mirrored ? 1 : 0;
     const int mi = msaa4 ? 1 : 0;
-    WGPURenderPipeline* cache = wireframe ? &dv->p3dWirePipeline[mi][layout]
-                                         : &dv->p3dMatPipeline[mi][model][b][side][mir][layout];
+    const int fi = (dv->p3dFormatIndex >= 0 && dv->p3dFormatIndex < 2) ? dv->p3dFormatIndex : 0;
+    WGPURenderPipeline* cache = wireframe ? &dv->p3dWirePipeline[fi][mi][layout]
+                                         : &dv->p3dMatPipeline[fi][mi][model][b][side][mir][layout];
     if (*cache) return *cache;
     WGPUColorTargetState ct = WGPU_COLOR_TARGET_STATE_INIT;
-    ct.format = dv->p3dFormat; ct.writeMask = WGPUColorWriteMask_All;
+    ct.format = dv->p3dFormats[fi]; ct.writeMask = WGPUColorWriteMask_All;
     WGPUBlendState blend_state = WGPU_BLEND_STATE_INIT;
     blend_state.color.srcFactor = WGPUBlendFactor_SrcAlpha;
     blend_state.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
@@ -1238,8 +1261,7 @@ static void destroy_device(Device* dv) {
     if (dv->dummyDepth) wgpuTextureRelease(dv->dummyDepth);
     if (dv->shadowView) wgpuTextureViewRelease(dv->shadowView);
     if (dv->shadowTex) wgpuTextureRelease(dv->shadowTex);
-    if (dv->skyPipeline[0]) wgpuRenderPipelineRelease(dv->skyPipeline[0]);
-    if (dv->skyPipeline[1]) wgpuRenderPipelineRelease(dv->skyPipeline[1]);
+    release_sky_pipelines(dv);
     for (int di = 0; di < 2; ++di)
         for (int mi = 0; mi < 2; ++mi)
             if (dv->viewClearPipeline[di][mi]) wgpuRenderPipelineRelease(dv->viewClearPipeline[di][mi]);
@@ -3362,10 +3384,11 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
         };
         /* envmap 天空背景：在 opaque 之前画全屏三角形（不写深度；opaque 会覆盖它）。 */
         auto draw_sky = [&](WGPURenderPassEncoder p) {
-            if (v.clear_mode == 0 && dv->skyPipeline[msaa > 1 ? 1 : 0] &&
+            const int sky_fi = (dv->p3dFormatIndex >= 0 && dv->p3dFormatIndex < 2) ? dv->p3dFormatIndex : 0;
+            if (v.clear_mode == 0 && dv->skyPipeline[sky_fi][msaa > 1 ? 1 : 0] &&
                 ((f->env.sky_mode == 3 && f->env.env_texture >= 0) ||
                  (f->env.sky_mode == 2 && f->env.env_cubemap >= 0))) {
-                wgpuRenderPassEncoderSetPipeline(p, dv->skyPipeline[msaa > 1 ? 1 : 0]);
+                wgpuRenderPassEncoderSetPipeline(p, dv->skyPipeline[sky_fi][msaa > 1 ? 1 : 0]);
                 wgpuRenderPassEncoderDraw(p, 3, 1, 0, 0);
             }
         };

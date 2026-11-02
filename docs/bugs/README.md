@@ -30,6 +30,7 @@
 | [007](007-scene-instance-slot-leak.md) | 场景实例槽位 / 动态壳映射泄漏（卸载不回收） | 内存 + 正确性 | fixed | `scene_instance_e2e` |
 | [008](008-wgpu-direct-present-no-poll.md) | wgpu 直呈路径不排空事件队列 → 延迟销毁资源累积 | 内存 | fixed | 手动 RSS（直呈 1280×720） |
 | [009](009-static-scene-redraw-cpu.md) | 静态场景每帧重绘导致 CPU 占用偏高 | 性能 | fixed | 手动 CPU / `MAQUE_TRACE_STATS` |
+| [011](011-pipeline-format-thrash.md) | RenderTexture/主目标格式交替导致 3D 管线每 pass 重建 | 性能 | fixed | ender_texture_e2e |
 
 ## 模板
 
