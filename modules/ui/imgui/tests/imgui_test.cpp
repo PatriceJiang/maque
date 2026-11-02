@@ -167,6 +167,48 @@ int main() {
     mq_imgui_shutdown();
     CHECK_EQ(mq_imgui_ready(), 0);
 
+    /* ⑦ 静态图集补充固定文案：U+6E32「渲」不在 ImGui 2500 常用字表中，
+     * 但项目 TTF 有该字。两档字号都必须在首次 Build 时得到独立、非空的位图，
+     * 不能等到绘制阶段才加载（那时宿主已经上传过静态图集，只会显示 fallback）。 */
+    const char* cjk_path = nullptr;
+    static const char* const kFontPaths[] = {
+        "scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+        "../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+        "../../../../scenes/fonts/AlibabaPuHuiTi-3-55-Regular.ttf",
+    };
+    for (const char* path : kFontPaths) {
+        if (FILE* f = std::fopen(path, "rb")) { std::fclose(f); cjk_path = path; break; }
+    }
+    CHECK(cjk_path != nullptr);  // 找不到项目 TTF 时必须失败，不能静默跳过缺字回归
+    if (cjk_path) {
+        CHECK_EQ(mq_imgui_init_with_fonts(cjk_path, 20.0F, 15.0F, 1.0F), 0);
+        int cjk_w = 0, cjk_h = 0;
+        const uint8_t* cjk_px = mq_imgui_font_pixels(&cjk_w, &cjk_h);
+        CHECK(cjk_px != nullptr && cjk_w > 0 && cjk_h > 0);
+        ImFontAtlas* atlas = ImGui::GetIO().Fonts;
+        CHECK_EQ(atlas->Fonts.Size, 2);
+        for (ImFont* font : atlas->Fonts) {
+            ImFontBaked* baked = font->LastBaked;  // 纯读取；FindGlyph 会现场加载并掩盖问题
+            CHECK(baked != nullptr);
+            if (!baked) continue;
+            const bool loaded = baked->IsGlyphLoaded(0x6E32);
+            CHECK(loaded);
+            if (!loaded || !cjk_px) continue;
+            const ImFontGlyph& glyph = baked->Glyphs[baked->IndexLookup[0x6E32]];
+            const ImFontGlyph& fallback = baked->Glyphs[baked->FallbackGlyphIndex];
+            CHECK_EQ(glyph.Codepoint, 0x6E32);
+            CHECK(glyph.PackId != fallback.PackId);
+            const int x0 = (int)(glyph.U0 * cjk_w), x1 = (int)(glyph.U1 * cjk_w);
+            const int y0 = (int)(glyph.V0 * cjk_h), y1 = (int)(glyph.V1 * cjk_h);
+            bool has_ink = false;
+            for (int y = y0; y < y1; ++y)
+                for (int x = x0; x < x1; ++x)
+                    if (cjk_px[((size_t)y * cjk_w + x) * 4 + 3] != 0) has_ink = true;
+            CHECK(has_ink);
+        }
+        mq_imgui_shutdown();
+    }
+
     std::printf("imgui: %d checks, %d failed\n", g_checks, g_fail);
     return g_fail == 0 ? 0 : 1;
 }

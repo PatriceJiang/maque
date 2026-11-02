@@ -31,9 +31,9 @@ SCN="$SCENES/spine/spine.scn"
 [ -f "$SCN" ] || { echo "imgui_present_e2e: skip（缺 $SCN）"; exit 77; }
 
 rm -rf "$WORK"; mkdir -p "$WORK"
-unset MAQUE_HEADLESS MAQUE_KEEP_OPEN MAQUE_IMGUI MAQUE_PRESENT MAQUE_CAPTURE \
+unset MAQUE_HEADLESS MAQUE_KEEP_OPEN MAQUE_IMGUI MAQUE_PRESENT MAQUE_CAPTURE MAQUE_CAPTURE_WGPU \
       MAQUE_CAPTURE_FRAMES MAQUE_CAPTURE_EVERY MAQUE_IMGUI_POINTER MAQUE_MAX_FRAMES \
-      MAQUE_IMGUI_SCALE MAQUE_IMGUI_FONT_SIZE 2>/dev/null || true
+      MAQUE_IMGUI_SCALE MAQUE_IMGUI_FONT_SIZE MAQUE_SIM_KEY_AT 2>/dev/null || true
 
 # 抓第 5 次 present（= 运行期第 4 帧，拖动事件已在第 2..4 帧注入完）之后的整帧。
 COMMON=(MAQUE_WINDOW=800x650 MAQUE_CAPTURE_EVERY=5 MAQUE_CAPTURE_FRAMES=2 MAQUE_MAX_FRAMES=12)
@@ -206,7 +206,56 @@ print(f'imgui_present_e2e: ok（面板差异 {panel_diff}/{panel_area:.0f}、游
       f'拖动旧区 {drag_old} 新区 {drag_new}/{new_area:.0f}、游戏颜色 {game_colors}）')
 PY
 
+# ---- ⑥ WGPU 直呈：ImGui 是屏幕空间覆盖层，不得跟随游戏视图缩放/平移 ----
+# 320x240 场景放进 800x650 窗口时游戏 zoom=2.5。旧实现把 F4 网格也放大 2.5 倍，
+# 却保留未变换的 scissor → 文字被裁、面板甚至移出屏幕；SDL 官方后端是同帧参考。
+DIRECT_COMMON=(MAQUE_WINDOW=800x650 MAQUE_IMGUI=0 MAQUE_SIM_KEY_AT=2:1004
+               MAQUE_CAPTURE_FRAMES=4 MAQUE_MAX_FRAMES=8)
+run_player "$WORK/direct_f4.log" env "${DIRECT_COMMON[@]}" MAQUE_PRESENT=wgpu \
+    MAQUE_CAPTURE_WGPU="$WORK/direct_f4" timeout 60 "$PLAYER" "$SCN" || fail "WGPU 直呈 F4 运行失败"
+run_player "$WORK/direct_f4_sdl.log" env "${DIRECT_COMMON[@]}" MAQUE_PRESENT=sdl \
+    MAQUE_CAPTURE="$WORK/direct_f4_sdl" timeout 60 "$PLAYER" "$SCN" || fail "SDL F4 参考运行失败"
+grep -q "direct present attach_window .*rc=0" "$WORK/direct_f4.log" || fail "F4 用例未进入 WGPU 直呈"
+[ -f "$WORK/direct_f4_3.ppm" ] || fail "WGPU 直呈 F4 抓帧缺失"
+[ -f "$WORK/direct_f4_sdl_3.ppm" ] || fail "SDL F4 参考抓帧缺失"
+
+"$PY" - "$WORK/direct_f4_3.ppm" "$WORK/direct_f4_sdl_3.ppm" \
+    "$UI_SCALE" "$PANEL_W" "$PANEL_H" <<'PY' || fail "WGPU 直呈 F4 面板与 SDL 参考不一致（视图 zoom 误作用于屏幕空间 ImGui）"
+import sys
+
+
+def load(path):
+    parts = open(path, 'rb').read().split(b'\n', 3)
+    assert len(parts) == 4 and parts[0] == b'P6'
+    w, h = map(int, parts[1].split())
+    assert len(parts[3]) == w * h * 3
+    return w, h, parts[3]
+
+
+w, h, direct = load(sys.argv[1])
+w2, h2, reference = load(sys.argv[2])
+assert (w, h) == (w2, h2) == (800, 650)
+ui_scale, panel_w, panel_h = map(float, sys.argv[3:])
+pad = 8.0 * ui_scale
+x0 = int(pad + panel_w + pad)
+y0 = int(pad)
+x1 = min(w, int(x0 + panel_w * 1.30))
+y1 = min(h, int(y0 + panel_h * 3.65))
+diff = 0
+total = 0
+for y in range(y0, y1):
+    for x in range(x0, x1):
+        i = (y * w + x) * 3
+        total += 1
+        if (abs(direct[i] - reference[i]) + abs(direct[i + 1] - reference[i + 1])
+                + abs(direct[i + 2] - reference[i + 2])) > 30:
+            diff += 1
+ratio = diff / max(1, total)
+print(f'imgui_present_e2e: WGPU 直呈 F4 对照 region=({x0},{y0})-({x1},{y1}) diff={ratio:.4%}')
+sys.exit(0 if ratio < 0.02 else 1)
+PY
+
 # 反向断言：统一呈现后不再调用窗口表面路径（SDL2 不允许与 renderer 混用）
 grep -q "window surface" "$WORK/on.log" && fail "仍在用 SDL_GetWindowSurface（与 renderer 混用）"
 
-echo "imgui_present_e2e: ok（游戏上屏 + stats 可拖动 + 固定 UI 度量 + software 回退）"
+echo "imgui_present_e2e: ok（游戏上屏 + stats 可拖动 + 固定 UI 度量 + software 回退 + WGPU 直呈 F4 坐标）"

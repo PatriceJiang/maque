@@ -52,6 +52,7 @@ std::vector<uint8_t> g_font_rgba;
 int g_font_w = 0, g_font_h = 0;
 unsigned char *g_font_px = nullptr;    // ImGui 持有的图集像素（GetTexDataAsRGBA32 返回）
 bool g_font_built = false;             // 静态图集是否已 Build（只会做一次）
+ImVector<ImWchar> g_font_ranges;        // GlyphRanges 的生命周期必须覆盖 Build
 
 /* 导出缓冲（仅本帧有效）。
  * ⚠️ 构建期只存**偏移**，不要存 vector 指针：边 push_back 边取 pointer 会在扩容后悬空
@@ -115,22 +116,45 @@ int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_
      * 注：1.93 里这是**公开字段** TexDesiredFormat，不是 Set 方法。 */
     io.Fonts->TexDesiredFormat = ImTextureFormat_RGBA32;
 
-    /* 字体：TTF（含 CJK）+ 常用简体中文范围；没有 TTF 才退默认（只有 ASCII → 中文会是 '?'）。
-     * 一次烘**两档**：标题（title_px）与正文（body_px），都乘 UI 缩放 → 屏幕像素级清晰。 */
+    /* 字体：TTF（含 CJK）+ 常用简体中文范围和内建面板固定文案；没有 TTF 才退默认
+     *（只有 ASCII → 中文会是 '?'）。一次烘**两档**：标题与正文，都乘 UI 缩放。 */
+    /* 常用简体字表不包含所有内建面板用语（例如 U+6E32「渲」）。合并 F4 面板的固定文案；
+     * 只增加实际字符，不切到全量 CJK。ranges 的生命周期必须覆盖两档字体的静态 Build。 */
+    g_font_ranges.clear();
+    ImFontGlyphRangesBuilder ranges;
+    ranges.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+    ranges.AddText(
+        "选项：只影响本机画面，不改场景"
+        "F4 开关本面板 / F2 开关 stats"
+        "渲染模式"
+        "跟随场景,关闭,4x"
+        "实际：4x MSAA"
+        "实际：关闭（1x）"
+        "默认太阳光（场景无光源时补光）"
+        "启用"
+        "强度"
+        "方向 X方向 Y方向 Z"
+        "实际：使用默认太阳光"
+        "实际：未使用（场景已有光源或已关闭）"
+        "主相机 near / far"
+        "覆盖场景相机"
+        "跟随场景相机的 near/far"
+        "实际：near=%.4f far=%.2f"
+        "重置为默认");
+    ranges.BuildRanges(&g_font_ranges);
+
     bool loaded = false;
     if (ttf_path && *ttf_path) {
         ImFontConfig cfg;
         cfg.SizePixels = title_px * g_pixel_scale;
-        /* OverrideGlyphOffset 保持默认；范围取"常用简体中文"（约 2500 字）——够面板文案用，
-         * 且图集不会过大（全量 CJK 会到几 MB 图集，没必要）。 */
-        cfg.GlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+        cfg.GlyphRanges = g_font_ranges.Data;
         if (io.Fonts->AddFontFromFileTTF(ttf_path, cfg.SizePixels, &cfg)) {
             loaded = true;
             /* 第二档：正文小字号（stats 面板内容用）。**必须也乘 g_pixel_scale** ——
              * 之前写死 15px，UI 缩放变化时标题跟着变、正文不变 → 比例失衡。 */
             ImFontConfig small_cfg;
             small_cfg.SizePixels = body_px * g_pixel_scale;
-            small_cfg.GlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+            small_cfg.GlyphRanges = g_font_ranges.Data;
             g_small_font = io.Fonts->AddFontFromFileTTF(ttf_path, small_cfg.SizePixels, &small_cfg);
         }
     }
@@ -171,6 +195,7 @@ void mq_imgui_shutdown(void) {
     ImGui::DestroyContext();
     g_ready = false;
     g_font_rgba.clear();
+    g_font_ranges.clear();
     g_pos.clear(); g_uv.clear(); g_col.clear(); g_idx.clear(); g_cmds.clear();
 }
 

@@ -3472,6 +3472,10 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
          * key: 0 = solid；1<<32 | tex<<1 | nearest = textured；2<<32 | tex = mesh。 */
         struct BgEntry { uint64_t key; WGPUBindGroup bg; };
         std::vector<BgEntry> bg_cache;
+        /* ImGui（MQ_IMGUI_LAYER=100）的顶点和 clip 都已经是渲染目标像素空间。
+         * 游戏视图 uniform 不能把 Canvas 的 zoom/camera 再应用到这一层；按需建恒等视图，
+         * 避免普通 Spine/游戏网格的既有变换与 bind-group 缓存发生变化。 */
+        WGPUBuffer screen_ubuf = nullptr;
         auto find_bg = [&](uint64_t key) -> WGPUBindGroup {
             for (const BgEntry& e : bg_cache)
                 if (e.key == key) return e.bg;
@@ -3510,11 +3514,24 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                     continue;
                 }
                 if (!has_tex) continue;          /* 无页纹理 → 无法采样（不静默画错颜色） */
-                const uint64_t bkey = (uint64_t{ 2 } << 32) | (uint32_t)c.texture;
+                const bool screen_space = m.layer == 100;   // MQ_IMGUI_LAYER（ui/mq_imgui.h）
+                if (screen_space && vi != 0) continue;      // 全目标覆盖层只画一次，不在每个游戏视图重复叠画
+                if (screen_space && !screen_ubuf) {
+                    /* mesh shader 的世界原点在目标中心；ImGui 原点在左上角。
+                     * cam=目标中心 + zoom=1 → vertex/clip 都逐像素落在原 ImGui 坐标。 */
+                    const float screen_uni[12] = { (float)TW, (float)TH, 0.0F, 0.0F,
+                                                   (float)TW * 0.5F, (float)TH * 0.5F,
+                                                   1.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F };
+                    screen_ubuf = wgpuDeviceCreateBuffer(dv->device, &ubd);
+                    wgpuQueueWriteBuffer(dv->queue, screen_ubuf, 0, screen_uni, sizeof screen_uni);
+                }
+                /* key 必须包含坐标空间：同一纹理也可能同时用于世界网格与 ImGui。 */
+                const uint64_t bkey = (uint64_t{ 2 } << 32) |
+                                      ((uint64_t)(uint32_t)c.texture << 1) | (screen_space ? 1ull : 0ull);
                 WGPUBindGroup bgroup = find_bg(bkey);
                 if (!bgroup) {
                     WGPUBindGroupEntry be[3] = {};
-                    be[0].binding = 0; be[0].buffer = ubuf; be[0].size = sizeof uni;
+                    be[0].binding = 0; be[0].buffer = screen_space ? screen_ubuf : ubuf; be[0].size = sizeof uni;
                     be[1].binding = 1; be[1].textureView = dv->textures[c.texture]->view;
                     be[2].binding = 2;
                     be[2].sampler = dv->textures[c.texture]->sampler
@@ -3525,8 +3542,11 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                     bg_cache.push_back({ bkey, bgroup });
                 }
                 /* 裁剪矩形：`clip_w/h > 0` 时用网格自带的（ImGui 的 scissor），否则用整个视图。
-                 * 两者取**交集**并夹到视图内，避免越界（WebGPU 要求 scissor 在附件范围内）。 */
-                int sx = view_x0, sy = view_y0, sw = view_sw, sh = view_sh;
+                 * ImGui 的 clip 与恒等视图顶点同属全目标空间，不能再与游戏 viewport 求交。 */
+                int sx = screen_space ? 0 : view_x0;
+                int sy = screen_space ? 0 : view_y0;
+                int sw = screen_space ? TW : view_sw;
+                int sh = screen_space ? TH : view_sh;
                 if (sw <= 0 || sh <= 0) continue;
                 if (m.clip_w > 0.0F && m.clip_h > 0.0F) {
                     const int cx = (int)(m.clip_x + 0.5F), cy = (int)(m.clip_y + 0.5F);
@@ -3592,6 +3612,7 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
         for (const BgEntry& e : bg_cache)
             if (e.bg) wgpuBindGroupRelease(e.bg);
+        if (screen_ubuf) wgpuBufferRelease(screen_ubuf);
         wgpuBufferRelease(ubuf);
     }
 
