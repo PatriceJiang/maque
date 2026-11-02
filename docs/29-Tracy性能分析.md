@@ -266,6 +266,9 @@ ctest --test-dir build-win -R 'tracy' --output-on-failure     # 单测 + 两个 
   `memory` 曲线持续上涨。用 Release 构建，或加
   `ASAN_OPTIONS=quarantine_size_mb=0:thread_local_quarantine_size_kb=0` 做对照
   （见 docs/bugs/008 的 Fox/Box 数据）。
+- **Tracy client 自身也占 RSS**：`MAQUE_TRACY=1` 常驻约 +40 MB；连上 `tracy-capture` 后
+  WorkingSet 再上一个台阶（实测 +8 MB）。判泄漏要关 Tracy，或看 **Private Bytes** 而不是
+  `memory`（WorkingSet）曲线——WorkingSet 含共享页/驱动缓存，会台阶式涨落。
 - 未编入（`MQ_TRACY_MEMORY_ENABLED=0`）：宏是 inline no-op，调用点不用改，零状态零开销。
 
 ### 10.1.1 控制面读取（`Perf.get`，不需要 GUI/日志解析）

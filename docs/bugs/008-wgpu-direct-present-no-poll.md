@@ -63,6 +63,12 @@ RSS 随帧数线性增长。该构建的 `wgpuInstanceWaitAny` 未实现（AGENT
   不再单调上涨。
 - Box（1280×720，直呈）6×1000 帧采样：`170.19 → 171.11 → 172.29 → 172.43 → 170.64 → 170.04 MB` ——
   前 ~1000 帧是管线/分配器 warmup（可涨 5–7 MB），之后平台期/回落；判断泄漏要跳过 warmup。
+- **60,000 帧 / 16.5 min 长跑**（Box 800×650，release，直呈，**MAQUE_TRACY=0**）：
+  WorkingSet 190.60 → 195.22 MB（+4.6 MB，最后 5 min 仅 +0.36 MB）；
+  **Private Bytes 412.65 → 421.40 MB 后，最后 5 min 恒为 `421,400,576 B`**。
+  同一场景开 `MAQUE_TRACY=1`（client 常驻、未连 profiler）时 WS 基线约 **231–232 MB**（Tracy client +40 MB）；
+  连上 `tracy-capture` 20 s 后 WS 跳到 **240.4 MB** 并保持。Tracy 截图里的 222→232 MB 与台阶主要是
+  Tracy client/连接开销 + WorkingSet，不是引擎逐帧分配；泄漏度量请用 `MAQUE_TRACY=0` 的 Private Bytes。
 - `[mem]` 六域与 `resource_bytes` 保持平台期（本泄漏不在引擎账本内，不能只看 `mem.*`）。
 - **Debug+ASan 构建不能直接看 RSS 判泄漏**：ASan quarantine 会保留已 free 的内存。
   同一 Fox 场景（1280×720 直呈）：
