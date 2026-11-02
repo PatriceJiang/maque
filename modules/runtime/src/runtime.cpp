@@ -513,25 +513,16 @@ struct Engine {
                           const mq_platform_key_event* keys, uint32_t nk);
     void imgui_frame_begin(float dt);          // 开始一帧（脚本 update 之前）
     void imgui_extract(std::vector<mq_renderer_mesh>& out);   // 结束帧 + 命令 → 网格图元
-    float imgui_ptr_x = 0, imgui_ptr_y = 0;    // 最近指针位置（窗口像素）
+    float imgui_ptr_x = 0, imgui_ptr_y = 0;    // 最近指针位置（窗口**逻辑**像素）
     bool  imgui_ptr_down = false;              // 左键是否按住
-    /* 指针的"窗口像素 → ImGui 显示空间"换算：
-     *   · 官方后端：显示空间 = 绘制区**设备像素**；SDL 鼠标是**逻辑像素** →
-     *     乘 content_scale（非 HiDPI 时 1:1）；
-     *   · 网格链（无窗口/present off）：显示空间 = 目标像素 → 按画布映射反算。
-     * 无窗口时 scale=1/offset=0，等价于直接用。 */
-    float ptr_target_x() const {
-        if (imgui_backend) return imgui_ptr_x * imgui_input_scale;
-        if (!window) return imgui_ptr_x;
-        const float s = canvas.scale > 0.0F ? canvas.scale : 1.0F;
-        return (imgui_ptr_x - canvas.offset_x) / s;
-    }
-    float ptr_target_y() const {
-        if (imgui_backend) return imgui_ptr_y * imgui_input_scale;
-        if (!window) return imgui_ptr_y;
-        const float s = canvas.scale > 0.0F ? canvas.scale : 1.0F;
-        return (imgui_ptr_y - canvas.offset_y) / s;
-    }
+    /* ImGui 的**显示空间**（= `mq_imgui_begin_frame` 的 show_w/show_h，也是导出顶点所在空间）：
+     *   · 官方 SDL_Renderer 后端：绘制区**设备像素**（renderer 后台缓冲）；
+     *   · 网格链（WGPU 直呈 / 无窗口 / present off）：**渲染目标像素** TW×TH
+     *     —— gfx 对 MQ_IMGUI_LAYER 用恒等视图，顶点逐像素落在目标上。
+     * 指针事件是窗口**逻辑**像素，与显示空间只差一个等比倍率（显示/逻辑）；
+     * 无窗口时指针本来就是目标像素 → 1:1。 */
+    void  imgui_show_size(float* w, float* h) const;
+    float imgui_show_scale() const;
     bool  imgui_env_checked = false;           // 是否已按 MAQUE_IMGUI 决定过初始开关
     bool  imgui_frame_active = false;          // 本帧已 begin（保证 end 一定配对）
     bool  imgui_f2_held = false;               // F2 是否按住（热键沿检测：按住只切一次）
@@ -541,7 +532,6 @@ struct Engine {
     float imgui_ui_scale = 1.0F;               // 屏幕分辨率派生的 UI 缩放
     float imgui_pixel_scale = 1.0F;            // 实际像素倍率（字号 × 样式尺寸）
     float imgui_content_scale = 1.0F;          // 窗口 绘制区/逻辑区 比（HiDPI）
-    float imgui_input_scale = 1.0F;            // 输入坐标 → ImGui 显示空间 的倍率
     int   imgui_screen_w = 0, imgui_screen_h = 0;
     float imgui_title_size = 0.0F;             // 标题字号（逻辑像素，未乘 pixel_scale）
     float imgui_body_size = 0.0F;              // 正文字号（逻辑像素，未乘 pixel_scale）
@@ -563,6 +553,11 @@ struct Engine {
      * 只看"能让画面变化"的数据；脚本状态/物理等非视觉逻辑仍每帧推进。 */
     uint64_t idle_render_hash = 0;
     uint32_t idle_render_frames = 0;
+    /* 场景组件/派生世界矩阵的视觉哈希：用于在 RenderTexture（默认 EveryFrame）场景里
+     * 判断“整个场景没有变化”，从而跳过 RT pass 与主 pass（docs/bugs/009）。 */
+    uint64_t scene_visual_hash_value = 0;
+    bool     scene_visual_unchanged = false;
+    uint64_t compute_scene_visual_hash() const;
     bool  stat_window_sized = false;
     bool  imgui_backend = false;   // 用官方 SDL_Renderer 后端（与游戏帧共用 renderer、单次 present）
     bool  direct_present = false;  // plans/18 M1：wgpu swapchain 直接呈现（attach_window 成功；不走 CPU readback→SDL）
@@ -4444,12 +4439,59 @@ bool Engine::save_camera_texture(int entity, const std::string& path) {
     return rc == 0;
 }
 
+uint64_t Engine::compute_scene_visual_hash() const {
+    if (!scene) return 0;
+    uint64_t h = 1469598103934665603ull;
+    auto mix = [&](const void* p, size_t n) {
+        const uint8_t* b = (const uint8_t*)p;
+        for (size_t i = 0; i < n; ++i) { h ^= b[i]; h *= 1099511628211ull; }
+    };
+    std::vector<int> ids;
+    ids.reserve(scene->ents.size());
+    for (const auto& [id, e] : scene->ents) { (void)e; ids.push_back(id); }
+    std::sort(ids.begin(), ids.end());
+    for (int id : ids) {
+        const Entity* e = scene->at(id);
+        if (!e) continue;
+        mix(&id, sizeof id);
+        mix(&e->parent, sizeof e->parent);
+        mix(&e->active, sizeof e->active);
+        mix(&e->scale, sizeof e->scale);
+        mix(&e->angle, sizeof e->angle);
+        mix(&e->opacity, sizeof e->opacity);
+        mix(&e->z_index, sizeof e->z_index);
+        mix(&e->world_x, sizeof e->world_x);
+        mix(&e->world_y, sizeof e->world_y);
+        mix(e->world_m, sizeof e->world_m);
+        mix(e->name.data(), e->name.size());
+        std::vector<uint32_t> tids;
+        tids.reserve(e->comps.size());
+        for (const auto& [tid, blob] : e->comps) { (void)blob; tids.push_back(tid); }
+        std::sort(tids.begin(), tids.end());
+        for (uint32_t tid : tids) {
+            mix(&tid, sizeof tid);
+            auto it = e->comps.find(tid);
+            if (it != e->comps.end()) {
+                mix(it->second.data(), it->second.size());
+            }
+        }
+    }
+    return h;
+}
+
 void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
                                     const std::vector<mq_renderer_mesh>& meshes) {
     if (render_textures.empty() || !MQ_RENDERER_HAS(rapi, render_to_texture)) return;
     /* 截图请求会强制 OnDemand 目标在本帧更新。 */
     for (const auto& req : camera_captures)
         if (RenderTextureState* rt = render_texture_for(req.entity)) rt->dirty = true;
+    /* 静态场景：所有 RT 都干净时，整帧 RT pass（含各自的 3D 提取/深度/命令缓冲）直接跳过。 */
+    if (scene_visual_unchanged) {
+        bool any_rt_dirty = false;
+        for (const auto& rt : render_textures)
+            if (rt.enabled && (rt.dirty || !rt.ready)) { any_rt_dirty = true; break; }
+        if (!any_rt_dirty) return;
+    }
 
     /* 依赖排序：A 的可见 2D 输入采样 B，则 B 先于 A。同一环内按实体 id 继续，语义为
      * “较早目标读环中较晚目标的上一帧，较晚目标可读较早目标的本帧”，确定且无同-pass 反馈。 */
@@ -5789,6 +5831,26 @@ void Engine::step_frame(bool render_frame) {
         { MQ_TRACY_ZONE_N(text, "text.flush"); text_flush(draws); }   // 文本阶段 2：图集纹理 + 最终 UV
     }
     if (scene) sync_render_textures();                  // 动态组件/尺寸/name 变化统一在帧边界提交
+    /* 静态场景判定（RenderTexture 默认 EveryFrame，必须在视觉输入不变时跳过 RT pass）。
+     * 哈希覆盖实体树/组件 blob/派生世界矩阵；动画/粒子/Spine/shader/ImGui/输入/截图一律视为动态。 */
+    if (scene) {
+        const bool visual_dynamic =
+            gltf_dynamic || !spines.empty() || !particles.empty() || has_shader_pass ||
+            imgui_on || imgui_backend || !shot_path.empty() || !shot_seq.empty() ||
+            !frames_dir.empty() || !camera_captures.empty() || frame_capture_requested ||
+            std::getenv("MAQUE_CAPTURE_WGPU") != nullptr;
+        bool rt_dirty = false;
+        for (const auto& rt : render_textures)
+            if (rt.enabled && (rt.dirty || !rt.ready)) { rt_dirty = true; break; }
+        const uint64_t svh = visual_dynamic ? 0 : compute_scene_visual_hash();
+        scene_visual_unchanged =
+            !visual_dynamic && !rt_dirty && iframe.pointer_count == 0 &&
+            iframe.key_count == 0 && !iframe.resized && svh == scene_visual_hash_value;
+        scene_visual_hash_value = svh;
+    } else {
+        scene_visual_unchanged = false;
+        scene_visual_hash_value = 0;
+    }
     /* F4 的 2D/UI 开关只隐藏游戏层；随后提取的 ImGui 网格必须保留，否则调试面板也会消失。 */
     if (!opt_2d_enabled) { draws.clear(); spine_meshes.clear(); }
     /* stats：只计游戏每帧逻辑提交量，调试 ImGui 面板自身不计入。
@@ -5972,7 +6034,7 @@ void Engine::step_frame(bool render_frame) {
                 !imgui_on && !imgui_backend && !has_shader_pass &&
                 !gltf_dynamic && spines.empty() && particles.empty() &&
                 morph_meshes.empty() && skins3d.empty() &&
-                render_textures.empty() && spine_meshes.empty() &&
+                (render_textures.empty() || scene_visual_unchanged) && spine_meshes.empty() &&
                 iframe.pointer_count == 0 && iframe.key_count == 0 && !iframe.resized;
             if (idle_ok) {
                 uint64_t h = 1469598103934665603ull;
@@ -10477,7 +10539,6 @@ void Engine::imgui_setup() {
     const float ps = imgui_ui_scale * imgui_content_scale *
                      (pre_ren ? 1.0F : std::max(render_scale_req, 0.25F));
     imgui_pixel_scale = ps > 0.0F ? ps : 1.0F;
-    imgui_input_scale = imgui_content_scale;
     if (mq_imgui_init_with_fonts(font_path.empty() ? nullptr : font_path.c_str(),
                                  imgui_title_size, imgui_body_size, imgui_pixel_scale) != 0) {
         std::print(stderr, "runtime: imgui init failed\n");
@@ -10540,8 +10601,41 @@ void Engine::imgui_enable(bool on, bool show_stats) {
     std::print("runtime: imgui panel ON\n");
 }
 
-/* 把本帧设备事件转发给 ImGui（**窗口像素坐标**；调用点在转成世界坐标**之前**）。
- * ImGui 的显示空间就是窗口像素 → 不需要换算（画布缩放只影响世界层）。 */
+/* ImGui 的显示空间尺寸（= `mq_imgui_begin_frame` 的 show_w/show_h，也是导出顶点所在空间）。
+ * 必须与**实际画到哪里**一致，否则鼠标命中会整体偏移（docs/bugs/010）：
+ *   · 官方 SDL_Renderer 后端：绘制区**设备像素**（renderer 后台缓冲；HiDPI 下大于逻辑尺寸）；
+ *   · 网格链（WGPU 直呈 / 无窗口 / present off）：渲染目标像素 TW×TH
+ *     （gfx 对 MQ_IMGUI_LAYER 用恒等视图，顶点逐像素落在目标上）。 */
+void Engine::imgui_show_size(float* w, float* h) const {
+    float sw = (float)TW, sh = (float)TH;
+    if (imgui_backend) {
+        int dw = 0, dh = 0;
+        if (platform) mq_platform_drawable_size(platform, &dw, &dh);
+        if (dw > 0 && dh > 0) { sw = (float)dw; sh = (float)dh; }
+        else if (win_w > 0 && win_h > 0) { sw = (float)win_w; sh = (float)win_h; }
+    }
+    if (w) *w = sw;
+    if (h) *h = sh;
+}
+
+/* 窗口**逻辑**像素 → ImGui 显示空间 的倍率（等比）。
+ * 无窗口（headless/截图）时指针本来就是目标像素 → 1。
+ * ⚠️ 与 Canvas 的 scale/offset 无关：面板是屏幕空间覆盖层，不参与"设计坐标 → 目标"映射
+ *    （旧实现按画布反算 → WGPU 直呈下点击/拖动整体偏移，见 docs/bugs/010）。 */
+float Engine::imgui_show_scale() const {
+    if (!window || !platform) return 1.0F;
+    int ww = 0, wh = 0;
+    mq_platform_window_size(platform, &ww, &wh);
+    float sw = 0.0F, sh = 0.0F;
+    imgui_show_size(&sw, &sh);
+    if (ww <= 0 || !(sw > 0.0F)) return 1.0F;
+    return sw / (float)ww;
+}
+
+/* 把本帧设备事件转发给 ImGui（**窗口逻辑像素坐标**；调用点在转成世界坐标**之前**）。
+ * ImGui 的显示空间 = 渲染目标像素（网格链）或绘制区设备像素（官方后端），两者与窗口逻辑
+ * 像素只差一个等比倍率 → 用 `imgui_show_scale()` 换算。**不能**再按 Canvas 的 offset/scale
+ * 反算：面板是屏幕空间覆盖层，不跟随游戏视图的 zoom/平移（docs/bugs/010）。 */
 void Engine::imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np,
                               const mq_platform_key_event* keys, uint32_t nk) {
     if (!imgui_on || !imgui_inited) return;
@@ -10554,7 +10648,8 @@ void Engine::imgui_input_feed(const mq_platform_pointer_event* ptrs, uint32_t np
         else if (p.type == MQ_PLATFORM_POINTER_UP && p.button == 0) imgui_ptr_down = false;
         else if (p.type == MQ_PLATFORM_POINTER_WHEEL) wheel += p.scroll_y != 0.0F ? p.scroll_y : p.dy;
     }
-    mq_imgui_input_pointer(ptr_target_x(), ptr_target_y(), imgui_ptr_down ? 1 : 0, wheel);
+    const float k = imgui_show_scale();
+    mq_imgui_input_pointer(imgui_ptr_x * k, imgui_ptr_y * k, imgui_ptr_down ? 1 : 0, wheel);
     for (uint32_t i = 0; i < nk; ++i) {
         const mq_platform_key_event& k = keys[i];
         mq_imgui_input_key((int)k.key, k.down ? 1 : 0);
@@ -10642,19 +10737,11 @@ void Engine::imgui_frame_begin(float dt) {
         }
     }
 
-    /* 显示空间：
-     * · 官方后端模式：ImGui 直接画在 SDL_Renderer 上 → 显示空间 = 窗口**设备像素**
-     *   （HiDPI 下大于逻辑尺寸；鼠标逻辑坐标按 imgui_input_scale 换算）。
-     * · 自研网格链模式（headless / present off）：显示空间 = 目标像素（面板进 --shot）。
-     * 字号/面板尺寸都是**固定 UI 度量**（imgui_resolve_metrics），与窗口/目标大小无关。 */
-    float show_w = (float)target_w;
-    float show_h = (float)target_h;
-    if (imgui_backend) {
-        int dw = 0, dh = 0;
-        if (platform) mq_platform_drawable_size(platform, &dw, &dh);
-        if (dw > 0 && dh > 0) { show_w = (float)dw; show_h = (float)dh; }
-        else if (win_w > 0 && win_h > 0) { show_w = (float)win_w; show_h = (float)win_h; }
-    }
+    /* 显示空间（docs/bugs/010）：见 `imgui_show_size()` —— 官方后端 = 绘制区设备像素，
+     * 网格链 = 渲染目标像素。字号/面板尺寸都是**固定 UI 度量**（imgui_resolve_metrics），
+     * 与窗口/目标大小无关。 */
+    float show_w = 0.0F, show_h = 0.0F;
+    imgui_show_size(&show_w, &show_h);
     const float scale = 1.0F, off_x = 0.0F, off_y = 0.0F;
     const float dpi = 1.0F;
     if (imgui_backend) mq_imgui_backend_new_frame();   // 官方后端的 NewFrame（须在 ImGui::NewFrame 之前）

@@ -31,7 +31,10 @@ render pass/command buffer 并提交、present。对 1 个 draw 的场景，这�
   RenderTexture、场景 shader pass、ImGui、输入事件、窗口 resize、`--shot`/`MAQUE_CAPTURE*`、
   `Capture.screen`；
 - 每 **60 帧**强制重画一次，兜住窗口 expose/驱动 surface 变化；
-- 2D 直呈分支做同样的哈希跳帧（`views/draws`）。
+- 2D 直呈分支做同样的哈希跳帧（`views/draws`）；
+- **RenderTexture（默认 EveryFrame）也纳入静态判定**：对整棵场景（实体/组件 blob/派生世界矩阵）
+  做视觉哈希，场景不变且所有 RT 都 `!dirty && ready` 时跳过全部 RT pass；否则逐帧更新。
+- 动画/蒙皮/morph/粒子/Spine/shader/ImGui/输入/截图一律视为动态，保持每帧渲染。
 
 脚本、物理、动画采样等**非视觉逻辑仍每帧推进**，只是不提交 GPU 帧。
 
@@ -49,6 +52,9 @@ render pass/command buffer 并提交、present。对 1 个 draw 的场景，这�
 - 静态 **2D 文本**场景（如 `scenes/label/label.scn`）跳过了 GPU 提交，但 `extract` 仍每帧重新排版
   207 个字形，`logic≈4.8 ms`，CPU 仍约 30%。要做“静态 2D 也接近 0”，下一步需要**文本/提取结果缓存**
   （场景无变化时复用上一帧 draws），不在本次范围内。
+- **带逐帧动画的 RenderTexture 场景**（如 `render_texture_3d.scn` 的 Fox 自动播放 clip）不能跳帧：
+  仍要每帧渲染 RT + 主画面（release 实测约 83–98% 单核）。这是动画负载，不是静态场景。
+- 直接 `scenes/khronos-bin/Duck/Duck.scn`（静态 GLB）实测：release **1.4%**、ASan Debug **6.8%**。
 - 每 60 帧强制刷新一次：静态场景仍会有约 1 Hz 的 GPU 提交。
 
 ## 相关
