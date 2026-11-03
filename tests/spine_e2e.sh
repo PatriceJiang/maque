@@ -60,7 +60,9 @@ case "$MODE" in
 smoke)
     run "$WORK/smoke.log" 40
     grep -q 'spine: ready' "$WORK/smoke.log" || { echo "--- 日志 ---"; cat "$WORK/smoke.log"; fail "脚本未进入 ready（骨架/场景没装配？）"; }
-    grep -q "renderer plugin" "$WORK/smoke.log" || skip "渲染插件不可用（无 wgpu/GPU）"
+    # 渲染器可用 = 成功行 "runtime: renderer '<插件>' backend='…'"（"renderer plugin" 只在失败行，
+    # 用它当探针会把有 GPU 判成无 GPU → 见 flappy_e2e.sh 的说明）
+    grep -q "runtime: renderer '" "$WORK/smoke.log" || skip "渲染插件不可用（无 wgpu/GPU）"
     # 引擎侧：骨架/图集装上了（页表有 pma 标记 = 图集解析成功、页纹理已上传）
     grep -q "skel='/art/spineboy-pro.skel'" "$WORK/smoke.log" || { cat "$WORK/smoke.log"; fail "骨架未装配"; }
     grep -q "pma=1" "$WORK/smoke.log" || { cat "$WORK/smoke.log"; fail "图集页纹理/pma 未就位"; }
@@ -99,7 +101,7 @@ PY
 
     run "$WORK/play.log" 140 "$WORK/switch.sim.json"
     grep -q 'spine: ready' "$WORK/play.log" || { cat "$WORK/play.log"; fail "未进入 ready"; }
-    grep -q "renderer plugin" "$WORK/play.log" || skip "渲染插件不可用（无 wgpu/GPU）"
+    grep -q "runtime: renderer '" "$WORK/play.log" || skip "渲染插件不可用（无 wgpu/GPU）"
     has_errors "$WORK/play.log" && { cat "$WORK/play.log"; fail "运行期报错"; }
 
     # ② 断言：动画按注入顺序切换（↓=+1、↑=-1，环绕），且脚本读回的引擎当前动画 == 请求
@@ -252,7 +254,7 @@ PY
 dragon)
     run "$WORK/dragon.log" 40
     grep -q 'spine: ready' "$WORK/dragon.log" || { cat "$WORK/dragon.log"; fail "dragon 未进入 ready"; }
-    grep -q "renderer plugin" "$WORK/dragon.log" || skip "渲染插件不可用（无 wgpu/GPU）"
+    grep -q "runtime: renderer '" "$WORK/dragon.log" || skip "渲染插件不可用（无 wgpu/GPU）"
     has_errors "$WORK/dragon.log" && { cat "$WORK/dragon.log"; fail "运行期报错"; }
     grep -q "skel='/art/dragon-ess.skel'" "$WORK/dragon.log" || { cat "$WORK/dragon.log"; fail "dragon 骨架未装配（约定 atlas 路径？）"; }
     # 多页：5 页（素材实测）且每页纹理句柄非 -1

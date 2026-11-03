@@ -64,7 +64,8 @@ case "$MODE" in
 smoke)
     run "$WORK/smoke.log" 60
     grep -q 'tank: ready' "$WORK/smoke.log" || { echo "--- 日志 ---"; cat "$WORK/smoke.log"; fail "脚本未进入 ready（场景/脚本没加载？）"; }
-    grep -q 'renderer plugin' "$WORK/smoke.log" || skip "渲染插件不可用（无 wgpu/GPU）"
+    # 探针只认成功行（"renderer plugin" 只出现在失败行，用它会把有 GPU 判成无 GPU —— 见 flappy_e2e.sh）
+    grep -q "runtime: renderer '" "$WORK/smoke.log" || skip "渲染插件不可用（无 wgpu/GPU）"
     grep -q 'tank: wave 1 start enemies=5' "$WORK/smoke.log" || { cat "$WORK/smoke.log"; fail "波次没有生成（敌坦部件缺失？）"; }
     check_clean "$WORK/smoke.log"
     echo "tank_smoke: ok（ready + 渲染插件 + 5 敌坦 + 无报错，60 帧）"

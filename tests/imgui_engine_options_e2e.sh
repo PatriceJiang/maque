@@ -409,6 +409,8 @@ PY
 # stats 同样按游戏图层分类；基线额外打开 F2，验证调试面板自身不进入 draw/几何计数。
 # VRAM 则统计真实存活资源，因此 F2 的字体图集应计入；图层开关只隐藏绘制，不释放资产。
 echo "imgui_engine_options_e2e: ⑤b stats（UI/3D drawcall、顶点、三角形、显存）"
+MAQUE_TRACE_STATS=1 run "$WORK/stats_plain.log" "stats 无选项基线运行失败" \
+    --frames 31 "$LAYER_SCN"
 MAQUE_TRACE_STATS=1 MAQUE_SIM_KEY_AT="5:1002" run "$WORK/stats_base.log" "stats 基线运行失败" \
     --frames 31 "$LAYER_SCN"
 MAQUE_TRACE_STATS=1 MAQUE_ENGINE_OPTIONS="3d=0" run "$WORK/stats_no3d.log" "stats 3d=0 运行失败" \
@@ -422,7 +424,7 @@ grep -qF "draws=1 ui_draws=1 3d_draws=0 tris=2 verts=4" "$WORK/stats_no3d.log" \
 grep -qF "draws=1 ui_draws=0 3d_draws=1 tris=12 verts=24" "$WORK/stats_no2d.log" \
     || { cat "$WORK/stats_no2d.log" >&2; fail "stats 2d=0 应只剩 3D cube：24 顶点、12 三角形"; }
 
-"$PY" - "$WORK/stats_base.log" "$WORK/stats_no3d.log" "$WORK/stats_no2d.log" <<'PY' \
+"$PY" - "$WORK/stats_plain.log" "$WORK/stats_base.log" "$WORK/stats_no3d.log" "$WORK/stats_no2d.log" <<'PY' \
     || fail "stats VRAM 资源字节断言不满足"
 import re
 import sys
@@ -435,12 +437,21 @@ def last_vram(path):
     return int(values[-1])
 
 
-base, no3d, no2d = [last_vram(p) for p in sys.argv[1:]]
-# 内建 cube：24×48B 顶点 + 36×4B 三角形索引 + 72×4B wireframe 索引 = 1584B。
-# 不打开调试面板时没有其它外部纹理；切换图层只影响提交，不应释放这 1584B。
+plain, base, no3d, no2d = [last_vram(p) for p in sys.argv[1:]]
+# 断言**关系**而不是绝对字节数：
+#   · 内建 cube = 24×48B 顶点 + 36×4B 索引 + 72×4B wireframe 索引 = 1584B，必须常驻；
+#   · 图层开关只隐藏提交，不释放资产 → 三个非面板运行的 vram 必须完全相等；
+#   · F2 打开面板会新增字体图集 → base 必须严格大于 plain；
+#   · 场景里除 cube 外只有少量常驻资源（内建 checker 16×16 RGBA8 = 1024B），
+#     给一个宽上界，既容得下正常资源、又能抓住"多出一张大纹理/泄漏"。
+# 旧断言写死 no3d == 1584，场景后来给 Sprite 加了内建 checker 就必然差 1024；
+# 而字体图集本身随机器/DPI 变化（实测同场景 base 在 0.5MB 与 16MB 之间漂），也不能钉死。
 cube_bytes = 24 * 48 + 36 * 4 + 72 * 4
-print(f'imgui_engine_options_e2e: VRAM base(F2)={base} no3d={no3d} no2d={no2d} cube={cube_bytes}')
-sys.exit(0 if no3d == cube_bytes and no2d == cube_bytes and base > cube_bytes else 1)
+extra = plain - cube_bytes
+print(f'imgui_engine_options_e2e: VRAM plain={plain} base(F2)={base} no3d={no3d} no2d={no2d} '
+      f'cube={cube_bytes} extra={extra}')
+sys.exit(0 if (no3d == plain and no2d == plain and extra >= 0 and extra < 8192
+               and base > plain) else 1)
 PY
 
 # ---- ⑥ 默认太阳光 -----------------------------------------------------------

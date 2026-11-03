@@ -53,7 +53,10 @@ case "$MODE" in
 smoke)
     run_play "$WORK/smoke.log" 40
     grep -q 'flappy: ready' "$WORK/smoke.log" || { echo "--- 日志 ---"; cat "$WORK/smoke.log"; fail "脚本未进入 ready（场景/脚本没加载？）"; }
-    grep -q "renderer plugin" "$WORK/smoke.log" || skip "渲染插件不可用（无 wgpu/GPU）"
+    # 渲染器可用 = 成功行 "runtime: renderer '<插件>' backend='…'"；
+    # 注意别 grep "renderer plugin"：那个词组只在**失败**行（cannot load renderer plugin）里出现，
+    # 用它当探针会把"有 GPU"判成"无 GPU"（Windows 上 9 个用例因此被静默跳过）。
+    grep -q "runtime: renderer '" "$WORK/smoke.log" || skip "渲染插件不可用（无 wgpu/GPU）"
     if grep -qiE 'panic|Assertion failed|ERROR: AddressSanitizer|stack-overflow' "$WORK/smoke.log"; then
         cat "$WORK/smoke.log"; fail "运行期报错"
     fi

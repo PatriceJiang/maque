@@ -82,19 +82,34 @@ print("pbr_regression_e2e: Normal oracle + 镜像 front-face OK")
 PY
 [ $? -eq 0 ] || exit 1
 
-# ---- ③ preview.jpg 渲染基线（需 PIL；无 PIL 时跳过这一节）----
-if "$PY" -c 'import PIL' >/dev/null 2>&1; then
-    for model in ToyCar Duck CompareSpecular; do
+# ---- ③ preview.jpg 渲染基线（需 PIL + 派生资产；缺任一项则跳过这一节）----
+# 派生资产 `scenes/khronos/<模型>/assets/`（*.mesh.json + textures/）由 tools/migrate_gltf_models.py
+# 从 LFS 里的原始 .glb 生成，**不入库**。缺了它场景只会 `mesh not found` 渲染出空画面 ——
+# 与参考图的差异是"模型不见了"（实测 Duck p50 差 1、4% 像素差 >60；CompareSpecular 45%），
+# 不是渲染回归，所以逐模型判存在性，一个都没有就整节跳过（而不是假报回归）。
+MODELS_OK=()
+for model in ToyCar Duck CompareSpecular; do
+    if [ -d "$ROOT/scenes/khronos/$model/assets" ] && \
+       [ -n "$(ls -A "$ROOT/scenes/khronos/$model/assets" 2>/dev/null)" ]; then
+        MODELS_OK+=("$model")
+    else
+        echo "pbr_regression_e2e: ③ 跳过 $model（缺派生资产 scenes/khronos/$model/assets/，跑 tools/migrate_gltf_models.py 生成）"
+    fi
+done
+if [ "${#MODELS_OK[@]}" -eq 0 ]; then
+    echo "pbr_regression_e2e: ③ 跳过 preview.jpg 基线（三个代表模型都没有派生资产；① ② 仍有效）"
+elif "$PY" -c 'import PIL' >/dev/null 2>&1; then
+    for model in "${MODELS_OK[@]}"; do
         scn="$ROOT/scenes/khronos/$model/$model.scn"
         ( cd "$ROOT" && timeout 120 env MAQUE_PRESENT=off MAQUE_WINDOW=0x0 "$PLAYER" \
             --shot "$WORK/$model.png" --frames 2 "scenes/khronos/$model/$model.scn" ) \
             >"$WORK/$model.log" 2>&1 || { cat "$WORK/$model.log"; fail "$model 基线重渲染失败"; }
     done
-    "$PY" - "$ROOT" "$WORK" <<'PY' || exit 1
+    "$PY" - "$ROOT" "$WORK" "${MODELS_OK[@]}" <<'PY' || exit 1
 import os, sys
 from PIL import Image, ImageChops
 root, work = sys.argv[1], sys.argv[2]
-for model in ("ToyCar", "Duck", "CompareSpecular"):
+for model in sys.argv[3:]:
     a = Image.open(os.path.join(work, model + ".png")).convert("RGB")
     w, h = a.size
     a = a.resize((800, 450), Image.LANCZOS)          # preview.jpg = preview.png 下采样 q82
@@ -108,7 +123,7 @@ for model in ("ToyCar", "Duck", "CompareSpecular"):
     print(f"pbr_regression_e2e: {model} 预览基线 mean={mean:.2f} max={mx}")
     # 同机同构建应接近 0；JPEG 下采样噪声给到 mean<6/max<140；渲染行为变化会显著超过。
     assert mean < 6.0 and mx < 140, (model, mean, mx)
-print("pbr_regression_e2e: preview.jpg 渲染基线 OK")
+print("pbr_regression_e2e: preview.jpg 渲染基线 OK（" + " ".join(sys.argv[3:]) + "）")
 PY
     [ $? -eq 0 ] || exit 1
 else

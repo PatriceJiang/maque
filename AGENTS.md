@@ -88,6 +88,14 @@ ctest --test-dir build-win --timeout 120 --output-on-failure
 - **wgpu-native**：Windows 用官方 `wgpu-windows-x86_64-msvc-release.zip` 里的
   `wgpu_native.dll` + `wgpu_native.lib`（放到 `third_party/wgpu-native/lib/`，二者不入库）。
   仓库现有 `webgpu.h` 与 v29.0.1.1 发行包逐字节等价（仅行尾不同），故无需替换头文件。
+- **换行策略写死在 `.gitattributes`**：`core.autocrlf=true` 的检出只按"前 8000 字节有无 NUL"猜文本，
+  两类坑都只在 Windows 复现：① 平滑渐变的 `.hdr`（RGBE）恰好没有 NUL → 头部 `\n` 被改成 `\r\n`
+  （65585→65589），env 解析失败并**静默回退 analytic**（实测 `scenes/pbr/env/studio_cube/` 的
+  `_py/_ny`；解析器现在也容忍 CRLF 头部，但数据区一旦被插字节就无从恢复）→ 新增二进制资产类型要补
+  `-text`；② `tools/gltf_import.py` 的产物是**按字节比对**的（与已入库 `*.mesh.json` `cmp`，
+  render3d_scene_e2e ④ / gltf_import_e2e 的"资产漂移"门）→ 这些生成物必须 `text eol=lf` 检出，
+  否则每次比对都假报漂移。排查别用 `git status`（按转换后比较，看不出差异），用
+  `git cat-file -s HEAD:<path>` 对字节数；还原用 blob 字节直接写回。
 - **e2e 用 Git Bash**：CMake 自动探测并把绝对路径传给 `add_test`。Windows 自带的
   `C:\WINDOWS\system32\bash.exe` 是 **WSL 启动器**，语义不一致，会被显式排除
   （`-DMAQUE_BASH=<bash.exe>` 可覆盖）。

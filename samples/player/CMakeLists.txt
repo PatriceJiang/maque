@@ -137,11 +137,15 @@ endif()
 
 # 3D/PBR 直接呈现端到端（plans/18-pbr-3d.md M1）：MAQUE_PRESENT=wgpu → wgpu swapchain 直呈
 # ① attach_window 成功且不建 SDL_Renderer ② MAQUE_CAPTURE_WGPU 从交换链抓帧断言画面非空
+#    + 16:9 场景在 4:3 窗口里居中留边（上下黑边、内容带从 bar 行开始）
 # ③ 直呈环境下 --shot 仍走离屏回读（截图/CI 路径不受影响）
+# 场景必须是 16:9 的 scenes/pbr/cube.scn：测试的信箱断言按「设计 16:9 ⊂ 窗口 4:3」写，
+# 早先用 ball.scn（320×240 且 views=2 → 世界 640×240）时 bar 算出来是 60 而真实留边是 120，
+# 只有在这台机器建真窗口（Windows/有 DISPLAY）才跑到这条，Linux CI 是 skip → 一直没暴露。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME render3d_present_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/render3d_present_e2e.sh"
              $<TARGET_FILE:maque_player>
-             "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
+             "${CMAKE_SOURCE_DIR}/scenes/pbr/cube.scn"
              "${CMAKE_CURRENT_BINARY_DIR}/render3d_present_e2e")
     set_tests_properties(render3d_present_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()

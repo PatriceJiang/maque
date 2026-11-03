@@ -49,7 +49,7 @@ demos)
         [ -f "$scn" ] || fail "缺少场景 $scn"
         log="$WORK/$d.log"
         MAQUE_MAX_FRAMES=30 "$BIN" "$scn" >"$log" 2>&1
-        grep -q "renderer plugin" "$log" || skip "渲染插件不可用（无 wgpu/GPU）"
+        grep -q "runtime: renderer '" "$log" || skip "渲染插件不可用（无 wgpu/GPU）"
         grep -q "spine\[" "$log" || { cat "$log"; fail "$d: 脚本没跑起来（没有 spine[...] 日志）"; }
         grep -q "ready " "$log" || { cat "$log"; fail "$d: 未进入 ready"; }
         # 动画清单非空（batching 打印一次、all 逐格打印；单个 demo 每个至少 1 个动画）
@@ -67,7 +67,7 @@ all)
     [ -f "$scn" ] || fail "缺少 $scn"
     log="$WORK/all.log"
     "$BIN" --shot "$WORK/all.png" --shot-frame 30 "$scn" >"$log" 2>&1
-    grep -q "renderer plugin" "$log" || skip "渲染插件不可用（无 wgpu/GPU）"
+    grep -q "runtime: renderer '" "$log" || skip "渲染插件不可用（无 wgpu/GPU）"
     grep -q "runtime: shot" "$log" || { cat "$log"; fail "未出图"; }
     [ -s "$WORK/all.png" ] || fail "PNG 未生成"
     has_errors "$log" && { cat "$log"; fail "运行期报错"; }

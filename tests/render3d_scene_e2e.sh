@@ -20,6 +20,10 @@ fail() { echo "render3d_scene_e2e: FAIL $*" >&2; exit 1; }
 rm -rf "$WORK"; mkdir -p "$WORK"
 unset MAQUE_HEADLESS MAQUE_PRESENT MAQUE_CAPTURE MAQUE_CAPTURE_WGPU MAQUE_CAPTURE_FRAMES \
       MAQUE_MAX_FRAMES MAQUE_IMGUI MAQUE_SHOT MAQUE_SHOT_SEQ MAQUE_ENV_IBL 2>/dev/null || true
+# 除 ② 之外全部是「离屏 --shot + 像素断言」，必须钉死无窗口：有显示器的机器上默认会建 800×650 真窗口，
+# 抓帧走另一条回读路径（背景/覆盖率随之变化）→ ① 的 nonbg 占比从 0.19 跳到 0.69，断言直接假失败。
+# ② 要真 surface 才谈得上"直接呈现"，它自己覆盖 MAQUE_WINDOW。
+export MAQUE_WINDOW=0x0
 
 # ---- ① 离屏 3D 渲染（--shot）----
 timeout 90 "$PLAYER" --shot "$WORK/scene.ppm" --frames 2 "$SCN" >"$WORK/out.txt" 2>&1 \
@@ -69,8 +73,8 @@ sys.exit(0 if ok else 1)
 PY
 echo "render3d_scene_e2e: ① 离屏 3D（depth/相机/Lambert/透视）OK"
 
-# ---- ② 3D + wgpu 交换链直接呈现 ----
-MAQUE_PRESENT=wgpu MAQUE_CAPTURE_WGPU="$WORK/direct" MAQUE_CAPTURE_FRAMES=1 \
+# ---- ② 3D + wgpu 交换链直接呈现（这条**必须建窗口**：交换链要有真 surface）----
+MAQUE_WINDOW=640x360 MAQUE_PRESENT=wgpu MAQUE_CAPTURE_WGPU="$WORK/direct" MAQUE_CAPTURE_FRAMES=1 \
     timeout 90 "$PLAYER" --frames 4 "$SCN" >"$WORK/direct.txt" 2>&1 \
     || { cat "$WORK/direct.txt"; fail "3D 直呈运行失败"; }
 grep -q "direct present attach_window .*rc=0" "$WORK/direct.txt" \

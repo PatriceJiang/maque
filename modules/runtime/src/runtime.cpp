@@ -1715,13 +1715,19 @@ static void append_half_rgba(std::vector<uint8_t>& out, float r, float g, float 
     out.insert(out.end(), p, p + sizeof h);
 }
 
-/* 解析 Radiance RGBE（new RLE 扫描线；老格式按平铺 RGBE 兼容）。 */
+/* 解析 Radiance RGBE（new RLE 扫描线；老格式按平铺 RGBE 兼容）。
+ * 头部按行读，**容忍 CRLF**：Radiance 规范只要求 \n 结尾，但不少工具（以及 core.autocrlf=true
+ * 的检出）会把头部写成 \r\n —— 不剥掉 \r 的话"空行结束头部"判定失效，会把扫描线数据当分辨率行
+ * 去 sscanf → 整张 env 静默回退 analytic（实测 studio_cube 的 _py/_ny 两面就是这样废掉的）。
+ * 注意这只救头部：数据区若被换行转换插过字节（含 0x0A 的扫描线）无从恢复，
+ * 二进制资产必须在 .gitattributes 里标 -text。 */
 static bool parse_radiance_hdr(const uint8_t* d, size_t n, int& W, int& H, std::vector<float>& rgba) {
     size_t pos = 0;
     auto get_line = [&](std::string& line) {
         line.clear();
         while (pos < n && d[pos] != '\n') line.push_back((char)d[pos++]);
         if (pos < n) ++pos;
+        if (!line.empty() && line.back() == '\r') line.pop_back();
     };
     std::string line;
     get_line(line);

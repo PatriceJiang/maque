@@ -1,1 +1,33 @@
 *.glb filter=lfs diff=lfs merge=lfs -text
+
+# 二进制资产一律禁止换行转换。core.autocrlf=true 的检出只靠"前 8000 字节有没有 NUL"判断
+# 文本/二进制 —— Radiance .hdr 的平滑天空/地面面（studio_cube 的 _py/_ny）恰好一个 NUL 都没有，
+# 于是头部 4 个 \n 被改写成 \r\n（文件从 65585 变 65589），RGBE 解析直接失败、env 静默回退
+# analytic，只在 Windows 工作区复现。显式 -text 才是根治（解析器也已改成容忍 CRLF 头部，
+# 但数据区一旦被插字节就无从恢复）。
+*.hdr  -text
+*.hdr  binary
+*.exr  -text
+*.ktx2 -text
+*.dds  -text
+*.png  -text
+*.jpg  -text
+*.jpeg -text
+*.webp -text
+*.avif -text
+*.ico  -text
+*.ttf  -text
+*.otf  -text
+*.wav  -text
+*.ogg  -text
+*.mp3  -text
+*.mesh -text
+*.bin  -text
+*.zip  -text
+
+# 离线导入产物是**按字节比对**的（tools/gltf_import.py 的输出与已入库资产 `cmp`，见
+# render3d_scene_e2e ④ / gltf_import_e2e 的"资产漂移"门）。importer 已经 `newline="\n"`，
+# 但 autocrlf=true 的检出会给这些 .json 补 \r → 每次比对都假报漂移。强制 LF 检出。
+*.mesh.json text eol=lf
+*.skel.json text eol=lf
+*.clip.json text eol=lf
