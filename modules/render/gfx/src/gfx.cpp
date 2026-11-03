@@ -116,9 +116,18 @@ struct Device {
     uint64_t texture_bytes = 0;
     uint64_t buffer_bytes = 0;
     std::vector<Texture*> textures;
-    /* shader 精灵（render.ShaderSprite）的离屏目标：每个精灵一张 RGBA8，尺寸跟随屏幕像素。
-     * 句柄是 dv->textures 的下标（这样 2D 合成走既有「带纹理矩形」通路，纹理查找/绑定无需特判）。 */
-    std::vector<int32_t> spriteTargets;
+    /* shader 精灵（render.ShaderSprite）的离屏目标：每个精灵一张 RGBA8，尺寸跟随消费目标的像素。
+     * 句柄是 dv->textures 的下标（2D 合成走既有「带纹理矩形」通路，纹理查找/绑定无需特判）。
+     * 同一帧里精灵可能被画到尺寸不同的目标（主目标 zoom≠1 + 某张 RenderTexture），
+     * 所以按 (精灵序号, w, h) 各留一份、LRU 复用 —— 否则两个目标交替会每帧重建纹理。 */
+    struct SpriteTarget {
+        int32_t id = -1;                 /* dv->textures 下标 */
+        int32_t slot = -1;               /* 精灵在本帧列表里的序号 */
+        int32_t w = 0, h = 0;
+        uint64_t used = 0;               /* LRU 时间戳 */
+    };
+    std::vector<SpriteTarget> spriteTargets;
+    uint64_t spriteTargetTick = 0;
     /* ---- 直接呈现（plans/18-pbr-3d.md §4.1）：attach_window 成功后非空（M1）---- */
     WGPUSurface surface = nullptr;
     WGPUTextureFormat surfaceFormat = WGPUTextureFormat_RGBA8Unorm;
@@ -2006,21 +2015,44 @@ static int32_t render_shader_passes(Device* dv, WGPUTexture target, WGPUTextureF
  *      全部复用既有 2D 通路，不需要第二套顶点/相机变换。
  * 纹理尺寸 = 设计尺寸 × 2D 视图缩放（屏幕上实际像素），所以窗口放大不会糊。 */
 
-/* 取/建第 slot 个精灵目标（w×h）。句柄稳定：尺寸变化时原地重建，dv->textures 槽位不变。 */
-static int32_t ensure_sprite_target(Device* dv, size_t slot, int32_t w, int32_t h) {
-    while (dv->spriteTargets.size() <= slot) {
+/* 精灵离屏目标的池上限：正常情况下 = 精灵数 × 消费目标数（主目标 + 各 RenderTexture）。
+ * 超过就淘汰最久未用的一份，保证长跑不会无限增长。 */
+static constexpr size_t kSpriteTargetCap = 16;
+
+/* 取/建 (slot, w, h) 的精灵目标。同一精灵在不同尺寸的目标里各留一份 → 不逐帧重建纹理。
+ * 返回 dv->textures 下标（-1 = 失败）。 */
+static int32_t ensure_sprite_target(Device* dv, int32_t slot, int32_t w, int32_t h) {
+    const uint64_t tick = ++dv->spriteTargetTick;
+    for (auto& st : dv->spriteTargets) {
+        if (st.slot == slot && st.w == w && st.h == h) {
+            st.used = tick;
+            return st.id;
+        }
+    }
+    /* 新尺寸：先找可复用槽位（池满 → 淘汰最久未用）。 */
+    Device::SpriteTarget* target = nullptr;
+    if (dv->spriteTargets.size() >= kSpriteTargetCap) {
+        size_t victim = 0;
+        for (size_t i = 1; i < dv->spriteTargets.size(); ++i)
+            if (dv->spriteTargets[i].used < dv->spriteTargets[victim].used) victim = i;
+        Device::SpriteTarget& st = dv->spriteTargets[victim];
+        Texture* old = dv->textures[(size_t)st.id];
+        if (old) {
+            dv->texture_bytes -= old->gpu_bytes;
+            old->gpu_bytes = 0;
+            if (old->view) { wgpuTextureViewRelease(old->view); old->view = nullptr; }
+            if (old->tex) { wgpuTextureRelease(old->tex); old->tex = nullptr; }
+            old->width = old->height = 0;
+        }
+        target = &st;
+    } else {
         auto* t = new Texture();
         dv->textures.push_back(t);
-        dv->spriteTargets.push_back((int32_t)dv->textures.size() - 1);
+        dv->spriteTargets.push_back(Device::SpriteTarget{ (int32_t)dv->textures.size() - 1, -1, 0, 0, 0 });
+        target = &dv->spriteTargets.back();
     }
-    const int32_t id = dv->spriteTargets[slot];
-    Texture* t = dv->textures[(size_t)id];
-    if (t->tex && t->view && t->width == w && t->height == h) return id;
-    dv->texture_bytes -= t->gpu_bytes;
-    t->gpu_bytes = 0;
-    if (t->sampler) { wgpuSamplerRelease(t->sampler); t->sampler = nullptr; }
-    if (t->view) { wgpuTextureViewRelease(t->view); t->view = nullptr; }
-    if (t->tex) { wgpuTextureRelease(t->tex); t->tex = nullptr; }
+    target->slot = slot; target->w = w; target->h = h; target->used = tick;
+    Texture* t = dv->textures[(size_t)target->id];
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
     td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
     td.dimension = WGPUTextureDimension_2D;
@@ -2035,7 +2067,7 @@ static int32_t ensure_sprite_target(Device* dv, size_t slot, int32_t w, int32_t 
     t->render_target = true;
     t->gpu_bytes = mip_texture_bytes((uint32_t)w, (uint32_t)h, 1, 1, 4);
     dv->texture_bytes += t->gpu_bytes;
-    return id;
+    return target->id;
 }
 
 /* 把每个精灵渲染到离屏纹理，并把"带纹理矩形"追加进 2D 图元表（与普通 sprite 同层排序）。
@@ -2053,7 +2085,7 @@ static uint32_t append_shader_sprite_items(Device* dv, const mq_renderer_frame3d
         if (s.shader < 0 || s.half_w <= 0.0F || s.half_h <= 0.0F || s.a <= 0.0F) continue;
         const int32_t w = std::clamp((int32_t)std::lround(2.0F * s.half_w * zoom), 1, 4096);
         const int32_t h = std::clamp((int32_t)std::lround(2.0F * s.half_h * zoom), 1, 4096);
-        const int32_t tex_id = ensure_sprite_target(dv, (size_t)i, w, h);
+        const int32_t tex_id = ensure_sprite_target(dv, (int32_t)i, w, h);
         if (tex_id < 0) continue;
         mq_renderer_shader_pass ps{};
         ps.shader = s.shader;

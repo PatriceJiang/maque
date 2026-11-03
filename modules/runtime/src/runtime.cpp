@@ -4647,9 +4647,15 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             };
             for (const auto& item : draws) if (keep_2d(item.layer)) target_items.push_back(item);
             for (const auto& mesh : meshes) if (keep_2d(mesh.layer)) target_meshes.push_back(mesh);
+            /* shader 精灵是 2D 图元（layer 0）：2D 相机的 RT 也要捕获它们（docs/13）。
+             * 3D RT 不捕获（它只按 include_ui 叠 UI 层；精灵属世界层 2D）。 */
+            std::vector<mq_renderer_shader_sprite> target_sprites;
+            extract_shader_sprites(target_sprites);
             fr.views2d = &view; fr.view2d_count = 1;
             fr.items = target_items.data(); fr.item_count = (uint32_t)target_items.size();
             fr.meshes = target_meshes.data(); fr.mesh_count = (uint32_t)target_meshes.size();
+            fr.shader_sprites = target_sprites.data();
+            fr.shader_sprite_count = (uint32_t)target_sprites.size();
             const int32_t rc = rapi->render_to_texture(rself, rt.handle, &fr);
             if (rc != 0) { std::print(stderr, "runtime: RenderTexture '{}' 2D render rc={}\n", rt.uri, rc); continue; }
         } else {

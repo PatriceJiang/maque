@@ -370,6 +370,31 @@ fragment 入口消费。
 颜色多样且**左暖右冷**（证明是两个不同作品）、中缝是背景色（精灵没有铺满整屏）、frame 1/60 有动画、
 同帧两次逐字节一致。
 
+### 示例：精灵 → 2D RenderTexture → cube 表面（`scenes/render_texture/shader-sprites-cube.scn`）
+
+`shader sprite` 是普通 2D 图元，因此**2D 相机驱动的 RenderTexture 会把它一起捕获**（3D RT 不会，
+它只按 `include_ui` 叠 UI 层）。这条链路可以做成"cube 正面一块屏幕"：
+
+```
+两个 render.ShaderSprite（layer 0 世界层）
+  → render.Camera2D(layer_mask: 1) + render.RenderTexture(640x360, camera=2d)
+  → asset.PbrMaterial{ shading_model: 2（Basic/unlit）, base_color_texture: "rendertexture://sprites" }
+  → 贴在 cube 正面的 plane 上（position z=0.6075 避免 z-fighting）
+```
+
+场景里有两个工程细节：
+
+- **让精灵只出现在 RT 里**：主画面的 2D 覆盖层会绘制所有 2D 图元，没有办法"只画到 RT"。
+  这里把精灵摆到画布外（`y=1180`，超出 `Scene.height`），主视图的 scissor 会裁掉它们；
+  2D 相机摆到同一区域（`x=320, y=1180, zoom=1`）就能把它们 1:1 收进 640x360 的 RT。
+  `render.RenderTexture` 的 `update_mode: 0`（EveryFrame）+ 精灵 `time` 推进 → 屏幕内容逐帧动。
+- **shader 必须是场景自带的副本**：VFS 有 `..` 穿越防护（docs/04 §9），跨场景引用不成立，
+  所以 `scenes/render_texture/assets/shaders/` 放了 `scenes/shadertoy/` 两个文件的**逐字节副本**；
+  `render_texture_e2e` 用 `cmp` 守住两份副本不漂移。
+
+回归：`ctest -R render_texture_e2e` 的 `shader sprites -> RenderTexture -> cube face` 一节
+（RT 创建日志 + 两条精灵加载行 + 屏幕里暖/冷像素都够 + 顶部是背景 + 场景副本与源一致）。
+
 ## 后处理（PostEffect）
 
 **主输出阶段的后处理**：把 3D 层（场景 shader pass → 天空/3D）过一遍全屏 shader，再把 2D/UI 叠在

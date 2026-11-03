@@ -164,4 +164,56 @@ MSAA_CREATES=$(grep -c 'gfx: gpu attachment create msaa ' "$WORK/attach.log" || 
   || { cat "$WORK/attach.log"; fail "60 帧 MSAA 附件重建 ${MSAA_CREATES} 次"; }
 echo "render_texture_e2e: attachment cache depth=${DEPTH_CREATES} msaa=${MSAA_CREATES} (60 frames)"
 
-echo "render_texture_e2e: ok（Camera2D text rotation + Camera3D duck/fox + Texture/screenshot + hot reload）"
+# shader 精灵 → 2D RenderTexture → cube 面（docs/13 §场景自定义 shader 精灵）：
+# 两个 render.ShaderSprite 先渲染进 rendertexture://sprites，再以 Basic（unlit）材质贴到 cube 正面。
+SCENESS="$(dirname "$SCENE")/shader-sprites-cube.scn"
+ROOT_E2E="$(cd "$(dirname "$0")/.." && pwd)"
+timeout 120 "$PLAYER" --shot "$WORK/ss.ppm" --shot-frame 2 "$SCENESS" >"$WORK/runss.log" 2>&1 \
+  || { cat "$WORK/runss.log"; fail "shader sprite + RenderTexture + cube 运行失败"; }
+grep -q "RenderTexture 'rendertexture://0/sprites' 640x360.*camera=2d" "$WORK/runss.log" \
+  || { cat "$WORK/runss.log"; fail "shader sprite 的 2D RenderTexture 未创建"; }
+[ "$(grep -c 'shader sprite .* loaded' "$WORK/runss.log")" -ge 2 ] \
+  || { cat "$WORK/runss.log"; fail "应加载 2 个 shader 精灵"; }
+grep -qiE "shader sprite.*(失败|未找到|error|missing|not found)" "$WORK/runss.log" \
+  && { cat "$WORK/runss.log"; fail "shader 精灵加载/编译报错"; }
+# VFS 禁止 ".." 跨场景引用 → 场景要带 shader 副本；这条断言防止两份副本漂移。
+for n in mandelbulb seascape; do
+  cmp -s "$ROOT_E2E/scenes/shadertoy/$n.wgsl" \
+         "$ROOT_E2E/scenes/render_texture/assets/shaders/$n.wgsl" \
+    || fail "shader 副本漂移：scenes/render_texture/assets/shaders/$n.wgsl"
+done
+"$PY" - "$WORK/ss.ppm" <<'PY' || exit 1
+import sys
+d = open(sys.argv[1], 'rb').read()
+magic, size, maxv, px = d.split(b'\n', 3)
+assert magic == b'P6' and maxv == b'255', magic
+w, h = map(int, size.split())
+assert (w, h) == (480, 360), (w, h)
+def at(x, y):
+    i = (y * w + x) * 3
+    return px[i], px[i + 1], px[i + 2]
+def lum(c):
+    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+# cube 正面的屏幕里同时有暖色（mandelbulb）与冷色（seascape）→ 两个 shader 精灵都在 RT 里。
+warm = cool = 0
+for y in range(40, 320):
+    for x in range(w):
+        r, g, b = at(x, y)
+        if r - b > 30 and r > 90:
+            warm += 1
+        elif b - r > 15 and b > 90:
+            cool += 1
+# 顶部必须是背景：精灵只出现在 RT 里，不能以 2D overlay 铺在主画面。
+top_max = max(lum(at(x, y)) for y in range(0, 40) for x in range(0, w, 2))
+bg = at(5, 5)
+caption = sum(1 for y in range(328, h) for x in range(w) if lum(at(x, y)) > 110)
+print('render_texture_e2e: cube screen shader sprites warm=', warm, 'cool=', cool,
+      'top_max=', round(top_max, 1), 'bg=', bg, 'caption=', caption)
+assert warm > 800 and cool > 3000, ('RT 屏幕暖/冷像素不足', warm, cool)
+assert top_max < 40, ('顶部不是背景', top_max)
+assert max(bg) < 40, ('角落不是背景', bg)
+assert caption > 150, ('标题文字缺失', caption)
+PY
+echo "render_texture_e2e: shader sprites -> RenderTexture -> cube face ok"
+
+echo "render_texture_e2e: ok（Camera2D text rotation + Camera3D duck/fox + Texture/screenshot + hot reload + shader sprite cube）"

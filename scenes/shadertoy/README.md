@@ -130,6 +130,10 @@ Mandelbulb 是逐像素 raymarch（每步 4 次 DE + 更细的 3 次梯度采样
 `sprite-shader.scn` 同屏跑**两个**作品（各一张离屏纹理），负载是两者之和；它也是
 "同一份 WGSL 既做全屏背景、又做精灵"的例子。
 
+`scenes/render_texture/shader-sprites-cube.scn` 把这两块精灵再往前推一步：精灵先渲染进
+`rendertexture://sprites`（2D 相机），再贴到 cube 正面的屏幕上。注意 VFS 禁止 `..` 跨场景引用，
+所以那边放的是本目录两个 `.wgsl` 的**逐字节副本**（`ctest -R render_texture_e2e` 用 `cmp` 防漂移）。
+
 ## 为什么 shader 放在 `scenes/` 而不是 `assets/builtin/shaders/`？
 
 - `assets/builtin/shaders/` 是**引擎内建 shader**：一个 shader 一个目录，配置期由
