@@ -253,10 +253,28 @@
         - { name: env_ground_color, type: "float[4]" }
         - { name: env_highlight,    type: float }
         - { name: env_rotation,     type: float }
+    # 主输出阶段后处理（PostEffect；docs/13 §后处理）。默认只作用于 **3D 层**
+    # （shader pass + 3D + 天空），2D/UI 在 post 结果之上叠加；`include_2d=1` 才整帧处理。
+    # `enabled=0` 时 gfx 完全跳过该 pass（旧调用方把所有新字段留 0 即保持逐字节不变）。
+    # 尾部追加字段，旧布局前缀不变。
     - record: post
       fields:
         - { name: exposure, type: float }
-        - { name: tonemap,  type: int32_t }         # 0=none 1=ACES
+        - { name: tonemap,  type: int32_t }         # 0=none 1=ACES（在已成像的整帧上再做一次）
+        # ---- PostEffect（F4 引擎选项；尾部追加）----
+        - { name: enabled,  type: int32_t }         # 0=关闭（默认；不建中间目标、不做 pass）1=开启
+        - { name: effects,  type: uint32_t }        # bit0 bloom / bit1 vignette / bit2 chromatic / bit3 color grade
+        - { name: bloom_intensity, type: float }
+        - { name: bloom_threshold, type: float }    # 亮度阈值（< 阈值的像素不参与泛光）
+        - { name: bloom_radius,    type: float }    # 采样半径 = 目标高度 × 该比例（图像无关）
+        - { name: vignette,        type: float }    # 暗角强度 0..1
+        - { name: aberration,      type: float }    # 色差：沿径向的 UV 偏移比例
+        - { name: saturation,      type: float }    # 1 = 原样；0 = 灰
+        - { name: contrast,        type: float }    # 1 = 原样（绕 0.5 缩放）
+        - { name: grayscale,       type: float }    # 0 = 彩色；1 = 全灰（与 saturation 叠加）
+        # 作用范围：0 = **只作用于 3D 层**（shader pass + 3D + 天空；2D/UI 在 post 之后叠加，
+        # 保持原样 = 默认）；1 = 含 2D/UI（整帧后处理）。纯 2D 场景在 0 时不跑 post（零成本）。
+        - { name: include_2d,      type: int32_t }
     # 场景自带的全屏 shader pass（**场景资源**，不是 assets/builtin/shaders 内建 shader）：
     # shader = create_shader_pass 返回的句柄（-1 = 无）。引擎提供全屏三角形 VS，
     # 资源只提供 @fragment fs_main；uniform = group0 binding0 的 32B 结构（见 docs/13）。

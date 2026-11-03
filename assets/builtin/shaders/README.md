@@ -8,6 +8,8 @@
 assets/builtin/shaders/
   solid/shader.wgsl        # 无贴图图元（矩形/圆/方块）
   textured/shader.wgsl     # 贴图图元（图集子矩形 + 采样器）；uniform 布局与 solid 一致（48B）
+  blit/shader.wgsl         # 整帧 blit（中间目标 → surface）
+  post/shader.wgsl         # 整帧后处理（PostEffect：曝光/ACES/Bloom/暗角/色差/色彩分级；docs/13）
   <new-name>/shader.wgsl   # 新增：目录名 = shader 名（gfx 按名字取）
 ```
 

@@ -22,7 +22,12 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
   - **游戏图层**：独立显示/隐藏 3D 与 2D/UI，F4 面板自身不受影响；
   - **MSAA**：跟随场景 / 关闭 / 4x（优先级：面板 > `MAQUE_MSAA` > `scn.Scene.msaa_samples`）；
   - **默认太阳光**：场景**没有任何光源**时补的那盏方向光的开关 / 强度 / 传播方向（老场景兜底行为可调）；
-  - **主相机 near / far**：覆盖场景相机的近远裁剪面（覆盖关闭时字段自动跟随场景实际值，勾选后不跳变）。
+  - **主相机 near / far**：覆盖场景相机的近远裁剪面（覆盖关闭时字段自动跟随场景实际值，勾选后不跳变）；
+  - **后处理 PostEffect**（docs/13 §后处理；面板里是**折叠头**，默认收起）：3D 层过一遍 gfx 内建
+    shader `post` —— 启用总开关、**包含 2D / UI**（默认关 = 只叠加 3D 层，2D/UI 原样叠在结果上）、
+    色调映射（无 / ACES）、曝光、Bloom 泛光（开关/强度/阈值/半径）、暗角（开关/强度）、
+    色差（开关/强度）、色彩分级（开关/饱和度/对比度/灰度）。**默认关闭**（关闭时 gfx 不建中间目标、
+    不跑 pass，画面逐字节不变）；纯 2D 场景默认不处理（勾「包含 2D / UI」才整帧处理）。
   启动初值用 `MAQUE_ENGINE_OPTIONS`（CI/截图/演示无需鼠标，见下"使用"）。
 - **F2 / F4 互不干扰**：
   · F4 只开关「引擎选项」面板 —— ImGui 本来关着时顺手打开它、再按 F4 收起面板时恢复关闭
@@ -124,16 +129,28 @@ MAQUE_IMGUI_SCALE=1.5 ./build-win/samples/player/maque_player.exe <scene>
 # 呈现后端（默认 Windows accelerated / 其它平台 software；两者都支持面板）
 MAQUE_PRESENT=software ./build-win/samples/player/maque_player.exe <scene>
 
-# F4 弹出/收起「引擎选项」面板（渲染模式/图层/MSAA/默认太阳光/主相机 near·far；首次按 F4 会自动开 ImGui）
+# F4 弹出/收起「引擎选项」面板（渲染模式/图层/MSAA/默认太阳光/主相机 near·far/后处理；首次按 F4 会自动开 ImGui）
 ./build-win/samples/player/maque_player.exe <scene>
 
 # 引擎选项的启动初值（不必用鼠标；逗号分隔，向量分量用 ':'）
 #   键：mode=rendered|textured|solid|wireframe、3d=0|1、2d=0|1、msaa=0|1|4、
-#       sun=0|1、sun_intensity=<f>、sun_dir=x:y:z、near=<f>、far=<f>
+#       sun=0|1、sun_intensity=<f>、sun_dir=x:y:z、near=<f>、far=<f>、
+#       post=0|1、tonemap=none|aces、exposure=<f>、bloom=0|1、bloom_intensity=<f>、
+#       bloom_threshold=<f>、bloom_radius=<f>、vignette=0|1、vignette_intensity=<f>、
+#       chromatic=0|1、chromatic_strength=<f>、grade=0|1、saturation=<f>、contrast=<f>、gray=<f>、
+#       post_2d=0|1（默认 0 = 后处理只叠加 3D 层；1 = 含 2D/UI）
 MAQUE_ENGINE_OPTIONS="mode=textured" ./build-win/samples/player/maque_player.exe <scene>
 MAQUE_ENGINE_OPTIONS="msaa=4" ./build-win/samples/player/maque_player.exe <scene>
 MAQUE_ENGINE_OPTIONS="sun=0" ./build-win/samples/player/maque_player.exe <scene>
 MAQUE_ENGINE_OPTIONS="sun_intensity=2.5,sun_dir=0.4:-1:-0.2,near=0.01,far=500" \
+    ./build-win/samples/player/maque_player.exe <scene>
+# 后处理：出现任何后处理键自动打开总开关；post=0 显式关闭。
+# 默认只叠加 3D 层（2D/UI 不受影响）；post_2d=1 才整帧处理。
+MAQUE_ENGINE_OPTIONS="post=1,bloom=1,bloom_intensity=1.5,vignette=1" \
+    ./build-win/samples/player/maque_player.exe <scene>
+MAQUE_ENGINE_OPTIONS="post=1,tonemap=aces,exposure=1.3,grade=1,gray=0.6" \
+    ./build-win/samples/player/maque_player.exe <scene>
+MAQUE_ENGINE_OPTIONS="post=1,post_2d=1,grade=1,gray=1" \
     ./build-win/samples/player/maque_player.exe <scene>
 ```
 
@@ -165,6 +182,9 @@ if (imgui_enabled()) {
 - `ctest -R imgui_engine_options_e2e`：F4 引擎选项面板 —— F4 沿检测与面板像素、MSAA、
   `rendered/textured/solid/wireframe`（`textured` 采样 base-color 贴图且开关太阳光逐像素不变）、
   3D 与 2D/UI 图层开关、默认太阳光、near/far 覆盖、F2/F4 状态隔离及热键路由。
+- `ctest -R post_effect_e2e`：后处理 PostEffect —— 默认关闭逐字节零回归、identity、
+  曝光·ACES、暗角（四角变暗/中心不变）、灰度、Bloom 光晕、色差、同选项两次逐字节一致、
+  F4 面板 + 后处理共存（无 ASan）。
 - `ctest -R imgui_present_e2e`：**修复回归** —— 真实窗口抓帧断言
   ① imgui 开启时游戏区域逐像素可见且不被面板扰动；② 合成指针拖动 stats 后
   面板确实换位置、游戏仍可见；③ `MAQUE_PRESENT=software` 回退路径同样可见；
@@ -190,7 +210,7 @@ if (imgui_enabled()) {
 | 中文字体（TTF + 标题/正文两档字号，默认 20/15） | ✅ | `--shot` 截图里中文正常、stats 用正文字号 |
 | stats 面板（左上角，237x148；F2 / `MAQUE_IMGUI=1` 打开） | ✅ | FPS / logic / render / draws / tris / frame / target 七项 |
 | F2 开关（沿检测） | ✅ | `imgui_toggle_e2e` |
-| **F4 引擎选项面板**（rendered/textured/solid/wireframe、3D/2D 图层、MSAA、默认太阳光、主相机 near·far，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（含 textured 纹理采样与无光照像素断言）；`MAQUE_ENGINE_OPTIONS` 初值 |
+| **F4 引擎选项面板**（rendered/textured/solid/wireframe、3D/2D 图层、MSAA、默认太阳光、主相机 near·far、后处理 PostEffect，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（含 textured 纹理采样与无光照像素断言）；`post_effect_e2e`（后处理全效果 + 默认关闭零回归）；`MAQUE_ENGINE_OPTIONS` 初值 |
 | `MAQUE_PRESENT=software/accelerated` 都能显示面板 | ✅ | `imgui_present_e2e`（software 抓帧） |
 | 输入隔离（面板吃输入时清空本帧设备事件） | ✅ | `imgui_present_e2e` 拖动用合成指针走 `imgui_input_feed` |
 

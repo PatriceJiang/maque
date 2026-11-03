@@ -124,6 +124,17 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(imgui_engine_options_e2e PROPERTIES TIMEOUT 240 SKIP_RETURN_CODE 77)
 endif()
 
+# 后处理 PostEffect 端到端（docs/13 §后处理；F4 面板「后处理」一节）：
+#   ① 默认关闭零回归（post=0 与不设选项逐字节一致）+ identity ② 曝光/ACES ③ 暗角
+#   ④ 灰度 ⑤ Bloom 光晕 ⑥ 色差 ⑦ 同选项两次逐字节一致 ⑧ F4 面板 + 后处理共存。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME post_effect_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/post_effect_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}"
+             "${CMAKE_CURRENT_BINARY_DIR}/post_effect_e2e")
+    set_tests_properties(post_effect_e2e PROPERTIES TIMEOUT 240 SKIP_RETURN_CODE 77)
+endif()
+
 # 3D/PBR 直接呈现端到端（plans/18-pbr-3d.md M1）：MAQUE_PRESENT=wgpu → wgpu swapchain 直呈
 # ① attach_window 成功且不建 SDL_Renderer ② MAQUE_CAPTURE_WGPU 从交换链抓帧断言画面非空
 # ③ 直呈环境下 --shot 仍走离屏回读（截图/CI 路径不受影响）

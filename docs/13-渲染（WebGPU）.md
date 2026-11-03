@@ -310,3 +310,69 @@ fragment 入口消费。
 
 回归测试：`ctest -R shadertoy_e2e`（逐 demo：640x360 离屏结构断言 + frame 1/60 差异 +
 同帧逐字节确定性 + WGSL 属场景资源而非内建 shader；单项 demo 缺失时该节 SKIP，不阻塞）。
+
+## 后处理（PostEffect）
+
+**主输出阶段的后处理**：把 3D 层（场景 shader pass → 天空/3D）过一遍全屏 shader，再把 2D/UI 叠在
+结果之上。它是**引擎级**（F4 引擎选项 / `MAQUE_ENGINE_OPTIONS`）的**视图层**效果——不写场景组件、
+不进快照/校验和、不参与模拟，**默认关闭**。
+
+### 作用范围（默认只叠加 3D）
+
+| `frame3d.post.include_2d` | 行为 |
+|---|---|
+| **0（默认）** | 只处理 **3D 层**（场景 shader pass + 3D + 天空）；3D 先画进中间目标 → post → 目标，**2D/UI 再原样叠在 post 结果之上**（UI 的颜色/清晰度不受曝光、暗角、色差、Bloom 影响）。纯 2D 场景（没有 3D 组件/shaders pass）**不跑 post**（零成本） |
+| 1 | 整帧（3D + 2D/UI 一起）后处理；纯 2D 场景也可以用（F4 勾「包含 2D / UI」/ `post_2d=1`） |
+
+### Pass 顺序
+
+```
+默认（include_2d=0）：
+  3D 层（render.ShaderPass → 3D PBR/阴影/天空）
+    → 中间目标 postSrc（RGBA8Unorm，RenderAttachment|TextureBinding|CopySrc）
+    → post 全屏 pass（内建 shader 'post'，64B uniform + 1 张贴图 + 线性 clamp 采样器）
+    → 真正目标（swapchain / 离屏回读纹理 / 缩放用中间目标）
+    → 2D/UI 覆盖层（图元/网格，叠在 post 结果上）
+
+include_2d=1：
+  3D 层 + 2D/UI → 中间目标 → post → 真正目标
+```
+
+- **关闭时零成本**：`frame3d.post.enabled == 0` → 不建中间目标、不建管线、不跑 pass，
+  场景直接画进目标（旧调用方输出**逐字节不变**）。
+- 中间目标始终带 `CopySrc`：transmission 的 scene-color 拷贝、`--shot` 离屏回读、`render_scale≠1`
+  的缩放 blit 都从它拿源。
+- **RenderTexture（相机离屏纹理）不叠后处理**：后处理是**主输出**阶段的效果；若叠到每张相机纹理上，
+  同帧被采样的 RT 会出现"效果被采样两次"。场景相机的离屏图保持原始画面。
+
+### 效果（`frame3d.post.effects` 位掩码）
+
+| bit | 名称 | 参数 | 说明 |
+|---|---|---|---|
+| 0 | Bloom 泛光 | `bloom_intensity` / `bloom_threshold` / `bloom_radius` | 阈值亮度 × 12 个黄金角螺旋采样累积；`bloom_radius` = 目标高度的比例（图像无关），单 pass 近似（无 mip 链降采样） |
+| 1 | 暗角 | `vignette` | 归一化半径 `smoothstep(0.55, 1.45)` 压暗边缘，中心不动 |
+| 2 | 色差 | `aberration` | R/B 沿"离屏幕中心"的方向反向偏移（G 不动） |
+| 3 | 色彩分级 | `saturation` / `contrast` / `grayscale` | 饱和度 → 对比度（绕 0.5）→ 灰度混合 |
+
+另有两个"总是执行"的阶段（不占 bit）：`exposure`（曝光乘子）与 `tonemap`（0=none / 1=ACES）。
+**色彩空间 = 已成像的显示空间**：3D 在 pbr shader 里已做过 ACES + sRGB、2D/UI 本来就是显示值，
+所以这里的曝光/ACES 是**在成片上**再叠一层（F4 调试语义），不是 HDR 管线里的 tonemap。
+真正的 HDR 中间目标 + 后置 tonemap 属后续工作。
+
+### 确定性
+
+采样序列是**固定**的（12 个黄金角采样点、不读时间/随机/uav），同一帧输入 + 同一组参数 →
+输出逐字节一致（`ctest -R post_effect_e2e` 断言同选项两次运行逐字节相同）。
+
+### 开关与剔除
+
+- F4 面板「后处理 PostEffect」：启用、**包含 2D / UI**（默认关 = 只叠加 3D 层）、色调映射、曝光、
+  Bloom（开关/强度/阈值/半径）、暗角（开关/强度）、色差（开关/强度）、色彩分级（开关/饱和度/对比度/灰度）。
+- 启动初值：`MAQUE_ENGINE_OPTIONS="post=1,bloom=1,bloom_intensity=1.5,tonemap=aces,exposure=1.2"`
+  （键见 docs/28；出现任何后处理键会自动打开总开关，显式 `post=0` 则关闭；`post_2d=1` 才含 2D/UI）。
+- 剔除：`-DMAQUE_SHADER_POST=OFF` → 不生成/不链接该 shader；gfx 取不到时打印一行原因并**回退到
+  无后处理画面**（不黑屏、不静默画错）。
+
+回归测试：`ctest -R post_effect_e2e`（默认关闭逐字节零回归 / identity / 曝光·ACES / 暗角 /
+灰度 / Bloom 光晕 / 色差 / 2D/UI 默认不受影响 / `post_2d=1` 整帧 / 同选项确定性 /
+F4 面板共存 / 无 ASan）。

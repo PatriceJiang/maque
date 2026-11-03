@@ -900,6 +900,7 @@ struct Engine {
      *   · MSAA（0=跟随场景/MAQUE_MSAA，1=关，4=4x）
      *   · 默认太阳光（场景无光源时补的方向光：开关 / 强度 / 传播方向）
      *   · 主相机 near/far 覆盖
+     *   · 后处理 PostEffect（曝光/ACES/Bloom/暗角/色差/色彩分级；默认只叠加 3D 层）
      * 只在 extract_3d / 成帧时生效，**不写回场景组件/不进快照/校验和**（视图层调试覆盖，docs/10）。
      * 同一组值也可用 `MAQUE_ENGINE_OPTIONS` 给启动初值（见 engine_options_parse_env）。 */
     bool  opt_panel = false;                   // F4 面板开关
@@ -914,6 +915,27 @@ struct Engine {
     float opt_sun_dir[3] = { 0.35F, -0.85F, -0.4F };   // 光的**传播方向**（shader 内 normalize）
     bool  opt_cam_override = false;            // 覆盖主相机 near/far
     float opt_cam_near = 0.1F, opt_cam_far = 100.0F;   // 未覆盖时跟随场景实际值（面板默认值随之同步）
+    /* 后处理 PostEffect（docs/13 §后处理）：纯视图层，默认**关闭**（旧画面逐字节不变）；
+     * 默认**只叠加 3D 层**，2D/UI 在 post 结果之上叠加（include_2d=1 才整帧）。
+     * 效果由位掩码 + 参数组成；tonemap=0 表示只做曝光，不额外压 ACES。 */
+    bool  opt_post_enabled = false;
+    int   opt_post_tonemap = 0;                // 0=none 1=ACES
+    float opt_post_exposure = 1.0F;
+    bool  opt_post_bloom = false;
+    float opt_post_bloom_intensity = 0.85F;
+    float opt_post_bloom_threshold = 0.62F;
+    float opt_post_bloom_radius = 0.018F;      // 相对目标高度的采样半径
+    bool  opt_post_vignette = false;
+    float opt_post_vignette_intensity = 0.55F;
+    bool  opt_post_chromatic = false;
+    float opt_post_chromatic_strength = 0.0022F;   // 沿径向的 UV 偏移比例
+    bool  opt_post_grade = false;
+    float opt_post_saturation = 1.0F;
+    float opt_post_contrast = 1.0F;
+    float opt_post_grayscale = 0.0F;
+    /* 作用范围：false（默认）= 只叠加 3D 层（shader pass + 3D + 天空），2D/UI 原样叠在上面；
+     * true = 整帧（含 2D/UI）。纯 2D 场景只有 true 时才有后处理。 */
+    bool  opt_post_include_2d = false;
     /* 上一帧实际生效值（面板只读回显） */
     int   opt_last_msaa = 0;
     bool  opt_last_sun = false;
@@ -921,6 +943,8 @@ struct Engine {
     bool  opt_env_parsed = false;
     void engine_options_parse_env();           // 启动初值 MAQUE_ENGINE_OPTIONS（只解析一次）
     void engine_options_panel(float show_w, float show_h);   // F4 面板内容（本帧 ImGui 已 begin）
+    void engine_options_fill_post(mq_renderer_post& out) const;  // opt_post_* → frame3d.post
+    void engine_options_log_post();            // 变化时打印一行（CI 可断言）
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
     int load_texture(const std::string& path);                 // assets（VFS 编码文件）
@@ -5912,7 +5936,11 @@ void Engine::step_frame(bool render_frame) {
     const bool need_pixels = explicit_readback || inspector_readback || frame_capture_requested || !direct_present;
     std::vector<uint8_t> pixels;
     if (need_pixels) pixels.resize((size_t)TW * SHpx * 4);
-    if ((has_3d || has_shader_pass) && rapi && rself && rapi->render_frame3d) {
+    /* 后处理（F4）默认**只叠加 3D 层**：只有 3D/场景 shader pass 存在时才需要走 frame3d 通路；
+     * 纯 2D 场景仅在显式勾选「包含 2D / UI」（post_2d=1）时才改走 frame3d（整帧后处理）。
+     * 关闭后处理时条件与旧实现完全一致（零回归）。 */
+    const bool post_needs_frame3d = opt_post_enabled && opt_post_include_2d;
+    if ((has_3d || has_shader_pass || post_needs_frame3d) && rapi && rself && rapi->render_frame3d) {
         /* M2：3D 场景 = 3D pass + 2D 覆盖层同帧（直呈时 out=null → present；否则离屏回读）
          * docs/13：场景自带全屏 shader pass 也走这条通路（纯 shader 场景 view_count=0 同样支持）。 */
         MQ_TRACY_ZONE_N(render, "frame.3d");
@@ -5951,6 +5979,9 @@ void Engine::step_frame(bool render_frame) {
         fr.present_w = 0;                         /* 0 = 整个 surface；目标等于屏幕时可直接渲染 */
         fr.present_h = 0;
         fr.render_mode = opt_render_mode;
+        /* 后处理 PostEffect：纯视图层（F4 / MAQUE_ENGINE_OPTIONS）。enabled=0 → gfx 不建中间
+         * 目标、不跑 pass（旧画面逐字节不变）；参数只在开启时被读取。 */
+        engine_options_fill_post(fr.post);
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
         /* MSAA：场景字段 scn.Scene.msaa_samples（0/1=关、4=4x），MAQUE_MSAA 覆盖（0/1/4）。
          * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。
@@ -6052,6 +6083,7 @@ void Engine::step_frame(bool render_frame) {
                 mix(bg, sizeof bg); mix(&opt_render_mode, sizeof opt_render_mode);
                 mix(&fr.msaa_samples, sizeof fr.msaa_samples);
                 mix(&fr.env, sizeof fr.env);
+                mix(&fr.post, sizeof fr.post);      /* 后处理参数变化必须重画（否则面板调参无效果） */
                 mixv(views); mixv(draws);
                 mixv(views3d); mixv(lights3d); mixv(mats3d); mixv(draws3d);
                 mixv(skins3d); mixv(passes3d);
@@ -10817,20 +10849,79 @@ void Engine::imgui_frame_begin(float dt) {
 }
 
 /* ---- F4 引擎选项（docs/28）----------------------------------------------------
- * 「引擎选项」面板：渲染模式 / 游戏 3D、2D/UI 图层 / MSAA / 默认太阳光 / 主相机 near·far。
+ * 「引擎选项」面板：渲染模式 / 游戏 3D、2D/UI 图层 / MSAA / 默认太阳光 / 主相机 near·far /
+ * 后处理 PostEffect。
  *   · 纯视图层：不写场景组件、不进快照/校验和、不参与模拟（docs/10 确定性不受影响）；
  *   · 值在 extract_3d / 成帧时读取（Engine 的 opt_* 字段），切场景后仍保留；
  *   · 启动初值可用 `MAQUE_ENGINE_OPTIONS`（CI/截图/演示不必依赖鼠标拖控件）。
  * 环境变量格式（逗号分隔；向量分量用 ':'）：
  *   MAQUE_ENGINE_OPTIONS="mode=textured,3d=1,2d=0,msaa=4,sun=0,near=0.01,far=500"
  * 键：mode(rendered|textured|solid|wireframe) / 3d(0|1) / 2d(0|1) / msaa(0|1|4) /
- * sun(0|1) / sun_intensity / sun_dir(x:y:z) / near / far；
- * near 或 far 任一出场即启用主相机 near/far 覆盖。 */
+ * sun(0|1) / sun_intensity / sun_dir(x:y:z) / near / far /
+ * post(0|1) / tonemap(none|aces) / exposure / bloom(0|1) / bloom_intensity / bloom_threshold /
+ * bloom_radius / vignette(0|1) / vignette_intensity / chromatic(0|1) / chromatic_strength /
+ * grade(0|1) / saturation / contrast / gray / post_2d(0|1)
+ * near 或 far 任一出场即启用主相机 near/far 覆盖；出现任何后处理键会自动打开总开关
+ * （显式写 post=0 则在最后被尊重）。后处理**默认只叠加 3D 层**；post_2d=1 才含 2D/UI。 */
+
+/* 后处理效果位（与 mq_renderer_post.effects / post/shader.wgsl 一致）。 */
+enum : uint32_t {
+    MQ_POST_BLOOM     = 1u << 0,
+    MQ_POST_VIGNETTE  = 1u << 1,
+    MQ_POST_CHROMATIC = 1u << 2,
+    MQ_POST_GRADE     = 1u << 3,
+};
+
+/* opt_post_* → frame3d.post。关闭时只填 enabled=0（其余留 0）→ gfx 不走后处理通路。 */
+void Engine::engine_options_fill_post(mq_renderer_post& out) const {
+    std::memset(&out, 0, sizeof out);
+    out.exposure = 1.0F;
+    if (!opt_post_enabled) return;
+    out.enabled = 1;
+    out.tonemap = opt_post_tonemap;
+    out.exposure = opt_post_exposure;
+    out.effects = (opt_post_bloom ? MQ_POST_BLOOM : 0u) |
+                  (opt_post_vignette ? MQ_POST_VIGNETTE : 0u) |
+                  (opt_post_chromatic ? MQ_POST_CHROMATIC : 0u) |
+                  (opt_post_grade ? MQ_POST_GRADE : 0u);
+    out.bloom_intensity = opt_post_bloom_intensity;
+    out.bloom_threshold = opt_post_bloom_threshold;
+    out.bloom_radius = opt_post_bloom_radius;
+    out.vignette = opt_post_vignette_intensity;
+    out.aberration = opt_post_chromatic_strength;
+    out.saturation = opt_post_saturation;
+    out.contrast = opt_post_contrast;
+    out.grayscale = opt_post_grayscale;
+    out.include_2d = opt_post_include_2d ? 1 : 0;
+}
+
+/* 后处理状态变化时打印一行（面板调参/环境初值都可见，CI 可断言）。 */
+void Engine::engine_options_log_post() {
+    std::string fx;
+    auto add = [&fx](bool on, const char* name) {
+        if (!on) return;
+        if (!fx.empty()) fx.push_back(',');
+        fx += name;
+    };
+    add(opt_post_bloom, "bloom");
+    add(opt_post_vignette, "vignette");
+    add(opt_post_chromatic, "chromatic");
+    add(opt_post_grade, "grade");
+    std::print("runtime: engine option post={} effects={} exposure={:.2f} tonemap={} scope={}\n",
+               opt_post_enabled ? "on" : "off", fx.empty() ? "-" : fx.c_str(),
+               (double)opt_post_exposure,
+               opt_post_tonemap ? "aces" : "none",
+               opt_post_include_2d ? "all" : "3d");
+}
+
 void Engine::engine_options_parse_env() {
     if (opt_env_parsed) return;
     opt_env_parsed = true;
     const char* e = std::getenv("MAQUE_ENGINE_OPTIONS");
     if (!e || !*e) return;
+    /* 出现任何后处理键 → 自动打开总开关（只要没显式写 post=0）。 */
+    bool post_touched = false;
+    bool post_explicit = false;
     std::string s(e), item;
     for (size_t i = 0; i <= s.size(); ++i) {
         const char c = i < s.size() ? s[i] : ',';
@@ -10839,17 +10930,18 @@ void Engine::engine_options_parse_env() {
         const size_t eq = item.find('=');
         const std::string key = eq == std::string::npos ? item : item.substr(0, eq);
         const std::string val = eq == std::string::npos ? std::string() : item.substr(eq + 1);
+        const bool on = !(val == "0" || val == "off" || val == "false");
         if (key == "mode") {
             opt_render_mode = val == "wireframe" ? 2 : (val == "solid" ? 1 : (val == "textured" ? 3 : 0));
         } else if (key == "3d") {
-            opt_3d_enabled = !(val == "0" || val == "off" || val == "false");
+            opt_3d_enabled = on;
         } else if (key == "2d") {
-            opt_2d_enabled = !(val == "0" || val == "off" || val == "false");
+            opt_2d_enabled = on;
         } else if (key == "msaa") {
             const int m = std::atoi(val.c_str());
             opt_msaa = m >= 4 ? 4 : (m == 1 ? 1 : 0);
         } else if (key == "sun") {
-            opt_sun_enabled = !(val == "0" || val == "off" || val == "false");
+            opt_sun_enabled = on;
         } else if (key == "sun_intensity") {
             opt_sun_intensity = std::clamp((float)std::atof(val.c_str()), 0.0F, 20.0F);
         } else if (key == "sun_dir") {
@@ -10863,9 +10955,59 @@ void Engine::engine_options_parse_env() {
         } else if (key == "far") {
             opt_cam_far = std::max((float)std::atof(val.c_str()), 1e-3F);
             opt_cam_override = true;
+        } else if (key == "post") {
+            opt_post_enabled = on;
+            post_explicit = true;
+        } else if (key == "tonemap") {
+            opt_post_tonemap = (val == "aces") ? 1 : 0;
+            post_touched = true;
+        } else if (key == "exposure") {
+            opt_post_exposure = std::clamp((float)std::atof(val.c_str()), 0.05F, 8.0F);
+            post_touched = true;
+        } else if (key == "bloom") {
+            opt_post_bloom = on;
+            post_touched = true;
+        } else if (key == "bloom_intensity") {
+            opt_post_bloom_intensity = std::clamp((float)std::atof(val.c_str()), 0.0F, 4.0F);
+            post_touched = true;
+        } else if (key == "bloom_threshold") {
+            opt_post_bloom_threshold = std::clamp((float)std::atof(val.c_str()), 0.0F, 1.0F);
+            post_touched = true;
+        } else if (key == "bloom_radius") {
+            opt_post_bloom_radius = std::clamp((float)std::atof(val.c_str()), 0.001F, 0.15F);
+            post_touched = true;
+        } else if (key == "vignette") {
+            opt_post_vignette = on;
+            post_touched = true;
+        } else if (key == "vignette_intensity") {
+            opt_post_vignette_intensity = std::clamp((float)std::atof(val.c_str()), 0.0F, 1.0F);
+            post_touched = true;
+        } else if (key == "chromatic") {
+            opt_post_chromatic = on;
+            post_touched = true;
+        } else if (key == "chromatic_strength") {
+            opt_post_chromatic_strength = std::clamp((float)std::atof(val.c_str()), 0.0F, 0.05F);
+            post_touched = true;
+        } else if (key == "grade") {
+            opt_post_grade = on;
+            post_touched = true;
+        } else if (key == "saturation") {
+            opt_post_saturation = std::clamp((float)std::atof(val.c_str()), 0.0F, 3.0F);
+            post_touched = true;
+        } else if (key == "contrast") {
+            opt_post_contrast = std::clamp((float)std::atof(val.c_str()), 0.0F, 3.0F);
+            post_touched = true;
+        } else if (key == "gray") {
+            opt_post_grayscale = std::clamp((float)std::atof(val.c_str()), 0.0F, 1.0F);
+            post_touched = true;
+        } else if (key == "post_2d") {
+            /* 显式把 2D/UI 也纳入后处理（默认只叠加 3D 层）。 */
+            opt_post_include_2d = on;
+            post_touched = true;
         }
         item.clear();
     }
+    if (post_touched && !post_explicit) opt_post_enabled = true;
     static const char* const kModeNames[4] = { "rendered", "solid", "wireframe", "textured" };
     std::print("runtime: engine options (env) mode={} 3d={} 2d={} msaa={} sun={} intensity={:.2f} cam={}",
                kModeNames[opt_render_mode], opt_3d_enabled ? "on" : "off", opt_2d_enabled ? "on" : "off",
@@ -10875,6 +11017,7 @@ void Engine::engine_options_parse_env() {
     if (opt_cam_override)
         std::print(" near={:.3f} far={:.3f}", (double)opt_cam_near, (double)opt_cam_far);
     std::print("\n");
+    engine_options_log_post();
 }
 
 /* F4 面板内容。调用方保证本帧 ImGui 已 begin（`imgui_frame_begin`）。
@@ -10884,7 +11027,8 @@ void Engine::engine_options_panel(float show_w, float show_h) {
     const float pad = 8.0F * imgui_pixel_scale;
     const float gap = 8.0F * imgui_pixel_scale;
     const float w = std::min(imgui_panel_w * 1.30F, std::max(show_w * 0.90F, 120.0F));
-    const float h = std::min(imgui_panel_h * 3.65F, std::max(show_h * 0.85F, 100.0F));
+    /* 高度：常用项 + 后处理折叠头一行；展开后靠 ImGui 滚动条（窗口太矮时夹到 85%）。 */
+    const float h = std::min(imgui_panel_h * 4.05F, std::max(show_h * 0.85F, 100.0F));
     float x = imgui_panel_w > 0.0F ? pad + imgui_panel_w + gap : pad;
     if (x + w > show_w - pad) x = std::max(pad, show_w - w - pad);
     if (!mq_imgui_begin_at("engine options", x, pad, w, h)) { mq_imgui_end(); return; }
@@ -10965,6 +11109,89 @@ void Engine::engine_options_panel(float show_w, float show_h) {
         mq_imgui_text(line);
     }
     mq_imgui_separator();
+
+    /* ⑤ 后处理 PostEffect（docs/13 §后处理）——视图层覆盖，不改场景。
+     * 折叠头（默认收起）：面板高度留给常用项，展开后调参；总开关在折叠头内。
+     * 默认只叠加 3D 层（2D/UI 不受影响），勾「包含 2D / UI」才整帧。
+     * 执行顺序 = 采样（含色差）→ 曝光 → 色调映射 → Bloom → 暗角 → 色彩分级。 */
+    if (mq_imgui_collapsing_header("后处理 PostEffect")) {
+        const bool old_enabled = opt_post_enabled;
+        /* label 带 ##post：与「默认太阳光」的「启用」同名会触发 ImGui ID 冲突（显示仍是「启用」）。 */
+        opt_post_enabled = mq_imgui_checkbox("启用##post", opt_post_enabled ? 1.0F : 0.0F) != 0.0F;
+        if (old_enabled != opt_post_enabled) engine_options_log_post();
+        if (opt_post_enabled) {
+            /* 作用范围：默认**只叠加 3D 层**（2D/UI 原样叠在 post 结果之上）。 */
+            {
+                const bool old = opt_post_include_2d;
+                opt_post_include_2d = mq_imgui_checkbox("包含 2D / UI", opt_post_include_2d ? 1.0F : 0.0F) != 0.0F;
+                if (old != opt_post_include_2d) engine_options_log_post();
+            }
+            if (!opt_post_include_2d)
+                mq_imgui_text_disabled("默认只叠加 3D 层（2D / UI 不受影响）");
+            /* 曝光 + 色调映射 */
+            {
+                const int sel = opt_post_tonemap ? 1 : 0;
+                const int nsel = (int)mq_imgui_combo("色调映射", (float)sel, "无,ACES");
+                const int ntm = nsel == 1 ? 1 : 0;
+                if (ntm != opt_post_tonemap) { opt_post_tonemap = ntm; engine_options_log_post(); }
+                const float nexp = mq_imgui_slider_float("曝光", opt_post_exposure, 0.10F, 4.0F);
+                if (nexp != opt_post_exposure) { opt_post_exposure = nexp; engine_options_log_post(); }
+            }
+            /* Bloom 泛光 */
+            {
+                const bool old = opt_post_bloom;
+                opt_post_bloom = mq_imgui_checkbox("Bloom 泛光", opt_post_bloom ? 1.0F : 0.0F) != 0.0F;
+                if (old != opt_post_bloom) engine_options_log_post();
+                if (opt_post_bloom) {
+                    const float ni = mq_imgui_slider_float("强度##bloom", opt_post_bloom_intensity, 0.0F, 3.0F);
+                    if (ni != opt_post_bloom_intensity) { opt_post_bloom_intensity = ni; engine_options_log_post(); }
+                    const float nt = mq_imgui_slider_float("阈值##bloom", opt_post_bloom_threshold, 0.0F, 1.0F);
+                    if (nt != opt_post_bloom_threshold) { opt_post_bloom_threshold = nt; engine_options_log_post(); }
+                    const float nr = mq_imgui_drag_float("半径##bloom", opt_post_bloom_radius, 0.001F);
+                    const float clamped = std::clamp(nr, 0.001F, 0.15F);
+                    if (clamped != opt_post_bloom_radius) { opt_post_bloom_radius = clamped; engine_options_log_post(); }
+                }
+            }
+            /* 暗角 */
+            {
+                const bool old = opt_post_vignette;
+                opt_post_vignette = mq_imgui_checkbox("暗角", opt_post_vignette ? 1.0F : 0.0F) != 0.0F;
+                if (old != opt_post_vignette) engine_options_log_post();
+                if (opt_post_vignette) {
+                    const float nv = mq_imgui_slider_float("强度##vignette", opt_post_vignette_intensity, 0.0F, 1.0F);
+                    if (nv != opt_post_vignette_intensity) { opt_post_vignette_intensity = nv; engine_options_log_post(); }
+                }
+            }
+            /* 色差 */
+            {
+                const bool old = opt_post_chromatic;
+                opt_post_chromatic = mq_imgui_checkbox("色差", opt_post_chromatic ? 1.0F : 0.0F) != 0.0F;
+                if (old != opt_post_chromatic) engine_options_log_post();
+                if (opt_post_chromatic) {
+                    const float na = mq_imgui_slider_float("强度##chromatic", opt_post_chromatic_strength, 0.0F, 0.02F);
+                    if (na != opt_post_chromatic_strength) { opt_post_chromatic_strength = na; engine_options_log_post(); }
+                }
+            }
+            /* 色彩分级（饱和度 / 对比度 / 灰度） */
+            {
+                const bool old = opt_post_grade;
+                opt_post_grade = mq_imgui_checkbox("色彩分级", opt_post_grade ? 1.0F : 0.0F) != 0.0F;
+                if (old != opt_post_grade) engine_options_log_post();
+                if (opt_post_grade) {
+                    const float ns = mq_imgui_slider_float("饱和度", opt_post_saturation, 0.0F, 2.0F);
+                    if (ns != opt_post_saturation) { opt_post_saturation = ns; engine_options_log_post(); }
+                    const float nc = mq_imgui_slider_float("对比度", opt_post_contrast, 0.25F, 2.0F);
+                    if (nc != opt_post_contrast) { opt_post_contrast = nc; engine_options_log_post(); }
+                    const float ng = mq_imgui_slider_float("灰度", opt_post_grayscale, 0.0F, 1.0F);
+                    if (ng != opt_post_grayscale) { opt_post_grayscale = ng; engine_options_log_post(); }
+                }
+            }
+        } else {
+            mq_imgui_text_disabled("关闭（不改画面；开启后效果叠加在 3D 上层）");
+        }
+    }
+    mq_imgui_separator();
+
     if (mq_imgui_button("重置为默认")) {
         opt_render_mode = 0;
         opt_3d_enabled = true;
@@ -10974,6 +11201,22 @@ void Engine::engine_options_panel(float show_w, float show_h) {
         opt_sun_intensity = 1.1F;
         opt_sun_dir[0] = 0.35F; opt_sun_dir[1] = -0.85F; opt_sun_dir[2] = -0.4F;
         opt_cam_override = false;            // near/far 下一帧自动跟随场景
+        opt_post_enabled = false;
+        opt_post_tonemap = 0;
+        opt_post_exposure = 1.0F;
+        opt_post_bloom = false;
+        opt_post_bloom_intensity = 0.85F;
+        opt_post_bloom_threshold = 0.62F;
+        opt_post_bloom_radius = 0.018F;
+        opt_post_vignette = false;
+        opt_post_vignette_intensity = 0.55F;
+        opt_post_chromatic = false;
+        opt_post_chromatic_strength = 0.0022F;
+        opt_post_grade = false;
+        opt_post_saturation = 1.0F;
+        opt_post_contrast = 1.0F;
+        opt_post_grayscale = 0.0F;
+        opt_post_include_2d = false;
         std::print("runtime: engine options reset\n");
     }
 

@@ -140,6 +140,23 @@ int mq_imgui_init_with_fonts(const char *ttf_path, float title_size, float body_
         "覆盖场景相机"
         "跟随场景相机的 near/far"
         "实际：near=%.4f far=%.2f"
+        /* F4「后处理 PostEffect」一节（docs/28）。 */
+        "后处理 PostEffect"
+        "色调映射"
+        "无,ACES"
+        "曝光"
+        "Bloom 泛光"
+        "阈值##bloom"
+        "半径##bloom"
+        "暗角"
+        "色差"
+        "色彩分级"
+        "饱和度"
+        "对比度"
+        "灰度"
+        "包含 2D / UI"
+        "默认只叠加 3D 层（2D / UI 不受影响）"
+        "关闭（不改画面；开启后效果叠加在 3D 上层）"
         "重置为默认");
     ranges.BuildRanges(&g_font_ranges);
 

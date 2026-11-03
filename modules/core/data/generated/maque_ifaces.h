@@ -224,6 +224,17 @@ typedef struct mq_renderer_environment {
 typedef struct mq_renderer_post {
     float exposure;
     int32_t tonemap;
+    int32_t enabled;
+    uint32_t effects;
+    float bloom_intensity;
+    float bloom_threshold;
+    float bloom_radius;
+    float vignette;
+    float aberration;
+    float saturation;
+    float contrast;
+    float grayscale;
+    int32_t include_2d;
 } mq_renderer_post;
 
 typedef struct mq_renderer_shader_pass {

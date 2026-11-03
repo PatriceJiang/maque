@@ -31,7 +31,8 @@ static_assert(sizeof(mq_renderer_view3d) == 184, "mq_renderer_view3d 布局漂�
 static_assert(sizeof(mq_renderer_light) == 64, "mq_renderer_light 布局漂移");
 static_assert(sizeof(mq_renderer_pbr_material) == 352, "mq_renderer_pbr_material 布局漂移（5 贴图槽 + clearcoat + 多材质模型 + 贴图 UV 变换 + uv1_mask + textures3[7] + textures4[2] + transmission 三字段 + diffuse_transmission factor/color + textures6[2] + volume attenuation/multiscatter + textures7[1]）");
 static_assert(sizeof(mq_renderer_environment) == 100, "mq_renderer_environment 布局漂移（+analytic studio IBL 参数 + PMREM irradiance + cubemap env/irradiance）");
-static_assert(sizeof(mq_renderer_post) == 8, "mq_renderer_post 布局漂移");
+static_assert(sizeof(mq_renderer_post) == 52,
+              "mq_renderer_post 布局漂移（exposure/tonemap + PostEffect：enabled/effects/6 个参数 + 色彩分级 + include_2d）");
 static_assert(sizeof(mq_renderer_draw3d) == 104, "mq_renderer_draw3d 布局漂移（model 64B + sort_key u64 + skin）");
 static_assert(offsetof(mq_renderer_draw3d, model) == 8, "draw3d.model 必须在 offset 8");
 static_assert(offsetof(mq_renderer_draw3d, sort_key) == 88, "draw3d.sort_key 必须在 offset 88");
@@ -253,6 +254,23 @@ struct Device {
     /* ---- 场景资源全屏 shader pass（docs/13）---- */
     std::vector<ShaderPassGpu*> shaderPasses;   /* 槽位 = ABI 句柄（destroy 后保留 nullptr） */
     WGPUShaderModule passVsShader = nullptr;    /* 引擎提供的全屏三角形 VS（所有 pass 共用） */
+    /* ---- 主输出阶段后处理 PostEffect（docs/13 §后处理；docs/28 F4）----
+     * frame3d.post.enabled=1 时：场景先画进 postSrcTex（RGBA8），再由一个全屏 pass 采样它写出到
+     * 真正目标（swapchain / 离屏回读纹理 / 缩放中间目标）。关闭时完全不建这些资源 →
+     * 旧调用方（post 全 0）逐字节不变。 */
+    WGPUShaderModule postShader = nullptr;      /* 内建 shader "post" */
+    WGPUBindGroupLayout postBgl = nullptr;
+    WGPUPipelineLayout postPl = nullptr;
+    WGPUSampler postSampler = nullptr;          /* linear + clamp */
+    WGPURenderPipeline postPipe = nullptr;      /* 按目标格式缓存（RGBA8 / BGRA8 …） */
+    WGPUTextureFormat postPipeFormat = WGPUTextureFormat_Undefined;
+    WGPUTexture postSrcTex = nullptr;           /* 场景渲染的中间目标 */
+    WGPUTextureView postSrcView = nullptr;
+    int32_t postW = 0, postH = 0;
+    WGPUBuffer postUbo = nullptr;               /* 64B PostUniform（每帧写入） */
+    WGPUBindGroup postBg = nullptr;             /* 复用；纹理视图变化（resize）才重建 */
+    WGPUTextureView postBgView = nullptr;
+    int32_t postWarned = 0;                     /* 1 = 已提示"后处理不可用"（shader 被剔除等） */
 };
 
 template <class P>
@@ -1220,6 +1238,16 @@ static void destroy_device(Device* dv) {
     if (dv->blitPl) wgpuPipelineLayoutRelease(dv->blitPl);
     if (dv->blitBgl) wgpuBindGroupLayoutRelease(dv->blitBgl);
     if (dv->blitShader) wgpuShaderModuleRelease(dv->blitShader);
+    /* PostEffect（附在 render_frame_to_target 上的主输出阶段后处理）。 */
+    if (dv->postBg) wgpuBindGroupRelease(dv->postBg);
+    if (dv->postUbo) wgpuBufferRelease(dv->postUbo);
+    if (dv->postPipe) wgpuRenderPipelineRelease(dv->postPipe);
+    if (dv->postSampler) wgpuSamplerRelease(dv->postSampler);
+    if (dv->postPl) wgpuPipelineLayoutRelease(dv->postPl);
+    if (dv->postBgl) wgpuBindGroupLayoutRelease(dv->postBgl);
+    if (dv->postShader) wgpuShaderModuleRelease(dv->postShader);
+    if (dv->postSrcView) wgpuTextureViewRelease(dv->postSrcView);
+    if (dv->postSrcTex) wgpuTextureRelease(dv->postSrcTex);
     if (dv->sampler) wgpuSamplerRelease(dv->sampler);
     if (dv->samplerNearest) wgpuSamplerRelease(dv->samplerNearest);
     if (dv->whiteTexView) wgpuTextureViewRelease(dv->whiteTexView);
@@ -2241,13 +2269,176 @@ static int32_t r_resize_surface(void* self, int32_t w, int32_t h) {
     return configure_surface(dv, w, h) ? 0 : -3;
 }
 
-/* 把统一 frame3d（也可只有 2D）画进调用方给定的颜色目标；不回读、不 present。
- * queue submit 的先后顺序就是 RenderTexture 生产者→消费者的可见性顺序。 */
-static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextureFormat format,
-                                      const mq_renderer_frame3d* f, bool allow_scene_copy = true) {
-    if (!dv || !target || !f || f->width <= 0 || f->height <= 0) return -1;
-    float bg[4];
-    std::memcpy(bg, f->bg, sizeof bg);
+/* ==========================================================================
+ * 主输出阶段后处理（PostEffect；docs/13 §后处理 / docs/28 F4 面板）
+ *
+ * 语义：`frame3d.post.enabled != 0` 时，先把场景（shader pass / 3D / 2D）画进一张**中间目标**
+ * postSrcTex，再用一个全屏 pass 采样它、按参数出效果写到真正目标。因此：
+ *   · 关闭（默认，旧调用方）→ 这条通路完全不参与，输出逐字节不变；
+ *   · 开启 → 目标尺寸多一张 RGBA8 纹理 + 一次全屏 draw（RGB 采样，alpha 固定 1）。
+ *
+ * 中间目标始终是 RGBA8Unorm + CopySrc：transmission 的 scene-color 拷贝、离屏回读、缩放 blit
+ * 都从它拿源。色彩空间 = 场景已经成像的**显示空间**（3D 已在自己的 fragment 里做过 ACES+sRGB，
+ * 2D/UI 本来就是显示值），所以这里的曝光/ACES 是在成片上再叠一层（F4 调试语义，非 HDR 管线）。
+ * ========================================================================== */
+struct PostUniform {
+    float exposure;              // 0
+    int32_t tonemap;             // 4
+    int32_t enabled;             // 8
+    uint32_t effects;            // 12
+    float bloom_intensity;       // 16
+    float bloom_threshold;       // 20
+    float bloom_radius;          // 24
+    float vignette;              // 28
+    float aberration;            // 32
+    float saturation;            // 36
+    float contrast;              // 40
+    float grayscale;             // 44
+    float resolution[2];         // 48
+    float texel[2];              // 56
+};
+static_assert(sizeof(PostUniform) == 64, "PostUniform 必须与 post/shader.wgsl 的 64B 布局一致");
+
+static bool ensure_post_resources(Device* dv) {
+    if (dv->postShader && dv->postBgl && dv->postPl && dv->postUbo && dv->postSampler) return true;
+    const char* wgsl = mq_builtin_shader_text("post");
+    if (!wgsl) {
+        if (!dv->postWarned) {
+            dv->postWarned = 1;
+            std::print(stderr, "gfx: 后处理不可用（内建 shader 'post' 未编入；见 MAQUE_SHADER_POST 开关）→ 本帧跳过 PostEffect\n");
+        }
+        return false;
+    }
+    if (!dv->postShader) dv->postShader = make_shader(dv->device, wgsl);
+    if (!dv->postShader) return false;
+    WGPUBindGroupLayoutEntry e[3] = {};
+    e[0].binding = 0; e[0].visibility = WGPUShaderStage_Fragment;
+    e[0].buffer.type = WGPUBufferBindingType_Uniform; e[0].buffer.minBindingSize = sizeof(PostUniform);
+    e[1].binding = 1; e[1].visibility = WGPUShaderStage_Fragment;
+    e[1].texture.sampleType = WGPUTextureSampleType_Float;
+    e[1].texture.viewDimension = WGPUTextureViewDimension_2D;
+    e[2].binding = 2; e[2].visibility = WGPUShaderStage_Fragment;
+    e[2].sampler.type = WGPUSamplerBindingType_Filtering;
+    WGPUBindGroupLayoutDescriptor bd = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+    bd.entryCount = 3; bd.entries = e;
+    dv->postBgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bd);
+    WGPUPipelineLayoutDescriptor pl = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+    pl.bindGroupLayoutCount = 1; pl.bindGroupLayouts = &dv->postBgl;
+    dv->postPl = wgpuDeviceCreatePipelineLayout(dv->device, &pl);
+    WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
+    sd.magFilter = WGPUFilterMode_Linear; sd.minFilter = WGPUFilterMode_Linear;
+    sd.mipmapFilter = WGPUMipmapFilterMode_Nearest;
+    sd.addressModeU = WGPUAddressMode_ClampToEdge;
+    sd.addressModeV = WGPUAddressMode_ClampToEdge;
+    dv->postSampler = wgpuDeviceCreateSampler(dv->device, &sd);
+    WGPUBufferDescriptor ubd = WGPU_BUFFER_DESCRIPTOR_INIT;
+    ubd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+    ubd.size = sizeof(PostUniform);
+    dv->postUbo = wgpuDeviceCreateBuffer(dv->device, &ubd);
+    return dv->postBgl && dv->postPl && dv->postSampler && dv->postUbo;
+}
+
+/* 场景中间目标（尺寸跟随渲染目标；resize 时重建）。始终带 CopySrc：
+ * transmission 的 scene-color 拷贝、离屏回读、缩放 blit 都以它为源。 */
+static bool ensure_post_source(Device* dv, int32_t w, int32_t h) {
+    if (dv->postSrcTex && dv->postSrcView && dv->postW == w && dv->postH == h) return true;
+    if (dv->postBg) { wgpuBindGroupRelease(dv->postBg); dv->postBg = nullptr; }
+    if (dv->postSrcView) { wgpuTextureViewRelease(dv->postSrcView); dv->postSrcView = nullptr; }
+    if (dv->postSrcTex) { wgpuTextureRelease(dv->postSrcTex); dv->postSrcTex = nullptr; }
+    dv->postBgView = nullptr;
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    td.format = WGPUTextureFormat_RGBA8Unorm;
+    td.mipLevelCount = 1; td.sampleCount = 1;
+    dv->postSrcTex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!dv->postSrcTex) return false;
+    dv->postSrcView = wgpuTextureCreateView(dv->postSrcTex, nullptr);
+    if (!dv->postSrcView) return false;
+    dv->postW = w; dv->postH = h;
+    return true;
+}
+
+static bool ensure_post_pipeline(Device* dv, WGPUTextureFormat format) {
+    if (dv->postPipe && dv->postPipeFormat == format) return true;
+    if (dv->postPipe) { wgpuRenderPipelineRelease(dv->postPipe); dv->postPipe = nullptr; }
+    dv->postPipeFormat = WGPUTextureFormat_Undefined;
+    if (!dv->postShader || !dv->postPl) return false;
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = format; target.writeMask = WGPUColorWriteMask_All;
+    WGPUFragmentState frag = WGPU_FRAGMENT_STATE_INIT;
+    frag.module = dv->postShader; frag.entryPoint = SV("fs"); frag.targetCount = 1; frag.targets = &target;
+    WGPUVertexState vert = WGPU_VERTEX_STATE_INIT;
+    vert.module = dv->postShader; vert.entryPoint = SV("vs");
+    WGPURenderPipelineDescriptor rp = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    rp.layout = dv->postPl; rp.vertex = vert; rp.fragment = &frag;
+    rp.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    dv->postPipe = wgpuDeviceCreateRenderPipeline(dv->device, &rp);
+    dv->postPipeFormat = dv->postPipe ? format : WGPUTextureFormat_Undefined;
+    return dv->postPipe != nullptr;
+}
+
+/* 中间目标 → 真正目标：一次全屏 draw（不读回、不 present）。 */
+static int32_t apply_post(Device* dv, WGPUTexture target, WGPUTextureFormat format,
+                          const mq_renderer_post& p, int32_t w, int32_t h) {
+    if (!dv->postSrcView || !target) return -1;
+    if (!ensure_post_pipeline(dv, format)) return -2;
+
+    PostUniform u{};
+    u.exposure = p.exposure;
+    u.tonemap = p.tonemap;
+    u.enabled = p.enabled;
+    u.effects = p.effects;
+    u.bloom_intensity = p.bloom_intensity;
+    u.bloom_threshold = p.bloom_threshold;
+    u.bloom_radius = p.bloom_radius;
+    u.vignette = p.vignette;
+    u.aberration = p.aberration;
+    u.saturation = p.saturation;
+    u.contrast = p.contrast;
+    u.grayscale = p.grayscale;
+    u.resolution[0] = (float)w; u.resolution[1] = (float)h;
+    u.texel[0] = w > 0 ? 1.0F / (float)w : 0.0F;
+    u.texel[1] = h > 0 ? 1.0F / (float)h : 0.0F;
+    wgpuQueueWriteBuffer(dv->queue, dv->postUbo, 0, &u, sizeof u);
+
+    if (!dv->postBg || dv->postBgView != dv->postSrcView) {
+        if (dv->postBg) { wgpuBindGroupRelease(dv->postBg); dv->postBg = nullptr; }
+        WGPUBindGroupEntry be[3] = {};
+        be[0].binding = 0; be[0].buffer = dv->postUbo; be[0].size = sizeof(PostUniform);
+        be[1].binding = 1; be[1].textureView = dv->postSrcView;
+        be[2].binding = 2; be[2].sampler = dv->postSampler;
+        WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+        bgd.layout = dv->postBgl; bgd.entryCount = 3; bgd.entries = be;
+        dv->postBg = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+        if (!dv->postBg) return -3;
+        dv->postBgView = dv->postSrcView;
+    }
+
+    WGPUTextureView dst = wgpuTextureCreateView(target, nullptr);
+    if (!dst) return -4;
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    const float black[4] = { 0.0F, 0.0F, 0.0F, 1.0F };
+    WGPURenderPassEncoder pass = nullptr;
+    begin_pass(enc, dst, WGPULoadOp_Clear, black, &pass);
+    wgpuRenderPassEncoderSetPipeline(pass, dv->postPipe);
+    wgpuRenderPassEncoderSetBindGroup(pass, 0, dv->postBg, 0, nullptr);
+    wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cmd);
+    wgpuCommandBufferRelease(cmd);
+    wgpuCommandEncoderRelease(enc);
+    wgpuTextureViewRelease(dst);
+    return 0;
+}
+
+/* 3D 层（场景 shader pass → 3D）画进 target；不含 2D 覆盖层。
+ * 返回 0 表示成功（没有 3D/passes 时也是 0，只是没画东西）。 */
+static int32_t render_3d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat format,
+                               const mq_renderer_frame3d* f, bool allow_scene_copy) {
     const bool has3d = f->view_count > 0 && f->views != nullptr;
     const bool has_passes = f->pass_count > 0 && f->passes != nullptr;
     bool target_initialized = false;
@@ -2270,9 +2461,71 @@ static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextur
         const int32_t rc = render_3d_only(dv, target, format, f, allow_scene_copy);
         if (rc != 0) return rc;
     }
+    return 0;
+}
+
+/* 2D/UI 覆盖层（图元 + 网格）画进 target。clear_first：先用 bg 清屏（没有 3D 层时）。 */
+static int32_t render_2d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat format,
+                               const mq_renderer_frame3d* f, bool clear_first) {
+    float bg[4];
+    std::memcpy(bg, f->bg, sizeof bg);
     return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                        f->items, f->item_count, f->meshes, f->mesh_count,
-                       bg, nullptr, 0, target, format, !(has3d || has_passes));
+                       bg, nullptr, 0, target, format, clear_first);
+}
+
+/* 场景本体（shader pass → 3D → 2D 覆盖层）画进给定目标；不含后处理。 */
+static int32_t render_scene_to_target(Device* dv, WGPUTexture target, WGPUTextureFormat format,
+                                      const mq_renderer_frame3d* f, bool allow_scene_copy) {
+    const bool has3d = f->view_count > 0 && f->views != nullptr;
+    const bool has_passes = f->pass_count > 0 && f->passes != nullptr;
+    const int32_t rc = render_3d_layer(dv, target, format, f, allow_scene_copy);
+    if (rc != 0) return rc;
+    return render_2d_layer(dv, target, format, f, !(has3d || has_passes));
+}
+
+/* 把统一 frame3d（也可只有 2D）画进调用方给定的颜色目标；不回读、不 present。
+ * queue submit 的先后顺序就是 RenderTexture 生产者→消费者的可见性顺序。
+ * allow_post=false：RenderTexture（场景相机离屏纹理）不参与整帧后处理 —— 后处理是**主输出**阶段
+ * 的效果，把它叠到每张相机纹理上会让同帧采样链出现"效果被采样两次"。
+ *
+ * 后处理的作用范围（frame3d.post.include_2d）：
+ *   · 0（默认）= **只作用于 3D 层**（shader pass + 3D + 天空）：3D 先画进中间目标 → post → 目标，
+ *     再把 2D/UI 原样叠在 post 结果之上（UI 颜色/清晰度不受后处理影响）；纯 2D 场景不跑 post。
+ *   · 1 = 整帧（3D + 2D/UI 一起）后处理。 */
+static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextureFormat format,
+                                      const mq_renderer_frame3d* f, bool allow_scene_copy = true,
+                                      bool allow_post = true) {
+    if (!dv || !target || !f || f->width <= 0 || f->height <= 0) return -1;
+    if (!allow_post || f->post.enabled == 0)
+        return render_scene_to_target(dv, target, format, f, allow_scene_copy);
+    const bool has3d = f->view_count > 0 && f->views != nullptr;
+    const bool has_passes = f->pass_count > 0 && f->passes != nullptr;
+    const bool include_2d = f->post.include_2d != 0;
+    /* 默认只处理 3D 层：没有 3D 层（纯 2D 场景）→ 后处理无作用对象，直接走原路径（零成本）。 */
+    if (!has3d && !has_passes && !include_2d)
+        return render_scene_to_target(dv, target, format, f, allow_scene_copy);
+    if (!ensure_post_resources(dv) || !ensure_post_source(dv, f->width, f->height)) {
+        /* 后处理不可用（shader 被剔除/OOM）→ 明确回退到无后处理画面，而不是黑屏。 */
+        if (!dv->postWarned) {
+            dv->postWarned = 1;
+            std::print(stderr, "gfx: PostEffect 资源创建失败 → 本帧回退无后处理\n");
+        }
+        return render_scene_to_target(dv, target, format, f, allow_scene_copy);
+    }
+    /* 中间目标一定支持 CopySrc → transmission 的 scene-color 拷贝总能开启。 */
+    int32_t rc;
+    if (include_2d) {
+        rc = render_scene_to_target(dv, dv->postSrcTex, WGPUTextureFormat_RGBA8Unorm, f, true);
+    } else {
+        rc = render_3d_layer(dv, dv->postSrcTex, WGPUTextureFormat_RGBA8Unorm, f, true);
+    }
+    if (rc != 0) return rc;
+    rc = apply_post(dv, target, format, f->post, f->width, f->height);
+    if (rc != 0) return rc;
+    if (include_2d) return 0;
+    /* 2D/UI 叠在 post 结果之上：不清屏（保留后处理后的 3D 层）。 */
+    return render_2d_layer(dv, target, format, f, false);
 }
 
 /* 一帧：out 非空 → 离屏回读（--shot/CI）；空 → 直接呈现。 */
@@ -2399,7 +2652,8 @@ static int32_t r_render_to_texture(void* self, int32_t id, const mq_renderer_fra
     if (safe.env.env_irradiance_texture == id) safe.env.env_irradiance_texture = -1;
     if (safe.env.env_cubemap == id) safe.env.env_cubemap = -1;
     if (safe.env.env_cubemap_irradiance == id) safe.env.env_cubemap_irradiance = -1;
-    return render_frame_to_target(dv, target->tex, target->format, &safe);
+    /* RenderTexture = 场景相机离屏纹理：不叠整帧后处理（见 render_frame_to_target 说明）。 */
+    return render_frame_to_target(dv, target->tex, target->format, &safe, true, false);
 }
 
 static int32_t r_read_texture(void* self, int32_t id, uint8_t* out, uint32_t out_size) {
