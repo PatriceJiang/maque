@@ -1,0 +1,12 @@
+{
+  "name": "quartz_orbit",
+  "space": "world",
+  "events": [
+    { "frame": 5, "type": "pointer_move", "x": 444, "y": 250 },
+    { "frame": 6, "type": "pointer_down", "x": 444, "y": 250 },
+    { "frame": 20, "type": "pointer_move", "x": 560, "y": 250 },
+    { "frame": 34, "type": "pointer_move", "x": 680, "y": 250 },
+    { "frame": 48, "type": "pointer_move", "x": 780, "y": 250 },
+    { "frame": 62, "type": "pointer_up", "x": 780, "y": 250 }
+  ]
+}

@@ -20,11 +20,19 @@
 | `mountains/buffer_b.wgsl` | 侵蚀滤波 + ridgemap/trees/debug 打包进 alpha |
 | `mountains/buffer_c.wgsl` | 细节噪声缓冲 |
 | `mountains/image.wgsl` | 光线步进地形渲染 + 大气 + ACES |
+| `quartz_cave.scn` | 场景：960×540，`render.ShaderGraph → quartz/program.json`（5 阶段 / 4 缓冲） |
+| `quartz/program.json` | 多通道 shader 图：3 个非方形缓冲 + 5 个阶段（state/scene/cells/centres + image） |
+| `quartz/common.wgsl` | 各阶段共享源码（选项/常量/Shadertoy 兼容层），运行时拼在阶段源码前 |
+| `quartz/buffer_a.wgsl` | 拖拽状态（1×6，自反馈） |
+| `quartz/buffer_b.wgsl` | 主渲染：凸多面体晶体 + 湿岩 + 光柱 + 尘埃 + 色散/焦散，输出线性 HDR |
+| `quartz/buffer_c.wgsl` | 光照单元（64×24）：高于阈值的亮度与质心 |
+| `quartz/buffer_d.wgsl` | 最亮的 6 个分离光心（6×1） |
+| `quartz/image.wgsl` | tone map + `value / distance` 星芒 |
 | `README.md` | 本文件 |
 
 ## 作品与许可
 
-三个原作许可**不同**，逐项见下面的小节：
+四个原作许可**不同**，逐项见下面的小节：
 
 - Seascape / Mandelbulb 以 **CC BY-NC-SA 3.0**
   （Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported
@@ -32,6 +40,8 @@
   修改/再分发需以同一许可（相同方式共享）发布。
 - Mouse-Paint Eroded Mountains 的噪声/侵蚀代码为 **MPL 2.0**（弱 copyleft，按文件生效；
   修改后的 MPL 文件需以 MPL 发布），地形渲染部分派生自 Fewes 的 Shadertoy。
+- quartz cave 的许可**以 Shadertoy 作品页标注为准**（原作未在本目录另附许可）；移植只做
+  语言/坐标/ABI 适配，数学、材质、光照与全部参数值均来自原作。
 
 ### Seascape — "Seascape" by Alexander Alekseev aka TDM (2014)
 
@@ -79,6 +89,35 @@
 - 精灵形态：`mountain-shader-sprite.scn` 只有**一个实体**——`render.ShaderSprite` 的 `shader` 直接写
   `"mountains/program.json"`（引擎按扩展名判定：`.json` = 多阶段图，`.wgsl` = 单 pass），`width/height`
   写 720×405。整条阶段链先渲染到该节点的离屏纹理再合成 2D 精灵；指针只在矩形内生效。
+
+### quartz cave 💎 — 作者 aladiN
+
+- 许可：**以 Shadertoy 作品页标注为准**（原作未在本目录另附许可）；移植只做语言/坐标/ABI 适配。
+- 5 个阶段 / 4 个缓冲，其中 **3 个缓冲是非方形的**（`width`/`height`）：
+  | 阶段 | 目标缓冲 | 尺寸 | 内容 |
+  |------|----------|------|------|
+  | `buffer_a` | `state`（自反馈） | 1×6 | 拖拽偏移/按下/锚点/起点/上次位置/时间戳 |
+  | `buffer_b` | `scene` | 960×540 | 凸多面体晶体（6 棱柱 + 3 大 3 小菱面）、湿岩、光柱、尘埃、色散、焦散 → **线性 HDR** |
+  | `buffer_c` | `cells` | 64×24 | 每单元累加高于 `BRIGHT_TH` 的亮度 + 质心 + 峰值 |
+  | `buffer_d` | `centres` | 6×1 | 最亮的 6 个**分离**光心（合并的星保留各自的光） |
+  | `image` | 主目标 | 屏幕 | tone map + 每个光心一颗 `value / distance` 星芒 |
+- 移植要点：
+  - 原作用 **iResolution 大小的纹理 + 角落若干 texel** 存状态/光照单元；这里直接给每个缓冲它
+    真正用到的尺寸。所以这几个阶段里的「屏幕尺寸」取 `mq_pass.screen_resolution`（不是该阶段
+    自己的 `resolution`）——`common.wgsl` 的 `dragN`、`buffer_c`、`buffer_d` 都按这条写。
+  - Shadertoy 的**左下原点**纹理坐标由 `texelFetchSH` / `textureSH` 翻 y 保留；
+    每个阶段的 `fragCoord` 也经 `fragCoordSH` 翻到同一约定（`image` 一旦漏翻，合成就上下颠倒）。
+  - GLSL 行向量乘法 `v * M` → `transpose(M) * v`；WGSL 不允许给 swizzle 赋值、
+    也不能用 `smoothstep(edge0 > edge1)`，所以有 `ss()` 与显式分量重建。
+  - 原作 `#ifdef GL_ES` 的展开分支（`ZERO`/`SEQ_*` 命名槽）只为压低 shadertoy.com 的 ANGLE
+    编译时间，这里用桌面分支：普通数组 + 动态索引。
+  - `image` 按 `fragCoord / resolution * textureDimensions(ch1)` 取 `scene` 缓冲：主目标尺寸与
+    `scene` 缓冲不同（窗口 resize）时是最近邻放大，相同尺寸时逐 texel 一一对应。
+- 交互：**拖拽环绕**（拖得越高相机越靠近、越俯视晶体里的彩虹），单击回到初始视角。
+  拖拽状态跨帧保留在 `state` 缓冲里（原作靠 `STATE_STAMP` 在热重载后复位，这里 `frame` 由引擎
+  在场景重载时重置，同样安全）。
+- 性能：`scene` 是 960×540 的逐像素闭式求交（晶体 12 个半空间 × 6 个 + 12 块岩石 + 光柱 erf +
+  尘埃 DDA）。没有光线步进，但比 Seascape 重、比 Mandelbulb 轻。
 
 ## 引擎侧 shader-pass 契约（摘要）
 
@@ -145,6 +184,8 @@ shader 文件侧必须满足：
 .\build-win\samples\player\maque_player.exe scenes\shadertoy\mandelbulb.scn
 # 多通道 shader 图（4 阶段 + 鼠标绘制；山体由 Buffer A 的初始笔刷生成）
 .\build-win\samples\player\maque_player.exe scenes\shadertoy\mountains.scn
+# 多通道 shader 图（5 阶段 + 3 个非方形缓冲；拖拽环绕 → 晶体里的彩虹）
+.\build-win\samples\player\maque_player.exe scenes\shadertoy\quartz_cave.scn
 # 同一份 program 的精灵形态（画在节点矩形里，backdrop 衬底）
 .\build-win\samples\player\maque_player.exe scenes\shadertoy\mountain-shader-sprite.scn
 # 两块 shader 精灵并排（同一份 WGSL 契约，画在节点矩形里）
@@ -163,9 +204,14 @@ $env:MAQUE_PRESENT='wgpu'
 # 批量截图看动画（帧号写进文件名）：Seascape 海浪/相机、Mandelbulb 相机轨道、Mountains 相机自转
 .\build-win\samples\player\maque_player.exe --shot-seq scenes\shadertoy\mb_{}.png --shot-frames 1,60 scenes\shadertoy\mandelbulb.scn
 .\build-win\samples\player\maque_player.exe --shot-seq scenes\shadertoy\mt_{}.png --shot-frames 1,120 scenes\shadertoy\mountains.scn
+.\build-win\samples\player\maque_player.exe --shot-seq scenes\shadertoy\qz_{}.png --shot-frames 1,120 scenes\shadertoy\quartz_cave.scn
 
 # 用输入模拟器"画"山（世界坐标：按住左键拖动；Shift 反向、Backspace 重置、Enter 关侵蚀）
 $env:MAQUE_SIM='tests\data\sim\ball_clicks.sim.json'   # 或自己的 .sim.json
+# 用输入模拟器拖拽环绕 quartz cave（拖得越高相机越靠近晶体）
+$env:MAQUE_SIM='tests\data\sim\quartz_orbit.sim.json'
+$env:MAQUE_SHOT='scenes\shadertoy\qz_orbit.png'; $env:MAQUE_SHOT_FRAME='70'
+.\build-win\samples\player\maque_player.exe scenes\shadertoy\quartz_cave.scn
 ```
 
 Linux/macOS 把 `.\build-win\...` 换成 `./build/samples/player/maque_player`。
@@ -177,6 +223,9 @@ Mandelbulb 是逐像素 raymarch（每步 4 次 DE + 更细的 3 次梯度采样
 Mountains 每帧要跑 4 个阶段——Buffer B 是 5 个 octave × 16 个 Phacelle cell 的侵蚀滤波，
 Image 是 96 步 × 4 次手写双线性采样（float32 缓冲不可硬件过滤）。960×540 下仍可交互，
 但别拿它当性能基准。
+Quartz cave 也是 5 个阶段，但主要负载在 Buffer B：逐像素闭式求交（6 个晶体 × 12 个半空间、
+12 块岩石、光柱 erf 积分、尘埃 DDA），外加最后一次 per-wavelength 的色散重放。没有光线步进，
+比 Mandelbulb 轻，但比 Seascape 重不少。
 `sprite-shader.scn` 同屏跑**两个**作品（各一张离屏纹理），负载是两者之和；它也是
 "同一份 WGSL 既做全屏背景、又做精灵"的例子。
 
@@ -194,8 +243,8 @@ Image 是 96 步 × 4 次手写双线性采样（float32 缓冲不可硬件过�
   直接加载源码，`render.ShaderGraph` 直接读 program JSON + 各阶段 `.wgsl`；
   改完无需重编引擎；这正是"引擎即浏览器、游戏即资源"的演示——
   换一个 `.scn` / `.wgsl` 就是一个新 demo。
-- 因此仓库中**不存在** `assets/builtin/shaders/seascape/`、`assets/builtin/shaders/mandelbulb/`
-  或 `assets/builtin/shaders/mountains/`。
+- 因此仓库中**不存在** `assets/builtin/shaders/seascape/`、`assets/builtin/shaders/mandelbulb/`、
+  `assets/builtin/shaders/mountains/` 或 `assets/builtin/shaders/quartz/`。
 
 ## 如何修改
 
@@ -220,3 +269,11 @@ Image 是 96 步 × 4 次手写双线性采样（float32 缓冲不可硬件过�
   相机在 `common.wgsl` 的 `CAMERA_DIST/FOV/ANGLE/ELEVATION/LOOKAT` 与 `TIME_CAM_SPIN`；
   初始地形笔刷在 `buffer_a.wgsl`（首帧的居中凸起，`0.35` 是笔刷半径）。
   缓冲分辨率在 `mountains/program.json` 的 `buffers[].size`（正方形；越大越清晰也越慢）。
+- 改 Quartz cave：**全部开关在 `quartz/common.wgsl`**（原作 Common 标签页顶部）——
+  `DISPERSION`（1 = 物理石英，5 = 更宽的彩虹）、`NLAMBDA`、`BOUNCES`、`CRACKS`、
+  `CAUSTICS`、`DUST*`、`STARS`/`STAR_*`/`LEN_*`/`SRC_GLOW`、`SHAFT_BRIGHT`、
+  `SUN_SWAY`/`CAM_SWAY`、`ZOOM_IN`、`EXPOSURE`、`AA`（2 = 每轴两采样，四倍代价）、`TIME_SPEED`。
+  晶体形状/位置在 `buffer_b.wgsl` 的 `cry(i)`（轴向、半径、柱高、锥高、底部），
+  岩石在 `bould(i)` 与 `BSQ`，太阳/环境色在文件顶部（`SUNE`/`SUNCOL`/`SKY_L`/`AMBC`/`ABSORB`/`HAZE`）。
+  缓冲分辨率在 `quartz/program.json` 的 `buffers[].width/height`（`scene` 越大越清晰也越慢；
+  `cells` 的宽高由 `STAR_ROWS` 决定，改 `STAR_ROWS` 时要同步改 `cells` 的 `height`）。

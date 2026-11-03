@@ -1,0 +1,16 @@
+{
+  "title": "quartz_cave",
+  "width": 960,
+  "height": 540,
+  "entities": [
+    {
+      "name": "quartz_cave",
+      "components": [
+        {
+          "type": "render.ShaderGraph",
+          "program": "quartz/program.json"
+        }
+      ]
+    }
+  ]
+}

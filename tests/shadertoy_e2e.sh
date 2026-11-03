@@ -424,6 +424,131 @@ PY
     echo "shadertoy_e2e: [graph-sprite] ⑤ 精灵形态 = ShaderSprite.shader 指向 program.json OK"
 }
 
+# ⑧ quartz cave（render.ShaderGraph，5 阶段 / 4 缓冲，其中 3 个是**非方形**缓冲）：
+#    `quartz_cave.scn` = 960x540，program.json 声明
+#      state 1x6（拖拽状态，自反馈）→ scene 960x540（HDR 渲染）→ cells 64x24（光照单元）
+#      → centres 6x1（最亮光心）→ image（tone map + 星芒）。
+#    断言：加载行 + 5 阶段无报错 / 960x540 结构（颜色多样、非平坦、顶部暗于底部：洞顶暗、
+#    岩石地面亮）/ frame 1 vs 120 有动画 / 同帧逐字节确定性 /
+#    鼠标拖拽真的通过自反馈缓冲改变了视角（MAQUE_SIM 按下拖动 vs 不注入）/
+#    阶段与 program 都是场景资源（非内建 shader）。
+#    这节同时是「非方形中间缓冲（width/height）」的唯一回归。
+check_quartz_scene() {
+    local scn="$ROOT/scenes/shadertoy/quartz_cave.scn"
+    local prog="$ROOT/scenes/shadertoy/quartz/program.json"
+    local d="$WORK/quartz"
+    [ -f "$scn" ] || { echo "shadertoy_e2e: SKIP quartz（场景未入库）"; return 0; }
+    mkdir -p "$d"
+    echo "shadertoy_e2e: ---- [quartz] $scn"
+    [ -f "$prog" ] || fail "[quartz] 缺 $prog"
+    [ ! -e "$ROOT/assets/builtin/shaders/quartz" ] \
+        || fail "[quartz] 不得是内建 shader（assets/builtin/shaders/quartz 存在）"
+    grep -q "render.ShaderGraph" "$scn" || fail "[quartz] 场景未挂 render.ShaderGraph 组件"
+    grep -q "quartz/program.json" "$scn" || fail "[quartz] 场景未引用 quartz/program.json"
+    [ -f "$ROOT/scenes/shadertoy/quartz/common.wgsl" ] || fail "[quartz] 缺共享源码 common.wgsl"
+    grep -q "common.wgsl" "$prog" || fail "[quartz] program.json 未引用 common.wgsl"
+    grep -q '"width"' "$prog" || fail "[quartz] program.json 未使用非方形缓冲（width/height）"
+    for f in buffer_a buffer_b buffer_c buffer_d image; do
+        [ -f "$ROOT/scenes/shadertoy/quartz/$f.wgsl" ] || fail "[quartz] 缺阶段源码 $f.wgsl"
+        grep -q "fs_main" "$ROOT/scenes/shadertoy/quartz/$f.wgsl" \
+            || fail "[quartz] $f.wgsl 缺 fragment 入口 fs_main"
+        grep -q "$f.wgsl" "$prog" || fail "[quartz] program.json 未引用 $f.wgsl"
+    done
+
+    # ① 离屏渲染：加载行 + 5 个阶段 + 截图
+    timeout 240 "$PLAYER" --shot "$d/f1.ppm" --frames 2 "$scn" >"$d/run1.txt" 2>&1 \
+        || { cat "$d/run1.txt"; fail "[quartz] 场景运行/截图失败（退出码非 0）"; }
+    grep -q "shader graph .*quartz/program.json.*passes=5.*buffers=4" "$d/run1.txt" \
+        || { cat "$d/run1.txt"; fail "[quartz] 缺 shader graph 加载行 / 阶段或缓冲数不对（应 5 阶段 4 缓冲）"; }
+    if grep -qE "shader graph.*(失败|未找到|编译失败|error|missing)" "$d/run1.txt"; then
+        cat "$d/run1.txt"; fail "[quartz] 阶段加载/编译报错"
+    fi
+    grep -q "runtime: shot" "$d/run1.txt" || { cat "$d/run1.txt"; fail "[quartz] 截图未写入"; }
+
+    "$PY" - "$d/f1.ppm" <<'PY' || fail "[quartz] PPM 结构断言失败"
+import sys
+d = open(sys.argv[1], 'rb').read()
+magic, dims, _max, px = d.split(b'\n', 3)
+assert magic == b'P6', magic
+w, h = map(int, dims.split())
+assert (w, h) == (960, 540), (w, h)
+n = w * h
+def lum(i):
+    return 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
+lums = [lum(i) for i in range(0, len(px), 3)]
+mean = sum(lums) / n
+sd = (sum((v - mean) ** 2 for v in lums) / n) ** 0.5
+colors = set((px[i] >> 3, px[i + 1] >> 3, px[i + 2] >> 3) for i in range(0, len(px), 3))
+nonflat = sum(1 for v in lums if abs(v - mean) > 10) / n
+# 洞顶（上 1/6）暗、湿岩地面（下 1/6）亮：晶体簇从暗洞顶里被光柱照亮
+top = sum(lums[y * w + x] for y in range(h // 6) for x in range(0, w, 2))
+top_n = (h // 6) * len(range(0, w, 2))
+bottom = sum(lums[y * w + x] for y in range(h - h // 6, h) for x in range(0, w, 2))
+bottom_n = (h // 6) * len(range(0, w, 2))
+top_m, bottom_m = top / top_n, bottom / bottom_n
+print(f'  [quartz] {w}x{h} colors={len(colors)} sd={sd:.1f} nonflat={nonflat:.3f} '
+      f'top={top_m:.1f} bottom={bottom_m:.1f}')
+ok = (len(colors) >= 300 and sd > 10.0 and nonflat > 0.5)
+ok = ok and top_m < bottom_m - 5.0
+sys.exit(0 if ok else 1)
+PY
+    echo "shadertoy_e2e: [quartz] ① 离屏 5 阶段（960x540 / 颜色多样 / 非平坦 / 洞顶暗于地面）OK"
+
+    # ② 动画：太阳漂移 + 尘埃（frame 1 vs 120）
+    timeout 240 "$PLAYER" --shot "$d/f120.ppm" --shot-frame 120 "$scn" >"$d/run120.txt" 2>&1 \
+        || { cat "$d/run120.txt"; fail "[quartz] 第 120 帧截图失败"; }
+    "$PY" - "$d/f1.ppm" "$d/f120.ppm" <<'PY' || fail "[quartz] 动画像素差不足（time 未推进）"
+import sys
+def load(p):
+    d = open(p, 'rb').read(); magic, dims, _m, px = d.split(b'\n', 3)
+    assert magic == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+diff = sum(1 for i in range(0, len(a), 3)
+           if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12)
+ratio = diff / (w * h)
+print(f'  [quartz] frame1 vs frame120 diff={diff} ({ratio:.3f})')
+sys.exit(0 if ratio > 0.05 else 1)
+PY
+    echo "shadertoy_e2e: [quartz] ② 动画（太阳漂移 + 尘埃，frame 1 vs 120）OK"
+
+    # ③ 确定性：同一帧跑两次逐字节一致
+    timeout 240 "$PLAYER" --shot "$d/f120b.ppm" --shot-frame 120 "$scn" >"$d/run120b.txt" 2>&1 \
+        || { cat "$d/run120b.txt"; fail "[quartz] 第 120 帧第二次截图失败"; }
+    cmp -s "$d/f120.ppm" "$d/f120b.ppm" \
+        || fail "[quartz] 同一帧两次渲染不一致（确定性破坏：多阶段/自反馈不得依赖墙钟）"
+    echo "shadertoy_e2e: [quartz] ③ 确定性（同帧两次逐字节一致）OK"
+
+    # ④ 指针通路：MAQUE_SIM 拖拽 → 相机绕着晶体转，画面必须有可见差异
+    #    （验证 state 缓冲的自反馈：拖拽偏移跨帧保留、image 复用它）
+    local sim="$ROOT/tests/data/sim/quartz_orbit.sim.json"
+    if [ -f "$sim" ]; then
+        MAQUE_SIM="$sim" timeout 240 "$PLAYER" --shot "$d/orbit.ppm" --shot-frame 70 "$scn" \
+            >"$d/orbit.txt" 2>&1 || { cat "$d/orbit.txt"; fail "[quartz] 注入拖拽后运行失败"; }
+        timeout 240 "$PLAYER" --shot "$d/base.ppm" --shot-frame 70 "$scn" >"$d/base.txt" 2>&1 \
+            || { cat "$d/base.txt"; fail "[quartz] 基准帧截图失败"; }
+        "$PY" - "$d/orbit.ppm" "$d/base.ppm" <<'PY' || fail "[quartz] 拖拽没有改变视角（自反馈/指针通路未生效）"
+import sys
+def load(p):
+    d = open(p, 'rb').read(); magic, dims, _m, px = d.split(b'\n', 3)
+    assert magic == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+diff = sum(1 for i in range(0, len(a), 3)
+           if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12)
+ratio = diff / (w * h)
+print(f'  [quartz] orbit vs base diff={diff} ({ratio:.3f})')
+sys.exit(0 if ratio > 0.2 else 1)
+PY
+        echo "shadertoy_e2e: [quartz] ④ 拖拽环绕（state 自反馈缓冲 + 指针 uniform）OK"
+    else
+        echo "shadertoy_e2e: SKIP [quartz] 拖拽环绕（缺 $sim）"
+    fi
+    echo "shadertoy_e2e: [quartz] ⑤ 场景资源（program.json + 5 个 .wgsl，非内建 shader）OK"
+}
+
 # 主场景（CTest 参数）= seascape；mandelbulb 由 shaderport 并行产出，缺失时只 SKIP 该节。
 check_scene seascape "$SCN" "$ROOT/scenes/shadertoy/seascape.wgsl" 1
 if [ -f "$ROOT/scenes/shadertoy/mandelbulb.scn" ] && [ -f "$ROOT/scenes/shadertoy/mandelbulb.wgsl" ]; then
@@ -435,5 +560,6 @@ fi
 check_sprite_scene
 check_graph_scene
 check_graph_sprite_scene
+check_quartz_scene
 
 echo "shadertoy_e2e: PASS"

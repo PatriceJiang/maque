@@ -1,0 +1,45 @@
+{
+  "buffers": [
+    { "name": "state",   "width": 1,   "height": 6 },
+    { "name": "scene",   "width": 960, "height": 540 },
+    { "name": "cells",   "width": 64,  "height": 24 },
+    { "name": "centres", "width": 6,   "height": 1 }
+  ],
+  "passes": [
+    {
+      "name": "buffer_a",
+      "shader": "buffer_a.wgsl",
+      "common": "common.wgsl",
+      "target": "state",
+      "channels": ["self", "", "", ""]
+    },
+    {
+      "name": "buffer_b",
+      "shader": "buffer_b.wgsl",
+      "common": "common.wgsl",
+      "target": "scene",
+      "channels": ["state", "", "", ""]
+    },
+    {
+      "name": "buffer_c",
+      "shader": "buffer_c.wgsl",
+      "common": "common.wgsl",
+      "target": "cells",
+      "channels": ["", "scene", "", ""]
+    },
+    {
+      "name": "buffer_d",
+      "shader": "buffer_d.wgsl",
+      "common": "common.wgsl",
+      "target": "centres",
+      "channels": ["", "", "cells", ""]
+    },
+    {
+      "name": "image",
+      "shader": "image.wgsl",
+      "common": "common.wgsl",
+      "target": "screen",
+      "channels": ["", "scene", "", "centres"]
+    }
+  ]
+}
