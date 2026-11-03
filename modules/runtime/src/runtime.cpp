@@ -5481,6 +5481,11 @@ void Engine::extract_3d(int32_t tw, int32_t th,
 
     mq_renderer_view3d v{};
     if (camera_entity >= 0 && !has_cam) return;       /* RenderTexture 必须由同节点的有效 Camera3D 驱动 */
+    /* 纯 shader-pass / 纯 2D 场景（无 Camera3D / MeshRenderer）**不要合成默认相机 view**：
+     * gfx 的 3D pass 会按 view 的 clear_color 覆盖自己的 viewport —— 对纯 shader 场景就是把
+     * 全屏 `render.ShaderPass` 背景整块擦成背景色（表现为 shader 只剩画布外一圈、或整屏纯背景色）。
+     * 不产出 view（view_count=0）时 gfx 直接跳过 3D pass，scene shader pass 就是整幅画面。 */
+    if (camera_entity < 0 && !has_3d) return;
     /* 相机 view 由**世界矩阵**派生（plans/22 §6.3）：默认相机 / 平级场景与旧 m4_view(trs) 逐字节一致 */
     if (!has_cam_wm) m4_from_trs(cam_trs, cam_wm);
     float view[16], proj[16];
