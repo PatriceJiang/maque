@@ -1,0 +1,21 @@
+{
+  "title": "sprite-shader",
+  "width": 640,
+  "height": 360,
+  "entities": [
+    {
+      "name": "mandelbulb_sprite",
+      "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 180 },
+        { "type": "render.ShaderSprite", "shader": "mandelbulb.wgsl", "width": 312, "height": 344 }
+      ]
+    },
+    {
+      "name": "seascape_sprite",
+      "components": [
+        { "type": "scn.Transform2D", "x": 480, "y": 180 },
+        { "type": "render.ShaderSprite", "shader": "seascape.wgsl", "width": 312, "height": 344 }
+      ]
+    }
+  ]
+}

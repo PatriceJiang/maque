@@ -882,9 +882,11 @@ struct Engine {
     bool load_gclip(const std::string& path);      /* .clip.json → gclips[path]（失败缓存 failed） */
     void anim_step_gclip(int entity, const mq_type_desc* d, std::vector<uint8_t>& blob, float dt);
     bool apply_morph(const std::string& path, const std::vector<float>& weights);
-    /* 场景资源全屏 shader pass（docs/13）：shader = 场景目录里的 .wgsl（**不是** builtin shader）。
-     * 每个实体最多一个 render.ShaderPass；顺序 = 实体 id 序（确定性）。 */
-    struct LoadedShaderPass { int entity = -1; int32_t handle = -1; };
+    /* 场景资源 shader（docs/13）：shader = 场景目录里的 .wgsl（**不是** builtin shader）。
+     * sprite=false → render.ShaderPass（全屏背景层）；sprite=true → render.ShaderSprite（2D 精灵）。
+     * 每个实体最多一个组件；顺序 = 实体 id 序（确定性）。 */
+    struct LoadedShaderPass { int entity = -1; int32_t handle = -1; bool sprite = false; };
+    /* 任一 render.ShaderPass / render.ShaderSprite：决定走 frame3d 通路、并视为"画面动态"。 */
     bool has_shader_pass = false;
     std::vector<LoadedShaderPass> loaded_shader_passes;
     /* 3D OrbitControls（鼠标拖拽环绕 + 滚轮缩放；在场景相机之上覆盖；MAQUE_ORBIT=yaw,pitch,dist 供 CI） */
@@ -963,11 +965,13 @@ struct Engine {
     void main_loop(const std::string& frames_dir, const std::string& name);
     /* M2 3D：扫描 render.* 组件 + 上传内建 cube；每帧提取 frame3d 数据（只读）。 */
     void setup_3d();
-    /* 场景资源全屏 shader pass（docs/13）：加载 .wgsl → create_shader_pass；每帧推进 time/提取。 */
+    /* 场景资源 shader（docs/13）：加载 .wgsl → create_shader_pass；每帧推进 time/提取。
+     * 全屏 pass（render.ShaderPass）→ 背景层；精灵（render.ShaderSprite）→ 2D 图层矩形。 */
     void setup_shader_passes();
     void destroy_shader_passes();
     void shader_pass_step(float dt);
     void extract_shader_passes(std::vector<mq_renderer_shader_pass>& out);
+    void extract_shader_sprites(std::vector<mq_renderer_shader_sprite>& out);
     void extract_3d(int32_t tw, int32_t th,
                     std::vector<mq_renderer_view3d>& out_views,
                     std::vector<mq_renderer_light>& out_lights,
@@ -4714,34 +4718,40 @@ void Engine::setup_shader_passes() {
     ids.reserve(scene->ents.size());
     for (auto& kv : scene->ents) ids.push_back(kv.first);
     std::sort(ids.begin(), ids.end());            // unordered_map 顺序不可依赖（确定性）
-    for (int id : ids) {
-        const mq_type_desc* d = nullptr;
-        auto* blob = comp_by_name(*this, id, "render.ShaderPass", &d);
-        if (!blob || !d) continue;
-        const std::string* path = read_str(d, blob->data(), "shader");
-        if (!path || path->empty()) continue;
-        void* src = nullptr;
-        size_t n = 0;
-        const std::string vpath = "/" + *path;
-        if (mq_vfs_read(vfs, vpath.c_str(), &src, &n) != MQ_VFS_OK || !src || n == 0) {
-            std::print(stderr, "runtime: shader pass '{}' 未找到（相对场景目录，经 VFS 读取）\n", *path);
-            if (src) mq_vfs_free(src);
-            continue;
+    /* 两种组件共用同一套加载/编译路径：全屏 pass 与 shader 精灵只是在 gfx 侧的绘制方式不同。 */
+    auto load = [&](const char* type, bool sprite) {
+        for (int id : ids) {
+            const mq_type_desc* d = nullptr;
+            auto* blob = comp_by_name(*this, id, type, &d);
+            if (!blob || !d) continue;
+            const std::string* path = read_str(d, blob->data(), "shader");
+            if (!path || path->empty()) continue;
+            void* src = nullptr;
+            size_t n = 0;
+            const std::string vpath = "/" + *path;
+            if (mq_vfs_read(vfs, vpath.c_str(), &src, &n) != MQ_VFS_OK || !src || n == 0) {
+                std::print(stderr, "runtime: {} '{}' 未找到（相对场景目录，经 VFS 读取）\n",
+                           sprite ? "shader sprite" : "shader pass", *path);
+                if (src) mq_vfs_free(src);
+                continue;
+            }
+            std::string wgsl((const char*)src, n);
+            mq_vfs_free(src);
+            int32_t handle = -1;
+            const int32_t rc = rapi->create_shader_pass(rself, wgsl.c_str(), &handle);
+            if (rc != 0 || handle < 0) {
+                std::print(stderr, "runtime: {} '{}' 编译失败 rc={}"
+                                   "（需 @fragment fs_main + group0 binding0 的 32B uniform，见 docs/13）\n",
+                           sprite ? "shader sprite" : "shader pass", *path, (int)rc);
+                continue;
+            }
+            loaded_shader_passes.push_back({ id, handle, sprite });
+            std::print("runtime: {} '{}' loaded (entity={}, id={})\n",
+                       sprite ? "shader sprite" : "shader pass", *path, id, (long long)handle);
         }
-        std::string wgsl((const char*)src, n);
-        mq_vfs_free(src);
-        int32_t handle = -1;
-        const int32_t rc = rapi->create_shader_pass(rself, wgsl.c_str(), &handle);
-        if (rc != 0 || handle < 0) {
-            std::print(stderr, "runtime: shader pass '{}' 编译失败 rc={}"
-                               "（需 @fragment fs_main + group0 binding0 的 32B uniform，见 docs/13）\n",
-                       *path, (int)rc);
-            continue;
-        }
-        loaded_shader_passes.push_back({ id, handle });
-        std::print("runtime: shader pass '{}' loaded (entity={}, id={})\n",
-                   *path, id, (long long)handle);
-    }
+    };
+    load("render.ShaderPass", false);
+    load("render.ShaderSprite", true);
     has_shader_pass = !loaded_shader_passes.empty();
 }
 
@@ -4752,15 +4762,17 @@ void Engine::shader_pass_step(float dt) {
     for (auto& kv : scene->ents) ids.push_back(kv.first);
     std::sort(ids.begin(), ids.end());
     for (int id : ids) {
-        const mq_type_desc* d = nullptr;
-        auto* blob = comp_by_name(*this, id, "render.ShaderPass", &d);
-        if (!blob || !d) continue;
-        if (read_num(d, blob->data(), "paused", 0.0F) >= 0.5F) continue;
-        const float speed = read_num(d, blob->data(), "speed", 1.0F);
-        if (speed == 0.0F) continue;
-        const float time = read_num(d, blob->data(), "time", 0.0F) + dt * speed;
-        if (const mq_field_desc* f = mq_reflect_field(d, "time"))
-            *(float*)(blob->data() + f->offset) = time;
+        for (const char* type : { "render.ShaderPass", "render.ShaderSprite" }) {
+            const mq_type_desc* d = nullptr;
+            auto* blob = comp_by_name(*this, id, type, &d);
+            if (!blob || !d) continue;
+            if (read_num(d, blob->data(), "paused", 0.0F) >= 0.5F) continue;
+            const float speed = read_num(d, blob->data(), "speed", 1.0F);
+            if (speed == 0.0F) continue;
+            const float time = read_num(d, blob->data(), "time", 0.0F) + dt * speed;
+            if (const mq_field_desc* f = mq_reflect_field(d, "time"))
+                *(float*)(blob->data() + f->offset) = time;
+        }
     }
 }
 
@@ -4773,6 +4785,7 @@ void Engine::extract_shader_passes(std::vector<mq_renderer_shader_pass>& out) {
     const float mx = (canvas.offset_x + mouse_x * canvas.scale_x) * rx;
     const float my = (canvas.offset_y + ((float)H - mouse_y) * canvas.scale_y) * ry;
     for (const auto& p : loaded_shader_passes) {
+        if (p.sprite) continue;                       /* 精灵走 extract_shader_sprites（2D 图层） */
         const mq_type_desc* d = nullptr;
         auto* blob = comp_by_name(*this, p.entity, "render.ShaderPass", &d);
         if (!blob || !d) continue;
@@ -4784,6 +4797,55 @@ void Engine::extract_shader_passes(std::vector<mq_renderer_shader_pass>& out) {
         sp.mouse[0] = mx;
         sp.mouse[1] = my;
         out.push_back(sp);
+    }
+}
+
+/* shader 精灵 → 2D 图元式记录（位置/尺寸/旋转/透明度语义与 scn.Sprite 一致）。
+ * 位置是**设计坐标**（中心；y 已翻到屏幕向下），尺寸含节点 scale；gfx 据此先渲染离屏纹理、
+ * 再当普通带纹理矩形合成，因此画布缩放/letterbox/旋转/图层顺序都走既有 2D 通路。 */
+void Engine::extract_shader_sprites(std::vector<mq_renderer_shader_sprite>& out) {
+    out.clear();
+    if (!scene || loaded_shader_passes.empty()) return;
+    /* F4「2D/UI 图层」开关只隐藏游戏层：shader 精灵是 2D 图元，一并隐藏（时间仍照常推进）。 */
+    if (!opt_2d_enabled) return;
+    for (const auto& p : loaded_shader_passes) {
+        if (!p.sprite) continue;
+        Entity* e = scene->at(p.entity);
+        if (!e) continue;
+        const mq_type_desc* d = nullptr;
+        auto* blob = comp_by_name(*this, p.entity, "render.ShaderSprite", &d);
+        if (!blob || !d) continue;
+        if (read_num(d, blob->data(), "enabled", 1.0F) < 0.5F) continue;
+        if (!node_active_effective(*this, p.entity)) continue;
+        float w = 64.0F, h = 64.0F;
+        read_f32(d, blob->data(), "width", &w);
+        read_f32(d, blob->data(), "height", &h);
+        if (w <= 0.0F || h <= 0.0F) continue;
+        float node_angle = 0.0F, node_scale = 1.0F, node_opacity = 1.0F;
+        accumulate_node_attrs(*this, p.entity, node_angle, node_scale, node_opacity);
+        const float half_w = w * 0.5F * node_scale;
+        const float half_h = h * 0.5F * node_scale;
+        const float alpha = std::clamp(node_opacity, 0.0F, 1.0F);
+        if (alpha <= 0.0F) continue;
+        mq_renderer_shader_sprite s{};
+        s.shader = p.handle;
+        s.z = p.entity;                              /* 稳定序（与 2D 图元的 z = 实体 id 一致） */
+        s.x = e->world_x;
+        s.y = (float)H - e->world_y;                 /* 世界 y 向上 → 屏幕 y 向下 */
+        s.half_w = half_w;
+        s.half_h = half_h;
+        s.rotation = -node_angle * 3.14159265358979323846F / 180.0F;
+        s.a = alpha;
+        s.time = read_num(d, blob->data(), "time", 0.0F);
+        s.frame = (float)frame;
+        /* 指针：世界坐标 → 精灵内局部**设计像素**（原点左上）。在矩形外 → 0（shader 的鼠标语义）。 */
+        const float lx = mouse_x - (e->world_x - half_w);
+        const float ly = (e->world_y + half_h) - mouse_y;
+        if (lx >= 0.0F && ly >= 0.0F && lx <= 2.0F * half_w && ly <= 2.0F * half_h) {
+            s.mouse[0] = lx;
+            s.mouse[1] = ly;
+        }
+        out.push_back(s);
     }
 }
 
@@ -5962,6 +6024,9 @@ void Engine::step_frame(bool render_frame) {
         stat_calls = stat_ui_calls + stat_3d_calls;
         std::vector<mq_renderer_shader_pass> passes3d;
         extract_shader_passes(passes3d);
+        /* shader 精灵（docs/13）：2D 图元式记录，gfx 侧先离屏渲染再合成（与 item 同层排序）。 */
+        std::vector<mq_renderer_shader_sprite> sprites3d;
+        extract_shader_sprites(sprites3d);
         mq_renderer_frame3d fr{};
         fr.width = TW;
         fr.height = SHpx;
@@ -5974,6 +6039,7 @@ void Engine::step_frame(bool render_frame) {
         fr.items = draws.data(); fr.item_count = (uint32_t)draws.size();
         fr.meshes = spine_meshes.data(); fr.mesh_count = (uint32_t)spine_meshes.size();
         fr.passes = passes3d.data(); fr.pass_count = (uint32_t)passes3d.size();
+        fr.shader_sprites = sprites3d.data(); fr.shader_sprite_count = (uint32_t)sprites3d.size();
         fr.present_x = 0;
         fr.present_y = 0;
         fr.present_w = 0;                         /* 0 = 整个 surface；目标等于屏幕时可直接渲染 */

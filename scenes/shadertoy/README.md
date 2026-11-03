@@ -10,6 +10,7 @@
 | `seascape.scn` | 场景：640×360，单个实体挂 `render.ShaderPass`，`shader` 相对场景目录 |
 | `mandelbulb.wgsl` | Mandelbulb 的全屏 fragment shader（同上） |
 | `mandelbulb.scn` | 场景：640×360，`render.ShaderPass → mandelbulb.wgsl` |
+| `sprite-shader.scn` | 场景：640×360，左右两块 `render.ShaderSprite`（左 mandelbulb / 右 seascape） |
 | `README.md` | 本文件 |
 
 ## 作品与许可
@@ -71,8 +72,30 @@ shader 文件侧必须满足：
 3. `frag_coord` 是 WebGPU 帧缓冲坐标（**原点左上、y 向下**）；Shadertoy 的 `fragCoord`
    原点左下、y 向上 → 想与 Shadertoy 画面一致就在 shader 里翻 y：
    `vec2f(fc.x, resolution.y - fc.y)`（两个文件都已这么做）。
-4. 只画背景层（先于 3D/2D）；纯 shader 场景（无 3D 组件）也走这条通路。
+4. `render.ShaderPass` 只画背景层（先于 3D/2D）；纯 shader 场景（无 3D 组件）也走这条通路。
 5. 失败语义：文件缺失 / WGSL 编译失败 → stderr 明确报错，场景其余部分照常运行，不崩溃。
+
+## shader 精灵（`render.ShaderSprite`）
+
+同一份 `.wgsl` 也可以只画在**节点矩形**里（2D 精灵），一个场景放多块——`sprite-shader.scn` 就是
+左右并排两块：左 `mandelbulb.wgsl`、右 `seascape.wgsl`：
+
+```json
+{ "name": "left", "components": [
+    { "type": "scn.Transform2D", "x": 160, "y": 180 },
+    { "type": "render.ShaderSprite", "shader": "mandelbulb.wgsl", "width": 312, "height": 344 } ] }
+```
+
+| 字段 | 默认 | 说明 |
+|------|------|------|
+| `shader` | `""` | 同上（相对场景目录） |
+| `width` / `height` | `64` | 精灵尺寸（设计像素，节点 `scale` 再乘） |
+| `speed` / `paused` / `enabled` / `time` | 同 `render.ShaderPass` | 独立的 time 推进 |
+
+**WGSL 契约完全不变**（还是 `fs_main` + 32B uniform）：只是 `resolution` 变成该精灵离屏纹理的像素
+尺寸、`frag_coord` 从该纹理左上起算、`mouse.xy` 是精灵内局部像素。引擎先把精灵渲染到离屏纹理，
+再当普通带纹理矩形并入 2D 图元批次，所以位置/旋转/画布缩放/letterbox/图层序都和 `scn.Sprite` 一致。
+详见 `docs/13-渲染（WebGPU）.md` §场景自定义 shader 精灵。
 
 ## 运行
 
@@ -80,6 +103,8 @@ shader 文件侧必须满足：
 # 有窗口（默认 SDL 呈现）
 .\build-win\samples\player\maque_player.exe scenes\shadertoy\seascape.scn
 .\build-win\samples\player\maque_player.exe scenes\shadertoy\mandelbulb.scn
+# 两块 shader 精灵并排（同一份 WGSL 契约，画在节点矩形里）
+.\build-win\samples\player\maque_player.exe scenes\shadertoy\sprite-shader.scn
 
 # 无窗口（CI / 无显示环境）：仍会渲染，但不出窗口
 $env:MAQUE_WINDOW='0x0'
@@ -102,6 +127,8 @@ Linux/macOS 把 `.\build-win\...` 换成 `./build/samples/player/maque_player`�
 两个 shader 的负载差别很大：Seascape 是少量 noise/高度图求交（很快）；
 Mandelbulb 是逐像素 raymarch（每步 4 次 DE + 更细的 3 次梯度采样 + 阴影光线），
 在集显上也明显更慢——640×360 下仍可交互，但别拿它当性能基准。
+`sprite-shader.scn` 同屏跑**两个**作品（各一张离屏纹理），负载是两者之和；它也是
+"同一份 WGSL 既做全屏背景、又做精灵"的例子。
 
 ## 为什么 shader 放在 `scenes/` 而不是 `assets/builtin/shaders/`？
 
@@ -109,7 +136,8 @@ Mandelbulb 是逐像素 raymarch（每步 4 次 DE + 更细的 3 次梯度采样
   `cmake/shader_pack.cmake` 打包、运行时按注册表取用，并可按 shader 名裁剪
   （`-DMAQUE_SHADER_XXX=OFF`）。把 demo 放进去会让它进入引擎构建/二进制与注册表，
   属于"引擎资产"而不是"游戏资产"。
-- 本目录的 shader 是**场景资源**：路径相对场景目录、由 `render.ShaderPass` 直接加载源码，
+- 本目录的 shader 是**场景资源**：路径相对场景目录、由 `render.ShaderPass` / `render.ShaderSprite`
+  直接加载源码，
   改完无需重编引擎；这正是"引擎即浏览器、游戏即资源"的演示——
   换一个 `.scn` / `.wgsl` 就是一个新 demo。
 - 因此仓库中**不存在** `assets/builtin/shaders/seascape/` 与 `assets/builtin/shaders/mandelbulb/`。

@@ -284,6 +284,23 @@
         - { name: time,   type: float }             # 组件 time（秒）
         - { name: frame,  type: float }             # 帧号
         - { name: mouse,  type: "float[4]" }        # xy = 目标像素（原点左上，与 frag_coord 同向）；zw 预留
+    # 场景资源的「shader 精灵」（docs/13）：与 shader_pass 同一份 WGSL 契约，但画在节点矩形里。
+    # 位置/尺寸是 **2D 设计坐标**（与 mq_renderer_item 同语义：中心 + 半尺寸 + 弧度旋转）；
+    # gfx 先把它渲染到一张 w×h 的离屏纹理（resolution = 该纹理像素尺寸），
+    # 再作为普通 2D 图元（带纹理的矩形）合成 → 跟随 Canvas 缩放/letterbox/旋转。
+    - record: shader_sprite
+      fields:
+        - { name: shader,   type: int32_t }
+        - { name: z,        type: int32_t }         # 同层 z-order（与 item 一致，稳定排序）
+        - { name: x,        type: float }           # 设计坐标：中心
+        - { name: y,        type: float }           # 设计坐标：屏幕 y（向下）
+        - { name: half_w,   type: float }
+        - { name: half_h,   type: float }
+        - { name: rotation, type: float }           # 弧度
+        - { name: a,        type: float }           # 透明度（<=0 跳过）
+        - { name: time,     type: float }
+        - { name: frame,    type: float }
+        - { name: mouse,    type: "float[4]" }      # xy = 精灵内局部像素（原点左上，设计像素）；zw 预留
     # 一帧 3D + 2D 覆盖层：非空 out = 离屏渲染并回读；空 out = 直接呈现到窗口。
     - record: frame3d
       fields:
@@ -330,6 +347,10 @@
         # out 非空时仍把同一离屏结果 blit 到 surface 并由调用方 present；Inspector 实时预览用。
         # 0 = 纯离屏回读（截图）；1 = 回读 + 呈现。尾部追加，旧调用方默认 0。
         - { name: present_after_readback, type: int32_t }
+        # 场景资源「shader 精灵」（尾部追加）：与 2D 图元同层排序、跟随 Canvas 变换。
+        # 空/0 = 无。gfx 先把每个精灵的 WGSL 渲染到离屏纹理，再当普通带纹理矩形合成。
+        - { name: shader_sprites,       type: "const mq_renderer_shader_sprite*" }
+        - { name: shader_sprite_count,  type: uint32_t }
     # 持久可采样离屏目标描述；独立 struct_size 允许将来在记录尾部安全扩展。
     # 首版仅支持 2D、单 mip；usage 固定包含 sampled/color-attachment/copy-src。
     - record: render_texture_desc

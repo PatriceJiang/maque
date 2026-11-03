@@ -2046,6 +2046,16 @@ struct ShaderPass {
     float time = 0.0F;
 };
 
+struct ShaderSprite {
+    std::string shader = "";
+    float width = 64.0F;
+    float height = 64.0F;
+    float speed = 1.0F;
+    bool paused = false;
+    bool enabled = true;
+    float time = 0.0F;
+};
+
 enum class ShadowCastMode : int32_t {
     Off         = 0,
     On          = 1,

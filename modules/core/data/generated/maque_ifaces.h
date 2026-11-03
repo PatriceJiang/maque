@@ -244,6 +244,20 @@ typedef struct mq_renderer_shader_pass {
     float mouse[4];
 } mq_renderer_shader_pass;
 
+typedef struct mq_renderer_shader_sprite {
+    int32_t shader;
+    int32_t z;
+    float x;
+    float y;
+    float half_w;
+    float half_h;
+    float rotation;
+    float a;
+    float time;
+    float frame;
+    float mouse[4];
+} mq_renderer_shader_sprite;
+
 typedef struct mq_renderer_frame3d {
     int32_t width;
     int32_t height;
@@ -277,6 +291,8 @@ typedef struct mq_renderer_frame3d {
     int32_t present_h;
     int32_t render_mode;
     int32_t present_after_readback;
+    const mq_renderer_shader_sprite* shader_sprites;
+    uint32_t shader_sprite_count;
 } mq_renderer_frame3d;
 
 typedef struct mq_renderer_render_texture_desc {

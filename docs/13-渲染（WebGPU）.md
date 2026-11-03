@@ -311,6 +311,65 @@ fragment 入口消费。
 回归测试：`ctest -R shadertoy_e2e`（逐 demo：640x360 离屏结构断言 + frame 1/60 差异 +
 同帧逐字节确定性 + WGSL 属场景资源而非内建 shader；单项 demo 缺失时该节 SKIP，不阻塞）。
 
+## 场景自定义 shader 精灵（render.ShaderSprite）
+
+`render.ShaderPass` 只能铺满整屏；**`render.ShaderSprite`** 把同一个 WGSL 画进**节点所在的矩形**
+——一枚由 shader 出图的 2D 精灵。典型用途：程序化头像/传送门/水面窗口/分屏对比，一个场景里放多块。
+
+```json
+{
+  "name": "left",
+  "components": [
+    { "type": "scn.Transform2D", "x": 160, "y": 180 },
+    { "type": "render.ShaderSprite", "shader": "mandelbulb.wgsl", "width": 312, "height": 344 }
+  ]
+}
+```
+
+### 组件字段（`render.ShaderSprite`）
+
+| 字段 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `shader` | string | `""` | WGSL 源文件路径，**相对场景目录**（与 `render.ShaderPass` 同一套 VFS 语义） |
+| `width` / `height` | float | `64` / `64` | 精灵尺寸（**设计像素**，单位 px）；节点 `scale` 再乘上去 |
+| `speed` | float | `1.0` | `time` 推进倍率 |
+| `paused` | bool | `false` | `true` = 冻结时间（仍绘制） |
+| `enabled` | bool | `true` | `false` = 不绘制 |
+| `time` | float | `0.0` | 运行期推进的秒数；脚本可读写 |
+
+### WGSL 契约：与全屏 pass **完全一致**
+
+同一份 `.wgsl` 既可以是 `render.ShaderPass`（铺满整屏）也可以是 `render.ShaderSprite`（只占矩形），
+不需要改一行 shader：入口仍是 `@fragment fs_main`，uniform 仍是 `group(0) binding(0)` 的 32B 结构。
+区别只在 `resolution` 的含义：
+
+| 通路 | `resolution` | `frag_coord` 原点 |
+|------|--------------|-------------------|
+| `render.ShaderPass` | 渲染目标像素尺寸 | 渲染目标左上 |
+| `render.ShaderSprite` | 该精灵**离屏纹理**像素尺寸（= 设计尺寸 × 视图缩放） | 该纹理左上（精灵内部坐标） |
+
+`mouse.xy` 同理是**精灵内局部像素**（指针不在精灵内时为 0）。因此 Shadertoy 的
+`fragCoord / resolution` 归一化在两种通路里都成立。
+
+### 绘制方式与限制
+
+- 两阶段：**① 每个精灵渲染到自己的离屏 RGBA8 纹理**（尺寸 = 设计尺寸 × 2D 视图缩放，窗口放大不糊）
+  → **② 作为带纹理矩形并入 2D 图元批次**。所以位置/旋转/节点缩放/画布 letterbox/图层 z 序
+  全部复用既有 2D 通路；`scn.Sprite` 怎么摆，它就怎么摆。
+- 与普通 2D 图元**同层排序**（`layer` 0 世界层，`z` = 实体 id 稳定序）；不受 3D 相机 clear 影响
+  （它在 2D 图层，绘制于 3D 之后）。
+- **time 推进进确定性**：`time += dt * speed`（模拟 dt），与全屏 pass 一致；快照/回放可读 `time`。
+- 限制：纹理只有 RGBA8、无 depth/混合状态（输出按不透明）；精灵内容**不支持旋转后的像素级重采样**
+  （旋转的是承载它的矩形，shader 看到的仍是自己的 uv 网格）；**不热重载 `.wgsl`**。
+- 每个精灵一张离屏纹理 + 一次全屏 draw；同屏几十个以上时先量性能（可用 `MAQUE_TRACE_STATS=1`）。
+
+### 示例：分屏对比（`scenes/shadertoy/sprite-shader.scn`）
+
+同一个 640x360 场景左右并排两块精灵：左 `mandelbulb.wgsl`、右 `seascape.wgsl`，中间留 16px 中缝
+（露出场景背景色）。回归：`ctest -R shadertoy_e2e` 的 `[sprite]` 一节——两条加载行、左右区域
+颜色多样且**左暖右冷**（证明是两个不同作品）、中缝是背景色（精灵没有铺满整屏）、frame 1/60 有动画、
+同帧两次逐字节一致。
+
 ## 后处理（PostEffect）
 
 **主输出阶段的后处理**：把 3D 层（场景 shader pass → 天空/3D）过一遍全屏 shader，再把 2D/UI 叠在

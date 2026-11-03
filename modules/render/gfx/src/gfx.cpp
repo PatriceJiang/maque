@@ -38,6 +38,9 @@ static_assert(offsetof(mq_renderer_draw3d, model) == 8, "draw3d.model 必须在 
 static_assert(offsetof(mq_renderer_draw3d, sort_key) == 88, "draw3d.sort_key 必须在 offset 88");
 static_assert(offsetof(mq_renderer_draw3d, skin) == 96, "draw3d.skin 必须在 offset 96（帧索引，-1 = 非蒙皮）");
 static_assert(sizeof(mq_renderer_skin) == 16, "mq_renderer_skin 布局漂移（palette 指针 + joint_count）");
+static_assert(sizeof(mq_renderer_shader_sprite) == 56,
+              "mq_renderer_shader_sprite 布局漂移（shader/z 8B + 中心/半尺寸/旋转/透明度 24B + time/frame 8B + mouse 16B）");
+static_assert(offsetof(mq_renderer_shader_sprite, mouse) == 40, "shader_sprite.mouse 必须在 offset 40");
 static_assert(sizeof(mq_renderer_render_texture_desc) == 44, "RenderTexture desc 布局漂移");
 static_assert(offsetof(mq_renderer_render_texture_desc, clear_color) == 28, "RenderTexture clear_color 偏移漂移");
 
@@ -113,6 +116,9 @@ struct Device {
     uint64_t texture_bytes = 0;
     uint64_t buffer_bytes = 0;
     std::vector<Texture*> textures;
+    /* shader 精灵（render.ShaderSprite）的离屏目标：每个精灵一张 RGBA8，尺寸跟随屏幕像素。
+     * 句柄是 dv->textures 的下标（这样 2D 合成走既有「带纹理矩形」通路，纹理查找/绑定无需特判）。 */
+    std::vector<int32_t> spriteTargets;
     /* ---- 直接呈现（plans/18-pbr-3d.md §4.1）：attach_window 成功后非空（M1）---- */
     WGPUSurface surface = nullptr;
     WGPUTextureFormat surfaceFormat = WGPUTextureFormat_RGBA8Unorm;
@@ -1992,6 +1998,99 @@ static int32_t render_shader_passes(Device* dv, WGPUTexture target, WGPUTextureF
     return drawn > 0 ? 0 : (first_error ? first_error : -4);
 }
 
+/* ---- shader 精灵（render.ShaderSprite；docs/13）--------------------------------
+ * 语义：一个 2D 精灵矩形，画面由场景 .wgsl 生成。实现分两步，**不改 WGSL 契约**：
+ *   ① 把该精灵的 fragment 渲染到一张 w×h 的离屏纹理（resolution = 纹理尺寸、
+ *      frag_coord 从 (0,0) 开始 —— 与全屏 pass 完全同一份 shader 源码与 uniform）；
+ *   ② 把这张纹理当作普通 2D 图元（带纹理矩形）合成 → 位置/旋转/缩放/letterbox/图层
+ *      全部复用既有 2D 通路，不需要第二套顶点/相机变换。
+ * 纹理尺寸 = 设计尺寸 × 2D 视图缩放（屏幕上实际像素），所以窗口放大不会糊。 */
+
+/* 取/建第 slot 个精灵目标（w×h）。句柄稳定：尺寸变化时原地重建，dv->textures 槽位不变。 */
+static int32_t ensure_sprite_target(Device* dv, size_t slot, int32_t w, int32_t h) {
+    while (dv->spriteTargets.size() <= slot) {
+        auto* t = new Texture();
+        dv->textures.push_back(t);
+        dv->spriteTargets.push_back((int32_t)dv->textures.size() - 1);
+    }
+    const int32_t id = dv->spriteTargets[slot];
+    Texture* t = dv->textures[(size_t)id];
+    if (t->tex && t->view && t->width == w && t->height == h) return id;
+    dv->texture_bytes -= t->gpu_bytes;
+    t->gpu_bytes = 0;
+    if (t->sampler) { wgpuSamplerRelease(t->sampler); t->sampler = nullptr; }
+    if (t->view) { wgpuTextureViewRelease(t->view); t->view = nullptr; }
+    if (t->tex) { wgpuTextureRelease(t->tex); t->tex = nullptr; }
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    td.format = WGPUTextureFormat_RGBA8Unorm;
+    td.mipLevelCount = 1; td.sampleCount = 1;
+    t->tex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!t->tex) return -1;
+    t->view = wgpuTextureCreateView(t->tex, nullptr);
+    if (!t->view) { wgpuTextureRelease(t->tex); t->tex = nullptr; return -1; }
+    t->width = w; t->height = h;
+    t->render_target = true;
+    t->gpu_bytes = mip_texture_bytes((uint32_t)w, (uint32_t)h, 1, 1, 4);
+    dv->texture_bytes += t->gpu_bytes;
+    return id;
+}
+
+/* 把每个精灵渲染到离屏纹理，并把"带纹理矩形"追加进 2D 图元表（与普通 sprite 同层排序）。
+ * 返回追加的图元数；失败（资源/管线）跳过该精灵并继续其余图层。 */
+static uint32_t append_shader_sprite_items(Device* dv, const mq_renderer_frame3d* f,
+                                           std::vector<mq_renderer_item>& items) {
+    if (!f->shader_sprites || f->shader_sprite_count == 0) return 0;
+    /* 2D 视图缩放（设计像素 → 目标像素）：决定离屏纹理分辨率，保证放大后仍清晰。 */
+    float zoom = 1.0F;
+    if (f->views2d && f->view2d_count > 0 && f->views2d[0].zoom > 0.0F) zoom = f->views2d[0].zoom;
+    if (!(zoom > 0.0F)) zoom = 1.0F;
+    uint32_t added = 0;
+    for (uint32_t i = 0; i < f->shader_sprite_count; ++i) {
+        const mq_renderer_shader_sprite& s = f->shader_sprites[i];
+        if (s.shader < 0 || s.half_w <= 0.0F || s.half_h <= 0.0F || s.a <= 0.0F) continue;
+        const int32_t w = std::clamp((int32_t)std::lround(2.0F * s.half_w * zoom), 1, 4096);
+        const int32_t h = std::clamp((int32_t)std::lround(2.0F * s.half_h * zoom), 1, 4096);
+        const int32_t tex_id = ensure_sprite_target(dv, (size_t)i, w, h);
+        if (tex_id < 0) continue;
+        mq_renderer_shader_pass ps{};
+        ps.shader = s.shader;
+        ps.time = s.time;
+        ps.frame = s.frame;
+        /* 指针：设计像素 → 该离屏目标像素（shader 的 mouse 语义 = 目标像素，原点左上）。 */
+        ps.mouse[0] = s.mouse[0] * (float)w / std::max(1.0F, 2.0F * s.half_w);
+        ps.mouse[1] = s.mouse[1] * (float)h / std::max(1.0F, 2.0F * s.half_h);
+        mq_renderer_frame3d one{};
+        one.passes = &ps; one.pass_count = 1;
+        if (render_shader_passes(dv, dv->textures[(size_t)tex_id]->tex,
+                                 WGPUTextureFormat_RGBA8Unorm, w, h, &one) != 0) {
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                std::print(stderr, "gfx: shader 精灵绘制失败（本帧跳过该精灵，其余图层照常）\n");
+            }
+            continue;
+        }
+        mq_renderer_item it{};
+        it.x = s.x; it.y = s.y;
+        it.size = std::max(s.half_w, s.half_h);
+        it.r = it.g = it.b = 1.0F;
+        it.a = s.a;
+        it.texture = tex_id;
+        it.rotation = s.rotation;
+        it.half_w = s.half_w;
+        it.half_h = s.half_h;
+        it.filter = 0;                        /* 线性（精灵缩放/非整数倍窗口） */
+        it.layer = 0;                         /* 世界层：与 scn.Sprite 相同 */
+        it.z = s.z;
+        items.push_back(it);
+        ++added;
+    }
+    return added;
+}
+
 /* 前向声明：成帧主路径定义在下方（图元 + 网格 + 可选外部目标纹理）。 */
 static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                            const mq_renderer_view* views, uint32_t nviews,
@@ -2464,11 +2563,21 @@ static int32_t render_3d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat
     return 0;
 }
 
-/* 2D/UI 覆盖层（图元 + 网格）画进 target。clear_first：先用 bg 清屏（没有 3D 层时）。 */
+/* 2D/UI 覆盖层（图元 + 网格）画进 target。clear_first：先用 bg 清屏（没有 3D 层时）。
+ * shader 精灵先各自渲染到离屏纹理，再以「带纹理矩形」追加进图元表 —— 与普通 2D 图元同一次
+ * 排序/pass 绘制（图层顺序、旋转、画布缩放全部走既有通路）。 */
 static int32_t render_2d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat format,
                                const mq_renderer_frame3d* f, bool clear_first) {
     float bg[4];
     std::memcpy(bg, f->bg, sizeof bg);
+    if (f->shader_sprites && f->shader_sprite_count > 0) {
+        std::vector<mq_renderer_item> items;
+        if (f->items && f->item_count > 0) items.assign(f->items, f->items + f->item_count);
+        append_shader_sprite_items(dv, f, items);
+        return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
+                           items.data(), (uint32_t)items.size(), f->meshes, f->mesh_count,
+                           bg, nullptr, 0, target, format, clear_first);
+    }
     return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                        f->items, f->item_count, f->meshes, f->mesh_count,
                        bg, nullptr, 0, target, format, clear_first);

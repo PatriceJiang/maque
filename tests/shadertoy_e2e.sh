@@ -123,6 +123,74 @@ PY
     echo "shadertoy_e2e: [$name] ④ 场景资源 WGSL（scenes/shadertoy/，非内建 shader）OK"
 }
 
+# ⑤ shader 精灵（render.ShaderSprite，docs/13）：节点矩形里跑场景 .wgsl（同一份 WGSL 契约）。
+#    `sprite-shader.scn` 左右并排两个精灵（左 mandelbulb / 右 seascape）：
+#    · 两条 "shader sprite ... loaded" 日志（各自一张离屏纹理）；
+#    · 640x360 离屏：左右两块内部区域颜色多样/非平坦，且**左暖右冷**（是两个不同作品）；
+#    · 两个精灵之间的中缝是场景背景色（精灵只画自己的矩形，不铺满整屏）；
+#    · 动画（frame 1 vs 60）+ 同帧两次逐字节一致（确定性）。
+check_sprite_scene() {
+    local scn="$ROOT/scenes/shadertoy/sprite-shader.scn"
+    local d="$WORK/sprite"
+    [ -f "$scn" ] || { echo "shadertoy_e2e: SKIP sprite-shader（场景未入库）"; return 0; }
+    mkdir -p "$d"
+    echo "shadertoy_e2e: ---- [sprite] $scn"
+    timeout 120 "$PLAYER" --shot "$d/f1.ppm" --frames 2 "$scn" >"$d/run1.txt" 2>&1 \
+        || { cat "$d/run1.txt"; fail "[sprite] 场景运行/截图失败（退出码非 0）"; }
+    local loaded
+    loaded="$(grep -c "shader sprite .* loaded" "$d/run1.txt" || true)"
+    [ "${loaded:-0}" -ge 2 ] || { cat "$d/run1.txt"; fail "[sprite] 应加载 2 个 shader 精灵，实际 $loaded"; }
+    grep -qiE "shader sprite.*(失败|未找到|error|missing|not found)" "$d/run1.txt" \
+        && { cat "$d/run1.txt"; fail "[sprite] shader 精灵加载/编译报错"; }
+    timeout 120 "$PLAYER" --shot "$d/f60.ppm" --shot-frame 60 "$scn" >"$d/run60.txt" 2>&1 \
+        || { cat "$d/run60.txt"; fail "[sprite] 第 60 帧截图失败"; }
+    timeout 120 "$PLAYER" --shot "$d/f60b.ppm" --shot-frame 60 "$scn" >"$d/run60b.txt" 2>&1 \
+        || { cat "$d/run60b.txt"; fail "[sprite] 第 60 帧第二次截图失败"; }
+    cmp -s "$d/f60.ppm" "$d/f60b.ppm" \
+        || fail "[sprite] 同一帧两次渲染不一致（确定性破坏）"
+
+    "$PY" - "$d/f1.ppm" "$d/f60.ppm" <<'PY' || fail "[sprite] PPM 结构断言失败"
+import sys
+def load(p):
+    d = open(p, 'rb').read()
+    magic, dims, _m, px = d.split(b'\n', 3)
+    assert magic == b'P6', magic
+    w, h = map(int, dims.split())
+    assert (w, h) == (640, 360), (w, h)
+    return w, h, px
+w, h, a = load(sys.argv[1])
+_, _, b = load(sys.argv[2])
+def rgb(px, x, y):
+    i = (y * w + x) * 3
+    return px[i], px[i + 1], px[i + 2]
+def block(px, x0, x1):
+    return [rgb(px, x, y) for y in range(20, h - 20, 6) for x in range(x0, x1, 6)]
+def stats(pix):
+    n = len(pix)
+    lum = [0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2] for c in pix]
+    m = sum(lum) / n
+    sd = (sum((v - m) ** 2 for v in lum) / n) ** 0.5
+    colors = len({(c[0] >> 3, c[1] >> 3, c[2] >> 3) for c in pix})
+    r = sum(c[0] for c in pix) / n
+    bl = sum(c[2] for c in pix) / n
+    return m, sd, colors, r, bl
+lm, lsd, lc, lr, lb = stats(block(a, 20, 290))     # 左精灵内部
+rm, rsd, rc, rr, rb = stats(block(a, 350, 620))    # 右精灵内部
+gap = rgb(a, 320, 180)                             # 两精灵之间的中缝
+diff = sum(1 for i in range(0, len(a), 3)
+           if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12)
+anim = diff / (w * h)
+print(f'  [sprite] left(m,b)={lm:.1f},{lsd:.1f} colors={lc} warm={lr - lb:+.1f} | '
+      f'right(m,sd)={rm:.1f},{rsd:.1f} colors={rc} cool={rb - rr:+.1f} | gap={gap} anim={anim:.3f}')
+ok = (lc >= 100 and rc >= 100 and lsd > 10.0 and rsd > 10.0)
+ok = ok and (lr - lb) > 10.0 and (rb - rr) > 10.0          # 左暖（fractal）右冷（海面）
+ok = ok and max(gap) < 40                                  # 中缝 = 场景背景色，未被精灵覆盖
+ok = ok and anim > 0.05                                    # time 真的推进进两个 shader
+sys.exit(0 if ok else 1)
+PY
+    echo "shadertoy_e2e: [sprite] 左右两个 shader 精灵（mandelbulb / seascape）+ 动画 + 确定性 OK"
+}
+
 # 主场景（CTest 参数）= seascape；mandelbulb 由 shaderport 并行产出，缺失时只 SKIP 该节。
 check_scene seascape "$SCN" "$ROOT/scenes/shadertoy/seascape.wgsl" 1
 if [ -f "$ROOT/scenes/shadertoy/mandelbulb.scn" ] && [ -f "$ROOT/scenes/shadertoy/mandelbulb.wgsl" ]; then
@@ -131,5 +199,6 @@ if [ -f "$ROOT/scenes/shadertoy/mandelbulb.scn" ] && [ -f "$ROOT/scenes/shaderto
 else
     echo "shadertoy_e2e: SKIP mandelbulb（scenes/shadertoy/mandelbulb.scn/.wgsl 尚未入库）"
 fi
+check_sprite_scene
 
 echo "shadertoy_e2e: PASS"

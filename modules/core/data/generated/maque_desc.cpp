@@ -1068,6 +1068,16 @@ static const mq_field_desc mq_fields_render_ShaderPass[] = {
     { "time", (uint32_t)offsetof(render::ShaderPass, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
 };
 
+static const mq_field_desc mq_fields_render_ShaderSprite[] = {
+    { "shader", (uint32_t)offsetof(render::ShaderSprite, shader), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "width", (uint32_t)offsetof(render::ShaderSprite, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "height", (uint32_t)offsetof(render::ShaderSprite, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "speed", (uint32_t)offsetof(render::ShaderSprite, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "paused", (uint32_t)offsetof(render::ShaderSprite, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "enabled", (uint32_t)offsetof(render::ShaderSprite, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "time", (uint32_t)offsetof(render::ShaderSprite, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+};
+
 static const mq_field_desc mq_fields_render_Skybox[] = {
     { "skybox_mode", (uint32_t)offsetof(render::Skybox, skybox_mode), MQ_TK_ENUM, 3367387160u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "skybox_texture", (uint32_t)offsetof(render::Skybox, skybox_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -2673,6 +2683,7 @@ static void mq_defaults_render_RichRun(void* p) { new (p) render::RichRun{}; }
 static void mq_defaults_render_RichTagType(void* p) { new (p) render::RichTagType{}; }
 static void mq_defaults_render_RichText(void* p) { new (p) render::RichText{}; }
 static void mq_defaults_render_ShaderPass(void* p) { new (p) render::ShaderPass{}; }
+static void mq_defaults_render_ShaderSprite(void* p) { new (p) render::ShaderSprite{}; }
 static void mq_defaults_render_ShadowCastMode(void* p) { new (p) render::ShadowCastMode{}; }
 static void mq_defaults_render_ShadowMode(void* p) { new (p) render::ShadowMode{}; }
 static void mq_defaults_render_Skybox(void* p) { new (p) render::Skybox{}; }
@@ -4928,6 +4939,20 @@ extern const mq_type_desc mq_type_render_ShaderPass = {
     mq_defaults_render_ShaderPass,
 };
 
+extern const mq_type_desc mq_type_render_ShaderSprite = {
+    "render.ShaderSprite",
+    2473816933u,
+    (uint32_t)sizeof(render::ShaderSprite),
+    (uint32_t)alignof(render::ShaderSprite),
+    7u,
+    mq_fields_render_ShaderSprite,
+    4u,
+    0u,
+    0,
+    0u,
+    mq_defaults_render_ShaderSprite,
+};
+
 extern const mq_type_desc mq_type_render_ShadowCastMode = {
     "render.ShadowCastMode",
     2098906413u,
@@ -6455,6 +6480,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_render_RichTagType,
     &mq_type_render_RichText,
     &mq_type_render_ShaderPass,
+    &mq_type_render_ShaderSprite,
     &mq_type_render_ShadowCastMode,
     &mq_type_render_ShadowMode,
     &mq_type_render_Skybox,
@@ -6555,7 +6581,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 252u;
+const uint32_t mq_schema_type_count = 253u;
 
 #ifdef __cplusplus
 } // extern "C"
