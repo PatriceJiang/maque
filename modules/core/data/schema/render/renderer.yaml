@@ -356,7 +356,9 @@
         - { name: view2d_count,   type: uint32_t }
         - { name: bg,             type: "float[4]" }      # 2D 覆盖层清屏色
         # MSAA 样本数：1=关（默认，保持旧输出逐字节不变）、4=4x（颜色/深度各一张 4x 附件，
-        # pass 结束 resolve 到目标纹理）。runtime 从 scn.Scene.msaa_samples / MAQUE_MSAA 取值。
+        # pass 结束 resolve 到目标纹理）。**每次提交独立生效**：主目标与各张 RenderTexture 各自取值，
+        # 附件按 (w,h,fmt,samples) 缓存。runtime 优先级 = F4 引擎选项 > MAQUE_MSAA >
+        # render.RenderTexture.msaa_samples > scn.Scene.msaa_samples。
         - { name: msaa_samples,   type: int32_t }
         - { name: out,            type: "uint8_t*" }
         - { name: out_size,       type: uint32_t }
@@ -392,6 +394,8 @@
         - { name: graph_sprite_count,   type: uint32_t }
     # 持久可采样离屏目标描述；独立 struct_size 允许将来在记录尾部安全扩展。
     # 首版仅支持 2D、单 mip；usage 固定包含 sampled/color-attachment/copy-src。
+    # 没有 samples 字段是刻意的：多采样纹理不能被普通采样/回读 → 物理目标恒单采样，
+    # MSAA 由每次提交的 frame3d.msaa_samples 决定（临时多采样附件 + pass 末 resolve）。
     - record: render_texture_desc
       fields:
         - { name: struct_size,  type: uint32_t }

@@ -134,8 +134,16 @@ camera_capture(camera, "shots/minimap.png"); // 当前渲染帧更新后写 PNG�
 normal/MR 等数据贴图。PBR 当前每个材质共用一个 sampler；材质含 RenderTexture 时优先采用该 RT 的过滤设置，
 否则采用第一张有效静态贴图的 sampler。逐帧路径保持 GPU→GPU，只有显式截图/控制面抓取才做 GPU→CPU readback。
 
+**MSAA 是逐目标的**：`frame3d.msaa_samples` 每次提交各算一份，主输出与每张相机离屏纹理互不牵连。
+组件字段 `render.RenderTexture.msaa_samples`（`0=跟随场景`、`1=强制关`、`4=4x`）单点开启某张小地图；
+F4 面板「RenderTexture MSAA」/ `MAQUE_ENGINE_OPTIONS="rt_msaa=4"` 一次性开全部相机纹理。
+离屏纹理本体恒单采样（多采样纹理不能被采样、也不能 CopySrc 回读）：4x 只是该次 3D pass 的临时
+颜色/深度附件，pass 末 resolve 进目标。2D 图元层没有多采样管线，所以 2D 相机目标上的 msaa 会被
+强制回 1x 并打印一次提示。完整优先级与边界见 docs/33 §11。
+
 样例：`scenes/render_texture/render_texture.scn`、`render_texture_2d.scn`、`render_texture_3d.scn`、
-`render_texture_cube.scn`；回归：`ctest -R render_texture_e2e`。
+`render_texture_msaa.scn`（只有 duck 目标 4x 的对照）、`render_texture_cube.scn`；
+回归：`ctest -R render_texture_e2e`（含逐目标 MSAA 的像素/附件/优先级断言）。
 
 ## 7. 观测
 

@@ -259,6 +259,11 @@
         - { name: include_ui, type: bool, default: false }
         - { name: enabled, type: bool, default: true }
         - { name: clear_color, type: math.Color, default: "{0.0F, 0.0F, 0.0F, 0.0F}" }
+        # 该目标自己的 MSAA：0=跟随 scn.Scene.msaa_samples、1=强制关、4=4x。
+        # 只作用于 3D 相机目标（2D 图元层恒单采样）；物理纹理仍单采样，
+        # 多采样只作 pass 的临时附件并在结束时 resolve 进来。
+        # 优先级：F4 引擎选项 > MAQUE_MSAA > 本字段 > scn.Scene.msaa_samples。
+        - { name: msaa_samples, type: int32_t, default: 0 }
         - { name: texture, type: string, default: "", attrs: { transient: true, readonly: true } }
         - { name: ready, type: bool, default: false, attrs: { transient: true, readonly: true } }
         - { name: last_frame, type: uint32_t, default: 0, attrs: { transient: true, readonly: true } }

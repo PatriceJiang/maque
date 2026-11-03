@@ -203,8 +203,9 @@
         # 运行时按 `<基名>_px/_nx/_py/_ny/_pz/_nz.(hdr|exr|png|jpg)` 加载 6 面 → GGX 预过滤 cube +
         # irradiance cube（IBL/天空按方向采样）。非空时优先于 env_texture；加载失败回退 equirect/analytic。
         - { name: env_cubemap, type: string, default: "" }
-        # 3D 渲染 MSAA：0/1 = 关（默认，旧场景零变化）、4 = 4x（gfx 不支持时自动回退 1x）。
-        # 环境变量 MAQUE_MSAA 可覆盖本字段（0/1/4）。
+        # 3D 渲染 MSAA（整帧默认值）：0/1 = 关（旧场景零变化）、4 = 4x（gfx 不支持时自动回退 1x）。
+        # 环境变量 MAQUE_MSAA 可覆盖本字段（0/1/4）；单张相机离屏目标另有
+        # render.RenderTexture.msaa_samples（0 = 跟随本字段）。
         - { name: msaa_samples, type: int32_t, default: 0 }
         - { name: gravity_y,   type: float, default: -900.0F }  # 重力加速度的 y 分量（像素/秒²，世界 y 向上）
         - { name: restitution, type: float, default: 0.86F }    # 弹性（0..1）

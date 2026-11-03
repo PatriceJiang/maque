@@ -417,7 +417,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   自建纹理必须 `ImGui::RegisterUserTexture()`（1.92+ 的外部纹理 API），否则后端不创建 SDL_Texture（白图）。
 - **引擎侧 ImGui 调试面板（docs/28）**：`modules/ui/imgui` + `modules/runtime`。**默认不显示**（`MAQUE_IMGUI=1`
   或游戏内 **F2** 打开）；打开后 stats 面板（FPS/logic/render/draws/tris/frame/target）+ 74 个 `imgui_*` 脚本函数。
-  **F4** 弹出**引擎选项**面板（rendered/textured/solid/wireframe、3D/2D 图层、MSAA、默认太阳光、
+  **F4** 弹出**引擎选项**面板（rendered/textured/solid/wireframe、3D/2D 图层、MSAA（主输出）与
+  RenderTexture MSAA（相机离屏纹理，`rt_msaa`，逐目标解析见 docs/33 §11）、默认太阳光、
   主相机 near·far、**后处理 PostEffect**：曝光/ACES、Bloom、暗角、色差、色彩分级——gfx 内建
   shader `post`，**默认只叠加 3D 层**（2D/UI 在 post 结果之上叠加；`post_2d=1` 才整帧），
   默认关闭，见 docs/13 §后处理；其中 textured = base-color 贴图且无光照；

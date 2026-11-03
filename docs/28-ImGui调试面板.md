@@ -20,7 +20,12 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
   **视图层**渲染选项，**不写场景组件、不进快照/校验和**，只在成帧时生效（切场景后仍保留）：
   - **渲染模式**：`rendered`（完整材质）/ `textured`（base-color 贴图，无光照）/ `solid` / `wireframe`；
   - **游戏图层**：独立显示/隐藏 3D 与 2D/UI，F4 面板自身不受影响；
-  - **MSAA**：跟随场景 / 关闭 / 4x（优先级：面板 > `MAQUE_MSAA` > `scn.Scene.msaa_samples`）；
+  - **MSAA（主输出）**：跟随场景 / 关闭 / 4x（优先级：面板 > `MAQUE_MSAA` > `scn.Scene.msaa_samples`）；
+  - **RenderTexture MSAA（相机离屏纹理）**：跟随 / 关闭 / 4x，只作用于挂了 `render.RenderTexture` 的
+    **3D 相机**目标（2D 图元层恒单采样），不动上面的主输出开关；"跟随"时由 `MAQUE_MSAA` /
+    组件字段 `render.RenderTexture.msaa_samples` / 场景字段决定（逐目标解析见 docs/33 §11）。
+    优先级：本开关 > 主输出 MSAA > `MAQUE_MSAA` > 组件字段 > 场景字段。面板下方回显
+    「实际：N/M 张相机纹理 4x」，「重置为默认」会一起清掉两个开关；
   - **默认太阳光**：场景**没有任何光源**时补的那盏方向光的开关 / 强度 / 传播方向（老场景兜底行为可调）；
   - **主相机 near / far**：覆盖场景相机的近远裁剪面（覆盖关闭时字段自动跟随场景实际值，勾选后不跳变）；
   - **后处理 PostEffect**（docs/13 §后处理；面板里是**折叠头**，默认收起）：3D 层过一遍 gfx 内建
@@ -210,7 +215,8 @@ if (imgui_enabled()) {
 | 中文字体（TTF + 标题/正文两档字号，默认 20/15） | ✅ | `--shot` 截图里中文正常、stats 用正文字号 |
 | stats 面板（左上角，237x148；F2 / `MAQUE_IMGUI=1` 打开） | ✅ | FPS / logic / render / draws / tris / frame / target 七项 |
 | F2 开关（沿检测） | ✅ | `imgui_toggle_e2e` |
-| **F4 引擎选项面板**（rendered/textured/solid/wireframe、3D/2D 图层、MSAA、默认太阳光、主相机 near·far、后处理 PostEffect，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（含 textured 纹理采样与无光照像素断言）；`post_effect_e2e`（后处理全效果 + 默认关闭零回归）；`MAQUE_ENGINE_OPTIONS` 初值 |
+| **F4 引擎选项面板**（rendered/textured/solid/wireframe、3D/2D 图层、MSAA（主输出）与 RenderTexture MSAA（相机离屏纹理）、默认太阳光、主相机 near·far、后处理 PostEffect，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（含 textured 纹理采样与无光照像素断言）；`post_effect_e2e`（后处理全效果 + 默认关闭零回归）；`MAQUE_ENGINE_OPTIONS` 初值 |
+| **RenderTexture MSAA**（`rt_msaa`：只作用于 3D 相机离屏目标，逐目标解析，面板回显「N/M 张相机纹理 4x」） | ✅ | `render_texture_e2e`（组件字段只改一张、`rt_msaa=4` 全开、`rt_msaa=1` 压过组件字段、2D 目标明确忽略、主输出不受牵连）；见 docs/33 §11 |
 | `MAQUE_PRESENT=software/accelerated` 都能显示面板 | ✅ | `imgui_present_e2e`（software 抓帧） |
 | 输入隔离（面板吃输入时清空本帧设备事件） | ✅ | `imgui_present_e2e` 拖动用合成指针走 `imgui_input_feed` |
 
@@ -220,4 +226,5 @@ if (imgui_enabled()) {
 2. `MAQUE_STATS=0` 开关 stats 面板。
 3. HiDPI：SDL 窗口 DPI 感知（`SDL_HINT_WINDOWS_DPI_AWARENESS=permonitorv2`）+ 面板按帧缓冲比例渲染
    （当前窗口被系统放大时窗口与文字会糊；UI 度量本身已按逻辑分辨率算好）。
-4. 引擎选项扩展：MSAA 支持 2x/8x（gfx 当前只有 1x/4x 管线）、太阳光颜色、`MAQUE_STATS` 同类脚本/控制面接口。
+4. 引擎选项扩展：MSAA 支持 2x/8x（gfx 当前只有 1x/4x 管线；主输出与相机离屏纹理的**逐目标 4x**
+   已落地，见 docs/33 §11）、太阳光颜色、`MAQUE_STATS` 同类脚本/控制面接口。

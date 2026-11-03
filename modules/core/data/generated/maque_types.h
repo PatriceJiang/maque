@@ -2251,6 +2251,7 @@ struct RenderTexture {
     bool include_ui = false;
     bool enabled = true;
     math::Color clear_color = {0.0F, 0.0F, 0.0F, 0.0F};
+    int32_t msaa_samples = 0;
     std::string texture = "";
     bool ready = false;
     uint32_t last_frame = 0;

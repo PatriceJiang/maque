@@ -182,6 +182,7 @@
 | `include_ui` | `bool` | `false` | | 允许 Camera2D 收集游戏 UI；仍受 `layer_mask` 限制 |
 | `enabled` | `bool` | `true` | | 自动提交开关；关闭时保留上次内容 |
 | `clear_color` | `Color` | `{0,0,0,0}` | | `scn.Camera` 路径清屏色；新相机用自身 clear color |
+| `msaa_samples` | `int32_t` | `0` | | 该目标自己的 MSAA：`0` 跟随 `scn.Scene.msaa_samples`、`1` 强制关、`4` 4x。仅 3D 相机目标生效（2D 图元层恒单采样）；优先级 F4「RenderTexture MSAA」(`rt_msaa`) > F4「MSAA」> `MAQUE_MSAA` > 本字段 > 场景字段，见 33 §11 |
 | `texture` | `string` | `""` | `transient,readonly` | 运行期规范 URI：`rendertexture://<instance>/<name>` |
 | `ready` | `bool` | `false` | `transient,readonly` | 至少成功渲染一次 |
 | `last_frame` | `uint32_t` | `0` | `transient,readonly` | 最后成功更新帧号 |

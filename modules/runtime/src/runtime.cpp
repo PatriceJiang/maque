@@ -714,6 +714,7 @@ struct Engine {
         int32_t width = 0, height = 0;
         int32_t filter = 1;
         int32_t update_mode = 0;
+        int32_t msaa_samples = 0;   // 组件 render.RenderTexture.msaa_samples（0=跟随场景）
         std::string name;
         std::string uri;
         bool is_3d = false;
@@ -939,7 +940,7 @@ struct Engine {
     /* ---- 引擎选项（F4 ImGui 面板；docs/28）----
      * 运行期可热调的纯视图选项：
      *   · rendered / textured / solid / wireframe 渲染模式，以及游戏 3D、2D/UI 图层开关
-     *   · MSAA（0=跟随场景/MAQUE_MSAA，1=关，4=4x）
+     *   · MSAA（主输出）与 RenderTexture MSAA（相机离屏目标）：各自 0=跟随，1=关，4=4x
      *   · 默认太阳光（场景无光源时补的方向光：开关 / 强度 / 传播方向）
      *   · 主相机 near/far 覆盖
      *   · 后处理 PostEffect（曝光/ACES/Bloom/暗角/色差/色彩分级；默认只叠加 3D 层）
@@ -949,6 +950,22 @@ struct Engine {
     bool  opt_f4_held = false;                 // F4 沿检测（按住只切换一次）
     bool  opt_opened_imgui = false;            // F4 自己打开的 ImGui（收起面板时恢复"关"→ 不残留 stats）
     int   opt_msaa = 0;                        // 0=跟随场景(MAQUE_MSAA 次之) 1=关 4=4x
+    /* RenderTexture MSAA 全局开关（F4 / MAQUE_ENGINE_OPTIONS 的 rt_msaa）：只管**相机离屏目标**，
+     * 不动主输出。0=跟随（上面的 MSAA / MAQUE_MSAA / 各 RT 字段 / 场景），1=全部强制关，
+     * 4=全部强制 4x。因为它是更专门的那个开关，对 RT 而言赢过 opt_msaa。 */
+    int   opt_rt_msaa = 0;
+    /* MAQUE_MSAA 只读一次（"出现过"即生效，即使值为 0/1）；主目标与每张 RenderTexture
+     * 共用同一条解析链，见 Engine::resolve_msaa()。 */
+    bool  msaa_env_loaded = false;
+    bool  msaa_env_set = false;
+    int   msaa_env_value = 0;
+    /* MSAA 样本数解析（唯一出口）：
+     *   主目标（is_render_texture=false）：opt_msaa > MAQUE_MSAA > scn.Scene.msaa_samples
+     *   相机离屏目标（is_render_texture=true）：opt_rt_msaa > opt_msaa > MAQUE_MSAA >
+     *       render.RenderTexture.msaa_samples > scn.Scene.msaa_samples
+     * target_override = 目标自己的字段值（0 = 跟随场景、1 = 强制关、4 = 4x）。
+     * 只返回 1/4：gfx 只为这两个 sampleCount 建管线（docs/31 §MSAA）。 */
+    int   resolve_msaa(int target_override, bool is_render_texture);
     int   opt_render_mode = 0;                 // 0=rendered 1=solid 2=wireframe 3=textured
     bool  opt_3d_enabled = true;               // 游戏 3D 层（不影响 F4 面板）
     bool  opt_2d_enabled = true;               // 游戏 2D/UI 层（不影响 F4 面板）
@@ -980,6 +997,10 @@ struct Engine {
     bool  opt_post_include_2d = false;
     /* 上一帧实际生效值（面板只读回显） */
     int   opt_last_msaa = 0;
+    /* 上一帧相机离屏目标的 MSAA 实况（面板回显）：只统计 3D 且启用的目标，
+     * 2D 目标不计 —— 多采样对 2D 图元层无效，列进去只会误导。 */
+    int   opt_last_rt_total = 0;
+    int   opt_last_rt_msaa4 = 0;
     bool  opt_last_sun = false;
     float opt_last_near = 0.1F, opt_last_far = 100.0F;
     bool  opt_env_parsed = false;
@@ -4180,6 +4201,27 @@ const Engine::RenderTextureState* Engine::render_texture_for(int entity) const {
     return nullptr;
 }
 
+/* MSAA 样本数解析：主目标与每张相机离屏纹理走同一条链，所以"整帧开 4x"与"只有小地图开 4x"
+ * 是同一套语义，不存在第二套优先级。
+ *   · 更专门的开关赢：RT 自己看 opt_rt_msaa，再退到全局 opt_msaa / MAQUE_MSAA；
+ *   · 显式覆盖之下，才是目标自己的字段（render.RenderTexture.msaa_samples）与场景字段；
+ *   · 返回 1 或 4；gfx 侧 4x 附件创建失败会自行回退 1x（打印一次，不静默）。 */
+int Engine::resolve_msaa(int target_override, bool is_render_texture) {
+    if (!msaa_env_loaded) {
+        msaa_env_loaded = true;
+        if (const char* msaa_env = std::getenv("MAQUE_MSAA")) {
+            msaa_env_set = true;
+            msaa_env_value = std::atoi(msaa_env);
+        }
+    }
+    int samples = scene ? scene->desc.msaa_samples : 0;
+    if (target_override > 0) samples = target_override;
+    if (msaa_env_set) samples = msaa_env_value;
+    if (opt_msaa > 0) samples = opt_msaa;
+    if (is_render_texture && opt_rt_msaa > 0) samples = opt_rt_msaa;
+    return samples >= 4 ? 4 : 1;
+}
+
 void Engine::destroy_render_textures() {
     for (auto& rt : render_textures) {
         auto erase_key = [&](const std::string& key) {
@@ -4335,6 +4377,11 @@ void Engine::sync_render_textures() {
             rt->is_3d = has3d_camera;
         }
         rt->update_mode = (int32_t)read_num(rtd, blob.data(), "update_mode", 0.0F);
+        /* 目标自己的 MSAA 变化不改纹理本身（多采样只是 pass 的临时附件），
+         * 但要重画一次，否则 OnDemand 目标会留着旧样本数的画面。 */
+        const int32_t rt_msaa = (int32_t)read_num(rtd, blob.data(), "msaa_samples", 0.0F);
+        if (rt->msaa_samples != rt_msaa) rt->dirty = true;
+        rt->msaa_samples = rt_msaa;
         const bool include_ui = read_num(rtd, blob.data(), "include_ui", 0.0F) >= 0.5F;
         const bool enabled = read_num(rtd, blob.data(), "enabled", 1.0F) >= 0.5F;
         if (rt->include_ui != include_ui || (!rt->enabled && enabled)) rt->dirty = true;
@@ -4662,7 +4709,11 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
         fr.width = rt.width; fr.height = rt.height;
         fr.env.sky_texture = fr.env.env_texture = fr.env.env_irradiance_texture = -1;
         fr.env.env_cubemap = fr.env.env_cubemap_irradiance = -1;
-        fr.msaa_samples = scene && scene->desc.msaa_samples >= 4 ? 4 : 1;
+        /* MSAA 逐目标解析（Engine::resolve_msaa）：F4「RenderTexture MSAA」> F4「MSAA」>
+         * MAQUE_MSAA > render.RenderTexture.msaa_samples > scn.Scene.msaa_samples。
+         * 2D 分支会退回 1x：多采样只作用于 3D pass，2D 图元层恒单采样（见下）。 */
+        const int rt_msaa = resolve_msaa(rt.msaa_samples, true);
+        fr.msaa_samples = rt_msaa;
         math::Color cc{};
         read_color(rtd, rtb->data(), "clear_color", &cc);
         fr.bg[0] = cc.r; fr.bg[1] = cc.g; fr.bg[2] = cc.b; fr.bg[3] = cc.a;
@@ -4671,6 +4722,17 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
         std::vector<mq_renderer_mesh> target_meshes;
         auto keep_layer = [&](int layer) { return layer == 0 || (rt.include_ui && layer == 1); };
         if (!rt.is_3d) {
+            if (rt_msaa > 1) {
+                /* 别让人以为 2D 目标的 msaa 生效了：2D 图元走 render_impl，管线 sampleCount 恒 1，
+                 * 边缘质量由纹理过滤决定，MSAA 对它没有任何作用（只打印一次，不逐帧刷屏）。 */
+                static bool warned_2d_msaa = false;
+                if (!warned_2d_msaa) {
+                    warned_2d_msaa = true;
+                    std::print(stderr, "runtime: RenderTexture '{}' 是 2D 相机目标 → MSAA 无效"
+                                       "（多采样只作用于 3D pass；本提示只打印一次）\n", rt.uri);
+                }
+                fr.msaa_samples = 1;
+            }
             const mq_type_desc* camera2d_desc = nullptr;
             if (auto* camera2d = comp_by_name(*this, rt.entity, "render.Camera2D", &camera2d_desc);
                 camera2d && camera2d_desc) {
@@ -6512,14 +6574,20 @@ void Engine::step_frame(bool render_frame) {
          * 目标、不跑 pass（旧画面逐字节不变）；参数只在开启时被读取。 */
         engine_options_fill_post(fr.post);
         for (int i = 0; i < 4; ++i) fr.bg[i] = bg[i];
-        /* MSAA：场景字段 scn.Scene.msaa_samples（0/1=关、4=4x），MAQUE_MSAA 覆盖（0/1/4）。
-         * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。
-         * F4 引擎选项（opt_msaa > 0）优先级最高：面板上显式选择的 关/4x 覆盖场景与 MAQUE_MSAA。 */
-        int msaa_samples = scene ? scene->desc.msaa_samples : 0;
-        if (const char* msaa_env = std::getenv("MAQUE_MSAA")) msaa_samples = std::atoi(msaa_env);
-        if (opt_msaa > 0) msaa_samples = opt_msaa;
-        fr.msaa_samples = (msaa_samples >= 4) ? 4 : 1;
+        /* MSAA：与每张 RenderTexture 同一解析链（Engine::resolve_msaa）——
+         * F4 引擎选项 > MAQUE_MSAA > scn.Scene.msaa_samples（0/1=关、4=4x）。
+         * 默认关 → 148 模型批量预览与旧场景逐像素不变；gfx 不支持 4x 时自动回退。 */
+        fr.msaa_samples = resolve_msaa(0, false);
         opt_last_msaa = fr.msaa_samples;
+        /* 面板回显（上一帧实况）：与 render_camera_textures 同一套解析，不额外决定任何东西。
+         * 只统计启用中的 3D 目标 —— 2D 图元层恒单采样，把 2D 目标算进「4x 张数」会误导。 */
+        opt_last_rt_total = 0;
+        opt_last_rt_msaa4 = 0;
+        for (const auto& s : render_textures) {
+            if (!s.enabled || !s.is_3d) continue;
+            ++opt_last_rt_total;
+            if (resolve_msaa(s.msaa_samples, true) > 1) ++opt_last_rt_msaa4;
+        }
         fr.env.sky_mode = 1;
         /* 环境光：scn.Scene.env_color/env_intensity + analytic studio IBL 参数（plans/19）。
          * env_sky_color/env_ground_color 全 0 = 由 env_color 派生（旧场景不改也有半球环境）。 */
@@ -11388,8 +11456,9 @@ void Engine::imgui_frame_begin(float dt) {
  *   · 值在 extract_3d / 成帧时读取（Engine 的 opt_* 字段），切场景后仍保留；
  *   · 启动初值可用 `MAQUE_ENGINE_OPTIONS`（CI/截图/演示不必依赖鼠标拖控件）。
  * 环境变量格式（逗号分隔；向量分量用 ':'）：
- *   MAQUE_ENGINE_OPTIONS="mode=textured,3d=1,2d=0,msaa=4,sun=0,near=0.01,far=500"
+ *   MAQUE_ENGINE_OPTIONS="mode=textured,3d=1,2d=0,msaa=4,rt_msaa=4,sun=0,near=0.01,far=500"
  * 键：mode(rendered|textured|solid|wireframe) / 3d(0|1) / 2d(0|1) / msaa(0|1|4) /
+ * rt_msaa(0|1|4 = 相机离屏纹理的全局 MSAA，只作用于 3D 相机目标) /
  * sun(0|1) / sun_intensity / sun_dir(x:y:z) / near / far /
  * post(0|1) / tonemap(none|aces) / exposure / bloom(0|1) / bloom_intensity / bloom_threshold /
  * bloom_radius / vignette(0|1) / vignette_intensity / chromatic(0|1) / chromatic_strength /
@@ -11473,6 +11542,10 @@ void Engine::engine_options_parse_env() {
         } else if (key == "msaa") {
             const int m = std::atoi(val.c_str());
             opt_msaa = m >= 4 ? 4 : (m == 1 ? 1 : 0);
+        } else if (key == "rt_msaa") {
+            /* 相机离屏纹理的全局 MSAA 覆盖（只作用于 3D 相机目标，不动主输出）。 */
+            const int m = std::atoi(val.c_str());
+            opt_rt_msaa = m >= 4 ? 4 : (m == 1 ? 1 : 0);
         } else if (key == "sun") {
             opt_sun_enabled = on;
         } else if (key == "sun_intensity") {
@@ -11542,9 +11615,10 @@ void Engine::engine_options_parse_env() {
     }
     if (post_touched && !post_explicit) opt_post_enabled = true;
     static const char* const kModeNames[4] = { "rendered", "solid", "wireframe", "textured" };
-    std::print("runtime: engine options (env) mode={} 3d={} 2d={} msaa={} sun={} intensity={:.2f} cam={}",
+    std::print("runtime: engine options (env) mode={} 3d={} 2d={} msaa={} rt_msaa={} sun={} intensity={:.2f} cam={}",
                kModeNames[opt_render_mode], opt_3d_enabled ? "on" : "off", opt_2d_enabled ? "on" : "off",
                opt_msaa == 0 ? "scene" : (opt_msaa == 4 ? "4x" : "off"),
+               opt_rt_msaa == 0 ? "scene" : (opt_rt_msaa == 4 ? "4x" : "off"),
                opt_sun_enabled ? "on" : "off", (double)opt_sun_intensity,
                opt_cam_override ? "override" : "scene");
     if (opt_cam_override)
@@ -11595,7 +11669,7 @@ void Engine::engine_options_panel(float show_w, float show_h) {
         std::print("runtime: engine option 2d={}\n", opt_2d_enabled ? "on" : "off");
     mq_imgui_separator();
 
-    /* ② MSAA：0=跟随场景（与 MAQUE_MSAA），1=关，4=4x */
+    /* ② MSAA（**主输出**）：0=跟随场景（与 MAQUE_MSAA），1=关，4=4x */
     const int msaa_sel = opt_msaa == 4 ? 2 : (opt_msaa == 1 ? 1 : 0);
     const int new_sel = (int)mq_imgui_combo("MSAA", (float)msaa_sel, "跟随场景,关闭,4x");
     const int new_msaa = new_sel == 2 ? 4 : (new_sel == 1 ? 1 : 0);
@@ -11606,6 +11680,27 @@ void Engine::engine_options_panel(float show_w, float show_h) {
     }
     if (opt_last_msaa >= 4) mq_imgui_text("实际：4x MSAA");
     else mq_imgui_text("实际：关闭（1x）");
+    /* ②b RenderTexture MSAA：只管**相机离屏目标**（render.RenderTexture），不动上面那个主输出开关。
+     * 「跟随」= 交给 MAQUE_MSAA / 各目标的 msaa_samples 字段 / 场景字段决定。
+     * 更专门的开关赢：这里选了 关/4x，就覆盖 ②的选择与场景字段（面板上直接说清楚，避免两处对着猜）。 */
+    const int rt_msaa_sel = opt_rt_msaa == 4 ? 2 : (opt_rt_msaa == 1 ? 1 : 0);
+    const int new_rt_sel = (int)mq_imgui_combo("RenderTexture MSAA", (float)rt_msaa_sel, "跟随,关闭,4x");
+    const int new_rt_msaa = new_rt_sel == 2 ? 4 : (new_rt_sel == 1 ? 1 : 0);
+    if (new_rt_msaa != opt_rt_msaa) {
+        opt_rt_msaa = new_rt_msaa;
+        std::print("runtime: engine option rt_msaa={}\n",
+                   opt_rt_msaa == 4 ? "4x" : (opt_rt_msaa == 1 ? "off" : "scene"));
+    }
+    {
+        char line[160];
+        if (opt_last_rt_total <= 0)
+            std::snprintf(line, sizeof line, "实际：无 3D 相机离屏目标（2D 目标不吃 MSAA）");
+        else
+            std::snprintf(line, sizeof line, "实际：%d/%d 张相机纹理 4x",
+                          opt_last_rt_msaa4, opt_last_rt_total);
+        mq_imgui_text(line);
+    }
+    mq_imgui_text_disabled("多采样只作用于 3D pass；离屏纹理本体仍单采样（pass 末 resolve）");
     mq_imgui_separator();
 
     /* ③ 默认太阳光：**只在场景没有任何光源时**补光（老场景的兜底行为可开关/调参） */
@@ -11730,6 +11825,7 @@ void Engine::engine_options_panel(float show_w, float show_h) {
         opt_3d_enabled = true;
         opt_2d_enabled = true;
         opt_msaa = 0;
+        opt_rt_msaa = 0;
         opt_sun_enabled = true;
         opt_sun_intensity = 1.1F;
         opt_sun_dir[0] = 0.35F; opt_sun_dir[1] = -0.85F; opt_sun_dir[2] = -0.4F;

@@ -164,8 +164,13 @@ struct Device {
     /* depth/MSAA 附件按 `(w,h[,fmt,samples])` 缓存（最多 kAttachmentCacheSlots 组）。
      * 旧实现只有一组槽位：RenderTexture（128²）与主目标（320×240）交替时每帧互相驱逐，
      * 每帧创建/销毁 depth（bug 004）。除了 GPU churn，wgpu-native 在未 poll 的直呈路径上
-     * 会推迟释放被销毁纹理 → 进程内存随帧数增长。缓存命中后同一尺寸只建一次。 */
-    static constexpr size_t kAttachmentCacheSlots = 4;
+     * 会推迟释放被销毁纹理 → 进程内存随帧数增长。缓存命中后同一尺寸只建一次。
+     * 槽位 8：每张 RenderTexture 现在可以各自决定 MSAA（frame3d.msaa_samples 逐次提交生效），
+     * 一组附件槽位对应一个 (尺寸,样本数) 组合 → 需要 1 个主目标 + 各 RT 尺寸。RT 越多、尺寸越杂
+     * 越容易驱逐重建（每槽 = color+depth 各 w·h·4B·samples），故超出时 ensure_msaa 打印一次提示，
+     * 让"把多张 RT 统一到同一尺寸"或关掉部分 msaa 成为可见的优化建议。 */
+    static constexpr size_t kAttachmentCacheSlots = 8;
+    bool msaaChurnWarned = false;
     struct DepthAttachment {
         int32_t w = 0, h = 0;
         WGPUTexture tex = nullptr;
@@ -596,6 +601,15 @@ static bool ensure_msaa(Device* dv, int32_t w, int32_t h, WGPUTextureFormat fmt,
     if (const char* trace = std::getenv("MAQUE_TRACE_GPU_ALLOC"); trace && *trace && std::strcmp(trace, "0") != 0)
         std::print("gfx: gpu attachment create msaa {}x{} fmt={} samples={} (#{})\n",
                    w, h, (int)fmt, samples, dv->msaaCreates);
+    /* 每张 RenderTexture 可各自开 MSAA → 每个 (尺寸,样本数) 占一个缓存槽。槽位用完后
+     * 相邻目标互相驱逐 = 每帧重建 4x 附件（bug 004 的同型问题，只是触发条件变成"多尺寸 + msaa"）。
+     * 打印一次，给出可执行的收敛办法，而不是逐帧刷屏。 */
+    if (dv->msaaCreates >= 4 * (int)Device::kAttachmentCacheSlots && !dv->msaaChurnWarned) {
+        dv->msaaChurnWarned = true;
+        std::print(stderr, "gfx: 多采样附件已创建 {} 次（缓存 {} 组）→ 目标尺寸过多正在互相驱逐重建；"
+                           "把各 RenderTexture 统一到相同尺寸，或只对需要的目标开 msaa\n",
+                   dv->msaaCreates, (int)Device::kAttachmentCacheSlots);
+    }
     if (dv->msaaCache.size() >= Device::kAttachmentCacheSlots) {
         auto victim = std::min_element(dv->msaaCache.begin(), dv->msaaCache.end(),
                                        [](const Device::MsaaAttachment& a, const Device::MsaaAttachment& b) {

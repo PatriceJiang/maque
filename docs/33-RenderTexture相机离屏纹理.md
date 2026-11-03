@@ -117,6 +117,8 @@ Camera2D 目前使用等比缩放 ABI。`zoom.x != zoom.y` 时会打印一次诊
 当前示例：
 
 - `scenes/render_texture/render_texture_3d.scn`：两台 3D 相机分别拍 Duck/Fox，再显示到主画面 Sprite；
+- `scenes/render_texture/render_texture_msaa.scn`：同一场景，只给 duck 目标写 `msaa_samples: 4`
+  → 小地图边缘 4x 抗锯齿，fox 与主画面逐像素不变（逐目标 MSAA 的对照样例）；
 - `scenes/render_texture/render_texture_cube.scn`：把两张 RenderTexture 绑定到 PBR/Basic 材质贴图，显示在 cube 表面。
 
 ## 4. RenderTexture 字段
@@ -131,6 +133,7 @@ Camera2D 目前使用等比缩放 ABI。`zoom.x != zoom.y` 时会打印一次诊
 | `include_ui` | bool | `false` | 是否允许收集游戏 UI 层；仍受 Camera2D `layer_mask` 限制 |
 | `enabled` | bool | `true` | false 时停止自动提交并保留上次内容；显式截图请求仍可强制更新 |
 | `clear_color` | Color | 透明黑 | `scn.Camera` 路径使用；Camera2D/Camera3D 使用相机自己的 clear color |
+| `msaa_samples` | int32 | `0` | 该目标自己的 MSAA：`0=跟随 scn.Scene.msaa_samples`、`1=强制关`、`4=4x`。只作用于 **3D 相机**目标（2D 图元层恒单采样），见 §11 |
 | `texture` | string | `""` | transient/readonly；运行期规范 URI |
 | `ready` | bool | `false` | transient/readonly；至少成功渲染一次后为 true |
 | `last_frame` | uint32 | `0` | transient/readonly；最后成功更新的模拟帧号 |
@@ -289,8 +292,38 @@ function on_start() {
 
 - 2D、单层、单 mip；
 - `RGBA8Unorm`；
-- 物理目标单采样；场景 MSAA 使用临时多采样附件并 resolve；
+- **物理目标恒单采样**；MSAA 是逐目标生效的 pass 内临时多采样附件（见下）；
 - usage 包含 RenderAttachment、TextureBinding、CopySrc、CopyDst。
+
+### 逐目标 MSAA
+
+`mq_renderer_frame3d.msaa_samples` 是**每次提交**的字段，主目标与每张 RenderTexture 各算一份，
+所以「只有小地图开 4x」和「整帧开 4x」是同一套通路（描述符里没有、也不该有 `samples` 字段：
+多采样纹理不能被普通采样，也不能 `CopySrc` 回读，把它当物理目标会让 RT 失去存在的意义）。
+
+生效样本数由 `Engine::resolve_msaa()` 一处解析，优先级高→低：
+
+| 主输出 | 相机离屏目标（RenderTexture） |
+|--------|------------------------------|
+| F4 面板 / `MAQUE_ENGINE_OPTIONS=msaa` | F4「RenderTexture MSAA」/ `rt_msaa=4` |
+| `MAQUE_MSAA` | F4「MSAA」/ `msaa` |
+| `scn.Scene.msaa_samples` | `MAQUE_MSAA` |
+| — | `render.RenderTexture.msaa_samples`（`0` = 跟随下一行） |
+| — | `scn.Scene.msaa_samples` |
+
+约定与边界：
+
+- 只认 `1`（关）与 `4`（4x）：gfx 只为这两个 sampleCount 建管线（2x/8x 需扩管线维度，未做）；
+- 4x = 该目标本次 3D pass 用 `w×h×4` 的颜色 + 深度附件，pass 结束 resolve 进单采样目标纹理；
+  离屏纹理本体、后续采样与 `Capture.camera_*` 回读全部不变；
+- **只作用于 3D pass**：2D 图元/mesh 层恒单采样（2D 目标上写 `msaa_samples=4` 会被强制回 1x，
+  并打印一次 `runtime: RenderTexture '...' 是 2D 相机目标 → MSAA 无效`）；
+- 相机视图 `clear_mode>=2`（保留目标内容）时该次提交退回 1x；
+- 设备建不出 4x 纹理时 `caps.max_samples=1` → 自动回退 1x 并打印一次（不静默降级）；
+- 多采样附件按 `(w,h,fmt,samples)` 进 8 组 LRU 缓存（[docs/bugs/004](bugs/004-render-target-attachment-churn.md)
+  的同型问题由这个缓存挡住）。目标**尺寸种类**多于缓存时互相驱逐会退回每帧重建，gfx 打印一次
+  「正在互相驱逐重建」提示 —— 收敛办法是把各 RT 统一到相同尺寸，或只给需要的目标开；
+- 后处理不参与：RT 的 `frame3d.post` 恒 `enabled=0`（整帧后处理是**主输出**阶段的效果）。
 
 采样规则：
 
@@ -313,6 +346,11 @@ Camera2D 非等比 zoom。
 5. 避免依赖环和无意义的相机互拍；
 6. 截图/readback 是冷路径，不要每帧调用；
 7. 用 `MAQUE_TRACE_STATS=1` 观察 render 时间、draws、tris 和 target，VRAM 看 `resource_bytes` 统计。
+8. 开 `msaa_samples=4` 前先看尺寸：4x 附件 = 颜色 + 深度各 `w×h×4B×4`（128² ≈ 0.5 MB，1080p ≈ 35 MB），
+   而且这些**帧临时附件不计入 `resource_bytes()`**（`MAQUE_TRACE_GPU_ALLOC=1` 才看得见创建次数）；
+   只给真正需要抗锯齿的那一两张目标开，别用 `rt_msaa=4` 全场铺开；
+9. 目标**尺寸种类**会各占一个附件缓存槽（8 组）：多张不同尺寸的 4x 纹理互相驱逐时 gfx 会打印一次
+   「正在互相驱逐重建」——把 RT 尺寸对齐（例如小地图与监控都用 256²）即可消掉。
 
 ## 13. Windows 构建、运行与测试
 
@@ -335,6 +373,19 @@ tools\win\build.cmd -BuildDir build-win-release -BuildType Release -NoSanitize
   .\scenes\render_texture\render_texture_3d.scn
 ```
 
+逐目标 MSAA 的手动对照（同一场景，只改一张目标的样本数）：
+
+```powershell
+$env:MAQUE_WINDOW='0x0'; $env:MAQUE_PRESENT='off'; $env:MAQUE_TRACE_GPU_ALLOC='1'
+# duck 的 RT 组件写了 msaa_samples=4 → 只创建 128x128 的 4x 附件，主目标仍 1x
+.\build-win\samples\player\maque_player.exe --shot .\build\rt_msaa.ppm --shot-frame 2 `
+  .\scenes\render_texture\render_texture_msaa.scn
+# 全局开关：两张相机纹理一起 4x（主输出不受影响）
+$env:MAQUE_ENGINE_OPTIONS='rt_msaa=4'
+.\build-win\samples\player\maque_player.exe --shot .\build\rt_all.ppm --shot-frame 2 `
+  .\scenes\render_texture\render_texture_3d.scn
+```
+
 聚焦回归：
 
 ```powershell
@@ -342,8 +393,9 @@ ctest --test-dir build --timeout 180 --output-on-failure `
   -R '^render_texture_e2e$'
 ```
 
-`tests/render_texture_e2e.sh` 覆盖 GPU 离屏目标、同帧 Sprite 采样、Camera2D/Camera3D、截图和像素断言。
-手工场景还包括 `render_texture_2d.scn` 与 `render_texture_cube.scn`。
+`tests/render_texture_e2e.sh` 覆盖 GPU 离屏目标、同帧 Sprite 采样、Camera2D/Camera3D、截图和像素断言，
+以及逐目标 MSAA（组件字段只改 duck、`rt_msaa` 全局覆盖与强制关、2D 目标明确忽略、主输出不受牵连）。
+手工场景还包括 `render_texture_2d.scn`、`render_texture_msaa.scn` 与 `render_texture_cube.scn`。
 
 ## 14. 排错表
 
@@ -359,6 +411,8 @@ ctest --test-dir build --timeout 180 --output-on-failure `
 | 画面模糊 | `filter=Nearest(0)`；RenderTexture 尺寸是否低于最终显示尺寸 |
 | 截图没有生成 | 路径是否可写；请求后是否至少执行一个渲染帧；查看 `camera shot` 日志 |
 | `Capture.camera` 后续块失效 | 从 `offset=0` 重启同一次分块传输 |
+| 开了 `msaa_samples` 没变化 | 是不是 **2D 相机**目标（日志有「MSAA 无效」）；`clear_mode>=2`；`MAQUE_MSAA`/F4 选项把它压回 1x；`gfx caps.max_samples=1`（设备不支持 4x，自动回退） |
+| 帧时间/显存随 RT 数量涨 | `MAQUE_TRACE_GPU_ALLOC=1` 看 `attachment create msaa` 次数：多尺寸目标在驱逐缓存 → 对齐尺寸或减少开 msaa 的目标 |
 | Windows 无法加载 renderer | 确认 `maque_gfx.dll`、`wgpu_native.dll` 在 player 旁；优先使用 `tools\win\build.cmd` |
 
 ## 15. 相关入口
@@ -369,5 +423,7 @@ ctest --test-dir build --timeout 180 --output-on-failure `
 - 自动生成类型参考：`modules/core/data/generated/TYPES.md`
 - 2D 示例：`scenes/render_texture/render_texture_2d.scn`
 - 3D 双相机示例：`scenes/render_texture/render_texture_3d.scn`
+- 逐目标 MSAA 对照：`scenes/render_texture/render_texture_msaa.scn`（只有 duck 写 `msaa_samples: 4`）
 - PBR cube 示例：`scenes/render_texture/render_texture_cube.scn`
 - 回归：`tests/render_texture_e2e.sh`
+- 附件缓存抖动（同型问题）：[bugs/004](bugs/004-render-target-attachment-churn.md)

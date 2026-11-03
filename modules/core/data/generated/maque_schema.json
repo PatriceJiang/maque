@@ -9209,6 +9209,15 @@
           "attrs": {}
         },
         {
+          "name": "msaa_samples",
+          "type": "int32_t",
+          "kind": "i32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "texture",
           "type": "string",
           "kind": "string",

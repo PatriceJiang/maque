@@ -164,6 +164,147 @@ MSAA_CREATES=$(grep -c 'gfx: gpu attachment create msaa ' "$WORK/attach.log" || 
   || { cat "$WORK/attach.log"; fail "60 帧 MSAA 附件重建 ${MSAA_CREATES} 次"; }
 echo "render_texture_e2e: attachment cache depth=${DEPTH_CREATES} msaa=${MSAA_CREATES} (60 frames)"
 
+# ---- 逐目标 MSAA（docs/33 §格式、采样与限制）----
+# 主目标与每张 RenderTexture 各算一份 frame3d.msaa_samples：
+#   · 组件字段 render.RenderTexture.msaa_samples → 只有那张纹理变 4x；
+#   · F4/MAQUE_ENGINE_OPTIONS 的 rt_msaa → 全部相机离屏目标一起变，主输出不受影响；
+#   · 优先级：rt_msaa > msaa（面板） > MAQUE_MSAA > 组件字段 > scn.Scene.msaa_samples。
+# 多采样只是 3D pass 的临时附件（pass 末 resolve 回单采样纹理），所以物理目标仍可被采样/回读。
+SCENEMS="$(dirname "$SCENE")/render_texture_msaa.scn"
+# 两份场景必须只差 duck 的 msaa_samples（防漂移：基线一改，这里的像素对照就失去意义）。
+"$PY" - "$SCENE3D" "$SCENEMS" <<'PY' || exit 1
+import json, sys
+
+def raw(path):
+    return json.load(open(path, encoding='utf-8'))
+
+def norm(d):
+    d = json.loads(json.dumps(d))
+    d.pop('title', None)
+    for ent in d.get('entities', []):
+        for c in ent.get('components', []):
+            if c.get('type') == 'render.RenderTexture':
+                c.pop('msaa_samples', None)
+    return d
+
+a, b = (raw(p) for p in sys.argv[1:3])
+assert norm(a) == norm(b), 'render_texture_msaa.scn 与 render_texture_3d.scn 已漂移（除 msaa_samples 外须一致）'
+rts = [c for e in b['entities'] if e['name'] == 'camera_duck'
+       for c in e['components'] if c.get('type') == 'render.RenderTexture']
+assert rts and rts[0].get('msaa_samples') == 4, ('duck RT 应写 msaa_samples=4', rts)
+print('render_texture_e2e: per-target MSAA 场景 = 基线 + duck msaa_samples=4')
+PY
+env MAQUE_TRACE_GPU_ALLOC=1 timeout 90 "$PLAYER" --shot "$WORK/msaa_rt.ppm" --shot-frame 2 "$SCENEMS" >"$WORK/runms.log" 2>&1 \
+  || { cat "$WORK/runms.log"; fail "逐目标 MSAA 场景运行失败（附件/管线样本数不匹配？）"; }
+grep -q 'gfx: gpu attachment create msaa 128x128 ' "$WORK/runms.log" \
+  || { cat "$WORK/runms.log"; fail "duck RT 的 4x 附件未创建（组件 msaa_samples 未生效）"; }
+grep -q 'gfx: gpu attachment create msaa 320x240 ' "$WORK/runms.log" \
+  && { cat "$WORK/runms.log"; fail "主目标未开 MSAA，却给它建了 4x 附件"; }
+# 只有 duck 变（边缘抗锯齿），fox 与主画面逐像素不变 → 证明样本数是「逐目标」而非全局。
+"$PY" - "$WORK/main3d.ppm" "$WORK/msaa_rt.ppm" <<'PY' || exit 1
+import sys
+
+def ppm(path):
+    d = open(path, 'rb').read()
+    magic, size, maxv, px = d.split(b'\n', 3)
+    assert magic == b'P6' and maxv == b'255', path
+    w, h = map(int, size.split())
+    assert len(px) == w * h * 3, (path, w, h, len(px))
+    return w, h, px
+
+a, b = ppm(sys.argv[1]), ppm(sys.argv[2])
+assert a[:2] == b[:2] == (320, 240)
+
+def diff(x0, y0, x1, y1):
+    n = 0
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            i = (y * a[0] + x) * 3
+            if sum(abs(a[2][i + k] - b[2][i + k]) for k in range(3)) > 30:
+                n += 1
+    return n
+
+duck = diff(20, 56, 148, 184)
+fox = diff(172, 56, 300, 184)
+outside = diff(0, 190, 320, 240)
+assert duck > 20, ('duck RT 区域无抗锯齿差异（RT msaa_samples 未生效？）', duck)
+assert fox == 0, ('fox RT 不该被 duck 的 MSAA 影响', fox)
+assert outside == 0, ('主画面不该被 RT 的 MSAA 影响', outside)
+print('render_texture_e2e: per-target MSAA duck-diff=', duck, 'fox-diff=', fox, 'main-diff=', outside)
+PY
+
+# rt_msaa=4：基线场景（两个 RT 都没有组件字段）→ 两张相机纹理一起 4x，主输出仍 1x。
+env MAQUE_TRACE_GPU_ALLOC=1 MAQUE_RENDER3D_INFO=1 MAQUE_ENGINE_OPTIONS="rt_msaa=4" \
+  timeout 90 "$PLAYER" --shot "$WORK/rt_msaa_on.ppm" --shot-frame 2 "$SCENE3D" >"$WORK/runms_on.log" 2>&1 \
+  || { cat "$WORK/runms_on.log"; fail "MAQUE_ENGINE_OPTIONS=rt_msaa=4 运行失败"; }
+grep -qF "msaa=scene rt_msaa=4x" "$WORK/runms_on.log" \
+  || { cat "$WORK/runms_on.log"; fail "rt_msaa 未被 MAQUE_ENGINE_OPTIONS 解析（缺 env 日志）"; }
+grep -q 'gfx: gpu attachment create msaa 128x128 ' "$WORK/runms_on.log" \
+  || { cat "$WORK/runms_on.log"; fail "rt_msaa=4 未给相机纹理建 4x 附件"; }
+grep -q 'gfx: gpu attachment create msaa 320x240 ' "$WORK/runms_on.log" \
+  && { cat "$WORK/runms_on.log"; fail "rt_msaa 只该作用于相机离屏目标，主输出被改动了"; }
+# rt_msaa=1：更专门的开关赢过组件字段 → duck 回到与基线逐像素一致，且完全没有多采样附件。
+env MAQUE_TRACE_GPU_ALLOC=1 MAQUE_ENGINE_OPTIONS="rt_msaa=1" \
+  timeout 90 "$PLAYER" --shot "$WORK/rt_msaa_off.ppm" --shot-frame 2 "$SCENEMS" >"$WORK/runms_off.log" 2>&1 \
+  || { cat "$WORK/runms_off.log"; fail "MAQUE_ENGINE_OPTIONS=rt_msaa=1 运行失败"; }
+grep -q 'gfx: gpu attachment create msaa ' "$WORK/runms_off.log" \
+  && { cat "$WORK/runms_off.log"; fail "rt_msaa=1 应压过 duck 的 msaa_samples=4（仍建了 4x 附件）"; }
+"$PY" - "$WORK/main3d.ppm" "$WORK/rt_msaa_off.ppm" "$WORK/rt_msaa_on.ppm" <<'PY' || exit 1
+import sys
+
+def ppm(path):
+    d = open(path, 'rb').read()
+    _, size, _, px = d.split(b'\n', 3)
+    w, h = map(int, size.split())
+    return w, h, px
+
+base, off, on = (ppm(p) for p in sys.argv[1:4])
+
+def diff(a, b, x0, y0, x1, y1):
+    n = 0
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            i = (y * a[0] + x) * 3
+            if sum(abs(a[2][i + k] - b[2][i + k]) for k in range(3)) > 30:
+                n += 1
+    return n
+
+forced_off = diff(base, off, 20, 56, 148, 184)
+both_on_duck = diff(base, on, 20, 56, 148, 184)
+both_on_fox = diff(base, on, 172, 56, 300, 184)
+assert forced_off == 0, ('rt_msaa=1 未压过组件 msaa_samples=4', forced_off)
+assert both_on_duck > 20 and both_on_fox > 20, ('rt_msaa=4 应同时改变两张相机纹理', both_on_duck, both_on_fox)
+print('render_texture_e2e: rt_msaa 覆盖 off→', forced_off, 'px on→ duck', both_on_duck, 'fox', both_on_fox)
+PY
+echo "render_texture_e2e: per-target MSAA ok（duck 单张 4x / rt_msaa 全局开关 / 主输出不受影响）"
+
+# 2D 相机目标不吃 MSAA（2D 图元层恒单采样）：强开 rt_msaa=4 必须明确打印一次「无效」，
+# 不建多采样附件、画面逐像素不变 —— 免得让人以为小地图开了抗锯齿。
+env MAQUE_TRACE_GPU_ALLOC=1 MAQUE_ENGINE_OPTIONS="rt_msaa=4" \
+  timeout 90 "$PLAYER" --shot "$WORK/rt2d_msaa.ppm" --shot-frame 5 "$SCENE2D" >"$WORK/run2d_msaa.log" 2>&1 \
+  || { cat "$WORK/run2d_msaa.log"; fail "2D RenderTexture + rt_msaa=4 运行失败"; }
+grep -qE "2D 相机目标.*MSAA 无效" "$WORK/run2d_msaa.log" \
+  || { cat "$WORK/run2d_msaa.log"; fail "2D 目标的 MSAA 请求未被明确拒绝（缺提示）"; }
+RT2D_MSAA_CREATES=$(grep -c 'gfx: gpu attachment create msaa ' "$WORK/run2d_msaa.log" || true)
+[ "${RT2D_MSAA_CREATES:-0}" -eq 0 ] \
+  || { cat "$WORK/run2d_msaa.log"; fail "2D 相机目标不该建多采样附件"; }
+"$PY" - "$WORK/rot_a.ppm" "$WORK/rt2d_msaa.ppm" <<'PY' || exit 1
+import sys
+
+def ppm(path):
+    d = open(path, 'rb').read()
+    _, size, _, px = d.split(b'\n', 3)
+    w, h = map(int, size.split())
+    return w, h, px
+
+a, b = ppm(sys.argv[1]), ppm(sys.argv[2])
+assert a[:2] == b[:2]
+same = a[2] == b[2]
+assert same, '2D 目标在 rt_msaa=4 下画面被改动了（应完全忽略）'
+print('render_texture_e2e: 2D RenderTexture 忽略 MSAA（逐像素一致 + 明确提示）')
+PY
+echo "render_texture_e2e: 2D 目标 MSAA 无效路径 ok"
+
 # shader 精灵 → 2D RenderTexture → cube 面（docs/13 §场景自定义 shader 精灵）：
 # 两个 render.ShaderSprite 先渲染进 rendertexture://sprites，再以 Basic（unlit）材质贴到 cube 正面。
 SCENESS="$(dirname "$SCENE")/shader-sprites-cube.scn"

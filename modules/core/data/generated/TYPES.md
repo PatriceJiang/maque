@@ -1645,6 +1645,7 @@ role: `physics_body`
 | `include_ui` | bool | false |  |
 | `enabled` | bool | true |  |
 | `clear_color` | math.Color | {0.0F, 0.0F, 0.0F, 0.0F} |  |
+| `msaa_samples` | int32_t | 0 |  |
 | `texture` | string |  | transient, readonly |
 | `ready` | bool | false | transient, readonly |
 | `last_frame` | uint32_t | 0 | transient, readonly |
