@@ -6,10 +6,7 @@
     {
       "name": "quartz_cave",
       "components": [
-        {
-          "type": "render.ShaderGraph",
-          "program": "quartz/program.json"
-        }
+        { "type": "render.ShaderGraph", "program": "quartz/program.json" }
       ]
     }
   ]

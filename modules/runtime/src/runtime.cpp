@@ -5029,21 +5029,28 @@ void Engine::setup_shader_graphs() {
             return base_dir + rel;
         };
 
-        /* 中间缓冲：每个两张纹理（ping-pong）。size 为正方形边长（像素）。 */
+        /* 中间缓冲：每个两张纹理（ping-pong）。`size` = 正方形边长；也可以写 `width`+`height`
+         * 要非方形缓冲（例如按屏幕比例的画面缓冲、光照单元网格），`size` 仍然有效且优先。 */
         const mq_json* jbufs = mq_json_get(dom, "buffers");
         const uint32_t nbuf = mq_json_len(jbufs);
         for (uint32_t i = 0; i < nbuf; ++i) {
             const mq_json* jb = mq_json_at(jbufs, i);
             const char* name = mq_json_str(mq_json_get(jb, "name"), "");
             const int32_t size = (int32_t)mq_json_num(mq_json_get(jb, "size"), 0);
-            if (!name || !*name || size <= 0) {
-                std::print(stderr, "runtime: shader graph '{}' buffers[{}] 需要 name + size>0，已跳过\n", *path, i);
+            int32_t bw = size, bh = size;
+            if (size <= 0) {
+                bw = (int32_t)mq_json_num(mq_json_get(jb, "width"), 0);
+                bh = (int32_t)mq_json_num(mq_json_get(jb, "height"), 0);
+            }
+            if (!name || !*name || bw <= 0 || bh <= 0) {
+                std::print(stderr, "runtime: shader graph '{}' buffers[{}] 需要 name + "
+                                   "(size>0 或 width>0 且 height>0)，已跳过\n", *path, i);
                 continue;
             }
             ShaderGraphBuffer b;
             b.name = name;
-            b.w = size;
-            b.h = size;
+            b.w = bw;
+            b.h = bh;
             bool ok = true;
             for (int k = 0; k < 2 && ok; ++k) {
                 int32_t tid = -1;

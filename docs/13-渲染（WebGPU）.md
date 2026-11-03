@@ -360,11 +360,18 @@ fragment 入口消费。
 
 | 字段 | 说明 |
 |------|------|
-| `buffers[].name` / `size` | 中间缓冲名（`channels` 引用它）与正方形边长（像素） |
+| `buffers[].name` / `size` | 中间缓冲名（`channels` 引用它）与**正方形**边长（像素） |
+| `buffers[].width` / `height` | 非方形缓冲的宽高（像素）；`size` 优先，两者都写时按 `size`。给「按屏幕比例的画面缓冲」「光照单元网格」这类缓冲用 |
 | `passes[].shader` | 阶段 WGSL；**相对 program 文件所在目录**，失败只跳过该阶段并报错 |
 | `passes[].common` | 可选：共享源码，引擎把它**拼在 shader 之前**（相当于 Shadertoy 的 Common 标签页） |
 | `passes[].target` | 输出缓冲名；`""` / `"screen"` / `"main"` = 主渲染目标（背景层） |
 | `passes[].channels` | 4 个 `iChannel`：缓冲名；`"self"`/`"prev"` = 本 pass 目标缓冲的**上一帧**内容；`""` = 未绑定 |
+
+**缓冲尺寸**：`size` 写正方形，需要任意宽高就写 `width`+`height`（两者都缺失才报错跳过）。
+缓冲只渲染它自己的尺寸，所以「原作用 iResolution 大小的纹理 + 角落一块」的写法可以直接缩成
+实际用到的 texel 数——`scenes/shadertoy/quartz/program.json` 里拖拽状态是 `1x6`、光照单元是
+`64x24`、光心是 `6x1`。中间缓冲阶段若需要「屏幕」尺寸（原作的 `iResolution`），取
+`mq_pass.screen_resolution`，不要用该阶段自己的 `resolution`。
 
 **缓冲语义**：每个缓冲两张 RGBA32F 纹理（ping-pong）。本帧写 `tex[write]`，读上一帧的 `tex[1-write]`；
 同一帧内引用别的缓冲时读它**本帧最新**的结果（前面的阶段先写），所以阶段可以串联。ping-pong 每模拟帧
@@ -460,6 +467,30 @@ program JSON 的路径即可**（引擎按扩展名判定：`.wgsl` = 单 pass �
 - 同一份 program 还用于精灵场景 `mountain-shader-sprite.scn`：单个实体挂
   `render.ShaderSprite`、`shader` 写 `mountains/program.json`、720×405，
   用来验证"精灵形态与背景形态共享同一条阶段链"。
+
+### 示例：Shadertoy "quartz cave"（`scenes/shadertoy/quartz_cave.scn`）
+
+- 原作：**"quartz cave 💎"**，作者 **aladiN**（Shadertoy）。
+- 5 个阶段 / 4 个缓冲，**3 个缓冲是非方形的**（这条通路也是 `width`/`height` 的唯一回归）：
+  `buffer_a`（`state` 1×6：拖拽状态，自反馈）→ `buffer_b`（`scene` 960×540：凸多面体晶体 +
+  湿岩 + 光柱 + 尘埃 + 色散/焦散，输出线性 HDR）→ `buffer_c`（`cells` 64×24：按单元累加
+  高于曝光阈值的亮度与质心）→ `buffer_d`（`centres` 6×1：最亮的 6 个分离光心）→
+  `image`（tone map + 按 `value / distance` 画星芒）。
+- 移植要点：
+  - 原作用 iResolution 大小的纹理 + 角落若干 texel 存状态/光照单元；这里直接给每个缓冲它
+    真正用到的尺寸。因此这几个阶段里的「屏幕尺寸」取 `mq_pass.screen_resolution`
+    （`common.wgsl` 的 `dragN` / `buffer_c` / `buffer_d` 都这么写），不是阶段自己的 `resolution`。
+  - GLSL 行向量乘法（`v * M`）→ `transpose(M) * v`；WGSL 不允许给 swizzle 赋值、
+    也不能用 `smoothstep(edge0 > edge1)`，故有 `ss()` 与显式分量重建。
+  - 原作 `#ifdef GL_ES` 的展开分支（`ZERO` / `SEQ_*` 命名槽）是为 shadertoy.com 的 ANGLE
+    编译时间服务的，这里用桌面分支：普通数组 + 动态索引。
+  - `image` 阶段按 `fragCoord / resolution * textureDimensions` 取 `scene` 缓冲，所以主目标
+    尺寸与 `scene` 缓冲尺寸不同（窗口 resize）时仍是正确的最近邻放大。
+- 交互：拖拽环绕（拖得越高相机越靠近、越俯视晶体里的彩虹）；单击回到初始视角。
+  `CLICK_PX` 之内算单击——状态由 `state` 缓冲跨帧保留。
+- 回归：`ctest -R shadertoy_e2e` 的 `[quartz]` 一节——5 阶段加载行、960×540 结构
+  （颜色多样/非平坦/洞顶暗于地面）、frame 1 vs 120 有动画、同帧逐字节一致、
+  `MAQUE_SIM` 拖拽通过自反馈缓冲改变视角（`tests/data/sim/quartz_orbit.sim.json`）。
 
 ## 场景自定义 shader 精灵（render.ShaderSprite）
 
