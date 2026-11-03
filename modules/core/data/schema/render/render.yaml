@@ -304,13 +304,31 @@
     # 区别是它画在**节点所在的矩形**里（跟随 Canvas 缩放/letterbox/旋转），并参与 2D 图层排序。
     - struct: ShaderSprite
       fields:
-        - { name: shader, type: string, default: "" }     # WGSL 源文件（相对场景目录，VFS 路径）
+        # WGSL 源文件，或**shader 图 program JSON**（引擎按扩展名 .json 判定）——
+        # 两种都渲染到节点矩形里：.wgsl 走单 pass 契约（32B uniform），
+        # program JSON 走多阶段/自反馈链（`render.ShaderGraph` 的同一套 program 格式）。
+        - { name: shader, type: string, default: "" }     # 相对场景目录（VFS 路径）
         - { name: width, type: float, default: 64.0F, attrs: { unit: px } }
         - { name: height, type: float, default: 64.0F, attrs: { unit: px } }
         - { name: speed, type: float, default: 1.0F }
         - { name: paused, type: bool, default: false }
         - { name: enabled, type: bool, default: true }
         - { name: time, type: float, default: 0.0F }
+    # 场景资源**多通道 shader 图**（render.ShaderGraph；docs/13 §多通道 shader）：
+    # program = 场景目录相对的 JSON（buffers/passes/channels），每帧按声明顺序执行各阶段，
+    # 最后画到屏幕的阶段就是背景层。中间缓冲是 RGBA32F 纹理（可采样 + 可作渲染附件），
+    # feedback=true 的通道在读上一帧的同时写另一张纹理（ping-pong），因此支持自反馈缓冲。
+    # WGSL 契约：@fragment fs_main + group0 binding0 的 64B uniform + binding1..4 纹理 + binding5 sampler；
+    # program 里给了 common 时，引擎把 common 源码拼在每个 pass 源码之前（共享函数库语义）。
+    # 与 render.ShaderPass 的关系：单阶段用 ShaderPass 更简单；需要中间缓冲/多阶段时用本组件。
+    # 只画在 2D 精灵矩形里 → 用 render.ShaderSprite 且 shader 写同一份 program JSON。
+    - struct: ShaderGraph
+      fields:
+        - { name: program, type: string, default: "" }    # program JSON（相对场景目录，VFS 路径）
+        - { name: speed, type: float, default: 1.0F }     # time 推进倍率
+        - { name: paused, type: bool, default: false }    # true = time 冻结
+        - { name: enabled, type: bool, default: true }
+        - { name: time, type: float, default: 0.0F }      # 运行期按 dt*speed 推进（脚本可读写）
     - struct: Light
       fields:
         - { name: type, type: LightType, default: "LightType::Directional" }

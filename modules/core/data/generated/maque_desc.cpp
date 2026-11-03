@@ -1060,6 +1060,14 @@ static const mq_field_desc mq_fields_render_RichText[] = {
     { "line_count", (uint32_t)offsetof(render::RichText, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
 };
 
+static const mq_field_desc mq_fields_render_ShaderGraph[] = {
+    { "program", (uint32_t)offsetof(render::ShaderGraph, program), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "speed", (uint32_t)offsetof(render::ShaderGraph, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "paused", (uint32_t)offsetof(render::ShaderGraph, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "enabled", (uint32_t)offsetof(render::ShaderGraph, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "time", (uint32_t)offsetof(render::ShaderGraph, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+};
+
 static const mq_field_desc mq_fields_render_ShaderPass[] = {
     { "shader", (uint32_t)offsetof(render::ShaderPass, shader), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
     { "speed", (uint32_t)offsetof(render::ShaderPass, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
@@ -2682,6 +2690,7 @@ static void mq_defaults_render_RenderTextureUpdateMode(void* p) { new (p) render
 static void mq_defaults_render_RichRun(void* p) { new (p) render::RichRun{}; }
 static void mq_defaults_render_RichTagType(void* p) { new (p) render::RichTagType{}; }
 static void mq_defaults_render_RichText(void* p) { new (p) render::RichText{}; }
+static void mq_defaults_render_ShaderGraph(void* p) { new (p) render::ShaderGraph{}; }
 static void mq_defaults_render_ShaderPass(void* p) { new (p) render::ShaderPass{}; }
 static void mq_defaults_render_ShaderSprite(void* p) { new (p) render::ShaderSprite{}; }
 static void mq_defaults_render_ShadowCastMode(void* p) { new (p) render::ShadowCastMode{}; }
@@ -4925,6 +4934,20 @@ extern const mq_type_desc mq_type_render_RichText = {
     mq_defaults_render_RichText,
 };
 
+extern const mq_type_desc mq_type_render_ShaderGraph = {
+    "render.ShaderGraph",
+    3931021936u,
+    (uint32_t)sizeof(render::ShaderGraph),
+    (uint32_t)alignof(render::ShaderGraph),
+    5u,
+    mq_fields_render_ShaderGraph,
+    4u,
+    0u,
+    0,
+    0u,
+    mq_defaults_render_ShaderGraph,
+};
+
 extern const mq_type_desc mq_type_render_ShaderPass = {
     "render.ShaderPass",
     4275420661u,
@@ -6479,6 +6502,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_render_RichRun,
     &mq_type_render_RichTagType,
     &mq_type_render_RichText,
+    &mq_type_render_ShaderGraph,
     &mq_type_render_ShaderPass,
     &mq_type_render_ShaderSprite,
     &mq_type_render_ShadowCastMode,
@@ -6581,7 +6605,7 @@ const mq_type_desc* const mq_schema_types[] = {
     &mq_type_ui_WrapMode,
 };
 
-const uint32_t mq_schema_type_count = 253u;
+const uint32_t mq_schema_type_count = 254u;
 
 #ifdef __cplusplus
 } // extern "C"

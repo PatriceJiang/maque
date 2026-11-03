@@ -2038,6 +2038,14 @@ enum class RichTagType : int32_t {
     Link          = 10,
 };
 
+struct ShaderGraph {
+    std::string program = "";
+    float speed = 1.0F;
+    bool paused = false;
+    bool enabled = true;
+    float time = 0.0F;
+};
+
 struct ShaderPass {
     std::string shader = "";
     float speed = 1.0F;

@@ -3,7 +3,7 @@
 > ⚠️ 由 `modules/core/data/parser.js` 从 `schema/` 生成，**请勿手工编辑**。
 > 这些类型同时生成 C++ 头（`maque_types.h`）与 C ABI 描述符（`maque_desc.*`）；`role` 表示引擎会通用处理该组件的语义。
 
-共 **253** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
+共 **254** 个类型。字段格式：`名称: 类型 = 默认值 (attrs)`。
 
 ## anim（29） · `world/anim.yaml`
 
@@ -1299,7 +1299,7 @@ role: `physics_body`
 | `Combine` | 1 |
 | `Replace` | 2 |
 
-## render（50） · `render/render.yaml`
+## render（51） · `render/render.yaml`
 
 ### render.Billboard — struct (变长（含动态成员）)
 
@@ -1714,6 +1714,16 @@ role: `ui_text`
 | `runs` | RichRun[] | — | transient |
 | `links` | string[] | — | transient |
 | `line_count` | int32_t | 0 | transient |
+
+### render.ShaderGraph — struct (变长（含动态成员）)
+
+| 字段 | 类型 | 默认值 | attrs |
+|------|------|--------|-------|
+| `program` | string |  |  |
+| `speed` | float | 1.0F |  |
+| `paused` | bool | false |  |
+| `enabled` | bool | true |  |
+| `time` | float | 0.0F |  |
 
 ### render.ShaderPass — struct (变长（含动态成员）)
 

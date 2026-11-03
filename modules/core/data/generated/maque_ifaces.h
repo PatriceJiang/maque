@@ -258,6 +258,30 @@ typedef struct mq_renderer_shader_sprite {
     float mouse[4];
 } mq_renderer_shader_sprite;
 
+typedef struct mq_renderer_shader_graph_pass {
+    int32_t shader;
+    int32_t target;
+    int32_t channels[4];
+    float resolution[2];
+    float time;
+    float frame;
+    float mouse[4];
+    float keys[4];
+    float screen_resolution[2];
+} mq_renderer_shader_graph_pass;
+
+typedef struct mq_renderer_shader_graph_sprite {
+    const mq_renderer_shader_graph_pass* passes;
+    uint32_t pass_count;
+    int32_t z;
+    float x;
+    float y;
+    float half_w;
+    float half_h;
+    float rotation;
+    float a;
+} mq_renderer_shader_graph_sprite;
+
 typedef struct mq_renderer_frame3d {
     int32_t width;
     int32_t height;
@@ -293,6 +317,10 @@ typedef struct mq_renderer_frame3d {
     int32_t present_after_readback;
     const mq_renderer_shader_sprite* shader_sprites;
     uint32_t shader_sprite_count;
+    const mq_renderer_shader_graph_pass* graph_passes;
+    uint32_t graph_pass_count;
+    const mq_renderer_shader_graph_sprite* graph_sprites;
+    uint32_t graph_sprite_count;
 } mq_renderer_frame3d;
 
 typedef struct mq_renderer_render_texture_desc {
@@ -341,4 +369,7 @@ typedef struct mq_renderer_v2 {
     int32_t (*render_to_texture)(void* self, int32_t id, const mq_renderer_frame3d* frame);
     int32_t (*read_texture)(void* self, int32_t id, uint8_t* out, uint32_t out_size);
     int32_t (*resource_bytes2)(void* self, mq_renderer_resource_usage* out);
+    int32_t (*create_shader_graph_pass)(void* self, const char* wgsl, int32_t* out_id);
+    void (*destroy_shader_graph_pass)(void* self, int32_t id);
+    int32_t (*create_shader_graph_target)(void* self, int32_t w, int32_t h, int32_t* out_id);
 } mq_renderer_v2;

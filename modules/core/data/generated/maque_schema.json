@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "parser.js",
-  "type_count": 253,
+  "type_count": 254,
   "api_count": 325,
   "control_count": 57,
   "callback_count": 11,
@@ -9612,6 +9612,64 @@
           "attrs": {
             "transient": true
           }
+        }
+      ]
+    },
+    {
+      "name": "render.ShaderGraph",
+      "namespace": "render",
+      "kind": "struct",
+      "type_id": 3931021936,
+      "size": null,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
+      "source": "render/render.yaml",
+      "fields": [
+        {
+          "name": "program",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "paused",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "enabled",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "time",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
         }
       ]
     },

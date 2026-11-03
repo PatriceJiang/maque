@@ -93,6 +93,19 @@ struct ShaderPassGpu {
     int pipe_count = 0;
 };
 
+/* 场景资源多通道 shader 图的一个阶段（render.ShaderGraph；docs/13 §多通道 shader）：
+ * fragment 来自场景 .wgsl（runtime 把 common 源码拼在前面），绑定面固定为
+ * group0 binding0 = 64B uniform、binding1..4 = iChannel0..3、binding5 = sampler。
+ * 与 ShaderPass 的区别：多了纹理通道，因此每个阶段可以读中间缓冲（含自反馈缓冲）。 */
+struct ShaderGraphPassGpu {
+    WGPUShaderModule frag = nullptr;
+    WGPUBindGroupLayout bgl = nullptr;
+    WGPUPipelineLayout pl = nullptr;
+    struct PipeEntry { WGPUTextureFormat fmt; WGPURenderPipeline pipe; };
+    PipeEntry pipes[4] = {};
+    int pipe_count = 0;
+};
+
 struct Device {
     WGPUInstance instance = nullptr;
     WGPUAdapter  adapter = nullptr;
@@ -269,6 +282,11 @@ struct Device {
     /* ---- 场景资源全屏 shader pass（docs/13）---- */
     std::vector<ShaderPassGpu*> shaderPasses;   /* 槽位 = ABI 句柄（destroy 后保留 nullptr） */
     WGPUShaderModule passVsShader = nullptr;    /* 引擎提供的全屏三角形 VS（所有 pass 共用） */
+    /* ---- 场景资源多通道 shader 图（docs/13 §多通道 shader）---- */
+    std::vector<ShaderGraphPassGpu*> shaderGraphPasses;   /* 槽位 = ABI 句柄（destroy 后保留 nullptr） */
+    WGPUSampler graphSampler = nullptr;                   /* nearest + clamp（float32 纹理不可过滤） */
+    WGPUTexture graphDummyTex = nullptr;                  /* 未绑定通道的 1×1 占位（RGBA32F 0） */
+    WGPUTextureView graphDummyView = nullptr;
     /* ---- 主输出阶段后处理 PostEffect（docs/13 §后处理；docs/28 F4）----
      * frame3d.post.enabled=1 时：场景先画进 postSrcTex（RGBA8），再由一个全屏 pass 采样它写出到
      * 真正目标（swapchain / 离屏回读纹理 / 缩放中间目标）。关闭时完全不建这些资源 →
@@ -380,6 +398,16 @@ struct O { @builtin(position) p: vec4f };
 }
 
 static void release_shader_pass(ShaderPassGpu* sp) {
+    if (!sp) return;
+    for (int i = 0; i < sp->pipe_count; ++i)
+        if (sp->pipes[i].pipe) wgpuRenderPipelineRelease(sp->pipes[i].pipe);
+    if (sp->pl) wgpuPipelineLayoutRelease(sp->pl);
+    if (sp->bgl) wgpuBindGroupLayoutRelease(sp->bgl);
+    if (sp->frag) wgpuShaderModuleRelease(sp->frag);
+    delete sp;
+}
+
+static void release_shader_graph_pass(ShaderGraphPassGpu* sp) {
     if (!sp) return;
     for (int i = 0; i < sp->pipe_count; ++i)
         if (sp->pipes[i].pipe) wgpuRenderPipelineRelease(sp->pipes[i].pipe);
@@ -1235,6 +1263,10 @@ static void destroy_device(Device* dv) {
         delete m;
     }
     for (auto* sp : dv->shaderPasses) release_shader_pass(sp);
+    for (auto* sp : dv->shaderGraphPasses) release_shader_graph_pass(sp);
+    if (dv->graphSampler) wgpuSamplerRelease(dv->graphSampler);
+    if (dv->graphDummyView) wgpuTextureViewRelease(dv->graphDummyView);
+    if (dv->graphDummyTex) wgpuTextureRelease(dv->graphDummyTex);
     if (dv->passVsShader) wgpuShaderModuleRelease(dv->passVsShader);
     for (auto* t : dv->textures) {
         if (!t) continue;                  /* 已由 destroy_texture 释放（槽位保留但指针为空） */
@@ -2007,6 +2039,306 @@ static int32_t render_shader_passes(Device* dv, WGPUTexture target, WGPUTextureF
     return drawn > 0 ? 0 : (first_error ? first_error : -4);
 }
 
+/* ---- 多通道 shader 图（render.ShaderGraph；docs/13 §多通道 shader）-------------
+ * 语义：一个 program = 有序阶段列表。阶段写中间缓冲（RGBA32F，可采样 + 可作颜色附件）
+ * 或主渲染目标；绑定面固定：group0 binding0 = 64B uniform、binding1..4 = iChannel0..3、
+ * binding5 = 采样器。float32 纹理在 WebGPU 里不可硬件过滤，所以采样器是 nearest，
+ * 需要双线性的 shader 自己用 textureLoad 插值（场景资源侧已按此约定移植）。
+ * 阶段在**同一个 command encoder** 里各自开一个 render pass：同一队列提交内的 pass 有先后
+ * 可见性，后面的阶段能读到前面刚写的缓冲（自反馈缓冲由 runtime 做 ping-pong，
+ * 同一帧内读的是另一张纹理，不会出现同 pass 同纹理读写）。 */
+
+/* CPU 侧 uniform 布局（64B；与 WGSL MqShaderGraphPass 严格一致）。 */
+struct ShaderGraphUniform {
+    float resolution[2];        /* 本阶段渲染尺寸（像素） */
+    float time;                 /* 组件 time（秒） */
+    float frame;                /* 帧号 */
+    float mouse[4];             /* xy = 指针像素（原点左上，**屏幕空间**）；z = 按下；w 预留 */
+    float keys[4];              /* x=Backspace y=Shift z=Enter；w 预留 */
+    float screen_resolution[2]; /* 主目标尺寸：mouse.xy 所在的屏幕空间（中间缓冲阶段据此还原射线） */
+    float pad[2];               /* 对齐到 16B，保持 64B */
+};
+static_assert(sizeof(ShaderGraphUniform) == 64, "shader graph uniform 必须与 WGSL 布局一致（64B）");
+
+static WGPURenderPipeline shader_graph_pipeline(Device* dv, ShaderGraphPassGpu* sp, WGPUTextureFormat fmt) {
+    for (int i = 0; i < sp->pipe_count; ++i)
+        if (sp->pipes[i].fmt == fmt) return sp->pipes[i].pipe;
+    WGPUVertexState vs = WGPU_VERTEX_STATE_INIT;
+    vs.module = dv->passVsShader; vs.entryPoint = SV("mq_pass_vs");
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = fmt; target.writeMask = WGPUColorWriteMask_All;   /* 不混合：全屏覆盖 */
+    WGPUFragmentState fs = WGPU_FRAGMENT_STATE_INIT;
+    fs.module = sp->frag; fs.entryPoint = SV("fs_main"); fs.targetCount = 1; fs.targets = &target;
+    WGPURenderPipelineDescriptor pd = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    pd.layout = sp->pl; pd.vertex = vs; pd.fragment = &fs;
+    pd.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    pd.multisample.count = 1;
+    WGPURenderPipeline pipe = wgpuDeviceCreateRenderPipeline(dv->device, &pd);
+    if (!pipe) return nullptr;
+    if (sp->pipe_count < 4) sp->pipes[sp->pipe_count++] = { fmt, pipe };
+    return pipe;
+}
+
+/* 采样器 + 未绑定通道的 1×1 占位纹理（RGBA32F 0）。 */
+static bool ensure_graph_resources(Device* dv) {
+    if (!dv->graphSampler) {
+        WGPUSamplerDescriptor sd = WGPU_SAMPLER_DESCRIPTOR_INIT;
+        sd.addressModeU = WGPUAddressMode_ClampToEdge;
+        sd.addressModeV = WGPUAddressMode_ClampToEdge;
+        sd.addressModeW = WGPUAddressMode_ClampToEdge;
+        sd.magFilter = WGPUFilterMode_Nearest;
+        sd.minFilter = WGPUFilterMode_Nearest;
+        sd.mipmapFilter = WGPUMipmapFilterMode_Nearest;
+        sd.maxAnisotropy = 1;
+        dv->graphSampler = wgpuDeviceCreateSampler(dv->device, &sd);
+        if (!dv->graphSampler) return false;
+    }
+    if (!dv->graphDummyTex) {
+        WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+        td.dimension = WGPUTextureDimension_2D;
+        td.size = WGPUExtent3D{ 1, 1, 1 };
+        td.format = WGPUTextureFormat_RGBA32Float;
+        td.mipLevelCount = 1; td.sampleCount = 1;
+        dv->graphDummyTex = wgpuDeviceCreateTexture(dv->device, &td);
+        if (!dv->graphDummyTex) return false;
+        dv->graphDummyView = wgpuTextureCreateView(dv->graphDummyTex, nullptr);
+        if (!dv->graphDummyView) return false;
+        const float zero[4] = { 0.0F, 0.0F, 0.0F, 0.0F };
+        WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+        dst.texture = dv->graphDummyTex; dst.aspect = WGPUTextureAspect_All;
+        WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
+        layout.bytesPerRow = 16; layout.rowsPerImage = 1;
+        WGPUExtent3D sz = WGPUExtent3D{ 1, 1, 1 };
+        wgpuQueueWriteTexture(dv->queue, &dst, zero, sizeof zero, &layout, &sz);
+    }
+    return true;
+}
+
+static int32_t r_create_shader_graph_pass(void* self, const char* wgsl, int32_t* out_id) {
+    auto* dv = (Device*)self;
+    if (!dv || !wgsl || !wgsl[0] || !out_id) return -1;
+    if (!dv->passVsShader) dv->passVsShader = make_shader(dv->device, kShaderPassVs);
+    if (!dv->passVsShader) return -2;
+    auto* sp = new ShaderGraphPassGpu();
+    sp->frag = make_shader(dv->device, wgsl);
+    if (!sp->frag) { delete sp; return -2; }
+
+    WGPUBindGroupLayoutEntry e[6] = {};
+    e[0].binding = 0;
+    e[0].visibility = WGPUShaderStage_Fragment;
+    e[0].buffer.type = WGPUBufferBindingType_Uniform;
+    e[0].buffer.minBindingSize = sizeof(ShaderGraphUniform);
+    for (int k = 0; k < 4; ++k) {
+        e[1 + k].binding = (uint32_t)(1 + k);
+        e[1 + k].visibility = WGPUShaderStage_Fragment;
+        /* 中间缓冲是 RGBA32F（不可过滤）→ 必须声明 UnfilterableFloat，否则 bind group 校验拒绝。 */
+        e[1 + k].texture.sampleType = WGPUTextureSampleType_UnfilterableFloat;
+        e[1 + k].texture.viewDimension = WGPUTextureViewDimension_2D;
+    }
+    e[5].binding = 5;
+    e[5].visibility = WGPUShaderStage_Fragment;
+    /* RGBA32F 不可过滤 → 布局必须是 NonFiltering（否则 bind group 校验拒绝 float 纹理）。 */
+    e[5].sampler.type = WGPUSamplerBindingType_NonFiltering;
+
+    WGPUBindGroupLayoutDescriptor bgl_d = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+    bgl_d.entryCount = 6; bgl_d.entries = e;
+    sp->bgl = wgpuDeviceCreateBindGroupLayout(dv->device, &bgl_d);
+    if (!sp->bgl) { release_shader_graph_pass(sp); return -3; }
+    WGPUPipelineLayoutDescriptor pl_d = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+    pl_d.bindGroupLayoutCount = 1; pl_d.bindGroupLayouts = &sp->bgl;
+    sp->pl = wgpuDeviceCreatePipelineLayout(dv->device, &pl_d);
+    if (!sp->pl) { release_shader_graph_pass(sp); return -3; }
+    /* 加载期就用中间缓冲格式试建管线：WGSL 语法/入口/绑定面问题在场景加载时暴露。 */
+    if (!shader_graph_pipeline(dv, sp, WGPUTextureFormat_RGBA32Float)) {
+        std::print(stderr, "gfx: shader graph 阶段编译/管线创建失败"
+                           "（需 @fragment fs_main + group0 binding0 的 64B uniform + binding1..4 纹理 + binding5 sampler）\n");
+        release_shader_graph_pass(sp);
+        return -4;
+    }
+    dv->shaderGraphPasses.push_back(sp);
+    *out_id = (int32_t)dv->shaderGraphPasses.size() - 1;
+    return 0;
+}
+
+static void r_destroy_shader_graph_pass(void* self, int32_t id) {
+    auto* dv = (Device*)self;
+    if (!dv || id < 0 || id >= (int)dv->shaderGraphPasses.size()) return;
+    release_shader_graph_pass(dv->shaderGraphPasses[(size_t)id]);
+    dv->shaderGraphPasses[(size_t)id] = nullptr;   /* 槽位保留（句柄稳定） */
+}
+
+/* 中间缓冲：RGBA32F、可采样 + 可作颜色附件 + 可回读。创建时清 0（首帧采样有确定值）。 */
+static int32_t r_create_shader_graph_target(void* self, int32_t w, int32_t h, int32_t* out_id) {
+    auto* dv = (Device*)self;
+    if (out_id) *out_id = -1;
+    if (!dv || !out_id || w <= 0 || h <= 0) return -1;
+    auto* t = new Texture();
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding |
+               WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)w, (uint32_t)h, 1 };
+    td.format = WGPUTextureFormat_RGBA32Float;
+    td.mipLevelCount = 1; td.sampleCount = 1;
+    t->tex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!t->tex) { delete t; return -2; }
+    t->view = wgpuTextureCreateView(t->tex, nullptr);
+    if (!t->view) { wgpuTextureRelease(t->tex); delete t; return -2; }
+    t->format = WGPUTextureFormat_RGBA32Float;
+    t->width = w; t->height = h;
+    t->render_target = true;
+    t->gpu_bytes = (uint64_t)w * (uint64_t)h * 16u;
+
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    WGPURenderPassColorAttachment ca = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+    ca.view = t->view;
+    ca.loadOp = WGPULoadOp_Clear;
+    ca.storeOp = WGPUStoreOp_Store;
+    ca.clearValue = WGPUColor{ 0.0, 0.0, 0.0, 0.0 };
+    WGPURenderPassDescriptor rpd = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+    rpd.colorAttachmentCount = 1;
+    rpd.colorAttachments = &ca;
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(enc, &rpd);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cmd);
+    wgpuCommandBufferRelease(cmd);
+    wgpuCommandEncoderRelease(enc);
+
+    dv->texture_bytes += t->gpu_bytes;
+    dv->textures.push_back(t);
+    *out_id = (int32_t)dv->textures.size() - 1;
+    return 0;
+}
+
+/* 按顺序执行一条阶段链；target<0 的阶段画到 target。返回 0 = 至少画了一个阶段。
+ * override_w/h > 0：精灵模式 —— 把"主目标阶段"的 resolution/screen_resolution 换成离屏纹理
+ * 像素尺寸，并按同一比例缩放 mouse（uniform 三个字段必须处在同一像素空间）。 */
+static int32_t render_shader_graph_passes(Device* dv, WGPUTexture target, WGPUTextureFormat fmt,
+                                          const mq_renderer_shader_graph_pass* passes, uint32_t count,
+                                          int32_t override_w, int32_t override_h) {
+    if (!dv || !target || !passes || count == 0) return -1;
+    if (!ensure_graph_resources(dv)) return -2;
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    int32_t drawn = 0;
+    int32_t first_error = 0;
+    /* 为"主目标阶段"临时创建的 view 必须活到 submit 之后（命令缓冲引用它）。 */
+    std::vector<WGPUTextureView> own_views;
+    for (uint32_t i = 0; i < count; ++i) {
+        const mq_renderer_shader_graph_pass& ps = passes[i];
+        if (ps.shader < 0 || ps.shader >= (int)dv->shaderGraphPasses.size()) continue;
+        ShaderGraphPassGpu* sp = dv->shaderGraphPasses[(size_t)ps.shader];
+        if (!sp) continue;
+
+        WGPUTexture dst = target;
+        WGPUTextureFormat dfmt = fmt;
+        WGPUTextureView dst_view = nullptr;
+        bool own_view = false;
+        if (ps.target < 0) {
+            dst_view = wgpuTextureCreateView(target, nullptr);
+            own_view = true;
+        } else {
+            if (ps.target >= (int)dv->textures.size() || !dv->textures[(size_t)ps.target]) continue;
+            Texture* tt = dv->textures[(size_t)ps.target];
+            if (!tt->render_target || !tt->view) continue;
+            dst = tt->tex; dfmt = tt->format; dst_view = tt->view;
+        }
+        if (!dst_view) { if (!first_error) first_error = -3; continue; }
+        WGPURenderPipeline pipe = shader_graph_pipeline(dv, sp, dfmt);
+        if (!pipe) {
+            if (!first_error) first_error = -2;
+            if (own_view) wgpuTextureViewRelease(dst_view);
+            continue;
+        }
+
+        ShaderGraphUniform u{};
+        const bool sprite_stage = ps.target < 0 && override_w > 0 && override_h > 0;
+        if (sprite_stage) {
+            /* 精灵模式：uniform 全部换到离屏纹理的像素空间（与 frag_coord 同空间）。 */
+            u.resolution[0] = (float)override_w;
+            u.resolution[1] = (float)override_h;
+            u.screen_resolution[0] = (float)override_w;
+            u.screen_resolution[1] = (float)override_h;
+            const float sx = ps.resolution[0] > 0.0F ? (float)override_w / ps.resolution[0] : 1.0F;
+            const float sy = ps.resolution[1] > 0.0F ? (float)override_h / ps.resolution[1] : 1.0F;
+            u.mouse[0] = ps.mouse[0] * sx;
+            u.mouse[1] = ps.mouse[1] * sy;
+        } else {
+            u.resolution[0] = ps.resolution[0];
+            u.resolution[1] = ps.resolution[1];
+            u.screen_resolution[0] = ps.screen_resolution[0];
+            u.screen_resolution[1] = ps.screen_resolution[1];
+            u.mouse[0] = ps.mouse[0];
+            u.mouse[1] = ps.mouse[1];
+        }
+        u.time = ps.time;
+        u.frame = ps.frame;
+        u.mouse[2] = ps.mouse[2];
+        u.mouse[3] = ps.mouse[3];
+        for (int k = 0; k < 4; ++k) u.keys[k] = ps.keys[k];
+        WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
+        bd.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+        bd.size = sizeof(ShaderGraphUniform);
+        WGPUBuffer ub = wgpuDeviceCreateBuffer(dv->device, &bd);
+        if (!ub) {
+            if (!first_error) first_error = -3;
+            if (own_view) wgpuTextureViewRelease(dst_view);
+            continue;
+        }
+        wgpuQueueWriteBuffer(dv->queue, ub, 0, &u, sizeof u);
+
+        WGPUBindGroupEntry be[6] = {};
+        be[0].binding = 0; be[0].buffer = ub; be[0].size = sizeof(ShaderGraphUniform);
+        for (int k = 0; k < 4; ++k) {
+            be[1 + k].binding = (uint32_t)(1 + k);
+            be[1 + k].textureView = dv->graphDummyView;
+            const int32_t cid = ps.channels[k];
+            if (cid >= 0 && cid < (int)dv->textures.size() && dv->textures[(size_t)cid])
+                be[1 + k].textureView = dv->textures[(size_t)cid]->view;
+        }
+        be[5].binding = 5; be[5].sampler = dv->graphSampler;
+        WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+        bgd.layout = sp->bgl; bgd.entryCount = 6; bgd.entries = be;
+        WGPUBindGroup bg = wgpuDeviceCreateBindGroup(dv->device, &bgd);
+        if (!bg) {
+            if (!first_error) first_error = -3;
+            wgpuBufferRelease(ub);
+            if (own_view) wgpuTextureViewRelease(dst_view);
+            continue;
+        }
+
+        const float clear[4] = { 0.0F, 0.0F, 0.0F, 0.0F };
+        WGPURenderPassEncoder pass = nullptr;
+        begin_pass(enc, dst_view, WGPULoadOp_Clear, clear, &pass);
+        wgpuRenderPassEncoderSetPipeline(pass, pipe);
+        wgpuRenderPassEncoderSetBindGroup(pass, 0, bg, 0, nullptr);
+        wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+        wgpuRenderPassEncoderEnd(pass);
+        wgpuRenderPassEncoderRelease(pass);
+        wgpuBindGroupRelease(bg);
+        wgpuBufferRelease(ub);
+        if (own_view) own_views.push_back(dst_view);
+        ++drawn;
+    }
+    if (drawn > 0) {
+        WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(enc, nullptr);
+        wgpuQueueSubmit(dv->queue, 1, &cmd);
+        wgpuCommandBufferRelease(cmd);
+    }
+    for (WGPUTextureView v : own_views) wgpuTextureViewRelease(v);
+    wgpuCommandEncoderRelease(enc);
+    return drawn > 0 ? 0 : (first_error ? first_error : -4);
+}
+
+/* 背景层形态：阶段链直接画到主渲染目标（target<0 的阶段 = 背景层）。 */
+static int32_t render_shader_graphs(Device* dv, WGPUTexture target, WGPUTextureFormat fmt,
+                                    const mq_renderer_frame3d* f) {
+    if (!f) return -1;
+    return render_shader_graph_passes(dv, target, fmt, f->graph_passes, f->graph_pass_count, 0, 0);
+}
+
 /* ---- shader 精灵（render.ShaderSprite；docs/13）--------------------------------
  * 语义：一个 2D 精灵矩形，画面由场景 .wgsl 生成。实现分两步，**不改 WGSL 契约**：
  *   ① 把该精灵的 fragment 渲染到一张 w×h 的离屏纹理（resolution = 纹理尺寸、
@@ -2102,6 +2434,52 @@ static uint32_t append_shader_sprite_items(Device* dv, const mq_renderer_frame3d
             if (!warned) {
                 warned = true;
                 std::print(stderr, "gfx: shader 精灵绘制失败（本帧跳过该精灵，其余图层照常）\n");
+            }
+            continue;
+        }
+        mq_renderer_item it{};
+        it.x = s.x; it.y = s.y;
+        it.size = std::max(s.half_w, s.half_h);
+        it.r = it.g = it.b = 1.0F;
+        it.a = s.a;
+        it.texture = tex_id;
+        it.rotation = s.rotation;
+        it.half_w = s.half_w;
+        it.half_h = s.half_h;
+        it.filter = 0;                        /* 线性（精灵缩放/非整数倍窗口） */
+        it.layer = 0;                         /* 世界层：与 scn.Sprite 相同 */
+        it.z = s.z;
+        items.push_back(it);
+        ++added;
+    }
+    return added;
+}
+
+/* 多通道 shader 图的**精灵**形态（render.ShaderGraph 且 width/height>0）：
+ * 与 shader 精灵同一套 2D 语义，区别是每张精灵自带一条完整阶段链（中间缓冲 + 主目标阶段），
+ * 主目标阶段渲染到该精灵的离屏纹理（RGBA8），再当普通带纹理矩形合成。 */
+static uint32_t append_shader_graph_sprite_items(Device* dv, const mq_renderer_frame3d* f,
+                                                 std::vector<mq_renderer_item>& items) {
+    if (!f->graph_sprites || f->graph_sprite_count == 0) return 0;
+    float zoom = 1.0F;
+    if (f->views2d && f->view2d_count > 0 && f->views2d[0].zoom > 0.0F) zoom = f->views2d[0].zoom;
+    if (!(zoom > 0.0F)) zoom = 1.0F;
+    uint32_t added = 0;
+    for (uint32_t i = 0; i < f->graph_sprite_count; ++i) {
+        const mq_renderer_shader_graph_sprite& s = f->graph_sprites[i];
+        if (!s.passes || s.pass_count == 0 || s.half_w <= 0.0F || s.half_h <= 0.0F || s.a <= 0.0F) continue;
+        const int32_t w = std::clamp((int32_t)std::lround(2.0F * s.half_w * zoom), 1, 4096);
+        const int32_t h = std::clamp((int32_t)std::lround(2.0F * s.half_h * zoom), 1, 4096);
+        /* 槽位与 shader 精灵（0..count）分开，避免两种精灵互相驱逐离屏纹理。 */
+        const int32_t tex_id = ensure_sprite_target(dv, (int32_t)(0x100000 + i), w, h);
+        if (tex_id < 0) continue;
+        if (render_shader_graph_passes(dv, dv->textures[(size_t)tex_id]->tex,
+                                       WGPUTextureFormat_RGBA8Unorm,
+                                       s.passes, s.pass_count, w, h) != 0) {
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                std::print(stderr, "gfx: shader 图精灵绘制失败（本帧跳过该精灵，其余图层照常）\n");
             }
             continue;
         }
@@ -2572,7 +2950,20 @@ static int32_t render_3d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat
                                const mq_renderer_frame3d* f, bool allow_scene_copy) {
     const bool has3d = f->view_count > 0 && f->views != nullptr;
     const bool has_passes = f->pass_count > 0 && f->passes != nullptr;
+    const bool has_graph = f->graph_pass_count > 0 && f->graph_passes != nullptr;
     bool target_initialized = false;
+    /* 多通道 shader 图先跑（其中 target<0 的阶段就是背景层），单 pass 全屏 shader 叠加在其上。 */
+    if (has_graph) {
+        const int32_t grc = render_shader_graphs(dv, target, format, f);
+        target_initialized = grc == 0;
+        if (grc != 0) {
+            static bool warned_graph = false;
+            if (!warned_graph) {
+                warned_graph = true;
+                std::print(stderr, "gfx: 场景 shader 图绘制失败 rc={}（本帧继续渲染其余图层）\n", grc);
+            }
+        }
+    }
     if (has_passes) {
         const int32_t prc = render_shader_passes(dv, target, format, f->width, f->height, f);
         target_initialized = prc == 0;
@@ -2602,10 +2993,13 @@ static int32_t render_2d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat
                                const mq_renderer_frame3d* f, bool clear_first) {
     float bg[4];
     std::memcpy(bg, f->bg, sizeof bg);
-    if (f->shader_sprites && f->shader_sprite_count > 0) {
+    const bool has_sprites = f->shader_sprites && f->shader_sprite_count > 0;
+    const bool has_graph_sprites = f->graph_sprites && f->graph_sprite_count > 0;
+    if (has_sprites || has_graph_sprites) {
         std::vector<mq_renderer_item> items;
         if (f->items && f->item_count > 0) items.assign(f->items, f->items + f->item_count);
         append_shader_sprite_items(dv, f, items);
+        append_shader_graph_sprite_items(dv, f, items);
         return render_impl(dv, f->width, f->height, f->views2d, f->view2d_count,
                            items.data(), (uint32_t)items.size(), f->meshes, f->mesh_count,
                            bg, nullptr, 0, target, format, clear_first);
@@ -2619,7 +3013,8 @@ static int32_t render_2d_layer(Device* dv, WGPUTexture target, WGPUTextureFormat
 static int32_t render_scene_to_target(Device* dv, WGPUTexture target, WGPUTextureFormat format,
                                       const mq_renderer_frame3d* f, bool allow_scene_copy) {
     const bool has3d = f->view_count > 0 && f->views != nullptr;
-    const bool has_passes = f->pass_count > 0 && f->passes != nullptr;
+    const bool has_passes = (f->pass_count > 0 && f->passes != nullptr) ||
+                            (f->graph_pass_count > 0 && f->graph_passes != nullptr);
     const int32_t rc = render_3d_layer(dv, target, format, f, allow_scene_copy);
     if (rc != 0) return rc;
     return render_2d_layer(dv, target, format, f, !(has3d || has_passes));
@@ -2641,7 +3036,8 @@ static int32_t render_frame_to_target(Device* dv, WGPUTexture target, WGPUTextur
     if (!allow_post || f->post.enabled == 0)
         return render_scene_to_target(dv, target, format, f, allow_scene_copy);
     const bool has3d = f->view_count > 0 && f->views != nullptr;
-    const bool has_passes = f->pass_count > 0 && f->passes != nullptr;
+    const bool has_passes = (f->pass_count > 0 && f->passes != nullptr) ||
+                            (f->graph_pass_count > 0 && f->graph_passes != nullptr);
     const bool include_2d = f->post.include_2d != 0;
     /* 默认只处理 3D 层：没有 3D 层（纯 2D 场景）→ 后处理无作用对象，直接走原路径（零成本）。 */
     if (!has3d && !has_passes && !include_2d)
@@ -4282,7 +4678,9 @@ static const mq_renderer_v2 g_api = {
     /* ---- RenderTexture（追加）---- */
     r_create_render_texture, r_configure_render_texture, r_render_to_texture, r_read_texture,
     /* ---- GPU 资源按类拆分（追加；docs/29）---- */
-    r_resource_bytes2
+    r_resource_bytes2,
+    /* ---- 场景资源多通道 shader 图（追加）---- */
+    r_create_shader_graph_pass, r_destroy_shader_graph_pass, r_create_shader_graph_target
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {

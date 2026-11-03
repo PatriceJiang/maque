@@ -301,6 +301,37 @@
         - { name: time,     type: float }
         - { name: frame,    type: float }
         - { name: mouse,    type: "float[4]" }      # xy = 精灵内局部像素（原点左上，设计像素）；zw 预留
+    # 场景资源多通道 shader 图的一个阶段（render.ShaderGraph；docs/13 §多通道 shader）。
+    # target < 0 = 主渲染目标（背景层）；>= 0 = create_shader_graph_target 的 RGBA32F 纹理句柄。
+    # channels[i] = iChannel i：纹理句柄，-1 = 未绑定（gfx 绑 1×1 占位纹理）。
+    # uniform 与 WGSL 的 MqShaderGraphPass 严格一致（48B）。
+    - record: shader_graph_pass
+      fields:
+        - { name: shader,     type: int32_t }         # create_shader_graph_pass 的句柄
+        - { name: target,     type: int32_t }         # 输出目标（-1 = 主目标；>=0 = 中间缓冲纹理）
+        - { name: channels,   type: "int32_t[4]" }    # iChannel0..3 的纹理句柄（-1 = 未绑定）
+        - { name: resolution, type: "float[2]" }      # 本阶段渲染尺寸（像素）
+        - { name: time,       type: float }           # 组件 time（秒）
+        - { name: frame,      type: float }           # 帧号
+        - { name: mouse,      type: "float[4]" }      # xy = 指针像素（原点左上）；z = 按下(1)/松开(0)；w 预留
+        - { name: keys,       type: "float[4]" }      # x=Backspace y=Shift z=Enter（0/1）；w 预留
+        # 主目标尺寸（像素）：mouse.xy 所在的屏幕空间。中间缓冲阶段（分辨率 ≠ 屏幕）用它把指针
+        # 还原成世界射线，否则鼠标位置会按缓冲分辨率算错（尾部追加）。
+        - { name: screen_resolution, type: "float[2]" }
+    # 场景资源多通道 shader 图的**精灵**形态（render.ShaderGraph 且 width/height>0）：
+    # 与 shader_sprite 同一套 2D 语义（中心/半尺寸/弧度旋转/透明度），区别是每个精灵自带
+    # 一条完整阶段链（中间缓冲 + 主目标阶段；最后画到该精灵的离屏纹理上）。
+    - record: shader_graph_sprite
+      fields:
+        - { name: passes,     type: "const mq_renderer_shader_graph_pass*" }
+        - { name: pass_count, type: uint32_t }
+        - { name: z,          type: int32_t }         # 同层 z-order（与 item 一致，稳定排序）
+        - { name: x,          type: float }           # 设计坐标：中心
+        - { name: y,          type: float }           # 设计坐标：屏幕 y（向下）
+        - { name: half_w,     type: float }
+        - { name: half_h,     type: float }
+        - { name: rotation,   type: float }           # 弧度
+        - { name: a,          type: float }           # 透明度（<=0 跳过）
     # 一帧 3D + 2D 覆盖层：非空 out = 离屏渲染并回读；空 out = 直接呈现到窗口。
     - record: frame3d
       fields:
@@ -351,6 +382,14 @@
         # 空/0 = 无。gfx 先把每个精灵的 WGSL 渲染到离屏纹理，再当普通带纹理矩形合成。
         - { name: shader_sprites,       type: "const mq_renderer_shader_sprite*" }
         - { name: shader_sprite_count,  type: uint32_t }
+        # 场景资源多通道 shader 图（render.ShaderGraph；尾部追加）：按声明顺序执行各阶段，
+        # 其中 target<0 的阶段画到主目标（背景层）。空/0 = 无。
+        - { name: graph_passes,         type: "const mq_renderer_shader_graph_pass*" }
+        - { name: graph_pass_count,     type: uint32_t }
+        # 多通道 shader 图的精灵形态（尾部追加）：各精灵自带阶段链，先渲染到离屏纹理
+        # 再当普通 2D 图元合成（与 shader_sprites 同层排序）。
+        - { name: graph_sprites,        type: "const mq_renderer_shader_graph_sprite*" }
+        - { name: graph_sprite_count,   type: uint32_t }
     # 持久可采样离屏目标描述；独立 struct_size 允许将来在记录尾部安全扩展。
     # 首版仅支持 2D、单 mip；usage 固定包含 sampled/color-attachment/copy-src。
     - record: render_texture_desc
@@ -467,3 +506,16 @@
       returns: int32_t
       args: [ { name: self, type: self }, { name: out, type: "mq_renderer_resource_usage*" } ]
       doc: "按类拆分的 GPU 字节估算（0=成功）：纹理（含 RenderTexture/cube/env）与缓冲（网格顶点/索引）。旧插件无此方法时调用方回退 resource_bytes"
+    # ---- 场景资源多通道 shader 图（render.ShaderGraph；append-only）----
+    - fn: create_shader_graph_pass
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: wgsl, type: "const char*" }, { name: out_id, type: "int32_t*" } ]
+      doc: "编译 shader 图的一个阶段（@fragment fs_main + group0 binding0 的 64B uniform + binding1..4 纹理 + binding5 sampler）；0=成功"
+    - fn: destroy_shader_graph_pass
+      returns: void
+      args: [ { name: self, type: self }, { name: id, type: int32_t } ]
+      doc: "释放 create_shader_graph_pass 的句柄（场景重载/退出用；无效 id 忽略）"
+    - fn: create_shader_graph_target
+      returns: int32_t
+      args: [ { name: self, type: self }, { name: w, type: int32_t }, { name: h, type: int32_t }, { name: out_id, type: "int32_t*" } ]
+      doc: "创建 RGBA32F 的采样/渲染目标（shader 图中间缓冲；句柄可作普通纹理槽或阶段 target）；0=成功"

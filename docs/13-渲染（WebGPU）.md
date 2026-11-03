@@ -293,7 +293,7 @@ fragment 入口消费。
 - 3D 相机的颜色 clear 会**覆盖**背景：场景里有生效的 `render.Camera3D` clear 时看不到 shader pass
   （本通路只画背景，不做叠层）。
 - **每个实体一份全屏 pass**（一次全屏 draw）；需要多 pass 串联/反馈 buffer（上一帧、多 buffer 合成）
-  请等后续 frame-graph 能力，本轮不支持。
+  用下一节的 `render.ShaderGraph`（`render.ShaderPass` 保持单 pass 的简单契约不变）。
 - 资源侧限制：**没有 `iChannel*` 纹理**（不能采样音频/上一帧/其它贴图）；**没有 depth 测试与混合状态**，
   输出按不透明背景色处理。
 - **不热重载 `.wgsl`**：改 shader 需重启或重新加载场景才会生效。
@@ -310,6 +310,148 @@ fragment 入口消费。
 
 回归测试：`ctest -R shadertoy_e2e`（逐 demo：640x360 离屏结构断言 + frame 1/60 差异 +
 同帧逐字节确定性 + WGSL 属场景资源而非内建 shader；单项 demo 缺失时该节 SKIP，不阻塞）。
+
+## 场景自定义多通道 shader 图（render.ShaderGraph）
+
+`render.ShaderPass` 只有一份 uniform、**没有纹理输入**，所以只能单 pass。需要「上一帧结果 / 中间缓冲 /
+多阶段串联」时用 **`render.ShaderGraph`**：一个实体挂一份 **program JSON**，声明若干中间缓冲与有序阶段，
+引擎每帧按声明顺序执行，最后画到屏幕的阶段就是背景层（先于 3D/2D）。
+
+> **命名**：这里的 "graph" 指 **shader pass 之间的图**（阶段通过通道引用缓冲形成 DAG），
+> 不是节点式可视化编辑器，也不是整帧渲染调度器（没有资源别名 / 自动依赖分析 / culling）。
+
+### 组件字段（`render.ShaderGraph`）
+
+| 字段 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `program` | string | `""` | program JSON 路径，**相对场景目录**（运行时 VFS 根 = 场景目录） |
+| `speed` | float | `1.0` | `time` 推进倍率 |
+| `paused` | bool | `false` | `true` = 冻结时间（仍绘制） |
+| `enabled` | bool | `true` | `false` = 不执行任何阶段 |
+| `time` | float | `0.0` | 运行期推进的秒数；所有阶段共享同一个 `time`（= Shadertoy `iTime`） |
+
+> 只画在 2D 精灵矩形里时不用本组件：改用 `render.ShaderSprite` 并把 `shader` 指向 program JSON
+> （见 §精灵形态）。
+
+### program JSON
+
+```json
+{
+  "buffers": [
+    { "name": "a", "size": 540 },
+    { "name": "b", "size": 540 }
+  ],
+  "passes": [
+    { "name": "buffer_a", "shader": "buffer_a.wgsl", "common": "common.wgsl",
+      "target": "a", "channels": ["self", "", "", ""] },
+    { "name": "image", "shader": "image.wgsl", "common": "common.wgsl",
+      "target": "screen", "channels": ["a", "", "", ""] }
+  ]
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `buffers[].name` / `size` | 中间缓冲名（`channels` 引用它）与正方形边长（像素） |
+| `passes[].shader` | 阶段 WGSL；**相对 program 文件所在目录**，失败只跳过该阶段并报错 |
+| `passes[].common` | 可选：共享源码，引擎把它**拼在 shader 之前**（相当于 Shadertoy 的 Common 标签页） |
+| `passes[].target` | 输出缓冲名；`""` / `"screen"` / `"main"` = 主渲染目标（背景层） |
+| `passes[].channels` | 4 个 `iChannel`：缓冲名；`"self"`/`"prev"` = 本 pass 目标缓冲的**上一帧**内容；`""` = 未绑定 |
+
+**缓冲语义**：每个缓冲两张 RGBA32F 纹理（ping-pong）。本帧写 `tex[write]`，读上一帧的 `tex[1-write]`；
+同一帧内引用别的缓冲时读它**本帧最新**的结果（前面的阶段先写），所以阶段可以串联。ping-pong 每模拟帧
+只交换一次（与成帧次数无关）。
+
+### WGSL 阶段契约
+
+引擎供全屏三角形 VS，阶段只提供 fragment 入口：
+
+```wgsl
+struct MqShaderGraphPass {
+    resolution: vec2f,        // 本阶段渲染尺寸（像素）：缓冲边长或主目标尺寸
+    time: f32,                // 组件 time（秒）
+    frame: f32,               // 帧号
+    mouse: vec4f,             // xy = 指针像素（原点左上，**屏幕空间**）；z = 按下(1)/松开(0)；w 预留
+    keys: vec4f,              // x = Backspace，y = Shift，z = Enter（0/1）；w 预留
+    screen_resolution: vec2f, // 主目标尺寸：mouse.xy 所在的空间
+    pad: vec2f,               // 对齐填充
+};
+@group(0) @binding(0) var<uniform> mq_pass: MqShaderGraphPass;
+@group(0) @binding(1) var ch0: texture_2d<f32>;   // iChannel0
+@group(0) @binding(2) var ch1: texture_2d<f32>;   // iChannel1
+@group(0) @binding(3) var ch2: texture_2d<f32>;   // iChannel2
+@group(0) @binding(4) var ch3: texture_2d<f32>;   // iChannel3
+@group(0) @binding(5) var mq_sampler: sampler;    // non-filtering（float32 目标不可过滤）
+
+@fragment
+fn fs_main(@builtin(position) frag_coord: vec4f) -> @location(0) vec4f
+```
+
+- uniform 合计 **64B**（`resolution` 8 + `time` 4 + `frame` 4 + `mouse` 16 + `keys` 16 +
+  `screen_resolution` 8 + 8 填充）。
+- `mouse.xy` 是**屏幕**（主目标）像素，而中间缓冲的 `resolution` 通常更小（正方形）；
+  要用指针构造射线/命中位置时取 `screen_resolution` 做分母，否则中间缓冲阶段会算偏
+  （`scenes/shadertoy/mountains/buffer_a.wgsl` 的注释就是这条）。
+- 中间缓冲是 **RGBA32F**：WebGPU 不能对 float32 纹理做硬件过滤，所以 `channels` 的采样器是
+  nearest —— 需要双线性的 shader 自己用 `textureLoad` 插值（`scenes/shadertoy/mountains/common.wgsl`
+  的 `textureSH` / `texelFetchSH` 就是这套封装）。
+- **坐标约定**：`frag_coord` 原点左上（与 `render.ShaderPass` 相同）；Shadertoy 风格（原点左下）在
+  入口翻 y 即可。纹理 v 方向同理——Buffer 通道按「Shadertoy 的 v=0 在下」读写时，采样要翻 y。
+- 未绑定的通道绑 1×1 占位纹理（RGBA32F 0），shader 仍要声明全部 5 个绑定。
+- 失败语义：program 缺失/JSON 非法/某阶段编译失败 → stderr 明确报错；全部阶段失败时该图不生效，
+  场景其余部分照常运行。
+
+### 精灵形态：`render.ShaderSprite` 的 `shader` 指向 program JSON
+
+同一份 program 也可以只画在一枚 **2D 精灵矩形**里——**用 `render.ShaderSprite`，把 `shader` 写成
+program JSON 的路径即可**（引擎按扩展名判定：`.wgsl` = 单 pass 契约，`.json` = 多阶段图）。
+场景里**只需要那一个实体**，不需要额外的 backdrop 或第二个组件：
+
+```json
+{
+  "name": "mountain_sprite",
+  "components": [
+    { "type": "scn.Transform2D", "x": 480, "y": 270 },
+    { "type": "render.ShaderSprite", "shader": "mountains/program.json",
+      "width": 720, "height": 405 }
+  ]
+}
+```
+
+- 精灵的位置/尺寸/旋转/透明度/图层序全部沿用 `render.ShaderSprite` 的既有语义（与 `scn.Sprite` 一致）；
+  `width`/`height` 是设计像素，节点 `scale` 再乘。
+- 整条阶段链先渲染到该精灵的离屏纹理（RGBA8，像素尺寸 = 设计尺寸 × 节点 scale × 2D 视图缩放），
+  再由 2D 通路合成。
+- **阶段链完全一致**：中间缓冲仍是 RGBA32F、仍做 ping-pong；只有 `target` 为主目标的那一步
+  改成写精灵离屏纹理。因此同一份 program.json 可以同时用于全屏场景与精灵场景。
+- 精灵的最终阶段拿到的 uniform：`resolution` / `screen_resolution` = 离屏纹理**像素尺寸**，
+  `mouse.xy` = 精灵内局部像素（原点左上）；中间缓冲阶段仍拿设计尺寸与设计像素，
+  两者只差一个统一比例，射线/命中计算不受影响。
+- 指针只在矩形内生效（矩形外 `mouse.z = 0`、坐标 0），所以绘制不会"漏"到精灵外面。
+- 受 F4「2D/UI 图层」开关控制（与普通 shader 精灵一致）。
+- `render.ShaderGraph`（`program` 字段）是全屏背景形态；两者共享同一套 program 格式与阶段 ABI。
+
+### 绘制顺序与限制
+
+- 各阶段按数组顺序在**同一队列提交**里依次开 render pass；`target` 为主目标的阶段是背景层
+  （先于 3D / 2D）。纯 shader 图场景（无任何 3D 组件）同样可用。
+- 阶段**不混合、不清除历史**：每个阶段开始前清成 0，整阶段覆盖写（与 Shadertoy 的 buffer 语义一致）。
+- 中间缓冲尺寸在装配期创建（program 里的 `size`），运行期不随窗口 resize 重建；主目标阶段的
+  `resolution` 跟随渲染目标像素。
+- 阶段数量/通道数上限：每个图没有硬上限（按声明执行）；单阶段 4 个通道（WebGPU 的 `iChannel` 同款）。
+- **不热重载** `.wgsl` / program.json：改完需重新加载场景。
+
+### 示例：Shadertoy "Mouse-Paint Eroded Mountains"（`scenes/shadertoy/mountains.scn`）
+
+- 原作：**sf23W1 "Mouse-Paint Eroded Mountains"**，作者 **Rune Skovbo Johansen**，2026；
+  Phacelle Noise / 侵蚀滤波为 **MPL 2.0**，地形渲染派生自 Fewes 的 `7ljcRW`。
+- 4 个阶段：`buffer_a`（鼠标绘制的高度图，自反馈 = `channels[0] = "self"`）→ `buffer_b`
+  （侵蚀滤波，含 `pack4` 打包数据到 alpha）→ `buffer_c`（细节噪声）→ `image`（光线步进渲染）。
+- program 在 `mountains/program.json`，阶段 WGSL 与 `common.wgsl` 同目录，全部是场景资源。
+- 交互：鼠标左键绘制山体（Shift 反向 = 下凹），Backspace 重置，Enter 开关侵蚀（对应原作的键盘纹理）。
+- 同一份 program 还用于精灵场景 `mountain-shader-sprite.scn`：单个实体挂
+  `render.ShaderSprite`、`shader` 写 `mountains/program.json`、720×405，
+  用来验证"精灵形态与背景形态共享同一条阶段链"。
 
 ## 场景自定义 shader 精灵（render.ShaderSprite）
 
@@ -330,7 +472,7 @@ fragment 入口消费。
 
 | 字段 | 类型 | 默认 | 说明 |
 |------|------|------|------|
-| `shader` | string | `""` | WGSL 源文件路径，**相对场景目录**（与 `render.ShaderPass` 同一套 VFS 语义） |
+| `shader` | string | `""` | **`.wgsl` 源文件**或**多阶段 program JSON**，**相对场景目录**（与 `render.ShaderPass` 同一套 VFS 语义）。引擎按扩展名判定：`.json` = shader 图（多阶段/自反馈），其余按 WGSL 单 pass 编译 |
 | `width` / `height` | float | `64` / `64` | 精灵尺寸（**设计像素**，单位 px）；节点 `scale` 再乘上去 |
 | `speed` | float | `1.0` | `time` 推进倍率 |
 | `paused` | bool | `false` | `true` = 冻结时间（仍绘制） |
@@ -350,6 +492,9 @@ fragment 入口消费。
 
 `mouse.xy` 同理是**精灵内局部像素**（指针不在精灵内时为 0）。因此 Shadertoy 的
 `fragCoord / resolution` 归一化在两种通路里都成立。
+
+`shader` 指向 program JSON 时走的是多阶段通路（阶段契约换成 `render.ShaderGraph` 的 64B uniform +
+4 个通道），精灵矩形/离屏纹理/合成方式完全不变 —— 细节见 §多通道 shader 的"精灵形态"。
 
 ### 绘制方式与限制
 

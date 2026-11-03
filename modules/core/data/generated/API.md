@@ -476,7 +476,9 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 - `post`：exposure: float, tonemap: int32_t, enabled: int32_t, effects: uint32_t, bloom_intensity: float, bloom_threshold: float, bloom_radius: float, vignette: float, aberration: float, saturation: float, contrast: float, grayscale: float, include_2d: int32_t
 - `shader_pass`：shader: int32_t, time: float, frame: float, mouse: float[4]
 - `shader_sprite`：shader: int32_t, z: int32_t, x: float, y: float, half_w: float, half_h: float, rotation: float, a: float, time: float, frame: float, mouse: float[4]
-- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t, render_mode: int32_t, present_after_readback: int32_t, shader_sprites: const mq_renderer_shader_sprite*, shader_sprite_count: uint32_t
+- `shader_graph_pass`：shader: int32_t, target: int32_t, channels: int32_t[4], resolution: float[2], time: float, frame: float, mouse: float[4], keys: float[4], screen_resolution: float[2]
+- `shader_graph_sprite`：passes: const mq_renderer_shader_graph_pass*, pass_count: uint32_t, z: int32_t, x: float, y: float, half_w: float, half_h: float, rotation: float, a: float
+- `frame3d`：width: int32_t, height: int32_t, views: const mq_renderer_view3d*, view_count: uint32_t, lights: const mq_renderer_light*, light_count: uint32_t, materials: const mq_renderer_pbr_material*, material_count: uint32_t, draws: const mq_renderer_draw3d*, draw_count: uint32_t, env: mq_renderer_environment, post: mq_renderer_post, items: const mq_renderer_item*, item_count: uint32_t, meshes: const mq_renderer_mesh*, mesh_count: uint32_t, views2d: const mq_renderer_view*, view2d_count: uint32_t, bg: float[4], msaa_samples: int32_t, out: uint8_t*, out_size: uint32_t, passes: const mq_renderer_shader_pass*, pass_count: uint32_t, skins: const mq_renderer_skin*, skin_count: uint32_t, present_x: int32_t, present_y: int32_t, present_w: int32_t, present_h: int32_t, render_mode: int32_t, present_after_readback: int32_t, shader_sprites: const mq_renderer_shader_sprite*, shader_sprite_count: uint32_t, graph_passes: const mq_renderer_shader_graph_pass*, graph_pass_count: uint32_t, graph_sprites: const mq_renderer_shader_graph_sprite*, graph_sprite_count: uint32_t
 - `render_texture_desc`：struct_size: uint32_t, width: int32_t, height: int32_t, pixel_format: int32_t, filter: int32_t, wrap_u: int32_t, wrap_v: int32_t, clear_color: float[4]
 - `resource_usage`：struct_size: uint32_t, texture_bytes: uint64_t, buffer_bytes: uint64_t, other_bytes: uint64_t
 
@@ -506,6 +508,9 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `render_to_texture` | self: self, id: int32_t, frame: const mq_renderer_frame3d* | int32_t |
 | `read_texture` | self: self, id: int32_t, out: uint8_t*, out_size: uint32_t | int32_t |
 | `resource_bytes2` | self: self, out: mq_renderer_resource_usage* | int32_t |
+| `create_shader_graph_pass` | self: self, wgsl: const char*, out_id: int32_t* | int32_t |
+| `destroy_shader_graph_pass` | self: self, id: int32_t | void |
+| `create_shader_graph_target` | self: self, w: int32_t, h: int32_t, out_id: int32_t* | int32_t |
 
 ## 5. 模块 C ABI（module_abi）
 

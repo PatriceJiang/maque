@@ -1,0 +1,37 @@
+{
+  "buffers": [
+    { "name": "a", "size": 540 },
+    { "name": "b", "size": 540 },
+    { "name": "c", "size": 540 }
+  ],
+  "passes": [
+    {
+      "name": "buffer_a",
+      "shader": "buffer_a.wgsl",
+      "common": "common.wgsl",
+      "target": "a",
+      "channels": ["self", "", "", ""]
+    },
+    {
+      "name": "buffer_b",
+      "shader": "buffer_b.wgsl",
+      "common": "common.wgsl",
+      "target": "b",
+      "channels": ["a", "", "", ""]
+    },
+    {
+      "name": "buffer_c",
+      "shader": "buffer_c.wgsl",
+      "common": "common.wgsl",
+      "target": "c",
+      "channels": ["", "", "", ""]
+    },
+    {
+      "name": "image",
+      "shader": "image.wgsl",
+      "common": "common.wgsl",
+      "target": "screen",
+      "channels": ["b", "c", "", ""]
+    }
+  ]
+}

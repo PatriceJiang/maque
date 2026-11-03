@@ -1,0 +1,13 @@
+{
+  "title": "mountains",
+  "width": 960,
+  "height": 540,
+  "entities": [
+    {
+      "name": "mountains",
+      "components": [
+        { "type": "render.ShaderGraph", "program": "mountains/program.json" }
+      ]
+    }
+  ]
+}

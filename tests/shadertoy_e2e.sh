@@ -191,6 +191,239 @@ PY
     echo "shadertoy_e2e: [sprite] 左右两个 shader 精灵（mandelbulb / seascape）+ 动画 + 确定性 OK"
 }
 
+# ⑥ 多通道 shader 图（render.ShaderGraph，docs/13 §多通道 shader）：
+#    `mountains.scn` = 960x540，program.json 声明 3 个中间缓冲 + 4 个阶段
+#    （buffer_a 自反馈 → buffer_b 侵蚀 → buffer_c 噪声 → image 主目标）。
+#    断言：加载行 + 4 个阶段无报错 / 960x540 结构（颜色多样、非平坦、天空亮于底部）/
+#    frame 1 vs 120 差异 / 同帧逐字节确定性 / 阶段与 program 都是场景资源（非内建 shader）/
+#    鼠标输入真的写进缓冲（MAQUE_SIM 按住拖动 vs 不注入，同一帧可见差异）。
+check_graph_scene() {
+    local scn="$ROOT/scenes/shadertoy/mountains.scn"
+    local prog="$ROOT/scenes/shadertoy/mountains/program.json"
+    local d="$WORK/graph"
+    [ -f "$scn" ] || { echo "shadertoy_e2e: SKIP mountains（场景未入库）"; return 0; }
+    mkdir -p "$d"
+    echo "shadertoy_e2e: ---- [graph] $scn"
+    [ -f "$prog" ] || fail "[graph] 缺 $prog"
+    [ ! -e "$ROOT/assets/builtin/shaders/mountains" ] \
+        || fail "[graph] 不得是内建 shader（assets/builtin/shaders/mountains 存在）"
+    grep -q "render.ShaderGraph" "$scn" || fail "[graph] 场景未挂 render.ShaderGraph 组件"
+    grep -q "mountains/program.json" "$scn" || fail "[graph] 场景未引用 mountains/program.json"
+    [ -f "$ROOT/scenes/shadertoy/mountains/common.wgsl" ] || fail "[graph] 缺共享源码 common.wgsl"
+    grep -q "common.wgsl" "$prog" || fail "[graph] program.json 未引用 common.wgsl"
+    for f in buffer_a buffer_b buffer_c image; do
+        [ -f "$ROOT/scenes/shadertoy/mountains/$f.wgsl" ] || fail "[graph] 缺阶段源码 $f.wgsl"
+        grep -q "fs_main" "$ROOT/scenes/shadertoy/mountains/$f.wgsl" \
+            || fail "[graph] $f.wgsl 缺 fragment 入口 fs_main"
+        grep -q "$f.wgsl" "$prog" || fail "[graph] program.json 未引用 $f.wgsl"
+    done
+
+    # ① 离屏渲染：加载行 + 4 个阶段 + 截图
+    timeout 180 "$PLAYER" --shot "$d/f1.ppm" --frames 2 "$scn" >"$d/run1.txt" 2>&1 \
+        || { cat "$d/run1.txt"; fail "[graph] 场景运行/截图失败（退出码非 0）"; }
+    grep -q "shader graph .*mountains/program.json.*passes=4" "$d/run1.txt" \
+        || { cat "$d/run1.txt"; fail "[graph] 缺 shader graph 加载行 / 阶段数不是 4"; }
+    if grep -qE "shader graph.*(失败|未找到|编译失败|error|missing)" "$d/run1.txt"; then
+        cat "$d/run1.txt"; fail "[graph] 阶段加载/编译报错"
+    fi
+    grep -q "runtime: shot" "$d/run1.txt" || { cat "$d/run1.txt"; fail "[graph] 截图未写入"; }
+
+    "$PY" - "$d/f1.ppm" <<'PY' || fail "[graph] PPM 结构断言失败"
+import sys
+d = open(sys.argv[1], 'rb').read()
+magic, dims, _max, px = d.split(b'\n', 3)
+assert magic == b'P6', magic
+w, h = map(int, dims.split())
+assert (w, h) == (960, 540), (w, h)
+n = w * h
+def lum(i):
+    return 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
+lums = [lum(i) for i in range(0, len(px), 3)]
+mean = sum(lums) / n
+sd = (sum((v - mean) ** 2 for v in lums) / n) ** 0.5
+colors = set((px[i] >> 3, px[i + 1] >> 3, px[i + 2] >> 3) for i in range(0, len(px), 3))
+nonflat = sum(1 for v in lums if abs(v - mean) > 10) / n
+top = sum(lums[y * w + x] for y in range(h // 6) for x in range(0, w, 2))
+top_n = (h // 6) * len(range(0, w, 2))
+bottom = sum(lums[y * w + x] for y in range(h - h // 6, h) for x in range(0, w, 2))
+bottom_n = (h // 6) * len(range(0, w, 2))
+top_m, bottom_m = top / top_n, bottom / bottom_n
+print(f'  [graph] {w}x{h} colors={len(colors)} sd={sd:.1f} nonflat={nonflat:.3f} '
+      f'top={top_m:.1f} bottom={bottom_m:.1f}')
+ok = (len(colors) >= 300 and sd > 10.0 and nonflat > 0.5)
+ok = ok and top_m > bottom_m + 15.0        # 顶部天空亮于底部海面/岩层
+sys.exit(0 if ok else 1)
+PY
+    echo "shadertoy_e2e: [graph] ① 离屏 4 阶段（960x540 / 颜色多样 / 非平坦 / 天空更亮）OK"
+
+    # ② 动画：相机自转（frame 1 vs 120）
+    timeout 180 "$PLAYER" --shot "$d/f120.ppm" --shot-frame 120 "$scn" >"$d/run120.txt" 2>&1 \
+        || { cat "$d/run120.txt"; fail "[graph] 第 120 帧截图失败"; }
+    "$PY" - "$d/f1.ppm" "$d/f120.ppm" <<'PY' || fail "[graph] 动画像素差不足（time 未推进）"
+import sys
+def load(p):
+    d = open(p, 'rb').read(); magic, dims, _m, px = d.split(b'\n', 3)
+    assert magic == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+diff = sum(1 for i in range(0, len(a), 3)
+           if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12)
+ratio = diff / (w * h)
+print(f'  [graph] frame1 vs frame120 diff={diff} ({ratio:.3f})')
+sys.exit(0 if ratio > 0.05 else 1)
+PY
+    echo "shadertoy_e2e: [graph] ② 动画（相机自转，frame 1 vs 120）OK"
+
+    # ③ 确定性：同一帧跑两次逐字节一致
+    timeout 180 "$PLAYER" --shot "$d/f120b.ppm" --shot-frame 120 "$scn" >"$d/run120b.txt" 2>&1 \
+        || { cat "$d/run120b.txt"; fail "[graph] 第 120 帧第二次截图失败"; }
+    cmp -s "$d/f120.ppm" "$d/f120b.ppm" \
+        || fail "[graph] 同一帧两次渲染不一致（确定性破坏：多阶段/自反馈不得依赖墙钟）"
+    echo "shadertoy_e2e: [graph] ③ 确定性（同帧两次逐字节一致）OK"
+
+    # ④ 指针通路：MAQUE_SIM 按住拖动 → 与不注入的同一帧有可见差异
+    #    （验证 Buffer A 的自反馈 + uniform 里的屏幕鼠标坐标真的写进中间缓冲）
+    local sim="$ROOT/tests/data/sim/mountains_paint.sim.json"
+    if [ -f "$sim" ]; then
+        MAQUE_SIM="$sim" timeout 180 "$PLAYER" --shot "$d/paint.ppm" --shot-frame 60 "$scn" \
+            >"$d/paint.txt" 2>&1 || { cat "$d/paint.txt"; fail "[graph] 注入鼠标后运行失败"; }
+        timeout 180 "$PLAYER" --shot "$d/nopaint.ppm" --shot-frame 60 "$scn" >"$d/nopaint.txt" 2>&1 \
+            || { cat "$d/nopaint.txt"; fail "[graph] 基准帧截图失败"; }
+        "$PY" - "$d/paint.ppm" "$d/nopaint.ppm" <<'PY' || fail "[graph] 鼠标绘制没有改变画面（自反馈/指针通路未生效）"
+import sys
+def load(p):
+    d = open(p, 'rb').read(); magic, dims, _m, px = d.split(b'\n', 3)
+    assert magic == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+diff = sum(1 for i in range(0, len(a), 3)
+           if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12)
+ratio = diff / (w * h)
+print(f'  [graph] paint vs base diff={diff} ({ratio:.4f})')
+sys.exit(0 if ratio > 0.002 else 1)
+PY
+        echo "shadertoy_e2e: [graph] ④ 鼠标绘制（自反馈缓冲 + 指针 uniform）OK"
+    else
+        echo "shadertoy_e2e: SKIP [graph] 鼠标绘制（缺 $sim）"
+    fi
+    echo "shadertoy_e2e: [graph] ⑤ 场景资源（program.json + 4 个 .wgsl，非内建 shader）OK"
+}
+
+# ⑦ 多通道 shader 图的精灵形态：`render.ShaderSprite.shader` 直接指向 program JSON
+#    （与 .wgsl 共用同一个字段；引擎按扩展名判定）。`mountain-shader-sprite.scn` =
+#    单个实体、720x405 精灵，背后是场景背景色。
+#    断言：加载行走的是 "shader sprite graph" 分支 / 960x540 结构（精灵内颜色多样、四角为背景色、
+#    中心与角落不同）/ 精灵内动画 / 同帧逐字节确定性 / 鼠标在精灵矩形内绘制会改变画面。
+check_graph_sprite_scene() {
+    local scn="$ROOT/scenes/shadertoy/mountain-shader-sprite.scn"
+    local d="$WORK/graph_sprite"
+    [ -f "$scn" ] || { echo "shadertoy_e2e: SKIP graph-sprite（场景未入库）"; return 0; }
+    mkdir -p "$d"
+    echo "shadertoy_e2e: ---- [graph-sprite] $scn"
+    grep -q "render.ShaderSprite" "$scn" || fail "[graph-sprite] 场景未挂 render.ShaderSprite"
+    grep -q '"shader": *"mountains/program.json"' "$scn" \
+        || fail "[graph-sprite] ShaderSprite.shader 未指向 program.json"
+    ! grep -q "render.ShaderGraph" "$scn" \
+        || fail "[graph-sprite] 精灵形态不应再需要 render.ShaderGraph 组件"
+
+    timeout 180 "$PLAYER" --shot "$d/f1.ppm" --frames 2 "$scn" >"$d/run1.txt" 2>&1 \
+        || { cat "$d/run1.txt"; fail "[graph-sprite] 场景运行/截图失败（退出码非 0）"; }
+    grep -q "shader sprite graph .*mountains/program.json.*passes=4" "$d/run1.txt" \
+        || { cat "$d/run1.txt"; fail "[graph-sprite] 缺 'shader sprite graph' 加载行 / 阶段数不是 4"; }
+    if grep -qE "shader graph.*(失败|未找到|编译失败|error|missing)" "$d/run1.txt"; then
+        cat "$d/run1.txt"; fail "[graph-sprite] 阶段加载/编译报错"
+    fi
+    if grep -qE "shader 图精灵绘制失败" "$d/run1.txt"; then
+        cat "$d/run1.txt"; fail "[graph-sprite] 精灵离屏渲染失败"
+    fi
+    if grep -qE "shader sprite .*编译失败" "$d/run1.txt"; then
+        cat "$d/run1.txt"; fail "[graph-sprite] program JSON 被误当成 WGSL 编译"
+    fi
+
+    "$PY" - "$d/f1.ppm" <<'PY' || fail "[graph-sprite] PPM 结构断言失败"
+import sys
+d = open(sys.argv[1], 'rb').read()
+magic, dims, _max, px = d.split(b'\n', 3)
+assert magic == b'P6', magic
+w, h = map(int, dims.split())
+assert (w, h) == (960, 540), (w, h)
+def rgb(x, y):
+    i = (y * w + x) * 3
+    return px[i], px[i + 1], px[i + 2]
+corner = rgb(8, 8)
+# 精灵矩形 = 960x540 里居中的 720x405：x∈[120,840] y∈[67.5,472.5]
+inner = [rgb(x, y) for y in range(120, 420, 6) for x in range(220, 740, 6)]
+colors = len({(c[0] >> 3, c[1] >> 3, c[2] >> 3) for c in inner})
+lum = [0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2] for c in inner]
+m = sum(lum) / len(lum)
+sd = (sum((v - m) ** 2 for v in lum) / len(lum)) ** 0.5
+center = rgb(480, 270)
+print(f'  [graph-sprite] corner={corner} center={center} colors={colors} sd={sd:.1f} mean={m:.1f}')
+ok = colors >= 200 and sd > 10.0
+ok = ok and max(corner) < 60                       # 角落 = 场景背景色，未被精灵覆盖
+ok = ok and abs(center[0] - corner[0]) + abs(center[1] - corner[1]) + abs(center[2] - corner[2]) > 60
+sys.exit(0 if ok else 1)
+PY
+    echo "shadertoy_e2e: [graph-sprite] ① 离屏精灵（720x405 矩形 / 背景色保留 / 颜色多样）OK"
+
+    # ② 精灵内动画 + ③ 确定性
+    timeout 180 "$PLAYER" --shot "$d/f120.ppm" --shot-frame 120 "$scn" >"$d/run120.txt" 2>&1 \
+        || { cat "$d/run120.txt"; fail "[graph-sprite] 第 120 帧截图失败"; }
+    timeout 180 "$PLAYER" --shot "$d/f120b.ppm" --shot-frame 120 "$scn" >"$d/run120b.txt" 2>&1 \
+        || { cat "$d/run120b.txt"; fail "[graph-sprite] 第 120 帧第二次截图失败"; }
+    cmp -s "$d/f120.ppm" "$d/f120b.ppm" \
+        || fail "[graph-sprite] 同一帧两次渲染不一致（确定性破坏）"
+    "$PY" - "$d/f1.ppm" "$d/f120.ppm" <<'PY' || fail "[graph-sprite] 精灵内动画不足（time 未推进）"
+import sys
+def load(p):
+    d = open(p, 'rb').read(); magic, dims, _m, px = d.split(b'\n', 3)
+    assert magic == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+diff = 0; total = 0
+for y in range(120, 420, 2):
+    for x in range(220, 740, 2):
+        i = (y * w + x) * 3
+        total += 1
+        if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12:
+            diff += 1
+ratio = diff / total
+print(f'  [graph-sprite] frame1 vs frame120 inner diff={ratio:.3f}')
+sys.exit(0 if ratio > 0.05 else 1)
+PY
+    echo "shadertoy_e2e: [graph-sprite] ② 精灵内动画 + ③ 确定性 OK"
+
+    # ④ 鼠标在精灵矩形内绘制（复用 mountains 的绘制脚本；世界坐标在精灵范围内）
+    local sim="$ROOT/tests/data/sim/mountains_paint.sim.json"
+    if [ -f "$sim" ]; then
+        MAQUE_SIM="$sim" timeout 180 "$PLAYER" --shot "$d/paint.ppm" --shot-frame 60 "$scn" \
+            >"$d/paint.txt" 2>&1 || { cat "$d/paint.txt"; fail "[graph-sprite] 注入鼠标后运行失败"; }
+        timeout 180 "$PLAYER" --shot "$d/nopaint.ppm" --shot-frame 60 "$scn" >"$d/nopaint.txt" 2>&1 \
+            || { cat "$d/nopaint.txt"; fail "[graph-sprite] 基准帧截图失败"; }
+        "$PY" - "$d/paint.ppm" "$d/nopaint.ppm" <<'PY' || fail "[graph-sprite] 精灵内鼠标绘制未生效"
+import sys
+def load(p):
+    d = open(p, 'rb').read(); magic, dims, _m, px = d.split(b'\n', 3)
+    assert magic == b'P6'
+    w, h = map(int, dims.split())
+    return w, h, px
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+diff = sum(1 for i in range(0, len(a), 3)
+           if abs(a[i] - b[i]) + abs(a[i + 1] - b[i + 1]) + abs(a[i + 2] - b[i + 2]) > 12)
+ratio = diff / (w * h)
+print(f'  [graph-sprite] paint vs base diff={diff} ({ratio:.4f})')
+sys.exit(0 if ratio > 0.002 else 1)
+PY
+        echo "shadertoy_e2e: [graph-sprite] ④ 精灵内鼠标绘制（局部像素 + 自反馈）OK"
+    else
+        echo "shadertoy_e2e: SKIP [graph-sprite] 鼠标绘制（缺 $sim）"
+    fi
+    echo "shadertoy_e2e: [graph-sprite] ⑤ 精灵形态 = ShaderSprite.shader 指向 program.json OK"
+}
+
 # 主场景（CTest 参数）= seascape；mandelbulb 由 shaderport 并行产出，缺失时只 SKIP 该节。
 check_scene seascape "$SCN" "$ROOT/scenes/shadertoy/seascape.wgsl" 1
 if [ -f "$ROOT/scenes/shadertoy/mandelbulb.scn" ] && [ -f "$ROOT/scenes/shadertoy/mandelbulb.wgsl" ]; then
@@ -200,5 +433,7 @@ else
     echo "shadertoy_e2e: SKIP mandelbulb（scenes/shadertoy/mandelbulb.scn/.wgsl 尚未入库）"
 fi
 check_sprite_scene
+check_graph_scene
+check_graph_sprite_scene
 
 echo "shadertoy_e2e: PASS"

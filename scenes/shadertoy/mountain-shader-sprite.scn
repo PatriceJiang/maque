@@ -1,0 +1,15 @@
+{
+  "title": "mountain-shader-sprite",
+  "width": 960,
+  "height": 540,
+  "entities": [
+    {
+      "name": "mountain_sprite",
+      "components": [
+        { "type": "scn.Transform2D", "x": 480, "y": 270 },
+        { "type": "render.ShaderSprite", "shader": "mountains/program.json",
+          "width": 720, "height": 405 }
+      ]
+    }
+  ]
+}

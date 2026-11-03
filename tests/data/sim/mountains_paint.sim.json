@@ -1,0 +1,11 @@
+{
+  "name": "mountains_paint",
+  "space": "world",
+  "events": [
+    { "frame": 10, "type": "pointer_move", "x": 700, "y": 300 },
+    { "frame": 11, "type": "pointer_down", "x": 700, "y": 300 },
+    { "frame": 20, "type": "pointer_move", "x": 740, "y": 320 },
+    { "frame": 30, "type": "pointer_move", "x": 780, "y": 330 },
+    { "frame": 50, "type": "pointer_up", "x": 780, "y": 330 }
+  ]
+}

@@ -166,6 +166,28 @@ void null_destroy_shader_pass(void* self, int32_t id) {
     if (r && valid_handle(r->shader_passes, id)) r->shader_passes[static_cast<size_t>(id)] = 0;
 }
 
+/* 多通道 shader 图（render.ShaderGraph）：null 后端只做句柄生命周期，画面由 fill() 决定。 */
+int32_t null_create_shader_graph_pass(void* self, const char* wgsl, int32_t* out_id) {
+    auto* r = static_cast<NullRenderer*>(self);
+    if (out_id) *out_id = -1;
+    if (!r || !wgsl || !*wgsl || !out_id) return 1;
+    *out_id = allocate_handle(r->shader_passes);
+    return 0;
+}
+
+void null_destroy_shader_graph_pass(void* self, int32_t id) {
+    auto* r = static_cast<NullRenderer*>(self);
+    if (r && valid_handle(r->shader_passes, id)) r->shader_passes[static_cast<size_t>(id)] = 0;
+}
+
+int32_t null_create_shader_graph_target(void* self, int32_t w, int32_t h, int32_t* out_id) {
+    auto* r = static_cast<NullRenderer*>(self);
+    if (out_id) *out_id = -1;
+    if (!r || !out_id || w <= 0 || h <= 0) return 1;
+    *out_id = allocate_texture(r, w, h, true);
+    return *out_id < 0 ? 1 : 0;
+}
+
 int32_t null_update_mesh(void* self, int32_t id, const void* vertices, uint64_t vertex_bytes) {
     auto* r = static_cast<NullRenderer*>(self);
     return r && valid_handle(r->meshes, id) && vertices && vertex_bytes > 0 ? 0 : 1;
@@ -264,6 +286,10 @@ const mq_renderer_v2 kApi = {
     null_read_texture,
     /* ---- GPU 资源按类拆分（追加；docs/29）---- */
     null_resource_bytes2,
+    /* ---- 场景资源多通道 shader 图（追加）---- */
+    null_create_shader_graph_pass,
+    null_destroy_shader_graph_pass,
+    null_create_shader_graph_target,
 };
 
 } // namespace
