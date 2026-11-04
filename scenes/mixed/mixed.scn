@@ -1,0 +1,20 @@
+{
+  "title": "mixed-language",
+  "script": "host.js",
+  "width": 320,
+  "height": 240,
+  "seed": 7,
+  "entities": [
+    { "name": "WorkerA", "components": [
+        { "type": "scn.SceneInstance", "source": "worker.scn", "params": "{\"tag\":\"A\"}" } ] },
+    { "name": "WorkerB", "components": [
+        { "type": "scn.SceneInstance", "source": "worker.scn", "params": "{\"tag\":\"B\"}" } ] },
+    { "name": "Title", "components": [
+        { "type": "scn.Label", "x": 10.0, "y": 228.0,
+          "text": "混合语言通信：JS 根（单 VM 模块） + Lua 子实例（事件）",
+          "font_size": 12.0, "r": 0.9, "g": 0.9, "b": 0.6, "a": 1.0 } ] },
+    { "name": "Status", "components": [
+        { "type": "scn.Label", "x": 10.0, "y": 210.0, "text": "", "font_size": 11.0,
+          "r": 0.7, "g": 0.85, "b": 1.0, "a": 1.0 } ] }
+  ]
+}

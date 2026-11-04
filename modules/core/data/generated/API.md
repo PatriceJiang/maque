@@ -909,7 +909,7 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_spine_attachment_sequence_info` | int | inst: mq_spine_instance*, slot_index: int, out: mq_spine_sequence_info* |
 | `mq_spine_instance_set_sequence_index` | int | inst: mq_spine_instance*, slot_index: int, frame: int |
 
-### script — `maque.script` v2
+### script — `maque.script` v3
 
 头文件：`build/modules/core/data/generated/abi/script.h` · 宏：`MQ_SCRIPT_ABI_VERSION` / `_IFACE_NAME`
 
@@ -931,6 +931,13 @@ Spine 2D 官方运行时（spine-cpp）的 C ABI 封装：骨架数据 + 实例 
 | `mq_script_module_has` | int | module: mq_script_module*, fn: const char* |
 | `mq_script_module_call` | int | module: mq_script_module*, fn: const char*, nnum: int, nums: const double*, text: const char*, ret: double* |
 | `mq_script_current_module` | mq_script_module* | vm: mq_script_vm* |
+| `mq_script_vm_set_module_loader` | int | vm: mq_script_vm*, resolve_fn: mq_script_module_resolve_fn, read_fn: mq_script_module_read_fn, user: void* |
+| `mq_script_module_load_esm` | mq_script_module* | vm: mq_script_vm*, key: const char* |
+| `mq_script_module_instantiate` | mq_script_instance* | module: mq_script_module*, node: int32_t, scene: int32_t, params: const char*, package_key: const char* |
+| `mq_script_instance_has` | int | instance: mq_script_instance*, fn: const char* |
+| `mq_script_instance_call` | int | instance: mq_script_instance*, fn: const char*, nnum: int, nums: const double*, text: const char*, ret: double* |
+| `mq_script_instance_last_error` | int | instance: mq_script_instance*, out: char*, cap: int |
+| `mq_script_instance_destroy` | void | instance: mq_script_instance* |
 | `mq_script_bus_create` | mq_script_bus* | — |
 | `mq_script_bus_add` | int | bus: mq_script_bus*, vm: mq_script_vm*, name: const char* |
 | `mq_script_bus_count` | uint32_t | bus: mq_script_bus* |

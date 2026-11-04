@@ -41,6 +41,7 @@
 | [31](31-gltf-model-migration.md) | **Khronos glTF 模型批量迁移经验**：149 个 glTF-Sample-Assets 模型的导入流水线、产物入库策略、特性支持矩阵与差距、自动机位/灯光/env 手调、参考图对比方法与归因、踩坑清单与排查手册、`scenes/khronos/` 统计 |
 | [32](32-场景实例与事件作用域.md) | **场景实例（重新设计）**：Scene = 节点树 + 行为；SceneInstance 实例树 + 每实例 VM/生命周期/事件作用域；`.scn` v2 保真序列化；动态实例化脚本/控制面 API |
 | [33](33-RenderTexture相机离屏纹理.md) | **RenderTexture 相机离屏纹理**：2D/3D 相机挂载、纹理 URI、依赖顺序、截图脚本/控制面、生命周期、性能与排错 |
+| [34](34-脚本模块与实例上下文.md) | **脚本模块、包与实例上下文（重新设计）**：每语言一个 VM；`maque.package.json` 包清单 + 模块键；原生 ESM / Lua `require`；模块定义 + 每挂载点 `this`/`self` 上下文；`props` 持久化；包作用域 `global_*`；模块级热重载与迁移/测试影响面 |
 | [bugs/](bugs/README.md) | **Bug 档案（内存/崩溃/性能必录）**：症状、最小复现、根因、修复/状态、回归与证据 |
 | [api/](api/README.md) | **API 参考（自动生成，随仓库提交）**：脚本 API / 控制面 / 事件 / 插件 vtable / 模块 C ABI / 数据类型 |
 | [assets/00](assets/00-index.md) | 资产系列索引（Effect/Material/Mesh/Texture/Font/AnimationClip/Skeleton/Spine） |

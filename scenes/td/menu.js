@@ -1,3 +1,5 @@
+// docs/34 P0: factory form — 每个挂载点一个实例；顶层 var 是实例闭包状态。
+export default function () {
 'use strict';
 // 菜单场景脚本：选关 / 继续 / 重置进度。
 //
@@ -143,4 +145,7 @@ function on_key_down(target, key) {
 
 function on_destroy() {
   log('td_menu destroy');
+}
+
+return { normPath, pathJoin, clampLevel, cacheIds, setButton, setLabelColor, refresh, startLevel, resetProgress, on_start, on_pointer_down, on_key_down, on_destroy };
 }

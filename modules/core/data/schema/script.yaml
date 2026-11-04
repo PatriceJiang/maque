@@ -50,12 +50,16 @@
         - { name: init_err, type: uint16_t, default: 0, attrs: { transient: true, readonly: true } }
   module_abi:
     module: script
-    version: 2
+    version: 3
     abi_name: "maque.script"
     includes: [ "<stddef.h>", "<stdint.h>" ]
-    opaque: [ mq_script_vm, mq_script_module, mq_script_bus ]
+    opaque: [ mq_script_vm, mq_script_module, mq_script_instance, mq_script_bus ]
     typedefs:
       - { name: mq_script_rng_fn, type: "uint32_t (*)(void* user)" }
+      - { name: mq_script_module_resolve_fn, type: "const char* (*)(void* user, const char* importer, const char* spec)",
+          doc: "把 import 说明符解析成模块键；返回的字符串只在回调期间有效" }
+      - { name: mq_script_module_read_fn, type: "const char* (*)(void* user, const char* key, size_t* out_len)",
+          doc: "按模块键读取源码；返回的缓冲区只在回调期间有效" }
       - { name: mq_script_num_fn, type: "int (*)(void* user, int argc, const double* argv, double* ret)" }
       - { name: mq_script_str_fn, type: "int (*)(void* user, const char* arg, double* ret)" }
       - { name: mq_script_ret_str_fn, type: "int (*)(void* user, int argc, const double* argv, char* ret, int ret_cap)" }
@@ -101,6 +105,19 @@
           doc: "调用模块函数：数值参数依序传入；text 非 NULL 时作为末尾字符串参数；成功 0、不存在 1、执行错误 2" }
       - { fn: mq_script_current_module, returns: "mq_script_module*", args: [ { name: vm, type: "mq_script_vm*" } ],
           doc: "当前正在加载/执行的模块；宿主函数用它识别调用者，空闲时返回 NULL" }
+      # ---- 原生 ESM 模块 + 每挂载点实例（docs/34 P0）----
+      - { fn: mq_script_vm_set_module_loader, returns: int, args: [ { name: vm, type: "mq_script_vm*" }, { name: resolve_fn, type: "mq_script_module_resolve_fn" }, { name: read_fn, type: "mq_script_module_read_fn" }, { name: user, type: "void*" } ],
+          doc: "给 VM 挂模块解析/读取回调；键（如 pkg@1/scripts/a.js）由调用方定义" }
+      - { fn: mq_script_module_load_esm, returns: "mq_script_module*", args: [ { name: vm, type: "mq_script_vm*" }, { name: key, type: "const char*" } ],
+          doc: "按模块键加载并求值原生 ESM（同键只求值一次）；导入经 loader 回调解析" }
+      - { fn: mq_script_module_instantiate, returns: "mq_script_instance*", args: [ { name: module, type: "mq_script_module*" }, { name: node, type: "int32_t" }, { name: scene, type: "int32_t" }, { name: params, type: "const char*" }, { name: package_key, type: "const char*" } ],
+          doc: "为挂载点创建实例：模块 default 导出对象/class/工厂；this/self 上注入 node/scene/package/params/props" }
+      - { fn: mq_script_instance_has, returns: int, args: [ { name: instance, type: "mq_script_instance*" }, { name: fn, type: "const char*" } ],
+          doc: "实例（含定义/原型）上是否有该函数" }
+      - { fn: mq_script_instance_call, returns: int, args: [ { name: instance, type: "mq_script_instance*" }, { name: fn, type: "const char*" }, { name: nnum, type: int }, { name: nums, type: "const double*" }, { name: text, type: "const char*" }, { name: ret, type: "double*" } ],
+          doc: "以实例为 this/self 调用方法；成功 0、不存在 1、执行错误 2" }
+      - { fn: mq_script_instance_last_error, returns: int, args: [ { name: instance, type: "mq_script_instance*" }, { name: out, type: "char*" }, { name: cap, type: int } ] }
+      - { fn: mq_script_instance_destroy, returns: void, args: [ { name: instance, type: "mq_script_instance*" } ] }
       # ---- 事件总线（多 VM / 跨语言协作，docs/14 §多 VM、docs/19 §事件）----
       # 语义：**按加入顺序**逐 VM 投递；只投给定义了该处理器的 VM；每个 VM 独立保护调用（错误隔离）。
       - { fn: mq_script_bus_create, returns: "mq_script_bus*", args: [  ],

@@ -1,3 +1,5 @@
+// docs/34 P0: factory form — 每个挂载点一个实例；顶层 var 是实例闭包状态。
+export default function () {
 'use strict';
 // 父场景脚本（docs/32）：能看到自己的实例树；动态实例化/卸载走帧边界 API。
 var frames = 0, static_ids = [], dyn_id = -1, left = -1, right = -1;
@@ -31,4 +33,7 @@ function update(dt) {
   if (frames == 10) {
     log('PARENT_FINAL children=' + scene_instance_count() + ' dyn_valid=' + scene_instance_valid(dyn_id));
   }
+}
+
+return { on_start, parent_on_child, update };
 }

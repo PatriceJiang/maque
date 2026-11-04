@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
+#include <map>
+#include <string>
 
 static int g_failures = 0;
 #define CHECK(cond) do { if (!(cond)) { \
@@ -37,6 +39,56 @@ static int host_bytes(void* user, int nnum, const double* nums, int nbytes,
     ret->release = host_bytes_release;
     ret->release_user = user;
     return 0;
+}
+
+/* ---- 原生 ESM + 实例（docs/34 P0）测试夹具 ---- */
+struct EsmFixture {
+    std::map<std::string, std::string> files;
+    std::map<std::string, int> reads;
+};
+
+static thread_local std::string g_esm_resolved;
+
+static std::string normalize_key(const std::string& in) {
+    std::string out;
+    size_t i = 0;
+    while (i <= in.size()) {
+        size_t j = in.find('/', i);
+        if (j == std::string::npos) j = in.size();
+        const std::string seg = in.substr(i, j - i);
+        if (seg.empty() || seg == ".") {
+            /* skip */
+        } else if (seg == "..") {
+            const size_t p = out.rfind('/');
+            out = (p == std::string::npos) ? std::string() : out.substr(0, p);
+        } else {
+            if (!out.empty()) out += '/';
+            out += seg;
+        }
+        i = j + 1;
+    }
+    return out;
+}
+
+static const char* esm_resolve(void* user, const char* importer, const char* spec) {
+    auto* f = static_cast<EsmFixture*>(user);
+    std::string base = importer ? importer : "";
+    const size_t slash = base.rfind('/');
+    const std::string dir = slash == std::string::npos ? std::string() : base.substr(0, slash);
+    std::string s = spec ? spec : "";
+    if (s.rfind("./", 0) == 0 || s.rfind("../", 0) == 0) s = dir + "/" + s;
+    g_esm_resolved = normalize_key(s);
+    (void)f;
+    return g_esm_resolved.c_str();
+}
+
+static const char* esm_read(void* user, const char* key, size_t* out_len) {
+    auto* f = static_cast<EsmFixture*>(user);
+    auto it = f->files.find(key ? key : "");
+    if (it == f->files.end()) return nullptr;
+    f->reads[it->first] += 1;
+    if (out_len) *out_len = it->second.size();
+    return it->second.c_str();
 }
 
 int main() {
@@ -170,6 +222,78 @@ int main() {
         mq_script_module_destroy(ma);
         CHECK(mq_script_module_call(mb, "bump", 0, nullptr, nullptr, &v) == 0 && v == 2.0);
         mq_script_module_destroy(mb);
+    }
+
+    // ---- 原生 ESM：模块只求值一次、每挂载点实例独立 this、导入解析 ----
+    {
+        EsmFixture fx;
+        fx.files["pkg/lib.js"] =
+            "globalThis.__lib_evals = (globalThis.__lib_evals || 0) + 1;\n"
+            "export function libCount() { return globalThis.__lib_evals; }\n"
+            "export function add(a, b) { return a + b; }\n";
+        fx.files["pkg/main.js"] =
+            "import { libCount, add } from './lib.js';\n"
+            "export default function () {\n"
+            "  let n = 0;\n"
+            "  return {\n"
+            "    update(dt) { n += dt; },\n"
+            "    value() { return add(n, this.node); },\n"
+            "    lib() { return libCount(); },\n"
+            "    paramsX() { return this.params.x; },\n"
+            "    hasProps() { return typeof this.props === 'object'; },\n"
+            "  };\n"
+            "}\n";
+        fx.files["pkg/obj.js"] =
+            "export default { value() { return this.node; } };\n";
+        fx.files["pkg/klass.js"] =
+            "export default class K {\n"
+            "  constructor() { this.n = 0; }\n"
+            "  bump(dt) { this.n += dt; return this.n + this.node; }\n"
+            "}\n";
+
+        mq_script_vm* evm = mq_script_vm_create();
+        CHECK(evm != nullptr);
+        CHECK(mq_script_vm_set_module_loader(evm, esm_resolve, esm_read, &fx) == 0);
+
+        mq_script_module* main_mod = mq_script_module_load_esm(evm, "pkg/main.js");
+        CHECK(main_mod != nullptr);
+        CHECK(mq_script_module_load_esm(evm, "pkg/main.js") == main_mod);   // 同键缓存
+        CHECK(fx.reads["pkg/main.js"] == 1);
+        CHECK(fx.reads["pkg/lib.js"] == 1);
+
+        mq_script_instance* a = mq_script_module_instantiate(main_mod, 7, 2, "{\"x\":3}", "pkg@1");
+        mq_script_instance* b = mq_script_module_instantiate(main_mod, 9, 2, "{}", "pkg@1");
+        CHECK(a && b && a != b);
+        double v = 0, dt = 1.5;
+        CHECK(mq_script_instance_call(a, "update", 1, &dt, nullptr, nullptr) == 0);
+        CHECK(mq_script_instance_call(b, "update", 1, &dt, nullptr, nullptr) == 0);
+        CHECK(mq_script_instance_call(a, "value", 0, nullptr, nullptr, &v) == 0 && v == 8.5);
+        CHECK(mq_script_instance_call(b, "value", 0, nullptr, nullptr, &v) == 0 && v == 10.5);
+        CHECK(mq_script_instance_call(a, "lib", 0, nullptr, nullptr, &v) == 0 && v == 1.0);
+        CHECK(mq_script_instance_call(a, "paramsX", 0, nullptr, nullptr, &v) == 0 && v == 3.0);
+        CHECK(mq_script_instance_call(a, "hasProps", 0, nullptr, nullptr, &v) == 0 && v == 1.0);
+        CHECK(mq_script_instance_has(a, "value") == 1);
+        CHECK(mq_script_instance_has(a, "missing") == 0);
+        CHECK(mq_script_instance_call(a, "missing", 0, nullptr, nullptr, &v) == 1);
+
+        mq_script_module* obj_mod = mq_script_module_load_esm(evm, "pkg/obj.js");
+        CHECK(obj_mod != nullptr);
+        mq_script_instance* c = mq_script_module_instantiate(obj_mod, 5, 0, "", "pkg@1");
+        CHECK(c != nullptr);
+        CHECK(mq_script_instance_call(c, "value", 0, nullptr, nullptr, &v) == 0 && v == 5.0);
+
+        mq_script_module* klass_mod = mq_script_module_load_esm(evm, "pkg/klass.js");
+        CHECK(klass_mod != nullptr);
+        mq_script_instance* k = mq_script_module_instantiate(klass_mod, 4, 0, "", "pkg@1");
+        CHECK(k != nullptr);
+        double two = 2.0;
+        CHECK(mq_script_instance_call(k, "bump", 1, &two, nullptr, &v) == 0 && v == 6.0);
+
+        mq_script_instance_destroy(k);
+        mq_script_instance_destroy(c);
+        mq_script_instance_destroy(b);
+        mq_script_instance_destroy(a);
+        mq_script_vm_destroy(evm);
     }
 
     mq_script_gc(vm);

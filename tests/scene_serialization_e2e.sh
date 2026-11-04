@@ -23,7 +23,7 @@ export MAQUE_HEADLESS=1
 fail() { echo "scene_serialization_e2e: FAIL $*" >&2; exit 1; }
 
 SCN_DIR="$(dirname "$SCENE")"
-cp "$SCN_DIR/parent.scn" "$SCN_DIR/child.scn" "$SCN_DIR/parent.js" "$SCN_DIR/child.js" "$WORK/"
+cp "$SCN_DIR/parent.scn" "$SCN_DIR/child.scn" "$SCN_DIR/parent.js" "$SCN_DIR/child.js" "$SCN_DIR/maque.package.json" "$WORK/"
 P="$WORK/parent.scn"
 A="$WORK/saved_a.scn"
 B="$WORK/saved_b.scn"

@@ -1,3 +1,5 @@
+// docs/34 P0: factory form — 每个挂载点一个实例；顶层 var 是实例闭包状态。
+export default function () {
 'use strict';
 // 冰塔（Frost）——独立场景 + 独立行为脚本：低伤害、命中后减速（on_slow）。
 // 组合契约同箭塔/炮台：父场景 params（tier）、scene_emit 结算、scene_instance_source 找敌人。
@@ -165,4 +167,7 @@ function update(dt) {
 
 function on_destroy() {
   log('td_tower_destroy type=' + TYPE + ' inst=' + S.inst + ' shots=' + S.shots);
+}
+
+return { parseParams, towerRoot, on_start, pickTarget, aimAt, spawnBullet, hit, fire, stepBullets, update, on_destroy };
 }

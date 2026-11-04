@@ -26,7 +26,7 @@ export MAQUE_HEADLESS=1
 fail() { echo "scene_instance_e2e: FAIL $*" >&2; exit 1; }
 
 SCN_DIR="$(dirname "$SCENE")"
-cp "$SCN_DIR/parent.scn" "$SCN_DIR/child.scn" "$SCN_DIR/parent.js" "$SCN_DIR/child.js" "$WORK/"
+cp "$SCN_DIR/parent.scn" "$SCN_DIR/child.scn" "$SCN_DIR/parent.js" "$SCN_DIR/child.js" "$SCN_DIR/maque.package.json" "$WORK/"
 SCENE_RUN="$WORK/parent.scn"
 
 # ---- ①-④ 运行 12 帧，解析脚本日志 ----
@@ -54,6 +54,7 @@ assert all(i < parent_start for i in starts[:2]), '子 on_start 应在父 on_sta
 assert 'PARENT_START children=3' in log[parent_start], log[parent_start].strip()
 insts = {int(m.group(1)) for l in log for m in [re.search(r'CHILD_START inst=(\d+)', l)] if m}
 assert {1, 2}.issubset(insts), f'静态实例 id 不齐: {insts}'
+assert all('module=1' in l for l in log if 'CHILD_START' in l), '同一 VM 内 child.js 被重复求值'
 assert 'PARENT_STATIC=1,2' in '\n'.join(log), '静态实例顺序/列表异常'
 
 # ② 状态隔离：只有 inst=1 收到 ping
@@ -121,6 +122,7 @@ cat > "$WORK/churn.scn" <<'EOF'
 EOF
 cat > "$WORK/churn.js" <<'EOF'
 'use strict';
+export default function () {
 var frames = 0, prev = -1, spawned = 0, failed = 0;
 function update(dt) {
   frames++;
@@ -132,6 +134,8 @@ function update(dt) {
   if (frames % 100 == 0)
     log('STRESS frame=' + frames + ' spawned=' + spawned + ' failed=' + failed +
         ' count=' + scene_instance_count());
+}
+return { update };
 }
 EOF
 timeout 120 "$PLAYER" --frames 400 "$WORK/churn.scn" > "$WORK/churn.log" 2>&1

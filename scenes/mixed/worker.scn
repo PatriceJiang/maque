@@ -1,0 +1,8 @@
+{
+  "title": "mixed-worker",
+  "script": "worker.lua",
+  "entities": [
+    { "name": "Body", "components": [
+        { "type": "scn.Transform2D", "x": 0.0, "y": 0.0 } ] }
+  ]
+}

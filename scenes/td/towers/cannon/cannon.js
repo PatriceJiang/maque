@@ -1,3 +1,5 @@
+// docs/34 P0: factory form — 每个挂载点一个实例；顶层 var 是实例闭包状态。
+export default function () {
 'use strict';
 // 炮台（Cannon）——独立场景 + 独立行为脚本：慢速、高伤害、范围爆炸。
 // 与箭塔相同的组合契约（params / scene_emit / scene_instance_source），
@@ -181,4 +183,7 @@ function update(dt) {
 
 function on_destroy() {
   log('td_tower_destroy type=' + TYPE + ' inst=' + S.inst + ' shots=' + S.shots);
+}
+
+return { parseParams, towerRoot, on_start, pickTarget, aimAt, spawnBullet, hit, fire, stepBullets, update, on_destroy };
 }

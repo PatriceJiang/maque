@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 /* ---- 脚本内存域（docs/29 §10.2）：QuickJS 自定义分配器 ----
@@ -57,11 +58,29 @@ struct JsVm : mq_script_vm {
     std::string      last_error;         /* 最近错误（per-instance，ADR-0014） */
     std::vector<std::string*> kinds_store;   /* kinds 字符串存储（VM 释放时一并回收） */
     mq_script_module* current_module = nullptr; /* 当前模块加载/调用栈顶 */
+    /* 原生 ESM（docs/34 P0）：loader 回调 + 模块缓存；键由 runtime 定义。 */
+    mq_script_module_resolve_fn resolver = nullptr;
+    mq_script_module_read_fn    reader = nullptr;
+    void*                       loader_user = nullptr;
+    std::unordered_map<std::string, struct JsEsmModule*> esm_modules;
 };
 
 struct JsModule : mq_script_module {
     JSValue exports = JS_UNDEFINED;      /* { has, call }；闭包持有模块词法环境 */
     JSValue global = JS_UNDEFINED;       /* 模块专属 globalThis，原型为共享宿主全局 */
+};
+
+/* 原生 ESM 模块：ns = 模块命名空间，def = default 导出（定义/class/工厂）。 */
+struct JsEsmModule : mq_script_module {
+    std::string key;
+    JSValue ns = JS_UNDEFINED;
+    JSValue def = JS_UNDEFINED;
+};
+
+/* 每挂载点实例：this/self 就是 obj。 */
+struct JsInstance : mq_script_instance {
+    JSValue obj = JS_UNDEFINED;
+    std::string last_error;
 };
 
 /* 公共指针 → 后端实例（公共首部在偏移 0；标准布局） */
@@ -218,6 +237,35 @@ static void throw_and_print(JSContext* ctx) {
     JS_FreeValue(ctx, e);
 }
 
+/* ---- 原生 ESM loader（docs/34 P0）：runtime 提供解析/读取，后端负责编译与缓存 ---- */
+static char* js_module_normalize_cb(JSContext* ctx, const char* base, const char* name, void* opaque) {
+    auto* vm = S(static_cast<mq_script_vm*>(opaque));
+    if (!vm || !S(vm)->resolver) return nullptr;
+    const char* key = S(vm)->resolver(S(vm)->loader_user, base ? base : "", name ? name : "");
+    if (!key || !*key) return nullptr;
+    return js_strdup(ctx, key);
+}
+
+static JSModuleDef* js_module_load_cb(JSContext* ctx, const char* name, void* opaque) {
+    auto* vm = S(static_cast<mq_script_vm*>(opaque));
+    if (!vm || !S(vm)->reader) {
+        JS_ThrowReferenceError(ctx, "no module reader for '%s'", name ? name : "?");
+        return nullptr;
+    }
+    size_t len = 0;
+    const char* src = S(vm)->reader(S(vm)->loader_user, name, &len);
+    if (!src) {
+        JS_ThrowReferenceError(ctx, "cannot read module '%s'", name ? name : "?");
+        return nullptr;
+    }
+    JSValue val = JS_Eval(ctx, src, len, name ? name : "<module>",
+                          JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(val)) return nullptr;
+    JSModuleDef* m = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(val));
+    JS_FreeValue(ctx, val);
+    return m;
+}
+
 namespace maque::script::js {
 
 mq_script_vm* vm_create(void) {
@@ -233,6 +281,7 @@ mq_script_vm* vm_create(void) {
     S(vm)->ctx = JS_NewContext(S(vm)->rt);
     if (!S(vm)->ctx) { JS_FreeRuntime(S(vm)->rt); delete vm; return nullptr; }
     JS_SetContextOpaque(S(vm)->ctx, vm);
+    JS_SetModuleLoaderFunc(S(vm)->rt, js_module_normalize_cb, js_module_load_cb, vm);
     return vm;
 }
 
@@ -241,6 +290,15 @@ void vm_destroy(mq_script_vm* vm) {
     JsVm* self = S(vm);
     for (auto* p : self->kinds_store) delete p;
     self->kinds_store.clear();
+    for (auto& [key, m] : self->esm_modules) {
+        (void)key;
+        if (self->ctx && m) {
+            if (!JS_IsUndefined(m->ns)) JS_FreeValue(self->ctx, m->ns);
+            if (!JS_IsUndefined(m->def)) JS_FreeValue(self->ctx, m->def);
+            delete m;
+        }
+    }
+    self->esm_modules.clear();
     if (self->ctx) JS_FreeContext(self->ctx);
     if (self->rt) JS_FreeRuntime(self->rt);
     delete self;                 /* 必须按**派生类型**释放（公共首部无虚析构） */
@@ -402,8 +460,18 @@ return {
 
 void module_destroy(mq_script_module* base) {
     if (!base || !base->vm) return;
-    auto* module = static_cast<JsModule*>(base);
     JsVm* v = S(base->vm);
+    if (base->kind == 1) {
+        auto* m = static_cast<JsEsmModule*>(base);
+        if (v->ctx) {
+            if (!JS_IsUndefined(m->ns)) JS_FreeValue(v->ctx, m->ns);
+            if (!JS_IsUndefined(m->def)) JS_FreeValue(v->ctx, m->def);
+        }
+        v->esm_modules.erase(m->key);
+        delete m;
+        return;
+    }
+    auto* module = static_cast<JsModule*>(base);
     if (v->current_module == base) v->current_module = nullptr;
     JS_FreeValue(v->ctx, module->exports);
     JS_FreeValue(v->ctx, module->global);
@@ -412,6 +480,7 @@ void module_destroy(mq_script_module* base) {
 
 int module_has(mq_script_module* base, const char* fn) {
     if (!base || !base->vm || !fn) return 0;
+    if (base->kind == 1) return 0;                 /* ESM：用 instance_has */
     auto* module = static_cast<JsModule*>(base);
     JsVm* v = S(base->vm);
     JSValue has = JS_GetPropertyStr(v->ctx, module->exports, "has");
@@ -434,6 +503,7 @@ int module_call(mq_script_module* base, const char* fn, int nnum, const double* 
     MQ_TRACY_ZONE_TEXT(mq_zone, fn);
     if (ret) *ret = 0.0;
     if (!base || !base->vm || !fn || nnum < 0 || (nnum > 0 && !nums)) return 1;
+    if (base->kind == 1) return 1;                 /* ESM：用 instance_call */
     if (!module_has(base, fn)) return 1;
     auto* module = static_cast<JsModule*>(base);
     JsVm* v = S(base->vm);
@@ -563,6 +633,219 @@ int last_error(mq_script_vm* vm, char* out, int cap) {
     if (msg.empty()) { out[0] = '\0'; return 1; }
     std::snprintf(out, (size_t)cap, "%s", msg.c_str());
     return 0;
+}
+
+/* ---- 原生 ESM 模块 + 每挂载点实例（docs/34 P0）---- */
+
+int vm_set_module_loader(mq_script_vm* vm, mq_script_module_resolve_fn resolve_fn,
+                         mq_script_module_read_fn read_fn, void* user) {
+    if (!vm) return 1;
+    S(vm)->resolver = resolve_fn;
+    S(vm)->reader = read_fn;
+    S(vm)->loader_user = user;
+    return 0;
+}
+
+/* 类构造函数的 prototype 不可写；普通函数可写 → 用它区分 class 与工厂。 */
+static bool js_definition_is_class(JSContext* ctx, JSValueConst fn) {
+    JSAtom atom = JS_NewAtom(ctx, "prototype");
+    JSPropertyDescriptor desc{};
+    const int rc = JS_GetOwnProperty(ctx, &desc, fn, atom);
+    JS_FreeAtom(ctx, atom);
+    if (rc <= 0) return false;
+    const bool klass = !(desc.flags & JS_PROP_WRITABLE);
+    JS_FreeValue(ctx, desc.value);
+    JS_FreeValue(ctx, desc.getter);
+    JS_FreeValue(ctx, desc.setter);
+    return klass;
+}
+
+static int js_set_instance_context(JSContext* ctx, JSValueConst inst, int32_t node, int32_t scene,
+                                   const char* params, const char* package_key) {
+    if (JS_DefinePropertyValueStr(ctx, inst, "node", JS_NewInt32(ctx, node), 0) < 0) return -1;
+    if (JS_DefinePropertyValueStr(ctx, inst, "scene", JS_NewInt32(ctx, scene), 0) < 0) return -1;
+    if (JS_DefinePropertyValueStr(ctx, inst, "package", JS_NewString(ctx, package_key ? package_key : ""), 0) < 0) return -1;
+    JSValue p = JS_UNDEFINED;
+    if (params && *params) {
+        p = JS_ParseJSON(ctx, params, std::strlen(params), "<params>");
+        if (JS_IsException(p)) {
+            JS_FreeValue(ctx, JS_GetException(ctx));
+            p = JS_NewObject(ctx);
+        }
+    } else {
+        p = JS_NewObject(ctx);
+    }
+    if (JS_DefinePropertyValueStr(ctx, inst, "params", p, 0) < 0) return -1;
+    if (JS_DefinePropertyValueStr(ctx, inst, "props", JS_NewObject(ctx), 0) < 0) return -1;
+    return 0;
+}
+
+mq_script_module* module_load_esm(mq_script_vm* vm, const char* key) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "esm.load");
+    MQ_TRACY_ZONE_TEXT(mq_zone, key);
+    if (!vm || !key) return nullptr;
+    JsVm* v = S(vm);
+    auto it = v->esm_modules.find(key);
+    if (it != v->esm_modules.end()) return it->second;
+    if (!v->reader) { v->last_error = "no module reader"; return nullptr; }
+
+    size_t len = 0;
+    const char* src = v->reader(v->loader_user, key, &len);
+    if (!src) {
+        v->last_error = std::string("cannot read module: ") + key;
+        std::print(stderr, "[script] {}\n", v->last_error);
+        return nullptr;
+    }
+    JSValue mod = JS_Eval(v->ctx, src, len, key,
+                          JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(mod)) { throw_and_print(v->ctx); return nullptr; }
+    JSModuleDef* m = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(mod));
+    JSValue ret = JS_EvalFunction(v->ctx, mod);       /* takes ownership of mod */
+    if (JS_IsException(ret)) { throw_and_print(v->ctx); return nullptr; }
+    if (JS_IsPromise(ret)) {
+        JSPromiseStateEnum st = JS_PromiseState(v->ctx, ret);
+        while (st == JS_PROMISE_PENDING) {
+            JSContext* c1 = nullptr;
+            if (JS_ExecutePendingJob(v->rt, &c1) <= 0) break;
+            st = JS_PromiseState(v->ctx, ret);
+        }
+        if (st == JS_PROMISE_REJECTED || st == JS_PROMISE_PENDING) {
+            JSValue e = JS_PromiseResult(v->ctx, ret);
+            const char* s = JS_ToCString(v->ctx, e);
+            v->last_error = s ? s : (st == JS_PROMISE_PENDING ? "top-level await unsupported" : "module rejected");
+            if (s) JS_FreeCString(v->ctx, s);
+            JS_FreeValue(v->ctx, e);
+            std::print(stderr, "[script] module '{}' failed: {}\n", key, v->last_error);
+            JS_FreeValue(v->ctx, ret);
+            return nullptr;
+        }
+        JSValue result = JS_PromiseResult(v->ctx, ret);
+        JS_FreeValue(v->ctx, result);
+    }
+    JS_FreeValue(v->ctx, ret);
+
+    JSValue ns = JS_GetModuleNamespace(v->ctx, m);
+    if (JS_IsException(ns)) { throw_and_print(v->ctx); return nullptr; }
+    JSValue def = JS_GetPropertyStr(v->ctx, ns, "default");
+    auto* em = new JsEsmModule();
+    em->vm = vm;
+    em->kind = 1;
+    em->key = key;
+    em->ns = ns;
+    em->def = def;
+    v->esm_modules[key] = em;
+    return em;
+}
+
+mq_script_instance* module_instantiate(mq_script_module* module, int32_t node, int32_t scene,
+                                       const char* params, const char* package_key) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "esm.instantiate");
+    if (!module || module->kind != 1) return nullptr;
+    auto* em = static_cast<JsEsmModule*>(module);
+    JsVm* v = S(module->vm);
+    JSContext* ctx = v->ctx;
+    const JSValue def = em->def;
+    if (JS_IsUndefined(def)) {
+        v->last_error = std::string("module has no default export: ") + em->key;
+        std::print(stderr, "[script] {}\n", v->last_error);
+        return nullptr;
+    }
+
+    JSValue inst = JS_UNDEFINED;
+    if (JS_IsFunction(ctx, def)) {
+        if (js_definition_is_class(ctx, def)) {
+            inst = JS_CallConstructor(ctx, def, 0, nullptr);
+        } else {
+            JSValue seed = JS_NewObject(ctx);
+            JSValue out = JS_Call(ctx, def, seed, 0, nullptr);
+            if (JS_IsException(out)) {
+                JS_FreeValue(ctx, seed);
+                throw_and_print(ctx);
+                return nullptr;
+            }
+            if (JS_IsObject(out)) {
+                JS_FreeValue(ctx, seed);
+                inst = out;
+            } else {
+                JS_FreeValue(ctx, out);
+                inst = seed;
+            }
+        }
+    } else if (JS_IsObject(def)) {
+        inst = JS_NewObjectProto(ctx, def);
+    } else {
+        v->last_error = std::string("module default must be object/class/function: ") + em->key;
+        std::print(stderr, "[script] {}\n", v->last_error);
+        return nullptr;
+    }
+    if (JS_IsException(inst)) { throw_and_print(ctx); return nullptr; }
+    if (js_set_instance_context(ctx, inst, node, scene, params, package_key) < 0) {
+        JS_FreeValue(ctx, inst);
+        throw_and_print(ctx);
+        return nullptr;
+    }
+    auto* out = new JsInstance();
+    out->vm = module->vm;
+    out->obj = inst;
+    return out;
+}
+
+int instance_has(mq_script_instance* instance, const char* fn) {
+    if (!instance || !fn) return 0;
+    auto* inst = static_cast<JsInstance*>(instance);
+    JsVm* v = S(instance->vm);
+    JSValue f = JS_GetPropertyStr(v->ctx, inst->obj, fn);
+    const int ok = JS_IsFunction(v->ctx, f);
+    JS_FreeValue(v->ctx, f);
+    return ok;
+}
+
+int instance_call(mq_script_instance* instance, const char* fn, int nnum, const double* nums,
+                  const char* text, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "esm.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
+    if (ret) *ret = 0.0;
+    if (!instance || !fn || nnum < 0 || (nnum > 0 && !nums)) return 1;
+    auto* inst = static_cast<JsInstance*>(instance);
+    JsVm* v = S(instance->vm);
+    JSContext* ctx = v->ctx;
+    JSValue f = JS_GetPropertyStr(ctx, inst->obj, fn);
+    if (!JS_IsFunction(ctx, f)) { JS_FreeValue(ctx, f); return 1; }
+    JSValue args[8];
+    const int argc = nnum + (text ? 1 : 0);
+    if (argc > 8) { JS_FreeValue(ctx, f); return 2; }
+    for (int i = 0; i < nnum; ++i) args[i] = JS_NewFloat64(ctx, nums[i]);
+    if (text) args[nnum] = JS_NewString(ctx, text);
+    JSValue r = JS_Call(ctx, f, inst->obj, argc, argc ? args : nullptr);
+    for (int i = 0; i < argc; ++i) JS_FreeValue(ctx, args[i]);
+    JS_FreeValue(ctx, f);
+    if (JS_IsException(r)) {
+        char buf[512] = { 0 };
+        last_error(instance->vm, buf, (int)sizeof buf);
+        inst->last_error = buf;
+        throw_and_print(ctx);
+        return 2;
+    }
+    if (ret) { double d = 0; JS_ToFloat64(ctx, &d, r); *ret = d; }
+    JS_FreeValue(ctx, r);
+    return 0;
+}
+
+int instance_last_error(mq_script_instance* instance, char* out, int cap) {
+    if (!instance || !out || cap <= 0) return 1;
+    out[0] = '\0';
+    const std::string& e = static_cast<JsInstance*>(instance)->last_error;
+    if (e.empty()) return 1;
+    std::snprintf(out, (size_t)cap, "%s", e.c_str());
+    return 0;
+}
+
+void instance_destroy(mq_script_instance* instance) {
+    if (!instance) return;
+    auto* inst = static_cast<JsInstance*>(instance);
+    JsVm* v = S(instance->vm);
+    if (v && v->ctx && !JS_IsUndefined(inst->obj)) JS_FreeValue(v->ctx, inst->obj);
+    delete inst;
 }
 
 /* 帧边界（docs/10 D7）：JS 的 cycle GC 只在帧边界运行（docs/14） */

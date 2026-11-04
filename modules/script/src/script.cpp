@@ -103,6 +103,49 @@ mq_script_module* mq_script_current_module(mq_script_vm* vm) {
                       : maque::script::js::current_module(vm);
 }
 
+/* ---- 原生 ESM + 每挂载点实例（docs/34 P0）：当前仅 JS 后端实现 ---- */
+int mq_script_vm_set_module_loader(mq_script_vm* vm, mq_script_module_resolve_fn resolve_fn,
+                                   mq_script_module_read_fn read_fn, void* user) {
+    if (!vm || is_lua(vm)) return 1;
+    return maque::script::js::vm_set_module_loader(vm, resolve_fn, read_fn, user);
+}
+
+mq_script_module* mq_script_module_load_esm(mq_script_vm* vm, const char* key) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "esm.load");
+    MQ_TRACY_ZONE_TEXT(mq_zone, key);
+    if (!vm || !key || is_lua(vm)) return nullptr;
+    return maque::script::js::module_load_esm(vm, key);
+}
+
+mq_script_instance* mq_script_module_instantiate(mq_script_module* module, int32_t node, int32_t scene,
+                                                 const char* params, const char* package_key) {
+    if (!module || !module->vm || is_lua(module->vm)) return nullptr;
+    return maque::script::js::module_instantiate(module, node, scene, params, package_key);
+}
+
+int mq_script_instance_has(mq_script_instance* instance, const char* fn) {
+    if (!instance || !instance->vm || is_lua(instance->vm)) return 0;
+    return maque::script::js::instance_has(instance, fn);
+}
+
+int mq_script_instance_call(mq_script_instance* instance, const char* fn, int nnum, const double* nums,
+                            const char* text, double* ret) {
+    MQ_TRACY_ZONE_NAMED(mq_zone, script, "instance.call");
+    MQ_TRACY_ZONE_TEXT(mq_zone, fn);
+    if (!instance || !instance->vm || is_lua(instance->vm)) return 1;
+    return maque::script::js::instance_call(instance, fn, nnum, nums, text, ret);
+}
+
+int mq_script_instance_last_error(mq_script_instance* instance, char* out, int cap) {
+    if (!instance || !instance->vm || is_lua(instance->vm)) return 1;
+    return maque::script::js::instance_last_error(instance, out, cap);
+}
+
+void mq_script_instance_destroy(mq_script_instance* instance) {
+    if (!instance || !instance->vm || is_lua(instance->vm)) return;
+    maque::script::js::instance_destroy(instance);
+}
+
 int mq_script_eval(mq_script_vm* vm, const char* src, const char* filename) {
     MQ_TRACY_ZONE_NAMED(mq_zone, script, filename);
     if (!vm) return 1;

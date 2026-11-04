@@ -9,8 +9,15 @@ struct mq_script_vm {
     const char* lang = nullptr;      /* 后端语言 id："js" / "lua" */
 };
 
-/* 同一 VM 内的独立脚本实例。模块由调用方销毁，且必须先于所属 VM 销毁。 */
+/* 同一 VM 内的独立脚本实例。模块由调用方销毁，且必须先于所属 VM 销毁。
+ * kind：0 = legacy 作用域模块（module_load），1 = 原生 ESM 模块（module_load_esm）。 */
 struct mq_script_module {
+    mq_script_vm* vm = nullptr;
+    int kind = 0;
+};
+
+/* 每挂载点的脚本实例（docs/34 P0）：this/self 就是它。 */
+struct mq_script_instance {
     mq_script_vm* vm = nullptr;
 };
 
@@ -23,6 +30,16 @@ int module_has(mq_script_module* module, const char* fn);
 int module_call(mq_script_module* module, const char* fn, int nnum, const double* nums,
                 const char* text, double* ret);
 mq_script_module* current_module(mq_script_vm* vm);
+int vm_set_module_loader(mq_script_vm* vm, mq_script_module_resolve_fn resolve_fn,
+                         mq_script_module_read_fn read_fn, void* user);
+mq_script_module* module_load_esm(mq_script_vm* vm, const char* key);
+mq_script_instance* module_instantiate(mq_script_module* module, int32_t node, int32_t scene,
+                                       const char* params, const char* package_key);
+int instance_has(mq_script_instance* instance, const char* fn);
+int instance_call(mq_script_instance* instance, const char* fn, int nnum, const double* nums,
+                  const char* text, double* ret);
+int instance_last_error(mq_script_instance* instance, char* out, int cap);
+void instance_destroy(mq_script_instance* instance);
 int eval(mq_script_vm* vm, const char* src, const char* filename);
 int has(mq_script_vm* vm, const char* fn);
 int call0(mq_script_vm* vm, const char* fn, double* ret);
@@ -57,6 +74,16 @@ int module_has(mq_script_module* module, const char* fn);
 int module_call(mq_script_module* module, const char* fn, int nnum, const double* nums,
                 const char* text, double* ret);
 mq_script_module* current_module(mq_script_vm* vm);
+int vm_set_module_loader(mq_script_vm* vm, mq_script_module_resolve_fn resolve_fn,
+                         mq_script_module_read_fn read_fn, void* user);
+mq_script_module* module_load_esm(mq_script_vm* vm, const char* key);
+mq_script_instance* module_instantiate(mq_script_module* module, int32_t node, int32_t scene,
+                                       const char* params, const char* package_key);
+int instance_has(mq_script_instance* instance, const char* fn);
+int instance_call(mq_script_instance* instance, const char* fn, int nnum, const double* nums,
+                  const char* text, double* ret);
+int instance_last_error(mq_script_instance* instance, char* out, int cap);
+void instance_destroy(mq_script_instance* instance);
 int eval(mq_script_vm* vm, const char* src, const char* filename);
 int has(mq_script_vm* vm, const char* fn);
 int call0(mq_script_vm* vm, const char* fn, double* ret);

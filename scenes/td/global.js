@@ -1,3 +1,5 @@
+// docs/34 P0: factory form — 每个挂载点一个实例；顶层 var 是实例闭包状态。
+export default function () {
 'use strict';
 // 全局脚本（scn.Scene.global_script）——小小塔防的游戏级服务层。
 //
@@ -206,4 +208,7 @@ function update(dt) {
       director_load_scene(path);
     }
   }
+}
+
+return { normPath, pathJoin, isMenu, makeLabel, makeBar, destroyHud, buildHud, updateHud, makeBanner, on_start, on_key_down, level_finished, update };
 }

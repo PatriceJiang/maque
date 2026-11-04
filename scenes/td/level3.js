@@ -1,3 +1,5 @@
+// docs/34 P0: factory form — 每个挂载点一个实例；顶层 var 是实例闭包状态。
+export default function () {
 'use strict';
 // 第 3 关 · 王城终局 —— 独立关卡场景 + 独立行为脚本。
 //
@@ -190,4 +192,7 @@ function update(dt) {
 
 function on_destroy() {
   log('td_level destroy level=' + LEVEL + ' kills=' + S.kills + ' leaks=' + S.leaked);
+}
+
+return { readPath, on_start, startWave, spawnUnit, on_enemy_dead, on_enemy_leak, finish, update, on_destroy };
 }

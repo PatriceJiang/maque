@@ -1,3 +1,5 @@
+// docs/34 P0: factory form — 每个挂载点一个实例；顶层 var 是实例闭包状态。
+export default function () {
 'use strict';
 // 飞行者（Flyer）——独立场景 + 独立行为脚本：直线飞向终点（不沿地面路径）。
 //
@@ -176,4 +178,7 @@ function update(dt) {
 
 function on_destroy() {
   if (!S.demo) log('td_enemy_destroy type=' + TYPE + ' inst=' + S.inst + ' uid=' + S.uid);
+}
+
+return { parseParams, enemyRoot, findParts, setHpBar, applyTint, setPos, on_start, on_damage, on_slow, emitParent, die, leak, update, on_destroy };
 }

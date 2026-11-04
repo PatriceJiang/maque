@@ -662,6 +662,26 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/multilang_e2e")
 endif()
 
+# 混合语言通信（docs/34 P0）：JS 根（包内单 VM 模块/实例）↔ Lua 子实例（旧路径）双向 scene_emit，
+# 两个 Lua 实例闭包状态独立 + 同 seed 两跑确定性。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME mixed_lang_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/mixed_lang_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/mixed/mixed.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/mixed_lang_e2e")
+    set_tests_properties(mixed_lang_e2e PROPERTIES TIMEOUT 120)
+endif()
+
+# 混合语言内存泄漏回归（docs/34）：JS 根 + Lua 子实例 800 次 spawn/unload，
+# 脚本/节点内存必须进入平台期（190 → 790 帧不再增长），而不是随实例数线性增长。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME mixed_lang_mem_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/mixed_lang_mem_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/mixed/churn.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/mixed_lang_mem_e2e")
+    set_tests_properties(mixed_lang_mem_e2e PROPERTIES TIMEOUT 180)
+endif()
+
 # 多脚本热重载（docs/14 §多 VM）：增量生效 + 其它脚本状态保留 + 坏脚本原子回退
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME hot_reload_multi_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/hot_reload_multi_e2e.sh"

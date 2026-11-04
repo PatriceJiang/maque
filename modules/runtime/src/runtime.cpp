@@ -50,6 +50,7 @@ extern "C" void* mq_module_query(const char* name, uint32_t min_version);
 #include <string>
 #include <vector>
 #include <fstream>
+#include <deque>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
@@ -250,7 +251,10 @@ struct SceneInstanceRuntime {
     std::string params;              // 实例参数（JSON 文本；docs/32 §16.2）
     std::vector<int> roots;          // 本实例的顶层实体（parent == attach_entity 且 owner==id）
     std::vector<int> children;       // 子实例（创建/声明顺序）
-    mq_script_bus* bus = nullptr;    // 本实例的 VM 组（总线拥有 VM）
+    mq_script_bus* bus = nullptr;    // 本实例的 VM 组（总线拥有 VM；docs/34 新路径为 null）
+    /* docs/34 P0：每语言一个 VM 时，本实例的脚本实例（每脚本一个，声明序）。 */
+    std::vector<mq_script_instance*> module_instances;
+    std::vector<std::string> module_keys;
     std::vector<std::string> scripts;     // 相对 base 的脚本路径（声明序）
     std::vector<uint64_t> script_hashes;  // 内容哈希（热重载）
     bool paused = false;
@@ -323,6 +327,21 @@ struct Engine {
     mq_watcher*         watcher = nullptr;                  // 资源热重载监视（docs/08）
     std::string         script_path;                        // 当前脚本（热重载用）
     uint64_t            script_hash = 0;
+    /* ---- docs/34 P0：每语言一个 JS VM + 包/模块/实例 ---- */
+    struct ModulePackage {
+        bool active = false;
+        std::string id, version, key;    // key = id@version
+        std::string root_dir;            // 包根（本地绝对路径）
+        std::string scene_rel;           // 场景目录相对包根（"" / "towers/arrow"）
+    };
+    ModulePackage       module_pkg;
+    mq_script_vm*       module_vm = nullptr;             // Engine 级唯一 JS VM（shared）
+    mq_script_instance* active_script_instance = nullptr;// 当前调用的脚本实例（node_on 归属）
+    mq_script_instance* global_script_instance = nullptr;
+    mq_script_instance* overlay_script_instance = nullptr;
+    std::deque<std::string> module_src_pool;             // loader 读取缓冲（deque：嵌套读取指针稳定）
+    std::deque<std::string> module_resolved_pool;        // resolver 结果（同上）
+    uint32_t            module_errors = 0;
     std::string         scn_vfs_path;                       // 场景在 VFS 中的路径（/x.scn）
     std::string         scn_full_path;                      // 场景的原始路径（崩溃报告/重放用）
     std::string         scn_dir;                            // 场景所在目录（本地路径）
@@ -391,7 +410,13 @@ struct Engine {
      * script_slot：注册时该 handler 函数所在 VM 在所属 bus 里的槽位（-1=无法判定）。
      * 热重载某个脚本槽位前必须按 (owner, slot) 摘掉旧注册 —— 否则 on_start 每次重载都
      * 再 add 一份：同一事件被调用 N 次，且处理器字符串随重载次数无界增长（内存泄漏）。 */
-    struct NodeHandler { std::string event; std::string handler; int instance = 0; int slot = -1; };
+    struct NodeHandler {
+        std::string event;
+        std::string handler;
+        int instance = 0;                    // 场景实例（旧路径/诊断）
+        int slot = -1;
+        mq_script_instance* script_inst = nullptr;   // docs/34：注册它的脚本实例（新路径）
+    };
     std::unordered_map<int, std::vector<NodeHandler>> node_events;
     int  script_slot_for_handler(const char* handler) const;
     void purge_node_handlers(int instance, int slot, mq_script_vm* fresh, mq_script_bus* bus,
@@ -641,6 +666,14 @@ struct Engine {
     void  reset_instances();
     bool  build_instance(SceneInstanceRuntime& inst, int depth);
     bool  load_instance_scripts(SceneInstanceRuntime& inst, std::vector<std::string> rels, bool is_root);
+    /* docs/34 P0：包清单 → 单 VM + 模块 + 每挂载点实例。 */
+    bool  detect_package();
+    bool  ensure_module_vm();
+    bool  load_module_scripts(SceneInstanceRuntime& inst, const std::vector<std::string>& rels, bool is_root);
+    int   call_module_event(mq_script_instance* instance, const char* name,
+                            double a, double b, double c, const char* text);
+    void  destroy_module_instances(SceneInstanceRuntime& inst);
+    void  shutdown_module_vm();
     void  collect_instance_preorder(int id, std::vector<int>& out, bool skip_paused = false) const;
     void  collect_instance_postorder(int id, std::vector<int>& out) const;
     int   call_instance_event(SceneInstanceRuntime& inst, const char* name, double a, double b, double c, const char* text);
@@ -1085,6 +1118,217 @@ struct Engine {
     int  restore_globals(const uint8_t* data, size_t n, size_t& off);
     uint64_t world_trail() const;                           // 校验和轨迹（失步定位）
 };
+
+/* ---- docs/34 P0：包 / 模块 / 实例（Engine 级单 JS VM）---- */
+
+static std::string normalize_module_rel(const std::string& in) {
+    std::string out;
+    size_t i = 0;
+    while (i <= in.size()) {
+        size_t j = in.find('/', i);
+        if (j == std::string::npos) j = in.size();
+        const std::string seg = in.substr(i, j - i);
+        if (seg.empty() || seg == ".") {
+            /* skip */
+        } else if (seg == "..") {
+            const size_t p = out.rfind('/');
+            out = (p == std::string::npos) ? std::string() : out.substr(0, p);
+        } else {
+            if (!out.empty()) out += '/';
+            out += seg;
+        }
+        i = j + 1;
+    }
+    return out;
+}
+
+static const char* module_read_cb(void* user, const char* key, size_t* out_len) {
+    auto* eng = static_cast<Engine*>(user);
+    if (out_len) *out_len = 0;
+    if (!eng || !key) return nullptr;
+    const std::string prefix = eng->module_pkg.key + "/";
+    if (std::strncmp(key, prefix.c_str(), prefix.size()) != 0) return nullptr;
+    const std::string rel = std::string(key + prefix.size());
+    std::ifstream f(std::filesystem::path(eng->module_pkg.root_dir) / rel, std::ios::binary);
+    if (!f) return nullptr;
+    eng->module_src_pool.emplace_back((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    if (out_len) *out_len = eng->module_src_pool.back().size();
+    return eng->module_src_pool.back().c_str();
+}
+
+static const char* module_resolve_cb(void* user, const char* importer, const char* spec) {
+    auto* eng = static_cast<Engine*>(user);
+    if (!eng || !importer || !spec) return nullptr;
+    const std::string s = spec;
+    if (s.rfind("./", 0) != 0 && s.rfind("../", 0) != 0) return nullptr;  // P0：只允许包内相对导入
+    const std::string base = importer;
+    const size_t slash = base.rfind('/');
+    const std::string dir = slash == std::string::npos ? std::string() : base.substr(0, slash);
+    const std::string joined = dir + "/" + s;
+    eng->module_resolved_pool.push_back(normalize_module_rel(joined));
+    const std::string& resolved = eng->module_resolved_pool.back();
+    const std::string prefix = eng->module_pkg.key + "/";
+    if (resolved.rfind(prefix, 0) != 0) return nullptr;                    // 不得越出包根
+    return resolved.c_str();
+}
+
+bool Engine::detect_package() {
+    ModulePackage next;
+    /* P0 只支持本地包（远程场景的包根/读取另做）。 */
+    const bool remote = scn_dir.rfind("http://", 0) == 0 || scn_dir.rfind("https://", 0) == 0;
+    std::filesystem::path root;
+    if (!remote && !scn_dir.empty()) {
+        const std::filesystem::path scene_abs =
+            std::filesystem::absolute(std::filesystem::path(scn_dir)).lexically_normal();
+        std::filesystem::path dir = scene_abs;
+        for (int depth = 0; depth < 12; ++depth) {
+            std::error_code ec;
+            if (std::filesystem::exists(dir / "maque.package.json", ec) && !ec) { root = dir; break; }
+            const std::filesystem::path parent = dir.parent_path();
+            if (parent.empty() || parent == dir) break;
+            dir = parent;
+        }
+        if (!root.empty()) {
+            const std::filesystem::path manifest = root / "maque.package.json";
+            std::ifstream f(manifest, std::ios::binary);
+            std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+            mq_json* dom = mq_json_parse(text.c_str(), text.size());
+            if (dom) {
+                const char* id = mq_json_str(mq_json_get(dom, "id"), "");
+                const char* ver = mq_json_str(mq_json_get(dom, "version"), "0");
+                bool js_backend = true;
+                const mq_json* backends = mq_json_get(dom, "backends");
+                if (backends && mq_json_len(backends) > 0) {
+                    js_backend = false;
+                    for (uint32_t i = 0; i < mq_json_len(backends); ++i) {
+                        const char* b = mq_json_str(mq_json_at(backends, i), "");
+                        if (std::strcmp(b, "js") == 0) js_backend = true;
+                    }
+                }
+                if (id && *id && js_backend) {
+                    next.active = true;
+                    next.id = id;
+                    next.version = ver;
+                    next.key = next.id + "@" + next.version;
+                    next.root_dir = root.generic_string();
+                    std::error_code ec;
+                    const std::filesystem::path rel = std::filesystem::relative(scene_abs, root, ec);
+                    next.scene_rel = ec ? std::string() : rel.generic_string();
+                    if (next.scene_rel == ".") next.scene_rel.clear();
+                }
+                mq_json_free(dom);
+            } else {
+                std::print(stderr, "runtime: bad package manifest '{}'\n", manifest.string());
+            }
+        }
+    }
+    if (next.active) {
+        std::print("runtime: package '{}' (root '{}', scene '{}')\n",
+                   next.key, next.root_dir, next.scene_rel);
+    }
+    /* 切到另一个包才换掉常驻脚本；切到无清单场景时保持旧行为（不声明 = 保持）。 */
+    if (module_pkg.active && next.active &&
+        (next.key != module_pkg.key || next.root_dir != module_pkg.root_dir)) {
+        unload_global();
+        unload_overlay();
+        module_src_pool.clear();
+        module_resolved_pool.clear();
+    }
+    module_pkg = next;
+    return module_pkg.active;
+}
+
+bool Engine::ensure_module_vm() {
+    if (module_vm) return true;
+    module_vm = mq_script_vm_create_lang("js");
+    if (!module_vm) {
+        scene_last_error = "js backend unavailable";
+        std::print(stderr, "runtime: package scripts need the js backend\n");
+        return false;
+    }
+    mq_script_set_rng(module_vm, [](void* u) -> uint32_t { return static_cast<Engine*>(u)->next_rng(); }, this);
+    mq_bind_generated(module_vm, this);
+    mq_script_vm_set_module_loader(module_vm, module_resolve_cb, module_read_cb, this);
+    std::print("runtime: package script VM ready (one js VM per engine)\n");
+    return true;
+}
+
+void Engine::destroy_module_instances(SceneInstanceRuntime& inst) {
+    for (auto* ci : inst.module_instances) mq_script_instance_destroy(ci);
+    inst.module_instances.clear();
+    inst.module_keys.clear();
+}
+
+int Engine::call_module_event(mq_script_instance* instance, const char* name,
+                              double a, double b, double c, const char* text) {
+    if (!instance || !name) return 0;
+    if (!mq_script_instance_has(instance, name)) return 0;
+    int nnum = 3;
+    bool with_text = false;
+    const std::string n = name;
+    if (n == "on_start" || n == "on_destroy") nnum = 0;
+    else if (n == "update") nnum = 1;
+    else if (n == "on_text") { nnum = 1; with_text = true; }
+    else if (n == "on_key_down" || n == "on_key_up") nnum = 2;
+    const double nums[3] = { a, b, c };
+    mq_script_instance* prev = active_script_instance;
+    active_script_instance = instance;
+    const int rc = mq_script_instance_call(instance, name, nnum, nums, with_text ? text : nullptr, nullptr);
+    active_script_instance = prev;
+    if (rc == 2) ++module_errors;
+    return 1;
+}
+
+bool Engine::load_module_scripts(SceneInstanceRuntime& inst, const std::vector<std::string>& rels, bool is_root) {
+    if (!ensure_module_vm()) return false;
+    destroy_module_instances(inst);
+    inst.scripts = rels;
+    inst.script_hashes.clear();
+    for (const std::string& rel : rels) {
+        const std::string vpath = vfs_join(inst.base, rel);
+        std::string relpath = (vpath.size() > 1 && vpath[0] == '/') ? vpath.substr(1) : vpath;
+        if (!module_pkg.scene_rel.empty()) relpath = module_pkg.scene_rel + "/" + relpath;
+        relpath = normalize_module_rel(relpath);
+        const std::string key = module_pkg.key + "/" + relpath;
+        mq_script_module* module = mq_script_module_load_esm(module_vm, key.c_str());
+        if (!module) {
+            inst.error = "module load failed: " + key;
+            scene_last_error = inst.error;
+            destroy_module_instances(inst);
+            return false;
+        }
+        mq_script_instance* ci = mq_script_module_instantiate(
+            module, -1, inst.id, inst.params.c_str(), module_pkg.key.c_str());
+        if (!ci) {
+            inst.error = "module instantiate failed: " + key;
+            scene_last_error = inst.error;
+            destroy_module_instances(inst);
+            return false;
+        }
+        inst.module_instances.push_back(ci);
+        inst.module_keys.push_back(key);
+        inst.script_hashes.push_back(0);
+    }
+    if (is_root) {
+        script_paths = rels;
+        script_hashes = inst.script_hashes;
+        script_path = rels.empty() ? std::string() : rels[0];
+        script_hash = 0;
+        bus = nullptr;
+        vm = nullptr;
+    }
+    std::print("runtime: module scripts for instance {} ({} module instance(s), package '{}')\n",
+               inst.id, inst.module_instances.size(), module_pkg.key);
+    return true;
+}
+
+void Engine::shutdown_module_vm() {
+    if (!module_vm) return;
+    mq_script_vm_destroy(module_vm);
+    module_vm = nullptr;
+    module_src_pool.clear();
+    module_resolved_pool.clear();
+}
 
 /* 事件 kind → 处理器名 → **总线广播**（多脚本/多语言的唯一事件入口；定义见下方） */
 int dispatch_event(Engine& eng, int kind, double a, double b, double c, const char* text);
@@ -7398,6 +7642,7 @@ void Engine::preload_scene_assets() {
 /* ---- 热重载（docs/08 §热重载、docs/14）：只在帧边界执行 ---- */
 
 bool Engine::reload_script(std::string* err, const std::string* only) {
+    if (module_pkg.active) { if (err) *err = "module hot reload is P1"; return false; }
     if (script_paths.empty() || !bus) { if (err) *err = "no script"; return false; }
     bool any = false;
     for (size_t i = 0; i < script_paths.size(); ++i) {
@@ -7526,6 +7771,10 @@ bool Engine::reload_scene() {
 void Engine::unload_overlay() {
     /* 覆盖层 VM 即将销毁：它注册的节点事件必须先摘掉（换覆盖层脚本/退出时不留陈旧处理器）。 */
     purge_node_handlers(-2, -1, nullptr, nullptr, true);
+    if (overlay_script_instance) {
+        mq_script_instance_destroy(overlay_script_instance);
+        overlay_script_instance = nullptr;
+    }
     if (overlay_bus) { mq_script_bus_destroy(overlay_bus); overlay_bus = nullptr; }
     overlay_rel.clear();
     overlay_abs.clear();
@@ -7534,6 +7783,29 @@ void Engine::unload_overlay() {
 
 bool Engine::ensure_overlay_script(const std::string& rel) {
     if (rel.empty()) return false;
+    /* docs/34 P0：包内 JS 覆盖层 → 单 VM 的引擎级实例。 */
+    if (module_pkg.active && std::strcmp(mq_script_lang_for_path(rel.c_str()), "js") == 0) {
+        if (overlay_script_instance && rel == overlay_rel) return true;
+        unload_overlay();
+        if (!ensure_module_vm()) return false;
+        const std::string key = module_pkg.key + "/" +
+            normalize_module_rel(module_pkg.scene_rel.empty() ? rel : module_pkg.scene_rel + "/" + rel);
+        mq_script_module* m = mq_script_module_load_esm(module_vm, key.c_str());
+        if (!m) {
+            std::print(stderr, "runtime: overlay module load failed '{}'\n", key);
+            return false;
+        }
+        overlay_script_instance = mq_script_module_instantiate(m, -1, 0, "", module_pkg.key.c_str());
+        if (!overlay_script_instance) {
+            std::print(stderr, "runtime: overlay module instantiate failed '{}'\n", key);
+            return false;
+        }
+        overlay_rel = rel;
+        overlay_abs = scn_dir.empty() ? rel : (std::filesystem::path(scn_dir) / rel).string();
+        if (watcher) mq_watcher_add(watcher, overlay_abs.c_str());
+        std::print("runtime: overlay script '{}' active (persists across scene loads)\n", rel);
+        return true;
+    }
     /* 同一脚本：复用已有 VM（状态跨场景保留，只重新收 on_start）。 */
     if (overlay_bus && rel == overlay_rel) return true;
     unload_overlay();
@@ -7576,6 +7848,7 @@ bool Engine::ensure_overlay_script(const std::string& rel) {
 }
 
 bool Engine::reload_overlay_script() {
+    if (overlay_script_instance) return false;           // docs/34 P0：模块热重载 P1
     if (!overlay_bus || overlay_abs.empty() || !scene) return false;
     std::ifstream f(overlay_abs, std::ios::binary);
     if (!f) return false;
@@ -7628,6 +7901,10 @@ bool Engine::reload_overlay_script() {
 void Engine::unload_global() {
     /* 同 unload_overlay：全局脚本的节点事件随它的 VM 一起失效。 */
     purge_node_handlers(-3, -1, nullptr, nullptr, true);
+    if (global_script_instance) {
+        mq_script_instance_destroy(global_script_instance);
+        global_script_instance = nullptr;
+    }
     if (global_bus) { mq_script_bus_destroy(global_bus); global_bus = nullptr; }
     global_rel.clear();
     global_abs.clear();
@@ -7636,6 +7913,29 @@ void Engine::unload_global() {
 
 bool Engine::ensure_global_script(const std::string& rel) {
     if (rel.empty()) return false;
+    /* docs/34 P0：包内 JS 全局脚本 → 单 VM 的引擎级实例。 */
+    if (module_pkg.active && std::strcmp(mq_script_lang_for_path(rel.c_str()), "js") == 0) {
+        if (global_script_instance && rel == global_rel) return true;
+        unload_global();
+        if (!ensure_module_vm()) return false;
+        const std::string key = module_pkg.key + "/" +
+            normalize_module_rel(module_pkg.scene_rel.empty() ? rel : module_pkg.scene_rel + "/" + rel);
+        mq_script_module* m = mq_script_module_load_esm(module_vm, key.c_str());
+        if (!m) {
+            std::print(stderr, "runtime: global module load failed '{}'\n", key);
+            return false;
+        }
+        global_script_instance = mq_script_module_instantiate(m, -1, 0, "", module_pkg.key.c_str());
+        if (!global_script_instance) {
+            std::print(stderr, "runtime: global module instantiate failed '{}'\n", key);
+            return false;
+        }
+        global_rel = rel;
+        global_abs = scn_dir.empty() ? rel : (std::filesystem::path(scn_dir) / rel).string();
+        if (watcher) mq_watcher_add(watcher, global_abs.c_str());
+        std::print("runtime: global script '{}' active (persists across scene loads)\n", rel);
+        return true;
+    }
     if (global_bus && rel == global_rel) return true;
     unload_global();
     void* d = nullptr; size_t n = 0;
@@ -7689,6 +7989,7 @@ bool Engine::ensure_global_script(const std::string& rel) {
 }
 
 bool Engine::reload_global_script() {
+    if (global_script_instance) return false;            // docs/34 P0：模块热重载 P1
     if (!global_bus || global_abs.empty() || !scene) return false;
     std::ifstream f(global_abs, std::ios::binary);
     if (!f) return false;
@@ -8415,14 +8716,19 @@ bool Engine::resolve_instance_path(const std::string& rel, const std::string& ba
 
 int Engine::call_instance_event(SceneInstanceRuntime& inst, const char* name,
                                 double a, double b, double c, const char* text) {
-    if (!inst.bus || !name) return 0;
+    if (!name) return 0;
     SceneInstanceRuntime* prev = active_instance;
     const bool prev_ov = in_overlay;
     const bool prev_g = in_global;
     active_instance = &inst;
     in_overlay = false;
     in_global = false;
-    const int hits = mq_script_bus_call3(inst.bus, name, a, b, c, text);
+    int hits = 0;
+    if (!inst.module_instances.empty()) {
+        for (auto* ci : inst.module_instances) hits += call_module_event(ci, name, a, b, c, text);
+    } else if (inst.bus) {
+        hits = mq_script_bus_call3(inst.bus, name, a, b, c, text);
+    }
     active_instance = prev;
     in_overlay = prev_ov;
     in_global = prev_g;
@@ -8430,14 +8736,16 @@ int Engine::call_instance_event(SceneInstanceRuntime& inst, const char* name,
 }
 
 int Engine::call_overlay_event(const char* name, double a, double b, double c, const char* text) {
-    if (!overlay_bus || !name) return 0;
+    if (!name) return 0;
     SceneInstanceRuntime* prev = active_instance;
     const bool prev_ov = in_overlay;
     const bool prev_g = in_global;
     active_instance = nullptr;
     in_overlay = true;
     in_global = false;
-    const int hits = mq_script_bus_call3(overlay_bus, name, a, b, c, text);
+    int hits = 0;
+    if (overlay_script_instance) hits = call_module_event(overlay_script_instance, name, a, b, c, text);
+    else if (overlay_bus) hits = mq_script_bus_call3(overlay_bus, name, a, b, c, text);
     active_instance = prev;
     in_overlay = prev_ov;
     in_global = prev_g;
@@ -8445,14 +8753,16 @@ int Engine::call_overlay_event(const char* name, double a, double b, double c, c
 }
 
 int Engine::call_global_event(const char* name, double a, double b, double c, const char* text) {
-    if (!global_bus || !name) return 0;
+    if (!name) return 0;
     SceneInstanceRuntime* prev = active_instance;
     const bool prev_ov = in_overlay;
     const bool prev_g = in_global;
     active_instance = nullptr;
     in_overlay = false;
     in_global = true;
-    const int hits = mq_script_bus_call3(global_bus, name, a, b, c, text);
+    int hits = 0;
+    if (global_script_instance) hits = call_module_event(global_script_instance, name, a, b, c, text);
+    else if (global_bus) hits = mq_script_bus_call3(global_bus, name, a, b, c, text);
     active_instance = prev;
     in_overlay = prev_ov;
     in_global = prev_g;
@@ -8480,6 +8790,13 @@ void Engine::collect_instance_postorder(int id, std::vector<int>& out) const {
 }
 
 bool Engine::load_instance_scripts(SceneInstanceRuntime& inst, std::vector<std::string> rels, bool is_root) {
+    /* docs/34 P0：有包清单 + 全部 JS → 单 VM + 模块 + 实例；否则走旧的每脚本 VM 路径。 */
+    if (module_pkg.active && !rels.empty()) {
+        bool all_js = true;
+        for (const std::string& rel : rels)
+            if (std::strcmp(mq_script_lang_for_path(rel.c_str()), "js") != 0) all_js = false;
+        if (all_js) return load_module_scripts(inst, rels, is_root);
+    }
     mq_script_bus* bus = mq_script_bus_create();
     if (!bus) {
         inst.error = "script bus create failed";
@@ -8667,10 +8984,11 @@ void Engine::gc_all_instance_scripts() {
     }
     if (global_bus) mq_script_bus_gc(global_bus);
     if (overlay_bus) mq_script_bus_gc(overlay_bus);
+    if (module_vm) mq_script_frame_boundary(module_vm);
 }
 
 uint32_t Engine::instance_script_errors() const {
-    uint32_t n = 0;
+    uint32_t n = module_errors;
     for (auto& [id, up] : instances) {
         (void)id;
         if (up && up->bus) n += mq_script_bus_error_count(up->bus);
@@ -8686,6 +9004,7 @@ void Engine::destroy_instance_content(SceneInstanceRuntime& inst, bool fire_dest
         if (SceneInstanceRuntime* ci = instance_at(c)) destroy_instance_content(*ci, fire_destroy);
     }
     if (fire_destroy && (inst.state == 1 || inst.state == 4)) (void)dispatch_instance_on_destroy(inst.id);
+    destroy_module_instances(inst);
     if (inst.bus) {
         if (inst.bus == bus) { bus = nullptr; vm = nullptr; }
         mq_script_bus_destroy(inst.bus);
@@ -8732,6 +9051,7 @@ void Engine::reset_instances() {
     for (auto& [id, up] : instances) {
         (void)id;
         if (!up) continue;
+        destroy_module_instances(*up);
         if (up->bus) {
             if (up->bus == bus) { bus = nullptr; vm = nullptr; }
             mq_script_bus_destroy(up->bus);
@@ -8905,6 +9225,8 @@ void Engine::rebase_instance_assets(int instance_id) {
 bool Engine::reload_instance_script(int instance_id, const std::string& rel) {
     SceneInstanceRuntime* inst = instance_at(instance_id);
     if (!inst || !inst->bus || rel.empty()) return false;
+    if (!inst->module_instances.empty()) return false;   // docs/34 P0：模块热重载 P1
+
     int slot = -1;
     for (size_t i = 0; i < inst->scripts.size(); ++i)
         if (inst->scripts[i] == rel) { slot = (int)i; break; }    // 按文件增量：只重建该槽位
@@ -13095,7 +13417,9 @@ float node_on(void* ctx, float id, const char* event, const char* handler) {
                    (int)id, owner);
         return 0.0F;
     }
-    eng->node_events[(int)id].push_back({ event, handler, owner, eng->script_slot_for_handler(handler) });
+    Engine::NodeHandler rec{ event, handler, owner, eng->script_slot_for_handler(handler) };
+    rec.script_inst = eng->active_script_instance;
+    eng->node_events[(int)id].push_back(rec);
     return 1.0F;
 }
 
@@ -13124,6 +13448,16 @@ float node_emit_number(void* ctx, float id, const char* event, float value) {
         if (it != eng->node_events.end()) {
             for (const Engine::NodeHandler& h : it->second) {
                 if (h.event != ev) continue;
+                if (h.script_inst) {
+                    const double args[3] = { (double)cur, (double)value, 0.0 };
+                    mq_script_instance* prev = eng->active_script_instance;
+                    eng->active_script_instance = h.script_inst;
+                    const int rc = mq_script_instance_call(h.script_inst, h.handler.c_str(), 3, args, nullptr, nullptr);
+                    eng->active_script_instance = prev;
+                    if (rc == 2) ++eng->module_errors;
+                    ++hits;
+                    continue;
+                }
                 if (h.instance == -3) {
                     eng->call_global_event(h.handler.c_str(), (double)cur, (double)value, 0.0, nullptr);
                 } else if (h.instance == -2) {
@@ -16265,6 +16599,9 @@ bool Engine::load_scene_into(const std::string& scn_path) {
           text.assign((char*)d, n); mq_vfs_free(d); } }
     if (text.empty()) return false;
 
+    /* docs/34 P0：包清单决定是否走"每语言一个 VM + 模块/实例"路径（在旧实例销毁前判定）。 */
+    detect_package();
+
     /* ---- 世界重置（切场景：旧世界全部释放；脚本状态不跨场景保留，等价  onDestroy）---- */
     reset_instances();                   // 实例树/全部实例 VM（覆盖层是独立总线，不在此列）
     spine_release();                     // Spine 实例随世界一起释放（派生数据，重建即可）
@@ -16482,6 +16819,7 @@ void Engine::teardown() {
     reset_instances();                                                      // 实例树 + 全部主脚本 VM
     unload_global();                                                        // 全局脚本 VM
     unload_overlay();                                                       // 常驻覆盖层 VM
+    shutdown_module_vm();                                                   // docs/34：包脚本的单 JS VM
     if (obs) { mq_obs_destroy(obs); obs = nullptr; }
     if (reflect) {
         const mq_type_desc* ct = mq_reflect_type_by_name(reflect, "asset.AnimationClip");
