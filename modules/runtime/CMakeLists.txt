@@ -13,7 +13,10 @@ add_library(maque_runtime STATIC
     src/control/render.cpp src/control/storage.cpp src/control/audio.cpp
     src/control/input.cpp
     # 资源（纹理/环境/glTF 装配与动画采样）
-    src/assets/texture.cpp src/assets/env.cpp src/assets/gltf.cpp src/assets/gltf_anim.cpp)
+    src/assets/texture.cpp src/assets/env.cpp src/assets/gltf.cpp src/assets/gltf_anim.cpp
+    # 特性层（Spine / 引擎侧 ImGui 面板 / F4 选项）
+    src/anim/spine.cpp
+    src/ui/debug_panel.cpp src/ui/engine_options.cpp)
 add_library(maque::runtime ALIAS maque_runtime)
 target_include_directories(maque_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
