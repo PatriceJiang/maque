@@ -11,7 +11,7 @@ namespace host {
 /* ---- Spine 2D（docs/27）：按实体 id 寻址 ----
  * 语义：**问引擎当前状态**（组件字段 + 实例是唯一真相），脚本不自己记一份；
  * 越界 / 实体没有 SpineSkeleton 组件 → 0 / "" / -1，且不崩（脚本侧无需防御）。 */
-static Engine::Spine* spine_at(Engine* eng, float id) {
+static SpineRuntime::Instance* spine_at(Engine* eng, float id) {
     return eng ? eng->spine_of((int)id) : nullptr;
 }
 
@@ -221,7 +221,7 @@ float spine_set_mix(void* ctx, float id, const char* from, const char* to, float
 
 /* 事件 pull：一次取一个字段（脚本只有标量，不做结构体） */
 static const mq_spine_event* spine_event_at(Engine* eng, float id, float index) {
-    Engine::Spine* sp = spine_at(eng, id);
+    SpineRuntime::Instance* sp = spine_at(eng, id);
     if (!sp || index < 0.0F) return nullptr;
     if (index >= (float)mq_spine_instance_event_count(sp->inst)) return nullptr;
     /* 事件记录在实例内部（预分配数组）→ 直接下标取；用 ABI 复制到线程局部静态槽返回指针。 */
@@ -395,8 +395,8 @@ float spine_skin_find(void* ctx, float id, const char* name) {
 
 /* 合成皮肤句柄：脚本侧只有标量 → 用 sp->own_skins 的下标当句柄（>=0；-1 失败）。
  * 生命周期归引擎（spine_release 统一销毁）→ 脚本不用管释放。 */
-static Engine::Spine* spine_skin_owner(Engine* eng, float id, float handle, mq_spine_skin** out) {
-    Engine::Spine* sp = spine_at(eng, id);
+static SpineRuntime::Instance* spine_skin_owner(Engine* eng, float id, float handle, mq_spine_skin** out) {
+    SpineRuntime::Instance* sp = spine_at(eng, id);
     if (!sp) return nullptr;
     if (handle < 0.0F) {
         *out = sp->composed ? sp->composed : (sp->own_skins.empty() ? nullptr : sp->own_skins.back());
@@ -420,7 +420,7 @@ float spine_skin_create(void* ctx, float id, const char* name) {
 float spine_skin_add(void* ctx, float id, float handle, const char* source_skin) {
     auto* eng = (Engine*)ctx;
     mq_spine_skin* dst = nullptr;
-    Engine::Spine* sp = spine_skin_owner(eng, id, handle, &dst);
+    SpineRuntime::Instance* sp = spine_skin_owner(eng, id, handle, &dst);
     if (!sp || !dst || !sp->data || !source_skin || !*source_skin) return -1.0F;
     const int idx = mq_spine_data_skin_find(sp->data, source_skin);
     if (idx < 0) {
@@ -434,7 +434,7 @@ float spine_skin_add(void* ctx, float id, float handle, const char* source_skin)
 float spine_set_skin_obj(void* ctx, float id, float handle) {
     auto* eng = (Engine*)ctx;
     mq_spine_skin* sk = nullptr;
-    Engine::Spine* sp = spine_skin_owner(eng, id, handle, &sk);
+    SpineRuntime::Instance* sp = spine_skin_owner(eng, id, handle, &sk);
     if (!sp || !sk) return -1.0F;
     if (mq_spine_instance_set_skin_obj(sp->inst, sk) != MQ_SPINE_OK) return -1.0F;
     sp->composed = sk;
@@ -551,7 +551,7 @@ float spine_physics_reset(void* ctx, float id) {
 
 /* 序列帧（官方 Sequence demo：dragon-ess 的 flying） */
 static bool spine_seq_info(Engine* eng, float id, float slot, mq_spine_sequence_info* out) {
-    Engine::Spine* sp = spine_at(eng, id);
+    SpineRuntime::Instance* sp = spine_at(eng, id);
     if (!sp || slot < 0.0F) return false;
     return mq_spine_attachment_sequence_info(sp->inst, (int)slot, out) == MQ_SPINE_OK;
 }

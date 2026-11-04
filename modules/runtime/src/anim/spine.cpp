@@ -51,8 +51,8 @@ static std::string stem_of(const std::string& path) {         // "/art/x.skel" �
     return path.substr(0, dot);
 }
 
-Engine::Spine* Engine::spine_of(int entity) {
-    for (auto& sp : spines) if (sp.entity == entity) return &sp;
+SpineRuntime::Instance* Engine::spine_of(int entity) {
+    for (auto& sp : spine_rt.items) if (sp.entity == entity) return &sp;
     return nullptr;
 }
 
@@ -69,7 +69,7 @@ Engine::Spine* Engine::spine_of(int entity) {
  *
  * ⚠️ 单线程、帧内同步调用（spine 的 AnimationState 就是这样），无线程、无异步 → 确定性不变（docs/10）。 */
 static void spine_event_cb(void* user, mq_spine_instance* /*inst*/, const mq_spine_event* ev) {
-    auto* sp = static_cast<Engine::Spine*>(user);
+    auto* sp = static_cast<SpineRuntime::Instance*>(user);
     if (!sp || !sp->eng || !ev) return;
     Engine& eng = *sp->eng;
     const char* name = nullptr;
@@ -100,7 +100,7 @@ static void spine_event_cb(void* user, mq_spine_instance* /*inst*/, const mq_spi
 }
 
 void Engine::spine_release() {
-    for (auto& sp : spines) {
+    for (auto& sp : spine_rt.items) {
         if (sp.inst) { mq_spine_instance_destroy(sp.inst); sp.inst = nullptr; }
         if (sp.data) { mq_spine_data_destroy(sp.data); sp.data = nullptr; }   // 页纹理归引擎（tex_cache），此处不释放
         /* 运行时合成的皮肤：本引擎是分配者 → 由本引擎释放（ABI 的"分配者释放"约定） */
@@ -108,7 +108,7 @@ void Engine::spine_release() {
         sp.own_skins.clear();
         sp.composed = nullptr;
     }
-    spines.clear();
+    spine_rt.items.clear();
 }
 
 /* 帧边界：清空所有实例的事件记录。
@@ -118,7 +118,7 @@ void Engine::spine_release() {
  * 若放在脚本 update **之前**清（踩过）：上一帧 step 的事件会在脚本读之前被抹掉，
  * spine_event_count 永远是 0（push 面照常工作，但 pull 面瞎了）。 */
 void Engine::spine_clear_events() {
-    for (auto& sp : spines) {
+    for (auto& sp : spine_rt.items) {
         if (!sp.inst) continue;
         sp.events_last = mq_spine_instance_event_count(sp.inst);
         mq_spine_instance_clear_events(sp.inst);
@@ -144,7 +144,7 @@ void Engine::spine_setup() {
             std::print(stderr, "runtime: spine entity {} missing 'skeleton' ref\n", id);
             continue;
         }
-        Spine sp;
+        SpineRuntime::Instance sp;
         sp.entity = id;
         sp.comp = d->type_id;
         sp.skel_path = vfs_path_of(*skelref);
@@ -205,7 +205,7 @@ void Engine::spine_setup() {
         for (int i = 0; i < n_page; ++i) {
             mq_spine_page pg{};
             if (mq_spine_data_page(sp.data, i, &pg) != MQ_SPINE_OK) continue;
-            Spine::Page p;
+            SpineRuntime::Instance::Page p;
             p.name = pg.name ? pg.name : "";
             p.width = pg.width; p.height = pg.height; p.handle = pg.texture; p.pma = pg.pma;
             sp.pages.push_back(std::move(p));
@@ -235,7 +235,7 @@ void Engine::spine_setup() {
         sp.z = (int)read_num(d, blob.data(), "z_index", 0.0F) * 100000 + id;
         /* instance 字段（transient）：给自省/脚本一个"实例存在"的证据（下标 + 1，0 = 无） */
         if (const mq_field_desc* f = mq_reflect_field(d, "instance"))
-            *(uint64_t*)(blob.data() + f->offset) = (uint64_t)(spines.size() + 1);
+            *(uint64_t*)(blob.data() + f->offset) = (uint64_t)(spine_rt.items.size() + 1);
         std::print("runtime: spine entity {} '{}' skel='{}' atlas='{}' anims={} skins={} pages={}\n",
                    id, e->name, sp.skel_path, sp.atlas_path, n_anim, n_skin, n_page);
         if (!sp.pages.empty()) {
@@ -244,21 +244,21 @@ void Engine::spine_setup() {
                 std::print(" [{} {}x{} tex={} pma={}]", p.name, p.width, p.height, (long long)p.handle, p.pma);
             std::print("\n");
         }
-        spines.push_back(std::move(sp));
+        spine_rt.items.push_back(std::move(sp));
     }
-    spines.shrink_to_fit();          // 之后不再增删 → tex_ctx / eng / 事件回调 user 的地址稳定
+    spine_rt.items.shrink_to_fit();          // 之后不再增删 → tex_ctx / eng / 事件回调 user 的地址稳定
     /* 事件回调：**必须在向量定型之后**装（user = &spines[i]，push_back 会让旧地址失效）。
      * 装完即生效：之后任何 play/addAnimation/step 触发的动画事件都会同步投给脚本总线。 */
-    for (auto& sp : spines) {
+    for (auto& sp : spine_rt.items) {
         sp.eng = this;
         mq_spine_instance_set_event_cb(sp.inst, spine_event_cb, &sp);
     }
-    std::print("runtime: spine instances={}\n", spines.size());
+    std::print("runtime: spine instances={}\n", spine_rt.items.size());
 }
 
 void Engine::spine_step(float dt) {
     if (!scene) return;
-    for (auto& sp : spines) {
+    for (auto& sp : spine_rt.items) {
         if (!sp.inst || !sp.data) continue;
         SceneNode* e = scene->at(sp.entity);
         const mq_type_desc* d = mq_reflect_type_by_id(reflect, sp.comp);
@@ -383,7 +383,7 @@ void Engine::spine_step(float dt) {
 }
 
 void Engine::spine_extract(std::vector<mq_renderer_mesh>& out) {
-    for (auto& sp : spines) {
+    for (auto& sp : spine_rt.items) {
         if (!sp.inst || sp.draw.vertex_count <= 0 || sp.draw.index_count <= 0) continue;
         out.reserve(out.size() + (size_t)sp.draw.batch_count);        for (int b = 0; b < sp.draw.batch_count; ++b) {
             const mq_spine_batch& sb = sp.batches[(size_t)b];
@@ -402,7 +402,7 @@ void Engine::spine_extract(std::vector<mq_renderer_mesh>& out) {
             m.z = sp.z;
             m.texture = -1;
             if (sb.page >= 0 && sb.page < (int)sp.pages.size()) {
-                const Spine::Page& p = sp.pages[(size_t)sb.page];
+                const SpineRuntime::Instance::Page& p = sp.pages[(size_t)sb.page];
                 m.pma = p.pma;
                 /* 句柄 = gfx 纹理 id + 1（0 表示未回填）→ 还原成引擎纹理 id 交给渲染器 */
                 if (p.handle > 0) {

@@ -318,7 +318,7 @@ void Engine::step_frame(bool render_frame) {
      * 哈希覆盖实体树/组件 blob/派生世界矩阵；动画/粒子/Spine/shader/ImGui/输入/截图一律视为动态。 */
     if (scene) {
         const bool visual_dynamic =
-            gltf_dynamic || !spines.empty() || !particles.empty() || has_shader_pass || has_shader_graph ||
+            gltf_dynamic || !spine_rt.items.empty() || !particles.empty() || has_shader_pass || has_shader_graph ||
             imgui_on || imgui_backend || !shot_path.empty() || !shot_seq.empty() ||
             !frames_dir.empty() || !camera_captures.empty() || frame_capture_requested ||
             std::getenv("MAQUE_CAPTURE_WGPU") != nullptr;
@@ -540,7 +540,7 @@ void Engine::step_frame(bool render_frame) {
                 direct_present && !need_pixels && !frame_capture_requested &&
                 !std::getenv("MAQUE_CAPTURE_WGPU") &&
                 !imgui_on && !imgui_backend && !has_shader_pass && !has_shader_graph &&
-                !gltf_dynamic && spines.empty() && particles.empty() &&
+                !gltf_dynamic && spine_rt.items.empty() && particles.empty() &&
                 morph_meshes.empty() && skins3d.empty() &&
                 (render_textures.empty() || scene_visual_unchanged) && spine_meshes.empty() &&
                 iframe.pointer_count == 0 && iframe.key_count == 0 && !iframe.resized;

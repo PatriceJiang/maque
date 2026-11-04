@@ -7,6 +7,43 @@
 
 namespace maque::rt {
 
+struct SpineRuntime {
+    struct Instance {
+        int entity = -1;                       // 实体 id
+        Engine* eng = nullptr;                 // 回指（事件回调要把事件投给脚本总线）
+        uint32_t comp = 0;                     // 组件 type_id（定位 blob）
+        mq_spine_data* data = nullptr;         // 骨架数据（装配期建，切场景/退出时销毁）
+        mq_spine_instance* inst = nullptr;
+        std::string skel_path;                 // VFS 路径（诊断/截图报告用）
+        std::string atlas_path;
+        std::string tex_dir;                   // 页纹理目录（含结尾 '/'）
+        std::vector<std::string> anim_names;   // 动画清单快照（声明序，稳定）
+        std::vector<std::string> skin_names;
+        struct Page { std::string name; int width = 0, height = 0; uint64_t handle = 0; int pma = 0; };
+        std::vector<Page> pages;
+        /* 每帧 CPU 绘制缓冲（复用，避免逐帧分配；容量按骨架规模一次到位）
+         * darks = 两色着色（TintBlack）的逐顶点**暗色**通道（4 分量/顶点，长度同 cols）。
+         * 即使素材没启用 TintBlack 也照传：spine2d 会填官方默认 (0,0,0,1)，着色公式随即
+         * 退化成"纹理 × light"，与不支持两色着色时逐字节一致（见 mesh shader 顶部注释）。 */
+        std::vector<float> verts, uvs, cols, darks, tverts;
+        std::vector<uint32_t> idxs;
+        std::vector<mq_spine_batch> batches;
+        SpineTexCtx tex_ctx;                   // 纹理回调 user（活到 data 销毁）
+        mq_spine_draw draw{};
+        int last_anim = -1;                    // 上一帧播放的动画下标（检测组件字段变化）
+        int z = 0;                             // 本帧排序键（z_index*100000 + 实体 id）
+        /* 运行时**合成**的皮肤（MixAndMatch：skin-base + nose/short + …）。
+         * ABI 约定"分配者释放" → 引擎持有，切场景/退出时统一销毁（见 spine_release）。 */
+        std::vector<mq_spine_skin*> own_skins;
+        mq_spine_skin* composed = nullptr;     // 最近一次 spine_skin_compose 的结果（诊断用）
+        /* 上一帧的事件计数（诊断/脚本 pull 的观测口；事件本体存在实例里） */
+        int events_last = 0;
+    };
+
+
+    std::vector<Instance> items;   // 实例表（push_back 后定型：回调 user 指向元素）
+};
+
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
     const mq_renderer_v2* rapi = nullptr;                 // 渲染器插件接口
@@ -197,43 +234,13 @@ struct Engine {
      * 分层：spine2d 只产出 CPU 侧绘制数据（顶点/UV/颜色/索引 + 页号），
      * 纹理由本引擎按页名去 VFS 读 → image 解码 → gfx 上传，再回填句柄。
      * 实例是**派生数据**（不进快照/校验和，docs/10）：唯一真相是组件字段 + 骨架资源。 */
-    struct Spine {
-        int entity = -1;                       // 实体 id
-        Engine* eng = nullptr;                 // 回指（事件回调要把事件投给脚本总线）
-        uint32_t comp = 0;                     // 组件 type_id（定位 blob）
-        mq_spine_data* data = nullptr;         // 骨架数据（装配期建，切场景/退出时销毁）
-        mq_spine_instance* inst = nullptr;
-        std::string skel_path;                 // VFS 路径（诊断/截图报告用）
-        std::string atlas_path;
-        std::string tex_dir;                   // 页纹理目录（含结尾 '/'）
-        std::vector<std::string> anim_names;   // 动画清单快照（声明序，稳定）
-        std::vector<std::string> skin_names;
-        struct Page { std::string name; int width = 0, height = 0; uint64_t handle = 0; int pma = 0; };
-        std::vector<Page> pages;
-        /* 每帧 CPU 绘制缓冲（复用，避免逐帧分配；容量按骨架规模一次到位）
-         * darks = 两色着色（TintBlack）的逐顶点**暗色**通道（4 分量/顶点，长度同 cols）。
-         * 即使素材没启用 TintBlack 也照传：spine2d 会填官方默认 (0,0,0,1)，着色公式随即
-         * 退化成"纹理 × light"，与不支持两色着色时逐字节一致（见 mesh shader 顶部注释）。 */
-        std::vector<float> verts, uvs, cols, darks, tverts;
-        std::vector<uint32_t> idxs;
-        std::vector<mq_spine_batch> batches;
-        SpineTexCtx tex_ctx;                   // 纹理回调 user（活到 data 销毁）
-        mq_spine_draw draw{};
-        int last_anim = -1;                    // 上一帧播放的动画下标（检测组件字段变化）
-        int z = 0;                             // 本帧排序键（z_index*100000 + 实体 id）
-        /* 运行时**合成**的皮肤（MixAndMatch：skin-base + nose/short + …）。
-         * ABI 约定"分配者释放" → 引擎持有，切场景/退出时统一销毁（见 spine_release）。 */
-        std::vector<mq_spine_skin*> own_skins;
-        mq_spine_skin* composed = nullptr;     // 最近一次 spine_skin_compose 的结果（诊断用）
-        /* 上一帧的事件计数（诊断/脚本 pull 的观测口；事件本体存在实例里） */
-        int events_last = 0;
-    };
-    std::vector<Spine> spines;
+    SpineRuntime spine_rt;         // 阶段 2：Spine 状态从 Engine 抽成子对象
+
     void spine_setup();                        // 装配期：按 role 找组件 → 建骨架数据/实例
     void spine_release();                      // 释放全部 spine 实例（切场景/退出；幂等）
     void spine_step(float dt);                 // 帧内：推进 + 出绘制数据 + 变换到屏幕像素
     void spine_extract(std::vector<mq_renderer_mesh>& out);   // 提取期：绘制数据 → 网格图元
-    Spine* spine_of(int entity);               // 按实体 id 找实例（脚本 API 用）
+    SpineRuntime::Instance* spine_of(int entity);               // 按实体 id 找实例（脚本 API 用）
     void spine_clear_events();                 // 帧边界（脚本之后、step 之前）：清事件记录
 
     /* ---- ImGui 调试面板（引擎侧；docs/27 §ImGui）----
