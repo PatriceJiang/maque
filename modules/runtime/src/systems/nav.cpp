@@ -22,7 +22,7 @@ void Engine::nav_step() {
             const float tx = na->tx, ty = na->ty, speed = na->speed, arrive = na->arrive_dist;
             const bool repath = na->repath;
 
-            AgentPath& ap = agent_paths[id];
+            SystemsRuntime::AgentPath& ap = systems.agent_paths[id];
             /* 路径缺失/目标变化 → 重新寻路（确定性：与实体 id 顺序无关的单点查询） */
             const bool need_path = ap.path.empty() || ap.index >= ap.path.size() / 2;
             if (need_path || (repath && !ap.path.empty())) {

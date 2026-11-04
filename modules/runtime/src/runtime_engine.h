@@ -61,6 +61,8 @@ struct SystemsRuntime {
         for (size_t i = 0; i < clips.size(); ++i) if (clips[i].name == name) return (int)i;
         return -1;
     }
+    struct AgentPath { std::vector<float> path; uint32_t index = 0; };
+    std::unordered_map<int, AgentPath> agent_paths;
 };
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
@@ -180,8 +182,6 @@ struct Engine {
     mq_physics_world* physics = nullptr;                    // 确定性 2D 求解器（docs/15 §3）
     mq_nav_world*     nav = nullptr;                        // 确定性 2D 网格寻路（docs/15 导航）
     /* 每个 NavAgent 的路径缓存（按实体 id；path 为 [x,y] 交错世界坐标） */
-    struct AgentPath { std::vector<float> path; uint32_t index = 0; };
-    std::unordered_map<int, AgentPath> agent_paths;
     /* 节点事件表（entity → [(event, handler, owner_instance, script_slot)]；注册序即派发序，确定性）。
      * owner_instance：注册该处理器的脚本所属实例（0=根，-2=常驻覆盖层）；派发只调它自己的 bus。
      * script_slot：注册时该 handler 函数所在 VM 在所属 bus 里的槽位（-1=无法判定）。

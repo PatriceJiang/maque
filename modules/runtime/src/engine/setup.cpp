@@ -260,7 +260,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     reset_instances();                   // 实例树/全部实例 VM（覆盖层是独立总线，不在此列）
     spine_release();                     // Spine 实例随世界一起释放（派生数据，重建即可）
     clear_asset_caches();                // ⚠️ 纹理/网格缓存键是相对路径，换场景挂载点后必须清空
-    agent_paths.clear();
+    systems.agent_paths.clear();
     node_events.clear();
     physics_role_bodies.clear();
     systems.particles.clear();
@@ -480,7 +480,7 @@ void Engine::teardown() {
     } else {
         systems.clips.clear();
     }
-    agent_paths.clear();
+    systems.agent_paths.clear();
     for (auto* s : checkpoints) mq_snapshot_destroy(s);
     checkpoints.clear();
     mq_snapshot_destroy(snap_manual); snap_manual = nullptr;
