@@ -133,6 +133,15 @@ modules/runtime/src/           65 个文件（.cpp/.h）
 **不抽**：`ScriptHost` / `InstanceRegistry` / `FrameRenderer` —— 它们的算法天然是关于整个引擎的
 编排，抽成对象只多一层 `->`。它们的状态块留在 `Engine` 里但成段、加注释、方法分文件。
 
+**进度**：
+- ✅ `SpineRuntime`（提交 `a6fe636`）——类型提到命名空间作用域（`SpineRuntime::Instance` / `Page`），
+  `Engine` 从「内嵌 struct + 14 字段 + vector」收敛为单个成员 `spine_rt`；方法签名暂不变。
+- ⬜ `Systems`（粒子/导航/音频/tween/schedule/clip 状态）—— 字段多、调用点分散（frame / checksum /
+  snapshot），建议先把 `Engine` 的字段按子系统成段注释，再逐个搬。
+- ⬜ `DebugUi` + `EngineOptions`（imgui_* / opt_* 字段）—— 视图层，无模拟依赖，最容易搬。
+- ⬜ `TextRenderer`（font / font_atlases / pending_quads / retired_textures）。
+- ⬜ `AssetStore` / `GltfRuntime`（缓存 + 装配，依赖最重，最后做）。
+
 可选（先量再定）：大状态块改用 `unique_ptr` 持有，让头文件只见到前置声明 —— 改 `Spine`
 字段不再触发全部 TU 重编。
 
