@@ -1,14 +1,14 @@
-﻿# maque::runtime -- scene runtime and embeddable host API.
-# runtime.cpp 鎷嗗垎鐨勫唴閮ㄥご锛堜笉瀵瑰锛夛細绫诲瀷 + Engine/Scene 澹版槑銆?
-# 鍙湁 modules/runtime 鐨?.cpp 鍖呭惈锛涘叕寮€闈粛鏄?include/runtime/*.h锛坰chema 鐢熸垚鐨?shim锛夈€?
+# maque::runtime -- scene runtime and embeddable host API.
+# runtime.cpp 拆分的内部头（不对外）：类型 + Engine/Scene 声明。
+# 只有 modules/runtime 的 .cpp 包含；公开面仍是 include/runtime/*.h（schema 生成的 shim）。
 add_library(maque_runtime STATIC
     src/runtime.cpp src/gltf_model.cpp
-    src/runtime_common.h src/runtime_scene.h src/runtime_engine.h
-    # 瀹夸富 API锛坰chema api_list 鐨?310 涓疄鐜帮級鎸夊墠缂€鍒嗗煙
+    src/runtime_common.h src/runtime_scene.h src/runtime_engine.h src/runtime_math3d.h
+    # 宿主 API（schema api_list 的 310 个实现）按前缀分域
     src/api/system.cpp src/api/node.cpp src/api/ui.cpp src/api/scene.cpp
     src/api/spine.cpp src/api/imgui.cpp src/api/physics.cpp src/api/nav.cpp
     src/api/audio.cpp src/api/storage.cpp
-    # 鎺у埗闈紙schema control_list 鐨?57 涓柟娉曪級鎸夊煙
+    # 控制面（schema control_list 的 57 个方法）按域
     src/control/system.cpp src/control/scene.cpp src/control/world.cpp
     src/control/render.cpp src/control/storage.cpp src/control/audio.cpp
     src/control/input.cpp
@@ -45,6 +45,12 @@ else()
     endif()
 endif()
 target_link_libraries(maque_runtime PUBLIC ${MAQUE_RUNTIME_DEPS})
+
+# 预编译头：拆分后每个 TU 都要解析同一套模块头 + 生成类型（实测占单 TU 的 ~70%，
+# 每个 TU 14–22 s）。PCH 后单文件增量约 3–5 s —— 否则拆分只换来"并行度变高"，
+# 增量编译并没有变快。
+target_precompile_headers(maque_runtime PRIVATE src/runtime_engine.h)
+
 if(MAQUE_ANDROID)
     target_link_libraries(maque_runtime PUBLIC z)
 endif()

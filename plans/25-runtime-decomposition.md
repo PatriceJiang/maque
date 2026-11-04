@@ -19,6 +19,22 @@
 | 最大函数 | `step_frame` 766 行、`extract_3d` 724 行 |
 | 自由函数 | 337 个，295 个只用一次，仅 ~25 个跨关注点 |
 
+拆分后实测（`build-win`，Debug+ASan，clang-cl + Ninja，`.ninja_log`）：
+
+| 指标 | 拆分前 | 拆分后 |
+|---|---|---|
+| `runtime.cpp` | 17,163 行 | **5,663 行** |
+| 编译单元 | 1 | 38（36 .cpp + 2 生成/原有） |
+| 单 TU 编译（无 PCH） | 30–45 s | 14–22 s（**但 38 个 TU 串行 829 s**） |
+| 单 TU 编译（有 PCH） | — | 3.5–8.3 s |
+| **改一个子系统后增量** | 30–45 s | **4 s** |
+| 整库并行重编 | — | 27.8 s（38 TU） |
+
+> ⚠️ 关键教训：**只按文件拆分并不会让编译变快** —— 每个新 TU 都要重新解析同一套模块头 +
+> 生成类型（`maque_types.h` 78 KB、全部模块 ABI），单独一个空壳 TU 也要 14–16 s。
+> 必须配 `target_precompile_headers(maque_runtime PRIVATE src/runtime_engine.h)`
+> 才有增量收益（S8 起已开启）。
+
 **目标**（按优先级）：
 
 1. 每个文件一个关注点、≤800 行（硬上限 1200）；改一个特性只动一个文件。
@@ -149,7 +165,9 @@ void Engine::step_frame(bool render_frame) {
 4. **hot 路径数学函数用 `inline` 头**：`m4_*` 在 extract_3d 里逐节点/逐骨骼调用，跨 TU 非内联
    会有实测开销 → `runtime_math3d.h`。
 5. **行尾**：仓库 `core.autocrlf=true`，工作区是 CRLF；用脚本生成新文件后要统一成 CRLF，
-   否则 `git ls-files --eol` 报 `w/mixed`。
+   否则 `git ls-files --eol` 报 `w/mixed`。**也别用 `Get-Content -Raw | Set-Content -Encoding UTF8`
+   改带中文的 CMake 文件**：PS 5.1 的 `Get-Content` 按 ANSI 解码 → 双重编码（S7 踩过，
+   已修回；改文本一律用 Python/`write` 工具按 UTF-8 读写）。
 6. **文档锚点**：`docs/bugs/{001,002,005}` 里有 4 处 `runtime.cpp#L<行号>`，拆分完成后改成
    "文件 + 符号名"。
 
