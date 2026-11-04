@@ -82,6 +82,9 @@ extern "C" void* mq_module_query(const char* name, uint32_t min_version);
 
 namespace maque::rt {
 
+/* std::filesystem 短别名：本模块内部共用（runtime.cpp 不再单独声明）。 */
+namespace fs = std::filesystem;
+
 #define MQ_RENDERER_HAS(api, member) \
     ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v2, member) + sizeof((api)->member) && \
      (api)->member)

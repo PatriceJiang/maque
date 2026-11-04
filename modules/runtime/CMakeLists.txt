@@ -19,7 +19,10 @@ add_library(maque_runtime STATIC
     src/ui/debug_panel.cpp src/ui/engine_options.cpp
     # 渲染（3D 数学 / 渲染目标与相机 / 场景 shader / 3D 提取）
     src/render/math3d.cpp src/render/targets.cpp src/render/shader_passes.cpp
-    src/render/extract3d.cpp)
+    src/render/extract3d.cpp src/render/text.cpp
+    # 系统（动画/音频/粒子/导航）与诊断
+    src/systems/anim.cpp src/systems/audio.cpp src/systems/particles.cpp src/systems/nav.cpp
+    src/engine/tracy.cpp)
 add_library(maque::runtime ALIAS maque_runtime)
 target_include_directories(maque_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
