@@ -138,8 +138,11 @@ modules/runtime/src/           65 个文件（.cpp/.h）
   `Engine` 从「内嵌 struct + 14 字段 + vector」收敛为单个成员 `spine_rt`；方法签名暂不变。
 - ✅ `SystemsRuntime` 第一片（提交 `9bd60f3`）——tween / schedule / 延迟销毁队列
   （`Tween`、`Scheduled` 两个内嵌类型 + 3 个成员）→ 单个成员 `systems`。
-- ⬜ `SystemsRuntime` 其余：粒子（`particles` / `max_particles`）、导航（`agent_paths` / `nav`）、
-  音频（`audio*` / `audio_clips`）、动画片段（`clips`）—— 并入同一子对象即可，不要再开新类型。
+- ⬜ `SystemsRuntime` 仅剩音频：`audio` 句柄 + `audio_clips` + `audio_cap*`（句柄引用点多，
+  建议先 grep 全量引用再改）。
+- ✅ 已并入 `SystemsRuntime`（提交 `9bd60f3` / `aebc1a3` / `d31263a` / `4eff12c`）：
+  tween / schedule / 延迟销毁（`Tween`、`Scheduled`）、粒子（`Particle` / `emitter_accum` /
+  `max_particles`）、动画片段（`Clip` / `find_clip`）、导航（`AgentPath`）。
 - ⬜ `DebugUi` + `EngineOptions`（imgui_* / opt_* 字段）—— 视图层，无模拟依赖，最容易搬。
 - ⬜ `TextRenderer`（font / font_atlases / pending_quads / retired_textures）。
 - ⬜ `AssetStore` / `GltfRuntime`（缓存 + 装配，依赖最重，最后做）。
