@@ -220,15 +220,16 @@ void Engine::step_frame(bool render_frame) {
 `audio_cap_buf`。注意**不要**改 `audio_setup` / `audio_teardown` / `audio_step` / `audio_clip`
 （方法名）与 `mq_audio_*`（模块 ABI）。
 
-> ⚠️ **实测两次失败，别直接照搬前几刀的做法**：
-> 1. `SystemsRuntime::audio` 与**全局 `namespace audio`**（音频模块 ABI）撞名 → `systems.audio`
->    会被解析成命名空间（`unexpected namespace name 'audio'`）。
-> 2. 改名 `audio_engine` 后能编译，但 `audio_e2e` 失败 —— `systems/audio.cpp` 里 `audio` 既指成员
->    又出现在局部/参数位置，正则批量替换会误伤。
+> **决定（三次实测后）：音频组保留在 `Engine`，不并入 `SystemsRuntime`。**
+> ① `SystemsRuntime::audio` 与全局 `namespace audio`（音频模块 ABI）撞名；
+> ② 改名 `audio_engine` 能编译但 `audio_e2e` 失败（`systems/audio.cpp` 里 `audio` 既是成员又被
+>    当局部/参数，正则批量替换会误伤）；
+> ③ 只搬 `audio_clips` / `audio_cap*`（句柄留下）也能编译，但 oracle 在 `scenes/ui.scn` 漂移
+>    （第一次运行没产出退出摘要）—— 同样回滚。
 >
-> 可行方案（二选一）：① 句柄 `audio` **留在 `Engine`**，只把 `audio_clips` 缓存与 `audio_cap*`
-> 搬进子对象；② 手工重写 `systems/audio.cpp`（成员显式 `systems.`、局部变量改名），不走正则。
-> 这一刀已回滚，仓库停在 `3a0844e`（绿）。
+> 要真搬必须**手工重写** `systems/audio.cpp`，收益（2 个缓存 + 7 个抓音字段）不抵风险。
+> 结论：`Engine` 保留 `audio` 句柄与抓音状态；`SystemsRuntime` 到此为止（tween/schedule/
+> 延迟销毁/粒子/动画片段/导航）。这是**已知偏离** §7 原计划的一处，记录在此。
 
 **之后**：`DebugUi`+`EngineOptions`（`imgui_*` / `opt_*` / `stat_*`，视图层无模拟依赖）→
 `TextRenderer`（`font*` / `pending_quads` / `retired_textures`）→ `AssetStore` / `GltfRuntime`。
