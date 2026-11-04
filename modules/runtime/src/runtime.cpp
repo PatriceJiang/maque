@@ -153,6 +153,135 @@ struct MorphMesh {
     bool warned_no_update = false;
 };
 
+/* ---- 热路径字段布局：按类型解析一次，之后只按枚举取偏移 ----------------------
+ * 为什么：引擎每帧都要从组件 blob 里读一批**固定名字**的字段（transform/精灵/UI/文本），
+ * 而 `mq_reflect_field` 是**线性 strcmp**、`mq_reflect_type_by_id` 是哈希 —— 这些是
+ * 类型级静态信息，每帧每实体重查一遍纯属浪费（且把"字段名"散落在热循环里）。
+ * 这里把用到的字段按类型解析一次存成偏移表：热路径只有指针加法与读取，不再进反射。
+ *
+ * 缓存挂在 Engine 上（多实例各一份，无全局可变状态）；键是 type_id（schema 稳定）。
+ * ⚠️ `hot_layout()` 返回的指针只在下一次调用前有效（vector 可能重分配）。
+ *
+ * 新增热路径字段：在 `Fld` 加枚项 + `kFldNames` 加一行即可，解析逻辑不用改。 */
+enum Fld : uint8_t {
+    F_X, F_Y, F_Z, F_WIDTH, F_HEIGHT, F_RADIUS,                 /* 位置/尺寸 */
+    F_R, F_G, F_B, F_A, F_TEXTURE, F_MATERIAL,                  /* 精灵 */
+    F_TEXT, F_FONT, F_FONT_SIZE, F_MAX_WIDTH, F_MAX_HEIGHT, F_LINE_SPACING,   /* 文本 */
+    F_COLOR, F_ALIGN, F_ALIGN_H, F_WRAP, F_WRAP_MODE, F_OVERFLOW,
+    F_BOLD, F_ITALIC, F_PARSE_TAGS,
+    F_OUTLINE_SIZE, F_OUTLINE_COLOR, F_OUTLINE_R, F_OUTLINE_G, F_OUTLINE_B, F_OUTLINE_A,
+    F_SHADOW_X, F_SHADOW_Y, F_SHADOW_R, F_SHADOW_G, F_SHADOW_B, F_SHADOW_A,
+    F_TEXT_W, F_TEXT_H, F_LINE_COUNT, F_TEXT_SIZE, F_CONTENT_SIZE, F_FIT_FONT_SIZE,
+    F_OFFSET_MIN, F_OFFSET_MAX, F_Z_INDEX,                      /* ui.Control */
+    F_MODE, F_SPACING, F_COLUMNS, F_PADDING, F_VALUE, F_PHASE,  /* ui.Layout/Progress */
+    F_INSET_LEFT, F_INSET_TOP, F_INSET_RIGHT, F_INSET_BOTTOM, F_RESOLVED_INSET,
+    F_CLIP, F_PLAYING, F_SPEED, F_TIME, F_DURATION, F_CLIPS,    /* 动画播放器 */
+    F_LOCAL, F_POSITION, F_POS_X, F_POS_Y,                      /* 嵌套变换 */
+    F_COUNT
+};
+struct HotLayout {
+    uint32_t type_id = 0;
+    uint32_t role = 0;
+    bool     is_t3d = false;
+    int32_t  t2d_x = -1, t2d_y = -1;      /* transform2d：扁平 x / y 的 blob 内偏移 */
+    int32_t  t2d_local = -1;              /* transform2d：local 字段偏移（嵌套形态） */
+    int32_t  t2d_px = -1, t2d_py = -1;    /* local.position.x / y（已含 local 偏移） */
+    int32_t  t3d_local = -1;              /* scene.Transform3D.local 偏移 */
+    const mq_field_desc* f[F_COUNT] = {}; /* 常用字段（类型没声明 → nullptr） */
+};
+
+/* 热路径字段名表（只在**首次遇到某类型**时扫一遍，不在帧内执行）。 */
+struct FldName { const char* name; Fld id; };
+static const FldName kFldNames[] = {
+    {"x", F_X}, {"y", F_Y}, {"z", F_Z}, {"width", F_WIDTH}, {"height", F_HEIGHT},
+    {"radius", F_RADIUS}, {"r", F_R}, {"g", F_G}, {"b", F_B}, {"a", F_A},
+    {"texture", F_TEXTURE}, {"material", F_MATERIAL},
+    {"text", F_TEXT}, {"font", F_FONT}, {"font_size", F_FONT_SIZE},
+    {"max_width", F_MAX_WIDTH}, {"max_height", F_MAX_HEIGHT}, {"line_spacing", F_LINE_SPACING},
+    {"color", F_COLOR}, {"align", F_ALIGN}, {"align_h", F_ALIGN_H},
+    {"wrap", F_WRAP}, {"wrap_mode", F_WRAP_MODE}, {"overflow", F_OVERFLOW},
+    {"bold", F_BOLD}, {"italic", F_ITALIC}, {"parse_tags", F_PARSE_TAGS},
+    {"outline_size", F_OUTLINE_SIZE}, {"outline_color", F_OUTLINE_COLOR},
+    {"outline_r", F_OUTLINE_R}, {"outline_g", F_OUTLINE_G},
+    {"outline_b", F_OUTLINE_B}, {"outline_a", F_OUTLINE_A},
+    {"shadow_x", F_SHADOW_X}, {"shadow_y", F_SHADOW_Y}, {"shadow_r", F_SHADOW_R},
+    {"shadow_g", F_SHADOW_G}, {"shadow_b", F_SHADOW_B}, {"shadow_a", F_SHADOW_A},
+    {"text_w", F_TEXT_W}, {"text_h", F_TEXT_H}, {"line_count", F_LINE_COUNT},
+    {"text_size", F_TEXT_SIZE}, {"content_size", F_CONTENT_SIZE},
+    {"fit_font_size", F_FIT_FONT_SIZE},
+    {"offset_min", F_OFFSET_MIN}, {"offset_max", F_OFFSET_MAX}, {"z_index", F_Z_INDEX},
+    {"mode", F_MODE}, {"spacing", F_SPACING}, {"columns", F_COLUMNS}, {"padding", F_PADDING},
+    {"value", F_VALUE}, {"phase", F_PHASE},
+    {"inset_left", F_INSET_LEFT}, {"inset_top", F_INSET_TOP},
+    {"inset_right", F_INSET_RIGHT}, {"inset_bottom", F_INSET_BOTTOM},
+    {"resolved_inset", F_RESOLVED_INSET},
+    {"clip", F_CLIP}, {"playing", F_PLAYING}, {"speed", F_SPEED}, {"time", F_TIME},
+    {"duration", F_DURATION}, {"clips", F_CLIPS},
+    {"local", F_LOCAL}, {"position", F_POSITION}, {"position_x", F_POS_X}, {"position_y", F_POS_Y},
+};
+
+/* ---- 已解析字段的读取/写入（与 read_num/write_num 同语义，只是不再按名字查） ---- */
+float read_num_at(const mq_field_desc* f, const void* base, float def) {
+    if (!f) return def;
+    switch (f->kind) {
+        case MQ_TK_F32:  return *(const float*)((const uint8_t*)base + f->offset);
+        case MQ_TK_F64:  return (float)*(const double*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I8:   return (float)*(const int8_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_U8:   return (float)*(const uint8_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I16:  return (float)*(const int16_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_U16:  return (float)*(const uint16_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I32:  return (float)*(const int32_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_U32:  return (float)*(const uint32_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I64:  return (float)*(const int64_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_U64:  return (float)*(const uint64_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_BOOL: return *(const bool*)((const uint8_t*)base + f->offset) ? 1.0F : 0.0F;
+        case MQ_TK_ENUM: {
+            const uint8_t* p = (const uint8_t*)base + f->offset;
+            if (f->count == 1) return (float)*(const int8_t*)p;
+            if (f->count == 2) return (float)*(const int16_t*)p;
+            return (float)*(const int32_t*)p;
+        }
+        default: return def;
+    }
+}
+bool write_num_at(const mq_field_desc* f, void* base, double v) {
+    if (!f) return false;
+    uint8_t* p = (uint8_t*)base + f->offset;
+    switch (f->kind) {
+        case MQ_TK_ENUM: {
+            if (f->count == 1) { *(int8_t*)p = (int8_t)v; return true; }
+            if (f->count == 2) { *(int16_t*)p = (int16_t)v; return true; }
+            *(int32_t*)p = (int32_t)v; return true;
+        }
+        case MQ_TK_F32:  *(float*)p = (float)v; return true;
+        case MQ_TK_F64:  *(double*)p = v; return true;
+        case MQ_TK_I8:   *(int8_t*)p = (int8_t)v; return true;
+        case MQ_TK_U8:   *(uint8_t*)p = (uint8_t)v; return true;
+        case MQ_TK_I16:  *(int16_t*)p = (int16_t)v; return true;
+        case MQ_TK_U16:  *(uint16_t*)p = (uint16_t)v; return true;
+        case MQ_TK_I32:  *(int32_t*)p = (int32_t)v; return true;
+        case MQ_TK_U32:  *(uint32_t*)p = (uint32_t)v; return true;
+        case MQ_TK_I64:  *(int64_t*)p = (int64_t)v; return true;
+        case MQ_TK_U64:  *(uint64_t*)p = (uint64_t)v; return true;
+        case MQ_TK_BOOL: *(bool*)p = v != 0.0; return true;
+        default: return false;
+    }
+}
+/* 已解析字段的便捷读取（默认值版；类型不符就返回默认值，与 read_f32 一致）。 */
+static inline float f32_at(const mq_field_desc* f, const uint8_t* p, float def) {
+    return (f && f->kind == MQ_TK_F32) ? *(const float*)(p + f->offset) : def;
+}
+static inline const std::string* str_at(const mq_field_desc* f, const uint8_t* p) {
+    return (f && f->kind == MQ_TK_STRING) ? (const std::string*)(p + f->offset) : nullptr;
+}
+/* Vec2/Vec4 之类的小结构体字段（沿用旧实现的语义：只要是结构体就按 float 数组读）。 */
+static inline float* vec_at(const mq_field_desc* f, uint8_t* p) {
+    return f ? (float*)(p + f->offset) : nullptr;
+}
+static inline const float* vec_at(const mq_field_desc* f, const uint8_t* p) {
+    return f ? (const float*)(p + f->offset) : nullptr;
+}
+
 struct Engine;
 struct Scene;
 struct SnapshotWriter;
@@ -176,6 +305,8 @@ static std::string vfs_join(const std::string& base, const std::string& rel);
 std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name, const mq_type_desc** out_desc);
 void accumulate_node_attrs(Engine& eng, int idx, float& angle_deg, float& scale, float& opacity);
 bool node_active_effective(Engine& eng, int idx);
+/* 热路径布局缓存（定义见 Engine 之后）：按 type_id 解析一次，热路径不再查反射。 */
+const HotLayout* hot_layout(Engine& eng, uint32_t type_id);
 float read_num(const mq_type_desc* d, const void* base, const char* field, float def);
 bool  write_num(const mq_type_desc* d, void* base, const char* field, double v);
 void  slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px);
@@ -232,6 +363,13 @@ struct Scene {
     void flatten_world(Engine& eng);
     /* 每帧从**节点树 + glTF 片段派生姿态**展平出 3D 世界矩阵（写进 Entity::world_m，列主序）。 */
     void flatten_world3d(Engine& eng);
+    /* 展平前的 O(N) 拓扑索引（根 + 父→子），两个 flatten 共用；成员复用容量避免每帧分配。
+     * 旧实现每个节点都重扫一遍 ents 找子节点 → O(N²)（10k 实体 ≈ 1 亿次哈希表遍历/帧）。 */
+    void build_world_index();
+    std::vector<std::pair<int, int>> flat_pairs;                  // (id, parent) 升序
+    std::vector<int> flat_roots;                                 // 根 id 升序
+    std::unordered_map<int, std::vector<int>> flat_kids;         // 父 id → 子 id 升序
+    std::vector<std::pair<int, int>> flat_stack;                 // DFS 栈 (id, parent)
     uint64_t checksum(Engine& eng);     // 世界状态校验和（确定性；反射驱动）
     void encode(Engine& eng, SnapshotWriter& w);   // 世界 → 字节（二进制 codec）
     size_t decode(Engine& eng, const uint8_t* in, size_t n);
@@ -724,6 +862,8 @@ struct Engine {
     uint32_t audio_cap_channels = 2;
     double audio_cap_frac = 0.0;
     std::vector<float> audio_cap_buf;
+    /* 热路径布局缓存（见 HotLayout）：type_id → 角色字段偏移。每场景只有个位数类型。 */
+    std::vector<HotLayout> hot_layouts;
     uint32_t rng = 0;
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
@@ -1118,6 +1258,49 @@ struct Engine {
     int  restore_globals(const uint8_t* data, size_t n, size_t& off);
     uint64_t world_trail() const;                           // 校验和轨迹（失步定位）
 };
+
+/* 布局缓存查询（首次走反射，之后纯查表）。语义与逐次反射查找一致：
+ * 只有字段真存在且类型为 f32 时才记偏移；Transform3D 只认全名 `scene.Transform3D`
+ *（与 flatten_world3d 旧实现一致）。 */
+const HotLayout* hot_layout(Engine& eng, uint32_t type_id) {
+    for (const HotLayout& l : eng.hot_layouts)
+        if (l.type_id == type_id) return &l;
+    HotLayout l;
+    l.type_id = type_id;
+    if (const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, type_id)) {
+        l.role = d->role;
+        if (d->role & MQ_ROLE_TRANSFORM2D) {
+            const mq_field_desc* fx = mq_reflect_field(d, "x");
+            const mq_field_desc* fy = mq_reflect_field(d, "y");
+            if (fx && fy && fx->kind == MQ_TK_F32 && fy->kind == MQ_TK_F32) {
+                l.t2d_x = (int32_t)fx->offset; l.t2d_y = (int32_t)fy->offset;
+            } else if (const mq_field_desc* fl = mq_reflect_field(d, "local")) {
+                l.t2d_local = (int32_t)fl->offset;
+                if (const mq_type_desc* lt = mq_reflect_type_by_id(eng.reflect, fl->type_id))
+                    if (const mq_field_desc* fp = mq_reflect_field(lt, "position"))
+                        if (const mq_type_desc* pt = mq_reflect_type_by_id(eng.reflect, fp->type_id)) {
+                            if (const mq_field_desc* px = mq_reflect_field(pt, "x"))
+                                if (px->kind == MQ_TK_F32) l.t2d_px = (int32_t)(fp->offset + px->offset);
+                            if (const mq_field_desc* py = mq_reflect_field(pt, "y"))
+                                if (py->kind == MQ_TK_F32) l.t2d_py = (int32_t)(fp->offset + py->offset);
+                        }
+            }
+        }
+        if (d->name && std::strcmp(d->name, "scene.Transform3D") == 0) {
+            l.is_t3d = true;
+            if (const mq_field_desc* lf = mq_reflect_field(d, "local")) l.t3d_local = (int32_t)lf->offset;
+        }
+        /* 常用字段一次性解析（仅在**该类型首次出现**时执行；之后热路径只按枚举取指针） */
+        for (uint32_t i = 0; i < d->field_count; ++i) {
+            const mq_field_desc& fd = d->fields[i];
+            if (!fd.name) continue;
+            for (const FldName& fn : kFldNames)
+                if (std::strcmp(fd.name, fn.name) == 0) { l.f[fn.id] = &fd; break; }
+        }
+    }
+    eng.hot_layouts.push_back(l);
+    return &eng.hot_layouts.back();
+}
 
 /* ---- docs/34 P0：包 / 模块 / 实例（Engine 级单 JS VM）---- */
 
@@ -9677,27 +9860,41 @@ uint64_t Scene::checksum(Engine& eng) {
 
 /* 组件语义由 roles 决定：transform2d / sprite —— 引擎不认具体组件类型。 */
 /* 组件局部位置：按 role 读；兼容两种声明形态（扁平 x/y 或 math.Transform2D.local.position）。
- * 引擎不认具体组件类型 —— 只看 role 与标准字段路径（docs/12/17）。 */
+ * 引擎不认具体组件类型 —— 只看 role 与标准字段路径（docs/12/17）。
+ * 字段定位走 hot_layout（每类型解析一次），这里只做指针加法 —— 热路径不进反射。 */
 static void read_local_pos(Engine& eng, const Entity& e, float* lx, float* ly) {
     *lx = e.world_x; *ly = e.world_y;                      /* 默认：实体自身（无 Transform2D 的纯 UI 节点） */
     for (auto& [tid, blob] : e.comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
-        if (!d || !(d->role & MQ_ROLE_TRANSFORM2D)) continue;
-        { float tx = 0, ty = 0;
-          if (read_f32(d, blob.data(), "x", &tx) && read_f32(d, blob.data(), "y", &ty)) { *lx = tx; *ly = ty; return; } }
-        if (const mq_field_desc* fl = mq_reflect_field(d, "local")) {
-            const mq_type_desc* lt = mq_reflect_type_by_id(eng.reflect, fl->type_id);
-            if (lt) {
-                const void* lp = blob.data() + fl->offset;
-                if (const mq_field_desc* fp = mq_reflect_field(lt, "position")) {
-                    const mq_type_desc* pt = mq_reflect_type_by_id(eng.reflect, fp->type_id);
-                    if (pt) {
-                        read_f32(pt, (const uint8_t*)lp + fp->offset, "x", lx);
-                        read_f32(pt, (const uint8_t*)lp + fp->offset, "y", ly);
-                    }
-                }
-            }
+        const HotLayout* L = hot_layout(eng, tid);
+        if (!L || !(L->role & MQ_ROLE_TRANSFORM2D)) continue;
+        const uint8_t* p = blob.data();
+        if (L->t2d_x >= 0 && L->t2d_y >= 0) {              /* 扁平 x/y（scene.Transform2D） */
+            *lx = *(const float*)(p + L->t2d_x);
+            *ly = *(const float*)(p + L->t2d_y);
+            return;
         }
+        if (L->t2d_local >= 0) {                           /* 嵌套 local.position（math.Transform2D） */
+            if (L->t2d_px >= 0) *lx = *(const float*)(p + L->t2d_local + L->t2d_px);
+            if (L->t2d_py >= 0) *ly = *(const float*)(p + L->t2d_local + L->t2d_py);
+        }
+    }
+}
+
+/* 展平前的拓扑索引（O(N)）：根表 + 父→子表，均按 id 升序。
+ * 旧实现在遍历里对**每个节点**重扫整个 ents 找子节点（O(N²)：10k 实体 ≈ 1 亿次
+ * 哈希表遍历/帧，实测 1.55 s/帧），且每节点还分配一个临时 vector 再排序。
+ * 现在一次扫描建表，展平只做指针推进；实体增删改父后由下一次展平自然重建。 */
+void Scene::build_world_index() {
+    flat_pairs.clear();
+    flat_pairs.reserve(ents.size());
+    for (auto& [idx, e] : ents) flat_pairs.emplace_back(idx, e.parent);
+    std::sort(flat_pairs.begin(), flat_pairs.end());          // 父先于子 + 稳定遍历（docs/10 D4）
+    if (flat_kids.size() > ents.size() * 2 + 16) flat_kids.clear();   // 反复换父导致空桶堆积时才重置
+    else for (auto& [k, kids] : flat_kids) kids.clear();               // 保留桶与容量，避免每帧分配
+    flat_roots.clear();
+    for (auto& [idx, parent] : flat_pairs) {
+        if (parent < 0 || ents.find(parent) == ents.end()) flat_roots.push_back(idx);
+        else flat_kids[parent].push_back(idx);                // 升序插入（遍历升序）→ 子表天然有序
     }
 }
 
@@ -9705,37 +9902,28 @@ static void read_local_pos(Engine& eng, const Entity& e, float* lx, float* ly) {
 /* 展平（派生）：局部坐标在 Transform 组件里，世界坐标每帧重算到 Entity::world_x/y。
  * 顺序确定：根按 id 升序、子节点按 id 升序（栈序反转）→ 与快照/校验和的遍历顺序一致。 */
 void Scene::flatten_world(Engine& eng) {
+    /* 诊断：MAQUE_TRACE_FLATTEN=1 时每帧打印展平耗时（帧预算排查用，默认零开销）。 */
     static const bool tf_on = [] { const char* e = std::getenv("MAQUE_TRACE_FLATTEN"); return e && *e && *e != '0'; }();
-    auto tf_t0 = std::chrono::steady_clock::now();
-    size_t tf_nodes = 0, tf_scan = 0, tf_comps = 0;
-    double tf_local_ms = 0.0;
-    std::vector<int> roots;
-    for (auto& [idx, e] : ents) if (e.parent < 0 || !at(e.parent)) roots.push_back(idx);
-    std::sort(roots.begin(), roots.end());
-    std::vector<std::pair<int, int>> stack;      // (index, parent index)
-    for (int r : roots) stack.emplace_back(r, -1);
-    while (!stack.empty()) {
-        auto [idx, pidx] = stack.back();
-        stack.pop_back();
+    const auto tf_t0 = tf_on ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+    build_world_index();
+    flat_stack.clear();
+    for (int r : flat_roots) flat_stack.emplace_back(r, -1);
+    while (!flat_stack.empty()) {
+        auto [idx, pidx] = flat_stack.back();
+        flat_stack.pop_back();
         Entity* e = at(idx);
         if (!e) continue;
-        ++tf_nodes;
         float lx = 0, ly = 0;
-        const auto tf_l0 = std::chrono::steady_clock::now();
         read_local_pos(eng, *e, &lx, &ly);
-        tf_comps += e->comps.size();
-        tf_local_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tf_l0).count();
         if (pidx >= 0) { if (Entity* pe = at(pidx)) { e->world_x = pe->world_x + lx; e->world_y = pe->world_y + ly; } }
         else { e->world_x = lx; e->world_y = ly; }
-        std::vector<int> kids;
-        for (auto& [k, c] : ents) { ++tf_scan; if (c.parent == idx) kids.push_back(k); }
-        std::sort(kids.begin(), kids.end(), std::greater<int>());   // 栈序 → 最小 id 先处理（稳定）
-        for (int k : kids) stack.emplace_back(k, idx);
+        auto kit = flat_kids.find(idx);
+        if (kit != flat_kids.end())                               // 栈序 → 最小 id 先处理（稳定）
+            for (auto it = kit->second.rbegin(); it != kit->second.rend(); ++it) flat_stack.emplace_back(*it, idx);
     }
     if (tf_on) {
         const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tf_t0).count();
-        std::print("[flatten] {:.3f}ms nodes={} scan={} comps={} local_reflect={:.3f}ms ents={} roots={}\n",
-                   ms, tf_nodes, tf_scan, tf_comps, tf_local_ms, ents.size(), roots.size());
+        std::print("[flatten] {:.3f}ms ents={} roots={}\n", ms, ents.size(), flat_roots.size());
     }
 }
 
@@ -9744,22 +9932,19 @@ void Scene::flatten_world(Engine& eng) {
  * 有 rotation 轨道用四元数路径（m4_from_quat_trs，无万向锁），否则走 Euler TRS（m4_from_trs）；
  * world_m = parent.world_m * local。平级场景 world_m == m4_from_trs(local)，旧场景零漂移。 */
 void Scene::flatten_world3d(Engine& eng) {
-    std::vector<int> roots;
-    for (auto& [idx, e] : ents) if (e.parent < 0 || !at(e.parent)) roots.push_back(idx);
-    std::sort(roots.begin(), roots.end());
-    std::vector<std::pair<int, int>> stack;      // (index, parent index)
-    for (int r : roots) stack.emplace_back(r, -1);
-    while (!stack.empty()) {
-        auto [idx, pidx] = stack.back();
-        stack.pop_back();
+    build_world_index();
+    flat_stack.clear();
+    for (int r : flat_roots) flat_stack.emplace_back(r, -1);
+    while (!flat_stack.empty()) {
+        auto [idx, pidx] = flat_stack.back();
+        flat_stack.pop_back();
         Entity* e = at(idx);
         if (!e) continue;
         math::Transform3D trs{};
         for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
-            if (!d || std::strcmp(d->name, "scene.Transform3D") != 0) continue;
-            if (const mq_field_desc* lf = mq_reflect_field(d, "local"))
-                std::memcpy(&trs, blob.data() + lf->offset, sizeof trs);
+            const HotLayout* L = hot_layout(eng, tid);          // 类型布局只解析一次（不再 strcmp 类型名）
+            if (!L || !L->is_t3d) continue;
+            if (L->t3d_local >= 0) std::memcpy(&trs, blob.data() + L->t3d_local, sizeof trs);
             break;
         }
         AnimPose* pose = nullptr;
@@ -9776,10 +9961,9 @@ void Scene::flatten_world3d(Engine& eng) {
         } else {
             std::memcpy(e->world_m, local, sizeof local);
         }
-        std::vector<int> kids;
-        for (auto& [k, c] : ents) if (c.parent == idx) kids.push_back(k);
-        std::sort(kids.begin(), kids.end(), std::greater<int>());   // 栈序 → 最小 id 先处理（稳定）
-        for (int k : kids) stack.emplace_back(k, idx);
+        auto kit = flat_kids.find(idx);
+        if (kit != flat_kids.end())
+            for (auto it = kit->second.rbegin(); it != kit->second.rend(); ++it) flat_stack.emplace_back(*it, idx);
     }
 }
 

@@ -1,0 +1,11 @@
+{
+  "title": "sprite z-order regression",
+  "script": "zorder.lua",
+  "width": 320,
+  "height": 240,
+  "entities": [
+    { "name": "bg", "components": [
+        { "type": "scn.Transform2D", "x": 160, "y": 120 },
+        { "type": "scn.Sprite", "width": 320, "height": 240, "r": 0, "g": 0, "b": 0 } ] }
+  ]
+}
