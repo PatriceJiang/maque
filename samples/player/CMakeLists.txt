@@ -23,6 +23,18 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx AND MAQUE_ENABLE_LUA)
     set_tests_properties(compression_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 运行时拆分护栏（docs/10 确定性）：多关注点场景集合 → ① 逐帧 world_trail ② 逐字节像素。
+# selfcheck = 同一构建跑两遍互相比较（可移植，不依赖提交的绝对基线）。
+# 拆分 runtime.cpp 的每一步都必须让它保持绿（见 plans/25-runtime-decomposition.md）。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME runtime_oracle COMMAND "${CMAKE_COMMAND}" -E env "ORACLE_FAST=1"
+             "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/runtime_oracle.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}"
+             "${CMAKE_CURRENT_BINARY_DIR}/runtime_oracle")
+    set_tests_properties(runtime_oracle PROPERTIES TIMEOUT 900)
+endif()
+
 # 确定性：同场景跑两次，world_trail 必须一致（docs/10）
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME determinism COMMAND "${MAQUE_BASH}" -c

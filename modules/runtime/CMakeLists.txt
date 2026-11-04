@@ -1,5 +1,9 @@
 # maque::runtime -- scene runtime and embeddable host API.
-add_library(maque_runtime STATIC src/runtime.cpp src/gltf_model.cpp)
+# runtime.cpp 拆分的内部头（不对外）：类型 + Engine/Scene 声明。
+# 只有 modules/runtime 的 .cpp 包含；公开面仍是 include/runtime/*.h（schema 生成的 shim）。
+add_library(maque_runtime STATIC
+    src/runtime.cpp src/gltf_model.cpp
+    src/runtime_common.h src/runtime_scene.h src/runtime_engine.h)
 add_library(maque::runtime ALIAS maque_runtime)
 target_include_directories(maque_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
