@@ -306,6 +306,10 @@ bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>
 int dispatch_event(Engine& eng, int kind, double a, double b, double c, const char* text);
 /* 模块/包路径规范化（docs/34 P0；定义在 script/module.cpp）。 */
 std::string normalize_module_rel(const std::string& in);
+/* 场景加载（docs/12 §5）：实体树反序列化 + prefab 展开（定义在 scene/loader.cpp）。 */
+std::string vfs_dirname(const std::string& vfs_path);
+int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
+                std::vector<std::string>* chain = nullptr, int depth = 0);
 void read_color(const mq_type_desc* d, const void* base, const char* field, math::Color* out);
 void build_cube(std::vector<float>& verts, std::vector<uint32_t>& indices);
 
