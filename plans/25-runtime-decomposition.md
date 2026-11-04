@@ -154,6 +154,29 @@ modules/runtime/src/           65 个文件（.cpp/.h）
 
 `step_frame`（766 行）→ 10 个具名阶段，顺序即契约（docs/10 D1）：
 
+**实测切点**（`engine/frame.cpp`，行号 = 当前文件；每个注释就是原代码里的阶段标记）：
+
+| 行 | 现有标记 | 目标阶段 |
+|---|---|---|
+| 39 | `// ① 采样（设备事件…）` | `feed_input` 前半 |
+| 64 | `// ① 帧首：控制端点轮询` | `poll_control` |
+| 91 | `// ① 帧首：释放上一帧退役的字形图集纹理` | `begin_frame` |
+| 97 | `// ①b 输入模拟器` | `feed_input` |
+| 98 | `/* ①a 画布解析 */` | `begin_frame` |
+| 229 | `/* ③ 不点穿：ImGui 要吃鼠标/键盘 */` | `feed_input` 尾 |
+| 236 | `// ② 输入帧` | `feed_input` |
+| 243 | `// ②b 帧边界热重载` | `frame_boundary` |
+| 245 | `// ②c 帧边界切场景` | `frame_boundary` |
+| 254 | `// ③ 脚本：update(dt) → GC` | `run_scripts` |
+| 358 | `// ④ 世界校验和 + 周期快照` | `take_snapshot` |
+| 378 | `// ⑤ 渲染` | `render`（含 present/统计/截图尾） |
+
+建议**按上表从后往前切**（先 `render`/`take_snapshot`，再往前），每切一个就跑一次
+`runtime_oracle`；切完后 `step_frame` 只剩 §8 开头那段 10 行编排。
+
+> 注意：切分时**不要**改局部变量的作用域与求值顺序 —— 这些阶段共享 `dt` / `iframe` /
+> `frame_begin` 等局部量，先用参数传进去，等全部切完再考虑收进 `FrameCtx`。
+
 ```cpp
 void Engine::step_frame(bool render_frame) {
     FrameCtx f{ .dt = dt, .render = render_frame };
