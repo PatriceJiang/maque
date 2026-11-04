@@ -2,7 +2,14 @@
 # runtime.cpp 拆分的内部头（不对外）：类型 + Engine/Scene 声明。
 # 只有 modules/runtime 的 .cpp 包含；公开面仍是 include/runtime/*.h（schema 生成的 shim）。
 add_library(maque_runtime STATIC
-    src/runtime.cpp src/gltf_model.cpp
+    src/gltf_model.cpp
+    # 入口与引擎装配（原 runtime.cpp 的编排层；按关注点分文件，见 plans/25）
+    src/entry.cpp src/engine/globals.cpp src/engine/frame.cpp src/engine/setup.cpp
+    src/engine/window.cpp src/engine/run.cpp src/engine/crash.cpp src/engine/tracy.cpp
+    src/engine/ui.cpp src/engine/sim.cpp src/engine/canvas.cpp src/engine/storage.cpp
+    src/engine/reflect_ops.cpp
+    # 输入分发
+    src/input/dispatch.cpp
     src/runtime_common.h src/runtime_scene.h src/runtime_engine.h src/runtime_math3d.h
     # 宿主 API（schema api_list 的 310 个实现）按前缀分域
     src/api/system.cpp src/api/node.cpp src/api/ui.cpp src/api/scene.cpp
@@ -20,9 +27,9 @@ add_library(maque_runtime STATIC
     # 渲染（3D 数学 / 渲染目标与相机 / 场景 shader / 3D 提取）
     src/render/math3d.cpp src/render/targets.cpp src/render/shader_passes.cpp
     src/render/extract3d.cpp src/render/text.cpp
-    # 系统（动画/音频/粒子/导航）与诊断
+    # 系统（动画/音频/粒子/导航/物理）
     src/systems/anim.cpp src/systems/audio.cpp src/systems/particles.cpp src/systems/nav.cpp
-    src/engine/tracy.cpp
+    src/systems/physics.cpp
     # 脚本宿主（模块 VM / 热重载 / 覆盖层 / 全局脚本）与运行时控制
     src/script/module.cpp src/script/reload.cpp src/script/overlay.cpp src/script/global.cpp
     src/engine/run.cpp src/engine/crash.cpp

@@ -67,25 +67,30 @@ tests/runtime_oracle.sh <player> <repo> <work> check  /tmp/baseline.txt
 
 ctest 里跑 `selfcheck`（fast 集，两遍互相比较，可移植）。
 
-## 4. 结构落地（当前）
+## 4. 结构落地（阶段 1 已完成：`runtime.cpp` 已删除）
 
 ```
-modules/runtime/src/
-  runtime_common.h      # 共享类型 + 跨 TU 内部辅助声明 + 内联工具
+modules/runtime/src/           65 个文件（.cpp/.h）
+  runtime_common.h      # 共享类型 + 跨 TU 内部辅助声明 + 内联工具 + 信号/崩溃全局
   runtime_scene.h       # Scene / SceneInstanceRuntime / SnapshotWriter
   runtime_math3d.h      # m4_* 内联数学（extract_3d 逐骨骼调用）
-  runtime_engine.h      # Engine（组合根）
-  runtime.cpp           # 剩余编排：帧序、场景、实例、脚本宿主、setup/teardown
+  runtime_engine.h      # Engine（组合根；阶段 2 目标 ≤250 行）
+  entry.cpp             # mq_run_scene / mq_scene_ex / mq_host_*（嵌入宿主 ABI）
   api/        system node ui scene spine imgui physics nav audio storage   （310 个脚本 API）
   control/    system scene world render storage audio input                （57 个控制面方法）
   assets/     texture env gltf gltf_anim                                   （资源管线）
-  render/     math3d targets shader_passes extract3d text                  （渲染）
+  scene/      tree loader instance world codec world_state                 （场景模型）
+  script/     module reload overlay global                                 （脚本宿主）
+  render/     math3d targets shader_passes extract3d text items2d          （渲染）
+  input/      dispatch                                                     （命中/分发）
+  systems/    anim audio particles nav physics                             （模拟系统）
+  engine/     frame setup window run crash tracy ui sim canvas storage reflect_ops globals
   ui/         debug_panel engine_options                                   （ImGui/F4）
   anim/       spine                                                        （Spine 2D）
-  systems/    anim audio particles nav                                     （模拟系统）
-  engine/     tracy                                                        （诊断）
   gltf_model.{h,cpp}                                                       （glTF CPU 解析，原有）
 ```
+
+最大文件 899 行（`scene/instance.cpp`）、`engine/frame.cpp` 775 行（`step_frame`，阶段 3 再拆）。
 
 ## 5. 已完成步骤
 
@@ -98,23 +103,24 @@ modules/runtime/src/
 | S5 | `56b0bec` | Spine / ImGui 面板 / F4 选项 | → 9,063 |
 | S6 | `5d57878` | 3D 数学 / 渲染目标 / 场景 shader / extract_3d | → 6,685 |
 | S7 | `555ef26` | 系统（anim/audio/粒子/导航）+ 文本 + Tracy | → 5,663 |
+| S8 | `b3b94f8` | 脚本包/模块 VM → `script/module.cpp` | → 5,386 |
+| S9–S12 | `44a9ef1` | scene 家族（树/加载/实例/世界/编解码/2D 提取） | → 3,657 |
+| S13 | `8e1347b` | 脚本宿主（reload/overlay/global）+ engine/run + crash | → 2,864 |
+| S14–S18 | 本提交 | 帧管线/输入分发/装配期/音频/入口；**删除 runtime.cpp** | → 0 |
 
 每步都过了：全量构建 + oracle 18 场景逐字段一致 + 相关 ctest 子集全绿。
 
-## 6. 剩余步骤（阶段 1 收尾）
+## 6. 阶段 1 收尾记录（S8–S18，全部完成）
 
-| 步 | 目标文件 | 源区（S7 后行号） | 备注 |
+| 步 | 提交 | 内容 | 行数 |
 |---|---|---|---|
-| S8 | `script/module.cpp` | 17–294 | 包/模块 VM（docs/34 P0） |
-| S9 | `scene/tree.cpp`、`scene/loader.cpp` | 2045–2394 | 树操作 + 反序列化/实例化 |
-| S10 | `scene/instance.cpp`、`scene/instance_assets.cpp` | 2395–3286 | docs/32 实例与资源基址 |
-| S11 | `scene/codec.cpp` | 354–516、3287–3622 | 快照/校验和/世界编解码 |
-| S12 | `input/dispatch.cpp`、`engine/ui.cpp`、`systems/physics.cpp` | 3623–4057、4303–4728 | 命中/分发、UI 语义、物理组件 |
-| S13 | `engine/{storage,canvas,sim,window,caps}.cpp` | 4058–4302、4817–5109 | 装配期子系统 |
-| S14 | `engine/{setup,loop,crash}.cpp` | 1279–2044、4729–4816、5110–5368 | setup/teardown/主循环/崩溃上下文 |
-| S15 | `engine/frame.cpp`、`entry.cpp` | 517–1278、5369–5663 | `step_frame`（整段搬，阶段 3 再拆）+ 音频生命周期 + 嵌入宿主 ABI |
+| S8 | `b3b94f8` | 脚本包/模块 VM → `script/module.cpp` | 5,663 → 5,386 |
+| S9–S12 | `44a9ef1` | scene 家族：tree / loader / instance / world / codec / world_state + render/items2d | → 3,657 |
+| S13 | `8e1347b` | script/{reload,overlay,global} + engine/{run,crash} | → 2,864 |
+| S14–S18 | 本提交 | engine/{frame,setup,window,ui,sim,canvas,storage,reflect_ops,globals} + input/dispatch + systems/{physics,audio} + entry；**删除 runtime.cpp** | → 0 |
 
-S15 之后 `runtime.cpp` 只剩几十行的 `using`/注释，可整体删除或留作空的 TU。
+**阶段 1 完成判据**：`modules/runtime/src/runtime.cpp` 已不存在；65 个文件、最大 899 行；
+全量构建通过；oracle 18 场景逐字段一致；22 项 ctest 全绿。
 
 ## 7. 阶段 2（拆所有权，`Engine` 845 → ≤250 行）
 

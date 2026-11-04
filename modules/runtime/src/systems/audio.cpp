@@ -116,4 +116,146 @@ void Engine::audio_step(float dt) {
     }
 }
 
+/* ---- 音频生命周期（docs/30）---- */
+void Engine::audio_setup() {
+    mq_audio_desc d{};
+    d.struct_size = sizeof d;
+    d.sample_rate = 48000;
+    d.channels = 2;
+    d.buffer_frames = 1024;
+    d.max_voices = 64;
+    d.backend = MQ_AUDIO_BACKEND_NULL;   // 默认静音：逻辑/脚本可用，CI 不弹设备
+    bool want_device = false;
+    if (const char* env = std::getenv("MAQUE_AUDIO"); env && *env) {
+        if (std::strcmp(env, "0") == 0 || std::strcmp(env, "off") == 0 ||
+            std::strcmp(env, "null") == 0) {
+            d.backend = MQ_AUDIO_BACKEND_NULL;
+        } else if (std::strcmp(env, "sdl") == 0) {
+            d.backend = MQ_AUDIO_BACKEND_SDL;
+            want_device = true;
+        } else {   // 1 / on / auto
+            d.backend = MQ_AUDIO_BACKEND_AUTO;
+            want_device = true;
+        }
+    }
+    if (const char* dev = std::getenv("MAQUE_AUDIO_DEVICE"); dev && *dev) d.device = dev;
+    if (const char* buf = std::getenv("MAQUE_AUDIO_BUFFER"); buf && *buf) {
+        const int v = std::atoi(buf);
+        if (v > 0) d.buffer_frames = (uint32_t)v;
+    }
+    const char* cap_path = std::getenv("MAQUE_AUDIO_CAPTURE");
+    const bool capture = cap_path && *cap_path;
+    if (capture) {
+        /* 抓音必须独占混音推进（否则设备回调 + 抓音各 mix 一次 → playhead 双倍消耗） */
+        d.backend = MQ_AUDIO_BACKEND_NULL;
+        want_device = false;
+    }
+    audio = mq_audio_create(&d);
+    if (audio) {
+        mq_audio_stats st{};
+        st.struct_size = sizeof st;
+        mq_audio_get_stats(audio, &st);
+        audio_cap_rate = st.sample_rate;
+        audio_cap_channels = st.channels;
+        std::print("runtime: audio {} backend rate={} ch={}\n",
+                   capture ? "capture(null pump)"
+                           : (want_device ? "device requested" : "null (MAQUE_AUDIO=off/null)"),
+                   st.sample_rate, st.channels);
+        if (capture) audio_capture_start(cap_path);
+    } else {
+        std::print(stderr, "runtime: audio init failed（脚本 audio_* 将返回失败）\n");
+    }
+}
+
+void Engine::audio_teardown() {
+    audio_capture_finish();
+    if (audio) {
+        mq_audio_destroy(audio);   // 内含 stop/close（join 音频线程）
+        audio = nullptr;
+    }
+    for (auto& kv : audio_clips) mq_audio_clip_release(kv.second);
+    audio_clips.clear();
+}
+
+void Engine::audio_capture_start(const char* path) {
+    audio_cap = std::fopen(path, "wb");
+    if (!audio_cap) {
+        std::print(stderr, "runtime: audio capture open failed '{}'\n", path);
+        return;
+    }
+    std::array<uint8_t, 44> header{};   // 先占位，退出时回填
+    std::fwrite(header.data(), 1, header.size(), audio_cap);
+    audio_cap_path = path;
+    audio_cap_frames = 0;
+    audio_cap_frac = 0.0;
+    std::print("runtime: audio capture -> {}\n", path);
+}
+
+void Engine::audio_capture_step(float dt) {
+    if (!audio_cap || !audio) return;
+    audio_cap_frac += (double)dt * (double)audio_cap_rate;
+    uint32_t frames = (uint32_t)audio_cap_frac;
+    if (frames == 0) return;
+    audio_cap_frac -= (double)frames;
+    if (frames > 4800) frames = 4800;                 // 单帧上限（防 dt 异常）
+    audio_cap_buf.assign((size_t)frames * 2, 0.0F);
+    if (mq_audio_mix(audio, audio_cap_buf.data(), frames) != MQ_AUDIO_OK) return;
+    std::vector<int16_t> pcm((size_t)frames * 2);
+    for (size_t i = 0; i < pcm.size(); ++i) {
+        const float v = std::clamp(audio_cap_buf[i], -1.0F, 1.0F);
+        pcm[i] = (int16_t)std::lround(v * 32767.0F);
+    }
+    std::fwrite(pcm.data(), sizeof(int16_t), pcm.size(), audio_cap);
+    audio_cap_frames += frames;
+}
+
+void Engine::audio_capture_finish() {
+    if (!audio_cap) return;
+    const uint32_t channels = audio_cap_channels ? audio_cap_channels : 2;
+    const uint32_t data_bytes = (uint32_t)(audio_cap_frames * channels * 2u);
+    const uint32_t byte_rate = audio_cap_rate * channels * 2u;
+    std::array<uint8_t, 44> h{};
+    auto w16 = [&](size_t off, uint16_t v) { h[off] = (uint8_t)(v & 0xFF); h[off + 1] = (uint8_t)(v >> 8); };
+    auto w32 = [&](size_t off, uint32_t v) {
+        h[off] = (uint8_t)(v & 0xFF); h[off + 1] = (uint8_t)((v >> 8) & 0xFF);
+        h[off + 2] = (uint8_t)((v >> 16) & 0xFF); h[off + 3] = (uint8_t)((v >> 24) & 0xFF);
+    };
+    std::memcpy(h.data(), "RIFF", 4);
+    w32(4, 36u + data_bytes);
+    std::memcpy(h.data() + 8, "WAVEfmt ", 8);
+    w32(16, 16);
+    w16(20, 1);                       // PCM
+    w16(22, (uint16_t)channels);
+    w32(24, audio_cap_rate);
+    w32(28, byte_rate);
+    w16(32, (uint16_t)(channels * 2u));
+    w16(34, 16);
+    std::memcpy(h.data() + 36, "data", 4);
+    w32(40, data_bytes);
+    std::fseek(audio_cap, 0, SEEK_SET);
+    std::fwrite(h.data(), 1, h.size(), audio_cap);
+    std::fclose(audio_cap);
+    audio_cap = nullptr;
+    std::print("runtime: audio capture done '{}' frames={}\n", audio_cap_path,
+               (unsigned long long)audio_cap_frames);
+}
+
+mq_audio_clip* Engine::audio_clip(const std::string& path) {
+    if (!audio || path.empty()) return nullptr;
+    auto it = audio_clips.find(path);
+    if (it != audio_clips.end()) return it->second;
+    void* data = nullptr;
+    size_t n = 0;
+    if (mq_vfs_read(vfs, path.c_str(), &data, &n) != MQ_VFS_OK || !data || n == 0) {
+        std::print(stderr, "runtime: audio clip not found '{}'\n", path);
+        return nullptr;
+    }
+    mq_audio_clip* clip = nullptr;
+    const int rc = mq_audio_load_memory(audio, data, n, path.c_str(), &clip);
+    mq_vfs_free(data);
+    if (rc != MQ_AUDIO_OK || !clip) return nullptr;
+    audio_clips[path] = clip;
+    return clip;
+}
+
 }  // namespace maque::rt

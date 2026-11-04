@@ -298,6 +298,8 @@ bool resolve_field_path(Engine& eng, int entity, const std::string& path,
                         void** out_base);
 int  ui_hit_entity(Engine& eng, float px, float py, mq_input_target* out);
 int  runtime_hit_test(void* user, const mq_input_event* ev, mq_input_target* out);
+int  runtime_parent(void* user, int entity);
+int  runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target* target);
 double cfg_field(Engine* eng, const char* path);
 bool read_sim_scenario(mq_vfs* vfs, const char* path, std::string& out);
 bool read_f32(const mq_type_desc* d, const void* blob, const char* name, float* out);

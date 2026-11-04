@@ -190,4 +190,41 @@ uint32_t Engine::poll_watcher() {
     return changed;
 }
 
+/* 注册 handler 时判定它属于哪个脚本槽位：在同实例 bus 里找**定义了该全局函数**的 VM。
+ * 绝大多数脚本用 `function on_xxx()` 声明处理器，按名可唯一判定；多脚本同名处理器
+ * 取声明顺序第一个（与 bus 的派发顺序一致）。判不出 → -1（单脚本总线仍会被整体清理）。 */
+int Engine::script_slot_for_handler(const char* handler) const {
+    if (!handler || !*handler) return -1;
+    mq_script_bus* b = in_global ? global_bus
+                      : in_overlay ? overlay_bus
+                      : (active_instance && active_instance->bus ? active_instance->bus : bus);
+    if (!b) return -1;
+    const uint32_t n = mq_script_bus_count(b);
+    for (uint32_t i = 0; i < n; ++i)
+        if (mq_script_has(mq_script_bus_vm_at(b, i), handler)) return (int)i;
+    return -1;
+}
+
+/* 热重载前清理旧 VM 的节点事件注册：按 (实例, 脚本槽位) 精确摘除；
+ * 单脚本总线直接清空该实例的全部注册（覆盖 handler 无法按名判定/已被删除的情况）；
+ * 多脚本且槽位未知时，只清理新 VM 里仍存在的同名 handler（避免误删其它脚本的注册）。 */
+void Engine::purge_node_handlers(int instance, int slot, mq_script_vm* fresh, mq_script_bus* b,
+                                 bool single_vm) {
+    for (auto it = node_events.begin(); it != node_events.end();) {
+        auto& v = it->second;
+        std::erase_if(v, [&](const NodeHandler& h) {
+            if (h.instance != instance) return false;
+            if (single_vm) return true;
+            if (slot >= 0 && h.slot == slot) return true;
+            if (h.slot >= 0) return false;
+            /* 槽位未知：新 VM 仍定义同名处理器 → 视为被它替换；新 VM 没有、
+             * 且整条总线也没有任何 VM 定义它 → 旧脚本遗留的注册（新代码已删掉该 handler）。 */
+            if (fresh && mq_script_has(fresh, h.handler.c_str())) return true;
+            return b && !mq_script_bus_has(b, h.handler.c_str());
+        });
+        if (v.empty()) it = node_events.erase(it);
+        else ++it;
+    }
+}
+
 }  // namespace maque::rt
