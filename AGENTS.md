@@ -46,7 +46,7 @@ node tests/wasm_p0_smoke.mjs "$PWD/build-wasm/samples/web/maque_web.mjs" \
 ### Android（arm64-v8a）
 
 ```bash
-# 首次：固定 SDL2 源码；另按 android/README.md 准备 wgpu-native Android .so
+# 首次：固定 SDL2 源码 + 下载/校验 wgpu-native Android .so（ABI 由 MAQUE_ABIS 选，默认 arm64-v8a）
 sh android/setup-deps.sh
 cd android && ./gradlew :app:assembleDebug
 ```

@@ -38,7 +38,8 @@ powershell -ExecutionPolicy Bypass -File android\setup-deps.ps1
 sh ./android/setup-deps.sh
 ```
 
-脚本固定获取 SDL `release-2.32.10` 到 `android/.deps/SDL`。也可通过
+脚本固定获取 SDL `release-2.32.10` 到 `android/.deps/SDL`，并同时下载、校验
+wgpu-native `v29.0.1.1` 的 Android `.so`（见下一节）。也可通过
 `-PmaqueSdl2Dir=<目录>` 指向其它兼容 SDL2 checkout。
 
 ## wgpu-native
@@ -49,7 +50,14 @@ sh ./android/setup-deps.sh
 android/app/src/main/jniLibs/arm64-v8a/libwgpu_native.so
 ```
 
-从官方 Release 下载并解压：
+`setup-deps` 脚本会按 `MAQUE_ABIS`（默认 `arm64-v8a`）下载对应的 Release、校验
+SHA-256 后放进 `jniLibs/`；文件已存在且校验通过时直接跳过：
+
+```bash
+MAQUE_ABIS=arm64-v8a sh ./android/setup-deps.sh
+```
+
+需要手工放置（或使用其它版本）时，从官方 Release 下载并解压：
 
 ```powershell
 Invoke-WebRequest `
@@ -72,11 +80,11 @@ cp .deps/wgpu-android-aarch64-release/lib/libwgpu_native.so \
 
 该二进制是本机依赖，不入库。不要使用 `wgpu-linux-aarch64` 包替代 Android 包。
 
-本地 x86_64 AVD 调试时，改下载同一 Release 的
-`wgpu-android-x86_64-release.zip`，把其中的 `.so` 放到
-`android/app/src/main/jniLibs/x86_64/libwgpu_native.so`，然后构建：
+本地 x86_64 AVD 调试时，用同一脚本取 x86_64 的 `.so`
+（`android/app/src/main/jniLibs/x86_64/libwgpu_native.so`），然后构建：
 
 ```bash
+MAQUE_ABIS=arm64-v8a,x86_64 sh ./android/setup-deps.sh
 cd android
 ./gradlew -PmaqueAbis=x86_64 :app:assembleDebug
 ```

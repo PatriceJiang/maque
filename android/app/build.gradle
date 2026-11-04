@@ -16,12 +16,12 @@ def jniLibsDir = file("src/main/jniLibs")
 tasks.register("validateMaqueAndroidDeps") {
     doLast {
         if (!new File(sdl2Dir, "CMakeLists.txt").isFile()) {
-            throw new GradleException("SDL2 source not found at ${sdl2Dir}. See android/README.md.")
+            throw new GradleException("SDL2 source not found at ${sdl2Dir}. Run 'sh android/setup-deps.sh' (or android\\setup-deps.ps1 on Windows); see android/README.md.")
         }
         androidAbis.each { abi ->
             def wgpuNative = new File(jniLibsDir, "${abi}/libwgpu_native.so")
             if (!wgpuNative.isFile()) {
-                throw new GradleException("wgpu-native Android library not found at ${wgpuNative}. See android/README.md.")
+                throw new GradleException("wgpu-native Android library not found at ${wgpuNative}. Run 'MAQUE_ABIS=${androidAbis.join(',')} sh android/setup-deps.sh' (or android\\setup-deps.ps1 on Windows); see android/README.md.")
             }
         }
     }
