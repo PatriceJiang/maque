@@ -233,9 +233,9 @@ extern "C" int mq_control_Director_status(void* u, const mq_json*, char* out, si
 
 extern "C" int mq_control_Runtime_frame(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
-    std::snprintf(out, cap, "{\"frame\":%llu,\"entities\":%d,\"particles\":%zu,\"quit\":%s}",
+    std::snprintf(out, cap, "{\"frame\":%llu,\"entities\":%d,\"systems.particles\":%zu,\"quit\":%s}",
                   (unsigned long long)e->frame, e->scene ? e->scene->count() : 0,
-                  e->particles.size(), e->quit ? "true" : "false");
+                  e->systems.particles.size(), e->quit ? "true" : "false");
     return 0;
 }
 

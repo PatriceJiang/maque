@@ -21,10 +21,10 @@ bool Engine::world_snapshot(mq_snapshot* snap) {
     /* 粒子状态（docs/15 §4）：也是模拟状态 → 必须进快照，否则回滚后世界不一致 */
     w.pod(frame);                                     // 模拟帧号（时间位置；回滚必须一并回退）
     w.pod(rng);                                       // 引擎 RNG 状态（D2：回滚后随机序列延续）
-    w.pod((uint32_t)emitter_accum.size());
-    for (int acc : emitter_accum) w.pod((int32_t)acc);
-    w.pod((uint32_t)particles.size());
-    for (auto& p : particles) {
+    w.pod((uint32_t)systems.emitter_accum.size());
+    for (int acc : systems.emitter_accum) w.pod((int32_t)acc);
+    w.pod((uint32_t)systems.particles.size());
+    for (auto& p : systems.particles) {
         w.pod((int32_t)p.owner);
         w.pod(p.x); w.pod(p.y); w.pod(p.vx); w.pod(p.vy);
         w.pod(p.life); w.pod(p.max_life); w.pod(p.size);
@@ -55,7 +55,7 @@ void Engine::world_restore(const mq_snapshot* snap) {
             mq_physics_load_state(physics, ps, phys_size);
             off += phys_size;
         }
-        particles.clear();
+        systems.particles.clear();
         if (off + 8 <= n) {                                  // 模拟帧号
             uint64_t fr = 0;
             std::memcpy(&fr, (const uint8_t*)bytes + off, 8);
@@ -72,12 +72,12 @@ void Engine::world_restore(const mq_snapshot* snap) {
             uint32_t acount = 0;
             std::memcpy(&acount, (const uint8_t*)bytes + off, 4);
             off += 4;
-            emitter_accum.clear();
+            systems.emitter_accum.clear();
             for (uint32_t i = 0; i < acount && off + 4 <= n; ++i) {
                 int32_t v = 0;
                 std::memcpy(&v, (const uint8_t*)bytes + off, 4);
                 off += 4;
-                emitter_accum.push_back(v);
+                systems.emitter_accum.push_back(v);
             }
         }
         if (off + 4 <= n) {
@@ -85,10 +85,10 @@ void Engine::world_restore(const mq_snapshot* snap) {
             std::memcpy(&pcount, (const uint8_t*)bytes + off, 4);
             off += 4;
             if (pcount < 100000) {
-                particles.reserve(pcount);
+                systems.particles.reserve(pcount);
                 for (uint32_t i = 0; i < pcount; ++i) {
-                    if (off + sizeof(Particle) - sizeof(int) > n) break;
-                    Particle p{};
+                    if (off + sizeof(SystemsRuntime::Particle) - sizeof(int) > n) break;
+                    SystemsRuntime::Particle p{};
                     std::memcpy(&p.owner, (const uint8_t*)bytes + off, 4); off += 4;
                     std::memcpy(&p.x, (const uint8_t*)bytes + off, 4); off += 4;
                     std::memcpy(&p.y, (const uint8_t*)bytes + off, 4); off += 4;
@@ -100,7 +100,7 @@ void Engine::world_restore(const mq_snapshot* snap) {
                     std::memcpy(&p.r, (const uint8_t*)bytes + off, 4); off += 4;
                     std::memcpy(&p.g, (const uint8_t*)bytes + off, 4); off += 4;
                     std::memcpy(&p.b, (const uint8_t*)bytes + off, 4); off += 4;
-                    particles.push_back(p);
+                    systems.particles.push_back(p);
                 }
             }
         }
@@ -146,7 +146,7 @@ uint64_t Engine::world_checksum() {
     h ^= instance_checksum() * 1099511628211ull;      // 实例结构（docs/32 §6.3/§8）
     h ^= global_checksum() * 1099511628211ull;        // 全局状态（空 → 0，零回归）
     if (physics) h ^= mq_physics_checksum(physics) * 1099511628211ull;
-    for (auto& p : particles) {
+    for (auto& p : systems.particles) {
         h ^= (uint64_t)(int64_t)(p.x * 4096.0F); h *= 1099511628211ull;
         h ^= (uint64_t)(int64_t)(p.y * 4096.0F); h *= 1099511628211ull;
         h ^= (uint64_t)(int64_t)(p.life * 4096.0F); h *= 1099511628211ull;

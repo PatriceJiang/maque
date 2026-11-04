@@ -15,7 +15,7 @@ extern "C" int mq_control_World_checksum(void* u, const mq_json*, char* out, siz
                   (unsigned long long)e->frame,
                   (unsigned long long)(e->scene ? e->scene->checksum(*e) : 0),
                   (unsigned long long)(e->physics ? mq_physics_checksum(e->physics) : 0),
-                  e->particles.size());
+                  e->systems.particles.size());
 
     return 0;
 }

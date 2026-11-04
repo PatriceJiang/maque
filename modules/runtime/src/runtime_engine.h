@@ -51,6 +51,10 @@ struct SystemsRuntime {
     struct Scheduled { std::string handler; float interval, remaining; bool repeat; };
     std::vector<Scheduled> schedules;
     std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
+    struct Particle { int owner = -1; float x = 0, y = 0, vx = 0, vy = 0, life = 0, max_life = 1; float size = 2; float r = 1, g = 1, b = 1; };
+    std::vector<Particle> particles;
+    std::vector<int> emitter_accum;                        // 每个发射器的发射累加器（按实体 id 排序使用）
+    uint32_t max_particles = 2048;
 };
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
@@ -172,10 +176,6 @@ struct Engine {
         return -1;
     }
     /* 粒子（docs/15 §4）：CPU、确定性（引擎 RNG）、池化（docs/07 §8） */
-    struct Particle { int owner = -1; float x = 0, y = 0, vx = 0, vy = 0, life = 0, max_life = 1; float size = 2; float r = 1, g = 1, b = 1; };
-    std::vector<Particle> particles;
-    std::vector<int> emitter_accum;                        // 每个发射器的发射累加器（按实体 id 排序使用）
-    uint32_t max_particles = 2048;
     std::vector<Ball> balls;                                // 与物理世界对应的实体集合（按 id 升序）
     mq_physics_world* physics = nullptr;                    // 确定性 2D 求解器（docs/15 §3）
     mq_nav_world*     nav = nullptr;                        // 确定性 2D 网格寻路（docs/15 导航）

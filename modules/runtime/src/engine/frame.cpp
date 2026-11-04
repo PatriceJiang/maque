@@ -288,7 +288,7 @@ void Engine::step_frame(bool render_frame) {
         }
         { MQ_TRACY_ZONE_N(anim, "anim.step"); anim_step(dt); }           // 动画采样写回（docs/15 §2）
         { shader_pass_step(dt); }                                        // 场景 shader pass 时间推进（docs/13）
-        { MQ_TRACY_ZONE_N(anim, "particles"); particles_step(dt); }      // 粒子推进（docs/15 §4）
+        { MQ_TRACY_ZONE_N(anim, "systems.particles"); particles_step(dt); }      // 粒子推进（docs/15 §4）
         { MQ_TRACY_ZONE_N(nav, "nav.step"); nav_step(); }                // 导航代理推进（A* + 追踪）
         { MQ_TRACY_ZONE_N(physics, "physics.step"); physics_components_step(dt); }   // 组件驱动物理
         flush_pending_destroy();                         // node.destroy()：帧边界统一销毁
@@ -318,7 +318,7 @@ void Engine::step_frame(bool render_frame) {
      * 哈希覆盖实体树/组件 blob/派生世界矩阵；动画/粒子/Spine/shader/ImGui/输入/截图一律视为动态。 */
     if (scene) {
         const bool visual_dynamic =
-            gltf_dynamic || !spine_rt.items.empty() || !particles.empty() || has_shader_pass || has_shader_graph ||
+            gltf_dynamic || !spine_rt.items.empty() || !systems.particles.empty() || has_shader_pass || has_shader_graph ||
             imgui_on || imgui_backend || !shot_path.empty() || !shot_seq.empty() ||
             !frames_dir.empty() || !camera_captures.empty() || frame_capture_requested ||
             std::getenv("MAQUE_CAPTURE_WGPU") != nullptr;
@@ -540,7 +540,7 @@ void Engine::step_frame(bool render_frame) {
                 direct_present && !need_pixels && !frame_capture_requested &&
                 !std::getenv("MAQUE_CAPTURE_WGPU") &&
                 !imgui_on && !imgui_backend && !has_shader_pass && !has_shader_graph &&
-                !gltf_dynamic && spine_rt.items.empty() && particles.empty() &&
+                !gltf_dynamic && spine_rt.items.empty() && systems.particles.empty() &&
                 morph_meshes.empty() && skins3d.empty() &&
                 (render_textures.empty() || scene_visual_unchanged) && spine_meshes.empty() &&
                 iframe.pointer_count == 0 && iframe.key_count == 0 && !iframe.resized;
@@ -626,7 +626,7 @@ void Engine::step_frame(bool render_frame) {
                 direct_present && !need_pixels && !frame_capture_requested &&
                 !std::getenv("MAQUE_CAPTURE_WGPU") &&
                 !imgui_on && !imgui_backend && !has_shader_pass && !has_shader_graph &&
-                spine_meshes.empty() && particles.empty() && render_textures.empty() &&
+                spine_meshes.empty() && systems.particles.empty() && render_textures.empty() &&
                 iframe.pointer_count == 0 && iframe.key_count == 0 && !iframe.resized;
             if (idle_ok) {
                 uint64_t h = 1099511628211ull;

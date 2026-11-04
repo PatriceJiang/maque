@@ -10,15 +10,15 @@ void Engine::particles_step(float dt) {
     if (!scene) return;
     /* 推进已有粒子（按生成顺序；与实体无关，顺序稳定） */
     size_t w = 0;
-    for (size_t i = 0; i < particles.size(); ++i) {
-        Particle& p = particles[i];
+    for (size_t i = 0; i < systems.particles.size(); ++i) {
+        SystemsRuntime::Particle& p = systems.particles[i];
         p.life += dt;
         if (p.life >= p.max_life) continue;
         p.vy += 0.0F;                                  // 重力在下面按发射器参数施加
         p.x += p.vx * dt; p.y += p.vy * dt;
-        particles[w++] = p;
+        systems.particles[w++] = p;
     }
-    particles.resize(w);
+    systems.particles.resize(w);
 
     /* 发射（按实体 id 升序 → 确定性；RNG 为引擎 RNG） */
     std::vector<int> ids;
@@ -36,27 +36,27 @@ void Engine::particles_step(float dt) {
             const float r = pe->r, g = pe->g, b = pe->b;
             const uint32_t max_count = pe->max_count;
             /* 其它粒子的重力（按各自发射器；用 owner 记录） */
-            for (auto& p : particles) if (p.owner == id) p.vy += gravity * dt;
-            /* 累加器（每实体一份，存在 emitter_accum；按 id 定位） */
-            while ((int)emitter_accum.size() <= id) emitter_accum.push_back(0);
-            emitter_accum[id] += (int)(rate * dt * 1024.0F);        // 定点累加（确定性，避免浮点漂移）
-            const int per_emit = emitter_accum[id] / 1024;
-            emitter_accum[id] -= per_emit * 1024;
+            for (auto& p : systems.particles) if (p.owner == id) p.vy += gravity * dt;
+            /* 累加器（每实体一份，存在 systems.emitter_accum；按 id 定位） */
+            while ((int)systems.emitter_accum.size() <= id) systems.emitter_accum.push_back(0);
+            systems.emitter_accum[id] += (int)(rate * dt * 1024.0F);        // 定点累加（确定性，避免浮点漂移）
+            const int per_emit = systems.emitter_accum[id] / 1024;
+            systems.emitter_accum[id] -= per_emit * 1024;
             for (int i = 0; i < per_emit; ++i) {
-                if (particles.size() >= max_particles) break;
+                if (systems.particles.size() >= systems.max_particles) break;
                 uint32_t alive_owner = 0;
-                for (auto& p : particles) if (p.owner == id) ++alive_owner;
+                for (auto& p : systems.particles) if (p.owner == id) ++alive_owner;
                 if (alive_owner >= max_count) break;
                 const float ang = (next_rng() / 4294967296.0F) * 6.28318530718F;
                 const float mag = speed * (1.0F - spread * (next_rng() / 4294967296.0F));
-                Particle p;
+                SystemsRuntime::Particle p;
                 p.owner = id;
                 p.x = e->world_x; p.y = e->world_y;
                 p.vx = std::cos(ang) * mag;
                 p.vy = std::sin(ang) * mag;
                 p.max_life = life > 0 ? life : 1.0F;
                 p.size = size; p.r = r; p.g = g; p.b = b;
-                particles.push_back(p);
+                systems.particles.push_back(p);
             }
         }
     }

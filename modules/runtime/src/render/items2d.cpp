@@ -7,7 +7,7 @@ namespace maque::rt {
 
 void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
     /* 粒子（docs/15 §4）：只读提取，alpha 随寿命衰减；在实体图元之后按稳定顺序输出 */
-    for (auto& p : eng.particles) {
+    for (auto& p : eng.systems.particles) {
         const float t = p.max_life > 0 ? p.life / p.max_life : 1.0F;
         mq_renderer_item it{};
         it.x = p.x; it.y = (float)eng.H - p.y; it.size = p.size;

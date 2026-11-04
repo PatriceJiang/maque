@@ -263,7 +263,7 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     agent_paths.clear();
     node_events.clear();
     physics_role_bodies.clear();
-    particles.clear();
+    systems.particles.clear();
     if (audio) {
         for (auto& kv : audio_clips) mq_audio_clip_release(kv.second);
         audio_clips.clear();
