@@ -302,6 +302,10 @@ double cfg_field(Engine* eng, const char* path);
 bool read_sim_scenario(mq_vfs* vfs, const char* path, std::string& out);
 bool read_f32(const mq_type_desc* d, const void* blob, const char* name, float* out);
 bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba);
+/* 事件 kind → 处理器名 → 总线广播（多脚本/多语言的唯一事件入口；定义在输入分发段）。 */
+int dispatch_event(Engine& eng, int kind, double a, double b, double c, const char* text);
+/* 模块/包路径规范化（docs/34 P0；定义在 script/module.cpp）。 */
+std::string normalize_module_rel(const std::string& in);
 void read_color(const mq_type_desc* d, const void* base, const char* field, math::Color* out);
 void build_cube(std::vector<float>& verts, std::vector<uint32_t>& indices);
 

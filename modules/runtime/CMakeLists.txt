@@ -22,7 +22,9 @@ add_library(maque_runtime STATIC
     src/render/extract3d.cpp src/render/text.cpp
     # 系统（动画/音频/粒子/导航）与诊断
     src/systems/anim.cpp src/systems/audio.cpp src/systems/particles.cpp src/systems/nav.cpp
-    src/engine/tracy.cpp)
+    src/engine/tracy.cpp
+    # 脚本宿主（模块 VM）
+    src/script/module.cpp)
 add_library(maque::runtime ALIAS maque_runtime)
 target_include_directories(maque_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
