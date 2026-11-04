@@ -277,6 +277,17 @@ void attach_component(Engine& eng, int idx, const char* type_name);
 void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& blob);
 void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob);
 
+/* 贴图路径里的 sampler 后缀（plans/20）：
+ * `textures/x.png#wrap=clamp,mirror&filter=nearest` —— '#' 前是 VFS 路径，
+ * wrap/filter 落到 create_texture2。缓存 key 用完整字符串（同图不同 sampler = 两个纹理）。 */
+struct TexPathParams {
+    std::string vfs;
+    int wrap_u = 0, wrap_v = 0;      // 0=repeat 1=clamp 2=mirror
+    int filter = 1;                  // 0=nearest 1=linear
+    bool wrap_set = false, filter_set = false;
+};
+TexPathParams parse_tex_path(const std::string& ref);
+
 /* ---- 跨 TU 的内部辅助（原匿名命名空间里"到处可见"，拆分后必须显式声明）---- */
 const std::string* read_str(const mq_type_desc* d, const void* blob, const char* name);
 bool resolve_field_path(Engine& eng, int entity, const std::string& path,
