@@ -277,5 +277,14 @@ void attach_component(Engine& eng, int idx, const char* type_name);
 void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& blob);
 void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob);
 
+/* ---- 跨 TU 的内部辅助（原匿名命名空间里"到处可见"，拆分后必须显式声明）---- */
+const std::string* read_str(const mq_type_desc* d, const void* blob, const char* name);
+bool resolve_field_path(Engine& eng, int entity, const std::string& path,
+                        const mq_type_desc** out_type, const mq_field_desc** out_field,
+                        void** out_base);
+int  ui_hit_entity(Engine& eng, float px, float py, mq_input_target* out);
+int  runtime_hit_test(void* user, const mq_input_event* ev, mq_input_target* out);
+double cfg_field(Engine* eng, const char* path);
+bool read_sim_scenario(mq_vfs* vfs, const char* path, std::string& out);
 
 }  // namespace maque::rt

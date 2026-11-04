@@ -3,7 +3,15 @@
 # 只有 modules/runtime 的 .cpp 包含；公开面仍是 include/runtime/*.h（schema 生成的 shim）。
 add_library(maque_runtime STATIC
     src/runtime.cpp src/gltf_model.cpp
-    src/runtime_common.h src/runtime_scene.h src/runtime_engine.h)
+    src/runtime_common.h src/runtime_scene.h src/runtime_engine.h
+    # 宿主 API（schema api_list 的 310 个实现）按前缀分域
+    src/api/system.cpp src/api/node.cpp src/api/ui.cpp src/api/scene.cpp
+    src/api/spine.cpp src/api/imgui.cpp src/api/physics.cpp src/api/nav.cpp
+    src/api/audio.cpp src/api/storage.cpp
+    # 控制面（schema control_list 的 57 个方法）按域
+    src/control/system.cpp src/control/scene.cpp src/control/world.cpp
+    src/control/render.cpp src/control/storage.cpp src/control/audio.cpp
+    src/control/input.cpp)
 add_library(maque::runtime ALIAS maque_runtime)
 target_include_directories(maque_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
