@@ -1,8 +1,13 @@
-# 11 · scene（节点树 / ECS 双视图）
+# 11 · scene（节点树 · Node + Components）
 
+> ⚠️ **已收口（ADR-0003 2026-10 修订）**：本计划中的 `modules/world/ecs`、bake、archetype/SoA 双视图
+> **不实现**。实际引擎（`modules/runtime`）只有一棵显式 `SceneNode { parent, children[], components }` 树，
+> 全树遍历走 `Scene::visit()`（前序 DFS），每帧 `update_world()` 累积派生世界变换/可见性；
+> `.scn` 格式不变。下文 ECS/bake 段落仅作历史设计记录，勿照此新增存储层。
+>
 > Owner agent：`agent-scene`　上游：`docs/12`（主）、`docs/06`、`docs/07`、`docs/02`、`docs/10`、`docs/00`。
 > 铁律：**接口先冻结，测试先行（红→绿→重构）**；接口不完备不得进入实现。
-> 本模块所有权：`Scene = Node = Prefab` 统一、节点树 ⇄ ECS 双视图、实例化与引用重绑、确定化生命周期。
+> 本模块所有权：`Scene = Node = Prefab` 统一、节点树访问、实例化与引用重绑、确定化生命周期。
 
 ## 1. 模块概述
 

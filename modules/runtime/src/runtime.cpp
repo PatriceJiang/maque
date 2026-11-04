@@ -81,27 +81,54 @@ namespace {
     ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v2, member) + sizeof((api)->member) && \
      (api)->member)
 
-struct Entity {
+/* 场景树节点（Node + Components）——**不是 ECS 实体**。
+ * 层级是显式的 parent + 有序 children（升序 id = 声明/创建序），组件是反射 blob。
+ * 没有 archetype/系统调度：每帧只做一次确定性的树访问（Scene::visit），
+ * 由访问者按角色读取组件。id 只是脚本/快照/控制面使用的稳定键，不是存储槽。 */
+struct SceneNode {
     std::string name;
     int parent = -1;
-    /* 世界坐标：**每帧由 flatten_world() 从节点树展平写到这里的派生缓存**（不是位置真相！
+    std::vector<int> children;                 // 有序：id 升序（声明序；旧 childAt 语义不变）
+    /* 无 Transform2D 的节点（纯 UI/空节点）的局部位置兜底。
+     * 有 Transform2D 时位置真相在组件里（与 docs/12 一致）。 */
+    float local_x = 0.0F, local_y = 0.0F;
+    /* 世界坐标：**每帧由 Scene::update_world() 的树访问写到这里的派生缓存**（不是位置真相！
      * 位置真相 = Transform 组件里的局部坐标；改位置请经 node/entity API 写组件，
      * 直接改 world_x/y 会在下一帧被覆盖）。 */
     float world_x = 0, world_y = 0;
-    /* 3D 世界矩阵（列主序，派生缓存）：每帧由 flatten_world3d() 从节点树（+ glTF 片段派生姿态）
+    /* 3D 世界矩阵（列主序，派生缓存）：同一趟树访问（+ glTF 片段派生姿态）
      * 重算；不是位置真相（真相在 scene.Transform3D.local / .clip.json 采样里）。
      * 平级场景 world_m == m4_from_trs(local)，旧场景零漂移（plans/22 §6.3）。 */
     float world_m[16] = { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
                           0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F };
-    /* 节点属性（active/scale/angle/opacity）：active/scale/angle/opacity 影响
-     * 自身与子树；z_index 参与 UI/绘制稳定排序。全部进快照与校验和（docs/10）。 */
+    /* 节点属性（active/scale/angle/opacity）：影响自身与子树；z_index 参与 UI/绘制稳定排序。
+     * local_* 进快照与校验和；world_* 是同一趟树访问派生的有效值，不进快照。 */
     bool  active = true;
     float scale = 1.0F;
     float angle = 0.0F;                                    // 角度（度）
     float opacity = 1.0F;                                  // 0..1
     int   z_index = 0;
+    /* 派生：从根累积到本节点（update_world 写；O(1) 读取，不再沿父链重复上溯）。 */
+    bool  visible = true;
+    float world_angle = 0.0F;
+    float world_scale = 1.0F;
+    float world_opacity = 1.0F;
+    int   depth = 0;
     std::unordered_map<uint32_t, std::vector<uint8_t>> comps;   // type_id → blob
 };
+
+/* 已知内置组件：按 schema 生成的 type_id 判型后直接访问生成 struct。
+ * 调用方应优先用它，而不是 mq_reflect_field + offset。 */
+template <class T>
+inline const T* as_component(const mq_type_desc* d, const void* p) {
+    if (!d || !p || d->type_id != mq::schema::type_id_v<T>) return nullptr;
+    return std::launder(reinterpret_cast<const T*>(p));
+}
+template <class T>
+inline T* as_component_mut(const mq_type_desc* d, void* p) {
+    if (!d || !p || d->type_id != mq::schema::type_id_v<T>) return nullptr;
+    return std::launder(reinterpret_cast<T*>(p));
+}
 
 /* ---- glTF 片段 / 蒙皮 / morph 运行时状态（plans/22 §6）----
  * 全部是**派生缓存**：真相仍是场景组件（Transform3D.local / AnimationPlayer 字段 / 资源文件），
@@ -153,135 +180,64 @@ struct MorphMesh {
     bool warned_no_update = false;
 };
 
-/* ---- 热路径字段布局：按类型解析一次，之后只按枚举取偏移 ----------------------
- * 为什么：引擎每帧都要从组件 blob 里读一批**固定名字**的字段（transform/精灵/UI/文本），
- * 而 `mq_reflect_field` 是**线性 strcmp**、`mq_reflect_type_by_id` 是哈希 —— 这些是
- * 类型级静态信息，每帧每实体重查一遍纯属浪费（且把"字段名"散落在热循环里）。
- * 这里把用到的字段按类型解析一次存成偏移表：热路径只有指针加法与读取，不再进反射。
- *
- * 缓存挂在 Engine 上（多实例各一份，无全局可变状态）；键是 type_id（schema 稳定）。
- * ⚠️ `hot_layout()` 返回的指针只在下一次调用前有效（vector 可能重分配）。
- *
- * 新增热路径字段：在 `Fld` 加枚项 + `kFldNames` 加一行即可，解析逻辑不用改。 */
-enum Fld : uint8_t {
-    F_X, F_Y, F_Z, F_WIDTH, F_HEIGHT, F_RADIUS,                 /* 位置/尺寸 */
-    F_R, F_G, F_B, F_A, F_TEXTURE, F_MATERIAL,                  /* 精灵 */
-    F_TEXT, F_FONT, F_FONT_SIZE, F_MAX_WIDTH, F_MAX_HEIGHT, F_LINE_SPACING,   /* 文本 */
-    F_COLOR, F_ALIGN, F_ALIGN_H, F_WRAP, F_WRAP_MODE, F_OVERFLOW,
-    F_BOLD, F_ITALIC, F_PARSE_TAGS,
-    F_OUTLINE_SIZE, F_OUTLINE_COLOR, F_OUTLINE_R, F_OUTLINE_G, F_OUTLINE_B, F_OUTLINE_A,
-    F_SHADOW_X, F_SHADOW_Y, F_SHADOW_R, F_SHADOW_G, F_SHADOW_B, F_SHADOW_A,
-    F_TEXT_W, F_TEXT_H, F_LINE_COUNT, F_TEXT_SIZE, F_CONTENT_SIZE, F_FIT_FONT_SIZE,
-    F_OFFSET_MIN, F_OFFSET_MAX, F_Z_INDEX,                      /* ui.Control */
-    F_MODE, F_SPACING, F_COLUMNS, F_PADDING, F_VALUE, F_PHASE,  /* ui.Layout/Progress */
-    F_INSET_LEFT, F_INSET_TOP, F_INSET_RIGHT, F_INSET_BOTTOM, F_RESOLVED_INSET,
-    F_CLIP, F_PLAYING, F_SPEED, F_TIME, F_DURATION, F_CLIPS,    /* 动画播放器 */
-    F_LOCAL, F_POSITION, F_POS_X, F_POS_Y,                      /* 嵌套变换 */
-    F_COUNT
-};
-struct HotLayout {
-    uint32_t type_id = 0;
-    uint32_t role = 0;
-    bool     is_t3d = false;
-    int32_t  t2d_x = -1, t2d_y = -1;      /* transform2d：扁平 x / y 的 blob 内偏移 */
-    int32_t  t2d_local = -1;              /* transform2d：local 字段偏移（嵌套形态） */
-    int32_t  t2d_px = -1, t2d_py = -1;    /* local.position.x / y（已含 local 偏移） */
-    int32_t  t3d_local = -1;              /* scene.Transform3D.local 偏移 */
-    const mq_field_desc* f[F_COUNT] = {}; /* 常用字段（类型没声明 → nullptr） */
-};
-
-/* 热路径字段名表（只在**首次遇到某类型**时扫一遍，不在帧内执行）。 */
-struct FldName { const char* name; Fld id; };
-static const FldName kFldNames[] = {
-    {"x", F_X}, {"y", F_Y}, {"z", F_Z}, {"width", F_WIDTH}, {"height", F_HEIGHT},
-    {"radius", F_RADIUS}, {"r", F_R}, {"g", F_G}, {"b", F_B}, {"a", F_A},
-    {"texture", F_TEXTURE}, {"material", F_MATERIAL},
-    {"text", F_TEXT}, {"font", F_FONT}, {"font_size", F_FONT_SIZE},
-    {"max_width", F_MAX_WIDTH}, {"max_height", F_MAX_HEIGHT}, {"line_spacing", F_LINE_SPACING},
-    {"color", F_COLOR}, {"align", F_ALIGN}, {"align_h", F_ALIGN_H},
-    {"wrap", F_WRAP}, {"wrap_mode", F_WRAP_MODE}, {"overflow", F_OVERFLOW},
-    {"bold", F_BOLD}, {"italic", F_ITALIC}, {"parse_tags", F_PARSE_TAGS},
-    {"outline_size", F_OUTLINE_SIZE}, {"outline_color", F_OUTLINE_COLOR},
-    {"outline_r", F_OUTLINE_R}, {"outline_g", F_OUTLINE_G},
-    {"outline_b", F_OUTLINE_B}, {"outline_a", F_OUTLINE_A},
-    {"shadow_x", F_SHADOW_X}, {"shadow_y", F_SHADOW_Y}, {"shadow_r", F_SHADOW_R},
-    {"shadow_g", F_SHADOW_G}, {"shadow_b", F_SHADOW_B}, {"shadow_a", F_SHADOW_A},
-    {"text_w", F_TEXT_W}, {"text_h", F_TEXT_H}, {"line_count", F_LINE_COUNT},
-    {"text_size", F_TEXT_SIZE}, {"content_size", F_CONTENT_SIZE},
-    {"fit_font_size", F_FIT_FONT_SIZE},
-    {"offset_min", F_OFFSET_MIN}, {"offset_max", F_OFFSET_MAX}, {"z_index", F_Z_INDEX},
-    {"mode", F_MODE}, {"spacing", F_SPACING}, {"columns", F_COLUMNS}, {"padding", F_PADDING},
-    {"value", F_VALUE}, {"phase", F_PHASE},
-    {"inset_left", F_INSET_LEFT}, {"inset_top", F_INSET_TOP},
-    {"inset_right", F_INSET_RIGHT}, {"inset_bottom", F_INSET_BOTTOM},
-    {"resolved_inset", F_RESOLVED_INSET},
-    {"clip", F_CLIP}, {"playing", F_PLAYING}, {"speed", F_SPEED}, {"time", F_TIME},
-    {"duration", F_DURATION}, {"clips", F_CLIPS},
-    {"local", F_LOCAL}, {"position", F_POSITION}, {"position_x", F_POS_X}, {"position_y", F_POS_Y},
-};
-
-/* ---- 已解析字段的读取/写入（与 read_num/write_num 同语义，只是不再按名字查） ---- */
-float read_num_at(const mq_field_desc* f, const void* base, float def) {
+/* 已解析字段的直读/直写（生成访问器优先；容器/未知类型回退 offset）。 */
+static inline bool field_get_bool(const mq_field_desc* f, const void* p, bool def = false) {
     if (!f) return def;
-    switch (f->kind) {
-        case MQ_TK_F32:  return *(const float*)((const uint8_t*)base + f->offset);
-        case MQ_TK_F64:  return (float)*(const double*)((const uint8_t*)base + f->offset);
-        case MQ_TK_I8:   return (float)*(const int8_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_U8:   return (float)*(const uint8_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_I16:  return (float)*(const int16_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_U16:  return (float)*(const uint16_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_I32:  return (float)*(const int32_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_U32:  return (float)*(const uint32_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_I64:  return (float)*(const int64_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_U64:  return (float)*(const uint64_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_BOOL: return *(const bool*)((const uint8_t*)base + f->offset) ? 1.0F : 0.0F;
-        case MQ_TK_ENUM: {
-            const uint8_t* p = (const uint8_t*)base + f->offset;
-            if (f->count == 1) return (float)*(const int8_t*)p;
-            if (f->count == 2) return (float)*(const int16_t*)p;
-            return (float)*(const int32_t*)p;
-        }
-        default: return def;
-    }
+    if (f->accessor && f->accessor->get_f64) return f->accessor->get_f64(p) != 0.0;
+    return f->kind == MQ_TK_BOOL ? *(const bool*)((const uint8_t*)p + f->offset) : def;
 }
-bool write_num_at(const mq_field_desc* f, void* base, double v) {
+static inline void field_set_bool(const mq_field_desc* f, void* p, bool v) {
+    if (!f) return;
+    if (f->accessor && f->accessor->set_f64) { f->accessor->set_f64(p, v ? 1.0 : 0.0); return; }
+    if (f->kind == MQ_TK_BOOL) *(bool*)((uint8_t*)p + f->offset) = v;
+}
+static inline int32_t field_get_i32(const mq_field_desc* f, const void* p, int32_t def = 0) {
+    if (!f) return def;
+    if (f->accessor && f->accessor->get_f64) return (int32_t)f->accessor->get_f64(p);
+    return f->kind == MQ_TK_I32 ? *(const int32_t*)((const uint8_t*)p + f->offset) : def;
+}
+static inline void field_set_i32(const mq_field_desc* f, void* p, int32_t v) {
+    if (!f) return;
+    if (f->accessor && f->accessor->set_f64) { f->accessor->set_f64(p, (double)v); return; }
+    if (f->kind == MQ_TK_I32) *(int32_t*)((uint8_t*)p + f->offset) = v;
+}
+static inline uint32_t field_get_u32(const mq_field_desc* f, const void* p, uint32_t def = 0) {
+    if (!f) return def;
+    if (f->accessor && f->accessor->get_f64) return (uint32_t)f->accessor->get_f64(p);
+    return f->kind == MQ_TK_U32 ? *(const uint32_t*)((const uint8_t*)p + f->offset) : def;
+}
+static inline void field_set_u32(const mq_field_desc* f, void* p, uint32_t v) {
+    if (!f) return;
+    if (f->accessor && f->accessor->set_f64) { f->accessor->set_f64(p, (double)v); return; }
+    if (f->kind == MQ_TK_U32) *(uint32_t*)((uint8_t*)p + f->offset) = v;
+}
+static inline float field_get_f32(const mq_field_desc* f, const void* p, float def = 0.0F) {
+    if (!f) return def;
+    if (f->accessor && f->accessor->get_f64) return (float)f->accessor->get_f64(p);
+    return f->kind == MQ_TK_F32 ? *(const float*)((const uint8_t*)p + f->offset) : def;
+}
+static inline void field_set_f32(const mq_field_desc* f, void* p, float v) {
+    if (!f) return;
+    if (f->accessor && f->accessor->set_f64) { f->accessor->set_f64(p, (double)v); return; }
+    if (f->kind == MQ_TK_F32) *(float*)((uint8_t*)p + f->offset) = v;
+}
+static inline bool field_set_str(const mq_field_desc* f, void* p, const char* v) {
     if (!f) return false;
-    uint8_t* p = (uint8_t*)base + f->offset;
-    switch (f->kind) {
-        case MQ_TK_ENUM: {
-            if (f->count == 1) { *(int8_t*)p = (int8_t)v; return true; }
-            if (f->count == 2) { *(int16_t*)p = (int16_t)v; return true; }
-            *(int32_t*)p = (int32_t)v; return true;
-        }
-        case MQ_TK_F32:  *(float*)p = (float)v; return true;
-        case MQ_TK_F64:  *(double*)p = v; return true;
-        case MQ_TK_I8:   *(int8_t*)p = (int8_t)v; return true;
-        case MQ_TK_U8:   *(uint8_t*)p = (uint8_t)v; return true;
-        case MQ_TK_I16:  *(int16_t*)p = (int16_t)v; return true;
-        case MQ_TK_U16:  *(uint16_t*)p = (uint16_t)v; return true;
-        case MQ_TK_I32:  *(int32_t*)p = (int32_t)v; return true;
-        case MQ_TK_U32:  *(uint32_t*)p = (uint32_t)v; return true;
-        case MQ_TK_I64:  *(int64_t*)p = (int64_t)v; return true;
-        case MQ_TK_U64:  *(uint64_t*)p = (uint64_t)v; return true;
-        case MQ_TK_BOOL: *(bool*)p = v != 0.0; return true;
-        default: return false;
-    }
+    if (f->accessor && f->accessor->set_str) { f->accessor->set_str(p, v); return true; }
+    if (f->kind == MQ_TK_STRING) { *(std::string*)((uint8_t*)p + f->offset) = v ? v : ""; return true; }
+    return false;
 }
-/* 已解析字段的便捷读取（默认值版；类型不符就返回默认值，与 read_f32 一致）。 */
-static inline float f32_at(const mq_field_desc* f, const uint8_t* p, float def) {
-    return (f && f->kind == MQ_TK_F32) ? *(const float*)(p + f->offset) : def;
+/* 结构体/字符串/数组字段的指针（生成访问器优先；无访问器时回退 offset）。 */
+static inline const void* field_ptr(const mq_field_desc* f, const void* p) {
+    if (!f) return nullptr;
+    if (f->accessor && f->accessor->get_ptr) return f->accessor->get_ptr(p);
+    return (const uint8_t*)p + f->offset;
 }
-static inline const std::string* str_at(const mq_field_desc* f, const uint8_t* p) {
-    return (f && f->kind == MQ_TK_STRING) ? (const std::string*)(p + f->offset) : nullptr;
+static inline void* field_ptr_mut(const mq_field_desc* f, void* p) {
+    if (!f) return nullptr;
+    if (f->accessor && f->accessor->get_mut_ptr) return f->accessor->get_mut_ptr(p);
+    return (uint8_t*)p + f->offset;
 }
-/* Vec2/Vec4 之类的小结构体字段（沿用旧实现的语义：只要是结构体就按 float 数组读）。 */
-static inline float* vec_at(const mq_field_desc* f, uint8_t* p) {
-    return f ? (float*)(p + f->offset) : nullptr;
-}
-static inline const float* vec_at(const mq_field_desc* f, const uint8_t* p) {
-    return f ? (const float*)(p + f->offset) : nullptr;
-}
-
 struct Engine;
 struct Scene;
 struct SnapshotWriter;
@@ -306,7 +262,6 @@ std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name, c
 void accumulate_node_attrs(Engine& eng, int idx, float& angle_deg, float& scale, float& opacity);
 bool node_active_effective(Engine& eng, int idx);
 /* 热路径布局缓存（定义见 Engine 之后）：按 type_id 解析一次，热路径不再查反射。 */
-const HotLayout* hot_layout(Engine& eng, uint32_t type_id);
 float read_num(const mq_type_desc* d, const void* base, const char* field, float def);
 bool  write_num(const mq_type_desc* d, void* base, const char* field, double v);
 void  slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px);
@@ -320,19 +275,21 @@ void destroy_blob(Engine& eng, uint32_t type_id, std::vector<uint8_t>& blob);
 struct Scene {
     scn::Scene desc;
     std::string text_;
-    /* 实体 id 采用**单调递增**（不复用槽位）：docs/02 R4/docs/07 §3 要求陈旧句柄不得
+    /* 节点 id 采用**单调递增**（不复用槽位）：docs/02 R4/docs/07 §3 要求陈旧句柄不得
      * 静默指向新对象；不复用即从根上消除"销毁后 id 指到别人"的风险。
-     * （世代号在等价意义上内化于 id：同一个 id 永恒指向同一个实体或不存在。） */
+     * （世代号在等价意义上内化于 id：同一个 id 永恒指向同一个节点或不存在。） */
     int next_id = 0;
     Engine* eng = nullptr;                  // 组件析构需要反射 ctx（remove/重建时）
-    std::unordered_map<int, Entity> ents;
+    std::unordered_map<int, SceneNode> nodes;   // id → 节点（id 只是稳定键；层级看 children）
+    std::vector<int> roots;                    // 根节点 id（升序）
+    std::vector<std::pair<int, int>> visit_stack_;   // visit 的 DFS 栈（复用容量，不每帧分配）
 
     Scene() = default;
     ~Scene() { destroy_all(); }
     Scene(const Scene&) = delete; Scene& operator=(const Scene&) = delete;
     Scene(Scene&& o) noexcept
         : desc(std::move(o.desc)), text_(std::move(o.text_)), next_id(o.next_id), eng(o.eng),
-          ents(std::move(o.ents)) {
+          nodes(std::move(o.nodes)), roots(std::move(o.roots)) {
         o.eng = nullptr;             // 所有权转移：源对象不得再析构已移交的资源
     }
     Scene& operator=(Scene&& o) noexcept {
@@ -342,34 +299,64 @@ struct Scene {
         text_ = std::move(o.text_);
         next_id = o.next_id;
         eng = o.eng; o.eng = nullptr;
-        ents = std::move(o.ents);
+        nodes = std::move(o.nodes);
+        roots = std::move(o.roots);
         return *this;
     }
     /* 析构全部组件 blob（含动态成员）。 */
     void destroy_all() {
-        if (!eng) { ents.clear(); return; }
-        for (auto& [k, ent] : ents)
+        if (!eng) { nodes.clear(); roots.clear(); return; }
+        for (auto& [k, ent] : nodes)
             for (auto& [t, b] : ent.comps) destroy_blob(*eng, t, b);
-        ents.clear();
+        nodes.clear();
+        roots.clear();
     }
 
     bool deserialize(Engine& eng, const std::string& text);
     void instantiate(Engine& eng);
     int  spawn();
-    Entity* at(int index);
+    SceneNode* at(int index);
+    const SceneNode* at(int index) const;
     void remove(int index);
-    int  count() const { return (int)ents.size(); }
-    /* 每帧从**节点树**展平出世界坐标（写进 Entity::world_x/y）；树是唯一模型，这里是派生缓存。 */
-    void flatten_world(Engine& eng);
-    /* 每帧从**节点树 + glTF 片段派生姿态**展平出 3D 世界矩阵（写进 Entity::world_m，列主序）。 */
-    void flatten_world3d(Engine& eng);
-    /* 展平前的 O(N) 拓扑索引（根 + 父→子），两个 flatten 共用；成员复用容量避免每帧分配。
-     * 旧实现每个节点都重扫一遍 ents 找子节点 → O(N²)（10k 实体 ≈ 1 亿次哈希表遍历/帧）。 */
-    void build_world_index();
-    std::vector<std::pair<int, int>> flat_pairs;                  // (id, parent) 升序
-    std::vector<int> flat_roots;                                 // 根 id 升序
-    std::unordered_map<int, std::vector<int>> flat_kids;         // 父 id → 子 id 升序
-    std::vector<std::pair<int, int>> flat_stack;                 // DFS 栈 (id, parent)
+    int  count() const { return (int)nodes.size(); }
+
+    /* ---- 场景树结构（唯一层级真相；所有挂接/摘下都经这里，保持 children 有序） ---- */
+    void attach(int child, int parent);        // 挂到 parent 下（按 id 升序插入）；parent<0 = 根
+    void detach(int child);                    // 从原父（或根表）摘下，parent 置 -1
+    void rebuild_tree();                       // 从 parent 字段重建 children/roots（快照/反序列化用）
+    int  child_count(int parent) const;
+    int  child_at(int parent, int index) const;   // index 按 children 顺序（= id 升序）
+
+    /* 传统场景树访问：前序（父 → 子；兄弟按 id/声明序）。fn(id, node, depth)。
+     * 这是引擎唯一的全树遍历方式：渲染提取、世界变换累积、UI 命中、诊断 dump 都走它，
+     * 不再每帧重建"id→父"的扁平索引，也不再按 unordered_map 的哈希序扫描。 */
+    template <class Fn>
+    void visit(Fn&& fn) {
+        visit_stack_.clear();
+        visit_stack_.reserve(nodes.size());
+        for (auto it = roots.rbegin(); it != roots.rend(); ++it) visit_stack_.emplace_back(*it, 0);
+        while (!visit_stack_.empty()) {
+            const auto [id, depth] = visit_stack_.back();
+            visit_stack_.pop_back();
+            SceneNode* n = at(id);
+            if (!n) continue;
+            fn(id, *n, depth);
+            for (auto k = n->children.rbegin(); k != n->children.rend(); ++k)
+                visit_stack_.emplace_back(*k, depth + 1);
+        }
+    }
+
+    /* 整棵树 id 序列（前序；兄弟 id 升序）。整场景系统统一按树序处理，
+     * 不再各自扫 unordered_map 再排序。 */
+    void collect_preorder(std::vector<int>& out) {
+        out.clear();
+        out.reserve(nodes.size());
+        visit([&](int id, SceneNode&, int) { out.push_back(id); });
+    }
+
+    /* 每帧一趟树访问：局部 → 世界（2D 位置 + 3D 矩阵 + active/angle/scale/opacity）。 */
+    void update_world(Engine& eng);
+    void update_world3d(Engine& eng);
     uint64_t checksum(Engine& eng);     // 世界状态校验和（确定性；反射驱动）
     void encode(Engine& eng, SnapshotWriter& w);   // 世界 → 字节（二进制 codec）
     size_t decode(Engine& eng, const uint8_t* in, size_t n);
@@ -862,8 +849,6 @@ struct Engine {
     uint32_t audio_cap_channels = 2;
     double audio_cap_frac = 0.0;
     std::vector<float> audio_cap_buf;
-    /* 热路径布局缓存（见 HotLayout）：type_id → 角色字段偏移。每场景只有个位数类型。 */
-    std::vector<HotLayout> hot_layouts;
     uint32_t rng = 0;
     bool     quit = false;
     float    bg[4] = { 0.06f, 0.06f, 0.09f, 1.0f };
@@ -1217,7 +1202,7 @@ struct Engine {
     bool load_clip(const std::string& ref);                 // 载入动画片段（反射验证轨道路径）
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）
     void ui_step();                                         // UI 组件语义（layout/progress/slider/check/safearea/scroll）
-    void extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d,
+    void extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc* d,
                       std::vector<mq_renderer_item>& out, float inherit_alpha);
     void step_tweens(float dt);                             // Tween 推进（补间）
     void step_schedules(float dt);                          // 定时器推进（定时器）
@@ -1258,49 +1243,6 @@ struct Engine {
     int  restore_globals(const uint8_t* data, size_t n, size_t& off);
     uint64_t world_trail() const;                           // 校验和轨迹（失步定位）
 };
-
-/* 布局缓存查询（首次走反射，之后纯查表）。语义与逐次反射查找一致：
- * 只有字段真存在且类型为 f32 时才记偏移；Transform3D 只认全名 `scene.Transform3D`
- *（与 flatten_world3d 旧实现一致）。 */
-const HotLayout* hot_layout(Engine& eng, uint32_t type_id) {
-    for (const HotLayout& l : eng.hot_layouts)
-        if (l.type_id == type_id) return &l;
-    HotLayout l;
-    l.type_id = type_id;
-    if (const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, type_id)) {
-        l.role = d->role;
-        if (d->role & MQ_ROLE_TRANSFORM2D) {
-            const mq_field_desc* fx = mq_reflect_field(d, "x");
-            const mq_field_desc* fy = mq_reflect_field(d, "y");
-            if (fx && fy && fx->kind == MQ_TK_F32 && fy->kind == MQ_TK_F32) {
-                l.t2d_x = (int32_t)fx->offset; l.t2d_y = (int32_t)fy->offset;
-            } else if (const mq_field_desc* fl = mq_reflect_field(d, "local")) {
-                l.t2d_local = (int32_t)fl->offset;
-                if (const mq_type_desc* lt = mq_reflect_type_by_id(eng.reflect, fl->type_id))
-                    if (const mq_field_desc* fp = mq_reflect_field(lt, "position"))
-                        if (const mq_type_desc* pt = mq_reflect_type_by_id(eng.reflect, fp->type_id)) {
-                            if (const mq_field_desc* px = mq_reflect_field(pt, "x"))
-                                if (px->kind == MQ_TK_F32) l.t2d_px = (int32_t)(fp->offset + px->offset);
-                            if (const mq_field_desc* py = mq_reflect_field(pt, "y"))
-                                if (py->kind == MQ_TK_F32) l.t2d_py = (int32_t)(fp->offset + py->offset);
-                        }
-            }
-        }
-        if (d->name && std::strcmp(d->name, "scene.Transform3D") == 0) {
-            l.is_t3d = true;
-            if (const mq_field_desc* lf = mq_reflect_field(d, "local")) l.t3d_local = (int32_t)lf->offset;
-        }
-        /* 常用字段一次性解析（仅在**该类型首次出现**时执行；之后热路径只按枚举取指针） */
-        for (uint32_t i = 0; i < d->field_count; ++i) {
-            const mq_field_desc& fd = d->fields[i];
-            if (!fd.name) continue;
-            for (const FldName& fn : kFldNames)
-                if (std::strcmp(fd.name, fn.name) == 0) { l.f[fn.id] = &fd; break; }
-        }
-    }
-    eng.hot_layouts.push_back(l);
-    return &eng.hot_layouts.back();
-}
 
 /* ---- docs/34 P0：包 / 模块 / 实例（Engine 级单 JS VM）---- */
 
@@ -1572,7 +1514,7 @@ void construct_blob(Engine& eng, const mq_type_desc* d, std::vector<uint8_t>& bl
 
 /* 组件挂载：由**描述符**构造默认实例（schema 默认值生效）→ 引擎不硬编码组件类型。 */
 void attach_component(Engine& eng, int idx, const char* type_name) {
-    Entity* e = eng.scene->at(idx);
+    SceneNode* e = eng.scene->at(idx);
     const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, type_name);
     if (!e || !d) return;
     auto& blob = e->comps[d->type_id];
@@ -1612,12 +1554,17 @@ inline void on_fatal_signal(int sig) {
 bool read_f32(const mq_type_desc* d, const void* blob, const char* name, float* out) {
     const mq_field_desc* f = mq_reflect_field(d, name);
     if (!f || f->kind != MQ_TK_F32) return false;
-    *out = *(const float*)((const uint8_t*)blob + f->offset);
+    if (f->accessor && f->accessor->get_f64) {
+        *out = (float)f->accessor->get_f64(blob);
+        return true;
+    }
+    *out = field_get_f32(f, (const uint8_t*)blob);
     return true;
 }
 const std::string* read_str(const mq_type_desc* d, const void* blob, const char* name) {
     const mq_field_desc* f = mq_reflect_field(d, name);
     if (!f || f->kind != MQ_TK_STRING) return nullptr;
+    if (f->accessor && f->accessor->get_ptr) return (const std::string*)f->accessor->get_ptr(blob);
     return (const std::string*)((const uint8_t*)blob + f->offset);
 }
 
@@ -3789,14 +3736,12 @@ void Engine::setup_gltf_assets() {
     entity_morph_mesh.clear();
     if (!scene) return;
     std::vector<int> ids;
-    ids.reserve(scene->ents.size());
-    for (auto& [k, e] : scene->ents) ids.push_back(k);
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
     /* 名字表：唯一名 → 最小 id（重名只告警一次；动画轨道/骨架关节按名字引用实体） */
     int dup = 0;
     std::string dup_example;
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e || e->name.empty()) continue;
         auto [nit, inserted] = entity_by_name.emplace(e->name, id);
         (void)nit;
@@ -3807,7 +3752,7 @@ void Engine::setup_gltf_assets() {
                    dup, dup_example);
     int n_skin = 0, n_clip = 0, n_morph = 0, n_gltf = 0;
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         const mq_type_desc* dmesh = nullptr;
         if (auto* mb = comp_by_name(*this, id, "render.MeshRenderer", &dmesh)) {
@@ -3835,10 +3780,10 @@ void Engine::setup_gltf_assets() {
         }
         for (auto& [tid, blob] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-            if (!d || !(d->role & MQ_ROLE_ANIM_PLAYER)) continue;
-            const mq_field_desc* fc = mq_reflect_field(d, "clips");
-            if (!fc) continue;
-            for (const std::string& cp : read_string_array(fc, blob.data() + fc->offset)) {
+            const auto* ap = (d && (d->role & MQ_ROLE_ANIM_PLAYER))
+                                 ? as_component<scn::AnimationPlayer>(d, blob.data()) : nullptr;
+            if (!ap) continue;
+            for (const std::string& cp : ap->clips) {
                 ++n_clip;
                 (void)load_gclip(cp);
             }
@@ -3876,26 +3821,18 @@ void Engine::read_gltf_env() {
 /* glTF 片段采样（plans/22 §6.2）：仅处理 clips 非空的 scn.AnimationPlayer（旧 clip 通路不变）。
  * 推进播放头 → 采样（纯函数）→ 写 Engine::anim_pose（pos/rot/scale）与 morph 权重覆盖。 */
 void Engine::anim_step_gclip(int entity, const mq_type_desc* d, std::vector<uint8_t>& blob, float dt) {
-    const mq_field_desc* fc = mq_reflect_field(d, "clips");
-    if (!fc) return;
-    std::vector<std::string> paths = read_string_array(fc, blob.data() + fc->offset);
-    if (paths.empty()) return;
-    const int32_t ci = (int32_t)read_num(d, blob.data(), "clip_index", 0.0F);
-    const std::string& clip_path = paths[(ci >= 0 && (size_t)ci < paths.size()) ? (size_t)ci : 0];
+    auto* ap = as_component_mut<scn::AnimationPlayer>(d, blob.data());
+    if (!ap || ap->clips.empty()) return;
+    const int32_t ci = ap->clip_index;
+    const std::string& clip_path = ap->clips[(ci >= 0 && (size_t)ci < ap->clips.size()) ? (size_t)ci : 0];
     if (!load_gclip(clip_path)) return;
     auto cit = gclips.find(clip_path);
     if (cit == gclips.end() || cit->second.failed || cit->second.tracks.empty()) return;
     const GClip& clip = cit->second;
-    bool playing = true;
-    if (const mq_field_desc* f = mq_reflect_field(d, "playing"))
-        playing = *(const bool*)(blob.data() + f->offset);
-    bool loop = true;
-    if (const mq_field_desc* f = mq_reflect_field(d, "loop"))
-        loop = *(const bool*)(blob.data() + f->offset);
-    float speed = 1.0F;
-    read_f32(d, blob.data(), "speed", &speed);
-    float time = 0.0F;
-    read_f32(d, blob.data(), "time", &time);
+    const bool playing = ap->playing;
+    const bool loop = ap->loop;
+    const float speed = ap->speed;
+    float time = ap->time;
     if (playing) time += dt * speed;
     if (clip.duration > 0.0F) {
         if (loop) {
@@ -3908,10 +3845,8 @@ void Engine::anim_step_gclip(int entity, const mq_type_desc* d, std::vector<uint
             time = 0.0F;
         }
     }
-    if (const mq_field_desc* f = mq_reflect_field(d, "time"))
-        *(float*)(blob.data() + f->offset) = time;
-    if (const mq_field_desc* f = mq_reflect_field(d, "duration"))
-        *(float*)(blob.data() + f->offset) = clip.duration;
+    ap->time = time;
+    ap->duration = clip.duration;
     if (!anim_enabled) return;                    /* MAQUE_ANIM=0：保持 bind pose（不写派生姿态） */
     std::vector<float> v;
     for (const GClipTrack& tr : clip.tracks) {
@@ -3939,10 +3874,8 @@ void Engine::anim_step_gclip(int entity, const mq_type_desc* d, std::vector<uint
                 stack2.pop_back();
                 if (entity_morph_mesh.find(cur) != entity_morph_mesh.end())
                     morph_weight_override[cur] = v;
-                std::vector<int> kids;
-                for (auto& [k2, c2] : scene->ents) if (c2.parent == cur) kids.push_back(k2);
-                std::sort(kids.begin(), kids.end());
-                for (int k2 : kids) stack2.push_back(k2);
+                if (SceneNode* cn = scene->at(cur))
+                    for (int k2 : cn->children) stack2.push_back(k2);
             }
         }
     }
@@ -4085,7 +4018,7 @@ void Engine::world_restore(const mq_snapshot* snap) {
             if (overlay_bus) (void)call_overlay_event("on_start", 0.0, 0.0, 0.0, nullptr);
         }
     }
-    scene->flatten_world(*this);
+    scene->update_world(*this);
 }
 
 /* 全局状态校验和（docs/32 §16.3）：空 → 0（老场景的 world_trail 零变化）。
@@ -4593,7 +4526,7 @@ void Engine::gltf_anim_step(float dt) {
 }
 static void read_color(const mq_type_desc* d, const void* base, const char* field, math::Color* out) {
     const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
-    if (f) std::memcpy(out, (const uint8_t*)base + f->offset, sizeof *out);
+    if (f) std::memcpy(out, field_ptr(f, (const uint8_t*)base), sizeof *out);
 }
 
 /* 内建 cube：24 顶点（每面 4 个，法线独立）/ 36 索引；48B 规范布局（pos3|normal3|tangent4|uv2）。
@@ -4691,7 +4624,7 @@ void Engine::sync_render_textures() {
         }
     }
     std::vector<int> ids;
-    for (const auto& [id, e] : scene->ents)
+    for (const auto& [id, e] : scene->nodes)
         if (e.comps.find(rtd->type_id) != e.comps.end()) ids.push_back(id);
     std::sort(ids.begin(), ids.end());
     std::unordered_set<int> live(ids.begin(), ids.end());
@@ -4713,15 +4646,16 @@ void Engine::sync_render_textures() {
 
     std::unordered_set<std::string> used;
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         std::vector<uint8_t>& blob = e->comps[rtd->type_id];
         const mq_type_desc* dummy = nullptr;
         const bool has3d_camera = comp_by_name(*this, id, "render.Camera3D", &dummy) != nullptr;
         const bool has2d_camera = comp_by_name(*this, id, "render.Camera2D", &dummy) != nullptr ||
                                   comp_by_name(*this, id, "scn.Camera", &dummy) != nullptr;
-        const std::string* configured = read_str(rtd, blob.data(), "name");
-        std::string name = configured && !configured->empty() ? *configured : e->name;
+        auto* rtc = as_component_mut<render::RenderTexture>(rtd, blob.data());
+        if (!rtc) continue;
+        std::string name = rtc->name.empty() ? e->name : rtc->name;
         if (name.empty()) name = "camera-" + std::to_string(id);
         const int owner = entity_instance.count(id) ? entity_instance[id] : 0;
         const std::string uri = "rendertexture://" + std::to_string(owner) + "/" + name;
@@ -4730,12 +4664,9 @@ void Engine::sync_render_textures() {
         RenderTextureState* rt = render_texture_for(id);
 
         auto write_transients = [&](const std::string& texture, bool ready, uint64_t rendered) {
-            if (const mq_field_desc* f = mq_reflect_field(rtd, "texture"))
-                *(std::string*)(blob.data() + f->offset) = texture;
-            if (const mq_field_desc* f = mq_reflect_field(rtd, "ready"))
-                *(bool*)(blob.data() + f->offset) = ready;
-            if (const mq_field_desc* f = mq_reflect_field(rtd, "last_frame"))
-                *(uint32_t*)(blob.data() + f->offset) = (uint32_t)rendered;
+            rtc->texture = texture;
+            rtc->ready = ready;
+            rtc->last_frame = (uint32_t)rendered;
         };
         if (duplicate || (!has3d_camera && !has2d_camera) || !supported) {
             if (duplicate)
@@ -4758,13 +4689,12 @@ void Engine::sync_render_textures() {
             continue;
         }
 
-        const int32_t requested_w = (int32_t)read_num(rtd, blob.data(), "width", 0.0F);
-        const int32_t requested_h = (int32_t)read_num(rtd, blob.data(), "height", 0.0F);
+        const int32_t requested_w = (int32_t)rtc->width;
+        const int32_t requested_h = (int32_t)rtc->height;
         const int32_t width = std::max(1, requested_w > 0 ? requested_w : W);
         const int32_t height = std::max(1, requested_h > 0 ? requested_h : H);
-        const int32_t filter = (int32_t)read_num(rtd, blob.data(), "filter", 1.0F);
-        math::Color cc{ 0.0F, 0.0F, 0.0F, 0.0F };
-        read_color(rtd, blob.data(), "clear_color", &cc);
+        const int32_t filter = (int32_t)rtc->filter;
+        const math::Color cc = rtc->clear_color;
         mq_renderer_render_texture_desc desc{};
         desc.struct_size = sizeof desc;
         desc.width = width; desc.height = height; desc.pixel_format = 0;
@@ -4809,14 +4739,14 @@ void Engine::sync_render_textures() {
             if (rt->is_3d != has3d_camera) rt->dirty = true;
             rt->is_3d = has3d_camera;
         }
-        rt->update_mode = (int32_t)read_num(rtd, blob.data(), "update_mode", 0.0F);
+        rt->update_mode = (int32_t)rtc->update_mode;
         /* 目标自己的 MSAA 变化不改纹理本身（多采样只是 pass 的临时附件），
          * 但要重画一次，否则 OnDemand 目标会留着旧样本数的画面。 */
-        const int32_t rt_msaa = (int32_t)read_num(rtd, blob.data(), "msaa_samples", 0.0F);
+        const int32_t rt_msaa = (int32_t)rtc->msaa_samples;
         if (rt->msaa_samples != rt_msaa) rt->dirty = true;
         rt->msaa_samples = rt_msaa;
-        const bool include_ui = read_num(rtd, blob.data(), "include_ui", 0.0F) >= 0.5F;
-        const bool enabled = read_num(rtd, blob.data(), "enabled", 1.0F) >= 0.5F;
+        const bool include_ui = rtc->include_ui;
+        const bool enabled = rtc->enabled;
         if (rt->include_ui != include_ui || (!rt->enabled && enabled)) rt->dirty = true;
         rt->include_ui = include_ui;
         rt->enabled = enabled;
@@ -4832,7 +4762,7 @@ void Engine::setup_3d() {
     has_3d = false;
     if (!scene) return;
     int n_cam = 0, n_mesh = 0, n_light = 0;
-    for (auto& kv : scene->ents) {
+    for (auto& kv : scene->nodes) {
         const mq_type_desc* d = nullptr;
         if (comp_by_name(*this, kv.first, "render.Camera3D", &d)) ++n_cam;
         if (comp_by_name(*this, kv.first, "render.MeshRenderer", &d)) ++n_mesh;
@@ -4867,24 +4797,19 @@ void Engine::setup_3d() {
 
 bool Engine::make_camera_view2d(int entity, int width, int height, mq_renderer_view& view,
                                 uint32_t* layer_mask) {
-    Entity* e = scene ? scene->at(entity) : nullptr;
+    SceneNode* e = scene ? scene->at(entity) : nullptr;
     if (!e || !node_active_effective(*this, entity)) return false;
     if (layer_mask) *layer_mask = 0xFFFFFFFFu;
     view = mq_renderer_view{};
     view.vw = (float)width; view.vh = (float)height;
     const mq_type_desc* d = nullptr;
     if (auto* b = comp_by_name(*this, entity, "render.Camera2D", &d); b && d) {
-        if (read_num(d, b->data(), "active", 1.0F) < 0.5F) return false;
-        math::Vec2 zoom{ 1.0F, 1.0F }, offset{};
-        math::Rect viewport{ 0.0F, 0.0F, 1.0F, 1.0F };
-        if (const mq_field_desc* f = mq_reflect_field(d, "zoom"))
-            std::memcpy(&zoom, b->data() + f->offset, sizeof zoom);
-        if (const mq_field_desc* f = mq_reflect_field(d, "offset"))
-            std::memcpy(&offset, b->data() + f->offset, sizeof offset);
-        if (const mq_field_desc* f = mq_reflect_field(d, "viewport"))
-            std::memcpy(&viewport, b->data() + f->offset, sizeof viewport);
-        if (layer_mask) if (const mq_field_desc* f = mq_reflect_field(d, "layer_mask"))
-            *layer_mask = *(const uint32_t*)(b->data() + f->offset);
+        const auto* cam = as_component<render::Camera2D>(d, b->data());
+        if (!cam || !cam->active) return false;
+        const math::Vec2 zoom = cam->zoom;
+        const math::Vec2 offset = cam->offset;
+        const math::Rect viewport = cam->viewport;
+        if (layer_mask) *layer_mask = cam->layer_mask;
         const float zx = std::max(zoom.x, 1e-5F);
         const float zy = std::max(zoom.y, 1e-5F);
         const float nx = std::clamp(viewport.x, 0.0F, 1.0F);
@@ -4995,11 +4920,9 @@ uint64_t Engine::compute_scene_visual_hash() const {
         for (size_t i = 0; i < n; ++i) { h ^= b[i]; h *= 1099511628211ull; }
     };
     std::vector<int> ids;
-    ids.reserve(scene->ents.size());
-    for (const auto& [id, e] : scene->ents) { (void)e; ids.push_back(id); }
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
     for (int id : ids) {
-        const Entity* e = scene->at(id);
+        const SceneNode* e = scene->at(id);
         if (!e) continue;
         mix(&id, sizeof id);
         mix(&e->parent, sizeof e->parent);
@@ -5055,15 +4978,15 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             const mq_type_desc* camera_desc = nullptr;
             if (auto* camera = comp_by_name(*this, render_textures[i].entity, "render.Camera2D", &camera_desc);
                 camera && camera_desc) {
-                if (const mq_field_desc* f = mq_reflect_field(camera_desc, "layer_mask"))
-                    dep_2d_mask = *(const uint32_t*)(camera->data() + f->offset);
+                if (const auto* cam = as_component<render::Camera2D>(camera_desc, camera->data()))
+                    dep_2d_mask = cam->layer_mask;
             }
         } else {
             const mq_type_desc* camera_desc = nullptr;
             if (auto* camera = comp_by_name(*this, render_textures[i].entity, "render.Camera3D", &camera_desc);
                 camera && camera_desc) {
-                if (const mq_field_desc* f = mq_reflect_field(camera_desc, "culling_mask"))
-                    dep_3d_mask = *(const uint32_t*)(camera->data() + f->offset);
+                if (const auto* cam = as_component<render::Camera3D>(camera_desc, camera->data()))
+                    dep_3d_mask = cam->culling_mask;
             }
         }
         auto consider = [&](int32_t texture, int layer) {
@@ -5082,16 +5005,15 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             }
             /* 3D 材质在 per-camera extract_3d 中生成；这里直接扫描 PBR 的字符串贴图槽，
              * 把 rendertexture:// 引用提前加入 pass 依赖。 */
-            for (const auto& [eid, ent] : scene->ents) for (const auto& [tid, blob] : ent.comps) {
+            for (const auto& [eid, ent] : scene->nodes) for (const auto& [tid, blob] : ent.comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
                 if (!d || std::strcmp(d->name, "asset.PbrMaterial") != 0) continue;
                 const mq_type_desc* mesh_desc = nullptr;
                 auto* mesh_blob = comp_by_name(*this, eid, "render.MeshRenderer", &mesh_desc);
-                if (!mesh_blob || !mesh_desc || !node_active_effective(*this, eid) ||
-                    read_num(mesh_desc, mesh_blob->data(), "visible", 1.0F) < 0.5F) continue;
-                uint32_t mesh_mask = 0xFFFFFFFFu;
-                if (const mq_field_desc* f = mq_reflect_field(mesh_desc, "culling_mask"))
-                    mesh_mask = *(const uint32_t*)(mesh_blob->data() + f->offset);
+                const auto* mesh = (mesh_blob && mesh_desc)
+                    ? as_component<render::MeshRenderer>(mesh_desc, mesh_blob->data()) : nullptr;
+                if (!mesh || !node_active_effective(*this, eid) || !mesh->visible) continue;
+                const uint32_t mesh_mask = mesh->culling_mask;
                 if ((mesh_mask & dep_3d_mask) == 0) continue;
                 for (uint32_t fi = 0; fi < d->field_count; ++fi) {
                     const mq_field_desc& f = d->fields[fi];
@@ -5223,8 +5145,10 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
         rt.ready = true;
         rt.dirty = false;
         rt.last_frame = frame;
-        if (const mq_field_desc* f = mq_reflect_field(rtd, "ready")) *(bool*)(rtb->data() + f->offset) = true;
-        if (const mq_field_desc* f = mq_reflect_field(rtd, "last_frame")) *(uint32_t*)(rtb->data() + f->offset) = (uint32_t)frame;
+        if (auto* rtc = as_component_mut<render::RenderTexture>(rtd, rtb->data())) {
+            rtc->ready = true;
+            rtc->last_frame = (uint32_t)frame;
+        }
     }
     for (const auto& req : camera_captures) {
         RenderTextureState* rt = render_texture_for(req.entity);
@@ -5264,9 +5188,7 @@ void Engine::destroy_shader_passes() {
 void Engine::setup_shader_passes() {
     destroy_shader_passes();    if (!scene || !vfs || !rapi || !rself || !rapi->create_shader_pass) return;
     std::vector<int> ids;
-    ids.reserve(scene->ents.size());
-    for (auto& kv : scene->ents) ids.push_back(kv.first);
-    std::sort(ids.begin(), ids.end());            // unordered_map 顺序不可依赖（确定性）
+    scene->collect_preorder(ids);
     /* 两种组件共用同一套加载/编译路径：全屏 pass 与 shader 精灵只是在 gfx 侧的绘制方式不同。 */
     auto load = [&](const char* type, bool sprite) {
         for (int id : ids) {
@@ -5310,9 +5232,7 @@ void Engine::setup_shader_passes() {
 void Engine::shader_pass_step(float dt) {
     if (!scene) return;
     std::vector<int> ids;
-    ids.reserve(scene->ents.size());
-    for (auto& kv : scene->ents) ids.push_back(kv.first);
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
     for (int id : ids) {
         for (const char* type : { "render.ShaderPass", "render.ShaderSprite", "render.ShaderGraph" }) {
             const mq_type_desc* d = nullptr;
@@ -5323,7 +5243,7 @@ void Engine::shader_pass_step(float dt) {
             if (speed == 0.0F) continue;
             const float time = read_num(d, blob->data(), "time", 0.0F) + dt * speed;
             if (const mq_field_desc* f = mq_reflect_field(d, "time"))
-                *(float*)(blob->data() + f->offset) = time;
+                field_set_f32(f, blob->data(), time);
         }
     }
 }
@@ -5421,9 +5341,7 @@ void Engine::setup_shader_graphs() {
     };
 
     std::vector<int> ids;
-    ids.reserve(scene->ents.size());
-    for (auto& kv : scene->ents) ids.push_back(kv.first);
-    std::sort(ids.begin(), ids.end());            // unordered_map 顺序不可依赖（确定性）
+    scene->collect_preorder(ids);
 
     /* 加载一份 program：背景形态（render.ShaderGraph）与精灵形态（render.ShaderSprite + .json）共用。 */
     auto load_program = [&](int id, const std::string& program_path, bool sprite) {
@@ -5707,7 +5625,7 @@ void Engine::extract_shader_graph_sprites(std::vector<mq_renderer_shader_graph_s
     std::vector<size_t> offsets;                  /* 每个精灵的阶段在 scratch 里的起点 */
     for (auto& g : loaded_shader_graphs) {
         if (!g.sprite) continue;                  /* 背景形态 → extract_shader_graphs */
-        Entity* e = scene->at(g.entity);
+        SceneNode* e = scene->at(g.entity);
         if (!e) continue;
         /* 精灵形态的参数（width/height/enabled/time）在 render.ShaderSprite 上。 */
         const mq_type_desc* d = nullptr;
@@ -5767,7 +5685,7 @@ void Engine::extract_shader_sprites(std::vector<mq_renderer_shader_sprite>& out)
     if (!opt_2d_enabled) return;
     for (const auto& p : loaded_shader_passes) {
         if (!p.sprite) continue;
-        Entity* e = scene->at(p.entity);
+        SceneNode* e = scene->at(p.entity);
         if (!e) continue;
         const mq_type_desc* d = nullptr;
         auto* blob = comp_by_name(*this, p.entity, "render.ShaderSprite", &d);
@@ -5820,12 +5738,10 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     if (!scene || tw <= 0 || th <= 0) return;
     /* plans/22 §6.3：每帧先由节点树 + 片段派生姿态算世界矩阵（extract 只读派生数据）。
      * 纯 shader-pass 场景（has_3d=false）没有 3D 组件，不必付这次遍历。 */
-    if (has_3d) scene->flatten_world3d(*this);
+    if (has_3d) scene->update_world3d(*this);
     /* 实体 id 排序：unordered_map 迭代顺序不可依赖（确定性） */
     std::vector<int> ids;
-    ids.reserve(scene->ents.size());
-    for (auto& kv : scene->ents) ids.push_back(kv.first);
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
 
     /* 材质：M3 从**同节点的 asset.PbrMaterial 组件**读取（M4 换成共享 .material.json 资产）；
      * 无材质组件的节点用默认灰（金属度 0 / 粗糙度 0.6）。 */
@@ -5847,9 +5763,9 @@ void Engine::extract_3d(int32_t tw, int32_t th,
     math::Color clear{ 0.06F, 0.06F, 0.09F, 1.0F };
 
     for (int idx : ids) {
-        auto it = scene->ents.find(idx);
-        if (it == scene->ents.end()) continue;
-        const float* wm = it->second.world_m;    /* flatten_world3d 的派生结果（列主序） */
+        auto it = scene->nodes.find(idx);
+        if (it == scene->nodes.end()) continue;
+        const float* wm = it->second.world_m;    /* update_world3d 的派生结果（列主序） */
         const mq_type_desc* dt = nullptr;
         const mq_type_desc* dcam = nullptr;
         const mq_type_desc* dmesh = nullptr;
@@ -5857,53 +5773,43 @@ void Engine::extract_3d(int32_t tw, int32_t th,
         auto* tb = comp_by_name(*this, idx, "scene.Transform3D", &dt);
         math::Transform3D trs{};
         trs.scale = math::Vec3{ 1.0F, 1.0F, 1.0F };
-        if (tb && dt) {
-            if (const mq_field_desc* lf = mq_reflect_field(dt, "local"))
-                std::memcpy(&trs, tb->data() + lf->offset, sizeof trs);
-        }
+        if (auto* t3 = tb ? as_component<scene::Transform3D>(dt, tb->data()) : nullptr)
+            trs = t3->local;
         auto* cb = comp_by_name(*this, idx, "render.Camera3D", &dcam);
         const bool rt_camera = comp_by_name(*this, idx, "render.RenderTexture", nullptr) != nullptr;
-        if (cb && dcam && (camera_entity < 0 || idx == camera_entity) &&
+        if (auto* cam = (cb && dcam) ? as_component<render::Camera3D>(dcam, cb->data()) : nullptr;
+            cam && (camera_entity < 0 || idx == camera_entity) &&
             !(camera_entity < 0 && rt_camera)) {
-            const float active = read_num(dcam, cb->data(), "active", 1.0F);
-            const float prio = read_num(dcam, cb->data(), "priority", 0.0F);
-            if (active >= 0.5F && node_active_effective(*this, idx) &&
-                (!has_cam || prio > cam_priority)) {
+            if (cam->active && node_active_effective(*this, idx) &&
+                (!has_cam || cam->priority > cam_priority)) {
                 has_cam = true;
-                cam_priority = prio;
+                cam_priority = cam->priority;
                 cam_trs = trs;
                 std::memcpy(cam_wm, wm, sizeof cam_wm);   /* 相机用世界矩阵（平级场景 == 旧 trs） */
                 has_cam_wm = true;
-                projection = (int32_t)read_num(dcam, cb->data(), "projection", 0.0F);
-                fov_y = read_num(dcam, cb->data(), "fov_y", 60.0F);
-                ortho_height = read_num(dcam, cb->data(), "ortho_height", 2.0F);
-                near_z = read_num(dcam, cb->data(), "near", 0.1F);
-                far_z = read_num(dcam, cb->data(), "far", 100.0F);
-                exposure = read_num(dcam, cb->data(), "exposure", 1.0F);
-                clear_mode = (int32_t)read_num(dcam, cb->data(), "clear_mode", 1.0F);
-                if (const mq_field_desc* f = mq_reflect_field(dcam, "culling_mask"))
-                    camera_mask = (int32_t)*(const uint32_t*)(cb->data() + f->offset);
-                if (const mq_field_desc* f = mq_reflect_field(dcam, "viewport"))
-                    std::memcpy(&camera_viewport, cb->data() + f->offset, sizeof camera_viewport);
-                read_color(dcam, cb->data(), "clear_color", &clear);
+                projection = (int32_t)cam->projection;
+                fov_y = cam->fov_y;
+                ortho_height = cam->ortho_height;
+                near_z = cam->near;
+                far_z = cam->far;
+                exposure = cam->exposure;
+                clear_mode = (int32_t)cam->clear_mode;
+                camera_mask = (int32_t)cam->culling_mask;
+                camera_viewport = cam->viewport;
+                clear = cam->clear_color;
             }
         }
         auto* lb = comp_by_name(*this, idx, "render.Light", &dlight);
-        if (lb && dlight) {
+        if (auto* light = (lb && dlight) ? as_component<render::Light>(dlight, lb->data()) : nullptr) {
             /* M5b：Directional / Point / Spot 全类型（后两种用节点世界位置；方向 = 节点 -Z 轴） */
             mq_renderer_light L{};
-            const int type = (int)read_num(dlight, lb->data(), "type", 0.0F);
-            L.type = type;
-            math::Color lc{ 1.0F, 1.0F, 1.0F, 1.0F };
-            read_color(dlight, lb->data(), "color", &lc);
-            L.color[0] = lc.r; L.color[1] = lc.g; L.color[2] = lc.b;
-            L.intensity = read_num(dlight, lb->data(), "intensity", 1.0F);
-            L.range = read_num(dlight, lb->data(), "range", 10.0F);
+            L.type = (int)light->type;
+            L.color[0] = light->color.r; L.color[1] = light->color.g; L.color[2] = light->color.b;
+            L.intensity = light->intensity;
+            L.range = light->range;
             constexpr float kDeg = 3.14159265F / 180.0F;
-            const float inner_d = read_num(dlight, lb->data(), "inner_angle", 20.0F);
-            const float outer_d = read_num(dlight, lb->data(), "outer_angle", 30.0F);
-            L.inner_cos = std::cos(inner_d * kDeg);
-            L.outer_cos = std::cos(outer_d * kDeg);
+            L.inner_cos = std::cos(light->inner_angle * kDeg);
+            L.outer_cos = std::cos(light->outer_angle * kDeg);
             /* plans/22 §6.3：位置/朝向取节点世界矩阵（平级场景与旧 trs 逐字节一致） */
             float az[3];
             m4_axis(wm, 2, az);
@@ -5912,9 +5818,10 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             out_lights.push_back(L);
         }
         auto* mb = comp_by_name(*this, idx, "render.MeshRenderer", &dmesh);
-        const std::string* gmp = (mb && dmesh) ? read_str(dmesh, mb->data(), "mesh_path") : nullptr;
-        if (mb && dmesh && gmp && !gmp->empty() && gltf::is_gltf_path(*gmp)) {
-            if (read_num(dmesh, mb->data(), "visible", 1.0F) < 0.5F) continue;
+        const auto* mesh = (mb && dmesh) ? as_component<render::MeshRenderer>(dmesh, mb->data()) : nullptr;
+        const std::string* gmp = mesh ? &mesh->mesh_path : nullptr;
+        if (mesh && gmp && !gmp->empty() && gltf::is_gltf_path(*gmp)) {
+            if (!mesh->visible) continue;
             GltfGpuModel* gm = load_gltf_model(*gmp);
             if (gm && !gm->failed) {
                 gltf_state_ensure(idx, *gmp, *gm);
@@ -6010,8 +5917,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                     dr.skin = skin_index;
                     dr.flags |= 0x40000000;            /* draw.layer 是有效 culling mask（旧调用方无此位） */
                     dr.layer = -1;
-                    if (const mq_field_desc* f = mq_reflect_field(dmesh, "culling_mask"))
-                        dr.layer = (int32_t)*(const uint32_t*)(mb->data() + f->offset);
+                    if (const auto* m = as_component<render::MeshRenderer>(dmesh, mb->data()))
+                        dr.layer = (int32_t)m->culling_mask;
                     dr.sort_key = (uint64_t)idx;
                     out_draws.push_back(dr);
                 }
@@ -6057,56 +5964,51 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             mat.occlusion_strength = 1.0F;
             const mq_type_desc* dmat = nullptr;
             auto* matb = comp_by_name(*this, idx, "asset.PbrMaterial", &dmat);
-            if (matb && dmat) {
-                const uint8_t* base = matb->data();
-                math::Color bc{ 1.0F, 1.0F, 1.0F, 1.0F };
-                if (const mq_field_desc* f = mq_reflect_field(dmat, "base_color"))
-                    std::memcpy(&bc, base + f->offset, sizeof bc);
-                mat.base_color[0] = bc.r; mat.base_color[1] = bc.g;
-                mat.base_color[2] = bc.b; mat.base_color[3] = bc.a;
-                math::Vec3 em{ 0.0F, 0.0F, 0.0F };
-                if (const mq_field_desc* f = mq_reflect_field(dmat, "emissive"))
-                    std::memcpy(&em, base + f->offset, sizeof em);
-                mat.emissive[0] = em.x; mat.emissive[1] = em.y; mat.emissive[2] = em.z;
-                mat.metallic = read_num(dmat, base, "metallic", 0.0F);
-                mat.roughness = read_num(dmat, base, "roughness", 0.5F);
-                mat.normal_scale = read_num(dmat, base, "normal_scale", 1.0F);
-                mat.occlusion_strength = read_num(dmat, base, "occlusion_strength", 1.0F);
-                mat.alpha_cutoff = read_num(dmat, base, "alpha_cutoff", 0.5F);
-                mat.alpha_mode = (int32_t)read_num(dmat, base, "alpha_mode", 0.0F);
+            if (const auto* pm = (matb && dmat)
+                    ? as_component<asset::PbrMaterial>(dmat, matb->data()) : nullptr) {
+                mat.base_color[0] = pm->base_color.r; mat.base_color[1] = pm->base_color.g;
+                mat.base_color[2] = pm->base_color.b; mat.base_color[3] = pm->base_color.a;
+                mat.emissive[0] = pm->emissive.x; mat.emissive[1] = pm->emissive.y;
+                mat.emissive[2] = pm->emissive.z;
+                mat.metallic = pm->metallic;
+                mat.roughness = pm->roughness;
+                mat.normal_scale = pm->normal_scale;
+                mat.occlusion_strength = pm->occlusion_strength;
+                mat.alpha_cutoff = pm->alpha_cutoff;
+                mat.alpha_mode = (int32_t)pm->alpha_mode;
     /* transmission/diffuse 近似把 MASK 改成 BLEND 时保留 alpha 镂空（shader 用 flags2 bit19） */
-    if (read_num(dmat, base, "alpha_mask_in_blend", 0.0F) >= 0.5F) mat.flags2 |= 0x80000;
+    if (pm->alpha_mask_in_blend) mat.flags2 |= 0x80000;
 
-                mat.flags = read_num(dmat, base, "double_sided", 0.0F) >= 0.5F ? 1 : 0;
-                mat.clearcoat = read_num(dmat, base, "clearcoat", 0.0F);
-                mat.clearcoat_roughness = read_num(dmat, base, "clearcoat_roughness", 0.03F);
+                mat.flags = pm->double_sided ? 1 : 0;
+                mat.clearcoat = pm->clearcoat;
+                mat.clearcoat_roughness = pm->clearcoat_roughness;
                 /* plans/19：多着色模型参数（缺省 = Standard 观感，旧场景零变化） */
-                mat.shading_model = (int32_t)read_num(dmat, base, "shading_model", 0.0F);
-                mat.side = (int32_t)read_num(dmat, base, "side", 2.0F);
-                mat.opacity = read_num(dmat, base, "opacity", 1.0F);
-                mat.emissive_intensity = read_num(dmat, base, "emissive_intensity", 1.0F);
-                mat.env_intensity = read_num(dmat, base, "env_intensity", 1.0F);
-                mat.normal_scale_y = read_num(dmat, base, "normal_scale_y", 1.0F);
-                if (const mq_field_desc* f = mq_reflect_field(dmat, "specular"))
-                    std::memcpy(mat.specular, base + f->offset, sizeof mat.specular);
-                mat.shininess = read_num(dmat, base, "shininess", 30.0F);
-                mat.specular_intensity = read_num(dmat, base, "specular_intensity", 1.0F);
-                mat.ior = read_num(dmat, base, "ior", 1.5F);
-                mat.sheen = read_num(dmat, base, "sheen", 0.0F);
-                mat.sheen_roughness = read_num(dmat, base, "sheen_roughness", 0.5F);
-                if (const mq_field_desc* f = mq_reflect_field(dmat, "sheen_color"))
-                    std::memcpy(mat.sheen_color, base + f->offset, sizeof mat.sheen_color);
-                mat.iridescence = read_num(dmat, base, "iridescence", 0.0F);
-                mat.iridescence_ior = read_num(dmat, base, "iridescence_ior", 1.3F);
-                mat.iridescence_thickness_min = read_num(dmat, base, "iridescence_thickness_min", 100.0F);
-                mat.iridescence_thickness_max = read_num(dmat, base, "iridescence_thickness_max", 400.0F);
-                mat.anisotropy = read_num(dmat, base, "anisotropy", 0.0F);
-                mat.anisotropy_rotation = read_num(dmat, base, "anisotropy_rotation", 0.0F);
+                mat.shading_model = (int32_t)pm->shading_model;
+                mat.side = (int32_t)pm->side;
+                mat.opacity = pm->opacity;
+                mat.emissive_intensity = pm->emissive_intensity;
+                mat.env_intensity = pm->env_intensity;
+                mat.normal_scale_y = pm->normal_scale_y;
+                mat.specular[0] = pm->specular.x; mat.specular[1] = pm->specular.y;
+                mat.specular[2] = pm->specular.z;
+                mat.shininess = pm->shininess;
+                mat.specular_intensity = pm->specular_intensity;
+                mat.ior = pm->ior;
+                mat.sheen = pm->sheen;
+                mat.sheen_roughness = pm->sheen_roughness;
+                mat.sheen_color[0] = pm->sheen_color.x; mat.sheen_color[1] = pm->sheen_color.y;
+                mat.sheen_color[2] = pm->sheen_color.z;
+                mat.iridescence = pm->iridescence;
+                mat.iridescence_ior = pm->iridescence_ior;
+                mat.iridescence_thickness_min = pm->iridescence_thickness_min;
+                mat.iridescence_thickness_max = pm->iridescence_thickness_max;
+                mat.anisotropy = pm->anisotropy;
+                mat.anisotropy_rotation = pm->anisotropy_rotation;
                 /* KHR_materials_transmission 近似参数：shader 用 Fresnel 视角 alpha、gfx 画两遍（背面→正面）。
                  * Draw 的 anisotropy_rotation 槽 shader 未使用，复用它传 transmission factor（避免扩 uniform）。
                  * ⚠️ 必须写在上面读取材质自身 anisotropy_rotation **之后**：否则会被无条件覆盖为 0，
                  *    shader 收到的 Fresnel 权重恒 0（玻璃退化为均匀半透"幽灵"，CompareDispersion 即此坑）。 */
-                const float transmission_factor = read_num(dmat, base, "transmission_factor", 0.0F);
+                const float transmission_factor = pm->transmission_factor;
                 if (transmission_factor > 0.001F) {
                     mat.anisotropy_rotation = transmission_factor;
                     mat.flags2 |= 0x100000;             /* bit20 = transmission approx */
@@ -6114,8 +6016,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 /* KHR_materials_volume / KHR_materials_dispersion：折射厚度与色散近似参数
                  * （gfx 打包进 Draw.clearcoat.z / Draw.alpha.w，材质 uniform 仍是 288B 不扩）。
                  * 缺省 0 = 无体积折射/色散（旧材质零行为变化）。 */
-                mat.volume_thickness = read_num(dmat, base, "volume_thickness", 0.0F);
-                mat.dispersion = read_num(dmat, base, "dispersion", 0.0F);
+                mat.volume_thickness = pm->volume_thickness;
+                mat.dispersion = pm->dispersion;
                 /* KHR_materials_volume：thicknessFactor/thicknessTexture 给的是 **mesh 空间** 厚度，
                  * 规范要求随节点变换缩放；attenuationDistance 是**世界空间**。gfx/shader 把它当世界
                  * 空间厚度用（Beer-Lambert 路径长 + 折射偏移），这里先乘节点世界缩放（非均匀用几何均值
@@ -6126,70 +6028,44 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 /* KHR_materials_diffuse_transmission：**不透明**薄壁透光（不再 alpha BLEND，
                  * 否则陶瓷/叶片会变幽灵玻璃）。factor → shader 背光透射项；flags2 bit24 标记。 */
-                const float diffuse_transmission_factor =
-                    read_num(dmat, base, "diffuse_transmission_factor", 0.0F);
+                const float diffuse_transmission_factor = pm->diffuse_transmission_factor;
                 if (diffuse_transmission_factor > 0.001F) {
                     mat.diffuse_transmission_factor = diffuse_transmission_factor;
-                    math::Vec3 dtc{ 1.0F, 1.0F, 1.0F };
-                    if (const mq_field_desc* f = mq_reflect_field(dmat, "diffuse_transmission_color"))
-                        std::memcpy(&dtc, base + f->offset, sizeof dtc);
-                    mat.diffuse_transmission_color[0] = dtc.x;
-                    mat.diffuse_transmission_color[1] = dtc.y;
-                    mat.diffuse_transmission_color[2] = dtc.z;
+                    mat.diffuse_transmission_color[0] = pm->diffuse_transmission_color.x;
+                    mat.diffuse_transmission_color[1] = pm->diffuse_transmission_color.y;
+                    mat.diffuse_transmission_color[2] = pm->diffuse_transmission_color.z;
                     mat.flags2 |= 0x1000000;            /* bit24 = diffuse transmission approx */
                 }
                 /* KHR_materials_volume（第 24 轮）：Beer-Lambert 吸收（attenuationColor/Distance）+
                  * thicknessTexture.G（厚度乘子）+ volume_scatter 的 multiscatterColorFactor。 */
-                {
-                    math::Vec3 att{ 1.0F, 1.0F, 1.0F };
-                    if (const mq_field_desc* f = mq_reflect_field(dmat, "attenuation_color"))
-                        std::memcpy(&att, base + f->offset, sizeof att);
-                    mat.attenuation_color[0] = att.x;
-                    mat.attenuation_color[1] = att.y;
-                    mat.attenuation_color[2] = att.z;
-                    mat.attenuation_distance = read_num(dmat, base, "attenuation_distance", 0.0F);
-                    math::Vec3 msc{ 0.0F, 0.0F, 0.0F };
-                    if (const mq_field_desc* f = mq_reflect_field(dmat, "multiscatter_color"))
-                        std::memcpy(&msc, base + f->offset, sizeof msc);
-                    mat.multiscatter_color[0] = msc.x;
-                    mat.multiscatter_color[1] = msc.y;
-                    mat.multiscatter_color[2] = msc.z;
-                }
-                mat.clearcoat_normal_scale = read_num(dmat, base, "clearcoat_normal_scale", 1.0F);
-                mat.toon_steps = (int32_t)read_num(dmat, base, "toon_steps", 3.0F);
-                mat.depth_packing = (int32_t)read_num(dmat, base, "depth_packing", 0.0F);
-                if (read_num(dmat, base, "flat_shading", 0.0F) >= 0.5F) mat.flags2 |= 1;
+                mat.attenuation_color[0] = pm->attenuation_color.x;
+                mat.attenuation_color[1] = pm->attenuation_color.y;
+                mat.attenuation_color[2] = pm->attenuation_color.z;
+                mat.attenuation_distance = pm->attenuation_distance;
+                mat.multiscatter_color[0] = pm->multiscatter_color.x;
+                mat.multiscatter_color[1] = pm->multiscatter_color.y;
+                mat.multiscatter_color[2] = pm->multiscatter_color.z;
+                mat.clearcoat_normal_scale = pm->clearcoat_normal_scale;
+                mat.toon_steps = pm->toon_steps;
+                mat.depth_packing = (int32_t)pm->depth_packing;
+                if (pm->flat_shading) mat.flags2 |= 1;
                 /* KHR_texture_transform（plans/19）：基础贴图用 uv_scale/uv_offset，法线单独一组 */
-                if (const mq_field_desc* f = mq_reflect_field(dmat, "uv_scale")) {
-                    math::Vec2 v{ 1.0F, 1.0F };
-                    std::memcpy(&v, base + f->offset, sizeof v);
-                    mat.uv_scale[0] = v.x; mat.uv_scale[1] = v.y;
-                }
-                if (const mq_field_desc* f = mq_reflect_field(dmat, "uv_offset")) {
-                    math::Vec2 v{ 0.0F, 0.0F };
-                    std::memcpy(&v, base + f->offset, sizeof v);
-                    mat.uv_offset[0] = v.x; mat.uv_offset[1] = v.y;
-                }
-                if (const mq_field_desc* f = mq_reflect_field(dmat, "normal_uv_scale")) {
-                    math::Vec2 v{ 1.0F, 1.0F };
-                    std::memcpy(&v, base + f->offset, sizeof v);
-                    mat.normal_uv_scale[0] = v.x; mat.normal_uv_scale[1] = v.y;
-                }
-                if (const mq_field_desc* f = mq_reflect_field(dmat, "normal_uv_offset")) {
-                    math::Vec2 v{ 0.0F, 0.0F };
-                    std::memcpy(&v, base + f->offset, sizeof v);
-                    mat.normal_uv_offset[0] = v.x; mat.normal_uv_offset[1] = v.y;
-                }
+                mat.uv_scale[0] = pm->uv_scale.x; mat.uv_scale[1] = pm->uv_scale.y;
+                mat.uv_offset[0] = pm->uv_offset.x; mat.uv_offset[1] = pm->uv_offset.y;
+                mat.normal_uv_scale[0] = pm->normal_uv_scale.x;
+                mat.normal_uv_scale[1] = pm->normal_uv_scale.y;
+                mat.normal_uv_offset[0] = pm->normal_uv_offset.x;
+                mat.normal_uv_offset[1] = pm->normal_uv_offset.y;
                 /* glTF TEXCOORD_1（多 UV 集）：uv1_mask bit0..7 = 8 个**基础**贴图槽是否用第二套 UV；
                  * 折进 flags2 bit4..11（uv1_sel），bit12..18 留给 KHR 扩展贴图 presence（见下），
                  * 故这里只取低 8 位（0xFF）——用 0x1FF 会占用 bit12。
                  * 只有 vertex_layout=1 的网格才有有效 uv1；layout0 的 vs 写 uv1=0，mask=0 时无影响。 */
                 {
-                    const int32_t uv1_mask = (int32_t)read_num(dmat, base, "uv1_mask", 0.0F);
+                    const int32_t uv1_mask = (int32_t)pm->uv1_mask;
                     mat.flags2 |= (uv1_mask & 0xFF) << 4;
                 }
                 /* M4：PBR 贴图槽（albedo / metallic-roughness / occlusion）；normal 在 M5（需要切线空间） */
-                if (const std::string* texref = read_str(dmat, base, "base_color_texture")) {
+                if (const std::string* texref = &pm->base_color_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_srgb(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[0] = tid;
@@ -6197,7 +6073,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             std::print("runtime: pbr albedo texture '{}' -> {}\n", *texref, tid);
                     }
                 }
-                if (const std::string* texref = read_str(dmat, base, "metallic_roughness_texture")) {
+                if (const std::string* texref = &pm->metallic_roughness_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[1] = tid;
@@ -6205,7 +6081,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             std::print("runtime: pbr mr texture '{}' -> {}\n", *texref, tid);
                     }
                 }
-                if (const std::string* texref = read_str(dmat, base, "occlusion_texture")) {
+                if (const std::string* texref = &pm->occlusion_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[2] = tid;
@@ -6213,7 +6089,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             std::print("runtime: pbr ao texture '{}' -> {}\n", *texref, tid);
                     }
                 }
-                if (const std::string* texref = read_str(dmat, base, "normal_texture")) {
+                if (const std::string* texref = &pm->normal_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[3] = tid;
@@ -6221,7 +6097,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             std::print("runtime: pbr normal texture '{}' -> {}\n", *texref, tid);
                     }
                 }
-                if (const std::string* texref = read_str(dmat, base, "emissive_texture")) {
+                if (const std::string* texref = &pm->emissive_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_srgb(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) mat.textures[4] = tid;
@@ -6231,9 +6107,9 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 }
                 /* plans/19：matcap / toon 渐变 / clearcoat 法线三个新贴图槽（flags2 位告知 shader 是否有图） */
                 /* KHR_texture_transform.rotation（弧度；glTF T*R*S 顺序，shader 里先缩放再旋转再平移） */
-    mat.uv_rotation = read_num(dmat, base, "uv_rotation", 0.0F);
-    mat.normal_uv_rotation = read_num(dmat, base, "normal_uv_rotation", 0.0F);
-    if (const std::string* texref = read_str(dmat, base, "matcap_texture")) {
+    mat.uv_rotation = pm->uv_rotation;
+    mat.normal_uv_rotation = pm->normal_uv_rotation;
+    if (const std::string* texref = &pm->matcap_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_srgb(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures2[0] = tid; mat.flags2 |= 2; }
@@ -6241,7 +6117,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             std::print("runtime: matcap texture '{}' -> {}\n", *texref, tid);
                     }
                 }
-                if (const std::string* texref = read_str(dmat, base, "gradient_texture")) {
+                if (const std::string* texref = &pm->gradient_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_ref(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures2[1] = tid; mat.flags2 |= 4; }
@@ -6249,7 +6125,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             std::print("runtime: toon gradient texture '{}' -> {}\n", *texref, tid);
                     }
                 }
-                if (const std::string* texref = read_str(dmat, base, "clearcoat_normal_texture")) {
+                if (const std::string* texref = &pm->clearcoat_normal_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures2[2] = tid; mat.flags2 |= 8; }
@@ -6265,46 +6141,44 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                  * 除 sheen_color 是颜色贴图（sRGB）外，其余都是线性数据贴图（G/A/R 通道语义由 shader 解释）。
                  * 缺失/空 → textures3 保持 -1、presence=0：shader 走旧路径（旧材质零行为变化）。 */
                 {
-                    auto load_ext_tex = [&](const char* field, int slot, bool srgb) {
-                        const std::string* texref = read_str(dmat, base, field);
-                        if (!texref || texref->empty()) return;
-                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, *texref)) : load_texture_mips(scoped_texture_ref(idx, *texref));
+                    auto load_ext_tex = [&](const std::string& texref, int slot, bool srgb, const char* name) {
+                        if (texref.empty()) return;
+                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, texref)) : load_texture_mips(scoped_texture_ref(idx, texref));
                         if (tid >= 0) {
                             mat.textures3[slot] = tid;
                             mat.flags2 |= 1 << (12 + slot);          /* presence：bit12..18 */
                         }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
-                            std::print("runtime: pbr ext texture {} '{}' -> {}\n", field, *texref, tid);
+                            std::print("runtime: pbr ext texture {} '{}' -> {}\n", name, texref, tid);
                     };
-                    load_ext_tex("clearcoat_texture", 0, false);
-                    load_ext_tex("clearcoat_roughness_texture", 1, false);
-                    load_ext_tex("sheen_color_texture", 2, true);
-                    load_ext_tex("sheen_roughness_texture", 3, false);
-                    load_ext_tex("iridescence_texture", 4, false);
-                    load_ext_tex("iridescence_thickness_texture", 5, false);
-                    load_ext_tex("anisotropy_texture", 6, false);
+                    load_ext_tex(pm->clearcoat_texture, 0, false, "clearcoat_texture");
+                    load_ext_tex(pm->clearcoat_roughness_texture, 1, false, "clearcoat_roughness_texture");
+                    load_ext_tex(pm->sheen_color_texture, 2, true, "sheen_color_texture");
+                    load_ext_tex(pm->sheen_roughness_texture, 3, false, "sheen_roughness_texture");
+                    load_ext_tex(pm->iridescence_texture, 4, false, "iridescence_texture");
+                    load_ext_tex(pm->iridescence_thickness_texture, 5, false, "iridescence_thickness_texture");
+                    load_ext_tex(pm->anisotropy_texture, 6, false, "anisotropy_texture");
                 }
                 /* KHR_materials_specular 两槽（flags2 bit21/22）：specularTexture.A=specularFactor（线性）、
                  * specularColorTexture.RGB=specularColorFactor（sRGB）；shader 只作用于电介质 F0。 */
                 {
-                    auto load_spec_tex = [&](const char* field, int slot, bool srgb) {
-                        const std::string* texref = read_str(dmat, base, field);
-                        if (!texref || texref->empty()) return;
-                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, *texref)) : load_texture_mips(scoped_texture_ref(idx, *texref));
+                    auto load_spec_tex = [&](const std::string& texref, int slot, bool srgb, const char* name) {
+                        if (texref.empty()) return;
+                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, texref)) : load_texture_mips(scoped_texture_ref(idx, texref));
                         if (tid >= 0) {
                             mat.textures4[slot] = tid;
                             mat.flags2 |= 1 << (21 + slot);          /* presence：bit21/22 */
                         }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
-                            std::print("runtime: pbr specular texture {} '{}' -> {}\n", field, *texref, tid);
+                            std::print("runtime: pbr specular texture {} '{}' -> {}\n", name, texref, tid);
                     };
-                    load_spec_tex("specular_texture", 0, false);
-                    load_spec_tex("specular_color_texture", 1, true);
+                    load_spec_tex(pm->specular_texture, 0, false, "specular_texture");
+                    load_spec_tex(pm->specular_color_texture, 1, true, "specular_color_texture");
                 }
                 /* KHR_materials_transmission 贴图槽（尾部追加）：R = 透射率掩码（0=不透、1=全透）。
                  * 线性数据贴图 → load_texture_mips（不是 sRGB）；句柄放 textures5[0]，
                  * 存在时置 flags2 bit23（presence；gfx 在 group1 新 binding 绑定）。空/失败保持 -1、presence=0。 */
-                if (const std::string* texref = read_str(dmat, base, "transmission_texture")) {
+                if (const std::string* texref = &pm->transmission_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures5[0] = tid; mat.flags2 |= 0x800000; }
@@ -6317,24 +6191,23 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                  * diffuseTransmissionColorTexture.RGB = 透射色（sRGB）。presence = flags2 bit25/26，
                  * gfx 绑定在 group1 binding 20/21；空/失败保持 -1、presence=0。 */
                 {
-                    auto load_dt_tex = [&](const char* field, int slot, bool srgb) {
-                        const std::string* texref = read_str(dmat, base, field);
-                        if (!texref || texref->empty()) return;
-                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, *texref)) : load_texture_mips(scoped_texture_ref(idx, *texref));
+                    auto load_dt_tex = [&](const std::string& texref, int slot, bool srgb, const char* name) {
+                        if (texref.empty()) return;
+                        const int tid = srgb ? load_texture_srgb(scoped_texture_ref(idx, texref)) : load_texture_mips(scoped_texture_ref(idx, texref));
                         if (tid >= 0) {
                             mat.textures6[slot] = tid;
                             mat.flags2 |= 1 << (25 + slot);          /* presence：bit25/26 */
                         }
                         if (std::getenv("MAQUE_RENDER3D_INFO"))
                             std::print("runtime: pbr diffuse-transmission texture {} '{}' -> {}\n",
-                                       field, *texref, tid);
+                                       name, texref, tid);
                     };
-                    load_dt_tex("diffuse_transmission_texture", 0, false);
-                    load_dt_tex("diffuse_transmission_color_texture", 1, true);
+                    load_dt_tex(pm->diffuse_transmission_texture, 0, false, "diffuse_transmission_texture");
+                    load_dt_tex(pm->diffuse_transmission_color_texture, 1, true, "diffuse_transmission_color_texture");
                 }
                 /* KHR_materials_volume thicknessTexture.G（线性数据；flags2 bit27 presence，
                  * gfx 绑定在 group1 binding 22）。 */
-                if (const std::string* texref = read_str(dmat, base, "volume_thickness_texture")) {
+                if (const std::string* texref = &pm->volume_thickness_texture) {
                     if (!texref->empty()) {
                         const int tid = load_texture_mips(scoped_texture_ref(idx, *texref));
                         if (tid >= 0) { mat.textures7[0] = tid; mat.flags2 |= 0x8000000; }
@@ -6397,7 +6270,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                             built = true;
                             for (size_t j = 0; j < nj; ++j) {
                                 auto jhit = entity_by_name.find(sk->joint_names[j]);
-                                const Entity* je = jhit == entity_by_name.end()
+                                const SceneNode* je = jhit == entity_by_name.end()
                                                        ? nullptr : scene->at(jhit->second);
                                 if (!je) { built = false; break; }
                                 m4_mul(je->world_m, sk->inverse_bind.data() + j * 16,
@@ -6446,8 +6319,8 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             dr.skin = skin_index;
             dr.flags |= 0x40000000;            /* draw.layer 是有效 culling mask（旧调用方无此位） */
             dr.layer = -1;
-            if (const mq_field_desc* f = mq_reflect_field(dmesh, "culling_mask"))
-                dr.layer = (int32_t)*(const uint32_t*)(mb->data() + f->offset);
+            if (const auto* m = as_component<render::MeshRenderer>(dmesh, mb->data()))
+                dr.layer = (int32_t)m->culling_mask;
             dr.sort_key = (uint64_t)idx;
             out_draws.push_back(dr);
         }
@@ -6858,7 +6731,7 @@ void Engine::step_frame(bool render_frame) {
         { MQ_TRACY_ZONE_N(physics, "physics.step"); physics_components_step(dt); }   // 组件驱动物理
         flush_pending_destroy();                         // node.destroy()：帧边界统一销毁
         { MQ_TRACY_ZONE_N(ui, "ui.step"); ui_step(); }   // UI 组件语义（layout/progress/slider/...）
-        { MQ_TRACY_ZONE_N(runtime, "flatten"); scene->flatten_world(*this); }
+        { MQ_TRACY_ZONE_N(runtime, "flatten"); scene->update_world(*this); }
         /* 音频：组件同步（autoplay/参数/空间化）→ 逻辑 playhead/状态按模拟 dt 推进
          * （与设备是否出声无关，docs/30 §5）。 */
         {
@@ -7343,7 +7216,7 @@ void Engine::step_frame(bool render_frame) {
  * 返回目标类型/字段与所在实体；全部按 role 与反射，不硬编码组件类型。 */
 bool resolve_field_path(Engine& eng, int entity, const std::string& path,
                         const mq_type_desc** out_type, const mq_field_desc** out_field, void** out_base) {
-    Entity* e = eng.scene->at(entity);
+    SceneNode* e = eng.scene->at(entity);
     if (!e) return false;
     const size_t dot = path.rfind('.');
     const std::string type_part = dot == std::string::npos ? std::string() : path.substr(0, dot);
@@ -7405,45 +7278,35 @@ void Engine::anim_step(float dt) {
     anim_pose.clear();
     morph_weight_override.clear();
     std::vector<int> ids;
-    for (auto& [idx, e] : scene->ents) ids.push_back(idx);
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (!d || !(d->role & MQ_ROLE_ANIM_PLAYER)) continue;
+            auto* ap = as_component_mut<scn::AnimationPlayer>(d, blob.data());
+            if (!ap) continue;
             /* glTF 片段通路：clips 非空 → 只走新逻辑（旧 clip 通路完全不变） */
-            if (const mq_field_desc* fc = mq_reflect_field(d, "clips")) {
-                if (fc->kind == MQ_TK_ARRAY_DYN && fc->container_size &&
-                    fc->container_size(blob.data() + fc->offset) > 0) {
-                    anim_step_gclip(id, d, blob, dt);
-                    continue;
-                }
+            if (!ap->clips.empty()) {
+                anim_step_gclip(id, d, blob, dt);
+                continue;
             }
-            bool playing = true;
-            if (const mq_field_desc* f = mq_reflect_field(d, "playing")) playing = *(const bool*)(blob.data() + f->offset);
-            std::string clipref;
-            if (const std::string* cp = read_str(d, blob.data(), "clip")) clipref = *cp;
-            float speed = 1.0F;
-            read_f32(d, blob.data(), "speed", &speed);
-            if (!playing || clipref.empty()) continue;
-            if (find_clip(clipref) < 0 && !load_clip(clipref)) continue;
-            const int ci = find_clip(clipref);
+            if (!ap->playing || ap->clip.empty()) continue;
+            if (find_clip(ap->clip) < 0 && !load_clip(ap->clip)) continue;
+            const int ci = find_clip(ap->clip);
             if (ci < 0) continue;
             const asset::AnimationClip* ac = (const asset::AnimationClip*)clips[ci].blob.data();
             const float length = ac->length;
             /* 播放头推进（确定性：dt 来自固定步长，无墙钟，docs/10 D1/D3） */
-            float time = 0.0F;
-            if (const mq_field_desc* f = mq_reflect_field(d, "time")) time = *(const float*)(blob.data() + f->offset);
-            time += dt * speed;
+            ap->time += dt * ap->speed;
             const bool loop = clips[ci].loop;
             if (length > 0.0F) {
-                if (loop) { while (time >= length) time -= length; }
-                else if (time > length) time = length;
+                if (loop) { while (ap->time >= length) ap->time -= length; }
+                else if (ap->time > length) ap->time = length;
             }
-            if (const mq_field_desc* f = mq_reflect_field(d, "time")) *(float*)(blob.data() + f->offset) = time;
-            if (const mq_field_desc* f = mq_reflect_field(d, "duration")) *(float*)(blob.data() + f->offset) = length;
+            const float time = ap->time;
+            ap->duration = length;
             /* 采样 + 写回：对每条轨道做线性插值（值型 Vec4 前 n 分量按字段类型写标量） */
             for (auto& track : ac->tracks) {
                 if (track.keys.empty() || track.field_path.empty()) continue;
@@ -7472,7 +7335,7 @@ void Engine::anim_step(float dt) {
                     if (!vt) continue;
                     for (uint32_t fi = 0, vi = 0; fi < vt->field_count && vi < 4; ++fi, ++vi) {
                         const mq_field_desc* vf = &vt->fields[fi];
-                        if (vf->kind == MQ_TK_F32) *(float*)((uint8_t*)fp + vf->offset) = v[vi];
+                        if (vf->kind == MQ_TK_F32) field_set_f32(vf, (uint8_t*)fp, v[vi]);
                     }
                 }
             }
@@ -7486,14 +7349,12 @@ void Engine::audio_step(float dt) {
     (void)dt;
     if (!audio || !scene) return;
     std::vector<int> ids;
-    ids.reserve(scene->ents.size());
-    for (auto& [k, e] : scene->ents) ids.push_back(k);
-    std::sort(ids.begin(), ids.end());   // 稳定顺序（docs/10 D4）
+    scene->collect_preorder(ids);
 
     /* 听者：每 instance 取稳定排序后的第一个 active */
     const mq_type_desc* listener_desc = nullptr;
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         auto* lb = comp_by_role(*this, id, MQ_ROLE_AUDIO_LISTENER);
         if (!lb) continue;
@@ -7501,8 +7362,8 @@ void Engine::audio_step(float dt) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (d && (d->role & MQ_ROLE_AUDIO_LISTENER)) { listener_desc = d; break; }
         }
-        if (!listener_desc) continue;
-        if (read_num(listener_desc, lb->data(), "active", 1.0F) <= 0.0F) continue;
+        const auto* lis = listener_desc ? as_component<audio::AudioListener>(listener_desc, lb->data()) : nullptr;
+        if (!lis || !lis->active) continue;
         const float rad = e->angle * 3.14159265358979F / 180.0F;
         mq_audio_listener l{};
         l.struct_size = sizeof l;
@@ -7513,7 +7374,7 @@ void Engine::audio_step(float dt) {
         l.dir_y = std::sin(rad);
         l.dir_z = 0.0F;
         mq_audio_set_listener(audio, &l);
-        const float master = read_num(listener_desc, lb->data(), "master_volume", 1.0F);
+        const float master = lis->master_volume;
         if (master != last_listener_master) {
             mq_audio_set_master(audio, master, 0);
             last_listener_master = master;
@@ -7522,7 +7383,7 @@ void Engine::audio_step(float dt) {
     }
 
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         auto* sb = comp_by_role(*this, id, MQ_ROLE_AUDIO_SOURCE);
         if (!sb) continue;
@@ -7531,27 +7392,26 @@ void Engine::audio_step(float dt) {
             const mq_type_desc* t = mq_reflect_type_by_id(reflect, tid);
             if (t && (t->role & MQ_ROLE_AUDIO_SOURCE)) { d = t; break; }
         }
-        if (!d) continue;
-        uint8_t* data = sb->data();
-        const mq_field_desc* fv = mq_reflect_field(d, "voice");
-        uint64_t voice = fv ? *(uint64_t*)(data + fv->offset) : 0;
-        const std::string* clip_path = read_str(d, data, "clip");
-        if (!clip_path || clip_path->empty()) {
+        auto* src = d ? as_component_mut<audio::AudioSource>(d, sb->data()) : nullptr;
+        if (!src) continue;
+        uint64_t voice = src->voice;
+        const std::string* clip_path = &src->clip;
+        if (clip_path->empty()) {
             if (voice) {
                 mq_audio_stop(audio, voice);
-                if (fv) *(uint64_t*)(data + fv->offset) = 0;
+                src->voice = 0;
             }
             continue;
         }
-        const bool autoplay = read_num(d, data, "autoplay", 0.0F) > 0.0F;
-        const bool loop = read_num(d, data, "loop", 0.0F) > 0.0F;
-        const float volume = read_num(d, data, "volume", 1.0F);
-        const float pitch = read_num(d, data, "pitch", 1.0F);
-        const float min_d = read_num(d, data, "min_distance", 1.0F);
-        const float max_d = read_num(d, data, "max_distance", 50.0F);
-        const uint32_t panning = (uint32_t)read_num(d, data, "panning", 0.0F);
-        const uint32_t attenuation = (uint32_t)read_num(d, data, "attenuation", 0.0F);
-        const std::string* bus = read_str(d, data, "bus");
+        const bool autoplay = src->autoplay;
+        const bool loop = src->loop;
+        const float volume = src->volume;
+        const float pitch = src->pitch;
+        const float min_d = src->min_distance;
+        const float max_d = src->max_distance;
+        const uint32_t panning = (uint32_t)src->panning;
+        const uint32_t attenuation = (uint32_t)src->attenuation;
+        const std::string* bus = &src->bus;
 
         if (voice == 0) {
             if (!autoplay) continue;
@@ -7580,7 +7440,7 @@ void Engine::audio_step(float dt) {
                 std::print("[audio] start voice={} frames={} rate={} ch={}\n", voice, fr, rt, chn);
             }
             if (!voice) continue;
-            if (fv) *(uint64_t*)(data + fv->offset) = voice;
+            src->voice = voice;
         }
         /* 每帧同步可调参数（脚本可用 node_set_number 改 volume 等） */
         mq_audio_set_volume(audio, voice, volume);
@@ -7590,11 +7450,8 @@ void Engine::audio_step(float dt) {
         uint32_t st = 0;
         float head = 0.0F;
         if (mq_audio_voice_state(audio, voice, &st, &head) == MQ_AUDIO_OK) {
-            if (const mq_field_desc* fs = mq_reflect_field(d, "state"))
-                *(int32_t*)(data + fs->offset) = (int32_t)st;
-            if (const mq_field_desc* fh = mq_reflect_field(d, "playhead"))
-                *(float*)(data + fh->offset) = head;
-            (void)0;
+            src->state = (audio::AudioPlayState)st;
+            src->playhead = head;
         }
     }
 }
@@ -7616,30 +7473,19 @@ void Engine::particles_step(float dt) {
 
     /* 发射（按实体 id 升序 → 确定性；RNG 为引擎 RNG） */
     std::vector<int> ids;
-    for (auto& [idx, e] : scene->ents) ids.push_back(idx);
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-            if (!d || !(d->role & MQ_ROLE_PARTICLE)) continue;
-            bool enabled = true;
-            if (const mq_field_desc* f = mq_reflect_field(d, "enabled")) enabled = *(const bool*)(blob.data() + f->offset);
-            if (!enabled) continue;
-            float rate = 0, life = 1, speed = 0, spread = 0.5F, gravity = 0, size = 2;
-            float r = 1, g = 1, b = 1;
-            uint32_t max_count = 256;
-            read_f32(d, blob.data(), "rate", &rate);
-            read_f32(d, blob.data(), "lifetime", &life);
-            read_f32(d, blob.data(), "speed", &speed);
-            read_f32(d, blob.data(), "spread", &spread);
-            read_f32(d, blob.data(), "gravity", &gravity);
-            read_f32(d, blob.data(), "size", &size);
-            read_f32(d, blob.data(), "r", &r);
-            read_f32(d, blob.data(), "g", &g);
-            read_f32(d, blob.data(), "b", &b);
-            if (const mq_field_desc* f = mq_reflect_field(d, "max_count")) max_count = *(const uint32_t*)(blob.data() + f->offset);
+            const auto* pe = (d && (d->role & MQ_ROLE_PARTICLE))
+                                 ? as_component<scn::ParticleEmitter>(d, blob.data()) : nullptr;
+            if (!pe || !pe->enabled) continue;
+            const float rate = pe->rate, life = pe->lifetime, speed = pe->speed;
+            const float spread = pe->spread, gravity = pe->gravity, size = pe->size;
+            const float r = pe->r, g = pe->g, b = pe->b;
+            const uint32_t max_count = pe->max_count;
             /* 其它粒子的重力（按各自发射器；用 owner 记录） */
             for (auto& p : particles) if (p.owner == id) p.vy += gravity * dt;
             /* 累加器（每实体一份，存在 emitter_accum；按 id 定位） */
@@ -7671,25 +7517,18 @@ void Engine::particles_step(float dt) {
 void Engine::nav_step() {
     if (!scene || !nav) return;
     std::vector<int> ids;
-    for (auto& [idx, e] : scene->ents) ids.push_back(idx);
-    std::sort(ids.begin(), ids.end());                      // 升序 → 更新顺序确定（docs/10 D4）
+    scene->collect_preorder(ids);
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-            if (!d || !(d->role & MQ_ROLE_NAV_AGENT)) continue;
-            bool has_target = false;
-            if (const mq_field_desc* f = mq_reflect_field(d, "has_target")) has_target = *(const bool*)(blob.data() + f->offset);
-            const mq_field_desc* fstate = mq_reflect_field(d, "state");
-            if (!has_target) { if (fstate) *(int32_t*)(blob.data() + fstate->offset) = 0; continue; }
-            float tx = 0, ty = 0, speed = 60, arrive = 2;
-            read_f32(d, blob.data(), "tx", &tx);
-            read_f32(d, blob.data(), "ty", &ty);
-            read_f32(d, blob.data(), "speed", &speed);
-            read_f32(d, blob.data(), "arrive_dist", &arrive);
-            bool repath = true;
-            if (const mq_field_desc* f = mq_reflect_field(d, "repath")) repath = *(const bool*)(blob.data() + f->offset);
+            auto* na = (d && (d->role & MQ_ROLE_NAV_AGENT))
+                           ? as_component_mut<scn::NavAgent>(d, blob.data()) : nullptr;
+            if (!na) continue;
+            if (!na->has_target) { na->state = 0; continue; }
+            const float tx = na->tx, ty = na->ty, speed = na->speed, arrive = na->arrive_dist;
+            const bool repath = na->repath;
 
             AgentPath& ap = agent_paths[id];
             /* 路径缺失/目标变化 → 重新寻路（确定性：与实体 id 顺序无关的单点查询） */
@@ -7711,11 +7550,11 @@ void Engine::nav_step() {
                         n = mq_nav_smooth(nav, buf.data(), n);
                         ap.path.assign(buf.begin(), buf.begin() + (size_t)n * 2);
                         ap.index = 0;
-                        if (fstate) *(int32_t*)(blob.data() + fstate->offset) = 1;   // Moving
+                        na->state = 1;   // Moving
                     } else {
                         ap.path.clear();
                         ap.index = 0;
-                        if (fstate) *(int32_t*)(blob.data() + fstate->offset) = 3;   // NoPath
+                        na->state = 3;   // NoPath
                         continue;
                     }
                 }
@@ -7728,7 +7567,7 @@ void Engine::nav_step() {
                                                speed, dt, arrive);
             host::entity_set_pos(this, (float)id, x, y);
             e->world_x = x; e->world_y = y;
-            if (rc == 1 && fstate) *(int32_t*)(blob.data() + fstate->offset) = 2;    // Arrived
+            if (rc == 1) na->state = 2;    // Arrived
         }
     }
 }
@@ -7799,10 +7638,9 @@ void Engine::clear_asset_caches() {
 void Engine::preload_scene_assets() {
     if (!scene) return;
     std::vector<int> ids;
-    for (auto& [idx, e] : scene->ents) ids.push_back(idx);
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
@@ -7919,12 +7757,11 @@ bool Engine::reload_scene() {
     if (scene == &scene_store) scene_store = Scene();
     scene_owned = std::move(fresh);
     scene = scene_owned.get();
-    scene->flatten_world(*this);
+    scene->update_world(*this);
     if (SceneInstanceRuntime* root = instance_at(0)) {
-        for (auto& [eid, ent] : scene->ents)
-            if (ent.parent < 0 && entity_instance.find(eid) != entity_instance.end() && entity_instance[eid] == 0)
+        for (int eid : scene->roots)
+            if (entity_instance.find(eid) != entity_instance.end() && entity_instance[eid] == 0)
                 root->roots.push_back(eid);
-        std::sort(root->roots.begin(), root->roots.end());
     }
     /* 新装配出的子实例需要一次 on_start（后序）；根实例保持"世界重建但 VM 状态不丢"的旧语义。
      * 先收集 id 再派发：on_start 里可能继续 scene_instantiate，不能边遍历边改表。 */
@@ -8589,26 +8426,136 @@ void Engine::main_loop(const std::string& frames_dir, const std::string& name) {
                name, frame, quit ? 1 : 0, world_trail());
 }
 
-/* ---- Scene ---- */
+/* ---- Scene（场景树：Node + Components）---- */
 int Scene::spawn() {
-    const int idx = next_id++;                   // 单调：永不复用（陈旧 id 不会别名新实体）
-    ents.emplace(idx, Entity{});
+    const int idx = next_id++;                   // 单调：永不复用（陈旧 id 不会别名新节点）
+    nodes.emplace(idx, SceneNode{});
+    roots.insert(std::lower_bound(roots.begin(), roots.end(), idx), idx);
     return idx;
 }
-Entity* Scene::at(int index) {
+SceneNode* Scene::at(int index) {
     if (index < 0) return nullptr;
-    auto it = ents.find(index);
-    return it == ents.end() ? nullptr : &it->second;
+    auto it = nodes.find(index);
+    return it == nodes.end() ? nullptr : &it->second;
 }
-void Scene::remove(int index) {
-    auto it = ents.find(index);
-    if (it != ents.end()) {
-        for (auto& [t, b] : it->second.comps) if (eng) destroy_blob(*eng, t, b);
-        ents.erase(it);
+const SceneNode* Scene::at(int index) const {
+    if (index < 0) return nullptr;
+    auto it = nodes.find(index);
+    return it == nodes.end() ? nullptr : &it->second;
+}
+
+/* 挂到 parent 下（parent<0 = 场景根）。children 保持 id 升序：
+ * 加载/动态创建天然递增 → 顺序 == 声明序；重挂时也维持旧 childAt 的确定性语义。 */
+void Scene::attach(int child, int parent) {
+    if (child < 0) return;
+    auto cit = nodes.find(child);
+    if (cit == nodes.end()) return;
+    if (cit->second.parent == parent) return;
+    detach(child);
+    cit = nodes.find(child);                     // detach 只改容器内容，不 erase 节点
+    if (parent >= 0 && parent != child) {
+        auto pit = nodes.find(parent);
+        if (pit != nodes.end()) {
+            auto& kids = pit->second.children;
+            kids.insert(std::lower_bound(kids.begin(), kids.end(), child), child);
+            cit->second.parent = parent;
+            return;
+        }
     }
-    if (eng) {
-        eng->entity_instance.erase(index);
-        eng->node_events.erase(index);
+    roots.insert(std::lower_bound(roots.begin(), roots.end(), child), child);
+    cit->second.parent = -1;
+}
+
+void Scene::detach(int child) {
+    auto it = nodes.find(child);
+    if (it == nodes.end()) return;
+    const int p = it->second.parent;
+    if (p >= 0) {
+        auto pit = nodes.find(p);
+        if (pit != nodes.end()) {
+            auto& kids = pit->second.children;
+            auto k = std::lower_bound(kids.begin(), kids.end(), child);
+            if (k != kids.end() && *k == child) kids.erase(k);
+        }
+    }
+    auto r = std::lower_bound(roots.begin(), roots.end(), child);
+    if (r != roots.end() && *r == child) roots.erase(r);
+    it->second.parent = -1;
+}
+
+/* 从 parent 字段重建整棵树（快照 decode / 反序列化后调用）。
+ * 脏数据保护：父不存在、自环、祖先环 → 该节点降为根（绝不产生环或悬垂 children）。 */
+void Scene::rebuild_tree() {
+    roots.clear();
+    std::vector<int> ids;
+    ids.reserve(nodes.size());
+    for (auto& [id, n] : nodes) { n.children.clear(); ids.push_back(id); }
+    std::sort(ids.begin(), ids.end());
+    for (int id : ids) {
+        SceneNode& n = nodes[id];
+        const int p = n.parent;
+        if (p == id || p < 0 || nodes.find(p) == nodes.end()) { n.parent = -1; roots.push_back(id); continue; }
+        bool cycle = false;
+        for (int cur = p, guard = 0; cur >= 0 && guard < 4096; ++guard) {
+            if (cur == id) { cycle = true; break; }
+            auto ci = nodes.find(cur);
+            if (ci == nodes.end()) break;
+            cur = ci->second.parent;
+        }
+        if (cycle) { n.parent = -1; roots.push_back(id); continue; }
+        nodes[p].children.push_back(id);
+    }
+    std::sort(roots.begin(), roots.end());
+    for (auto& [id, n] : nodes) std::sort(n.children.begin(), n.children.end());
+}
+
+int Scene::child_count(int parent) const {
+    if (parent < 0) return (int)roots.size();
+    auto it = nodes.find(parent);
+    return it == nodes.end() ? 0 : (int)it->second.children.size();
+}
+
+int Scene::child_at(int parent, int index) const {
+    if (index < 0) return -1;
+    if (parent < 0) return index < (int)roots.size() ? roots[(size_t)index] : -1;
+    auto it = nodes.find(parent);
+    if (it == nodes.end() || index >= (int)it->second.children.size()) return -1;
+    return it->second.children[(size_t)index];
+}
+
+void Scene::remove(int index) {
+    if (nodes.find(index) == nodes.end()) {
+        if (eng) {
+            eng->entity_instance.erase(index);
+            eng->node_events.erase(index);
+        }
+        return;
+    }
+    /* 销毁**整棵子树**（Node 树语义：父节点消失则后代一并消失）。
+     * 先收集后删除：组件析构/事件表清理都按 id 进行，不能边遍历边 erase。 */
+    std::vector<int> doomed;
+    std::unordered_set<int> seen;
+    std::vector<int> stack{index};
+    while (!stack.empty()) {
+        const int cur = stack.back();
+        stack.pop_back();
+        auto it = nodes.find(cur);
+        if (it == nodes.end() || !seen.insert(cur).second) continue;
+        doomed.push_back(cur);
+        for (int k : it->second.children) stack.push_back(k);
+    }
+    detach(index);                       // 只把子树根从父节点/根表摘下
+    for (int id : doomed) {
+        auto it = nodes.find(id);
+        if (it == nodes.end()) continue;
+        if (eng) for (auto& [t, b] : it->second.comps) destroy_blob(*eng, t, b);
+        nodes.erase(it);
+        auto r = std::lower_bound(roots.begin(), roots.end(), id);
+        if (r != roots.end() && *r == id) roots.erase(r);
+    }
+    if (eng) for (int id : doomed) {
+        eng->entity_instance.erase(id);
+        eng->node_events.erase(id);
     }
     /* 不回收 id（单调分配）→ 之后 entity_valid(旧 id) 恒为 false */
 }
@@ -8694,7 +8641,7 @@ static void expand_prefab(Engine& eng, Scene& sc, const std::string& src, int pa
     for (uint32_t i = 0; i < pcount; ++i) {
         int child = load_entity(eng, sc, mq_json_at(pents, i), parent, &child_chain, depth + 1);
         if (child >= 0 && !name_prefix.empty())
-            if (Entity* ce = sc.at(child); ce && !ce->name.empty()) ce->name = name_prefix + ce->name;
+            if (SceneNode* ce = sc.at(child); ce && !ce->name.empty()) ce->name = name_prefix + ce->name;
     }
     mq_json_free(pdom);
     std::print("runtime: prefab '{}' instantiated under entity {}\n", src, parent);
@@ -8726,8 +8673,8 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
     int idx = sc.spawn();
     if (idx < 0) return -1;
     eng.entity_instance[idx] = eng.building_instance;    // 归属（事件作用域/序列化过滤用）
-    Entity* ent = sc.at(idx);
-    ent->parent = parent;
+    sc.attach(idx, parent);                              // 层级真相：父的 children（id 升序）
+    SceneNode* ent = sc.at(idx);
     if (nm) ent->name = nm;
 
     for (uint32_t i = 0; i < cn; ++i) {
@@ -8751,7 +8698,7 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
         const std::string* src = read_str(d, blob.data(), "source");
         if (!src || src->empty()) continue;
         bool detached = false;
-        if (const mq_field_desc* fd = mq_reflect_field(d, "detached")) detached = *(const bool*)(blob.data() + fd->offset);
+        if (const mq_field_desc* fd = mq_reflect_field(d, "detached")) detached = field_get_bool(fd, blob.data());
         if (detached) continue;
         expand_prefab(eng, sc, *src, idx, chain, depth);
     }
@@ -8766,7 +8713,7 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
                 std::vector<uint8_t>& blob = it->second;
                 const std::string* src = read_str(sid, blob.data(), "source");
                 const mq_field_desc* det = mq_reflect_field(sid, "detached");
-                const bool detached = det && *(const bool*)(blob.data() + det->offset);
+                const bool detached = det && field_get_bool(det, blob.data());
                 if (!detached && src && !src->empty()) {
                     std::string src_vfs;
                     const int iid = eng.resolve_instance_path(*src, eng.building_base, src_vfs)
@@ -8787,16 +8734,16 @@ static int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
                         } else {
                             state = 1;
                             if (const mq_field_desc* f = mq_reflect_field(sid, "paused"))
-                                ci->paused = *(bool*)(blob.data() + f->offset);
+                                ci->paused = field_get_bool(f, blob.data());
                             if (const mq_field_desc* f = mq_reflect_field(sid, "active"))
-                                ci->active = *(bool*)(blob.data() + f->offset);
-                            if (!ci->active) { if (Entity* se = eng.scene->at(idx)) se->active = false; }
+                                ci->active = field_get_bool(f, blob.data());
+                            if (!ci->active) { if (SceneNode* se = eng.scene->at(idx)) se->active = false; }
                         }
                     }
                     if (const mq_field_desc* f = mq_reflect_field(sid, "instance_id"))
-                        *(int32_t*)(blob.data() + f->offset) = (int32_t)iid;
+                        field_set_i32(f, blob.data(), (int32_t)iid);
                     if (const mq_field_desc* f = mq_reflect_field(sid, "state"))
-                        *(int32_t*)(blob.data() + f->offset) = state;
+                        field_set_i32(f, blob.data(), state);
                     if (const mq_field_desc* f = mq_reflect_field(sid, "error"))
                         *(uint16_t*)(blob.data() + f->offset) = err;
                 }
@@ -9115,9 +9062,9 @@ bool Engine::build_instance(SceneInstanceRuntime& inst, int depth) {
     building_instance = inst.id;
     building_base = inst.base;
     const int attach = inst.attach_entity;
-    const mq_json* ents = mq_json_get(dom, "entities");
-    const uint32_t count = mq_json_len(ents);
-    for (uint32_t i = 0; i < count; ++i) load_entity(*this, *scene, mq_json_at(ents, i), attach, nullptr, 1);
+    const mq_json* jents = mq_json_get(dom, "entities");
+    const uint32_t count = mq_json_len(jents);
+    for (uint32_t i = 0; i < count; ++i) load_entity(*this, *scene, mq_json_at(jents, i), attach, nullptr, 1);
     bool ok = true;
     if (!rel_scripts.empty()) ok = load_instance_scripts(inst, rel_scripts, false);
     building_instance = prev_inst;
@@ -9125,11 +9072,15 @@ bool Engine::build_instance(SceneInstanceRuntime& inst, int depth) {
     scene_chain.pop_back();
     mq_json_free(dom);
 
-    for (auto& [eid, ent] : scene->ents)
-        if (ent.parent == attach && entity_instance.find(eid) != entity_instance.end()
-            && entity_instance[eid] == inst.id)
-            inst.roots.push_back(eid);
-    std::sort(inst.roots.begin(), inst.roots.end());
+    if (SceneNode* an = attach >= 0 ? scene->at(attach) : nullptr) {
+        for (int eid : an->children)
+            if (entity_instance.find(eid) != entity_instance.end() && entity_instance[eid] == inst.id)
+                inst.roots.push_back(eid);
+    } else {
+        for (int eid : scene->roots)
+            if (entity_instance.find(eid) != entity_instance.end() && entity_instance[eid] == inst.id)
+                inst.roots.push_back(eid);
+    }
     if (!ok) { inst.state = 3; return false; }
     inst.state = 1;
     rebase_instance_assets(inst.id);                 // 嵌套场景内资源路径 → 实例 base 前缀
@@ -9274,8 +9225,8 @@ void Engine::apply_instance_ops() {
                     entity_instance[shell] = inst->parent >= 0 ? inst->parent : 0;
                     inst->attach_entity = shell;
                     inst->owns_shell = true;
-                    if (Entity* se = scene->at(shell)) {
-                        se->parent = -1;
+                    if (SceneNode* se = scene->at(shell)) {
+                        scene->attach(shell, -1);       // 动态壳 = 根节点
                         se->name = "SceneInstance#" + std::to_string(inst->id);
                     }
                 }
@@ -9352,7 +9303,7 @@ std::string Engine::serialized_instance_source(const SceneInstanceRuntime& inst)
 
 void Engine::ensure_instance_component(int shell, int instance_id) {
     if (!scene || !reflect) return;
-    Entity* se = scene->at(shell);
+    SceneNode* se = scene->at(shell);
     SceneInstanceRuntime* inst = instance_at(instance_id);
     if (!se || !inst) return;
     const mq_type_desc* sid = mq_reflect_type_by_name(reflect, "scn.SceneInstance");
@@ -9363,19 +9314,19 @@ void Engine::ensure_instance_component(int shell, int instance_id) {
     if (it == se->comps.end()) return;
     std::vector<uint8_t>& blob = it->second;
     if (const mq_field_desc* f = mq_reflect_field(sid, "source"))
-        *(std::string*)(blob.data() + f->offset) = serialized_instance_source(*inst);
+        field_set_str(f, blob.data(), serialized_instance_source(*inst).c_str());
     if (const mq_field_desc* f = mq_reflect_field(sid, "params"))
-        *(std::string*)(blob.data() + f->offset) = inst->params;
+        field_set_str(f, blob.data(), inst->params.c_str());
     if (const mq_field_desc* f = mq_reflect_field(sid, "paused"))
-        *(bool*)(blob.data() + f->offset) = inst->paused;
+        field_set_bool(f, blob.data(), inst->paused);
     if (const mq_field_desc* f = mq_reflect_field(sid, "active"))
-        *(bool*)(blob.data() + f->offset) = inst->active;
+        field_set_bool(f, blob.data(), inst->active);
     if (const mq_field_desc* f = mq_reflect_field(sid, "detached"))
-        *(bool*)(blob.data() + f->offset) = inst->detached;
+        field_set_bool(f, blob.data(), inst->detached);
     if (const mq_field_desc* f = mq_reflect_field(sid, "instance_id"))
-        *(int32_t*)(blob.data() + f->offset) = inst->id;
+        field_set_i32(f, blob.data(), inst->id);
     if (const mq_field_desc* f = mq_reflect_field(sid, "state"))
-        *(int32_t*)(blob.data() + f->offset) = inst->state;
+        field_set_i32(f, blob.data(), inst->state);
 }
 
 /* 把实例拥有的组件资源路径改写为「实例 base 前缀」——让既有的 VFS 相对根场景目录的
@@ -9385,7 +9336,7 @@ void Engine::rebase_instance_assets(int instance_id) {
     if (!inst || inst->base.empty() || !scene) return;
     for (auto& [eid, owner] : entity_instance) {
         if (owner != instance_id) continue;
-        Entity* e = scene->at(eid);
+        SceneNode* e = scene->at(eid);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
@@ -9393,7 +9344,7 @@ void Engine::rebase_instance_assets(int instance_id) {
             for (uint32_t i = 0; i < d->field_count; ++i) {
                 const mq_field_desc* f = &d->fields[i];
                 if (f->kind != MQ_TK_STRING || !is_instance_asset_field(f->name)) continue;
-                std::string* s = (std::string*)(blob.data() + f->offset);
+                std::string* s = (std::string*)field_ptr_mut(f, blob.data());
                 if (s->empty()) continue;
                 static constexpr const char* kRt = "rendertexture://";
                 if (s->rfind(kRt, 0) == 0) continue;  /* 运行期按 consumer instance 解析，不改写持久化文本 */
@@ -9723,11 +9674,11 @@ uint64_t Engine::instance_checksum() const {
  * 转换按 index 排序 → 不依赖哈希迭代顺序（docs/10 D4）。 ---- */
 void Scene::encode(Engine& eng, SnapshotWriter& w) {
     std::vector<int> idx;
-    for (auto& [k, v] : ents) idx.push_back(k);
+    for (auto& [k, v] : nodes) idx.push_back(k);
     std::sort(idx.begin(), idx.end());
     w.pod((uint32_t)idx.size());
     for (int k : idx) {
-        Entity& e = ents[k];
+        SceneNode& e = nodes[k];
         w.pod((int32_t)k);
         w.pod((int32_t)e.parent);
         w.pod((uint8_t)(e.active ? 1 : 0));
@@ -9765,9 +9716,10 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
     };
     uint32_t count = 0;
     if (!take(&count, 4) || count > (1u << 20)) return 0;
-    for (auto& [k, ent] : ents)
+    for (auto& [k, ent] : nodes)
         for (auto& [t, b] : ent.comps) destroy_blob(eng, t, b);
-    ents.clear();
+    nodes.clear();
+    roots.clear();
     for (uint32_t i = 0; i < count; ++i) {
         int32_t k = 0, parent = -1;
         uint32_t name_len = 0;
@@ -9782,7 +9734,7 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
         pos += name_len;
         uint32_t comps = 0;
         if (!take(&comps, 4) || comps > 4096) return 0;
-        Entity e;
+        SceneNode e;
         e.name = std::move(nm);
         e.parent = parent;
         e.active = active != 0;
@@ -9806,10 +9758,11 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
             }
             pos += len;
         }
-        ents[k] = std::move(e);
+        nodes[k] = std::move(e);
         if (k + 1 > next_id) next_id = k + 1;
     }
     if (id_floor > next_id) next_id = id_floor;
+    rebuild_tree();                 // children/roots 是派生结构：快照只存 parent，恢复后重建
     return pos;
 }
 
@@ -9822,10 +9775,10 @@ uint64_t Scene::checksum(Engine& eng) {
         for (size_t i = 0; i < n; ++i) { h ^= b[i]; h *= 1099511628211ull; }
     };
     std::vector<int> idx;
-    for (auto& [k, v] : ents) idx.push_back(k);
+    for (auto& [k, v] : nodes) idx.push_back(k);
     std::sort(idx.begin(), idx.end());
     for (int k : idx) {
-        Entity& e = ents[k];
+        SceneNode& e = nodes[k];
         mix(&k, sizeof k); mix(&e.parent, sizeof e.parent); mix(&e.world_x, sizeof e.world_x); mix(&e.world_y, sizeof e.world_y);
         mix(&e.active, sizeof e.active); mix(&e.scale, sizeof e.scale); mix(&e.angle, sizeof e.angle);
         mix(&e.opacity, sizeof e.opacity); mix(&e.z_index, sizeof e.z_index);
@@ -9858,94 +9811,71 @@ uint64_t Scene::checksum(Engine& eng) {
     return h;
 }
 
-/* 组件语义由 roles 决定：transform2d / sprite —— 引擎不认具体组件类型。 */
-/* 组件局部位置：按 role 读；兼容两种声明形态（扁平 x/y 或 math.Transform2D.local.position）。
- * 引擎不认具体组件类型 —— 只看 role 与标准字段路径（docs/12/17）。
- * 字段定位走 hot_layout（每类型解析一次），这里只做指针加法 —— 热路径不进反射。 */
-static void read_local_pos(Engine& eng, const Entity& e, float* lx, float* ly) {
-    *lx = e.world_x; *ly = e.world_y;                      /* 默认：实体自身（无 Transform2D 的纯 UI 节点） */
+/* 组件局部位置：直接读生成的 Transform2D struct（兼容三种声明形态）。 */
+static void read_local_pos(Engine& eng, const SceneNode& e, float* lx, float* ly) {
+    *lx = e.local_x; *ly = e.local_y;                      /* 无 Transform2D：显式局部兜底（真值在节点上） */
     for (auto& [tid, blob] : e.comps) {
-        const HotLayout* L = hot_layout(eng, tid);
-        if (!L || !(L->role & MQ_ROLE_TRANSFORM2D)) continue;
+        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
         const uint8_t* p = blob.data();
-        if (L->t2d_x >= 0 && L->t2d_y >= 0) {              /* 扁平 x/y（scene.Transform2D） */
-            *lx = *(const float*)(p + L->t2d_x);
-            *ly = *(const float*)(p + L->t2d_y);
-            return;
+        if (const auto* t = as_component<scn::Transform2D>(d, p)) {
+            *lx = t->x; *ly = t->y; return;
         }
-        if (L->t2d_local >= 0) {                           /* 嵌套 local.position（math.Transform2D） */
-            if (L->t2d_px >= 0) *lx = *(const float*)(p + L->t2d_local + L->t2d_px);
-            if (L->t2d_py >= 0) *ly = *(const float*)(p + L->t2d_local + L->t2d_py);
+        if (const auto* t = as_component<scene::Transform2D>(d, p)) {
+            *lx = t->local.position.x; *ly = t->local.position.y; return;
+        }
+        if (const auto* t = as_component<math::Transform2D>(d, p)) {
+            *lx = t->position.x; *ly = t->position.y; return;
         }
     }
 }
 
-/* 展平前的拓扑索引（O(N)）：根表 + 父→子表，均按 id 升序。
- * 旧实现在遍历里对**每个节点**重扫整个 ents 找子节点（O(N²)：10k 实体 ≈ 1 亿次
- * 哈希表遍历/帧，实测 1.55 s/帧），且每节点还分配一个临时 vector 再排序。
- * 现在一次扫描建表，展平只做指针推进；实体增删改父后由下一次展平自然重建。 */
-void Scene::build_world_index() {
-    flat_pairs.clear();
-    flat_pairs.reserve(ents.size());
-    for (auto& [idx, e] : ents) flat_pairs.emplace_back(idx, e.parent);
-    std::sort(flat_pairs.begin(), flat_pairs.end());          // 父先于子 + 稳定遍历（docs/10 D4）
-    if (flat_kids.size() > ents.size() * 2 + 16) flat_kids.clear();   // 反复换父导致空桶堆积时才重置
-    else for (auto& [k, kids] : flat_kids) kids.clear();               // 保留桶与容量，避免每帧分配
-    flat_roots.clear();
-    for (auto& [idx, parent] : flat_pairs) {
-        if (parent < 0 || ents.find(parent) == ents.end()) flat_roots.push_back(idx);
-        else flat_kids[parent].push_back(idx);                // 升序插入（遍历升序）→ 子表天然有序
-    }
-}
-
-/* 世界矩阵自根向叶累积（确定性：父先于子；迭代顺序不影响结果，docs/10 D4）。 */
-/* 展平（派生）：局部坐标在 Transform 组件里，世界坐标每帧重算到 Entity::world_x/y。
- * 顺序确定：根按 id 升序、子节点按 id 升序（栈序反转）→ 与快照/校验和的遍历顺序一致。 */
-void Scene::flatten_world(Engine& eng) {
-    /* 诊断：MAQUE_TRACE_FLATTEN=1 时每帧打印展平耗时（帧预算排查用，默认零开销）。 */
-    static const bool tf_on = [] { const char* e = std::getenv("MAQUE_TRACE_FLATTEN"); return e && *e && *e != '0'; }();
-    const auto tf_t0 = tf_on ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
-    build_world_index();
-    flat_stack.clear();
-    for (int r : flat_roots) flat_stack.emplace_back(r, -1);
-    while (!flat_stack.empty()) {
-        auto [idx, pidx] = flat_stack.back();
-        flat_stack.pop_back();
-        Entity* e = at(idx);
-        if (!e) continue;
+/* 每帧一趟树访问（Scene::visit，前序）：把局部变换累积成世界坐标，同时算出
+ * active/angle/scale/opacity 的有效值。派生值写回节点，后续提取/命中直接 O(1) 读取，
+ * 不再对每个节点沿父链重复上溯，也不再重建 "id→父" 的扁平索引。
+ * 顺序确定：根 id 升序、兄弟 id 升序（children 有序）→ 与快照/校验和一致（docs/10 D4）。 */
+void Scene::update_world(Engine& eng) {
+    static const bool tv_on = [] { const char* e = std::getenv("MAQUE_TRACE_FLATTEN"); return e && *e && *e != '0'; }();
+    const auto t0 = tv_on ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+    visit([&](int idx, SceneNode& e, int depth) {
+        (void)idx;
         float lx = 0, ly = 0;
-        read_local_pos(eng, *e, &lx, &ly);
-        if (pidx >= 0) { if (Entity* pe = at(pidx)) { e->world_x = pe->world_x + lx; e->world_y = pe->world_y + ly; } }
-        else { e->world_x = lx; e->world_y = ly; }
-        auto kit = flat_kids.find(idx);
-        if (kit != flat_kids.end())                               // 栈序 → 最小 id 先处理（稳定）
-            for (auto it = kit->second.rbegin(); it != kit->second.rend(); ++it) flat_stack.emplace_back(*it, idx);
-    }
-    if (tf_on) {
-        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tf_t0).count();
-        std::print("[flatten] {:.3f}ms ents={} roots={}\n", ms, ents.size(), flat_roots.size());
+        read_local_pos(eng, e, &lx, &ly);
+        float px = 0, py = 0, pang = 0, psc = 1, pop = 1;
+        bool pvis = true;
+        if (SceneNode* pe = e.parent >= 0 ? at(e.parent) : nullptr) {
+            px = pe->world_x; py = pe->world_y;
+            pang = pe->world_angle; psc = pe->world_scale; pop = pe->world_opacity;
+            pvis = pe->visible;
+        }
+        e.world_x = px + lx;
+        e.world_y = py + ly;
+        e.world_angle = pang + e.angle;
+        e.world_scale = psc * e.scale;
+        e.world_opacity = pop * e.opacity;
+        if (e.world_opacity < 0.0F) e.world_opacity = 0.0F;
+        if (e.world_opacity > 1.0F) e.world_opacity = 1.0F;
+        e.visible = pvis && e.active;
+        e.depth = depth;
+    });
+    if (tv_on) {
+        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+        std::print("[visit] {:.3f}ms nodes={} roots={}\n", ms, nodes.size(), roots.size());
     }
 }
 
-/* 3D 世界矩阵（plans/22 §6.3）：遍历顺序与 flatten_world 完全一致（根 id 升序、子 id 升序）。
+/* 3D 世界矩阵（plans/22 §6.3）：与 update_world 同一趟树序（父先于子）。
  * local = scene.Transform3D.local 叠加 Engine::anim_pose（clips 采样结果）；
  * 有 rotation 轨道用四元数路径（m4_from_quat_trs，无万向锁），否则走 Euler TRS（m4_from_trs）；
  * world_m = parent.world_m * local。平级场景 world_m == m4_from_trs(local)，旧场景零漂移。 */
-void Scene::flatten_world3d(Engine& eng) {
-    build_world_index();
-    flat_stack.clear();
-    for (int r : flat_roots) flat_stack.emplace_back(r, -1);
-    while (!flat_stack.empty()) {
-        auto [idx, pidx] = flat_stack.back();
-        flat_stack.pop_back();
-        Entity* e = at(idx);
-        if (!e) continue;
+void Scene::update_world3d(Engine& eng) {
+    visit([&](int idx, SceneNode& e, int) {
         math::Transform3D trs{};
-        for (auto& [tid, blob] : e->comps) {
-            const HotLayout* L = hot_layout(eng, tid);          // 类型布局只解析一次（不再 strcmp 类型名）
-            if (!L || !L->is_t3d) continue;
-            if (L->t3d_local >= 0) std::memcpy(&trs, blob.data() + L->t3d_local, sizeof trs);
-            break;
+        for (auto& [tid, blob] : e.comps) {
+            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            if (const auto* t3 = as_component<scene::Transform3D>(d, blob.data())) {
+                trs = t3->local;
+                break;
+            }
         }
         AnimPose* pose = nullptr;
         auto pit = eng.anim_pose.find(idx);
@@ -9955,62 +9885,28 @@ void Scene::flatten_world3d(Engine& eng) {
         float local[16];
         if (pose && pose->has_rot) m4_from_quat_trs(trs.position, pose->rot, trs.scale, local);
         else m4_from_trs(trs, local);
-        if (pidx >= 0) {
-            if (Entity* pe = at(pidx)) m4_mul(pe->world_m, local, e->world_m);
-            else std::memcpy(e->world_m, local, sizeof local);
-        } else {
-            std::memcpy(e->world_m, local, sizeof local);
-        }
-        auto kit = flat_kids.find(idx);
-        if (kit != flat_kids.end())
-            for (auto it = kit->second.rbegin(); it != kit->second.rend(); ++it) flat_stack.emplace_back(*it, idx);
-    }
+        if (SceneNode* pe = e.parent >= 0 ? at(e.parent) : nullptr) m4_mul(pe->world_m, local, e.world_m);
+        else std::memcpy(e.world_m, local, sizeof local);
+    });
 }
 
-/* 节点属性沿父链累积（angle/scale/opacity）。
- *
- * 为什么需要它：`flatten_world` 只累积**位置**（父子坐标相加），而 `Entity` 上的
- * angle/scale/opacity 是"影响自身与子树"的节点属性（见 Entity 定义处注释）。
- * 渲染提取若不累积，子节点的朝向/缩放就不会跟随父节点 —— 炮塔装在车体上、
- * 挂点、动作部件这类层级结构就摆不对。
- *
- * 语义与 2D 直觉一致：
- *   · 角度**相加**（每级旋转都是相对父级的局部旋转）；
- *   · 缩放**相乘**；
- *   · 透明度**相乘**（父级半透明则整棵子树都更透明），并夹到 [0,1]；
- *   · active 由调用方判断（子节点不会"复活"父节点隐藏的内容）。
- * 自父向子累积的顺序与 flatten_world 的遍历一致（最小 id 先），结果稳定（docs/10 D4）。 */
+/* 节点有效属性：update_world 已沿树累积到节点上（O(1) 读取）。
+ * 语义与 2D 直觉一致：角度相加、缩放相乘、透明度相乘并夹 [0,1]、active 沿祖先与。 */
 void accumulate_node_attrs(Engine& eng, int idx, float& angle_deg, float& scale, float& opacity) {
     angle_deg = 0.0F; scale = 1.0F; opacity = 1.0F;
     if (!eng.scene) return;
-    int guard = 0;
-    for (int cur = idx; cur >= 0 && guard < 4096; ++guard) {
-        Entity* e = eng.scene->at(cur);
-        if (!e) break;
-        angle_deg += e->angle;
-        scale *= e->scale;
-        opacity *= e->opacity;
-        if (e->parent == cur) break;             // 自环保护（脏数据不应造成死循环）
-        cur = e->parent;
+    if (SceneNode* e = eng.scene->at(idx)) {
+        angle_deg = e->world_angle;
+        scale = e->world_scale;
+        opacity = e->world_opacity;
     }
-    if (opacity < 0.0F) opacity = 0.0F;
-    if (opacity > 1.0F) opacity = 1.0F;
 }
 
-/* active 沿父链判定（docs/18：`node_set_active` 影响自身与子树）。
- * 之前只查了 `e.active` 自身 —— 父节点隐藏后子节点照常绘制（实测）。
- * 带自环保护：脏数据不应造成死循环。 */
+/* active 沿祖先与（docs/18：node_set_active 影响自身与子树）—— 有效值由 update_world 缓存。 */
 bool node_active_effective(Engine& eng, int idx) {
     if (!eng.scene) return true;
-    int guard = 0;
-    for (int cur = idx; cur >= 0 && guard < 4096; ++guard) {
-        Entity* e = eng.scene->at(cur);
-        if (!e) break;
-        if (!e->active) return false;
-        if (e->parent == cur) break;                 // 自环保护
-        cur = e->parent;
-    }
-    return true;
+    SceneNode* e = eng.scene->at(idx);
+    return e ? e->visible : true;
 }
 
 void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
@@ -10024,23 +9920,17 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
         it.texture = -1; it.layer = 0; it.z = 100000;      // 粒子在世界层最上
         out.push_back(it);
     }
-    for (auto& [idx, e] : ents) {
+    visit([&](int idx, SceneNode& e, int) {
+        if (!e.visible) return;                       // 隐藏整棵子树（update_world 已沿树累积）
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
             if (!d) continue;
             /* UI 控件：overlay 层（layer=1）——屏幕空间绘制，不受相机影响（docs/13 §分层） */
             if (d->role & MQ_ROLE_UI_BUTTON) {
-                float x = 0, y = 0, w = 64, h = 24, r = 0.2F, g = 0.25F, b = 0.35F;
-                int32_t z = 0;
-                read_f32(d, blob.data(), "x", &x);
-                read_f32(d, blob.data(), "y", &y);
-                read_f32(d, blob.data(), "width", &w);
-                read_f32(d, blob.data(), "height", &h);
-                read_f32(d, blob.data(), "r", &r);
-                read_f32(d, blob.data(), "g", &g);
-                read_f32(d, blob.data(), "b", &b);
-                if (const mq_field_desc* fz = mq_reflect_field(d, "z")) z = *(const int32_t*)(blob.data() + fz->offset);
-                (void)z;
+                const auto* btn = as_component<scn::Button>(d, blob.data());
+                if (!btn) continue;
+                const float x = btn->x, y = btn->y, w = btn->width, h = btn->height;
+                const float r = btn->r, g = btn->g, b = btn->b;
                 // 矩形控件以"中心 + 半尺寸"图元表达（half_w/half_h 都 >0 时渲染器画矩形；
                 // 只填 size 会退化成正方形 —— 96x28 的按钮曾显示成 96x96 方块）
                 mq_renderer_item it{};
@@ -10049,12 +9939,12 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 it.half_w = w * 0.5F;
                 it.half_h = h * 0.5F;
                 it.r = r; it.g = g; it.b = b; it.a = 1.0F;
-                it.texture = -1; it.layer = 1; it.z = z;
+                it.texture = -1; it.layer = 1; it.z = btn->z;
                 out.push_back(it);
                 continue;
             }
             if (d->role & (MQ_ROLE_UI_LABEL | MQ_ROLE_UI_TEXT)) {
-                eng.extract_text(eng, idx, e, d, out, e.opacity);   // 真实字形渲染（docs/13/17）
+                eng.extract_text(eng, idx, e, d, out, e.world_opacity);   // 真实字形渲染（docs/13/17）
                 continue;
             }
             if (!(d->role & MQ_ROLE_SPRITE)) continue;
@@ -10062,28 +9952,24 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
              * 实测：node_set_angle 不旋转、node_set_active(0) 不隐藏、node_set_scale /
              * node_set_opacity 对 sprite 无效。渲染项 ABI 本来就有这些字段
              *（rotation/a/half_w/half_h），只是提取时没填。 */
-            if (!node_active_effective(eng, idx)) continue;   // 隐藏（含整棵子树）
-            float node_angle = 0.0F, node_scale = 1.0F, node_opacity = 1.0F;
-            accumulate_node_attrs(eng, idx, node_angle, node_scale, node_opacity);
-            float radius = 8, r = 1, g = 1, b = 1, sw = 0, sh = 0;
-            read_f32(d, blob.data(), "radius", &radius);
-            read_f32(d, blob.data(), "width", &sw);
-            read_f32(d, blob.data(), "height", &sh);
-            read_f32(d, blob.data(), "r", &r);
-            read_f32(d, blob.data(), "g", &g);
-            read_f32(d, blob.data(), "b", &b);
+            /* 节点有效属性由 update_world 的树访问累积（角度相加、缩放相乘、透明度相乘）。 */
+            const float node_angle = e.world_angle;
+            const float node_scale = e.world_scale;
+            const float node_opacity = e.world_opacity;
+            const auto* spr = as_component<scn::Sprite>(d, blob.data());
+            if (!spr) continue;
+            float radius = spr->radius, r = spr->r, g = spr->g, b = spr->b;
+            const float sw = spr->width, sh = spr->height;
             /* 只读提取（docs/13 §8 / docs/15 §1）：纹理与材质已在装配期预解析并缓存，
              * 此处仅查表，**不得**触发加载或改写任何引擎状态。 */
-            std::string texref;
-            if (const std::string* tp = read_str(d, blob.data(), "texture")) texref = *tp;
-            if (const std::string* mp = read_str(d, blob.data(), "material"))
-                if (!mp->empty()) {
-                    auto mi = eng.material_cache.find(*mp);
-                    if (mi != eng.material_cache.end()) {
-                        r = mi->second.base_color.x; g = mi->second.base_color.y; b = mi->second.base_color.z;
-                        if (!mi->second.texture.empty()) texref = mi->second.texture;
-                    }
+            std::string texref = spr->texture;
+            if (!spr->material.empty()) {
+                auto mi = eng.material_cache.find(spr->material);
+                if (mi != eng.material_cache.end()) {
+                    r = mi->second.base_color.x; g = mi->second.base_color.y; b = mi->second.base_color.z;
+                    if (!mi->second.texture.empty()) texref = mi->second.texture;
                 }
+            }
             int tex = -1;
             if (!texref.empty()) {
                 const std::string resolved = eng.scoped_texture_ref(idx, texref);
@@ -10115,14 +10001,14 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
             it.z = e.z_index * 100000 + (int)idx;
             out.push_back(it);
         }
-    }
+    });
 }
 
 /* ---- UI 命中测试（docs/19 §4）：z-order + 树深 稳定排序，命中最上层 ---- */
 struct HitBest { int entity = -1; int z = INT32_MIN; int depth = -1; float lx = 0, ly = 0; };
 
 void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& best) {
-    Entity* e = eng.scene->at(idx);
+    SceneNode* e = eng.scene->at(idx);
     if (!e) return;
     /* 有效 z = 自身 z + 祖先 z（层级叠加，稳定） */
     int zsum = 0;
@@ -10131,17 +10017,11 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
         const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
         if (!d) continue;
         if (d->role & MQ_ROLE_UI_CONTROL) {
-            float w = 0, h = 0;
-            if (const mq_field_desc* f = mq_reflect_field(d, "offset_max")) {
-                const float* v = (const float*)(blob.data() + f->offset);
-                w = v[0]; h = v[1];
-            }
-            if (const mq_field_desc* f = mq_reflect_field(d, "offset_min")) {
-                const float* v = (const float*)(blob.data() + f->offset);
-                w -= v[0]; h -= v[1];
-            }
-            if (const mq_field_desc* fz = mq_reflect_field(d, "z_index"))
-                zsum += *(const int32_t*)(blob.data() + fz->offset);
+            const auto* ctrl = as_component<ui::Control>(d, blob.data());
+            if (!ctrl) continue;
+            const float w = ctrl->offset_max.x - ctrl->offset_min.x;
+            const float h = ctrl->offset_max.y - ctrl->offset_min.y;
+            zsum += ctrl->z_index;
             bool interactive = false;
             for (auto& [t2, b2] : e->comps) {
                 const mq_type_desc* d2 = mq_reflect_type_by_id(eng.reflect, t2);
@@ -10167,11 +10047,13 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
         if (!ui) continue;
         float x = 0, y = 0, w = 0, h = 0;
         int32_t z = 0;
-        read_f32(d, blob.data(), "x", &x);
-        read_f32(d, blob.data(), "y", &y);
-        read_f32(d, blob.data(), "width", &w);
-        read_f32(d, blob.data(), "height", &h);
-        if (const mq_field_desc* fz = mq_reflect_field(d, "z")) z = *(const int32_t*)(blob.data() + fz->offset);
+        if (const auto* btn = as_component<scn::Button>(d, blob.data())) {
+            x = btn->x; y = btn->y; w = btn->width; h = btn->height; z = btn->z;
+        } else if (const auto* lbl = as_component<scn::Label>(d, blob.data())) {
+            x = lbl->x; y = lbl->y; z = lbl->z;
+        } else {
+            continue;
+        }
         zsum += z;
         if (!(d->role & MQ_ROLE_UI_BUTTON)) continue;        // 仅可交互控件参与命中
         /* 本地 (x,y) = 世界坐标下的矩形左下角 → 矩形 = [x, x+w] × [y, y+h]（y 向上） */
@@ -10186,8 +10068,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
             }
         }
     }
-    for (auto& [k, child] : eng.scene->ents)
-        if (child.parent == idx) collect_hits(eng, k, depth + 1, px, py, best);
+    for (int k : e->children) collect_hits(eng, k, depth + 1, px, py, best);
 }
 
 /* 命中查询（事件与控制面/脚本共用一套）→ 行为一致（docs/19 §4）。 */
@@ -10195,8 +10076,7 @@ int ui_hit_entity(Engine& eng, float px, float py, mq_input_target* out) {
     if (out) { out->entity = -1; out->handle = (uint32_t)-1; out->depth = 0; out->z = 0; }
     if (!eng.scene || !eng.scene->count()) return -1;
     HitBest best;
-    for (auto& [k, e] : eng.scene->ents)
-        if (e.parent < 0) collect_hits(eng, k, 0, px, py, best);
+    for (int k : eng.scene->roots) collect_hits(eng, k, 0, px, py, best);
     if (best.entity < 0) return -1;
     if (out) {
         out->entity = best.entity; out->handle = (uint32_t)best.entity;
@@ -10216,7 +10096,7 @@ int runtime_hit_test(void* user, const mq_input_event* ev, mq_input_target* out)
 }
 
 int runtime_parent(void* user, int entity) {
-    Entity* e = ((Engine*)user)->scene->at(entity);
+    SceneNode* e = ((Engine*)user)->scene->at(entity);
     return e ? e->parent : -1;
 }
 
@@ -10349,34 +10229,36 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
     }
     if (target->entity >= 0) {
         /* 控件状态写回（按钮按下/悬停；docs/19 §8：组件订阅语义事件） */
-        Entity* e = eng->scene->at(target->entity);
+        SceneNode* e = eng->scene->at(target->entity);
         if (e && ev->type == MQ_INPUT_POINTER_DOWN)
             for (auto& [tid, blob] : e->comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
-                if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
-                if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
-                    *(bool*)(blob.data() + fp->offset) = true;
+                if (auto* btn = (d && (d->role & MQ_ROLE_UI_BUTTON))
+                                    ? as_component_mut<scn::Button>(d, blob.data()) : nullptr)
+                    btn->pressed = true;
             }
         if (e && ev->type == MQ_INPUT_POINTER_UP)
             for (auto& [tid, blob] : e->comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
-                if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
-                if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
-                    *(bool*)(blob.data() + fp->offset) = false;
+                if (auto* btn = (d && (d->role & MQ_ROLE_UI_BUTTON))
+                                    ? as_component_mut<scn::Button>(d, blob.data()) : nullptr)
+                    btn->pressed = false;
             }
         /* Slider：按下进入拖拽，拖动中按水平比例改值（滑块语义） */
         if (e) {
             for (auto& [tid, blob] : e->comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
-                if (!d || !(d->role & MQ_ROLE_UI_SLIDER)) continue;
+                auto* sl = (d && (d->role & MQ_ROLE_UI_SLIDER))
+                               ? as_component_mut<ui::Slider>(d, blob.data()) : nullptr;
+                if (!sl) continue;
                 if (ev->type == MQ_INPUT_POINTER_DOWN) {
-                    write_num(d, blob.data(), "dragging", 1.0);
+                    sl->dragging = true;
                     slider_apply_pointer(*eng, target->entity, d, blob.data(), ev->x);
                 } else if (ev->type == MQ_INPUT_POINTER_UP) {
-                    write_num(d, blob.data(), "dragging", 0.0);
+                    sl->dragging = false;
                     slider_apply_pointer(*eng, target->entity, d, blob.data(), ev->x);
                 } else if (ev->type == MQ_INPUT_POINTER_MOVE) {
-                    if (read_num(d, blob.data(), "dragging", 0.0F) != 0.0F)
+                    if (sl->dragging)
                         slider_apply_pointer(*eng, target->entity, d, blob.data(), ev->x);
                 }
             }
@@ -10384,10 +10266,11 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
             if (ev->type == MQ_INPUT_CLICK) {
                 for (auto& [tid, blob] : e->comps) {
                     const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
-                    if (!d || !(d->role & MQ_ROLE_UI_CHECK)) continue;
-                    if (read_num(d, blob.data(), "disabled", 0.0F) != 0.0F) continue;
-                    const bool now = read_num(d, blob.data(), "checked", 0.0F) == 0.0F;
-                    write_num(d, blob.data(), "checked", now ? 1.0 : 0.0);
+                    auto* cb = (d && (d->role & MQ_ROLE_UI_CHECK))
+                                   ? as_component_mut<ui::CheckBox>(d, blob.data()) : nullptr;
+                    if (!cb || cb->disabled) continue;
+                    const bool now = !cb->checked;
+                    cb->checked = now;
                     host::node_emit_number(eng, target->entity, "toggled", now ? 1.0F : 0.0F);
                 }
             }
@@ -10422,7 +10305,7 @@ double cfg_field(Engine* eng, const char* path) {
 }
 
 std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role) {
-    Entity* e = eng.scene->at(id);
+    SceneNode* e = eng.scene->at(id);
     if (!e) return nullptr;
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
@@ -10434,7 +10317,7 @@ std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role) {
 /* 直接按类型名找组件（getComponent("Type") 语义；支持短名与 fq 名）。 */
 std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
                                    const mq_type_desc** out_desc) {
-    Entity* e = eng.scene->at(id);
+    SceneNode* e = eng.scene->at(id);
     if (!e || !type_name) return nullptr;
     const mq_type_desc* want = mq_reflect_type_by_name(eng.reflect, type_name);
     if (!want) {                                   // 允许短名（"Sprite" → "scn.Sprite"）
@@ -10471,18 +10354,19 @@ std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
 float read_num(const mq_type_desc* d, const void* base, const char* field, float def) {
     const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
     if (!f) return def;
+    if (f->accessor && f->accessor->get_f64) return (float)f->accessor->get_f64(base);
     switch (f->kind) {
-        case MQ_TK_F32:  return *(const float*)((const uint8_t*)base + f->offset);
+        case MQ_TK_F32:  return field_get_f32(f, (const uint8_t*)base);
         case MQ_TK_F64:  return (float)*(const double*)((const uint8_t*)base + f->offset);
         case MQ_TK_I8:   return (float)*(const int8_t*)((const uint8_t*)base + f->offset);
         case MQ_TK_U8:   return (float)*(const uint8_t*)((const uint8_t*)base + f->offset);
         case MQ_TK_I16:  return (float)*(const int16_t*)((const uint8_t*)base + f->offset);
         case MQ_TK_U16:  return (float)*(const uint16_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_I32:  return (float)*(const int32_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_U32:  return (float)*(const uint32_t*)((const uint8_t*)base + f->offset);
+        case MQ_TK_I32:  return (float)field_get_i32(f, (const uint8_t*)base);
+        case MQ_TK_U32:  return (float)field_get_u32(f, (const uint8_t*)base);
         case MQ_TK_I64:  return (float)*(const int64_t*)((const uint8_t*)base + f->offset);
         case MQ_TK_U64:  return (float)*(const uint64_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_BOOL: return *(const bool*)((const uint8_t*)base + f->offset) ? 1.0F : 0.0F;
+        case MQ_TK_BOOL: return field_get_bool(f, (const uint8_t*)base) ? 1.0F : 0.0F;
         case MQ_TK_ENUM: {
             /* 枚举：按底层整型宽度读（BodyType::Dynamic 等，docs/06） */
             const uint8_t* p = (const uint8_t*)base + f->offset;
@@ -10497,6 +10381,7 @@ float read_num(const mq_type_desc* d, const void* base, const char* field, float
 bool write_num(const mq_type_desc* d, void* base, const char* field, double v) {
     const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
     if (!f) return false;
+    if (f->accessor && f->accessor->set_f64) { f->accessor->set_f64(base, v); return true; }
     uint8_t* p = (uint8_t*)base + f->offset;
     switch (f->kind) {
         case MQ_TK_ENUM: {
@@ -10521,24 +10406,27 @@ bool write_num(const mq_type_desc* d, void* base, const char* field, double v) {
 
 /* Slider：把指针 x 映射为值（Slider 的 progress 语义）。 */
 void slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base, float px) {
-    Entity* e = eng.scene->at(id);
+    SceneNode* e = eng.scene->at(id);
     if (!e) return;
+    auto* sl = as_component_mut<ui::Slider>(d, base);
+    if (!sl) return;
     float w = 100.0F;
     if (auto* ctrl = comp_by_role(eng, id, MQ_ROLE_UI_CONTROL)) {
         const mq_type_desc* cd = mq_reflect_type_by_name(eng.reflect, "ui.Control");
-        if (cd) w = read_num(cd, ctrl->data(), "offset_max", 100.0F);
+        if (const auto* c = cd ? as_component<ui::Control>(cd, ctrl->data()) : nullptr)
+            w = c->offset_max.x;
     }
     if (w <= 0.0F) w = 1.0F;
     float t = (px - (e->world_x - w * 0.5F)) / w;
     t = t < 0.0F ? 0.0F : (t > 1.0F ? 1.0F : t);
-    if (read_num(d, base, "invert", 0.0F) != 0.0F) t = 1.0F - t;
-    const float lo = read_num(d, base, "min_value", 0.0F);
-    const float hi = read_num(d, base, "max_value", 1.0F);
+    if (sl->invert) t = 1.0F - t;
+    const float lo = sl->min_value;
+    const float hi = sl->max_value;
     float v = lo + (hi - lo) * t;
-    const float step = read_num(d, base, "step", 0.0F);
+    const float step = sl->step;
     if (step > 0.0F) v = lo + std::round((v - lo) / step) * step;
-    write_num(d, base, "value", v);
-    write_num(d, base, "ratio", t);
+    sl->value = v;
+    sl->ratio = t;
     host::node_emit_number(&eng, id, "changed", v);
 }
 
@@ -10665,62 +10553,50 @@ int Engine::glyph_texture(const mq_font* f, float size) {
 
 /* 文本提取（docs/13 §8：只读）：排版后逐字形提交 quad。
  * 支持 scn.Label（扁平字段）与 ui.TextLabel / ui.RichText（字段）。 */
-void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d,
+void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc* d,
                           std::vector<mq_renderer_item>& out, float inherit_alpha) {
     std::string text, font_path_comp;
     float size = 16.0F, r = 1, g = 1, b = 1, a = 1, max_w = 0, max_h = 0, line_spacing = 0;
     int align = 0, wrap = 0, overflow = 0;
     bool bold = false, italic = false;
-    if (const std::string* tp = read_str(d, e.comps[d->type_id].data(), "text")) text = *tp;
-    if (const std::string* fp = read_str(d, e.comps[d->type_id].data(), "font")) font_path_comp = *fp;
-    read_f32(d, e.comps[d->type_id].data(), "font_size", &size);
-    read_f32(d, e.comps[d->type_id].data(), "max_width", &max_w);
-    read_f32(d, e.comps[d->type_id].data(), "max_height", &max_h);
-    read_f32(d, e.comps[d->type_id].data(), "line_spacing", &line_spacing);
-    /* 颜色：scn.Label 用 r/g/b/a；ui.* 用 color（Vec4） */
-    if (const mq_field_desc* fc = mq_reflect_field(d, "color")) {
-        const float* v = (const float*)(e.comps[d->type_id].data() + fc->offset);
-        r = v[0]; g = v[1]; b = v[2]; a = v[3];
-    } else {
-        read_f32(d, e.comps[d->type_id].data(), "r", &r);
-        read_f32(d, e.comps[d->type_id].data(), "g", &g);
-        read_f32(d, e.comps[d->type_id].data(), "b", &b);
-        read_f32(d, e.comps[d->type_id].data(), "a", &a);
-    }
-    align = (int)read_num(d, e.comps[d->type_id].data(), "align", 0.0F);
-    if (!mq_reflect_field(d, "align")) align = (int)read_num(d, e.comps[d->type_id].data(), "align_h", 0.0F);
-    wrap = (int)read_num(d, e.comps[d->type_id].data(), "wrap", 0.0F);
-    if (!mq_reflect_field(d, "wrap")) wrap = (int)read_num(d, e.comps[d->type_id].data(), "wrap_mode", 0.0F);
-    overflow = (int)read_num(d, e.comps[d->type_id].data(), "overflow", 0.0F);
-    bold = read_num(d, e.comps[d->type_id].data(), "bold", 0.0F) >= 0.5F;
-    italic = read_num(d, e.comps[d->type_id].data(), "italic", 0.0F) >= 0.5F;
-    /* 装饰：outline / shadow（字段不存在 → 关闭；ui.* 描边用 outline_color Vec4） */
+    float ox = 0.0F, oy = 0.0F;
     float outline_size = 0.0F, orr = 0.0F, ogg = 0.0F, obb = 0.0F, oaa = 1.0F;
-    read_f32(d, e.comps[d->type_id].data(), "outline_size", &outline_size);
-    if (const mq_field_desc* foc = mq_reflect_field(d, "outline_color")) {
-        const float* v = (const float*)(e.comps[d->type_id].data() + foc->offset);
-        orr = v[0]; ogg = v[1]; obb = v[2]; oaa = v[3];
-    } else {
-        read_f32(d, e.comps[d->type_id].data(), "outline_r", &orr);
-        read_f32(d, e.comps[d->type_id].data(), "outline_g", &ogg);
-        read_f32(d, e.comps[d->type_id].data(), "outline_b", &obb);
-        read_f32(d, e.comps[d->type_id].data(), "outline_a", &oaa);
-    }
-    /* 阴影：偏移为文本空间像素（y 向下）；a=0 关闭。仅 scn.Label 声明这些字段。 */
     float shx = 0.0F, shy = 0.0F, shr = 0.0F, shg = 0.0F, shb = 0.0F, sha = 0.0F;
-    read_f32(d, e.comps[d->type_id].data(), "shadow_x", &shx);
-    read_f32(d, e.comps[d->type_id].data(), "shadow_y", &shy);
-    read_f32(d, e.comps[d->type_id].data(), "shadow_r", &shr);
-    read_f32(d, e.comps[d->type_id].data(), "shadow_g", &shg);
-    read_f32(d, e.comps[d->type_id].data(), "shadow_b", &shb);
-    read_f32(d, e.comps[d->type_id].data(), "shadow_a", &sha);
-    /* parse_tags=false：把标记当纯文本（转义 '<'） */
-    if (const mq_field_desc* fpt = mq_reflect_field(d, "parse_tags")) {
-        if (!*(const bool*)(e.comps[d->type_id].data() + fpt->offset)) {
+    const uint8_t* tb = e.comps[d->type_id].data();
+    if (const auto* l = as_component<scn::Label>(d, tb)) {
+        text = l->text; font_path_comp = l->font;
+        size = l->font_size; max_w = l->max_width; max_h = l->max_height;
+        line_spacing = l->line_spacing;
+        r = l->r; g = l->g; b = l->b; a = l->a;
+        align = (int)l->align; wrap = (int)l->wrap; overflow = (int)l->overflow;
+        bold = l->bold; italic = l->italic;
+        outline_size = l->outline_size;
+        orr = l->outline_r; ogg = l->outline_g; obb = l->outline_b; oaa = l->outline_a;
+        shx = l->shadow_x; shy = l->shadow_y;
+        shr = l->shadow_r; shg = l->shadow_g; shb = l->shadow_b; sha = l->shadow_a;
+        ox = l->x; oy = l->y;
+    } else if (const auto* tl = as_component<ui::TextLabel>(d, tb)) {
+        text = tl->text; size = tl->font_size; line_spacing = tl->line_spacing;
+        r = tl->color.x; g = tl->color.y; b = tl->color.z; a = tl->color.w;
+        align = (int)tl->align_h; wrap = (int)tl->wrap_mode;
+        outline_size = tl->outline_size;
+        orr = tl->outline_color.x; ogg = tl->outline_color.y;
+        obb = tl->outline_color.z; oaa = tl->outline_color.w;
+    } else if (const auto* rt = as_component<render::RichText>(d, tb)) {
+        text = rt->text; size = rt->font_size; max_w = rt->max_width;
+        line_spacing = rt->line_spacing;
+        r = rt->color.r; g = rt->color.g; b = rt->color.b; a = rt->color.a;
+        align = (int)rt->align_h; wrap = (int)rt->wrap_mode;
+        outline_size = rt->outline_size;
+        orr = rt->outline_color.r; ogg = rt->outline_color.g;
+        obb = rt->outline_color.b; oaa = rt->outline_color.a;
+        if (!rt->parse_tags) {
             std::string esc;
             for (char c : text) { if (c == '<') esc += "&lt;"; else esc.push_back(c); }
             text = esc;
         }
+    } else {
+        return;                                          // role 文本组件必须是三个内置类型之一
     }
     if (text.empty()) return;
 
@@ -10793,29 +10669,19 @@ void Engine::extract_text(Engine& eng, int idx, Entity& e, const mq_type_desc* d
     const float measured_w = m.width, measured_h = m.height;
     const float shown_w = max_w > 0.0F ? std::min(measured_w, max_w) : measured_w;
     const float shown_h = max_h > 0.0F ? std::min(measured_h, max_h) : measured_h;
-    if (const mq_field_desc* fw = mq_reflect_field(d, "text_w"))
-        *(float*)(e.comps[d->type_id].data() + fw->offset) = shown_w;
-    if (const mq_field_desc* fh = mq_reflect_field(d, "text_h"))
-        *(float*)(e.comps[d->type_id].data() + fh->offset) = shown_h;
-    if (const mq_field_desc* flc = mq_reflect_field(d, "line_count"))
-        *(int32_t*)(e.comps[d->type_id].data() + flc->offset) = (int32_t)m.line_count;
-    if (const mq_field_desc* fts = mq_reflect_field(d, "text_size")) {
-        float* v = (float*)(e.comps[d->type_id].data() + fts->offset);
-        v[0] = shown_w; v[1] = shown_h;
+    if (auto* l = as_component_mut<scn::Label>(d, e.comps[d->type_id].data())) {
+        l->text_w = shown_w; l->text_h = shown_h;
+        l->line_count = (int32_t)m.line_count;
+        l->fit_font_size = shrink_mode ? st.font_size : 0.0F;
+    } else if (auto* tl = as_component_mut<ui::TextLabel>(d, e.comps[d->type_id].data())) {
+        tl->text_size = math::Vec2{ shown_w, shown_h };
+    } else if (auto* rt = as_component_mut<render::RichText>(d, e.comps[d->type_id].data())) {
+        rt->content_size = math::Vec2{ shown_w, shown_h };
+        rt->line_count = (int32_t)m.line_count;
     }
-    /* render.RichText 用 content_size 承载实测尺寸 */
-    if (const mq_field_desc* fcs = mq_reflect_field(d, "content_size")) {
-        float* v = (float*)(e.comps[d->type_id].data() + fcs->offset);
-        v[0] = shown_w; v[1] = shown_h;
-    }
-    /* 高度限制 + Shrink 的实际字号（transient；0 = 未生效） */
-    if (const mq_field_desc* ffs = mq_reflect_field(d, "fit_font_size"))
-        *(float*)(e.comps[d->type_id].data() + ffs->offset) = shrink_mode ? st.font_size : 0.0F;
 
     /* 锚点：scn.Label 的 x/y 为左上角偏移；ui.* 以节点位置为左上角 */
-    float ox = 0, oy = 0;
-    read_f32(d, e.comps[d->type_id].data(), "x", &ox);
-    read_f32(d, e.comps[d->type_id].data(), "y", &oy);
+
     /* 节点旋转（node_set_angle + 父链累积）：轴心 = **节点位置**（与 Sprite 一致，
      * x/y 偏移只做平移）。世界 y 向上、屏幕 y 向下 → 取负；旋转量同时作用于字形位置与
      * 字形自身朝向（整块文本刚体旋转）。angle=0 时 cos=1/sin=0 精确，走旧路径逐字节不变。 */
@@ -11006,7 +10872,7 @@ void Engine::canvas_setup() {
     canvas_entity = -1;
     canvas_design_warned = false;
     if (!scene) return;
-    for (auto& [idx, e] : scene->ents) {
+    for (auto& [idx, e] : scene->nodes) {
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
@@ -11035,7 +10901,7 @@ void Engine::canvas_resolve() {
     desc.safe_left = canvas_safe[0]; desc.safe_top = canvas_safe[1];
     desc.safe_right = canvas_safe[2]; desc.safe_bottom = canvas_safe[3];
     if (canvas_entity >= 0) {
-        Entity* e = scene->at(canvas_entity);
+        SceneNode* e = scene->at(canvas_entity);
         if (e) {
             for (auto& [tid, blob] : e->comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
@@ -11079,7 +10945,7 @@ void Engine::canvas_resolve() {
     update_main_views();
     /* 回写 transient 字段 */
     if (canvas_entity >= 0) {
-        Entity* e = scene->at(canvas_entity);
+        SceneNode* e = scene->at(canvas_entity);
         if (e) {
             std::vector<uint8_t>* blob = nullptr;
             const mq_type_desc* d = nullptr;
@@ -11323,10 +11189,9 @@ void Engine::spine_clear_events() {
 void Engine::spine_setup() {
     if (!scene || !vfs || !rapi) return;
     std::vector<int> ids;
-    for (auto& [idx, e] : scene->ents) ids.push_back(idx);
-    std::sort(ids.begin(), ids.end());                         // 稳定序（声明序 = id 升序）
+    scene->collect_preorder(ids);
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         const mq_type_desc* d = nullptr;
         for (auto& [tid, blob] : e->comps) {
@@ -11456,7 +11321,7 @@ void Engine::spine_step(float dt) {
     if (!scene) return;
     for (auto& sp : spines) {
         if (!sp.inst || !sp.data) continue;
-        Entity* e = scene->at(sp.entity);
+        SceneNode* e = scene->at(sp.entity);
         const mq_type_desc* d = mq_reflect_type_by_id(reflect, sp.comp);
         if (!e || !d) continue;
         auto it = e->comps.find(sp.comp);
@@ -11568,11 +11433,11 @@ void Engine::spine_step(float dt) {
             uint8_t* base = blob.data() + f->offset;
             if (st) {
                 if (const mq_field_desc* ft = mq_reflect_field(st, "time"))
-                    *(float*)(base + ft->offset) = mq_spine_instance_time(sp.inst, 0);
+                    field_set_f32(ft, base, mq_spine_instance_time(sp.inst, 0));
                 if (const mq_field_desc* ft = mq_reflect_field(st, "track"))
-                    *(int32_t*)(base + ft->offset) = 0;
+                    field_set_i32(ft, base, 0);
                 if (const mq_field_desc* ft = mq_reflect_field(st, "loop"))
-                    *(bool*)(base + ft->offset) = loop;
+                    field_set_bool(ft, base, loop);
             }
         }
     }
@@ -12568,8 +12433,8 @@ void Engine::memory_sample() {
         node += (uint64_t)scene->desc.scripts.capacity() * sizeof(std::string);
         for (const auto& s : scene->desc.scripts) node += (uint64_t)s.capacity();
         node += (uint64_t)scene->text_.capacity();
-        node += (uint64_t)scene->ents.size() * (sizeof(void*) * 3 + sizeof(Entity));   // 桶+链表节点估算
-        for (const auto& [id, e] : scene->ents) {
+        node += (uint64_t)scene->nodes.size() * (sizeof(void*) * 3 + sizeof(SceneNode));   // 桶+链表节点估算
+        for (const auto& [id, e] : scene->nodes) {
             (void)id;
             node += (uint64_t)e.name.capacity();
             node += (uint64_t)e.comps.size() *
@@ -12650,43 +12515,35 @@ void Engine::memory_sample() {
 void Engine::ui_step() {
     if (!scene) return;
     std::vector<int> ids;
-    for (auto& [k, e] : scene->ents) ids.push_back(k);
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (!d) continue;
 
-            if (d->role & MQ_ROLE_UI_LAYOUT) {
-                const float mode = read_num(d, blob.data(), "mode", 0.0F);
+            if (const auto* lay = as_component<ui::Container>(d, blob.data())) {
+                const float mode = (float)lay->mode;
                 if (std::getenv("MAQUE_TRACE_UI")) std::print("[ui] layout entity={} mode={}\n", id, (int)mode);
-                const float spacing = read_num(d, blob.data(), "spacing", 0.0F);
-                const int columns = (int)read_num(d, blob.data(), "columns", 1.0F);
-                float pad_l = 0, pad_t = 0;
-                if (const mq_field_desc* f = mq_reflect_field(d, "padding")) {
-                    const float* v = (const float*)(blob.data() + f->offset);
-                    pad_l = v[0]; pad_t = v[1];
-                }
-                std::vector<int> kids;
-                for (auto& [k, ke] : scene->ents) if (ke.parent == id) kids.push_back(k);
-                std::sort(kids.begin(), kids.end());          // 稳定：创建序
+                const float spacing = lay->spacing;
+                const int columns = lay->columns;
+                const float pad_l = lay->padding.x, pad_t = lay->padding.y;
+                const std::vector<int> kids = e->children;   // 有序：id/声明序
                 float cursor = 0.0F;
                 int col = 0;
                 for (int k : kids) {
-                    Entity* ke = scene->at(k);
+                    SceneNode* ke = scene->at(k);
                     if (!ke) continue;
                     float kw = 32.0F, kh = 32.0F;
                     if (auto* ctrl = comp_by_role(*this, k, MQ_ROLE_UI_CONTROL)) {
                         const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
-                        if (const mq_field_desc* f = mq_reflect_field(cd, "offset_max")) {
-                            const float* v = (const float*)(ctrl->data() + f->offset);
-                            kw = v[0]; kh = v[1];        // Vec2：offset_max 即内容尺寸（contentSize）
+                        if (const auto* c = as_component<ui::Control>(cd, ctrl->data())) {
+                            kw = c->offset_max.x; kh = c->offset_max.y;   // 内容尺寸
                         }
                     }
                     /* mode: 0=Free 1=Horizontal 2=Vertical 3=Grid */
-                    /* 位置经 entity_set_pos 写回 Transform2D 组件（否则被 flatten_world 覆盖） */
+                    /* 位置经 entity_set_pos 写回 Transform2D 组件（否则被 update_world 覆盖） */
                     if ((int)mode == 1) {
                         host::entity_set_pos(this, (float)k, e->world_x + pad_l + cursor + kw * 0.5F,
                                              e->world_y + pad_t + kh * 0.5F);
@@ -12707,63 +12564,52 @@ void Engine::ui_step() {
                 }
             }
 
-            if (d->role & MQ_ROLE_UI_PROGRESS) {
-                float v = read_num(d, blob.data(), "value", 0.0F);
+            if (auto* pb = as_component_mut<ui::ProgressBar>(d, blob.data())) {
+                float v = pb->value;
                 v = v < 0.0F ? 0.0F : (v > 1.0F ? 1.0F : v);
-                write_num(d, blob.data(), "phase", (double)v);
+                pb->phase = v;
                 /* 填充子节点：第一个带 sprite/control 的子节点，宽度 = 父宽 × value */
-                std::vector<int> kids;
-                for (auto& [k, ke] : scene->ents) if (ke.parent == id) kids.push_back(k);
-                std::sort(kids.begin(), kids.end());
-                for (int k : kids) {
+                for (int k : e->children) {
                     if (auto* ctrl = comp_by_role(*this, k, MQ_ROLE_UI_CONTROL)) {
                         const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
+                        auto* c = as_component_mut<ui::Control>(cd, ctrl->data());
+                        if (!c) continue;
                         float full = host::node_width(this, (float)id);
-                        if (full <= 0.0F) full = read_num(cd, ctrl->data(), "offset_max", 100.0F);
-                        if (const mq_field_desc* f = mq_reflect_field(cd, "offset_max"))
-                            *(float*)(ctrl->data() + f->offset) = full * v;
+                        if (full <= 0.0F) full = c->offset_max.x > 0.0F ? c->offset_max.x : 100.0F;
+                        c->offset_max.x = full * v;
                         break;
                     }
                 }
             }
 
-            if (d->role & MQ_ROLE_UI_SAFEAREA) {
-                const float il = read_num(d, blob.data(), "inset_left", 0.0F);
-                const float it = read_num(d, blob.data(), "inset_top", 0.0F);
-                const float ir = read_num(d, blob.data(), "inset_right", 0.0F);
-                const float ib = read_num(d, blob.data(), "inset_bottom", 0.0F);
-                if (const mq_field_desc* f = mq_reflect_field(d, "resolved_inset")) {
-                    float* v = (float*)(blob.data() + f->offset);
-                    v[0] = il; v[1] = it; v[2] = ir; v[3] = ib;
-                }
+            if (auto* sa = as_component_mut<ui::SafeArea>(d, blob.data())) {
+                const float il = sa->inset_left, it = sa->inset_top;
+                const float ir = sa->inset_right, ib = sa->inset_bottom;
+                sa->resolved_inset = math::Vec4{ il, it, ir, ib };
                 /* 目标（或首个 Control 子节点）按内缩重排 */
-                int target = -1;
-                for (auto& [k, ke] : scene->ents) if (ke.parent == id) { target = k; break; }
+                const std::vector<int>& kids = e->children;
+                const int target = kids.empty() ? -1 : kids.front();
                 if (target >= 0) {
                     host::entity_set_pos(this, (float)target, e->world_x + il, e->world_y + it);
                     if (auto* ctrl = comp_by_role(*this, target, MQ_ROLE_UI_CONTROL)) {
                         const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
-                        if (const mq_field_desc* f = mq_reflect_field(cd, "offset_max")) {
-                            float* v = (float*)(ctrl->data() + f->offset);
-                            v[0] = (float)W - il - ir;
-                            v[1] = (float)H - it - ib;
+                        if (auto* c = as_component_mut<ui::Control>(cd, ctrl->data())) {
+                            c->offset_max.x = (float)W - il - ir;
+                            c->offset_max.y = (float)H - it - ib;
                         }
                     }
                 }
             }
 
-            if (d->role & MQ_ROLE_UI_SCROLL) {
-                const float sv = read_num(d, blob.data(), "scroll_v", 0.0F);
-                if (const mq_field_desc* f = mq_reflect_field(d, "scroll_offset")) {
-                    float* v = (float*)(blob.data() + f->offset);
-                    v[1] = sv;
+            if (auto* sv = as_component_mut<ui::ScrollView>(d, blob.data())) {
+                const float v = sv->scroll_v;
+                sv->scroll_offset.y = v;
+                const std::vector<int>& kids = e->children;
+                if (!kids.empty()) {
+                    const int k = kids.front();
+                    SceneNode* ke = scene->at(k);
+                    if (ke) host::entity_set_pos(this, (float)k, ke->world_x, e->world_y - v);
                 }
-                for (auto& [k, ke] : scene->ents)
-                    if (ke.parent == id) {
-                        const float kx = ke.world_x;
-                        host::entity_set_pos(this, (float)k, kx, e->world_y - sv);
-                        break;
-                    }
             }
         }
     }
@@ -12831,11 +12677,10 @@ void Engine::flush_pending_destroy() {
 void Engine::physics_components_setup() {
     if (!scene || !physics) return;
     std::vector<int> ids;
-    for (auto& [k, e] : scene->ents) ids.push_back(k);
-    std::sort(ids.begin(), ids.end());
+    scene->collect_preorder(ids);
     physics_role_bodies.clear();
     for (int id : ids) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         auto* body_blob = comp_by_role(*this, id, MQ_ROLE_PHYSICS_BODY);
         if (!body_blob) continue;
@@ -12844,9 +12689,10 @@ void Engine::physics_components_setup() {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (d && (d->role & MQ_ROLE_PHYSICS_BODY)) { bd = d; break; }
         }
-        if (!bd) continue;
+        const auto* rb = bd ? as_component<physics::RigidBody>(bd, body_blob->data()) : nullptr;
+        if (!rb) continue;
         /* BodyType: Static=0 / Kinematic=1 / Dynamic=2（Kinematic 暂按 static 处理并记录） */
-        const double body_type = read_num(bd, body_blob->data(), "body_type", 0.0F);
+        const double body_type = (double)rb->body_type;
         const double is_static = body_type == 0.0 ? 1.0 : 0.0;
         double radius = 0.0, hw = 0.0, hh = 0.0;
         double shape_type = 0.0, friction = 0.5, restitution = 0.0;
@@ -12856,28 +12702,15 @@ void Engine::physics_components_setup() {
                 const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
                 if (d && (d->role & MQ_ROLE_PHYSICS_COLLIDER)) { cd = d; break; }
             }
-            if (cd) {
-                /* 字段名必须与 schema 的 `physics.Collider`（world/physics.yaml）**逐字段一致**。
-                 * 踩过的大坑：这里曾读 `half_w`/`half_h` —— 那两个字段在 Collider 里**根本不存在**，
-                 * 于是永远拿到默认值、几何全错；同时完全没读 `shape_type`（形状靠 radius>0 猜）。
-                 * 结果是"碰撞表面看着存在、球却直接穿过地板"：bug 藏在默认值里，很难看出来。
-                 *   shape_type: ShapeType（Box=0 Circle=1 Capsule=2 …）→ 求解器只支持 Ball/Cuboid
-                 *   half_extents: math.Vec3（**嵌套 struct**）→ 2D 取其 x/y，z 忽略 */
-                shape_type = read_num(cd, col->data(), "shape_type", 0.0F);
-                radius = read_num(cd, col->data(), "radius", 0.5F);
-                friction = read_num(cd, col->data(), "friction", 0.5F);
-                restitution = read_num(cd, col->data(), "restitution", 0.0F);
-                if (const mq_field_desc* f = mq_reflect_field(cd, "half_extents")) {
-                    const mq_type_desc* vt = mq_reflect_type_by_id(reflect, f->type_id);
-                    const uint8_t* p = col->data() + f->offset;
-                    if (const mq_field_desc* fx = vt ? mq_reflect_field(vt, "x") : nullptr)
-                        hw = *(const float*)(p + fx->offset);
-                    if (const mq_field_desc* fy = vt ? mq_reflect_field(vt, "y") : nullptr)
-                        hh = *(const float*)(p + fy->offset);
-                }
+            if (const auto* collider = cd ? as_component<physics::Collider>(cd, col->data()) : nullptr) {
+                shape_type = (double)collider->shape_type;
+                radius = collider->radius;
+                friction = collider->friction;
+                restitution = collider->restitution;
+                hw = collider->half_extents.x;
+                hh = collider->half_extents.y;
                 /* Capsule(2)/Cylinder(3) 的轴向半高在 half_height；2D 下沿用为半高 */
-                if (shape_type == 2.0 || shape_type == 3.0)
-                    hh = read_num(cd, col->data(), "half_height", 0.5F);
+                if (shape_type == 2.0 || shape_type == 3.0) hh = collider->half_height;
             }
         }
         /* 形状按**声明的 shape_type** 决定，而不是靠"radius 是否 > 0"猜。
@@ -12958,12 +12791,12 @@ void Engine::physics_components_step(float) {
         }
     }
     for (auto& [id, body] : physics_role_bodies) {
-        Entity* e = scene->at(id);
+        SceneNode* e = scene->at(id);
         if (!e) continue;
         float x = e->world_x, y = e->world_y;
         if (mq_physics_get_transform(physics, body, &x, &y) == MQ_PHYSICS_OK) {
             e->world_x = x; e->world_y = y;
-            host::entity_set_pos(this, (float)id, x, y);   // 写回 Transform2D（否则被 flatten_world 覆盖）
+            host::entity_set_pos(this, (float)id, x, y);   // 写回 Transform2D（否则被 update_world 覆盖）
         }
     }
 }
@@ -13090,7 +12923,7 @@ const char* camera_texture(void* ctx, float camera) {
     }
     const mq_type_desc* d = nullptr;
     auto* b = comp_by_name(*e, id, "render.RenderTexture", &d);
-    Entity* ent = e->scene ? e->scene->at(id) : nullptr;
+    SceneNode* ent = e->scene ? e->scene->at(id) : nullptr;
     if (!b || !d || !ent) { e->script_ret.clear(); return e->script_ret.c_str(); }
     const std::string* configured = read_str(d, b->data(), "name");
     const std::string name = configured && !configured->empty() ? *configured
@@ -13121,57 +12954,48 @@ float entity_spawn(void* ctx) {
 }
 void  entity_set_pos(void* ctx, float id, float x, float y) {
     auto* e = (Engine*)ctx;
-    if (Entity* ent = e->scene->at((int)id)) {
-        /* 无 Transform2D 组件的节点（如纯 UI 节点）：位置存在实体自身（父空间局部坐标） */
+    if (SceneNode* ent = e->scene->at((int)id)) {
+        /* 无 Transform2D 组件（纯 UI/空节点）：位置写在节点的局部兜底字段上（父空间）。
+         * world_x/y 同步赋值只为"本帧立即读回"；下一次 update_world 会按父世界重算。 */
         bool has_tf = false;
         for (auto& [tid, blob] : ent->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
             if (d && (d->role & MQ_ROLE_TRANSFORM2D)) { has_tf = true; break; }
         }
-        if (!has_tf) { ent->world_x = x; ent->world_y = y; return; }
-        // 写回 transform2d 组件（按 role；兼容扁平 x/y 与 math.Transform2D.local.position）
+        if (!has_tf) { ent->local_x = x; ent->local_y = y; ent->world_x = x; ent->world_y = y; return; }
+        // 写回 Transform2D 组件（直接访问生成的 struct；兼容三种声明形态）
         for (auto& [tid, blob] : ent->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
-            if (!d || !(d->role & MQ_ROLE_TRANSFORM2D)) continue;
-            const mq_field_desc* fx = mq_reflect_field(d, "x");
-            const mq_field_desc* fy = mq_reflect_field(d, "y");
-            if (fx && fy) {
-                *(float*)(blob.data() + fx->offset) = x;
-                *(float*)(blob.data() + fy->offset) = y;
-                continue;
+            void* p = blob.data();
+            if (auto* t = as_component_mut<scn::Transform2D>(d, p)) { t->x = x; t->y = y; continue; }
+            if (auto* t = as_component_mut<scene::Transform2D>(d, p)) {
+                t->local.position = math::Vec2{ x, y }; continue;
             }
-            if (const mq_field_desc* fl = mq_reflect_field(d, "local")) {
-                const mq_type_desc* lt = mq_reflect_type_by_id(e->reflect, fl->type_id);
-                if (!lt) continue;
-                void* lp = blob.data() + fl->offset;
-                if (const mq_field_desc* fp = mq_reflect_field(lt, "position")) {
-                    const mq_type_desc* pt = mq_reflect_type_by_id(e->reflect, fp->type_id);
-                    if (!pt) continue;
-                    void* pos = (uint8_t*)lp + fp->offset;
-                    if (const mq_field_desc* px = mq_reflect_field(pt, "x")) *(float*)((uint8_t*)pos + px->offset) = x;
-                    if (const mq_field_desc* py = mq_reflect_field(pt, "y")) *(float*)((uint8_t*)pos + py->offset) = y;
-                }
+            if (auto* t = as_component_mut<math::Transform2D>(d, p)) {
+                t->position = math::Vec2{ x, y }; continue;
             }
         }
         ent->world_x = x; ent->world_y = y;
     }
 }
-float entity_x(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->world_x : 0.0f; }
-float entity_y(void* ctx, float id) { Entity* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->world_y : 0.0f; }
+float entity_x(void* ctx, float id) { SceneNode* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->world_x : 0.0f; }
+float entity_y(void* ctx, float id) { SceneNode* e = ((Engine*)ctx)->scene->at((int)id); return e ? e->world_y : 0.0f; }
 float entity_count(void* ctx) { return (float)((Engine*)ctx)->scene->count(); }
 void  entity_destroy(void* ctx, float id) { ((Engine*)ctx)->scene->remove((int)id); }
 
 /* 实体查询（脚本按名字找节点，docs/12/19） */
 const char* entity_name(void* ctx, float id) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     return e ? e->name.c_str() : "";
 }
 float entity_find(void* ctx, const char* name) {
     if (!name) return -1.0F;
     auto* eng = (Engine*)ctx;
     int best = -1;
-    for (auto& [k, e] : eng->scene->ents)          // 稳定：取最小 id（确定性，docs/10 D4）
-        if (e.name == name && (best < 0 || k < best)) best = k;
+    /* 重名取**最小 id**（旧语义；树序不保证全局 id 升序，重挂后尤其如此）。 */
+    eng->scene->visit([&](int id, SceneNode& e, int) {
+        if (e.name == name && (best < 0 || id < best)) best = id;
+    });
     return (float)best;
 }
 /* 运行期配置：读宿主环境变量（不存在 → ""）。返回 std::string 的 c_str，绑定侧立即拷贝。 */
@@ -13256,15 +13080,16 @@ float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius) 
     if (id < 0) return -1.0F;
     attach_component(*eng, (int)id, "scn.Transform2D");
     attach_component(*eng, (int)id, "scn.Sprite");
-    Entity* be = eng->scene->at((int)id);
+    SceneNode* be = eng->scene->at((int)id);
     if (be) {
         for (auto& [tid, blob] : be->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
-            if (!d || !(d->role & MQ_ROLE_SPRITE)) continue;
-            if (const mq_field_desc* fr = mq_reflect_field(d, "radius")) *(float*)(blob.data() + fr->offset) = radius > 0 ? radius : 8.0F;
-            if (const mq_field_desc* fg = mq_reflect_field(d, "r")) *(float*)(blob.data() + fg->offset) = 0.4F + eng->next_rng() / 4294967296.0F * 0.6F;
-            if (const mq_field_desc* fg = mq_reflect_field(d, "g")) *(float*)(blob.data() + fg->offset) = 0.5F;
-            if (const mq_field_desc* fb = mq_reflect_field(d, "b")) *(float*)(blob.data() + fb->offset) = 1.0F;
+            auto* spr = d ? as_component_mut<scn::Sprite>(d, blob.data()) : nullptr;
+            if (!spr) continue;
+            spr->radius = radius > 0 ? radius : 8.0F;
+            spr->r = 0.4F + eng->next_rng() / 4294967296.0F * 0.6F;
+            spr->g = 0.5F;
+            spr->b = 1.0F;
         }
     }
     host::entity_set_pos(eng, id, x, y);
@@ -13289,13 +13114,14 @@ float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius) 
 /* 写回 Label 组件的 text（按 role；字符串字段，docs/19 §8）。 */
 void set_label(void* ctx, float id, const char* text) {
     auto* eng = (Engine*)ctx;
-    Entity* e = eng->scene->at((int)id);
+    SceneNode* e = eng->scene->at((int)id);
     if (!e || !text) return;
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
         if (!d || !(d->role & MQ_ROLE_UI_LABEL)) continue;
-        if (const mq_field_desc* f = mq_reflect_field(d, "text"))
-            *(std::string*)(blob.data() + f->offset) = text;
+        if (auto* l = as_component_mut<scn::Label>(d, blob.data())) l->text = text;
+        else if (auto* tl = as_component_mut<ui::TextLabel>(d, blob.data())) tl->text = text;
+        else if (auto* rt = as_component_mut<render::RichText>(d, blob.data())) rt->text = text;
     }
 }
 
@@ -13314,96 +13140,91 @@ void set_label(void* ctx, float id, const char* text) {
 /* ---- 层级 ---- */
 float node_set_parent(void* ctx, float id, float parent) {
     auto* eng = (Engine*)ctx;
-    Entity* e = eng->scene->at((int)id);
+    SceneNode* e = eng->scene->at((int)id);
     if (!e) return 0.0F;
     const int p = (int)parent;
     if (p == (int)id) return 0.0F;                       // 禁止自环
-    for (int a = p; a >= 0; ) {                          // 禁止成环（沿祖先链上溯）
+    for (int a = p, guard = 0; a >= 0 && guard < 4096; ++guard) {   // 禁止成环（沿祖先链上溯）
         if (a == (int)id) return 0.0F;
-        Entity* pe = eng->scene->at(a);
+        SceneNode* pe = eng->scene->at(a);
         a = pe ? pe->parent : -1;
     }
-    e->parent = p;
+    eng->scene->attach((int)id, p);                      // children 与 parent 同步维护
     return 1.0F;
 }
 
 float node_parent(void* ctx, float id) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     return e ? (float)e->parent : -1.0F;
 }
 
 float node_child_count(void* ctx, float id) {
-    auto* eng = (Engine*)ctx;
-    int n = 0;
-    for (auto& [k, e] : eng->scene->ents) if (e.parent == (int)id) ++n;
-    return (float)n;
+    return (float)((Engine*)ctx)->scene->child_count((int)id);
 }
 
 float node_child_at(void* ctx, float id, float index) {
-    auto* eng = (Engine*)ctx;
-    std::vector<int> kids;
-    for (auto& [k, e] : eng->scene->ents) if (e.parent == (int)id) kids.push_back(k);
-    std::sort(kids.begin(), kids.end());                 // 稳定：按实体 id（创建序）
-    const int i = (int)index;
-    return (i >= 0 && i < (int)kids.size()) ? (float)kids[(size_t)i] : -1.0F;
+    return (float)((Engine*)ctx)->scene->child_at((int)id, (int)index);
 }
 
 float node_find_child(void* ctx, float id, const char* name) {
     auto* eng = (Engine*)ctx;
-    std::vector<int> kids;
-    for (auto& [k, e] : eng->scene->ents) if (e.parent == (int)id) kids.push_back(k);
-    std::sort(kids.begin(), kids.end());
-    for (int k : kids) {
-        Entity* e = eng->scene->at(k);
-        if (e && e->name == (name ? name : "")) return (float)k;
-    }
-    return -1.0F;
+    const std::string want = name ? name : "";
+    auto match = [&](const std::vector<int>& ids) -> int {
+        for (int k : ids) {
+            SceneNode* e = eng->scene->at(k);
+            if (e && e->name == want) return k;
+        }
+        return -1;
+    };
+    if ((int)id < 0) return (float)match(eng->scene->roots);     // -1 = 场景根集合
+    SceneNode* p = eng->scene->at((int)id);
+    return p ? (float)match(p->children) : -1.0F;
 }
 
 void node_set_name(void* ctx, float id, const char* name) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     if (e && name) e->name = name;
 }
 
 /* ---- 节点属性 ---- */
 void node_set_active(void* ctx, float id, float on) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     if (e) e->active = on != 0.0F;
 }
 float node_active(void* ctx, float id) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     return e ? (e->active ? 1.0F : 0.0F) : 0.0F;
 }
 void node_set_scale(void* ctx, float id, float v) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     if (e) e->scale = v;
 }
 float node_scale(void* ctx, float id) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     return e ? e->scale : 1.0F;
 }
 void node_set_angle(void* ctx, float id, float deg) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     if (e) e->angle = deg;
 }
 float node_angle(void* ctx, float id) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     return e ? e->angle : 0.0F;
 }
 void node_set_opacity(void* ctx, float id, float a) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     if (e) e->opacity = a < 0.0F ? 0.0F : (a > 1.0F ? 1.0F : a);
 }
 float node_opacity(void* ctx, float id) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     return e ? e->opacity : 1.0F;
 }
 void node_set_z_index(void* ctx, float id, float z) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     if (e) e->z_index = (int)z;
 }
 float node_z_index(void* ctx, float id) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     return e ? (float)e->z_index : 0.0F;
 }
 
@@ -13417,23 +13238,15 @@ float node_width(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
     auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
     const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
-    if (!blob || !d) return 0.0F;
-    auto* v = (const float*)nullptr;
-    (void)v;
-    const uint8_t* base = blob->data();
-    const mq_field_desc* f = mq_reflect_field(d, "offset_max");
-    if (!f) return 0.0F;
-    return *(const float*)(base + f->offset);            // Vec2.x
+    const auto* ctrl = (blob && d) ? as_component<ui::Control>(d, blob->data()) : nullptr;
+    return ctrl ? ctrl->offset_max.x : 0.0F;
 }
 float node_height(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
     auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
     const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
-    if (!blob || !d) return 0.0F;
-    const uint8_t* base = blob->data();
-    const mq_field_desc* f = mq_reflect_field(d, "offset_max");
-    if (!f) return 0.0F;
-    return *(const float*)(base + f->offset + sizeof(float));   // Vec2.y
+    const auto* ctrl = (blob && d) ? as_component<ui::Control>(d, blob->data()) : nullptr;
+    return ctrl ? ctrl->offset_max.y : 0.0F;
 }
 void node_set_content_size(void* ctx, float id, float w, float h) {
     auto* eng = (Engine*)ctx;
@@ -13441,25 +13254,17 @@ void node_set_content_size(void* ctx, float id, float w, float h) {
         attach_component(*eng, (int)id, "ui.Control");        // 控件盒模型恒在（按需补挂）
     auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
     const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
-    if (!blob || !d) return;
-    uint8_t* base = blob->data();
-    if (const mq_field_desc* f = mq_reflect_field(d, "offset_max")) {
-        *(float*)(base + f->offset) = w;
-        *(float*)(base + f->offset + sizeof(float)) = h;
-    }
+    auto* ctrl = (blob && d) ? as_component_mut<ui::Control>(d, blob->data()) : nullptr;
+    if (ctrl) ctrl->offset_max = math::Vec2{ w, h };
 }
 void node_set_anchor(void* ctx, float id, float ax, float ay) {
     auto* eng = (Engine*)ctx;
     auto* blob = comp_by_role(*eng, (int)id, MQ_ROLE_UI_CONTROL);
     const mq_type_desc* d = mq_reflect_type_by_name(eng->reflect, "ui.Control");
-    if (!blob || !d) return;
-    uint8_t* base = blob->data();
-    for (const char* fn : { "anchor_min", "anchor_max", "pivot" }) {
-        if (const mq_field_desc* f = mq_reflect_field(d, fn)) {
-            *(float*)(base + f->offset) = ax;
-            *(float*)(base + f->offset + sizeof(float)) = ay;
-        }
-    }
+    auto* ctrl = (blob && d) ? as_component_mut<ui::Control>(d, blob->data()) : nullptr;
+    if (!ctrl) return;
+    const math::Vec2 v{ ax, ay };
+    ctrl->anchor_min = v; ctrl->anchor_max = v; ctrl->pivot = v;
 }
 
 /* ---- 组件 ---- */
@@ -13487,7 +13292,7 @@ float node_add_component(void* ctx, float id, const char* type) {
 
 float node_remove_component(void* ctx, float id, const char* type) {
     auto* eng = (Engine*)ctx;
-    Entity* e = eng->scene->at((int)id);
+    SceneNode* e = eng->scene->at((int)id);
     const mq_type_desc* d = nullptr;
     auto* blob = comp_by_name(*eng, (int)id, type, &d);
     if (!e || !blob || !d) return 0.0F;
@@ -13497,13 +13302,13 @@ float node_remove_component(void* ctx, float id, const char* type) {
 }
 
 float node_component_count(void* ctx, float id) {
-    Entity* e = ((Engine*)ctx)->scene->at((int)id);
+    SceneNode* e = ((Engine*)ctx)->scene->at((int)id);
     return e ? (float)e->comps.size() : 0.0F;
 }
 
 const char* node_component_at(void* ctx, float id, float index) {
     auto* eng = (Engine*)ctx;
-    Entity* e = eng->scene->at((int)id);
+    SceneNode* e = eng->scene->at((int)id);
     if (!e) return "";
     std::vector<uint32_t> tids;
     for (auto& [t, b] : e->comps) tids.push_back(t);
@@ -13516,11 +13321,13 @@ const char* node_component_at(void* ctx, float id, float index) {
 
 float node_child_with_component(void* ctx, float id, const char* type) {
     auto* eng = (Engine*)ctx;
-    std::vector<int> kids;
-    for (auto& [k, e] : eng->scene->ents) if (e.parent == (int)id) kids.push_back(k);
-    std::sort(kids.begin(), kids.end());
-    for (int k : kids) if (comp_by_name(*eng, k, type, nullptr)) return (float)k;
-    return -1.0F;
+    auto match = [&](const std::vector<int>& ids) -> int {
+        for (int k : ids) if (comp_by_name(*eng, k, type, nullptr)) return k;
+        return -1;
+    };
+    if ((int)id < 0) return (float)match(eng->scene->roots);     // -1 = 场景根集合
+    SceneNode* p = eng->scene->at((int)id);
+    return p ? (float)match(p->children) : -1.0F;
 }
 
 /* ---- 组件字段（反射读写）---- */
@@ -13547,7 +13354,7 @@ float node_get_bool(void* ctx, float id, const char* comp, const char* field) {
     if (!blob || !d) return 0.0F;
     const mq_field_desc* f = mq_reflect_field(d, field ? field : "");
     if (!f || f->kind != MQ_TK_BOOL) return 0.0F;
-    return *(const bool*)(blob->data() + f->offset) ? 1.0F : 0.0F;
+    return field_get_bool(f, blob->data()) ? 1.0F : 0.0F;
 }
 
 float node_set_bool(void* ctx, float id, const char* comp, const char* field, float value) {
@@ -13557,7 +13364,7 @@ float node_set_bool(void* ctx, float id, const char* comp, const char* field, fl
     if (!blob || !d) return 0.0F;
     const mq_field_desc* f = mq_reflect_field(d, field ? field : "");
     if (!f || f->kind != MQ_TK_BOOL) return 0.0F;
-    *(bool*)(blob->data() + f->offset) = value != 0.0F;
+    field_set_bool(f, blob->data(), value != 0.0F);
     return 1.0F;
 }
 
@@ -13578,7 +13385,7 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
     const mq_field_desc* f = mq_reflect_field(d, field ? field : "");
     if (!f || f->kind != MQ_TK_STRING) return 0.0F;
     std::string assigned = value ? value : "";
-    *(std::string*)(blob->data() + f->offset) = assigned;
+    (void)field_set_str(f, blob->data(), assigned.c_str());
     /* 改了资源引用就**当场解析并缓存**。
      * 为什么必须在这里做：渲染提取（Scene::extract）是**只读**的（docs/13 §8 / docs/15 §1：
      * 不得触发加载），它只查 material_cache / tex_cache。装配期会预解析场景自带实体的资源，
@@ -13668,7 +13475,7 @@ float node_emit_number(void* ctx, float id, const char* event, float value) {
                 ++hits;
             }
         }
-        Entity* e = eng->scene->at(cur);
+        SceneNode* e = eng->scene->at(cur);
         cur = e ? e->parent : -1;
     }
     return (float)hits;
@@ -13727,7 +13534,7 @@ std::vector<uint8_t>* text_comp(Engine& eng, int id, const mq_type_desc** out_d)
     std::vector<uint8_t>* blob = comp_by_role(eng, id, MQ_ROLE_UI_LABEL);
     if (!blob) blob = comp_by_role(eng, id, MQ_ROLE_UI_TEXT);
     if (blob && out_d) {
-        Entity* e = eng.scene->at(id);
+        SceneNode* e = eng.scene->at(id);
         for (auto& [tid, b] : e->comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
             if (d && (d->role & (MQ_ROLE_UI_LABEL | MQ_ROLE_UI_TEXT)) && &b == blob) { *out_d = d; break; }
@@ -13741,10 +13548,10 @@ float ui_set_text(void* ctx, float id, const char* text) {
     const mq_type_desc* d = nullptr;
     auto* blob = text_comp(*eng, (int)id, &d);
     if (!blob || !d || !text) return 0.0F;
-    const mq_field_desc* f = mq_reflect_field(d, "text");
-    if (!f || f->kind != MQ_TK_STRING) return 0.0F;
-    *(std::string*)(blob->data() + f->offset) = text;
-    return 1.0F;
+    if (auto* l = as_component_mut<scn::Label>(d, blob->data())) { l->text = text; return 1.0F; }
+    if (auto* tl = as_component_mut<ui::TextLabel>(d, blob->data())) { tl->text = text; return 1.0F; }
+    if (auto* rt = as_component_mut<render::RichText>(d, blob->data())) { rt->text = text; return 1.0F; }
+    return 0.0F;
 }
 
 const char* ui_get_text(void* ctx, float id) {
@@ -13752,7 +13559,9 @@ const char* ui_get_text(void* ctx, float id) {
     const mq_type_desc* d = nullptr;
     auto* blob = text_comp(*eng, (int)id, &d);
     if (!blob || !d) return "";
-    if (const std::string* s = read_str(d, blob->data(), "text")) return s->c_str();
+    if (const auto* l = as_component<scn::Label>(d, blob->data())) return l->text.c_str();
+    if (const auto* tl = as_component<ui::TextLabel>(d, blob->data())) return tl->text.c_str();
+    if (const auto* rt = as_component<render::RichText>(d, blob->data())) return rt->text.c_str();
     return "";
 }
 
@@ -13762,9 +13571,9 @@ float ui_text_width(void* ctx, float id) {
     const mq_type_desc* d = nullptr;
     auto* blob = text_comp(*eng, (int)id, &d);
     if (!blob || !d) return 0.0F;
-    for (const char* fn : { "text_w", "text_size", "content_size" })
-        if (const mq_field_desc* f = mq_reflect_field(d, fn))
-            return *(const float*)(blob->data() + f->offset);
+    if (const auto* l = as_component<scn::Label>(d, blob->data())) return l->text_w;
+    if (const auto* tl = as_component<ui::TextLabel>(d, blob->data())) return tl->text_size.x;
+    if (const auto* rt = as_component<render::RichText>(d, blob->data())) return rt->content_size.x;
     return 0.0F;
 }
 
@@ -13773,13 +13582,9 @@ float ui_text_height(void* ctx, float id) {
     const mq_type_desc* d = nullptr;
     auto* blob = text_comp(*eng, (int)id, &d);
     if (!blob || !d) return 0.0F;
-    /* text_h 是**标量** float；text_size / content_size 是 Vec2（y 在第二个分量）。
-     * 此前一律按 +sizeof(float) 读 → 标量路径读到下一个字段（line_count 的 int 位型）。 */
-    if (const mq_field_desc* f = mq_reflect_field(d, "text_h"))
-        return *(const float*)(blob->data() + f->offset);
-    for (const char* fn : { "text_size", "content_size" })
-        if (const mq_field_desc* f = mq_reflect_field(d, fn))
-            return *((const float*)(blob->data() + f->offset) + 1);
+    if (const auto* l = as_component<scn::Label>(d, blob->data())) return l->text_h;
+    if (const auto* tl = as_component<ui::TextLabel>(d, blob->data())) return tl->text_size.y;
+    if (const auto* rt = as_component<render::RichText>(d, blob->data())) return rt->content_size.y;
     return 0.0F;
 }
 
@@ -13788,8 +13593,8 @@ float ui_text_lines(void* ctx, float id) {
     const mq_type_desc* d = nullptr;
     auto* blob = text_comp(*eng, (int)id, &d);
     if (!blob || !d) return 0.0F;
-    if (const mq_field_desc* f = mq_reflect_field(d, "line_count"))
-        return (float)*(const int32_t*)(blob->data() + f->offset);
+    if (const auto* l = as_component<scn::Label>(d, blob->data())) return (float)l->line_count;
+    if (const auto* rt = as_component<render::RichText>(d, blob->data())) return (float)rt->line_count;
     return 0.0F;
 }
 
@@ -14401,13 +14206,14 @@ float node_find_path(void* ctx, float root, const char* path) {
         if (*p == '/' || *p == '\0') {
             if (!seg.empty() && seg != ".") {
                 int next = -1;
-                std::vector<int> kids;
-                for (auto& [k, e] : eng->scene->ents) if (e.parent == cur) kids.push_back(k);
-                std::sort(kids.begin(), kids.end());
-                for (int k : kids) {
-                    Entity* e = eng->scene->at(k);
-                    if (e && e->name == seg) { next = k; break; }
-                }
+                auto match = [&](const std::vector<int>& ids) {
+                    for (int k : ids) {
+                        SceneNode* e = eng->scene->at(k);
+                        if (e && e->name == seg) { next = k; break; }
+                    }
+                };
+                if (cur < 0) match(eng->scene->roots);          // root=-1：从场景根集合找
+                else if (SceneNode* p = eng->scene->at(cur)) match(p->children);
                 cur = next;
                 if (cur < 0) return -1.0F;
             }
@@ -14503,7 +14309,7 @@ void scene_set_instance_active(void* ctx, float instance, float active) {
     if (!inst) return;
     inst->active = active != 0.0F;
     if (inst->attach_entity >= 0) {
-        if (Entity* e = eng->scene ? eng->scene->at(inst->attach_entity) : nullptr) e->active = inst->active;
+        if (SceneNode* e = eng->scene ? eng->scene->at(inst->attach_entity) : nullptr) e->active = inst->active;
         eng->ensure_instance_component(inst->attach_entity, inst->id);
     }
 }
@@ -14691,14 +14497,14 @@ void nav_block(void* ctx, float cx, float cy, float w, float h) {
 
 float nav_goto(void* ctx, float id, float x, float y) {
     auto* eng = (Engine*)ctx;
-    Entity* e = eng->scene->at((int)id);
+    SceneNode* e = eng->scene->at((int)id);
     if (!e) return 0.0F;
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
         if (!d || !(d->role & MQ_ROLE_NAV_AGENT)) continue;
-        if (const mq_field_desc* fx = mq_reflect_field(d, "tx")) *(float*)(blob.data() + fx->offset) = x;
-        if (const mq_field_desc* fy = mq_reflect_field(d, "ty")) *(float*)(blob.data() + fy->offset) = y;
-        if (const mq_field_desc* fh = mq_reflect_field(d, "has_target")) *(bool*)(blob.data() + fh->offset) = true;
+        if (const mq_field_desc* fx = mq_reflect_field(d, "tx")) field_set_f32(fx, blob.data(), x);
+        if (const mq_field_desc* fy = mq_reflect_field(d, "ty")) field_set_f32(fy, blob.data(), y);
+        if (const mq_field_desc* fh = mq_reflect_field(d, "has_target")) field_set_bool(fh, blob.data(), true);
         eng->agent_paths[(int)id].path.clear();          // 目标变化 → 下一帧重算
         eng->agent_paths[(int)id].index = 0;
         return 1.0F;
@@ -14735,24 +14541,24 @@ float entity_valid(void* ctx, float id) {
 
 float entity_z(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
-    Entity* e = eng->scene->at((int)id);
+    SceneNode* e = eng->scene->at((int)id);
     if (!e) return 0.0F;
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
         if (const mq_field_desc* fz = mq_reflect_field(d, "z"))
-            return (float)*(const int32_t*)(blob.data() + fz->offset);
+            return (float)field_get_i32(fz, blob.data());
     }
     return 0.0F;
 }
 void entity_set_z(void* ctx, float id, float z) {
     auto* eng = (Engine*)ctx;
-    Entity* e = eng->scene->at((int)id);
+    SceneNode* e = eng->scene->at((int)id);
     if (!e) return;
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
-        if (const mq_field_desc* fz = mq_reflect_field(d, "z")) *(int32_t*)(blob.data() + fz->offset) = (int32_t)z;
+        if (const mq_field_desc* fz = mq_reflect_field(d, "z")) field_set_i32(fz, blob.data(), (int32_t)z);
     }
 }
 
@@ -14789,13 +14595,13 @@ float ui_hit(void* ctx) {
 float ui_hover(void* ctx) { return (float)((Engine*)ctx)->hover; }
 float ui_pressed(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
-    Entity* e = eng->scene->at((int)id);
+    SceneNode* e = eng->scene->at((int)id);
     if (!e) return 0.0F;
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
         if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
-            return *(const bool*)(blob.data() + fp->offset) ? 1.0F : 0.0F;
+            return field_get_bool(fp, blob.data()) ? 1.0F : 0.0F;
     }
     return 0.0F;
 }
@@ -15417,13 +15223,15 @@ extern "C" int mq_control_Scene_entities(void* u, const mq_json*, char* out, siz
     auto* e = (Engine*)u;
     std::string o = "[";
     bool first = true;
-    char item[256];
-    for (auto& [idx, ent] : e->scene->ents) {
-        std::snprintf(item, sizeof item, "%s{\"id\":%d,\"name\":\"%s\",\"parent\":%d,\"x\":%.4f,\"y\":%.4f,\"components\":%zu}",
-                      first ? "" : ",", idx, ent.name.c_str(), ent.parent, ent.world_x, ent.world_y, ent.comps.size());
+    char item[320];
+    e->scene->visit([&](int idx, SceneNode& ent, int depth) {   // 前序：父一定在子之前
+        std::snprintf(item, sizeof item,
+                      "%s{\"id\":%d,\"name\":\"%s\",\"parent\":%d,\"depth\":%d,\"x\":%.4f,\"y\":%.4f,\"components\":%zu}",
+                      first ? "" : ",", idx, ent.name.c_str(), ent.parent, depth,
+                      ent.world_x, ent.world_y, ent.comps.size());
         first = false;
         o += item;
-    }
+    });
     o += "]";
     std::snprintf(out, cap, "%s", o.c_str());
     return 0;
@@ -15437,7 +15245,7 @@ extern "C" int mq_control_Scene_get(void* u, const mq_json* params, char* out, s
     const char* path = mq_json_str(mq_json_get(params, "path"), nullptr);
     /* path == "" → **dump 整个实体**（反射驱动：组件 + 全部标量字段）——inspector 属性面板用 */
     if (path && !*path) {
-        Entity* ent = e->scene ? e->scene->at(id) : nullptr;
+        SceneNode* ent = e->scene ? e->scene->at(id) : nullptr;
         if (!ent) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no entity\"}"); return 0; }
         size_t n = 0;
         n += (size_t)std::snprintf(out + n, n < cap ? cap - n : 0, "{\"ok\":true,\"id\":%d,\"name\":\"%s\",\"components\":[",
@@ -15487,7 +15295,7 @@ extern "C" int mq_control_Scene_get(void* u, const mq_json* params, char* out, s
         if (vt) for (uint32_t i = 0; i < vt->field_count; ++i) {
             const mq_field_desc* vf = &vt->fields[i];
             if (vf->kind != MQ_TK_F32) continue;
-            vals += std::string(i ? ",\"" : "\"") + vf->name + "\":" + std::to_string(*(float*)((uint8_t*)fp + vf->offset));
+            vals += std::string(i ? ",\"" : "\"") + vf->name + "\":" + std::to_string(field_get_f32(vf, fp));
         }
         vals += "}}";
         std::snprintf(out, cap, "%s", vals.c_str());
@@ -15514,7 +15322,7 @@ extern "C" int mq_control_Scene_set(void* u, const mq_json* params, char* out, s
     void* fp = (uint8_t*)base + tf->offset;
     if (tf->kind == MQ_TK_STRING) {
         const char* s = mq_json_str(vj, "");
-        *(std::string*)fp = s ? s : "";
+        (void)field_set_str(tf, base, s ? s : "");
     } else {
         mq_reflect_set_f64(e->reflect, base, tf, mq_json_num(vj, 0.0));
     }
@@ -15532,9 +15340,9 @@ extern "C" int mq_control_Scene_spawn(void* u, const mq_json* params, char* out,
     const int id = e->scene->spawn();
     if (id < 0) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"spawn failed\"}"); return 0; }
     e->entity_instance[id] = 0;                 // 控制面编辑：归世界（根实例）
-    if (Entity* ent = e->scene->at(id)) {
+    e->scene->attach(id, (int)parent);
+    if (SceneNode* ent = e->scene->at(id)) {
         ent->name = name;
-        ent->parent = (int)parent;
         if (const char* tn = mq_json_str(mq_json_get(params, "component"), nullptr)) attach_component(*e, id, tn);
     }
     std::snprintf(out, cap, "{\"ok\":true,\"id\":%d,\"undo\":{\"destroy\":%d}}", id, id);
@@ -15545,7 +15353,7 @@ extern "C" int mq_control_Scene_destroy(void* u, const mq_json* params, char* ou
     auto* e = (Engine*)u;
     const int id = (int)mq_json_num(mq_json_get(params, "id"), -1);
     const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
-    Entity* ent = e->scene->at(id);
+    SceneNode* ent = e->scene->at(id);
     if (!ent) { std::snprintf(out, cap, "{\"ok\":false,\"error\":\"no such entity\"}"); return 0; }
     if (dry) { std::snprintf(out, cap, "{\"ok\":true,\"dry_run\":true,\"name\":\"%s\"}", ent->name.c_str()); return 0; }
     e->scene->remove(id);
@@ -15559,7 +15367,7 @@ extern "C" int mq_control_Scene_expand_prefabs(void* u, const mq_json* params, c
     auto* e = (Engine*)u;
     const bool dry = mq_json_num(mq_json_get(params, "dry_run"), 0) != 0.0;
     uint32_t expanded = 0;
-    for (auto& [idx, ent] : e->scene->ents) {
+    for (auto& [idx, ent] : e->scene->nodes) {
         for (auto& [tid, blob] : ent.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
             if (!d || std::strcmp(d->name, "scn.PrefabInstance") != 0) continue;
@@ -15567,8 +15375,8 @@ extern "C" int mq_control_Scene_expand_prefabs(void* u, const mq_json* params, c
             if (!src || src->empty()) continue;
             const mq_field_desc* fd = mq_reflect_field(d, "detached");
             if (!fd) continue;
-            if (*(const bool*)(blob.data() + fd->offset)) continue;
-            if (!dry) *(bool*)(blob.data() + fd->offset) = true;
+            if (field_get_bool(fd, blob.data())) continue;
+            if (!dry) field_set_bool(fd, blob.data(), true);
             ++expanded;
         }
     }
@@ -15827,10 +15635,9 @@ extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, 
     json += ",\n  \"entities\": [";
 
     std::vector<int> ids;
-    for (auto& [idx, ent] : e->scene->ents) ids.push_back(idx);
-    std::sort(ids.begin(), ids.end());
+    e->scene->collect_preorder(ids);
     std::function<void(int, int)> emit = [&](int id, int indent) {
-        Entity* ent = e->scene->at(id);
+        SceneNode* ent = e->scene->at(id);
         if (!ent) return;
         const std::string pad((size_t)indent * 2, ' ');
         json += "\n" + pad + "{ \"name\": ";
@@ -15857,8 +15664,7 @@ extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, 
         }
         json += "]";
         std::vector<int> kids;
-        for (auto& [k, c] : e->scene->ents) if (c.parent == id && included(k)) kids.push_back(k);
-        std::sort(kids.begin(), kids.end());
+        for (int k : ent->children) if (included(k)) kids.push_back(k);
         if (!kids.empty()) {
             json += ", \"children\": [";
             for (size_t i = 0; i < kids.size(); ++i) { if (i) json += ","; emit(kids[i], indent + 1); }
@@ -15868,7 +15674,7 @@ extern "C" int mq_control_Scene_save(void* u, const mq_json* params, char* out, 
     };
     bool first = true;
     for (int id : ids) {
-        Entity* ent = e->scene->at(id);
+        SceneNode* ent = e->scene->at(id);
         if (!ent || (ent->parent >= 0 && e->scene->at(ent->parent))) continue;   // 仅从根开始
         if (!included(id)) continue;
         if (!first) json += ",";
@@ -15994,14 +15800,13 @@ extern "C" int mq_control_Scene_bake_instances(void* u, const mq_json* params, c
     const mq_type_desc* sid = mq_reflect_type_by_name(e->reflect, "scn.SceneInstance");
     int marked = 0;
     if (sid && e->scene) {
-        for (auto& [eid, ent] : e->scene->ents) {
+        for (auto& [eid, ent] : e->scene->nodes) {
             auto it = ent.comps.find(sid->type_id);
             if (it == ent.comps.end()) continue;
             const mq_field_desc* f = mq_reflect_field(sid, "detached");
             if (!f) continue;
-            bool& det = *(bool*)(it->second.data() + f->offset);
-            if (det) continue;
-            if (!dry) det = true;
+            if (field_get_bool(f, it->second.data())) continue;
+            if (!dry) field_set_bool(f, it->second.data(), true);
             if (!dry) {
                 if (SceneInstanceRuntime* up = e->instance_by_attach(eid)) up->detached = true;
             }
@@ -16600,7 +16405,7 @@ void Engine::resolve_render_scale() {
     render_scale_req = scene && scene->desc.render_scale > 0.0F ? scene->desc.render_scale : 1.0F;
     /* 旧场景兼容：Canvas.render_scale 曾是唯一入口；显式 >0 时继续生效。 */
     if (scene && canvas_entity >= 0) {
-        if (Entity* ce = scene->at(canvas_entity)) {
+        if (SceneNode* ce = scene->at(canvas_entity)) {
             for (auto& [tid, blob] : ce->comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
                 if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
@@ -16682,13 +16487,13 @@ void Engine::update_main_views() {
         v.zoom = design_zoom_x;
         v.zoom_y = design_zoom_y;
     }
-    for (auto& [idx, e] : scene->ents) {
+    for (auto& [idx, e] : scene->nodes) {
         if (comp_by_name(*this, idx, "render.RenderTexture", nullptr)) continue;
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
             if (!d || !(d->role & MQ_ROLE_CAMERA)) continue;
             bool active = true;
-            if (const mq_field_desc* fa = mq_reflect_field(d, "active")) active = *(const bool*)(blob.data() + fa->offset);
+            if (const mq_field_desc* fa = mq_reflect_field(d, "active")) active = field_get_bool(fa, blob.data());
             if (!active) continue;
             float cx = W * 0.5F, cy = H * 0.5F, zoom = 1.0F, rot = 0.0F;
             read_f32(d, blob.data(), "x", &cx);
@@ -16838,15 +16643,13 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     if (!scene->deserialize(*this, text)) return false;
     scene->instantiate(*this);
     scene_chain.pop_back();
-    scene->flatten_world(*this);
+    scene->update_world(*this);
     {
         SceneInstanceRuntime* root = instance_at(0);
         if (root) {
-            for (auto& [eid, ent] : scene->ents)
-                if (ent.parent < 0 && entity_instance.find(eid) != entity_instance.end()
-                    && entity_instance[eid] == 0)
+            for (int eid : scene->roots)
+                if (entity_instance.find(eid) != entity_instance.end() && entity_instance[eid] == 0)
                     root->roots.push_back(eid);
-            std::sort(root->roots.begin(), root->roots.end());
         }
     }
     /* 窗口标题跟随场景（director.loadScene 切 demo 时标题栏同步；首次装配时 platform 尚未创建，

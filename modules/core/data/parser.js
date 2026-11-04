@@ -1132,6 +1132,21 @@ function genTypesHeader(namespaces) {
     lines.push(`} // namespace ${ns.name}`)
   }
 
+  /* 生成类型 id 常量：引擎/绑定按 type_id 直接判型并 reinterpret_cast 到生成的 struct，
+   * 不再用字段名反射查找。 */
+  lines.push('')
+  lines.push('namespace mq {')
+  lines.push('namespace schema {')
+  lines.push('template <class T> inline constexpr uint32_t type_id_v = 0;')
+  for (const ns of namespaces) {
+    for (const t of ns.types) {
+      const cpp = t.fqName.replace(/\./g, '::')
+      lines.push(`template <> inline constexpr uint32_t type_id_v<${cpp}> = ${t.typeId}u;`)
+    }
+  }
+  lines.push('} // namespace schema')
+  lines.push('} // namespace mq')
+
   return lines.join('\n') + '\n'
 }
 
@@ -1218,6 +1233,18 @@ typedef enum mq_type_kind {
  * 反射/persist 据此按 std::string 处理（此前 string[] 因 elem_type_id=0 被整体跳过）。 */
 #define MQ_ELEM_TYPE_STRING 0xFFFFFFFFu
 
+/* 生成的结构体字段访问器（docs/06 §5 零开销原则）：
+ * 热路径/脚本绑定直接调用这些函数读取成员，不再用 offset + 类型 switch。
+ * 容器字段（T[] / map / optional）没有标量访问器，仍走容器算子/反射 visitor。 */
+typedef struct mq_field_accessor {
+    double      (*get_f64)(const void* obj);
+    void        (*set_f64)(void* obj, double v);
+    const char* (*get_str)(const void* obj);
+    void        (*set_str)(void* obj, const char* v);
+    const void* (*get_ptr)(const void* obj);     /* struct / ref / fixed array / string */
+    void*       (*get_mut_ptr)(void* obj);
+} mq_field_accessor;
+
 typedef struct mq_field_desc {
     const char*  name;
     uint32_t     offset;       /* offsetof(Type, field) */
@@ -1231,6 +1258,8 @@ typedef struct mq_field_desc {
     uint32_t   (*container_size)(const void* field);
     void       (*container_resize)(void* field, uint32_t n);
     void*      (*container_elem)(void* field, uint32_t i);
+    /* 生成的直读/直写访问器（无 offset、无类型分支）；容器字段为 0。 */
+    const mq_field_accessor* accessor;
 } mq_field_desc;
 
 /* 组件语义角色（由 schema 的 roles 声明；引擎据此通用处理，不硬编码类型）。 */
@@ -1284,6 +1313,10 @@ typedef struct mq_type_desc {
 extern const mq_type_desc* const mq_schema_types[];
 extern const uint32_t            mq_schema_type_count;
 
+/* 生成式字段查找：type_id + FNV-1a(字段名) → descriptor（O(1)，无线性 strcmp）。
+ * 未命中返回 0（自定义类型/字段可由调用方回退线性扫描）。 */
+extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char* name);
+
 #ifdef __cplusplus
 }
 #endif
@@ -1332,6 +1365,7 @@ function genDescSource(types) {
   lines.push('#include "maque_desc.h"')
   lines.push('#include "maque_types.h"')
   lines.push('#include <cstddef>')
+  lines.push('#include <cstring>')
   lines.push('#include <new>')
   lines.push('')
   // offsetof on non-standard-layout (container-bearing) types is intentional:
@@ -1356,6 +1390,47 @@ function genDescSource(types) {
   for (const t of types) {
     if (t.kind !== 'struct' || t.fields.length === 0) continue
     const sym = `mq_fields_${mangle(t.fqName)}`
+    const accSym = `mq_acc_${mangle(t.fqName)}`
+    const cpp = t.fqName.replace(/\./g, '::')
+    /* 每个字段生成直读/直写访问器：函数体直接访问生成的结构体成员（无 offset/类型 switch）。 */
+    for (const f of t.fields) {
+      const kind = fieldKind(f.typeNode)
+      const base = `mq_acc_${mangle(t.fqName)}_${mangle(f.name)}`
+      f._acc = { base, kind, getf: '0', setf: '0', gets: '0', sets: '0', getp: '0', setp: '0' }
+      if (kind === 'STRING') {
+        lines.push(`static const char* ${base}_gets(const void* p) { const auto& s = *static_cast<const ${cpp}*>(p); return s.${f.name}.c_str(); }`)
+        lines.push(`static void ${base}_sets(void* p, const char* v) { auto& s = *static_cast<${cpp}*>(p); s.${f.name} = v ? v : ""; }`)
+        lines.push(`static const void* ${base}_getp(const void* p) { const auto& s = *static_cast<const ${cpp}*>(p); return &s.${f.name}; }`)
+        lines.push(`static void* ${base}_getmp(void* p) { auto& s = *static_cast<${cpp}*>(p); return &s.${f.name}; }`)
+        f._acc.gets = `${base}_gets`; f._acc.sets = `${base}_sets`
+        f._acc.getp = `${base}_getp`; f._acc.setp = `${base}_getmp`
+      } else if (kind === 'STRUCT' || kind === 'ENTITY_REF' || kind === 'ASSET_REF' ||
+                 kind === 'ARRAY_FIXED' || kind === 'OPTIONAL') {
+        lines.push(`static const void* ${base}_getp(const void* p) { const auto& s = *static_cast<const ${cpp}*>(p); return &s.${f.name}; }`)
+        lines.push(`static void* ${base}_getmp(void* p) { auto& s = *static_cast<${cpp}*>(p); return &s.${f.name}; }`)
+        f._acc.getp = `${base}_getp`; f._acc.setp = `${base}_getmp`
+      } else if (kind !== 'ARRAY_DYN' && kind !== 'MAP') {
+        /* 标量 / 枚举 / bool：数值访问器。 */
+        if (kind === 'BOOL') {
+          lines.push(`static double ${base}_getf(const void* p) { const auto& s = *static_cast<const ${cpp}*>(p); return s.${f.name} ? 1.0 : 0.0; }`)
+          lines.push(`static void ${base}_setf(void* p, double v) { auto& s = *static_cast<${cpp}*>(p); s.${f.name} = v != 0.0; }`)
+        } else if (kind === 'ENUM') {
+          lines.push(`static double ${base}_getf(const void* p) { const auto& s = *static_cast<const ${cpp}*>(p); return static_cast<double>(static_cast<int64_t>(s.${f.name})); }`)
+          lines.push(`static void ${base}_setf(void* p, double v) { auto& s = *static_cast<${cpp}*>(p); s.${f.name} = static_cast<decltype(s.${f.name})>(v); }`)
+        } else {
+          lines.push(`static double ${base}_getf(const void* p) { const auto& s = *static_cast<const ${cpp}*>(p); return static_cast<double>(s.${f.name}); }`)
+          lines.push(`static void ${base}_setf(void* p, double v) { auto& s = *static_cast<${cpp}*>(p); s.${f.name} = static_cast<decltype(s.${f.name})>(v); }`)
+        }
+        f._acc.getf = `${base}_getf`; f._acc.setf = `${base}_setf`
+      }
+    }
+    lines.push(`static const mq_field_accessor ${accSym}[] = {`)
+    for (const f of t.fields) {
+      const a = f._acc
+      if (a) lines.push(`    { ${a.getf}, ${a.setf}, ${a.gets}, ${a.sets}, ${a.getp}, ${a.setp} },`)
+      else lines.push('    { 0, 0, 0, 0, 0, 0 },')
+    }
+    lines.push('};')
     for (const f of t.fields) {
       const de = dynElem(f.typeNode)
       if (!de) continue
@@ -1367,7 +1442,8 @@ function genDescSource(types) {
       lines.push(`static void* ${base}_elem(void* f, uint32_t i) { return &static_cast<std::vector<${elemCpp}>*>(f)->at(i); }`)
     }
     lines.push(`static const mq_field_desc ${sym}[] = {`)
-    for (const f of t.fields) {
+    for (let fi = 0; fi < t.fields.length; ++fi) {
+      const f = t.fields[fi]
       const kind = fieldKind(f.typeNode)
       const typeId = fieldTypeId(f.typeNode)
       const count = fieldCount(f.typeNode)
@@ -1382,8 +1458,8 @@ function genDescSource(types) {
         extra = `0u, 0, 0, 0, 0`
       }
       lines.push(
-        `    { "${f.name}", (uint32_t)offsetof(${t.fqName.replace(/\./g, '::')}, ${f.name}), ` +
-        `MQ_TK_${kind}, ${typeId}u, ${count}u, ${attrs}u, ${extra} },`
+        `    { "${f.name}", (uint32_t)offsetof(${cpp}, ${f.name}), ` +
+        `MQ_TK_${kind}, ${typeId}u, ${count}u, ${attrs}u, ${extra}, &${accSym}[${fi}] },`
       )
     }
     lines.push('};')
@@ -1429,6 +1505,40 @@ function genDescSource(types) {
     lines.push('')
   }
 
+  /* 生成式字段查找：按 type_id + 字段名 FNV-1a 直接返回 descriptor。 */
+  lines.push('static uint32_t mq_field_hash(const char* s) {')
+  lines.push('    uint32_t h = 2166136261u;')
+  lines.push('    while (s && *s) { h ^= (uint32_t)(uint8_t)*s++; h *= 16777619u; }')
+  lines.push('    return h;')
+  lines.push('}')
+  lines.push('')
+  lines.push('extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char* name) {')
+  lines.push('    if (!type || !name) return 0;')
+  lines.push('    const uint32_t h = mq_field_hash(name);')
+  lines.push('    switch (type->type_id) {')
+  for (const t of types) {
+    if (t.kind !== 'struct' || t.fields.length === 0) continue
+    const byHash = new Map()
+    t.fields.forEach((f, i) => {
+      const h = fnv1a32(f.name)
+      if (!byHash.has(h)) byHash.set(h, [])
+      byHash.get(h).push({ f, i })
+    })
+    lines.push(`    case ${t.typeId}u:`)
+    lines.push('        switch (h) {')
+    for (const [h, items] of byHash) {
+      lines.push(`        case ${h}u:`)
+      for (const { f, i } of items)
+        lines.push(`            if (std::strcmp(name, "${f.name}") == 0) return &type->fields[${i}];`)
+      lines.push('            break;')
+    }
+    lines.push('        }')
+    lines.push('        break;')
+  }
+  lines.push('    }')
+  lines.push('    return 0;')
+  lines.push('}')
+  lines.push('')
   lines.push('const mq_type_desc* const mq_schema_types[] = {')
   for (const t of types) {
     lines.push(`    &mq_type_${mangle(t.fqName)},`)

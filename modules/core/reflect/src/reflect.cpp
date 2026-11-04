@@ -104,6 +104,9 @@ const mq_type_desc* mq_reflect_type_at(mq_reflect_ctx* ctx, uint32_t index) {
 
 const mq_field_desc* mq_reflect_field(const mq_type_desc* type, const char* field_name) {
     if (!type || !field_name) return nullptr;
+    /* 生成式 O(1) 查找（FNV-1a 字段名 → descriptor）；未命中再回退线性扫描
+     * （自定义模块注册的类型不在生成的 schema 表里）。 */
+    if (const mq_field_desc* f = mq_schema_field(type, field_name)) return f;
     for (uint32_t i = 0; i < type->field_count; ++i)
         if (type->fields[i].name && std::strcmp(type->fields[i].name, field_name) == 0)
             return &type->fields[i];
@@ -132,6 +135,11 @@ const mq_field_desc* mq_reflect_field_path(mq_reflect_ctx* ctx, const mq_type_de
 
 int mq_reflect_get_f64(mq_reflect_ctx* ctx, const void* obj, const mq_field_desc* field, double* out) {
     if (!ctx || !obj || !field || !out) return 1;
+    /* 生成的结构体访问器优先：直接读成员，不再按 offset + kind 分派。 */
+    if (field->accessor && field->accessor->get_f64) {
+        *out = field->accessor->get_f64(obj);
+        return 0;
+    }
     size_t w = field_scalar_size(ctx, field);
     if (!w) return 1;
     *out = load_as_double((const uint8_t*)obj + field->offset, field->kind, w);
@@ -139,6 +147,10 @@ int mq_reflect_get_f64(mq_reflect_ctx* ctx, const void* obj, const mq_field_desc
 }
 int mq_reflect_set_f64(mq_reflect_ctx* ctx, void* obj, const mq_field_desc* field, double value) {
     if (!ctx || !obj || !field) return 1;
+    if (field->accessor && field->accessor->set_f64) {
+        field->accessor->set_f64(obj, value);
+        return 0;
+    }
     size_t w = field_scalar_size(ctx, field);
     if (!w) return 1;
     return store_from_double((uint8_t*)obj + field->offset, field->kind, w, value) ? 0 : 1;

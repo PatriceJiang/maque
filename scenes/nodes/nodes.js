@@ -36,7 +36,11 @@ function on_start() {
   node_set_parent(mute, panel);
   node_set_parent(spawned, canvas);
 
-  S.ids = { canvas: canvas, panel: panel, bar: bar, barFill: barFill, volume: volume, mute: mute, spawned: spawned };
+  // 递归销毁回归：父节点销毁必须连带整棵子树（Node 树语义）
+  const doomedChild = entity_spawn();
+  node_set_parent(doomedChild, spawned);
+  S.ids = { canvas: canvas, panel: panel, bar: bar, barFill: barFill, volume: volume, mute: mute, spawned: spawned,
+            doomedChild: doomedChild };
   S.panel_children = node_child_count(panel);
   S.canvas_children = node_child_count(canvas);
   S.parent_of_bar = node_parent(bar);
@@ -101,6 +105,7 @@ function update() {
   }
   if (S.frames === 46) {
     S.destroyed = 1 - node_valid(S.ids.spawned);        // 帧边界已生效 → 1
+    S.destroyed_child = 1 - node_valid(S.ids.doomedChild);   // 子树一起销毁 → 1
   }
   if (S.frames === 50) {
     S.fall_y_40 = entity_y(entity_find('Fall'));

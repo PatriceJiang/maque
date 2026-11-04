@@ -49,7 +49,7 @@
 | 08 | asset pipeline（ai：导入/烘焙/打包/dump） | [08-asset-ai.md](08-asset-ai.md) | `agent-asset` | docs/08 |
 | 09 | observability（日志 / 指标 / 崩溃） | [09-observability.md](09-observability.md) | `agent-obs` | docs/09 |
 | 10 | control plane（CDP 式 / MCP） | [10-control-plane.md](10-control-plane.md) | `agent-control` | docs/11, 16 |
-| 11 | scene（节点树 / ECS 双视图） | [11-scene.md](11-scene.md) | `agent-scene` | docs/12, 06 |
+| 11 | scene（节点树 / Node + Components / visit） | [11-scene.md](11-scene.md) | `agent-scene` | docs/12, 06 |
 | 12 | animation | [12-animation.md](12-animation.md) | `agent-animation` | docs/15 |
 | 13 | physics（Rapier FFI） | [13-physics.md](13-physics.md) | `agent-physics` | docs/15 |
 | 14 | particle | [14-particle.md](14-particle.md) | `agent-particle` | docs/15 |

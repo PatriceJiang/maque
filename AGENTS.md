@@ -235,7 +235,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   顶点布局 2/3 = 48/56B + 24B（joints u16x4 + weights f32x4，stride 72/80）；`gfx` group1 binding 23 = 骨骼调色板
   readonly-storage（`mq_renderer_skin`，`draw3d.skin` / `frame3d.skins`），阴影 pass 同绑；`update_mesh` 走 CPU morph。
   场景用 `scn.AnimationPlayer.clips`（glTF 片段数组，`clip_index` 选片段、自动播放首个；空 = 旧 2D 属性轨道）。
-  `Entity::world_m` 每帧由 `flatten_world3d` 从节点树 + 派生姿态累积（**不写回 Transform3D**，避免 quat→Euler 有损）。
+  `SceneNode::world_m` 每帧由 `Scene::update_world3d()` 的树访问 + 派生姿态累积（**不写回 Transform3D**，避免 quat→Euler 有损）。
   诊断开关：`MAQUE_ANIM=0`（保持 bind pose）、`MAQUE_SKIN=0`（identity 调色板，用于 bind pose 不变量 A/B）、
   `MAQUE_RENDER3D_INFO=1`（骨架/clip/palette/morph 装配与首帧日志）。测试：`ctest -R 'gltf_(skin|anim|morph)_e2e'`。
   已知边界：`KHR_animation_pointer`（材质/贴图/可见性指针通道）、CUBICSPLINE 精确切线、动画状态机/混合未做；
@@ -514,11 +514,18 @@ tools\win\build.cmd -Sanitize address -RunTests
 - **运行时（浏览器）**：`modules/runtime` 的 `mq_run_scene(path)`：加载 `.scn` → 反序列化 → 加载 `.js` → 固定步长循环 → WebGPU 渲染 → 退出。
   宿主 `samples/player` 仅一行；**游戏逻辑全在资源**（`scenes/*.scn`、`scenes/*.js`）。
 - **渲染**：`maque::gfx`（wgpu-native）。注意：该构建的 `wgpuInstanceWaitAny` **未实现**，异步统一用 `wgpuInstanceProcessEvents` 轮询。
-- **场景模型（单一模型，ADR-0003 2026-10 修订）**：**节点树（children + 反射组件）是唯一模型**；
-  runtime 的实体表只是"`id → 节点` 的扁平索引 + 每帧 `Scene::flatten_world()` 展平出的世界坐标缓存"
-  （`Entity::world_x/world_y` 是派生数据，**不是位置真相**——位置在 Transform 组件里，改 `world_*` 会被下一帧覆盖）。
-  渲染/物理/UI 按**组件角色**从展平视图提取（只读）；**不做 ECS/archetype 存储**（高基数用专用数组，如粒子）。
-  脚本两面同一模型：`node_*` 是树语义规范面，`entity_*` 是**扁平别名**（按 id 直接寻址）。
+- **场景模型（Scene Tree · Node + Components）**：**节点树是唯一模型**，`SceneNode` 显式持有
+  `parent + children[]`（有序 = 声明/id 序）与**反射组件 blob**；`id` 只是脚本/快照/控制面的稳定句柄，
+  **不是存储槽**。runtime 里**没有 ECS/archetype/系统调度**：全树遍历只有 `Scene::visit()`（前序 DFS），
+  每帧一趟 `Scene::update_world()` 把局部 Transform 累积成世界坐标/矩阵，并把
+  `active/angle/scale/opacity` 沿树累积成 `visible/world_*` 派生缓存。
+  位置真相在 Transform 组件（无 Transform2D 的节点用 `local_x/local_y` 兜底），改 `world_*` 会被下一帧覆盖。
+  渲染/物理/UI/命中都按**组件角色**从树访问结果只读提取（高基数仍用专用数组，如粒子）。
+  **内置组件不查字段名**：schema 生成 `mq::schema::type_id_v<T>`，runtime 用 `as_component<T>` 判型后
+  直接读写生成 struct 的成员（`scn.Sprite`/`ui.Control`/`render.*`/`physics.*`/`audio.*`/…）；
+  `mq_reflect_field` 只用于自定义组件、脚本按名访问、序列化与编辑器路径。
+  脚本两面同一模型：`node_*` 是树语义规范面，`entity_*` 是**按 id 寻址的兼容别名**。
+  `.scn` 的 `children`/`parent` 语义不变（加载时经 `Scene::attach` 建树，快照只存 parent、恢复后重建 children）。
   控制面 `Scene.expand_prefabs` = 展开 PrefabInstance（旧名 `Scene.bake` 为兼容别名，已弃用）。
 - **场景实例（docs/32，P0–P2 已落地）**：`.scn` = 节点树 + 行为（`script`/`scripts`）；节点挂
   `scn.SceneInstance{source}` 即加载期实例化**带行为的子场景**（每实例独立 `mq_script_bus`/VM、生命周期与事件作用域；
@@ -559,7 +566,7 @@ tools\win\build.cmd -Sanitize address -RunTests
 - **Node**：`node_set_parent/parent/child_count/child_at/find_child/find_path/set_name`、
   `node_set_position/position_x/position_y`、`node_set_scale/scale`、`node_set_angle/angle`、
   `node_set_opacity/opacity`、`node_set_z_index/z_index`、`node_width/height/set_content_size/set_anchor`、
-  `node_set_active/active`、`node_destroy`（帧末生效）、`node_valid`
+  `node_set_active/active`、`node_destroy`（帧末生效；**连带整棵子树**）、`node_valid`
 - **Component**：`node_has_component/add_component/remove_component/component_count/component_at/child_with_component`、
   `node_get_number/set_number/get_bool/set_bool/get_string/set_string`（组件字段名可用 `Type.field` 或短名）
 - **事件**：`node_on(id, event, handler)` / `node_off` / `node_emit` / `node_emit_number`；emit 沿父链冒泡，

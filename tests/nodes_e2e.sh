@@ -141,6 +141,7 @@ ck('unschedule：已移除定时器', d.get('schedules_before_unschedule') == 1 
 ck('find(path)：按路径命中节点', d.get('found_path') == d['ids']['volume'], d.get('found_path'))
 ck('destroy：调用时仍有效（帧末销毁）', d.get('valid_right_after_destroy_call') == 1, d.get('valid_right_after_destroy_call'))
 ck('destroy：帧边界后已销毁', d.get('destroyed') == 1, d.get('destroyed'))
+ck('destroy：子节点随父节点一起销毁', d.get('destroyed_child') == 1, d.get('destroyed_child'))
 if bad:
     print('nodes_e2e: FAIL ' + '; '.join(bad), file=sys.stderr)
     sys.exit(1)

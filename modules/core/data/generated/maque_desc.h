@@ -19,6 +19,18 @@ typedef enum mq_type_kind {
  * 反射/persist 据此按 std::string 处理（此前 string[] 因 elem_type_id=0 被整体跳过）。 */
 #define MQ_ELEM_TYPE_STRING 0xFFFFFFFFu
 
+/* 生成的结构体字段访问器（docs/06 §5 零开销原则）：
+ * 热路径/脚本绑定直接调用这些函数读取成员，不再用 offset + 类型 switch。
+ * 容器字段（T[] / map / optional）没有标量访问器，仍走容器算子/反射 visitor。 */
+typedef struct mq_field_accessor {
+    double      (*get_f64)(const void* obj);
+    void        (*set_f64)(void* obj, double v);
+    const char* (*get_str)(const void* obj);
+    void        (*set_str)(void* obj, const char* v);
+    const void* (*get_ptr)(const void* obj);     /* struct / ref / fixed array / string */
+    void*       (*get_mut_ptr)(void* obj);
+} mq_field_accessor;
+
 typedef struct mq_field_desc {
     const char*  name;
     uint32_t     offset;       /* offsetof(Type, field) */
@@ -32,6 +44,8 @@ typedef struct mq_field_desc {
     uint32_t   (*container_size)(const void* field);
     void       (*container_resize)(void* field, uint32_t n);
     void*      (*container_elem)(void* field, uint32_t i);
+    /* 生成的直读/直写访问器（无 offset、无类型分支）；容器字段为 0。 */
+    const mq_field_accessor* accessor;
 } mq_field_desc;
 
 /* 组件语义角色（由 schema 的 roles 声明；引擎据此通用处理，不硬编码类型）。 */
@@ -84,6 +98,10 @@ typedef struct mq_type_desc {
 /* registry (lookup by type_id / name) */
 extern const mq_type_desc* const mq_schema_types[];
 extern const uint32_t            mq_schema_type_count;
+
+/* 生成式字段查找：type_id + FNV-1a(字段名) → descriptor（O(1)，无线性 strcmp）。
+ * 未命中返回 0（自定义类型/字段可由调用方回退线性扫描）。 */
+extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char* name);
 
 #ifdef __cplusplus
 }

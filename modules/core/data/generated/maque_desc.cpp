@@ -8,6 +8,7 @@
 #include "maque_desc.h"
 #include "maque_types.h"
 #include <cstddef>
+#include <cstring>
 #include <new>
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -18,107 +19,356 @@
 extern "C" {
 #endif
 
+static const void* mq_acc_anim_AnimatedSprite_frames_getp(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return &s.frames; }
+static void* mq_acc_anim_AnimatedSprite_frames_getmp(void* p) { auto& s = *static_cast<anim::AnimatedSprite*>(p); return &s.frames; }
+static double mq_acc_anim_AnimatedSprite_animation_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return static_cast<double>(s.animation); }
+static void mq_acc_anim_AnimatedSprite_animation_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.animation = static_cast<decltype(s.animation)>(v); }
+static double mq_acc_anim_AnimatedSprite_autoplay_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return s.autoplay ? 1.0 : 0.0; }
+static void mq_acc_anim_AnimatedSprite_autoplay_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.autoplay = v != 0.0; }
+static double mq_acc_anim_AnimatedSprite_play_mode_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return static_cast<double>(static_cast<int64_t>(s.play_mode)); }
+static void mq_acc_anim_AnimatedSprite_play_mode_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.play_mode = static_cast<decltype(s.play_mode)>(v); }
+static double mq_acc_anim_AnimatedSprite_fps_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return static_cast<double>(s.fps); }
+static void mq_acc_anim_AnimatedSprite_fps_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.fps = static_cast<decltype(s.fps)>(v); }
+static double mq_acc_anim_AnimatedSprite_speed_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_anim_AnimatedSprite_speed_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_anim_AnimatedSprite_frame_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return static_cast<double>(s.frame); }
+static void mq_acc_anim_AnimatedSprite_frame_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.frame = static_cast<decltype(s.frame)>(v); }
+static double mq_acc_anim_AnimatedSprite_time_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return static_cast<double>(s.time); }
+static void mq_acc_anim_AnimatedSprite_time_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static double mq_acc_anim_AnimatedSprite_playing_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return s.playing ? 1.0 : 0.0; }
+static void mq_acc_anim_AnimatedSprite_playing_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.playing = v != 0.0; }
+static double mq_acc_anim_AnimatedSprite_flip_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return static_cast<double>(static_cast<int64_t>(s.flip)); }
+static void mq_acc_anim_AnimatedSprite_flip_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.flip = static_cast<decltype(s.flip)>(v); }
+static const void* mq_acc_anim_AnimatedSprite_color_getp(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return &s.color; }
+static void* mq_acc_anim_AnimatedSprite_color_getmp(void* p) { auto& s = *static_cast<anim::AnimatedSprite*>(p); return &s.color; }
+static const void* mq_acc_anim_AnimatedSprite_pivot_getp(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return &s.pivot; }
+static void* mq_acc_anim_AnimatedSprite_pivot_getmp(void* p) { auto& s = *static_cast<anim::AnimatedSprite*>(p); return &s.pivot; }
+static double mq_acc_anim_AnimatedSprite_z_index_getf(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return static_cast<double>(s.z_index); }
+static void mq_acc_anim_AnimatedSprite_z_index_setf(void* p, double v) { auto& s = *static_cast<anim::AnimatedSprite*>(p); s.z_index = static_cast<decltype(s.z_index)>(v); }
+static const void* mq_acc_anim_AnimatedSprite_material_getp(const void* p) { const auto& s = *static_cast<const anim::AnimatedSprite*>(p); return &s.material; }
+static void* mq_acc_anim_AnimatedSprite_material_getmp(void* p) { auto& s = *static_cast<anim::AnimatedSprite*>(p); return &s.material; }
+static const mq_field_accessor mq_acc_anim_AnimatedSprite[] = {
+    { 0, 0, 0, 0, mq_acc_anim_AnimatedSprite_frames_getp, mq_acc_anim_AnimatedSprite_frames_getmp },
+    { mq_acc_anim_AnimatedSprite_animation_getf, mq_acc_anim_AnimatedSprite_animation_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimatedSprite_autoplay_getf, mq_acc_anim_AnimatedSprite_autoplay_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimatedSprite_play_mode_getf, mq_acc_anim_AnimatedSprite_play_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimatedSprite_fps_getf, mq_acc_anim_AnimatedSprite_fps_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimatedSprite_speed_getf, mq_acc_anim_AnimatedSprite_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimatedSprite_frame_getf, mq_acc_anim_AnimatedSprite_frame_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimatedSprite_time_getf, mq_acc_anim_AnimatedSprite_time_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimatedSprite_playing_getf, mq_acc_anim_AnimatedSprite_playing_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimatedSprite_flip_getf, mq_acc_anim_AnimatedSprite_flip_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_AnimatedSprite_color_getp, mq_acc_anim_AnimatedSprite_color_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_AnimatedSprite_pivot_getp, mq_acc_anim_AnimatedSprite_pivot_getmp },
+    { mq_acc_anim_AnimatedSprite_z_index_getf, mq_acc_anim_AnimatedSprite_z_index_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_AnimatedSprite_material_getp, mq_acc_anim_AnimatedSprite_material_getmp },
+};
 static const mq_field_desc mq_fields_anim_AnimatedSprite[] = {
-    { "frames", (uint32_t)offsetof(anim::AnimatedSprite, frames), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "animation", (uint32_t)offsetof(anim::AnimatedSprite, animation), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "autoplay", (uint32_t)offsetof(anim::AnimatedSprite, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "play_mode", (uint32_t)offsetof(anim::AnimatedSprite, play_mode), MQ_TK_ENUM, 3819653223u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fps", (uint32_t)offsetof(anim::AnimatedSprite, fps), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(anim::AnimatedSprite, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "frame", (uint32_t)offsetof(anim::AnimatedSprite, frame), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "time", (uint32_t)offsetof(anim::AnimatedSprite, time), MQ_TK_F32, 0u, 0u, 2u, 0u, 0, 0, 0, 0 },
-    { "playing", (uint32_t)offsetof(anim::AnimatedSprite, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "flip", (uint32_t)offsetof(anim::AnimatedSprite, flip), MQ_TK_ENUM, 577626198u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(anim::AnimatedSprite, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pivot", (uint32_t)offsetof(anim::AnimatedSprite, pivot), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z_index", (uint32_t)offsetof(anim::AnimatedSprite, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(anim::AnimatedSprite, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "frames", (uint32_t)offsetof(anim::AnimatedSprite, frames), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[0] },
+    { "animation", (uint32_t)offsetof(anim::AnimatedSprite, animation), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[1] },
+    { "autoplay", (uint32_t)offsetof(anim::AnimatedSprite, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[2] },
+    { "play_mode", (uint32_t)offsetof(anim::AnimatedSprite, play_mode), MQ_TK_ENUM, 3819653223u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[3] },
+    { "fps", (uint32_t)offsetof(anim::AnimatedSprite, fps), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[4] },
+    { "speed", (uint32_t)offsetof(anim::AnimatedSprite, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[5] },
+    { "frame", (uint32_t)offsetof(anim::AnimatedSprite, frame), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[6] },
+    { "time", (uint32_t)offsetof(anim::AnimatedSprite, time), MQ_TK_F32, 0u, 0u, 2u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[7] },
+    { "playing", (uint32_t)offsetof(anim::AnimatedSprite, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[8] },
+    { "flip", (uint32_t)offsetof(anim::AnimatedSprite, flip), MQ_TK_ENUM, 577626198u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[9] },
+    { "color", (uint32_t)offsetof(anim::AnimatedSprite, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[10] },
+    { "pivot", (uint32_t)offsetof(anim::AnimatedSprite, pivot), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[11] },
+    { "z_index", (uint32_t)offsetof(anim::AnimatedSprite, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[12] },
+    { "material", (uint32_t)offsetof(anim::AnimatedSprite, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimatedSprite[13] },
 };
 
+static const void* mq_acc_anim_AnimationPlayer_clip_getp(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return &s.clip; }
+static void* mq_acc_anim_AnimationPlayer_clip_getmp(void* p) { auto& s = *static_cast<anim::AnimationPlayer*>(p); return &s.clip; }
+static double mq_acc_anim_AnimationPlayer_autoplay_getf(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return s.autoplay ? 1.0 : 0.0; }
+static void mq_acc_anim_AnimationPlayer_autoplay_setf(void* p, double v) { auto& s = *static_cast<anim::AnimationPlayer*>(p); s.autoplay = v != 0.0; }
+static double mq_acc_anim_AnimationPlayer_loop_getf(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return static_cast<double>(static_cast<int64_t>(s.loop)); }
+static void mq_acc_anim_AnimationPlayer_loop_setf(void* p, double v) { auto& s = *static_cast<anim::AnimationPlayer*>(p); s.loop = static_cast<decltype(s.loop)>(v); }
+static double mq_acc_anim_AnimationPlayer_update_mode_getf(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return static_cast<double>(static_cast<int64_t>(s.update_mode)); }
+static void mq_acc_anim_AnimationPlayer_update_mode_setf(void* p, double v) { auto& s = *static_cast<anim::AnimationPlayer*>(p); s.update_mode = static_cast<decltype(s.update_mode)>(v); }
+static double mq_acc_anim_AnimationPlayer_speed_getf(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_anim_AnimationPlayer_speed_setf(void* p, double v) { auto& s = *static_cast<anim::AnimationPlayer*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_anim_AnimationPlayer_playing_getf(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return s.playing ? 1.0 : 0.0; }
+static void mq_acc_anim_AnimationPlayer_playing_setf(void* p, double v) { auto& s = *static_cast<anim::AnimationPlayer*>(p); s.playing = v != 0.0; }
+static double mq_acc_anim_AnimationPlayer_time_getf(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return static_cast<double>(s.time); }
+static void mq_acc_anim_AnimationPlayer_time_setf(void* p, double v) { auto& s = *static_cast<anim::AnimationPlayer*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static double mq_acc_anim_AnimationPlayer_track_mask_getf(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return static_cast<double>(s.track_mask); }
+static void mq_acc_anim_AnimationPlayer_track_mask_setf(void* p, double v) { auto& s = *static_cast<anim::AnimationPlayer*>(p); s.track_mask = static_cast<decltype(s.track_mask)>(v); }
+static const void* mq_acc_anim_AnimationPlayer_event_sink_getp(const void* p) { const auto& s = *static_cast<const anim::AnimationPlayer*>(p); return &s.event_sink; }
+static void* mq_acc_anim_AnimationPlayer_event_sink_getmp(void* p) { auto& s = *static_cast<anim::AnimationPlayer*>(p); return &s.event_sink; }
+static const mq_field_accessor mq_acc_anim_AnimationPlayer[] = {
+    { 0, 0, 0, 0, mq_acc_anim_AnimationPlayer_clip_getp, mq_acc_anim_AnimationPlayer_clip_getmp },
+    { mq_acc_anim_AnimationPlayer_autoplay_getf, mq_acc_anim_AnimationPlayer_autoplay_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimationPlayer_loop_getf, mq_acc_anim_AnimationPlayer_loop_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimationPlayer_update_mode_getf, mq_acc_anim_AnimationPlayer_update_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimationPlayer_speed_getf, mq_acc_anim_AnimationPlayer_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimationPlayer_playing_getf, mq_acc_anim_AnimationPlayer_playing_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimationPlayer_time_getf, mq_acc_anim_AnimationPlayer_time_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimationPlayer_track_mask_getf, mq_acc_anim_AnimationPlayer_track_mask_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_AnimationPlayer_event_sink_getp, mq_acc_anim_AnimationPlayer_event_sink_getmp },
+};
 static const mq_field_desc mq_fields_anim_AnimationPlayer[] = {
-    { "clip", (uint32_t)offsetof(anim::AnimationPlayer, clip), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "autoplay", (uint32_t)offsetof(anim::AnimationPlayer, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "loop", (uint32_t)offsetof(anim::AnimationPlayer, loop), MQ_TK_ENUM, 3389167963u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "update_mode", (uint32_t)offsetof(anim::AnimationPlayer, update_mode), MQ_TK_ENUM, 1148137276u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(anim::AnimationPlayer, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "playing", (uint32_t)offsetof(anim::AnimationPlayer, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "time", (uint32_t)offsetof(anim::AnimationPlayer, time), MQ_TK_F32, 0u, 0u, 2u, 0u, 0, 0, 0, 0 },
-    { "track_mask", (uint32_t)offsetof(anim::AnimationPlayer, track_mask), MQ_TK_U64, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "event_sink", (uint32_t)offsetof(anim::AnimationPlayer, event_sink), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clip", (uint32_t)offsetof(anim::AnimationPlayer, clip), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[0] },
+    { "autoplay", (uint32_t)offsetof(anim::AnimationPlayer, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[1] },
+    { "loop", (uint32_t)offsetof(anim::AnimationPlayer, loop), MQ_TK_ENUM, 3389167963u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[2] },
+    { "update_mode", (uint32_t)offsetof(anim::AnimationPlayer, update_mode), MQ_TK_ENUM, 1148137276u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[3] },
+    { "speed", (uint32_t)offsetof(anim::AnimationPlayer, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[4] },
+    { "playing", (uint32_t)offsetof(anim::AnimationPlayer, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[5] },
+    { "time", (uint32_t)offsetof(anim::AnimationPlayer, time), MQ_TK_F32, 0u, 0u, 2u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[6] },
+    { "track_mask", (uint32_t)offsetof(anim::AnimationPlayer, track_mask), MQ_TK_U64, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[7] },
+    { "event_sink", (uint32_t)offsetof(anim::AnimationPlayer, event_sink), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimationPlayer[8] },
 };
 
+static const void* mq_acc_anim_Animator_controller_getp(const void* p) { const auto& s = *static_cast<const anim::Animator*>(p); return &s.controller; }
+static void* mq_acc_anim_Animator_controller_getmp(void* p) { auto& s = *static_cast<anim::Animator*>(p); return &s.controller; }
+static const void* mq_acc_anim_Animator_parameters_getp(const void* p) { const auto& s = *static_cast<const anim::Animator*>(p); return &s.parameters; }
+static void* mq_acc_anim_Animator_parameters_getmp(void* p) { auto& s = *static_cast<anim::Animator*>(p); return &s.parameters; }
+static double mq_acc_anim_Animator_param_count_getf(const void* p) { const auto& s = *static_cast<const anim::Animator*>(p); return static_cast<double>(s.param_count); }
+static void mq_acc_anim_Animator_param_count_setf(void* p, double v) { auto& s = *static_cast<anim::Animator*>(p); s.param_count = static_cast<decltype(s.param_count)>(v); }
+static double mq_acc_anim_Animator_current_state_getf(const void* p) { const auto& s = *static_cast<const anim::Animator*>(p); return static_cast<double>(s.current_state); }
+static void mq_acc_anim_Animator_current_state_setf(void* p, double v) { auto& s = *static_cast<anim::Animator*>(p); s.current_state = static_cast<decltype(s.current_state)>(v); }
+static double mq_acc_anim_Animator_normalized_time_getf(const void* p) { const auto& s = *static_cast<const anim::Animator*>(p); return static_cast<double>(s.normalized_time); }
+static void mq_acc_anim_Animator_normalized_time_setf(void* p, double v) { auto& s = *static_cast<anim::Animator*>(p); s.normalized_time = static_cast<decltype(s.normalized_time)>(v); }
+static double mq_acc_anim_Animator_speed_getf(const void* p) { const auto& s = *static_cast<const anim::Animator*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_anim_Animator_speed_setf(void* p, double v) { auto& s = *static_cast<anim::Animator*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_anim_Animator_apply_physics_getf(const void* p) { const auto& s = *static_cast<const anim::Animator*>(p); return s.apply_physics ? 1.0 : 0.0; }
+static void mq_acc_anim_Animator_apply_physics_setf(void* p, double v) { auto& s = *static_cast<anim::Animator*>(p); s.apply_physics = v != 0.0; }
+static const void* mq_acc_anim_Animator_target_getp(const void* p) { const auto& s = *static_cast<const anim::Animator*>(p); return &s.target; }
+static void* mq_acc_anim_Animator_target_getmp(void* p) { auto& s = *static_cast<anim::Animator*>(p); return &s.target; }
+static const mq_field_accessor mq_acc_anim_Animator[] = {
+    { 0, 0, 0, 0, mq_acc_anim_Animator_controller_getp, mq_acc_anim_Animator_controller_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_Animator_parameters_getp, mq_acc_anim_Animator_parameters_getmp },
+    { mq_acc_anim_Animator_param_count_getf, mq_acc_anim_Animator_param_count_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_Animator_current_state_getf, mq_acc_anim_Animator_current_state_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_Animator_normalized_time_getf, mq_acc_anim_Animator_normalized_time_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_Animator_speed_getf, mq_acc_anim_Animator_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_Animator_apply_physics_getf, mq_acc_anim_Animator_apply_physics_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_Animator_target_getp, mq_acc_anim_Animator_target_getmp },
+};
 static const mq_field_desc mq_fields_anim_Animator[] = {
-    { "controller", (uint32_t)offsetof(anim::Animator, controller), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "parameters", (uint32_t)offsetof(anim::Animator, parameters), MQ_TK_ARRAY_FIXED, 2767010176u, 16u, 0u, 0u, 0, 0, 0, 0 },
-    { "param_count", (uint32_t)offsetof(anim::Animator, param_count), MQ_TK_U8, 0u, 0u, 2u, 0u, 0, 0, 0, 0 },
-    { "current_state", (uint32_t)offsetof(anim::Animator, current_state), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "normalized_time", (uint32_t)offsetof(anim::Animator, normalized_time), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(anim::Animator, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "apply_physics", (uint32_t)offsetof(anim::Animator, apply_physics), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "target", (uint32_t)offsetof(anim::Animator, target), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "controller", (uint32_t)offsetof(anim::Animator, controller), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Animator[0] },
+    { "parameters", (uint32_t)offsetof(anim::Animator, parameters), MQ_TK_ARRAY_FIXED, 2767010176u, 16u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Animator[1] },
+    { "param_count", (uint32_t)offsetof(anim::Animator, param_count), MQ_TK_U8, 0u, 0u, 2u, 0u, 0, 0, 0, 0, &mq_acc_anim_Animator[2] },
+    { "current_state", (uint32_t)offsetof(anim::Animator, current_state), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_anim_Animator[3] },
+    { "normalized_time", (uint32_t)offsetof(anim::Animator, normalized_time), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_anim_Animator[4] },
+    { "speed", (uint32_t)offsetof(anim::Animator, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Animator[5] },
+    { "apply_physics", (uint32_t)offsetof(anim::Animator, apply_physics), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Animator[6] },
+    { "target", (uint32_t)offsetof(anim::Animator, target), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Animator[7] },
 };
 
+static double mq_acc_anim_AnimParam_name_hash_getf(const void* p) { const auto& s = *static_cast<const anim::AnimParam*>(p); return static_cast<double>(s.name_hash); }
+static void mq_acc_anim_AnimParam_name_hash_setf(void* p, double v) { auto& s = *static_cast<anim::AnimParam*>(p); s.name_hash = static_cast<decltype(s.name_hash)>(v); }
+static double mq_acc_anim_AnimParam_type_getf(const void* p) { const auto& s = *static_cast<const anim::AnimParam*>(p); return static_cast<double>(static_cast<int64_t>(s.type)); }
+static void mq_acc_anim_AnimParam_type_setf(void* p, double v) { auto& s = *static_cast<anim::AnimParam*>(p); s.type = static_cast<decltype(s.type)>(v); }
+static double mq_acc_anim_AnimParam_value_getf(const void* p) { const auto& s = *static_cast<const anim::AnimParam*>(p); return static_cast<double>(s.value); }
+static void mq_acc_anim_AnimParam_value_setf(void* p, double v) { auto& s = *static_cast<anim::AnimParam*>(p); s.value = static_cast<decltype(s.value)>(v); }
+static double mq_acc_anim_AnimParam_ivalue_getf(const void* p) { const auto& s = *static_cast<const anim::AnimParam*>(p); return static_cast<double>(s.ivalue); }
+static void mq_acc_anim_AnimParam_ivalue_setf(void* p, double v) { auto& s = *static_cast<anim::AnimParam*>(p); s.ivalue = static_cast<decltype(s.ivalue)>(v); }
+static const mq_field_accessor mq_acc_anim_AnimParam[] = {
+    { mq_acc_anim_AnimParam_name_hash_getf, mq_acc_anim_AnimParam_name_hash_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimParam_type_getf, mq_acc_anim_AnimParam_type_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimParam_value_getf, mq_acc_anim_AnimParam_value_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_AnimParam_ivalue_getf, mq_acc_anim_AnimParam_ivalue_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_anim_AnimParam[] = {
-    { "name_hash", (uint32_t)offsetof(anim::AnimParam, name_hash), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "type", (uint32_t)offsetof(anim::AnimParam, type), MQ_TK_ENUM, 3075390472u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "value", (uint32_t)offsetof(anim::AnimParam, value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "ivalue", (uint32_t)offsetof(anim::AnimParam, ivalue), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name_hash", (uint32_t)offsetof(anim::AnimParam, name_hash), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimParam[0] },
+    { "type", (uint32_t)offsetof(anim::AnimParam, type), MQ_TK_ENUM, 3075390472u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimParam[1] },
+    { "value", (uint32_t)offsetof(anim::AnimParam, value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimParam[2] },
+    { "ivalue", (uint32_t)offsetof(anim::AnimParam, ivalue), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_AnimParam[3] },
 };
 
+static const void* mq_acc_anim_BonePose_position_getp(const void* p) { const auto& s = *static_cast<const anim::BonePose*>(p); return &s.position; }
+static void* mq_acc_anim_BonePose_position_getmp(void* p) { auto& s = *static_cast<anim::BonePose*>(p); return &s.position; }
+static const void* mq_acc_anim_BonePose_rotation_getp(const void* p) { const auto& s = *static_cast<const anim::BonePose*>(p); return &s.rotation; }
+static void* mq_acc_anim_BonePose_rotation_getmp(void* p) { auto& s = *static_cast<anim::BonePose*>(p); return &s.rotation; }
+static const void* mq_acc_anim_BonePose_scale_getp(const void* p) { const auto& s = *static_cast<const anim::BonePose*>(p); return &s.scale; }
+static void* mq_acc_anim_BonePose_scale_getmp(void* p) { auto& s = *static_cast<anim::BonePose*>(p); return &s.scale; }
+static const mq_field_accessor mq_acc_anim_BonePose[] = {
+    { 0, 0, 0, 0, mq_acc_anim_BonePose_position_getp, mq_acc_anim_BonePose_position_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_BonePose_rotation_getp, mq_acc_anim_BonePose_rotation_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_BonePose_scale_getp, mq_acc_anim_BonePose_scale_getmp },
+};
 static const mq_field_desc mq_fields_anim_BonePose[] = {
-    { "position", (uint32_t)offsetof(anim::BonePose, position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "rotation", (uint32_t)offsetof(anim::BonePose, rotation), MQ_TK_STRUCT, 1809161124u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scale", (uint32_t)offsetof(anim::BonePose, scale), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "position", (uint32_t)offsetof(anim::BonePose, position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_BonePose[0] },
+    { "rotation", (uint32_t)offsetof(anim::BonePose, rotation), MQ_TK_STRUCT, 1809161124u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_BonePose[1] },
+    { "scale", (uint32_t)offsetof(anim::BonePose, scale), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_BonePose[2] },
 };
 
+static double mq_acc_anim_Curve_interp_getf(const void* p) { const auto& s = *static_cast<const anim::Curve*>(p); return static_cast<double>(static_cast<int64_t>(s.interp)); }
+static void mq_acc_anim_Curve_interp_setf(void* p, double v) { auto& s = *static_cast<anim::Curve*>(p); s.interp = static_cast<decltype(s.interp)>(v); }
+static double mq_acc_anim_Curve_count_getf(const void* p) { const auto& s = *static_cast<const anim::Curve*>(p); return static_cast<double>(s.count); }
+static void mq_acc_anim_Curve_count_setf(void* p, double v) { auto& s = *static_cast<anim::Curve*>(p); s.count = static_cast<decltype(s.count)>(v); }
+static const void* mq_acc_anim_Curve_keys_getp(const void* p) { const auto& s = *static_cast<const anim::Curve*>(p); return &s.keys; }
+static void* mq_acc_anim_Curve_keys_getmp(void* p) { auto& s = *static_cast<anim::Curve*>(p); return &s.keys; }
+static const mq_field_accessor mq_acc_anim_Curve[] = {
+    { mq_acc_anim_Curve_interp_getf, mq_acc_anim_Curve_interp_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_Curve_count_getf, mq_acc_anim_Curve_count_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_Curve_keys_getp, mq_acc_anim_Curve_keys_getmp },
+};
 static const mq_field_desc mq_fields_anim_Curve[] = {
-    { "interp", (uint32_t)offsetof(anim::Curve, interp), MQ_TK_ENUM, 2154681411u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "count", (uint32_t)offsetof(anim::Curve, count), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "keys", (uint32_t)offsetof(anim::Curve, keys), MQ_TK_ARRAY_FIXED, 1020666756u, 8u, 0u, 0u, 0, 0, 0, 0 },
+    { "interp", (uint32_t)offsetof(anim::Curve, interp), MQ_TK_ENUM, 2154681411u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Curve[0] },
+    { "count", (uint32_t)offsetof(anim::Curve, count), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Curve[1] },
+    { "keys", (uint32_t)offsetof(anim::Curve, keys), MQ_TK_ARRAY_FIXED, 1020666756u, 8u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Curve[2] },
 };
 
+static double mq_acc_anim_CurveKey_t_getf(const void* p) { const auto& s = *static_cast<const anim::CurveKey*>(p); return static_cast<double>(s.t); }
+static void mq_acc_anim_CurveKey_t_setf(void* p, double v) { auto& s = *static_cast<anim::CurveKey*>(p); s.t = static_cast<decltype(s.t)>(v); }
+static double mq_acc_anim_CurveKey_value_getf(const void* p) { const auto& s = *static_cast<const anim::CurveKey*>(p); return static_cast<double>(s.value); }
+static void mq_acc_anim_CurveKey_value_setf(void* p, double v) { auto& s = *static_cast<anim::CurveKey*>(p); s.value = static_cast<decltype(s.value)>(v); }
+static double mq_acc_anim_CurveKey_in_tangent_getf(const void* p) { const auto& s = *static_cast<const anim::CurveKey*>(p); return static_cast<double>(s.in_tangent); }
+static void mq_acc_anim_CurveKey_in_tangent_setf(void* p, double v) { auto& s = *static_cast<anim::CurveKey*>(p); s.in_tangent = static_cast<decltype(s.in_tangent)>(v); }
+static double mq_acc_anim_CurveKey_out_tangent_getf(const void* p) { const auto& s = *static_cast<const anim::CurveKey*>(p); return static_cast<double>(s.out_tangent); }
+static void mq_acc_anim_CurveKey_out_tangent_setf(void* p, double v) { auto& s = *static_cast<anim::CurveKey*>(p); s.out_tangent = static_cast<decltype(s.out_tangent)>(v); }
+static const mq_field_accessor mq_acc_anim_CurveKey[] = {
+    { mq_acc_anim_CurveKey_t_getf, mq_acc_anim_CurveKey_t_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_CurveKey_value_getf, mq_acc_anim_CurveKey_value_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_CurveKey_in_tangent_getf, mq_acc_anim_CurveKey_in_tangent_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_CurveKey_out_tangent_getf, mq_acc_anim_CurveKey_out_tangent_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_anim_CurveKey[] = {
-    { "t", (uint32_t)offsetof(anim::CurveKey, t), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "value", (uint32_t)offsetof(anim::CurveKey, value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "in_tangent", (uint32_t)offsetof(anim::CurveKey, in_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "out_tangent", (uint32_t)offsetof(anim::CurveKey, out_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "t", (uint32_t)offsetof(anim::CurveKey, t), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_CurveKey[0] },
+    { "value", (uint32_t)offsetof(anim::CurveKey, value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_CurveKey[1] },
+    { "in_tangent", (uint32_t)offsetof(anim::CurveKey, in_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_CurveKey[2] },
+    { "out_tangent", (uint32_t)offsetof(anim::CurveKey, out_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_CurveKey[3] },
 };
 
+static double mq_acc_anim_Gradient_count_getf(const void* p) { const auto& s = *static_cast<const anim::Gradient*>(p); return static_cast<double>(s.count); }
+static void mq_acc_anim_Gradient_count_setf(void* p, double v) { auto& s = *static_cast<anim::Gradient*>(p); s.count = static_cast<decltype(s.count)>(v); }
+static const void* mq_acc_anim_Gradient_stops_getp(const void* p) { const auto& s = *static_cast<const anim::Gradient*>(p); return &s.stops; }
+static void* mq_acc_anim_Gradient_stops_getmp(void* p) { auto& s = *static_cast<anim::Gradient*>(p); return &s.stops; }
+static const mq_field_accessor mq_acc_anim_Gradient[] = {
+    { mq_acc_anim_Gradient_count_getf, mq_acc_anim_Gradient_count_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_Gradient_stops_getp, mq_acc_anim_Gradient_stops_getmp },
+};
 static const mq_field_desc mq_fields_anim_Gradient[] = {
-    { "count", (uint32_t)offsetof(anim::Gradient, count), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "stops", (uint32_t)offsetof(anim::Gradient, stops), MQ_TK_ARRAY_FIXED, 3921250374u, 8u, 0u, 0u, 0, 0, 0, 0 },
+    { "count", (uint32_t)offsetof(anim::Gradient, count), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Gradient[0] },
+    { "stops", (uint32_t)offsetof(anim::Gradient, stops), MQ_TK_ARRAY_FIXED, 3921250374u, 8u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Gradient[1] },
 };
 
+static double mq_acc_anim_GradientStop_t_getf(const void* p) { const auto& s = *static_cast<const anim::GradientStop*>(p); return static_cast<double>(s.t); }
+static void mq_acc_anim_GradientStop_t_setf(void* p, double v) { auto& s = *static_cast<anim::GradientStop*>(p); s.t = static_cast<decltype(s.t)>(v); }
+static const void* mq_acc_anim_GradientStop_color_getp(const void* p) { const auto& s = *static_cast<const anim::GradientStop*>(p); return &s.color; }
+static void* mq_acc_anim_GradientStop_color_getmp(void* p) { auto& s = *static_cast<anim::GradientStop*>(p); return &s.color; }
+static const mq_field_accessor mq_acc_anim_GradientStop[] = {
+    { mq_acc_anim_GradientStop_t_getf, mq_acc_anim_GradientStop_t_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_GradientStop_color_getp, mq_acc_anim_GradientStop_color_getmp },
+};
 static const mq_field_desc mq_fields_anim_GradientStop[] = {
-    { "t", (uint32_t)offsetof(anim::GradientStop, t), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(anim::GradientStop, color), MQ_TK_STRUCT, 4177408449u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "t", (uint32_t)offsetof(anim::GradientStop, t), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_GradientStop[0] },
+    { "color", (uint32_t)offsetof(anim::GradientStop, color), MQ_TK_STRUCT, 4177408449u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_GradientStop[1] },
 };
 
+static double mq_acc_anim_ParticleEmitter_mode_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
+static void mq_acc_anim_ParticleEmitter_mode_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.mode = static_cast<decltype(s.mode)>(v); }
+static double mq_acc_anim_ParticleEmitter_sim_space_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(static_cast<int64_t>(s.sim_space)); }
+static void mq_acc_anim_ParticleEmitter_sim_space_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.sim_space = static_cast<decltype(s.sim_space)>(v); }
+static const void* mq_acc_anim_ParticleEmitter_texture_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.texture; }
+static void* mq_acc_anim_ParticleEmitter_texture_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.texture; }
+static const void* mq_acc_anim_ParticleEmitter_material_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.material; }
+static void* mq_acc_anim_ParticleEmitter_material_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.material; }
+static double mq_acc_anim_ParticleEmitter_blend_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(static_cast<int64_t>(s.blend)); }
+static void mq_acc_anim_ParticleEmitter_blend_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.blend = static_cast<decltype(s.blend)>(v); }
+static double mq_acc_anim_ParticleEmitter_shape_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(static_cast<int64_t>(s.shape)); }
+static void mq_acc_anim_ParticleEmitter_shape_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.shape = static_cast<decltype(s.shape)>(v); }
+static const void* mq_acc_anim_ParticleEmitter_shape_size_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.shape_size; }
+static void* mq_acc_anim_ParticleEmitter_shape_size_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.shape_size; }
+static double mq_acc_anim_ParticleEmitter_shape_angle_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(s.shape_angle); }
+static void mq_acc_anim_ParticleEmitter_shape_angle_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.shape_angle = static_cast<decltype(s.shape_angle)>(v); }
+static double mq_acc_anim_ParticleEmitter_rate_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(s.rate); }
+static void mq_acc_anim_ParticleEmitter_rate_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.rate = static_cast<decltype(s.rate)>(v); }
+static double mq_acc_anim_ParticleEmitter_burst_count_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(s.burst_count); }
+static void mq_acc_anim_ParticleEmitter_burst_count_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.burst_count = static_cast<decltype(s.burst_count)>(v); }
+static const void* mq_acc_anim_ParticleEmitter_lifetime_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.lifetime; }
+static void* mq_acc_anim_ParticleEmitter_lifetime_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.lifetime; }
+static const void* mq_acc_anim_ParticleEmitter_start_speed_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.start_speed; }
+static void* mq_acc_anim_ParticleEmitter_start_speed_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.start_speed; }
+static const void* mq_acc_anim_ParticleEmitter_gravity_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.gravity; }
+static void* mq_acc_anim_ParticleEmitter_gravity_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.gravity; }
+static const void* mq_acc_anim_ParticleEmitter_start_size_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.start_size; }
+static void* mq_acc_anim_ParticleEmitter_start_size_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.start_size; }
+static const void* mq_acc_anim_ParticleEmitter_size_over_life_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.size_over_life; }
+static void* mq_acc_anim_ParticleEmitter_size_over_life_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.size_over_life; }
+static const void* mq_acc_anim_ParticleEmitter_color_over_life_getp(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return &s.color_over_life; }
+static void* mq_acc_anim_ParticleEmitter_color_over_life_getmp(void* p) { auto& s = *static_cast<anim::ParticleEmitter*>(p); return &s.color_over_life; }
+static double mq_acc_anim_ParticleEmitter_max_particles_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(s.max_particles); }
+static void mq_acc_anim_ParticleEmitter_max_particles_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.max_particles = static_cast<decltype(s.max_particles)>(v); }
+static double mq_acc_anim_ParticleEmitter_seed_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(s.seed); }
+static void mq_acc_anim_ParticleEmitter_seed_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.seed = static_cast<decltype(s.seed)>(v); }
+static double mq_acc_anim_ParticleEmitter_prewarm_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(s.prewarm); }
+static void mq_acc_anim_ParticleEmitter_prewarm_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.prewarm = static_cast<decltype(s.prewarm)>(v); }
+static double mq_acc_anim_ParticleEmitter_emit_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return s.emit ? 1.0 : 0.0; }
+static void mq_acc_anim_ParticleEmitter_emit_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.emit = v != 0.0; }
+static double mq_acc_anim_ParticleEmitter_sort_mode_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(static_cast<int64_t>(s.sort_mode)); }
+static void mq_acc_anim_ParticleEmitter_sort_mode_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.sort_mode = static_cast<decltype(s.sort_mode)>(v); }
+static double mq_acc_anim_ParticleEmitter_rng_state_getf(const void* p) { const auto& s = *static_cast<const anim::ParticleEmitter*>(p); return static_cast<double>(s.rng_state); }
+static void mq_acc_anim_ParticleEmitter_rng_state_setf(void* p, double v) { auto& s = *static_cast<anim::ParticleEmitter*>(p); s.rng_state = static_cast<decltype(s.rng_state)>(v); }
+static const mq_field_accessor mq_acc_anim_ParticleEmitter[] = {
+    { mq_acc_anim_ParticleEmitter_mode_getf, mq_acc_anim_ParticleEmitter_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_sim_space_getf, mq_acc_anim_ParticleEmitter_sim_space_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_texture_getp, mq_acc_anim_ParticleEmitter_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_material_getp, mq_acc_anim_ParticleEmitter_material_getmp },
+    { mq_acc_anim_ParticleEmitter_blend_getf, mq_acc_anim_ParticleEmitter_blend_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_shape_getf, mq_acc_anim_ParticleEmitter_shape_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_shape_size_getp, mq_acc_anim_ParticleEmitter_shape_size_getmp },
+    { mq_acc_anim_ParticleEmitter_shape_angle_getf, mq_acc_anim_ParticleEmitter_shape_angle_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_rate_getf, mq_acc_anim_ParticleEmitter_rate_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_burst_count_getf, mq_acc_anim_ParticleEmitter_burst_count_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_lifetime_getp, mq_acc_anim_ParticleEmitter_lifetime_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_start_speed_getp, mq_acc_anim_ParticleEmitter_start_speed_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_gravity_getp, mq_acc_anim_ParticleEmitter_gravity_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_start_size_getp, mq_acc_anim_ParticleEmitter_start_size_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_size_over_life_getp, mq_acc_anim_ParticleEmitter_size_over_life_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_ParticleEmitter_color_over_life_getp, mq_acc_anim_ParticleEmitter_color_over_life_getmp },
+    { mq_acc_anim_ParticleEmitter_max_particles_getf, mq_acc_anim_ParticleEmitter_max_particles_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_seed_getf, mq_acc_anim_ParticleEmitter_seed_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_prewarm_getf, mq_acc_anim_ParticleEmitter_prewarm_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_emit_getf, mq_acc_anim_ParticleEmitter_emit_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_sort_mode_getf, mq_acc_anim_ParticleEmitter_sort_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_ParticleEmitter_rng_state_getf, mq_acc_anim_ParticleEmitter_rng_state_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_anim_ParticleEmitter[] = {
-    { "mode", (uint32_t)offsetof(anim::ParticleEmitter, mode), MQ_TK_ENUM, 444600279u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sim_space", (uint32_t)offsetof(anim::ParticleEmitter, sim_space), MQ_TK_ENUM, 2468039825u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "texture", (uint32_t)offsetof(anim::ParticleEmitter, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(anim::ParticleEmitter, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "blend", (uint32_t)offsetof(anim::ParticleEmitter, blend), MQ_TK_ENUM, 205620382u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shape", (uint32_t)offsetof(anim::ParticleEmitter, shape), MQ_TK_ENUM, 3106929615u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shape_size", (uint32_t)offsetof(anim::ParticleEmitter, shape_size), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shape_angle", (uint32_t)offsetof(anim::ParticleEmitter, shape_angle), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "rate", (uint32_t)offsetof(anim::ParticleEmitter, rate), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "burst_count", (uint32_t)offsetof(anim::ParticleEmitter, burst_count), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "lifetime", (uint32_t)offsetof(anim::ParticleEmitter, lifetime), MQ_TK_STRUCT, 14099437u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "start_speed", (uint32_t)offsetof(anim::ParticleEmitter, start_speed), MQ_TK_STRUCT, 14099437u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gravity", (uint32_t)offsetof(anim::ParticleEmitter, gravity), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "start_size", (uint32_t)offsetof(anim::ParticleEmitter, start_size), MQ_TK_STRUCT, 14099437u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "size_over_life", (uint32_t)offsetof(anim::ParticleEmitter, size_over_life), MQ_TK_STRUCT, 14099437u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color_over_life", (uint32_t)offsetof(anim::ParticleEmitter, color_over_life), MQ_TK_STRUCT, 2176610286u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_particles", (uint32_t)offsetof(anim::ParticleEmitter, max_particles), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "seed", (uint32_t)offsetof(anim::ParticleEmitter, seed), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "prewarm", (uint32_t)offsetof(anim::ParticleEmitter, prewarm), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "emit", (uint32_t)offsetof(anim::ParticleEmitter, emit), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sort_mode", (uint32_t)offsetof(anim::ParticleEmitter, sort_mode), MQ_TK_ENUM, 4012539153u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "rng_state", (uint32_t)offsetof(anim::ParticleEmitter, rng_state), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "mode", (uint32_t)offsetof(anim::ParticleEmitter, mode), MQ_TK_ENUM, 444600279u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[0] },
+    { "sim_space", (uint32_t)offsetof(anim::ParticleEmitter, sim_space), MQ_TK_ENUM, 2468039825u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[1] },
+    { "texture", (uint32_t)offsetof(anim::ParticleEmitter, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[2] },
+    { "material", (uint32_t)offsetof(anim::ParticleEmitter, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[3] },
+    { "blend", (uint32_t)offsetof(anim::ParticleEmitter, blend), MQ_TK_ENUM, 205620382u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[4] },
+    { "shape", (uint32_t)offsetof(anim::ParticleEmitter, shape), MQ_TK_ENUM, 3106929615u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[5] },
+    { "shape_size", (uint32_t)offsetof(anim::ParticleEmitter, shape_size), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[6] },
+    { "shape_angle", (uint32_t)offsetof(anim::ParticleEmitter, shape_angle), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[7] },
+    { "rate", (uint32_t)offsetof(anim::ParticleEmitter, rate), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[8] },
+    { "burst_count", (uint32_t)offsetof(anim::ParticleEmitter, burst_count), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[9] },
+    { "lifetime", (uint32_t)offsetof(anim::ParticleEmitter, lifetime), MQ_TK_STRUCT, 14099437u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[10] },
+    { "start_speed", (uint32_t)offsetof(anim::ParticleEmitter, start_speed), MQ_TK_STRUCT, 14099437u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[11] },
+    { "gravity", (uint32_t)offsetof(anim::ParticleEmitter, gravity), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[12] },
+    { "start_size", (uint32_t)offsetof(anim::ParticleEmitter, start_size), MQ_TK_STRUCT, 14099437u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[13] },
+    { "size_over_life", (uint32_t)offsetof(anim::ParticleEmitter, size_over_life), MQ_TK_STRUCT, 14099437u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[14] },
+    { "color_over_life", (uint32_t)offsetof(anim::ParticleEmitter, color_over_life), MQ_TK_STRUCT, 2176610286u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[15] },
+    { "max_particles", (uint32_t)offsetof(anim::ParticleEmitter, max_particles), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[16] },
+    { "seed", (uint32_t)offsetof(anim::ParticleEmitter, seed), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[17] },
+    { "prewarm", (uint32_t)offsetof(anim::ParticleEmitter, prewarm), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[18] },
+    { "emit", (uint32_t)offsetof(anim::ParticleEmitter, emit), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[19] },
+    { "sort_mode", (uint32_t)offsetof(anim::ParticleEmitter, sort_mode), MQ_TK_ENUM, 4012539153u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[20] },
+    { "rng_state", (uint32_t)offsetof(anim::ParticleEmitter, rng_state), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_anim_ParticleEmitter[21] },
 };
 
+static const void* mq_acc_anim_Skeleton_skeleton_getp(const void* p) { const auto& s = *static_cast<const anim::Skeleton*>(p); return &s.skeleton; }
+static void* mq_acc_anim_Skeleton_skeleton_getmp(void* p) { auto& s = *static_cast<anim::Skeleton*>(p); return &s.skeleton; }
+static const void* mq_acc_anim_Skeleton_bone_root_getp(const void* p) { const auto& s = *static_cast<const anim::Skeleton*>(p); return &s.bone_root; }
+static void* mq_acc_anim_Skeleton_bone_root_getmp(void* p) { auto& s = *static_cast<anim::Skeleton*>(p); return &s.bone_root; }
+static double mq_acc_anim_Skeleton_skinning_mode_getf(const void* p) { const auto& s = *static_cast<const anim::Skeleton*>(p); return static_cast<double>(static_cast<int64_t>(s.skinning_mode)); }
+static void mq_acc_anim_Skeleton_skinning_mode_setf(void* p, double v) { auto& s = *static_cast<anim::Skeleton*>(p); s.skinning_mode = static_cast<decltype(s.skinning_mode)>(v); }
+static const void* mq_acc_anim_Skeleton_bounds_getp(const void* p) { const auto& s = *static_cast<const anim::Skeleton*>(p); return &s.bounds; }
+static void* mq_acc_anim_Skeleton_bounds_getmp(void* p) { auto& s = *static_cast<anim::Skeleton*>(p); return &s.bounds; }
+static const mq_field_accessor mq_acc_anim_Skeleton[] = {
+    { 0, 0, 0, 0, mq_acc_anim_Skeleton_skeleton_getp, mq_acc_anim_Skeleton_skeleton_getmp },
+    { 0, 0, 0, 0, mq_acc_anim_Skeleton_bone_root_getp, mq_acc_anim_Skeleton_bone_root_getmp },
+    { mq_acc_anim_Skeleton_skinning_mode_getf, mq_acc_anim_Skeleton_skinning_mode_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_Skeleton_bounds_getp, mq_acc_anim_Skeleton_bounds_getmp },
+};
 static void mq_dyn_anim_Skeleton_poses_clear(void* f) { static_cast<std::vector<anim::BonePose>*>(f)->clear(); }
 static uint32_t mq_dyn_anim_Skeleton_poses_size(const void* f) { return (uint32_t)static_cast<const std::vector<anim::BonePose>*>(f)->size(); }
 static void mq_dyn_anim_Skeleton_poses_resize(void* f, uint32_t n) { static_cast<std::vector<anim::BonePose>*>(f)->resize(n); }
@@ -128,57 +378,169 @@ static uint32_t mq_dyn_anim_Skeleton_skinning_matrices_size(const void* f) { ret
 static void mq_dyn_anim_Skeleton_skinning_matrices_resize(void* f, uint32_t n) { static_cast<std::vector<math::Mat4>*>(f)->resize(n); }
 static void* mq_dyn_anim_Skeleton_skinning_matrices_elem(void* f, uint32_t i) { return &static_cast<std::vector<math::Mat4>*>(f)->at(i); }
 static const mq_field_desc mq_fields_anim_Skeleton[] = {
-    { "skeleton", (uint32_t)offsetof(anim::Skeleton, skeleton), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bone_root", (uint32_t)offsetof(anim::Skeleton, bone_root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skinning_mode", (uint32_t)offsetof(anim::Skeleton, skinning_mode), MQ_TK_ENUM, 371730434u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "poses", (uint32_t)offsetof(anim::Skeleton, poses), MQ_TK_ARRAY_DYN, 615011289u, 0u, 1u, 615011289u, mq_dyn_anim_Skeleton_poses_clear, mq_dyn_anim_Skeleton_poses_size, mq_dyn_anim_Skeleton_poses_resize, mq_dyn_anim_Skeleton_poses_elem },
-    { "skinning_matrices", (uint32_t)offsetof(anim::Skeleton, skinning_matrices), MQ_TK_ARRAY_DYN, 4084314145u, 0u, 1u, 4084314145u, mq_dyn_anim_Skeleton_skinning_matrices_clear, mq_dyn_anim_Skeleton_skinning_matrices_size, mq_dyn_anim_Skeleton_skinning_matrices_resize, mq_dyn_anim_Skeleton_skinning_matrices_elem },
-    { "bounds", (uint32_t)offsetof(anim::Skeleton, bounds), MQ_TK_STRUCT, 3225946357u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "skeleton", (uint32_t)offsetof(anim::Skeleton, skeleton), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Skeleton[0] },
+    { "bone_root", (uint32_t)offsetof(anim::Skeleton, bone_root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Skeleton[1] },
+    { "skinning_mode", (uint32_t)offsetof(anim::Skeleton, skinning_mode), MQ_TK_ENUM, 371730434u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_Skeleton[2] },
+    { "poses", (uint32_t)offsetof(anim::Skeleton, poses), MQ_TK_ARRAY_DYN, 615011289u, 0u, 1u, 615011289u, mq_dyn_anim_Skeleton_poses_clear, mq_dyn_anim_Skeleton_poses_size, mq_dyn_anim_Skeleton_poses_resize, mq_dyn_anim_Skeleton_poses_elem, &mq_acc_anim_Skeleton[3] },
+    { "skinning_matrices", (uint32_t)offsetof(anim::Skeleton, skinning_matrices), MQ_TK_ARRAY_DYN, 4084314145u, 0u, 1u, 4084314145u, mq_dyn_anim_Skeleton_skinning_matrices_clear, mq_dyn_anim_Skeleton_skinning_matrices_size, mq_dyn_anim_Skeleton_skinning_matrices_resize, mq_dyn_anim_Skeleton_skinning_matrices_elem, &mq_acc_anim_Skeleton[4] },
+    { "bounds", (uint32_t)offsetof(anim::Skeleton, bounds), MQ_TK_STRUCT, 3225946357u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_anim_Skeleton[5] },
 };
 
+static double mq_acc_anim_SpineAnimState_time_getf(const void* p) { const auto& s = *static_cast<const anim::SpineAnimState*>(p); return static_cast<double>(s.time); }
+static void mq_acc_anim_SpineAnimState_time_setf(void* p, double v) { auto& s = *static_cast<anim::SpineAnimState*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static double mq_acc_anim_SpineAnimState_track_getf(const void* p) { const auto& s = *static_cast<const anim::SpineAnimState*>(p); return static_cast<double>(s.track); }
+static void mq_acc_anim_SpineAnimState_track_setf(void* p, double v) { auto& s = *static_cast<anim::SpineAnimState*>(p); s.track = static_cast<decltype(s.track)>(v); }
+static double mq_acc_anim_SpineAnimState_loop_getf(const void* p) { const auto& s = *static_cast<const anim::SpineAnimState*>(p); return s.loop ? 1.0 : 0.0; }
+static void mq_acc_anim_SpineAnimState_loop_setf(void* p, double v) { auto& s = *static_cast<anim::SpineAnimState*>(p); s.loop = v != 0.0; }
+static const mq_field_accessor mq_acc_anim_SpineAnimState[] = {
+    { mq_acc_anim_SpineAnimState_time_getf, mq_acc_anim_SpineAnimState_time_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineAnimState_track_getf, mq_acc_anim_SpineAnimState_track_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineAnimState_loop_getf, mq_acc_anim_SpineAnimState_loop_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_anim_SpineAnimState[] = {
-    { "time", (uint32_t)offsetof(anim::SpineAnimState, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "track", (uint32_t)offsetof(anim::SpineAnimState, track), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "loop", (uint32_t)offsetof(anim::SpineAnimState, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "time", (uint32_t)offsetof(anim::SpineAnimState, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineAnimState[0] },
+    { "track", (uint32_t)offsetof(anim::SpineAnimState, track), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineAnimState[1] },
+    { "loop", (uint32_t)offsetof(anim::SpineAnimState, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineAnimState[2] },
 };
 
+static const char* mq_acc_anim_SpineSkeleton_skeleton_gets(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return s.skeleton.c_str(); }
+static void mq_acc_anim_SpineSkeleton_skeleton_sets(void* p, const char* v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.skeleton = v ? v : ""; }
+static const void* mq_acc_anim_SpineSkeleton_skeleton_getp(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return &s.skeleton; }
+static void* mq_acc_anim_SpineSkeleton_skeleton_getmp(void* p) { auto& s = *static_cast<anim::SpineSkeleton*>(p); return &s.skeleton; }
+static const char* mq_acc_anim_SpineSkeleton_atlas_gets(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return s.atlas.c_str(); }
+static void mq_acc_anim_SpineSkeleton_atlas_sets(void* p, const char* v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.atlas = v ? v : ""; }
+static const void* mq_acc_anim_SpineSkeleton_atlas_getp(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return &s.atlas; }
+static void* mq_acc_anim_SpineSkeleton_atlas_getmp(void* p) { auto& s = *static_cast<anim::SpineSkeleton*>(p); return &s.atlas; }
+static double mq_acc_anim_SpineSkeleton_skin_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.skin); }
+static void mq_acc_anim_SpineSkeleton_skin_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.skin = static_cast<decltype(s.skin)>(v); }
+static double mq_acc_anim_SpineSkeleton_animation_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.animation); }
+static void mq_acc_anim_SpineSkeleton_animation_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.animation = static_cast<decltype(s.animation)>(v); }
+static double mq_acc_anim_SpineSkeleton_autoplay_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return s.autoplay ? 1.0 : 0.0; }
+static void mq_acc_anim_SpineSkeleton_autoplay_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.autoplay = v != 0.0; }
+static double mq_acc_anim_SpineSkeleton_play_mode_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(static_cast<int64_t>(s.play_mode)); }
+static void mq_acc_anim_SpineSkeleton_play_mode_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.play_mode = static_cast<decltype(s.play_mode)>(v); }
+static double mq_acc_anim_SpineSkeleton_speed_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_anim_SpineSkeleton_speed_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_anim_SpineSkeleton_blend_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(static_cast<int64_t>(s.blend)); }
+static void mq_acc_anim_SpineSkeleton_blend_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.blend = static_cast<decltype(s.blend)>(v); }
+static double mq_acc_anim_SpineSkeleton_update_mode_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(static_cast<int64_t>(s.update_mode)); }
+static void mq_acc_anim_SpineSkeleton_update_mode_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.update_mode = static_cast<decltype(s.update_mode)>(v); }
+static double mq_acc_anim_SpineSkeleton_phys_timestep_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(static_cast<int64_t>(s.phys_timestep)); }
+static void mq_acc_anim_SpineSkeleton_phys_timestep_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.phys_timestep = static_cast<decltype(s.phys_timestep)>(v); }
+static double mq_acc_anim_SpineSkeleton_flip_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(static_cast<int64_t>(s.flip)); }
+static void mq_acc_anim_SpineSkeleton_flip_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.flip = static_cast<decltype(s.flip)>(v); }
+static const void* mq_acc_anim_SpineSkeleton_color_getp(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return &s.color; }
+static void* mq_acc_anim_SpineSkeleton_color_getmp(void* p) { auto& s = *static_cast<anim::SpineSkeleton*>(p); return &s.color; }
+static double mq_acc_anim_SpineSkeleton_z_index_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.z_index); }
+static void mq_acc_anim_SpineSkeleton_z_index_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.z_index = static_cast<decltype(s.z_index)>(v); }
+static const char* mq_acc_anim_SpineSkeleton_material_gets(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return s.material.c_str(); }
+static void mq_acc_anim_SpineSkeleton_material_sets(void* p, const char* v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.material = v ? v : ""; }
+static const void* mq_acc_anim_SpineSkeleton_material_getp(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return &s.material; }
+static void* mq_acc_anim_SpineSkeleton_material_getmp(void* p) { auto& s = *static_cast<anim::SpineSkeleton*>(p); return &s.material; }
+static double mq_acc_anim_SpineSkeleton_slots_from_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.slots_from); }
+static void mq_acc_anim_SpineSkeleton_slots_from_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.slots_from = static_cast<decltype(s.slots_from)>(v); }
+static double mq_acc_anim_SpineSkeleton_slots_to_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.slots_to); }
+static void mq_acc_anim_SpineSkeleton_slots_to_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.slots_to = static_cast<decltype(s.slots_to)>(v); }
+static double mq_acc_anim_SpineSkeleton_default_mix_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.default_mix); }
+static void mq_acc_anim_SpineSkeleton_default_mix_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.default_mix = static_cast<decltype(s.default_mix)>(v); }
+static double mq_acc_anim_SpineSkeleton_time_scale_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.time_scale); }
+static void mq_acc_anim_SpineSkeleton_time_scale_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.time_scale = static_cast<decltype(s.time_scale)>(v); }
+static double mq_acc_anim_SpineSkeleton_two_color_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return s.two_color ? 1.0 : 0.0; }
+static void mq_acc_anim_SpineSkeleton_two_color_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.two_color = v != 0.0; }
+static const void* mq_acc_anim_SpineSkeleton_state_getp(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return &s.state; }
+static void* mq_acc_anim_SpineSkeleton_state_getmp(void* p) { auto& s = *static_cast<anim::SpineSkeleton*>(p); return &s.state; }
+static double mq_acc_anim_SpineSkeleton_instance_getf(const void* p) { const auto& s = *static_cast<const anim::SpineSkeleton*>(p); return static_cast<double>(s.instance); }
+static void mq_acc_anim_SpineSkeleton_instance_setf(void* p, double v) { auto& s = *static_cast<anim::SpineSkeleton*>(p); s.instance = static_cast<decltype(s.instance)>(v); }
+static const mq_field_accessor mq_acc_anim_SpineSkeleton[] = {
+    { 0, 0, mq_acc_anim_SpineSkeleton_skeleton_gets, mq_acc_anim_SpineSkeleton_skeleton_sets, mq_acc_anim_SpineSkeleton_skeleton_getp, mq_acc_anim_SpineSkeleton_skeleton_getmp },
+    { 0, 0, mq_acc_anim_SpineSkeleton_atlas_gets, mq_acc_anim_SpineSkeleton_atlas_sets, mq_acc_anim_SpineSkeleton_atlas_getp, mq_acc_anim_SpineSkeleton_atlas_getmp },
+    { mq_acc_anim_SpineSkeleton_skin_getf, mq_acc_anim_SpineSkeleton_skin_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_animation_getf, mq_acc_anim_SpineSkeleton_animation_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_autoplay_getf, mq_acc_anim_SpineSkeleton_autoplay_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_play_mode_getf, mq_acc_anim_SpineSkeleton_play_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_speed_getf, mq_acc_anim_SpineSkeleton_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_blend_getf, mq_acc_anim_SpineSkeleton_blend_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_update_mode_getf, mq_acc_anim_SpineSkeleton_update_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_phys_timestep_getf, mq_acc_anim_SpineSkeleton_phys_timestep_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_flip_getf, mq_acc_anim_SpineSkeleton_flip_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_SpineSkeleton_color_getp, mq_acc_anim_SpineSkeleton_color_getmp },
+    { mq_acc_anim_SpineSkeleton_z_index_getf, mq_acc_anim_SpineSkeleton_z_index_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_anim_SpineSkeleton_material_gets, mq_acc_anim_SpineSkeleton_material_sets, mq_acc_anim_SpineSkeleton_material_getp, mq_acc_anim_SpineSkeleton_material_getmp },
+    { mq_acc_anim_SpineSkeleton_slots_from_getf, mq_acc_anim_SpineSkeleton_slots_from_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_slots_to_getf, mq_acc_anim_SpineSkeleton_slots_to_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_default_mix_getf, mq_acc_anim_SpineSkeleton_default_mix_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_time_scale_getf, mq_acc_anim_SpineSkeleton_time_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_anim_SpineSkeleton_two_color_getf, mq_acc_anim_SpineSkeleton_two_color_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_anim_SpineSkeleton_state_getp, mq_acc_anim_SpineSkeleton_state_getmp },
+    { mq_acc_anim_SpineSkeleton_instance_getf, mq_acc_anim_SpineSkeleton_instance_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_anim_SpineSkeleton[] = {
-    { "skeleton", (uint32_t)offsetof(anim::SpineSkeleton, skeleton), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "atlas", (uint32_t)offsetof(anim::SpineSkeleton, atlas), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skin", (uint32_t)offsetof(anim::SpineSkeleton, skin), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "animation", (uint32_t)offsetof(anim::SpineSkeleton, animation), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "autoplay", (uint32_t)offsetof(anim::SpineSkeleton, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "play_mode", (uint32_t)offsetof(anim::SpineSkeleton, play_mode), MQ_TK_ENUM, 3819653223u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(anim::SpineSkeleton, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "blend", (uint32_t)offsetof(anim::SpineSkeleton, blend), MQ_TK_ENUM, 2665641336u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "update_mode", (uint32_t)offsetof(anim::SpineSkeleton, update_mode), MQ_TK_ENUM, 2246853780u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "phys_timestep", (uint32_t)offsetof(anim::SpineSkeleton, phys_timestep), MQ_TK_ENUM, 3114948982u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "flip", (uint32_t)offsetof(anim::SpineSkeleton, flip), MQ_TK_ENUM, 577626198u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(anim::SpineSkeleton, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z_index", (uint32_t)offsetof(anim::SpineSkeleton, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(anim::SpineSkeleton, material), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "slots_from", (uint32_t)offsetof(anim::SpineSkeleton, slots_from), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "slots_to", (uint32_t)offsetof(anim::SpineSkeleton, slots_to), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "default_mix", (uint32_t)offsetof(anim::SpineSkeleton, default_mix), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "time_scale", (uint32_t)offsetof(anim::SpineSkeleton, time_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "two_color", (uint32_t)offsetof(anim::SpineSkeleton, two_color), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "state", (uint32_t)offsetof(anim::SpineSkeleton, state), MQ_TK_STRUCT, 1681902629u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "instance", (uint32_t)offsetof(anim::SpineSkeleton, instance), MQ_TK_U64, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "skeleton", (uint32_t)offsetof(anim::SpineSkeleton, skeleton), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[0] },
+    { "atlas", (uint32_t)offsetof(anim::SpineSkeleton, atlas), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[1] },
+    { "skin", (uint32_t)offsetof(anim::SpineSkeleton, skin), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[2] },
+    { "animation", (uint32_t)offsetof(anim::SpineSkeleton, animation), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[3] },
+    { "autoplay", (uint32_t)offsetof(anim::SpineSkeleton, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[4] },
+    { "play_mode", (uint32_t)offsetof(anim::SpineSkeleton, play_mode), MQ_TK_ENUM, 3819653223u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[5] },
+    { "speed", (uint32_t)offsetof(anim::SpineSkeleton, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[6] },
+    { "blend", (uint32_t)offsetof(anim::SpineSkeleton, blend), MQ_TK_ENUM, 2665641336u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[7] },
+    { "update_mode", (uint32_t)offsetof(anim::SpineSkeleton, update_mode), MQ_TK_ENUM, 2246853780u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[8] },
+    { "phys_timestep", (uint32_t)offsetof(anim::SpineSkeleton, phys_timestep), MQ_TK_ENUM, 3114948982u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[9] },
+    { "flip", (uint32_t)offsetof(anim::SpineSkeleton, flip), MQ_TK_ENUM, 577626198u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[10] },
+    { "color", (uint32_t)offsetof(anim::SpineSkeleton, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[11] },
+    { "z_index", (uint32_t)offsetof(anim::SpineSkeleton, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[12] },
+    { "material", (uint32_t)offsetof(anim::SpineSkeleton, material), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[13] },
+    { "slots_from", (uint32_t)offsetof(anim::SpineSkeleton, slots_from), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[14] },
+    { "slots_to", (uint32_t)offsetof(anim::SpineSkeleton, slots_to), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[15] },
+    { "default_mix", (uint32_t)offsetof(anim::SpineSkeleton, default_mix), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[16] },
+    { "time_scale", (uint32_t)offsetof(anim::SpineSkeleton, time_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[17] },
+    { "two_color", (uint32_t)offsetof(anim::SpineSkeleton, two_color), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[18] },
+    { "state", (uint32_t)offsetof(anim::SpineSkeleton, state), MQ_TK_STRUCT, 1681902629u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[19] },
+    { "instance", (uint32_t)offsetof(anim::SpineSkeleton, instance), MQ_TK_U64, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_anim_SpineSkeleton[20] },
 };
 
+static const char* mq_acc_asset_AnimationClip_name_gets(const void* p) { const auto& s = *static_cast<const asset::AnimationClip*>(p); return s.name.c_str(); }
+static void mq_acc_asset_AnimationClip_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::AnimationClip*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_AnimationClip_name_getp(const void* p) { const auto& s = *static_cast<const asset::AnimationClip*>(p); return &s.name; }
+static void* mq_acc_asset_AnimationClip_name_getmp(void* p) { auto& s = *static_cast<asset::AnimationClip*>(p); return &s.name; }
+static double mq_acc_asset_AnimationClip_length_getf(const void* p) { const auto& s = *static_cast<const asset::AnimationClip*>(p); return static_cast<double>(s.length); }
+static void mq_acc_asset_AnimationClip_length_setf(void* p, double v) { auto& s = *static_cast<asset::AnimationClip*>(p); s.length = static_cast<decltype(s.length)>(v); }
+static double mq_acc_asset_AnimationClip_loop_getf(const void* p) { const auto& s = *static_cast<const asset::AnimationClip*>(p); return static_cast<double>(static_cast<int64_t>(s.loop)); }
+static void mq_acc_asset_AnimationClip_loop_setf(void* p, double v) { auto& s = *static_cast<asset::AnimationClip*>(p); s.loop = static_cast<decltype(s.loop)>(v); }
+static double mq_acc_asset_AnimationClip_interpolation_getf(const void* p) { const auto& s = *static_cast<const asset::AnimationClip*>(p); return static_cast<double>(static_cast<int64_t>(s.interpolation)); }
+static void mq_acc_asset_AnimationClip_interpolation_setf(void* p, double v) { auto& s = *static_cast<asset::AnimationClip*>(p); s.interpolation = static_cast<decltype(s.interpolation)>(v); }
+static double mq_acc_asset_AnimationClip_fps_getf(const void* p) { const auto& s = *static_cast<const asset::AnimationClip*>(p); return static_cast<double>(s.fps); }
+static void mq_acc_asset_AnimationClip_fps_setf(void* p, double v) { auto& s = *static_cast<asset::AnimationClip*>(p); s.fps = static_cast<decltype(s.fps)>(v); }
+static const mq_field_accessor mq_acc_asset_AnimationClip[] = {
+    { 0, 0, mq_acc_asset_AnimationClip_name_gets, mq_acc_asset_AnimationClip_name_sets, mq_acc_asset_AnimationClip_name_getp, mq_acc_asset_AnimationClip_name_getmp },
+    { mq_acc_asset_AnimationClip_length_getf, mq_acc_asset_AnimationClip_length_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_AnimationClip_loop_getf, mq_acc_asset_AnimationClip_loop_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_AnimationClip_interpolation_getf, mq_acc_asset_AnimationClip_interpolation_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_AnimationClip_fps_getf, mq_acc_asset_AnimationClip_fps_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_AnimationClip_tracks_clear(void* f) { static_cast<std::vector<asset::Track>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_AnimationClip_tracks_size(const void* f) { return (uint32_t)static_cast<const std::vector<asset::Track>*>(f)->size(); }
 static void mq_dyn_asset_AnimationClip_tracks_resize(void* f, uint32_t n) { static_cast<std::vector<asset::Track>*>(f)->resize(n); }
 static void* mq_dyn_asset_AnimationClip_tracks_elem(void* f, uint32_t i) { return &static_cast<std::vector<asset::Track>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_AnimationClip[] = {
-    { "name", (uint32_t)offsetof(asset::AnimationClip, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "length", (uint32_t)offsetof(asset::AnimationClip, length), MQ_TK_F32, 0u, 0u, 2u, 0u, 0, 0, 0, 0 },
-    { "loop", (uint32_t)offsetof(asset::AnimationClip, loop), MQ_TK_ENUM, 3389167963u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "interpolation", (uint32_t)offsetof(asset::AnimationClip, interpolation), MQ_TK_ENUM, 2154681411u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fps", (uint32_t)offsetof(asset::AnimationClip, fps), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tracks", (uint32_t)offsetof(asset::AnimationClip, tracks), MQ_TK_ARRAY_DYN, 1084542974u, 0u, 0u, 1084542974u, mq_dyn_asset_AnimationClip_tracks_clear, mq_dyn_asset_AnimationClip_tracks_size, mq_dyn_asset_AnimationClip_tracks_resize, mq_dyn_asset_AnimationClip_tracks_elem },
+    { "name", (uint32_t)offsetof(asset::AnimationClip, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AnimationClip[0] },
+    { "length", (uint32_t)offsetof(asset::AnimationClip, length), MQ_TK_F32, 0u, 0u, 2u, 0u, 0, 0, 0, 0, &mq_acc_asset_AnimationClip[1] },
+    { "loop", (uint32_t)offsetof(asset::AnimationClip, loop), MQ_TK_ENUM, 3389167963u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AnimationClip[2] },
+    { "interpolation", (uint32_t)offsetof(asset::AnimationClip, interpolation), MQ_TK_ENUM, 2154681411u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AnimationClip[3] },
+    { "fps", (uint32_t)offsetof(asset::AnimationClip, fps), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AnimationClip[4] },
+    { "tracks", (uint32_t)offsetof(asset::AnimationClip, tracks), MQ_TK_ARRAY_DYN, 1084542974u, 0u, 0u, 1084542974u, mq_dyn_asset_AnimationClip_tracks_clear, mq_dyn_asset_AnimationClip_tracks_size, mq_dyn_asset_AnimationClip_tracks_resize, mq_dyn_asset_AnimationClip_tracks_elem, &mq_acc_asset_AnimationClip[5] },
 };
 
+static const char* mq_acc_asset_AnimatorController_name_gets(const void* p) { const auto& s = *static_cast<const asset::AnimatorController*>(p); return s.name.c_str(); }
+static void mq_acc_asset_AnimatorController_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::AnimatorController*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_AnimatorController_name_getp(const void* p) { const auto& s = *static_cast<const asset::AnimatorController*>(p); return &s.name; }
+static void* mq_acc_asset_AnimatorController_name_getmp(void* p) { auto& s = *static_cast<asset::AnimatorController*>(p); return &s.name; }
+static const mq_field_accessor mq_acc_asset_AnimatorController[] = {
+    { 0, 0, mq_acc_asset_AnimatorController_name_gets, mq_acc_asset_AnimatorController_name_sets, mq_acc_asset_AnimatorController_name_getp, mq_acc_asset_AnimatorController_name_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_AnimatorController_states_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_AnimatorController_states_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
 static void mq_dyn_asset_AnimatorController_states_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
@@ -192,66 +554,214 @@ static uint32_t mq_dyn_asset_AnimatorController_transitions_size(const void* f) 
 static void mq_dyn_asset_AnimatorController_transitions_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_asset_AnimatorController_transitions_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_AnimatorController[] = {
-    { "name", (uint32_t)offsetof(asset::AnimatorController, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "states", (uint32_t)offsetof(asset::AnimatorController, states), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_states_clear, mq_dyn_asset_AnimatorController_states_size, mq_dyn_asset_AnimatorController_states_resize, mq_dyn_asset_AnimatorController_states_elem },
-    { "parameters", (uint32_t)offsetof(asset::AnimatorController, parameters), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_parameters_clear, mq_dyn_asset_AnimatorController_parameters_size, mq_dyn_asset_AnimatorController_parameters_resize, mq_dyn_asset_AnimatorController_parameters_elem },
-    { "transitions", (uint32_t)offsetof(asset::AnimatorController, transitions), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_transitions_clear, mq_dyn_asset_AnimatorController_transitions_size, mq_dyn_asset_AnimatorController_transitions_resize, mq_dyn_asset_AnimatorController_transitions_elem },
+    { "name", (uint32_t)offsetof(asset::AnimatorController, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AnimatorController[0] },
+    { "states", (uint32_t)offsetof(asset::AnimatorController, states), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_states_clear, mq_dyn_asset_AnimatorController_states_size, mq_dyn_asset_AnimatorController_states_resize, mq_dyn_asset_AnimatorController_states_elem, &mq_acc_asset_AnimatorController[1] },
+    { "parameters", (uint32_t)offsetof(asset::AnimatorController, parameters), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_parameters_clear, mq_dyn_asset_AnimatorController_parameters_size, mq_dyn_asset_AnimatorController_parameters_resize, mq_dyn_asset_AnimatorController_parameters_elem, &mq_acc_asset_AnimatorController[2] },
+    { "transitions", (uint32_t)offsetof(asset::AnimatorController, transitions), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_AnimatorController_transitions_clear, mq_dyn_asset_AnimatorController_transitions_size, mq_dyn_asset_AnimatorController_transitions_resize, mq_dyn_asset_AnimatorController_transitions_elem, &mq_acc_asset_AnimatorController[3] },
 };
 
+static const char* mq_acc_asset_AudioBus_name_gets(const void* p) { const auto& s = *static_cast<const asset::AudioBus*>(p); return s.name.c_str(); }
+static void mq_acc_asset_AudioBus_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::AudioBus*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_AudioBus_name_getp(const void* p) { const auto& s = *static_cast<const asset::AudioBus*>(p); return &s.name; }
+static void* mq_acc_asset_AudioBus_name_getmp(void* p) { auto& s = *static_cast<asset::AudioBus*>(p); return &s.name; }
+static double mq_acc_asset_AudioBus_volume_getf(const void* p) { const auto& s = *static_cast<const asset::AudioBus*>(p); return static_cast<double>(s.volume); }
+static void mq_acc_asset_AudioBus_volume_setf(void* p, double v) { auto& s = *static_cast<asset::AudioBus*>(p); s.volume = static_cast<decltype(s.volume)>(v); }
+static double mq_acc_asset_AudioBus_mute_getf(const void* p) { const auto& s = *static_cast<const asset::AudioBus*>(p); return s.mute ? 1.0 : 0.0; }
+static void mq_acc_asset_AudioBus_mute_setf(void* p, double v) { auto& s = *static_cast<asset::AudioBus*>(p); s.mute = v != 0.0; }
+static const mq_field_accessor mq_acc_asset_AudioBus[] = {
+    { 0, 0, mq_acc_asset_AudioBus_name_gets, mq_acc_asset_AudioBus_name_sets, mq_acc_asset_AudioBus_name_getp, mq_acc_asset_AudioBus_name_getmp },
+    { mq_acc_asset_AudioBus_volume_getf, mq_acc_asset_AudioBus_volume_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_AudioBus_mute_getf, mq_acc_asset_AudioBus_mute_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_AudioBus[] = {
-    { "name", (uint32_t)offsetof(asset::AudioBus, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "volume", (uint32_t)offsetof(asset::AudioBus, volume), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mute", (uint32_t)offsetof(asset::AudioBus, mute), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::AudioBus, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioBus[0] },
+    { "volume", (uint32_t)offsetof(asset::AudioBus, volume), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioBus[1] },
+    { "mute", (uint32_t)offsetof(asset::AudioBus, mute), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioBus[2] },
 };
 
+static const char* mq_acc_asset_AudioClip_name_gets(const void* p) { const auto& s = *static_cast<const asset::AudioClip*>(p); return s.name.c_str(); }
+static void mq_acc_asset_AudioClip_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::AudioClip*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_AudioClip_name_getp(const void* p) { const auto& s = *static_cast<const asset::AudioClip*>(p); return &s.name; }
+static void* mq_acc_asset_AudioClip_name_getmp(void* p) { auto& s = *static_cast<asset::AudioClip*>(p); return &s.name; }
+static const char* mq_acc_asset_AudioClip_source_gets(const void* p) { const auto& s = *static_cast<const asset::AudioClip*>(p); return s.source.c_str(); }
+static void mq_acc_asset_AudioClip_source_sets(void* p, const char* v) { auto& s = *static_cast<asset::AudioClip*>(p); s.source = v ? v : ""; }
+static const void* mq_acc_asset_AudioClip_source_getp(const void* p) { const auto& s = *static_cast<const asset::AudioClip*>(p); return &s.source; }
+static void* mq_acc_asset_AudioClip_source_getmp(void* p) { auto& s = *static_cast<asset::AudioClip*>(p); return &s.source; }
+static double mq_acc_asset_AudioClip_length_getf(const void* p) { const auto& s = *static_cast<const asset::AudioClip*>(p); return static_cast<double>(s.length); }
+static void mq_acc_asset_AudioClip_length_setf(void* p, double v) { auto& s = *static_cast<asset::AudioClip*>(p); s.length = static_cast<decltype(s.length)>(v); }
+static double mq_acc_asset_AudioClip_sample_rate_getf(const void* p) { const auto& s = *static_cast<const asset::AudioClip*>(p); return static_cast<double>(s.sample_rate); }
+static void mq_acc_asset_AudioClip_sample_rate_setf(void* p, double v) { auto& s = *static_cast<asset::AudioClip*>(p); s.sample_rate = static_cast<decltype(s.sample_rate)>(v); }
+static double mq_acc_asset_AudioClip_channels_getf(const void* p) { const auto& s = *static_cast<const asset::AudioClip*>(p); return static_cast<double>(s.channels); }
+static void mq_acc_asset_AudioClip_channels_setf(void* p, double v) { auto& s = *static_cast<asset::AudioClip*>(p); s.channels = static_cast<decltype(s.channels)>(v); }
+static const mq_field_accessor mq_acc_asset_AudioClip[] = {
+    { 0, 0, mq_acc_asset_AudioClip_name_gets, mq_acc_asset_AudioClip_name_sets, mq_acc_asset_AudioClip_name_getp, mq_acc_asset_AudioClip_name_getmp },
+    { 0, 0, mq_acc_asset_AudioClip_source_gets, mq_acc_asset_AudioClip_source_sets, mq_acc_asset_AudioClip_source_getp, mq_acc_asset_AudioClip_source_getmp },
+    { mq_acc_asset_AudioClip_length_getf, mq_acc_asset_AudioClip_length_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_AudioClip_sample_rate_getf, mq_acc_asset_AudioClip_sample_rate_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_AudioClip_channels_getf, mq_acc_asset_AudioClip_channels_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_AudioClip[] = {
-    { "name", (uint32_t)offsetof(asset::AudioClip, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "source", (uint32_t)offsetof(asset::AudioClip, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "length", (uint32_t)offsetof(asset::AudioClip, length), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sample_rate", (uint32_t)offsetof(asset::AudioClip, sample_rate), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "channels", (uint32_t)offsetof(asset::AudioClip, channels), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::AudioClip, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioClip[0] },
+    { "source", (uint32_t)offsetof(asset::AudioClip, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioClip[1] },
+    { "length", (uint32_t)offsetof(asset::AudioClip, length), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioClip[2] },
+    { "sample_rate", (uint32_t)offsetof(asset::AudioClip, sample_rate), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioClip[3] },
+    { "channels", (uint32_t)offsetof(asset::AudioClip, channels), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioClip[4] },
 };
 
+static const char* mq_acc_asset_AudioCurve_name_gets(const void* p) { const auto& s = *static_cast<const asset::AudioCurve*>(p); return s.name.c_str(); }
+static void mq_acc_asset_AudioCurve_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::AudioCurve*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_AudioCurve_name_getp(const void* p) { const auto& s = *static_cast<const asset::AudioCurve*>(p); return &s.name; }
+static void* mq_acc_asset_AudioCurve_name_getmp(void* p) { auto& s = *static_cast<asset::AudioCurve*>(p); return &s.name; }
+static const mq_field_accessor mq_acc_asset_AudioCurve[] = {
+    { 0, 0, mq_acc_asset_AudioCurve_name_gets, mq_acc_asset_AudioCurve_name_sets, mq_acc_asset_AudioCurve_name_getp, mq_acc_asset_AudioCurve_name_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_AudioCurve_points_clear(void* f) { static_cast<std::vector<math::Vec2>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_AudioCurve_points_size(const void* f) { return (uint32_t)static_cast<const std::vector<math::Vec2>*>(f)->size(); }
 static void mq_dyn_asset_AudioCurve_points_resize(void* f, uint32_t n) { static_cast<std::vector<math::Vec2>*>(f)->resize(n); }
 static void* mq_dyn_asset_AudioCurve_points_elem(void* f, uint32_t i) { return &static_cast<std::vector<math::Vec2>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_AudioCurve[] = {
-    { "name", (uint32_t)offsetof(asset::AudioCurve, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "points", (uint32_t)offsetof(asset::AudioCurve, points), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 0u, 1876288095u, mq_dyn_asset_AudioCurve_points_clear, mq_dyn_asset_AudioCurve_points_size, mq_dyn_asset_AudioCurve_points_resize, mq_dyn_asset_AudioCurve_points_elem },
+    { "name", (uint32_t)offsetof(asset::AudioCurve, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_AudioCurve[0] },
+    { "points", (uint32_t)offsetof(asset::AudioCurve, points), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 0u, 1876288095u, mq_dyn_asset_AudioCurve_points_clear, mq_dyn_asset_AudioCurve_points_size, mq_dyn_asset_AudioCurve_points_resize, mq_dyn_asset_AudioCurve_points_elem, &mq_acc_asset_AudioCurve[1] },
 };
 
+static double mq_acc_asset_BoneB_name_hash_getf(const void* p) { const auto& s = *static_cast<const asset::BoneB*>(p); return static_cast<double>(s.name_hash); }
+static void mq_acc_asset_BoneB_name_hash_setf(void* p, double v) { auto& s = *static_cast<asset::BoneB*>(p); s.name_hash = static_cast<decltype(s.name_hash)>(v); }
+static double mq_acc_asset_BoneB_parent_getf(const void* p) { const auto& s = *static_cast<const asset::BoneB*>(p); return static_cast<double>(s.parent); }
+static void mq_acc_asset_BoneB_parent_setf(void* p, double v) { auto& s = *static_cast<asset::BoneB*>(p); s.parent = static_cast<decltype(s.parent)>(v); }
+static const void* mq_acc_asset_BoneB_bind_position_getp(const void* p) { const auto& s = *static_cast<const asset::BoneB*>(p); return &s.bind_position; }
+static void* mq_acc_asset_BoneB_bind_position_getmp(void* p) { auto& s = *static_cast<asset::BoneB*>(p); return &s.bind_position; }
+static const void* mq_acc_asset_BoneB_bind_rotation_getp(const void* p) { const auto& s = *static_cast<const asset::BoneB*>(p); return &s.bind_rotation; }
+static void* mq_acc_asset_BoneB_bind_rotation_getmp(void* p) { auto& s = *static_cast<asset::BoneB*>(p); return &s.bind_rotation; }
+static const void* mq_acc_asset_BoneB_bind_scale_getp(const void* p) { const auto& s = *static_cast<const asset::BoneB*>(p); return &s.bind_scale; }
+static void* mq_acc_asset_BoneB_bind_scale_getmp(void* p) { auto& s = *static_cast<asset::BoneB*>(p); return &s.bind_scale; }
+static const void* mq_acc_asset_BoneB_inverse_bind_getp(const void* p) { const auto& s = *static_cast<const asset::BoneB*>(p); return &s.inverse_bind; }
+static void* mq_acc_asset_BoneB_inverse_bind_getmp(void* p) { auto& s = *static_cast<asset::BoneB*>(p); return &s.inverse_bind; }
+static const mq_field_accessor mq_acc_asset_BoneB[] = {
+    { mq_acc_asset_BoneB_name_hash_getf, mq_acc_asset_BoneB_name_hash_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_BoneB_parent_getf, mq_acc_asset_BoneB_parent_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_asset_BoneB_bind_position_getp, mq_acc_asset_BoneB_bind_position_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_BoneB_bind_rotation_getp, mq_acc_asset_BoneB_bind_rotation_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_BoneB_bind_scale_getp, mq_acc_asset_BoneB_bind_scale_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_BoneB_inverse_bind_getp, mq_acc_asset_BoneB_inverse_bind_getmp },
+};
 static const mq_field_desc mq_fields_asset_BoneB[] = {
-    { "name_hash", (uint32_t)offsetof(asset::BoneB, name_hash), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "parent", (uint32_t)offsetof(asset::BoneB, parent), MQ_TK_I16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bind_position", (uint32_t)offsetof(asset::BoneB, bind_position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bind_rotation", (uint32_t)offsetof(asset::BoneB, bind_rotation), MQ_TK_STRUCT, 1809161124u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bind_scale", (uint32_t)offsetof(asset::BoneB, bind_scale), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "inverse_bind", (uint32_t)offsetof(asset::BoneB, inverse_bind), MQ_TK_STRUCT, 4084314145u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name_hash", (uint32_t)offsetof(asset::BoneB, name_hash), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_BoneB[0] },
+    { "parent", (uint32_t)offsetof(asset::BoneB, parent), MQ_TK_I16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_BoneB[1] },
+    { "bind_position", (uint32_t)offsetof(asset::BoneB, bind_position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_BoneB[2] },
+    { "bind_rotation", (uint32_t)offsetof(asset::BoneB, bind_rotation), MQ_TK_STRUCT, 1809161124u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_BoneB[3] },
+    { "bind_scale", (uint32_t)offsetof(asset::BoneB, bind_scale), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_BoneB[4] },
+    { "inverse_bind", (uint32_t)offsetof(asset::BoneB, inverse_bind), MQ_TK_STRUCT, 4084314145u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_BoneB[5] },
 };
 
+static const char* mq_acc_asset_Effect_name_gets(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return s.name.c_str(); }
+static void mq_acc_asset_Effect_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::Effect*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_Effect_name_getp(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return &s.name; }
+static void* mq_acc_asset_Effect_name_getmp(void* p) { auto& s = *static_cast<asset::Effect*>(p); return &s.name; }
+static const char* mq_acc_asset_Effect_wgsl_gets(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return s.wgsl.c_str(); }
+static void mq_acc_asset_Effect_wgsl_sets(void* p, const char* v) { auto& s = *static_cast<asset::Effect*>(p); s.wgsl = v ? v : ""; }
+static const void* mq_acc_asset_Effect_wgsl_getp(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return &s.wgsl; }
+static void* mq_acc_asset_Effect_wgsl_getmp(void* p) { auto& s = *static_cast<asset::Effect*>(p); return &s.wgsl; }
+static double mq_acc_asset_Effect_blend_src_getf(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return static_cast<double>(static_cast<int64_t>(s.blend_src)); }
+static void mq_acc_asset_Effect_blend_src_setf(void* p, double v) { auto& s = *static_cast<asset::Effect*>(p); s.blend_src = static_cast<decltype(s.blend_src)>(v); }
+static double mq_acc_asset_Effect_blend_dst_getf(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return static_cast<double>(static_cast<int64_t>(s.blend_dst)); }
+static void mq_acc_asset_Effect_blend_dst_setf(void* p, double v) { auto& s = *static_cast<asset::Effect*>(p); s.blend_dst = static_cast<decltype(s.blend_dst)>(v); }
+static double mq_acc_asset_Effect_depth_test_getf(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return s.depth_test ? 1.0 : 0.0; }
+static void mq_acc_asset_Effect_depth_test_setf(void* p, double v) { auto& s = *static_cast<asset::Effect*>(p); s.depth_test = v != 0.0; }
+static double mq_acc_asset_Effect_depth_write_getf(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return s.depth_write ? 1.0 : 0.0; }
+static void mq_acc_asset_Effect_depth_write_setf(void* p, double v) { auto& s = *static_cast<asset::Effect*>(p); s.depth_write = v != 0.0; }
+static double mq_acc_asset_Effect_cull_mode_getf(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return static_cast<double>(static_cast<int64_t>(s.cull_mode)); }
+static void mq_acc_asset_Effect_cull_mode_setf(void* p, double v) { auto& s = *static_cast<asset::Effect*>(p); s.cull_mode = static_cast<decltype(s.cull_mode)>(v); }
+static double mq_acc_asset_Effect_primitive_getf(const void* p) { const auto& s = *static_cast<const asset::Effect*>(p); return static_cast<double>(static_cast<int64_t>(s.primitive)); }
+static void mq_acc_asset_Effect_primitive_setf(void* p, double v) { auto& s = *static_cast<asset::Effect*>(p); s.primitive = static_cast<decltype(s.primitive)>(v); }
+static const mq_field_accessor mq_acc_asset_Effect[] = {
+    { 0, 0, mq_acc_asset_Effect_name_gets, mq_acc_asset_Effect_name_sets, mq_acc_asset_Effect_name_getp, mq_acc_asset_Effect_name_getmp },
+    { 0, 0, mq_acc_asset_Effect_wgsl_gets, mq_acc_asset_Effect_wgsl_sets, mq_acc_asset_Effect_wgsl_getp, mq_acc_asset_Effect_wgsl_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_asset_Effect_blend_src_getf, mq_acc_asset_Effect_blend_src_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Effect_blend_dst_getf, mq_acc_asset_Effect_blend_dst_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Effect_depth_test_getf, mq_acc_asset_Effect_depth_test_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Effect_depth_write_getf, mq_acc_asset_Effect_depth_write_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Effect_cull_mode_getf, mq_acc_asset_Effect_cull_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Effect_primitive_getf, mq_acc_asset_Effect_primitive_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_Effect_params_clear(void* f) { static_cast<std::vector<asset::EffectParam>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_Effect_params_size(const void* f) { return (uint32_t)static_cast<const std::vector<asset::EffectParam>*>(f)->size(); }
 static void mq_dyn_asset_Effect_params_resize(void* f, uint32_t n) { static_cast<std::vector<asset::EffectParam>*>(f)->resize(n); }
 static void* mq_dyn_asset_Effect_params_elem(void* f, uint32_t i) { return &static_cast<std::vector<asset::EffectParam>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_Effect[] = {
-    { "name", (uint32_t)offsetof(asset::Effect, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "wgsl", (uint32_t)offsetof(asset::Effect, wgsl), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "params", (uint32_t)offsetof(asset::Effect, params), MQ_TK_ARRAY_DYN, 1796108667u, 0u, 0u, 1796108667u, mq_dyn_asset_Effect_params_clear, mq_dyn_asset_Effect_params_size, mq_dyn_asset_Effect_params_resize, mq_dyn_asset_Effect_params_elem },
-    { "blend_src", (uint32_t)offsetof(asset::Effect, blend_src), MQ_TK_ENUM, 3117829745u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "blend_dst", (uint32_t)offsetof(asset::Effect, blend_dst), MQ_TK_ENUM, 3117829745u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "depth_test", (uint32_t)offsetof(asset::Effect, depth_test), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "depth_write", (uint32_t)offsetof(asset::Effect, depth_write), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "cull_mode", (uint32_t)offsetof(asset::Effect, cull_mode), MQ_TK_ENUM, 3202703500u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "primitive", (uint32_t)offsetof(asset::Effect, primitive), MQ_TK_ENUM, 230530366u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::Effect, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Effect[0] },
+    { "wgsl", (uint32_t)offsetof(asset::Effect, wgsl), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Effect[1] },
+    { "params", (uint32_t)offsetof(asset::Effect, params), MQ_TK_ARRAY_DYN, 1796108667u, 0u, 0u, 1796108667u, mq_dyn_asset_Effect_params_clear, mq_dyn_asset_Effect_params_size, mq_dyn_asset_Effect_params_resize, mq_dyn_asset_Effect_params_elem, &mq_acc_asset_Effect[2] },
+    { "blend_src", (uint32_t)offsetof(asset::Effect, blend_src), MQ_TK_ENUM, 3117829745u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Effect[3] },
+    { "blend_dst", (uint32_t)offsetof(asset::Effect, blend_dst), MQ_TK_ENUM, 3117829745u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Effect[4] },
+    { "depth_test", (uint32_t)offsetof(asset::Effect, depth_test), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Effect[5] },
+    { "depth_write", (uint32_t)offsetof(asset::Effect, depth_write), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Effect[6] },
+    { "cull_mode", (uint32_t)offsetof(asset::Effect, cull_mode), MQ_TK_ENUM, 3202703500u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Effect[7] },
+    { "primitive", (uint32_t)offsetof(asset::Effect, primitive), MQ_TK_ENUM, 230530366u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Effect[8] },
 };
 
+static const char* mq_acc_asset_EffectParam_name_gets(const void* p) { const auto& s = *static_cast<const asset::EffectParam*>(p); return s.name.c_str(); }
+static void mq_acc_asset_EffectParam_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::EffectParam*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_EffectParam_name_getp(const void* p) { const auto& s = *static_cast<const asset::EffectParam*>(p); return &s.name; }
+static void* mq_acc_asset_EffectParam_name_getmp(void* p) { auto& s = *static_cast<asset::EffectParam*>(p); return &s.name; }
+static double mq_acc_asset_EffectParam_type_getf(const void* p) { const auto& s = *static_cast<const asset::EffectParam*>(p); return static_cast<double>(static_cast<int64_t>(s.type)); }
+static void mq_acc_asset_EffectParam_type_setf(void* p, double v) { auto& s = *static_cast<asset::EffectParam*>(p); s.type = static_cast<decltype(s.type)>(v); }
+static const char* mq_acc_asset_EffectParam_default_value_gets(const void* p) { const auto& s = *static_cast<const asset::EffectParam*>(p); return s.default_value.c_str(); }
+static void mq_acc_asset_EffectParam_default_value_sets(void* p, const char* v) { auto& s = *static_cast<asset::EffectParam*>(p); s.default_value = v ? v : ""; }
+static const void* mq_acc_asset_EffectParam_default_value_getp(const void* p) { const auto& s = *static_cast<const asset::EffectParam*>(p); return &s.default_value; }
+static void* mq_acc_asset_EffectParam_default_value_getmp(void* p) { auto& s = *static_cast<asset::EffectParam*>(p); return &s.default_value; }
+static const mq_field_accessor mq_acc_asset_EffectParam[] = {
+    { 0, 0, mq_acc_asset_EffectParam_name_gets, mq_acc_asset_EffectParam_name_sets, mq_acc_asset_EffectParam_name_getp, mq_acc_asset_EffectParam_name_getmp },
+    { mq_acc_asset_EffectParam_type_getf, mq_acc_asset_EffectParam_type_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_asset_EffectParam_default_value_gets, mq_acc_asset_EffectParam_default_value_sets, mq_acc_asset_EffectParam_default_value_getp, mq_acc_asset_EffectParam_default_value_getmp },
+};
 static const mq_field_desc mq_fields_asset_EffectParam[] = {
-    { "name", (uint32_t)offsetof(asset::EffectParam, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "type", (uint32_t)offsetof(asset::EffectParam, type), MQ_TK_ENUM, 2019242036u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "default_value", (uint32_t)offsetof(asset::EffectParam, default_value), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::EffectParam, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_EffectParam[0] },
+    { "type", (uint32_t)offsetof(asset::EffectParam, type), MQ_TK_ENUM, 2019242036u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_EffectParam[1] },
+    { "default_value", (uint32_t)offsetof(asset::EffectParam, default_value), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_EffectParam[2] },
 };
 
+static const char* mq_acc_asset_Font_name_gets(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return s.name.c_str(); }
+static void mq_acc_asset_Font_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::Font*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_Font_name_getp(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return &s.name; }
+static void* mq_acc_asset_Font_name_getmp(void* p) { auto& s = *static_cast<asset::Font*>(p); return &s.name; }
+static const char* mq_acc_asset_Font_source_gets(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return s.source.c_str(); }
+static void mq_acc_asset_Font_source_sets(void* p, const char* v) { auto& s = *static_cast<asset::Font*>(p); s.source = v ? v : ""; }
+static const void* mq_acc_asset_Font_source_getp(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return &s.source; }
+static void* mq_acc_asset_Font_source_getmp(void* p) { auto& s = *static_cast<asset::Font*>(p); return &s.source; }
+static double mq_acc_asset_Font_mode_getf(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
+static void mq_acc_asset_Font_mode_setf(void* p, double v) { auto& s = *static_cast<asset::Font*>(p); s.mode = static_cast<decltype(s.mode)>(v); }
+static double mq_acc_asset_Font_charset_preset_getf(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return static_cast<double>(static_cast<int64_t>(s.charset_preset)); }
+static void mq_acc_asset_Font_charset_preset_setf(void* p, double v) { auto& s = *static_cast<asset::Font*>(p); s.charset_preset = static_cast<decltype(s.charset_preset)>(v); }
+static double mq_acc_asset_Font_sdf_spread_getf(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return static_cast<double>(s.sdf_spread); }
+static void mq_acc_asset_Font_sdf_spread_setf(void* p, double v) { auto& s = *static_cast<asset::Font*>(p); s.sdf_spread = static_cast<decltype(s.sdf_spread)>(v); }
+static double mq_acc_asset_Font_sdf_px_range_getf(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return static_cast<double>(s.sdf_px_range); }
+static void mq_acc_asset_Font_sdf_px_range_setf(void* p, double v) { auto& s = *static_cast<asset::Font*>(p); s.sdf_px_range = static_cast<decltype(s.sdf_px_range)>(v); }
+static double mq_acc_asset_Font_atlas_max_size_getf(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return static_cast<double>(s.atlas_max_size); }
+static void mq_acc_asset_Font_atlas_max_size_setf(void* p, double v) { auto& s = *static_cast<asset::Font*>(p); s.atlas_max_size = static_cast<decltype(s.atlas_max_size)>(v); }
+static double mq_acc_asset_Font_atlas_padding_getf(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return static_cast<double>(s.atlas_padding); }
+static void mq_acc_asset_Font_atlas_padding_setf(void* p, double v) { auto& s = *static_cast<asset::Font*>(p); s.atlas_padding = static_cast<decltype(s.atlas_padding)>(v); }
+static double mq_acc_asset_Font_bold_getf(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return s.bold ? 1.0 : 0.0; }
+static void mq_acc_asset_Font_bold_setf(void* p, double v) { auto& s = *static_cast<asset::Font*>(p); s.bold = v != 0.0; }
+static double mq_acc_asset_Font_italic_getf(const void* p) { const auto& s = *static_cast<const asset::Font*>(p); return s.italic ? 1.0 : 0.0; }
+static void mq_acc_asset_Font_italic_setf(void* p, double v) { auto& s = *static_cast<asset::Font*>(p); s.italic = v != 0.0; }
+static const mq_field_accessor mq_acc_asset_Font[] = {
+    { 0, 0, mq_acc_asset_Font_name_gets, mq_acc_asset_Font_name_sets, mq_acc_asset_Font_name_getp, mq_acc_asset_Font_name_getmp },
+    { 0, 0, mq_acc_asset_Font_source_gets, mq_acc_asset_Font_source_sets, mq_acc_asset_Font_source_getp, mq_acc_asset_Font_source_getmp },
+    { mq_acc_asset_Font_mode_getf, mq_acc_asset_Font_mode_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_asset_Font_charset_preset_getf, mq_acc_asset_Font_charset_preset_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_asset_Font_sdf_spread_getf, mq_acc_asset_Font_sdf_spread_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Font_sdf_px_range_getf, mq_acc_asset_Font_sdf_px_range_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Font_atlas_max_size_getf, mq_acc_asset_Font_atlas_max_size_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Font_atlas_padding_getf, mq_acc_asset_Font_atlas_padding_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Font_bold_getf, mq_acc_asset_Font_bold_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Font_italic_getf, mq_acc_asset_Font_italic_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_Font_charset_ranges_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_Font_charset_ranges_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
 static void mq_dyn_asset_Font_charset_ranges_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
@@ -265,55 +775,123 @@ static uint32_t mq_dyn_asset_Font_fallback_size(const void* f) { return (uint32_
 static void mq_dyn_asset_Font_fallback_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_asset_Font_fallback_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_Font[] = {
-    { "name", (uint32_t)offsetof(asset::Font, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "source", (uint32_t)offsetof(asset::Font, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mode", (uint32_t)offsetof(asset::Font, mode), MQ_TK_ENUM, 3953170109u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sizes", (uint32_t)offsetof(asset::Font, sizes), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "charset_preset", (uint32_t)offsetof(asset::Font, charset_preset), MQ_TK_ENUM, 561650886u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "charset_ranges", (uint32_t)offsetof(asset::Font, charset_ranges), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_charset_ranges_clear, mq_dyn_asset_Font_charset_ranges_size, mq_dyn_asset_Font_charset_ranges_resize, mq_dyn_asset_Font_charset_ranges_elem },
-    { "charset_extra", (uint32_t)offsetof(asset::Font, charset_extra), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_charset_extra_clear, mq_dyn_asset_Font_charset_extra_size, mq_dyn_asset_Font_charset_extra_resize, mq_dyn_asset_Font_charset_extra_elem },
-    { "sdf_spread", (uint32_t)offsetof(asset::Font, sdf_spread), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sdf_px_range", (uint32_t)offsetof(asset::Font, sdf_px_range), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "atlas_max_size", (uint32_t)offsetof(asset::Font, atlas_max_size), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "atlas_padding", (uint32_t)offsetof(asset::Font, atlas_padding), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bold", (uint32_t)offsetof(asset::Font, bold), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "italic", (uint32_t)offsetof(asset::Font, italic), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fallback", (uint32_t)offsetof(asset::Font, fallback), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_fallback_clear, mq_dyn_asset_Font_fallback_size, mq_dyn_asset_Font_fallback_resize, mq_dyn_asset_Font_fallback_elem },
+    { "name", (uint32_t)offsetof(asset::Font, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[0] },
+    { "source", (uint32_t)offsetof(asset::Font, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[1] },
+    { "mode", (uint32_t)offsetof(asset::Font, mode), MQ_TK_ENUM, 3953170109u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[2] },
+    { "sizes", (uint32_t)offsetof(asset::Font, sizes), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[3] },
+    { "charset_preset", (uint32_t)offsetof(asset::Font, charset_preset), MQ_TK_ENUM, 561650886u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[4] },
+    { "charset_ranges", (uint32_t)offsetof(asset::Font, charset_ranges), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_charset_ranges_clear, mq_dyn_asset_Font_charset_ranges_size, mq_dyn_asset_Font_charset_ranges_resize, mq_dyn_asset_Font_charset_ranges_elem, &mq_acc_asset_Font[5] },
+    { "charset_extra", (uint32_t)offsetof(asset::Font, charset_extra), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_charset_extra_clear, mq_dyn_asset_Font_charset_extra_size, mq_dyn_asset_Font_charset_extra_resize, mq_dyn_asset_Font_charset_extra_elem, &mq_acc_asset_Font[6] },
+    { "sdf_spread", (uint32_t)offsetof(asset::Font, sdf_spread), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[7] },
+    { "sdf_px_range", (uint32_t)offsetof(asset::Font, sdf_px_range), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[8] },
+    { "atlas_max_size", (uint32_t)offsetof(asset::Font, atlas_max_size), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[9] },
+    { "atlas_padding", (uint32_t)offsetof(asset::Font, atlas_padding), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[10] },
+    { "bold", (uint32_t)offsetof(asset::Font, bold), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[11] },
+    { "italic", (uint32_t)offsetof(asset::Font, italic), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Font[12] },
+    { "fallback", (uint32_t)offsetof(asset::Font, fallback), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_Font_fallback_clear, mq_dyn_asset_Font_fallback_size, mq_dyn_asset_Font_fallback_resize, mq_dyn_asset_Font_fallback_elem, &mq_acc_asset_Font[13] },
 };
 
+static double mq_acc_asset_Key_time_getf(const void* p) { const auto& s = *static_cast<const asset::Key*>(p); return static_cast<double>(s.time); }
+static void mq_acc_asset_Key_time_setf(void* p, double v) { auto& s = *static_cast<asset::Key*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static const void* mq_acc_asset_Key_value_getp(const void* p) { const auto& s = *static_cast<const asset::Key*>(p); return &s.value; }
+static void* mq_acc_asset_Key_value_getmp(void* p) { auto& s = *static_cast<asset::Key*>(p); return &s.value; }
+static double mq_acc_asset_Key_in_tangent_getf(const void* p) { const auto& s = *static_cast<const asset::Key*>(p); return static_cast<double>(s.in_tangent); }
+static void mq_acc_asset_Key_in_tangent_setf(void* p, double v) { auto& s = *static_cast<asset::Key*>(p); s.in_tangent = static_cast<decltype(s.in_tangent)>(v); }
+static double mq_acc_asset_Key_out_tangent_getf(const void* p) { const auto& s = *static_cast<const asset::Key*>(p); return static_cast<double>(s.out_tangent); }
+static void mq_acc_asset_Key_out_tangent_setf(void* p, double v) { auto& s = *static_cast<asset::Key*>(p); s.out_tangent = static_cast<decltype(s.out_tangent)>(v); }
+static const mq_field_accessor mq_acc_asset_Key[] = {
+    { mq_acc_asset_Key_time_getf, mq_acc_asset_Key_time_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_asset_Key_value_getp, mq_acc_asset_Key_value_getmp },
+    { mq_acc_asset_Key_in_tangent_getf, mq_acc_asset_Key_in_tangent_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Key_out_tangent_getf, mq_acc_asset_Key_out_tangent_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_Key[] = {
-    { "time", (uint32_t)offsetof(asset::Key, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "value", (uint32_t)offsetof(asset::Key, value), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "in_tangent", (uint32_t)offsetof(asset::Key, in_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "out_tangent", (uint32_t)offsetof(asset::Key, out_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "time", (uint32_t)offsetof(asset::Key, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Key[0] },
+    { "value", (uint32_t)offsetof(asset::Key, value), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Key[1] },
+    { "in_tangent", (uint32_t)offsetof(asset::Key, in_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Key[2] },
+    { "out_tangent", (uint32_t)offsetof(asset::Key, out_tangent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Key[3] },
 };
 
+static const char* mq_acc_asset_Material_name_gets(const void* p) { const auto& s = *static_cast<const asset::Material*>(p); return s.name.c_str(); }
+static void mq_acc_asset_Material_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::Material*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_Material_name_getp(const void* p) { const auto& s = *static_cast<const asset::Material*>(p); return &s.name; }
+static void* mq_acc_asset_Material_name_getmp(void* p) { auto& s = *static_cast<asset::Material*>(p); return &s.name; }
+static const void* mq_acc_asset_Material_effect_getp(const void* p) { const auto& s = *static_cast<const asset::Material*>(p); return &s.effect; }
+static void* mq_acc_asset_Material_effect_getmp(void* p) { auto& s = *static_cast<asset::Material*>(p); return &s.effect; }
+static const mq_field_accessor mq_acc_asset_Material[] = {
+    { 0, 0, mq_acc_asset_Material_name_gets, mq_acc_asset_Material_name_sets, mq_acc_asset_Material_name_getp, mq_acc_asset_Material_name_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_Material_effect_getp, mq_acc_asset_Material_effect_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_Material_params_clear(void* f) { static_cast<std::vector<asset::MaterialParam>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_Material_params_size(const void* f) { return (uint32_t)static_cast<const std::vector<asset::MaterialParam>*>(f)->size(); }
 static void mq_dyn_asset_Material_params_resize(void* f, uint32_t n) { static_cast<std::vector<asset::MaterialParam>*>(f)->resize(n); }
 static void* mq_dyn_asset_Material_params_elem(void* f, uint32_t i) { return &static_cast<std::vector<asset::MaterialParam>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_Material[] = {
-    { "name", (uint32_t)offsetof(asset::Material, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "effect", (uint32_t)offsetof(asset::Material, effect), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "params", (uint32_t)offsetof(asset::Material, params), MQ_TK_ARRAY_DYN, 711465463u, 0u, 0u, 711465463u, mq_dyn_asset_Material_params_clear, mq_dyn_asset_Material_params_size, mq_dyn_asset_Material_params_resize, mq_dyn_asset_Material_params_elem },
+    { "name", (uint32_t)offsetof(asset::Material, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Material[0] },
+    { "effect", (uint32_t)offsetof(asset::Material, effect), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Material[1] },
+    { "params", (uint32_t)offsetof(asset::Material, params), MQ_TK_ARRAY_DYN, 711465463u, 0u, 0u, 711465463u, mq_dyn_asset_Material_params_clear, mq_dyn_asset_Material_params_size, mq_dyn_asset_Material_params_resize, mq_dyn_asset_Material_params_elem, &mq_acc_asset_Material[2] },
 };
 
+static const char* mq_acc_asset_MaterialInstance_name_gets(const void* p) { const auto& s = *static_cast<const asset::MaterialInstance*>(p); return s.name.c_str(); }
+static void mq_acc_asset_MaterialInstance_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::MaterialInstance*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_MaterialInstance_name_getp(const void* p) { const auto& s = *static_cast<const asset::MaterialInstance*>(p); return &s.name; }
+static void* mq_acc_asset_MaterialInstance_name_getmp(void* p) { auto& s = *static_cast<asset::MaterialInstance*>(p); return &s.name; }
+static const void* mq_acc_asset_MaterialInstance_parent_getp(const void* p) { const auto& s = *static_cast<const asset::MaterialInstance*>(p); return &s.parent; }
+static void* mq_acc_asset_MaterialInstance_parent_getmp(void* p) { auto& s = *static_cast<asset::MaterialInstance*>(p); return &s.parent; }
+static const mq_field_accessor mq_acc_asset_MaterialInstance[] = {
+    { 0, 0, mq_acc_asset_MaterialInstance_name_gets, mq_acc_asset_MaterialInstance_name_sets, mq_acc_asset_MaterialInstance_name_getp, mq_acc_asset_MaterialInstance_name_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_MaterialInstance_parent_getp, mq_acc_asset_MaterialInstance_parent_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_MaterialInstance_overrides_clear(void* f) { static_cast<std::vector<asset::MaterialParam>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_MaterialInstance_overrides_size(const void* f) { return (uint32_t)static_cast<const std::vector<asset::MaterialParam>*>(f)->size(); }
 static void mq_dyn_asset_MaterialInstance_overrides_resize(void* f, uint32_t n) { static_cast<std::vector<asset::MaterialParam>*>(f)->resize(n); }
 static void* mq_dyn_asset_MaterialInstance_overrides_elem(void* f, uint32_t i) { return &static_cast<std::vector<asset::MaterialParam>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_MaterialInstance[] = {
-    { "name", (uint32_t)offsetof(asset::MaterialInstance, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "parent", (uint32_t)offsetof(asset::MaterialInstance, parent), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "overrides", (uint32_t)offsetof(asset::MaterialInstance, overrides), MQ_TK_ARRAY_DYN, 711465463u, 0u, 0u, 711465463u, mq_dyn_asset_MaterialInstance_overrides_clear, mq_dyn_asset_MaterialInstance_overrides_size, mq_dyn_asset_MaterialInstance_overrides_resize, mq_dyn_asset_MaterialInstance_overrides_elem },
+    { "name", (uint32_t)offsetof(asset::MaterialInstance, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_MaterialInstance[0] },
+    { "parent", (uint32_t)offsetof(asset::MaterialInstance, parent), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_MaterialInstance[1] },
+    { "overrides", (uint32_t)offsetof(asset::MaterialInstance, overrides), MQ_TK_ARRAY_DYN, 711465463u, 0u, 0u, 711465463u, mq_dyn_asset_MaterialInstance_overrides_clear, mq_dyn_asset_MaterialInstance_overrides_size, mq_dyn_asset_MaterialInstance_overrides_resize, mq_dyn_asset_MaterialInstance_overrides_elem, &mq_acc_asset_MaterialInstance[2] },
 };
 
+static const char* mq_acc_asset_MaterialParam_name_gets(const void* p) { const auto& s = *static_cast<const asset::MaterialParam*>(p); return s.name.c_str(); }
+static void mq_acc_asset_MaterialParam_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::MaterialParam*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_MaterialParam_name_getp(const void* p) { const auto& s = *static_cast<const asset::MaterialParam*>(p); return &s.name; }
+static void* mq_acc_asset_MaterialParam_name_getmp(void* p) { auto& s = *static_cast<asset::MaterialParam*>(p); return &s.name; }
+static double mq_acc_asset_MaterialParam_type_getf(const void* p) { const auto& s = *static_cast<const asset::MaterialParam*>(p); return static_cast<double>(static_cast<int64_t>(s.type)); }
+static void mq_acc_asset_MaterialParam_type_setf(void* p, double v) { auto& s = *static_cast<asset::MaterialParam*>(p); s.type = static_cast<decltype(s.type)>(v); }
+static const char* mq_acc_asset_MaterialParam_value_gets(const void* p) { const auto& s = *static_cast<const asset::MaterialParam*>(p); return s.value.c_str(); }
+static void mq_acc_asset_MaterialParam_value_sets(void* p, const char* v) { auto& s = *static_cast<asset::MaterialParam*>(p); s.value = v ? v : ""; }
+static const void* mq_acc_asset_MaterialParam_value_getp(const void* p) { const auto& s = *static_cast<const asset::MaterialParam*>(p); return &s.value; }
+static void* mq_acc_asset_MaterialParam_value_getmp(void* p) { auto& s = *static_cast<asset::MaterialParam*>(p); return &s.value; }
+static const mq_field_accessor mq_acc_asset_MaterialParam[] = {
+    { 0, 0, mq_acc_asset_MaterialParam_name_gets, mq_acc_asset_MaterialParam_name_sets, mq_acc_asset_MaterialParam_name_getp, mq_acc_asset_MaterialParam_name_getmp },
+    { mq_acc_asset_MaterialParam_type_getf, mq_acc_asset_MaterialParam_type_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_asset_MaterialParam_value_gets, mq_acc_asset_MaterialParam_value_sets, mq_acc_asset_MaterialParam_value_getp, mq_acc_asset_MaterialParam_value_getmp },
+};
 static const mq_field_desc mq_fields_asset_MaterialParam[] = {
-    { "name", (uint32_t)offsetof(asset::MaterialParam, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "type", (uint32_t)offsetof(asset::MaterialParam, type), MQ_TK_ENUM, 2019242036u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "value", (uint32_t)offsetof(asset::MaterialParam, value), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::MaterialParam, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_MaterialParam[0] },
+    { "type", (uint32_t)offsetof(asset::MaterialParam, type), MQ_TK_ENUM, 2019242036u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_MaterialParam[1] },
+    { "value", (uint32_t)offsetof(asset::MaterialParam, value), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_MaterialParam[2] },
 };
 
+static double mq_acc_asset_Mesh_topology_getf(const void* p) { const auto& s = *static_cast<const asset::Mesh*>(p); return static_cast<double>(static_cast<int64_t>(s.topology)); }
+static void mq_acc_asset_Mesh_topology_setf(void* p, double v) { auto& s = *static_cast<asset::Mesh*>(p); s.topology = static_cast<decltype(s.topology)>(v); }
+static const void* mq_acc_asset_Mesh_bounds_getp(const void* p) { const auto& s = *static_cast<const asset::Mesh*>(p); return &s.bounds; }
+static void* mq_acc_asset_Mesh_bounds_getmp(void* p) { auto& s = *static_cast<asset::Mesh*>(p); return &s.bounds; }
+static const mq_field_accessor mq_acc_asset_Mesh[] = {
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_asset_Mesh_topology_getf, mq_acc_asset_Mesh_topology_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_asset_Mesh_bounds_getp, mq_acc_asset_Mesh_bounds_getmp },
+};
 static void mq_dyn_asset_Mesh_vertices_clear(void* f) { static_cast<std::vector<math::Vec3>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_Mesh_vertices_size(const void* f) { return (uint32_t)static_cast<const std::vector<math::Vec3>*>(f)->size(); }
 static void mq_dyn_asset_Mesh_vertices_resize(void* f, uint32_t n) { static_cast<std::vector<math::Vec3>*>(f)->resize(n); }
@@ -343,127 +921,461 @@ static uint32_t mq_dyn_asset_Mesh_submeshes_size(const void* f) { return (uint32
 static void mq_dyn_asset_Mesh_submeshes_resize(void* f, uint32_t n) { static_cast<std::vector<asset::SubMesh>*>(f)->resize(n); }
 static void* mq_dyn_asset_Mesh_submeshes_elem(void* f, uint32_t i) { return &static_cast<std::vector<asset::SubMesh>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_Mesh[] = {
-    { "vertices", (uint32_t)offsetof(asset::Mesh, vertices), MQ_TK_ARRAY_DYN, 1859510476u, 0u, 0u, 1859510476u, mq_dyn_asset_Mesh_vertices_clear, mq_dyn_asset_Mesh_vertices_size, mq_dyn_asset_Mesh_vertices_resize, mq_dyn_asset_Mesh_vertices_elem },
-    { "indices", (uint32_t)offsetof(asset::Mesh, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "normals", (uint32_t)offsetof(asset::Mesh, normals), MQ_TK_ARRAY_DYN, 1859510476u, 0u, 0u, 1859510476u, mq_dyn_asset_Mesh_normals_clear, mq_dyn_asset_Mesh_normals_size, mq_dyn_asset_Mesh_normals_resize, mq_dyn_asset_Mesh_normals_elem },
-    { "uvs", (uint32_t)offsetof(asset::Mesh, uvs), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 0u, 1876288095u, mq_dyn_asset_Mesh_uvs_clear, mq_dyn_asset_Mesh_uvs_size, mq_dyn_asset_Mesh_uvs_resize, mq_dyn_asset_Mesh_uvs_elem },
-    { "colors", (uint32_t)offsetof(asset::Mesh, colors), MQ_TK_ARRAY_DYN, 1842732857u, 0u, 0u, 1842732857u, mq_dyn_asset_Mesh_colors_clear, mq_dyn_asset_Mesh_colors_size, mq_dyn_asset_Mesh_colors_resize, mq_dyn_asset_Mesh_colors_elem },
-    { "tangents", (uint32_t)offsetof(asset::Mesh, tangents), MQ_TK_ARRAY_DYN, 1842732857u, 0u, 0u, 1842732857u, mq_dyn_asset_Mesh_tangents_clear, mq_dyn_asset_Mesh_tangents_size, mq_dyn_asset_Mesh_tangents_resize, mq_dyn_asset_Mesh_tangents_elem },
-    { "joints", (uint32_t)offsetof(asset::Mesh, joints), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "weights", (uint32_t)offsetof(asset::Mesh, weights), MQ_TK_ARRAY_DYN, 1842732857u, 0u, 0u, 1842732857u, mq_dyn_asset_Mesh_weights_clear, mq_dyn_asset_Mesh_weights_size, mq_dyn_asset_Mesh_weights_resize, mq_dyn_asset_Mesh_weights_elem },
-    { "topology", (uint32_t)offsetof(asset::Mesh, topology), MQ_TK_ENUM, 230530366u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "submeshes", (uint32_t)offsetof(asset::Mesh, submeshes), MQ_TK_ARRAY_DYN, 3942279142u, 0u, 0u, 3942279142u, mq_dyn_asset_Mesh_submeshes_clear, mq_dyn_asset_Mesh_submeshes_size, mq_dyn_asset_Mesh_submeshes_resize, mq_dyn_asset_Mesh_submeshes_elem },
-    { "bounds", (uint32_t)offsetof(asset::Mesh, bounds), MQ_TK_STRUCT, 3225946357u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "vertices", (uint32_t)offsetof(asset::Mesh, vertices), MQ_TK_ARRAY_DYN, 1859510476u, 0u, 0u, 1859510476u, mq_dyn_asset_Mesh_vertices_clear, mq_dyn_asset_Mesh_vertices_size, mq_dyn_asset_Mesh_vertices_resize, mq_dyn_asset_Mesh_vertices_elem, &mq_acc_asset_Mesh[0] },
+    { "indices", (uint32_t)offsetof(asset::Mesh, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Mesh[1] },
+    { "normals", (uint32_t)offsetof(asset::Mesh, normals), MQ_TK_ARRAY_DYN, 1859510476u, 0u, 0u, 1859510476u, mq_dyn_asset_Mesh_normals_clear, mq_dyn_asset_Mesh_normals_size, mq_dyn_asset_Mesh_normals_resize, mq_dyn_asset_Mesh_normals_elem, &mq_acc_asset_Mesh[2] },
+    { "uvs", (uint32_t)offsetof(asset::Mesh, uvs), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 0u, 1876288095u, mq_dyn_asset_Mesh_uvs_clear, mq_dyn_asset_Mesh_uvs_size, mq_dyn_asset_Mesh_uvs_resize, mq_dyn_asset_Mesh_uvs_elem, &mq_acc_asset_Mesh[3] },
+    { "colors", (uint32_t)offsetof(asset::Mesh, colors), MQ_TK_ARRAY_DYN, 1842732857u, 0u, 0u, 1842732857u, mq_dyn_asset_Mesh_colors_clear, mq_dyn_asset_Mesh_colors_size, mq_dyn_asset_Mesh_colors_resize, mq_dyn_asset_Mesh_colors_elem, &mq_acc_asset_Mesh[4] },
+    { "tangents", (uint32_t)offsetof(asset::Mesh, tangents), MQ_TK_ARRAY_DYN, 1842732857u, 0u, 0u, 1842732857u, mq_dyn_asset_Mesh_tangents_clear, mq_dyn_asset_Mesh_tangents_size, mq_dyn_asset_Mesh_tangents_resize, mq_dyn_asset_Mesh_tangents_elem, &mq_acc_asset_Mesh[5] },
+    { "joints", (uint32_t)offsetof(asset::Mesh, joints), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Mesh[6] },
+    { "weights", (uint32_t)offsetof(asset::Mesh, weights), MQ_TK_ARRAY_DYN, 1842732857u, 0u, 0u, 1842732857u, mq_dyn_asset_Mesh_weights_clear, mq_dyn_asset_Mesh_weights_size, mq_dyn_asset_Mesh_weights_resize, mq_dyn_asset_Mesh_weights_elem, &mq_acc_asset_Mesh[7] },
+    { "topology", (uint32_t)offsetof(asset::Mesh, topology), MQ_TK_ENUM, 230530366u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Mesh[8] },
+    { "submeshes", (uint32_t)offsetof(asset::Mesh, submeshes), MQ_TK_ARRAY_DYN, 3942279142u, 0u, 0u, 3942279142u, mq_dyn_asset_Mesh_submeshes_clear, mq_dyn_asset_Mesh_submeshes_size, mq_dyn_asset_Mesh_submeshes_resize, mq_dyn_asset_Mesh_submeshes_elem, &mq_acc_asset_Mesh[9] },
+    { "bounds", (uint32_t)offsetof(asset::Mesh, bounds), MQ_TK_STRUCT, 3225946357u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Mesh[10] },
 };
 
+static const char* mq_acc_asset_NavMeshData_name_gets(const void* p) { const auto& s = *static_cast<const asset::NavMeshData*>(p); return s.name.c_str(); }
+static void mq_acc_asset_NavMeshData_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::NavMeshData*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_NavMeshData_name_getp(const void* p) { const auto& s = *static_cast<const asset::NavMeshData*>(p); return &s.name; }
+static void* mq_acc_asset_NavMeshData_name_getmp(void* p) { auto& s = *static_cast<asset::NavMeshData*>(p); return &s.name; }
+static double mq_acc_asset_NavMeshData_cell_size_getf(const void* p) { const auto& s = *static_cast<const asset::NavMeshData*>(p); return static_cast<double>(s.cell_size); }
+static void mq_acc_asset_NavMeshData_cell_size_setf(void* p, double v) { auto& s = *static_cast<asset::NavMeshData*>(p); s.cell_size = static_cast<decltype(s.cell_size)>(v); }
+static const mq_field_accessor mq_acc_asset_NavMeshData[] = {
+    { 0, 0, mq_acc_asset_NavMeshData_name_gets, mq_acc_asset_NavMeshData_name_sets, mq_acc_asset_NavMeshData_name_getp, mq_acc_asset_NavMeshData_name_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_asset_NavMeshData_cell_size_getf, mq_acc_asset_NavMeshData_cell_size_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_NavMeshData_vertices_clear(void* f) { static_cast<std::vector<math::Vec3>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_NavMeshData_vertices_size(const void* f) { return (uint32_t)static_cast<const std::vector<math::Vec3>*>(f)->size(); }
 static void mq_dyn_asset_NavMeshData_vertices_resize(void* f, uint32_t n) { static_cast<std::vector<math::Vec3>*>(f)->resize(n); }
 static void* mq_dyn_asset_NavMeshData_vertices_elem(void* f, uint32_t i) { return &static_cast<std::vector<math::Vec3>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_NavMeshData[] = {
-    { "name", (uint32_t)offsetof(asset::NavMeshData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "vertices", (uint32_t)offsetof(asset::NavMeshData, vertices), MQ_TK_ARRAY_DYN, 1859510476u, 0u, 0u, 1859510476u, mq_dyn_asset_NavMeshData_vertices_clear, mq_dyn_asset_NavMeshData_vertices_size, mq_dyn_asset_NavMeshData_vertices_resize, mq_dyn_asset_NavMeshData_vertices_elem },
-    { "indices", (uint32_t)offsetof(asset::NavMeshData, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "cell_size", (uint32_t)offsetof(asset::NavMeshData, cell_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::NavMeshData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_NavMeshData[0] },
+    { "vertices", (uint32_t)offsetof(asset::NavMeshData, vertices), MQ_TK_ARRAY_DYN, 1859510476u, 0u, 0u, 1859510476u, mq_dyn_asset_NavMeshData_vertices_clear, mq_dyn_asset_NavMeshData_vertices_size, mq_dyn_asset_NavMeshData_vertices_resize, mq_dyn_asset_NavMeshData_vertices_elem, &mq_acc_asset_NavMeshData[1] },
+    { "indices", (uint32_t)offsetof(asset::NavMeshData, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_NavMeshData[2] },
+    { "cell_size", (uint32_t)offsetof(asset::NavMeshData, cell_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_NavMeshData[3] },
 };
 
+static const char* mq_acc_asset_PbrMaterial_name_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.name.c_str(); }
+static void mq_acc_asset_PbrMaterial_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_name_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.name; }
+static void* mq_acc_asset_PbrMaterial_name_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.name; }
+static const void* mq_acc_asset_PbrMaterial_base_color_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.base_color; }
+static void* mq_acc_asset_PbrMaterial_base_color_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.base_color; }
+static double mq_acc_asset_PbrMaterial_metallic_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.metallic); }
+static void mq_acc_asset_PbrMaterial_metallic_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.metallic = static_cast<decltype(s.metallic)>(v); }
+static double mq_acc_asset_PbrMaterial_roughness_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.roughness); }
+static void mq_acc_asset_PbrMaterial_roughness_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.roughness = static_cast<decltype(s.roughness)>(v); }
+static const void* mq_acc_asset_PbrMaterial_emissive_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.emissive; }
+static void* mq_acc_asset_PbrMaterial_emissive_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.emissive; }
+static double mq_acc_asset_PbrMaterial_normal_scale_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.normal_scale); }
+static void mq_acc_asset_PbrMaterial_normal_scale_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.normal_scale = static_cast<decltype(s.normal_scale)>(v); }
+static double mq_acc_asset_PbrMaterial_occlusion_strength_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.occlusion_strength); }
+static void mq_acc_asset_PbrMaterial_occlusion_strength_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.occlusion_strength = static_cast<decltype(s.occlusion_strength)>(v); }
+static double mq_acc_asset_PbrMaterial_alpha_mode_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(static_cast<int64_t>(s.alpha_mode)); }
+static void mq_acc_asset_PbrMaterial_alpha_mode_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.alpha_mode = static_cast<decltype(s.alpha_mode)>(v); }
+static double mq_acc_asset_PbrMaterial_alpha_cutoff_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.alpha_cutoff); }
+static void mq_acc_asset_PbrMaterial_alpha_cutoff_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.alpha_cutoff = static_cast<decltype(s.alpha_cutoff)>(v); }
+static double mq_acc_asset_PbrMaterial_double_sided_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.double_sided ? 1.0 : 0.0; }
+static void mq_acc_asset_PbrMaterial_double_sided_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.double_sided = v != 0.0; }
+static double mq_acc_asset_PbrMaterial_clearcoat_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.clearcoat); }
+static void mq_acc_asset_PbrMaterial_clearcoat_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.clearcoat = static_cast<decltype(s.clearcoat)>(v); }
+static double mq_acc_asset_PbrMaterial_clearcoat_roughness_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.clearcoat_roughness); }
+static void mq_acc_asset_PbrMaterial_clearcoat_roughness_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.clearcoat_roughness = static_cast<decltype(s.clearcoat_roughness)>(v); }
+static const char* mq_acc_asset_PbrMaterial_base_color_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.base_color_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_base_color_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.base_color_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_base_color_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.base_color_texture; }
+static void* mq_acc_asset_PbrMaterial_base_color_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.base_color_texture; }
+static const char* mq_acc_asset_PbrMaterial_metallic_roughness_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.metallic_roughness_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_metallic_roughness_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.metallic_roughness_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_metallic_roughness_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.metallic_roughness_texture; }
+static void* mq_acc_asset_PbrMaterial_metallic_roughness_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.metallic_roughness_texture; }
+static const char* mq_acc_asset_PbrMaterial_normal_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.normal_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_normal_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.normal_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_normal_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.normal_texture; }
+static void* mq_acc_asset_PbrMaterial_normal_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.normal_texture; }
+static const char* mq_acc_asset_PbrMaterial_occlusion_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.occlusion_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_occlusion_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.occlusion_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_occlusion_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.occlusion_texture; }
+static void* mq_acc_asset_PbrMaterial_occlusion_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.occlusion_texture; }
+static const char* mq_acc_asset_PbrMaterial_emissive_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.emissive_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_emissive_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.emissive_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_emissive_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.emissive_texture; }
+static void* mq_acc_asset_PbrMaterial_emissive_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.emissive_texture; }
+static double mq_acc_asset_PbrMaterial_shading_model_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(static_cast<int64_t>(s.shading_model)); }
+static void mq_acc_asset_PbrMaterial_shading_model_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.shading_model = static_cast<decltype(s.shading_model)>(v); }
+static double mq_acc_asset_PbrMaterial_opacity_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.opacity); }
+static void mq_acc_asset_PbrMaterial_opacity_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.opacity = static_cast<decltype(s.opacity)>(v); }
+static double mq_acc_asset_PbrMaterial_side_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(static_cast<int64_t>(s.side)); }
+static void mq_acc_asset_PbrMaterial_side_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.side = static_cast<decltype(s.side)>(v); }
+static double mq_acc_asset_PbrMaterial_flat_shading_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.flat_shading ? 1.0 : 0.0; }
+static void mq_acc_asset_PbrMaterial_flat_shading_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.flat_shading = v != 0.0; }
+static double mq_acc_asset_PbrMaterial_emissive_intensity_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.emissive_intensity); }
+static void mq_acc_asset_PbrMaterial_emissive_intensity_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.emissive_intensity = static_cast<decltype(s.emissive_intensity)>(v); }
+static double mq_acc_asset_PbrMaterial_env_intensity_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.env_intensity); }
+static void mq_acc_asset_PbrMaterial_env_intensity_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.env_intensity = static_cast<decltype(s.env_intensity)>(v); }
+static double mq_acc_asset_PbrMaterial_normal_scale_y_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.normal_scale_y); }
+static void mq_acc_asset_PbrMaterial_normal_scale_y_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.normal_scale_y = static_cast<decltype(s.normal_scale_y)>(v); }
+static const void* mq_acc_asset_PbrMaterial_specular_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.specular; }
+static void* mq_acc_asset_PbrMaterial_specular_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.specular; }
+static double mq_acc_asset_PbrMaterial_shininess_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.shininess); }
+static void mq_acc_asset_PbrMaterial_shininess_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.shininess = static_cast<decltype(s.shininess)>(v); }
+static double mq_acc_asset_PbrMaterial_specular_intensity_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.specular_intensity); }
+static void mq_acc_asset_PbrMaterial_specular_intensity_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.specular_intensity = static_cast<decltype(s.specular_intensity)>(v); }
+static double mq_acc_asset_PbrMaterial_ior_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.ior); }
+static void mq_acc_asset_PbrMaterial_ior_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.ior = static_cast<decltype(s.ior)>(v); }
+static double mq_acc_asset_PbrMaterial_sheen_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.sheen); }
+static void mq_acc_asset_PbrMaterial_sheen_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.sheen = static_cast<decltype(s.sheen)>(v); }
+static double mq_acc_asset_PbrMaterial_sheen_roughness_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.sheen_roughness); }
+static void mq_acc_asset_PbrMaterial_sheen_roughness_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.sheen_roughness = static_cast<decltype(s.sheen_roughness)>(v); }
+static const void* mq_acc_asset_PbrMaterial_sheen_color_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.sheen_color; }
+static void* mq_acc_asset_PbrMaterial_sheen_color_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.sheen_color; }
+static double mq_acc_asset_PbrMaterial_iridescence_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.iridescence); }
+static void mq_acc_asset_PbrMaterial_iridescence_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.iridescence = static_cast<decltype(s.iridescence)>(v); }
+static double mq_acc_asset_PbrMaterial_iridescence_ior_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.iridescence_ior); }
+static void mq_acc_asset_PbrMaterial_iridescence_ior_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.iridescence_ior = static_cast<decltype(s.iridescence_ior)>(v); }
+static double mq_acc_asset_PbrMaterial_iridescence_thickness_min_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.iridescence_thickness_min); }
+static void mq_acc_asset_PbrMaterial_iridescence_thickness_min_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.iridescence_thickness_min = static_cast<decltype(s.iridescence_thickness_min)>(v); }
+static double mq_acc_asset_PbrMaterial_iridescence_thickness_max_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.iridescence_thickness_max); }
+static void mq_acc_asset_PbrMaterial_iridescence_thickness_max_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.iridescence_thickness_max = static_cast<decltype(s.iridescence_thickness_max)>(v); }
+static double mq_acc_asset_PbrMaterial_anisotropy_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.anisotropy); }
+static void mq_acc_asset_PbrMaterial_anisotropy_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.anisotropy = static_cast<decltype(s.anisotropy)>(v); }
+static double mq_acc_asset_PbrMaterial_anisotropy_rotation_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.anisotropy_rotation); }
+static void mq_acc_asset_PbrMaterial_anisotropy_rotation_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.anisotropy_rotation = static_cast<decltype(s.anisotropy_rotation)>(v); }
+static double mq_acc_asset_PbrMaterial_clearcoat_normal_scale_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.clearcoat_normal_scale); }
+static void mq_acc_asset_PbrMaterial_clearcoat_normal_scale_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.clearcoat_normal_scale = static_cast<decltype(s.clearcoat_normal_scale)>(v); }
+static double mq_acc_asset_PbrMaterial_toon_steps_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.toon_steps); }
+static void mq_acc_asset_PbrMaterial_toon_steps_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.toon_steps = static_cast<decltype(s.toon_steps)>(v); }
+static double mq_acc_asset_PbrMaterial_depth_packing_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(static_cast<int64_t>(s.depth_packing)); }
+static void mq_acc_asset_PbrMaterial_depth_packing_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.depth_packing = static_cast<decltype(s.depth_packing)>(v); }
+static const char* mq_acc_asset_PbrMaterial_matcap_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.matcap_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_matcap_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.matcap_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_matcap_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.matcap_texture; }
+static void* mq_acc_asset_PbrMaterial_matcap_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.matcap_texture; }
+static const char* mq_acc_asset_PbrMaterial_gradient_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.gradient_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_gradient_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.gradient_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_gradient_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.gradient_texture; }
+static void* mq_acc_asset_PbrMaterial_gradient_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.gradient_texture; }
+static const char* mq_acc_asset_PbrMaterial_clearcoat_normal_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.clearcoat_normal_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_clearcoat_normal_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.clearcoat_normal_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_clearcoat_normal_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.clearcoat_normal_texture; }
+static void* mq_acc_asset_PbrMaterial_clearcoat_normal_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.clearcoat_normal_texture; }
+static const void* mq_acc_asset_PbrMaterial_uv_scale_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.uv_scale; }
+static void* mq_acc_asset_PbrMaterial_uv_scale_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.uv_scale; }
+static const void* mq_acc_asset_PbrMaterial_uv_offset_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.uv_offset; }
+static void* mq_acc_asset_PbrMaterial_uv_offset_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.uv_offset; }
+static const void* mq_acc_asset_PbrMaterial_normal_uv_scale_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.normal_uv_scale; }
+static void* mq_acc_asset_PbrMaterial_normal_uv_scale_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.normal_uv_scale; }
+static const void* mq_acc_asset_PbrMaterial_normal_uv_offset_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.normal_uv_offset; }
+static void* mq_acc_asset_PbrMaterial_normal_uv_offset_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.normal_uv_offset; }
+static double mq_acc_asset_PbrMaterial_uv1_mask_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.uv1_mask); }
+static void mq_acc_asset_PbrMaterial_uv1_mask_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.uv1_mask = static_cast<decltype(s.uv1_mask)>(v); }
+static const char* mq_acc_asset_PbrMaterial_clearcoat_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.clearcoat_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_clearcoat_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.clearcoat_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_clearcoat_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.clearcoat_texture; }
+static void* mq_acc_asset_PbrMaterial_clearcoat_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.clearcoat_texture; }
+static const char* mq_acc_asset_PbrMaterial_clearcoat_roughness_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.clearcoat_roughness_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_clearcoat_roughness_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.clearcoat_roughness_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_clearcoat_roughness_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.clearcoat_roughness_texture; }
+static void* mq_acc_asset_PbrMaterial_clearcoat_roughness_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.clearcoat_roughness_texture; }
+static const char* mq_acc_asset_PbrMaterial_sheen_color_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.sheen_color_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_sheen_color_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.sheen_color_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_sheen_color_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.sheen_color_texture; }
+static void* mq_acc_asset_PbrMaterial_sheen_color_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.sheen_color_texture; }
+static const char* mq_acc_asset_PbrMaterial_sheen_roughness_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.sheen_roughness_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_sheen_roughness_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.sheen_roughness_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_sheen_roughness_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.sheen_roughness_texture; }
+static void* mq_acc_asset_PbrMaterial_sheen_roughness_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.sheen_roughness_texture; }
+static const char* mq_acc_asset_PbrMaterial_iridescence_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.iridescence_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_iridescence_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.iridescence_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_iridescence_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.iridescence_texture; }
+static void* mq_acc_asset_PbrMaterial_iridescence_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.iridescence_texture; }
+static const char* mq_acc_asset_PbrMaterial_iridescence_thickness_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.iridescence_thickness_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_iridescence_thickness_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.iridescence_thickness_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_iridescence_thickness_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.iridescence_thickness_texture; }
+static void* mq_acc_asset_PbrMaterial_iridescence_thickness_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.iridescence_thickness_texture; }
+static const char* mq_acc_asset_PbrMaterial_anisotropy_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.anisotropy_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_anisotropy_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.anisotropy_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_anisotropy_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.anisotropy_texture; }
+static void* mq_acc_asset_PbrMaterial_anisotropy_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.anisotropy_texture; }
+static const char* mq_acc_asset_PbrMaterial_specular_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.specular_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_specular_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.specular_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_specular_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.specular_texture; }
+static void* mq_acc_asset_PbrMaterial_specular_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.specular_texture; }
+static const char* mq_acc_asset_PbrMaterial_specular_color_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.specular_color_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_specular_color_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.specular_color_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_specular_color_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.specular_color_texture; }
+static void* mq_acc_asset_PbrMaterial_specular_color_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.specular_color_texture; }
+static double mq_acc_asset_PbrMaterial_uv_rotation_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.uv_rotation); }
+static void mq_acc_asset_PbrMaterial_uv_rotation_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.uv_rotation = static_cast<decltype(s.uv_rotation)>(v); }
+static double mq_acc_asset_PbrMaterial_normal_uv_rotation_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.normal_uv_rotation); }
+static void mq_acc_asset_PbrMaterial_normal_uv_rotation_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.normal_uv_rotation = static_cast<decltype(s.normal_uv_rotation)>(v); }
+static double mq_acc_asset_PbrMaterial_alpha_mask_in_blend_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.alpha_mask_in_blend ? 1.0 : 0.0; }
+static void mq_acc_asset_PbrMaterial_alpha_mask_in_blend_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.alpha_mask_in_blend = v != 0.0; }
+static double mq_acc_asset_PbrMaterial_transmission_factor_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.transmission_factor); }
+static void mq_acc_asset_PbrMaterial_transmission_factor_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.transmission_factor = static_cast<decltype(s.transmission_factor)>(v); }
+static double mq_acc_asset_PbrMaterial_diffuse_transmission_factor_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.diffuse_transmission_factor); }
+static void mq_acc_asset_PbrMaterial_diffuse_transmission_factor_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.diffuse_transmission_factor = static_cast<decltype(s.diffuse_transmission_factor)>(v); }
+static const void* mq_acc_asset_PbrMaterial_diffuse_transmission_color_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.diffuse_transmission_color; }
+static void* mq_acc_asset_PbrMaterial_diffuse_transmission_color_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.diffuse_transmission_color; }
+static const char* mq_acc_asset_PbrMaterial_diffuse_transmission_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.diffuse_transmission_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_diffuse_transmission_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.diffuse_transmission_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_diffuse_transmission_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.diffuse_transmission_texture; }
+static void* mq_acc_asset_PbrMaterial_diffuse_transmission_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.diffuse_transmission_texture; }
+static const char* mq_acc_asset_PbrMaterial_diffuse_transmission_color_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.diffuse_transmission_color_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_diffuse_transmission_color_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.diffuse_transmission_color_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_diffuse_transmission_color_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.diffuse_transmission_color_texture; }
+static void* mq_acc_asset_PbrMaterial_diffuse_transmission_color_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.diffuse_transmission_color_texture; }
+static double mq_acc_asset_PbrMaterial_volume_thickness_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.volume_thickness); }
+static void mq_acc_asset_PbrMaterial_volume_thickness_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.volume_thickness = static_cast<decltype(s.volume_thickness)>(v); }
+static double mq_acc_asset_PbrMaterial_dispersion_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.dispersion); }
+static void mq_acc_asset_PbrMaterial_dispersion_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.dispersion = static_cast<decltype(s.dispersion)>(v); }
+static const char* mq_acc_asset_PbrMaterial_transmission_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.transmission_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_transmission_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.transmission_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_transmission_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.transmission_texture; }
+static void* mq_acc_asset_PbrMaterial_transmission_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.transmission_texture; }
+static const void* mq_acc_asset_PbrMaterial_attenuation_color_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.attenuation_color; }
+static void* mq_acc_asset_PbrMaterial_attenuation_color_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.attenuation_color; }
+static double mq_acc_asset_PbrMaterial_attenuation_distance_getf(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return static_cast<double>(s.attenuation_distance); }
+static void mq_acc_asset_PbrMaterial_attenuation_distance_setf(void* p, double v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.attenuation_distance = static_cast<decltype(s.attenuation_distance)>(v); }
+static const void* mq_acc_asset_PbrMaterial_multiscatter_color_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.multiscatter_color; }
+static void* mq_acc_asset_PbrMaterial_multiscatter_color_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.multiscatter_color; }
+static const char* mq_acc_asset_PbrMaterial_volume_thickness_texture_gets(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return s.volume_thickness_texture.c_str(); }
+static void mq_acc_asset_PbrMaterial_volume_thickness_texture_sets(void* p, const char* v) { auto& s = *static_cast<asset::PbrMaterial*>(p); s.volume_thickness_texture = v ? v : ""; }
+static const void* mq_acc_asset_PbrMaterial_volume_thickness_texture_getp(const void* p) { const auto& s = *static_cast<const asset::PbrMaterial*>(p); return &s.volume_thickness_texture; }
+static void* mq_acc_asset_PbrMaterial_volume_thickness_texture_getmp(void* p) { auto& s = *static_cast<asset::PbrMaterial*>(p); return &s.volume_thickness_texture; }
+static const mq_field_accessor mq_acc_asset_PbrMaterial[] = {
+    { 0, 0, mq_acc_asset_PbrMaterial_name_gets, mq_acc_asset_PbrMaterial_name_sets, mq_acc_asset_PbrMaterial_name_getp, mq_acc_asset_PbrMaterial_name_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_base_color_getp, mq_acc_asset_PbrMaterial_base_color_getmp },
+    { mq_acc_asset_PbrMaterial_metallic_getf, mq_acc_asset_PbrMaterial_metallic_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_roughness_getf, mq_acc_asset_PbrMaterial_roughness_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_emissive_getp, mq_acc_asset_PbrMaterial_emissive_getmp },
+    { mq_acc_asset_PbrMaterial_normal_scale_getf, mq_acc_asset_PbrMaterial_normal_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_occlusion_strength_getf, mq_acc_asset_PbrMaterial_occlusion_strength_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_alpha_mode_getf, mq_acc_asset_PbrMaterial_alpha_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_alpha_cutoff_getf, mq_acc_asset_PbrMaterial_alpha_cutoff_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_double_sided_getf, mq_acc_asset_PbrMaterial_double_sided_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_clearcoat_getf, mq_acc_asset_PbrMaterial_clearcoat_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_clearcoat_roughness_getf, mq_acc_asset_PbrMaterial_clearcoat_roughness_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_asset_PbrMaterial_base_color_texture_gets, mq_acc_asset_PbrMaterial_base_color_texture_sets, mq_acc_asset_PbrMaterial_base_color_texture_getp, mq_acc_asset_PbrMaterial_base_color_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_metallic_roughness_texture_gets, mq_acc_asset_PbrMaterial_metallic_roughness_texture_sets, mq_acc_asset_PbrMaterial_metallic_roughness_texture_getp, mq_acc_asset_PbrMaterial_metallic_roughness_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_normal_texture_gets, mq_acc_asset_PbrMaterial_normal_texture_sets, mq_acc_asset_PbrMaterial_normal_texture_getp, mq_acc_asset_PbrMaterial_normal_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_occlusion_texture_gets, mq_acc_asset_PbrMaterial_occlusion_texture_sets, mq_acc_asset_PbrMaterial_occlusion_texture_getp, mq_acc_asset_PbrMaterial_occlusion_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_emissive_texture_gets, mq_acc_asset_PbrMaterial_emissive_texture_sets, mq_acc_asset_PbrMaterial_emissive_texture_getp, mq_acc_asset_PbrMaterial_emissive_texture_getmp },
+    { mq_acc_asset_PbrMaterial_shading_model_getf, mq_acc_asset_PbrMaterial_shading_model_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_opacity_getf, mq_acc_asset_PbrMaterial_opacity_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_side_getf, mq_acc_asset_PbrMaterial_side_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_flat_shading_getf, mq_acc_asset_PbrMaterial_flat_shading_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_emissive_intensity_getf, mq_acc_asset_PbrMaterial_emissive_intensity_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_env_intensity_getf, mq_acc_asset_PbrMaterial_env_intensity_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_normal_scale_y_getf, mq_acc_asset_PbrMaterial_normal_scale_y_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_specular_getp, mq_acc_asset_PbrMaterial_specular_getmp },
+    { mq_acc_asset_PbrMaterial_shininess_getf, mq_acc_asset_PbrMaterial_shininess_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_specular_intensity_getf, mq_acc_asset_PbrMaterial_specular_intensity_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_ior_getf, mq_acc_asset_PbrMaterial_ior_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_sheen_getf, mq_acc_asset_PbrMaterial_sheen_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_sheen_roughness_getf, mq_acc_asset_PbrMaterial_sheen_roughness_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_sheen_color_getp, mq_acc_asset_PbrMaterial_sheen_color_getmp },
+    { mq_acc_asset_PbrMaterial_iridescence_getf, mq_acc_asset_PbrMaterial_iridescence_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_iridescence_ior_getf, mq_acc_asset_PbrMaterial_iridescence_ior_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_iridescence_thickness_min_getf, mq_acc_asset_PbrMaterial_iridescence_thickness_min_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_iridescence_thickness_max_getf, mq_acc_asset_PbrMaterial_iridescence_thickness_max_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_anisotropy_getf, mq_acc_asset_PbrMaterial_anisotropy_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_anisotropy_rotation_getf, mq_acc_asset_PbrMaterial_anisotropy_rotation_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_clearcoat_normal_scale_getf, mq_acc_asset_PbrMaterial_clearcoat_normal_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_toon_steps_getf, mq_acc_asset_PbrMaterial_toon_steps_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_depth_packing_getf, mq_acc_asset_PbrMaterial_depth_packing_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_asset_PbrMaterial_matcap_texture_gets, mq_acc_asset_PbrMaterial_matcap_texture_sets, mq_acc_asset_PbrMaterial_matcap_texture_getp, mq_acc_asset_PbrMaterial_matcap_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_gradient_texture_gets, mq_acc_asset_PbrMaterial_gradient_texture_sets, mq_acc_asset_PbrMaterial_gradient_texture_getp, mq_acc_asset_PbrMaterial_gradient_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_clearcoat_normal_texture_gets, mq_acc_asset_PbrMaterial_clearcoat_normal_texture_sets, mq_acc_asset_PbrMaterial_clearcoat_normal_texture_getp, mq_acc_asset_PbrMaterial_clearcoat_normal_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_uv_scale_getp, mq_acc_asset_PbrMaterial_uv_scale_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_uv_offset_getp, mq_acc_asset_PbrMaterial_uv_offset_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_normal_uv_scale_getp, mq_acc_asset_PbrMaterial_normal_uv_scale_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_normal_uv_offset_getp, mq_acc_asset_PbrMaterial_normal_uv_offset_getmp },
+    { mq_acc_asset_PbrMaterial_uv1_mask_getf, mq_acc_asset_PbrMaterial_uv1_mask_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_asset_PbrMaterial_clearcoat_texture_gets, mq_acc_asset_PbrMaterial_clearcoat_texture_sets, mq_acc_asset_PbrMaterial_clearcoat_texture_getp, mq_acc_asset_PbrMaterial_clearcoat_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_clearcoat_roughness_texture_gets, mq_acc_asset_PbrMaterial_clearcoat_roughness_texture_sets, mq_acc_asset_PbrMaterial_clearcoat_roughness_texture_getp, mq_acc_asset_PbrMaterial_clearcoat_roughness_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_sheen_color_texture_gets, mq_acc_asset_PbrMaterial_sheen_color_texture_sets, mq_acc_asset_PbrMaterial_sheen_color_texture_getp, mq_acc_asset_PbrMaterial_sheen_color_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_sheen_roughness_texture_gets, mq_acc_asset_PbrMaterial_sheen_roughness_texture_sets, mq_acc_asset_PbrMaterial_sheen_roughness_texture_getp, mq_acc_asset_PbrMaterial_sheen_roughness_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_iridescence_texture_gets, mq_acc_asset_PbrMaterial_iridescence_texture_sets, mq_acc_asset_PbrMaterial_iridescence_texture_getp, mq_acc_asset_PbrMaterial_iridescence_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_iridescence_thickness_texture_gets, mq_acc_asset_PbrMaterial_iridescence_thickness_texture_sets, mq_acc_asset_PbrMaterial_iridescence_thickness_texture_getp, mq_acc_asset_PbrMaterial_iridescence_thickness_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_anisotropy_texture_gets, mq_acc_asset_PbrMaterial_anisotropy_texture_sets, mq_acc_asset_PbrMaterial_anisotropy_texture_getp, mq_acc_asset_PbrMaterial_anisotropy_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_specular_texture_gets, mq_acc_asset_PbrMaterial_specular_texture_sets, mq_acc_asset_PbrMaterial_specular_texture_getp, mq_acc_asset_PbrMaterial_specular_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_specular_color_texture_gets, mq_acc_asset_PbrMaterial_specular_color_texture_sets, mq_acc_asset_PbrMaterial_specular_color_texture_getp, mq_acc_asset_PbrMaterial_specular_color_texture_getmp },
+    { mq_acc_asset_PbrMaterial_uv_rotation_getf, mq_acc_asset_PbrMaterial_uv_rotation_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_normal_uv_rotation_getf, mq_acc_asset_PbrMaterial_normal_uv_rotation_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_alpha_mask_in_blend_getf, mq_acc_asset_PbrMaterial_alpha_mask_in_blend_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_transmission_factor_getf, mq_acc_asset_PbrMaterial_transmission_factor_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_diffuse_transmission_factor_getf, mq_acc_asset_PbrMaterial_diffuse_transmission_factor_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_diffuse_transmission_color_getp, mq_acc_asset_PbrMaterial_diffuse_transmission_color_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_diffuse_transmission_texture_gets, mq_acc_asset_PbrMaterial_diffuse_transmission_texture_sets, mq_acc_asset_PbrMaterial_diffuse_transmission_texture_getp, mq_acc_asset_PbrMaterial_diffuse_transmission_texture_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_diffuse_transmission_color_texture_gets, mq_acc_asset_PbrMaterial_diffuse_transmission_color_texture_sets, mq_acc_asset_PbrMaterial_diffuse_transmission_color_texture_getp, mq_acc_asset_PbrMaterial_diffuse_transmission_color_texture_getmp },
+    { mq_acc_asset_PbrMaterial_volume_thickness_getf, mq_acc_asset_PbrMaterial_volume_thickness_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_PbrMaterial_dispersion_getf, mq_acc_asset_PbrMaterial_dispersion_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_asset_PbrMaterial_transmission_texture_gets, mq_acc_asset_PbrMaterial_transmission_texture_sets, mq_acc_asset_PbrMaterial_transmission_texture_getp, mq_acc_asset_PbrMaterial_transmission_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_attenuation_color_getp, mq_acc_asset_PbrMaterial_attenuation_color_getmp },
+    { mq_acc_asset_PbrMaterial_attenuation_distance_getf, mq_acc_asset_PbrMaterial_attenuation_distance_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_asset_PbrMaterial_multiscatter_color_getp, mq_acc_asset_PbrMaterial_multiscatter_color_getmp },
+    { 0, 0, mq_acc_asset_PbrMaterial_volume_thickness_texture_gets, mq_acc_asset_PbrMaterial_volume_thickness_texture_sets, mq_acc_asset_PbrMaterial_volume_thickness_texture_getp, mq_acc_asset_PbrMaterial_volume_thickness_texture_getmp },
+};
 static const mq_field_desc mq_fields_asset_PbrMaterial[] = {
-    { "name", (uint32_t)offsetof(asset::PbrMaterial, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "base_color", (uint32_t)offsetof(asset::PbrMaterial, base_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "metallic", (uint32_t)offsetof(asset::PbrMaterial, metallic), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "roughness", (uint32_t)offsetof(asset::PbrMaterial, roughness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "emissive", (uint32_t)offsetof(asset::PbrMaterial, emissive), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "normal_scale", (uint32_t)offsetof(asset::PbrMaterial, normal_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "occlusion_strength", (uint32_t)offsetof(asset::PbrMaterial, occlusion_strength), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "alpha_mode", (uint32_t)offsetof(asset::PbrMaterial, alpha_mode), MQ_TK_ENUM, 1857555100u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "alpha_cutoff", (uint32_t)offsetof(asset::PbrMaterial, alpha_cutoff), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "double_sided", (uint32_t)offsetof(asset::PbrMaterial, double_sided), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clearcoat", (uint32_t)offsetof(asset::PbrMaterial, clearcoat), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clearcoat_roughness", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_roughness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "base_color_texture", (uint32_t)offsetof(asset::PbrMaterial, base_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "metallic_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, metallic_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "normal_texture", (uint32_t)offsetof(asset::PbrMaterial, normal_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "occlusion_texture", (uint32_t)offsetof(asset::PbrMaterial, occlusion_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "emissive_texture", (uint32_t)offsetof(asset::PbrMaterial, emissive_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shading_model", (uint32_t)offsetof(asset::PbrMaterial, shading_model), MQ_TK_ENUM, 3420218605u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "opacity", (uint32_t)offsetof(asset::PbrMaterial, opacity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "side", (uint32_t)offsetof(asset::PbrMaterial, side), MQ_TK_ENUM, 2939004181u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "flat_shading", (uint32_t)offsetof(asset::PbrMaterial, flat_shading), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "emissive_intensity", (uint32_t)offsetof(asset::PbrMaterial, emissive_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_intensity", (uint32_t)offsetof(asset::PbrMaterial, env_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "normal_scale_y", (uint32_t)offsetof(asset::PbrMaterial, normal_scale_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "specular", (uint32_t)offsetof(asset::PbrMaterial, specular), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shininess", (uint32_t)offsetof(asset::PbrMaterial, shininess), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "specular_intensity", (uint32_t)offsetof(asset::PbrMaterial, specular_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "ior", (uint32_t)offsetof(asset::PbrMaterial, ior), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sheen", (uint32_t)offsetof(asset::PbrMaterial, sheen), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sheen_roughness", (uint32_t)offsetof(asset::PbrMaterial, sheen_roughness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sheen_color", (uint32_t)offsetof(asset::PbrMaterial, sheen_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "iridescence", (uint32_t)offsetof(asset::PbrMaterial, iridescence), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "iridescence_ior", (uint32_t)offsetof(asset::PbrMaterial, iridescence_ior), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "iridescence_thickness_min", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_min), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "iridescence_thickness_max", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_max), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "anisotropy", (uint32_t)offsetof(asset::PbrMaterial, anisotropy), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "anisotropy_rotation", (uint32_t)offsetof(asset::PbrMaterial, anisotropy_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clearcoat_normal_scale", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_normal_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "toon_steps", (uint32_t)offsetof(asset::PbrMaterial, toon_steps), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "depth_packing", (uint32_t)offsetof(asset::PbrMaterial, depth_packing), MQ_TK_ENUM, 483116663u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "matcap_texture", (uint32_t)offsetof(asset::PbrMaterial, matcap_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gradient_texture", (uint32_t)offsetof(asset::PbrMaterial, gradient_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clearcoat_normal_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_normal_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "uv_scale", (uint32_t)offsetof(asset::PbrMaterial, uv_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "uv_offset", (uint32_t)offsetof(asset::PbrMaterial, uv_offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "normal_uv_scale", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "normal_uv_offset", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "uv1_mask", (uint32_t)offsetof(asset::PbrMaterial, uv1_mask), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clearcoat_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clearcoat_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sheen_color_texture", (uint32_t)offsetof(asset::PbrMaterial, sheen_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "sheen_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, sheen_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "iridescence_texture", (uint32_t)offsetof(asset::PbrMaterial, iridescence_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "iridescence_thickness_texture", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "anisotropy_texture", (uint32_t)offsetof(asset::PbrMaterial, anisotropy_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "specular_texture", (uint32_t)offsetof(asset::PbrMaterial, specular_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "specular_color_texture", (uint32_t)offsetof(asset::PbrMaterial, specular_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "uv_rotation", (uint32_t)offsetof(asset::PbrMaterial, uv_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "normal_uv_rotation", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "alpha_mask_in_blend", (uint32_t)offsetof(asset::PbrMaterial, alpha_mask_in_blend), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "transmission_factor", (uint32_t)offsetof(asset::PbrMaterial, transmission_factor), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "diffuse_transmission_factor", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_factor), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "diffuse_transmission_color", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "diffuse_transmission_texture", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "diffuse_transmission_color_texture", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "volume_thickness", (uint32_t)offsetof(asset::PbrMaterial, volume_thickness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "dispersion", (uint32_t)offsetof(asset::PbrMaterial, dispersion), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "transmission_texture", (uint32_t)offsetof(asset::PbrMaterial, transmission_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "attenuation_color", (uint32_t)offsetof(asset::PbrMaterial, attenuation_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "attenuation_distance", (uint32_t)offsetof(asset::PbrMaterial, attenuation_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "multiscatter_color", (uint32_t)offsetof(asset::PbrMaterial, multiscatter_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "volume_thickness_texture", (uint32_t)offsetof(asset::PbrMaterial, volume_thickness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::PbrMaterial, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[0] },
+    { "base_color", (uint32_t)offsetof(asset::PbrMaterial, base_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[1] },
+    { "metallic", (uint32_t)offsetof(asset::PbrMaterial, metallic), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[2] },
+    { "roughness", (uint32_t)offsetof(asset::PbrMaterial, roughness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[3] },
+    { "emissive", (uint32_t)offsetof(asset::PbrMaterial, emissive), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[4] },
+    { "normal_scale", (uint32_t)offsetof(asset::PbrMaterial, normal_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[5] },
+    { "occlusion_strength", (uint32_t)offsetof(asset::PbrMaterial, occlusion_strength), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[6] },
+    { "alpha_mode", (uint32_t)offsetof(asset::PbrMaterial, alpha_mode), MQ_TK_ENUM, 1857555100u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[7] },
+    { "alpha_cutoff", (uint32_t)offsetof(asset::PbrMaterial, alpha_cutoff), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[8] },
+    { "double_sided", (uint32_t)offsetof(asset::PbrMaterial, double_sided), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[9] },
+    { "clearcoat", (uint32_t)offsetof(asset::PbrMaterial, clearcoat), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[10] },
+    { "clearcoat_roughness", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_roughness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[11] },
+    { "base_color_texture", (uint32_t)offsetof(asset::PbrMaterial, base_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[12] },
+    { "metallic_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, metallic_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[13] },
+    { "normal_texture", (uint32_t)offsetof(asset::PbrMaterial, normal_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[14] },
+    { "occlusion_texture", (uint32_t)offsetof(asset::PbrMaterial, occlusion_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[15] },
+    { "emissive_texture", (uint32_t)offsetof(asset::PbrMaterial, emissive_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[16] },
+    { "shading_model", (uint32_t)offsetof(asset::PbrMaterial, shading_model), MQ_TK_ENUM, 3420218605u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[17] },
+    { "opacity", (uint32_t)offsetof(asset::PbrMaterial, opacity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[18] },
+    { "side", (uint32_t)offsetof(asset::PbrMaterial, side), MQ_TK_ENUM, 2939004181u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[19] },
+    { "flat_shading", (uint32_t)offsetof(asset::PbrMaterial, flat_shading), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[20] },
+    { "emissive_intensity", (uint32_t)offsetof(asset::PbrMaterial, emissive_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[21] },
+    { "env_intensity", (uint32_t)offsetof(asset::PbrMaterial, env_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[22] },
+    { "normal_scale_y", (uint32_t)offsetof(asset::PbrMaterial, normal_scale_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[23] },
+    { "specular", (uint32_t)offsetof(asset::PbrMaterial, specular), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[24] },
+    { "shininess", (uint32_t)offsetof(asset::PbrMaterial, shininess), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[25] },
+    { "specular_intensity", (uint32_t)offsetof(asset::PbrMaterial, specular_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[26] },
+    { "ior", (uint32_t)offsetof(asset::PbrMaterial, ior), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[27] },
+    { "sheen", (uint32_t)offsetof(asset::PbrMaterial, sheen), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[28] },
+    { "sheen_roughness", (uint32_t)offsetof(asset::PbrMaterial, sheen_roughness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[29] },
+    { "sheen_color", (uint32_t)offsetof(asset::PbrMaterial, sheen_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[30] },
+    { "iridescence", (uint32_t)offsetof(asset::PbrMaterial, iridescence), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[31] },
+    { "iridescence_ior", (uint32_t)offsetof(asset::PbrMaterial, iridescence_ior), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[32] },
+    { "iridescence_thickness_min", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_min), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[33] },
+    { "iridescence_thickness_max", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_max), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[34] },
+    { "anisotropy", (uint32_t)offsetof(asset::PbrMaterial, anisotropy), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[35] },
+    { "anisotropy_rotation", (uint32_t)offsetof(asset::PbrMaterial, anisotropy_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[36] },
+    { "clearcoat_normal_scale", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_normal_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[37] },
+    { "toon_steps", (uint32_t)offsetof(asset::PbrMaterial, toon_steps), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[38] },
+    { "depth_packing", (uint32_t)offsetof(asset::PbrMaterial, depth_packing), MQ_TK_ENUM, 483116663u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[39] },
+    { "matcap_texture", (uint32_t)offsetof(asset::PbrMaterial, matcap_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[40] },
+    { "gradient_texture", (uint32_t)offsetof(asset::PbrMaterial, gradient_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[41] },
+    { "clearcoat_normal_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_normal_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[42] },
+    { "uv_scale", (uint32_t)offsetof(asset::PbrMaterial, uv_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[43] },
+    { "uv_offset", (uint32_t)offsetof(asset::PbrMaterial, uv_offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[44] },
+    { "normal_uv_scale", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[45] },
+    { "normal_uv_offset", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[46] },
+    { "uv1_mask", (uint32_t)offsetof(asset::PbrMaterial, uv1_mask), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[47] },
+    { "clearcoat_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[48] },
+    { "clearcoat_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, clearcoat_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[49] },
+    { "sheen_color_texture", (uint32_t)offsetof(asset::PbrMaterial, sheen_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[50] },
+    { "sheen_roughness_texture", (uint32_t)offsetof(asset::PbrMaterial, sheen_roughness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[51] },
+    { "iridescence_texture", (uint32_t)offsetof(asset::PbrMaterial, iridescence_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[52] },
+    { "iridescence_thickness_texture", (uint32_t)offsetof(asset::PbrMaterial, iridescence_thickness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[53] },
+    { "anisotropy_texture", (uint32_t)offsetof(asset::PbrMaterial, anisotropy_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[54] },
+    { "specular_texture", (uint32_t)offsetof(asset::PbrMaterial, specular_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[55] },
+    { "specular_color_texture", (uint32_t)offsetof(asset::PbrMaterial, specular_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[56] },
+    { "uv_rotation", (uint32_t)offsetof(asset::PbrMaterial, uv_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[57] },
+    { "normal_uv_rotation", (uint32_t)offsetof(asset::PbrMaterial, normal_uv_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[58] },
+    { "alpha_mask_in_blend", (uint32_t)offsetof(asset::PbrMaterial, alpha_mask_in_blend), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[59] },
+    { "transmission_factor", (uint32_t)offsetof(asset::PbrMaterial, transmission_factor), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[60] },
+    { "diffuse_transmission_factor", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_factor), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[61] },
+    { "diffuse_transmission_color", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[62] },
+    { "diffuse_transmission_texture", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[63] },
+    { "diffuse_transmission_color_texture", (uint32_t)offsetof(asset::PbrMaterial, diffuse_transmission_color_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[64] },
+    { "volume_thickness", (uint32_t)offsetof(asset::PbrMaterial, volume_thickness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[65] },
+    { "dispersion", (uint32_t)offsetof(asset::PbrMaterial, dispersion), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[66] },
+    { "transmission_texture", (uint32_t)offsetof(asset::PbrMaterial, transmission_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[67] },
+    { "attenuation_color", (uint32_t)offsetof(asset::PbrMaterial, attenuation_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[68] },
+    { "attenuation_distance", (uint32_t)offsetof(asset::PbrMaterial, attenuation_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[69] },
+    { "multiscatter_color", (uint32_t)offsetof(asset::PbrMaterial, multiscatter_color), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[70] },
+    { "volume_thickness_texture", (uint32_t)offsetof(asset::PbrMaterial, volume_thickness_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_PbrMaterial[71] },
 };
 
+static const char* mq_acc_asset_Prefab_name_gets(const void* p) { const auto& s = *static_cast<const asset::Prefab*>(p); return s.name.c_str(); }
+static void mq_acc_asset_Prefab_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::Prefab*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_Prefab_name_getp(const void* p) { const auto& s = *static_cast<const asset::Prefab*>(p); return &s.name; }
+static void* mq_acc_asset_Prefab_name_getmp(void* p) { auto& s = *static_cast<asset::Prefab*>(p); return &s.name; }
+static const void* mq_acc_asset_Prefab_root_getp(const void* p) { const auto& s = *static_cast<const asset::Prefab*>(p); return &s.root; }
+static void* mq_acc_asset_Prefab_root_getmp(void* p) { auto& s = *static_cast<asset::Prefab*>(p); return &s.root; }
+static const mq_field_accessor mq_acc_asset_Prefab[] = {
+    { 0, 0, mq_acc_asset_Prefab_name_gets, mq_acc_asset_Prefab_name_sets, mq_acc_asset_Prefab_name_getp, mq_acc_asset_Prefab_name_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_Prefab_root_getp, mq_acc_asset_Prefab_root_getmp },
+};
 static const mq_field_desc mq_fields_asset_Prefab[] = {
-    { "name", (uint32_t)offsetof(asset::Prefab, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "root", (uint32_t)offsetof(asset::Prefab, root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::Prefab, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Prefab[0] },
+    { "root", (uint32_t)offsetof(asset::Prefab, root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Prefab[1] },
 };
 
+static const char* mq_acc_asset_RenderTarget_name_gets(const void* p) { const auto& s = *static_cast<const asset::RenderTarget*>(p); return s.name.c_str(); }
+static void mq_acc_asset_RenderTarget_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::RenderTarget*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_RenderTarget_name_getp(const void* p) { const auto& s = *static_cast<const asset::RenderTarget*>(p); return &s.name; }
+static void* mq_acc_asset_RenderTarget_name_getmp(void* p) { auto& s = *static_cast<asset::RenderTarget*>(p); return &s.name; }
+static double mq_acc_asset_RenderTarget_width_getf(const void* p) { const auto& s = *static_cast<const asset::RenderTarget*>(p); return static_cast<double>(s.width); }
+static void mq_acc_asset_RenderTarget_width_setf(void* p, double v) { auto& s = *static_cast<asset::RenderTarget*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_asset_RenderTarget_height_getf(const void* p) { const auto& s = *static_cast<const asset::RenderTarget*>(p); return static_cast<double>(s.height); }
+static void mq_acc_asset_RenderTarget_height_setf(void* p, double v) { auto& s = *static_cast<asset::RenderTarget*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static const mq_field_accessor mq_acc_asset_RenderTarget[] = {
+    { 0, 0, mq_acc_asset_RenderTarget_name_gets, mq_acc_asset_RenderTarget_name_sets, mq_acc_asset_RenderTarget_name_getp, mq_acc_asset_RenderTarget_name_getmp },
+    { mq_acc_asset_RenderTarget_width_getf, mq_acc_asset_RenderTarget_width_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_RenderTarget_height_getf, mq_acc_asset_RenderTarget_height_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_RenderTarget[] = {
-    { "name", (uint32_t)offsetof(asset::RenderTarget, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(asset::RenderTarget, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(asset::RenderTarget, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::RenderTarget, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_RenderTarget[0] },
+    { "width", (uint32_t)offsetof(asset::RenderTarget, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_RenderTarget[1] },
+    { "height", (uint32_t)offsetof(asset::RenderTarget, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_RenderTarget[2] },
 };
 
+static const char* mq_acc_asset_Scene_name_gets(const void* p) { const auto& s = *static_cast<const asset::Scene*>(p); return s.name.c_str(); }
+static void mq_acc_asset_Scene_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::Scene*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_Scene_name_getp(const void* p) { const auto& s = *static_cast<const asset::Scene*>(p); return &s.name; }
+static void* mq_acc_asset_Scene_name_getmp(void* p) { auto& s = *static_cast<asset::Scene*>(p); return &s.name; }
+static const void* mq_acc_asset_Scene_root_getp(const void* p) { const auto& s = *static_cast<const asset::Scene*>(p); return &s.root; }
+static void* mq_acc_asset_Scene_root_getmp(void* p) { auto& s = *static_cast<asset::Scene*>(p); return &s.root; }
+static const mq_field_accessor mq_acc_asset_Scene[] = {
+    { 0, 0, mq_acc_asset_Scene_name_gets, mq_acc_asset_Scene_name_sets, mq_acc_asset_Scene_name_getp, mq_acc_asset_Scene_name_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_Scene_root_getp, mq_acc_asset_Scene_root_getmp },
+};
 static const mq_field_desc mq_fields_asset_Scene[] = {
-    { "name", (uint32_t)offsetof(asset::Scene, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "root", (uint32_t)offsetof(asset::Scene, root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::Scene, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Scene[0] },
+    { "root", (uint32_t)offsetof(asset::Scene, root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Scene[1] },
 };
 
+static const char* mq_acc_asset_ScriptAsset_name_gets(const void* p) { const auto& s = *static_cast<const asset::ScriptAsset*>(p); return s.name.c_str(); }
+static void mq_acc_asset_ScriptAsset_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::ScriptAsset*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_ScriptAsset_name_getp(const void* p) { const auto& s = *static_cast<const asset::ScriptAsset*>(p); return &s.name; }
+static void* mq_acc_asset_ScriptAsset_name_getmp(void* p) { auto& s = *static_cast<asset::ScriptAsset*>(p); return &s.name; }
+static double mq_acc_asset_ScriptAsset_language_getf(const void* p) { const auto& s = *static_cast<const asset::ScriptAsset*>(p); return static_cast<double>(static_cast<int64_t>(s.language)); }
+static void mq_acc_asset_ScriptAsset_language_setf(void* p, double v) { auto& s = *static_cast<asset::ScriptAsset*>(p); s.language = static_cast<decltype(s.language)>(v); }
+static const char* mq_acc_asset_ScriptAsset_source_gets(const void* p) { const auto& s = *static_cast<const asset::ScriptAsset*>(p); return s.source.c_str(); }
+static void mq_acc_asset_ScriptAsset_source_sets(void* p, const char* v) { auto& s = *static_cast<asset::ScriptAsset*>(p); s.source = v ? v : ""; }
+static const void* mq_acc_asset_ScriptAsset_source_getp(const void* p) { const auto& s = *static_cast<const asset::ScriptAsset*>(p); return &s.source; }
+static void* mq_acc_asset_ScriptAsset_source_getmp(void* p) { auto& s = *static_cast<asset::ScriptAsset*>(p); return &s.source; }
+static const mq_field_accessor mq_acc_asset_ScriptAsset[] = {
+    { 0, 0, mq_acc_asset_ScriptAsset_name_gets, mq_acc_asset_ScriptAsset_name_sets, mq_acc_asset_ScriptAsset_name_getp, mq_acc_asset_ScriptAsset_name_getmp },
+    { mq_acc_asset_ScriptAsset_language_getf, mq_acc_asset_ScriptAsset_language_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_asset_ScriptAsset_source_gets, mq_acc_asset_ScriptAsset_source_sets, mq_acc_asset_ScriptAsset_source_getp, mq_acc_asset_ScriptAsset_source_getmp },
+};
 static const mq_field_desc mq_fields_asset_ScriptAsset[] = {
-    { "name", (uint32_t)offsetof(asset::ScriptAsset, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "language", (uint32_t)offsetof(asset::ScriptAsset, language), MQ_TK_ENUM, 3668652633u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "source", (uint32_t)offsetof(asset::ScriptAsset, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::ScriptAsset, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_ScriptAsset[0] },
+    { "language", (uint32_t)offsetof(asset::ScriptAsset, language), MQ_TK_ENUM, 3668652633u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_ScriptAsset[1] },
+    { "source", (uint32_t)offsetof(asset::ScriptAsset, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_ScriptAsset[2] },
 };
 
+static const char* mq_acc_asset_SkeletonData_name_gets(const void* p) { const auto& s = *static_cast<const asset::SkeletonData*>(p); return s.name.c_str(); }
+static void mq_acc_asset_SkeletonData_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::SkeletonData*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_SkeletonData_name_getp(const void* p) { const auto& s = *static_cast<const asset::SkeletonData*>(p); return &s.name; }
+static void* mq_acc_asset_SkeletonData_name_getmp(void* p) { auto& s = *static_cast<asset::SkeletonData*>(p); return &s.name; }
+static double mq_acc_asset_SkeletonData_skinning_getf(const void* p) { const auto& s = *static_cast<const asset::SkeletonData*>(p); return static_cast<double>(static_cast<int64_t>(s.skinning)); }
+static void mq_acc_asset_SkeletonData_skinning_setf(void* p, double v) { auto& s = *static_cast<asset::SkeletonData*>(p); s.skinning = static_cast<decltype(s.skinning)>(v); }
+static const mq_field_accessor mq_acc_asset_SkeletonData[] = {
+    { 0, 0, mq_acc_asset_SkeletonData_name_gets, mq_acc_asset_SkeletonData_name_sets, mq_acc_asset_SkeletonData_name_getp, mq_acc_asset_SkeletonData_name_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_asset_SkeletonData_skinning_getf, mq_acc_asset_SkeletonData_skinning_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_SkeletonData_bones_clear(void* f) { static_cast<std::vector<asset::BoneB>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_SkeletonData_bones_size(const void* f) { return (uint32_t)static_cast<const std::vector<asset::BoneB>*>(f)->size(); }
 static void mq_dyn_asset_SkeletonData_bones_resize(void* f, uint32_t n) { static_cast<std::vector<asset::BoneB>*>(f)->resize(n); }
@@ -473,22 +1385,49 @@ static uint32_t mq_dyn_asset_SkeletonData_constraints_size(const void* f) { retu
 static void mq_dyn_asset_SkeletonData_constraints_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_asset_SkeletonData_constraints_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_SkeletonData[] = {
-    { "name", (uint32_t)offsetof(asset::SkeletonData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bones", (uint32_t)offsetof(asset::SkeletonData, bones), MQ_TK_ARRAY_DYN, 3027706389u, 0u, 0u, 3027706389u, mq_dyn_asset_SkeletonData_bones_clear, mq_dyn_asset_SkeletonData_bones_size, mq_dyn_asset_SkeletonData_bones_resize, mq_dyn_asset_SkeletonData_bones_elem },
-    { "skinning", (uint32_t)offsetof(asset::SkeletonData, skinning), MQ_TK_ENUM, 371730434u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "constraints", (uint32_t)offsetof(asset::SkeletonData, constraints), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SkeletonData_constraints_clear, mq_dyn_asset_SkeletonData_constraints_size, mq_dyn_asset_SkeletonData_constraints_resize, mq_dyn_asset_SkeletonData_constraints_elem },
+    { "name", (uint32_t)offsetof(asset::SkeletonData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SkeletonData[0] },
+    { "bones", (uint32_t)offsetof(asset::SkeletonData, bones), MQ_TK_ARRAY_DYN, 3027706389u, 0u, 0u, 3027706389u, mq_dyn_asset_SkeletonData_bones_clear, mq_dyn_asset_SkeletonData_bones_size, mq_dyn_asset_SkeletonData_bones_resize, mq_dyn_asset_SkeletonData_bones_elem, &mq_acc_asset_SkeletonData[1] },
+    { "skinning", (uint32_t)offsetof(asset::SkeletonData, skinning), MQ_TK_ENUM, 371730434u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SkeletonData[2] },
+    { "constraints", (uint32_t)offsetof(asset::SkeletonData, constraints), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SkeletonData_constraints_clear, mq_dyn_asset_SkeletonData_constraints_size, mq_dyn_asset_SkeletonData_constraints_resize, mq_dyn_asset_SkeletonData_constraints_elem, &mq_acc_asset_SkeletonData[3] },
 };
 
+static const char* mq_acc_asset_SpineAtlas_name_gets(const void* p) { const auto& s = *static_cast<const asset::SpineAtlas*>(p); return s.name.c_str(); }
+static void mq_acc_asset_SpineAtlas_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::SpineAtlas*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_SpineAtlas_name_getp(const void* p) { const auto& s = *static_cast<const asset::SpineAtlas*>(p); return &s.name; }
+static void* mq_acc_asset_SpineAtlas_name_getmp(void* p) { auto& s = *static_cast<asset::SpineAtlas*>(p); return &s.name; }
+static const mq_field_accessor mq_acc_asset_SpineAtlas[] = {
+    { 0, 0, mq_acc_asset_SpineAtlas_name_gets, mq_acc_asset_SpineAtlas_name_sets, mq_acc_asset_SpineAtlas_name_getp, mq_acc_asset_SpineAtlas_name_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_SpineAtlas_regions_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_SpineAtlas_regions_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
 static void mq_dyn_asset_SpineAtlas_regions_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_asset_SpineAtlas_regions_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_SpineAtlas[] = {
-    { "name", (uint32_t)offsetof(asset::SpineAtlas, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "textures", (uint32_t)offsetof(asset::SpineAtlas, textures), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "regions", (uint32_t)offsetof(asset::SpineAtlas, regions), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineAtlas_regions_clear, mq_dyn_asset_SpineAtlas_regions_size, mq_dyn_asset_SpineAtlas_regions_resize, mq_dyn_asset_SpineAtlas_regions_elem },
+    { "name", (uint32_t)offsetof(asset::SpineAtlas, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpineAtlas[0] },
+    { "textures", (uint32_t)offsetof(asset::SpineAtlas, textures), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpineAtlas[1] },
+    { "regions", (uint32_t)offsetof(asset::SpineAtlas, regions), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineAtlas_regions_clear, mq_dyn_asset_SpineAtlas_regions_size, mq_dyn_asset_SpineAtlas_regions_resize, mq_dyn_asset_SpineAtlas_regions_elem, &mq_acc_asset_SpineAtlas[2] },
 };
 
+static const char* mq_acc_asset_SpineData_name_gets(const void* p) { const auto& s = *static_cast<const asset::SpineData*>(p); return s.name.c_str(); }
+static void mq_acc_asset_SpineData_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::SpineData*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_SpineData_name_getp(const void* p) { const auto& s = *static_cast<const asset::SpineData*>(p); return &s.name; }
+static void* mq_acc_asset_SpineData_name_getmp(void* p) { auto& s = *static_cast<asset::SpineData*>(p); return &s.name; }
+static const char* mq_acc_asset_SpineData_skeleton_gets(const void* p) { const auto& s = *static_cast<const asset::SpineData*>(p); return s.skeleton.c_str(); }
+static void mq_acc_asset_SpineData_skeleton_sets(void* p, const char* v) { auto& s = *static_cast<asset::SpineData*>(p); s.skeleton = v ? v : ""; }
+static const void* mq_acc_asset_SpineData_skeleton_getp(const void* p) { const auto& s = *static_cast<const asset::SpineData*>(p); return &s.skeleton; }
+static void* mq_acc_asset_SpineData_skeleton_getmp(void* p) { auto& s = *static_cast<asset::SpineData*>(p); return &s.skeleton; }
+static const void* mq_acc_asset_SpineData_atlas_getp(const void* p) { const auto& s = *static_cast<const asset::SpineData*>(p); return &s.atlas; }
+static void* mq_acc_asset_SpineData_atlas_getmp(void* p) { auto& s = *static_cast<asset::SpineData*>(p); return &s.atlas; }
+static const mq_field_accessor mq_acc_asset_SpineData[] = {
+    { 0, 0, mq_acc_asset_SpineData_name_gets, mq_acc_asset_SpineData_name_sets, mq_acc_asset_SpineData_name_getp, mq_acc_asset_SpineData_name_getmp },
+    { 0, 0, mq_acc_asset_SpineData_skeleton_gets, mq_acc_asset_SpineData_skeleton_sets, mq_acc_asset_SpineData_skeleton_getp, mq_acc_asset_SpineData_skeleton_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_SpineData_atlas_getp, mq_acc_asset_SpineData_atlas_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_SpineData_skins_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_SpineData_skins_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
 static void mq_dyn_asset_SpineData_skins_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
@@ -498,385 +1437,1248 @@ static uint32_t mq_dyn_asset_SpineData_animations_size(const void* f) { return (
 static void mq_dyn_asset_SpineData_animations_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_asset_SpineData_animations_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_SpineData[] = {
-    { "name", (uint32_t)offsetof(asset::SpineData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skeleton", (uint32_t)offsetof(asset::SpineData, skeleton), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "atlas", (uint32_t)offsetof(asset::SpineData, atlas), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "textures", (uint32_t)offsetof(asset::SpineData, textures), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skins", (uint32_t)offsetof(asset::SpineData, skins), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineData_skins_clear, mq_dyn_asset_SpineData_skins_size, mq_dyn_asset_SpineData_skins_resize, mq_dyn_asset_SpineData_skins_elem },
-    { "animations", (uint32_t)offsetof(asset::SpineData, animations), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineData_animations_clear, mq_dyn_asset_SpineData_animations_size, mq_dyn_asset_SpineData_animations_resize, mq_dyn_asset_SpineData_animations_elem },
+    { "name", (uint32_t)offsetof(asset::SpineData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpineData[0] },
+    { "skeleton", (uint32_t)offsetof(asset::SpineData, skeleton), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpineData[1] },
+    { "atlas", (uint32_t)offsetof(asset::SpineData, atlas), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpineData[2] },
+    { "textures", (uint32_t)offsetof(asset::SpineData, textures), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpineData[3] },
+    { "skins", (uint32_t)offsetof(asset::SpineData, skins), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineData_skins_clear, mq_dyn_asset_SpineData_skins_size, mq_dyn_asset_SpineData_skins_resize, mq_dyn_asset_SpineData_skins_elem, &mq_acc_asset_SpineData[4] },
+    { "animations", (uint32_t)offsetof(asset::SpineData, animations), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_asset_SpineData_animations_clear, mq_dyn_asset_SpineData_animations_size, mq_dyn_asset_SpineData_animations_resize, mq_dyn_asset_SpineData_animations_elem, &mq_acc_asset_SpineData[5] },
 };
 
+static const void* mq_acc_asset_SpriteFrame_region_getp(const void* p) { const auto& s = *static_cast<const asset::SpriteFrame*>(p); return &s.region; }
+static void* mq_acc_asset_SpriteFrame_region_getmp(void* p) { auto& s = *static_cast<asset::SpriteFrame*>(p); return &s.region; }
+static double mq_acc_asset_SpriteFrame_duration_getf(const void* p) { const auto& s = *static_cast<const asset::SpriteFrame*>(p); return static_cast<double>(s.duration); }
+static void mq_acc_asset_SpriteFrame_duration_setf(void* p, double v) { auto& s = *static_cast<asset::SpriteFrame*>(p); s.duration = static_cast<decltype(s.duration)>(v); }
+static const mq_field_accessor mq_acc_asset_SpriteFrame[] = {
+    { 0, 0, 0, 0, mq_acc_asset_SpriteFrame_region_getp, mq_acc_asset_SpriteFrame_region_getmp },
+    { mq_acc_asset_SpriteFrame_duration_getf, mq_acc_asset_SpriteFrame_duration_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_SpriteFrame[] = {
-    { "region", (uint32_t)offsetof(asset::SpriteFrame, region), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "duration", (uint32_t)offsetof(asset::SpriteFrame, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "region", (uint32_t)offsetof(asset::SpriteFrame, region), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpriteFrame[0] },
+    { "duration", (uint32_t)offsetof(asset::SpriteFrame, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpriteFrame[1] },
 };
 
+static const char* mq_acc_asset_SpriteFrames_name_gets(const void* p) { const auto& s = *static_cast<const asset::SpriteFrames*>(p); return s.name.c_str(); }
+static void mq_acc_asset_SpriteFrames_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::SpriteFrames*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_SpriteFrames_name_getp(const void* p) { const auto& s = *static_cast<const asset::SpriteFrames*>(p); return &s.name; }
+static void* mq_acc_asset_SpriteFrames_name_getmp(void* p) { auto& s = *static_cast<asset::SpriteFrames*>(p); return &s.name; }
+static const mq_field_accessor mq_acc_asset_SpriteFrames[] = {
+    { 0, 0, mq_acc_asset_SpriteFrames_name_gets, mq_acc_asset_SpriteFrames_name_sets, mq_acc_asset_SpriteFrames_name_getp, mq_acc_asset_SpriteFrames_name_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_SpriteFrames_frames_clear(void* f) { static_cast<std::vector<asset::SpriteFrame>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_SpriteFrames_frames_size(const void* f) { return (uint32_t)static_cast<const std::vector<asset::SpriteFrame>*>(f)->size(); }
 static void mq_dyn_asset_SpriteFrames_frames_resize(void* f, uint32_t n) { static_cast<std::vector<asset::SpriteFrame>*>(f)->resize(n); }
 static void* mq_dyn_asset_SpriteFrames_frames_elem(void* f, uint32_t i) { return &static_cast<std::vector<asset::SpriteFrame>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_SpriteFrames[] = {
-    { "name", (uint32_t)offsetof(asset::SpriteFrames, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "frames", (uint32_t)offsetof(asset::SpriteFrames, frames), MQ_TK_ARRAY_DYN, 4088105687u, 0u, 0u, 4088105687u, mq_dyn_asset_SpriteFrames_frames_clear, mq_dyn_asset_SpriteFrames_frames_size, mq_dyn_asset_SpriteFrames_frames_resize, mq_dyn_asset_SpriteFrames_frames_elem },
+    { "name", (uint32_t)offsetof(asset::SpriteFrames, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SpriteFrames[0] },
+    { "frames", (uint32_t)offsetof(asset::SpriteFrames, frames), MQ_TK_ARRAY_DYN, 4088105687u, 0u, 0u, 4088105687u, mq_dyn_asset_SpriteFrames_frames_clear, mq_dyn_asset_SpriteFrames_frames_size, mq_dyn_asset_SpriteFrames_frames_resize, mq_dyn_asset_SpriteFrames_frames_elem, &mq_acc_asset_SpriteFrames[1] },
 };
 
+static double mq_acc_asset_SubMesh_first_index_getf(const void* p) { const auto& s = *static_cast<const asset::SubMesh*>(p); return static_cast<double>(s.first_index); }
+static void mq_acc_asset_SubMesh_first_index_setf(void* p, double v) { auto& s = *static_cast<asset::SubMesh*>(p); s.first_index = static_cast<decltype(s.first_index)>(v); }
+static double mq_acc_asset_SubMesh_index_count_getf(const void* p) { const auto& s = *static_cast<const asset::SubMesh*>(p); return static_cast<double>(s.index_count); }
+static void mq_acc_asset_SubMesh_index_count_setf(void* p, double v) { auto& s = *static_cast<asset::SubMesh*>(p); s.index_count = static_cast<decltype(s.index_count)>(v); }
+static double mq_acc_asset_SubMesh_material_slot_getf(const void* p) { const auto& s = *static_cast<const asset::SubMesh*>(p); return static_cast<double>(s.material_slot); }
+static void mq_acc_asset_SubMesh_material_slot_setf(void* p, double v) { auto& s = *static_cast<asset::SubMesh*>(p); s.material_slot = static_cast<decltype(s.material_slot)>(v); }
+static const mq_field_accessor mq_acc_asset_SubMesh[] = {
+    { mq_acc_asset_SubMesh_first_index_getf, mq_acc_asset_SubMesh_first_index_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_SubMesh_index_count_getf, mq_acc_asset_SubMesh_index_count_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_SubMesh_material_slot_getf, mq_acc_asset_SubMesh_material_slot_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_SubMesh[] = {
-    { "first_index", (uint32_t)offsetof(asset::SubMesh, first_index), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "index_count", (uint32_t)offsetof(asset::SubMesh, index_count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material_slot", (uint32_t)offsetof(asset::SubMesh, material_slot), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "first_index", (uint32_t)offsetof(asset::SubMesh, first_index), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SubMesh[0] },
+    { "index_count", (uint32_t)offsetof(asset::SubMesh, index_count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SubMesh[1] },
+    { "material_slot", (uint32_t)offsetof(asset::SubMesh, material_slot), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_SubMesh[2] },
 };
 
+static const char* mq_acc_asset_TerrainData_name_gets(const void* p) { const auto& s = *static_cast<const asset::TerrainData*>(p); return s.name.c_str(); }
+static void mq_acc_asset_TerrainData_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::TerrainData*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_TerrainData_name_getp(const void* p) { const auto& s = *static_cast<const asset::TerrainData*>(p); return &s.name; }
+static void* mq_acc_asset_TerrainData_name_getmp(void* p) { auto& s = *static_cast<asset::TerrainData*>(p); return &s.name; }
+static const void* mq_acc_asset_TerrainData_height_map_getp(const void* p) { const auto& s = *static_cast<const asset::TerrainData*>(p); return &s.height_map; }
+static void* mq_acc_asset_TerrainData_height_map_getmp(void* p) { auto& s = *static_cast<asset::TerrainData*>(p); return &s.height_map; }
+static double mq_acc_asset_TerrainData_width_getf(const void* p) { const auto& s = *static_cast<const asset::TerrainData*>(p); return static_cast<double>(s.width); }
+static void mq_acc_asset_TerrainData_width_setf(void* p, double v) { auto& s = *static_cast<asset::TerrainData*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_asset_TerrainData_height_getf(const void* p) { const auto& s = *static_cast<const asset::TerrainData*>(p); return static_cast<double>(s.height); }
+static void mq_acc_asset_TerrainData_height_setf(void* p, double v) { auto& s = *static_cast<asset::TerrainData*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static double mq_acc_asset_TerrainData_layer_count_getf(const void* p) { const auto& s = *static_cast<const asset::TerrainData*>(p); return static_cast<double>(s.layer_count); }
+static void mq_acc_asset_TerrainData_layer_count_setf(void* p, double v) { auto& s = *static_cast<asset::TerrainData*>(p); s.layer_count = static_cast<decltype(s.layer_count)>(v); }
+static const mq_field_accessor mq_acc_asset_TerrainData[] = {
+    { 0, 0, mq_acc_asset_TerrainData_name_gets, mq_acc_asset_TerrainData_name_sets, mq_acc_asset_TerrainData_name_getp, mq_acc_asset_TerrainData_name_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_TerrainData_height_map_getp, mq_acc_asset_TerrainData_height_map_getmp },
+    { mq_acc_asset_TerrainData_width_getf, mq_acc_asset_TerrainData_width_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_TerrainData_height_getf, mq_acc_asset_TerrainData_height_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_TerrainData_layer_count_getf, mq_acc_asset_TerrainData_layer_count_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_TerrainData[] = {
-    { "name", (uint32_t)offsetof(asset::TerrainData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height_map", (uint32_t)offsetof(asset::TerrainData, height_map), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(asset::TerrainData, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(asset::TerrainData, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "layer_count", (uint32_t)offsetof(asset::TerrainData, layer_count), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::TerrainData, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TerrainData[0] },
+    { "height_map", (uint32_t)offsetof(asset::TerrainData, height_map), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TerrainData[1] },
+    { "width", (uint32_t)offsetof(asset::TerrainData, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TerrainData[2] },
+    { "height", (uint32_t)offsetof(asset::TerrainData, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TerrainData[3] },
+    { "layer_count", (uint32_t)offsetof(asset::TerrainData, layer_count), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TerrainData[4] },
 };
 
+static double mq_acc_asset_Texture_width_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return static_cast<double>(s.width); }
+static void mq_acc_asset_Texture_width_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_asset_Texture_height_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return static_cast<double>(s.height); }
+static void mq_acc_asset_Texture_height_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static double mq_acc_asset_Texture_file_format_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return static_cast<double>(static_cast<int64_t>(s.file_format)); }
+static void mq_acc_asset_Texture_file_format_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.file_format = static_cast<decltype(s.file_format)>(v); }
+static double mq_acc_asset_Texture_pixel_format_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return static_cast<double>(static_cast<int64_t>(s.pixel_format)); }
+static void mq_acc_asset_Texture_pixel_format_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.pixel_format = static_cast<decltype(s.pixel_format)>(v); }
+static double mq_acc_asset_Texture_mip_levels_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return static_cast<double>(s.mip_levels); }
+static void mq_acc_asset_Texture_mip_levels_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.mip_levels = static_cast<decltype(s.mip_levels)>(v); }
+static double mq_acc_asset_Texture_srgb_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return s.srgb ? 1.0 : 0.0; }
+static void mq_acc_asset_Texture_srgb_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.srgb = v != 0.0; }
+static double mq_acc_asset_Texture_filter_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return static_cast<double>(static_cast<int64_t>(s.filter)); }
+static void mq_acc_asset_Texture_filter_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.filter = static_cast<decltype(s.filter)>(v); }
+static double mq_acc_asset_Texture_wrap_u_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return static_cast<double>(static_cast<int64_t>(s.wrap_u)); }
+static void mq_acc_asset_Texture_wrap_u_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.wrap_u = static_cast<decltype(s.wrap_u)>(v); }
+static double mq_acc_asset_Texture_wrap_v_getf(const void* p) { const auto& s = *static_cast<const asset::Texture*>(p); return static_cast<double>(static_cast<int64_t>(s.wrap_v)); }
+static void mq_acc_asset_Texture_wrap_v_setf(void* p, double v) { auto& s = *static_cast<asset::Texture*>(p); s.wrap_v = static_cast<decltype(s.wrap_v)>(v); }
+static const mq_field_accessor mq_acc_asset_Texture[] = {
+    { mq_acc_asset_Texture_width_getf, mq_acc_asset_Texture_width_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Texture_height_getf, mq_acc_asset_Texture_height_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Texture_file_format_getf, mq_acc_asset_Texture_file_format_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_asset_Texture_pixel_format_getf, mq_acc_asset_Texture_pixel_format_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Texture_mip_levels_getf, mq_acc_asset_Texture_mip_levels_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Texture_srgb_getf, mq_acc_asset_Texture_srgb_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Texture_filter_getf, mq_acc_asset_Texture_filter_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Texture_wrap_u_getf, mq_acc_asset_Texture_wrap_u_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Texture_wrap_v_getf, mq_acc_asset_Texture_wrap_v_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_Texture[] = {
-    { "width", (uint32_t)offsetof(asset::Texture, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(asset::Texture, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "file_format", (uint32_t)offsetof(asset::Texture, file_format), MQ_TK_ENUM, 604245694u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "data", (uint32_t)offsetof(asset::Texture, data), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pixel_format", (uint32_t)offsetof(asset::Texture, pixel_format), MQ_TK_ENUM, 895719202u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mip_levels", (uint32_t)offsetof(asset::Texture, mip_levels), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "srgb", (uint32_t)offsetof(asset::Texture, srgb), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "filter", (uint32_t)offsetof(asset::Texture, filter), MQ_TK_ENUM, 3561221734u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "wrap_u", (uint32_t)offsetof(asset::Texture, wrap_u), MQ_TK_ENUM, 774619152u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "wrap_v", (uint32_t)offsetof(asset::Texture, wrap_v), MQ_TK_ENUM, 774619152u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "width", (uint32_t)offsetof(asset::Texture, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[0] },
+    { "height", (uint32_t)offsetof(asset::Texture, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[1] },
+    { "file_format", (uint32_t)offsetof(asset::Texture, file_format), MQ_TK_ENUM, 604245694u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[2] },
+    { "data", (uint32_t)offsetof(asset::Texture, data), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[3] },
+    { "pixel_format", (uint32_t)offsetof(asset::Texture, pixel_format), MQ_TK_ENUM, 895719202u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[4] },
+    { "mip_levels", (uint32_t)offsetof(asset::Texture, mip_levels), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[5] },
+    { "srgb", (uint32_t)offsetof(asset::Texture, srgb), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[6] },
+    { "filter", (uint32_t)offsetof(asset::Texture, filter), MQ_TK_ENUM, 3561221734u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[7] },
+    { "wrap_u", (uint32_t)offsetof(asset::Texture, wrap_u), MQ_TK_ENUM, 774619152u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[8] },
+    { "wrap_v", (uint32_t)offsetof(asset::Texture, wrap_v), MQ_TK_ENUM, 774619152u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Texture[9] },
 };
 
+static const char* mq_acc_asset_TileSet_name_gets(const void* p) { const auto& s = *static_cast<const asset::TileSet*>(p); return s.name.c_str(); }
+static void mq_acc_asset_TileSet_name_sets(void* p, const char* v) { auto& s = *static_cast<asset::TileSet*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_asset_TileSet_name_getp(const void* p) { const auto& s = *static_cast<const asset::TileSet*>(p); return &s.name; }
+static void* mq_acc_asset_TileSet_name_getmp(void* p) { auto& s = *static_cast<asset::TileSet*>(p); return &s.name; }
+static const void* mq_acc_asset_TileSet_texture_getp(const void* p) { const auto& s = *static_cast<const asset::TileSet*>(p); return &s.texture; }
+static void* mq_acc_asset_TileSet_texture_getmp(void* p) { auto& s = *static_cast<asset::TileSet*>(p); return &s.texture; }
+static const void* mq_acc_asset_TileSet_tile_size_getp(const void* p) { const auto& s = *static_cast<const asset::TileSet*>(p); return &s.tile_size; }
+static void* mq_acc_asset_TileSet_tile_size_getmp(void* p) { auto& s = *static_cast<asset::TileSet*>(p); return &s.tile_size; }
+static double mq_acc_asset_TileSet_tile_count_getf(const void* p) { const auto& s = *static_cast<const asset::TileSet*>(p); return static_cast<double>(s.tile_count); }
+static void mq_acc_asset_TileSet_tile_count_setf(void* p, double v) { auto& s = *static_cast<asset::TileSet*>(p); s.tile_count = static_cast<decltype(s.tile_count)>(v); }
+static const mq_field_accessor mq_acc_asset_TileSet[] = {
+    { 0, 0, mq_acc_asset_TileSet_name_gets, mq_acc_asset_TileSet_name_sets, mq_acc_asset_TileSet_name_getp, mq_acc_asset_TileSet_name_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_TileSet_texture_getp, mq_acc_asset_TileSet_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_asset_TileSet_tile_size_getp, mq_acc_asset_TileSet_tile_size_getmp },
+    { mq_acc_asset_TileSet_tile_count_getf, mq_acc_asset_TileSet_tile_count_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_asset_TileSet[] = {
-    { "name", (uint32_t)offsetof(asset::TileSet, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "texture", (uint32_t)offsetof(asset::TileSet, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tile_size", (uint32_t)offsetof(asset::TileSet, tile_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tile_count", (uint32_t)offsetof(asset::TileSet, tile_count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(asset::TileSet, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TileSet[0] },
+    { "texture", (uint32_t)offsetof(asset::TileSet, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TileSet[1] },
+    { "tile_size", (uint32_t)offsetof(asset::TileSet, tile_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TileSet[2] },
+    { "tile_count", (uint32_t)offsetof(asset::TileSet, tile_count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_TileSet[3] },
 };
 
+static double mq_acc_asset_Track_kind_getf(const void* p) { const auto& s = *static_cast<const asset::Track*>(p); return static_cast<double>(static_cast<int64_t>(s.kind)); }
+static void mq_acc_asset_Track_kind_setf(void* p, double v) { auto& s = *static_cast<asset::Track*>(p); s.kind = static_cast<decltype(s.kind)>(v); }
+static const char* mq_acc_asset_Track_field_path_gets(const void* p) { const auto& s = *static_cast<const asset::Track*>(p); return s.field_path.c_str(); }
+static void mq_acc_asset_Track_field_path_sets(void* p, const char* v) { auto& s = *static_cast<asset::Track*>(p); s.field_path = v ? v : ""; }
+static const void* mq_acc_asset_Track_field_path_getp(const void* p) { const auto& s = *static_cast<const asset::Track*>(p); return &s.field_path; }
+static void* mq_acc_asset_Track_field_path_getmp(void* p) { auto& s = *static_cast<asset::Track*>(p); return &s.field_path; }
+static double mq_acc_asset_Track_bone_index_getf(const void* p) { const auto& s = *static_cast<const asset::Track*>(p); return static_cast<double>(s.bone_index); }
+static void mq_acc_asset_Track_bone_index_setf(void* p, double v) { auto& s = *static_cast<asset::Track*>(p); s.bone_index = static_cast<decltype(s.bone_index)>(v); }
+static double mq_acc_asset_Track_value_type_getf(const void* p) { const auto& s = *static_cast<const asset::Track*>(p); return static_cast<double>(static_cast<int64_t>(s.value_type)); }
+static void mq_acc_asset_Track_value_type_setf(void* p, double v) { auto& s = *static_cast<asset::Track*>(p); s.value_type = static_cast<decltype(s.value_type)>(v); }
+static double mq_acc_asset_Track_interpolation_getf(const void* p) { const auto& s = *static_cast<const asset::Track*>(p); return static_cast<double>(static_cast<int64_t>(s.interpolation)); }
+static void mq_acc_asset_Track_interpolation_setf(void* p, double v) { auto& s = *static_cast<asset::Track*>(p); s.interpolation = static_cast<decltype(s.interpolation)>(v); }
+static double mq_acc_asset_Track_key_count_getf(const void* p) { const auto& s = *static_cast<const asset::Track*>(p); return static_cast<double>(s.key_count); }
+static void mq_acc_asset_Track_key_count_setf(void* p, double v) { auto& s = *static_cast<asset::Track*>(p); s.key_count = static_cast<decltype(s.key_count)>(v); }
+static const mq_field_accessor mq_acc_asset_Track[] = {
+    { mq_acc_asset_Track_kind_getf, mq_acc_asset_Track_kind_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_asset_Track_field_path_gets, mq_acc_asset_Track_field_path_sets, mq_acc_asset_Track_field_path_getp, mq_acc_asset_Track_field_path_getmp },
+    { mq_acc_asset_Track_bone_index_getf, mq_acc_asset_Track_bone_index_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Track_value_type_getf, mq_acc_asset_Track_value_type_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Track_interpolation_getf, mq_acc_asset_Track_interpolation_setf, 0, 0, 0, 0 },
+    { mq_acc_asset_Track_key_count_getf, mq_acc_asset_Track_key_count_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_asset_Track_keys_clear(void* f) { static_cast<std::vector<asset::Key>*>(f)->clear(); }
 static uint32_t mq_dyn_asset_Track_keys_size(const void* f) { return (uint32_t)static_cast<const std::vector<asset::Key>*>(f)->size(); }
 static void mq_dyn_asset_Track_keys_resize(void* f, uint32_t n) { static_cast<std::vector<asset::Key>*>(f)->resize(n); }
 static void* mq_dyn_asset_Track_keys_elem(void* f, uint32_t i) { return &static_cast<std::vector<asset::Key>*>(f)->at(i); }
 static const mq_field_desc mq_fields_asset_Track[] = {
-    { "kind", (uint32_t)offsetof(asset::Track, kind), MQ_TK_ENUM, 3887545808u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "field_path", (uint32_t)offsetof(asset::Track, field_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bone_index", (uint32_t)offsetof(asset::Track, bone_index), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "value_type", (uint32_t)offsetof(asset::Track, value_type), MQ_TK_ENUM, 3692183884u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "interpolation", (uint32_t)offsetof(asset::Track, interpolation), MQ_TK_ENUM, 2154681411u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "key_count", (uint32_t)offsetof(asset::Track, key_count), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "keys", (uint32_t)offsetof(asset::Track, keys), MQ_TK_ARRAY_DYN, 1719075286u, 0u, 0u, 1719075286u, mq_dyn_asset_Track_keys_clear, mq_dyn_asset_Track_keys_size, mq_dyn_asset_Track_keys_resize, mq_dyn_asset_Track_keys_elem },
+    { "kind", (uint32_t)offsetof(asset::Track, kind), MQ_TK_ENUM, 3887545808u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Track[0] },
+    { "field_path", (uint32_t)offsetof(asset::Track, field_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Track[1] },
+    { "bone_index", (uint32_t)offsetof(asset::Track, bone_index), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Track[2] },
+    { "value_type", (uint32_t)offsetof(asset::Track, value_type), MQ_TK_ENUM, 3692183884u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Track[3] },
+    { "interpolation", (uint32_t)offsetof(asset::Track, interpolation), MQ_TK_ENUM, 2154681411u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Track[4] },
+    { "key_count", (uint32_t)offsetof(asset::Track, key_count), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_asset_Track[5] },
+    { "keys", (uint32_t)offsetof(asset::Track, keys), MQ_TK_ARRAY_DYN, 1719075286u, 0u, 0u, 1719075286u, mq_dyn_asset_Track_keys_clear, mq_dyn_asset_Track_keys_size, mq_dyn_asset_Track_keys_resize, mq_dyn_asset_Track_keys_elem, &mq_acc_asset_Track[6] },
 };
 
+static double mq_acc_audio_AudioListener_active_getf(const void* p) { const auto& s = *static_cast<const audio::AudioListener*>(p); return s.active ? 1.0 : 0.0; }
+static void mq_acc_audio_AudioListener_active_setf(void* p, double v) { auto& s = *static_cast<audio::AudioListener*>(p); s.active = v != 0.0; }
+static double mq_acc_audio_AudioListener_master_volume_getf(const void* p) { const auto& s = *static_cast<const audio::AudioListener*>(p); return static_cast<double>(s.master_volume); }
+static void mq_acc_audio_AudioListener_master_volume_setf(void* p, double v) { auto& s = *static_cast<audio::AudioListener*>(p); s.master_volume = static_cast<decltype(s.master_volume)>(v); }
+static double mq_acc_audio_AudioListener_doppler_scale_getf(const void* p) { const auto& s = *static_cast<const audio::AudioListener*>(p); return static_cast<double>(s.doppler_scale); }
+static void mq_acc_audio_AudioListener_doppler_scale_setf(void* p, double v) { auto& s = *static_cast<audio::AudioListener*>(p); s.doppler_scale = static_cast<decltype(s.doppler_scale)>(v); }
+static double mq_acc_audio_AudioListener_listener_getf(const void* p) { const auto& s = *static_cast<const audio::AudioListener*>(p); return static_cast<double>(s.listener); }
+static void mq_acc_audio_AudioListener_listener_setf(void* p, double v) { auto& s = *static_cast<audio::AudioListener*>(p); s.listener = static_cast<decltype(s.listener)>(v); }
+static const mq_field_accessor mq_acc_audio_AudioListener[] = {
+    { mq_acc_audio_AudioListener_active_getf, mq_acc_audio_AudioListener_active_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioListener_master_volume_getf, mq_acc_audio_AudioListener_master_volume_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioListener_doppler_scale_getf, mq_acc_audio_AudioListener_doppler_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioListener_listener_getf, mq_acc_audio_AudioListener_listener_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_audio_AudioListener[] = {
-    { "active", (uint32_t)offsetof(audio::AudioListener, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "master_volume", (uint32_t)offsetof(audio::AudioListener, master_volume), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "doppler_scale", (uint32_t)offsetof(audio::AudioListener, doppler_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "listener", (uint32_t)offsetof(audio::AudioListener, listener), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "active", (uint32_t)offsetof(audio::AudioListener, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioListener[0] },
+    { "master_volume", (uint32_t)offsetof(audio::AudioListener, master_volume), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioListener[1] },
+    { "doppler_scale", (uint32_t)offsetof(audio::AudioListener, doppler_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioListener[2] },
+    { "listener", (uint32_t)offsetof(audio::AudioListener, listener), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioListener[3] },
 };
 
+static const char* mq_acc_audio_AudioSource_clip_gets(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return s.clip.c_str(); }
+static void mq_acc_audio_AudioSource_clip_sets(void* p, const char* v) { auto& s = *static_cast<audio::AudioSource*>(p); s.clip = v ? v : ""; }
+static const void* mq_acc_audio_AudioSource_clip_getp(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return &s.clip; }
+static void* mq_acc_audio_AudioSource_clip_getmp(void* p) { auto& s = *static_cast<audio::AudioSource*>(p); return &s.clip; }
+static const char* mq_acc_audio_AudioSource_bus_gets(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return s.bus.c_str(); }
+static void mq_acc_audio_AudioSource_bus_sets(void* p, const char* v) { auto& s = *static_cast<audio::AudioSource*>(p); s.bus = v ? v : ""; }
+static const void* mq_acc_audio_AudioSource_bus_getp(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return &s.bus; }
+static void* mq_acc_audio_AudioSource_bus_getmp(void* p) { auto& s = *static_cast<audio::AudioSource*>(p); return &s.bus; }
+static double mq_acc_audio_AudioSource_autoplay_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return s.autoplay ? 1.0 : 0.0; }
+static void mq_acc_audio_AudioSource_autoplay_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.autoplay = v != 0.0; }
+static double mq_acc_audio_AudioSource_loop_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return s.loop ? 1.0 : 0.0; }
+static void mq_acc_audio_AudioSource_loop_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.loop = v != 0.0; }
+static double mq_acc_audio_AudioSource_volume_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(s.volume); }
+static void mq_acc_audio_AudioSource_volume_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.volume = static_cast<decltype(s.volume)>(v); }
+static double mq_acc_audio_AudioSource_pitch_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(s.pitch); }
+static void mq_acc_audio_AudioSource_pitch_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.pitch = static_cast<decltype(s.pitch)>(v); }
+static double mq_acc_audio_AudioSource_panning_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(static_cast<int64_t>(s.panning)); }
+static void mq_acc_audio_AudioSource_panning_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.panning = static_cast<decltype(s.panning)>(v); }
+static double mq_acc_audio_AudioSource_attenuation_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(static_cast<int64_t>(s.attenuation)); }
+static void mq_acc_audio_AudioSource_attenuation_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.attenuation = static_cast<decltype(s.attenuation)>(v); }
+static const char* mq_acc_audio_AudioSource_curve_gets(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return s.curve.c_str(); }
+static void mq_acc_audio_AudioSource_curve_sets(void* p, const char* v) { auto& s = *static_cast<audio::AudioSource*>(p); s.curve = v ? v : ""; }
+static const void* mq_acc_audio_AudioSource_curve_getp(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return &s.curve; }
+static void* mq_acc_audio_AudioSource_curve_getmp(void* p) { auto& s = *static_cast<audio::AudioSource*>(p); return &s.curve; }
+static double mq_acc_audio_AudioSource_min_distance_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(s.min_distance); }
+static void mq_acc_audio_AudioSource_min_distance_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.min_distance = static_cast<decltype(s.min_distance)>(v); }
+static double mq_acc_audio_AudioSource_max_distance_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(s.max_distance); }
+static void mq_acc_audio_AudioSource_max_distance_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.max_distance = static_cast<decltype(s.max_distance)>(v); }
+static double mq_acc_audio_AudioSource_doppler_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(s.doppler); }
+static void mq_acc_audio_AudioSource_doppler_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.doppler = static_cast<decltype(s.doppler)>(v); }
+static double mq_acc_audio_AudioSource_state_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(static_cast<int64_t>(s.state)); }
+static void mq_acc_audio_AudioSource_state_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.state = static_cast<decltype(s.state)>(v); }
+static double mq_acc_audio_AudioSource_playhead_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(s.playhead); }
+static void mq_acc_audio_AudioSource_playhead_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.playhead = static_cast<decltype(s.playhead)>(v); }
+static double mq_acc_audio_AudioSource_voice_getf(const void* p) { const auto& s = *static_cast<const audio::AudioSource*>(p); return static_cast<double>(s.voice); }
+static void mq_acc_audio_AudioSource_voice_setf(void* p, double v) { auto& s = *static_cast<audio::AudioSource*>(p); s.voice = static_cast<decltype(s.voice)>(v); }
+static const mq_field_accessor mq_acc_audio_AudioSource[] = {
+    { 0, 0, mq_acc_audio_AudioSource_clip_gets, mq_acc_audio_AudioSource_clip_sets, mq_acc_audio_AudioSource_clip_getp, mq_acc_audio_AudioSource_clip_getmp },
+    { 0, 0, mq_acc_audio_AudioSource_bus_gets, mq_acc_audio_AudioSource_bus_sets, mq_acc_audio_AudioSource_bus_getp, mq_acc_audio_AudioSource_bus_getmp },
+    { mq_acc_audio_AudioSource_autoplay_getf, mq_acc_audio_AudioSource_autoplay_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_loop_getf, mq_acc_audio_AudioSource_loop_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_volume_getf, mq_acc_audio_AudioSource_volume_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_pitch_getf, mq_acc_audio_AudioSource_pitch_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_panning_getf, mq_acc_audio_AudioSource_panning_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_attenuation_getf, mq_acc_audio_AudioSource_attenuation_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_audio_AudioSource_curve_gets, mq_acc_audio_AudioSource_curve_sets, mq_acc_audio_AudioSource_curve_getp, mq_acc_audio_AudioSource_curve_getmp },
+    { mq_acc_audio_AudioSource_min_distance_getf, mq_acc_audio_AudioSource_min_distance_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_max_distance_getf, mq_acc_audio_AudioSource_max_distance_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_doppler_getf, mq_acc_audio_AudioSource_doppler_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_state_getf, mq_acc_audio_AudioSource_state_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_playhead_getf, mq_acc_audio_AudioSource_playhead_setf, 0, 0, 0, 0 },
+    { mq_acc_audio_AudioSource_voice_getf, mq_acc_audio_AudioSource_voice_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_audio_AudioSource[] = {
-    { "clip", (uint32_t)offsetof(audio::AudioSource, clip), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bus", (uint32_t)offsetof(audio::AudioSource, bus), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "autoplay", (uint32_t)offsetof(audio::AudioSource, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "loop", (uint32_t)offsetof(audio::AudioSource, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "volume", (uint32_t)offsetof(audio::AudioSource, volume), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pitch", (uint32_t)offsetof(audio::AudioSource, pitch), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "panning", (uint32_t)offsetof(audio::AudioSource, panning), MQ_TK_ENUM, 1865492929u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "attenuation", (uint32_t)offsetof(audio::AudioSource, attenuation), MQ_TK_ENUM, 685740996u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "curve", (uint32_t)offsetof(audio::AudioSource, curve), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "min_distance", (uint32_t)offsetof(audio::AudioSource, min_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_distance", (uint32_t)offsetof(audio::AudioSource, max_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "doppler", (uint32_t)offsetof(audio::AudioSource, doppler), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "state", (uint32_t)offsetof(audio::AudioSource, state), MQ_TK_ENUM, 609929136u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "playhead", (uint32_t)offsetof(audio::AudioSource, playhead), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "voice", (uint32_t)offsetof(audio::AudioSource, voice), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "clip", (uint32_t)offsetof(audio::AudioSource, clip), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[0] },
+    { "bus", (uint32_t)offsetof(audio::AudioSource, bus), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[1] },
+    { "autoplay", (uint32_t)offsetof(audio::AudioSource, autoplay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[2] },
+    { "loop", (uint32_t)offsetof(audio::AudioSource, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[3] },
+    { "volume", (uint32_t)offsetof(audio::AudioSource, volume), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[4] },
+    { "pitch", (uint32_t)offsetof(audio::AudioSource, pitch), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[5] },
+    { "panning", (uint32_t)offsetof(audio::AudioSource, panning), MQ_TK_ENUM, 1865492929u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[6] },
+    { "attenuation", (uint32_t)offsetof(audio::AudioSource, attenuation), MQ_TK_ENUM, 685740996u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[7] },
+    { "curve", (uint32_t)offsetof(audio::AudioSource, curve), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[8] },
+    { "min_distance", (uint32_t)offsetof(audio::AudioSource, min_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[9] },
+    { "max_distance", (uint32_t)offsetof(audio::AudioSource, max_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[10] },
+    { "doppler", (uint32_t)offsetof(audio::AudioSource, doppler), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[11] },
+    { "state", (uint32_t)offsetof(audio::AudioSource, state), MQ_TK_ENUM, 609929136u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[12] },
+    { "playhead", (uint32_t)offsetof(audio::AudioSource, playhead), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[13] },
+    { "voice", (uint32_t)offsetof(audio::AudioSource, voice), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_audio_AudioSource[14] },
 };
 
+static double mq_acc_input_InputTarget_pickable_getf(const void* p) { const auto& s = *static_cast<const input::InputTarget*>(p); return s.pickable ? 1.0 : 0.0; }
+static void mq_acc_input_InputTarget_pickable_setf(void* p, double v) { auto& s = *static_cast<input::InputTarget*>(p); s.pickable = v != 0.0; }
+static double mq_acc_input_InputTarget_pick_layer_getf(const void* p) { const auto& s = *static_cast<const input::InputTarget*>(p); return static_cast<double>(s.pick_layer); }
+static void mq_acc_input_InputTarget_pick_layer_setf(void* p, double v) { auto& s = *static_cast<input::InputTarget*>(p); s.pick_layer = static_cast<decltype(s.pick_layer)>(v); }
+static double mq_acc_input_InputTarget_drag_enabled_getf(const void* p) { const auto& s = *static_cast<const input::InputTarget*>(p); return s.drag_enabled ? 1.0 : 0.0; }
+static void mq_acc_input_InputTarget_drag_enabled_setf(void* p, double v) { auto& s = *static_cast<input::InputTarget*>(p); s.drag_enabled = v != 0.0; }
+static double mq_acc_input_InputTarget_hover_cursor_getf(const void* p) { const auto& s = *static_cast<const input::InputTarget*>(p); return static_cast<double>(static_cast<int64_t>(s.hover_cursor)); }
+static void mq_acc_input_InputTarget_hover_cursor_setf(void* p, double v) { auto& s = *static_cast<input::InputTarget*>(p); s.hover_cursor = static_cast<decltype(s.hover_cursor)>(v); }
+static const mq_field_accessor mq_acc_input_InputTarget[] = {
+    { mq_acc_input_InputTarget_pickable_getf, mq_acc_input_InputTarget_pickable_setf, 0, 0, 0, 0 },
+    { mq_acc_input_InputTarget_pick_layer_getf, mq_acc_input_InputTarget_pick_layer_setf, 0, 0, 0, 0 },
+    { mq_acc_input_InputTarget_drag_enabled_getf, mq_acc_input_InputTarget_drag_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_input_InputTarget_hover_cursor_getf, mq_acc_input_InputTarget_hover_cursor_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_input_InputTarget[] = {
-    { "pickable", (uint32_t)offsetof(input::InputTarget, pickable), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pick_layer", (uint32_t)offsetof(input::InputTarget, pick_layer), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "drag_enabled", (uint32_t)offsetof(input::InputTarget, drag_enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "hover_cursor", (uint32_t)offsetof(input::InputTarget, hover_cursor), MQ_TK_ENUM, 1094833230u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "pickable", (uint32_t)offsetof(input::InputTarget, pickable), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_input_InputTarget[0] },
+    { "pick_layer", (uint32_t)offsetof(input::InputTarget, pick_layer), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_input_InputTarget[1] },
+    { "drag_enabled", (uint32_t)offsetof(input::InputTarget, drag_enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_input_InputTarget[2] },
+    { "hover_cursor", (uint32_t)offsetof(input::InputTarget, hover_cursor), MQ_TK_ENUM, 1094833230u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_input_InputTarget[3] },
 };
 
+static const void* mq_acc_math_Aabb_min_getp(const void* p) { const auto& s = *static_cast<const math::Aabb*>(p); return &s.min; }
+static void* mq_acc_math_Aabb_min_getmp(void* p) { auto& s = *static_cast<math::Aabb*>(p); return &s.min; }
+static const void* mq_acc_math_Aabb_max_getp(const void* p) { const auto& s = *static_cast<const math::Aabb*>(p); return &s.max; }
+static void* mq_acc_math_Aabb_max_getmp(void* p) { auto& s = *static_cast<math::Aabb*>(p); return &s.max; }
+static const mq_field_accessor mq_acc_math_Aabb[] = {
+    { 0, 0, 0, 0, mq_acc_math_Aabb_min_getp, mq_acc_math_Aabb_min_getmp },
+    { 0, 0, 0, 0, mq_acc_math_Aabb_max_getp, mq_acc_math_Aabb_max_getmp },
+};
 static const mq_field_desc mq_fields_math_Aabb[] = {
-    { "min", (uint32_t)offsetof(math::Aabb, min), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max", (uint32_t)offsetof(math::Aabb, max), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "min", (uint32_t)offsetof(math::Aabb, min), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Aabb[0] },
+    { "max", (uint32_t)offsetof(math::Aabb, max), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Aabb[1] },
 };
 
+static double mq_acc_math_Color_r_getf(const void* p) { const auto& s = *static_cast<const math::Color*>(p); return static_cast<double>(s.r); }
+static void mq_acc_math_Color_r_setf(void* p, double v) { auto& s = *static_cast<math::Color*>(p); s.r = static_cast<decltype(s.r)>(v); }
+static double mq_acc_math_Color_g_getf(const void* p) { const auto& s = *static_cast<const math::Color*>(p); return static_cast<double>(s.g); }
+static void mq_acc_math_Color_g_setf(void* p, double v) { auto& s = *static_cast<math::Color*>(p); s.g = static_cast<decltype(s.g)>(v); }
+static double mq_acc_math_Color_b_getf(const void* p) { const auto& s = *static_cast<const math::Color*>(p); return static_cast<double>(s.b); }
+static void mq_acc_math_Color_b_setf(void* p, double v) { auto& s = *static_cast<math::Color*>(p); s.b = static_cast<decltype(s.b)>(v); }
+static double mq_acc_math_Color_a_getf(const void* p) { const auto& s = *static_cast<const math::Color*>(p); return static_cast<double>(s.a); }
+static void mq_acc_math_Color_a_setf(void* p, double v) { auto& s = *static_cast<math::Color*>(p); s.a = static_cast<decltype(s.a)>(v); }
+static const mq_field_accessor mq_acc_math_Color[] = {
+    { mq_acc_math_Color_r_getf, mq_acc_math_Color_r_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Color_g_getf, mq_acc_math_Color_g_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Color_b_getf, mq_acc_math_Color_b_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Color_a_getf, mq_acc_math_Color_a_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_math_Color[] = {
-    { "r", (uint32_t)offsetof(math::Color, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "g", (uint32_t)offsetof(math::Color, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "b", (uint32_t)offsetof(math::Color, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "a", (uint32_t)offsetof(math::Color, a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "r", (uint32_t)offsetof(math::Color, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Color[0] },
+    { "g", (uint32_t)offsetof(math::Color, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Color[1] },
+    { "b", (uint32_t)offsetof(math::Color, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Color[2] },
+    { "a", (uint32_t)offsetof(math::Color, a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Color[3] },
 };
 
+static const void* mq_acc_math_Mat3_m_getp(const void* p) { const auto& s = *static_cast<const math::Mat3*>(p); return &s.m; }
+static void* mq_acc_math_Mat3_m_getmp(void* p) { auto& s = *static_cast<math::Mat3*>(p); return &s.m; }
+static const mq_field_accessor mq_acc_math_Mat3[] = {
+    { 0, 0, 0, 0, mq_acc_math_Mat3_m_getp, mq_acc_math_Mat3_m_getmp },
+};
 static const mq_field_desc mq_fields_math_Mat3[] = {
-    { "m", (uint32_t)offsetof(math::Mat3, m), MQ_TK_ARRAY_FIXED, 0u, 9u, 0u, 0u, 0, 0, 0, 0 },
+    { "m", (uint32_t)offsetof(math::Mat3, m), MQ_TK_ARRAY_FIXED, 0u, 9u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Mat3[0] },
 };
 
+static const void* mq_acc_math_Mat4_m_getp(const void* p) { const auto& s = *static_cast<const math::Mat4*>(p); return &s.m; }
+static void* mq_acc_math_Mat4_m_getmp(void* p) { auto& s = *static_cast<math::Mat4*>(p); return &s.m; }
+static const mq_field_accessor mq_acc_math_Mat4[] = {
+    { 0, 0, 0, 0, mq_acc_math_Mat4_m_getp, mq_acc_math_Mat4_m_getmp },
+};
 static const mq_field_desc mq_fields_math_Mat4[] = {
-    { "m", (uint32_t)offsetof(math::Mat4, m), MQ_TK_ARRAY_FIXED, 0u, 16u, 0u, 0u, 0, 0, 0, 0 },
+    { "m", (uint32_t)offsetof(math::Mat4, m), MQ_TK_ARRAY_FIXED, 0u, 16u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Mat4[0] },
 };
 
+static const void* mq_acc_math_Plane_normal_getp(const void* p) { const auto& s = *static_cast<const math::Plane*>(p); return &s.normal; }
+static void* mq_acc_math_Plane_normal_getmp(void* p) { auto& s = *static_cast<math::Plane*>(p); return &s.normal; }
+static double mq_acc_math_Plane_distance_getf(const void* p) { const auto& s = *static_cast<const math::Plane*>(p); return static_cast<double>(s.distance); }
+static void mq_acc_math_Plane_distance_setf(void* p, double v) { auto& s = *static_cast<math::Plane*>(p); s.distance = static_cast<decltype(s.distance)>(v); }
+static const mq_field_accessor mq_acc_math_Plane[] = {
+    { 0, 0, 0, 0, mq_acc_math_Plane_normal_getp, mq_acc_math_Plane_normal_getmp },
+    { mq_acc_math_Plane_distance_getf, mq_acc_math_Plane_distance_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_math_Plane[] = {
-    { "normal", (uint32_t)offsetof(math::Plane, normal), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "distance", (uint32_t)offsetof(math::Plane, distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "normal", (uint32_t)offsetof(math::Plane, normal), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Plane[0] },
+    { "distance", (uint32_t)offsetof(math::Plane, distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Plane[1] },
 };
 
+static double mq_acc_math_Quat_x_getf(const void* p) { const auto& s = *static_cast<const math::Quat*>(p); return static_cast<double>(s.x); }
+static void mq_acc_math_Quat_x_setf(void* p, double v) { auto& s = *static_cast<math::Quat*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_math_Quat_y_getf(const void* p) { const auto& s = *static_cast<const math::Quat*>(p); return static_cast<double>(s.y); }
+static void mq_acc_math_Quat_y_setf(void* p, double v) { auto& s = *static_cast<math::Quat*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static double mq_acc_math_Quat_z_getf(const void* p) { const auto& s = *static_cast<const math::Quat*>(p); return static_cast<double>(s.z); }
+static void mq_acc_math_Quat_z_setf(void* p, double v) { auto& s = *static_cast<math::Quat*>(p); s.z = static_cast<decltype(s.z)>(v); }
+static double mq_acc_math_Quat_w_getf(const void* p) { const auto& s = *static_cast<const math::Quat*>(p); return static_cast<double>(s.w); }
+static void mq_acc_math_Quat_w_setf(void* p, double v) { auto& s = *static_cast<math::Quat*>(p); s.w = static_cast<decltype(s.w)>(v); }
+static const mq_field_accessor mq_acc_math_Quat[] = {
+    { mq_acc_math_Quat_x_getf, mq_acc_math_Quat_x_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Quat_y_getf, mq_acc_math_Quat_y_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Quat_z_getf, mq_acc_math_Quat_z_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Quat_w_getf, mq_acc_math_Quat_w_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_math_Quat[] = {
-    { "x", (uint32_t)offsetof(math::Quat, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(math::Quat, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z", (uint32_t)offsetof(math::Quat, z), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "w", (uint32_t)offsetof(math::Quat, w), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(math::Quat, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Quat[0] },
+    { "y", (uint32_t)offsetof(math::Quat, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Quat[1] },
+    { "z", (uint32_t)offsetof(math::Quat, z), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Quat[2] },
+    { "w", (uint32_t)offsetof(math::Quat, w), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Quat[3] },
 };
 
+static const void* mq_acc_math_Ray_origin_getp(const void* p) { const auto& s = *static_cast<const math::Ray*>(p); return &s.origin; }
+static void* mq_acc_math_Ray_origin_getmp(void* p) { auto& s = *static_cast<math::Ray*>(p); return &s.origin; }
+static const void* mq_acc_math_Ray_direction_getp(const void* p) { const auto& s = *static_cast<const math::Ray*>(p); return &s.direction; }
+static void* mq_acc_math_Ray_direction_getmp(void* p) { auto& s = *static_cast<math::Ray*>(p); return &s.direction; }
+static const mq_field_accessor mq_acc_math_Ray[] = {
+    { 0, 0, 0, 0, mq_acc_math_Ray_origin_getp, mq_acc_math_Ray_origin_getmp },
+    { 0, 0, 0, 0, mq_acc_math_Ray_direction_getp, mq_acc_math_Ray_direction_getmp },
+};
 static const mq_field_desc mq_fields_math_Ray[] = {
-    { "origin", (uint32_t)offsetof(math::Ray, origin), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "direction", (uint32_t)offsetof(math::Ray, direction), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "origin", (uint32_t)offsetof(math::Ray, origin), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Ray[0] },
+    { "direction", (uint32_t)offsetof(math::Ray, direction), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Ray[1] },
 };
 
+static double mq_acc_math_Rect_x_getf(const void* p) { const auto& s = *static_cast<const math::Rect*>(p); return static_cast<double>(s.x); }
+static void mq_acc_math_Rect_x_setf(void* p, double v) { auto& s = *static_cast<math::Rect*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_math_Rect_y_getf(const void* p) { const auto& s = *static_cast<const math::Rect*>(p); return static_cast<double>(s.y); }
+static void mq_acc_math_Rect_y_setf(void* p, double v) { auto& s = *static_cast<math::Rect*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static double mq_acc_math_Rect_width_getf(const void* p) { const auto& s = *static_cast<const math::Rect*>(p); return static_cast<double>(s.width); }
+static void mq_acc_math_Rect_width_setf(void* p, double v) { auto& s = *static_cast<math::Rect*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_math_Rect_height_getf(const void* p) { const auto& s = *static_cast<const math::Rect*>(p); return static_cast<double>(s.height); }
+static void mq_acc_math_Rect_height_setf(void* p, double v) { auto& s = *static_cast<math::Rect*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static const mq_field_accessor mq_acc_math_Rect[] = {
+    { mq_acc_math_Rect_x_getf, mq_acc_math_Rect_x_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Rect_y_getf, mq_acc_math_Rect_y_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Rect_width_getf, mq_acc_math_Rect_width_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Rect_height_getf, mq_acc_math_Rect_height_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_math_Rect[] = {
-    { "x", (uint32_t)offsetof(math::Rect, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(math::Rect, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(math::Rect, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(math::Rect, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(math::Rect, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Rect[0] },
+    { "y", (uint32_t)offsetof(math::Rect, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Rect[1] },
+    { "width", (uint32_t)offsetof(math::Rect, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Rect[2] },
+    { "height", (uint32_t)offsetof(math::Rect, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Rect[3] },
 };
 
+static double mq_acc_math_Rgba_r_getf(const void* p) { const auto& s = *static_cast<const math::Rgba*>(p); return static_cast<double>(s.r); }
+static void mq_acc_math_Rgba_r_setf(void* p, double v) { auto& s = *static_cast<math::Rgba*>(p); s.r = static_cast<decltype(s.r)>(v); }
+static double mq_acc_math_Rgba_g_getf(const void* p) { const auto& s = *static_cast<const math::Rgba*>(p); return static_cast<double>(s.g); }
+static void mq_acc_math_Rgba_g_setf(void* p, double v) { auto& s = *static_cast<math::Rgba*>(p); s.g = static_cast<decltype(s.g)>(v); }
+static double mq_acc_math_Rgba_b_getf(const void* p) { const auto& s = *static_cast<const math::Rgba*>(p); return static_cast<double>(s.b); }
+static void mq_acc_math_Rgba_b_setf(void* p, double v) { auto& s = *static_cast<math::Rgba*>(p); s.b = static_cast<decltype(s.b)>(v); }
+static double mq_acc_math_Rgba_a_getf(const void* p) { const auto& s = *static_cast<const math::Rgba*>(p); return static_cast<double>(s.a); }
+static void mq_acc_math_Rgba_a_setf(void* p, double v) { auto& s = *static_cast<math::Rgba*>(p); s.a = static_cast<decltype(s.a)>(v); }
+static const mq_field_accessor mq_acc_math_Rgba[] = {
+    { mq_acc_math_Rgba_r_getf, mq_acc_math_Rgba_r_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Rgba_g_getf, mq_acc_math_Rgba_g_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Rgba_b_getf, mq_acc_math_Rgba_b_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Rgba_a_getf, mq_acc_math_Rgba_a_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_math_Rgba[] = {
-    { "r", (uint32_t)offsetof(math::Rgba, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "g", (uint32_t)offsetof(math::Rgba, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "b", (uint32_t)offsetof(math::Rgba, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "a", (uint32_t)offsetof(math::Rgba, a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "r", (uint32_t)offsetof(math::Rgba, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Rgba[0] },
+    { "g", (uint32_t)offsetof(math::Rgba, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Rgba[1] },
+    { "b", (uint32_t)offsetof(math::Rgba, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Rgba[2] },
+    { "a", (uint32_t)offsetof(math::Rgba, a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Rgba[3] },
 };
 
+static const void* mq_acc_math_Transform2D_position_getp(const void* p) { const auto& s = *static_cast<const math::Transform2D*>(p); return &s.position; }
+static void* mq_acc_math_Transform2D_position_getmp(void* p) { auto& s = *static_cast<math::Transform2D*>(p); return &s.position; }
+static double mq_acc_math_Transform2D_rotation_getf(const void* p) { const auto& s = *static_cast<const math::Transform2D*>(p); return static_cast<double>(s.rotation); }
+static void mq_acc_math_Transform2D_rotation_setf(void* p, double v) { auto& s = *static_cast<math::Transform2D*>(p); s.rotation = static_cast<decltype(s.rotation)>(v); }
+static const void* mq_acc_math_Transform2D_scale_getp(const void* p) { const auto& s = *static_cast<const math::Transform2D*>(p); return &s.scale; }
+static void* mq_acc_math_Transform2D_scale_getmp(void* p) { auto& s = *static_cast<math::Transform2D*>(p); return &s.scale; }
+static const mq_field_accessor mq_acc_math_Transform2D[] = {
+    { 0, 0, 0, 0, mq_acc_math_Transform2D_position_getp, mq_acc_math_Transform2D_position_getmp },
+    { mq_acc_math_Transform2D_rotation_getf, mq_acc_math_Transform2D_rotation_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_math_Transform2D_scale_getp, mq_acc_math_Transform2D_scale_getmp },
+};
 static const mq_field_desc mq_fields_math_Transform2D[] = {
-    { "position", (uint32_t)offsetof(math::Transform2D, position), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "rotation", (uint32_t)offsetof(math::Transform2D, rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scale", (uint32_t)offsetof(math::Transform2D, scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "position", (uint32_t)offsetof(math::Transform2D, position), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Transform2D[0] },
+    { "rotation", (uint32_t)offsetof(math::Transform2D, rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Transform2D[1] },
+    { "scale", (uint32_t)offsetof(math::Transform2D, scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Transform2D[2] },
 };
 
+static const void* mq_acc_math_Transform3D_position_getp(const void* p) { const auto& s = *static_cast<const math::Transform3D*>(p); return &s.position; }
+static void* mq_acc_math_Transform3D_position_getmp(void* p) { auto& s = *static_cast<math::Transform3D*>(p); return &s.position; }
+static const void* mq_acc_math_Transform3D_rotation_getp(const void* p) { const auto& s = *static_cast<const math::Transform3D*>(p); return &s.rotation; }
+static void* mq_acc_math_Transform3D_rotation_getmp(void* p) { auto& s = *static_cast<math::Transform3D*>(p); return &s.rotation; }
+static const void* mq_acc_math_Transform3D_scale_getp(const void* p) { const auto& s = *static_cast<const math::Transform3D*>(p); return &s.scale; }
+static void* mq_acc_math_Transform3D_scale_getmp(void* p) { auto& s = *static_cast<math::Transform3D*>(p); return &s.scale; }
+static const mq_field_accessor mq_acc_math_Transform3D[] = {
+    { 0, 0, 0, 0, mq_acc_math_Transform3D_position_getp, mq_acc_math_Transform3D_position_getmp },
+    { 0, 0, 0, 0, mq_acc_math_Transform3D_rotation_getp, mq_acc_math_Transform3D_rotation_getmp },
+    { 0, 0, 0, 0, mq_acc_math_Transform3D_scale_getp, mq_acc_math_Transform3D_scale_getmp },
+};
 static const mq_field_desc mq_fields_math_Transform3D[] = {
-    { "position", (uint32_t)offsetof(math::Transform3D, position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "rotation", (uint32_t)offsetof(math::Transform3D, rotation), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scale", (uint32_t)offsetof(math::Transform3D, scale), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "position", (uint32_t)offsetof(math::Transform3D, position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Transform3D[0] },
+    { "rotation", (uint32_t)offsetof(math::Transform3D, rotation), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Transform3D[1] },
+    { "scale", (uint32_t)offsetof(math::Transform3D, scale), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Transform3D[2] },
 };
 
+static double mq_acc_math_Vec2_x_getf(const void* p) { const auto& s = *static_cast<const math::Vec2*>(p); return static_cast<double>(s.x); }
+static void mq_acc_math_Vec2_x_setf(void* p, double v) { auto& s = *static_cast<math::Vec2*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_math_Vec2_y_getf(const void* p) { const auto& s = *static_cast<const math::Vec2*>(p); return static_cast<double>(s.y); }
+static void mq_acc_math_Vec2_y_setf(void* p, double v) { auto& s = *static_cast<math::Vec2*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static const mq_field_accessor mq_acc_math_Vec2[] = {
+    { mq_acc_math_Vec2_x_getf, mq_acc_math_Vec2_x_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Vec2_y_getf, mq_acc_math_Vec2_y_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_math_Vec2[] = {
-    { "x", (uint32_t)offsetof(math::Vec2, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(math::Vec2, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(math::Vec2, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec2[0] },
+    { "y", (uint32_t)offsetof(math::Vec2, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec2[1] },
 };
 
+static double mq_acc_math_Vec3_x_getf(const void* p) { const auto& s = *static_cast<const math::Vec3*>(p); return static_cast<double>(s.x); }
+static void mq_acc_math_Vec3_x_setf(void* p, double v) { auto& s = *static_cast<math::Vec3*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_math_Vec3_y_getf(const void* p) { const auto& s = *static_cast<const math::Vec3*>(p); return static_cast<double>(s.y); }
+static void mq_acc_math_Vec3_y_setf(void* p, double v) { auto& s = *static_cast<math::Vec3*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static double mq_acc_math_Vec3_z_getf(const void* p) { const auto& s = *static_cast<const math::Vec3*>(p); return static_cast<double>(s.z); }
+static void mq_acc_math_Vec3_z_setf(void* p, double v) { auto& s = *static_cast<math::Vec3*>(p); s.z = static_cast<decltype(s.z)>(v); }
+static const mq_field_accessor mq_acc_math_Vec3[] = {
+    { mq_acc_math_Vec3_x_getf, mq_acc_math_Vec3_x_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Vec3_y_getf, mq_acc_math_Vec3_y_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Vec3_z_getf, mq_acc_math_Vec3_z_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_math_Vec3[] = {
-    { "x", (uint32_t)offsetof(math::Vec3, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(math::Vec3, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z", (uint32_t)offsetof(math::Vec3, z), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(math::Vec3, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec3[0] },
+    { "y", (uint32_t)offsetof(math::Vec3, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec3[1] },
+    { "z", (uint32_t)offsetof(math::Vec3, z), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec3[2] },
 };
 
+static double mq_acc_math_Vec4_x_getf(const void* p) { const auto& s = *static_cast<const math::Vec4*>(p); return static_cast<double>(s.x); }
+static void mq_acc_math_Vec4_x_setf(void* p, double v) { auto& s = *static_cast<math::Vec4*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_math_Vec4_y_getf(const void* p) { const auto& s = *static_cast<const math::Vec4*>(p); return static_cast<double>(s.y); }
+static void mq_acc_math_Vec4_y_setf(void* p, double v) { auto& s = *static_cast<math::Vec4*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static double mq_acc_math_Vec4_z_getf(const void* p) { const auto& s = *static_cast<const math::Vec4*>(p); return static_cast<double>(s.z); }
+static void mq_acc_math_Vec4_z_setf(void* p, double v) { auto& s = *static_cast<math::Vec4*>(p); s.z = static_cast<decltype(s.z)>(v); }
+static double mq_acc_math_Vec4_w_getf(const void* p) { const auto& s = *static_cast<const math::Vec4*>(p); return static_cast<double>(s.w); }
+static void mq_acc_math_Vec4_w_setf(void* p, double v) { auto& s = *static_cast<math::Vec4*>(p); s.w = static_cast<decltype(s.w)>(v); }
+static const mq_field_accessor mq_acc_math_Vec4[] = {
+    { mq_acc_math_Vec4_x_getf, mq_acc_math_Vec4_x_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Vec4_y_getf, mq_acc_math_Vec4_y_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Vec4_z_getf, mq_acc_math_Vec4_z_setf, 0, 0, 0, 0 },
+    { mq_acc_math_Vec4_w_getf, mq_acc_math_Vec4_w_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_math_Vec4[] = {
-    { "x", (uint32_t)offsetof(math::Vec4, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(math::Vec4, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z", (uint32_t)offsetof(math::Vec4, z), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "w", (uint32_t)offsetof(math::Vec4, w), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(math::Vec4, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec4[0] },
+    { "y", (uint32_t)offsetof(math::Vec4, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec4[1] },
+    { "z", (uint32_t)offsetof(math::Vec4, z), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec4[2] },
+    { "w", (uint32_t)offsetof(math::Vec4, w), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_math_Vec4[3] },
 };
 
+static const void* mq_acc_nav_NavAgent_navmesh_getp(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return &s.navmesh; }
+static void* mq_acc_nav_NavAgent_navmesh_getmp(void* p) { auto& s = *static_cast<nav::NavAgent*>(p); return &s.navmesh; }
+static const void* mq_acc_nav_NavAgent_target_entity_getp(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return &s.target_entity; }
+static void* mq_acc_nav_NavAgent_target_entity_getmp(void* p) { auto& s = *static_cast<nav::NavAgent*>(p); return &s.target_entity; }
+static const void* mq_acc_nav_NavAgent_target_position_getp(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return &s.target_position; }
+static void* mq_acc_nav_NavAgent_target_position_getmp(void* p) { auto& s = *static_cast<nav::NavAgent*>(p); return &s.target_position; }
+static double mq_acc_nav_NavAgent_speed_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_nav_NavAgent_speed_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_nav_NavAgent_acceleration_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.acceleration); }
+static void mq_acc_nav_NavAgent_acceleration_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.acceleration = static_cast<decltype(s.acceleration)>(v); }
+static double mq_acc_nav_NavAgent_radius_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.radius); }
+static void mq_acc_nav_NavAgent_radius_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.radius = static_cast<decltype(s.radius)>(v); }
+static double mq_acc_nav_NavAgent_height_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.height); }
+static void mq_acc_nav_NavAgent_height_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static double mq_acc_nav_NavAgent_stopping_distance_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.stopping_distance); }
+static void mq_acc_nav_NavAgent_stopping_distance_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.stopping_distance = static_cast<decltype(s.stopping_distance)>(v); }
+static double mq_acc_nav_NavAgent_max_slope_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.max_slope); }
+static void mq_acc_nav_NavAgent_max_slope_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.max_slope = static_cast<decltype(s.max_slope)>(v); }
+static double mq_acc_nav_NavAgent_step_height_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.step_height); }
+static void mq_acc_nav_NavAgent_step_height_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.step_height = static_cast<decltype(s.step_height)>(v); }
+static double mq_acc_nav_NavAgent_avoidance_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(static_cast<int64_t>(s.avoidance)); }
+static void mq_acc_nav_NavAgent_avoidance_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.avoidance = static_cast<decltype(s.avoidance)>(v); }
+static double mq_acc_nav_NavAgent_state_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(static_cast<int64_t>(s.state)); }
+static void mq_acc_nav_NavAgent_state_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.state = static_cast<decltype(s.state)>(v); }
+static double mq_acc_nav_NavAgent_path_index_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.path_index); }
+static void mq_acc_nav_NavAgent_path_index_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.path_index = static_cast<decltype(s.path_index)>(v); }
+static const void* mq_acc_nav_NavAgent_desired_velocity_getp(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return &s.desired_velocity; }
+static void* mq_acc_nav_NavAgent_desired_velocity_getmp(void* p) { auto& s = *static_cast<nav::NavAgent*>(p); return &s.desired_velocity; }
+static double mq_acc_nav_NavAgent_query_getf(const void* p) { const auto& s = *static_cast<const nav::NavAgent*>(p); return static_cast<double>(s.query); }
+static void mq_acc_nav_NavAgent_query_setf(void* p, double v) { auto& s = *static_cast<nav::NavAgent*>(p); s.query = static_cast<decltype(s.query)>(v); }
+static const mq_field_accessor mq_acc_nav_NavAgent[] = {
+    { 0, 0, 0, 0, mq_acc_nav_NavAgent_navmesh_getp, mq_acc_nav_NavAgent_navmesh_getmp },
+    { 0, 0, 0, 0, mq_acc_nav_NavAgent_target_entity_getp, mq_acc_nav_NavAgent_target_entity_getmp },
+    { 0, 0, 0, 0, mq_acc_nav_NavAgent_target_position_getp, mq_acc_nav_NavAgent_target_position_getmp },
+    { mq_acc_nav_NavAgent_speed_getf, mq_acc_nav_NavAgent_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_acceleration_getf, mq_acc_nav_NavAgent_acceleration_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_radius_getf, mq_acc_nav_NavAgent_radius_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_height_getf, mq_acc_nav_NavAgent_height_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_stopping_distance_getf, mq_acc_nav_NavAgent_stopping_distance_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_max_slope_getf, mq_acc_nav_NavAgent_max_slope_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_step_height_getf, mq_acc_nav_NavAgent_step_height_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_avoidance_getf, mq_acc_nav_NavAgent_avoidance_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_state_getf, mq_acc_nav_NavAgent_state_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_nav_NavAgent_path_index_getf, mq_acc_nav_NavAgent_path_index_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_nav_NavAgent_desired_velocity_getp, mq_acc_nav_NavAgent_desired_velocity_getmp },
+    { mq_acc_nav_NavAgent_query_getf, mq_acc_nav_NavAgent_query_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_nav_NavAgent_path_clear(void* f) { static_cast<std::vector<math::Vec3>*>(f)->clear(); }
 static uint32_t mq_dyn_nav_NavAgent_path_size(const void* f) { return (uint32_t)static_cast<const std::vector<math::Vec3>*>(f)->size(); }
 static void mq_dyn_nav_NavAgent_path_resize(void* f, uint32_t n) { static_cast<std::vector<math::Vec3>*>(f)->resize(n); }
 static void* mq_dyn_nav_NavAgent_path_elem(void* f, uint32_t i) { return &static_cast<std::vector<math::Vec3>*>(f)->at(i); }
 static const mq_field_desc mq_fields_nav_NavAgent[] = {
-    { "navmesh", (uint32_t)offsetof(nav::NavAgent, navmesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "target_entity", (uint32_t)offsetof(nav::NavAgent, target_entity), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "target_position", (uint32_t)offsetof(nav::NavAgent, target_position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(nav::NavAgent, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "acceleration", (uint32_t)offsetof(nav::NavAgent, acceleration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "radius", (uint32_t)offsetof(nav::NavAgent, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(nav::NavAgent, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "stopping_distance", (uint32_t)offsetof(nav::NavAgent, stopping_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_slope", (uint32_t)offsetof(nav::NavAgent, max_slope), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "step_height", (uint32_t)offsetof(nav::NavAgent, step_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "avoidance", (uint32_t)offsetof(nav::NavAgent, avoidance), MQ_TK_ENUM, 829705629u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "state", (uint32_t)offsetof(nav::NavAgent, state), MQ_TK_ENUM, 3866589823u, 0u, 2u, 0u, 0, 0, 0, 0 },
-    { "path", (uint32_t)offsetof(nav::NavAgent, path), MQ_TK_ARRAY_DYN, 1859510476u, 0u, 1u, 1859510476u, mq_dyn_nav_NavAgent_path_clear, mq_dyn_nav_NavAgent_path_size, mq_dyn_nav_NavAgent_path_resize, mq_dyn_nav_NavAgent_path_elem },
-    { "path_index", (uint32_t)offsetof(nav::NavAgent, path_index), MQ_TK_U16, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "desired_velocity", (uint32_t)offsetof(nav::NavAgent, desired_velocity), MQ_TK_STRUCT, 1859510476u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "query", (uint32_t)offsetof(nav::NavAgent, query), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "navmesh", (uint32_t)offsetof(nav::NavAgent, navmesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[0] },
+    { "target_entity", (uint32_t)offsetof(nav::NavAgent, target_entity), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[1] },
+    { "target_position", (uint32_t)offsetof(nav::NavAgent, target_position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[2] },
+    { "speed", (uint32_t)offsetof(nav::NavAgent, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[3] },
+    { "acceleration", (uint32_t)offsetof(nav::NavAgent, acceleration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[4] },
+    { "radius", (uint32_t)offsetof(nav::NavAgent, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[5] },
+    { "height", (uint32_t)offsetof(nav::NavAgent, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[6] },
+    { "stopping_distance", (uint32_t)offsetof(nav::NavAgent, stopping_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[7] },
+    { "max_slope", (uint32_t)offsetof(nav::NavAgent, max_slope), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[8] },
+    { "step_height", (uint32_t)offsetof(nav::NavAgent, step_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[9] },
+    { "avoidance", (uint32_t)offsetof(nav::NavAgent, avoidance), MQ_TK_ENUM, 829705629u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[10] },
+    { "state", (uint32_t)offsetof(nav::NavAgent, state), MQ_TK_ENUM, 3866589823u, 0u, 2u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[11] },
+    { "path", (uint32_t)offsetof(nav::NavAgent, path), MQ_TK_ARRAY_DYN, 1859510476u, 0u, 1u, 1859510476u, mq_dyn_nav_NavAgent_path_clear, mq_dyn_nav_NavAgent_path_size, mq_dyn_nav_NavAgent_path_resize, mq_dyn_nav_NavAgent_path_elem, &mq_acc_nav_NavAgent[12] },
+    { "path_index", (uint32_t)offsetof(nav::NavAgent, path_index), MQ_TK_U16, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[13] },
+    { "desired_velocity", (uint32_t)offsetof(nav::NavAgent, desired_velocity), MQ_TK_STRUCT, 1859510476u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[14] },
+    { "query", (uint32_t)offsetof(nav::NavAgent, query), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavAgent[15] },
 };
 
+static double mq_acc_nav_NavMesh_source_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(static_cast<int64_t>(s.source)); }
+static void mq_acc_nav_NavMesh_source_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.source = static_cast<decltype(s.source)>(v); }
+static const void* mq_acc_nav_NavMesh_geometry_getp(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return &s.geometry; }
+static void* mq_acc_nav_NavMesh_geometry_getmp(void* p) { auto& s = *static_cast<nav::NavMesh*>(p); return &s.geometry; }
+static const void* mq_acc_nav_NavMesh_data_getp(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return &s.data; }
+static void* mq_acc_nav_NavMesh_data_getmp(void* p) { auto& s = *static_cast<nav::NavMesh*>(p); return &s.data; }
+static double mq_acc_nav_NavMesh_cell_size_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(s.cell_size); }
+static void mq_acc_nav_NavMesh_cell_size_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.cell_size = static_cast<decltype(s.cell_size)>(v); }
+static double mq_acc_nav_NavMesh_cell_height_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(s.cell_height); }
+static void mq_acc_nav_NavMesh_cell_height_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.cell_height = static_cast<decltype(s.cell_height)>(v); }
+static double mq_acc_nav_NavMesh_agent_radius_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(s.agent_radius); }
+static void mq_acc_nav_NavMesh_agent_radius_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.agent_radius = static_cast<decltype(s.agent_radius)>(v); }
+static double mq_acc_nav_NavMesh_agent_height_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(s.agent_height); }
+static void mq_acc_nav_NavMesh_agent_height_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.agent_height = static_cast<decltype(s.agent_height)>(v); }
+static double mq_acc_nav_NavMesh_max_slope_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(s.max_slope); }
+static void mq_acc_nav_NavMesh_max_slope_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.max_slope = static_cast<decltype(s.max_slope)>(v); }
+static double mq_acc_nav_NavMesh_max_edge_length_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(s.max_edge_length); }
+static void mq_acc_nav_NavMesh_max_edge_length_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.max_edge_length = static_cast<decltype(s.max_edge_length)>(v); }
+static double mq_acc_nav_NavMesh_region_min_size_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(s.region_min_size); }
+static void mq_acc_nav_NavMesh_region_min_size_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.region_min_size = static_cast<decltype(s.region_min_size)>(v); }
+static double mq_acc_nav_NavMesh_bake_state_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(static_cast<int64_t>(s.bake_state)); }
+static void mq_acc_nav_NavMesh_bake_state_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.bake_state = static_cast<decltype(s.bake_state)>(v); }
+static double mq_acc_nav_NavMesh_accel_getf(const void* p) { const auto& s = *static_cast<const nav::NavMesh*>(p); return static_cast<double>(s.accel); }
+static void mq_acc_nav_NavMesh_accel_setf(void* p, double v) { auto& s = *static_cast<nav::NavMesh*>(p); s.accel = static_cast<decltype(s.accel)>(v); }
+static const mq_field_accessor mq_acc_nav_NavMesh[] = {
+    { mq_acc_nav_NavMesh_source_getf, mq_acc_nav_NavMesh_source_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_nav_NavMesh_geometry_getp, mq_acc_nav_NavMesh_geometry_getmp },
+    { 0, 0, 0, 0, mq_acc_nav_NavMesh_data_getp, mq_acc_nav_NavMesh_data_getmp },
+    { mq_acc_nav_NavMesh_cell_size_getf, mq_acc_nav_NavMesh_cell_size_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavMesh_cell_height_getf, mq_acc_nav_NavMesh_cell_height_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavMesh_agent_radius_getf, mq_acc_nav_NavMesh_agent_radius_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavMesh_agent_height_getf, mq_acc_nav_NavMesh_agent_height_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavMesh_max_slope_getf, mq_acc_nav_NavMesh_max_slope_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavMesh_max_edge_length_getf, mq_acc_nav_NavMesh_max_edge_length_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavMesh_region_min_size_getf, mq_acc_nav_NavMesh_region_min_size_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavMesh_bake_state_getf, mq_acc_nav_NavMesh_bake_state_setf, 0, 0, 0, 0 },
+    { mq_acc_nav_NavMesh_accel_getf, mq_acc_nav_NavMesh_accel_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_nav_NavMesh[] = {
-    { "source", (uint32_t)offsetof(nav::NavMesh, source), MQ_TK_ENUM, 4072604573u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "geometry", (uint32_t)offsetof(nav::NavMesh, geometry), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "data", (uint32_t)offsetof(nav::NavMesh, data), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "cell_size", (uint32_t)offsetof(nav::NavMesh, cell_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "cell_height", (uint32_t)offsetof(nav::NavMesh, cell_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "agent_radius", (uint32_t)offsetof(nav::NavMesh, agent_radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "agent_height", (uint32_t)offsetof(nav::NavMesh, agent_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_slope", (uint32_t)offsetof(nav::NavMesh, max_slope), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_edge_length", (uint32_t)offsetof(nav::NavMesh, max_edge_length), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "region_min_size", (uint32_t)offsetof(nav::NavMesh, region_min_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bake_state", (uint32_t)offsetof(nav::NavMesh, bake_state), MQ_TK_ENUM, 1736581126u, 0u, 2u, 0u, 0, 0, 0, 0 },
-    { "accel", (uint32_t)offsetof(nav::NavMesh, accel), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "source", (uint32_t)offsetof(nav::NavMesh, source), MQ_TK_ENUM, 4072604573u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[0] },
+    { "geometry", (uint32_t)offsetof(nav::NavMesh, geometry), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[1] },
+    { "data", (uint32_t)offsetof(nav::NavMesh, data), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[2] },
+    { "cell_size", (uint32_t)offsetof(nav::NavMesh, cell_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[3] },
+    { "cell_height", (uint32_t)offsetof(nav::NavMesh, cell_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[4] },
+    { "agent_radius", (uint32_t)offsetof(nav::NavMesh, agent_radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[5] },
+    { "agent_height", (uint32_t)offsetof(nav::NavMesh, agent_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[6] },
+    { "max_slope", (uint32_t)offsetof(nav::NavMesh, max_slope), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[7] },
+    { "max_edge_length", (uint32_t)offsetof(nav::NavMesh, max_edge_length), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[8] },
+    { "region_min_size", (uint32_t)offsetof(nav::NavMesh, region_min_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[9] },
+    { "bake_state", (uint32_t)offsetof(nav::NavMesh, bake_state), MQ_TK_ENUM, 1736581126u, 0u, 2u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[10] },
+    { "accel", (uint32_t)offsetof(nav::NavMesh, accel), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_nav_NavMesh[11] },
 };
 
+static double mq_acc_physics_Area_monitoring_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return s.monitoring ? 1.0 : 0.0; }
+static void mq_acc_physics_Area_monitoring_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.monitoring = v != 0.0; }
+static double mq_acc_physics_Area_monitorable_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return s.monitorable ? 1.0 : 0.0; }
+static void mq_acc_physics_Area_monitorable_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.monitorable = v != 0.0; }
+static double mq_acc_physics_Area_priority_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(s.priority); }
+static void mq_acc_physics_Area_priority_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.priority = static_cast<decltype(s.priority)>(v); }
+static double mq_acc_physics_Area_gravity_space_override_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(static_cast<int64_t>(s.gravity_space_override)); }
+static void mq_acc_physics_Area_gravity_space_override_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.gravity_space_override = static_cast<decltype(s.gravity_space_override)>(v); }
+static const void* mq_acc_physics_Area_gravity_direction_getp(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return &s.gravity_direction; }
+static void* mq_acc_physics_Area_gravity_direction_getmp(void* p) { auto& s = *static_cast<physics::Area*>(p); return &s.gravity_direction; }
+static double mq_acc_physics_Area_gravity_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(s.gravity); }
+static void mq_acc_physics_Area_gravity_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.gravity = static_cast<decltype(s.gravity)>(v); }
+static double mq_acc_physics_Area_linear_damping_override_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(s.linear_damping_override); }
+static void mq_acc_physics_Area_linear_damping_override_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.linear_damping_override = static_cast<decltype(s.linear_damping_override)>(v); }
+static double mq_acc_physics_Area_angular_damping_override_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(s.angular_damping_override); }
+static void mq_acc_physics_Area_angular_damping_override_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.angular_damping_override = static_cast<decltype(s.angular_damping_override)>(v); }
+static double mq_acc_physics_Area_collision_layer_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(s.collision_layer); }
+static void mq_acc_physics_Area_collision_layer_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.collision_layer = static_cast<decltype(s.collision_layer)>(v); }
+static double mq_acc_physics_Area_collision_mask_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(s.collision_mask); }
+static void mq_acc_physics_Area_collision_mask_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.collision_mask = static_cast<decltype(s.collision_mask)>(v); }
+static double mq_acc_physics_Area_overlap_count_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(s.overlap_count); }
+static void mq_acc_physics_Area_overlap_count_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.overlap_count = static_cast<decltype(s.overlap_count)>(v); }
+static double mq_acc_physics_Area_area_handle_getf(const void* p) { const auto& s = *static_cast<const physics::Area*>(p); return static_cast<double>(s.area_handle); }
+static void mq_acc_physics_Area_area_handle_setf(void* p, double v) { auto& s = *static_cast<physics::Area*>(p); s.area_handle = static_cast<decltype(s.area_handle)>(v); }
+static const mq_field_accessor mq_acc_physics_Area[] = {
+    { mq_acc_physics_Area_monitoring_getf, mq_acc_physics_Area_monitoring_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_monitorable_getf, mq_acc_physics_Area_monitorable_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_priority_getf, mq_acc_physics_Area_priority_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_gravity_space_override_getf, mq_acc_physics_Area_gravity_space_override_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_physics_Area_gravity_direction_getp, mq_acc_physics_Area_gravity_direction_getmp },
+    { mq_acc_physics_Area_gravity_getf, mq_acc_physics_Area_gravity_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_linear_damping_override_getf, mq_acc_physics_Area_linear_damping_override_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_angular_damping_override_getf, mq_acc_physics_Area_angular_damping_override_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_collision_layer_getf, mq_acc_physics_Area_collision_layer_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_collision_mask_getf, mq_acc_physics_Area_collision_mask_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_overlap_count_getf, mq_acc_physics_Area_overlap_count_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Area_area_handle_getf, mq_acc_physics_Area_area_handle_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_physics_Area[] = {
-    { "monitoring", (uint32_t)offsetof(physics::Area, monitoring), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "monitorable", (uint32_t)offsetof(physics::Area, monitorable), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "priority", (uint32_t)offsetof(physics::Area, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gravity_space_override", (uint32_t)offsetof(physics::Area, gravity_space_override), MQ_TK_ENUM, 2558817330u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gravity_direction", (uint32_t)offsetof(physics::Area, gravity_direction), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gravity", (uint32_t)offsetof(physics::Area, gravity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "linear_damping_override", (uint32_t)offsetof(physics::Area, linear_damping_override), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "angular_damping_override", (uint32_t)offsetof(physics::Area, angular_damping_override), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "collision_layer", (uint32_t)offsetof(physics::Area, collision_layer), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "collision_mask", (uint32_t)offsetof(physics::Area, collision_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "overlap_count", (uint32_t)offsetof(physics::Area, overlap_count), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "area_handle", (uint32_t)offsetof(physics::Area, area_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "monitoring", (uint32_t)offsetof(physics::Area, monitoring), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[0] },
+    { "monitorable", (uint32_t)offsetof(physics::Area, monitorable), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[1] },
+    { "priority", (uint32_t)offsetof(physics::Area, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[2] },
+    { "gravity_space_override", (uint32_t)offsetof(physics::Area, gravity_space_override), MQ_TK_ENUM, 2558817330u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[3] },
+    { "gravity_direction", (uint32_t)offsetof(physics::Area, gravity_direction), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[4] },
+    { "gravity", (uint32_t)offsetof(physics::Area, gravity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[5] },
+    { "linear_damping_override", (uint32_t)offsetof(physics::Area, linear_damping_override), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[6] },
+    { "angular_damping_override", (uint32_t)offsetof(physics::Area, angular_damping_override), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[7] },
+    { "collision_layer", (uint32_t)offsetof(physics::Area, collision_layer), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[8] },
+    { "collision_mask", (uint32_t)offsetof(physics::Area, collision_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[9] },
+    { "overlap_count", (uint32_t)offsetof(physics::Area, overlap_count), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[10] },
+    { "area_handle", (uint32_t)offsetof(physics::Area, area_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_physics_Area[11] },
 };
 
+static const void* mq_acc_physics_CharacterBody_desired_velocity_getp(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return &s.desired_velocity; }
+static void* mq_acc_physics_CharacterBody_desired_velocity_getmp(void* p) { auto& s = *static_cast<physics::CharacterBody*>(p); return &s.desired_velocity; }
+static const void* mq_acc_physics_CharacterBody_up_direction_getp(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return &s.up_direction; }
+static void* mq_acc_physics_CharacterBody_up_direction_getmp(void* p) { auto& s = *static_cast<physics::CharacterBody*>(p); return &s.up_direction; }
+static double mq_acc_physics_CharacterBody_floor_max_angle_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return static_cast<double>(s.floor_max_angle); }
+static void mq_acc_physics_CharacterBody_floor_max_angle_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.floor_max_angle = static_cast<decltype(s.floor_max_angle)>(v); }
+static double mq_acc_physics_CharacterBody_step_height_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return static_cast<double>(s.step_height); }
+static void mq_acc_physics_CharacterBody_step_height_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.step_height = static_cast<decltype(s.step_height)>(v); }
+static double mq_acc_physics_CharacterBody_snap_length_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return static_cast<double>(s.snap_length); }
+static void mq_acc_physics_CharacterBody_snap_length_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.snap_length = static_cast<decltype(s.snap_length)>(v); }
+static double mq_acc_physics_CharacterBody_max_slides_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return static_cast<double>(s.max_slides); }
+static void mq_acc_physics_CharacterBody_max_slides_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.max_slides = static_cast<decltype(s.max_slides)>(v); }
+static double mq_acc_physics_CharacterBody_auto_apply_gravity_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return s.auto_apply_gravity ? 1.0 : 0.0; }
+static void mq_acc_physics_CharacterBody_auto_apply_gravity_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.auto_apply_gravity = v != 0.0; }
+static double mq_acc_physics_CharacterBody_gravity_scale_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return static_cast<double>(s.gravity_scale); }
+static void mq_acc_physics_CharacterBody_gravity_scale_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.gravity_scale = static_cast<decltype(s.gravity_scale)>(v); }
+static const void* mq_acc_physics_CharacterBody_velocity_getp(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return &s.velocity; }
+static void* mq_acc_physics_CharacterBody_velocity_getmp(void* p) { auto& s = *static_cast<physics::CharacterBody*>(p); return &s.velocity; }
+static double mq_acc_physics_CharacterBody_on_floor_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return s.on_floor ? 1.0 : 0.0; }
+static void mq_acc_physics_CharacterBody_on_floor_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.on_floor = v != 0.0; }
+static double mq_acc_physics_CharacterBody_on_wall_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return s.on_wall ? 1.0 : 0.0; }
+static void mq_acc_physics_CharacterBody_on_wall_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.on_wall = v != 0.0; }
+static double mq_acc_physics_CharacterBody_on_ceiling_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return s.on_ceiling ? 1.0 : 0.0; }
+static void mq_acc_physics_CharacterBody_on_ceiling_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.on_ceiling = v != 0.0; }
+static const void* mq_acc_physics_CharacterBody_floor_normal_getp(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return &s.floor_normal; }
+static void* mq_acc_physics_CharacterBody_floor_normal_getmp(void* p) { auto& s = *static_cast<physics::CharacterBody*>(p); return &s.floor_normal; }
+static double mq_acc_physics_CharacterBody_controller_handle_getf(const void* p) { const auto& s = *static_cast<const physics::CharacterBody*>(p); return static_cast<double>(s.controller_handle); }
+static void mq_acc_physics_CharacterBody_controller_handle_setf(void* p, double v) { auto& s = *static_cast<physics::CharacterBody*>(p); s.controller_handle = static_cast<decltype(s.controller_handle)>(v); }
+static const mq_field_accessor mq_acc_physics_CharacterBody[] = {
+    { 0, 0, 0, 0, mq_acc_physics_CharacterBody_desired_velocity_getp, mq_acc_physics_CharacterBody_desired_velocity_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_CharacterBody_up_direction_getp, mq_acc_physics_CharacterBody_up_direction_getmp },
+    { mq_acc_physics_CharacterBody_floor_max_angle_getf, mq_acc_physics_CharacterBody_floor_max_angle_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_CharacterBody_step_height_getf, mq_acc_physics_CharacterBody_step_height_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_CharacterBody_snap_length_getf, mq_acc_physics_CharacterBody_snap_length_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_CharacterBody_max_slides_getf, mq_acc_physics_CharacterBody_max_slides_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_CharacterBody_auto_apply_gravity_getf, mq_acc_physics_CharacterBody_auto_apply_gravity_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_CharacterBody_gravity_scale_getf, mq_acc_physics_CharacterBody_gravity_scale_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_physics_CharacterBody_velocity_getp, mq_acc_physics_CharacterBody_velocity_getmp },
+    { mq_acc_physics_CharacterBody_on_floor_getf, mq_acc_physics_CharacterBody_on_floor_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_CharacterBody_on_wall_getf, mq_acc_physics_CharacterBody_on_wall_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_CharacterBody_on_ceiling_getf, mq_acc_physics_CharacterBody_on_ceiling_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_physics_CharacterBody_floor_normal_getp, mq_acc_physics_CharacterBody_floor_normal_getmp },
+    { mq_acc_physics_CharacterBody_controller_handle_getf, mq_acc_physics_CharacterBody_controller_handle_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_physics_CharacterBody[] = {
-    { "desired_velocity", (uint32_t)offsetof(physics::CharacterBody, desired_velocity), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "up_direction", (uint32_t)offsetof(physics::CharacterBody, up_direction), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "floor_max_angle", (uint32_t)offsetof(physics::CharacterBody, floor_max_angle), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "step_height", (uint32_t)offsetof(physics::CharacterBody, step_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "snap_length", (uint32_t)offsetof(physics::CharacterBody, snap_length), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_slides", (uint32_t)offsetof(physics::CharacterBody, max_slides), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "auto_apply_gravity", (uint32_t)offsetof(physics::CharacterBody, auto_apply_gravity), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gravity_scale", (uint32_t)offsetof(physics::CharacterBody, gravity_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "velocity", (uint32_t)offsetof(physics::CharacterBody, velocity), MQ_TK_STRUCT, 1859510476u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "on_floor", (uint32_t)offsetof(physics::CharacterBody, on_floor), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "on_wall", (uint32_t)offsetof(physics::CharacterBody, on_wall), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "on_ceiling", (uint32_t)offsetof(physics::CharacterBody, on_ceiling), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "floor_normal", (uint32_t)offsetof(physics::CharacterBody, floor_normal), MQ_TK_STRUCT, 1859510476u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "controller_handle", (uint32_t)offsetof(physics::CharacterBody, controller_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "desired_velocity", (uint32_t)offsetof(physics::CharacterBody, desired_velocity), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[0] },
+    { "up_direction", (uint32_t)offsetof(physics::CharacterBody, up_direction), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[1] },
+    { "floor_max_angle", (uint32_t)offsetof(physics::CharacterBody, floor_max_angle), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[2] },
+    { "step_height", (uint32_t)offsetof(physics::CharacterBody, step_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[3] },
+    { "snap_length", (uint32_t)offsetof(physics::CharacterBody, snap_length), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[4] },
+    { "max_slides", (uint32_t)offsetof(physics::CharacterBody, max_slides), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[5] },
+    { "auto_apply_gravity", (uint32_t)offsetof(physics::CharacterBody, auto_apply_gravity), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[6] },
+    { "gravity_scale", (uint32_t)offsetof(physics::CharacterBody, gravity_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[7] },
+    { "velocity", (uint32_t)offsetof(physics::CharacterBody, velocity), MQ_TK_STRUCT, 1859510476u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[8] },
+    { "on_floor", (uint32_t)offsetof(physics::CharacterBody, on_floor), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[9] },
+    { "on_wall", (uint32_t)offsetof(physics::CharacterBody, on_wall), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[10] },
+    { "on_ceiling", (uint32_t)offsetof(physics::CharacterBody, on_ceiling), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[11] },
+    { "floor_normal", (uint32_t)offsetof(physics::CharacterBody, floor_normal), MQ_TK_STRUCT, 1859510476u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[12] },
+    { "controller_handle", (uint32_t)offsetof(physics::CharacterBody, controller_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_physics_CharacterBody[13] },
 };
 
+static double mq_acc_physics_Collider_shape_type_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(static_cast<int64_t>(s.shape_type)); }
+static void mq_acc_physics_Collider_shape_type_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.shape_type = static_cast<decltype(s.shape_type)>(v); }
+static const void* mq_acc_physics_Collider_half_extents_getp(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return &s.half_extents; }
+static void* mq_acc_physics_Collider_half_extents_getmp(void* p) { auto& s = *static_cast<physics::Collider*>(p); return &s.half_extents; }
+static double mq_acc_physics_Collider_radius_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.radius); }
+static void mq_acc_physics_Collider_radius_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.radius = static_cast<decltype(s.radius)>(v); }
+static double mq_acc_physics_Collider_half_height_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.half_height); }
+static void mq_acc_physics_Collider_half_height_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.half_height = static_cast<decltype(s.half_height)>(v); }
+static const void* mq_acc_physics_Collider_convex_mesh_getp(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return &s.convex_mesh; }
+static void* mq_acc_physics_Collider_convex_mesh_getmp(void* p) { auto& s = *static_cast<physics::Collider*>(p); return &s.convex_mesh; }
+static const void* mq_acc_physics_Collider_trimesh_getp(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return &s.trimesh; }
+static void* mq_acc_physics_Collider_trimesh_getmp(void* p) { auto& s = *static_cast<physics::Collider*>(p); return &s.trimesh; }
+static const void* mq_acc_physics_Collider_height_scale_getp(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return &s.height_scale; }
+static void* mq_acc_physics_Collider_height_scale_getmp(void* p) { auto& s = *static_cast<physics::Collider*>(p); return &s.height_scale; }
+static double mq_acc_physics_Collider_density_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.density); }
+static void mq_acc_physics_Collider_density_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.density = static_cast<decltype(s.density)>(v); }
+static double mq_acc_physics_Collider_friction_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.friction); }
+static void mq_acc_physics_Collider_friction_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.friction = static_cast<decltype(s.friction)>(v); }
+static double mq_acc_physics_Collider_restitution_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.restitution); }
+static void mq_acc_physics_Collider_restitution_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.restitution = static_cast<decltype(s.restitution)>(v); }
+static double mq_acc_physics_Collider_friction_combine_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(static_cast<int64_t>(s.friction_combine)); }
+static void mq_acc_physics_Collider_friction_combine_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.friction_combine = static_cast<decltype(s.friction_combine)>(v); }
+static double mq_acc_physics_Collider_restitution_combine_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(static_cast<int64_t>(s.restitution_combine)); }
+static void mq_acc_physics_Collider_restitution_combine_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.restitution_combine = static_cast<decltype(s.restitution_combine)>(v); }
+static double mq_acc_physics_Collider_is_sensor_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return s.is_sensor ? 1.0 : 0.0; }
+static void mq_acc_physics_Collider_is_sensor_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.is_sensor = v != 0.0; }
+static double mq_acc_physics_Collider_collision_layer_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.collision_layer); }
+static void mq_acc_physics_Collider_collision_layer_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.collision_layer = static_cast<decltype(s.collision_layer)>(v); }
+static double mq_acc_physics_Collider_collision_mask_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.collision_mask); }
+static void mq_acc_physics_Collider_collision_mask_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.collision_mask = static_cast<decltype(s.collision_mask)>(v); }
+static const void* mq_acc_physics_Collider_offset_position_getp(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return &s.offset_position; }
+static void* mq_acc_physics_Collider_offset_position_getmp(void* p) { auto& s = *static_cast<physics::Collider*>(p); return &s.offset_position; }
+static const void* mq_acc_physics_Collider_offset_rotation_getp(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return &s.offset_rotation; }
+static void* mq_acc_physics_Collider_offset_rotation_getmp(void* p) { auto& s = *static_cast<physics::Collider*>(p); return &s.offset_rotation; }
+static double mq_acc_physics_Collider_collider_handle_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.collider_handle); }
+static void mq_acc_physics_Collider_collider_handle_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.collider_handle = static_cast<decltype(s.collider_handle)>(v); }
+static double mq_acc_physics_Collider_owner_body_getf(const void* p) { const auto& s = *static_cast<const physics::Collider*>(p); return static_cast<double>(s.owner_body); }
+static void mq_acc_physics_Collider_owner_body_setf(void* p, double v) { auto& s = *static_cast<physics::Collider*>(p); s.owner_body = static_cast<decltype(s.owner_body)>(v); }
+static const mq_field_accessor mq_acc_physics_Collider[] = {
+    { mq_acc_physics_Collider_shape_type_getf, mq_acc_physics_Collider_shape_type_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_physics_Collider_half_extents_getp, mq_acc_physics_Collider_half_extents_getmp },
+    { mq_acc_physics_Collider_radius_getf, mq_acc_physics_Collider_radius_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_half_height_getf, mq_acc_physics_Collider_half_height_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_physics_Collider_convex_mesh_getp, mq_acc_physics_Collider_convex_mesh_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_Collider_trimesh_getp, mq_acc_physics_Collider_trimesh_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_Collider_height_scale_getp, mq_acc_physics_Collider_height_scale_getmp },
+    { mq_acc_physics_Collider_density_getf, mq_acc_physics_Collider_density_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_friction_getf, mq_acc_physics_Collider_friction_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_restitution_getf, mq_acc_physics_Collider_restitution_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_friction_combine_getf, mq_acc_physics_Collider_friction_combine_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_restitution_combine_getf, mq_acc_physics_Collider_restitution_combine_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_is_sensor_getf, mq_acc_physics_Collider_is_sensor_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_collision_layer_getf, mq_acc_physics_Collider_collision_layer_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_collision_mask_getf, mq_acc_physics_Collider_collision_mask_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_physics_Collider_offset_position_getp, mq_acc_physics_Collider_offset_position_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_Collider_offset_rotation_getp, mq_acc_physics_Collider_offset_rotation_getmp },
+    { mq_acc_physics_Collider_collider_handle_getf, mq_acc_physics_Collider_collider_handle_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Collider_owner_body_getf, mq_acc_physics_Collider_owner_body_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_physics_Collider[] = {
-    { "shape_type", (uint32_t)offsetof(physics::Collider, shape_type), MQ_TK_ENUM, 2760662513u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "half_extents", (uint32_t)offsetof(physics::Collider, half_extents), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "radius", (uint32_t)offsetof(physics::Collider, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "half_height", (uint32_t)offsetof(physics::Collider, half_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "convex_mesh", (uint32_t)offsetof(physics::Collider, convex_mesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "trimesh", (uint32_t)offsetof(physics::Collider, trimesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height_scale", (uint32_t)offsetof(physics::Collider, height_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "density", (uint32_t)offsetof(physics::Collider, density), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "friction", (uint32_t)offsetof(physics::Collider, friction), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "restitution", (uint32_t)offsetof(physics::Collider, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "friction_combine", (uint32_t)offsetof(physics::Collider, friction_combine), MQ_TK_ENUM, 1641000163u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "restitution_combine", (uint32_t)offsetof(physics::Collider, restitution_combine), MQ_TK_ENUM, 1641000163u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "is_sensor", (uint32_t)offsetof(physics::Collider, is_sensor), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "collision_layer", (uint32_t)offsetof(physics::Collider, collision_layer), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "collision_mask", (uint32_t)offsetof(physics::Collider, collision_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "offset_position", (uint32_t)offsetof(physics::Collider, offset_position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "offset_rotation", (uint32_t)offsetof(physics::Collider, offset_rotation), MQ_TK_STRUCT, 1809161124u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "collider_handle", (uint32_t)offsetof(physics::Collider, collider_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "owner_body", (uint32_t)offsetof(physics::Collider, owner_body), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "shape_type", (uint32_t)offsetof(physics::Collider, shape_type), MQ_TK_ENUM, 2760662513u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[0] },
+    { "half_extents", (uint32_t)offsetof(physics::Collider, half_extents), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[1] },
+    { "radius", (uint32_t)offsetof(physics::Collider, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[2] },
+    { "half_height", (uint32_t)offsetof(physics::Collider, half_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[3] },
+    { "convex_mesh", (uint32_t)offsetof(physics::Collider, convex_mesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[4] },
+    { "trimesh", (uint32_t)offsetof(physics::Collider, trimesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[5] },
+    { "height_scale", (uint32_t)offsetof(physics::Collider, height_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[6] },
+    { "density", (uint32_t)offsetof(physics::Collider, density), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[7] },
+    { "friction", (uint32_t)offsetof(physics::Collider, friction), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[8] },
+    { "restitution", (uint32_t)offsetof(physics::Collider, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[9] },
+    { "friction_combine", (uint32_t)offsetof(physics::Collider, friction_combine), MQ_TK_ENUM, 1641000163u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[10] },
+    { "restitution_combine", (uint32_t)offsetof(physics::Collider, restitution_combine), MQ_TK_ENUM, 1641000163u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[11] },
+    { "is_sensor", (uint32_t)offsetof(physics::Collider, is_sensor), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[12] },
+    { "collision_layer", (uint32_t)offsetof(physics::Collider, collision_layer), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[13] },
+    { "collision_mask", (uint32_t)offsetof(physics::Collider, collision_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[14] },
+    { "offset_position", (uint32_t)offsetof(physics::Collider, offset_position), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[15] },
+    { "offset_rotation", (uint32_t)offsetof(physics::Collider, offset_rotation), MQ_TK_STRUCT, 1809161124u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[16] },
+    { "collider_handle", (uint32_t)offsetof(physics::Collider, collider_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[17] },
+    { "owner_body", (uint32_t)offsetof(physics::Collider, owner_body), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_physics_Collider[18] },
 };
 
+static const void* mq_acc_physics_ConstantForce_force_getp(const void* p) { const auto& s = *static_cast<const physics::ConstantForce*>(p); return &s.force; }
+static void* mq_acc_physics_ConstantForce_force_getmp(void* p) { auto& s = *static_cast<physics::ConstantForce*>(p); return &s.force; }
+static const void* mq_acc_physics_ConstantForce_torque_getp(const void* p) { const auto& s = *static_cast<const physics::ConstantForce*>(p); return &s.torque; }
+static void* mq_acc_physics_ConstantForce_torque_getmp(void* p) { auto& s = *static_cast<physics::ConstantForce*>(p); return &s.torque; }
+static double mq_acc_physics_ConstantForce_space_getf(const void* p) { const auto& s = *static_cast<const physics::ConstantForce*>(p); return static_cast<double>(static_cast<int64_t>(s.space)); }
+static void mq_acc_physics_ConstantForce_space_setf(void* p, double v) { auto& s = *static_cast<physics::ConstantForce*>(p); s.space = static_cast<decltype(s.space)>(v); }
+static double mq_acc_physics_ConstantForce_apply_mode_getf(const void* p) { const auto& s = *static_cast<const physics::ConstantForce*>(p); return static_cast<double>(static_cast<int64_t>(s.apply_mode)); }
+static void mq_acc_physics_ConstantForce_apply_mode_setf(void* p, double v) { auto& s = *static_cast<physics::ConstantForce*>(p); s.apply_mode = static_cast<decltype(s.apply_mode)>(v); }
+static double mq_acc_physics_ConstantForce_enabled_getf(const void* p) { const auto& s = *static_cast<const physics::ConstantForce*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_physics_ConstantForce_enabled_setf(void* p, double v) { auto& s = *static_cast<physics::ConstantForce*>(p); s.enabled = v != 0.0; }
+static double mq_acc_physics_ConstantForce_only_when_awake_getf(const void* p) { const auto& s = *static_cast<const physics::ConstantForce*>(p); return s.only_when_awake ? 1.0 : 0.0; }
+static void mq_acc_physics_ConstantForce_only_when_awake_setf(void* p, double v) { auto& s = *static_cast<physics::ConstantForce*>(p); s.only_when_awake = v != 0.0; }
+static double mq_acc_physics_ConstantForce_impulse_consumed_getf(const void* p) { const auto& s = *static_cast<const physics::ConstantForce*>(p); return s.impulse_consumed ? 1.0 : 0.0; }
+static void mq_acc_physics_ConstantForce_impulse_consumed_setf(void* p, double v) { auto& s = *static_cast<physics::ConstantForce*>(p); s.impulse_consumed = v != 0.0; }
+static const mq_field_accessor mq_acc_physics_ConstantForce[] = {
+    { 0, 0, 0, 0, mq_acc_physics_ConstantForce_force_getp, mq_acc_physics_ConstantForce_force_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_ConstantForce_torque_getp, mq_acc_physics_ConstantForce_torque_getmp },
+    { mq_acc_physics_ConstantForce_space_getf, mq_acc_physics_ConstantForce_space_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_ConstantForce_apply_mode_getf, mq_acc_physics_ConstantForce_apply_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_ConstantForce_enabled_getf, mq_acc_physics_ConstantForce_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_ConstantForce_only_when_awake_getf, mq_acc_physics_ConstantForce_only_when_awake_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_ConstantForce_impulse_consumed_getf, mq_acc_physics_ConstantForce_impulse_consumed_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_physics_ConstantForce[] = {
-    { "force", (uint32_t)offsetof(physics::ConstantForce, force), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "torque", (uint32_t)offsetof(physics::ConstantForce, torque), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "space", (uint32_t)offsetof(physics::ConstantForce, space), MQ_TK_ENUM, 4137576307u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "apply_mode", (uint32_t)offsetof(physics::ConstantForce, apply_mode), MQ_TK_ENUM, 4093419606u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(physics::ConstantForce, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "only_when_awake", (uint32_t)offsetof(physics::ConstantForce, only_when_awake), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "impulse_consumed", (uint32_t)offsetof(physics::ConstantForce, impulse_consumed), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "force", (uint32_t)offsetof(physics::ConstantForce, force), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_ConstantForce[0] },
+    { "torque", (uint32_t)offsetof(physics::ConstantForce, torque), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_ConstantForce[1] },
+    { "space", (uint32_t)offsetof(physics::ConstantForce, space), MQ_TK_ENUM, 4137576307u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_ConstantForce[2] },
+    { "apply_mode", (uint32_t)offsetof(physics::ConstantForce, apply_mode), MQ_TK_ENUM, 4093419606u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_ConstantForce[3] },
+    { "enabled", (uint32_t)offsetof(physics::ConstantForce, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_ConstantForce[4] },
+    { "only_when_awake", (uint32_t)offsetof(physics::ConstantForce, only_when_awake), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_ConstantForce[5] },
+    { "impulse_consumed", (uint32_t)offsetof(physics::ConstantForce, impulse_consumed), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_ConstantForce[6] },
 };
 
+static double mq_acc_physics_DampingOverride_linear_damping_getf(const void* p) { const auto& s = *static_cast<const physics::DampingOverride*>(p); return static_cast<double>(s.linear_damping); }
+static void mq_acc_physics_DampingOverride_linear_damping_setf(void* p, double v) { auto& s = *static_cast<physics::DampingOverride*>(p); s.linear_damping = static_cast<decltype(s.linear_damping)>(v); }
+static double mq_acc_physics_DampingOverride_angular_damping_getf(const void* p) { const auto& s = *static_cast<const physics::DampingOverride*>(p); return static_cast<double>(s.angular_damping); }
+static void mq_acc_physics_DampingOverride_angular_damping_setf(void* p, double v) { auto& s = *static_cast<physics::DampingOverride*>(p); s.angular_damping = static_cast<decltype(s.angular_damping)>(v); }
+static double mq_acc_physics_DampingOverride_enabled_getf(const void* p) { const auto& s = *static_cast<const physics::DampingOverride*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_physics_DampingOverride_enabled_setf(void* p, double v) { auto& s = *static_cast<physics::DampingOverride*>(p); s.enabled = v != 0.0; }
+static double mq_acc_physics_DampingOverride_priority_getf(const void* p) { const auto& s = *static_cast<const physics::DampingOverride*>(p); return static_cast<double>(s.priority); }
+static void mq_acc_physics_DampingOverride_priority_setf(void* p, double v) { auto& s = *static_cast<physics::DampingOverride*>(p); s.priority = static_cast<decltype(s.priority)>(v); }
+static const mq_field_accessor mq_acc_physics_DampingOverride[] = {
+    { mq_acc_physics_DampingOverride_linear_damping_getf, mq_acc_physics_DampingOverride_linear_damping_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_DampingOverride_angular_damping_getf, mq_acc_physics_DampingOverride_angular_damping_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_DampingOverride_enabled_getf, mq_acc_physics_DampingOverride_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_DampingOverride_priority_getf, mq_acc_physics_DampingOverride_priority_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_physics_DampingOverride[] = {
-    { "linear_damping", (uint32_t)offsetof(physics::DampingOverride, linear_damping), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "angular_damping", (uint32_t)offsetof(physics::DampingOverride, angular_damping), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(physics::DampingOverride, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "priority", (uint32_t)offsetof(physics::DampingOverride, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "linear_damping", (uint32_t)offsetof(physics::DampingOverride, linear_damping), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_DampingOverride[0] },
+    { "angular_damping", (uint32_t)offsetof(physics::DampingOverride, angular_damping), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_DampingOverride[1] },
+    { "enabled", (uint32_t)offsetof(physics::DampingOverride, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_DampingOverride[2] },
+    { "priority", (uint32_t)offsetof(physics::DampingOverride, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_DampingOverride[3] },
 };
 
+static double mq_acc_physics_Joint_joint_type_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return static_cast<double>(static_cast<int64_t>(s.joint_type)); }
+static void mq_acc_physics_Joint_joint_type_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.joint_type = static_cast<decltype(s.joint_type)>(v); }
+static const void* mq_acc_physics_Joint_body_a_getp(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return &s.body_a; }
+static void* mq_acc_physics_Joint_body_a_getmp(void* p) { auto& s = *static_cast<physics::Joint*>(p); return &s.body_a; }
+static const void* mq_acc_physics_Joint_body_b_getp(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return &s.body_b; }
+static void* mq_acc_physics_Joint_body_b_getmp(void* p) { auto& s = *static_cast<physics::Joint*>(p); return &s.body_b; }
+static const void* mq_acc_physics_Joint_anchor_a_getp(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return &s.anchor_a; }
+static void* mq_acc_physics_Joint_anchor_a_getmp(void* p) { auto& s = *static_cast<physics::Joint*>(p); return &s.anchor_a; }
+static const void* mq_acc_physics_Joint_anchor_b_getp(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return &s.anchor_b; }
+static void* mq_acc_physics_Joint_anchor_b_getmp(void* p) { auto& s = *static_cast<physics::Joint*>(p); return &s.anchor_b; }
+static const void* mq_acc_physics_Joint_axis_getp(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return &s.axis; }
+static void* mq_acc_physics_Joint_axis_getmp(void* p) { auto& s = *static_cast<physics::Joint*>(p); return &s.axis; }
+static double mq_acc_physics_Joint_limits_enabled_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return s.limits_enabled ? 1.0 : 0.0; }
+static void mq_acc_physics_Joint_limits_enabled_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.limits_enabled = v != 0.0; }
+static double mq_acc_physics_Joint_limit_min_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return static_cast<double>(s.limit_min); }
+static void mq_acc_physics_Joint_limit_min_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.limit_min = static_cast<decltype(s.limit_min)>(v); }
+static double mq_acc_physics_Joint_limit_max_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return static_cast<double>(s.limit_max); }
+static void mq_acc_physics_Joint_limit_max_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.limit_max = static_cast<decltype(s.limit_max)>(v); }
+static double mq_acc_physics_Joint_motor_enabled_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return s.motor_enabled ? 1.0 : 0.0; }
+static void mq_acc_physics_Joint_motor_enabled_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.motor_enabled = v != 0.0; }
+static double mq_acc_physics_Joint_motor_target_vel_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return static_cast<double>(s.motor_target_vel); }
+static void mq_acc_physics_Joint_motor_target_vel_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.motor_target_vel = static_cast<decltype(s.motor_target_vel)>(v); }
+static double mq_acc_physics_Joint_motor_max_force_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return static_cast<double>(s.motor_max_force); }
+static void mq_acc_physics_Joint_motor_max_force_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.motor_max_force = static_cast<decltype(s.motor_max_force)>(v); }
+static double mq_acc_physics_Joint_break_force_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return static_cast<double>(s.break_force); }
+static void mq_acc_physics_Joint_break_force_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.break_force = static_cast<decltype(s.break_force)>(v); }
+static double mq_acc_physics_Joint_break_torque_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return static_cast<double>(s.break_torque); }
+static void mq_acc_physics_Joint_break_torque_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.break_torque = static_cast<decltype(s.break_torque)>(v); }
+static double mq_acc_physics_Joint_joint_handle_getf(const void* p) { const auto& s = *static_cast<const physics::Joint*>(p); return static_cast<double>(s.joint_handle); }
+static void mq_acc_physics_Joint_joint_handle_setf(void* p, double v) { auto& s = *static_cast<physics::Joint*>(p); s.joint_handle = static_cast<decltype(s.joint_handle)>(v); }
+static const mq_field_accessor mq_acc_physics_Joint[] = {
+    { mq_acc_physics_Joint_joint_type_getf, mq_acc_physics_Joint_joint_type_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_physics_Joint_body_a_getp, mq_acc_physics_Joint_body_a_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_Joint_body_b_getp, mq_acc_physics_Joint_body_b_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_Joint_anchor_a_getp, mq_acc_physics_Joint_anchor_a_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_Joint_anchor_b_getp, mq_acc_physics_Joint_anchor_b_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_Joint_axis_getp, mq_acc_physics_Joint_axis_getmp },
+    { mq_acc_physics_Joint_limits_enabled_getf, mq_acc_physics_Joint_limits_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Joint_limit_min_getf, mq_acc_physics_Joint_limit_min_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Joint_limit_max_getf, mq_acc_physics_Joint_limit_max_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Joint_motor_enabled_getf, mq_acc_physics_Joint_motor_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Joint_motor_target_vel_getf, mq_acc_physics_Joint_motor_target_vel_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Joint_motor_max_force_getf, mq_acc_physics_Joint_motor_max_force_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Joint_break_force_getf, mq_acc_physics_Joint_break_force_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Joint_break_torque_getf, mq_acc_physics_Joint_break_torque_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_Joint_joint_handle_getf, mq_acc_physics_Joint_joint_handle_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_physics_Joint[] = {
-    { "joint_type", (uint32_t)offsetof(physics::Joint, joint_type), MQ_TK_ENUM, 551990008u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "body_a", (uint32_t)offsetof(physics::Joint, body_a), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "body_b", (uint32_t)offsetof(physics::Joint, body_b), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "anchor_a", (uint32_t)offsetof(physics::Joint, anchor_a), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "anchor_b", (uint32_t)offsetof(physics::Joint, anchor_b), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "axis", (uint32_t)offsetof(physics::Joint, axis), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "limits_enabled", (uint32_t)offsetof(physics::Joint, limits_enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "limit_min", (uint32_t)offsetof(physics::Joint, limit_min), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "limit_max", (uint32_t)offsetof(physics::Joint, limit_max), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "motor_enabled", (uint32_t)offsetof(physics::Joint, motor_enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "motor_target_vel", (uint32_t)offsetof(physics::Joint, motor_target_vel), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "motor_max_force", (uint32_t)offsetof(physics::Joint, motor_max_force), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "break_force", (uint32_t)offsetof(physics::Joint, break_force), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "break_torque", (uint32_t)offsetof(physics::Joint, break_torque), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "joint_handle", (uint32_t)offsetof(physics::Joint, joint_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "joint_type", (uint32_t)offsetof(physics::Joint, joint_type), MQ_TK_ENUM, 551990008u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[0] },
+    { "body_a", (uint32_t)offsetof(physics::Joint, body_a), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[1] },
+    { "body_b", (uint32_t)offsetof(physics::Joint, body_b), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[2] },
+    { "anchor_a", (uint32_t)offsetof(physics::Joint, anchor_a), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[3] },
+    { "anchor_b", (uint32_t)offsetof(physics::Joint, anchor_b), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[4] },
+    { "axis", (uint32_t)offsetof(physics::Joint, axis), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[5] },
+    { "limits_enabled", (uint32_t)offsetof(physics::Joint, limits_enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[6] },
+    { "limit_min", (uint32_t)offsetof(physics::Joint, limit_min), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[7] },
+    { "limit_max", (uint32_t)offsetof(physics::Joint, limit_max), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[8] },
+    { "motor_enabled", (uint32_t)offsetof(physics::Joint, motor_enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[9] },
+    { "motor_target_vel", (uint32_t)offsetof(physics::Joint, motor_target_vel), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[10] },
+    { "motor_max_force", (uint32_t)offsetof(physics::Joint, motor_max_force), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[11] },
+    { "break_force", (uint32_t)offsetof(physics::Joint, break_force), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[12] },
+    { "break_torque", (uint32_t)offsetof(physics::Joint, break_torque), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[13] },
+    { "joint_handle", (uint32_t)offsetof(physics::Joint, joint_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_physics_Joint[14] },
 };
 
+static double mq_acc_physics_LinearVelocityLimit_max_linear_speed_getf(const void* p) { const auto& s = *static_cast<const physics::LinearVelocityLimit*>(p); return static_cast<double>(s.max_linear_speed); }
+static void mq_acc_physics_LinearVelocityLimit_max_linear_speed_setf(void* p, double v) { auto& s = *static_cast<physics::LinearVelocityLimit*>(p); s.max_linear_speed = static_cast<decltype(s.max_linear_speed)>(v); }
+static double mq_acc_physics_LinearVelocityLimit_max_angular_speed_getf(const void* p) { const auto& s = *static_cast<const physics::LinearVelocityLimit*>(p); return static_cast<double>(s.max_angular_speed); }
+static void mq_acc_physics_LinearVelocityLimit_max_angular_speed_setf(void* p, double v) { auto& s = *static_cast<physics::LinearVelocityLimit*>(p); s.max_angular_speed = static_cast<decltype(s.max_angular_speed)>(v); }
+static double mq_acc_physics_LinearVelocityLimit_enabled_getf(const void* p) { const auto& s = *static_cast<const physics::LinearVelocityLimit*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_physics_LinearVelocityLimit_enabled_setf(void* p, double v) { auto& s = *static_cast<physics::LinearVelocityLimit*>(p); s.enabled = v != 0.0; }
+static double mq_acc_physics_LinearVelocityLimit_linear_speed_getf(const void* p) { const auto& s = *static_cast<const physics::LinearVelocityLimit*>(p); return static_cast<double>(s.linear_speed); }
+static void mq_acc_physics_LinearVelocityLimit_linear_speed_setf(void* p, double v) { auto& s = *static_cast<physics::LinearVelocityLimit*>(p); s.linear_speed = static_cast<decltype(s.linear_speed)>(v); }
+static double mq_acc_physics_LinearVelocityLimit_angular_speed_getf(const void* p) { const auto& s = *static_cast<const physics::LinearVelocityLimit*>(p); return static_cast<double>(s.angular_speed); }
+static void mq_acc_physics_LinearVelocityLimit_angular_speed_setf(void* p, double v) { auto& s = *static_cast<physics::LinearVelocityLimit*>(p); s.angular_speed = static_cast<decltype(s.angular_speed)>(v); }
+static const mq_field_accessor mq_acc_physics_LinearVelocityLimit[] = {
+    { mq_acc_physics_LinearVelocityLimit_max_linear_speed_getf, mq_acc_physics_LinearVelocityLimit_max_linear_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_LinearVelocityLimit_max_angular_speed_getf, mq_acc_physics_LinearVelocityLimit_max_angular_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_LinearVelocityLimit_enabled_getf, mq_acc_physics_LinearVelocityLimit_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_LinearVelocityLimit_linear_speed_getf, mq_acc_physics_LinearVelocityLimit_linear_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_LinearVelocityLimit_angular_speed_getf, mq_acc_physics_LinearVelocityLimit_angular_speed_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_physics_LinearVelocityLimit[] = {
-    { "max_linear_speed", (uint32_t)offsetof(physics::LinearVelocityLimit, max_linear_speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_angular_speed", (uint32_t)offsetof(physics::LinearVelocityLimit, max_angular_speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(physics::LinearVelocityLimit, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "linear_speed", (uint32_t)offsetof(physics::LinearVelocityLimit, linear_speed), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "angular_speed", (uint32_t)offsetof(physics::LinearVelocityLimit, angular_speed), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "max_linear_speed", (uint32_t)offsetof(physics::LinearVelocityLimit, max_linear_speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_LinearVelocityLimit[0] },
+    { "max_angular_speed", (uint32_t)offsetof(physics::LinearVelocityLimit, max_angular_speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_LinearVelocityLimit[1] },
+    { "enabled", (uint32_t)offsetof(physics::LinearVelocityLimit, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_LinearVelocityLimit[2] },
+    { "linear_speed", (uint32_t)offsetof(physics::LinearVelocityLimit, linear_speed), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_LinearVelocityLimit[3] },
+    { "angular_speed", (uint32_t)offsetof(physics::LinearVelocityLimit, angular_speed), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_LinearVelocityLimit[4] },
 };
 
+static double mq_acc_physics_RigidBody_body_type_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(static_cast<int64_t>(s.body_type)); }
+static void mq_acc_physics_RigidBody_body_type_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.body_type = static_cast<decltype(s.body_type)>(v); }
+static double mq_acc_physics_RigidBody_mass_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(s.mass); }
+static void mq_acc_physics_RigidBody_mass_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.mass = static_cast<decltype(s.mass)>(v); }
+static double mq_acc_physics_RigidBody_linear_damping_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(s.linear_damping); }
+static void mq_acc_physics_RigidBody_linear_damping_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.linear_damping = static_cast<decltype(s.linear_damping)>(v); }
+static double mq_acc_physics_RigidBody_angular_damping_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(s.angular_damping); }
+static void mq_acc_physics_RigidBody_angular_damping_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.angular_damping = static_cast<decltype(s.angular_damping)>(v); }
+static double mq_acc_physics_RigidBody_gravity_scale_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(s.gravity_scale); }
+static void mq_acc_physics_RigidBody_gravity_scale_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.gravity_scale = static_cast<decltype(s.gravity_scale)>(v); }
+static double mq_acc_physics_RigidBody_ccd_enabled_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return s.ccd_enabled ? 1.0 : 0.0; }
+static void mq_acc_physics_RigidBody_ccd_enabled_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.ccd_enabled = v != 0.0; }
+static double mq_acc_physics_RigidBody_can_sleep_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return s.can_sleep ? 1.0 : 0.0; }
+static void mq_acc_physics_RigidBody_can_sleep_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.can_sleep = v != 0.0; }
+static double mq_acc_physics_RigidBody_locked_translation_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(s.locked_translation); }
+static void mq_acc_physics_RigidBody_locked_translation_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.locked_translation = static_cast<decltype(s.locked_translation)>(v); }
+static double mq_acc_physics_RigidBody_locked_rotation_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(s.locked_rotation); }
+static void mq_acc_physics_RigidBody_locked_rotation_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.locked_rotation = static_cast<decltype(s.locked_rotation)>(v); }
+static const void* mq_acc_physics_RigidBody_linear_velocity_getp(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return &s.linear_velocity; }
+static void* mq_acc_physics_RigidBody_linear_velocity_getmp(void* p) { auto& s = *static_cast<physics::RigidBody*>(p); return &s.linear_velocity; }
+static const void* mq_acc_physics_RigidBody_angular_velocity_getp(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return &s.angular_velocity; }
+static void* mq_acc_physics_RigidBody_angular_velocity_getmp(void* p) { auto& s = *static_cast<physics::RigidBody*>(p); return &s.angular_velocity; }
+static double mq_acc_physics_RigidBody_sleeping_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return s.sleeping ? 1.0 : 0.0; }
+static void mq_acc_physics_RigidBody_sleeping_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.sleeping = v != 0.0; }
+static double mq_acc_physics_RigidBody_body_handle_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(s.body_handle); }
+static void mq_acc_physics_RigidBody_body_handle_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.body_handle = static_cast<decltype(s.body_handle)>(v); }
+static double mq_acc_physics_RigidBody_world_slot_getf(const void* p) { const auto& s = *static_cast<const physics::RigidBody*>(p); return static_cast<double>(s.world_slot); }
+static void mq_acc_physics_RigidBody_world_slot_setf(void* p, double v) { auto& s = *static_cast<physics::RigidBody*>(p); s.world_slot = static_cast<decltype(s.world_slot)>(v); }
+static const mq_field_accessor mq_acc_physics_RigidBody[] = {
+    { mq_acc_physics_RigidBody_body_type_getf, mq_acc_physics_RigidBody_body_type_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_mass_getf, mq_acc_physics_RigidBody_mass_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_linear_damping_getf, mq_acc_physics_RigidBody_linear_damping_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_angular_damping_getf, mq_acc_physics_RigidBody_angular_damping_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_gravity_scale_getf, mq_acc_physics_RigidBody_gravity_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_ccd_enabled_getf, mq_acc_physics_RigidBody_ccd_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_can_sleep_getf, mq_acc_physics_RigidBody_can_sleep_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_locked_translation_getf, mq_acc_physics_RigidBody_locked_translation_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_locked_rotation_getf, mq_acc_physics_RigidBody_locked_rotation_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_physics_RigidBody_linear_velocity_getp, mq_acc_physics_RigidBody_linear_velocity_getmp },
+    { 0, 0, 0, 0, mq_acc_physics_RigidBody_angular_velocity_getp, mq_acc_physics_RigidBody_angular_velocity_getmp },
+    { mq_acc_physics_RigidBody_sleeping_getf, mq_acc_physics_RigidBody_sleeping_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_body_handle_getf, mq_acc_physics_RigidBody_body_handle_setf, 0, 0, 0, 0 },
+    { mq_acc_physics_RigidBody_world_slot_getf, mq_acc_physics_RigidBody_world_slot_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_physics_RigidBody[] = {
-    { "body_type", (uint32_t)offsetof(physics::RigidBody, body_type), MQ_TK_ENUM, 2854855080u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mass", (uint32_t)offsetof(physics::RigidBody, mass), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "linear_damping", (uint32_t)offsetof(physics::RigidBody, linear_damping), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "angular_damping", (uint32_t)offsetof(physics::RigidBody, angular_damping), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gravity_scale", (uint32_t)offsetof(physics::RigidBody, gravity_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "ccd_enabled", (uint32_t)offsetof(physics::RigidBody, ccd_enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "can_sleep", (uint32_t)offsetof(physics::RigidBody, can_sleep), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "locked_translation", (uint32_t)offsetof(physics::RigidBody, locked_translation), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "locked_rotation", (uint32_t)offsetof(physics::RigidBody, locked_rotation), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "linear_velocity", (uint32_t)offsetof(physics::RigidBody, linear_velocity), MQ_TK_STRUCT, 1859510476u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "angular_velocity", (uint32_t)offsetof(physics::RigidBody, angular_velocity), MQ_TK_STRUCT, 1859510476u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "sleeping", (uint32_t)offsetof(physics::RigidBody, sleeping), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "body_handle", (uint32_t)offsetof(physics::RigidBody, body_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "world_slot", (uint32_t)offsetof(physics::RigidBody, world_slot), MQ_TK_U32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "body_type", (uint32_t)offsetof(physics::RigidBody, body_type), MQ_TK_ENUM, 2854855080u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[0] },
+    { "mass", (uint32_t)offsetof(physics::RigidBody, mass), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[1] },
+    { "linear_damping", (uint32_t)offsetof(physics::RigidBody, linear_damping), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[2] },
+    { "angular_damping", (uint32_t)offsetof(physics::RigidBody, angular_damping), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[3] },
+    { "gravity_scale", (uint32_t)offsetof(physics::RigidBody, gravity_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[4] },
+    { "ccd_enabled", (uint32_t)offsetof(physics::RigidBody, ccd_enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[5] },
+    { "can_sleep", (uint32_t)offsetof(physics::RigidBody, can_sleep), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[6] },
+    { "locked_translation", (uint32_t)offsetof(physics::RigidBody, locked_translation), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[7] },
+    { "locked_rotation", (uint32_t)offsetof(physics::RigidBody, locked_rotation), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[8] },
+    { "linear_velocity", (uint32_t)offsetof(physics::RigidBody, linear_velocity), MQ_TK_STRUCT, 1859510476u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[9] },
+    { "angular_velocity", (uint32_t)offsetof(physics::RigidBody, angular_velocity), MQ_TK_STRUCT, 1859510476u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[10] },
+    { "sleeping", (uint32_t)offsetof(physics::RigidBody, sleeping), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[11] },
+    { "body_handle", (uint32_t)offsetof(physics::RigidBody, body_handle), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[12] },
+    { "world_slot", (uint32_t)offsetof(physics::RigidBody, world_slot), MQ_TK_U32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_physics_RigidBody[13] },
 };
 
+static double mq_acc_render_Billboard_facing_getf(const void* p) { const auto& s = *static_cast<const render::Billboard*>(p); return static_cast<double>(static_cast<int64_t>(s.facing)); }
+static void mq_acc_render_Billboard_facing_setf(void* p, double v) { auto& s = *static_cast<render::Billboard*>(p); s.facing = static_cast<decltype(s.facing)>(v); }
+static double mq_acc_render_Billboard_pivot_getf(const void* p) { const auto& s = *static_cast<const render::Billboard*>(p); return static_cast<double>(static_cast<int64_t>(s.pivot)); }
+static void mq_acc_render_Billboard_pivot_setf(void* p, double v) { auto& s = *static_cast<render::Billboard*>(p); s.pivot = static_cast<decltype(s.pivot)>(v); }
+static double mq_acc_render_Billboard_lock_scale_getf(const void* p) { const auto& s = *static_cast<const render::Billboard*>(p); return s.lock_scale ? 1.0 : 0.0; }
+static void mq_acc_render_Billboard_lock_scale_setf(void* p, double v) { auto& s = *static_cast<render::Billboard*>(p); s.lock_scale = v != 0.0; }
+static const void* mq_acc_render_Billboard_align_up_getp(const void* p) { const auto& s = *static_cast<const render::Billboard*>(p); return &s.align_up; }
+static void* mq_acc_render_Billboard_align_up_getmp(void* p) { auto& s = *static_cast<render::Billboard*>(p); return &s.align_up; }
+static const void* mq_acc_render_Billboard_target_camera_getp(const void* p) { const auto& s = *static_cast<const render::Billboard*>(p); return &s.target_camera; }
+static void* mq_acc_render_Billboard_target_camera_getmp(void* p) { auto& s = *static_cast<render::Billboard*>(p); return &s.target_camera; }
+static double mq_acc_render_Billboard_enabled_getf(const void* p) { const auto& s = *static_cast<const render::Billboard*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_render_Billboard_enabled_setf(void* p, double v) { auto& s = *static_cast<render::Billboard*>(p); s.enabled = v != 0.0; }
+static const mq_field_accessor mq_acc_render_Billboard[] = {
+    { mq_acc_render_Billboard_facing_getf, mq_acc_render_Billboard_facing_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Billboard_pivot_getf, mq_acc_render_Billboard_pivot_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Billboard_lock_scale_getf, mq_acc_render_Billboard_lock_scale_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Billboard_align_up_getp, mq_acc_render_Billboard_align_up_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Billboard_target_camera_getp, mq_acc_render_Billboard_target_camera_getmp },
+    { mq_acc_render_Billboard_enabled_getf, mq_acc_render_Billboard_enabled_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_Billboard[] = {
-    { "facing", (uint32_t)offsetof(render::Billboard, facing), MQ_TK_ENUM, 629135010u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pivot", (uint32_t)offsetof(render::Billboard, pivot), MQ_TK_ENUM, 3206638116u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "lock_scale", (uint32_t)offsetof(render::Billboard, lock_scale), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_up", (uint32_t)offsetof(render::Billboard, align_up), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "target_camera", (uint32_t)offsetof(render::Billboard, target_camera), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(render::Billboard, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "facing", (uint32_t)offsetof(render::Billboard, facing), MQ_TK_ENUM, 629135010u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Billboard[0] },
+    { "pivot", (uint32_t)offsetof(render::Billboard, pivot), MQ_TK_ENUM, 3206638116u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Billboard[1] },
+    { "lock_scale", (uint32_t)offsetof(render::Billboard, lock_scale), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Billboard[2] },
+    { "align_up", (uint32_t)offsetof(render::Billboard, align_up), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Billboard[3] },
+    { "target_camera", (uint32_t)offsetof(render::Billboard, target_camera), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Billboard[4] },
+    { "enabled", (uint32_t)offsetof(render::Billboard, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Billboard[5] },
 };
 
+static double mq_acc_render_Camera2D_active_getf(const void* p) { const auto& s = *static_cast<const render::Camera2D*>(p); return s.active ? 1.0 : 0.0; }
+static void mq_acc_render_Camera2D_active_setf(void* p, double v) { auto& s = *static_cast<render::Camera2D*>(p); s.active = v != 0.0; }
+static double mq_acc_render_Camera2D_priority_getf(const void* p) { const auto& s = *static_cast<const render::Camera2D*>(p); return static_cast<double>(s.priority); }
+static void mq_acc_render_Camera2D_priority_setf(void* p, double v) { auto& s = *static_cast<render::Camera2D*>(p); s.priority = static_cast<decltype(s.priority)>(v); }
+static const void* mq_acc_render_Camera2D_zoom_getp(const void* p) { const auto& s = *static_cast<const render::Camera2D*>(p); return &s.zoom; }
+static void* mq_acc_render_Camera2D_zoom_getmp(void* p) { auto& s = *static_cast<render::Camera2D*>(p); return &s.zoom; }
+static const void* mq_acc_render_Camera2D_offset_getp(const void* p) { const auto& s = *static_cast<const render::Camera2D*>(p); return &s.offset; }
+static void* mq_acc_render_Camera2D_offset_getmp(void* p) { auto& s = *static_cast<render::Camera2D*>(p); return &s.offset; }
+static const void* mq_acc_render_Camera2D_viewport_getp(const void* p) { const auto& s = *static_cast<const render::Camera2D*>(p); return &s.viewport; }
+static void* mq_acc_render_Camera2D_viewport_getmp(void* p) { auto& s = *static_cast<render::Camera2D*>(p); return &s.viewport; }
+static double mq_acc_render_Camera2D_layer_mask_getf(const void* p) { const auto& s = *static_cast<const render::Camera2D*>(p); return static_cast<double>(s.layer_mask); }
+static void mq_acc_render_Camera2D_layer_mask_setf(void* p, double v) { auto& s = *static_cast<render::Camera2D*>(p); s.layer_mask = static_cast<decltype(s.layer_mask)>(v); }
+static const void* mq_acc_render_Camera2D_clear_color_getp(const void* p) { const auto& s = *static_cast<const render::Camera2D*>(p); return &s.clear_color; }
+static void* mq_acc_render_Camera2D_clear_color_getmp(void* p) { auto& s = *static_cast<render::Camera2D*>(p); return &s.clear_color; }
+static const mq_field_accessor mq_acc_render_Camera2D[] = {
+    { mq_acc_render_Camera2D_active_getf, mq_acc_render_Camera2D_active_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera2D_priority_getf, mq_acc_render_Camera2D_priority_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Camera2D_zoom_getp, mq_acc_render_Camera2D_zoom_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Camera2D_offset_getp, mq_acc_render_Camera2D_offset_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Camera2D_viewport_getp, mq_acc_render_Camera2D_viewport_getmp },
+    { mq_acc_render_Camera2D_layer_mask_getf, mq_acc_render_Camera2D_layer_mask_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Camera2D_clear_color_getp, mq_acc_render_Camera2D_clear_color_getmp },
+};
 static const mq_field_desc mq_fields_render_Camera2D[] = {
-    { "active", (uint32_t)offsetof(render::Camera2D, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "priority", (uint32_t)offsetof(render::Camera2D, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "zoom", (uint32_t)offsetof(render::Camera2D, zoom), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "offset", (uint32_t)offsetof(render::Camera2D, offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "viewport", (uint32_t)offsetof(render::Camera2D, viewport), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "layer_mask", (uint32_t)offsetof(render::Camera2D, layer_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clear_color", (uint32_t)offsetof(render::Camera2D, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "active", (uint32_t)offsetof(render::Camera2D, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera2D[0] },
+    { "priority", (uint32_t)offsetof(render::Camera2D, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera2D[1] },
+    { "zoom", (uint32_t)offsetof(render::Camera2D, zoom), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera2D[2] },
+    { "offset", (uint32_t)offsetof(render::Camera2D, offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera2D[3] },
+    { "viewport", (uint32_t)offsetof(render::Camera2D, viewport), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera2D[4] },
+    { "layer_mask", (uint32_t)offsetof(render::Camera2D, layer_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera2D[5] },
+    { "clear_color", (uint32_t)offsetof(render::Camera2D, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera2D[6] },
 };
 
+static double mq_acc_render_Camera3D_active_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return s.active ? 1.0 : 0.0; }
+static void mq_acc_render_Camera3D_active_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.active = v != 0.0; }
+static double mq_acc_render_Camera3D_priority_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(s.priority); }
+static void mq_acc_render_Camera3D_priority_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.priority = static_cast<decltype(s.priority)>(v); }
+static double mq_acc_render_Camera3D_projection_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(static_cast<int64_t>(s.projection)); }
+static void mq_acc_render_Camera3D_projection_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.projection = static_cast<decltype(s.projection)>(v); }
+static double mq_acc_render_Camera3D_fov_y_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(s.fov_y); }
+static void mq_acc_render_Camera3D_fov_y_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.fov_y = static_cast<decltype(s.fov_y)>(v); }
+static double mq_acc_render_Camera3D_ortho_height_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(s.ortho_height); }
+static void mq_acc_render_Camera3D_ortho_height_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.ortho_height = static_cast<decltype(s.ortho_height)>(v); }
+static double mq_acc_render_Camera3D_near_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(s.near); }
+static void mq_acc_render_Camera3D_near_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.near = static_cast<decltype(s.near)>(v); }
+static double mq_acc_render_Camera3D_far_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(s.far); }
+static void mq_acc_render_Camera3D_far_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.far = static_cast<decltype(s.far)>(v); }
+static const void* mq_acc_render_Camera3D_viewport_getp(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return &s.viewport; }
+static void* mq_acc_render_Camera3D_viewport_getmp(void* p) { auto& s = *static_cast<render::Camera3D*>(p); return &s.viewport; }
+static double mq_acc_render_Camera3D_culling_mask_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(s.culling_mask); }
+static void mq_acc_render_Camera3D_culling_mask_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.culling_mask = static_cast<decltype(s.culling_mask)>(v); }
+static double mq_acc_render_Camera3D_clear_mode_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(static_cast<int64_t>(s.clear_mode)); }
+static void mq_acc_render_Camera3D_clear_mode_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.clear_mode = static_cast<decltype(s.clear_mode)>(v); }
+static const void* mq_acc_render_Camera3D_clear_color_getp(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return &s.clear_color; }
+static void* mq_acc_render_Camera3D_clear_color_getmp(void* p) { auto& s = *static_cast<render::Camera3D*>(p); return &s.clear_color; }
+static double mq_acc_render_Camera3D_exposure_getf(const void* p) { const auto& s = *static_cast<const render::Camera3D*>(p); return static_cast<double>(s.exposure); }
+static void mq_acc_render_Camera3D_exposure_setf(void* p, double v) { auto& s = *static_cast<render::Camera3D*>(p); s.exposure = static_cast<decltype(s.exposure)>(v); }
+static const mq_field_accessor mq_acc_render_Camera3D[] = {
+    { mq_acc_render_Camera3D_active_getf, mq_acc_render_Camera3D_active_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera3D_priority_getf, mq_acc_render_Camera3D_priority_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera3D_projection_getf, mq_acc_render_Camera3D_projection_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera3D_fov_y_getf, mq_acc_render_Camera3D_fov_y_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera3D_ortho_height_getf, mq_acc_render_Camera3D_ortho_height_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera3D_near_getf, mq_acc_render_Camera3D_near_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera3D_far_getf, mq_acc_render_Camera3D_far_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Camera3D_viewport_getp, mq_acc_render_Camera3D_viewport_getmp },
+    { mq_acc_render_Camera3D_culling_mask_getf, mq_acc_render_Camera3D_culling_mask_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Camera3D_clear_mode_getf, mq_acc_render_Camera3D_clear_mode_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Camera3D_clear_color_getp, mq_acc_render_Camera3D_clear_color_getmp },
+    { mq_acc_render_Camera3D_exposure_getf, mq_acc_render_Camera3D_exposure_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_Camera3D[] = {
-    { "active", (uint32_t)offsetof(render::Camera3D, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "priority", (uint32_t)offsetof(render::Camera3D, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "projection", (uint32_t)offsetof(render::Camera3D, projection), MQ_TK_ENUM, 3717810087u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fov_y", (uint32_t)offsetof(render::Camera3D, fov_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "ortho_height", (uint32_t)offsetof(render::Camera3D, ortho_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "near", (uint32_t)offsetof(render::Camera3D, near), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "far", (uint32_t)offsetof(render::Camera3D, far), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "viewport", (uint32_t)offsetof(render::Camera3D, viewport), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "culling_mask", (uint32_t)offsetof(render::Camera3D, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clear_mode", (uint32_t)offsetof(render::Camera3D, clear_mode), MQ_TK_ENUM, 3336631157u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clear_color", (uint32_t)offsetof(render::Camera3D, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "exposure", (uint32_t)offsetof(render::Camera3D, exposure), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "active", (uint32_t)offsetof(render::Camera3D, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[0] },
+    { "priority", (uint32_t)offsetof(render::Camera3D, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[1] },
+    { "projection", (uint32_t)offsetof(render::Camera3D, projection), MQ_TK_ENUM, 3717810087u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[2] },
+    { "fov_y", (uint32_t)offsetof(render::Camera3D, fov_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[3] },
+    { "ortho_height", (uint32_t)offsetof(render::Camera3D, ortho_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[4] },
+    { "near", (uint32_t)offsetof(render::Camera3D, near), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[5] },
+    { "far", (uint32_t)offsetof(render::Camera3D, far), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[6] },
+    { "viewport", (uint32_t)offsetof(render::Camera3D, viewport), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[7] },
+    { "culling_mask", (uint32_t)offsetof(render::Camera3D, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[8] },
+    { "clear_mode", (uint32_t)offsetof(render::Camera3D, clear_mode), MQ_TK_ENUM, 3336631157u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[9] },
+    { "clear_color", (uint32_t)offsetof(render::Camera3D, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[10] },
+    { "exposure", (uint32_t)offsetof(render::Camera3D, exposure), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Camera3D[11] },
 };
 
+static double mq_acc_render_DrawCommand_op_getf(const void* p) { const auto& s = *static_cast<const render::DrawCommand*>(p); return static_cast<double>(static_cast<int64_t>(s.op)); }
+static void mq_acc_render_DrawCommand_op_setf(void* p, double v) { auto& s = *static_cast<render::DrawCommand*>(p); s.op = static_cast<decltype(s.op)>(v); }
+static double mq_acc_render_DrawCommand_first_getf(const void* p) { const auto& s = *static_cast<const render::DrawCommand*>(p); return static_cast<double>(s.first); }
+static void mq_acc_render_DrawCommand_first_setf(void* p, double v) { auto& s = *static_cast<render::DrawCommand*>(p); s.first = static_cast<decltype(s.first)>(v); }
+static double mq_acc_render_DrawCommand_count_getf(const void* p) { const auto& s = *static_cast<const render::DrawCommand*>(p); return static_cast<double>(s.count); }
+static void mq_acc_render_DrawCommand_count_setf(void* p, double v) { auto& s = *static_cast<render::DrawCommand*>(p); s.count = static_cast<decltype(s.count)>(v); }
+static double mq_acc_render_DrawCommand_flags_getf(const void* p) { const auto& s = *static_cast<const render::DrawCommand*>(p); return static_cast<double>(s.flags); }
+static void mq_acc_render_DrawCommand_flags_setf(void* p, double v) { auto& s = *static_cast<render::DrawCommand*>(p); s.flags = static_cast<decltype(s.flags)>(v); }
+static const void* mq_acc_render_DrawCommand_color_getp(const void* p) { const auto& s = *static_cast<const render::DrawCommand*>(p); return &s.color; }
+static void* mq_acc_render_DrawCommand_color_getmp(void* p) { auto& s = *static_cast<render::DrawCommand*>(p); return &s.color; }
+static const void* mq_acc_render_DrawCommand_param_getp(const void* p) { const auto& s = *static_cast<const render::DrawCommand*>(p); return &s.param; }
+static void* mq_acc_render_DrawCommand_param_getmp(void* p) { auto& s = *static_cast<render::DrawCommand*>(p); return &s.param; }
+static double mq_acc_render_DrawCommand_width_getf(const void* p) { const auto& s = *static_cast<const render::DrawCommand*>(p); return static_cast<double>(s.width); }
+static void mq_acc_render_DrawCommand_width_setf(void* p, double v) { auto& s = *static_cast<render::DrawCommand*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static const mq_field_accessor mq_acc_render_DrawCommand[] = {
+    { mq_acc_render_DrawCommand_op_getf, mq_acc_render_DrawCommand_op_setf, 0, 0, 0, 0 },
+    { mq_acc_render_DrawCommand_first_getf, mq_acc_render_DrawCommand_first_setf, 0, 0, 0, 0 },
+    { mq_acc_render_DrawCommand_count_getf, mq_acc_render_DrawCommand_count_setf, 0, 0, 0, 0 },
+    { mq_acc_render_DrawCommand_flags_getf, mq_acc_render_DrawCommand_flags_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_DrawCommand_color_getp, mq_acc_render_DrawCommand_color_getmp },
+    { 0, 0, 0, 0, mq_acc_render_DrawCommand_param_getp, mq_acc_render_DrawCommand_param_getmp },
+    { mq_acc_render_DrawCommand_width_getf, mq_acc_render_DrawCommand_width_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_DrawCommand[] = {
-    { "op", (uint32_t)offsetof(render::DrawCommand, op), MQ_TK_ENUM, 3872449123u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "first", (uint32_t)offsetof(render::DrawCommand, first), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "count", (uint32_t)offsetof(render::DrawCommand, count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "flags", (uint32_t)offsetof(render::DrawCommand, flags), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(render::DrawCommand, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "param", (uint32_t)offsetof(render::DrawCommand, param), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(render::DrawCommand, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "op", (uint32_t)offsetof(render::DrawCommand, op), MQ_TK_ENUM, 3872449123u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_DrawCommand[0] },
+    { "first", (uint32_t)offsetof(render::DrawCommand, first), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_DrawCommand[1] },
+    { "count", (uint32_t)offsetof(render::DrawCommand, count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_DrawCommand[2] },
+    { "flags", (uint32_t)offsetof(render::DrawCommand, flags), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_DrawCommand[3] },
+    { "color", (uint32_t)offsetof(render::DrawCommand, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_DrawCommand[4] },
+    { "param", (uint32_t)offsetof(render::DrawCommand, param), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_DrawCommand[5] },
+    { "width", (uint32_t)offsetof(render::DrawCommand, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_DrawCommand[6] },
 };
 
+static const void* mq_acc_render_Graphics_fill_color_getp(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return &s.fill_color; }
+static void* mq_acc_render_Graphics_fill_color_getmp(void* p) { auto& s = *static_cast<render::Graphics*>(p); return &s.fill_color; }
+static const void* mq_acc_render_Graphics_line_color_getp(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return &s.line_color; }
+static void* mq_acc_render_Graphics_line_color_getmp(void* p) { auto& s = *static_cast<render::Graphics*>(p); return &s.line_color; }
+static double mq_acc_render_Graphics_width_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return static_cast<double>(s.width); }
+static void mq_acc_render_Graphics_width_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_render_Graphics_line_join_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return static_cast<double>(static_cast<int64_t>(s.line_join)); }
+static void mq_acc_render_Graphics_line_join_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.line_join = static_cast<decltype(s.line_join)>(v); }
+static double mq_acc_render_Graphics_line_cap_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return static_cast<double>(static_cast<int64_t>(s.line_cap)); }
+static void mq_acc_render_Graphics_line_cap_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.line_cap = static_cast<decltype(s.line_cap)>(v); }
+static double mq_acc_render_Graphics_fill_rule_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return static_cast<double>(static_cast<int64_t>(s.fill_rule)); }
+static void mq_acc_render_Graphics_fill_rule_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.fill_rule = static_cast<decltype(s.fill_rule)>(v); }
+static double mq_acc_render_Graphics_miter_limit_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return static_cast<double>(s.miter_limit); }
+static void mq_acc_render_Graphics_miter_limit_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.miter_limit = static_cast<decltype(s.miter_limit)>(v); }
+static double mq_acc_render_Graphics_curve_tolerance_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return static_cast<double>(s.curve_tolerance); }
+static void mq_acc_render_Graphics_curve_tolerance_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.curve_tolerance = static_cast<decltype(s.curve_tolerance)>(v); }
+static double mq_acc_render_Graphics_antialiased_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return s.antialiased ? 1.0 : 0.0; }
+static void mq_acc_render_Graphics_antialiased_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.antialiased = v != 0.0; }
+static const void* mq_acc_render_Graphics_material_getp(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return &s.material; }
+static void* mq_acc_render_Graphics_material_getmp(void* p) { auto& s = *static_cast<render::Graphics*>(p); return &s.material; }
+static double mq_acc_render_Graphics_z_index_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return static_cast<double>(s.z_index); }
+static void mq_acc_render_Graphics_z_index_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.z_index = static_cast<decltype(s.z_index)>(v); }
+static double mq_acc_render_Graphics_cache_geometry_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return s.cache_geometry ? 1.0 : 0.0; }
+static void mq_acc_render_Graphics_cache_geometry_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.cache_geometry = v != 0.0; }
+static double mq_acc_render_Graphics_dirty_getf(const void* p) { const auto& s = *static_cast<const render::Graphics*>(p); return s.dirty ? 1.0 : 0.0; }
+static void mq_acc_render_Graphics_dirty_setf(void* p, double v) { auto& s = *static_cast<render::Graphics*>(p); s.dirty = v != 0.0; }
+static const mq_field_accessor mq_acc_render_Graphics[] = {
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Graphics_fill_color_getp, mq_acc_render_Graphics_fill_color_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Graphics_line_color_getp, mq_acc_render_Graphics_line_color_getmp },
+    { mq_acc_render_Graphics_width_getf, mq_acc_render_Graphics_width_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Graphics_line_join_getf, mq_acc_render_Graphics_line_join_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Graphics_line_cap_getf, mq_acc_render_Graphics_line_cap_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Graphics_fill_rule_getf, mq_acc_render_Graphics_fill_rule_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Graphics_miter_limit_getf, mq_acc_render_Graphics_miter_limit_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Graphics_curve_tolerance_getf, mq_acc_render_Graphics_curve_tolerance_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Graphics_antialiased_getf, mq_acc_render_Graphics_antialiased_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Graphics_material_getp, mq_acc_render_Graphics_material_getmp },
+    { mq_acc_render_Graphics_z_index_getf, mq_acc_render_Graphics_z_index_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Graphics_cache_geometry_getf, mq_acc_render_Graphics_cache_geometry_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_render_Graphics_dirty_getf, mq_acc_render_Graphics_dirty_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_render_Graphics_commands_clear(void* f) { static_cast<std::vector<render::DrawCommand>*>(f)->clear(); }
 static uint32_t mq_dyn_render_Graphics_commands_size(const void* f) { return (uint32_t)static_cast<const std::vector<render::DrawCommand>*>(f)->size(); }
 static void mq_dyn_render_Graphics_commands_resize(void* f, uint32_t n) { static_cast<std::vector<render::DrawCommand>*>(f)->resize(n); }
@@ -894,61 +2696,208 @@ static uint32_t mq_dyn_render_Graphics_geometry_size(const void* f) { return (ui
 static void mq_dyn_render_Graphics_geometry_resize(void* f, uint32_t n) { static_cast<std::vector<math::Vec2>*>(f)->resize(n); }
 static void* mq_dyn_render_Graphics_geometry_elem(void* f, uint32_t i) { return &static_cast<std::vector<math::Vec2>*>(f)->at(i); }
 static const mq_field_desc mq_fields_render_Graphics[] = {
-    { "commands", (uint32_t)offsetof(render::Graphics, commands), MQ_TK_ARRAY_DYN, 2472060372u, 0u, 0u, 2472060372u, mq_dyn_render_Graphics_commands_clear, mq_dyn_render_Graphics_commands_size, mq_dyn_render_Graphics_commands_resize, mq_dyn_render_Graphics_commands_elem },
-    { "points", (uint32_t)offsetof(render::Graphics, points), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 0u, 1876288095u, mq_dyn_render_Graphics_points_clear, mq_dyn_render_Graphics_points_size, mq_dyn_render_Graphics_points_resize, mq_dyn_render_Graphics_points_elem },
-    { "point_colors", (uint32_t)offsetof(render::Graphics, point_colors), MQ_TK_ARRAY_DYN, 2997158578u, 0u, 0u, 2997158578u, mq_dyn_render_Graphics_point_colors_clear, mq_dyn_render_Graphics_point_colors_size, mq_dyn_render_Graphics_point_colors_resize, mq_dyn_render_Graphics_point_colors_elem },
-    { "fill_color", (uint32_t)offsetof(render::Graphics, fill_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "line_color", (uint32_t)offsetof(render::Graphics, line_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(render::Graphics, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "line_join", (uint32_t)offsetof(render::Graphics, line_join), MQ_TK_ENUM, 296788163u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "line_cap", (uint32_t)offsetof(render::Graphics, line_cap), MQ_TK_ENUM, 672059257u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fill_rule", (uint32_t)offsetof(render::Graphics, fill_rule), MQ_TK_ENUM, 1998648282u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "miter_limit", (uint32_t)offsetof(render::Graphics, miter_limit), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "curve_tolerance", (uint32_t)offsetof(render::Graphics, curve_tolerance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "antialiased", (uint32_t)offsetof(render::Graphics, antialiased), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(render::Graphics, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z_index", (uint32_t)offsetof(render::Graphics, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "cache_geometry", (uint32_t)offsetof(render::Graphics, cache_geometry), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "geometry", (uint32_t)offsetof(render::Graphics, geometry), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 1u, 1876288095u, mq_dyn_render_Graphics_geometry_clear, mq_dyn_render_Graphics_geometry_size, mq_dyn_render_Graphics_geometry_resize, mq_dyn_render_Graphics_geometry_elem },
-    { "indices", (uint32_t)offsetof(render::Graphics, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "dirty", (uint32_t)offsetof(render::Graphics, dirty), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "commands", (uint32_t)offsetof(render::Graphics, commands), MQ_TK_ARRAY_DYN, 2472060372u, 0u, 0u, 2472060372u, mq_dyn_render_Graphics_commands_clear, mq_dyn_render_Graphics_commands_size, mq_dyn_render_Graphics_commands_resize, mq_dyn_render_Graphics_commands_elem, &mq_acc_render_Graphics[0] },
+    { "points", (uint32_t)offsetof(render::Graphics, points), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 0u, 1876288095u, mq_dyn_render_Graphics_points_clear, mq_dyn_render_Graphics_points_size, mq_dyn_render_Graphics_points_resize, mq_dyn_render_Graphics_points_elem, &mq_acc_render_Graphics[1] },
+    { "point_colors", (uint32_t)offsetof(render::Graphics, point_colors), MQ_TK_ARRAY_DYN, 2997158578u, 0u, 0u, 2997158578u, mq_dyn_render_Graphics_point_colors_clear, mq_dyn_render_Graphics_point_colors_size, mq_dyn_render_Graphics_point_colors_resize, mq_dyn_render_Graphics_point_colors_elem, &mq_acc_render_Graphics[2] },
+    { "fill_color", (uint32_t)offsetof(render::Graphics, fill_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[3] },
+    { "line_color", (uint32_t)offsetof(render::Graphics, line_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[4] },
+    { "width", (uint32_t)offsetof(render::Graphics, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[5] },
+    { "line_join", (uint32_t)offsetof(render::Graphics, line_join), MQ_TK_ENUM, 296788163u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[6] },
+    { "line_cap", (uint32_t)offsetof(render::Graphics, line_cap), MQ_TK_ENUM, 672059257u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[7] },
+    { "fill_rule", (uint32_t)offsetof(render::Graphics, fill_rule), MQ_TK_ENUM, 1998648282u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[8] },
+    { "miter_limit", (uint32_t)offsetof(render::Graphics, miter_limit), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[9] },
+    { "curve_tolerance", (uint32_t)offsetof(render::Graphics, curve_tolerance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[10] },
+    { "antialiased", (uint32_t)offsetof(render::Graphics, antialiased), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[11] },
+    { "material", (uint32_t)offsetof(render::Graphics, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[12] },
+    { "z_index", (uint32_t)offsetof(render::Graphics, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[13] },
+    { "cache_geometry", (uint32_t)offsetof(render::Graphics, cache_geometry), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[14] },
+    { "geometry", (uint32_t)offsetof(render::Graphics, geometry), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 1u, 1876288095u, mq_dyn_render_Graphics_geometry_clear, mq_dyn_render_Graphics_geometry_size, mq_dyn_render_Graphics_geometry_resize, mq_dyn_render_Graphics_geometry_elem, &mq_acc_render_Graphics[15] },
+    { "indices", (uint32_t)offsetof(render::Graphics, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[16] },
+    { "dirty", (uint32_t)offsetof(render::Graphics, dirty), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_render_Graphics[17] },
 };
 
+static double mq_acc_render_Light_type_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(static_cast<int64_t>(s.type)); }
+static void mq_acc_render_Light_type_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.type = static_cast<decltype(s.type)>(v); }
+static const void* mq_acc_render_Light_color_getp(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return &s.color; }
+static void* mq_acc_render_Light_color_getmp(void* p) { auto& s = *static_cast<render::Light*>(p); return &s.color; }
+static double mq_acc_render_Light_intensity_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(s.intensity); }
+static void mq_acc_render_Light_intensity_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.intensity = static_cast<decltype(s.intensity)>(v); }
+static double mq_acc_render_Light_range_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(s.range); }
+static void mq_acc_render_Light_range_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.range = static_cast<decltype(s.range)>(v); }
+static double mq_acc_render_Light_inner_angle_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(s.inner_angle); }
+static void mq_acc_render_Light_inner_angle_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.inner_angle = static_cast<decltype(s.inner_angle)>(v); }
+static double mq_acc_render_Light_outer_angle_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(s.outer_angle); }
+static void mq_acc_render_Light_outer_angle_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.outer_angle = static_cast<decltype(s.outer_angle)>(v); }
+static double mq_acc_render_Light_shadow_mode_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(static_cast<int64_t>(s.shadow_mode)); }
+static void mq_acc_render_Light_shadow_mode_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.shadow_mode = static_cast<decltype(s.shadow_mode)>(v); }
+static double mq_acc_render_Light_shadow_bias_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(s.shadow_bias); }
+static void mq_acc_render_Light_shadow_bias_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.shadow_bias = static_cast<decltype(s.shadow_bias)>(v); }
+static double mq_acc_render_Light_shadow_distance_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(s.shadow_distance); }
+static void mq_acc_render_Light_shadow_distance_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.shadow_distance = static_cast<decltype(s.shadow_distance)>(v); }
+static double mq_acc_render_Light_culling_mask_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(s.culling_mask); }
+static void mq_acc_render_Light_culling_mask_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.culling_mask = static_cast<decltype(s.culling_mask)>(v); }
+static double mq_acc_render_Light_priority_getf(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return static_cast<double>(s.priority); }
+static void mq_acc_render_Light_priority_setf(void* p, double v) { auto& s = *static_cast<render::Light*>(p); s.priority = static_cast<decltype(s.priority)>(v); }
+static const void* mq_acc_render_Light_layer_getp(const void* p) { const auto& s = *static_cast<const render::Light*>(p); return &s.layer; }
+static void* mq_acc_render_Light_layer_getmp(void* p) { auto& s = *static_cast<render::Light*>(p); return &s.layer; }
+static const mq_field_accessor mq_acc_render_Light[] = {
+    { mq_acc_render_Light_type_getf, mq_acc_render_Light_type_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Light_color_getp, mq_acc_render_Light_color_getmp },
+    { mq_acc_render_Light_intensity_getf, mq_acc_render_Light_intensity_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Light_range_getf, mq_acc_render_Light_range_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Light_inner_angle_getf, mq_acc_render_Light_inner_angle_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Light_outer_angle_getf, mq_acc_render_Light_outer_angle_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Light_shadow_mode_getf, mq_acc_render_Light_shadow_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Light_shadow_bias_getf, mq_acc_render_Light_shadow_bias_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Light_shadow_distance_getf, mq_acc_render_Light_shadow_distance_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Light_culling_mask_getf, mq_acc_render_Light_culling_mask_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Light_priority_getf, mq_acc_render_Light_priority_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Light_layer_getp, mq_acc_render_Light_layer_getmp },
+};
 static const mq_field_desc mq_fields_render_Light[] = {
-    { "type", (uint32_t)offsetof(render::Light, type), MQ_TK_ENUM, 1240370171u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(render::Light, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "intensity", (uint32_t)offsetof(render::Light, intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "range", (uint32_t)offsetof(render::Light, range), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "inner_angle", (uint32_t)offsetof(render::Light, inner_angle), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outer_angle", (uint32_t)offsetof(render::Light, outer_angle), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_mode", (uint32_t)offsetof(render::Light, shadow_mode), MQ_TK_ENUM, 923278154u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_bias", (uint32_t)offsetof(render::Light, shadow_bias), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_distance", (uint32_t)offsetof(render::Light, shadow_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "culling_mask", (uint32_t)offsetof(render::Light, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "priority", (uint32_t)offsetof(render::Light, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "layer", (uint32_t)offsetof(render::Light, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "type", (uint32_t)offsetof(render::Light, type), MQ_TK_ENUM, 1240370171u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[0] },
+    { "color", (uint32_t)offsetof(render::Light, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[1] },
+    { "intensity", (uint32_t)offsetof(render::Light, intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[2] },
+    { "range", (uint32_t)offsetof(render::Light, range), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[3] },
+    { "inner_angle", (uint32_t)offsetof(render::Light, inner_angle), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[4] },
+    { "outer_angle", (uint32_t)offsetof(render::Light, outer_angle), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[5] },
+    { "shadow_mode", (uint32_t)offsetof(render::Light, shadow_mode), MQ_TK_ENUM, 923278154u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[6] },
+    { "shadow_bias", (uint32_t)offsetof(render::Light, shadow_bias), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[7] },
+    { "shadow_distance", (uint32_t)offsetof(render::Light, shadow_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[8] },
+    { "culling_mask", (uint32_t)offsetof(render::Light, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[9] },
+    { "priority", (uint32_t)offsetof(render::Light, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[10] },
+    { "layer", (uint32_t)offsetof(render::Light, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Light[11] },
 };
 
+static const void* mq_acc_render_MeshRenderer_mesh_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.mesh; }
+static void* mq_acc_render_MeshRenderer_mesh_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.mesh; }
+static const char* mq_acc_render_MeshRenderer_mesh_path_gets(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.mesh_path.c_str(); }
+static void mq_acc_render_MeshRenderer_mesh_path_sets(void* p, const char* v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.mesh_path = v ? v : ""; }
+static const void* mq_acc_render_MeshRenderer_mesh_path_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.mesh_path; }
+static void* mq_acc_render_MeshRenderer_mesh_path_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.mesh_path; }
+static const void* mq_acc_render_MeshRenderer_material_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.material; }
+static void* mq_acc_render_MeshRenderer_material_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.material; }
+static double mq_acc_render_MeshRenderer_cast_shadow_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return static_cast<double>(static_cast<int64_t>(s.cast_shadow)); }
+static void mq_acc_render_MeshRenderer_cast_shadow_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.cast_shadow = static_cast<decltype(s.cast_shadow)>(v); }
+static double mq_acc_render_MeshRenderer_receive_shadow_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.receive_shadow ? 1.0 : 0.0; }
+static void mq_acc_render_MeshRenderer_receive_shadow_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.receive_shadow = v != 0.0; }
+static double mq_acc_render_MeshRenderer_visible_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.visible ? 1.0 : 0.0; }
+static void mq_acc_render_MeshRenderer_visible_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.visible = v != 0.0; }
+static double mq_acc_render_MeshRenderer_culling_mask_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return static_cast<double>(s.culling_mask); }
+static void mq_acc_render_MeshRenderer_culling_mask_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.culling_mask = static_cast<decltype(s.culling_mask)>(v); }
+static const void* mq_acc_render_MeshRenderer_layer_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.layer; }
+static void* mq_acc_render_MeshRenderer_layer_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.layer; }
+static const char* mq_acc_render_MeshRenderer_skin_path_gets(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.skin_path.c_str(); }
+static void mq_acc_render_MeshRenderer_skin_path_sets(void* p, const char* v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.skin_path = v ? v : ""; }
+static const void* mq_acc_render_MeshRenderer_skin_path_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.skin_path; }
+static void* mq_acc_render_MeshRenderer_skin_path_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.skin_path; }
+static const char* mq_acc_render_MeshRenderer_clip_gets(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.clip.c_str(); }
+static void mq_acc_render_MeshRenderer_clip_sets(void* p, const char* v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.clip = v ? v : ""; }
+static const void* mq_acc_render_MeshRenderer_clip_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.clip; }
+static void* mq_acc_render_MeshRenderer_clip_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.clip; }
+static double mq_acc_render_MeshRenderer_playing_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.playing ? 1.0 : 0.0; }
+static void mq_acc_render_MeshRenderer_playing_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.playing = v != 0.0; }
+static double mq_acc_render_MeshRenderer_loop_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.loop ? 1.0 : 0.0; }
+static void mq_acc_render_MeshRenderer_loop_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.loop = v != 0.0; }
+static double mq_acc_render_MeshRenderer_speed_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_render_MeshRenderer_speed_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_render_MeshRenderer_time_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return static_cast<double>(s.time); }
+static void mq_acc_render_MeshRenderer_time_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static double mq_acc_render_MeshRenderer_duration_getf(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return static_cast<double>(s.duration); }
+static void mq_acc_render_MeshRenderer_duration_setf(void* p, double v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.duration = static_cast<decltype(s.duration)>(v); }
+static const char* mq_acc_render_MeshRenderer_variant_gets(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return s.variant.c_str(); }
+static void mq_acc_render_MeshRenderer_variant_sets(void* p, const char* v) { auto& s = *static_cast<render::MeshRenderer*>(p); s.variant = v ? v : ""; }
+static const void* mq_acc_render_MeshRenderer_variant_getp(const void* p) { const auto& s = *static_cast<const render::MeshRenderer*>(p); return &s.variant; }
+static void* mq_acc_render_MeshRenderer_variant_getmp(void* p) { auto& s = *static_cast<render::MeshRenderer*>(p); return &s.variant; }
+static const mq_field_accessor mq_acc_render_MeshRenderer[] = {
+    { 0, 0, 0, 0, mq_acc_render_MeshRenderer_mesh_getp, mq_acc_render_MeshRenderer_mesh_getmp },
+    { 0, 0, mq_acc_render_MeshRenderer_mesh_path_gets, mq_acc_render_MeshRenderer_mesh_path_sets, mq_acc_render_MeshRenderer_mesh_path_getp, mq_acc_render_MeshRenderer_mesh_path_getmp },
+    { 0, 0, 0, 0, mq_acc_render_MeshRenderer_material_getp, mq_acc_render_MeshRenderer_material_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_render_MeshRenderer_cast_shadow_getf, mq_acc_render_MeshRenderer_cast_shadow_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MeshRenderer_receive_shadow_getf, mq_acc_render_MeshRenderer_receive_shadow_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MeshRenderer_visible_getf, mq_acc_render_MeshRenderer_visible_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MeshRenderer_culling_mask_getf, mq_acc_render_MeshRenderer_culling_mask_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_MeshRenderer_layer_getp, mq_acc_render_MeshRenderer_layer_getmp },
+    { 0, 0, mq_acc_render_MeshRenderer_skin_path_gets, mq_acc_render_MeshRenderer_skin_path_sets, mq_acc_render_MeshRenderer_skin_path_getp, mq_acc_render_MeshRenderer_skin_path_getmp },
+    { 0, 0, mq_acc_render_MeshRenderer_clip_gets, mq_acc_render_MeshRenderer_clip_sets, mq_acc_render_MeshRenderer_clip_getp, mq_acc_render_MeshRenderer_clip_getmp },
+    { mq_acc_render_MeshRenderer_playing_getf, mq_acc_render_MeshRenderer_playing_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MeshRenderer_loop_getf, mq_acc_render_MeshRenderer_loop_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MeshRenderer_speed_getf, mq_acc_render_MeshRenderer_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MeshRenderer_time_getf, mq_acc_render_MeshRenderer_time_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MeshRenderer_duration_getf, mq_acc_render_MeshRenderer_duration_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_render_MeshRenderer_variant_gets, mq_acc_render_MeshRenderer_variant_sets, mq_acc_render_MeshRenderer_variant_getp, mq_acc_render_MeshRenderer_variant_getmp },
+};
 static const mq_field_desc mq_fields_render_MeshRenderer[] = {
-    { "mesh", (uint32_t)offsetof(render::MeshRenderer, mesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mesh_path", (uint32_t)offsetof(render::MeshRenderer, mesh_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(render::MeshRenderer, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material_overrides", (uint32_t)offsetof(render::MeshRenderer, material_overrides), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "cast_shadow", (uint32_t)offsetof(render::MeshRenderer, cast_shadow), MQ_TK_ENUM, 2098906413u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "receive_shadow", (uint32_t)offsetof(render::MeshRenderer, receive_shadow), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "visible", (uint32_t)offsetof(render::MeshRenderer, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "culling_mask", (uint32_t)offsetof(render::MeshRenderer, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "layer", (uint32_t)offsetof(render::MeshRenderer, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skin_path", (uint32_t)offsetof(render::MeshRenderer, skin_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clip", (uint32_t)offsetof(render::MeshRenderer, clip), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "playing", (uint32_t)offsetof(render::MeshRenderer, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "loop", (uint32_t)offsetof(render::MeshRenderer, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(render::MeshRenderer, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "time", (uint32_t)offsetof(render::MeshRenderer, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "duration", (uint32_t)offsetof(render::MeshRenderer, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "variant", (uint32_t)offsetof(render::MeshRenderer, variant), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "mesh", (uint32_t)offsetof(render::MeshRenderer, mesh), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[0] },
+    { "mesh_path", (uint32_t)offsetof(render::MeshRenderer, mesh_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[1] },
+    { "material", (uint32_t)offsetof(render::MeshRenderer, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[2] },
+    { "material_overrides", (uint32_t)offsetof(render::MeshRenderer, material_overrides), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[3] },
+    { "cast_shadow", (uint32_t)offsetof(render::MeshRenderer, cast_shadow), MQ_TK_ENUM, 2098906413u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[4] },
+    { "receive_shadow", (uint32_t)offsetof(render::MeshRenderer, receive_shadow), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[5] },
+    { "visible", (uint32_t)offsetof(render::MeshRenderer, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[6] },
+    { "culling_mask", (uint32_t)offsetof(render::MeshRenderer, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[7] },
+    { "layer", (uint32_t)offsetof(render::MeshRenderer, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[8] },
+    { "skin_path", (uint32_t)offsetof(render::MeshRenderer, skin_path), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[9] },
+    { "clip", (uint32_t)offsetof(render::MeshRenderer, clip), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[10] },
+    { "playing", (uint32_t)offsetof(render::MeshRenderer, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[11] },
+    { "loop", (uint32_t)offsetof(render::MeshRenderer, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[12] },
+    { "speed", (uint32_t)offsetof(render::MeshRenderer, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[13] },
+    { "time", (uint32_t)offsetof(render::MeshRenderer, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[14] },
+    { "duration", (uint32_t)offsetof(render::MeshRenderer, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[15] },
+    { "variant", (uint32_t)offsetof(render::MeshRenderer, variant), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MeshRenderer[16] },
 };
 
+static double mq_acc_render_MotionStreak_mode_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
+static void mq_acc_render_MotionStreak_mode_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.mode = static_cast<decltype(s.mode)>(v); }
+static double mq_acc_render_MotionStreak_width_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(s.width); }
+static void mq_acc_render_MotionStreak_width_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_render_MotionStreak_width_curve_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(s.width_curve); }
+static void mq_acc_render_MotionStreak_width_curve_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.width_curve = static_cast<decltype(s.width_curve)>(v); }
+static const void* mq_acc_render_MotionStreak_color_start_getp(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return &s.color_start; }
+static void* mq_acc_render_MotionStreak_color_start_getmp(void* p) { auto& s = *static_cast<render::MotionStreak*>(p); return &s.color_start; }
+static const void* mq_acc_render_MotionStreak_color_end_getp(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return &s.color_end; }
+static void* mq_acc_render_MotionStreak_color_end_getmp(void* p) { auto& s = *static_cast<render::MotionStreak*>(p); return &s.color_end; }
+static double mq_acc_render_MotionStreak_fade_mode_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(static_cast<int64_t>(s.fade_mode)); }
+static void mq_acc_render_MotionStreak_fade_mode_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.fade_mode = static_cast<decltype(s.fade_mode)>(v); }
+static double mq_acc_render_MotionStreak_lifetime_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(s.lifetime); }
+static void mq_acc_render_MotionStreak_lifetime_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.lifetime = static_cast<decltype(s.lifetime)>(v); }
+static double mq_acc_render_MotionStreak_min_distance_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(s.min_distance); }
+static void mq_acc_render_MotionStreak_min_distance_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.min_distance = static_cast<decltype(s.min_distance)>(v); }
+static double mq_acc_render_MotionStreak_max_points_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(s.max_points); }
+static void mq_acc_render_MotionStreak_max_points_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.max_points = static_cast<decltype(s.max_points)>(v); }
+static double mq_acc_render_MotionStreak_points_per_sec_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(s.points_per_sec); }
+static void mq_acc_render_MotionStreak_points_per_sec_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.points_per_sec = static_cast<decltype(s.points_per_sec)>(v); }
+static double mq_acc_render_MotionStreak_point_size_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(s.point_size); }
+static void mq_acc_render_MotionStreak_point_size_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.point_size = static_cast<decltype(s.point_size)>(v); }
+static const void* mq_acc_render_MotionStreak_texture_getp(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return &s.texture; }
+static void* mq_acc_render_MotionStreak_texture_getmp(void* p) { auto& s = *static_cast<render::MotionStreak*>(p); return &s.texture; }
+static const void* mq_acc_render_MotionStreak_material_getp(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return &s.material; }
+static void* mq_acc_render_MotionStreak_material_getmp(void* p) { auto& s = *static_cast<render::MotionStreak*>(p); return &s.material; }
+static double mq_acc_render_MotionStreak_z_index_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return static_cast<double>(s.z_index); }
+static void mq_acc_render_MotionStreak_z_index_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.z_index = static_cast<decltype(s.z_index)>(v); }
+static double mq_acc_render_MotionStreak_emit_getf(const void* p) { const auto& s = *static_cast<const render::MotionStreak*>(p); return s.emit ? 1.0 : 0.0; }
+static void mq_acc_render_MotionStreak_emit_setf(void* p, double v) { auto& s = *static_cast<render::MotionStreak*>(p); s.emit = v != 0.0; }
+static const mq_field_accessor mq_acc_render_MotionStreak[] = {
+    { mq_acc_render_MotionStreak_mode_getf, mq_acc_render_MotionStreak_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MotionStreak_width_getf, mq_acc_render_MotionStreak_width_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MotionStreak_width_curve_getf, mq_acc_render_MotionStreak_width_curve_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_MotionStreak_color_start_getp, mq_acc_render_MotionStreak_color_start_getmp },
+    { 0, 0, 0, 0, mq_acc_render_MotionStreak_color_end_getp, mq_acc_render_MotionStreak_color_end_getmp },
+    { mq_acc_render_MotionStreak_fade_mode_getf, mq_acc_render_MotionStreak_fade_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MotionStreak_lifetime_getf, mq_acc_render_MotionStreak_lifetime_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MotionStreak_min_distance_getf, mq_acc_render_MotionStreak_min_distance_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MotionStreak_max_points_getf, mq_acc_render_MotionStreak_max_points_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MotionStreak_points_per_sec_getf, mq_acc_render_MotionStreak_points_per_sec_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MotionStreak_point_size_getf, mq_acc_render_MotionStreak_point_size_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_MotionStreak_texture_getp, mq_acc_render_MotionStreak_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_render_MotionStreak_material_getp, mq_acc_render_MotionStreak_material_getmp },
+    { mq_acc_render_MotionStreak_z_index_getf, mq_acc_render_MotionStreak_z_index_setf, 0, 0, 0, 0 },
+    { mq_acc_render_MotionStreak_emit_getf, mq_acc_render_MotionStreak_emit_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_render_MotionStreak_samples_clear(void* f) { static_cast<std::vector<render::StreakSample>*>(f)->clear(); }
 static uint32_t mq_dyn_render_MotionStreak_samples_size(const void* f) { return (uint32_t)static_cast<const std::vector<render::StreakSample>*>(f)->size(); }
 static void mq_dyn_render_MotionStreak_samples_resize(void* f, uint32_t n) { static_cast<std::vector<render::StreakSample>*>(f)->resize(n); }
@@ -958,80 +2907,272 @@ static uint32_t mq_dyn_render_MotionStreak_geometry_size(const void* f) { return
 static void mq_dyn_render_MotionStreak_geometry_resize(void* f, uint32_t n) { static_cast<std::vector<math::Vec2>*>(f)->resize(n); }
 static void* mq_dyn_render_MotionStreak_geometry_elem(void* f, uint32_t i) { return &static_cast<std::vector<math::Vec2>*>(f)->at(i); }
 static const mq_field_desc mq_fields_render_MotionStreak[] = {
-    { "mode", (uint32_t)offsetof(render::MotionStreak, mode), MQ_TK_ENUM, 91681312u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(render::MotionStreak, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width_curve", (uint32_t)offsetof(render::MotionStreak, width_curve), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color_start", (uint32_t)offsetof(render::MotionStreak, color_start), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color_end", (uint32_t)offsetof(render::MotionStreak, color_end), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fade_mode", (uint32_t)offsetof(render::MotionStreak, fade_mode), MQ_TK_ENUM, 205328169u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "lifetime", (uint32_t)offsetof(render::MotionStreak, lifetime), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "min_distance", (uint32_t)offsetof(render::MotionStreak, min_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_points", (uint32_t)offsetof(render::MotionStreak, max_points), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "points_per_sec", (uint32_t)offsetof(render::MotionStreak, points_per_sec), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "point_size", (uint32_t)offsetof(render::MotionStreak, point_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "texture", (uint32_t)offsetof(render::MotionStreak, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(render::MotionStreak, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z_index", (uint32_t)offsetof(render::MotionStreak, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "emit", (uint32_t)offsetof(render::MotionStreak, emit), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "samples", (uint32_t)offsetof(render::MotionStreak, samples), MQ_TK_ARRAY_DYN, 1813093813u, 0u, 1u, 1813093813u, mq_dyn_render_MotionStreak_samples_clear, mq_dyn_render_MotionStreak_samples_size, mq_dyn_render_MotionStreak_samples_resize, mq_dyn_render_MotionStreak_samples_elem },
-    { "geometry", (uint32_t)offsetof(render::MotionStreak, geometry), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 1u, 1876288095u, mq_dyn_render_MotionStreak_geometry_clear, mq_dyn_render_MotionStreak_geometry_size, mq_dyn_render_MotionStreak_geometry_resize, mq_dyn_render_MotionStreak_geometry_elem },
-    { "indices", (uint32_t)offsetof(render::MotionStreak, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "mode", (uint32_t)offsetof(render::MotionStreak, mode), MQ_TK_ENUM, 91681312u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[0] },
+    { "width", (uint32_t)offsetof(render::MotionStreak, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[1] },
+    { "width_curve", (uint32_t)offsetof(render::MotionStreak, width_curve), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[2] },
+    { "color_start", (uint32_t)offsetof(render::MotionStreak, color_start), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[3] },
+    { "color_end", (uint32_t)offsetof(render::MotionStreak, color_end), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[4] },
+    { "fade_mode", (uint32_t)offsetof(render::MotionStreak, fade_mode), MQ_TK_ENUM, 205328169u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[5] },
+    { "lifetime", (uint32_t)offsetof(render::MotionStreak, lifetime), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[6] },
+    { "min_distance", (uint32_t)offsetof(render::MotionStreak, min_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[7] },
+    { "max_points", (uint32_t)offsetof(render::MotionStreak, max_points), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[8] },
+    { "points_per_sec", (uint32_t)offsetof(render::MotionStreak, points_per_sec), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[9] },
+    { "point_size", (uint32_t)offsetof(render::MotionStreak, point_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[10] },
+    { "texture", (uint32_t)offsetof(render::MotionStreak, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[11] },
+    { "material", (uint32_t)offsetof(render::MotionStreak, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[12] },
+    { "z_index", (uint32_t)offsetof(render::MotionStreak, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[13] },
+    { "emit", (uint32_t)offsetof(render::MotionStreak, emit), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[14] },
+    { "samples", (uint32_t)offsetof(render::MotionStreak, samples), MQ_TK_ARRAY_DYN, 1813093813u, 0u, 1u, 1813093813u, mq_dyn_render_MotionStreak_samples_clear, mq_dyn_render_MotionStreak_samples_size, mq_dyn_render_MotionStreak_samples_resize, mq_dyn_render_MotionStreak_samples_elem, &mq_acc_render_MotionStreak[15] },
+    { "geometry", (uint32_t)offsetof(render::MotionStreak, geometry), MQ_TK_ARRAY_DYN, 1876288095u, 0u, 1u, 1876288095u, mq_dyn_render_MotionStreak_geometry_clear, mq_dyn_render_MotionStreak_geometry_size, mq_dyn_render_MotionStreak_geometry_resize, mq_dyn_render_MotionStreak_geometry_elem, &mq_acc_render_MotionStreak[16] },
+    { "indices", (uint32_t)offsetof(render::MotionStreak, indices), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_render_MotionStreak[17] },
 };
 
+static double mq_acc_render_ReflectionProbe_source_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(static_cast<int64_t>(s.source)); }
+static void mq_acc_render_ReflectionProbe_source_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.source = static_cast<decltype(s.source)>(v); }
+static double mq_acc_render_ReflectionProbe_update_mode_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(static_cast<int64_t>(s.update_mode)); }
+static void mq_acc_render_ReflectionProbe_update_mode_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.update_mode = static_cast<decltype(s.update_mode)>(v); }
+static double mq_acc_render_ReflectionProbe_interval_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(s.interval); }
+static void mq_acc_render_ReflectionProbe_interval_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.interval = static_cast<decltype(s.interval)>(v); }
+static double mq_acc_render_ReflectionProbe_resolution_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(s.resolution); }
+static void mq_acc_render_ReflectionProbe_resolution_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.resolution = static_cast<decltype(s.resolution)>(v); }
+static double mq_acc_render_ReflectionProbe_shape_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(static_cast<int64_t>(s.shape)); }
+static void mq_acc_render_ReflectionProbe_shape_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.shape = static_cast<decltype(s.shape)>(v); }
+static double mq_acc_render_ReflectionProbe_radius_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(s.radius); }
+static void mq_acc_render_ReflectionProbe_radius_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.radius = static_cast<decltype(s.radius)>(v); }
+static const void* mq_acc_render_ReflectionProbe_box_size_getp(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return &s.box_size; }
+static void* mq_acc_render_ReflectionProbe_box_size_getmp(void* p) { auto& s = *static_cast<render::ReflectionProbe*>(p); return &s.box_size; }
+static double mq_acc_render_ReflectionProbe_blend_distance_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(s.blend_distance); }
+static void mq_acc_render_ReflectionProbe_blend_distance_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.blend_distance = static_cast<decltype(s.blend_distance)>(v); }
+static double mq_acc_render_ReflectionProbe_intensity_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(s.intensity); }
+static void mq_acc_render_ReflectionProbe_intensity_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.intensity = static_cast<decltype(s.intensity)>(v); }
+static double mq_acc_render_ReflectionProbe_priority_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(s.priority); }
+static void mq_acc_render_ReflectionProbe_priority_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.priority = static_cast<decltype(s.priority)>(v); }
+static double mq_acc_render_ReflectionProbe_culling_mask_getf(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return static_cast<double>(s.culling_mask); }
+static void mq_acc_render_ReflectionProbe_culling_mask_setf(void* p, double v) { auto& s = *static_cast<render::ReflectionProbe*>(p); s.culling_mask = static_cast<decltype(s.culling_mask)>(v); }
+static const void* mq_acc_render_ReflectionProbe_layer_getp(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return &s.layer; }
+static void* mq_acc_render_ReflectionProbe_layer_getmp(void* p) { auto& s = *static_cast<render::ReflectionProbe*>(p); return &s.layer; }
+static const void* mq_acc_render_ReflectionProbe_baked_cubemap_getp(const void* p) { const auto& s = *static_cast<const render::ReflectionProbe*>(p); return &s.baked_cubemap; }
+static void* mq_acc_render_ReflectionProbe_baked_cubemap_getmp(void* p) { auto& s = *static_cast<render::ReflectionProbe*>(p); return &s.baked_cubemap; }
+static const mq_field_accessor mq_acc_render_ReflectionProbe[] = {
+    { mq_acc_render_ReflectionProbe_source_getf, mq_acc_render_ReflectionProbe_source_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ReflectionProbe_update_mode_getf, mq_acc_render_ReflectionProbe_update_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ReflectionProbe_interval_getf, mq_acc_render_ReflectionProbe_interval_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ReflectionProbe_resolution_getf, mq_acc_render_ReflectionProbe_resolution_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ReflectionProbe_shape_getf, mq_acc_render_ReflectionProbe_shape_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ReflectionProbe_radius_getf, mq_acc_render_ReflectionProbe_radius_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_ReflectionProbe_box_size_getp, mq_acc_render_ReflectionProbe_box_size_getmp },
+    { mq_acc_render_ReflectionProbe_blend_distance_getf, mq_acc_render_ReflectionProbe_blend_distance_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ReflectionProbe_intensity_getf, mq_acc_render_ReflectionProbe_intensity_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ReflectionProbe_priority_getf, mq_acc_render_ReflectionProbe_priority_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ReflectionProbe_culling_mask_getf, mq_acc_render_ReflectionProbe_culling_mask_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_ReflectionProbe_layer_getp, mq_acc_render_ReflectionProbe_layer_getmp },
+    { 0, 0, 0, 0, mq_acc_render_ReflectionProbe_baked_cubemap_getp, mq_acc_render_ReflectionProbe_baked_cubemap_getmp },
+};
 static const mq_field_desc mq_fields_render_ReflectionProbe[] = {
-    { "source", (uint32_t)offsetof(render::ReflectionProbe, source), MQ_TK_ENUM, 2860423504u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "update_mode", (uint32_t)offsetof(render::ReflectionProbe, update_mode), MQ_TK_ENUM, 2860543455u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "interval", (uint32_t)offsetof(render::ReflectionProbe, interval), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "resolution", (uint32_t)offsetof(render::ReflectionProbe, resolution), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shape", (uint32_t)offsetof(render::ReflectionProbe, shape), MQ_TK_ENUM, 49615886u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "radius", (uint32_t)offsetof(render::ReflectionProbe, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "box_size", (uint32_t)offsetof(render::ReflectionProbe, box_size), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "blend_distance", (uint32_t)offsetof(render::ReflectionProbe, blend_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "intensity", (uint32_t)offsetof(render::ReflectionProbe, intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "priority", (uint32_t)offsetof(render::ReflectionProbe, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "culling_mask", (uint32_t)offsetof(render::ReflectionProbe, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "layer", (uint32_t)offsetof(render::ReflectionProbe, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "baked_cubemap", (uint32_t)offsetof(render::ReflectionProbe, baked_cubemap), MQ_TK_ASSET_REF, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "source", (uint32_t)offsetof(render::ReflectionProbe, source), MQ_TK_ENUM, 2860423504u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[0] },
+    { "update_mode", (uint32_t)offsetof(render::ReflectionProbe, update_mode), MQ_TK_ENUM, 2860543455u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[1] },
+    { "interval", (uint32_t)offsetof(render::ReflectionProbe, interval), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[2] },
+    { "resolution", (uint32_t)offsetof(render::ReflectionProbe, resolution), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[3] },
+    { "shape", (uint32_t)offsetof(render::ReflectionProbe, shape), MQ_TK_ENUM, 49615886u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[4] },
+    { "radius", (uint32_t)offsetof(render::ReflectionProbe, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[5] },
+    { "box_size", (uint32_t)offsetof(render::ReflectionProbe, box_size), MQ_TK_STRUCT, 1859510476u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[6] },
+    { "blend_distance", (uint32_t)offsetof(render::ReflectionProbe, blend_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[7] },
+    { "intensity", (uint32_t)offsetof(render::ReflectionProbe, intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[8] },
+    { "priority", (uint32_t)offsetof(render::ReflectionProbe, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[9] },
+    { "culling_mask", (uint32_t)offsetof(render::ReflectionProbe, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[10] },
+    { "layer", (uint32_t)offsetof(render::ReflectionProbe, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[11] },
+    { "baked_cubemap", (uint32_t)offsetof(render::ReflectionProbe, baked_cubemap), MQ_TK_ASSET_REF, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_render_ReflectionProbe[12] },
 };
 
+static double mq_acc_render_RenderLayer_kind_getf(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return static_cast<double>(static_cast<int64_t>(s.kind)); }
+static void mq_acc_render_RenderLayer_kind_setf(void* p, double v) { auto& s = *static_cast<render::RenderLayer*>(p); s.kind = static_cast<decltype(s.kind)>(v); }
+static double mq_acc_render_RenderLayer_order_getf(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return static_cast<double>(s.order); }
+static void mq_acc_render_RenderLayer_order_setf(void* p, double v) { auto& s = *static_cast<render::RenderLayer*>(p); s.order = static_cast<decltype(s.order)>(v); }
+static double mq_acc_render_RenderLayer_visible_getf(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return s.visible ? 1.0 : 0.0; }
+static void mq_acc_render_RenderLayer_visible_setf(void* p, double v) { auto& s = *static_cast<render::RenderLayer*>(p); s.visible = v != 0.0; }
+static const void* mq_acc_render_RenderLayer_camera_getp(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return &s.camera; }
+static void* mq_acc_render_RenderLayer_camera_getmp(void* p) { auto& s = *static_cast<render::RenderLayer*>(p); return &s.camera; }
+static const void* mq_acc_render_RenderLayer_viewport_getp(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return &s.viewport; }
+static void* mq_acc_render_RenderLayer_viewport_getmp(void* p) { auto& s = *static_cast<render::RenderLayer*>(p); return &s.viewport; }
+static double mq_acc_render_RenderLayer_clear_getf(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return s.clear ? 1.0 : 0.0; }
+static void mq_acc_render_RenderLayer_clear_setf(void* p, double v) { auto& s = *static_cast<render::RenderLayer*>(p); s.clear = v != 0.0; }
+static const void* mq_acc_render_RenderLayer_clear_color_getp(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return &s.clear_color; }
+static void* mq_acc_render_RenderLayer_clear_color_getmp(void* p) { auto& s = *static_cast<render::RenderLayer*>(p); return &s.clear_color; }
+static const void* mq_acc_render_RenderLayer_target_getp(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return &s.target; }
+static void* mq_acc_render_RenderLayer_target_getmp(void* p) { auto& s = *static_cast<render::RenderLayer*>(p); return &s.target; }
+static double mq_acc_render_RenderLayer_follow_viewport_getf(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return s.follow_viewport ? 1.0 : 0.0; }
+static void mq_acc_render_RenderLayer_follow_viewport_setf(void* p, double v) { auto& s = *static_cast<render::RenderLayer*>(p); s.follow_viewport = v != 0.0; }
+static const void* mq_acc_render_RenderLayer_offset_getp(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return &s.offset; }
+static void* mq_acc_render_RenderLayer_offset_getmp(void* p) { auto& s = *static_cast<render::RenderLayer*>(p); return &s.offset; }
+static double mq_acc_render_RenderLayer_blend_getf(const void* p) { const auto& s = *static_cast<const render::RenderLayer*>(p); return static_cast<double>(static_cast<int64_t>(s.blend)); }
+static void mq_acc_render_RenderLayer_blend_setf(void* p, double v) { auto& s = *static_cast<render::RenderLayer*>(p); s.blend = static_cast<decltype(s.blend)>(v); }
+static const mq_field_accessor mq_acc_render_RenderLayer[] = {
+    { mq_acc_render_RenderLayer_kind_getf, mq_acc_render_RenderLayer_kind_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RenderLayer_order_getf, mq_acc_render_RenderLayer_order_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RenderLayer_visible_getf, mq_acc_render_RenderLayer_visible_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RenderLayer_camera_getp, mq_acc_render_RenderLayer_camera_getmp },
+    { 0, 0, 0, 0, mq_acc_render_RenderLayer_viewport_getp, mq_acc_render_RenderLayer_viewport_getmp },
+    { mq_acc_render_RenderLayer_clear_getf, mq_acc_render_RenderLayer_clear_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RenderLayer_clear_color_getp, mq_acc_render_RenderLayer_clear_color_getmp },
+    { 0, 0, 0, 0, mq_acc_render_RenderLayer_target_getp, mq_acc_render_RenderLayer_target_getmp },
+    { mq_acc_render_RenderLayer_follow_viewport_getf, mq_acc_render_RenderLayer_follow_viewport_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RenderLayer_offset_getp, mq_acc_render_RenderLayer_offset_getmp },
+    { mq_acc_render_RenderLayer_blend_getf, mq_acc_render_RenderLayer_blend_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_RenderLayer[] = {
-    { "kind", (uint32_t)offsetof(render::RenderLayer, kind), MQ_TK_ENUM, 523082708u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "order", (uint32_t)offsetof(render::RenderLayer, order), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "visible", (uint32_t)offsetof(render::RenderLayer, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "camera", (uint32_t)offsetof(render::RenderLayer, camera), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "viewport", (uint32_t)offsetof(render::RenderLayer, viewport), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clear", (uint32_t)offsetof(render::RenderLayer, clear), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clear_color", (uint32_t)offsetof(render::RenderLayer, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "target", (uint32_t)offsetof(render::RenderLayer, target), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "follow_viewport", (uint32_t)offsetof(render::RenderLayer, follow_viewport), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "offset", (uint32_t)offsetof(render::RenderLayer, offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "blend", (uint32_t)offsetof(render::RenderLayer, blend), MQ_TK_ENUM, 3958457383u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "kind", (uint32_t)offsetof(render::RenderLayer, kind), MQ_TK_ENUM, 523082708u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[0] },
+    { "order", (uint32_t)offsetof(render::RenderLayer, order), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[1] },
+    { "visible", (uint32_t)offsetof(render::RenderLayer, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[2] },
+    { "camera", (uint32_t)offsetof(render::RenderLayer, camera), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[3] },
+    { "viewport", (uint32_t)offsetof(render::RenderLayer, viewport), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[4] },
+    { "clear", (uint32_t)offsetof(render::RenderLayer, clear), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[5] },
+    { "clear_color", (uint32_t)offsetof(render::RenderLayer, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[6] },
+    { "target", (uint32_t)offsetof(render::RenderLayer, target), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[7] },
+    { "follow_viewport", (uint32_t)offsetof(render::RenderLayer, follow_viewport), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[8] },
+    { "offset", (uint32_t)offsetof(render::RenderLayer, offset), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[9] },
+    { "blend", (uint32_t)offsetof(render::RenderLayer, blend), MQ_TK_ENUM, 3958457383u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderLayer[10] },
 };
 
+static const char* mq_acc_render_RenderTexture_name_gets(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return s.name.c_str(); }
+static void mq_acc_render_RenderTexture_name_sets(void* p, const char* v) { auto& s = *static_cast<render::RenderTexture*>(p); s.name = v ? v : ""; }
+static const void* mq_acc_render_RenderTexture_name_getp(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return &s.name; }
+static void* mq_acc_render_RenderTexture_name_getmp(void* p) { auto& s = *static_cast<render::RenderTexture*>(p); return &s.name; }
+static double mq_acc_render_RenderTexture_width_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return static_cast<double>(s.width); }
+static void mq_acc_render_RenderTexture_width_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_render_RenderTexture_height_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return static_cast<double>(s.height); }
+static void mq_acc_render_RenderTexture_height_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static double mq_acc_render_RenderTexture_update_mode_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return static_cast<double>(static_cast<int64_t>(s.update_mode)); }
+static void mq_acc_render_RenderTexture_update_mode_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.update_mode = static_cast<decltype(s.update_mode)>(v); }
+static double mq_acc_render_RenderTexture_filter_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return static_cast<double>(static_cast<int64_t>(s.filter)); }
+static void mq_acc_render_RenderTexture_filter_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.filter = static_cast<decltype(s.filter)>(v); }
+static double mq_acc_render_RenderTexture_include_ui_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return s.include_ui ? 1.0 : 0.0; }
+static void mq_acc_render_RenderTexture_include_ui_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.include_ui = v != 0.0; }
+static double mq_acc_render_RenderTexture_enabled_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_render_RenderTexture_enabled_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.enabled = v != 0.0; }
+static const void* mq_acc_render_RenderTexture_clear_color_getp(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return &s.clear_color; }
+static void* mq_acc_render_RenderTexture_clear_color_getmp(void* p) { auto& s = *static_cast<render::RenderTexture*>(p); return &s.clear_color; }
+static double mq_acc_render_RenderTexture_msaa_samples_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return static_cast<double>(s.msaa_samples); }
+static void mq_acc_render_RenderTexture_msaa_samples_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.msaa_samples = static_cast<decltype(s.msaa_samples)>(v); }
+static const char* mq_acc_render_RenderTexture_texture_gets(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return s.texture.c_str(); }
+static void mq_acc_render_RenderTexture_texture_sets(void* p, const char* v) { auto& s = *static_cast<render::RenderTexture*>(p); s.texture = v ? v : ""; }
+static const void* mq_acc_render_RenderTexture_texture_getp(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return &s.texture; }
+static void* mq_acc_render_RenderTexture_texture_getmp(void* p) { auto& s = *static_cast<render::RenderTexture*>(p); return &s.texture; }
+static double mq_acc_render_RenderTexture_ready_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return s.ready ? 1.0 : 0.0; }
+static void mq_acc_render_RenderTexture_ready_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.ready = v != 0.0; }
+static double mq_acc_render_RenderTexture_last_frame_getf(const void* p) { const auto& s = *static_cast<const render::RenderTexture*>(p); return static_cast<double>(s.last_frame); }
+static void mq_acc_render_RenderTexture_last_frame_setf(void* p, double v) { auto& s = *static_cast<render::RenderTexture*>(p); s.last_frame = static_cast<decltype(s.last_frame)>(v); }
+static const mq_field_accessor mq_acc_render_RenderTexture[] = {
+    { 0, 0, mq_acc_render_RenderTexture_name_gets, mq_acc_render_RenderTexture_name_sets, mq_acc_render_RenderTexture_name_getp, mq_acc_render_RenderTexture_name_getmp },
+    { mq_acc_render_RenderTexture_width_getf, mq_acc_render_RenderTexture_width_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RenderTexture_height_getf, mq_acc_render_RenderTexture_height_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RenderTexture_update_mode_getf, mq_acc_render_RenderTexture_update_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RenderTexture_filter_getf, mq_acc_render_RenderTexture_filter_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RenderTexture_include_ui_getf, mq_acc_render_RenderTexture_include_ui_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RenderTexture_enabled_getf, mq_acc_render_RenderTexture_enabled_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RenderTexture_clear_color_getp, mq_acc_render_RenderTexture_clear_color_getmp },
+    { mq_acc_render_RenderTexture_msaa_samples_getf, mq_acc_render_RenderTexture_msaa_samples_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_render_RenderTexture_texture_gets, mq_acc_render_RenderTexture_texture_sets, mq_acc_render_RenderTexture_texture_getp, mq_acc_render_RenderTexture_texture_getmp },
+    { mq_acc_render_RenderTexture_ready_getf, mq_acc_render_RenderTexture_ready_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RenderTexture_last_frame_getf, mq_acc_render_RenderTexture_last_frame_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_RenderTexture[] = {
-    { "name", (uint32_t)offsetof(render::RenderTexture, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(render::RenderTexture, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(render::RenderTexture, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "update_mode", (uint32_t)offsetof(render::RenderTexture, update_mode), MQ_TK_ENUM, 1562192302u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "filter", (uint32_t)offsetof(render::RenderTexture, filter), MQ_TK_ENUM, 4056136834u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "include_ui", (uint32_t)offsetof(render::RenderTexture, include_ui), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(render::RenderTexture, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clear_color", (uint32_t)offsetof(render::RenderTexture, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "msaa_samples", (uint32_t)offsetof(render::RenderTexture, msaa_samples), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "texture", (uint32_t)offsetof(render::RenderTexture, texture), MQ_TK_STRING, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "ready", (uint32_t)offsetof(render::RenderTexture, ready), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "last_frame", (uint32_t)offsetof(render::RenderTexture, last_frame), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "name", (uint32_t)offsetof(render::RenderTexture, name), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[0] },
+    { "width", (uint32_t)offsetof(render::RenderTexture, width), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[1] },
+    { "height", (uint32_t)offsetof(render::RenderTexture, height), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[2] },
+    { "update_mode", (uint32_t)offsetof(render::RenderTexture, update_mode), MQ_TK_ENUM, 1562192302u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[3] },
+    { "filter", (uint32_t)offsetof(render::RenderTexture, filter), MQ_TK_ENUM, 4056136834u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[4] },
+    { "include_ui", (uint32_t)offsetof(render::RenderTexture, include_ui), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[5] },
+    { "enabled", (uint32_t)offsetof(render::RenderTexture, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[6] },
+    { "clear_color", (uint32_t)offsetof(render::RenderTexture, clear_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[7] },
+    { "msaa_samples", (uint32_t)offsetof(render::RenderTexture, msaa_samples), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[8] },
+    { "texture", (uint32_t)offsetof(render::RenderTexture, texture), MQ_TK_STRING, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[9] },
+    { "ready", (uint32_t)offsetof(render::RenderTexture, ready), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[10] },
+    { "last_frame", (uint32_t)offsetof(render::RenderTexture, last_frame), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_render_RenderTexture[11] },
 };
 
+static double mq_acc_render_RichRun_tag_getf(const void* p) { const auto& s = *static_cast<const render::RichRun*>(p); return static_cast<double>(static_cast<int64_t>(s.tag)); }
+static void mq_acc_render_RichRun_tag_setf(void* p, double v) { auto& s = *static_cast<render::RichRun*>(p); s.tag = static_cast<decltype(s.tag)>(v); }
+static double mq_acc_render_RichRun_text_begin_getf(const void* p) { const auto& s = *static_cast<const render::RichRun*>(p); return static_cast<double>(s.text_begin); }
+static void mq_acc_render_RichRun_text_begin_setf(void* p, double v) { auto& s = *static_cast<render::RichRun*>(p); s.text_begin = static_cast<decltype(s.text_begin)>(v); }
+static double mq_acc_render_RichRun_text_len_getf(const void* p) { const auto& s = *static_cast<const render::RichRun*>(p); return static_cast<double>(s.text_len); }
+static void mq_acc_render_RichRun_text_len_setf(void* p, double v) { auto& s = *static_cast<render::RichRun*>(p); s.text_len = static_cast<decltype(s.text_len)>(v); }
+static const void* mq_acc_render_RichRun_color_getp(const void* p) { const auto& s = *static_cast<const render::RichRun*>(p); return &s.color; }
+static void* mq_acc_render_RichRun_color_getmp(void* p) { auto& s = *static_cast<render::RichRun*>(p); return &s.color; }
+static double mq_acc_render_RichRun_font_size_getf(const void* p) { const auto& s = *static_cast<const render::RichRun*>(p); return static_cast<double>(s.font_size); }
+static void mq_acc_render_RichRun_font_size_setf(void* p, double v) { auto& s = *static_cast<render::RichRun*>(p); s.font_size = static_cast<decltype(s.font_size)>(v); }
+static double mq_acc_render_RichRun_link_getf(const void* p) { const auto& s = *static_cast<const render::RichRun*>(p); return static_cast<double>(s.link); }
+static void mq_acc_render_RichRun_link_setf(void* p, double v) { auto& s = *static_cast<render::RichRun*>(p); s.link = static_cast<decltype(s.link)>(v); }
+static const mq_field_accessor mq_acc_render_RichRun[] = {
+    { mq_acc_render_RichRun_tag_getf, mq_acc_render_RichRun_tag_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichRun_text_begin_getf, mq_acc_render_RichRun_text_begin_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichRun_text_len_getf, mq_acc_render_RichRun_text_len_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RichRun_color_getp, mq_acc_render_RichRun_color_getmp },
+    { mq_acc_render_RichRun_font_size_getf, mq_acc_render_RichRun_font_size_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichRun_link_getf, mq_acc_render_RichRun_link_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_RichRun[] = {
-    { "tag", (uint32_t)offsetof(render::RichRun, tag), MQ_TK_ENUM, 2818671041u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text_begin", (uint32_t)offsetof(render::RichRun, text_begin), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text_len", (uint32_t)offsetof(render::RichRun, text_len), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(render::RichRun, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font_size", (uint32_t)offsetof(render::RichRun, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "link", (uint32_t)offsetof(render::RichRun, link), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "tag", (uint32_t)offsetof(render::RichRun, tag), MQ_TK_ENUM, 2818671041u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichRun[0] },
+    { "text_begin", (uint32_t)offsetof(render::RichRun, text_begin), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichRun[1] },
+    { "text_len", (uint32_t)offsetof(render::RichRun, text_len), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichRun[2] },
+    { "color", (uint32_t)offsetof(render::RichRun, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichRun[3] },
+    { "font_size", (uint32_t)offsetof(render::RichRun, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichRun[4] },
+    { "link", (uint32_t)offsetof(render::RichRun, link), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichRun[5] },
 };
 
+static const char* mq_acc_render_RichText_text_gets(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return s.text.c_str(); }
+static void mq_acc_render_RichText_text_sets(void* p, const char* v) { auto& s = *static_cast<render::RichText*>(p); s.text = v ? v : ""; }
+static const void* mq_acc_render_RichText_text_getp(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return &s.text; }
+static void* mq_acc_render_RichText_text_getmp(void* p) { auto& s = *static_cast<render::RichText*>(p); return &s.text; }
+static double mq_acc_render_RichText_parse_tags_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return s.parse_tags ? 1.0 : 0.0; }
+static void mq_acc_render_RichText_parse_tags_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.parse_tags = v != 0.0; }
+static double mq_acc_render_RichText_max_width_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(s.max_width); }
+static void mq_acc_render_RichText_max_width_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.max_width = static_cast<decltype(s.max_width)>(v); }
+static const void* mq_acc_render_RichText_font_getp(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return &s.font; }
+static void* mq_acc_render_RichText_font_getmp(void* p) { auto& s = *static_cast<render::RichText*>(p); return &s.font; }
+static double mq_acc_render_RichText_font_size_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(s.font_size); }
+static void mq_acc_render_RichText_font_size_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.font_size = static_cast<decltype(s.font_size)>(v); }
+static const void* mq_acc_render_RichText_color_getp(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return &s.color; }
+static void* mq_acc_render_RichText_color_getmp(void* p) { auto& s = *static_cast<render::RichText*>(p); return &s.color; }
+static double mq_acc_render_RichText_outline_size_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(s.outline_size); }
+static void mq_acc_render_RichText_outline_size_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.outline_size = static_cast<decltype(s.outline_size)>(v); }
+static const void* mq_acc_render_RichText_outline_color_getp(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return &s.outline_color; }
+static void* mq_acc_render_RichText_outline_color_getmp(void* p) { auto& s = *static_cast<render::RichText*>(p); return &s.outline_color; }
+static double mq_acc_render_RichText_align_h_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(static_cast<int64_t>(s.align_h)); }
+static void mq_acc_render_RichText_align_h_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.align_h = static_cast<decltype(s.align_h)>(v); }
+static double mq_acc_render_RichText_align_v_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(static_cast<int64_t>(s.align_v)); }
+static void mq_acc_render_RichText_align_v_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.align_v = static_cast<decltype(s.align_v)>(v); }
+static double mq_acc_render_RichText_wrap_mode_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(static_cast<int64_t>(s.wrap_mode)); }
+static void mq_acc_render_RichText_wrap_mode_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.wrap_mode = static_cast<decltype(s.wrap_mode)>(v); }
+static double mq_acc_render_RichText_line_spacing_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(s.line_spacing); }
+static void mq_acc_render_RichText_line_spacing_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.line_spacing = static_cast<decltype(s.line_spacing)>(v); }
+static double mq_acc_render_RichText_image_align_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(static_cast<int64_t>(s.image_align)); }
+static void mq_acc_render_RichText_image_align_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.image_align = static_cast<decltype(s.image_align)>(v); }
+static double mq_acc_render_RichText_meta_underlined_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return s.meta_underlined ? 1.0 : 0.0; }
+static void mq_acc_render_RichText_meta_underlined_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.meta_underlined = v != 0.0; }
+static const void* mq_acc_render_RichText_content_size_getp(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return &s.content_size; }
+static void* mq_acc_render_RichText_content_size_getmp(void* p) { auto& s = *static_cast<render::RichText*>(p); return &s.content_size; }
+static double mq_acc_render_RichText_line_count_getf(const void* p) { const auto& s = *static_cast<const render::RichText*>(p); return static_cast<double>(s.line_count); }
+static void mq_acc_render_RichText_line_count_setf(void* p, double v) { auto& s = *static_cast<render::RichText*>(p); s.line_count = static_cast<decltype(s.line_count)>(v); }
+static const mq_field_accessor mq_acc_render_RichText[] = {
+    { 0, 0, mq_acc_render_RichText_text_gets, mq_acc_render_RichText_text_sets, mq_acc_render_RichText_text_getp, mq_acc_render_RichText_text_getmp },
+    { mq_acc_render_RichText_parse_tags_getf, mq_acc_render_RichText_parse_tags_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichText_max_width_getf, mq_acc_render_RichText_max_width_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RichText_font_getp, mq_acc_render_RichText_font_getmp },
+    { mq_acc_render_RichText_font_size_getf, mq_acc_render_RichText_font_size_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RichText_color_getp, mq_acc_render_RichText_color_getmp },
+    { mq_acc_render_RichText_outline_size_getf, mq_acc_render_RichText_outline_size_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RichText_outline_color_getp, mq_acc_render_RichText_outline_color_getmp },
+    { mq_acc_render_RichText_align_h_getf, mq_acc_render_RichText_align_h_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichText_align_v_getf, mq_acc_render_RichText_align_v_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichText_wrap_mode_getf, mq_acc_render_RichText_wrap_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichText_line_spacing_getf, mq_acc_render_RichText_line_spacing_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichText_image_align_getf, mq_acc_render_RichText_image_align_setf, 0, 0, 0, 0 },
+    { mq_acc_render_RichText_meta_underlined_getf, mq_acc_render_RichText_meta_underlined_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_RichText_content_size_getp, mq_acc_render_RichText_content_size_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_render_RichText_line_count_getf, mq_acc_render_RichText_line_count_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_render_RichText_runs_clear(void* f) { static_cast<std::vector<render::RichRun>*>(f)->clear(); }
 static uint32_t mq_dyn_render_RichText_runs_size(const void* f) { return (uint32_t)static_cast<const std::vector<render::RichRun>*>(f)->size(); }
 static void mq_dyn_render_RichText_runs_resize(void* f, uint32_t n) { static_cast<std::vector<render::RichRun>*>(f)->resize(n); }
@@ -1041,691 +3182,2293 @@ static uint32_t mq_dyn_render_RichText_links_size(const void* f) { return (uint3
 static void mq_dyn_render_RichText_links_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_render_RichText_links_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_render_RichText[] = {
-    { "text", (uint32_t)offsetof(render::RichText, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "parse_tags", (uint32_t)offsetof(render::RichText, parse_tags), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_width", (uint32_t)offsetof(render::RichText, max_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font", (uint32_t)offsetof(render::RichText, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font_size", (uint32_t)offsetof(render::RichText, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(render::RichText, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_size", (uint32_t)offsetof(render::RichText, outline_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_color", (uint32_t)offsetof(render::RichText, outline_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_h", (uint32_t)offsetof(render::RichText, align_h), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_v", (uint32_t)offsetof(render::RichText, align_v), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "wrap_mode", (uint32_t)offsetof(render::RichText, wrap_mode), MQ_TK_ENUM, 1869600876u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "line_spacing", (uint32_t)offsetof(render::RichText, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "image_align", (uint32_t)offsetof(render::RichText, image_align), MQ_TK_ENUM, 2410795103u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "meta_underlined", (uint32_t)offsetof(render::RichText, meta_underlined), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "content_size", (uint32_t)offsetof(render::RichText, content_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "runs", (uint32_t)offsetof(render::RichText, runs), MQ_TK_ARRAY_DYN, 2859154460u, 0u, 1u, 2859154460u, mq_dyn_render_RichText_runs_clear, mq_dyn_render_RichText_runs_size, mq_dyn_render_RichText_runs_resize, mq_dyn_render_RichText_runs_elem },
-    { "links", (uint32_t)offsetof(render::RichText, links), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, MQ_ELEM_TYPE_STRING, mq_dyn_render_RichText_links_clear, mq_dyn_render_RichText_links_size, mq_dyn_render_RichText_links_resize, mq_dyn_render_RichText_links_elem },
-    { "line_count", (uint32_t)offsetof(render::RichText, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "text", (uint32_t)offsetof(render::RichText, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[0] },
+    { "parse_tags", (uint32_t)offsetof(render::RichText, parse_tags), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[1] },
+    { "max_width", (uint32_t)offsetof(render::RichText, max_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[2] },
+    { "font", (uint32_t)offsetof(render::RichText, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[3] },
+    { "font_size", (uint32_t)offsetof(render::RichText, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[4] },
+    { "color", (uint32_t)offsetof(render::RichText, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[5] },
+    { "outline_size", (uint32_t)offsetof(render::RichText, outline_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[6] },
+    { "outline_color", (uint32_t)offsetof(render::RichText, outline_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[7] },
+    { "align_h", (uint32_t)offsetof(render::RichText, align_h), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[8] },
+    { "align_v", (uint32_t)offsetof(render::RichText, align_v), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[9] },
+    { "wrap_mode", (uint32_t)offsetof(render::RichText, wrap_mode), MQ_TK_ENUM, 1869600876u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[10] },
+    { "line_spacing", (uint32_t)offsetof(render::RichText, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[11] },
+    { "image_align", (uint32_t)offsetof(render::RichText, image_align), MQ_TK_ENUM, 2410795103u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[12] },
+    { "meta_underlined", (uint32_t)offsetof(render::RichText, meta_underlined), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[13] },
+    { "content_size", (uint32_t)offsetof(render::RichText, content_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[14] },
+    { "runs", (uint32_t)offsetof(render::RichText, runs), MQ_TK_ARRAY_DYN, 2859154460u, 0u, 1u, 2859154460u, mq_dyn_render_RichText_runs_clear, mq_dyn_render_RichText_runs_size, mq_dyn_render_RichText_runs_resize, mq_dyn_render_RichText_runs_elem, &mq_acc_render_RichText[15] },
+    { "links", (uint32_t)offsetof(render::RichText, links), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, MQ_ELEM_TYPE_STRING, mq_dyn_render_RichText_links_clear, mq_dyn_render_RichText_links_size, mq_dyn_render_RichText_links_resize, mq_dyn_render_RichText_links_elem, &mq_acc_render_RichText[16] },
+    { "line_count", (uint32_t)offsetof(render::RichText, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_render_RichText[17] },
 };
 
+static const char* mq_acc_render_ShaderGraph_program_gets(const void* p) { const auto& s = *static_cast<const render::ShaderGraph*>(p); return s.program.c_str(); }
+static void mq_acc_render_ShaderGraph_program_sets(void* p, const char* v) { auto& s = *static_cast<render::ShaderGraph*>(p); s.program = v ? v : ""; }
+static const void* mq_acc_render_ShaderGraph_program_getp(const void* p) { const auto& s = *static_cast<const render::ShaderGraph*>(p); return &s.program; }
+static void* mq_acc_render_ShaderGraph_program_getmp(void* p) { auto& s = *static_cast<render::ShaderGraph*>(p); return &s.program; }
+static double mq_acc_render_ShaderGraph_speed_getf(const void* p) { const auto& s = *static_cast<const render::ShaderGraph*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_render_ShaderGraph_speed_setf(void* p, double v) { auto& s = *static_cast<render::ShaderGraph*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_render_ShaderGraph_paused_getf(const void* p) { const auto& s = *static_cast<const render::ShaderGraph*>(p); return s.paused ? 1.0 : 0.0; }
+static void mq_acc_render_ShaderGraph_paused_setf(void* p, double v) { auto& s = *static_cast<render::ShaderGraph*>(p); s.paused = v != 0.0; }
+static double mq_acc_render_ShaderGraph_enabled_getf(const void* p) { const auto& s = *static_cast<const render::ShaderGraph*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_render_ShaderGraph_enabled_setf(void* p, double v) { auto& s = *static_cast<render::ShaderGraph*>(p); s.enabled = v != 0.0; }
+static double mq_acc_render_ShaderGraph_time_getf(const void* p) { const auto& s = *static_cast<const render::ShaderGraph*>(p); return static_cast<double>(s.time); }
+static void mq_acc_render_ShaderGraph_time_setf(void* p, double v) { auto& s = *static_cast<render::ShaderGraph*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static const mq_field_accessor mq_acc_render_ShaderGraph[] = {
+    { 0, 0, mq_acc_render_ShaderGraph_program_gets, mq_acc_render_ShaderGraph_program_sets, mq_acc_render_ShaderGraph_program_getp, mq_acc_render_ShaderGraph_program_getmp },
+    { mq_acc_render_ShaderGraph_speed_getf, mq_acc_render_ShaderGraph_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderGraph_paused_getf, mq_acc_render_ShaderGraph_paused_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderGraph_enabled_getf, mq_acc_render_ShaderGraph_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderGraph_time_getf, mq_acc_render_ShaderGraph_time_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_ShaderGraph[] = {
-    { "program", (uint32_t)offsetof(render::ShaderGraph, program), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(render::ShaderGraph, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "paused", (uint32_t)offsetof(render::ShaderGraph, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(render::ShaderGraph, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "time", (uint32_t)offsetof(render::ShaderGraph, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "program", (uint32_t)offsetof(render::ShaderGraph, program), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderGraph[0] },
+    { "speed", (uint32_t)offsetof(render::ShaderGraph, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderGraph[1] },
+    { "paused", (uint32_t)offsetof(render::ShaderGraph, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderGraph[2] },
+    { "enabled", (uint32_t)offsetof(render::ShaderGraph, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderGraph[3] },
+    { "time", (uint32_t)offsetof(render::ShaderGraph, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderGraph[4] },
 };
 
+static const char* mq_acc_render_ShaderPass_shader_gets(const void* p) { const auto& s = *static_cast<const render::ShaderPass*>(p); return s.shader.c_str(); }
+static void mq_acc_render_ShaderPass_shader_sets(void* p, const char* v) { auto& s = *static_cast<render::ShaderPass*>(p); s.shader = v ? v : ""; }
+static const void* mq_acc_render_ShaderPass_shader_getp(const void* p) { const auto& s = *static_cast<const render::ShaderPass*>(p); return &s.shader; }
+static void* mq_acc_render_ShaderPass_shader_getmp(void* p) { auto& s = *static_cast<render::ShaderPass*>(p); return &s.shader; }
+static double mq_acc_render_ShaderPass_speed_getf(const void* p) { const auto& s = *static_cast<const render::ShaderPass*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_render_ShaderPass_speed_setf(void* p, double v) { auto& s = *static_cast<render::ShaderPass*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_render_ShaderPass_paused_getf(const void* p) { const auto& s = *static_cast<const render::ShaderPass*>(p); return s.paused ? 1.0 : 0.0; }
+static void mq_acc_render_ShaderPass_paused_setf(void* p, double v) { auto& s = *static_cast<render::ShaderPass*>(p); s.paused = v != 0.0; }
+static double mq_acc_render_ShaderPass_enabled_getf(const void* p) { const auto& s = *static_cast<const render::ShaderPass*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_render_ShaderPass_enabled_setf(void* p, double v) { auto& s = *static_cast<render::ShaderPass*>(p); s.enabled = v != 0.0; }
+static double mq_acc_render_ShaderPass_time_getf(const void* p) { const auto& s = *static_cast<const render::ShaderPass*>(p); return static_cast<double>(s.time); }
+static void mq_acc_render_ShaderPass_time_setf(void* p, double v) { auto& s = *static_cast<render::ShaderPass*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static const mq_field_accessor mq_acc_render_ShaderPass[] = {
+    { 0, 0, mq_acc_render_ShaderPass_shader_gets, mq_acc_render_ShaderPass_shader_sets, mq_acc_render_ShaderPass_shader_getp, mq_acc_render_ShaderPass_shader_getmp },
+    { mq_acc_render_ShaderPass_speed_getf, mq_acc_render_ShaderPass_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderPass_paused_getf, mq_acc_render_ShaderPass_paused_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderPass_enabled_getf, mq_acc_render_ShaderPass_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderPass_time_getf, mq_acc_render_ShaderPass_time_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_ShaderPass[] = {
-    { "shader", (uint32_t)offsetof(render::ShaderPass, shader), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(render::ShaderPass, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "paused", (uint32_t)offsetof(render::ShaderPass, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(render::ShaderPass, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "time", (uint32_t)offsetof(render::ShaderPass, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shader", (uint32_t)offsetof(render::ShaderPass, shader), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderPass[0] },
+    { "speed", (uint32_t)offsetof(render::ShaderPass, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderPass[1] },
+    { "paused", (uint32_t)offsetof(render::ShaderPass, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderPass[2] },
+    { "enabled", (uint32_t)offsetof(render::ShaderPass, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderPass[3] },
+    { "time", (uint32_t)offsetof(render::ShaderPass, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderPass[4] },
 };
 
+static const char* mq_acc_render_ShaderSprite_shader_gets(const void* p) { const auto& s = *static_cast<const render::ShaderSprite*>(p); return s.shader.c_str(); }
+static void mq_acc_render_ShaderSprite_shader_sets(void* p, const char* v) { auto& s = *static_cast<render::ShaderSprite*>(p); s.shader = v ? v : ""; }
+static const void* mq_acc_render_ShaderSprite_shader_getp(const void* p) { const auto& s = *static_cast<const render::ShaderSprite*>(p); return &s.shader; }
+static void* mq_acc_render_ShaderSprite_shader_getmp(void* p) { auto& s = *static_cast<render::ShaderSprite*>(p); return &s.shader; }
+static double mq_acc_render_ShaderSprite_width_getf(const void* p) { const auto& s = *static_cast<const render::ShaderSprite*>(p); return static_cast<double>(s.width); }
+static void mq_acc_render_ShaderSprite_width_setf(void* p, double v) { auto& s = *static_cast<render::ShaderSprite*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_render_ShaderSprite_height_getf(const void* p) { const auto& s = *static_cast<const render::ShaderSprite*>(p); return static_cast<double>(s.height); }
+static void mq_acc_render_ShaderSprite_height_setf(void* p, double v) { auto& s = *static_cast<render::ShaderSprite*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static double mq_acc_render_ShaderSprite_speed_getf(const void* p) { const auto& s = *static_cast<const render::ShaderSprite*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_render_ShaderSprite_speed_setf(void* p, double v) { auto& s = *static_cast<render::ShaderSprite*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_render_ShaderSprite_paused_getf(const void* p) { const auto& s = *static_cast<const render::ShaderSprite*>(p); return s.paused ? 1.0 : 0.0; }
+static void mq_acc_render_ShaderSprite_paused_setf(void* p, double v) { auto& s = *static_cast<render::ShaderSprite*>(p); s.paused = v != 0.0; }
+static double mq_acc_render_ShaderSprite_enabled_getf(const void* p) { const auto& s = *static_cast<const render::ShaderSprite*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_render_ShaderSprite_enabled_setf(void* p, double v) { auto& s = *static_cast<render::ShaderSprite*>(p); s.enabled = v != 0.0; }
+static double mq_acc_render_ShaderSprite_time_getf(const void* p) { const auto& s = *static_cast<const render::ShaderSprite*>(p); return static_cast<double>(s.time); }
+static void mq_acc_render_ShaderSprite_time_setf(void* p, double v) { auto& s = *static_cast<render::ShaderSprite*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static const mq_field_accessor mq_acc_render_ShaderSprite[] = {
+    { 0, 0, mq_acc_render_ShaderSprite_shader_gets, mq_acc_render_ShaderSprite_shader_sets, mq_acc_render_ShaderSprite_shader_getp, mq_acc_render_ShaderSprite_shader_getmp },
+    { mq_acc_render_ShaderSprite_width_getf, mq_acc_render_ShaderSprite_width_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderSprite_height_getf, mq_acc_render_ShaderSprite_height_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderSprite_speed_getf, mq_acc_render_ShaderSprite_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderSprite_paused_getf, mq_acc_render_ShaderSprite_paused_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderSprite_enabled_getf, mq_acc_render_ShaderSprite_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_render_ShaderSprite_time_getf, mq_acc_render_ShaderSprite_time_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_ShaderSprite[] = {
-    { "shader", (uint32_t)offsetof(render::ShaderSprite, shader), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(render::ShaderSprite, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(render::ShaderSprite, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(render::ShaderSprite, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "paused", (uint32_t)offsetof(render::ShaderSprite, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(render::ShaderSprite, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "time", (uint32_t)offsetof(render::ShaderSprite, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "shader", (uint32_t)offsetof(render::ShaderSprite, shader), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderSprite[0] },
+    { "width", (uint32_t)offsetof(render::ShaderSprite, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderSprite[1] },
+    { "height", (uint32_t)offsetof(render::ShaderSprite, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderSprite[2] },
+    { "speed", (uint32_t)offsetof(render::ShaderSprite, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderSprite[3] },
+    { "paused", (uint32_t)offsetof(render::ShaderSprite, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderSprite[4] },
+    { "enabled", (uint32_t)offsetof(render::ShaderSprite, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderSprite[5] },
+    { "time", (uint32_t)offsetof(render::ShaderSprite, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_ShaderSprite[6] },
 };
 
+static double mq_acc_render_Skybox_skybox_mode_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return static_cast<double>(static_cast<int64_t>(s.skybox_mode)); }
+static void mq_acc_render_Skybox_skybox_mode_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.skybox_mode = static_cast<decltype(s.skybox_mode)>(v); }
+static const void* mq_acc_render_Skybox_skybox_texture_getp(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return &s.skybox_texture; }
+static void* mq_acc_render_Skybox_skybox_texture_getmp(void* p) { auto& s = *static_cast<render::Skybox*>(p); return &s.skybox_texture; }
+static const void* mq_acc_render_Skybox_skybox_color_getp(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return &s.skybox_color; }
+static void* mq_acc_render_Skybox_skybox_color_getmp(void* p) { auto& s = *static_cast<render::Skybox*>(p); return &s.skybox_color; }
+static double mq_acc_render_Skybox_skybox_rotation_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return static_cast<double>(s.skybox_rotation); }
+static void mq_acc_render_Skybox_skybox_rotation_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.skybox_rotation = static_cast<decltype(s.skybox_rotation)>(v); }
+static double mq_acc_render_Skybox_skybox_intensity_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return static_cast<double>(s.skybox_intensity); }
+static void mq_acc_render_Skybox_skybox_intensity_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.skybox_intensity = static_cast<decltype(s.skybox_intensity)>(v); }
+static double mq_acc_render_Skybox_env_source_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return static_cast<double>(static_cast<int64_t>(s.env_source)); }
+static void mq_acc_render_Skybox_env_source_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.env_source = static_cast<decltype(s.env_source)>(v); }
+static const void* mq_acc_render_Skybox_env_texture_getp(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return &s.env_texture; }
+static void* mq_acc_render_Skybox_env_texture_getmp(void* p) { auto& s = *static_cast<render::Skybox*>(p); return &s.env_texture; }
+static const void* mq_acc_render_Skybox_env_color_getp(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return &s.env_color; }
+static void* mq_acc_render_Skybox_env_color_getmp(void* p) { auto& s = *static_cast<render::Skybox*>(p); return &s.env_color; }
+static const void* mq_acc_render_Skybox_env_sky_color_getp(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return &s.env_sky_color; }
+static void* mq_acc_render_Skybox_env_sky_color_getmp(void* p) { auto& s = *static_cast<render::Skybox*>(p); return &s.env_sky_color; }
+static const void* mq_acc_render_Skybox_env_ground_color_getp(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return &s.env_ground_color; }
+static void* mq_acc_render_Skybox_env_ground_color_getmp(void* p) { auto& s = *static_cast<render::Skybox*>(p); return &s.env_ground_color; }
+static double mq_acc_render_Skybox_env_intensity_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return static_cast<double>(s.env_intensity); }
+static void mq_acc_render_Skybox_env_intensity_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.env_intensity = static_cast<decltype(s.env_intensity)>(v); }
+static double mq_acc_render_Skybox_diffuse_contribution_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return static_cast<double>(s.diffuse_contribution); }
+static void mq_acc_render_Skybox_diffuse_contribution_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.diffuse_contribution = static_cast<decltype(s.diffuse_contribution)>(v); }
+static double mq_acc_render_Skybox_specular_contribution_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return static_cast<double>(s.specular_contribution); }
+static void mq_acc_render_Skybox_specular_contribution_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.specular_contribution = static_cast<decltype(s.specular_contribution)>(v); }
+static double mq_acc_render_Skybox_priority_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return static_cast<double>(s.priority); }
+static void mq_acc_render_Skybox_priority_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.priority = static_cast<decltype(s.priority)>(v); }
+static double mq_acc_render_Skybox_active_getf(const void* p) { const auto& s = *static_cast<const render::Skybox*>(p); return s.active ? 1.0 : 0.0; }
+static void mq_acc_render_Skybox_active_setf(void* p, double v) { auto& s = *static_cast<render::Skybox*>(p); s.active = v != 0.0; }
+static const mq_field_accessor mq_acc_render_Skybox[] = {
+    { mq_acc_render_Skybox_skybox_mode_getf, mq_acc_render_Skybox_skybox_mode_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Skybox_skybox_texture_getp, mq_acc_render_Skybox_skybox_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Skybox_skybox_color_getp, mq_acc_render_Skybox_skybox_color_getmp },
+    { mq_acc_render_Skybox_skybox_rotation_getf, mq_acc_render_Skybox_skybox_rotation_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Skybox_skybox_intensity_getf, mq_acc_render_Skybox_skybox_intensity_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Skybox_env_source_getf, mq_acc_render_Skybox_env_source_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Skybox_env_texture_getp, mq_acc_render_Skybox_env_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Skybox_env_color_getp, mq_acc_render_Skybox_env_color_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Skybox_env_sky_color_getp, mq_acc_render_Skybox_env_sky_color_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Skybox_env_ground_color_getp, mq_acc_render_Skybox_env_ground_color_getmp },
+    { mq_acc_render_Skybox_env_intensity_getf, mq_acc_render_Skybox_env_intensity_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Skybox_diffuse_contribution_getf, mq_acc_render_Skybox_diffuse_contribution_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Skybox_specular_contribution_getf, mq_acc_render_Skybox_specular_contribution_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Skybox_priority_getf, mq_acc_render_Skybox_priority_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Skybox_active_getf, mq_acc_render_Skybox_active_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_Skybox[] = {
-    { "skybox_mode", (uint32_t)offsetof(render::Skybox, skybox_mode), MQ_TK_ENUM, 3367387160u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skybox_texture", (uint32_t)offsetof(render::Skybox, skybox_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skybox_color", (uint32_t)offsetof(render::Skybox, skybox_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skybox_rotation", (uint32_t)offsetof(render::Skybox, skybox_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "skybox_intensity", (uint32_t)offsetof(render::Skybox, skybox_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_source", (uint32_t)offsetof(render::Skybox, env_source), MQ_TK_ENUM, 920726531u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_texture", (uint32_t)offsetof(render::Skybox, env_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_color", (uint32_t)offsetof(render::Skybox, env_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_sky_color", (uint32_t)offsetof(render::Skybox, env_sky_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_ground_color", (uint32_t)offsetof(render::Skybox, env_ground_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_intensity", (uint32_t)offsetof(render::Skybox, env_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "diffuse_contribution", (uint32_t)offsetof(render::Skybox, diffuse_contribution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "specular_contribution", (uint32_t)offsetof(render::Skybox, specular_contribution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "priority", (uint32_t)offsetof(render::Skybox, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "active", (uint32_t)offsetof(render::Skybox, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "skybox_mode", (uint32_t)offsetof(render::Skybox, skybox_mode), MQ_TK_ENUM, 3367387160u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[0] },
+    { "skybox_texture", (uint32_t)offsetof(render::Skybox, skybox_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[1] },
+    { "skybox_color", (uint32_t)offsetof(render::Skybox, skybox_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[2] },
+    { "skybox_rotation", (uint32_t)offsetof(render::Skybox, skybox_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[3] },
+    { "skybox_intensity", (uint32_t)offsetof(render::Skybox, skybox_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[4] },
+    { "env_source", (uint32_t)offsetof(render::Skybox, env_source), MQ_TK_ENUM, 920726531u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[5] },
+    { "env_texture", (uint32_t)offsetof(render::Skybox, env_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[6] },
+    { "env_color", (uint32_t)offsetof(render::Skybox, env_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[7] },
+    { "env_sky_color", (uint32_t)offsetof(render::Skybox, env_sky_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[8] },
+    { "env_ground_color", (uint32_t)offsetof(render::Skybox, env_ground_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[9] },
+    { "env_intensity", (uint32_t)offsetof(render::Skybox, env_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[10] },
+    { "diffuse_contribution", (uint32_t)offsetof(render::Skybox, diffuse_contribution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[11] },
+    { "specular_contribution", (uint32_t)offsetof(render::Skybox, specular_contribution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[12] },
+    { "priority", (uint32_t)offsetof(render::Skybox, priority), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[13] },
+    { "active", (uint32_t)offsetof(render::Skybox, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Skybox[14] },
 };
 
+static const void* mq_acc_render_Sprite_texture_getp(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return &s.texture; }
+static void* mq_acc_render_Sprite_texture_getmp(void* p) { auto& s = *static_cast<render::Sprite*>(p); return &s.texture; }
+static const void* mq_acc_render_Sprite_region_getp(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return &s.region; }
+static void* mq_acc_render_Sprite_region_getmp(void* p) { auto& s = *static_cast<render::Sprite*>(p); return &s.region; }
+static double mq_acc_render_Sprite_hframes_getf(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return static_cast<double>(s.hframes); }
+static void mq_acc_render_Sprite_hframes_setf(void* p, double v) { auto& s = *static_cast<render::Sprite*>(p); s.hframes = static_cast<decltype(s.hframes)>(v); }
+static double mq_acc_render_Sprite_vframes_getf(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return static_cast<double>(s.vframes); }
+static void mq_acc_render_Sprite_vframes_setf(void* p, double v) { auto& s = *static_cast<render::Sprite*>(p); s.vframes = static_cast<decltype(s.vframes)>(v); }
+static double mq_acc_render_Sprite_frame_getf(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return static_cast<double>(s.frame); }
+static void mq_acc_render_Sprite_frame_setf(void* p, double v) { auto& s = *static_cast<render::Sprite*>(p); s.frame = static_cast<decltype(s.frame)>(v); }
+static double mq_acc_render_Sprite_flip_getf(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return static_cast<double>(static_cast<int64_t>(s.flip)); }
+static void mq_acc_render_Sprite_flip_setf(void* p, double v) { auto& s = *static_cast<render::Sprite*>(p); s.flip = static_cast<decltype(s.flip)>(v); }
+static const void* mq_acc_render_Sprite_color_getp(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return &s.color; }
+static void* mq_acc_render_Sprite_color_getmp(void* p) { auto& s = *static_cast<render::Sprite*>(p); return &s.color; }
+static const void* mq_acc_render_Sprite_pivot_getp(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return &s.pivot; }
+static void* mq_acc_render_Sprite_pivot_getmp(void* p) { auto& s = *static_cast<render::Sprite*>(p); return &s.pivot; }
+static double mq_acc_render_Sprite_pivot_anchor_getf(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return static_cast<double>(static_cast<int64_t>(s.pivot_anchor)); }
+static void mq_acc_render_Sprite_pivot_anchor_setf(void* p, double v) { auto& s = *static_cast<render::Sprite*>(p); s.pivot_anchor = static_cast<decltype(s.pivot_anchor)>(v); }
+static const void* mq_acc_render_Sprite_material_getp(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return &s.material; }
+static void* mq_acc_render_Sprite_material_getmp(void* p) { auto& s = *static_cast<render::Sprite*>(p); return &s.material; }
+static double mq_acc_render_Sprite_z_index_getf(const void* p) { const auto& s = *static_cast<const render::Sprite*>(p); return static_cast<double>(s.z_index); }
+static void mq_acc_render_Sprite_z_index_setf(void* p, double v) { auto& s = *static_cast<render::Sprite*>(p); s.z_index = static_cast<decltype(s.z_index)>(v); }
+static const mq_field_accessor mq_acc_render_Sprite[] = {
+    { 0, 0, 0, 0, mq_acc_render_Sprite_texture_getp, mq_acc_render_Sprite_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Sprite_region_getp, mq_acc_render_Sprite_region_getmp },
+    { mq_acc_render_Sprite_hframes_getf, mq_acc_render_Sprite_hframes_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Sprite_vframes_getf, mq_acc_render_Sprite_vframes_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Sprite_frame_getf, mq_acc_render_Sprite_frame_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Sprite_flip_getf, mq_acc_render_Sprite_flip_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Sprite_color_getp, mq_acc_render_Sprite_color_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Sprite_pivot_getp, mq_acc_render_Sprite_pivot_getmp },
+    { mq_acc_render_Sprite_pivot_anchor_getf, mq_acc_render_Sprite_pivot_anchor_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Sprite_material_getp, mq_acc_render_Sprite_material_getmp },
+    { mq_acc_render_Sprite_z_index_getf, mq_acc_render_Sprite_z_index_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_Sprite[] = {
-    { "texture", (uint32_t)offsetof(render::Sprite, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "region", (uint32_t)offsetof(render::Sprite, region), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "hframes", (uint32_t)offsetof(render::Sprite, hframes), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "vframes", (uint32_t)offsetof(render::Sprite, vframes), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "frame", (uint32_t)offsetof(render::Sprite, frame), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "flip", (uint32_t)offsetof(render::Sprite, flip), MQ_TK_ENUM, 2410541537u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(render::Sprite, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pivot", (uint32_t)offsetof(render::Sprite, pivot), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pivot_anchor", (uint32_t)offsetof(render::Sprite, pivot_anchor), MQ_TK_ENUM, 4146125698u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(render::Sprite, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z_index", (uint32_t)offsetof(render::Sprite, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "texture", (uint32_t)offsetof(render::Sprite, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[0] },
+    { "region", (uint32_t)offsetof(render::Sprite, region), MQ_TK_STRUCT, 3103843429u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[1] },
+    { "hframes", (uint32_t)offsetof(render::Sprite, hframes), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[2] },
+    { "vframes", (uint32_t)offsetof(render::Sprite, vframes), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[3] },
+    { "frame", (uint32_t)offsetof(render::Sprite, frame), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[4] },
+    { "flip", (uint32_t)offsetof(render::Sprite, flip), MQ_TK_ENUM, 2410541537u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[5] },
+    { "color", (uint32_t)offsetof(render::Sprite, color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[6] },
+    { "pivot", (uint32_t)offsetof(render::Sprite, pivot), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[7] },
+    { "pivot_anchor", (uint32_t)offsetof(render::Sprite, pivot_anchor), MQ_TK_ENUM, 4146125698u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[8] },
+    { "material", (uint32_t)offsetof(render::Sprite, material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[9] },
+    { "z_index", (uint32_t)offsetof(render::Sprite, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Sprite[10] },
 };
 
+static const void* mq_acc_render_StreakSample_pos_getp(const void* p) { const auto& s = *static_cast<const render::StreakSample*>(p); return &s.pos; }
+static void* mq_acc_render_StreakSample_pos_getmp(void* p) { auto& s = *static_cast<render::StreakSample*>(p); return &s.pos; }
+static double mq_acc_render_StreakSample_age_getf(const void* p) { const auto& s = *static_cast<const render::StreakSample*>(p); return static_cast<double>(s.age); }
+static void mq_acc_render_StreakSample_age_setf(void* p, double v) { auto& s = *static_cast<render::StreakSample*>(p); s.age = static_cast<decltype(s.age)>(v); }
+static double mq_acc_render_StreakSample_width_getf(const void* p) { const auto& s = *static_cast<const render::StreakSample*>(p); return static_cast<double>(s.width); }
+static void mq_acc_render_StreakSample_width_setf(void* p, double v) { auto& s = *static_cast<render::StreakSample*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static const mq_field_accessor mq_acc_render_StreakSample[] = {
+    { 0, 0, 0, 0, mq_acc_render_StreakSample_pos_getp, mq_acc_render_StreakSample_pos_getmp },
+    { mq_acc_render_StreakSample_age_getf, mq_acc_render_StreakSample_age_setf, 0, 0, 0, 0 },
+    { mq_acc_render_StreakSample_width_getf, mq_acc_render_StreakSample_width_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_StreakSample[] = {
-    { "pos", (uint32_t)offsetof(render::StreakSample, pos), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "age", (uint32_t)offsetof(render::StreakSample, age), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(render::StreakSample, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "pos", (uint32_t)offsetof(render::StreakSample, pos), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_StreakSample[0] },
+    { "age", (uint32_t)offsetof(render::StreakSample, age), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_StreakSample[1] },
+    { "width", (uint32_t)offsetof(render::StreakSample, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_StreakSample[2] },
 };
 
+static const void* mq_acc_render_Terrain_terrain_data_getp(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return &s.terrain_data; }
+static void* mq_acc_render_Terrain_terrain_data_getmp(void* p) { auto& s = *static_cast<render::Terrain*>(p); return &s.terrain_data; }
+static const void* mq_acc_render_Terrain_layer_material_getp(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return &s.layer_material; }
+static void* mq_acc_render_Terrain_layer_material_getmp(void* p) { auto& s = *static_cast<render::Terrain*>(p); return &s.layer_material; }
+static double mq_acc_render_Terrain_tile_size_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return static_cast<double>(s.tile_size); }
+static void mq_acc_render_Terrain_tile_size_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.tile_size = static_cast<decltype(s.tile_size)>(v); }
+static double mq_acc_render_Terrain_lod_mode_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return static_cast<double>(static_cast<int64_t>(s.lod_mode)); }
+static void mq_acc_render_Terrain_lod_mode_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.lod_mode = static_cast<decltype(s.lod_mode)>(v); }
+static double mq_acc_render_Terrain_fixed_lod_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return static_cast<double>(s.fixed_lod); }
+static void mq_acc_render_Terrain_fixed_lod_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.fixed_lod = static_cast<decltype(s.fixed_lod)>(v); }
+static double mq_acc_render_Terrain_lod_bias_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return static_cast<double>(s.lod_bias); }
+static void mq_acc_render_Terrain_lod_bias_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.lod_bias = static_cast<decltype(s.lod_bias)>(v); }
+static double mq_acc_render_Terrain_height_scale_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return static_cast<double>(s.height_scale); }
+static void mq_acc_render_Terrain_height_scale_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.height_scale = static_cast<decltype(s.height_scale)>(v); }
+static double mq_acc_render_Terrain_cast_shadow_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return s.cast_shadow ? 1.0 : 0.0; }
+static void mq_acc_render_Terrain_cast_shadow_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.cast_shadow = v != 0.0; }
+static double mq_acc_render_Terrain_receive_shadow_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return s.receive_shadow ? 1.0 : 0.0; }
+static void mq_acc_render_Terrain_receive_shadow_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.receive_shadow = v != 0.0; }
+static double mq_acc_render_Terrain_visible_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return s.visible ? 1.0 : 0.0; }
+static void mq_acc_render_Terrain_visible_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.visible = v != 0.0; }
+static double mq_acc_render_Terrain_culling_mask_getf(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return static_cast<double>(s.culling_mask); }
+static void mq_acc_render_Terrain_culling_mask_setf(void* p, double v) { auto& s = *static_cast<render::Terrain*>(p); s.culling_mask = static_cast<decltype(s.culling_mask)>(v); }
+static const void* mq_acc_render_Terrain_layer_getp(const void* p) { const auto& s = *static_cast<const render::Terrain*>(p); return &s.layer; }
+static void* mq_acc_render_Terrain_layer_getmp(void* p) { auto& s = *static_cast<render::Terrain*>(p); return &s.layer; }
+static const mq_field_accessor mq_acc_render_Terrain[] = {
+    { 0, 0, 0, 0, mq_acc_render_Terrain_terrain_data_getp, mq_acc_render_Terrain_terrain_data_getmp },
+    { 0, 0, 0, 0, mq_acc_render_Terrain_layer_material_getp, mq_acc_render_Terrain_layer_material_getmp },
+    { mq_acc_render_Terrain_tile_size_getf, mq_acc_render_Terrain_tile_size_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Terrain_lod_mode_getf, mq_acc_render_Terrain_lod_mode_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_render_Terrain_fixed_lod_getf, mq_acc_render_Terrain_fixed_lod_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Terrain_lod_bias_getf, mq_acc_render_Terrain_lod_bias_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Terrain_height_scale_getf, mq_acc_render_Terrain_height_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Terrain_cast_shadow_getf, mq_acc_render_Terrain_cast_shadow_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Terrain_receive_shadow_getf, mq_acc_render_Terrain_receive_shadow_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Terrain_visible_getf, mq_acc_render_Terrain_visible_setf, 0, 0, 0, 0 },
+    { mq_acc_render_Terrain_culling_mask_getf, mq_acc_render_Terrain_culling_mask_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_Terrain_layer_getp, mq_acc_render_Terrain_layer_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static void mq_dyn_render_Terrain_lod_levels_clear(void* f) { static_cast<std::vector<render::TerrainLevel>*>(f)->clear(); }
 static uint32_t mq_dyn_render_Terrain_lod_levels_size(const void* f) { return (uint32_t)static_cast<const std::vector<render::TerrainLevel>*>(f)->size(); }
 static void mq_dyn_render_Terrain_lod_levels_resize(void* f, uint32_t n) { static_cast<std::vector<render::TerrainLevel>*>(f)->resize(n); }
 static void* mq_dyn_render_Terrain_lod_levels_elem(void* f, uint32_t i) { return &static_cast<std::vector<render::TerrainLevel>*>(f)->at(i); }
 static const mq_field_desc mq_fields_render_Terrain[] = {
-    { "terrain_data", (uint32_t)offsetof(render::Terrain, terrain_data), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "layer_material", (uint32_t)offsetof(render::Terrain, layer_material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tile_size", (uint32_t)offsetof(render::Terrain, tile_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "lod_mode", (uint32_t)offsetof(render::Terrain, lod_mode), MQ_TK_ENUM, 2833920478u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "lod_levels", (uint32_t)offsetof(render::Terrain, lod_levels), MQ_TK_ARRAY_DYN, 3217373296u, 0u, 0u, 3217373296u, mq_dyn_render_Terrain_lod_levels_clear, mq_dyn_render_Terrain_lod_levels_size, mq_dyn_render_Terrain_lod_levels_resize, mq_dyn_render_Terrain_lod_levels_elem },
-    { "fixed_lod", (uint32_t)offsetof(render::Terrain, fixed_lod), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "lod_bias", (uint32_t)offsetof(render::Terrain, lod_bias), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height_scale", (uint32_t)offsetof(render::Terrain, height_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "cast_shadow", (uint32_t)offsetof(render::Terrain, cast_shadow), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "receive_shadow", (uint32_t)offsetof(render::Terrain, receive_shadow), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "visible", (uint32_t)offsetof(render::Terrain, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "culling_mask", (uint32_t)offsetof(render::Terrain, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "layer", (uint32_t)offsetof(render::Terrain, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "lod_chunks", (uint32_t)offsetof(render::Terrain, lod_chunks), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "terrain_data", (uint32_t)offsetof(render::Terrain, terrain_data), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[0] },
+    { "layer_material", (uint32_t)offsetof(render::Terrain, layer_material), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[1] },
+    { "tile_size", (uint32_t)offsetof(render::Terrain, tile_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[2] },
+    { "lod_mode", (uint32_t)offsetof(render::Terrain, lod_mode), MQ_TK_ENUM, 2833920478u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[3] },
+    { "lod_levels", (uint32_t)offsetof(render::Terrain, lod_levels), MQ_TK_ARRAY_DYN, 3217373296u, 0u, 0u, 3217373296u, mq_dyn_render_Terrain_lod_levels_clear, mq_dyn_render_Terrain_lod_levels_size, mq_dyn_render_Terrain_lod_levels_resize, mq_dyn_render_Terrain_lod_levels_elem, &mq_acc_render_Terrain[4] },
+    { "fixed_lod", (uint32_t)offsetof(render::Terrain, fixed_lod), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[5] },
+    { "lod_bias", (uint32_t)offsetof(render::Terrain, lod_bias), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[6] },
+    { "height_scale", (uint32_t)offsetof(render::Terrain, height_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[7] },
+    { "cast_shadow", (uint32_t)offsetof(render::Terrain, cast_shadow), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[8] },
+    { "receive_shadow", (uint32_t)offsetof(render::Terrain, receive_shadow), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[9] },
+    { "visible", (uint32_t)offsetof(render::Terrain, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[10] },
+    { "culling_mask", (uint32_t)offsetof(render::Terrain, culling_mask), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[11] },
+    { "layer", (uint32_t)offsetof(render::Terrain, layer), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[12] },
+    { "lod_chunks", (uint32_t)offsetof(render::Terrain, lod_chunks), MQ_TK_ARRAY_DYN, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_render_Terrain[13] },
 };
 
+static double mq_acc_render_TerrainLevel_level_getf(const void* p) { const auto& s = *static_cast<const render::TerrainLevel*>(p); return static_cast<double>(s.level); }
+static void mq_acc_render_TerrainLevel_level_setf(void* p, double v) { auto& s = *static_cast<render::TerrainLevel*>(p); s.level = static_cast<decltype(s.level)>(v); }
+static double mq_acc_render_TerrainLevel_max_distance_getf(const void* p) { const auto& s = *static_cast<const render::TerrainLevel*>(p); return static_cast<double>(s.max_distance); }
+static void mq_acc_render_TerrainLevel_max_distance_setf(void* p, double v) { auto& s = *static_cast<render::TerrainLevel*>(p); s.max_distance = static_cast<decltype(s.max_distance)>(v); }
+static double mq_acc_render_TerrainLevel_resolution_getf(const void* p) { const auto& s = *static_cast<const render::TerrainLevel*>(p); return static_cast<double>(s.resolution); }
+static void mq_acc_render_TerrainLevel_resolution_setf(void* p, double v) { auto& s = *static_cast<render::TerrainLevel*>(p); s.resolution = static_cast<decltype(s.resolution)>(v); }
+static const mq_field_accessor mq_acc_render_TerrainLevel[] = {
+    { mq_acc_render_TerrainLevel_level_getf, mq_acc_render_TerrainLevel_level_setf, 0, 0, 0, 0 },
+    { mq_acc_render_TerrainLevel_max_distance_getf, mq_acc_render_TerrainLevel_max_distance_setf, 0, 0, 0, 0 },
+    { mq_acc_render_TerrainLevel_resolution_getf, mq_acc_render_TerrainLevel_resolution_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_TerrainLevel[] = {
-    { "level", (uint32_t)offsetof(render::TerrainLevel, level), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_distance", (uint32_t)offsetof(render::TerrainLevel, max_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "resolution", (uint32_t)offsetof(render::TerrainLevel, resolution), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "level", (uint32_t)offsetof(render::TerrainLevel, level), MQ_TK_U8, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TerrainLevel[0] },
+    { "max_distance", (uint32_t)offsetof(render::TerrainLevel, max_distance), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TerrainLevel[1] },
+    { "resolution", (uint32_t)offsetof(render::TerrainLevel, resolution), MQ_TK_U16, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TerrainLevel[2] },
 };
 
+static double mq_acc_render_TileCoord_x_getf(const void* p) { const auto& s = *static_cast<const render::TileCoord*>(p); return static_cast<double>(s.x); }
+static void mq_acc_render_TileCoord_x_setf(void* p, double v) { auto& s = *static_cast<render::TileCoord*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_render_TileCoord_y_getf(const void* p) { const auto& s = *static_cast<const render::TileCoord*>(p); return static_cast<double>(s.y); }
+static void mq_acc_render_TileCoord_y_setf(void* p, double v) { auto& s = *static_cast<render::TileCoord*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static const mq_field_accessor mq_acc_render_TileCoord[] = {
+    { mq_acc_render_TileCoord_x_getf, mq_acc_render_TileCoord_x_setf, 0, 0, 0, 0 },
+    { mq_acc_render_TileCoord_y_getf, mq_acc_render_TileCoord_y_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_render_TileCoord[] = {
-    { "x", (uint32_t)offsetof(render::TileCoord, x), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(render::TileCoord, y), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(render::TileCoord, x), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileCoord[0] },
+    { "y", (uint32_t)offsetof(render::TileCoord, y), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileCoord[1] },
 };
 
+static const void* mq_acc_render_TileMap_tileset_getp(const void* p) { const auto& s = *static_cast<const render::TileMap*>(p); return &s.tileset; }
+static void* mq_acc_render_TileMap_tileset_getmp(void* p) { auto& s = *static_cast<render::TileMap*>(p); return &s.tileset; }
+static const void* mq_acc_render_TileMap_cell_size_getp(const void* p) { const auto& s = *static_cast<const render::TileMap*>(p); return &s.cell_size; }
+static void* mq_acc_render_TileMap_cell_size_getmp(void* p) { auto& s = *static_cast<render::TileMap*>(p); return &s.cell_size; }
+static double mq_acc_render_TileMap_columns_getf(const void* p) { const auto& s = *static_cast<const render::TileMap*>(p); return static_cast<double>(s.columns); }
+static void mq_acc_render_TileMap_columns_setf(void* p, double v) { auto& s = *static_cast<render::TileMap*>(p); s.columns = static_cast<decltype(s.columns)>(v); }
+static double mq_acc_render_TileMap_rows_getf(const void* p) { const auto& s = *static_cast<const render::TileMap*>(p); return static_cast<double>(s.rows); }
+static void mq_acc_render_TileMap_rows_setf(void* p, double v) { auto& s = *static_cast<render::TileMap*>(p); s.rows = static_cast<decltype(s.rows)>(v); }
+static const void* mq_acc_render_TileMap_origin_getp(const void* p) { const auto& s = *static_cast<const render::TileMap*>(p); return &s.origin; }
+static void* mq_acc_render_TileMap_origin_getmp(void* p) { auto& s = *static_cast<render::TileMap*>(p); return &s.origin; }
+static const void* mq_acc_render_TileMap_modulate_getp(const void* p) { const auto& s = *static_cast<const render::TileMap*>(p); return &s.modulate; }
+static void* mq_acc_render_TileMap_modulate_getmp(void* p) { auto& s = *static_cast<render::TileMap*>(p); return &s.modulate; }
+static double mq_acc_render_TileMap_z_index_getf(const void* p) { const auto& s = *static_cast<const render::TileMap*>(p); return static_cast<double>(s.z_index); }
+static void mq_acc_render_TileMap_z_index_setf(void* p, double v) { auto& s = *static_cast<render::TileMap*>(p); s.z_index = static_cast<decltype(s.z_index)>(v); }
+static const void* mq_acc_render_TileMap_collision_source_getp(const void* p) { const auto& s = *static_cast<const render::TileMap*>(p); return &s.collision_source; }
+static void* mq_acc_render_TileMap_collision_source_getmp(void* p) { auto& s = *static_cast<render::TileMap*>(p); return &s.collision_source; }
+static const mq_field_accessor mq_acc_render_TileMap[] = {
+    { 0, 0, 0, 0, mq_acc_render_TileMap_tileset_getp, mq_acc_render_TileMap_tileset_getmp },
+    { 0, 0, 0, 0, mq_acc_render_TileMap_cell_size_getp, mq_acc_render_TileMap_cell_size_getmp },
+    { mq_acc_render_TileMap_columns_getf, mq_acc_render_TileMap_columns_setf, 0, 0, 0, 0 },
+    { mq_acc_render_TileMap_rows_getf, mq_acc_render_TileMap_rows_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_TileMap_origin_getp, mq_acc_render_TileMap_origin_getmp },
+    { 0, 0, 0, 0, mq_acc_render_TileMap_modulate_getp, mq_acc_render_TileMap_modulate_getmp },
+    { mq_acc_render_TileMap_z_index_getf, mq_acc_render_TileMap_z_index_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_render_TileMap_collision_source_getp, mq_acc_render_TileMap_collision_source_getmp },
+};
 static const mq_field_desc mq_fields_render_TileMap[] = {
-    { "tileset", (uint32_t)offsetof(render::TileMap, tileset), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "cell_size", (uint32_t)offsetof(render::TileMap, cell_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "columns", (uint32_t)offsetof(render::TileMap, columns), MQ_TK_U32, 0u, 0u, 2u, 0u, 0, 0, 0, 0 },
-    { "rows", (uint32_t)offsetof(render::TileMap, rows), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tile_ids", (uint32_t)offsetof(render::TileMap, tile_ids), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "origin", (uint32_t)offsetof(render::TileMap, origin), MQ_TK_STRUCT, 566140942u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "modulate", (uint32_t)offsetof(render::TileMap, modulate), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z_index", (uint32_t)offsetof(render::TileMap, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "collision_source", (uint32_t)offsetof(render::TileMap, collision_source), MQ_TK_ASSET_REF, 0u, 0u, 4u, 0u, 0, 0, 0, 0 },
+    { "tileset", (uint32_t)offsetof(render::TileMap, tileset), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[0] },
+    { "cell_size", (uint32_t)offsetof(render::TileMap, cell_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[1] },
+    { "columns", (uint32_t)offsetof(render::TileMap, columns), MQ_TK_U32, 0u, 0u, 2u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[2] },
+    { "rows", (uint32_t)offsetof(render::TileMap, rows), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[3] },
+    { "tile_ids", (uint32_t)offsetof(render::TileMap, tile_ids), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[4] },
+    { "origin", (uint32_t)offsetof(render::TileMap, origin), MQ_TK_STRUCT, 566140942u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[5] },
+    { "modulate", (uint32_t)offsetof(render::TileMap, modulate), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[6] },
+    { "z_index", (uint32_t)offsetof(render::TileMap, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[7] },
+    { "collision_source", (uint32_t)offsetof(render::TileMap, collision_source), MQ_TK_ASSET_REF, 0u, 0u, 4u, 0u, 0, 0, 0, 0, &mq_acc_render_TileMap[8] },
 };
 
+static double mq_acc_scene_Active_enabled_getf(const void* p) { const auto& s = *static_cast<const scene::Active*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_scene_Active_enabled_setf(void* p, double v) { auto& s = *static_cast<scene::Active*>(p); s.enabled = v != 0.0; }
+static double mq_acc_scene_Active_active_in_hierarchy_getf(const void* p) { const auto& s = *static_cast<const scene::Active*>(p); return s.active_in_hierarchy ? 1.0 : 0.0; }
+static void mq_acc_scene_Active_active_in_hierarchy_setf(void* p, double v) { auto& s = *static_cast<scene::Active*>(p); s.active_in_hierarchy = v != 0.0; }
+static const mq_field_accessor mq_acc_scene_Active[] = {
+    { mq_acc_scene_Active_enabled_getf, mq_acc_scene_Active_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_scene_Active_active_in_hierarchy_getf, mq_acc_scene_Active_active_in_hierarchy_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scene_Active[] = {
-    { "enabled", (uint32_t)offsetof(scene::Active, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "active_in_hierarchy", (uint32_t)offsetof(scene::Active, active_in_hierarchy), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "enabled", (uint32_t)offsetof(scene::Active, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Active[0] },
+    { "active_in_hierarchy", (uint32_t)offsetof(scene::Active, active_in_hierarchy), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_scene_Active[1] },
 };
 
+static double mq_acc_scene_Meta_stable_id_getf(const void* p) { const auto& s = *static_cast<const scene::Meta*>(p); return static_cast<double>(s.stable_id); }
+static void mq_acc_scene_Meta_stable_id_setf(void* p, double v) { auto& s = *static_cast<scene::Meta*>(p); s.stable_id = static_cast<decltype(s.stable_id)>(v); }
+static const void* mq_acc_scene_Meta_comment_getp(const void* p) { const auto& s = *static_cast<const scene::Meta*>(p); return &s.comment; }
+static void* mq_acc_scene_Meta_comment_getmp(void* p) { auto& s = *static_cast<scene::Meta*>(p); return &s.comment; }
+static const void* mq_acc_scene_Meta_source_scene_getp(const void* p) { const auto& s = *static_cast<const scene::Meta*>(p); return &s.source_scene; }
+static void* mq_acc_scene_Meta_source_scene_getmp(void* p) { auto& s = *static_cast<scene::Meta*>(p); return &s.source_scene; }
+static const void* mq_acc_scene_Meta_source_prefab_getp(const void* p) { const auto& s = *static_cast<const scene::Meta*>(p); return &s.source_prefab; }
+static void* mq_acc_scene_Meta_source_prefab_getmp(void* p) { auto& s = *static_cast<scene::Meta*>(p); return &s.source_prefab; }
+static const mq_field_accessor mq_acc_scene_Meta[] = {
+    { mq_acc_scene_Meta_stable_id_getf, mq_acc_scene_Meta_stable_id_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_scene_Meta_comment_getp, mq_acc_scene_Meta_comment_getmp },
+    { 0, 0, 0, 0, mq_acc_scene_Meta_source_scene_getp, mq_acc_scene_Meta_source_scene_getmp },
+    { 0, 0, 0, 0, mq_acc_scene_Meta_source_prefab_getp, mq_acc_scene_Meta_source_prefab_getmp },
+};
 static const mq_field_desc mq_fields_scene_Meta[] = {
-    { "stable_id", (uint32_t)offsetof(scene::Meta, stable_id), MQ_TK_U64, 0u, 0u, 2u, 0u, 0, 0, 0, 0 },
-    { "entries", (uint32_t)offsetof(scene::Meta, entries), MQ_TK_MAP, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "comment", (uint32_t)offsetof(scene::Meta, comment), MQ_TK_ARRAY_FIXED, 0u, 256u, 0u, 0u, 0, 0, 0, 0 },
-    { "source_scene", (uint32_t)offsetof(scene::Meta, source_scene), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "source_prefab", (uint32_t)offsetof(scene::Meta, source_prefab), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "stable_id", (uint32_t)offsetof(scene::Meta, stable_id), MQ_TK_U64, 0u, 0u, 2u, 0u, 0, 0, 0, 0, &mq_acc_scene_Meta[0] },
+    { "entries", (uint32_t)offsetof(scene::Meta, entries), MQ_TK_MAP, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Meta[1] },
+    { "comment", (uint32_t)offsetof(scene::Meta, comment), MQ_TK_ARRAY_FIXED, 0u, 256u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Meta[2] },
+    { "source_scene", (uint32_t)offsetof(scene::Meta, source_scene), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Meta[3] },
+    { "source_prefab", (uint32_t)offsetof(scene::Meta, source_prefab), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Meta[4] },
 };
 
+static const void* mq_acc_scene_Name_value_getp(const void* p) { const auto& s = *static_cast<const scene::Name*>(p); return &s.value; }
+static void* mq_acc_scene_Name_value_getmp(void* p) { auto& s = *static_cast<scene::Name*>(p); return &s.value; }
+static double mq_acc_scene_Name_hash_getf(const void* p) { const auto& s = *static_cast<const scene::Name*>(p); return static_cast<double>(s.hash); }
+static void mq_acc_scene_Name_hash_setf(void* p, double v) { auto& s = *static_cast<scene::Name*>(p); s.hash = static_cast<decltype(s.hash)>(v); }
+static const mq_field_accessor mq_acc_scene_Name[] = {
+    { 0, 0, 0, 0, mq_acc_scene_Name_value_getp, mq_acc_scene_Name_value_getmp },
+    { mq_acc_scene_Name_hash_getf, mq_acc_scene_Name_hash_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scene_Name[] = {
-    { "value", (uint32_t)offsetof(scene::Name, value), MQ_TK_ARRAY_FIXED, 0u, 64u, 0u, 0u, 0, 0, 0, 0 },
-    { "hash", (uint32_t)offsetof(scene::Name, hash), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "value", (uint32_t)offsetof(scene::Name, value), MQ_TK_ARRAY_FIXED, 0u, 64u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Name[0] },
+    { "hash", (uint32_t)offsetof(scene::Name, hash), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_scene_Name[1] },
 };
 
+static const void* mq_acc_scene_Node_parent_getp(const void* p) { const auto& s = *static_cast<const scene::Node*>(p); return &s.parent; }
+static void* mq_acc_scene_Node_parent_getmp(void* p) { auto& s = *static_cast<scene::Node*>(p); return &s.parent; }
+static const mq_field_accessor mq_acc_scene_Node[] = {
+    { 0, 0, 0, 0, mq_acc_scene_Node_parent_getp, mq_acc_scene_Node_parent_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scene_Node[] = {
-    { "parent", (uint32_t)offsetof(scene::Node, parent), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "children", (uint32_t)offsetof(scene::Node, children), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "parent", (uint32_t)offsetof(scene::Node, parent), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Node[0] },
+    { "children", (uint32_t)offsetof(scene::Node, children), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Node[1] },
 };
 
+static const void* mq_acc_scene_PrefabInstance_source_getp(const void* p) { const auto& s = *static_cast<const scene::PrefabInstance*>(p); return &s.source; }
+static void* mq_acc_scene_PrefabInstance_source_getmp(void* p) { auto& s = *static_cast<scene::PrefabInstance*>(p); return &s.source; }
+static double mq_acc_scene_PrefabInstance_is_variant_getf(const void* p) { const auto& s = *static_cast<const scene::PrefabInstance*>(p); return s.is_variant ? 1.0 : 0.0; }
+static void mq_acc_scene_PrefabInstance_is_variant_setf(void* p, double v) { auto& s = *static_cast<scene::PrefabInstance*>(p); s.is_variant = v != 0.0; }
+static double mq_acc_scene_PrefabInstance_override_count_getf(const void* p) { const auto& s = *static_cast<const scene::PrefabInstance*>(p); return static_cast<double>(s.override_count); }
+static void mq_acc_scene_PrefabInstance_override_count_setf(void* p, double v) { auto& s = *static_cast<scene::PrefabInstance*>(p); s.override_count = static_cast<decltype(s.override_count)>(v); }
+static double mq_acc_scene_PrefabInstance_dirty_getf(const void* p) { const auto& s = *static_cast<const scene::PrefabInstance*>(p); return s.dirty ? 1.0 : 0.0; }
+static void mq_acc_scene_PrefabInstance_dirty_setf(void* p, double v) { auto& s = *static_cast<scene::PrefabInstance*>(p); s.dirty = v != 0.0; }
+static const mq_field_accessor mq_acc_scene_PrefabInstance[] = {
+    { 0, 0, 0, 0, mq_acc_scene_PrefabInstance_source_getp, mq_acc_scene_PrefabInstance_source_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_scene_PrefabInstance_is_variant_getf, mq_acc_scene_PrefabInstance_is_variant_setf, 0, 0, 0, 0 },
+    { mq_acc_scene_PrefabInstance_override_count_getf, mq_acc_scene_PrefabInstance_override_count_setf, 0, 0, 0, 0 },
+    { mq_acc_scene_PrefabInstance_dirty_getf, mq_acc_scene_PrefabInstance_dirty_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_scene_PrefabInstance_overrides_clear(void* f) { static_cast<std::vector<scene::PrefabOverride>*>(f)->clear(); }
 static uint32_t mq_dyn_scene_PrefabInstance_overrides_size(const void* f) { return (uint32_t)static_cast<const std::vector<scene::PrefabOverride>*>(f)->size(); }
 static void mq_dyn_scene_PrefabInstance_overrides_resize(void* f, uint32_t n) { static_cast<std::vector<scene::PrefabOverride>*>(f)->resize(n); }
 static void* mq_dyn_scene_PrefabInstance_overrides_elem(void* f, uint32_t i) { return &static_cast<std::vector<scene::PrefabOverride>*>(f)->at(i); }
 static const mq_field_desc mq_fields_scene_PrefabInstance[] = {
-    { "source", (uint32_t)offsetof(scene::PrefabInstance, source), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "overrides", (uint32_t)offsetof(scene::PrefabInstance, overrides), MQ_TK_ARRAY_DYN, 276815009u, 0u, 0u, 276815009u, mq_dyn_scene_PrefabInstance_overrides_clear, mq_dyn_scene_PrefabInstance_overrides_size, mq_dyn_scene_PrefabInstance_overrides_resize, mq_dyn_scene_PrefabInstance_overrides_elem },
-    { "is_variant", (uint32_t)offsetof(scene::PrefabInstance, is_variant), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "override_count", (uint32_t)offsetof(scene::PrefabInstance, override_count), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "dirty", (uint32_t)offsetof(scene::PrefabInstance, dirty), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "source", (uint32_t)offsetof(scene::PrefabInstance, source), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_PrefabInstance[0] },
+    { "overrides", (uint32_t)offsetof(scene::PrefabInstance, overrides), MQ_TK_ARRAY_DYN, 276815009u, 0u, 0u, 276815009u, mq_dyn_scene_PrefabInstance_overrides_clear, mq_dyn_scene_PrefabInstance_overrides_size, mq_dyn_scene_PrefabInstance_overrides_resize, mq_dyn_scene_PrefabInstance_overrides_elem, &mq_acc_scene_PrefabInstance[1] },
+    { "is_variant", (uint32_t)offsetof(scene::PrefabInstance, is_variant), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_PrefabInstance[2] },
+    { "override_count", (uint32_t)offsetof(scene::PrefabInstance, override_count), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_scene_PrefabInstance[3] },
+    { "dirty", (uint32_t)offsetof(scene::PrefabInstance, dirty), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_scene_PrefabInstance[4] },
 };
 
+static const void* mq_acc_scene_PrefabOverride_node_getp(const void* p) { const auto& s = *static_cast<const scene::PrefabOverride*>(p); return &s.node; }
+static void* mq_acc_scene_PrefabOverride_node_getmp(void* p) { auto& s = *static_cast<scene::PrefabOverride*>(p); return &s.node; }
+static double mq_acc_scene_PrefabOverride_source_stable_id_getf(const void* p) { const auto& s = *static_cast<const scene::PrefabOverride*>(p); return static_cast<double>(s.source_stable_id); }
+static void mq_acc_scene_PrefabOverride_source_stable_id_setf(void* p, double v) { auto& s = *static_cast<scene::PrefabOverride*>(p); s.source_stable_id = static_cast<decltype(s.source_stable_id)>(v); }
+static double mq_acc_scene_PrefabOverride_component_type_id_getf(const void* p) { const auto& s = *static_cast<const scene::PrefabOverride*>(p); return static_cast<double>(s.component_type_id); }
+static void mq_acc_scene_PrefabOverride_component_type_id_setf(void* p, double v) { auto& s = *static_cast<scene::PrefabOverride*>(p); s.component_type_id = static_cast<decltype(s.component_type_id)>(v); }
+static const void* mq_acc_scene_PrefabOverride_field_path_getp(const void* p) { const auto& s = *static_cast<const scene::PrefabOverride*>(p); return &s.field_path; }
+static void* mq_acc_scene_PrefabOverride_field_path_getmp(void* p) { auto& s = *static_cast<scene::PrefabOverride*>(p); return &s.field_path; }
+static const mq_field_accessor mq_acc_scene_PrefabOverride[] = {
+    { 0, 0, 0, 0, mq_acc_scene_PrefabOverride_node_getp, mq_acc_scene_PrefabOverride_node_getmp },
+    { mq_acc_scene_PrefabOverride_source_stable_id_getf, mq_acc_scene_PrefabOverride_source_stable_id_setf, 0, 0, 0, 0 },
+    { mq_acc_scene_PrefabOverride_component_type_id_getf, mq_acc_scene_PrefabOverride_component_type_id_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_scene_PrefabOverride_field_path_getp, mq_acc_scene_PrefabOverride_field_path_getmp },
+};
 static const mq_field_desc mq_fields_scene_PrefabOverride[] = {
-    { "node", (uint32_t)offsetof(scene::PrefabOverride, node), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "source_stable_id", (uint32_t)offsetof(scene::PrefabOverride, source_stable_id), MQ_TK_U64, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "component_type_id", (uint32_t)offsetof(scene::PrefabOverride, component_type_id), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "field_path", (uint32_t)offsetof(scene::PrefabOverride, field_path), MQ_TK_ARRAY_FIXED, 0u, 128u, 0u, 0u, 0, 0, 0, 0 },
+    { "node", (uint32_t)offsetof(scene::PrefabOverride, node), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_PrefabOverride[0] },
+    { "source_stable_id", (uint32_t)offsetof(scene::PrefabOverride, source_stable_id), MQ_TK_U64, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_PrefabOverride[1] },
+    { "component_type_id", (uint32_t)offsetof(scene::PrefabOverride, component_type_id), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_PrefabOverride[2] },
+    { "field_path", (uint32_t)offsetof(scene::PrefabOverride, field_path), MQ_TK_ARRAY_FIXED, 0u, 128u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_PrefabOverride[3] },
 };
 
+static double mq_acc_scene_Tags_count_getf(const void* p) { const auto& s = *static_cast<const scene::Tags*>(p); return static_cast<double>(s.count); }
+static void mq_acc_scene_Tags_count_setf(void* p, double v) { auto& s = *static_cast<scene::Tags*>(p); s.count = static_cast<decltype(s.count)>(v); }
+static const mq_field_accessor mq_acc_scene_Tags[] = {
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_scene_Tags_count_getf, mq_acc_scene_Tags_count_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_scene_Tags_values_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
 static uint32_t mq_dyn_scene_Tags_values_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
 static void mq_dyn_scene_Tags_values_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_scene_Tags_values_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_scene_Tags[] = {
-    { "values", (uint32_t)offsetof(scene::Tags, values), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scene_Tags_values_clear, mq_dyn_scene_Tags_values_size, mq_dyn_scene_Tags_values_resize, mq_dyn_scene_Tags_values_elem },
-    { "count", (uint32_t)offsetof(scene::Tags, count), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "values", (uint32_t)offsetof(scene::Tags, values), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scene_Tags_values_clear, mq_dyn_scene_Tags_values_size, mq_dyn_scene_Tags_values_resize, mq_dyn_scene_Tags_values_elem, &mq_acc_scene_Tags[0] },
+    { "count", (uint32_t)offsetof(scene::Tags, count), MQ_TK_U32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_scene_Tags[1] },
 };
 
+static const void* mq_acc_scene_Transform2D_local_getp(const void* p) { const auto& s = *static_cast<const scene::Transform2D*>(p); return &s.local; }
+static void* mq_acc_scene_Transform2D_local_getmp(void* p) { auto& s = *static_cast<scene::Transform2D*>(p); return &s.local; }
+static const void* mq_acc_scene_Transform2D_world_getp(const void* p) { const auto& s = *static_cast<const scene::Transform2D*>(p); return &s.world; }
+static void* mq_acc_scene_Transform2D_world_getmp(void* p) { auto& s = *static_cast<scene::Transform2D*>(p); return &s.world; }
+static double mq_acc_scene_Transform2D_world_dirty_getf(const void* p) { const auto& s = *static_cast<const scene::Transform2D*>(p); return static_cast<double>(s.world_dirty); }
+static void mq_acc_scene_Transform2D_world_dirty_setf(void* p, double v) { auto& s = *static_cast<scene::Transform2D*>(p); s.world_dirty = static_cast<decltype(s.world_dirty)>(v); }
+static const mq_field_accessor mq_acc_scene_Transform2D[] = {
+    { 0, 0, 0, 0, mq_acc_scene_Transform2D_local_getp, mq_acc_scene_Transform2D_local_getmp },
+    { 0, 0, 0, 0, mq_acc_scene_Transform2D_world_getp, mq_acc_scene_Transform2D_world_getmp },
+    { mq_acc_scene_Transform2D_world_dirty_getf, mq_acc_scene_Transform2D_world_dirty_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scene_Transform2D[] = {
-    { "local", (uint32_t)offsetof(scene::Transform2D, local), MQ_TK_STRUCT, 2157848323u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "world", (uint32_t)offsetof(scene::Transform2D, world), MQ_TK_STRUCT, 4101091764u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "world_dirty", (uint32_t)offsetof(scene::Transform2D, world_dirty), MQ_TK_U8, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "local", (uint32_t)offsetof(scene::Transform2D, local), MQ_TK_STRUCT, 2157848323u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Transform2D[0] },
+    { "world", (uint32_t)offsetof(scene::Transform2D, world), MQ_TK_STRUCT, 4101091764u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scene_Transform2D[1] },
+    { "world_dirty", (uint32_t)offsetof(scene::Transform2D, world_dirty), MQ_TK_U8, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scene_Transform2D[2] },
 };
 
+static const void* mq_acc_scene_Transform3D_local_getp(const void* p) { const auto& s = *static_cast<const scene::Transform3D*>(p); return &s.local; }
+static void* mq_acc_scene_Transform3D_local_getmp(void* p) { auto& s = *static_cast<scene::Transform3D*>(p); return &s.local; }
+static const void* mq_acc_scene_Transform3D_world_getp(const void* p) { const auto& s = *static_cast<const scene::Transform3D*>(p); return &s.world; }
+static void* mq_acc_scene_Transform3D_world_getmp(void* p) { auto& s = *static_cast<scene::Transform3D*>(p); return &s.world; }
+static const void* mq_acc_scene_Transform3D_rotation_quat_getp(const void* p) { const auto& s = *static_cast<const scene::Transform3D*>(p); return &s.rotation_quat; }
+static void* mq_acc_scene_Transform3D_rotation_quat_getmp(void* p) { auto& s = *static_cast<scene::Transform3D*>(p); return &s.rotation_quat; }
+static double mq_acc_scene_Transform3D_world_dirty_getf(const void* p) { const auto& s = *static_cast<const scene::Transform3D*>(p); return static_cast<double>(s.world_dirty); }
+static void mq_acc_scene_Transform3D_world_dirty_setf(void* p, double v) { auto& s = *static_cast<scene::Transform3D*>(p); s.world_dirty = static_cast<decltype(s.world_dirty)>(v); }
+static const mq_field_accessor mq_acc_scene_Transform3D[] = {
+    { 0, 0, 0, 0, mq_acc_scene_Transform3D_local_getp, mq_acc_scene_Transform3D_local_getmp },
+    { 0, 0, 0, 0, mq_acc_scene_Transform3D_world_getp, mq_acc_scene_Transform3D_world_getmp },
+    { 0, 0, 0, 0, mq_acc_scene_Transform3D_rotation_quat_getp, mq_acc_scene_Transform3D_rotation_quat_getmp },
+    { mq_acc_scene_Transform3D_world_dirty_getf, mq_acc_scene_Transform3D_world_dirty_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scene_Transform3D[] = {
-    { "local", (uint32_t)offsetof(scene::Transform3D, local), MQ_TK_STRUCT, 1654372658u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "world", (uint32_t)offsetof(scene::Transform3D, world), MQ_TK_STRUCT, 4084314145u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "rotation_quat", (uint32_t)offsetof(scene::Transform3D, rotation_quat), MQ_TK_STRUCT, 1809161124u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "world_dirty", (uint32_t)offsetof(scene::Transform3D, world_dirty), MQ_TK_U8, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "local", (uint32_t)offsetof(scene::Transform3D, local), MQ_TK_STRUCT, 1654372658u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scene_Transform3D[0] },
+    { "world", (uint32_t)offsetof(scene::Transform3D, world), MQ_TK_STRUCT, 4084314145u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scene_Transform3D[1] },
+    { "rotation_quat", (uint32_t)offsetof(scene::Transform3D, rotation_quat), MQ_TK_STRUCT, 1809161124u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scene_Transform3D[2] },
+    { "world_dirty", (uint32_t)offsetof(scene::Transform3D, world_dirty), MQ_TK_U8, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scene_Transform3D[3] },
 };
 
+static const char* mq_acc_scn_AnimationPlayer_clip_gets(const void* p) { const auto& s = *static_cast<const scn::AnimationPlayer*>(p); return s.clip.c_str(); }
+static void mq_acc_scn_AnimationPlayer_clip_sets(void* p, const char* v) { auto& s = *static_cast<scn::AnimationPlayer*>(p); s.clip = v ? v : ""; }
+static const void* mq_acc_scn_AnimationPlayer_clip_getp(const void* p) { const auto& s = *static_cast<const scn::AnimationPlayer*>(p); return &s.clip; }
+static void* mq_acc_scn_AnimationPlayer_clip_getmp(void* p) { auto& s = *static_cast<scn::AnimationPlayer*>(p); return &s.clip; }
+static double mq_acc_scn_AnimationPlayer_time_getf(const void* p) { const auto& s = *static_cast<const scn::AnimationPlayer*>(p); return static_cast<double>(s.time); }
+static void mq_acc_scn_AnimationPlayer_time_setf(void* p, double v) { auto& s = *static_cast<scn::AnimationPlayer*>(p); s.time = static_cast<decltype(s.time)>(v); }
+static double mq_acc_scn_AnimationPlayer_speed_getf(const void* p) { const auto& s = *static_cast<const scn::AnimationPlayer*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_scn_AnimationPlayer_speed_setf(void* p, double v) { auto& s = *static_cast<scn::AnimationPlayer*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_scn_AnimationPlayer_loop_getf(const void* p) { const auto& s = *static_cast<const scn::AnimationPlayer*>(p); return s.loop ? 1.0 : 0.0; }
+static void mq_acc_scn_AnimationPlayer_loop_setf(void* p, double v) { auto& s = *static_cast<scn::AnimationPlayer*>(p); s.loop = v != 0.0; }
+static double mq_acc_scn_AnimationPlayer_playing_getf(const void* p) { const auto& s = *static_cast<const scn::AnimationPlayer*>(p); return s.playing ? 1.0 : 0.0; }
+static void mq_acc_scn_AnimationPlayer_playing_setf(void* p, double v) { auto& s = *static_cast<scn::AnimationPlayer*>(p); s.playing = v != 0.0; }
+static double mq_acc_scn_AnimationPlayer_duration_getf(const void* p) { const auto& s = *static_cast<const scn::AnimationPlayer*>(p); return static_cast<double>(s.duration); }
+static void mq_acc_scn_AnimationPlayer_duration_setf(void* p, double v) { auto& s = *static_cast<scn::AnimationPlayer*>(p); s.duration = static_cast<decltype(s.duration)>(v); }
+static double mq_acc_scn_AnimationPlayer_clip_index_getf(const void* p) { const auto& s = *static_cast<const scn::AnimationPlayer*>(p); return static_cast<double>(s.clip_index); }
+static void mq_acc_scn_AnimationPlayer_clip_index_setf(void* p, double v) { auto& s = *static_cast<scn::AnimationPlayer*>(p); s.clip_index = static_cast<decltype(s.clip_index)>(v); }
+static const mq_field_accessor mq_acc_scn_AnimationPlayer[] = {
+    { 0, 0, mq_acc_scn_AnimationPlayer_clip_gets, mq_acc_scn_AnimationPlayer_clip_sets, mq_acc_scn_AnimationPlayer_clip_getp, mq_acc_scn_AnimationPlayer_clip_getmp },
+    { mq_acc_scn_AnimationPlayer_time_getf, mq_acc_scn_AnimationPlayer_time_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_AnimationPlayer_speed_getf, mq_acc_scn_AnimationPlayer_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_AnimationPlayer_loop_getf, mq_acc_scn_AnimationPlayer_loop_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_AnimationPlayer_playing_getf, mq_acc_scn_AnimationPlayer_playing_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_AnimationPlayer_duration_getf, mq_acc_scn_AnimationPlayer_duration_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_scn_AnimationPlayer_clip_index_getf, mq_acc_scn_AnimationPlayer_clip_index_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_scn_AnimationPlayer_clips_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
 static uint32_t mq_dyn_scn_AnimationPlayer_clips_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
 static void mq_dyn_scn_AnimationPlayer_clips_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_scn_AnimationPlayer_clips_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_scn_AnimationPlayer[] = {
-    { "clip", (uint32_t)offsetof(scn::AnimationPlayer, clip), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "time", (uint32_t)offsetof(scn::AnimationPlayer, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(scn::AnimationPlayer, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "loop", (uint32_t)offsetof(scn::AnimationPlayer, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "playing", (uint32_t)offsetof(scn::AnimationPlayer, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "duration", (uint32_t)offsetof(scn::AnimationPlayer, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clips", (uint32_t)offsetof(scn::AnimationPlayer, clips), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_AnimationPlayer_clips_clear, mq_dyn_scn_AnimationPlayer_clips_size, mq_dyn_scn_AnimationPlayer_clips_resize, mq_dyn_scn_AnimationPlayer_clips_elem },
-    { "clip_index", (uint32_t)offsetof(scn::AnimationPlayer, clip_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "clip", (uint32_t)offsetof(scn::AnimationPlayer, clip), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_AnimationPlayer[0] },
+    { "time", (uint32_t)offsetof(scn::AnimationPlayer, time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_AnimationPlayer[1] },
+    { "speed", (uint32_t)offsetof(scn::AnimationPlayer, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_AnimationPlayer[2] },
+    { "loop", (uint32_t)offsetof(scn::AnimationPlayer, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_AnimationPlayer[3] },
+    { "playing", (uint32_t)offsetof(scn::AnimationPlayer, playing), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_AnimationPlayer[4] },
+    { "duration", (uint32_t)offsetof(scn::AnimationPlayer, duration), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_AnimationPlayer[5] },
+    { "clips", (uint32_t)offsetof(scn::AnimationPlayer, clips), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_AnimationPlayer_clips_clear, mq_dyn_scn_AnimationPlayer_clips_size, mq_dyn_scn_AnimationPlayer_clips_resize, mq_dyn_scn_AnimationPlayer_clips_elem, &mq_acc_scn_AnimationPlayer[6] },
+    { "clip_index", (uint32_t)offsetof(scn::AnimationPlayer, clip_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_AnimationPlayer[7] },
 };
 
+static double mq_acc_scn_Button_x_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return static_cast<double>(s.x); }
+static void mq_acc_scn_Button_x_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_scn_Button_y_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return static_cast<double>(s.y); }
+static void mq_acc_scn_Button_y_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static double mq_acc_scn_Button_width_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return static_cast<double>(s.width); }
+static void mq_acc_scn_Button_width_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_scn_Button_height_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return static_cast<double>(s.height); }
+static void mq_acc_scn_Button_height_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static double mq_acc_scn_Button_z_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return static_cast<double>(s.z); }
+static void mq_acc_scn_Button_z_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.z = static_cast<decltype(s.z)>(v); }
+static const char* mq_acc_scn_Button_label_gets(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return s.label.c_str(); }
+static void mq_acc_scn_Button_label_sets(void* p, const char* v) { auto& s = *static_cast<scn::Button*>(p); s.label = v ? v : ""; }
+static const void* mq_acc_scn_Button_label_getp(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return &s.label; }
+static void* mq_acc_scn_Button_label_getmp(void* p) { auto& s = *static_cast<scn::Button*>(p); return &s.label; }
+static double mq_acc_scn_Button_r_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return static_cast<double>(s.r); }
+static void mq_acc_scn_Button_r_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.r = static_cast<decltype(s.r)>(v); }
+static double mq_acc_scn_Button_g_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return static_cast<double>(s.g); }
+static void mq_acc_scn_Button_g_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.g = static_cast<decltype(s.g)>(v); }
+static double mq_acc_scn_Button_b_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return static_cast<double>(s.b); }
+static void mq_acc_scn_Button_b_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.b = static_cast<decltype(s.b)>(v); }
+static double mq_acc_scn_Button_pressed_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return s.pressed ? 1.0 : 0.0; }
+static void mq_acc_scn_Button_pressed_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.pressed = v != 0.0; }
+static double mq_acc_scn_Button_hovered_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return s.hovered ? 1.0 : 0.0; }
+static void mq_acc_scn_Button_hovered_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.hovered = v != 0.0; }
+static double mq_acc_scn_Button_enabled_getf(const void* p) { const auto& s = *static_cast<const scn::Button*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_scn_Button_enabled_setf(void* p, double v) { auto& s = *static_cast<scn::Button*>(p); s.enabled = v != 0.0; }
+static const mq_field_accessor mq_acc_scn_Button[] = {
+    { mq_acc_scn_Button_x_getf, mq_acc_scn_Button_x_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_y_getf, mq_acc_scn_Button_y_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_width_getf, mq_acc_scn_Button_width_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_height_getf, mq_acc_scn_Button_height_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_z_getf, mq_acc_scn_Button_z_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_scn_Button_label_gets, mq_acc_scn_Button_label_sets, mq_acc_scn_Button_label_getp, mq_acc_scn_Button_label_getmp },
+    { mq_acc_scn_Button_r_getf, mq_acc_scn_Button_r_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_g_getf, mq_acc_scn_Button_g_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_b_getf, mq_acc_scn_Button_b_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_pressed_getf, mq_acc_scn_Button_pressed_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_hovered_getf, mq_acc_scn_Button_hovered_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Button_enabled_getf, mq_acc_scn_Button_enabled_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scn_Button[] = {
-    { "x", (uint32_t)offsetof(scn::Button, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(scn::Button, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(scn::Button, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(scn::Button, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z", (uint32_t)offsetof(scn::Button, z), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "label", (uint32_t)offsetof(scn::Button, label), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "r", (uint32_t)offsetof(scn::Button, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "g", (uint32_t)offsetof(scn::Button, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "b", (uint32_t)offsetof(scn::Button, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pressed", (uint32_t)offsetof(scn::Button, pressed), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "hovered", (uint32_t)offsetof(scn::Button, hovered), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(scn::Button, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(scn::Button, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[0] },
+    { "y", (uint32_t)offsetof(scn::Button, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[1] },
+    { "width", (uint32_t)offsetof(scn::Button, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[2] },
+    { "height", (uint32_t)offsetof(scn::Button, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[3] },
+    { "z", (uint32_t)offsetof(scn::Button, z), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[4] },
+    { "label", (uint32_t)offsetof(scn::Button, label), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[5] },
+    { "r", (uint32_t)offsetof(scn::Button, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[6] },
+    { "g", (uint32_t)offsetof(scn::Button, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[7] },
+    { "b", (uint32_t)offsetof(scn::Button, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[8] },
+    { "pressed", (uint32_t)offsetof(scn::Button, pressed), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[9] },
+    { "hovered", (uint32_t)offsetof(scn::Button, hovered), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[10] },
+    { "enabled", (uint32_t)offsetof(scn::Button, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Button[11] },
 };
 
+static double mq_acc_scn_Camera_x_getf(const void* p) { const auto& s = *static_cast<const scn::Camera*>(p); return static_cast<double>(s.x); }
+static void mq_acc_scn_Camera_x_setf(void* p, double v) { auto& s = *static_cast<scn::Camera*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_scn_Camera_y_getf(const void* p) { const auto& s = *static_cast<const scn::Camera*>(p); return static_cast<double>(s.y); }
+static void mq_acc_scn_Camera_y_setf(void* p, double v) { auto& s = *static_cast<scn::Camera*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static double mq_acc_scn_Camera_zoom_getf(const void* p) { const auto& s = *static_cast<const scn::Camera*>(p); return static_cast<double>(s.zoom); }
+static void mq_acc_scn_Camera_zoom_setf(void* p, double v) { auto& s = *static_cast<scn::Camera*>(p); s.zoom = static_cast<decltype(s.zoom)>(v); }
+static double mq_acc_scn_Camera_rotation_getf(const void* p) { const auto& s = *static_cast<const scn::Camera*>(p); return static_cast<double>(s.rotation); }
+static void mq_acc_scn_Camera_rotation_setf(void* p, double v) { auto& s = *static_cast<scn::Camera*>(p); s.rotation = static_cast<decltype(s.rotation)>(v); }
+static double mq_acc_scn_Camera_active_getf(const void* p) { const auto& s = *static_cast<const scn::Camera*>(p); return s.active ? 1.0 : 0.0; }
+static void mq_acc_scn_Camera_active_setf(void* p, double v) { auto& s = *static_cast<scn::Camera*>(p); s.active = v != 0.0; }
+static const mq_field_accessor mq_acc_scn_Camera[] = {
+    { mq_acc_scn_Camera_x_getf, mq_acc_scn_Camera_x_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Camera_y_getf, mq_acc_scn_Camera_y_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Camera_zoom_getf, mq_acc_scn_Camera_zoom_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Camera_rotation_getf, mq_acc_scn_Camera_rotation_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Camera_active_getf, mq_acc_scn_Camera_active_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scn_Camera[] = {
-    { "x", (uint32_t)offsetof(scn::Camera, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(scn::Camera, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "zoom", (uint32_t)offsetof(scn::Camera, zoom), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "rotation", (uint32_t)offsetof(scn::Camera, rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "active", (uint32_t)offsetof(scn::Camera, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(scn::Camera, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Camera[0] },
+    { "y", (uint32_t)offsetof(scn::Camera, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Camera[1] },
+    { "zoom", (uint32_t)offsetof(scn::Camera, zoom), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Camera[2] },
+    { "rotation", (uint32_t)offsetof(scn::Camera, rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Camera[3] },
+    { "active", (uint32_t)offsetof(scn::Camera, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Camera[4] },
 };
 
+static double mq_acc_scn_Label_x_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.x); }
+static void mq_acc_scn_Label_x_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_scn_Label_y_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.y); }
+static void mq_acc_scn_Label_y_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static double mq_acc_scn_Label_z_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.z); }
+static void mq_acc_scn_Label_z_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.z = static_cast<decltype(s.z)>(v); }
+static const char* mq_acc_scn_Label_text_gets(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return s.text.c_str(); }
+static void mq_acc_scn_Label_text_sets(void* p, const char* v) { auto& s = *static_cast<scn::Label*>(p); s.text = v ? v : ""; }
+static const void* mq_acc_scn_Label_text_getp(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return &s.text; }
+static void* mq_acc_scn_Label_text_getmp(void* p) { auto& s = *static_cast<scn::Label*>(p); return &s.text; }
+static double mq_acc_scn_Label_r_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.r); }
+static void mq_acc_scn_Label_r_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.r = static_cast<decltype(s.r)>(v); }
+static double mq_acc_scn_Label_g_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.g); }
+static void mq_acc_scn_Label_g_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.g = static_cast<decltype(s.g)>(v); }
+static double mq_acc_scn_Label_b_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.b); }
+static void mq_acc_scn_Label_b_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.b = static_cast<decltype(s.b)>(v); }
+static double mq_acc_scn_Label_a_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.a); }
+static void mq_acc_scn_Label_a_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.a = static_cast<decltype(s.a)>(v); }
+static double mq_acc_scn_Label_font_size_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.font_size); }
+static void mq_acc_scn_Label_font_size_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.font_size = static_cast<decltype(s.font_size)>(v); }
+static double mq_acc_scn_Label_align_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(static_cast<int64_t>(s.align)); }
+static void mq_acc_scn_Label_align_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.align = static_cast<decltype(s.align)>(v); }
+static double mq_acc_scn_Label_wrap_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(static_cast<int64_t>(s.wrap)); }
+static void mq_acc_scn_Label_wrap_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.wrap = static_cast<decltype(s.wrap)>(v); }
+static double mq_acc_scn_Label_max_width_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.max_width); }
+static void mq_acc_scn_Label_max_width_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.max_width = static_cast<decltype(s.max_width)>(v); }
+static double mq_acc_scn_Label_line_spacing_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.line_spacing); }
+static void mq_acc_scn_Label_line_spacing_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.line_spacing = static_cast<decltype(s.line_spacing)>(v); }
+static double mq_acc_scn_Label_outline_size_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.outline_size); }
+static void mq_acc_scn_Label_outline_size_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.outline_size = static_cast<decltype(s.outline_size)>(v); }
+static double mq_acc_scn_Label_outline_r_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.outline_r); }
+static void mq_acc_scn_Label_outline_r_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.outline_r = static_cast<decltype(s.outline_r)>(v); }
+static double mq_acc_scn_Label_outline_g_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.outline_g); }
+static void mq_acc_scn_Label_outline_g_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.outline_g = static_cast<decltype(s.outline_g)>(v); }
+static double mq_acc_scn_Label_outline_b_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.outline_b); }
+static void mq_acc_scn_Label_outline_b_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.outline_b = static_cast<decltype(s.outline_b)>(v); }
+static double mq_acc_scn_Label_outline_a_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.outline_a); }
+static void mq_acc_scn_Label_outline_a_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.outline_a = static_cast<decltype(s.outline_a)>(v); }
+static const char* mq_acc_scn_Label_font_gets(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return s.font.c_str(); }
+static void mq_acc_scn_Label_font_sets(void* p, const char* v) { auto& s = *static_cast<scn::Label*>(p); s.font = v ? v : ""; }
+static const void* mq_acc_scn_Label_font_getp(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return &s.font; }
+static void* mq_acc_scn_Label_font_getmp(void* p) { auto& s = *static_cast<scn::Label*>(p); return &s.font; }
+static double mq_acc_scn_Label_text_w_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.text_w); }
+static void mq_acc_scn_Label_text_w_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.text_w = static_cast<decltype(s.text_w)>(v); }
+static double mq_acc_scn_Label_text_h_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.text_h); }
+static void mq_acc_scn_Label_text_h_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.text_h = static_cast<decltype(s.text_h)>(v); }
+static double mq_acc_scn_Label_line_count_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.line_count); }
+static void mq_acc_scn_Label_line_count_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.line_count = static_cast<decltype(s.line_count)>(v); }
+static double mq_acc_scn_Label_max_height_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.max_height); }
+static void mq_acc_scn_Label_max_height_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.max_height = static_cast<decltype(s.max_height)>(v); }
+static double mq_acc_scn_Label_overflow_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(static_cast<int64_t>(s.overflow)); }
+static void mq_acc_scn_Label_overflow_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.overflow = static_cast<decltype(s.overflow)>(v); }
+static double mq_acc_scn_Label_bold_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return s.bold ? 1.0 : 0.0; }
+static void mq_acc_scn_Label_bold_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.bold = v != 0.0; }
+static double mq_acc_scn_Label_italic_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return s.italic ? 1.0 : 0.0; }
+static void mq_acc_scn_Label_italic_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.italic = v != 0.0; }
+static double mq_acc_scn_Label_shadow_x_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.shadow_x); }
+static void mq_acc_scn_Label_shadow_x_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.shadow_x = static_cast<decltype(s.shadow_x)>(v); }
+static double mq_acc_scn_Label_shadow_y_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.shadow_y); }
+static void mq_acc_scn_Label_shadow_y_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.shadow_y = static_cast<decltype(s.shadow_y)>(v); }
+static double mq_acc_scn_Label_shadow_r_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.shadow_r); }
+static void mq_acc_scn_Label_shadow_r_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.shadow_r = static_cast<decltype(s.shadow_r)>(v); }
+static double mq_acc_scn_Label_shadow_g_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.shadow_g); }
+static void mq_acc_scn_Label_shadow_g_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.shadow_g = static_cast<decltype(s.shadow_g)>(v); }
+static double mq_acc_scn_Label_shadow_b_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.shadow_b); }
+static void mq_acc_scn_Label_shadow_b_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.shadow_b = static_cast<decltype(s.shadow_b)>(v); }
+static double mq_acc_scn_Label_shadow_a_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.shadow_a); }
+static void mq_acc_scn_Label_shadow_a_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.shadow_a = static_cast<decltype(s.shadow_a)>(v); }
+static double mq_acc_scn_Label_fit_font_size_getf(const void* p) { const auto& s = *static_cast<const scn::Label*>(p); return static_cast<double>(s.fit_font_size); }
+static void mq_acc_scn_Label_fit_font_size_setf(void* p, double v) { auto& s = *static_cast<scn::Label*>(p); s.fit_font_size = static_cast<decltype(s.fit_font_size)>(v); }
+static const mq_field_accessor mq_acc_scn_Label[] = {
+    { mq_acc_scn_Label_x_getf, mq_acc_scn_Label_x_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_y_getf, mq_acc_scn_Label_y_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_z_getf, mq_acc_scn_Label_z_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_scn_Label_text_gets, mq_acc_scn_Label_text_sets, mq_acc_scn_Label_text_getp, mq_acc_scn_Label_text_getmp },
+    { mq_acc_scn_Label_r_getf, mq_acc_scn_Label_r_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_g_getf, mq_acc_scn_Label_g_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_b_getf, mq_acc_scn_Label_b_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_a_getf, mq_acc_scn_Label_a_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_font_size_getf, mq_acc_scn_Label_font_size_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_align_getf, mq_acc_scn_Label_align_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_wrap_getf, mq_acc_scn_Label_wrap_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_max_width_getf, mq_acc_scn_Label_max_width_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_line_spacing_getf, mq_acc_scn_Label_line_spacing_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_outline_size_getf, mq_acc_scn_Label_outline_size_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_outline_r_getf, mq_acc_scn_Label_outline_r_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_outline_g_getf, mq_acc_scn_Label_outline_g_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_outline_b_getf, mq_acc_scn_Label_outline_b_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_outline_a_getf, mq_acc_scn_Label_outline_a_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_scn_Label_font_gets, mq_acc_scn_Label_font_sets, mq_acc_scn_Label_font_getp, mq_acc_scn_Label_font_getmp },
+    { mq_acc_scn_Label_text_w_getf, mq_acc_scn_Label_text_w_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_text_h_getf, mq_acc_scn_Label_text_h_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_line_count_getf, mq_acc_scn_Label_line_count_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_max_height_getf, mq_acc_scn_Label_max_height_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_overflow_getf, mq_acc_scn_Label_overflow_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_bold_getf, mq_acc_scn_Label_bold_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_italic_getf, mq_acc_scn_Label_italic_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_shadow_x_getf, mq_acc_scn_Label_shadow_x_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_shadow_y_getf, mq_acc_scn_Label_shadow_y_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_shadow_r_getf, mq_acc_scn_Label_shadow_r_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_shadow_g_getf, mq_acc_scn_Label_shadow_g_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_shadow_b_getf, mq_acc_scn_Label_shadow_b_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_shadow_a_getf, mq_acc_scn_Label_shadow_a_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Label_fit_font_size_getf, mq_acc_scn_Label_fit_font_size_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scn_Label[] = {
-    { "x", (uint32_t)offsetof(scn::Label, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(scn::Label, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z", (uint32_t)offsetof(scn::Label, z), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text", (uint32_t)offsetof(scn::Label, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "r", (uint32_t)offsetof(scn::Label, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "g", (uint32_t)offsetof(scn::Label, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "b", (uint32_t)offsetof(scn::Label, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "a", (uint32_t)offsetof(scn::Label, a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font_size", (uint32_t)offsetof(scn::Label, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align", (uint32_t)offsetof(scn::Label, align), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "wrap", (uint32_t)offsetof(scn::Label, wrap), MQ_TK_ENUM, 1869600876u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_width", (uint32_t)offsetof(scn::Label, max_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "line_spacing", (uint32_t)offsetof(scn::Label, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_size", (uint32_t)offsetof(scn::Label, outline_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_r", (uint32_t)offsetof(scn::Label, outline_r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_g", (uint32_t)offsetof(scn::Label, outline_g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_b", (uint32_t)offsetof(scn::Label, outline_b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_a", (uint32_t)offsetof(scn::Label, outline_a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font", (uint32_t)offsetof(scn::Label, font), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text_w", (uint32_t)offsetof(scn::Label, text_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "text_h", (uint32_t)offsetof(scn::Label, text_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "line_count", (uint32_t)offsetof(scn::Label, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "max_height", (uint32_t)offsetof(scn::Label, max_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "overflow", (uint32_t)offsetof(scn::Label, overflow), MQ_TK_ENUM, 752426990u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bold", (uint32_t)offsetof(scn::Label, bold), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "italic", (uint32_t)offsetof(scn::Label, italic), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_x", (uint32_t)offsetof(scn::Label, shadow_x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_y", (uint32_t)offsetof(scn::Label, shadow_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_r", (uint32_t)offsetof(scn::Label, shadow_r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_g", (uint32_t)offsetof(scn::Label, shadow_g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_b", (uint32_t)offsetof(scn::Label, shadow_b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shadow_a", (uint32_t)offsetof(scn::Label, shadow_a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fit_font_size", (uint32_t)offsetof(scn::Label, fit_font_size), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(scn::Label, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[0] },
+    { "y", (uint32_t)offsetof(scn::Label, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[1] },
+    { "z", (uint32_t)offsetof(scn::Label, z), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[2] },
+    { "text", (uint32_t)offsetof(scn::Label, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[3] },
+    { "r", (uint32_t)offsetof(scn::Label, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[4] },
+    { "g", (uint32_t)offsetof(scn::Label, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[5] },
+    { "b", (uint32_t)offsetof(scn::Label, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[6] },
+    { "a", (uint32_t)offsetof(scn::Label, a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[7] },
+    { "font_size", (uint32_t)offsetof(scn::Label, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[8] },
+    { "align", (uint32_t)offsetof(scn::Label, align), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[9] },
+    { "wrap", (uint32_t)offsetof(scn::Label, wrap), MQ_TK_ENUM, 1869600876u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[10] },
+    { "max_width", (uint32_t)offsetof(scn::Label, max_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[11] },
+    { "line_spacing", (uint32_t)offsetof(scn::Label, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[12] },
+    { "outline_size", (uint32_t)offsetof(scn::Label, outline_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[13] },
+    { "outline_r", (uint32_t)offsetof(scn::Label, outline_r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[14] },
+    { "outline_g", (uint32_t)offsetof(scn::Label, outline_g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[15] },
+    { "outline_b", (uint32_t)offsetof(scn::Label, outline_b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[16] },
+    { "outline_a", (uint32_t)offsetof(scn::Label, outline_a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[17] },
+    { "font", (uint32_t)offsetof(scn::Label, font), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[18] },
+    { "text_w", (uint32_t)offsetof(scn::Label, text_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[19] },
+    { "text_h", (uint32_t)offsetof(scn::Label, text_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[20] },
+    { "line_count", (uint32_t)offsetof(scn::Label, line_count), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[21] },
+    { "max_height", (uint32_t)offsetof(scn::Label, max_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[22] },
+    { "overflow", (uint32_t)offsetof(scn::Label, overflow), MQ_TK_ENUM, 752426990u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[23] },
+    { "bold", (uint32_t)offsetof(scn::Label, bold), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[24] },
+    { "italic", (uint32_t)offsetof(scn::Label, italic), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[25] },
+    { "shadow_x", (uint32_t)offsetof(scn::Label, shadow_x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[26] },
+    { "shadow_y", (uint32_t)offsetof(scn::Label, shadow_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[27] },
+    { "shadow_r", (uint32_t)offsetof(scn::Label, shadow_r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[28] },
+    { "shadow_g", (uint32_t)offsetof(scn::Label, shadow_g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[29] },
+    { "shadow_b", (uint32_t)offsetof(scn::Label, shadow_b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[30] },
+    { "shadow_a", (uint32_t)offsetof(scn::Label, shadow_a), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[31] },
+    { "fit_font_size", (uint32_t)offsetof(scn::Label, fit_font_size), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_scn_Label[32] },
 };
 
+static double mq_acc_scn_NavAgent_tx_getf(const void* p) { const auto& s = *static_cast<const scn::NavAgent*>(p); return static_cast<double>(s.tx); }
+static void mq_acc_scn_NavAgent_tx_setf(void* p, double v) { auto& s = *static_cast<scn::NavAgent*>(p); s.tx = static_cast<decltype(s.tx)>(v); }
+static double mq_acc_scn_NavAgent_ty_getf(const void* p) { const auto& s = *static_cast<const scn::NavAgent*>(p); return static_cast<double>(s.ty); }
+static void mq_acc_scn_NavAgent_ty_setf(void* p, double v) { auto& s = *static_cast<scn::NavAgent*>(p); s.ty = static_cast<decltype(s.ty)>(v); }
+static double mq_acc_scn_NavAgent_speed_getf(const void* p) { const auto& s = *static_cast<const scn::NavAgent*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_scn_NavAgent_speed_setf(void* p, double v) { auto& s = *static_cast<scn::NavAgent*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_scn_NavAgent_arrive_dist_getf(const void* p) { const auto& s = *static_cast<const scn::NavAgent*>(p); return static_cast<double>(s.arrive_dist); }
+static void mq_acc_scn_NavAgent_arrive_dist_setf(void* p, double v) { auto& s = *static_cast<scn::NavAgent*>(p); s.arrive_dist = static_cast<decltype(s.arrive_dist)>(v); }
+static double mq_acc_scn_NavAgent_repath_getf(const void* p) { const auto& s = *static_cast<const scn::NavAgent*>(p); return s.repath ? 1.0 : 0.0; }
+static void mq_acc_scn_NavAgent_repath_setf(void* p, double v) { auto& s = *static_cast<scn::NavAgent*>(p); s.repath = v != 0.0; }
+static double mq_acc_scn_NavAgent_has_target_getf(const void* p) { const auto& s = *static_cast<const scn::NavAgent*>(p); return s.has_target ? 1.0 : 0.0; }
+static void mq_acc_scn_NavAgent_has_target_setf(void* p, double v) { auto& s = *static_cast<scn::NavAgent*>(p); s.has_target = v != 0.0; }
+static double mq_acc_scn_NavAgent_state_getf(const void* p) { const auto& s = *static_cast<const scn::NavAgent*>(p); return static_cast<double>(s.state); }
+static void mq_acc_scn_NavAgent_state_setf(void* p, double v) { auto& s = *static_cast<scn::NavAgent*>(p); s.state = static_cast<decltype(s.state)>(v); }
+static const mq_field_accessor mq_acc_scn_NavAgent[] = {
+    { mq_acc_scn_NavAgent_tx_getf, mq_acc_scn_NavAgent_tx_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_NavAgent_ty_getf, mq_acc_scn_NavAgent_ty_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_NavAgent_speed_getf, mq_acc_scn_NavAgent_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_NavAgent_arrive_dist_getf, mq_acc_scn_NavAgent_arrive_dist_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_NavAgent_repath_getf, mq_acc_scn_NavAgent_repath_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_NavAgent_has_target_getf, mq_acc_scn_NavAgent_has_target_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_NavAgent_state_getf, mq_acc_scn_NavAgent_state_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scn_NavAgent[] = {
-    { "tx", (uint32_t)offsetof(scn::NavAgent, tx), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "ty", (uint32_t)offsetof(scn::NavAgent, ty), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(scn::NavAgent, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "arrive_dist", (uint32_t)offsetof(scn::NavAgent, arrive_dist), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "repath", (uint32_t)offsetof(scn::NavAgent, repath), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "has_target", (uint32_t)offsetof(scn::NavAgent, has_target), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "state", (uint32_t)offsetof(scn::NavAgent, state), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "tx", (uint32_t)offsetof(scn::NavAgent, tx), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_NavAgent[0] },
+    { "ty", (uint32_t)offsetof(scn::NavAgent, ty), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_NavAgent[1] },
+    { "speed", (uint32_t)offsetof(scn::NavAgent, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_NavAgent[2] },
+    { "arrive_dist", (uint32_t)offsetof(scn::NavAgent, arrive_dist), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_NavAgent[3] },
+    { "repath", (uint32_t)offsetof(scn::NavAgent, repath), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_NavAgent[4] },
+    { "has_target", (uint32_t)offsetof(scn::NavAgent, has_target), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_NavAgent[5] },
+    { "state", (uint32_t)offsetof(scn::NavAgent, state), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_NavAgent[6] },
 };
 
+static double mq_acc_scn_ParticleEmitter_rate_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.rate); }
+static void mq_acc_scn_ParticleEmitter_rate_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.rate = static_cast<decltype(s.rate)>(v); }
+static double mq_acc_scn_ParticleEmitter_lifetime_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.lifetime); }
+static void mq_acc_scn_ParticleEmitter_lifetime_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.lifetime = static_cast<decltype(s.lifetime)>(v); }
+static double mq_acc_scn_ParticleEmitter_speed_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.speed); }
+static void mq_acc_scn_ParticleEmitter_speed_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.speed = static_cast<decltype(s.speed)>(v); }
+static double mq_acc_scn_ParticleEmitter_spread_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.spread); }
+static void mq_acc_scn_ParticleEmitter_spread_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.spread = static_cast<decltype(s.spread)>(v); }
+static double mq_acc_scn_ParticleEmitter_gravity_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.gravity); }
+static void mq_acc_scn_ParticleEmitter_gravity_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.gravity = static_cast<decltype(s.gravity)>(v); }
+static double mq_acc_scn_ParticleEmitter_size_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.size); }
+static void mq_acc_scn_ParticleEmitter_size_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.size = static_cast<decltype(s.size)>(v); }
+static double mq_acc_scn_ParticleEmitter_r_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.r); }
+static void mq_acc_scn_ParticleEmitter_r_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.r = static_cast<decltype(s.r)>(v); }
+static double mq_acc_scn_ParticleEmitter_g_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.g); }
+static void mq_acc_scn_ParticleEmitter_g_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.g = static_cast<decltype(s.g)>(v); }
+static double mq_acc_scn_ParticleEmitter_b_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.b); }
+static void mq_acc_scn_ParticleEmitter_b_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.b = static_cast<decltype(s.b)>(v); }
+static double mq_acc_scn_ParticleEmitter_max_count_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return static_cast<double>(s.max_count); }
+static void mq_acc_scn_ParticleEmitter_max_count_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.max_count = static_cast<decltype(s.max_count)>(v); }
+static double mq_acc_scn_ParticleEmitter_enabled_getf(const void* p) { const auto& s = *static_cast<const scn::ParticleEmitter*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_scn_ParticleEmitter_enabled_setf(void* p, double v) { auto& s = *static_cast<scn::ParticleEmitter*>(p); s.enabled = v != 0.0; }
+static const mq_field_accessor mq_acc_scn_ParticleEmitter[] = {
+    { mq_acc_scn_ParticleEmitter_rate_getf, mq_acc_scn_ParticleEmitter_rate_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_lifetime_getf, mq_acc_scn_ParticleEmitter_lifetime_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_speed_getf, mq_acc_scn_ParticleEmitter_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_spread_getf, mq_acc_scn_ParticleEmitter_spread_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_gravity_getf, mq_acc_scn_ParticleEmitter_gravity_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_size_getf, mq_acc_scn_ParticleEmitter_size_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_r_getf, mq_acc_scn_ParticleEmitter_r_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_g_getf, mq_acc_scn_ParticleEmitter_g_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_b_getf, mq_acc_scn_ParticleEmitter_b_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_max_count_getf, mq_acc_scn_ParticleEmitter_max_count_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_ParticleEmitter_enabled_getf, mq_acc_scn_ParticleEmitter_enabled_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scn_ParticleEmitter[] = {
-    { "rate", (uint32_t)offsetof(scn::ParticleEmitter, rate), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "lifetime", (uint32_t)offsetof(scn::ParticleEmitter, lifetime), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "speed", (uint32_t)offsetof(scn::ParticleEmitter, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "spread", (uint32_t)offsetof(scn::ParticleEmitter, spread), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gravity", (uint32_t)offsetof(scn::ParticleEmitter, gravity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "size", (uint32_t)offsetof(scn::ParticleEmitter, size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "r", (uint32_t)offsetof(scn::ParticleEmitter, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "g", (uint32_t)offsetof(scn::ParticleEmitter, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "b", (uint32_t)offsetof(scn::ParticleEmitter, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_count", (uint32_t)offsetof(scn::ParticleEmitter, max_count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(scn::ParticleEmitter, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "rate", (uint32_t)offsetof(scn::ParticleEmitter, rate), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[0] },
+    { "lifetime", (uint32_t)offsetof(scn::ParticleEmitter, lifetime), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[1] },
+    { "speed", (uint32_t)offsetof(scn::ParticleEmitter, speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[2] },
+    { "spread", (uint32_t)offsetof(scn::ParticleEmitter, spread), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[3] },
+    { "gravity", (uint32_t)offsetof(scn::ParticleEmitter, gravity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[4] },
+    { "size", (uint32_t)offsetof(scn::ParticleEmitter, size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[5] },
+    { "r", (uint32_t)offsetof(scn::ParticleEmitter, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[6] },
+    { "g", (uint32_t)offsetof(scn::ParticleEmitter, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[7] },
+    { "b", (uint32_t)offsetof(scn::ParticleEmitter, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[8] },
+    { "max_count", (uint32_t)offsetof(scn::ParticleEmitter, max_count), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[9] },
+    { "enabled", (uint32_t)offsetof(scn::ParticleEmitter, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_ParticleEmitter[10] },
 };
 
+static const char* mq_acc_scn_PrefabInstance_source_gets(const void* p) { const auto& s = *static_cast<const scn::PrefabInstance*>(p); return s.source.c_str(); }
+static void mq_acc_scn_PrefabInstance_source_sets(void* p, const char* v) { auto& s = *static_cast<scn::PrefabInstance*>(p); s.source = v ? v : ""; }
+static const void* mq_acc_scn_PrefabInstance_source_getp(const void* p) { const auto& s = *static_cast<const scn::PrefabInstance*>(p); return &s.source; }
+static void* mq_acc_scn_PrefabInstance_source_getmp(void* p) { auto& s = *static_cast<scn::PrefabInstance*>(p); return &s.source; }
+static double mq_acc_scn_PrefabInstance_detached_getf(const void* p) { const auto& s = *static_cast<const scn::PrefabInstance*>(p); return s.detached ? 1.0 : 0.0; }
+static void mq_acc_scn_PrefabInstance_detached_setf(void* p, double v) { auto& s = *static_cast<scn::PrefabInstance*>(p); s.detached = v != 0.0; }
+static const mq_field_accessor mq_acc_scn_PrefabInstance[] = {
+    { 0, 0, mq_acc_scn_PrefabInstance_source_gets, mq_acc_scn_PrefabInstance_source_sets, mq_acc_scn_PrefabInstance_source_getp, mq_acc_scn_PrefabInstance_source_getmp },
+    { mq_acc_scn_PrefabInstance_detached_getf, mq_acc_scn_PrefabInstance_detached_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scn_PrefabInstance[] = {
-    { "source", (uint32_t)offsetof(scn::PrefabInstance, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "detached", (uint32_t)offsetof(scn::PrefabInstance, detached), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "source", (uint32_t)offsetof(scn::PrefabInstance, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_PrefabInstance[0] },
+    { "detached", (uint32_t)offsetof(scn::PrefabInstance, detached), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_PrefabInstance[1] },
 };
 
+static double mq_acc_scn_Scene_version_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.version); }
+static void mq_acc_scn_Scene_version_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.version = static_cast<decltype(s.version)>(v); }
+static const char* mq_acc_scn_Scene_title_gets(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return s.title.c_str(); }
+static void mq_acc_scn_Scene_title_sets(void* p, const char* v) { auto& s = *static_cast<scn::Scene*>(p); s.title = v ? v : ""; }
+static const void* mq_acc_scn_Scene_title_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.title; }
+static void* mq_acc_scn_Scene_title_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.title; }
+static const char* mq_acc_scn_Scene_script_gets(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return s.script.c_str(); }
+static void mq_acc_scn_Scene_script_sets(void* p, const char* v) { auto& s = *static_cast<scn::Scene*>(p); s.script = v ? v : ""; }
+static const void* mq_acc_scn_Scene_script_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.script; }
+static void* mq_acc_scn_Scene_script_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.script; }
+static const char* mq_acc_scn_Scene_overlay_script_gets(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return s.overlay_script.c_str(); }
+static void mq_acc_scn_Scene_overlay_script_sets(void* p, const char* v) { auto& s = *static_cast<scn::Scene*>(p); s.overlay_script = v ? v : ""; }
+static const void* mq_acc_scn_Scene_overlay_script_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.overlay_script; }
+static void* mq_acc_scn_Scene_overlay_script_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.overlay_script; }
+static const char* mq_acc_scn_Scene_global_script_gets(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return s.global_script.c_str(); }
+static void mq_acc_scn_Scene_global_script_sets(void* p, const char* v) { auto& s = *static_cast<scn::Scene*>(p); s.global_script = v ? v : ""; }
+static const void* mq_acc_scn_Scene_global_script_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.global_script; }
+static void* mq_acc_scn_Scene_global_script_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.global_script; }
+static double mq_acc_scn_Scene_width_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.width); }
+static void mq_acc_scn_Scene_width_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_scn_Scene_height_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.height); }
+static void mq_acc_scn_Scene_height_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static double mq_acc_scn_Scene_seed_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.seed); }
+static void mq_acc_scn_Scene_seed_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.seed = static_cast<decltype(s.seed)>(v); }
+static double mq_acc_scn_Scene_views_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.views); }
+static void mq_acc_scn_Scene_views_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.views = static_cast<decltype(s.views)>(v); }
+static double mq_acc_scn_Scene_eye_sep_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.eye_sep); }
+static void mq_acc_scn_Scene_eye_sep_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.eye_sep = static_cast<decltype(s.eye_sep)>(v); }
+static double mq_acc_scn_Scene_render_scale_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.render_scale); }
+static void mq_acc_scn_Scene_render_scale_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.render_scale = static_cast<decltype(s.render_scale)>(v); }
+static const void* mq_acc_scn_Scene_env_color_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.env_color; }
+static void* mq_acc_scn_Scene_env_color_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.env_color; }
+static double mq_acc_scn_Scene_env_intensity_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.env_intensity); }
+static void mq_acc_scn_Scene_env_intensity_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.env_intensity = static_cast<decltype(s.env_intensity)>(v); }
+static const void* mq_acc_scn_Scene_env_sky_color_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.env_sky_color; }
+static void* mq_acc_scn_Scene_env_sky_color_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.env_sky_color; }
+static const void* mq_acc_scn_Scene_env_ground_color_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.env_ground_color; }
+static void* mq_acc_scn_Scene_env_ground_color_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.env_ground_color; }
+static double mq_acc_scn_Scene_env_highlight_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.env_highlight); }
+static void mq_acc_scn_Scene_env_highlight_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.env_highlight = static_cast<decltype(s.env_highlight)>(v); }
+static double mq_acc_scn_Scene_env_rotation_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.env_rotation); }
+static void mq_acc_scn_Scene_env_rotation_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.env_rotation = static_cast<decltype(s.env_rotation)>(v); }
+static const char* mq_acc_scn_Scene_env_texture_gets(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return s.env_texture.c_str(); }
+static void mq_acc_scn_Scene_env_texture_sets(void* p, const char* v) { auto& s = *static_cast<scn::Scene*>(p); s.env_texture = v ? v : ""; }
+static const void* mq_acc_scn_Scene_env_texture_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.env_texture; }
+static void* mq_acc_scn_Scene_env_texture_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.env_texture; }
+static double mq_acc_scn_Scene_env_background_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return s.env_background ? 1.0 : 0.0; }
+static void mq_acc_scn_Scene_env_background_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.env_background = v != 0.0; }
+static const char* mq_acc_scn_Scene_env_cubemap_gets(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return s.env_cubemap.c_str(); }
+static void mq_acc_scn_Scene_env_cubemap_sets(void* p, const char* v) { auto& s = *static_cast<scn::Scene*>(p); s.env_cubemap = v ? v : ""; }
+static const void* mq_acc_scn_Scene_env_cubemap_getp(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return &s.env_cubemap; }
+static void* mq_acc_scn_Scene_env_cubemap_getmp(void* p) { auto& s = *static_cast<scn::Scene*>(p); return &s.env_cubemap; }
+static double mq_acc_scn_Scene_msaa_samples_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.msaa_samples); }
+static void mq_acc_scn_Scene_msaa_samples_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.msaa_samples = static_cast<decltype(s.msaa_samples)>(v); }
+static double mq_acc_scn_Scene_gravity_y_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.gravity_y); }
+static void mq_acc_scn_Scene_gravity_y_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.gravity_y = static_cast<decltype(s.gravity_y)>(v); }
+static double mq_acc_scn_Scene_restitution_getf(const void* p) { const auto& s = *static_cast<const scn::Scene*>(p); return static_cast<double>(s.restitution); }
+static void mq_acc_scn_Scene_restitution_setf(void* p, double v) { auto& s = *static_cast<scn::Scene*>(p); s.restitution = static_cast<decltype(s.restitution)>(v); }
+static const mq_field_accessor mq_acc_scn_Scene[] = {
+    { mq_acc_scn_Scene_version_getf, mq_acc_scn_Scene_version_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_scn_Scene_title_gets, mq_acc_scn_Scene_title_sets, mq_acc_scn_Scene_title_getp, mq_acc_scn_Scene_title_getmp },
+    { 0, 0, mq_acc_scn_Scene_script_gets, mq_acc_scn_Scene_script_sets, mq_acc_scn_Scene_script_getp, mq_acc_scn_Scene_script_getmp },
+    { 0, 0, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_scn_Scene_overlay_script_gets, mq_acc_scn_Scene_overlay_script_sets, mq_acc_scn_Scene_overlay_script_getp, mq_acc_scn_Scene_overlay_script_getmp },
+    { 0, 0, mq_acc_scn_Scene_global_script_gets, mq_acc_scn_Scene_global_script_sets, mq_acc_scn_Scene_global_script_getp, mq_acc_scn_Scene_global_script_getmp },
+    { mq_acc_scn_Scene_width_getf, mq_acc_scn_Scene_width_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_height_getf, mq_acc_scn_Scene_height_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_seed_getf, mq_acc_scn_Scene_seed_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_views_getf, mq_acc_scn_Scene_views_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_eye_sep_getf, mq_acc_scn_Scene_eye_sep_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_render_scale_getf, mq_acc_scn_Scene_render_scale_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_scn_Scene_env_color_getp, mq_acc_scn_Scene_env_color_getmp },
+    { mq_acc_scn_Scene_env_intensity_getf, mq_acc_scn_Scene_env_intensity_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_scn_Scene_env_sky_color_getp, mq_acc_scn_Scene_env_sky_color_getmp },
+    { 0, 0, 0, 0, mq_acc_scn_Scene_env_ground_color_getp, mq_acc_scn_Scene_env_ground_color_getmp },
+    { mq_acc_scn_Scene_env_highlight_getf, mq_acc_scn_Scene_env_highlight_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_env_rotation_getf, mq_acc_scn_Scene_env_rotation_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_scn_Scene_env_texture_gets, mq_acc_scn_Scene_env_texture_sets, mq_acc_scn_Scene_env_texture_getp, mq_acc_scn_Scene_env_texture_getmp },
+    { mq_acc_scn_Scene_env_background_getf, mq_acc_scn_Scene_env_background_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_scn_Scene_env_cubemap_gets, mq_acc_scn_Scene_env_cubemap_sets, mq_acc_scn_Scene_env_cubemap_getp, mq_acc_scn_Scene_env_cubemap_getmp },
+    { mq_acc_scn_Scene_msaa_samples_getf, mq_acc_scn_Scene_msaa_samples_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_gravity_y_getf, mq_acc_scn_Scene_gravity_y_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Scene_restitution_getf, mq_acc_scn_Scene_restitution_setf, 0, 0, 0, 0 },
+};
 static void mq_dyn_scn_Scene_scripts_clear(void* f) { static_cast<std::vector<std::string>*>(f)->clear(); }
 static uint32_t mq_dyn_scn_Scene_scripts_size(const void* f) { return (uint32_t)static_cast<const std::vector<std::string>*>(f)->size(); }
 static void mq_dyn_scn_Scene_scripts_resize(void* f, uint32_t n) { static_cast<std::vector<std::string>*>(f)->resize(n); }
 static void* mq_dyn_scn_Scene_scripts_elem(void* f, uint32_t i) { return &static_cast<std::vector<std::string>*>(f)->at(i); }
 static const mq_field_desc mq_fields_scn_Scene[] = {
-    { "version", (uint32_t)offsetof(scn::Scene, version), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "title", (uint32_t)offsetof(scn::Scene, title), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "script", (uint32_t)offsetof(scn::Scene, script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scripts", (uint32_t)offsetof(scn::Scene, scripts), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_Scene_scripts_clear, mq_dyn_scn_Scene_scripts_size, mq_dyn_scn_Scene_scripts_resize, mq_dyn_scn_Scene_scripts_elem },
-    { "overlay_script", (uint32_t)offsetof(scn::Scene, overlay_script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "global_script", (uint32_t)offsetof(scn::Scene, global_script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(scn::Scene, width), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(scn::Scene, height), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "seed", (uint32_t)offsetof(scn::Scene, seed), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "views", (uint32_t)offsetof(scn::Scene, views), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "eye_sep", (uint32_t)offsetof(scn::Scene, eye_sep), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "render_scale", (uint32_t)offsetof(scn::Scene, render_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_color", (uint32_t)offsetof(scn::Scene, env_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_intensity", (uint32_t)offsetof(scn::Scene, env_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_sky_color", (uint32_t)offsetof(scn::Scene, env_sky_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_ground_color", (uint32_t)offsetof(scn::Scene, env_ground_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_highlight", (uint32_t)offsetof(scn::Scene, env_highlight), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_rotation", (uint32_t)offsetof(scn::Scene, env_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_texture", (uint32_t)offsetof(scn::Scene, env_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_background", (uint32_t)offsetof(scn::Scene, env_background), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "env_cubemap", (uint32_t)offsetof(scn::Scene, env_cubemap), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "msaa_samples", (uint32_t)offsetof(scn::Scene, msaa_samples), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gravity_y", (uint32_t)offsetof(scn::Scene, gravity_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "restitution", (uint32_t)offsetof(scn::Scene, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "version", (uint32_t)offsetof(scn::Scene, version), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[0] },
+    { "title", (uint32_t)offsetof(scn::Scene, title), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[1] },
+    { "script", (uint32_t)offsetof(scn::Scene, script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[2] },
+    { "scripts", (uint32_t)offsetof(scn::Scene, scripts), MQ_TK_ARRAY_DYN, 0u, 0u, 0u, MQ_ELEM_TYPE_STRING, mq_dyn_scn_Scene_scripts_clear, mq_dyn_scn_Scene_scripts_size, mq_dyn_scn_Scene_scripts_resize, mq_dyn_scn_Scene_scripts_elem, &mq_acc_scn_Scene[3] },
+    { "overlay_script", (uint32_t)offsetof(scn::Scene, overlay_script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[4] },
+    { "global_script", (uint32_t)offsetof(scn::Scene, global_script), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[5] },
+    { "width", (uint32_t)offsetof(scn::Scene, width), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[6] },
+    { "height", (uint32_t)offsetof(scn::Scene, height), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[7] },
+    { "seed", (uint32_t)offsetof(scn::Scene, seed), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[8] },
+    { "views", (uint32_t)offsetof(scn::Scene, views), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[9] },
+    { "eye_sep", (uint32_t)offsetof(scn::Scene, eye_sep), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[10] },
+    { "render_scale", (uint32_t)offsetof(scn::Scene, render_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[11] },
+    { "env_color", (uint32_t)offsetof(scn::Scene, env_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[12] },
+    { "env_intensity", (uint32_t)offsetof(scn::Scene, env_intensity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[13] },
+    { "env_sky_color", (uint32_t)offsetof(scn::Scene, env_sky_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[14] },
+    { "env_ground_color", (uint32_t)offsetof(scn::Scene, env_ground_color), MQ_TK_STRUCT, 2997158578u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[15] },
+    { "env_highlight", (uint32_t)offsetof(scn::Scene, env_highlight), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[16] },
+    { "env_rotation", (uint32_t)offsetof(scn::Scene, env_rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[17] },
+    { "env_texture", (uint32_t)offsetof(scn::Scene, env_texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[18] },
+    { "env_background", (uint32_t)offsetof(scn::Scene, env_background), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[19] },
+    { "env_cubemap", (uint32_t)offsetof(scn::Scene, env_cubemap), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[20] },
+    { "msaa_samples", (uint32_t)offsetof(scn::Scene, msaa_samples), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[21] },
+    { "gravity_y", (uint32_t)offsetof(scn::Scene, gravity_y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[22] },
+    { "restitution", (uint32_t)offsetof(scn::Scene, restitution), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Scene[23] },
 };
 
+static const char* mq_acc_scn_SceneInstance_source_gets(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return s.source.c_str(); }
+static void mq_acc_scn_SceneInstance_source_sets(void* p, const char* v) { auto& s = *static_cast<scn::SceneInstance*>(p); s.source = v ? v : ""; }
+static const void* mq_acc_scn_SceneInstance_source_getp(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return &s.source; }
+static void* mq_acc_scn_SceneInstance_source_getmp(void* p) { auto& s = *static_cast<scn::SceneInstance*>(p); return &s.source; }
+static const char* mq_acc_scn_SceneInstance_params_gets(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return s.params.c_str(); }
+static void mq_acc_scn_SceneInstance_params_sets(void* p, const char* v) { auto& s = *static_cast<scn::SceneInstance*>(p); s.params = v ? v : ""; }
+static const void* mq_acc_scn_SceneInstance_params_getp(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return &s.params; }
+static void* mq_acc_scn_SceneInstance_params_getmp(void* p) { auto& s = *static_cast<scn::SceneInstance*>(p); return &s.params; }
+static double mq_acc_scn_SceneInstance_paused_getf(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return s.paused ? 1.0 : 0.0; }
+static void mq_acc_scn_SceneInstance_paused_setf(void* p, double v) { auto& s = *static_cast<scn::SceneInstance*>(p); s.paused = v != 0.0; }
+static double mq_acc_scn_SceneInstance_active_getf(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return s.active ? 1.0 : 0.0; }
+static void mq_acc_scn_SceneInstance_active_setf(void* p, double v) { auto& s = *static_cast<scn::SceneInstance*>(p); s.active = v != 0.0; }
+static double mq_acc_scn_SceneInstance_detached_getf(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return s.detached ? 1.0 : 0.0; }
+static void mq_acc_scn_SceneInstance_detached_setf(void* p, double v) { auto& s = *static_cast<scn::SceneInstance*>(p); s.detached = v != 0.0; }
+static double mq_acc_scn_SceneInstance_instance_id_getf(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return static_cast<double>(s.instance_id); }
+static void mq_acc_scn_SceneInstance_instance_id_setf(void* p, double v) { auto& s = *static_cast<scn::SceneInstance*>(p); s.instance_id = static_cast<decltype(s.instance_id)>(v); }
+static double mq_acc_scn_SceneInstance_state_getf(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return static_cast<double>(s.state); }
+static void mq_acc_scn_SceneInstance_state_setf(void* p, double v) { auto& s = *static_cast<scn::SceneInstance*>(p); s.state = static_cast<decltype(s.state)>(v); }
+static double mq_acc_scn_SceneInstance_error_getf(const void* p) { const auto& s = *static_cast<const scn::SceneInstance*>(p); return static_cast<double>(s.error); }
+static void mq_acc_scn_SceneInstance_error_setf(void* p, double v) { auto& s = *static_cast<scn::SceneInstance*>(p); s.error = static_cast<decltype(s.error)>(v); }
+static const mq_field_accessor mq_acc_scn_SceneInstance[] = {
+    { 0, 0, mq_acc_scn_SceneInstance_source_gets, mq_acc_scn_SceneInstance_source_sets, mq_acc_scn_SceneInstance_source_getp, mq_acc_scn_SceneInstance_source_getmp },
+    { 0, 0, mq_acc_scn_SceneInstance_params_gets, mq_acc_scn_SceneInstance_params_sets, mq_acc_scn_SceneInstance_params_getp, mq_acc_scn_SceneInstance_params_getmp },
+    { mq_acc_scn_SceneInstance_paused_getf, mq_acc_scn_SceneInstance_paused_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_SceneInstance_active_getf, mq_acc_scn_SceneInstance_active_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_SceneInstance_detached_getf, mq_acc_scn_SceneInstance_detached_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_SceneInstance_instance_id_getf, mq_acc_scn_SceneInstance_instance_id_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_SceneInstance_state_getf, mq_acc_scn_SceneInstance_state_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_SceneInstance_error_getf, mq_acc_scn_SceneInstance_error_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scn_SceneInstance[] = {
-    { "source", (uint32_t)offsetof(scn::SceneInstance, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "params", (uint32_t)offsetof(scn::SceneInstance, params), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "paused", (uint32_t)offsetof(scn::SceneInstance, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "active", (uint32_t)offsetof(scn::SceneInstance, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "detached", (uint32_t)offsetof(scn::SceneInstance, detached), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "instance_id", (uint32_t)offsetof(scn::SceneInstance, instance_id), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "state", (uint32_t)offsetof(scn::SceneInstance, state), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "error", (uint32_t)offsetof(scn::SceneInstance, error), MQ_TK_U16, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "source", (uint32_t)offsetof(scn::SceneInstance, source), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_SceneInstance[0] },
+    { "params", (uint32_t)offsetof(scn::SceneInstance, params), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_SceneInstance[1] },
+    { "paused", (uint32_t)offsetof(scn::SceneInstance, paused), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_SceneInstance[2] },
+    { "active", (uint32_t)offsetof(scn::SceneInstance, active), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_SceneInstance[3] },
+    { "detached", (uint32_t)offsetof(scn::SceneInstance, detached), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_SceneInstance[4] },
+    { "instance_id", (uint32_t)offsetof(scn::SceneInstance, instance_id), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_scn_SceneInstance[5] },
+    { "state", (uint32_t)offsetof(scn::SceneInstance, state), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_scn_SceneInstance[6] },
+    { "error", (uint32_t)offsetof(scn::SceneInstance, error), MQ_TK_U16, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_scn_SceneInstance[7] },
 };
 
+static double mq_acc_scn_Sprite_radius_getf(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return static_cast<double>(s.radius); }
+static void mq_acc_scn_Sprite_radius_setf(void* p, double v) { auto& s = *static_cast<scn::Sprite*>(p); s.radius = static_cast<decltype(s.radius)>(v); }
+static double mq_acc_scn_Sprite_width_getf(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return static_cast<double>(s.width); }
+static void mq_acc_scn_Sprite_width_setf(void* p, double v) { auto& s = *static_cast<scn::Sprite*>(p); s.width = static_cast<decltype(s.width)>(v); }
+static double mq_acc_scn_Sprite_height_getf(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return static_cast<double>(s.height); }
+static void mq_acc_scn_Sprite_height_setf(void* p, double v) { auto& s = *static_cast<scn::Sprite*>(p); s.height = static_cast<decltype(s.height)>(v); }
+static double mq_acc_scn_Sprite_r_getf(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return static_cast<double>(s.r); }
+static void mq_acc_scn_Sprite_r_setf(void* p, double v) { auto& s = *static_cast<scn::Sprite*>(p); s.r = static_cast<decltype(s.r)>(v); }
+static double mq_acc_scn_Sprite_g_getf(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return static_cast<double>(s.g); }
+static void mq_acc_scn_Sprite_g_setf(void* p, double v) { auto& s = *static_cast<scn::Sprite*>(p); s.g = static_cast<decltype(s.g)>(v); }
+static double mq_acc_scn_Sprite_b_getf(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return static_cast<double>(s.b); }
+static void mq_acc_scn_Sprite_b_setf(void* p, double v) { auto& s = *static_cast<scn::Sprite*>(p); s.b = static_cast<decltype(s.b)>(v); }
+static const char* mq_acc_scn_Sprite_texture_gets(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return s.texture.c_str(); }
+static void mq_acc_scn_Sprite_texture_sets(void* p, const char* v) { auto& s = *static_cast<scn::Sprite*>(p); s.texture = v ? v : ""; }
+static const void* mq_acc_scn_Sprite_texture_getp(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return &s.texture; }
+static void* mq_acc_scn_Sprite_texture_getmp(void* p) { auto& s = *static_cast<scn::Sprite*>(p); return &s.texture; }
+static const char* mq_acc_scn_Sprite_material_gets(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return s.material.c_str(); }
+static void mq_acc_scn_Sprite_material_sets(void* p, const char* v) { auto& s = *static_cast<scn::Sprite*>(p); s.material = v ? v : ""; }
+static const void* mq_acc_scn_Sprite_material_getp(const void* p) { const auto& s = *static_cast<const scn::Sprite*>(p); return &s.material; }
+static void* mq_acc_scn_Sprite_material_getmp(void* p) { auto& s = *static_cast<scn::Sprite*>(p); return &s.material; }
+static const mq_field_accessor mq_acc_scn_Sprite[] = {
+    { mq_acc_scn_Sprite_radius_getf, mq_acc_scn_Sprite_radius_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Sprite_width_getf, mq_acc_scn_Sprite_width_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Sprite_height_getf, mq_acc_scn_Sprite_height_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Sprite_r_getf, mq_acc_scn_Sprite_r_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Sprite_g_getf, mq_acc_scn_Sprite_g_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Sprite_b_getf, mq_acc_scn_Sprite_b_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_scn_Sprite_texture_gets, mq_acc_scn_Sprite_texture_sets, mq_acc_scn_Sprite_texture_getp, mq_acc_scn_Sprite_texture_getmp },
+    { 0, 0, mq_acc_scn_Sprite_material_gets, mq_acc_scn_Sprite_material_sets, mq_acc_scn_Sprite_material_getp, mq_acc_scn_Sprite_material_getmp },
+};
 static const mq_field_desc mq_fields_scn_Sprite[] = {
-    { "radius", (uint32_t)offsetof(scn::Sprite, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "width", (uint32_t)offsetof(scn::Sprite, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "height", (uint32_t)offsetof(scn::Sprite, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "r", (uint32_t)offsetof(scn::Sprite, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "g", (uint32_t)offsetof(scn::Sprite, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "b", (uint32_t)offsetof(scn::Sprite, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "texture", (uint32_t)offsetof(scn::Sprite, texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "material", (uint32_t)offsetof(scn::Sprite, material), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "radius", (uint32_t)offsetof(scn::Sprite, radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Sprite[0] },
+    { "width", (uint32_t)offsetof(scn::Sprite, width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Sprite[1] },
+    { "height", (uint32_t)offsetof(scn::Sprite, height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Sprite[2] },
+    { "r", (uint32_t)offsetof(scn::Sprite, r), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Sprite[3] },
+    { "g", (uint32_t)offsetof(scn::Sprite, g), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Sprite[4] },
+    { "b", (uint32_t)offsetof(scn::Sprite, b), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Sprite[5] },
+    { "texture", (uint32_t)offsetof(scn::Sprite, texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Sprite[6] },
+    { "material", (uint32_t)offsetof(scn::Sprite, material), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Sprite[7] },
 };
 
+static const void* mq_acc_scn_SpriteMaterial_base_color_getp(const void* p) { const auto& s = *static_cast<const scn::SpriteMaterial*>(p); return &s.base_color; }
+static void* mq_acc_scn_SpriteMaterial_base_color_getmp(void* p) { auto& s = *static_cast<scn::SpriteMaterial*>(p); return &s.base_color; }
+static const char* mq_acc_scn_SpriteMaterial_texture_gets(const void* p) { const auto& s = *static_cast<const scn::SpriteMaterial*>(p); return s.texture.c_str(); }
+static void mq_acc_scn_SpriteMaterial_texture_sets(void* p, const char* v) { auto& s = *static_cast<scn::SpriteMaterial*>(p); s.texture = v ? v : ""; }
+static const void* mq_acc_scn_SpriteMaterial_texture_getp(const void* p) { const auto& s = *static_cast<const scn::SpriteMaterial*>(p); return &s.texture; }
+static void* mq_acc_scn_SpriteMaterial_texture_getmp(void* p) { auto& s = *static_cast<scn::SpriteMaterial*>(p); return &s.texture; }
+static const mq_field_accessor mq_acc_scn_SpriteMaterial[] = {
+    { 0, 0, 0, 0, mq_acc_scn_SpriteMaterial_base_color_getp, mq_acc_scn_SpriteMaterial_base_color_getmp },
+    { 0, 0, mq_acc_scn_SpriteMaterial_texture_gets, mq_acc_scn_SpriteMaterial_texture_sets, mq_acc_scn_SpriteMaterial_texture_getp, mq_acc_scn_SpriteMaterial_texture_getmp },
+};
 static const mq_field_desc mq_fields_scn_SpriteMaterial[] = {
-    { "base_color", (uint32_t)offsetof(scn::SpriteMaterial, base_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "texture", (uint32_t)offsetof(scn::SpriteMaterial, texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "base_color", (uint32_t)offsetof(scn::SpriteMaterial, base_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_SpriteMaterial[0] },
+    { "texture", (uint32_t)offsetof(scn::SpriteMaterial, texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_SpriteMaterial[1] },
 };
 
+static double mq_acc_scn_Transform2D_x_getf(const void* p) { const auto& s = *static_cast<const scn::Transform2D*>(p); return static_cast<double>(s.x); }
+static void mq_acc_scn_Transform2D_x_setf(void* p, double v) { auto& s = *static_cast<scn::Transform2D*>(p); s.x = static_cast<decltype(s.x)>(v); }
+static double mq_acc_scn_Transform2D_y_getf(const void* p) { const auto& s = *static_cast<const scn::Transform2D*>(p); return static_cast<double>(s.y); }
+static void mq_acc_scn_Transform2D_y_setf(void* p, double v) { auto& s = *static_cast<scn::Transform2D*>(p); s.y = static_cast<decltype(s.y)>(v); }
+static const mq_field_accessor mq_acc_scn_Transform2D[] = {
+    { mq_acc_scn_Transform2D_x_getf, mq_acc_scn_Transform2D_x_setf, 0, 0, 0, 0 },
+    { mq_acc_scn_Transform2D_y_getf, mq_acc_scn_Transform2D_y_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_scn_Transform2D[] = {
-    { "x", (uint32_t)offsetof(scn::Transform2D, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "y", (uint32_t)offsetof(scn::Transform2D, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "x", (uint32_t)offsetof(scn::Transform2D, x), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Transform2D[0] },
+    { "y", (uint32_t)offsetof(scn::Transform2D, y), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_scn_Transform2D[1] },
 };
 
+static double mq_acc_script_PropertyVariant_type_getf(const void* p) { const auto& s = *static_cast<const script::PropertyVariant*>(p); return static_cast<double>(static_cast<int64_t>(s.type)); }
+static void mq_acc_script_PropertyVariant_type_setf(void* p, double v) { auto& s = *static_cast<script::PropertyVariant*>(p); s.type = static_cast<decltype(s.type)>(v); }
+static double mq_acc_script_PropertyVariant_b_getf(const void* p) { const auto& s = *static_cast<const script::PropertyVariant*>(p); return s.b ? 1.0 : 0.0; }
+static void mq_acc_script_PropertyVariant_b_setf(void* p, double v) { auto& s = *static_cast<script::PropertyVariant*>(p); s.b = v != 0.0; }
+static double mq_acc_script_PropertyVariant_i_getf(const void* p) { const auto& s = *static_cast<const script::PropertyVariant*>(p); return static_cast<double>(s.i); }
+static void mq_acc_script_PropertyVariant_i_setf(void* p, double v) { auto& s = *static_cast<script::PropertyVariant*>(p); s.i = static_cast<decltype(s.i)>(v); }
+static double mq_acc_script_PropertyVariant_f_getf(const void* p) { const auto& s = *static_cast<const script::PropertyVariant*>(p); return static_cast<double>(s.f); }
+static void mq_acc_script_PropertyVariant_f_setf(void* p, double v) { auto& s = *static_cast<script::PropertyVariant*>(p); s.f = static_cast<decltype(s.f)>(v); }
+static const void* mq_acc_script_PropertyVariant_v_getp(const void* p) { const auto& s = *static_cast<const script::PropertyVariant*>(p); return &s.v; }
+static void* mq_acc_script_PropertyVariant_v_getmp(void* p) { auto& s = *static_cast<script::PropertyVariant*>(p); return &s.v; }
+static const char* mq_acc_script_PropertyVariant_s_gets(const void* p) { const auto& s = *static_cast<const script::PropertyVariant*>(p); return s.s.c_str(); }
+static void mq_acc_script_PropertyVariant_s_sets(void* p, const char* v) { auto& s = *static_cast<script::PropertyVariant*>(p); s.s = v ? v : ""; }
+static const void* mq_acc_script_PropertyVariant_s_getp(const void* p) { const auto& s = *static_cast<const script::PropertyVariant*>(p); return &s.s; }
+static void* mq_acc_script_PropertyVariant_s_getmp(void* p) { auto& s = *static_cast<script::PropertyVariant*>(p); return &s.s; }
+static const mq_field_accessor mq_acc_script_PropertyVariant[] = {
+    { mq_acc_script_PropertyVariant_type_getf, mq_acc_script_PropertyVariant_type_setf, 0, 0, 0, 0 },
+    { mq_acc_script_PropertyVariant_b_getf, mq_acc_script_PropertyVariant_b_setf, 0, 0, 0, 0 },
+    { mq_acc_script_PropertyVariant_i_getf, mq_acc_script_PropertyVariant_i_setf, 0, 0, 0, 0 },
+    { mq_acc_script_PropertyVariant_f_getf, mq_acc_script_PropertyVariant_f_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_script_PropertyVariant_v_getp, mq_acc_script_PropertyVariant_v_getmp },
+    { 0, 0, mq_acc_script_PropertyVariant_s_gets, mq_acc_script_PropertyVariant_s_sets, mq_acc_script_PropertyVariant_s_getp, mq_acc_script_PropertyVariant_s_getmp },
+};
 static const mq_field_desc mq_fields_script_PropertyVariant[] = {
-    { "type", (uint32_t)offsetof(script::PropertyVariant, type), MQ_TK_ENUM, 1710326670u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "b", (uint32_t)offsetof(script::PropertyVariant, b), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "i", (uint32_t)offsetof(script::PropertyVariant, i), MQ_TK_I64, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "f", (uint32_t)offsetof(script::PropertyVariant, f), MQ_TK_F64, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "v", (uint32_t)offsetof(script::PropertyVariant, v), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "s", (uint32_t)offsetof(script::PropertyVariant, s), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "type", (uint32_t)offsetof(script::PropertyVariant, type), MQ_TK_ENUM, 1710326670u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_PropertyVariant[0] },
+    { "b", (uint32_t)offsetof(script::PropertyVariant, b), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_PropertyVariant[1] },
+    { "i", (uint32_t)offsetof(script::PropertyVariant, i), MQ_TK_I64, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_PropertyVariant[2] },
+    { "f", (uint32_t)offsetof(script::PropertyVariant, f), MQ_TK_F64, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_PropertyVariant[3] },
+    { "v", (uint32_t)offsetof(script::PropertyVariant, v), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_PropertyVariant[4] },
+    { "s", (uint32_t)offsetof(script::PropertyVariant, s), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_PropertyVariant[5] },
 };
 
+static const void* mq_acc_script_Script_source_getp(const void* p) { const auto& s = *static_cast<const script::Script*>(p); return &s.source; }
+static void* mq_acc_script_Script_source_getmp(void* p) { auto& s = *static_cast<script::Script*>(p); return &s.source; }
+static double mq_acc_script_Script_language_getf(const void* p) { const auto& s = *static_cast<const script::Script*>(p); return static_cast<double>(static_cast<int64_t>(s.language)); }
+static void mq_acc_script_Script_language_setf(void* p, double v) { auto& s = *static_cast<script::Script*>(p); s.language = static_cast<decltype(s.language)>(v); }
+static double mq_acc_script_Script_enabled_getf(const void* p) { const auto& s = *static_cast<const script::Script*>(p); return s.enabled ? 1.0 : 0.0; }
+static void mq_acc_script_Script_enabled_setf(void* p, double v) { auto& s = *static_cast<script::Script*>(p); s.enabled = v != 0.0; }
+static double mq_acc_script_Script_callbacks_getf(const void* p) { const auto& s = *static_cast<const script::Script*>(p); return static_cast<double>(s.callbacks); }
+static void mq_acc_script_Script_callbacks_setf(void* p, double v) { auto& s = *static_cast<script::Script*>(p); s.callbacks = static_cast<decltype(s.callbacks)>(v); }
+static double mq_acc_script_Script_vm_getf(const void* p) { const auto& s = *static_cast<const script::Script*>(p); return static_cast<double>(s.vm); }
+static void mq_acc_script_Script_vm_setf(void* p, double v) { auto& s = *static_cast<script::Script*>(p); s.vm = static_cast<decltype(s.vm)>(v); }
+static double mq_acc_script_Script_expose_defs_getf(const void* p) { const auto& s = *static_cast<const script::Script*>(p); return static_cast<double>(s.expose_defs); }
+static void mq_acc_script_Script_expose_defs_setf(void* p, double v) { auto& s = *static_cast<script::Script*>(p); s.expose_defs = static_cast<decltype(s.expose_defs)>(v); }
+static double mq_acc_script_Script_init_err_getf(const void* p) { const auto& s = *static_cast<const script::Script*>(p); return static_cast<double>(s.init_err); }
+static void mq_acc_script_Script_init_err_setf(void* p, double v) { auto& s = *static_cast<script::Script*>(p); s.init_err = static_cast<decltype(s.init_err)>(v); }
+static const mq_field_accessor mq_acc_script_Script[] = {
+    { 0, 0, 0, 0, mq_acc_script_Script_source_getp, mq_acc_script_Script_source_getmp },
+    { mq_acc_script_Script_language_getf, mq_acc_script_Script_language_setf, 0, 0, 0, 0 },
+    { mq_acc_script_Script_enabled_getf, mq_acc_script_Script_enabled_setf, 0, 0, 0, 0 },
+    { mq_acc_script_Script_callbacks_getf, mq_acc_script_Script_callbacks_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0 },
+    { mq_acc_script_Script_vm_getf, mq_acc_script_Script_vm_setf, 0, 0, 0, 0 },
+    { mq_acc_script_Script_expose_defs_getf, mq_acc_script_Script_expose_defs_setf, 0, 0, 0, 0 },
+    { mq_acc_script_Script_init_err_getf, mq_acc_script_Script_init_err_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_script_Script[] = {
-    { "source", (uint32_t)offsetof(script::Script, source), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "language", (uint32_t)offsetof(script::Script, language), MQ_TK_ENUM, 3668652633u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "enabled", (uint32_t)offsetof(script::Script, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "callbacks", (uint32_t)offsetof(script::Script, callbacks), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "exposed", (uint32_t)offsetof(script::Script, exposed), MQ_TK_MAP, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "vm", (uint32_t)offsetof(script::Script, vm), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "expose_defs", (uint32_t)offsetof(script::Script, expose_defs), MQ_TK_U64, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "init_err", (uint32_t)offsetof(script::Script, init_err), MQ_TK_U16, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "source", (uint32_t)offsetof(script::Script, source), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_Script[0] },
+    { "language", (uint32_t)offsetof(script::Script, language), MQ_TK_ENUM, 3668652633u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_Script[1] },
+    { "enabled", (uint32_t)offsetof(script::Script, enabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_Script[2] },
+    { "callbacks", (uint32_t)offsetof(script::Script, callbacks), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_Script[3] },
+    { "exposed", (uint32_t)offsetof(script::Script, exposed), MQ_TK_MAP, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_script_Script[4] },
+    { "vm", (uint32_t)offsetof(script::Script, vm), MQ_TK_U64, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_script_Script[5] },
+    { "expose_defs", (uint32_t)offsetof(script::Script, expose_defs), MQ_TK_U64, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_script_Script[6] },
+    { "init_err", (uint32_t)offsetof(script::Script, init_err), MQ_TK_U16, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_script_Script[7] },
 };
 
+static const char* mq_acc_ui_Button_text_gets(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return s.text.c_str(); }
+static void mq_acc_ui_Button_text_sets(void* p, const char* v) { auto& s = *static_cast<ui::Button*>(p); s.text = v ? v : ""; }
+static const void* mq_acc_ui_Button_text_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.text; }
+static void* mq_acc_ui_Button_text_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.text; }
+static const void* mq_acc_ui_Button_icon_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.icon; }
+static void* mq_acc_ui_Button_icon_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.icon; }
+static const void* mq_acc_ui_Button_font_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.font; }
+static void* mq_acc_ui_Button_font_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.font; }
+static double mq_acc_ui_Button_font_size_getf(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return static_cast<double>(s.font_size); }
+static void mq_acc_ui_Button_font_size_setf(void* p, double v) { auto& s = *static_cast<ui::Button*>(p); s.font_size = static_cast<decltype(s.font_size)>(v); }
+static double mq_acc_ui_Button_icon_align_getf(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return static_cast<double>(static_cast<int64_t>(s.icon_align)); }
+static void mq_acc_ui_Button_icon_align_setf(void* p, double v) { auto& s = *static_cast<ui::Button*>(p); s.icon_align = static_cast<decltype(s.icon_align)>(v); }
+static const void* mq_acc_ui_Button_text_color_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.text_color; }
+static void* mq_acc_ui_Button_text_color_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.text_color; }
+static const void* mq_acc_ui_Button_style_normal_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.style_normal; }
+static void* mq_acc_ui_Button_style_normal_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.style_normal; }
+static const void* mq_acc_ui_Button_style_hover_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.style_hover; }
+static void* mq_acc_ui_Button_style_hover_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.style_hover; }
+static const void* mq_acc_ui_Button_style_pressed_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.style_pressed; }
+static void* mq_acc_ui_Button_style_pressed_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.style_pressed; }
+static const void* mq_acc_ui_Button_style_disabled_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.style_disabled; }
+static void* mq_acc_ui_Button_style_disabled_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.style_disabled; }
+static const void* mq_acc_ui_Button_bg_color_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.bg_color; }
+static void* mq_acc_ui_Button_bg_color_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.bg_color; }
+static double mq_acc_ui_Button_toggle_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return s.toggle_mode ? 1.0 : 0.0; }
+static void mq_acc_ui_Button_toggle_mode_setf(void* p, double v) { auto& s = *static_cast<ui::Button*>(p); s.toggle_mode = v != 0.0; }
+static double mq_acc_ui_Button_button_pressed_getf(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return s.button_pressed ? 1.0 : 0.0; }
+static void mq_acc_ui_Button_button_pressed_setf(void* p, double v) { auto& s = *static_cast<ui::Button*>(p); s.button_pressed = v != 0.0; }
+static double mq_acc_ui_Button_disabled_getf(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return s.disabled ? 1.0 : 0.0; }
+static void mq_acc_ui_Button_disabled_setf(void* p, double v) { auto& s = *static_cast<ui::Button*>(p); s.disabled = v != 0.0; }
+static const char* mq_acc_ui_Button_action_gets(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return s.action.c_str(); }
+static void mq_acc_ui_Button_action_sets(void* p, const char* v) { auto& s = *static_cast<ui::Button*>(p); s.action = v ? v : ""; }
+static const void* mq_acc_ui_Button_action_getp(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return &s.action; }
+static void* mq_acc_ui_Button_action_getmp(void* p) { auto& s = *static_cast<ui::Button*>(p); return &s.action; }
+static double mq_acc_ui_Button_state_getf(const void* p) { const auto& s = *static_cast<const ui::Button*>(p); return static_cast<double>(static_cast<int64_t>(s.state)); }
+static void mq_acc_ui_Button_state_setf(void* p, double v) { auto& s = *static_cast<ui::Button*>(p); s.state = static_cast<decltype(s.state)>(v); }
+static const mq_field_accessor mq_acc_ui_Button[] = {
+    { 0, 0, mq_acc_ui_Button_text_gets, mq_acc_ui_Button_text_sets, mq_acc_ui_Button_text_getp, mq_acc_ui_Button_text_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Button_icon_getp, mq_acc_ui_Button_icon_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Button_font_getp, mq_acc_ui_Button_font_getmp },
+    { mq_acc_ui_Button_font_size_getf, mq_acc_ui_Button_font_size_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Button_icon_align_getf, mq_acc_ui_Button_icon_align_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Button_text_color_getp, mq_acc_ui_Button_text_color_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Button_style_normal_getp, mq_acc_ui_Button_style_normal_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Button_style_hover_getp, mq_acc_ui_Button_style_hover_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Button_style_pressed_getp, mq_acc_ui_Button_style_pressed_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Button_style_disabled_getp, mq_acc_ui_Button_style_disabled_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Button_bg_color_getp, mq_acc_ui_Button_bg_color_getmp },
+    { mq_acc_ui_Button_toggle_mode_getf, mq_acc_ui_Button_toggle_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Button_button_pressed_getf, mq_acc_ui_Button_button_pressed_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Button_disabled_getf, mq_acc_ui_Button_disabled_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_ui_Button_action_gets, mq_acc_ui_Button_action_sets, mq_acc_ui_Button_action_getp, mq_acc_ui_Button_action_getmp },
+    { mq_acc_ui_Button_state_getf, mq_acc_ui_Button_state_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_Button[] = {
-    { "text", (uint32_t)offsetof(ui::Button, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "icon", (uint32_t)offsetof(ui::Button, icon), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font", (uint32_t)offsetof(ui::Button, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font_size", (uint32_t)offsetof(ui::Button, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "icon_align", (uint32_t)offsetof(ui::Button, icon_align), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text_color", (uint32_t)offsetof(ui::Button, text_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "style_normal", (uint32_t)offsetof(ui::Button, style_normal), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "style_hover", (uint32_t)offsetof(ui::Button, style_hover), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "style_pressed", (uint32_t)offsetof(ui::Button, style_pressed), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "style_disabled", (uint32_t)offsetof(ui::Button, style_disabled), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bg_color", (uint32_t)offsetof(ui::Button, bg_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "toggle_mode", (uint32_t)offsetof(ui::Button, toggle_mode), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "button_pressed", (uint32_t)offsetof(ui::Button, button_pressed), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "disabled", (uint32_t)offsetof(ui::Button, disabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "action", (uint32_t)offsetof(ui::Button, action), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "state", (uint32_t)offsetof(ui::Button, state), MQ_TK_ENUM, 1789463920u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "text", (uint32_t)offsetof(ui::Button, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[0] },
+    { "icon", (uint32_t)offsetof(ui::Button, icon), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[1] },
+    { "font", (uint32_t)offsetof(ui::Button, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[2] },
+    { "font_size", (uint32_t)offsetof(ui::Button, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[3] },
+    { "icon_align", (uint32_t)offsetof(ui::Button, icon_align), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[4] },
+    { "text_color", (uint32_t)offsetof(ui::Button, text_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[5] },
+    { "style_normal", (uint32_t)offsetof(ui::Button, style_normal), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[6] },
+    { "style_hover", (uint32_t)offsetof(ui::Button, style_hover), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[7] },
+    { "style_pressed", (uint32_t)offsetof(ui::Button, style_pressed), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[8] },
+    { "style_disabled", (uint32_t)offsetof(ui::Button, style_disabled), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[9] },
+    { "bg_color", (uint32_t)offsetof(ui::Button, bg_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[10] },
+    { "toggle_mode", (uint32_t)offsetof(ui::Button, toggle_mode), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[11] },
+    { "button_pressed", (uint32_t)offsetof(ui::Button, button_pressed), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[12] },
+    { "disabled", (uint32_t)offsetof(ui::Button, disabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[13] },
+    { "action", (uint32_t)offsetof(ui::Button, action), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[14] },
+    { "state", (uint32_t)offsetof(ui::Button, state), MQ_TK_ENUM, 1789463920u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Button[15] },
 };
 
+static double mq_acc_ui_Canvas_design_width_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.design_width); }
+static void mq_acc_ui_Canvas_design_width_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.design_width = static_cast<decltype(s.design_width)>(v); }
+static double mq_acc_ui_Canvas_design_height_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.design_height); }
+static void mq_acc_ui_Canvas_design_height_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.design_height = static_cast<decltype(s.design_height)>(v); }
+static double mq_acc_ui_Canvas_fit_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(static_cast<int64_t>(s.fit_mode)); }
+static void mq_acc_ui_Canvas_fit_mode_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.fit_mode = static_cast<decltype(s.fit_mode)>(v); }
+static double mq_acc_ui_Canvas_align_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(static_cast<int64_t>(s.align)); }
+static void mq_acc_ui_Canvas_align_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.align = static_cast<decltype(s.align)>(v); }
+static double mq_acc_ui_Canvas_dpi_scale_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return s.dpi_scale ? 1.0 : 0.0; }
+static void mq_acc_ui_Canvas_dpi_scale_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.dpi_scale = v != 0.0; }
+static double mq_acc_ui_Canvas_render_scale_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.render_scale); }
+static void mq_acc_ui_Canvas_render_scale_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.render_scale = static_cast<decltype(s.render_scale)>(v); }
+static double mq_acc_ui_Canvas_min_scale_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.min_scale); }
+static void mq_acc_ui_Canvas_min_scale_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.min_scale = static_cast<decltype(s.min_scale)>(v); }
+static double mq_acc_ui_Canvas_max_scale_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.max_scale); }
+static void mq_acc_ui_Canvas_max_scale_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.max_scale = static_cast<decltype(s.max_scale)>(v); }
+static double mq_acc_ui_Canvas_scale_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.scale); }
+static void mq_acc_ui_Canvas_scale_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.scale = static_cast<decltype(s.scale)>(v); }
+static double mq_acc_ui_Canvas_scale_x_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.scale_x); }
+static void mq_acc_ui_Canvas_scale_x_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.scale_x = static_cast<decltype(s.scale_x)>(v); }
+static double mq_acc_ui_Canvas_scale_y_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.scale_y); }
+static void mq_acc_ui_Canvas_scale_y_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.scale_y = static_cast<decltype(s.scale_y)>(v); }
+static double mq_acc_ui_Canvas_offset_x_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.offset_x); }
+static void mq_acc_ui_Canvas_offset_x_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.offset_x = static_cast<decltype(s.offset_x)>(v); }
+static double mq_acc_ui_Canvas_offset_y_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.offset_y); }
+static void mq_acc_ui_Canvas_offset_y_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.offset_y = static_cast<decltype(s.offset_y)>(v); }
+static double mq_acc_ui_Canvas_viewport_w_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.viewport_w); }
+static void mq_acc_ui_Canvas_viewport_w_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.viewport_w = static_cast<decltype(s.viewport_w)>(v); }
+static double mq_acc_ui_Canvas_viewport_h_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.viewport_h); }
+static void mq_acc_ui_Canvas_viewport_h_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.viewport_h = static_cast<decltype(s.viewport_h)>(v); }
+static double mq_acc_ui_Canvas_window_w_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.window_w); }
+static void mq_acc_ui_Canvas_window_w_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.window_w = static_cast<decltype(s.window_w)>(v); }
+static double mq_acc_ui_Canvas_window_h_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.window_h); }
+static void mq_acc_ui_Canvas_window_h_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.window_h = static_cast<decltype(s.window_h)>(v); }
+static double mq_acc_ui_Canvas_device_scale_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.device_scale); }
+static void mq_acc_ui_Canvas_device_scale_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.device_scale = static_cast<decltype(s.device_scale)>(v); }
+static double mq_acc_ui_Canvas_safe_left_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.safe_left); }
+static void mq_acc_ui_Canvas_safe_left_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.safe_left = static_cast<decltype(s.safe_left)>(v); }
+static double mq_acc_ui_Canvas_safe_top_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.safe_top); }
+static void mq_acc_ui_Canvas_safe_top_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.safe_top = static_cast<decltype(s.safe_top)>(v); }
+static double mq_acc_ui_Canvas_safe_right_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.safe_right); }
+static void mq_acc_ui_Canvas_safe_right_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.safe_right = static_cast<decltype(s.safe_right)>(v); }
+static double mq_acc_ui_Canvas_safe_bottom_getf(const void* p) { const auto& s = *static_cast<const ui::Canvas*>(p); return static_cast<double>(s.safe_bottom); }
+static void mq_acc_ui_Canvas_safe_bottom_setf(void* p, double v) { auto& s = *static_cast<ui::Canvas*>(p); s.safe_bottom = static_cast<decltype(s.safe_bottom)>(v); }
+static const mq_field_accessor mq_acc_ui_Canvas[] = {
+    { mq_acc_ui_Canvas_design_width_getf, mq_acc_ui_Canvas_design_width_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_design_height_getf, mq_acc_ui_Canvas_design_height_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_fit_mode_getf, mq_acc_ui_Canvas_fit_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_align_getf, mq_acc_ui_Canvas_align_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_dpi_scale_getf, mq_acc_ui_Canvas_dpi_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_render_scale_getf, mq_acc_ui_Canvas_render_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_min_scale_getf, mq_acc_ui_Canvas_min_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_max_scale_getf, mq_acc_ui_Canvas_max_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_scale_getf, mq_acc_ui_Canvas_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_scale_x_getf, mq_acc_ui_Canvas_scale_x_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_scale_y_getf, mq_acc_ui_Canvas_scale_y_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_offset_x_getf, mq_acc_ui_Canvas_offset_x_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_offset_y_getf, mq_acc_ui_Canvas_offset_y_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_viewport_w_getf, mq_acc_ui_Canvas_viewport_w_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_viewport_h_getf, mq_acc_ui_Canvas_viewport_h_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_window_w_getf, mq_acc_ui_Canvas_window_w_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_window_h_getf, mq_acc_ui_Canvas_window_h_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_device_scale_getf, mq_acc_ui_Canvas_device_scale_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_safe_left_getf, mq_acc_ui_Canvas_safe_left_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_safe_top_getf, mq_acc_ui_Canvas_safe_top_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_safe_right_getf, mq_acc_ui_Canvas_safe_right_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Canvas_safe_bottom_getf, mq_acc_ui_Canvas_safe_bottom_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_Canvas[] = {
-    { "design_width", (uint32_t)offsetof(ui::Canvas, design_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "design_height", (uint32_t)offsetof(ui::Canvas, design_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fit_mode", (uint32_t)offsetof(ui::Canvas, fit_mode), MQ_TK_ENUM, 2154508541u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align", (uint32_t)offsetof(ui::Canvas, align), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "dpi_scale", (uint32_t)offsetof(ui::Canvas, dpi_scale), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "render_scale", (uint32_t)offsetof(ui::Canvas, render_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "min_scale", (uint32_t)offsetof(ui::Canvas, min_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_scale", (uint32_t)offsetof(ui::Canvas, max_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scale", (uint32_t)offsetof(ui::Canvas, scale), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "scale_x", (uint32_t)offsetof(ui::Canvas, scale_x), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "scale_y", (uint32_t)offsetof(ui::Canvas, scale_y), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "offset_x", (uint32_t)offsetof(ui::Canvas, offset_x), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "offset_y", (uint32_t)offsetof(ui::Canvas, offset_y), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "viewport_w", (uint32_t)offsetof(ui::Canvas, viewport_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "viewport_h", (uint32_t)offsetof(ui::Canvas, viewport_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "window_w", (uint32_t)offsetof(ui::Canvas, window_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "window_h", (uint32_t)offsetof(ui::Canvas, window_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "device_scale", (uint32_t)offsetof(ui::Canvas, device_scale), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "safe_left", (uint32_t)offsetof(ui::Canvas, safe_left), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "safe_top", (uint32_t)offsetof(ui::Canvas, safe_top), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "safe_right", (uint32_t)offsetof(ui::Canvas, safe_right), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "safe_bottom", (uint32_t)offsetof(ui::Canvas, safe_bottom), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "design_width", (uint32_t)offsetof(ui::Canvas, design_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[0] },
+    { "design_height", (uint32_t)offsetof(ui::Canvas, design_height), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[1] },
+    { "fit_mode", (uint32_t)offsetof(ui::Canvas, fit_mode), MQ_TK_ENUM, 2154508541u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[2] },
+    { "align", (uint32_t)offsetof(ui::Canvas, align), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[3] },
+    { "dpi_scale", (uint32_t)offsetof(ui::Canvas, dpi_scale), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[4] },
+    { "render_scale", (uint32_t)offsetof(ui::Canvas, render_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[5] },
+    { "min_scale", (uint32_t)offsetof(ui::Canvas, min_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[6] },
+    { "max_scale", (uint32_t)offsetof(ui::Canvas, max_scale), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[7] },
+    { "scale", (uint32_t)offsetof(ui::Canvas, scale), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[8] },
+    { "scale_x", (uint32_t)offsetof(ui::Canvas, scale_x), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[9] },
+    { "scale_y", (uint32_t)offsetof(ui::Canvas, scale_y), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[10] },
+    { "offset_x", (uint32_t)offsetof(ui::Canvas, offset_x), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[11] },
+    { "offset_y", (uint32_t)offsetof(ui::Canvas, offset_y), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[12] },
+    { "viewport_w", (uint32_t)offsetof(ui::Canvas, viewport_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[13] },
+    { "viewport_h", (uint32_t)offsetof(ui::Canvas, viewport_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[14] },
+    { "window_w", (uint32_t)offsetof(ui::Canvas, window_w), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[15] },
+    { "window_h", (uint32_t)offsetof(ui::Canvas, window_h), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[16] },
+    { "device_scale", (uint32_t)offsetof(ui::Canvas, device_scale), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[17] },
+    { "safe_left", (uint32_t)offsetof(ui::Canvas, safe_left), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[18] },
+    { "safe_top", (uint32_t)offsetof(ui::Canvas, safe_top), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[19] },
+    { "safe_right", (uint32_t)offsetof(ui::Canvas, safe_right), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[20] },
+    { "safe_bottom", (uint32_t)offsetof(ui::Canvas, safe_bottom), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Canvas[21] },
 };
 
+static double mq_acc_ui_CheckBox_checked_getf(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return s.checked ? 1.0 : 0.0; }
+static void mq_acc_ui_CheckBox_checked_setf(void* p, double v) { auto& s = *static_cast<ui::CheckBox*>(p); s.checked = v != 0.0; }
+static double mq_acc_ui_CheckBox_tristate_getf(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return s.tristate ? 1.0 : 0.0; }
+static void mq_acc_ui_CheckBox_tristate_setf(void* p, double v) { auto& s = *static_cast<ui::CheckBox*>(p); s.tristate = v != 0.0; }
+static double mq_acc_ui_CheckBox_indeterminate_getf(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return s.indeterminate ? 1.0 : 0.0; }
+static void mq_acc_ui_CheckBox_indeterminate_setf(void* p, double v) { auto& s = *static_cast<ui::CheckBox*>(p); s.indeterminate = v != 0.0; }
+static double mq_acc_ui_CheckBox_disabled_getf(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return s.disabled ? 1.0 : 0.0; }
+static void mq_acc_ui_CheckBox_disabled_setf(void* p, double v) { auto& s = *static_cast<ui::CheckBox*>(p); s.disabled = v != 0.0; }
+static const char* mq_acc_ui_CheckBox_text_gets(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return s.text.c_str(); }
+static void mq_acc_ui_CheckBox_text_sets(void* p, const char* v) { auto& s = *static_cast<ui::CheckBox*>(p); s.text = v ? v : ""; }
+static const void* mq_acc_ui_CheckBox_text_getp(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return &s.text; }
+static void* mq_acc_ui_CheckBox_text_getmp(void* p) { auto& s = *static_cast<ui::CheckBox*>(p); return &s.text; }
+static const void* mq_acc_ui_CheckBox_font_getp(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return &s.font; }
+static void* mq_acc_ui_CheckBox_font_getmp(void* p) { auto& s = *static_cast<ui::CheckBox*>(p); return &s.font; }
+static double mq_acc_ui_CheckBox_font_size_getf(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return static_cast<double>(s.font_size); }
+static void mq_acc_ui_CheckBox_font_size_setf(void* p, double v) { auto& s = *static_cast<ui::CheckBox*>(p); s.font_size = static_cast<decltype(s.font_size)>(v); }
+static const void* mq_acc_ui_CheckBox_text_color_getp(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return &s.text_color; }
+static void* mq_acc_ui_CheckBox_text_color_getmp(void* p) { auto& s = *static_cast<ui::CheckBox*>(p); return &s.text_color; }
+static const void* mq_acc_ui_CheckBox_icon_checked_getp(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return &s.icon_checked; }
+static void* mq_acc_ui_CheckBox_icon_checked_getmp(void* p) { auto& s = *static_cast<ui::CheckBox*>(p); return &s.icon_checked; }
+static const void* mq_acc_ui_CheckBox_icon_unchecked_getp(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return &s.icon_unchecked; }
+static void* mq_acc_ui_CheckBox_icon_unchecked_getmp(void* p) { auto& s = *static_cast<ui::CheckBox*>(p); return &s.icon_unchecked; }
+static const void* mq_acc_ui_CheckBox_icon_indeterminate_getp(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return &s.icon_indeterminate; }
+static void* mq_acc_ui_CheckBox_icon_indeterminate_getmp(void* p) { auto& s = *static_cast<ui::CheckBox*>(p); return &s.icon_indeterminate; }
+static double mq_acc_ui_CheckBox_box_position_getf(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return static_cast<double>(static_cast<int64_t>(s.box_position)); }
+static void mq_acc_ui_CheckBox_box_position_setf(void* p, double v) { auto& s = *static_cast<ui::CheckBox*>(p); s.box_position = static_cast<decltype(s.box_position)>(v); }
+static double mq_acc_ui_CheckBox_state_getf(const void* p) { const auto& s = *static_cast<const ui::CheckBox*>(p); return static_cast<double>(static_cast<int64_t>(s.state)); }
+static void mq_acc_ui_CheckBox_state_setf(void* p, double v) { auto& s = *static_cast<ui::CheckBox*>(p); s.state = static_cast<decltype(s.state)>(v); }
+static const mq_field_accessor mq_acc_ui_CheckBox[] = {
+    { mq_acc_ui_CheckBox_checked_getf, mq_acc_ui_CheckBox_checked_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_CheckBox_tristate_getf, mq_acc_ui_CheckBox_tristate_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_CheckBox_indeterminate_getf, mq_acc_ui_CheckBox_indeterminate_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_CheckBox_disabled_getf, mq_acc_ui_CheckBox_disabled_setf, 0, 0, 0, 0 },
+    { 0, 0, mq_acc_ui_CheckBox_text_gets, mq_acc_ui_CheckBox_text_sets, mq_acc_ui_CheckBox_text_getp, mq_acc_ui_CheckBox_text_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_CheckBox_font_getp, mq_acc_ui_CheckBox_font_getmp },
+    { mq_acc_ui_CheckBox_font_size_getf, mq_acc_ui_CheckBox_font_size_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_CheckBox_text_color_getp, mq_acc_ui_CheckBox_text_color_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_CheckBox_icon_checked_getp, mq_acc_ui_CheckBox_icon_checked_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_CheckBox_icon_unchecked_getp, mq_acc_ui_CheckBox_icon_unchecked_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_CheckBox_icon_indeterminate_getp, mq_acc_ui_CheckBox_icon_indeterminate_getmp },
+    { mq_acc_ui_CheckBox_box_position_getf, mq_acc_ui_CheckBox_box_position_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_CheckBox_state_getf, mq_acc_ui_CheckBox_state_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_CheckBox[] = {
-    { "checked", (uint32_t)offsetof(ui::CheckBox, checked), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tristate", (uint32_t)offsetof(ui::CheckBox, tristate), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "indeterminate", (uint32_t)offsetof(ui::CheckBox, indeterminate), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "disabled", (uint32_t)offsetof(ui::CheckBox, disabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text", (uint32_t)offsetof(ui::CheckBox, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font", (uint32_t)offsetof(ui::CheckBox, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font_size", (uint32_t)offsetof(ui::CheckBox, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text_color", (uint32_t)offsetof(ui::CheckBox, text_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "icon_checked", (uint32_t)offsetof(ui::CheckBox, icon_checked), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "icon_unchecked", (uint32_t)offsetof(ui::CheckBox, icon_unchecked), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "icon_indeterminate", (uint32_t)offsetof(ui::CheckBox, icon_indeterminate), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "box_position", (uint32_t)offsetof(ui::CheckBox, box_position), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "state", (uint32_t)offsetof(ui::CheckBox, state), MQ_TK_ENUM, 2420402546u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "checked", (uint32_t)offsetof(ui::CheckBox, checked), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[0] },
+    { "tristate", (uint32_t)offsetof(ui::CheckBox, tristate), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[1] },
+    { "indeterminate", (uint32_t)offsetof(ui::CheckBox, indeterminate), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[2] },
+    { "disabled", (uint32_t)offsetof(ui::CheckBox, disabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[3] },
+    { "text", (uint32_t)offsetof(ui::CheckBox, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[4] },
+    { "font", (uint32_t)offsetof(ui::CheckBox, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[5] },
+    { "font_size", (uint32_t)offsetof(ui::CheckBox, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[6] },
+    { "text_color", (uint32_t)offsetof(ui::CheckBox, text_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[7] },
+    { "icon_checked", (uint32_t)offsetof(ui::CheckBox, icon_checked), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[8] },
+    { "icon_unchecked", (uint32_t)offsetof(ui::CheckBox, icon_unchecked), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[9] },
+    { "icon_indeterminate", (uint32_t)offsetof(ui::CheckBox, icon_indeterminate), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[10] },
+    { "box_position", (uint32_t)offsetof(ui::CheckBox, box_position), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[11] },
+    { "state", (uint32_t)offsetof(ui::CheckBox, state), MQ_TK_ENUM, 2420402546u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_CheckBox[12] },
 };
 
+static double mq_acc_ui_Container_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Container*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
+static void mq_acc_ui_Container_mode_setf(void* p, double v) { auto& s = *static_cast<ui::Container*>(p); s.mode = static_cast<decltype(s.mode)>(v); }
+static const void* mq_acc_ui_Container_padding_getp(const void* p) { const auto& s = *static_cast<const ui::Container*>(p); return &s.padding; }
+static void* mq_acc_ui_Container_padding_getmp(void* p) { auto& s = *static_cast<ui::Container*>(p); return &s.padding; }
+static double mq_acc_ui_Container_spacing_getf(const void* p) { const auto& s = *static_cast<const ui::Container*>(p); return static_cast<double>(s.spacing); }
+static void mq_acc_ui_Container_spacing_setf(void* p, double v) { auto& s = *static_cast<ui::Container*>(p); s.spacing = static_cast<decltype(s.spacing)>(v); }
+static double mq_acc_ui_Container_align_main_getf(const void* p) { const auto& s = *static_cast<const ui::Container*>(p); return static_cast<double>(static_cast<int64_t>(s.align_main)); }
+static void mq_acc_ui_Container_align_main_setf(void* p, double v) { auto& s = *static_cast<ui::Container*>(p); s.align_main = static_cast<decltype(s.align_main)>(v); }
+static double mq_acc_ui_Container_align_cross_getf(const void* p) { const auto& s = *static_cast<const ui::Container*>(p); return static_cast<double>(static_cast<int64_t>(s.align_cross)); }
+static void mq_acc_ui_Container_align_cross_setf(void* p, double v) { auto& s = *static_cast<ui::Container*>(p); s.align_cross = static_cast<decltype(s.align_cross)>(v); }
+static double mq_acc_ui_Container_columns_getf(const void* p) { const auto& s = *static_cast<const ui::Container*>(p); return static_cast<double>(s.columns); }
+static void mq_acc_ui_Container_columns_setf(void* p, double v) { auto& s = *static_cast<ui::Container*>(p); s.columns = static_cast<decltype(s.columns)>(v); }
+static const void* mq_acc_ui_Container_grid_cell_getp(const void* p) { const auto& s = *static_cast<const ui::Container*>(p); return &s.grid_cell; }
+static void* mq_acc_ui_Container_grid_cell_getmp(void* p) { auto& s = *static_cast<ui::Container*>(p); return &s.grid_cell; }
+static double mq_acc_ui_Container_fit_content_getf(const void* p) { const auto& s = *static_cast<const ui::Container*>(p); return s.fit_content ? 1.0 : 0.0; }
+static void mq_acc_ui_Container_fit_content_setf(void* p, double v) { auto& s = *static_cast<ui::Container*>(p); s.fit_content = v != 0.0; }
+static const mq_field_accessor mq_acc_ui_Container[] = {
+    { mq_acc_ui_Container_mode_getf, mq_acc_ui_Container_mode_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Container_padding_getp, mq_acc_ui_Container_padding_getmp },
+    { mq_acc_ui_Container_spacing_getf, mq_acc_ui_Container_spacing_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Container_align_main_getf, mq_acc_ui_Container_align_main_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Container_align_cross_getf, mq_acc_ui_Container_align_cross_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Container_columns_getf, mq_acc_ui_Container_columns_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Container_grid_cell_getp, mq_acc_ui_Container_grid_cell_getmp },
+    { mq_acc_ui_Container_fit_content_getf, mq_acc_ui_Container_fit_content_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_Container[] = {
-    { "mode", (uint32_t)offsetof(ui::Container, mode), MQ_TK_ENUM, 3458834513u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "padding", (uint32_t)offsetof(ui::Container, padding), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "spacing", (uint32_t)offsetof(ui::Container, spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_main", (uint32_t)offsetof(ui::Container, align_main), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_cross", (uint32_t)offsetof(ui::Container, align_cross), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "columns", (uint32_t)offsetof(ui::Container, columns), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "grid_cell", (uint32_t)offsetof(ui::Container, grid_cell), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fit_content", (uint32_t)offsetof(ui::Container, fit_content), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "mode", (uint32_t)offsetof(ui::Container, mode), MQ_TK_ENUM, 3458834513u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Container[0] },
+    { "padding", (uint32_t)offsetof(ui::Container, padding), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Container[1] },
+    { "spacing", (uint32_t)offsetof(ui::Container, spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Container[2] },
+    { "align_main", (uint32_t)offsetof(ui::Container, align_main), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Container[3] },
+    { "align_cross", (uint32_t)offsetof(ui::Container, align_cross), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Container[4] },
+    { "columns", (uint32_t)offsetof(ui::Container, columns), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Container[5] },
+    { "grid_cell", (uint32_t)offsetof(ui::Container, grid_cell), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Container[6] },
+    { "fit_content", (uint32_t)offsetof(ui::Container, fit_content), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Container[7] },
 };
 
+static double mq_acc_ui_Control_anchor_preset_getf(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return static_cast<double>(static_cast<int64_t>(s.anchor_preset)); }
+static void mq_acc_ui_Control_anchor_preset_setf(void* p, double v) { auto& s = *static_cast<ui::Control*>(p); s.anchor_preset = static_cast<decltype(s.anchor_preset)>(v); }
+static const void* mq_acc_ui_Control_anchor_min_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.anchor_min; }
+static void* mq_acc_ui_Control_anchor_min_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.anchor_min; }
+static const void* mq_acc_ui_Control_anchor_max_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.anchor_max; }
+static void* mq_acc_ui_Control_anchor_max_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.anchor_max; }
+static const void* mq_acc_ui_Control_offset_min_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.offset_min; }
+static void* mq_acc_ui_Control_offset_min_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.offset_min; }
+static const void* mq_acc_ui_Control_offset_max_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.offset_max; }
+static void* mq_acc_ui_Control_offset_max_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.offset_max; }
+static const void* mq_acc_ui_Control_pivot_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.pivot; }
+static void* mq_acc_ui_Control_pivot_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.pivot; }
+static const void* mq_acc_ui_Control_min_size_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.min_size; }
+static void* mq_acc_ui_Control_min_size_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.min_size; }
+static const void* mq_acc_ui_Control_max_size_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.max_size; }
+static void* mq_acc_ui_Control_max_size_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.max_size; }
+static double mq_acc_ui_Control_size_flags_h_getf(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return static_cast<double>(static_cast<int64_t>(s.size_flags_h)); }
+static void mq_acc_ui_Control_size_flags_h_setf(void* p, double v) { auto& s = *static_cast<ui::Control*>(p); s.size_flags_h = static_cast<decltype(s.size_flags_h)>(v); }
+static double mq_acc_ui_Control_size_flags_v_getf(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return static_cast<double>(static_cast<int64_t>(s.size_flags_v)); }
+static void mq_acc_ui_Control_size_flags_v_setf(void* p, double v) { auto& s = *static_cast<ui::Control*>(p); s.size_flags_v = static_cast<decltype(s.size_flags_v)>(v); }
+static double mq_acc_ui_Control_visible_getf(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return s.visible ? 1.0 : 0.0; }
+static void mq_acc_ui_Control_visible_setf(void* p, double v) { auto& s = *static_cast<ui::Control*>(p); s.visible = v != 0.0; }
+static double mq_acc_ui_Control_mouse_filter_getf(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return static_cast<double>(static_cast<int64_t>(s.mouse_filter)); }
+static void mq_acc_ui_Control_mouse_filter_setf(void* p, double v) { auto& s = *static_cast<ui::Control*>(p); s.mouse_filter = static_cast<decltype(s.mouse_filter)>(v); }
+static double mq_acc_ui_Control_z_index_getf(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return static_cast<double>(s.z_index); }
+static void mq_acc_ui_Control_z_index_setf(void* p, double v) { auto& s = *static_cast<ui::Control*>(p); s.z_index = static_cast<decltype(s.z_index)>(v); }
+static const void* mq_acc_ui_Control_rect_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.rect; }
+static void* mq_acc_ui_Control_rect_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.rect; }
+static const void* mq_acc_ui_Control_scale_getp(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return &s.scale; }
+static void* mq_acc_ui_Control_scale_getmp(void* p) { auto& s = *static_cast<ui::Control*>(p); return &s.scale; }
+static double mq_acc_ui_Control_rotation_getf(const void* p) { const auto& s = *static_cast<const ui::Control*>(p); return static_cast<double>(s.rotation); }
+static void mq_acc_ui_Control_rotation_setf(void* p, double v) { auto& s = *static_cast<ui::Control*>(p); s.rotation = static_cast<decltype(s.rotation)>(v); }
+static const mq_field_accessor mq_acc_ui_Control[] = {
+    { mq_acc_ui_Control_anchor_preset_getf, mq_acc_ui_Control_anchor_preset_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Control_anchor_min_getp, mq_acc_ui_Control_anchor_min_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Control_anchor_max_getp, mq_acc_ui_Control_anchor_max_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Control_offset_min_getp, mq_acc_ui_Control_offset_min_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Control_offset_max_getp, mq_acc_ui_Control_offset_max_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Control_pivot_getp, mq_acc_ui_Control_pivot_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Control_min_size_getp, mq_acc_ui_Control_min_size_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Control_max_size_getp, mq_acc_ui_Control_max_size_getmp },
+    { mq_acc_ui_Control_size_flags_h_getf, mq_acc_ui_Control_size_flags_h_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Control_size_flags_v_getf, mq_acc_ui_Control_size_flags_v_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Control_visible_getf, mq_acc_ui_Control_visible_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Control_mouse_filter_getf, mq_acc_ui_Control_mouse_filter_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Control_z_index_getf, mq_acc_ui_Control_z_index_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Control_rect_getp, mq_acc_ui_Control_rect_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Control_scale_getp, mq_acc_ui_Control_scale_getmp },
+    { mq_acc_ui_Control_rotation_getf, mq_acc_ui_Control_rotation_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_Control[] = {
-    { "anchor_preset", (uint32_t)offsetof(ui::Control, anchor_preset), MQ_TK_ENUM, 1385295158u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "anchor_min", (uint32_t)offsetof(ui::Control, anchor_min), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "anchor_max", (uint32_t)offsetof(ui::Control, anchor_max), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "offset_min", (uint32_t)offsetof(ui::Control, offset_min), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "offset_max", (uint32_t)offsetof(ui::Control, offset_max), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pivot", (uint32_t)offsetof(ui::Control, pivot), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "min_size", (uint32_t)offsetof(ui::Control, min_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_size", (uint32_t)offsetof(ui::Control, max_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "size_flags_h", (uint32_t)offsetof(ui::Control, size_flags_h), MQ_TK_ENUM, 3528633672u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "size_flags_v", (uint32_t)offsetof(ui::Control, size_flags_v), MQ_TK_ENUM, 3528633672u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "visible", (uint32_t)offsetof(ui::Control, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mouse_filter", (uint32_t)offsetof(ui::Control, mouse_filter), MQ_TK_ENUM, 2414255908u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "z_index", (uint32_t)offsetof(ui::Control, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "rect", (uint32_t)offsetof(ui::Control, rect), MQ_TK_STRUCT, 1842732857u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "scale", (uint32_t)offsetof(ui::Control, scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "rotation", (uint32_t)offsetof(ui::Control, rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "anchor_preset", (uint32_t)offsetof(ui::Control, anchor_preset), MQ_TK_ENUM, 1385295158u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[0] },
+    { "anchor_min", (uint32_t)offsetof(ui::Control, anchor_min), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[1] },
+    { "anchor_max", (uint32_t)offsetof(ui::Control, anchor_max), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[2] },
+    { "offset_min", (uint32_t)offsetof(ui::Control, offset_min), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[3] },
+    { "offset_max", (uint32_t)offsetof(ui::Control, offset_max), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[4] },
+    { "pivot", (uint32_t)offsetof(ui::Control, pivot), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[5] },
+    { "min_size", (uint32_t)offsetof(ui::Control, min_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[6] },
+    { "max_size", (uint32_t)offsetof(ui::Control, max_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[7] },
+    { "size_flags_h", (uint32_t)offsetof(ui::Control, size_flags_h), MQ_TK_ENUM, 3528633672u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[8] },
+    { "size_flags_v", (uint32_t)offsetof(ui::Control, size_flags_v), MQ_TK_ENUM, 3528633672u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[9] },
+    { "visible", (uint32_t)offsetof(ui::Control, visible), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[10] },
+    { "mouse_filter", (uint32_t)offsetof(ui::Control, mouse_filter), MQ_TK_ENUM, 2414255908u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[11] },
+    { "z_index", (uint32_t)offsetof(ui::Control, z_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[12] },
+    { "rect", (uint32_t)offsetof(ui::Control, rect), MQ_TK_STRUCT, 1842732857u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[13] },
+    { "scale", (uint32_t)offsetof(ui::Control, scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[14] },
+    { "rotation", (uint32_t)offsetof(ui::Control, rotation), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Control[15] },
 };
 
+static const char* mq_acc_ui_EditBox_text_gets(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return s.text.c_str(); }
+static void mq_acc_ui_EditBox_text_sets(void* p, const char* v) { auto& s = *static_cast<ui::EditBox*>(p); s.text = v ? v : ""; }
+static const void* mq_acc_ui_EditBox_text_getp(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return &s.text; }
+static void* mq_acc_ui_EditBox_text_getmp(void* p) { auto& s = *static_cast<ui::EditBox*>(p); return &s.text; }
+static const char* mq_acc_ui_EditBox_placeholder_gets(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return s.placeholder.c_str(); }
+static void mq_acc_ui_EditBox_placeholder_sets(void* p, const char* v) { auto& s = *static_cast<ui::EditBox*>(p); s.placeholder = v ? v : ""; }
+static const void* mq_acc_ui_EditBox_placeholder_getp(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return &s.placeholder; }
+static void* mq_acc_ui_EditBox_placeholder_getmp(void* p) { auto& s = *static_cast<ui::EditBox*>(p); return &s.placeholder; }
+static double mq_acc_ui_EditBox_line_mode_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(static_cast<int64_t>(s.line_mode)); }
+static void mq_acc_ui_EditBox_line_mode_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.line_mode = static_cast<decltype(s.line_mode)>(v); }
+static double mq_acc_ui_EditBox_max_length_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(s.max_length); }
+static void mq_acc_ui_EditBox_max_length_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.max_length = static_cast<decltype(s.max_length)>(v); }
+static double mq_acc_ui_EditBox_editable_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return s.editable ? 1.0 : 0.0; }
+static void mq_acc_ui_EditBox_editable_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.editable = v != 0.0; }
+static double mq_acc_ui_EditBox_secret_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return s.secret ? 1.0 : 0.0; }
+static void mq_acc_ui_EditBox_secret_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.secret = v != 0.0; }
+static double mq_acc_ui_EditBox_secret_char_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(s.secret_char); }
+static void mq_acc_ui_EditBox_secret_char_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.secret_char = static_cast<decltype(s.secret_char)>(v); }
+static double mq_acc_ui_EditBox_select_all_on_focus_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return s.select_all_on_focus ? 1.0 : 0.0; }
+static void mq_acc_ui_EditBox_select_all_on_focus_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.select_all_on_focus = v != 0.0; }
+static double mq_acc_ui_EditBox_clear_button_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return s.clear_button ? 1.0 : 0.0; }
+static void mq_acc_ui_EditBox_clear_button_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.clear_button = v != 0.0; }
+static const void* mq_acc_ui_EditBox_text_color_getp(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return &s.text_color; }
+static void* mq_acc_ui_EditBox_text_color_getmp(void* p) { auto& s = *static_cast<ui::EditBox*>(p); return &s.text_color; }
+static const void* mq_acc_ui_EditBox_placeholder_color_getp(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return &s.placeholder_color; }
+static void* mq_acc_ui_EditBox_placeholder_color_getmp(void* p) { auto& s = *static_cast<ui::EditBox*>(p); return &s.placeholder_color; }
+static const void* mq_acc_ui_EditBox_selection_color_getp(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return &s.selection_color; }
+static void* mq_acc_ui_EditBox_selection_color_getmp(void* p) { auto& s = *static_cast<ui::EditBox*>(p); return &s.selection_color; }
+static const void* mq_acc_ui_EditBox_caret_color_getp(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return &s.caret_color; }
+static void* mq_acc_ui_EditBox_caret_color_getmp(void* p) { auto& s = *static_cast<ui::EditBox*>(p); return &s.caret_color; }
+static double mq_acc_ui_EditBox_caret_width_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(s.caret_width); }
+static void mq_acc_ui_EditBox_caret_width_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.caret_width = static_cast<decltype(s.caret_width)>(v); }
+static const void* mq_acc_ui_EditBox_font_getp(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return &s.font; }
+static void* mq_acc_ui_EditBox_font_getmp(void* p) { auto& s = *static_cast<ui::EditBox*>(p); return &s.font; }
+static double mq_acc_ui_EditBox_font_size_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(s.font_size); }
+static void mq_acc_ui_EditBox_font_size_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.font_size = static_cast<decltype(s.font_size)>(v); }
+static double mq_acc_ui_EditBox_align_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(static_cast<int64_t>(s.align)); }
+static void mq_acc_ui_EditBox_align_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.align = static_cast<decltype(s.align)>(v); }
+static double mq_acc_ui_EditBox_overflow_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(static_cast<int64_t>(s.overflow)); }
+static void mq_acc_ui_EditBox_overflow_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.overflow = static_cast<decltype(s.overflow)>(v); }
+static double mq_acc_ui_EditBox_wrap_mode_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(static_cast<int64_t>(s.wrap_mode)); }
+static void mq_acc_ui_EditBox_wrap_mode_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.wrap_mode = static_cast<decltype(s.wrap_mode)>(v); }
+static double mq_acc_ui_EditBox_line_spacing_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(s.line_spacing); }
+static void mq_acc_ui_EditBox_line_spacing_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.line_spacing = static_cast<decltype(s.line_spacing)>(v); }
+static double mq_acc_ui_EditBox_caret_pos_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(s.caret_pos); }
+static void mq_acc_ui_EditBox_caret_pos_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.caret_pos = static_cast<decltype(s.caret_pos)>(v); }
+static double mq_acc_ui_EditBox_sel_start_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(s.sel_start); }
+static void mq_acc_ui_EditBox_sel_start_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.sel_start = static_cast<decltype(s.sel_start)>(v); }
+static double mq_acc_ui_EditBox_sel_end_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return static_cast<double>(s.sel_end); }
+static void mq_acc_ui_EditBox_sel_end_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.sel_end = static_cast<decltype(s.sel_end)>(v); }
+static const void* mq_acc_ui_EditBox_scroll_offset_getp(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return &s.scroll_offset; }
+static void* mq_acc_ui_EditBox_scroll_offset_getmp(void* p) { auto& s = *static_cast<ui::EditBox*>(p); return &s.scroll_offset; }
+static double mq_acc_ui_EditBox_focused_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return s.focused ? 1.0 : 0.0; }
+static void mq_acc_ui_EditBox_focused_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.focused = v != 0.0; }
+static double mq_acc_ui_EditBox_ime_composing_getf(const void* p) { const auto& s = *static_cast<const ui::EditBox*>(p); return s.ime_composing ? 1.0 : 0.0; }
+static void mq_acc_ui_EditBox_ime_composing_setf(void* p, double v) { auto& s = *static_cast<ui::EditBox*>(p); s.ime_composing = v != 0.0; }
+static const mq_field_accessor mq_acc_ui_EditBox[] = {
+    { 0, 0, mq_acc_ui_EditBox_text_gets, mq_acc_ui_EditBox_text_sets, mq_acc_ui_EditBox_text_getp, mq_acc_ui_EditBox_text_getmp },
+    { 0, 0, mq_acc_ui_EditBox_placeholder_gets, mq_acc_ui_EditBox_placeholder_sets, mq_acc_ui_EditBox_placeholder_getp, mq_acc_ui_EditBox_placeholder_getmp },
+    { mq_acc_ui_EditBox_line_mode_getf, mq_acc_ui_EditBox_line_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_max_length_getf, mq_acc_ui_EditBox_max_length_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_editable_getf, mq_acc_ui_EditBox_editable_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_secret_getf, mq_acc_ui_EditBox_secret_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_secret_char_getf, mq_acc_ui_EditBox_secret_char_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_select_all_on_focus_getf, mq_acc_ui_EditBox_select_all_on_focus_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_clear_button_getf, mq_acc_ui_EditBox_clear_button_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_EditBox_text_color_getp, mq_acc_ui_EditBox_text_color_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_EditBox_placeholder_color_getp, mq_acc_ui_EditBox_placeholder_color_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_EditBox_selection_color_getp, mq_acc_ui_EditBox_selection_color_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_EditBox_caret_color_getp, mq_acc_ui_EditBox_caret_color_getmp },
+    { mq_acc_ui_EditBox_caret_width_getf, mq_acc_ui_EditBox_caret_width_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_EditBox_font_getp, mq_acc_ui_EditBox_font_getmp },
+    { mq_acc_ui_EditBox_font_size_getf, mq_acc_ui_EditBox_font_size_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_align_getf, mq_acc_ui_EditBox_align_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_overflow_getf, mq_acc_ui_EditBox_overflow_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_wrap_mode_getf, mq_acc_ui_EditBox_wrap_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_line_spacing_getf, mq_acc_ui_EditBox_line_spacing_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_caret_pos_getf, mq_acc_ui_EditBox_caret_pos_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_sel_start_getf, mq_acc_ui_EditBox_sel_start_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_sel_end_getf, mq_acc_ui_EditBox_sel_end_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_EditBox_scroll_offset_getp, mq_acc_ui_EditBox_scroll_offset_getmp },
+    { mq_acc_ui_EditBox_focused_getf, mq_acc_ui_EditBox_focused_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_EditBox_ime_composing_getf, mq_acc_ui_EditBox_ime_composing_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_EditBox[] = {
-    { "text", (uint32_t)offsetof(ui::EditBox, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "placeholder", (uint32_t)offsetof(ui::EditBox, placeholder), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "line_mode", (uint32_t)offsetof(ui::EditBox, line_mode), MQ_TK_ENUM, 450189638u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_length", (uint32_t)offsetof(ui::EditBox, max_length), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "editable", (uint32_t)offsetof(ui::EditBox, editable), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "secret", (uint32_t)offsetof(ui::EditBox, secret), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "secret_char", (uint32_t)offsetof(ui::EditBox, secret_char), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "select_all_on_focus", (uint32_t)offsetof(ui::EditBox, select_all_on_focus), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clear_button", (uint32_t)offsetof(ui::EditBox, clear_button), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text_color", (uint32_t)offsetof(ui::EditBox, text_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "placeholder_color", (uint32_t)offsetof(ui::EditBox, placeholder_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "selection_color", (uint32_t)offsetof(ui::EditBox, selection_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "caret_color", (uint32_t)offsetof(ui::EditBox, caret_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "caret_width", (uint32_t)offsetof(ui::EditBox, caret_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font", (uint32_t)offsetof(ui::EditBox, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font_size", (uint32_t)offsetof(ui::EditBox, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align", (uint32_t)offsetof(ui::EditBox, align), MQ_TK_ENUM, 3667898117u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "overflow", (uint32_t)offsetof(ui::EditBox, overflow), MQ_TK_ENUM, 752426990u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "wrap_mode", (uint32_t)offsetof(ui::EditBox, wrap_mode), MQ_TK_ENUM, 4215617008u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "line_spacing", (uint32_t)offsetof(ui::EditBox, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "caret_pos", (uint32_t)offsetof(ui::EditBox, caret_pos), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "sel_start", (uint32_t)offsetof(ui::EditBox, sel_start), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "sel_end", (uint32_t)offsetof(ui::EditBox, sel_end), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "scroll_offset", (uint32_t)offsetof(ui::EditBox, scroll_offset), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "focused", (uint32_t)offsetof(ui::EditBox, focused), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "ime_composing", (uint32_t)offsetof(ui::EditBox, ime_composing), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "text", (uint32_t)offsetof(ui::EditBox, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[0] },
+    { "placeholder", (uint32_t)offsetof(ui::EditBox, placeholder), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[1] },
+    { "line_mode", (uint32_t)offsetof(ui::EditBox, line_mode), MQ_TK_ENUM, 450189638u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[2] },
+    { "max_length", (uint32_t)offsetof(ui::EditBox, max_length), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[3] },
+    { "editable", (uint32_t)offsetof(ui::EditBox, editable), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[4] },
+    { "secret", (uint32_t)offsetof(ui::EditBox, secret), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[5] },
+    { "secret_char", (uint32_t)offsetof(ui::EditBox, secret_char), MQ_TK_U32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[6] },
+    { "select_all_on_focus", (uint32_t)offsetof(ui::EditBox, select_all_on_focus), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[7] },
+    { "clear_button", (uint32_t)offsetof(ui::EditBox, clear_button), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[8] },
+    { "text_color", (uint32_t)offsetof(ui::EditBox, text_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[9] },
+    { "placeholder_color", (uint32_t)offsetof(ui::EditBox, placeholder_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[10] },
+    { "selection_color", (uint32_t)offsetof(ui::EditBox, selection_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[11] },
+    { "caret_color", (uint32_t)offsetof(ui::EditBox, caret_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[12] },
+    { "caret_width", (uint32_t)offsetof(ui::EditBox, caret_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[13] },
+    { "font", (uint32_t)offsetof(ui::EditBox, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[14] },
+    { "font_size", (uint32_t)offsetof(ui::EditBox, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[15] },
+    { "align", (uint32_t)offsetof(ui::EditBox, align), MQ_TK_ENUM, 3667898117u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[16] },
+    { "overflow", (uint32_t)offsetof(ui::EditBox, overflow), MQ_TK_ENUM, 752426990u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[17] },
+    { "wrap_mode", (uint32_t)offsetof(ui::EditBox, wrap_mode), MQ_TK_ENUM, 4215617008u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[18] },
+    { "line_spacing", (uint32_t)offsetof(ui::EditBox, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[19] },
+    { "caret_pos", (uint32_t)offsetof(ui::EditBox, caret_pos), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[20] },
+    { "sel_start", (uint32_t)offsetof(ui::EditBox, sel_start), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[21] },
+    { "sel_end", (uint32_t)offsetof(ui::EditBox, sel_end), MQ_TK_I32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[22] },
+    { "scroll_offset", (uint32_t)offsetof(ui::EditBox, scroll_offset), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[23] },
+    { "focused", (uint32_t)offsetof(ui::EditBox, focused), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[24] },
+    { "ime_composing", (uint32_t)offsetof(ui::EditBox, ime_composing), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_EditBox[25] },
 };
 
+static double mq_acc_ui_FlexBox_direction_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return static_cast<double>(static_cast<int64_t>(s.direction)); }
+static void mq_acc_ui_FlexBox_direction_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.direction = static_cast<decltype(s.direction)>(v); }
+static double mq_acc_ui_FlexBox_wrap_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return static_cast<double>(static_cast<int64_t>(s.wrap)); }
+static void mq_acc_ui_FlexBox_wrap_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.wrap = static_cast<decltype(s.wrap)>(v); }
+static double mq_acc_ui_FlexBox_justify_content_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return static_cast<double>(static_cast<int64_t>(s.justify_content)); }
+static void mq_acc_ui_FlexBox_justify_content_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.justify_content = static_cast<decltype(s.justify_content)>(v); }
+static double mq_acc_ui_FlexBox_align_items_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return static_cast<double>(static_cast<int64_t>(s.align_items)); }
+static void mq_acc_ui_FlexBox_align_items_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.align_items = static_cast<decltype(s.align_items)>(v); }
+static double mq_acc_ui_FlexBox_align_content_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return static_cast<double>(static_cast<int64_t>(s.align_content)); }
+static void mq_acc_ui_FlexBox_align_content_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.align_content = static_cast<decltype(s.align_content)>(v); }
+static double mq_acc_ui_FlexBox_gap_main_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return static_cast<double>(s.gap_main); }
+static void mq_acc_ui_FlexBox_gap_main_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.gap_main = static_cast<decltype(s.gap_main)>(v); }
+static double mq_acc_ui_FlexBox_gap_cross_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return static_cast<double>(s.gap_cross); }
+static void mq_acc_ui_FlexBox_gap_cross_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.gap_cross = static_cast<decltype(s.gap_cross)>(v); }
+static const void* mq_acc_ui_FlexBox_padding_getp(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return &s.padding; }
+static void* mq_acc_ui_FlexBox_padding_getmp(void* p) { auto& s = *static_cast<ui::FlexBox*>(p); return &s.padding; }
+static double mq_acc_ui_FlexBox_reverse_safe_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return s.reverse_safe ? 1.0 : 0.0; }
+static void mq_acc_ui_FlexBox_reverse_safe_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.reverse_safe = v != 0.0; }
+static double mq_acc_ui_FlexBox_dirty_getf(const void* p) { const auto& s = *static_cast<const ui::FlexBox*>(p); return s.dirty ? 1.0 : 0.0; }
+static void mq_acc_ui_FlexBox_dirty_setf(void* p, double v) { auto& s = *static_cast<ui::FlexBox*>(p); s.dirty = v != 0.0; }
+static const mq_field_accessor mq_acc_ui_FlexBox[] = {
+    { mq_acc_ui_FlexBox_direction_getf, mq_acc_ui_FlexBox_direction_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexBox_wrap_getf, mq_acc_ui_FlexBox_wrap_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexBox_justify_content_getf, mq_acc_ui_FlexBox_justify_content_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexBox_align_items_getf, mq_acc_ui_FlexBox_align_items_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexBox_align_content_getf, mq_acc_ui_FlexBox_align_content_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexBox_gap_main_getf, mq_acc_ui_FlexBox_gap_main_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexBox_gap_cross_getf, mq_acc_ui_FlexBox_gap_cross_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_FlexBox_padding_getp, mq_acc_ui_FlexBox_padding_getmp },
+    { mq_acc_ui_FlexBox_reverse_safe_getf, mq_acc_ui_FlexBox_reverse_safe_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexBox_dirty_getf, mq_acc_ui_FlexBox_dirty_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_FlexBox[] = {
-    { "direction", (uint32_t)offsetof(ui::FlexBox, direction), MQ_TK_ENUM, 357432953u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "wrap", (uint32_t)offsetof(ui::FlexBox, wrap), MQ_TK_ENUM, 1917247420u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "justify_content", (uint32_t)offsetof(ui::FlexBox, justify_content), MQ_TK_ENUM, 1390300838u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_items", (uint32_t)offsetof(ui::FlexBox, align_items), MQ_TK_ENUM, 4183022536u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_content", (uint32_t)offsetof(ui::FlexBox, align_content), MQ_TK_ENUM, 189175393u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gap_main", (uint32_t)offsetof(ui::FlexBox, gap_main), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "gap_cross", (uint32_t)offsetof(ui::FlexBox, gap_cross), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "padding", (uint32_t)offsetof(ui::FlexBox, padding), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "reverse_safe", (uint32_t)offsetof(ui::FlexBox, reverse_safe), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "dirty", (uint32_t)offsetof(ui::FlexBox, dirty), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "direction", (uint32_t)offsetof(ui::FlexBox, direction), MQ_TK_ENUM, 357432953u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[0] },
+    { "wrap", (uint32_t)offsetof(ui::FlexBox, wrap), MQ_TK_ENUM, 1917247420u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[1] },
+    { "justify_content", (uint32_t)offsetof(ui::FlexBox, justify_content), MQ_TK_ENUM, 1390300838u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[2] },
+    { "align_items", (uint32_t)offsetof(ui::FlexBox, align_items), MQ_TK_ENUM, 4183022536u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[3] },
+    { "align_content", (uint32_t)offsetof(ui::FlexBox, align_content), MQ_TK_ENUM, 189175393u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[4] },
+    { "gap_main", (uint32_t)offsetof(ui::FlexBox, gap_main), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[5] },
+    { "gap_cross", (uint32_t)offsetof(ui::FlexBox, gap_cross), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[6] },
+    { "padding", (uint32_t)offsetof(ui::FlexBox, padding), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[7] },
+    { "reverse_safe", (uint32_t)offsetof(ui::FlexBox, reverse_safe), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[8] },
+    { "dirty", (uint32_t)offsetof(ui::FlexBox, dirty), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexBox[9] },
 };
 
+static double mq_acc_ui_FlexItem_grow_getf(const void* p) { const auto& s = *static_cast<const ui::FlexItem*>(p); return static_cast<double>(s.grow); }
+static void mq_acc_ui_FlexItem_grow_setf(void* p, double v) { auto& s = *static_cast<ui::FlexItem*>(p); s.grow = static_cast<decltype(s.grow)>(v); }
+static double mq_acc_ui_FlexItem_shrink_getf(const void* p) { const auto& s = *static_cast<const ui::FlexItem*>(p); return static_cast<double>(s.shrink); }
+static void mq_acc_ui_FlexItem_shrink_setf(void* p, double v) { auto& s = *static_cast<ui::FlexItem*>(p); s.shrink = static_cast<decltype(s.shrink)>(v); }
+static double mq_acc_ui_FlexItem_basis_mode_getf(const void* p) { const auto& s = *static_cast<const ui::FlexItem*>(p); return static_cast<double>(static_cast<int64_t>(s.basis_mode)); }
+static void mq_acc_ui_FlexItem_basis_mode_setf(void* p, double v) { auto& s = *static_cast<ui::FlexItem*>(p); s.basis_mode = static_cast<decltype(s.basis_mode)>(v); }
+static double mq_acc_ui_FlexItem_basis_value_getf(const void* p) { const auto& s = *static_cast<const ui::FlexItem*>(p); return static_cast<double>(s.basis_value); }
+static void mq_acc_ui_FlexItem_basis_value_setf(void* p, double v) { auto& s = *static_cast<ui::FlexItem*>(p); s.basis_value = static_cast<decltype(s.basis_value)>(v); }
+static double mq_acc_ui_FlexItem_align_self_getf(const void* p) { const auto& s = *static_cast<const ui::FlexItem*>(p); return static_cast<double>(static_cast<int64_t>(s.align_self)); }
+static void mq_acc_ui_FlexItem_align_self_setf(void* p, double v) { auto& s = *static_cast<ui::FlexItem*>(p); s.align_self = static_cast<decltype(s.align_self)>(v); }
+static double mq_acc_ui_FlexItem_order_getf(const void* p) { const auto& s = *static_cast<const ui::FlexItem*>(p); return static_cast<double>(s.order); }
+static void mq_acc_ui_FlexItem_order_setf(void* p, double v) { auto& s = *static_cast<ui::FlexItem*>(p); s.order = static_cast<decltype(s.order)>(v); }
+static double mq_acc_ui_FlexItem_min_main_getf(const void* p) { const auto& s = *static_cast<const ui::FlexItem*>(p); return static_cast<double>(s.min_main); }
+static void mq_acc_ui_FlexItem_min_main_setf(void* p, double v) { auto& s = *static_cast<ui::FlexItem*>(p); s.min_main = static_cast<decltype(s.min_main)>(v); }
+static double mq_acc_ui_FlexItem_max_main_getf(const void* p) { const auto& s = *static_cast<const ui::FlexItem*>(p); return static_cast<double>(s.max_main); }
+static void mq_acc_ui_FlexItem_max_main_setf(void* p, double v) { auto& s = *static_cast<ui::FlexItem*>(p); s.max_main = static_cast<decltype(s.max_main)>(v); }
+static const mq_field_accessor mq_acc_ui_FlexItem[] = {
+    { mq_acc_ui_FlexItem_grow_getf, mq_acc_ui_FlexItem_grow_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexItem_shrink_getf, mq_acc_ui_FlexItem_shrink_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexItem_basis_mode_getf, mq_acc_ui_FlexItem_basis_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexItem_basis_value_getf, mq_acc_ui_FlexItem_basis_value_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexItem_align_self_getf, mq_acc_ui_FlexItem_align_self_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexItem_order_getf, mq_acc_ui_FlexItem_order_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexItem_min_main_getf, mq_acc_ui_FlexItem_min_main_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_FlexItem_max_main_getf, mq_acc_ui_FlexItem_max_main_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_FlexItem[] = {
-    { "grow", (uint32_t)offsetof(ui::FlexItem, grow), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "shrink", (uint32_t)offsetof(ui::FlexItem, shrink), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "basis_mode", (uint32_t)offsetof(ui::FlexItem, basis_mode), MQ_TK_ENUM, 4147169845u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "basis_value", (uint32_t)offsetof(ui::FlexItem, basis_value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_self", (uint32_t)offsetof(ui::FlexItem, align_self), MQ_TK_ENUM, 2309682278u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "order", (uint32_t)offsetof(ui::FlexItem, order), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "min_main", (uint32_t)offsetof(ui::FlexItem, min_main), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_main", (uint32_t)offsetof(ui::FlexItem, max_main), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "grow", (uint32_t)offsetof(ui::FlexItem, grow), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[0] },
+    { "shrink", (uint32_t)offsetof(ui::FlexItem, shrink), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[1] },
+    { "basis_mode", (uint32_t)offsetof(ui::FlexItem, basis_mode), MQ_TK_ENUM, 4147169845u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[2] },
+    { "basis_value", (uint32_t)offsetof(ui::FlexItem, basis_value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[3] },
+    { "align_self", (uint32_t)offsetof(ui::FlexItem, align_self), MQ_TK_ENUM, 2309682278u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[4] },
+    { "order", (uint32_t)offsetof(ui::FlexItem, order), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[5] },
+    { "min_main", (uint32_t)offsetof(ui::FlexItem, min_main), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[6] },
+    { "max_main", (uint32_t)offsetof(ui::FlexItem, max_main), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[7] },
 };
 
+static const void* mq_acc_ui_Image_texture_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.texture; }
+static void* mq_acc_ui_Image_texture_getmp(void* p) { auto& s = *static_cast<ui::Image*>(p); return &s.texture; }
+static const void* mq_acc_ui_Image_region_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.region; }
+static void* mq_acc_ui_Image_region_getmp(void* p) { auto& s = *static_cast<ui::Image*>(p); return &s.region; }
+static const void* mq_acc_ui_Image_modulate_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.modulate; }
+static void* mq_acc_ui_Image_modulate_getmp(void* p) { auto& s = *static_cast<ui::Image*>(p); return &s.modulate; }
+static double mq_acc_ui_Image_stretch_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return static_cast<double>(static_cast<int64_t>(s.stretch_mode)); }
+static void mq_acc_ui_Image_stretch_mode_setf(void* p, double v) { auto& s = *static_cast<ui::Image*>(p); s.stretch_mode = static_cast<decltype(s.stretch_mode)>(v); }
+static double mq_acc_ui_Image_flip_h_getf(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return s.flip_h ? 1.0 : 0.0; }
+static void mq_acc_ui_Image_flip_h_setf(void* p, double v) { auto& s = *static_cast<ui::Image*>(p); s.flip_h = v != 0.0; }
+static double mq_acc_ui_Image_flip_v_getf(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return s.flip_v ? 1.0 : 0.0; }
+static void mq_acc_ui_Image_flip_v_setf(void* p, double v) { auto& s = *static_cast<ui::Image*>(p); s.flip_v = v != 0.0; }
+static const void* mq_acc_ui_Image_tile_scale_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.tile_scale; }
+static void* mq_acc_ui_Image_tile_scale_getmp(void* p) { auto& s = *static_cast<ui::Image*>(p); return &s.tile_scale; }
+static const void* mq_acc_ui_Image_nine_patch_margin_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.nine_patch_margin; }
+static void* mq_acc_ui_Image_nine_patch_margin_getmp(void* p) { auto& s = *static_cast<ui::Image*>(p); return &s.nine_patch_margin; }
+static const void* mq_acc_ui_Image_texture_size_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.texture_size; }
+static void* mq_acc_ui_Image_texture_size_getmp(void* p) { auto& s = *static_cast<ui::Image*>(p); return &s.texture_size; }
+static const mq_field_accessor mq_acc_ui_Image[] = {
+    { 0, 0, 0, 0, mq_acc_ui_Image_texture_getp, mq_acc_ui_Image_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Image_region_getp, mq_acc_ui_Image_region_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Image_modulate_getp, mq_acc_ui_Image_modulate_getmp },
+    { mq_acc_ui_Image_stretch_mode_getf, mq_acc_ui_Image_stretch_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Image_flip_h_getf, mq_acc_ui_Image_flip_h_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Image_flip_v_getf, mq_acc_ui_Image_flip_v_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Image_tile_scale_getp, mq_acc_ui_Image_tile_scale_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Image_nine_patch_margin_getp, mq_acc_ui_Image_nine_patch_margin_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Image_texture_size_getp, mq_acc_ui_Image_texture_size_getmp },
+};
 static const mq_field_desc mq_fields_ui_Image[] = {
-    { "texture", (uint32_t)offsetof(ui::Image, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "region", (uint32_t)offsetof(ui::Image, region), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "modulate", (uint32_t)offsetof(ui::Image, modulate), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "stretch_mode", (uint32_t)offsetof(ui::Image, stretch_mode), MQ_TK_ENUM, 2031275343u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "flip_h", (uint32_t)offsetof(ui::Image, flip_h), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "flip_v", (uint32_t)offsetof(ui::Image, flip_v), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tile_scale", (uint32_t)offsetof(ui::Image, tile_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "nine_patch_margin", (uint32_t)offsetof(ui::Image, nine_patch_margin), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "texture_size", (uint32_t)offsetof(ui::Image, texture_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "texture", (uint32_t)offsetof(ui::Image, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[0] },
+    { "region", (uint32_t)offsetof(ui::Image, region), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[1] },
+    { "modulate", (uint32_t)offsetof(ui::Image, modulate), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[2] },
+    { "stretch_mode", (uint32_t)offsetof(ui::Image, stretch_mode), MQ_TK_ENUM, 2031275343u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[3] },
+    { "flip_h", (uint32_t)offsetof(ui::Image, flip_h), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[4] },
+    { "flip_v", (uint32_t)offsetof(ui::Image, flip_v), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[5] },
+    { "tile_scale", (uint32_t)offsetof(ui::Image, tile_scale), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[6] },
+    { "nine_patch_margin", (uint32_t)offsetof(ui::Image, nine_patch_margin), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[7] },
+    { "texture_size", (uint32_t)offsetof(ui::Image, texture_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[8] },
 };
 
+static const void* mq_acc_ui_ListView_item_template_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.item_template; }
+static void* mq_acc_ui_ListView_item_template_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.item_template; }
+static const void* mq_acc_ui_ListView_data_source_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.data_source; }
+static void* mq_acc_ui_ListView_data_source_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.data_source; }
+static double mq_acc_ui_ListView_item_count_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.item_count); }
+static void mq_acc_ui_ListView_item_count_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.item_count = static_cast<decltype(s.item_count)>(v); }
+static double mq_acc_ui_ListView_item_extent_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.item_extent); }
+static void mq_acc_ui_ListView_item_extent_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.item_extent = static_cast<decltype(s.item_extent)>(v); }
+static double mq_acc_ui_ListView_orientation_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(static_cast<int64_t>(s.orientation)); }
+static void mq_acc_ui_ListView_orientation_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.orientation = static_cast<decltype(s.orientation)>(v); }
+static double mq_acc_ui_ListView_spacing_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.spacing); }
+static void mq_acc_ui_ListView_spacing_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.spacing = static_cast<decltype(s.spacing)>(v); }
+static double mq_acc_ui_ListView_overscan_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.overscan); }
+static void mq_acc_ui_ListView_overscan_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.overscan = static_cast<decltype(s.overscan)>(v); }
+static double mq_acc_ui_ListView_selection_mode_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(static_cast<int64_t>(s.selection_mode)); }
+static void mq_acc_ui_ListView_selection_mode_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.selection_mode = static_cast<decltype(s.selection_mode)>(v); }
+static double mq_acc_ui_ListView_selected_index_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.selected_index); }
+static void mq_acc_ui_ListView_selected_index_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.selected_index = static_cast<decltype(s.selected_index)>(v); }
+static const void* mq_acc_ui_ListView_scroll_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.scroll; }
+static void* mq_acc_ui_ListView_scroll_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.scroll; }
+static double mq_acc_ui_ListView_pool_size_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.pool_size); }
+static void mq_acc_ui_ListView_pool_size_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.pool_size = static_cast<decltype(s.pool_size)>(v); }
+static const mq_field_accessor mq_acc_ui_ListView[] = {
+    { 0, 0, 0, 0, mq_acc_ui_ListView_item_template_getp, mq_acc_ui_ListView_item_template_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_ListView_data_source_getp, mq_acc_ui_ListView_data_source_getmp },
+    { mq_acc_ui_ListView_item_count_getf, mq_acc_ui_ListView_item_count_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_item_extent_getf, mq_acc_ui_ListView_item_extent_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_orientation_getf, mq_acc_ui_ListView_orientation_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_spacing_getf, mq_acc_ui_ListView_spacing_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_overscan_getf, mq_acc_ui_ListView_overscan_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_selection_mode_getf, mq_acc_ui_ListView_selection_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_selected_index_getf, mq_acc_ui_ListView_selected_index_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ListView_scroll_getp, mq_acc_ui_ListView_scroll_getmp },
+    { mq_acc_ui_ListView_pool_size_getf, mq_acc_ui_ListView_pool_size_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_ListView[] = {
-    { "item_template", (uint32_t)offsetof(ui::ListView, item_template), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "data_source", (uint32_t)offsetof(ui::ListView, data_source), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "item_count", (uint32_t)offsetof(ui::ListView, item_count), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "item_extent", (uint32_t)offsetof(ui::ListView, item_extent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "orientation", (uint32_t)offsetof(ui::ListView, orientation), MQ_TK_ENUM, 1035951539u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "spacing", (uint32_t)offsetof(ui::ListView, spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "overscan", (uint32_t)offsetof(ui::ListView, overscan), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "selection_mode", (uint32_t)offsetof(ui::ListView, selection_mode), MQ_TK_ENUM, 3220632740u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "selected_index", (uint32_t)offsetof(ui::ListView, selected_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scroll", (uint32_t)offsetof(ui::ListView, scroll), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "pool_size", (uint32_t)offsetof(ui::ListView, pool_size), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "item_template", (uint32_t)offsetof(ui::ListView, item_template), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[0] },
+    { "data_source", (uint32_t)offsetof(ui::ListView, data_source), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[1] },
+    { "item_count", (uint32_t)offsetof(ui::ListView, item_count), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[2] },
+    { "item_extent", (uint32_t)offsetof(ui::ListView, item_extent), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[3] },
+    { "orientation", (uint32_t)offsetof(ui::ListView, orientation), MQ_TK_ENUM, 1035951539u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[4] },
+    { "spacing", (uint32_t)offsetof(ui::ListView, spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[5] },
+    { "overscan", (uint32_t)offsetof(ui::ListView, overscan), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[6] },
+    { "selection_mode", (uint32_t)offsetof(ui::ListView, selection_mode), MQ_TK_ENUM, 3220632740u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[7] },
+    { "selected_index", (uint32_t)offsetof(ui::ListView, selected_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[8] },
+    { "scroll", (uint32_t)offsetof(ui::ListView, scroll), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[9] },
+    { "pool_size", (uint32_t)offsetof(ui::ListView, pool_size), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[10] },
 };
 
+static double mq_acc_ui_Mask_mask_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(static_cast<int64_t>(s.mask_mode)); }
+static void mq_acc_ui_Mask_mask_mode_setf(void* p, double v) { auto& s = *static_cast<ui::Mask*>(p); s.mask_mode = static_cast<decltype(s.mask_mode)>(v); }
+static double mq_acc_ui_Mask_clip_children_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return s.clip_children ? 1.0 : 0.0; }
+static void mq_acc_ui_Mask_clip_children_setf(void* p, double v) { auto& s = *static_cast<ui::Mask*>(p); s.clip_children = v != 0.0; }
+static const void* mq_acc_ui_Mask_corner_radius_getp(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return &s.corner_radius; }
+static void* mq_acc_ui_Mask_corner_radius_getmp(void* p) { auto& s = *static_cast<ui::Mask*>(p); return &s.corner_radius; }
+static const void* mq_acc_ui_Mask_mask_texture_getp(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return &s.mask_texture; }
+static void* mq_acc_ui_Mask_mask_texture_getmp(void* p) { auto& s = *static_cast<ui::Mask*>(p); return &s.mask_texture; }
+static double mq_acc_ui_Mask_texture_channel_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(static_cast<int64_t>(s.texture_channel)); }
+static void mq_acc_ui_Mask_texture_channel_setf(void* p, double v) { auto& s = *static_cast<ui::Mask*>(p); s.texture_channel = static_cast<decltype(s.texture_channel)>(v); }
+static double mq_acc_ui_Mask_invert_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return s.invert ? 1.0 : 0.0; }
+static void mq_acc_ui_Mask_invert_setf(void* p, double v) { auto& s = *static_cast<ui::Mask*>(p); s.invert = v != 0.0; }
+static double mq_acc_ui_Mask_stencil_ref_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(s.stencil_ref); }
+static void mq_acc_ui_Mask_stencil_ref_setf(void* p, double v) { auto& s = *static_cast<ui::Mask*>(p); s.stencil_ref = static_cast<decltype(s.stencil_ref)>(v); }
+static double mq_acc_ui_Mask_stencil_write_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return s.stencil_write ? 1.0 : 0.0; }
+static void mq_acc_ui_Mask_stencil_write_setf(void* p, double v) { auto& s = *static_cast<ui::Mask*>(p); s.stencil_write = v != 0.0; }
+static double mq_acc_ui_Mask_stencil_compare_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(static_cast<int64_t>(s.stencil_compare)); }
+static void mq_acc_ui_Mask_stencil_compare_setf(void* p, double v) { auto& s = *static_cast<ui::Mask*>(p); s.stencil_compare = static_cast<decltype(s.stencil_compare)>(v); }
+static double mq_acc_ui_Mask_feather_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(s.feather); }
+static void mq_acc_ui_Mask_feather_setf(void* p, double v) { auto& s = *static_cast<ui::Mask*>(p); s.feather = static_cast<decltype(s.feather)>(v); }
+static const mq_field_accessor mq_acc_ui_Mask[] = {
+    { mq_acc_ui_Mask_mask_mode_getf, mq_acc_ui_Mask_mask_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Mask_clip_children_getf, mq_acc_ui_Mask_clip_children_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Mask_corner_radius_getp, mq_acc_ui_Mask_corner_radius_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Mask_mask_texture_getp, mq_acc_ui_Mask_mask_texture_getmp },
+    { mq_acc_ui_Mask_texture_channel_getf, mq_acc_ui_Mask_texture_channel_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Mask_invert_getf, mq_acc_ui_Mask_invert_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Mask_stencil_ref_getf, mq_acc_ui_Mask_stencil_ref_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Mask_stencil_write_getf, mq_acc_ui_Mask_stencil_write_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Mask_stencil_compare_getf, mq_acc_ui_Mask_stencil_compare_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Mask_feather_getf, mq_acc_ui_Mask_feather_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_Mask[] = {
-    { "mask_mode", (uint32_t)offsetof(ui::Mask, mask_mode), MQ_TK_ENUM, 2955577236u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clip_children", (uint32_t)offsetof(ui::Mask, clip_children), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "corner_radius", (uint32_t)offsetof(ui::Mask, corner_radius), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mask_texture", (uint32_t)offsetof(ui::Mask, mask_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "texture_channel", (uint32_t)offsetof(ui::Mask, texture_channel), MQ_TK_ENUM, 3613271938u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "invert", (uint32_t)offsetof(ui::Mask, invert), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "stencil_ref", (uint32_t)offsetof(ui::Mask, stencil_ref), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "stencil_write", (uint32_t)offsetof(ui::Mask, stencil_write), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "stencil_compare", (uint32_t)offsetof(ui::Mask, stencil_compare), MQ_TK_ENUM, 2014811752u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "feather", (uint32_t)offsetof(ui::Mask, feather), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
+    { "mask_mode", (uint32_t)offsetof(ui::Mask, mask_mode), MQ_TK_ENUM, 2955577236u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[0] },
+    { "clip_children", (uint32_t)offsetof(ui::Mask, clip_children), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[1] },
+    { "corner_radius", (uint32_t)offsetof(ui::Mask, corner_radius), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[2] },
+    { "mask_texture", (uint32_t)offsetof(ui::Mask, mask_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[3] },
+    { "texture_channel", (uint32_t)offsetof(ui::Mask, texture_channel), MQ_TK_ENUM, 3613271938u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[4] },
+    { "invert", (uint32_t)offsetof(ui::Mask, invert), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[5] },
+    { "stencil_ref", (uint32_t)offsetof(ui::Mask, stencil_ref), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[6] },
+    { "stencil_write", (uint32_t)offsetof(ui::Mask, stencil_write), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[7] },
+    { "stencil_compare", (uint32_t)offsetof(ui::Mask, stencil_compare), MQ_TK_ENUM, 2014811752u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[8] },
+    { "feather", (uint32_t)offsetof(ui::Mask, feather), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Mask[9] },
 };
 
+static double mq_acc_ui_PageView_current_page_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(s.current_page); }
+static void mq_acc_ui_PageView_current_page_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.current_page = static_cast<decltype(s.current_page)>(v); }
+static double mq_acc_ui_PageView_direction_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(static_cast<int64_t>(s.direction)); }
+static void mq_acc_ui_PageView_direction_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.direction = static_cast<decltype(s.direction)>(v); }
+static double mq_acc_ui_PageView_loop_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return s.loop ? 1.0 : 0.0; }
+static void mq_acc_ui_PageView_loop_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.loop = v != 0.0; }
+static double mq_acc_ui_PageView_transition_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(static_cast<int64_t>(s.transition)); }
+static void mq_acc_ui_PageView_transition_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.transition = static_cast<decltype(s.transition)>(v); }
+static double mq_acc_ui_PageView_transition_time_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(s.transition_time); }
+static void mq_acc_ui_PageView_transition_time_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.transition_time = static_cast<decltype(s.transition_time)>(v); }
+static double mq_acc_ui_PageView_drag_threshold_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(s.drag_threshold); }
+static void mq_acc_ui_PageView_drag_threshold_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.drag_threshold = static_cast<decltype(s.drag_threshold)>(v); }
+static double mq_acc_ui_PageView_fling_threshold_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(s.fling_threshold); }
+static void mq_acc_ui_PageView_fling_threshold_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.fling_threshold = static_cast<decltype(s.fling_threshold)>(v); }
+static double mq_acc_ui_PageView_deadzone_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(s.deadzone); }
+static void mq_acc_ui_PageView_deadzone_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.deadzone = static_cast<decltype(s.deadzone)>(v); }
+static double mq_acc_ui_PageView_snap_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return s.snap ? 1.0 : 0.0; }
+static void mq_acc_ui_PageView_snap_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.snap = v != 0.0; }
+static double mq_acc_ui_PageView_clip_content_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return s.clip_content ? 1.0 : 0.0; }
+static void mq_acc_ui_PageView_clip_content_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.clip_content = v != 0.0; }
+static double mq_acc_ui_PageView_page_count_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(s.page_count); }
+static void mq_acc_ui_PageView_page_count_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.page_count = static_cast<decltype(s.page_count)>(v); }
+static double mq_acc_ui_PageView_page_ratio_getf(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return static_cast<double>(s.page_ratio); }
+static void mq_acc_ui_PageView_page_ratio_setf(void* p, double v) { auto& s = *static_cast<ui::PageView*>(p); s.page_ratio = static_cast<decltype(s.page_ratio)>(v); }
+static const void* mq_acc_ui_PageView_current_node_getp(const void* p) { const auto& s = *static_cast<const ui::PageView*>(p); return &s.current_node; }
+static void* mq_acc_ui_PageView_current_node_getmp(void* p) { auto& s = *static_cast<ui::PageView*>(p); return &s.current_node; }
+static const mq_field_accessor mq_acc_ui_PageView[] = {
+    { mq_acc_ui_PageView_current_page_getf, mq_acc_ui_PageView_current_page_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_direction_getf, mq_acc_ui_PageView_direction_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_loop_getf, mq_acc_ui_PageView_loop_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_transition_getf, mq_acc_ui_PageView_transition_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_transition_time_getf, mq_acc_ui_PageView_transition_time_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_drag_threshold_getf, mq_acc_ui_PageView_drag_threshold_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_fling_threshold_getf, mq_acc_ui_PageView_fling_threshold_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_deadzone_getf, mq_acc_ui_PageView_deadzone_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_snap_getf, mq_acc_ui_PageView_snap_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_clip_content_getf, mq_acc_ui_PageView_clip_content_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_page_count_getf, mq_acc_ui_PageView_page_count_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_PageView_page_ratio_getf, mq_acc_ui_PageView_page_ratio_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_PageView_current_node_getp, mq_acc_ui_PageView_current_node_getmp },
+};
 static const mq_field_desc mq_fields_ui_PageView[] = {
-    { "current_page", (uint32_t)offsetof(ui::PageView, current_page), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "direction", (uint32_t)offsetof(ui::PageView, direction), MQ_TK_ENUM, 464382003u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "loop", (uint32_t)offsetof(ui::PageView, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "transition", (uint32_t)offsetof(ui::PageView, transition), MQ_TK_ENUM, 1742345199u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "transition_time", (uint32_t)offsetof(ui::PageView, transition_time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "drag_threshold", (uint32_t)offsetof(ui::PageView, drag_threshold), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fling_threshold", (uint32_t)offsetof(ui::PageView, fling_threshold), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "deadzone", (uint32_t)offsetof(ui::PageView, deadzone), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "snap", (uint32_t)offsetof(ui::PageView, snap), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "clip_content", (uint32_t)offsetof(ui::PageView, clip_content), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "page_count", (uint32_t)offsetof(ui::PageView, page_count), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "page_ratio", (uint32_t)offsetof(ui::PageView, page_ratio), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "current_node", (uint32_t)offsetof(ui::PageView, current_node), MQ_TK_ENTITY_REF, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "current_page", (uint32_t)offsetof(ui::PageView, current_page), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[0] },
+    { "direction", (uint32_t)offsetof(ui::PageView, direction), MQ_TK_ENUM, 464382003u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[1] },
+    { "loop", (uint32_t)offsetof(ui::PageView, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[2] },
+    { "transition", (uint32_t)offsetof(ui::PageView, transition), MQ_TK_ENUM, 1742345199u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[3] },
+    { "transition_time", (uint32_t)offsetof(ui::PageView, transition_time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[4] },
+    { "drag_threshold", (uint32_t)offsetof(ui::PageView, drag_threshold), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[5] },
+    { "fling_threshold", (uint32_t)offsetof(ui::PageView, fling_threshold), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[6] },
+    { "deadzone", (uint32_t)offsetof(ui::PageView, deadzone), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[7] },
+    { "snap", (uint32_t)offsetof(ui::PageView, snap), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[8] },
+    { "clip_content", (uint32_t)offsetof(ui::PageView, clip_content), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[9] },
+    { "page_count", (uint32_t)offsetof(ui::PageView, page_count), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[10] },
+    { "page_ratio", (uint32_t)offsetof(ui::PageView, page_ratio), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[11] },
+    { "current_node", (uint32_t)offsetof(ui::PageView, current_node), MQ_TK_ENTITY_REF, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_PageView[12] },
 };
 
+static double mq_acc_ui_ProgressBar_value_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return static_cast<double>(s.value); }
+static void mq_acc_ui_ProgressBar_value_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.value = static_cast<decltype(s.value)>(v); }
+static double mq_acc_ui_ProgressBar_min_display_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return static_cast<double>(s.min_display); }
+static void mq_acc_ui_ProgressBar_min_display_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.min_display = static_cast<decltype(s.min_display)>(v); }
+static double mq_acc_ui_ProgressBar_mode_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
+static void mq_acc_ui_ProgressBar_mode_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.mode = static_cast<decltype(s.mode)>(v); }
+static double mq_acc_ui_ProgressBar_fill_mode_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return static_cast<double>(static_cast<int64_t>(s.fill_mode)); }
+static void mq_acc_ui_ProgressBar_fill_mode_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.fill_mode = static_cast<decltype(s.fill_mode)>(v); }
+static const void* mq_acc_ui_ProgressBar_radial_center_getp(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return &s.radial_center; }
+static void* mq_acc_ui_ProgressBar_radial_center_getmp(void* p) { auto& s = *static_cast<ui::ProgressBar*>(p); return &s.radial_center; }
+static double mq_acc_ui_ProgressBar_radial_begin_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return static_cast<double>(s.radial_begin); }
+static void mq_acc_ui_ProgressBar_radial_begin_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.radial_begin = static_cast<decltype(s.radial_begin)>(v); }
+static double mq_acc_ui_ProgressBar_radial_fill_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return static_cast<double>(s.radial_fill); }
+static void mq_acc_ui_ProgressBar_radial_fill_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.radial_fill = static_cast<decltype(s.radial_fill)>(v); }
+static double mq_acc_ui_ProgressBar_indeterminate_speed_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return static_cast<double>(s.indeterminate_speed); }
+static void mq_acc_ui_ProgressBar_indeterminate_speed_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.indeterminate_speed = static_cast<decltype(s.indeterminate_speed)>(v); }
+static double mq_acc_ui_ProgressBar_overlay_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return s.overlay ? 1.0 : 0.0; }
+static void mq_acc_ui_ProgressBar_overlay_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.overlay = v != 0.0; }
+static const void* mq_acc_ui_ProgressBar_back_texture_getp(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return &s.back_texture; }
+static void* mq_acc_ui_ProgressBar_back_texture_getmp(void* p) { auto& s = *static_cast<ui::ProgressBar*>(p); return &s.back_texture; }
+static const void* mq_acc_ui_ProgressBar_fill_texture_getp(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return &s.fill_texture; }
+static void* mq_acc_ui_ProgressBar_fill_texture_getmp(void* p) { auto& s = *static_cast<ui::ProgressBar*>(p); return &s.fill_texture; }
+static const void* mq_acc_ui_ProgressBar_back_color_getp(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return &s.back_color; }
+static void* mq_acc_ui_ProgressBar_back_color_getmp(void* p) { auto& s = *static_cast<ui::ProgressBar*>(p); return &s.back_color; }
+static const void* mq_acc_ui_ProgressBar_fill_color_getp(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return &s.fill_color; }
+static void* mq_acc_ui_ProgressBar_fill_color_getmp(void* p) { auto& s = *static_cast<ui::ProgressBar*>(p); return &s.fill_color; }
+static double mq_acc_ui_ProgressBar_show_percentage_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return s.show_percentage ? 1.0 : 0.0; }
+static void mq_acc_ui_ProgressBar_show_percentage_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.show_percentage = v != 0.0; }
+static const void* mq_acc_ui_ProgressBar_font_getp(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return &s.font; }
+static void* mq_acc_ui_ProgressBar_font_getmp(void* p) { auto& s = *static_cast<ui::ProgressBar*>(p); return &s.font; }
+static double mq_acc_ui_ProgressBar_phase_getf(const void* p) { const auto& s = *static_cast<const ui::ProgressBar*>(p); return static_cast<double>(s.phase); }
+static void mq_acc_ui_ProgressBar_phase_setf(void* p, double v) { auto& s = *static_cast<ui::ProgressBar*>(p); s.phase = static_cast<decltype(s.phase)>(v); }
+static const mq_field_accessor mq_acc_ui_ProgressBar[] = {
+    { mq_acc_ui_ProgressBar_value_getf, mq_acc_ui_ProgressBar_value_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ProgressBar_min_display_getf, mq_acc_ui_ProgressBar_min_display_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ProgressBar_mode_getf, mq_acc_ui_ProgressBar_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ProgressBar_fill_mode_getf, mq_acc_ui_ProgressBar_fill_mode_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ProgressBar_radial_center_getp, mq_acc_ui_ProgressBar_radial_center_getmp },
+    { mq_acc_ui_ProgressBar_radial_begin_getf, mq_acc_ui_ProgressBar_radial_begin_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ProgressBar_radial_fill_getf, mq_acc_ui_ProgressBar_radial_fill_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ProgressBar_indeterminate_speed_getf, mq_acc_ui_ProgressBar_indeterminate_speed_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ProgressBar_overlay_getf, mq_acc_ui_ProgressBar_overlay_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ProgressBar_back_texture_getp, mq_acc_ui_ProgressBar_back_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_ProgressBar_fill_texture_getp, mq_acc_ui_ProgressBar_fill_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_ProgressBar_back_color_getp, mq_acc_ui_ProgressBar_back_color_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_ProgressBar_fill_color_getp, mq_acc_ui_ProgressBar_fill_color_getmp },
+    { mq_acc_ui_ProgressBar_show_percentage_getf, mq_acc_ui_ProgressBar_show_percentage_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ProgressBar_font_getp, mq_acc_ui_ProgressBar_font_getmp },
+    { mq_acc_ui_ProgressBar_phase_getf, mq_acc_ui_ProgressBar_phase_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_ProgressBar[] = {
-    { "value", (uint32_t)offsetof(ui::ProgressBar, value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "min_display", (uint32_t)offsetof(ui::ProgressBar, min_display), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mode", (uint32_t)offsetof(ui::ProgressBar, mode), MQ_TK_ENUM, 528587395u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fill_mode", (uint32_t)offsetof(ui::ProgressBar, fill_mode), MQ_TK_ENUM, 3297947197u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "radial_center", (uint32_t)offsetof(ui::ProgressBar, radial_center), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "radial_begin", (uint32_t)offsetof(ui::ProgressBar, radial_begin), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "radial_fill", (uint32_t)offsetof(ui::ProgressBar, radial_fill), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "indeterminate_speed", (uint32_t)offsetof(ui::ProgressBar, indeterminate_speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "overlay", (uint32_t)offsetof(ui::ProgressBar, overlay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "back_texture", (uint32_t)offsetof(ui::ProgressBar, back_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fill_texture", (uint32_t)offsetof(ui::ProgressBar, fill_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "back_color", (uint32_t)offsetof(ui::ProgressBar, back_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "fill_color", (uint32_t)offsetof(ui::ProgressBar, fill_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "show_percentage", (uint32_t)offsetof(ui::ProgressBar, show_percentage), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font", (uint32_t)offsetof(ui::ProgressBar, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "phase", (uint32_t)offsetof(ui::ProgressBar, phase), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "value", (uint32_t)offsetof(ui::ProgressBar, value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[0] },
+    { "min_display", (uint32_t)offsetof(ui::ProgressBar, min_display), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[1] },
+    { "mode", (uint32_t)offsetof(ui::ProgressBar, mode), MQ_TK_ENUM, 528587395u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[2] },
+    { "fill_mode", (uint32_t)offsetof(ui::ProgressBar, fill_mode), MQ_TK_ENUM, 3297947197u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[3] },
+    { "radial_center", (uint32_t)offsetof(ui::ProgressBar, radial_center), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[4] },
+    { "radial_begin", (uint32_t)offsetof(ui::ProgressBar, radial_begin), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[5] },
+    { "radial_fill", (uint32_t)offsetof(ui::ProgressBar, radial_fill), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[6] },
+    { "indeterminate_speed", (uint32_t)offsetof(ui::ProgressBar, indeterminate_speed), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[7] },
+    { "overlay", (uint32_t)offsetof(ui::ProgressBar, overlay), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[8] },
+    { "back_texture", (uint32_t)offsetof(ui::ProgressBar, back_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[9] },
+    { "fill_texture", (uint32_t)offsetof(ui::ProgressBar, fill_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[10] },
+    { "back_color", (uint32_t)offsetof(ui::ProgressBar, back_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[11] },
+    { "fill_color", (uint32_t)offsetof(ui::ProgressBar, fill_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[12] },
+    { "show_percentage", (uint32_t)offsetof(ui::ProgressBar, show_percentage), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[13] },
+    { "font", (uint32_t)offsetof(ui::ProgressBar, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[14] },
+    { "phase", (uint32_t)offsetof(ui::ProgressBar, phase), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_ProgressBar[15] },
 };
 
+static double mq_acc_ui_RadioGroup_selected_index_getf(const void* p) { const auto& s = *static_cast<const ui::RadioGroup*>(p); return static_cast<double>(s.selected_index); }
+static void mq_acc_ui_RadioGroup_selected_index_setf(void* p, double v) { auto& s = *static_cast<ui::RadioGroup*>(p); s.selected_index = static_cast<decltype(s.selected_index)>(v); }
+static double mq_acc_ui_RadioGroup_allow_unselect_getf(const void* p) { const auto& s = *static_cast<const ui::RadioGroup*>(p); return s.allow_unselect ? 1.0 : 0.0; }
+static void mq_acc_ui_RadioGroup_allow_unselect_setf(void* p, double v) { auto& s = *static_cast<ui::RadioGroup*>(p); s.allow_unselect = v != 0.0; }
+static double mq_acc_ui_RadioGroup_loop_getf(const void* p) { const auto& s = *static_cast<const ui::RadioGroup*>(p); return s.loop ? 1.0 : 0.0; }
+static void mq_acc_ui_RadioGroup_loop_setf(void* p, double v) { auto& s = *static_cast<ui::RadioGroup*>(p); s.loop = v != 0.0; }
+static double mq_acc_ui_RadioGroup_orientation_getf(const void* p) { const auto& s = *static_cast<const ui::RadioGroup*>(p); return static_cast<double>(static_cast<int64_t>(s.orientation)); }
+static void mq_acc_ui_RadioGroup_orientation_setf(void* p, double v) { auto& s = *static_cast<ui::RadioGroup*>(p); s.orientation = static_cast<decltype(s.orientation)>(v); }
+static double mq_acc_ui_RadioGroup_disabled_getf(const void* p) { const auto& s = *static_cast<const ui::RadioGroup*>(p); return s.disabled ? 1.0 : 0.0; }
+static void mq_acc_ui_RadioGroup_disabled_setf(void* p, double v) { auto& s = *static_cast<ui::RadioGroup*>(p); s.disabled = v != 0.0; }
+static const void* mq_acc_ui_RadioGroup_selected_getp(const void* p) { const auto& s = *static_cast<const ui::RadioGroup*>(p); return &s.selected; }
+static void* mq_acc_ui_RadioGroup_selected_getmp(void* p) { auto& s = *static_cast<ui::RadioGroup*>(p); return &s.selected; }
+static double mq_acc_ui_RadioGroup_member_count_getf(const void* p) { const auto& s = *static_cast<const ui::RadioGroup*>(p); return static_cast<double>(s.member_count); }
+static void mq_acc_ui_RadioGroup_member_count_setf(void* p, double v) { auto& s = *static_cast<ui::RadioGroup*>(p); s.member_count = static_cast<decltype(s.member_count)>(v); }
+static const mq_field_accessor mq_acc_ui_RadioGroup[] = {
+    { mq_acc_ui_RadioGroup_selected_index_getf, mq_acc_ui_RadioGroup_selected_index_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_RadioGroup_allow_unselect_getf, mq_acc_ui_RadioGroup_allow_unselect_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_RadioGroup_loop_getf, mq_acc_ui_RadioGroup_loop_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_RadioGroup_orientation_getf, mq_acc_ui_RadioGroup_orientation_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_RadioGroup_disabled_getf, mq_acc_ui_RadioGroup_disabled_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_RadioGroup_selected_getp, mq_acc_ui_RadioGroup_selected_getmp },
+    { mq_acc_ui_RadioGroup_member_count_getf, mq_acc_ui_RadioGroup_member_count_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_RadioGroup[] = {
-    { "selected_index", (uint32_t)offsetof(ui::RadioGroup, selected_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "allow_unselect", (uint32_t)offsetof(ui::RadioGroup, allow_unselect), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "loop", (uint32_t)offsetof(ui::RadioGroup, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "orientation", (uint32_t)offsetof(ui::RadioGroup, orientation), MQ_TK_ENUM, 1035951539u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "disabled", (uint32_t)offsetof(ui::RadioGroup, disabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "selected", (uint32_t)offsetof(ui::RadioGroup, selected), MQ_TK_ENTITY_REF, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "member_count", (uint32_t)offsetof(ui::RadioGroup, member_count), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
+    { "selected_index", (uint32_t)offsetof(ui::RadioGroup, selected_index), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_RadioGroup[0] },
+    { "allow_unselect", (uint32_t)offsetof(ui::RadioGroup, allow_unselect), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_RadioGroup[1] },
+    { "loop", (uint32_t)offsetof(ui::RadioGroup, loop), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_RadioGroup[2] },
+    { "orientation", (uint32_t)offsetof(ui::RadioGroup, orientation), MQ_TK_ENUM, 1035951539u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_RadioGroup[3] },
+    { "disabled", (uint32_t)offsetof(ui::RadioGroup, disabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_RadioGroup[4] },
+    { "selected", (uint32_t)offsetof(ui::RadioGroup, selected), MQ_TK_ENTITY_REF, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_RadioGroup[5] },
+    { "member_count", (uint32_t)offsetof(ui::RadioGroup, member_count), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_RadioGroup[6] },
 };
 
+static double mq_acc_ui_SafeArea_mode_getf(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
+static void mq_acc_ui_SafeArea_mode_setf(void* p, double v) { auto& s = *static_cast<ui::SafeArea*>(p); s.mode = static_cast<decltype(s.mode)>(v); }
+static double mq_acc_ui_SafeArea_anchor_getf(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return static_cast<double>(static_cast<int64_t>(s.anchor)); }
+static void mq_acc_ui_SafeArea_anchor_setf(void* p, double v) { auto& s = *static_cast<ui::SafeArea*>(p); s.anchor = static_cast<decltype(s.anchor)>(v); }
+static const void* mq_acc_ui_SafeArea_target_getp(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return &s.target; }
+static void* mq_acc_ui_SafeArea_target_getmp(void* p) { auto& s = *static_cast<ui::SafeArea*>(p); return &s.target; }
+static double mq_acc_ui_SafeArea_inset_left_getf(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return static_cast<double>(s.inset_left); }
+static void mq_acc_ui_SafeArea_inset_left_setf(void* p, double v) { auto& s = *static_cast<ui::SafeArea*>(p); s.inset_left = static_cast<decltype(s.inset_left)>(v); }
+static double mq_acc_ui_SafeArea_inset_top_getf(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return static_cast<double>(s.inset_top); }
+static void mq_acc_ui_SafeArea_inset_top_setf(void* p, double v) { auto& s = *static_cast<ui::SafeArea*>(p); s.inset_top = static_cast<decltype(s.inset_top)>(v); }
+static double mq_acc_ui_SafeArea_inset_right_getf(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return static_cast<double>(s.inset_right); }
+static void mq_acc_ui_SafeArea_inset_right_setf(void* p, double v) { auto& s = *static_cast<ui::SafeArea*>(p); s.inset_right = static_cast<decltype(s.inset_right)>(v); }
+static double mq_acc_ui_SafeArea_inset_bottom_getf(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return static_cast<double>(s.inset_bottom); }
+static void mq_acc_ui_SafeArea_inset_bottom_setf(void* p, double v) { auto& s = *static_cast<ui::SafeArea*>(p); s.inset_bottom = static_cast<decltype(s.inset_bottom)>(v); }
+static const void* mq_acc_ui_SafeArea_min_size_getp(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return &s.min_size; }
+static void* mq_acc_ui_SafeArea_min_size_getmp(void* p) { auto& s = *static_cast<ui::SafeArea*>(p); return &s.min_size; }
+static double mq_acc_ui_SafeArea_debug_draw_getf(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return s.debug_draw ? 1.0 : 0.0; }
+static void mq_acc_ui_SafeArea_debug_draw_setf(void* p, double v) { auto& s = *static_cast<ui::SafeArea*>(p); s.debug_draw = v != 0.0; }
+static const void* mq_acc_ui_SafeArea_resolved_inset_getp(const void* p) { const auto& s = *static_cast<const ui::SafeArea*>(p); return &s.resolved_inset; }
+static void* mq_acc_ui_SafeArea_resolved_inset_getmp(void* p) { auto& s = *static_cast<ui::SafeArea*>(p); return &s.resolved_inset; }
+static const mq_field_accessor mq_acc_ui_SafeArea[] = {
+    { mq_acc_ui_SafeArea_mode_getf, mq_acc_ui_SafeArea_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_SafeArea_anchor_getf, mq_acc_ui_SafeArea_anchor_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_SafeArea_target_getp, mq_acc_ui_SafeArea_target_getmp },
+    { mq_acc_ui_SafeArea_inset_left_getf, mq_acc_ui_SafeArea_inset_left_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_SafeArea_inset_top_getf, mq_acc_ui_SafeArea_inset_top_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_SafeArea_inset_right_getf, mq_acc_ui_SafeArea_inset_right_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_SafeArea_inset_bottom_getf, mq_acc_ui_SafeArea_inset_bottom_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_SafeArea_min_size_getp, mq_acc_ui_SafeArea_min_size_getmp },
+    { mq_acc_ui_SafeArea_debug_draw_getf, mq_acc_ui_SafeArea_debug_draw_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_SafeArea_resolved_inset_getp, mq_acc_ui_SafeArea_resolved_inset_getmp },
+};
 static const mq_field_desc mq_fields_ui_SafeArea[] = {
-    { "mode", (uint32_t)offsetof(ui::SafeArea, mode), MQ_TK_ENUM, 750329384u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "anchor", (uint32_t)offsetof(ui::SafeArea, anchor), MQ_TK_ENUM, 2829172726u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "target", (uint32_t)offsetof(ui::SafeArea, target), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "inset_left", (uint32_t)offsetof(ui::SafeArea, inset_left), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "inset_top", (uint32_t)offsetof(ui::SafeArea, inset_top), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "inset_right", (uint32_t)offsetof(ui::SafeArea, inset_right), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "inset_bottom", (uint32_t)offsetof(ui::SafeArea, inset_bottom), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "min_size", (uint32_t)offsetof(ui::SafeArea, min_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "debug_draw", (uint32_t)offsetof(ui::SafeArea, debug_draw), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "resolved_inset", (uint32_t)offsetof(ui::SafeArea, resolved_inset), MQ_TK_STRUCT, 1842732857u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "mode", (uint32_t)offsetof(ui::SafeArea, mode), MQ_TK_ENUM, 750329384u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[0] },
+    { "anchor", (uint32_t)offsetof(ui::SafeArea, anchor), MQ_TK_ENUM, 2829172726u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[1] },
+    { "target", (uint32_t)offsetof(ui::SafeArea, target), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[2] },
+    { "inset_left", (uint32_t)offsetof(ui::SafeArea, inset_left), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[3] },
+    { "inset_top", (uint32_t)offsetof(ui::SafeArea, inset_top), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[4] },
+    { "inset_right", (uint32_t)offsetof(ui::SafeArea, inset_right), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[5] },
+    { "inset_bottom", (uint32_t)offsetof(ui::SafeArea, inset_bottom), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[6] },
+    { "min_size", (uint32_t)offsetof(ui::SafeArea, min_size), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[7] },
+    { "debug_draw", (uint32_t)offsetof(ui::SafeArea, debug_draw), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[8] },
+    { "resolved_inset", (uint32_t)offsetof(ui::SafeArea, resolved_inset), MQ_TK_STRUCT, 1842732857u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_SafeArea[9] },
 };
 
+static const void* mq_acc_ui_ScrollView_content_getp(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return &s.content; }
+static void* mq_acc_ui_ScrollView_content_getmp(void* p) { auto& s = *static_cast<ui::ScrollView*>(p); return &s.content; }
+static double mq_acc_ui_ScrollView_scroll_h_getf(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return static_cast<double>(s.scroll_h); }
+static void mq_acc_ui_ScrollView_scroll_h_setf(void* p, double v) { auto& s = *static_cast<ui::ScrollView*>(p); s.scroll_h = static_cast<decltype(s.scroll_h)>(v); }
+static double mq_acc_ui_ScrollView_scroll_v_getf(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return static_cast<double>(s.scroll_v); }
+static void mq_acc_ui_ScrollView_scroll_v_setf(void* p, double v) { auto& s = *static_cast<ui::ScrollView*>(p); s.scroll_v = static_cast<decltype(s.scroll_v)>(v); }
+static double mq_acc_ui_ScrollView_scroll_mode_h_getf(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return static_cast<double>(static_cast<int64_t>(s.scroll_mode_h)); }
+static void mq_acc_ui_ScrollView_scroll_mode_h_setf(void* p, double v) { auto& s = *static_cast<ui::ScrollView*>(p); s.scroll_mode_h = static_cast<decltype(s.scroll_mode_h)>(v); }
+static double mq_acc_ui_ScrollView_scroll_mode_v_getf(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return static_cast<double>(static_cast<int64_t>(s.scroll_mode_v)); }
+static void mq_acc_ui_ScrollView_scroll_mode_v_setf(void* p, double v) { auto& s = *static_cast<ui::ScrollView*>(p); s.scroll_mode_v = static_cast<decltype(s.scroll_mode_v)>(v); }
+static const void* mq_acc_ui_ScrollView_scroll_step_getp(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return &s.scroll_step; }
+static void* mq_acc_ui_ScrollView_scroll_step_getmp(void* p) { auto& s = *static_cast<ui::ScrollView*>(p); return &s.scroll_step; }
+static double mq_acc_ui_ScrollView_follow_focus_getf(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return s.follow_focus ? 1.0 : 0.0; }
+static void mq_acc_ui_ScrollView_follow_focus_setf(void* p, double v) { auto& s = *static_cast<ui::ScrollView*>(p); s.follow_focus = v != 0.0; }
+static double mq_acc_ui_ScrollView_deadzone_getf(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return static_cast<double>(s.deadzone); }
+static void mq_acc_ui_ScrollView_deadzone_setf(void* p, double v) { auto& s = *static_cast<ui::ScrollView*>(p); s.deadzone = static_cast<decltype(s.deadzone)>(v); }
+static double mq_acc_ui_ScrollView_smooth_getf(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return s.smooth ? 1.0 : 0.0; }
+static void mq_acc_ui_ScrollView_smooth_setf(void* p, double v) { auto& s = *static_cast<ui::ScrollView*>(p); s.smooth = v != 0.0; }
+static double mq_acc_ui_ScrollView_bar_thickness_getf(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return static_cast<double>(s.bar_thickness); }
+static void mq_acc_ui_ScrollView_bar_thickness_setf(void* p, double v) { auto& s = *static_cast<ui::ScrollView*>(p); s.bar_thickness = static_cast<decltype(s.bar_thickness)>(v); }
+static const void* mq_acc_ui_ScrollView_scroll_offset_getp(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return &s.scroll_offset; }
+static void* mq_acc_ui_ScrollView_scroll_offset_getmp(void* p) { auto& s = *static_cast<ui::ScrollView*>(p); return &s.scroll_offset; }
+static const void* mq_acc_ui_ScrollView_content_size_getp(const void* p) { const auto& s = *static_cast<const ui::ScrollView*>(p); return &s.content_size; }
+static void* mq_acc_ui_ScrollView_content_size_getmp(void* p) { auto& s = *static_cast<ui::ScrollView*>(p); return &s.content_size; }
+static const mq_field_accessor mq_acc_ui_ScrollView[] = {
+    { 0, 0, 0, 0, mq_acc_ui_ScrollView_content_getp, mq_acc_ui_ScrollView_content_getmp },
+    { mq_acc_ui_ScrollView_scroll_h_getf, mq_acc_ui_ScrollView_scroll_h_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ScrollView_scroll_v_getf, mq_acc_ui_ScrollView_scroll_v_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ScrollView_scroll_mode_h_getf, mq_acc_ui_ScrollView_scroll_mode_h_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ScrollView_scroll_mode_v_getf, mq_acc_ui_ScrollView_scroll_mode_v_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ScrollView_scroll_step_getp, mq_acc_ui_ScrollView_scroll_step_getmp },
+    { mq_acc_ui_ScrollView_follow_focus_getf, mq_acc_ui_ScrollView_follow_focus_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ScrollView_deadzone_getf, mq_acc_ui_ScrollView_deadzone_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ScrollView_smooth_getf, mq_acc_ui_ScrollView_smooth_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ScrollView_bar_thickness_getf, mq_acc_ui_ScrollView_bar_thickness_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ScrollView_scroll_offset_getp, mq_acc_ui_ScrollView_scroll_offset_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_ScrollView_content_size_getp, mq_acc_ui_ScrollView_content_size_getmp },
+};
 static const mq_field_desc mq_fields_ui_ScrollView[] = {
-    { "content", (uint32_t)offsetof(ui::ScrollView, content), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scroll_h", (uint32_t)offsetof(ui::ScrollView, scroll_h), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scroll_v", (uint32_t)offsetof(ui::ScrollView, scroll_v), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scroll_mode_h", (uint32_t)offsetof(ui::ScrollView, scroll_mode_h), MQ_TK_ENUM, 3377444981u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scroll_mode_v", (uint32_t)offsetof(ui::ScrollView, scroll_mode_v), MQ_TK_ENUM, 3377444981u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scroll_step", (uint32_t)offsetof(ui::ScrollView, scroll_step), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "follow_focus", (uint32_t)offsetof(ui::ScrollView, follow_focus), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "deadzone", (uint32_t)offsetof(ui::ScrollView, deadzone), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "smooth", (uint32_t)offsetof(ui::ScrollView, smooth), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "bar_thickness", (uint32_t)offsetof(ui::ScrollView, bar_thickness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "scroll_offset", (uint32_t)offsetof(ui::ScrollView, scroll_offset), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "content_size", (uint32_t)offsetof(ui::ScrollView, content_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "content", (uint32_t)offsetof(ui::ScrollView, content), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[0] },
+    { "scroll_h", (uint32_t)offsetof(ui::ScrollView, scroll_h), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[1] },
+    { "scroll_v", (uint32_t)offsetof(ui::ScrollView, scroll_v), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[2] },
+    { "scroll_mode_h", (uint32_t)offsetof(ui::ScrollView, scroll_mode_h), MQ_TK_ENUM, 3377444981u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[3] },
+    { "scroll_mode_v", (uint32_t)offsetof(ui::ScrollView, scroll_mode_v), MQ_TK_ENUM, 3377444981u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[4] },
+    { "scroll_step", (uint32_t)offsetof(ui::ScrollView, scroll_step), MQ_TK_STRUCT, 1876288095u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[5] },
+    { "follow_focus", (uint32_t)offsetof(ui::ScrollView, follow_focus), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[6] },
+    { "deadzone", (uint32_t)offsetof(ui::ScrollView, deadzone), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[7] },
+    { "smooth", (uint32_t)offsetof(ui::ScrollView, smooth), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[8] },
+    { "bar_thickness", (uint32_t)offsetof(ui::ScrollView, bar_thickness), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[9] },
+    { "scroll_offset", (uint32_t)offsetof(ui::ScrollView, scroll_offset), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[10] },
+    { "content_size", (uint32_t)offsetof(ui::ScrollView, content_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_ScrollView[11] },
 };
 
+static double mq_acc_ui_Slider_min_value_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return static_cast<double>(s.min_value); }
+static void mq_acc_ui_Slider_min_value_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.min_value = static_cast<decltype(s.min_value)>(v); }
+static double mq_acc_ui_Slider_max_value_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return static_cast<double>(s.max_value); }
+static void mq_acc_ui_Slider_max_value_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.max_value = static_cast<decltype(s.max_value)>(v); }
+static double mq_acc_ui_Slider_value_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return static_cast<double>(s.value); }
+static void mq_acc_ui_Slider_value_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.value = static_cast<decltype(s.value)>(v); }
+static double mq_acc_ui_Slider_step_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return static_cast<double>(s.step); }
+static void mq_acc_ui_Slider_step_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.step = static_cast<decltype(s.step)>(v); }
+static double mq_acc_ui_Slider_step_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return static_cast<double>(static_cast<int64_t>(s.step_mode)); }
+static void mq_acc_ui_Slider_step_mode_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.step_mode = static_cast<decltype(s.step_mode)>(v); }
+static double mq_acc_ui_Slider_orientation_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return static_cast<double>(static_cast<int64_t>(s.orientation)); }
+static void mq_acc_ui_Slider_orientation_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.orientation = static_cast<decltype(s.orientation)>(v); }
+static double mq_acc_ui_Slider_invert_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return s.invert ? 1.0 : 0.0; }
+static void mq_acc_ui_Slider_invert_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.invert = v != 0.0; }
+static double mq_acc_ui_Slider_exp_edit_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return s.exp_edit ? 1.0 : 0.0; }
+static void mq_acc_ui_Slider_exp_edit_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.exp_edit = v != 0.0; }
+static double mq_acc_ui_Slider_allow_greater_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return s.allow_greater ? 1.0 : 0.0; }
+static void mq_acc_ui_Slider_allow_greater_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.allow_greater = v != 0.0; }
+static double mq_acc_ui_Slider_disabled_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return s.disabled ? 1.0 : 0.0; }
+static void mq_acc_ui_Slider_disabled_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.disabled = v != 0.0; }
+static const void* mq_acc_ui_Slider_track_texture_getp(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return &s.track_texture; }
+static void* mq_acc_ui_Slider_track_texture_getmp(void* p) { auto& s = *static_cast<ui::Slider*>(p); return &s.track_texture; }
+static const void* mq_acc_ui_Slider_grabber_texture_getp(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return &s.grabber_texture; }
+static void* mq_acc_ui_Slider_grabber_texture_getmp(void* p) { auto& s = *static_cast<ui::Slider*>(p); return &s.grabber_texture; }
+static double mq_acc_ui_Slider_grabber_radius_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return static_cast<double>(s.grabber_radius); }
+static void mq_acc_ui_Slider_grabber_radius_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.grabber_radius = static_cast<decltype(s.grabber_radius)>(v); }
+static double mq_acc_ui_Slider_show_value_label_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return s.show_value_label ? 1.0 : 0.0; }
+static void mq_acc_ui_Slider_show_value_label_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.show_value_label = v != 0.0; }
+static const void* mq_acc_ui_Slider_font_getp(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return &s.font; }
+static void* mq_acc_ui_Slider_font_getmp(void* p) { auto& s = *static_cast<ui::Slider*>(p); return &s.font; }
+static double mq_acc_ui_Slider_dragging_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return s.dragging ? 1.0 : 0.0; }
+static void mq_acc_ui_Slider_dragging_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.dragging = v != 0.0; }
+static double mq_acc_ui_Slider_ratio_getf(const void* p) { const auto& s = *static_cast<const ui::Slider*>(p); return static_cast<double>(s.ratio); }
+static void mq_acc_ui_Slider_ratio_setf(void* p, double v) { auto& s = *static_cast<ui::Slider*>(p); s.ratio = static_cast<decltype(s.ratio)>(v); }
+static const mq_field_accessor mq_acc_ui_Slider[] = {
+    { mq_acc_ui_Slider_min_value_getf, mq_acc_ui_Slider_min_value_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_max_value_getf, mq_acc_ui_Slider_max_value_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_value_getf, mq_acc_ui_Slider_value_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_step_getf, mq_acc_ui_Slider_step_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_step_mode_getf, mq_acc_ui_Slider_step_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_orientation_getf, mq_acc_ui_Slider_orientation_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_invert_getf, mq_acc_ui_Slider_invert_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_exp_edit_getf, mq_acc_ui_Slider_exp_edit_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_allow_greater_getf, mq_acc_ui_Slider_allow_greater_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_disabled_getf, mq_acc_ui_Slider_disabled_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Slider_track_texture_getp, mq_acc_ui_Slider_track_texture_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_Slider_grabber_texture_getp, mq_acc_ui_Slider_grabber_texture_getmp },
+    { mq_acc_ui_Slider_grabber_radius_getf, mq_acc_ui_Slider_grabber_radius_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_show_value_label_getf, mq_acc_ui_Slider_show_value_label_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Slider_font_getp, mq_acc_ui_Slider_font_getmp },
+    { mq_acc_ui_Slider_dragging_getf, mq_acc_ui_Slider_dragging_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Slider_ratio_getf, mq_acc_ui_Slider_ratio_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_Slider[] = {
-    { "min_value", (uint32_t)offsetof(ui::Slider, min_value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "max_value", (uint32_t)offsetof(ui::Slider, max_value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "value", (uint32_t)offsetof(ui::Slider, value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "step", (uint32_t)offsetof(ui::Slider, step), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "step_mode", (uint32_t)offsetof(ui::Slider, step_mode), MQ_TK_ENUM, 685304586u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "orientation", (uint32_t)offsetof(ui::Slider, orientation), MQ_TK_ENUM, 3112813784u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "invert", (uint32_t)offsetof(ui::Slider, invert), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "exp_edit", (uint32_t)offsetof(ui::Slider, exp_edit), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "allow_greater", (uint32_t)offsetof(ui::Slider, allow_greater), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "disabled", (uint32_t)offsetof(ui::Slider, disabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "track_texture", (uint32_t)offsetof(ui::Slider, track_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "grabber_texture", (uint32_t)offsetof(ui::Slider, grabber_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "grabber_radius", (uint32_t)offsetof(ui::Slider, grabber_radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "show_value_label", (uint32_t)offsetof(ui::Slider, show_value_label), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font", (uint32_t)offsetof(ui::Slider, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "dragging", (uint32_t)offsetof(ui::Slider, dragging), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
-    { "ratio", (uint32_t)offsetof(ui::Slider, ratio), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "min_value", (uint32_t)offsetof(ui::Slider, min_value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[0] },
+    { "max_value", (uint32_t)offsetof(ui::Slider, max_value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[1] },
+    { "value", (uint32_t)offsetof(ui::Slider, value), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[2] },
+    { "step", (uint32_t)offsetof(ui::Slider, step), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[3] },
+    { "step_mode", (uint32_t)offsetof(ui::Slider, step_mode), MQ_TK_ENUM, 685304586u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[4] },
+    { "orientation", (uint32_t)offsetof(ui::Slider, orientation), MQ_TK_ENUM, 3112813784u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[5] },
+    { "invert", (uint32_t)offsetof(ui::Slider, invert), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[6] },
+    { "exp_edit", (uint32_t)offsetof(ui::Slider, exp_edit), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[7] },
+    { "allow_greater", (uint32_t)offsetof(ui::Slider, allow_greater), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[8] },
+    { "disabled", (uint32_t)offsetof(ui::Slider, disabled), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[9] },
+    { "track_texture", (uint32_t)offsetof(ui::Slider, track_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[10] },
+    { "grabber_texture", (uint32_t)offsetof(ui::Slider, grabber_texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[11] },
+    { "grabber_radius", (uint32_t)offsetof(ui::Slider, grabber_radius), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[12] },
+    { "show_value_label", (uint32_t)offsetof(ui::Slider, show_value_label), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[13] },
+    { "font", (uint32_t)offsetof(ui::Slider, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[14] },
+    { "dragging", (uint32_t)offsetof(ui::Slider, dragging), MQ_TK_BOOL, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[15] },
+    { "ratio", (uint32_t)offsetof(ui::Slider, ratio), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Slider[16] },
 };
 
+static double mq_acc_ui_Tabs_current_tab_getf(const void* p) { const auto& s = *static_cast<const ui::Tabs*>(p); return static_cast<double>(s.current_tab); }
+static void mq_acc_ui_Tabs_current_tab_setf(void* p, double v) { auto& s = *static_cast<ui::Tabs*>(p); s.current_tab = static_cast<decltype(s.current_tab)>(v); }
+static const void* mq_acc_ui_Tabs_tab_bar_getp(const void* p) { const auto& s = *static_cast<const ui::Tabs*>(p); return &s.tab_bar; }
+static void* mq_acc_ui_Tabs_tab_bar_getmp(void* p) { auto& s = *static_cast<ui::Tabs*>(p); return &s.tab_bar; }
+static double mq_acc_ui_Tabs_side_getf(const void* p) { const auto& s = *static_cast<const ui::Tabs*>(p); return static_cast<double>(static_cast<int64_t>(s.side)); }
+static void mq_acc_ui_Tabs_side_setf(void* p, double v) { auto& s = *static_cast<ui::Tabs*>(p); s.side = static_cast<decltype(s.side)>(v); }
+static double mq_acc_ui_Tabs_transition_getf(const void* p) { const auto& s = *static_cast<const ui::Tabs*>(p); return static_cast<double>(static_cast<int64_t>(s.transition)); }
+static void mq_acc_ui_Tabs_transition_setf(void* p, double v) { auto& s = *static_cast<ui::Tabs*>(p); s.transition = static_cast<decltype(s.transition)>(v); }
+static double mq_acc_ui_Tabs_transition_time_getf(const void* p) { const auto& s = *static_cast<const ui::Tabs*>(p); return static_cast<double>(s.transition_time); }
+static void mq_acc_ui_Tabs_transition_time_setf(void* p, double v) { auto& s = *static_cast<ui::Tabs*>(p); s.transition_time = static_cast<decltype(s.transition_time)>(v); }
+static double mq_acc_ui_Tabs_tab_count_getf(const void* p) { const auto& s = *static_cast<const ui::Tabs*>(p); return static_cast<double>(s.tab_count); }
+static void mq_acc_ui_Tabs_tab_count_setf(void* p, double v) { auto& s = *static_cast<ui::Tabs*>(p); s.tab_count = static_cast<decltype(s.tab_count)>(v); }
+static const void* mq_acc_ui_Tabs_current_page_getp(const void* p) { const auto& s = *static_cast<const ui::Tabs*>(p); return &s.current_page; }
+static void* mq_acc_ui_Tabs_current_page_getmp(void* p) { auto& s = *static_cast<ui::Tabs*>(p); return &s.current_page; }
+static const mq_field_accessor mq_acc_ui_Tabs[] = {
+    { mq_acc_ui_Tabs_current_tab_getf, mq_acc_ui_Tabs_current_tab_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Tabs_tab_bar_getp, mq_acc_ui_Tabs_tab_bar_getmp },
+    { mq_acc_ui_Tabs_side_getf, mq_acc_ui_Tabs_side_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Tabs_transition_getf, mq_acc_ui_Tabs_transition_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Tabs_transition_time_getf, mq_acc_ui_Tabs_transition_time_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_Tabs_tab_count_getf, mq_acc_ui_Tabs_tab_count_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_Tabs_current_page_getp, mq_acc_ui_Tabs_current_page_getmp },
+};
 static const mq_field_desc mq_fields_ui_Tabs[] = {
-    { "current_tab", (uint32_t)offsetof(ui::Tabs, current_tab), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tab_bar", (uint32_t)offsetof(ui::Tabs, tab_bar), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "side", (uint32_t)offsetof(ui::Tabs, side), MQ_TK_ENUM, 3691923508u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "transition", (uint32_t)offsetof(ui::Tabs, transition), MQ_TK_ENUM, 770710813u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "transition_time", (uint32_t)offsetof(ui::Tabs, transition_time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "tab_count", (uint32_t)offsetof(ui::Tabs, tab_count), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0 },
-    { "current_page", (uint32_t)offsetof(ui::Tabs, current_page), MQ_TK_ENTITY_REF, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "current_tab", (uint32_t)offsetof(ui::Tabs, current_tab), MQ_TK_I32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Tabs[0] },
+    { "tab_bar", (uint32_t)offsetof(ui::Tabs, tab_bar), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Tabs[1] },
+    { "side", (uint32_t)offsetof(ui::Tabs, side), MQ_TK_ENUM, 3691923508u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Tabs[2] },
+    { "transition", (uint32_t)offsetof(ui::Tabs, transition), MQ_TK_ENUM, 770710813u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Tabs[3] },
+    { "transition_time", (uint32_t)offsetof(ui::Tabs, transition_time), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Tabs[4] },
+    { "tab_count", (uint32_t)offsetof(ui::Tabs, tab_count), MQ_TK_I32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_Tabs[5] },
+    { "current_page", (uint32_t)offsetof(ui::Tabs, current_page), MQ_TK_ENTITY_REF, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_Tabs[6] },
 };
 
+static const char* mq_acc_ui_TextLabel_text_gets(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return s.text.c_str(); }
+static void mq_acc_ui_TextLabel_text_sets(void* p, const char* v) { auto& s = *static_cast<ui::TextLabel*>(p); s.text = v ? v : ""; }
+static const void* mq_acc_ui_TextLabel_text_getp(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return &s.text; }
+static void* mq_acc_ui_TextLabel_text_getmp(void* p) { auto& s = *static_cast<ui::TextLabel*>(p); return &s.text; }
+static const void* mq_acc_ui_TextLabel_font_getp(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return &s.font; }
+static void* mq_acc_ui_TextLabel_font_getmp(void* p) { auto& s = *static_cast<ui::TextLabel*>(p); return &s.font; }
+static double mq_acc_ui_TextLabel_font_size_getf(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return static_cast<double>(s.font_size); }
+static void mq_acc_ui_TextLabel_font_size_setf(void* p, double v) { auto& s = *static_cast<ui::TextLabel*>(p); s.font_size = static_cast<decltype(s.font_size)>(v); }
+static const void* mq_acc_ui_TextLabel_color_getp(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return &s.color; }
+static void* mq_acc_ui_TextLabel_color_getmp(void* p) { auto& s = *static_cast<ui::TextLabel*>(p); return &s.color; }
+static double mq_acc_ui_TextLabel_align_h_getf(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return static_cast<double>(static_cast<int64_t>(s.align_h)); }
+static void mq_acc_ui_TextLabel_align_h_setf(void* p, double v) { auto& s = *static_cast<ui::TextLabel*>(p); s.align_h = static_cast<decltype(s.align_h)>(v); }
+static double mq_acc_ui_TextLabel_align_v_getf(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return static_cast<double>(static_cast<int64_t>(s.align_v)); }
+static void mq_acc_ui_TextLabel_align_v_setf(void* p, double v) { auto& s = *static_cast<ui::TextLabel*>(p); s.align_v = static_cast<decltype(s.align_v)>(v); }
+static double mq_acc_ui_TextLabel_wrap_mode_getf(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return static_cast<double>(static_cast<int64_t>(s.wrap_mode)); }
+static void mq_acc_ui_TextLabel_wrap_mode_setf(void* p, double v) { auto& s = *static_cast<ui::TextLabel*>(p); s.wrap_mode = static_cast<decltype(s.wrap_mode)>(v); }
+static double mq_acc_ui_TextLabel_line_spacing_getf(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return static_cast<double>(s.line_spacing); }
+static void mq_acc_ui_TextLabel_line_spacing_setf(void* p, double v) { auto& s = *static_cast<ui::TextLabel*>(p); s.line_spacing = static_cast<decltype(s.line_spacing)>(v); }
+static double mq_acc_ui_TextLabel_outline_size_getf(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return static_cast<double>(s.outline_size); }
+static void mq_acc_ui_TextLabel_outline_size_setf(void* p, double v) { auto& s = *static_cast<ui::TextLabel*>(p); s.outline_size = static_cast<decltype(s.outline_size)>(v); }
+static const void* mq_acc_ui_TextLabel_outline_color_getp(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return &s.outline_color; }
+static void* mq_acc_ui_TextLabel_outline_color_getmp(void* p) { auto& s = *static_cast<ui::TextLabel*>(p); return &s.outline_color; }
+static double mq_acc_ui_TextLabel_uppercase_getf(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return s.uppercase ? 1.0 : 0.0; }
+static void mq_acc_ui_TextLabel_uppercase_setf(void* p, double v) { auto& s = *static_cast<ui::TextLabel*>(p); s.uppercase = v != 0.0; }
+static const void* mq_acc_ui_TextLabel_text_size_getp(const void* p) { const auto& s = *static_cast<const ui::TextLabel*>(p); return &s.text_size; }
+static void* mq_acc_ui_TextLabel_text_size_getmp(void* p) { auto& s = *static_cast<ui::TextLabel*>(p); return &s.text_size; }
+static const mq_field_accessor mq_acc_ui_TextLabel[] = {
+    { 0, 0, mq_acc_ui_TextLabel_text_gets, mq_acc_ui_TextLabel_text_sets, mq_acc_ui_TextLabel_text_getp, mq_acc_ui_TextLabel_text_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_TextLabel_font_getp, mq_acc_ui_TextLabel_font_getmp },
+    { mq_acc_ui_TextLabel_font_size_getf, mq_acc_ui_TextLabel_font_size_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_TextLabel_color_getp, mq_acc_ui_TextLabel_color_getmp },
+    { mq_acc_ui_TextLabel_align_h_getf, mq_acc_ui_TextLabel_align_h_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_TextLabel_align_v_getf, mq_acc_ui_TextLabel_align_v_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_TextLabel_wrap_mode_getf, mq_acc_ui_TextLabel_wrap_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_TextLabel_line_spacing_getf, mq_acc_ui_TextLabel_line_spacing_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_TextLabel_outline_size_getf, mq_acc_ui_TextLabel_outline_size_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_TextLabel_outline_color_getp, mq_acc_ui_TextLabel_outline_color_getmp },
+    { mq_acc_ui_TextLabel_uppercase_getf, mq_acc_ui_TextLabel_uppercase_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_TextLabel_text_size_getp, mq_acc_ui_TextLabel_text_size_getmp },
+};
 static const mq_field_desc mq_fields_ui_TextLabel[] = {
-    { "text", (uint32_t)offsetof(ui::TextLabel, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font", (uint32_t)offsetof(ui::TextLabel, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "font_size", (uint32_t)offsetof(ui::TextLabel, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "color", (uint32_t)offsetof(ui::TextLabel, color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_h", (uint32_t)offsetof(ui::TextLabel, align_h), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "align_v", (uint32_t)offsetof(ui::TextLabel, align_v), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "wrap_mode", (uint32_t)offsetof(ui::TextLabel, wrap_mode), MQ_TK_ENUM, 1869600876u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "line_spacing", (uint32_t)offsetof(ui::TextLabel, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_size", (uint32_t)offsetof(ui::TextLabel, outline_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "outline_color", (uint32_t)offsetof(ui::TextLabel, outline_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "uppercase", (uint32_t)offsetof(ui::TextLabel, uppercase), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "text_size", (uint32_t)offsetof(ui::TextLabel, text_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "text", (uint32_t)offsetof(ui::TextLabel, text), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[0] },
+    { "font", (uint32_t)offsetof(ui::TextLabel, font), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[1] },
+    { "font_size", (uint32_t)offsetof(ui::TextLabel, font_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[2] },
+    { "color", (uint32_t)offsetof(ui::TextLabel, color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[3] },
+    { "align_h", (uint32_t)offsetof(ui::TextLabel, align_h), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[4] },
+    { "align_v", (uint32_t)offsetof(ui::TextLabel, align_v), MQ_TK_ENUM, 1234036308u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[5] },
+    { "wrap_mode", (uint32_t)offsetof(ui::TextLabel, wrap_mode), MQ_TK_ENUM, 1869600876u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[6] },
+    { "line_spacing", (uint32_t)offsetof(ui::TextLabel, line_spacing), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[7] },
+    { "outline_size", (uint32_t)offsetof(ui::TextLabel, outline_size), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[8] },
+    { "outline_color", (uint32_t)offsetof(ui::TextLabel, outline_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[9] },
+    { "uppercase", (uint32_t)offsetof(ui::TextLabel, uppercase), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[10] },
+    { "text_size", (uint32_t)offsetof(ui::TextLabel, text_size), MQ_TK_STRUCT, 1876288095u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_TextLabel[11] },
 };
 
+static double mq_acc_ui_UIOpacity_opacity_getf(const void* p) { const auto& s = *static_cast<const ui::UIOpacity*>(p); return static_cast<double>(s.opacity); }
+static void mq_acc_ui_UIOpacity_opacity_setf(void* p, double v) { auto& s = *static_cast<ui::UIOpacity*>(p); s.opacity = static_cast<decltype(s.opacity)>(v); }
+static double mq_acc_ui_UIOpacity_mode_getf(const void* p) { const auto& s = *static_cast<const ui::UIOpacity*>(p); return static_cast<double>(static_cast<int64_t>(s.mode)); }
+static void mq_acc_ui_UIOpacity_mode_setf(void* p, double v) { auto& s = *static_cast<ui::UIOpacity*>(p); s.mode = static_cast<decltype(s.mode)>(v); }
+static double mq_acc_ui_UIOpacity_affect_children_getf(const void* p) { const auto& s = *static_cast<const ui::UIOpacity*>(p); return s.affect_children ? 1.0 : 0.0; }
+static void mq_acc_ui_UIOpacity_affect_children_setf(void* p, double v) { auto& s = *static_cast<ui::UIOpacity*>(p); s.affect_children = v != 0.0; }
+static const void* mq_acc_ui_UIOpacity_root_getp(const void* p) { const auto& s = *static_cast<const ui::UIOpacity*>(p); return &s.root; }
+static void* mq_acc_ui_UIOpacity_root_getmp(void* p) { auto& s = *static_cast<ui::UIOpacity*>(p); return &s.root; }
+static double mq_acc_ui_UIOpacity_visible_threshold_getf(const void* p) { const auto& s = *static_cast<const ui::UIOpacity*>(p); return static_cast<double>(s.visible_threshold); }
+static void mq_acc_ui_UIOpacity_visible_threshold_setf(void* p, double v) { auto& s = *static_cast<ui::UIOpacity*>(p); s.visible_threshold = static_cast<decltype(s.visible_threshold)>(v); }
+static double mq_acc_ui_UIOpacity_final_alpha_getf(const void* p) { const auto& s = *static_cast<const ui::UIOpacity*>(p); return static_cast<double>(s.final_alpha); }
+static void mq_acc_ui_UIOpacity_final_alpha_setf(void* p, double v) { auto& s = *static_cast<ui::UIOpacity*>(p); s.final_alpha = static_cast<decltype(s.final_alpha)>(v); }
+static const mq_field_accessor mq_acc_ui_UIOpacity[] = {
+    { mq_acc_ui_UIOpacity_opacity_getf, mq_acc_ui_UIOpacity_opacity_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_UIOpacity_mode_getf, mq_acc_ui_UIOpacity_mode_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_UIOpacity_affect_children_getf, mq_acc_ui_UIOpacity_affect_children_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_UIOpacity_root_getp, mq_acc_ui_UIOpacity_root_getmp },
+    { mq_acc_ui_UIOpacity_visible_threshold_getf, mq_acc_ui_UIOpacity_visible_threshold_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_UIOpacity_final_alpha_getf, mq_acc_ui_UIOpacity_final_alpha_setf, 0, 0, 0, 0 },
+};
 static const mq_field_desc mq_fields_ui_UIOpacity[] = {
-    { "opacity", (uint32_t)offsetof(ui::UIOpacity, opacity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "mode", (uint32_t)offsetof(ui::UIOpacity, mode), MQ_TK_ENUM, 1908508991u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "affect_children", (uint32_t)offsetof(ui::UIOpacity, affect_children), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "root", (uint32_t)offsetof(ui::UIOpacity, root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "visible_threshold", (uint32_t)offsetof(ui::UIOpacity, visible_threshold), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0 },
-    { "final_alpha", (uint32_t)offsetof(ui::UIOpacity, final_alpha), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0 },
+    { "opacity", (uint32_t)offsetof(ui::UIOpacity, opacity), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_UIOpacity[0] },
+    { "mode", (uint32_t)offsetof(ui::UIOpacity, mode), MQ_TK_ENUM, 1908508991u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_UIOpacity[1] },
+    { "affect_children", (uint32_t)offsetof(ui::UIOpacity, affect_children), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_UIOpacity[2] },
+    { "root", (uint32_t)offsetof(ui::UIOpacity, root), MQ_TK_ENTITY_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_UIOpacity[3] },
+    { "visible_threshold", (uint32_t)offsetof(ui::UIOpacity, visible_threshold), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_UIOpacity[4] },
+    { "final_alpha", (uint32_t)offsetof(ui::UIOpacity, final_alpha), MQ_TK_F32, 0u, 0u, 1u, 0u, 0, 0, 0, 0, &mq_acc_ui_UIOpacity[5] },
 };
 
 static const mq_enum_value mq_values_anim_AnimParamType[] = {
@@ -6348,6 +10091,3966 @@ extern const mq_type_desc mq_type_ui_WrapMode = {
     3u,
     mq_defaults_ui_WrapMode,
 };
+
+static uint32_t mq_field_hash(const char* s) {
+    uint32_t h = 2166136261u;
+    while (s && *s) { h ^= (uint32_t)(uint8_t)*s++; h *= 16777619u; }
+    return h;
+}
+
+extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char* name) {
+    if (!type || !name) return 0;
+    const uint32_t h = mq_field_hash(name);
+    switch (type->type_id) {
+    case 629660702u:
+        switch (h) {
+        case 2071016015u:
+            if (std::strcmp(name, "frames") == 0) return &type->fields[0];
+            break;
+        case 3779456605u:
+            if (std::strcmp(name, "animation") == 0) return &type->fields[1];
+            break;
+        case 287169096u:
+            if (std::strcmp(name, "autoplay") == 0) return &type->fields[2];
+            break;
+        case 422158775u:
+            if (std::strcmp(name, "play_mode") == 0) return &type->fields[3];
+            break;
+        case 3184741032u:
+            if (std::strcmp(name, "fps") == 0) return &type->fields[4];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[5];
+            break;
+        case 3523899814u:
+            if (std::strcmp(name, "frame") == 0) return &type->fields[6];
+            break;
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[7];
+            break;
+        case 1911511093u:
+            if (std::strcmp(name, "playing") == 0) return &type->fields[8];
+            break;
+        case 3134659686u:
+            if (std::strcmp(name, "flip") == 0) return &type->fields[9];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[10];
+            break;
+        case 4226831639u:
+            if (std::strcmp(name, "pivot") == 0) return &type->fields[11];
+            break;
+        case 1895660890u:
+            if (std::strcmp(name, "z_index") == 0) return &type->fields[12];
+            break;
+        case 3538210912u:
+            if (std::strcmp(name, "material") == 0) return &type->fields[13];
+            break;
+        }
+        break;
+    case 429485613u:
+        switch (h) {
+        case 1393659643u:
+            if (std::strcmp(name, "clip") == 0) return &type->fields[0];
+            break;
+        case 287169096u:
+            if (std::strcmp(name, "autoplay") == 0) return &type->fields[1];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[2];
+            break;
+        case 3305482062u:
+            if (std::strcmp(name, "update_mode") == 0) return &type->fields[3];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[4];
+            break;
+        case 1911511093u:
+            if (std::strcmp(name, "playing") == 0) return &type->fields[5];
+            break;
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[6];
+            break;
+        case 86499029u:
+            if (std::strcmp(name, "track_mask") == 0) return &type->fields[7];
+            break;
+        case 3679955635u:
+            if (std::strcmp(name, "event_sink") == 0) return &type->fields[8];
+            break;
+        }
+        break;
+    case 2270324811u:
+        switch (h) {
+        case 3026529409u:
+            if (std::strcmp(name, "controller") == 0) return &type->fields[0];
+            break;
+        case 1218784985u:
+            if (std::strcmp(name, "parameters") == 0) return &type->fields[1];
+            break;
+        case 4233533230u:
+            if (std::strcmp(name, "param_count") == 0) return &type->fields[2];
+            break;
+        case 468664560u:
+            if (std::strcmp(name, "current_state") == 0) return &type->fields[3];
+            break;
+        case 1148482660u:
+            if (std::strcmp(name, "normalized_time") == 0) return &type->fields[4];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[5];
+            break;
+        case 3201898661u:
+            if (std::strcmp(name, "apply_physics") == 0) return &type->fields[6];
+            break;
+        case 845187144u:
+            if (std::strcmp(name, "target") == 0) return &type->fields[7];
+            break;
+        }
+        break;
+    case 2767010176u:
+        switch (h) {
+        case 2347707675u:
+            if (std::strcmp(name, "name_hash") == 0) return &type->fields[0];
+            break;
+        case 1361572173u:
+            if (std::strcmp(name, "type") == 0) return &type->fields[1];
+            break;
+        case 1113510858u:
+            if (std::strcmp(name, "value") == 0) return &type->fields[2];
+            break;
+        case 2494227229u:
+            if (std::strcmp(name, "ivalue") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 615011289u:
+        switch (h) {
+        case 2471448074u:
+            if (std::strcmp(name, "position") == 0) return &type->fields[0];
+            break;
+        case 564937055u:
+            if (std::strcmp(name, "rotation") == 0) return &type->fields[1];
+            break;
+        case 2190941297u:
+            if (std::strcmp(name, "scale") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 14099437u:
+        switch (h) {
+        case 4243288667u:
+            if (std::strcmp(name, "interp") == 0) return &type->fields[0];
+            break;
+        case 967958004u:
+            if (std::strcmp(name, "count") == 0) return &type->fields[1];
+            break;
+        case 4182378701u:
+            if (std::strcmp(name, "keys") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 1020666756u:
+        switch (h) {
+        case 4044111267u:
+            if (std::strcmp(name, "t") == 0) return &type->fields[0];
+            break;
+        case 1113510858u:
+            if (std::strcmp(name, "value") == 0) return &type->fields[1];
+            break;
+        case 3417638448u:
+            if (std::strcmp(name, "in_tangent") == 0) return &type->fields[2];
+            break;
+        case 1829518569u:
+            if (std::strcmp(name, "out_tangent") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 2176610286u:
+        switch (h) {
+        case 967958004u:
+            if (std::strcmp(name, "count") == 0) return &type->fields[0];
+            break;
+        case 2850818594u:
+            if (std::strcmp(name, "stops") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 3921250374u:
+        switch (h) {
+        case 4044111267u:
+            if (std::strcmp(name, "t") == 0) return &type->fields[0];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 2345358130u:
+        switch (h) {
+        case 3966689298u:
+            if (std::strcmp(name, "mode") == 0) return &type->fields[0];
+            break;
+        case 1761167537u:
+            if (std::strcmp(name, "sim_space") == 0) return &type->fields[1];
+            break;
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[2];
+            break;
+        case 3538210912u:
+            if (std::strcmp(name, "material") == 0) return &type->fields[3];
+            break;
+        case 196886744u:
+            if (std::strcmp(name, "blend") == 0) return &type->fields[4];
+            break;
+        case 2646858022u:
+            if (std::strcmp(name, "shape") == 0) return &type->fields[5];
+            break;
+        case 839558810u:
+            if (std::strcmp(name, "shape_size") == 0) return &type->fields[6];
+            break;
+        case 3443835658u:
+            if (std::strcmp(name, "shape_angle") == 0) return &type->fields[7];
+            break;
+        case 2927860839u:
+            if (std::strcmp(name, "rate") == 0) return &type->fields[8];
+            break;
+        case 1380840625u:
+            if (std::strcmp(name, "burst_count") == 0) return &type->fields[9];
+            break;
+        case 1376955374u:
+            if (std::strcmp(name, "lifetime") == 0) return &type->fields[10];
+            break;
+        case 935121995u:
+            if (std::strcmp(name, "start_speed") == 0) return &type->fields[11];
+            break;
+        case 3523870533u:
+            if (std::strcmp(name, "gravity") == 0) return &type->fields[12];
+            break;
+        case 190519825u:
+            if (std::strcmp(name, "start_size") == 0) return &type->fields[13];
+            break;
+        case 2784396486u:
+            if (std::strcmp(name, "size_over_life") == 0) return &type->fields[14];
+            break;
+        case 955157090u:
+            if (std::strcmp(name, "color_over_life") == 0) return &type->fields[15];
+            break;
+        case 2296051149u:
+            if (std::strcmp(name, "max_particles") == 0) return &type->fields[16];
+            break;
+        case 1346747564u:
+            if (std::strcmp(name, "seed") == 0) return &type->fields[17];
+            break;
+        case 2425545187u:
+            if (std::strcmp(name, "prewarm") == 0) return &type->fields[18];
+            break;
+        case 763905866u:
+            if (std::strcmp(name, "emit") == 0) return &type->fields[19];
+            break;
+        case 4128083025u:
+            if (std::strcmp(name, "sort_mode") == 0) return &type->fields[20];
+            break;
+        case 198736152u:
+            if (std::strcmp(name, "rng_state") == 0) return &type->fields[21];
+            break;
+        }
+        break;
+    case 1938326681u:
+        switch (h) {
+        case 2974586734u:
+            if (std::strcmp(name, "skeleton") == 0) return &type->fields[0];
+            break;
+        case 1681177512u:
+            if (std::strcmp(name, "bone_root") == 0) return &type->fields[1];
+            break;
+        case 3836561980u:
+            if (std::strcmp(name, "skinning_mode") == 0) return &type->fields[2];
+            break;
+        case 1275433429u:
+            if (std::strcmp(name, "poses") == 0) return &type->fields[3];
+            break;
+        case 3953685147u:
+            if (std::strcmp(name, "skinning_matrices") == 0) return &type->fields[4];
+            break;
+        case 1029089800u:
+            if (std::strcmp(name, "bounds") == 0) return &type->fields[5];
+            break;
+        }
+        break;
+    case 1681902629u:
+        switch (h) {
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[0];
+            break;
+        case 2067622972u:
+            if (std::strcmp(name, "track") == 0) return &type->fields[1];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 2414443662u:
+        switch (h) {
+        case 2974586734u:
+            if (std::strcmp(name, "skeleton") == 0) return &type->fields[0];
+            break;
+        case 3407328204u:
+            if (std::strcmp(name, "atlas") == 0) return &type->fields[1];
+            break;
+        case 862676408u:
+            if (std::strcmp(name, "skin") == 0) return &type->fields[2];
+            break;
+        case 3779456605u:
+            if (std::strcmp(name, "animation") == 0) return &type->fields[3];
+            break;
+        case 287169096u:
+            if (std::strcmp(name, "autoplay") == 0) return &type->fields[4];
+            break;
+        case 422158775u:
+            if (std::strcmp(name, "play_mode") == 0) return &type->fields[5];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[6];
+            break;
+        case 196886744u:
+            if (std::strcmp(name, "blend") == 0) return &type->fields[7];
+            break;
+        case 3305482062u:
+            if (std::strcmp(name, "update_mode") == 0) return &type->fields[8];
+            break;
+        case 940324117u:
+            if (std::strcmp(name, "phys_timestep") == 0) return &type->fields[9];
+            break;
+        case 3134659686u:
+            if (std::strcmp(name, "flip") == 0) return &type->fields[10];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[11];
+            break;
+        case 1895660890u:
+            if (std::strcmp(name, "z_index") == 0) return &type->fields[12];
+            break;
+        case 3538210912u:
+            if (std::strcmp(name, "material") == 0) return &type->fields[13];
+            break;
+        case 2354796151u:
+            if (std::strcmp(name, "slots_from") == 0) return &type->fields[14];
+            break;
+        case 3145480182u:
+            if (std::strcmp(name, "slots_to") == 0) return &type->fields[15];
+            break;
+        case 3568170787u:
+            if (std::strcmp(name, "default_mix") == 0) return &type->fields[16];
+            break;
+        case 141774037u:
+            if (std::strcmp(name, "time_scale") == 0) return &type->fields[17];
+            break;
+        case 3941941461u:
+            if (std::strcmp(name, "two_color") == 0) return &type->fields[18];
+            break;
+        case 2016490230u:
+            if (std::strcmp(name, "state") == 0) return &type->fields[19];
+            break;
+        case 193386898u:
+            if (std::strcmp(name, "instance") == 0) return &type->fields[20];
+            break;
+        }
+        break;
+    case 4113356993u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2211460629u:
+            if (std::strcmp(name, "length") == 0) return &type->fields[1];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[2];
+            break;
+        case 965172509u:
+            if (std::strcmp(name, "interpolation") == 0) return &type->fields[3];
+            break;
+        case 3184741032u:
+            if (std::strcmp(name, "fps") == 0) return &type->fields[4];
+            break;
+        case 1353810013u:
+            if (std::strcmp(name, "tracks") == 0) return &type->fields[5];
+            break;
+        }
+        break;
+    case 2547430826u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 3128067935u:
+            if (std::strcmp(name, "states") == 0) return &type->fields[1];
+            break;
+        case 1218784985u:
+            if (std::strcmp(name, "parameters") == 0) return &type->fields[2];
+            break;
+        case 556960323u:
+            if (std::strcmp(name, "transitions") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 799406187u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 786459023u:
+            if (std::strcmp(name, "volume") == 0) return &type->fields[1];
+            break;
+        case 3590758228u:
+            if (std::strcmp(name, "mute") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 3683006541u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[1];
+            break;
+        case 2211460629u:
+            if (std::strcmp(name, "length") == 0) return &type->fields[2];
+            break;
+        case 2936796266u:
+            if (std::strcmp(name, "sample_rate") == 0) return &type->fields[3];
+            break;
+        case 4226312309u:
+            if (std::strcmp(name, "channels") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 4228491786u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 3163908038u:
+            if (std::strcmp(name, "points") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 3027706389u:
+        switch (h) {
+        case 2347707675u:
+            if (std::strcmp(name, "name_hash") == 0) return &type->fields[0];
+            break;
+        case 3939368189u:
+            if (std::strcmp(name, "parent") == 0) return &type->fields[1];
+            break;
+        case 2242185136u:
+            if (std::strcmp(name, "bind_position") == 0) return &type->fields[2];
+            break;
+        case 1444116637u:
+            if (std::strcmp(name, "bind_rotation") == 0) return &type->fields[3];
+            break;
+        case 1847164731u:
+            if (std::strcmp(name, "bind_scale") == 0) return &type->fields[4];
+            break;
+        case 3456088331u:
+            if (std::strcmp(name, "inverse_bind") == 0) return &type->fields[5];
+            break;
+        }
+        break;
+    case 1886629898u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 363867892u:
+            if (std::strcmp(name, "wgsl") == 0) return &type->fields[1];
+            break;
+        case 559900755u:
+            if (std::strcmp(name, "params") == 0) return &type->fields[2];
+            break;
+        case 3711870601u:
+            if (std::strcmp(name, "blend_src") == 0) return &type->fields[3];
+            break;
+        case 3751679324u:
+            if (std::strcmp(name, "blend_dst") == 0) return &type->fields[4];
+            break;
+        case 4204972603u:
+            if (std::strcmp(name, "depth_test") == 0) return &type->fields[5];
+            break;
+        case 1248232018u:
+            if (std::strcmp(name, "depth_write") == 0) return &type->fields[6];
+            break;
+        case 2551920565u:
+            if (std::strcmp(name, "cull_mode") == 0) return &type->fields[7];
+            break;
+        case 8066294u:
+            if (std::strcmp(name, "primitive") == 0) return &type->fields[8];
+            break;
+        }
+        break;
+    case 1796108667u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 1361572173u:
+            if (std::strcmp(name, "type") == 0) return &type->fields[1];
+            break;
+        case 4063066224u:
+            if (std::strcmp(name, "default_value") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 404572438u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[1];
+            break;
+        case 3966689298u:
+            if (std::strcmp(name, "mode") == 0) return &type->fields[2];
+            break;
+        case 1161159933u:
+            if (std::strcmp(name, "sizes") == 0) return &type->fields[3];
+            break;
+        case 1580358979u:
+            if (std::strcmp(name, "charset_preset") == 0) return &type->fields[4];
+            break;
+        case 3464792918u:
+            if (std::strcmp(name, "charset_ranges") == 0) return &type->fields[5];
+            break;
+        case 707504506u:
+            if (std::strcmp(name, "charset_extra") == 0) return &type->fields[6];
+            break;
+        case 2092966386u:
+            if (std::strcmp(name, "sdf_spread") == 0) return &type->fields[7];
+            break;
+        case 3930497871u:
+            if (std::strcmp(name, "sdf_px_range") == 0) return &type->fields[8];
+            break;
+        case 3707729799u:
+            if (std::strcmp(name, "atlas_max_size") == 0) return &type->fields[9];
+            break;
+        case 1368809410u:
+            if (std::strcmp(name, "atlas_padding") == 0) return &type->fields[10];
+            break;
+        case 3734435446u:
+            if (std::strcmp(name, "bold") == 0) return &type->fields[11];
+            break;
+        case 1625946989u:
+            if (std::strcmp(name, "italic") == 0) return &type->fields[12];
+            break;
+        case 3799783355u:
+            if (std::strcmp(name, "fallback") == 0) return &type->fields[13];
+            break;
+        }
+        break;
+    case 1719075286u:
+        switch (h) {
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[0];
+            break;
+        case 1113510858u:
+            if (std::strcmp(name, "value") == 0) return &type->fields[1];
+            break;
+        case 3417638448u:
+            if (std::strcmp(name, "in_tangent") == 0) return &type->fields[2];
+            break;
+        case 1829518569u:
+            if (std::strcmp(name, "out_tangent") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 2307192086u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 1852738900u:
+            if (std::strcmp(name, "effect") == 0) return &type->fields[1];
+            break;
+        case 559900755u:
+            if (std::strcmp(name, "params") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 4232749649u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 3939368189u:
+            if (std::strcmp(name, "parent") == 0) return &type->fields[1];
+            break;
+        case 4258025162u:
+            if (std::strcmp(name, "overrides") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 711465463u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 1361572173u:
+            if (std::strcmp(name, "type") == 0) return &type->fields[1];
+            break;
+        case 1113510858u:
+            if (std::strcmp(name, "value") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 3507804226u:
+        switch (h) {
+        case 2082523534u:
+            if (std::strcmp(name, "vertices") == 0) return &type->fields[0];
+            break;
+        case 4155575922u:
+            if (std::strcmp(name, "indices") == 0) return &type->fields[1];
+            break;
+        case 247908339u:
+            if (std::strcmp(name, "normals") == 0) return &type->fields[2];
+            break;
+        case 899276339u:
+            if (std::strcmp(name, "uvs") == 0) return &type->fields[3];
+            break;
+        case 4176775601u:
+            if (std::strcmp(name, "colors") == 0) return &type->fields[4];
+            break;
+        case 2323447011u:
+            if (std::strcmp(name, "tangents") == 0) return &type->fields[5];
+            break;
+        case 4294352460u:
+            if (std::strcmp(name, "joints") == 0) return &type->fields[6];
+            break;
+        case 3067738110u:
+            if (std::strcmp(name, "weights") == 0) return &type->fields[7];
+            break;
+        case 2813332868u:
+            if (std::strcmp(name, "topology") == 0) return &type->fields[8];
+            break;
+        case 4232392264u:
+            if (std::strcmp(name, "submeshes") == 0) return &type->fields[9];
+            break;
+        case 1029089800u:
+            if (std::strcmp(name, "bounds") == 0) return &type->fields[10];
+            break;
+        }
+        break;
+    case 1065774005u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2082523534u:
+            if (std::strcmp(name, "vertices") == 0) return &type->fields[1];
+            break;
+        case 4155575922u:
+            if (std::strcmp(name, "indices") == 0) return &type->fields[2];
+            break;
+        case 1961134751u:
+            if (std::strcmp(name, "cell_size") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 460266568u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 3603003928u:
+            if (std::strcmp(name, "base_color") == 0) return &type->fields[1];
+            break;
+        case 2024658632u:
+            if (std::strcmp(name, "metallic") == 0) return &type->fields[2];
+            break;
+        case 3139841781u:
+            if (std::strcmp(name, "roughness") == 0) return &type->fields[3];
+            break;
+        case 2172449998u:
+            if (std::strcmp(name, "emissive") == 0) return &type->fields[4];
+            break;
+        case 1678853239u:
+            if (std::strcmp(name, "normal_scale") == 0) return &type->fields[5];
+            break;
+        case 2645403506u:
+            if (std::strcmp(name, "occlusion_strength") == 0) return &type->fields[6];
+            break;
+        case 691158271u:
+            if (std::strcmp(name, "alpha_mode") == 0) return &type->fields[7];
+            break;
+        case 2812689145u:
+            if (std::strcmp(name, "alpha_cutoff") == 0) return &type->fields[8];
+            break;
+        case 1508077758u:
+            if (std::strcmp(name, "double_sided") == 0) return &type->fields[9];
+            break;
+        case 1465144993u:
+            if (std::strcmp(name, "clearcoat") == 0) return &type->fields[10];
+            break;
+        case 196191272u:
+            if (std::strcmp(name, "clearcoat_roughness") == 0) return &type->fields[11];
+            break;
+        case 2440169716u:
+            if (std::strcmp(name, "base_color_texture") == 0) return &type->fields[12];
+            break;
+        case 90248689u:
+            if (std::strcmp(name, "metallic_roughness_texture") == 0) return &type->fields[13];
+            break;
+        case 1825437782u:
+            if (std::strcmp(name, "normal_texture") == 0) return &type->fields[14];
+            break;
+        case 320944934u:
+            if (std::strcmp(name, "occlusion_texture") == 0) return &type->fields[15];
+            break;
+        case 3684091954u:
+            if (std::strcmp(name, "emissive_texture") == 0) return &type->fields[16];
+            break;
+        case 1724813507u:
+            if (std::strcmp(name, "shading_model") == 0) return &type->fields[17];
+            break;
+        case 3334659430u:
+            if (std::strcmp(name, "opacity") == 0) return &type->fields[18];
+            break;
+        case 398089822u:
+            if (std::strcmp(name, "side") == 0) return &type->fields[19];
+            break;
+        case 2757591903u:
+            if (std::strcmp(name, "flat_shading") == 0) return &type->fields[20];
+            break;
+        case 3796798240u:
+            if (std::strcmp(name, "emissive_intensity") == 0) return &type->fields[21];
+            break;
+        case 3859095814u:
+            if (std::strcmp(name, "env_intensity") == 0) return &type->fields[22];
+            break;
+        case 1189038355u:
+            if (std::strcmp(name, "normal_scale_y") == 0) return &type->fields[23];
+            break;
+        case 3195258592u:
+            if (std::strcmp(name, "specular") == 0) return &type->fields[24];
+            break;
+        case 982103491u:
+            if (std::strcmp(name, "shininess") == 0) return &type->fields[25];
+            break;
+        case 1259831122u:
+            if (std::strcmp(name, "specular_intensity") == 0) return &type->fields[26];
+            break;
+        case 2179702137u:
+            if (std::strcmp(name, "ior") == 0) return &type->fields[27];
+            break;
+        case 3989568774u:
+            if (std::strcmp(name, "sheen") == 0) return &type->fields[28];
+            break;
+        case 357509391u:
+            if (std::strcmp(name, "sheen_roughness") == 0) return &type->fields[29];
+            break;
+        case 455485690u:
+            if (std::strcmp(name, "sheen_color") == 0) return &type->fields[30];
+            break;
+        case 440938483u:
+            if (std::strcmp(name, "iridescence") == 0) return &type->fields[31];
+            break;
+        case 1695538862u:
+            if (std::strcmp(name, "iridescence_ior") == 0) return &type->fields[32];
+            break;
+        case 3695456733u:
+            if (std::strcmp(name, "iridescence_thickness_min") == 0) return &type->fields[33];
+            break;
+        case 3861952995u:
+            if (std::strcmp(name, "iridescence_thickness_max") == 0) return &type->fields[34];
+            break;
+        case 3255496189u:
+            if (std::strcmp(name, "anisotropy") == 0) return &type->fields[35];
+            break;
+        case 3611595244u:
+            if (std::strcmp(name, "anisotropy_rotation") == 0) return &type->fields[36];
+            break;
+        case 911995096u:
+            if (std::strcmp(name, "clearcoat_normal_scale") == 0) return &type->fields[37];
+            break;
+        case 1645590581u:
+            if (std::strcmp(name, "toon_steps") == 0) return &type->fields[38];
+            break;
+        case 1673900150u:
+            if (std::strcmp(name, "depth_packing") == 0) return &type->fields[39];
+            break;
+        case 1549837135u:
+            if (std::strcmp(name, "matcap_texture") == 0) return &type->fields[40];
+            break;
+        case 3608991825u:
+            if (std::strcmp(name, "gradient_texture") == 0) return &type->fields[41];
+            break;
+        case 885622197u:
+            if (std::strcmp(name, "clearcoat_normal_texture") == 0) return &type->fields[42];
+            break;
+        case 3785857975u:
+            if (std::strcmp(name, "uv_scale") == 0) return &type->fields[43];
+            break;
+        case 1827113996u:
+            if (std::strcmp(name, "uv_offset") == 0) return &type->fields[44];
+            break;
+        case 182021353u:
+            if (std::strcmp(name, "normal_uv_scale") == 0) return &type->fields[45];
+            break;
+        case 2840773170u:
+            if (std::strcmp(name, "normal_uv_offset") == 0) return &type->fields[46];
+            break;
+        case 539978906u:
+            if (std::strcmp(name, "uv1_mask") == 0) return &type->fields[47];
+            break;
+        case 2803353677u:
+            if (std::strcmp(name, "clearcoat_texture") == 0) return &type->fields[48];
+            break;
+        case 3339752004u:
+            if (std::strcmp(name, "clearcoat_roughness_texture") == 0) return &type->fields[49];
+            break;
+        case 1450395134u:
+            if (std::strcmp(name, "sheen_color_texture") == 0) return &type->fields[50];
+            break;
+        case 2471308363u:
+            if (std::strcmp(name, "sheen_roughness_texture") == 0) return &type->fields[51];
+            break;
+        case 84858143u:
+            if (std::strcmp(name, "iridescence_texture") == 0) return &type->fields[52];
+            break;
+        case 2010582426u:
+            if (std::strcmp(name, "iridescence_thickness_texture") == 0) return &type->fields[53];
+            break;
+        case 2688382601u:
+            if (std::strcmp(name, "anisotropy_texture") == 0) return &type->fields[54];
+            break;
+        case 4103402780u:
+            if (std::strcmp(name, "specular_texture") == 0) return &type->fields[55];
+            break;
+        case 877351612u:
+            if (std::strcmp(name, "specular_color_texture") == 0) return &type->fields[56];
+            break;
+        case 3455462105u:
+            if (std::strcmp(name, "uv_rotation") == 0) return &type->fields[57];
+            break;
+        case 4173816919u:
+            if (std::strcmp(name, "normal_uv_rotation") == 0) return &type->fields[58];
+            break;
+        case 3570268294u:
+            if (std::strcmp(name, "alpha_mask_in_blend") == 0) return &type->fields[59];
+            break;
+        case 3093560041u:
+            if (std::strcmp(name, "transmission_factor") == 0) return &type->fields[60];
+            break;
+        case 1091613652u:
+            if (std::strcmp(name, "diffuse_transmission_factor") == 0) return &type->fields[61];
+            break;
+        case 3044872634u:
+            if (std::strcmp(name, "diffuse_transmission_color") == 0) return &type->fields[62];
+            break;
+        case 480370346u:
+            if (std::strcmp(name, "diffuse_transmission_texture") == 0) return &type->fields[63];
+            break;
+        case 2086857662u:
+            if (std::strcmp(name, "diffuse_transmission_color_texture") == 0) return &type->fields[64];
+            break;
+        case 96495554u:
+            if (std::strcmp(name, "volume_thickness") == 0) return &type->fields[65];
+            break;
+        case 2959361419u:
+            if (std::strcmp(name, "dispersion") == 0) return &type->fields[66];
+            break;
+        case 1288754577u:
+            if (std::strcmp(name, "transmission_texture") == 0) return &type->fields[67];
+            break;
+        case 877776015u:
+            if (std::strcmp(name, "attenuation_color") == 0) return &type->fields[68];
+            break;
+        case 1916070547u:
+            if (std::strcmp(name, "attenuation_distance") == 0) return &type->fields[69];
+            break;
+        case 2172161456u:
+            if (std::strcmp(name, "multiscatter_color") == 0) return &type->fields[70];
+            break;
+        case 3695131526u:
+            if (std::strcmp(name, "volume_thickness_texture") == 0) return &type->fields[71];
+            break;
+        }
+        break;
+    case 446978137u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 553455173u:
+            if (std::strcmp(name, "root") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 6137446u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[1];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 1756539789u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 553455173u:
+            if (std::strcmp(name, "root") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 1643742296u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 3119462523u:
+            if (std::strcmp(name, "language") == 0) return &type->fields[1];
+            break;
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 2688264976u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2702426036u:
+            if (std::strcmp(name, "bones") == 0) return &type->fields[1];
+            break;
+        case 1231425790u:
+            if (std::strcmp(name, "skinning") == 0) return &type->fields[2];
+            break;
+        case 132777611u:
+            if (std::strcmp(name, "constraints") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 3532497753u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2567998597u:
+            if (std::strcmp(name, "textures") == 0) return &type->fields[1];
+            break;
+        case 4051562506u:
+            if (std::strcmp(name, "regions") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 3313714786u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2974586734u:
+            if (std::strcmp(name, "skeleton") == 0) return &type->fields[1];
+            break;
+        case 3407328204u:
+            if (std::strcmp(name, "atlas") == 0) return &type->fields[2];
+            break;
+        case 2567998597u:
+            if (std::strcmp(name, "textures") == 0) return &type->fields[3];
+            break;
+        case 3172023953u:
+            if (std::strcmp(name, "skins") == 0) return &type->fields[4];
+            break;
+        case 3474322026u:
+            if (std::strcmp(name, "animations") == 0) return &type->fields[5];
+            break;
+        }
+        break;
+    case 4088105687u:
+        switch (h) {
+        case 52100733u:
+            if (std::strcmp(name, "region") == 0) return &type->fields[0];
+            break;
+        case 799079693u:
+            if (std::strcmp(name, "duration") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 990593068u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2071016015u:
+            if (std::strcmp(name, "frames") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 3942279142u:
+        switch (h) {
+        case 4092868270u:
+            if (std::strcmp(name, "first_index") == 0) return &type->fields[0];
+            break;
+        case 4066892707u:
+            if (std::strcmp(name, "index_count") == 0) return &type->fields[1];
+            break;
+        case 1642710137u:
+            if (std::strcmp(name, "material_slot") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 1604058608u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2319486215u:
+            if (std::strcmp(name, "height_map") == 0) return &type->fields[1];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[2];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[3];
+            break;
+        case 3606487546u:
+            if (std::strcmp(name, "layer_count") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 97170126u:
+        switch (h) {
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[0];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[1];
+            break;
+        case 4067948231u:
+            if (std::strcmp(name, "file_format") == 0) return &type->fields[2];
+            break;
+        case 3631407781u:
+            if (std::strcmp(name, "data") == 0) return &type->fields[3];
+            break;
+        case 2005779899u:
+            if (std::strcmp(name, "pixel_format") == 0) return &type->fields[4];
+            break;
+        case 1936528857u:
+            if (std::strcmp(name, "mip_levels") == 0) return &type->fields[5];
+            break;
+        case 1273099093u:
+            if (std::strcmp(name, "srgb") == 0) return &type->fields[6];
+            break;
+        case 3353438327u:
+            if (std::strcmp(name, "filter") == 0) return &type->fields[7];
+            break;
+        case 3068873249u:
+            if (std::strcmp(name, "wrap_u") == 0) return &type->fields[8];
+            break;
+        case 3018540392u:
+            if (std::strcmp(name, "wrap_v") == 0) return &type->fields[9];
+            break;
+        }
+        break;
+    case 81337769u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[1];
+            break;
+        case 1230416235u:
+            if (std::strcmp(name, "tile_size") == 0) return &type->fields[2];
+            break;
+        case 1469182793u:
+            if (std::strcmp(name, "tile_count") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 1084542974u:
+        switch (h) {
+        case 3641958979u:
+            if (std::strcmp(name, "kind") == 0) return &type->fields[0];
+            break;
+        case 2444133407u:
+            if (std::strcmp(name, "field_path") == 0) return &type->fields[1];
+            break;
+        case 302666796u:
+            if (std::strcmp(name, "bone_index") == 0) return &type->fields[2];
+            break;
+        case 996973687u:
+            if (std::strcmp(name, "value_type") == 0) return &type->fields[3];
+            break;
+        case 965172509u:
+            if (std::strcmp(name, "interpolation") == 0) return &type->fields[4];
+            break;
+        case 3680705904u:
+            if (std::strcmp(name, "key_count") == 0) return &type->fields[5];
+            break;
+        case 4182378701u:
+            if (std::strcmp(name, "keys") == 0) return &type->fields[6];
+            break;
+        }
+        break;
+    case 462776877u:
+        switch (h) {
+        case 3648362799u:
+            if (std::strcmp(name, "active") == 0) return &type->fields[0];
+            break;
+        case 3147452822u:
+            if (std::strcmp(name, "master_volume") == 0) return &type->fields[1];
+            break;
+        case 3680375682u:
+            if (std::strcmp(name, "doppler_scale") == 0) return &type->fields[2];
+            break;
+        case 327284433u:
+            if (std::strcmp(name, "listener") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 3174450644u:
+        switch (h) {
+        case 1393659643u:
+            if (std::strcmp(name, "clip") == 0) return &type->fields[0];
+            break;
+        case 1607822841u:
+            if (std::strcmp(name, "bus") == 0) return &type->fields[1];
+            break;
+        case 287169096u:
+            if (std::strcmp(name, "autoplay") == 0) return &type->fields[2];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[3];
+            break;
+        case 786459023u:
+            if (std::strcmp(name, "volume") == 0) return &type->fields[4];
+            break;
+        case 3174189745u:
+            if (std::strcmp(name, "pitch") == 0) return &type->fields[5];
+            break;
+        case 3293137898u:
+            if (std::strcmp(name, "panning") == 0) return &type->fields[6];
+            break;
+        case 1537216247u:
+            if (std::strcmp(name, "attenuation") == 0) return &type->fields[7];
+            break;
+        case 2570585620u:
+            if (std::strcmp(name, "curve") == 0) return &type->fields[8];
+            break;
+        case 3184339379u:
+            if (std::strcmp(name, "min_distance") == 0) return &type->fields[9];
+            break;
+        case 4156667865u:
+            if (std::strcmp(name, "max_distance") == 0) return &type->fields[10];
+            break;
+        case 3433082207u:
+            if (std::strcmp(name, "doppler") == 0) return &type->fields[11];
+            break;
+        case 2016490230u:
+            if (std::strcmp(name, "state") == 0) return &type->fields[12];
+            break;
+        case 1294564441u:
+            if (std::strcmp(name, "playhead") == 0) return &type->fields[13];
+            break;
+        case 2140916217u:
+            if (std::strcmp(name, "voice") == 0) return &type->fields[14];
+            break;
+        }
+        break;
+    case 1988119488u:
+        switch (h) {
+        case 3871761072u:
+            if (std::strcmp(name, "pickable") == 0) return &type->fields[0];
+            break;
+        case 465673110u:
+            if (std::strcmp(name, "pick_layer") == 0) return &type->fields[1];
+            break;
+        case 1276670517u:
+            if (std::strcmp(name, "drag_enabled") == 0) return &type->fields[2];
+            break;
+        case 1246827396u:
+            if (std::strcmp(name, "hover_cursor") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 3225946357u:
+        switch (h) {
+        case 3381609815u:
+            if (std::strcmp(name, "min") == 0) return &type->fields[0];
+            break;
+        case 3617776409u:
+            if (std::strcmp(name, "max") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 2997158578u:
+        switch (h) {
+        case 4144776981u:
+            if (std::strcmp(name, "r") == 0) return &type->fields[0];
+            break;
+        case 3792446982u:
+            if (std::strcmp(name, "g") == 0) return &type->fields[1];
+            break;
+        case 3876335077u:
+            if (std::strcmp(name, "b") == 0) return &type->fields[2];
+            break;
+        case 3826002220u:
+            if (std::strcmp(name, "a") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 4101091764u:
+        switch (h) {
+        case 3893112696u:
+            if (std::strcmp(name, "m") == 0) return &type->fields[0];
+            break;
+        }
+        break;
+    case 4084314145u:
+        switch (h) {
+        case 3893112696u:
+            if (std::strcmp(name, "m") == 0) return &type->fields[0];
+            break;
+        }
+        break;
+    case 532593131u:
+        switch (h) {
+        case 3867909202u:
+            if (std::strcmp(name, "normal") == 0) return &type->fields[0];
+            break;
+        case 783488098u:
+            if (std::strcmp(name, "distance") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 1809161124u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        case 4278997933u:
+            if (std::strcmp(name, "z") == 0) return &type->fields[2];
+            break;
+        case 4060888886u:
+            if (std::strcmp(name, "w") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 2025244029u:
+        switch (h) {
+        case 3649018447u:
+            if (std::strcmp(name, "origin") == 0) return &type->fields[0];
+            break;
+        case 3748513642u:
+            if (std::strcmp(name, "direction") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 3103843429u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[2];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 4177408449u:
+        switch (h) {
+        case 4144776981u:
+            if (std::strcmp(name, "r") == 0) return &type->fields[0];
+            break;
+        case 3792446982u:
+            if (std::strcmp(name, "g") == 0) return &type->fields[1];
+            break;
+        case 3876335077u:
+            if (std::strcmp(name, "b") == 0) return &type->fields[2];
+            break;
+        case 3826002220u:
+            if (std::strcmp(name, "a") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 2157848323u:
+        switch (h) {
+        case 2471448074u:
+            if (std::strcmp(name, "position") == 0) return &type->fields[0];
+            break;
+        case 564937055u:
+            if (std::strcmp(name, "rotation") == 0) return &type->fields[1];
+            break;
+        case 2190941297u:
+            if (std::strcmp(name, "scale") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 1654372658u:
+        switch (h) {
+        case 2471448074u:
+            if (std::strcmp(name, "position") == 0) return &type->fields[0];
+            break;
+        case 564937055u:
+            if (std::strcmp(name, "rotation") == 0) return &type->fields[1];
+            break;
+        case 2190941297u:
+            if (std::strcmp(name, "scale") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 1876288095u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 1859510476u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        case 4278997933u:
+            if (std::strcmp(name, "z") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 1842732857u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        case 4278997933u:
+            if (std::strcmp(name, "z") == 0) return &type->fields[2];
+            break;
+        case 4060888886u:
+            if (std::strcmp(name, "w") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 2188499050u:
+        switch (h) {
+        case 3857037883u:
+            if (std::strcmp(name, "navmesh") == 0) return &type->fields[0];
+            break;
+        case 1791831466u:
+            if (std::strcmp(name, "target_entity") == 0) return &type->fields[1];
+            break;
+        case 3551846938u:
+            if (std::strcmp(name, "target_position") == 0) return &type->fields[2];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[3];
+            break;
+        case 799062685u:
+            if (std::strcmp(name, "acceleration") == 0) return &type->fields[4];
+            break;
+        case 230313139u:
+            if (std::strcmp(name, "radius") == 0) return &type->fields[5];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[6];
+            break;
+        case 3784240489u:
+            if (std::strcmp(name, "stopping_distance") == 0) return &type->fields[7];
+            break;
+        case 2457112261u:
+            if (std::strcmp(name, "max_slope") == 0) return &type->fields[8];
+            break;
+        case 524401195u:
+            if (std::strcmp(name, "step_height") == 0) return &type->fields[9];
+            break;
+        case 3976065041u:
+            if (std::strcmp(name, "avoidance") == 0) return &type->fields[10];
+            break;
+        case 2016490230u:
+            if (std::strcmp(name, "state") == 0) return &type->fields[11];
+            break;
+        case 2223459638u:
+            if (std::strcmp(name, "path") == 0) return &type->fields[12];
+            break;
+        case 3244823233u:
+            if (std::strcmp(name, "path_index") == 0) return &type->fields[13];
+            break;
+        case 180896813u:
+            if (std::strcmp(name, "desired_velocity") == 0) return &type->fields[14];
+            break;
+        case 4174280163u:
+            if (std::strcmp(name, "query") == 0) return &type->fields[15];
+            break;
+        }
+        break;
+    case 3510124008u:
+        switch (h) {
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[0];
+            break;
+        case 711820689u:
+            if (std::strcmp(name, "geometry") == 0) return &type->fields[1];
+            break;
+        case 3631407781u:
+            if (std::strcmp(name, "data") == 0) return &type->fields[2];
+            break;
+        case 1961134751u:
+            if (std::strcmp(name, "cell_size") == 0) return &type->fields[3];
+            break;
+        case 2225079957u:
+            if (std::strcmp(name, "cell_height") == 0) return &type->fields[4];
+            break;
+        case 3841203225u:
+            if (std::strcmp(name, "agent_radius") == 0) return &type->fields[5];
+            break;
+        case 1206071604u:
+            if (std::strcmp(name, "agent_height") == 0) return &type->fields[6];
+            break;
+        case 2457112261u:
+            if (std::strcmp(name, "max_slope") == 0) return &type->fields[7];
+            break;
+        case 4231395632u:
+            if (std::strcmp(name, "max_edge_length") == 0) return &type->fields[8];
+            break;
+        case 3389944078u:
+            if (std::strcmp(name, "region_min_size") == 0) return &type->fields[9];
+            break;
+        case 1714108590u:
+            if (std::strcmp(name, "bake_state") == 0) return &type->fields[10];
+            break;
+        case 3784776339u:
+            if (std::strcmp(name, "accel") == 0) return &type->fields[11];
+            break;
+        }
+        break;
+    case 2902154581u:
+        switch (h) {
+        case 122881863u:
+            if (std::strcmp(name, "monitoring") == 0) return &type->fields[0];
+            break;
+        case 1171652361u:
+            if (std::strcmp(name, "monitorable") == 0) return &type->fields[1];
+            break;
+        case 2498028297u:
+            if (std::strcmp(name, "priority") == 0) return &type->fields[2];
+            break;
+        case 3487326045u:
+            if (std::strcmp(name, "gravity_space_override") == 0) return &type->fields[3];
+            break;
+        case 1772056051u:
+            if (std::strcmp(name, "gravity_direction") == 0) return &type->fields[4];
+            break;
+        case 3523870533u:
+            if (std::strcmp(name, "gravity") == 0) return &type->fields[5];
+            break;
+        case 1330360198u:
+            if (std::strcmp(name, "linear_damping_override") == 0) return &type->fields[6];
+            break;
+        case 2940617937u:
+            if (std::strcmp(name, "angular_damping_override") == 0) return &type->fields[7];
+            break;
+        case 2900776789u:
+            if (std::strcmp(name, "collision_layer") == 0) return &type->fields[8];
+            break;
+        case 2011980968u:
+            if (std::strcmp(name, "collision_mask") == 0) return &type->fields[9];
+            break;
+        case 281698820u:
+            if (std::strcmp(name, "overlap_count") == 0) return &type->fields[10];
+            break;
+        case 43176623u:
+            if (std::strcmp(name, "area_handle") == 0) return &type->fields[11];
+            break;
+        }
+        break;
+    case 4092521363u:
+        switch (h) {
+        case 180896813u:
+            if (std::strcmp(name, "desired_velocity") == 0) return &type->fields[0];
+            break;
+        case 41180514u:
+            if (std::strcmp(name, "up_direction") == 0) return &type->fields[1];
+            break;
+        case 3493445752u:
+            if (std::strcmp(name, "floor_max_angle") == 0) return &type->fields[2];
+            break;
+        case 524401195u:
+            if (std::strcmp(name, "step_height") == 0) return &type->fields[3];
+            break;
+        case 2502029682u:
+            if (std::strcmp(name, "snap_length") == 0) return &type->fields[4];
+            break;
+        case 3805622780u:
+            if (std::strcmp(name, "max_slides") == 0) return &type->fields[5];
+            break;
+        case 2972220876u:
+            if (std::strcmp(name, "auto_apply_gravity") == 0) return &type->fields[6];
+            break;
+        case 3354697228u:
+            if (std::strcmp(name, "gravity_scale") == 0) return &type->fields[7];
+            break;
+        case 846470194u:
+            if (std::strcmp(name, "velocity") == 0) return &type->fields[8];
+            break;
+        case 2513454069u:
+            if (std::strcmp(name, "on_floor") == 0) return &type->fields[9];
+            break;
+        case 130717101u:
+            if (std::strcmp(name, "on_wall") == 0) return &type->fields[10];
+            break;
+        case 2203590184u:
+            if (std::strcmp(name, "on_ceiling") == 0) return &type->fields[11];
+            break;
+        case 512400821u:
+            if (std::strcmp(name, "floor_normal") == 0) return &type->fields[12];
+            break;
+        case 3451745668u:
+            if (std::strcmp(name, "controller_handle") == 0) return &type->fields[13];
+            break;
+        }
+        break;
+    case 83304656u:
+        switch (h) {
+        case 2365171299u:
+            if (std::strcmp(name, "shape_type") == 0) return &type->fields[0];
+            break;
+        case 481994202u:
+            if (std::strcmp(name, "half_extents") == 0) return &type->fields[1];
+            break;
+        case 230313139u:
+            if (std::strcmp(name, "radius") == 0) return &type->fields[2];
+            break;
+        case 1898991782u:
+            if (std::strcmp(name, "half_height") == 0) return &type->fields[3];
+            break;
+        case 841525618u:
+            if (std::strcmp(name, "convex_mesh") == 0) return &type->fields[4];
+            break;
+        case 3599707079u:
+            if (std::strcmp(name, "trimesh") == 0) return &type->fields[5];
+            break;
+        case 1488833255u:
+            if (std::strcmp(name, "height_scale") == 0) return &type->fields[6];
+            break;
+        case 1924728219u:
+            if (std::strcmp(name, "density") == 0) return &type->fields[7];
+            break;
+        case 2770068155u:
+            if (std::strcmp(name, "friction") == 0) return &type->fields[8];
+            break;
+        case 4120530831u:
+            if (std::strcmp(name, "restitution") == 0) return &type->fields[9];
+            break;
+        case 3998139309u:
+            if (std::strcmp(name, "friction_combine") == 0) return &type->fields[10];
+            break;
+        case 671003849u:
+            if (std::strcmp(name, "restitution_combine") == 0) return &type->fields[11];
+            break;
+        case 1563037128u:
+            if (std::strcmp(name, "is_sensor") == 0) return &type->fields[12];
+            break;
+        case 2900776789u:
+            if (std::strcmp(name, "collision_layer") == 0) return &type->fields[13];
+            break;
+        case 2011980968u:
+            if (std::strcmp(name, "collision_mask") == 0) return &type->fields[14];
+            break;
+        case 2801814380u:
+            if (std::strcmp(name, "offset_position") == 0) return &type->fields[15];
+            break;
+        case 3128237969u:
+            if (std::strcmp(name, "offset_rotation") == 0) return &type->fields[16];
+            break;
+        case 1536794784u:
+            if (std::strcmp(name, "collider_handle") == 0) return &type->fields[17];
+            break;
+        case 3600305825u:
+            if (std::strcmp(name, "owner_body") == 0) return &type->fields[18];
+            break;
+        }
+        break;
+    case 1703464867u:
+        switch (h) {
+        case 2041153668u:
+            if (std::strcmp(name, "force") == 0) return &type->fields[0];
+            break;
+        case 1195336803u:
+            if (std::strcmp(name, "torque") == 0) return &type->fields[1];
+            break;
+        case 894689925u:
+            if (std::strcmp(name, "space") == 0) return &type->fields[2];
+            break;
+        case 716204047u:
+            if (std::strcmp(name, "apply_mode") == 0) return &type->fields[3];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[4];
+            break;
+        case 1685943892u:
+            if (std::strcmp(name, "only_when_awake") == 0) return &type->fields[5];
+            break;
+        case 962682955u:
+            if (std::strcmp(name, "impulse_consumed") == 0) return &type->fields[6];
+            break;
+        }
+        break;
+    case 3023214762u:
+        switch (h) {
+        case 936609949u:
+            if (std::strcmp(name, "linear_damping") == 0) return &type->fields[0];
+            break;
+        case 2196481796u:
+            if (std::strcmp(name, "angular_damping") == 0) return &type->fields[1];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[2];
+            break;
+        case 2498028297u:
+            if (std::strcmp(name, "priority") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 696546768u:
+        switch (h) {
+        case 196824624u:
+            if (std::strcmp(name, "joint_type") == 0) return &type->fields[0];
+            break;
+        case 3858648813u:
+            if (std::strcmp(name, "body_a") == 0) return &type->fields[1];
+            break;
+        case 3808315956u:
+            if (std::strcmp(name, "body_b") == 0) return &type->fields[2];
+            break;
+        case 3708919728u:
+            if (std::strcmp(name, "anchor_a") == 0) return &type->fields[3];
+            break;
+        case 3759252585u:
+            if (std::strcmp(name, "anchor_b") == 0) return &type->fields[4];
+            break;
+        case 1831579124u:
+            if (std::strcmp(name, "axis") == 0) return &type->fields[5];
+            break;
+        case 1579631883u:
+            if (std::strcmp(name, "limits_enabled") == 0) return &type->fields[6];
+            break;
+        case 2698527499u:
+            if (std::strcmp(name, "limit_min") == 0) return &type->fields[7];
+            break;
+        case 3066355189u:
+            if (std::strcmp(name, "limit_max") == 0) return &type->fields[8];
+            break;
+        case 1809594412u:
+            if (std::strcmp(name, "motor_enabled") == 0) return &type->fields[9];
+            break;
+        case 2967100530u:
+            if (std::strcmp(name, "motor_target_vel") == 0) return &type->fields[10];
+            break;
+        case 797871251u:
+            if (std::strcmp(name, "motor_max_force") == 0) return &type->fields[11];
+            break;
+        case 1505522084u:
+            if (std::strcmp(name, "break_force") == 0) return &type->fields[12];
+            break;
+        case 3459363075u:
+            if (std::strcmp(name, "break_torque") == 0) return &type->fields[13];
+            break;
+        case 1318702318u:
+            if (std::strcmp(name, "joint_handle") == 0) return &type->fields[14];
+            break;
+        }
+        break;
+    case 4172167953u:
+        switch (h) {
+        case 1415239791u:
+            if (std::strcmp(name, "max_linear_speed") == 0) return &type->fields[0];
+            break;
+        case 1204437696u:
+            if (std::strcmp(name, "max_angular_speed") == 0) return &type->fields[1];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[2];
+            break;
+        case 4063446136u:
+            if (std::strcmp(name, "linear_speed") == 0) return &type->fields[3];
+            break;
+        case 2405492437u:
+            if (std::strcmp(name, "angular_speed") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 2578252199u:
+        switch (h) {
+        case 3836179294u:
+            if (std::strcmp(name, "body_type") == 0) return &type->fields[0];
+            break;
+        case 3749132497u:
+            if (std::strcmp(name, "mass") == 0) return &type->fields[1];
+            break;
+        case 936609949u:
+            if (std::strcmp(name, "linear_damping") == 0) return &type->fields[2];
+            break;
+        case 2196481796u:
+            if (std::strcmp(name, "angular_damping") == 0) return &type->fields[3];
+            break;
+        case 3354697228u:
+            if (std::strcmp(name, "gravity_scale") == 0) return &type->fields[4];
+            break;
+        case 2883579147u:
+            if (std::strcmp(name, "ccd_enabled") == 0) return &type->fields[5];
+            break;
+        case 4293704113u:
+            if (std::strcmp(name, "can_sleep") == 0) return &type->fields[6];
+            break;
+        case 3839374159u:
+            if (std::strcmp(name, "locked_translation") == 0) return &type->fields[7];
+            break;
+        case 2468805698u:
+            if (std::strcmp(name, "locked_rotation") == 0) return &type->fields[8];
+            break;
+        case 493689690u:
+            if (std::strcmp(name, "linear_velocity") == 0) return &type->fields[9];
+            break;
+        case 766389257u:
+            if (std::strcmp(name, "angular_velocity") == 0) return &type->fields[10];
+            break;
+        case 894905216u:
+            if (std::strcmp(name, "sleeping") == 0) return &type->fields[11];
+            break;
+        case 2435330728u:
+            if (std::strcmp(name, "body_handle") == 0) return &type->fields[12];
+            break;
+        case 3691385080u:
+            if (std::strcmp(name, "world_slot") == 0) return &type->fields[13];
+            break;
+        }
+        break;
+    case 3395236688u:
+        switch (h) {
+        case 2261802447u:
+            if (std::strcmp(name, "facing") == 0) return &type->fields[0];
+            break;
+        case 4226831639u:
+            if (std::strcmp(name, "pivot") == 0) return &type->fields[1];
+            break;
+        case 2812780519u:
+            if (std::strcmp(name, "lock_scale") == 0) return &type->fields[2];
+            break;
+        case 2101905350u:
+            if (std::strcmp(name, "align_up") == 0) return &type->fields[3];
+            break;
+        case 1220548254u:
+            if (std::strcmp(name, "target_camera") == 0) return &type->fields[4];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[5];
+            break;
+        }
+        break;
+    case 3001756364u:
+        switch (h) {
+        case 3648362799u:
+            if (std::strcmp(name, "active") == 0) return &type->fields[0];
+            break;
+        case 2498028297u:
+            if (std::strcmp(name, "priority") == 0) return &type->fields[1];
+            break;
+        case 3750945330u:
+            if (std::strcmp(name, "zoom") == 0) return &type->fields[2];
+            break;
+        case 348705738u:
+            if (std::strcmp(name, "offset") == 0) return &type->fields[3];
+            break;
+        case 3836459715u:
+            if (std::strcmp(name, "viewport") == 0) return &type->fields[4];
+            break;
+        case 3339586431u:
+            if (std::strcmp(name, "layer_mask") == 0) return &type->fields[5];
+            break;
+        case 2083353110u:
+            if (std::strcmp(name, "clear_color") == 0) return &type->fields[6];
+            break;
+        }
+        break;
+    case 3639452981u:
+        switch (h) {
+        case 3648362799u:
+            if (std::strcmp(name, "active") == 0) return &type->fields[0];
+            break;
+        case 2498028297u:
+            if (std::strcmp(name, "priority") == 0) return &type->fields[1];
+            break;
+        case 3830020480u:
+            if (std::strcmp(name, "projection") == 0) return &type->fields[2];
+            break;
+        case 795992000u:
+            if (std::strcmp(name, "fov_y") == 0) return &type->fields[3];
+            break;
+        case 3111507589u:
+            if (std::strcmp(name, "ortho_height") == 0) return &type->fields[4];
+            break;
+        case 1425233679u:
+            if (std::strcmp(name, "near") == 0) return &type->fields[5];
+            break;
+        case 3170376174u:
+            if (std::strcmp(name, "far") == 0) return &type->fields[6];
+            break;
+        case 3836459715u:
+            if (std::strcmp(name, "viewport") == 0) return &type->fields[7];
+            break;
+        case 2671812252u:
+            if (std::strcmp(name, "culling_mask") == 0) return &type->fields[8];
+            break;
+        case 778653216u:
+            if (std::strcmp(name, "clear_mode") == 0) return &type->fields[9];
+            break;
+        case 2083353110u:
+            if (std::strcmp(name, "clear_color") == 0) return &type->fields[10];
+            break;
+        case 18111872u:
+            if (std::strcmp(name, "exposure") == 0) return &type->fields[11];
+            break;
+        }
+        break;
+    case 2472060372u:
+        switch (h) {
+        case 1597254826u:
+            if (std::strcmp(name, "op") == 0) return &type->fields[0];
+            break;
+        case 1216469057u:
+            if (std::strcmp(name, "first") == 0) return &type->fields[1];
+            break;
+        case 967958004u:
+            if (std::strcmp(name, "count") == 0) return &type->fields[2];
+            break;
+        case 2624027180u:
+            if (std::strcmp(name, "flags") == 0) return &type->fields[3];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[4];
+            break;
+        case 1309554226u:
+            if (std::strcmp(name, "param") == 0) return &type->fields[5];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[6];
+            break;
+        }
+        break;
+    case 3395281236u:
+        switch (h) {
+        case 3062934995u:
+            if (std::strcmp(name, "commands") == 0) return &type->fields[0];
+            break;
+        case 3163908038u:
+            if (std::strcmp(name, "points") == 0) return &type->fields[1];
+            break;
+        case 3558942058u:
+            if (std::strcmp(name, "point_colors") == 0) return &type->fields[2];
+            break;
+        case 2789597448u:
+            if (std::strcmp(name, "fill_color") == 0) return &type->fields[3];
+            break;
+        case 3645175871u:
+            if (std::strcmp(name, "line_color") == 0) return &type->fields[4];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[5];
+            break;
+        case 2588592216u:
+            if (std::strcmp(name, "line_join") == 0) return &type->fields[6];
+            break;
+        case 1821612576u:
+            if (std::strcmp(name, "line_cap") == 0) return &type->fields[7];
+            break;
+        case 1845077123u:
+            if (std::strcmp(name, "fill_rule") == 0) return &type->fields[8];
+            break;
+        case 395026918u:
+            if (std::strcmp(name, "miter_limit") == 0) return &type->fields[9];
+            break;
+        case 1112644076u:
+            if (std::strcmp(name, "curve_tolerance") == 0) return &type->fields[10];
+            break;
+        case 1870633550u:
+            if (std::strcmp(name, "antialiased") == 0) return &type->fields[11];
+            break;
+        case 3538210912u:
+            if (std::strcmp(name, "material") == 0) return &type->fields[12];
+            break;
+        case 1895660890u:
+            if (std::strcmp(name, "z_index") == 0) return &type->fields[13];
+            break;
+        case 1713317890u:
+            if (std::strcmp(name, "cache_geometry") == 0) return &type->fields[14];
+            break;
+        case 711820689u:
+            if (std::strcmp(name, "geometry") == 0) return &type->fields[15];
+            break;
+        case 4155575922u:
+            if (std::strcmp(name, "indices") == 0) return &type->fields[16];
+            break;
+        case 2667581083u:
+            if (std::strcmp(name, "dirty") == 0) return &type->fields[17];
+            break;
+        }
+        break;
+    case 3122260195u:
+        switch (h) {
+        case 1361572173u:
+            if (std::strcmp(name, "type") == 0) return &type->fields[0];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[1];
+            break;
+        case 2237916426u:
+            if (std::strcmp(name, "intensity") == 0) return &type->fields[2];
+            break;
+        case 4208725202u:
+            if (std::strcmp(name, "range") == 0) return &type->fields[3];
+            break;
+        case 3515771403u:
+            if (std::strcmp(name, "inner_angle") == 0) return &type->fields[4];
+            break;
+        case 2008160476u:
+            if (std::strcmp(name, "outer_angle") == 0) return &type->fields[5];
+            break;
+        case 1328204833u:
+            if (std::strcmp(name, "shadow_mode") == 0) return &type->fields[6];
+            break;
+        case 2552049759u:
+            if (std::strcmp(name, "shadow_bias") == 0) return &type->fields[7];
+            break;
+        case 231896641u:
+            if (std::strcmp(name, "shadow_distance") == 0) return &type->fields[8];
+            break;
+        case 2671812252u:
+            if (std::strcmp(name, "culling_mask") == 0) return &type->fields[9];
+            break;
+        case 2498028297u:
+            if (std::strcmp(name, "priority") == 0) return &type->fields[10];
+            break;
+        case 128336118u:
+            if (std::strcmp(name, "layer") == 0) return &type->fields[11];
+            break;
+        }
+        break;
+    case 956582135u:
+        switch (h) {
+        case 2701180604u:
+            if (std::strcmp(name, "mesh") == 0) return &type->fields[0];
+            break;
+        case 1600634562u:
+            if (std::strcmp(name, "mesh_path") == 0) return &type->fields[1];
+            break;
+        case 3538210912u:
+            if (std::strcmp(name, "material") == 0) return &type->fields[2];
+            break;
+        case 2905798850u:
+            if (std::strcmp(name, "material_overrides") == 0) return &type->fields[3];
+            break;
+        case 4281314643u:
+            if (std::strcmp(name, "cast_shadow") == 0) return &type->fields[4];
+            break;
+        case 4033425839u:
+            if (std::strcmp(name, "receive_shadow") == 0) return &type->fields[5];
+            break;
+        case 1425709473u:
+            if (std::strcmp(name, "visible") == 0) return &type->fields[6];
+            break;
+        case 2671812252u:
+            if (std::strcmp(name, "culling_mask") == 0) return &type->fields[7];
+            break;
+        case 128336118u:
+            if (std::strcmp(name, "layer") == 0) return &type->fields[8];
+            break;
+        case 1402287382u:
+            if (std::strcmp(name, "skin_path") == 0) return &type->fields[9];
+            break;
+        case 1393659643u:
+            if (std::strcmp(name, "clip") == 0) return &type->fields[10];
+            break;
+        case 1911511093u:
+            if (std::strcmp(name, "playing") == 0) return &type->fields[11];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[12];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[13];
+            break;
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[14];
+            break;
+        case 799079693u:
+            if (std::strcmp(name, "duration") == 0) return &type->fields[15];
+            break;
+        case 3272957318u:
+            if (std::strcmp(name, "variant") == 0) return &type->fields[16];
+            break;
+        }
+        break;
+    case 1809231709u:
+        switch (h) {
+        case 3966689298u:
+            if (std::strcmp(name, "mode") == 0) return &type->fields[0];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[1];
+            break;
+        case 2153266235u:
+            if (std::strcmp(name, "width_curve") == 0) return &type->fields[2];
+            break;
+        case 3012616735u:
+            if (std::strcmp(name, "color_start") == 0) return &type->fields[3];
+            break;
+        case 1294715370u:
+            if (std::strcmp(name, "color_end") == 0) return &type->fields[4];
+            break;
+        case 4025093671u:
+            if (std::strcmp(name, "fade_mode") == 0) return &type->fields[5];
+            break;
+        case 1376955374u:
+            if (std::strcmp(name, "lifetime") == 0) return &type->fields[6];
+            break;
+        case 3184339379u:
+            if (std::strcmp(name, "min_distance") == 0) return &type->fields[7];
+            break;
+        case 3327074261u:
+            if (std::strcmp(name, "max_points") == 0) return &type->fields[8];
+            break;
+        case 411655712u:
+            if (std::strcmp(name, "points_per_sec") == 0) return &type->fields[9];
+            break;
+        case 4044070963u:
+            if (std::strcmp(name, "point_size") == 0) return &type->fields[10];
+            break;
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[11];
+            break;
+        case 3538210912u:
+            if (std::strcmp(name, "material") == 0) return &type->fields[12];
+            break;
+        case 1895660890u:
+            if (std::strcmp(name, "z_index") == 0) return &type->fields[13];
+            break;
+        case 763905866u:
+            if (std::strcmp(name, "emit") == 0) return &type->fields[14];
+            break;
+        case 1546056636u:
+            if (std::strcmp(name, "samples") == 0) return &type->fields[15];
+            break;
+        case 711820689u:
+            if (std::strcmp(name, "geometry") == 0) return &type->fields[16];
+            break;
+        case 4155575922u:
+            if (std::strcmp(name, "indices") == 0) return &type->fields[17];
+            break;
+        }
+        break;
+    case 1580779802u:
+        switch (h) {
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[0];
+            break;
+        case 3305482062u:
+            if (std::strcmp(name, "update_mode") == 0) return &type->fields[1];
+            break;
+        case 3470624120u:
+            if (std::strcmp(name, "interval") == 0) return &type->fields[2];
+            break;
+        case 488725647u:
+            if (std::strcmp(name, "resolution") == 0) return &type->fields[3];
+            break;
+        case 2646858022u:
+            if (std::strcmp(name, "shape") == 0) return &type->fields[4];
+            break;
+        case 230313139u:
+            if (std::strcmp(name, "radius") == 0) return &type->fields[5];
+            break;
+        case 2286603182u:
+            if (std::strcmp(name, "box_size") == 0) return &type->fields[6];
+            break;
+        case 43150114u:
+            if (std::strcmp(name, "blend_distance") == 0) return &type->fields[7];
+            break;
+        case 2237916426u:
+            if (std::strcmp(name, "intensity") == 0) return &type->fields[8];
+            break;
+        case 2498028297u:
+            if (std::strcmp(name, "priority") == 0) return &type->fields[9];
+            break;
+        case 2671812252u:
+            if (std::strcmp(name, "culling_mask") == 0) return &type->fields[10];
+            break;
+        case 128336118u:
+            if (std::strcmp(name, "layer") == 0) return &type->fields[11];
+            break;
+        case 2052785290u:
+            if (std::strcmp(name, "baked_cubemap") == 0) return &type->fields[12];
+            break;
+        }
+        break;
+    case 1109225306u:
+        switch (h) {
+        case 3641958979u:
+            if (std::strcmp(name, "kind") == 0) return &type->fields[0];
+            break;
+        case 1932267671u:
+            if (std::strcmp(name, "order") == 0) return &type->fields[1];
+            break;
+        case 1425709473u:
+            if (std::strcmp(name, "visible") == 0) return &type->fields[2];
+            break;
+        case 2663290958u:
+            if (std::strcmp(name, "camera") == 0) return &type->fields[3];
+            break;
+        case 3836459715u:
+            if (std::strcmp(name, "viewport") == 0) return &type->fields[4];
+            break;
+        case 1550717474u:
+            if (std::strcmp(name, "clear") == 0) return &type->fields[5];
+            break;
+        case 2083353110u:
+            if (std::strcmp(name, "clear_color") == 0) return &type->fields[6];
+            break;
+        case 845187144u:
+            if (std::strcmp(name, "target") == 0) return &type->fields[7];
+            break;
+        case 881374779u:
+            if (std::strcmp(name, "follow_viewport") == 0) return &type->fields[8];
+            break;
+        case 348705738u:
+            if (std::strcmp(name, "offset") == 0) return &type->fields[9];
+            break;
+        case 196886744u:
+            if (std::strcmp(name, "blend") == 0) return &type->fields[10];
+            break;
+        }
+        break;
+    case 2253190608u:
+        switch (h) {
+        case 2369371622u:
+            if (std::strcmp(name, "name") == 0) return &type->fields[0];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[1];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[2];
+            break;
+        case 3305482062u:
+            if (std::strcmp(name, "update_mode") == 0) return &type->fields[3];
+            break;
+        case 3353438327u:
+            if (std::strcmp(name, "filter") == 0) return &type->fields[4];
+            break;
+        case 3581854218u:
+            if (std::strcmp(name, "include_ui") == 0) return &type->fields[5];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[6];
+            break;
+        case 2083353110u:
+            if (std::strcmp(name, "clear_color") == 0) return &type->fields[7];
+            break;
+        case 3292827831u:
+            if (std::strcmp(name, "msaa_samples") == 0) return &type->fields[8];
+            break;
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[9];
+            break;
+        case 1712242932u:
+            if (std::strcmp(name, "ready") == 0) return &type->fields[10];
+            break;
+        case 1818460067u:
+            if (std::strcmp(name, "last_frame") == 0) return &type->fields[11];
+            break;
+        }
+        break;
+    case 2859154460u:
+        switch (h) {
+        case 2516003219u:
+            if (std::strcmp(name, "tag") == 0) return &type->fields[0];
+            break;
+        case 2633906004u:
+            if (std::strcmp(name, "text_begin") == 0) return &type->fields[1];
+            break;
+        case 2194249442u:
+            if (std::strcmp(name, "text_len") == 0) return &type->fields[2];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[3];
+            break;
+        case 2396994324u:
+            if (std::strcmp(name, "font_size") == 0) return &type->fields[4];
+            break;
+        case 232457833u:
+            if (std::strcmp(name, "link") == 0) return &type->fields[5];
+            break;
+        }
+        break;
+    case 494252u:
+        switch (h) {
+        case 3185987134u:
+            if (std::strcmp(name, "text") == 0) return &type->fields[0];
+            break;
+        case 3437733076u:
+            if (std::strcmp(name, "parse_tags") == 0) return &type->fields[1];
+            break;
+        case 1086361422u:
+            if (std::strcmp(name, "max_width") == 0) return &type->fields[2];
+            break;
+        case 659427984u:
+            if (std::strcmp(name, "font") == 0) return &type->fields[3];
+            break;
+        case 2396994324u:
+            if (std::strcmp(name, "font_size") == 0) return &type->fields[4];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[5];
+            break;
+        case 2020743111u:
+            if (std::strcmp(name, "outline_size") == 0) return &type->fields[6];
+            break;
+        case 320187433u:
+            if (std::strcmp(name, "outline_color") == 0) return &type->fields[7];
+            break;
+        case 4003655073u:
+            if (std::strcmp(name, "align_h") == 0) return &type->fields[8];
+            break;
+        case 3634547455u:
+            if (std::strcmp(name, "align_v") == 0) return &type->fields[9];
+            break;
+        case 3551645141u:
+            if (std::strcmp(name, "wrap_mode") == 0) return &type->fields[10];
+            break;
+        case 254122649u:
+            if (std::strcmp(name, "line_spacing") == 0) return &type->fields[11];
+            break;
+        case 963530308u:
+            if (std::strcmp(name, "image_align") == 0) return &type->fields[12];
+            break;
+        case 2937930177u:
+            if (std::strcmp(name, "meta_underlined") == 0) return &type->fields[13];
+            break;
+        case 2919765566u:
+            if (std::strcmp(name, "content_size") == 0) return &type->fields[14];
+            break;
+        case 439545147u:
+            if (std::strcmp(name, "runs") == 0) return &type->fields[15];
+            break;
+        case 3922369262u:
+            if (std::strcmp(name, "links") == 0) return &type->fields[16];
+            break;
+        case 3915465063u:
+            if (std::strcmp(name, "line_count") == 0) return &type->fields[17];
+            break;
+        }
+        break;
+    case 3931021936u:
+        switch (h) {
+        case 1032087243u:
+            if (std::strcmp(name, "program") == 0) return &type->fields[0];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[1];
+            break;
+        case 169449419u:
+            if (std::strcmp(name, "paused") == 0) return &type->fields[2];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[3];
+            break;
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 4275420661u:
+        switch (h) {
+        case 895309160u:
+            if (std::strcmp(name, "shader") == 0) return &type->fields[0];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[1];
+            break;
+        case 169449419u:
+            if (std::strcmp(name, "paused") == 0) return &type->fields[2];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[3];
+            break;
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 2473816933u:
+        switch (h) {
+        case 895309160u:
+            if (std::strcmp(name, "shader") == 0) return &type->fields[0];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[1];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[2];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[3];
+            break;
+        case 169449419u:
+            if (std::strcmp(name, "paused") == 0) return &type->fields[4];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[5];
+            break;
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[6];
+            break;
+        }
+        break;
+    case 441950719u:
+        switch (h) {
+        case 1577488407u:
+            if (std::strcmp(name, "skybox_mode") == 0) return &type->fields[0];
+            break;
+        case 2676494063u:
+            if (std::strcmp(name, "skybox_texture") == 0) return &type->fields[1];
+            break;
+        case 1046395387u:
+            if (std::strcmp(name, "skybox_color") == 0) return &type->fields[2];
+            break;
+        case 1207190802u:
+            if (std::strcmp(name, "skybox_rotation") == 0) return &type->fields[3];
+            break;
+        case 2509147781u:
+            if (std::strcmp(name, "skybox_intensity") == 0) return &type->fields[4];
+            break;
+        case 2259768268u:
+            if (std::strcmp(name, "env_source") == 0) return &type->fields[5];
+            break;
+        case 2401678016u:
+            if (std::strcmp(name, "env_texture") == 0) return &type->fields[6];
+            break;
+        case 1408214548u:
+            if (std::strcmp(name, "env_color") == 0) return &type->fields[7];
+            break;
+        case 594034590u:
+            if (std::strcmp(name, "env_sky_color") == 0) return &type->fields[8];
+            break;
+        case 201321558u:
+            if (std::strcmp(name, "env_ground_color") == 0) return &type->fields[9];
+            break;
+        case 3859095814u:
+            if (std::strcmp(name, "env_intensity") == 0) return &type->fields[10];
+            break;
+        case 768813148u:
+            if (std::strcmp(name, "diffuse_contribution") == 0) return &type->fields[11];
+            break;
+        case 3735762711u:
+            if (std::strcmp(name, "specular_contribution") == 0) return &type->fields[12];
+            break;
+        case 2498028297u:
+            if (std::strcmp(name, "priority") == 0) return &type->fields[13];
+            break;
+        case 3648362799u:
+            if (std::strcmp(name, "active") == 0) return &type->fields[14];
+            break;
+        }
+        break;
+    case 3143938240u:
+        switch (h) {
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[0];
+            break;
+        case 52100733u:
+            if (std::strcmp(name, "region") == 0) return &type->fields[1];
+            break;
+        case 4276302685u:
+            if (std::strcmp(name, "hframes") == 0) return &type->fields[2];
+            break;
+        case 4115023883u:
+            if (std::strcmp(name, "vframes") == 0) return &type->fields[3];
+            break;
+        case 3523899814u:
+            if (std::strcmp(name, "frame") == 0) return &type->fields[4];
+            break;
+        case 3134659686u:
+            if (std::strcmp(name, "flip") == 0) return &type->fields[5];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[6];
+            break;
+        case 4226831639u:
+            if (std::strcmp(name, "pivot") == 0) return &type->fields[7];
+            break;
+        case 1926920697u:
+            if (std::strcmp(name, "pivot_anchor") == 0) return &type->fields[8];
+            break;
+        case 3538210912u:
+            if (std::strcmp(name, "material") == 0) return &type->fields[9];
+            break;
+        case 1895660890u:
+            if (std::strcmp(name, "z_index") == 0) return &type->fields[10];
+            break;
+        }
+        break;
+    case 1813093813u:
+        switch (h) {
+        case 1412654217u:
+            if (std::strcmp(name, "pos") == 0) return &type->fields[0];
+            break;
+        case 742476188u:
+            if (std::strcmp(name, "age") == 0) return &type->fields[1];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 3156343330u:
+        switch (h) {
+        case 1678930987u:
+            if (std::strcmp(name, "terrain_data") == 0) return &type->fields[0];
+            break;
+        case 3658887762u:
+            if (std::strcmp(name, "layer_material") == 0) return &type->fields[1];
+            break;
+        case 1230416235u:
+            if (std::strcmp(name, "tile_size") == 0) return &type->fields[2];
+            break;
+        case 2665650066u:
+            if (std::strcmp(name, "lod_mode") == 0) return &type->fields[3];
+            break;
+        case 1731263082u:
+            if (std::strcmp(name, "lod_levels") == 0) return &type->fields[4];
+            break;
+        case 2856099217u:
+            if (std::strcmp(name, "fixed_lod") == 0) return &type->fields[5];
+            break;
+        case 1824142916u:
+            if (std::strcmp(name, "lod_bias") == 0) return &type->fields[6];
+            break;
+        case 1488833255u:
+            if (std::strcmp(name, "height_scale") == 0) return &type->fields[7];
+            break;
+        case 4281314643u:
+            if (std::strcmp(name, "cast_shadow") == 0) return &type->fields[8];
+            break;
+        case 4033425839u:
+            if (std::strcmp(name, "receive_shadow") == 0) return &type->fields[9];
+            break;
+        case 1425709473u:
+            if (std::strcmp(name, "visible") == 0) return &type->fields[10];
+            break;
+        case 2671812252u:
+            if (std::strcmp(name, "culling_mask") == 0) return &type->fields[11];
+            break;
+        case 128336118u:
+            if (std::strcmp(name, "layer") == 0) return &type->fields[12];
+            break;
+        case 603414819u:
+            if (std::strcmp(name, "lod_chunks") == 0) return &type->fields[13];
+            break;
+        }
+        break;
+    case 3217373296u:
+        switch (h) {
+        case 2610554845u:
+            if (std::strcmp(name, "level") == 0) return &type->fields[0];
+            break;
+        case 4156667865u:
+            if (std::strcmp(name, "max_distance") == 0) return &type->fields[1];
+            break;
+        case 488725647u:
+            if (std::strcmp(name, "resolution") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 566140942u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 1781691217u:
+        switch (h) {
+        case 236845983u:
+            if (std::strcmp(name, "tileset") == 0) return &type->fields[0];
+            break;
+        case 1961134751u:
+            if (std::strcmp(name, "cell_size") == 0) return &type->fields[1];
+            break;
+        case 2326993468u:
+            if (std::strcmp(name, "columns") == 0) return &type->fields[2];
+            break;
+        case 708293528u:
+            if (std::strcmp(name, "rows") == 0) return &type->fields[3];
+            break;
+        case 1279131348u:
+            if (std::strcmp(name, "tile_ids") == 0) return &type->fields[4];
+            break;
+        case 3649018447u:
+            if (std::strcmp(name, "origin") == 0) return &type->fields[5];
+            break;
+        case 2173662638u:
+            if (std::strcmp(name, "modulate") == 0) return &type->fields[6];
+            break;
+        case 1895660890u:
+            if (std::strcmp(name, "z_index") == 0) return &type->fields[7];
+            break;
+        case 2363880725u:
+            if (std::strcmp(name, "collision_source") == 0) return &type->fields[8];
+            break;
+        }
+        break;
+    case 2230821881u:
+        switch (h) {
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[0];
+            break;
+        case 1033407187u:
+            if (std::strcmp(name, "active_in_hierarchy") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 2628357706u:
+        switch (h) {
+        case 246457574u:
+            if (std::strcmp(name, "stable_id") == 0) return &type->fields[0];
+            break;
+        case 1868071667u:
+            if (std::strcmp(name, "entries") == 0) return &type->fields[1];
+            break;
+        case 1738982494u:
+            if (std::strcmp(name, "comment") == 0) return &type->fields[2];
+            break;
+        case 4112470483u:
+            if (std::strcmp(name, "source_scene") == 0) return &type->fields[3];
+            break;
+        case 3392439363u:
+            if (std::strcmp(name, "source_prefab") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 3009367844u:
+        switch (h) {
+        case 1113510858u:
+            if (std::strcmp(name, "value") == 0) return &type->fields[0];
+            break;
+        case 3469047761u:
+            if (std::strcmp(name, "hash") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 1164514215u:
+        switch (h) {
+        case 3939368189u:
+            if (std::strcmp(name, "parent") == 0) return &type->fields[0];
+            break;
+        case 1739180498u:
+            if (std::strcmp(name, "children") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 1237402062u:
+        switch (h) {
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[0];
+            break;
+        case 4258025162u:
+            if (std::strcmp(name, "overrides") == 0) return &type->fields[1];
+            break;
+        case 3684061407u:
+            if (std::strcmp(name, "is_variant") == 0) return &type->fields[2];
+            break;
+        case 2709044213u:
+            if (std::strcmp(name, "override_count") == 0) return &type->fields[3];
+            break;
+        case 2667581083u:
+            if (std::strcmp(name, "dirty") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 276815009u:
+        switch (h) {
+        case 2982235661u:
+            if (std::strcmp(name, "node") == 0) return &type->fields[0];
+            break;
+        case 3459142566u:
+            if (std::strcmp(name, "source_stable_id") == 0) return &type->fields[1];
+            break;
+        case 186486995u:
+            if (std::strcmp(name, "component_type_id") == 0) return &type->fields[2];
+            break;
+        case 2444133407u:
+            if (std::strcmp(name, "field_path") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 2181137018u:
+        switch (h) {
+        case 877087803u:
+            if (std::strcmp(name, "values") == 0) return &type->fields[0];
+            break;
+        case 967958004u:
+            if (std::strcmp(name, "count") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 2885579967u:
+        switch (h) {
+        case 2621662984u:
+            if (std::strcmp(name, "local") == 0) return &type->fields[0];
+            break;
+        case 933488787u:
+            if (std::strcmp(name, "world") == 0) return &type->fields[1];
+            break;
+        case 724453100u:
+            if (std::strcmp(name, "world_dirty") == 0) return &type->fields[2];
+            break;
+        }
+        break;
+    case 2113662398u:
+        switch (h) {
+        case 2621662984u:
+            if (std::strcmp(name, "local") == 0) return &type->fields[0];
+            break;
+        case 933488787u:
+            if (std::strcmp(name, "world") == 0) return &type->fields[1];
+            break;
+        case 3316746615u:
+            if (std::strcmp(name, "rotation_quat") == 0) return &type->fields[2];
+            break;
+        case 724453100u:
+            if (std::strcmp(name, "world_dirty") == 0) return &type->fields[3];
+            break;
+        }
+        break;
+    case 2959465410u:
+        switch (h) {
+        case 1393659643u:
+            if (std::strcmp(name, "clip") == 0) return &type->fields[0];
+            break;
+        case 1564253156u:
+            if (std::strcmp(name, "time") == 0) return &type->fields[1];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[2];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[3];
+            break;
+        case 1911511093u:
+            if (std::strcmp(name, "playing") == 0) return &type->fields[4];
+            break;
+        case 799079693u:
+            if (std::strcmp(name, "duration") == 0) return &type->fields[5];
+            break;
+        case 1285775384u:
+            if (std::strcmp(name, "clips") == 0) return &type->fields[6];
+            break;
+        case 1034132360u:
+            if (std::strcmp(name, "clip_index") == 0) return &type->fields[7];
+            break;
+        }
+        break;
+    case 2843060339u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[2];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[3];
+            break;
+        case 4278997933u:
+            if (std::strcmp(name, "z") == 0) return &type->fields[4];
+            break;
+        case 4137097213u:
+            if (std::strcmp(name, "label") == 0) return &type->fields[5];
+            break;
+        case 4144776981u:
+            if (std::strcmp(name, "r") == 0) return &type->fields[6];
+            break;
+        case 3792446982u:
+            if (std::strcmp(name, "g") == 0) return &type->fields[7];
+            break;
+        case 3876335077u:
+            if (std::strcmp(name, "b") == 0) return &type->fields[8];
+            break;
+        case 3178409509u:
+            if (std::strcmp(name, "pressed") == 0) return &type->fields[9];
+            break;
+        case 2901697652u:
+            if (std::strcmp(name, "hovered") == 0) return &type->fields[10];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[11];
+            break;
+        }
+        break;
+    case 2648125948u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        case 3750945330u:
+            if (std::strcmp(name, "zoom") == 0) return &type->fields[2];
+            break;
+        case 564937055u:
+            if (std::strcmp(name, "rotation") == 0) return &type->fields[3];
+            break;
+        case 3648362799u:
+            if (std::strcmp(name, "active") == 0) return &type->fields[4];
+            break;
+        }
+        break;
+    case 3449142243u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        case 4278997933u:
+            if (std::strcmp(name, "z") == 0) return &type->fields[2];
+            break;
+        case 3185987134u:
+            if (std::strcmp(name, "text") == 0) return &type->fields[3];
+            break;
+        case 4144776981u:
+            if (std::strcmp(name, "r") == 0) return &type->fields[4];
+            break;
+        case 3792446982u:
+            if (std::strcmp(name, "g") == 0) return &type->fields[5];
+            break;
+        case 3876335077u:
+            if (std::strcmp(name, "b") == 0) return &type->fields[6];
+            break;
+        case 3826002220u:
+            if (std::strcmp(name, "a") == 0) return &type->fields[7];
+            break;
+        case 2396994324u:
+            if (std::strcmp(name, "font_size") == 0) return &type->fields[8];
+            break;
+        case 1613521886u:
+            if (std::strcmp(name, "align") == 0) return &type->fields[9];
+            break;
+        case 2145121445u:
+            if (std::strcmp(name, "wrap") == 0) return &type->fields[10];
+            break;
+        case 1086361422u:
+            if (std::strcmp(name, "max_width") == 0) return &type->fields[11];
+            break;
+        case 254122649u:
+            if (std::strcmp(name, "line_spacing") == 0) return &type->fields[12];
+            break;
+        case 2020743111u:
+            if (std::strcmp(name, "outline_size") == 0) return &type->fields[13];
+            break;
+        case 673352796u:
+            if (std::strcmp(name, "outline_r") == 0) return &type->fields[14];
+            break;
+        case 354578035u:
+            if (std::strcmp(name, "outline_g") == 0) return &type->fields[15];
+            break;
+        case 404910892u:
+            if (std::strcmp(name, "outline_b") == 0) return &type->fields[16];
+            break;
+        case 455243749u:
+            if (std::strcmp(name, "outline_a") == 0) return &type->fields[17];
+            break;
+        case 659427984u:
+            if (std::strcmp(name, "font") == 0) return &type->fields[18];
+            break;
+        case 3096607372u:
+            if (std::strcmp(name, "text_w") == 0) return &type->fields[19];
+            break;
+        case 3482492609u:
+            if (std::strcmp(name, "text_h") == 0) return &type->fields[20];
+            break;
+        case 3915465063u:
+            if (std::strcmp(name, "line_count") == 0) return &type->fields[21];
+            break;
+        case 3010806209u:
+            if (std::strcmp(name, "max_height") == 0) return &type->fields[22];
+            break;
+        case 2572986219u:
+            if (std::strcmp(name, "overflow") == 0) return &type->fields[23];
+            break;
+        case 3734435446u:
+            if (std::strcmp(name, "bold") == 0) return &type->fields[24];
+            break;
+        case 1625946989u:
+            if (std::strcmp(name, "italic") == 0) return &type->fields[25];
+            break;
+        case 944235462u:
+            if (std::strcmp(name, "shadow_x") == 0) return &type->fields[26];
+            break;
+        case 961013081u:
+            if (std::strcmp(name, "shadow_y") == 0) return &type->fields[27];
+            break;
+        case 1044901176u:
+            if (std::strcmp(name, "shadow_r") == 0) return &type->fields[28];
+            break;
+        case 1397231175u:
+            if (std::strcmp(name, "shadow_g") == 0) return &type->fields[29];
+            break;
+        case 1313343080u:
+            if (std::strcmp(name, "shadow_b") == 0) return &type->fields[30];
+            break;
+        case 1363675937u:
+            if (std::strcmp(name, "shadow_a") == 0) return &type->fields[31];
+            break;
+        case 461177504u:
+            if (std::strcmp(name, "fit_font_size") == 0) return &type->fields[32];
+            break;
+        }
+        break;
+    case 2085504285u:
+        switch (h) {
+        case 1363500993u:
+            if (std::strcmp(name, "tx") == 0) return &type->fields[0];
+            break;
+        case 1346723374u:
+            if (std::strcmp(name, "ty") == 0) return &type->fields[1];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[2];
+            break;
+        case 1438087267u:
+            if (std::strcmp(name, "arrive_dist") == 0) return &type->fields[3];
+            break;
+        case 287475639u:
+            if (std::strcmp(name, "repath") == 0) return &type->fields[4];
+            break;
+        case 1106964829u:
+            if (std::strcmp(name, "has_target") == 0) return &type->fields[5];
+            break;
+        case 2016490230u:
+            if (std::strcmp(name, "state") == 0) return &type->fields[6];
+            break;
+        }
+        break;
+    case 2243797837u:
+        switch (h) {
+        case 2927860839u:
+            if (std::strcmp(name, "rate") == 0) return &type->fields[0];
+            break;
+        case 1376955374u:
+            if (std::strcmp(name, "lifetime") == 0) return &type->fields[1];
+            break;
+        case 2072037248u:
+            if (std::strcmp(name, "speed") == 0) return &type->fields[2];
+            break;
+        case 1229586638u:
+            if (std::strcmp(name, "spread") == 0) return &type->fields[3];
+            break;
+        case 3523870533u:
+            if (std::strcmp(name, "gravity") == 0) return &type->fields[4];
+            break;
+        case 597743964u:
+            if (std::strcmp(name, "size") == 0) return &type->fields[5];
+            break;
+        case 4144776981u:
+            if (std::strcmp(name, "r") == 0) return &type->fields[6];
+            break;
+        case 3792446982u:
+            if (std::strcmp(name, "g") == 0) return &type->fields[7];
+            break;
+        case 3876335077u:
+            if (std::strcmp(name, "b") == 0) return &type->fields[8];
+            break;
+        case 1153542329u:
+            if (std::strcmp(name, "max_count") == 0) return &type->fields[9];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[10];
+            break;
+        }
+        break;
+    case 1743804050u:
+        switch (h) {
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[0];
+            break;
+        case 3594521283u:
+            if (std::strcmp(name, "detached") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 410509289u:
+        switch (h) {
+        case 1181855383u:
+            if (std::strcmp(name, "version") == 0) return &type->fields[0];
+            break;
+        case 2556802313u:
+            if (std::strcmp(name, "title") == 0) return &type->fields[1];
+            break;
+        case 540962730u:
+            if (std::strcmp(name, "script") == 0) return &type->fields[2];
+            break;
+        case 2605322907u:
+            if (std::strcmp(name, "scripts") == 0) return &type->fields[3];
+            break;
+        case 3181666063u:
+            if (std::strcmp(name, "overlay_script") == 0) return &type->fields[4];
+            break;
+        case 1637259652u:
+            if (std::strcmp(name, "global_script") == 0) return &type->fields[5];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[6];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[7];
+            break;
+        case 1346747564u:
+            if (std::strcmp(name, "seed") == 0) return &type->fields[8];
+            break;
+        case 1336735441u:
+            if (std::strcmp(name, "views") == 0) return &type->fields[9];
+            break;
+        case 4207033209u:
+            if (std::strcmp(name, "eye_sep") == 0) return &type->fields[10];
+            break;
+        case 3087320724u:
+            if (std::strcmp(name, "render_scale") == 0) return &type->fields[11];
+            break;
+        case 1408214548u:
+            if (std::strcmp(name, "env_color") == 0) return &type->fields[12];
+            break;
+        case 3859095814u:
+            if (std::strcmp(name, "env_intensity") == 0) return &type->fields[13];
+            break;
+        case 594034590u:
+            if (std::strcmp(name, "env_sky_color") == 0) return &type->fields[14];
+            break;
+        case 201321558u:
+            if (std::strcmp(name, "env_ground_color") == 0) return &type->fields[15];
+            break;
+        case 115200539u:
+            if (std::strcmp(name, "env_highlight") == 0) return &type->fields[16];
+            break;
+        case 546966259u:
+            if (std::strcmp(name, "env_rotation") == 0) return &type->fields[17];
+            break;
+        case 2401678016u:
+            if (std::strcmp(name, "env_texture") == 0) return &type->fields[18];
+            break;
+        case 2215278033u:
+            if (std::strcmp(name, "env_background") == 0) return &type->fields[19];
+            break;
+        case 4052109074u:
+            if (std::strcmp(name, "env_cubemap") == 0) return &type->fields[20];
+            break;
+        case 3292827831u:
+            if (std::strcmp(name, "msaa_samples") == 0) return &type->fields[21];
+            break;
+        case 1826585781u:
+            if (std::strcmp(name, "gravity_y") == 0) return &type->fields[22];
+            break;
+        case 4120530831u:
+            if (std::strcmp(name, "restitution") == 0) return &type->fields[23];
+            break;
+        }
+        break;
+    case 576957334u:
+        switch (h) {
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[0];
+            break;
+        case 559900755u:
+            if (std::strcmp(name, "params") == 0) return &type->fields[1];
+            break;
+        case 169449419u:
+            if (std::strcmp(name, "paused") == 0) return &type->fields[2];
+            break;
+        case 3648362799u:
+            if (std::strcmp(name, "active") == 0) return &type->fields[3];
+            break;
+        case 3594521283u:
+            if (std::strcmp(name, "detached") == 0) return &type->fields[4];
+            break;
+        case 1834629946u:
+            if (std::strcmp(name, "instance_id") == 0) return &type->fields[5];
+            break;
+        case 2016490230u:
+            if (std::strcmp(name, "state") == 0) return &type->fields[6];
+            break;
+        case 563185489u:
+            if (std::strcmp(name, "error") == 0) return &type->fields[7];
+            break;
+        }
+        break;
+    case 300083474u:
+        switch (h) {
+        case 230313139u:
+            if (std::strcmp(name, "radius") == 0) return &type->fields[0];
+            break;
+        case 2508680735u:
+            if (std::strcmp(name, "width") == 0) return &type->fields[1];
+            break;
+        case 3585981250u:
+            if (std::strcmp(name, "height") == 0) return &type->fields[2];
+            break;
+        case 4144776981u:
+            if (std::strcmp(name, "r") == 0) return &type->fields[3];
+            break;
+        case 3792446982u:
+            if (std::strcmp(name, "g") == 0) return &type->fields[4];
+            break;
+        case 3876335077u:
+            if (std::strcmp(name, "b") == 0) return &type->fields[5];
+            break;
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[6];
+            break;
+        case 3538210912u:
+            if (std::strcmp(name, "material") == 0) return &type->fields[7];
+            break;
+        }
+        break;
+    case 1473475175u:
+        switch (h) {
+        case 3603003928u:
+            if (std::strcmp(name, "base_color") == 0) return &type->fields[0];
+            break;
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 3128263995u:
+        switch (h) {
+        case 4245442695u:
+            if (std::strcmp(name, "x") == 0) return &type->fields[0];
+            break;
+        case 4228665076u:
+            if (std::strcmp(name, "y") == 0) return &type->fields[1];
+            break;
+        }
+        break;
+    case 3066399950u:
+        switch (h) {
+        case 1361572173u:
+            if (std::strcmp(name, "type") == 0) return &type->fields[0];
+            break;
+        case 3876335077u:
+            if (std::strcmp(name, "b") == 0) return &type->fields[1];
+            break;
+        case 3960223172u:
+            if (std::strcmp(name, "i") == 0) return &type->fields[2];
+            break;
+        case 3809224601u:
+            if (std::strcmp(name, "f") == 0) return &type->fields[3];
+            break;
+        case 4077666505u:
+            if (std::strcmp(name, "v") == 0) return &type->fields[4];
+            break;
+        case 4127999362u:
+            if (std::strcmp(name, "s") == 0) return &type->fields[5];
+            break;
+        }
+        break;
+    case 710511799u:
+        switch (h) {
+        case 466561496u:
+            if (std::strcmp(name, "source") == 0) return &type->fields[0];
+            break;
+        case 3119462523u:
+            if (std::strcmp(name, "language") == 0) return &type->fields[1];
+            break;
+        case 49525662u:
+            if (std::strcmp(name, "enabled") == 0) return &type->fields[2];
+            break;
+        case 1948423215u:
+            if (std::strcmp(name, "callbacks") == 0) return &type->fields[3];
+            break;
+        case 1946381011u:
+            if (std::strcmp(name, "exposed") == 0) return &type->fields[4];
+            break;
+        case 1078575660u:
+            if (std::strcmp(name, "vm") == 0) return &type->fields[5];
+            break;
+        case 3716468546u:
+            if (std::strcmp(name, "expose_defs") == 0) return &type->fields[6];
+            break;
+        case 397561523u:
+            if (std::strcmp(name, "init_err") == 0) return &type->fields[7];
+            break;
+        }
+        break;
+    case 3177507839u:
+        switch (h) {
+        case 3185987134u:
+            if (std::strcmp(name, "text") == 0) return &type->fields[0];
+            break;
+        case 3862959600u:
+            if (std::strcmp(name, "icon") == 0) return &type->fields[1];
+            break;
+        case 659427984u:
+            if (std::strcmp(name, "font") == 0) return &type->fields[2];
+            break;
+        case 2396994324u:
+            if (std::strcmp(name, "font_size") == 0) return &type->fields[3];
+            break;
+        case 979445750u:
+            if (std::strcmp(name, "icon_align") == 0) return &type->fields[4];
+            break;
+        case 2806781586u:
+            if (std::strcmp(name, "text_color") == 0) return &type->fields[5];
+            break;
+        case 1112308564u:
+            if (std::strcmp(name, "style_normal") == 0) return &type->fields[6];
+            break;
+        case 2829579851u:
+            if (std::strcmp(name, "style_hover") == 0) return &type->fields[7];
+            break;
+        case 2587000483u:
+            if (std::strcmp(name, "style_pressed") == 0) return &type->fields[8];
+            break;
+        case 1342619899u:
+            if (std::strcmp(name, "style_disabled") == 0) return &type->fields[9];
+            break;
+        case 575017818u:
+            if (std::strcmp(name, "bg_color") == 0) return &type->fields[10];
+            break;
+        case 3695585269u:
+            if (std::strcmp(name, "toggle_mode") == 0) return &type->fields[11];
+            break;
+        case 1694209616u:
+            if (std::strcmp(name, "button_pressed") == 0) return &type->fields[12];
+            break;
+        case 871591685u:
+            if (std::strcmp(name, "disabled") == 0) return &type->fields[13];
+            break;
+        case 3294899967u:
+            if (std::strcmp(name, "action") == 0) return &type->fields[14];
+            break;
+        case 2016490230u:
+            if (std::strcmp(name, "state") == 0) return &type->fields[15];
+            break;
+        }
+        break;
+    case 4251436635u:
+        switch (h) {
+        case 2908631420u:
+            if (std::strcmp(name, "design_width") == 0) return &type->fields[0];
+            break;
+        case 4055326955u:
+            if (std::strcmp(name, "design_height") == 0) return &type->fields[1];
+            break;
+        case 3725011366u:
+            if (std::strcmp(name, "fit_mode") == 0) return &type->fields[2];
+            break;
+        case 1613521886u:
+            if (std::strcmp(name, "align") == 0) return &type->fields[3];
+            break;
+        case 4192067945u:
+            if (std::strcmp(name, "dpi_scale") == 0) return &type->fields[4];
+            break;
+        case 3087320724u:
+            if (std::strcmp(name, "render_scale") == 0) return &type->fields[5];
+            break;
+        case 427115066u:
+            if (std::strcmp(name, "min_scale") == 0) return &type->fields[6];
+            break;
+        case 709919336u:
+            if (std::strcmp(name, "max_scale") == 0) return &type->fields[7];
+            break;
+        case 2190941297u:
+            if (std::strcmp(name, "scale") == 0) return &type->fields[8];
+            break;
+        case 1204023382u:
+            if (std::strcmp(name, "scale_x") == 0) return &type->fields[9];
+            break;
+        case 1220801001u:
+            if (std::strcmp(name, "scale_y") == 0) return &type->fields[10];
+            break;
+        case 1751018965u:
+            if (std::strcmp(name, "offset_x") == 0) return &type->fields[11];
+            break;
+        case 1734241346u:
+            if (std::strcmp(name, "offset_y") == 0) return &type->fields[12];
+            break;
+        case 2375442009u:
+            if (std::strcmp(name, "viewport_w") == 0) return &type->fields[13];
+            break;
+        case 2794882484u:
+            if (std::strcmp(name, "viewport_h") == 0) return &type->fields[14];
+            break;
+        case 3380968451u:
+            if (std::strcmp(name, "window_w") == 0) return &type->fields[15];
+            break;
+        case 3330635594u:
+            if (std::strcmp(name, "window_h") == 0) return &type->fields[16];
+            break;
+        case 3879277566u:
+            if (std::strcmp(name, "device_scale") == 0) return &type->fields[17];
+            break;
+        case 289152176u:
+            if (std::strcmp(name, "safe_left") == 0) return &type->fields[18];
+            break;
+        case 3135902588u:
+            if (std::strcmp(name, "safe_top") == 0) return &type->fields[19];
+            break;
+        case 2391993381u:
+            if (std::strcmp(name, "safe_right") == 0) return &type->fields[20];
+            break;
+        case 3184510314u:
+            if (std::strcmp(name, "safe_bottom") == 0) return &type->fields[21];
+            break;
+        }
+        break;
+    case 3045632590u:
+        switch (h) {
+        case 554782406u:
+            if (std::strcmp(name, "checked") == 0) return &type->fields[0];
+            break;
+        case 3675436387u:
+            if (std::strcmp(name, "tristate") == 0) return &type->fields[1];
+            break;
+        case 2696814680u:
+            if (std::strcmp(name, "indeterminate") == 0) return &type->fields[2];
+            break;
+        case 871591685u:
+            if (std::strcmp(name, "disabled") == 0) return &type->fields[3];
+            break;
+        case 3185987134u:
+            if (std::strcmp(name, "text") == 0) return &type->fields[4];
+            break;
+        case 659427984u:
+            if (std::strcmp(name, "font") == 0) return &type->fields[5];
+            break;
+        case 2396994324u:
+            if (std::strcmp(name, "font_size") == 0) return &type->fields[6];
+            break;
+        case 2806781586u:
+            if (std::strcmp(name, "text_color") == 0) return &type->fields[7];
+            break;
+        case 2459671470u:
+            if (std::strcmp(name, "icon_checked") == 0) return &type->fields[8];
+            break;
+        case 2704123795u:
+            if (std::strcmp(name, "icon_unchecked") == 0) return &type->fields[9];
+            break;
+        case 2206340336u:
+            if (std::strcmp(name, "icon_indeterminate") == 0) return &type->fields[10];
+            break;
+        case 3133372100u:
+            if (std::strcmp(name, "box_position") == 0) return &type->fields[11];
+            break;
+        case 2016490230u:
+            if (std::strcmp(name, "state") == 0) return &type->fields[12];
+            break;
+        }
+        break;
+    case 4172254122u:
+        switch (h) {
+        case 3966689298u:
+            if (std::strcmp(name, "mode") == 0) return &type->fields[0];
+            break;
+        case 2157316278u:
+            if (std::strcmp(name, "padding") == 0) return &type->fields[1];
+            break;
+        case 3369314814u:
+            if (std::strcmp(name, "spacing") == 0) return &type->fields[2];
+            break;
+        case 3426893250u:
+            if (std::strcmp(name, "align_main") == 0) return &type->fields[3];
+            break;
+        case 1541246145u:
+            if (std::strcmp(name, "align_cross") == 0) return &type->fields[4];
+            break;
+        case 2326993468u:
+            if (std::strcmp(name, "columns") == 0) return &type->fields[5];
+            break;
+        case 1317235322u:
+            if (std::strcmp(name, "grid_cell") == 0) return &type->fields[6];
+            break;
+        case 3458491534u:
+            if (std::strcmp(name, "fit_content") == 0) return &type->fields[7];
+            break;
+        }
+        break;
+    case 2668847680u:
+        switch (h) {
+        case 3862596178u:
+            if (std::strcmp(name, "anchor_preset") == 0) return &type->fields[0];
+            break;
+        case 3716729995u:
+            if (std::strcmp(name, "anchor_min") == 0) return &type->fields[1];
+            break;
+        case 4084557685u:
+            if (std::strcmp(name, "anchor_max") == 0) return &type->fields[2];
+            break;
+        case 1268134633u:
+            if (std::strcmp(name, "offset_min") == 0) return &type->fields[3];
+            break;
+        case 1031968039u:
+            if (std::strcmp(name, "offset_max") == 0) return &type->fields[4];
+            break;
+        case 4226831639u:
+            if (std::strcmp(name, "pivot") == 0) return &type->fields[5];
+            break;
+        case 1970049833u:
+            if (std::strcmp(name, "min_size") == 0) return &type->fields[6];
+            break;
+        case 1670713915u:
+            if (std::strcmp(name, "max_size") == 0) return &type->fields[7];
+            break;
+        case 1175748943u:
+            if (std::strcmp(name, "size_flags_h") == 0) return &type->fields[8];
+            break;
+        case 1007972753u:
+            if (std::strcmp(name, "size_flags_v") == 0) return &type->fields[9];
+            break;
+        case 1425709473u:
+            if (std::strcmp(name, "visible") == 0) return &type->fields[10];
+            break;
+        case 3383700883u:
+            if (std::strcmp(name, "mouse_filter") == 0) return &type->fields[11];
+            break;
+        case 1895660890u:
+            if (std::strcmp(name, "z_index") == 0) return &type->fields[12];
+            break;
+        case 3940830471u:
+            if (std::strcmp(name, "rect") == 0) return &type->fields[13];
+            break;
+        case 2190941297u:
+            if (std::strcmp(name, "scale") == 0) return &type->fields[14];
+            break;
+        case 564937055u:
+            if (std::strcmp(name, "rotation") == 0) return &type->fields[15];
+            break;
+        }
+        break;
+    case 320271428u:
+        switch (h) {
+        case 3185987134u:
+            if (std::strcmp(name, "text") == 0) return &type->fields[0];
+            break;
+        case 2097883034u:
+            if (std::strcmp(name, "placeholder") == 0) return &type->fields[1];
+            break;
+        case 266762875u:
+            if (std::strcmp(name, "line_mode") == 0) return &type->fields[2];
+            break;
+        case 2672087078u:
+            if (std::strcmp(name, "max_length") == 0) return &type->fields[3];
+            break;
+        case 60532369u:
+            if (std::strcmp(name, "editable") == 0) return &type->fields[4];
+            break;
+        case 1719429393u:
+            if (std::strcmp(name, "secret") == 0) return &type->fields[5];
+            break;
+        case 757260334u:
+            if (std::strcmp(name, "secret_char") == 0) return &type->fields[6];
+            break;
+        case 2581782096u:
+            if (std::strcmp(name, "select_all_on_focus") == 0) return &type->fields[7];
+            break;
+        case 2509030743u:
+            if (std::strcmp(name, "clear_button") == 0) return &type->fields[8];
+            break;
+        case 2806781586u:
+            if (std::strcmp(name, "text_color") == 0) return &type->fields[9];
+            break;
+        case 315746606u:
+            if (std::strcmp(name, "placeholder_color") == 0) return &type->fields[10];
+            break;
+        case 3378670817u:
+            if (std::strcmp(name, "selection_color") == 0) return &type->fields[11];
+            break;
+        case 679658536u:
+            if (std::strcmp(name, "caret_color") == 0) return &type->fields[12];
+            break;
+        case 1184310735u:
+            if (std::strcmp(name, "caret_width") == 0) return &type->fields[13];
+            break;
+        case 659427984u:
+            if (std::strcmp(name, "font") == 0) return &type->fields[14];
+            break;
+        case 2396994324u:
+            if (std::strcmp(name, "font_size") == 0) return &type->fields[15];
+            break;
+        case 1613521886u:
+            if (std::strcmp(name, "align") == 0) return &type->fields[16];
+            break;
+        case 2572986219u:
+            if (std::strcmp(name, "overflow") == 0) return &type->fields[17];
+            break;
+        case 3551645141u:
+            if (std::strcmp(name, "wrap_mode") == 0) return &type->fields[18];
+            break;
+        case 254122649u:
+            if (std::strcmp(name, "line_spacing") == 0) return &type->fields[19];
+            break;
+        case 1893934777u:
+            if (std::strcmp(name, "caret_pos") == 0) return &type->fields[20];
+            break;
+        case 1878394544u:
+            if (std::strcmp(name, "sel_start") == 0) return &type->fields[21];
+            break;
+        case 2546932785u:
+            if (std::strcmp(name, "sel_end") == 0) return &type->fields[22];
+            break;
+        case 2440652662u:
+            if (std::strcmp(name, "scroll_offset") == 0) return &type->fields[23];
+            break;
+        case 2462590034u:
+            if (std::strcmp(name, "focused") == 0) return &type->fields[24];
+            break;
+        case 3845937394u:
+            if (std::strcmp(name, "ime_composing") == 0) return &type->fields[25];
+            break;
+        }
+        break;
+    case 1565328673u:
+        switch (h) {
+        case 3748513642u:
+            if (std::strcmp(name, "direction") == 0) return &type->fields[0];
+            break;
+        case 2145121445u:
+            if (std::strcmp(name, "wrap") == 0) return &type->fields[1];
+            break;
+        case 200909365u:
+            if (std::strcmp(name, "justify_content") == 0) return &type->fields[2];
+            break;
+        case 855161381u:
+            if (std::strcmp(name, "align_items") == 0) return &type->fields[3];
+            break;
+        case 3745173204u:
+            if (std::strcmp(name, "align_content") == 0) return &type->fields[4];
+            break;
+        case 1583594173u:
+            if (std::strcmp(name, "gap_main") == 0) return &type->fields[5];
+            break;
+        case 3243006968u:
+            if (std::strcmp(name, "gap_cross") == 0) return &type->fields[6];
+            break;
+        case 2157316278u:
+            if (std::strcmp(name, "padding") == 0) return &type->fields[7];
+            break;
+        case 2211550427u:
+            if (std::strcmp(name, "reverse_safe") == 0) return &type->fields[8];
+            break;
+        case 2667581083u:
+            if (std::strcmp(name, "dirty") == 0) return &type->fields[9];
+            break;
+        }
+        break;
+    case 1180552023u:
+        switch (h) {
+        case 3162681818u:
+            if (std::strcmp(name, "grow") == 0) return &type->fields[0];
+            break;
+        case 3149562608u:
+            if (std::strcmp(name, "shrink") == 0) return &type->fields[1];
+            break;
+        case 4076799293u:
+            if (std::strcmp(name, "basis_mode") == 0) return &type->fields[2];
+            break;
+        case 2378512183u:
+            if (std::strcmp(name, "basis_value") == 0) return &type->fields[3];
+            break;
+        case 3557244733u:
+            if (std::strcmp(name, "align_self") == 0) return &type->fields[4];
+            break;
+        case 1932267671u:
+            if (std::strcmp(name, "order") == 0) return &type->fields[5];
+            break;
+        case 3458292309u:
+            if (std::strcmp(name, "min_main") == 0) return &type->fields[6];
+            break;
+        case 1026422395u:
+            if (std::strcmp(name, "max_main") == 0) return &type->fields[7];
+            break;
+        }
+        break;
+    case 839566900u:
+        switch (h) {
+        case 1013213428u:
+            if (std::strcmp(name, "texture") == 0) return &type->fields[0];
+            break;
+        case 52100733u:
+            if (std::strcmp(name, "region") == 0) return &type->fields[1];
+            break;
+        case 2173662638u:
+            if (std::strcmp(name, "modulate") == 0) return &type->fields[2];
+            break;
+        case 645885608u:
+            if (std::strcmp(name, "stretch_mode") == 0) return &type->fields[3];
+            break;
+        case 3961512745u:
+            if (std::strcmp(name, "flip_h") == 0) return &type->fields[4];
+            break;
+        case 3860847031u:
+            if (std::strcmp(name, "flip_v") == 0) return &type->fields[5];
+            break;
+        case 3980047576u:
+            if (std::strcmp(name, "tile_scale") == 0) return &type->fields[6];
+            break;
+        case 2219426719u:
+            if (std::strcmp(name, "nine_patch_margin") == 0) return &type->fields[7];
+            break;
+        case 3981505984u:
+            if (std::strcmp(name, "texture_size") == 0) return &type->fields[8];
+            break;
+        }
+        break;
+    case 2237314706u:
+        switch (h) {
+        case 3545525929u:
+            if (std::strcmp(name, "item_template") == 0) return &type->fields[0];
+            break;
+        case 1739303875u:
+            if (std::strcmp(name, "data_source") == 0) return &type->fields[1];
+            break;
+        case 2572312010u:
+            if (std::strcmp(name, "item_count") == 0) return &type->fields[2];
+            break;
+        case 852010755u:
+            if (std::strcmp(name, "item_extent") == 0) return &type->fields[3];
+            break;
+        case 3309681697u:
+            if (std::strcmp(name, "orientation") == 0) return &type->fields[4];
+            break;
+        case 3369314814u:
+            if (std::strcmp(name, "spacing") == 0) return &type->fields[5];
+            break;
+        case 2777774294u:
+            if (std::strcmp(name, "overscan") == 0) return &type->fields[6];
+            break;
+        case 1852209861u:
+            if (std::strcmp(name, "selection_mode") == 0) return &type->fields[7];
+            break;
+        case 621267879u:
+            if (std::strcmp(name, "selected_index") == 0) return &type->fields[8];
+            break;
+        case 3712926252u:
+            if (std::strcmp(name, "scroll") == 0) return &type->fields[9];
+            break;
+        case 4183502093u:
+            if (std::strcmp(name, "pool_size") == 0) return &type->fields[10];
+            break;
+        }
+        break;
+    case 685868107u:
+        switch (h) {
+        case 3756827497u:
+            if (std::strcmp(name, "mask_mode") == 0) return &type->fields[0];
+            break;
+        case 1410318859u:
+            if (std::strcmp(name, "clip_children") == 0) return &type->fields[1];
+            break;
+        case 1722754939u:
+            if (std::strcmp(name, "corner_radius") == 0) return &type->fields[2];
+            break;
+        case 2335450901u:
+            if (std::strcmp(name, "mask_texture") == 0) return &type->fields[3];
+            break;
+        case 294254520u:
+            if (std::strcmp(name, "texture_channel") == 0) return &type->fields[4];
+            break;
+        case 829202337u:
+            if (std::strcmp(name, "invert") == 0) return &type->fields[5];
+            break;
+        case 2700384441u:
+            if (std::strcmp(name, "stencil_ref") == 0) return &type->fields[6];
+            break;
+        case 2399036659u:
+            if (std::strcmp(name, "stencil_write") == 0) return &type->fields[7];
+            break;
+        case 1098753987u:
+            if (std::strcmp(name, "stencil_compare") == 0) return &type->fields[8];
+            break;
+        case 1094146344u:
+            if (std::strcmp(name, "feather") == 0) return &type->fields[9];
+            break;
+        }
+        break;
+    case 1510497581u:
+        switch (h) {
+        case 561577860u:
+            if (std::strcmp(name, "current_page") == 0) return &type->fields[0];
+            break;
+        case 3748513642u:
+            if (std::strcmp(name, "direction") == 0) return &type->fields[1];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[2];
+            break;
+        case 2787607266u:
+            if (std::strcmp(name, "transition") == 0) return &type->fields[3];
+            break;
+        case 2032613782u:
+            if (std::strcmp(name, "transition_time") == 0) return &type->fields[4];
+            break;
+        case 381769575u:
+            if (std::strcmp(name, "drag_threshold") == 0) return &type->fields[5];
+            break;
+        case 1652184589u:
+            if (std::strcmp(name, "fling_threshold") == 0) return &type->fields[6];
+            break;
+        case 96863077u:
+            if (std::strcmp(name, "deadzone") == 0) return &type->fields[7];
+            break;
+        case 2608083357u:
+            if (std::strcmp(name, "snap") == 0) return &type->fields[8];
+            break;
+        case 2113855705u:
+            if (std::strcmp(name, "clip_content") == 0) return &type->fields[9];
+            break;
+        case 371494778u:
+            if (std::strcmp(name, "page_count") == 0) return &type->fields[10];
+            break;
+        case 1573804894u:
+            if (std::strcmp(name, "page_ratio") == 0) return &type->fields[11];
+            break;
+        case 965170239u:
+            if (std::strcmp(name, "current_node") == 0) return &type->fields[12];
+            break;
+        }
+        break;
+    case 55086565u:
+        switch (h) {
+        case 1113510858u:
+            if (std::strcmp(name, "value") == 0) return &type->fields[0];
+            break;
+        case 1755987878u:
+            if (std::strcmp(name, "min_display") == 0) return &type->fields[1];
+            break;
+        case 3966689298u:
+            if (std::strcmp(name, "mode") == 0) return &type->fields[2];
+            break;
+        case 648836738u:
+            if (std::strcmp(name, "fill_mode") == 0) return &type->fields[3];
+            break;
+        case 219341510u:
+            if (std::strcmp(name, "radial_center") == 0) return &type->fields[4];
+            break;
+        case 696138148u:
+            if (std::strcmp(name, "radial_begin") == 0) return &type->fields[5];
+            break;
+        case 3586118002u:
+            if (std::strcmp(name, "radial_fill") == 0) return &type->fields[6];
+            break;
+        case 3954367424u:
+            if (std::strcmp(name, "indeterminate_speed") == 0) return &type->fields[7];
+            break;
+        case 543544579u:
+            if (std::strcmp(name, "overlay") == 0) return &type->fields[8];
+            break;
+        case 1843685670u:
+            if (std::strcmp(name, "back_texture") == 0) return &type->fields[9];
+            break;
+        case 2523015076u:
+            if (std::strcmp(name, "fill_texture") == 0) return &type->fields[10];
+            break;
+        case 2244412822u:
+            if (std::strcmp(name, "back_color") == 0) return &type->fields[11];
+            break;
+        case 2789597448u:
+            if (std::strcmp(name, "fill_color") == 0) return &type->fields[12];
+            break;
+        case 714732089u:
+            if (std::strcmp(name, "show_percentage") == 0) return &type->fields[13];
+            break;
+        case 659427984u:
+            if (std::strcmp(name, "font") == 0) return &type->fields[14];
+            break;
+        case 3649057272u:
+            if (std::strcmp(name, "phase") == 0) return &type->fields[15];
+            break;
+        }
+        break;
+    case 3161176109u:
+        switch (h) {
+        case 621267879u:
+            if (std::strcmp(name, "selected_index") == 0) return &type->fields[0];
+            break;
+        case 3360090992u:
+            if (std::strcmp(name, "allow_unselect") == 0) return &type->fields[1];
+            break;
+        case 3723446379u:
+            if (std::strcmp(name, "loop") == 0) return &type->fields[2];
+            break;
+        case 3309681697u:
+            if (std::strcmp(name, "orientation") == 0) return &type->fields[3];
+            break;
+        case 871591685u:
+            if (std::strcmp(name, "disabled") == 0) return &type->fields[4];
+            break;
+        case 1309284212u:
+            if (std::strcmp(name, "selected") == 0) return &type->fields[5];
+            break;
+        case 1361969611u:
+            if (std::strcmp(name, "member_count") == 0) return &type->fields[6];
+            break;
+        }
+        break;
+    case 439478671u:
+        switch (h) {
+        case 3966689298u:
+            if (std::strcmp(name, "mode") == 0) return &type->fields[0];
+            break;
+        case 1122880180u:
+            if (std::strcmp(name, "anchor") == 0) return &type->fields[1];
+            break;
+        case 845187144u:
+            if (std::strcmp(name, "target") == 0) return &type->fields[2];
+            break;
+        case 1585467234u:
+            if (std::strcmp(name, "inset_left") == 0) return &type->fields[3];
+            break;
+        case 2245531378u:
+            if (std::strcmp(name, "inset_top") == 0) return &type->fields[4];
+            break;
+        case 1086163279u:
+            if (std::strcmp(name, "inset_right") == 0) return &type->fields[5];
+            break;
+        case 524898548u:
+            if (std::strcmp(name, "inset_bottom") == 0) return &type->fields[6];
+            break;
+        case 1970049833u:
+            if (std::strcmp(name, "min_size") == 0) return &type->fields[7];
+            break;
+        case 916082323u:
+            if (std::strcmp(name, "debug_draw") == 0) return &type->fields[8];
+            break;
+        case 3112279991u:
+            if (std::strcmp(name, "resolved_inset") == 0) return &type->fields[9];
+            break;
+        }
+        break;
+    case 4133052943u:
+        switch (h) {
+        case 2428421058u:
+            if (std::strcmp(name, "content") == 0) return &type->fields[0];
+            break;
+        case 1021254067u:
+            if (std::strcmp(name, "scroll_h") == 0) return &type->fields[1];
+            break;
+        case 1524582637u:
+            if (std::strcmp(name, "scroll_v") == 0) return &type->fields[2];
+            break;
+        case 1312612201u:
+            if (std::strcmp(name, "scroll_mode_h") == 0) return &type->fields[3];
+            break;
+        case 1211946487u:
+            if (std::strcmp(name, "scroll_mode_v") == 0) return &type->fields[4];
+            break;
+        case 28460179u:
+            if (std::strcmp(name, "scroll_step") == 0) return &type->fields[5];
+            break;
+        case 1347992427u:
+            if (std::strcmp(name, "follow_focus") == 0) return &type->fields[6];
+            break;
+        case 96863077u:
+            if (std::strcmp(name, "deadzone") == 0) return &type->fields[7];
+            break;
+        case 24442543u:
+            if (std::strcmp(name, "smooth") == 0) return &type->fields[8];
+            break;
+        case 991063671u:
+            if (std::strcmp(name, "bar_thickness") == 0) return &type->fields[9];
+            break;
+        case 2440652662u:
+            if (std::strcmp(name, "scroll_offset") == 0) return &type->fields[10];
+            break;
+        case 2919765566u:
+            if (std::strcmp(name, "content_size") == 0) return &type->fields[11];
+            break;
+        }
+        break;
+    case 241107014u:
+        switch (h) {
+        case 2913132585u:
+            if (std::strcmp(name, "min_value") == 0) return &type->fields[0];
+            break;
+        case 3742966811u:
+            if (std::strcmp(name, "max_value") == 0) return &type->fields[1];
+            break;
+        case 1113510858u:
+            if (std::strcmp(name, "value") == 0) return &type->fields[2];
+            break;
+        case 3343129103u:
+            if (std::strcmp(name, "step") == 0) return &type->fields[3];
+            break;
+        case 1216013763u:
+            if (std::strcmp(name, "step_mode") == 0) return &type->fields[4];
+            break;
+        case 3309681697u:
+            if (std::strcmp(name, "orientation") == 0) return &type->fields[5];
+            break;
+        case 829202337u:
+            if (std::strcmp(name, "invert") == 0) return &type->fields[6];
+            break;
+        case 3416387649u:
+            if (std::strcmp(name, "exp_edit") == 0) return &type->fields[7];
+            break;
+        case 3464877443u:
+            if (std::strcmp(name, "allow_greater") == 0) return &type->fields[8];
+            break;
+        case 871591685u:
+            if (std::strcmp(name, "disabled") == 0) return &type->fields[9];
+            break;
+        case 2263847464u:
+            if (std::strcmp(name, "track_texture") == 0) return &type->fields[10];
+            break;
+        case 2515675432u:
+            if (std::strcmp(name, "grabber_texture") == 0) return &type->fields[11];
+            break;
+        case 903443271u:
+            if (std::strcmp(name, "grabber_radius") == 0) return &type->fields[12];
+            break;
+        case 3195132083u:
+            if (std::strcmp(name, "show_value_label") == 0) return &type->fields[13];
+            break;
+        case 659427984u:
+            if (std::strcmp(name, "font") == 0) return &type->fields[14];
+            break;
+        case 755686860u:
+            if (std::strcmp(name, "dragging") == 0) return &type->fields[15];
+            break;
+        case 3239190148u:
+            if (std::strcmp(name, "ratio") == 0) return &type->fields[16];
+            break;
+        }
+        break;
+    case 3347801487u:
+        switch (h) {
+        case 3107127894u:
+            if (std::strcmp(name, "current_tab") == 0) return &type->fields[0];
+            break;
+        case 721264710u:
+            if (std::strcmp(name, "tab_bar") == 0) return &type->fields[1];
+            break;
+        case 398089822u:
+            if (std::strcmp(name, "side") == 0) return &type->fields[2];
+            break;
+        case 2787607266u:
+            if (std::strcmp(name, "transition") == 0) return &type->fields[3];
+            break;
+        case 2032613782u:
+            if (std::strcmp(name, "transition_time") == 0) return &type->fields[4];
+            break;
+        case 3939506320u:
+            if (std::strcmp(name, "tab_count") == 0) return &type->fields[5];
+            break;
+        case 561577860u:
+            if (std::strcmp(name, "current_page") == 0) return &type->fields[6];
+            break;
+        }
+        break;
+    case 771007622u:
+        switch (h) {
+        case 3185987134u:
+            if (std::strcmp(name, "text") == 0) return &type->fields[0];
+            break;
+        case 659427984u:
+            if (std::strcmp(name, "font") == 0) return &type->fields[1];
+            break;
+        case 2396994324u:
+            if (std::strcmp(name, "font_size") == 0) return &type->fields[2];
+            break;
+        case 1031692888u:
+            if (std::strcmp(name, "color") == 0) return &type->fields[3];
+            break;
+        case 4003655073u:
+            if (std::strcmp(name, "align_h") == 0) return &type->fields[4];
+            break;
+        case 3634547455u:
+            if (std::strcmp(name, "align_v") == 0) return &type->fields[5];
+            break;
+        case 3551645141u:
+            if (std::strcmp(name, "wrap_mode") == 0) return &type->fields[6];
+            break;
+        case 254122649u:
+            if (std::strcmp(name, "line_spacing") == 0) return &type->fields[7];
+            break;
+        case 2020743111u:
+            if (std::strcmp(name, "outline_size") == 0) return &type->fields[8];
+            break;
+        case 320187433u:
+            if (std::strcmp(name, "outline_color") == 0) return &type->fields[9];
+            break;
+        case 645910219u:
+            if (std::strcmp(name, "uppercase") == 0) return &type->fields[10];
+            break;
+        case 1626531442u:
+            if (std::strcmp(name, "text_size") == 0) return &type->fields[11];
+            break;
+        }
+        break;
+    case 771715814u:
+        switch (h) {
+        case 3334659430u:
+            if (std::strcmp(name, "opacity") == 0) return &type->fields[0];
+            break;
+        case 3966689298u:
+            if (std::strcmp(name, "mode") == 0) return &type->fields[1];
+            break;
+        case 737669234u:
+            if (std::strcmp(name, "affect_children") == 0) return &type->fields[2];
+            break;
+        case 553455173u:
+            if (std::strcmp(name, "root") == 0) return &type->fields[3];
+            break;
+        case 1265046453u:
+            if (std::strcmp(name, "visible_threshold") == 0) return &type->fields[4];
+            break;
+        case 3155007740u:
+            if (std::strcmp(name, "final_alpha") == 0) return &type->fields[5];
+            break;
+        }
+        break;
+    }
+    return 0;
+}
 
 const mq_type_desc* const mq_schema_types[] = {
     &mq_type_anim_AnimatedSprite,
