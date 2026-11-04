@@ -299,5 +299,7 @@ double cfg_field(Engine* eng, const char* path);
 bool read_sim_scenario(mq_vfs* vfs, const char* path, std::string& out);
 bool read_f32(const mq_type_desc* d, const void* blob, const char* name, float* out);
 bool write_ppm(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba);
+void read_color(const mq_type_desc* d, const void* base, const char* field, math::Color* out);
+void build_cube(std::vector<float>& verts, std::vector<uint32_t>& indices);
 
 }  // namespace maque::rt

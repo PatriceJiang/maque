@@ -3,6 +3,7 @@
 #pragma once
 
 #include "runtime_scene.h"
+#include "runtime_math3d.h"
 
 namespace maque::rt {
 

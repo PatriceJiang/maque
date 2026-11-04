@@ -413,4 +413,345 @@ void Engine::anim_step_gclip(int entity, const mq_type_desc* d, std::vector<uint
     }
 }
 
+/* 动画通道采样：out 长度 = ch.comps（weights 通道可 >4）。 */
+template <typename Ch>
+static void sample_gltf_channel(const Ch& ch, float time, std::vector<float>& out) {
+    const size_t n = ch.times.size();
+    out.assign((size_t)ch.comps, 0.0F);
+    if (n == 0 || ch.comps <= 0 || ch.values.empty()) return;
+    const int comps = ch.comps;
+    const int groups = ch.interp == 2 ? 3 : 1;
+    const size_t fcount = (size_t)comps * (size_t)groups;
+    auto val = [&](size_t key, int grp, int c) -> float {
+        const size_t o = key * fcount + (size_t)grp * (size_t)comps + (size_t)c;
+        return o < ch.values.size() ? ch.values[o] : 0.0F;
+    };
+    size_t i = 0;
+    if (time <= ch.times[0]) {
+        i = 0;
+        if (ch.interp == 0 || n == 1) {
+            for (int c = 0; c < comps; ++c) out[c] = val(0, ch.interp == 2 ? 1 : 0, c);
+            return;
+        }
+    } else if (time >= ch.times[n - 1]) {
+        i = n - 1;
+        if (ch.interp == 0 || n == 1) {
+            for (int c = 0; c < comps; ++c) out[c] = val(i, ch.interp == 2 ? 1 : 0, c);
+            return;
+        }
+    } else {
+        while (i + 1 < n && ch.times[i + 1] <= time) ++i;
+    }
+    if (ch.interp == 0) {
+        for (int c = 0; c < comps; ++c) out[c] = val(i, 0, c);
+        return;
+    }
+    const size_t j = i + 1 < n ? i + 1 : i;
+    const float t0 = ch.times[i];
+    const float t1 = ch.times[j];
+    const float dt = t1 - t0;
+    const float u = dt > 0.0F ? std::clamp((time - t0) / dt, 0.0F, 1.0F) : 0.0F;
+    if (ch.interp == 1) {
+        for (int c = 0; c < comps; ++c)
+            out[c] = val(i, 0, c) + (val(j, 0, c) - val(i, 0, c)) * u;
+        return;
+    }
+    /* CUBICSPLINE：key = (in-tangent, value, out-tangent)，切线按秒缩放。 */
+    const float u2 = u * u, u3 = u2 * u;
+    const float h00 = 2.0F * u3 - 3.0F * u2 + 1.0F;
+    const float h10 = u3 - 2.0F * u2 + u;
+    const float h01 = -2.0F * u3 + 3.0F * u2;
+    const float h11 = u3 - u2;
+    for (int c = 0; c < comps; ++c) {
+        const float p0 = val(i, 1, c);
+        const float p1 = val(j, 1, c);
+        const float m0 = dt * val(i, 2, c);
+        const float m1 = dt * val(j, 0, c);
+        out[c] = h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1;
+    }
+}
+
+bool Engine::apply_gltf_morph(int entity, GltfGpuModel& gm, size_t prim_idx,
+                              const std::vector<float>& weights) {
+    (void)entity;
+    if (prim_idx >= gm.prims.size()) return false;
+    GltfGpuModel::Prim& pr = gm.prims[prim_idx];
+    if (pr.mesh < 0 || pr.morph_targets.empty() || pr.base.empty()) return false;
+    if (!rapi || !rself || !rapi->update_mesh) {
+        if (!pr.warned_update) {
+            pr.warned_update = true;
+            std::print(stderr, "runtime: 渲染器不支持 update_mesh，glTF morph 跳过\n");
+        }
+        return false;
+    }
+    std::vector<uint8_t> out = pr.base;
+    const uint32_t row_floats = pr.layout >= 2 ? (pr.layout == 3 ? 14u : 12u)
+                                               : (pr.layout == 1 ? 14u : 12u);
+    for (uint32_t vi = 0; vi < pr.vertex_count; ++vi) {
+        float* pos = (float*)(out.data() + (size_t)vi * pr.stride);
+        if ((size_t)(vi * row_floats + 2) >= pr.base.size() / sizeof(float)) break;
+        float* nrm = pos + 3;
+        bool normal_touched = false;
+        for (size_t ti = 0; ti < pr.morph_targets.size(); ++ti) {
+            const float w = ti < weights.size() ? weights[ti] : 0.0F;
+            if (w == 0.0F) continue;
+            const GltfGpuModel::MorphTarget& tgt = pr.morph_targets[ti];
+            const size_t o = (size_t)vi * 3;
+            if (o + 2 < tgt.positions.size()) {
+                pos[0] += w * tgt.positions[o];
+                pos[1] += w * tgt.positions[o + 1];
+                pos[2] += w * tgt.positions[o + 2];
+            }
+            if (o + 2 < tgt.normals.size()) {
+                nrm[0] += w * tgt.normals[o];
+                nrm[1] += w * tgt.normals[o + 1];
+                nrm[2] += w * tgt.normals[o + 2];
+                normal_touched = true;
+            }
+        }
+        if (normal_touched) {
+            const float len2 = nrm[0] * nrm[0] + nrm[1] * nrm[1] + nrm[2] * nrm[2];
+            if (len2 > 1.0e-12F) {
+                const float inv = 1.0F / std::sqrt(len2);
+                nrm[0] *= inv; nrm[1] *= inv; nrm[2] *= inv;
+            }
+        }
+    }
+    if (rapi->update_mesh(rself, pr.mesh, out.data(), (uint64_t)out.size()) != 0) {
+        if (!pr.warned_update) {
+            pr.warned_update = true;
+            std::print(stderr, "runtime: glTF update_mesh 失败，morph 跳过\n");
+        }
+        return false;
+    }
+    pr.applied_weights = weights;
+    return true;
+}
+
+void Engine::gltf_state_ensure(int entity, const std::string& path, const GltfGpuModel& gm) {
+    if (gltf_states.find(entity) != gltf_states.end()) return;
+    GltfEntityState st;
+    st.path = path;
+    const size_t n = gm.nodes.size();
+    st.node_local.assign(n * 10, 0.0F);
+    st.node_animated.assign(n, 0);
+    st.node_world.assign(n * 16, 0.0F);
+    st.node_weights.resize(n);
+    for (size_t i = 0; i < n; ++i) {
+        const auto& nd = gm.nodes[i];
+        float* L = &st.node_local[i * 10];
+        for (int k = 0; k < 3; ++k) { L[k] = nd.t[k]; L[7 + k] = nd.s[k]; }
+        for (int k = 0; k < 4; ++k) L[3 + k] = nd.r[k];
+        float lm[16];
+        if (nd.has_matrix) std::memcpy(lm, nd.m, sizeof lm);
+        else m4_from_qtrs(nd.t, nd.r, nd.s, lm);
+        if (nd.parent >= 0 && (size_t)nd.parent < i)
+            m4_mul(&st.node_world[(size_t)nd.parent * 16], lm, &st.node_world[i * 16]);
+        else
+            std::memcpy(&st.node_world[i * 16], lm, sizeof lm);
+    }
+    st.palettes.resize(gm.skins.size());
+    for (size_t si = 0; si < gm.skins.size(); ++si) {
+        const auto& sk = gm.skins[si];
+        st.palettes[si].assign(sk.joints.size() * 16, 0.0F);
+        for (size_t ji = 0; ji < sk.joints.size(); ++ji) {
+            const int jn = sk.joints[ji];
+            if (jn < 0 || (size_t)jn >= n) continue;
+            const float* ibm = sk.inverse_bind.data() + ji * 16;
+            m4_mul(&st.node_world[(size_t)jn * 16], ibm, &st.palettes[si][ji * 16]);
+        }
+    }
+    st.morph_weights.resize(gm.prims.size());
+    for (size_t pi = 0; pi < gm.prims.size(); ++pi)
+        st.morph_weights[pi] = gm.prims[pi].default_weights;
+    if (!gm.anims.empty()) {
+        st.duration = gm.anims.front().duration;
+        st.clip = 0;
+    }
+    st.inited = true;
+    gltf_states[entity] = std::move(st);
+}
+
+void Engine::gltf_anim_step(float dt) {
+    for (auto& kv : gltf_states) {
+        const int entity = kv.first;
+        GltfEntityState& st = kv.second;
+        auto mit = gltf_models.find(st.path);
+        if (mit == gltf_models.end() || mit->second.failed) continue;
+        GltfGpuModel& gm = mit->second;
+        const mq_type_desc* md = nullptr;
+        std::vector<uint8_t>* mb = comp_by_name(*this, entity, "render.MeshRenderer", &md);
+        void* mbase = mb ? mb->data() : nullptr;
+        if (md && mbase) {
+            const std::string* clip_name = read_str(md, mbase, "clip");
+            if (clip_name && !clip_name->empty()) {
+                for (size_t ai = 0; ai < gm.anims.size(); ++ai) {
+                    if (gm.anims[ai].name == *clip_name) { st.clip = (int)ai; break; }
+                }
+            }
+            const float speed = read_num(md, mbase, "speed", 1.0F);
+            const bool playing = read_num(md, mbase, "playing", 1.0F) >= 0.5F;
+            const bool loop = read_num(md, mbase, "loop", 1.0F) >= 0.5F;
+            if (!gm.anims.empty() && st.clip >= 0 && (size_t)st.clip < gm.anims.size())
+                st.duration = gm.anims[(size_t)st.clip].duration;
+            if (playing && !gm.anims.empty()) {
+                st.time += dt * speed;
+                if (loop && st.duration > 0.0F) {
+                    st.time = std::fmod(st.time, st.duration);
+                    if (st.time < 0.0F) st.time += st.duration;
+                } else if (st.time < 0.0F) {
+                    st.time = 0.0F;
+                } else if (st.duration > 0.0F && st.time > st.duration) {
+                    st.time = st.duration;
+                }
+            }
+            write_num(md, mbase, "time", (double)st.time);
+            write_num(md, mbase, "duration", (double)st.duration);
+        }
+        const size_t n = gm.nodes.size();
+        const bool anim_on = anim_enabled && !gm.anims.empty() && st.clip >= 0 &&
+                             (size_t)st.clip < gm.anims.size();
+        auto apply_pointer = [](GltfGpuModel& model, int mi, int field,
+                                const std::vector<float>& v) {
+            if (mi < 0 || (size_t)mi >= model.mats.size() || v.empty()) return;
+            auto& m = model.mats[(size_t)mi];
+            const float a = v[0];
+            const float b = v.size() > 1 ? v[1] : 0.0F;
+            const float c = v.size() > 2 ? v[2] : 0.0F;
+            const float d = v.size() > 3 ? v[3] : 0.0F;
+            switch (field) {
+            case gltf::PF_BASE_COLOR:
+                m.base_color[0] = a; m.base_color[1] = b; m.base_color[2] = c; m.base_color[3] = d;
+                break;
+            case gltf::PF_METALLIC: m.metallic = a; break;
+            case gltf::PF_ROUGHNESS: m.roughness = a; break;
+            case gltf::PF_EMISSIVE: m.emissive[0] = a; m.emissive[1] = b; m.emissive[2] = c; break;
+            case gltf::PF_EMISSIVE_STRENGTH: m.emissive_intensity = a; break;
+            case gltf::PF_ALPHA_CUTOFF: m.alpha_cutoff = a; break;
+            case gltf::PF_CLEARCOAT: m.clearcoat = a; break;
+            case gltf::PF_CLEARCOAT_ROUGHNESS: m.clearcoat_roughness = a; break;
+            case gltf::PF_SHEEN_COLOR: m.sheen_color[0] = a; m.sheen_color[1] = b; m.sheen_color[2] = c; break;
+            case gltf::PF_SHEEN_ROUGHNESS: m.sheen_roughness = a; break;
+            case gltf::PF_IOR: m.ior = a; break;
+            case gltf::PF_TRANSMISSION:
+                m.anisotropy_rotation = a;
+                if (a > 0.001F) m.flags2 |= 0x100000;
+                break;
+            case gltf::PF_VOLUME_THICKNESS: m.volume_thickness = a; break;
+            case gltf::PF_ATTENUATION_DISTANCE: m.attenuation_distance = a; break;
+            case gltf::PF_DIFFUSE_TRANSMISSION:
+                m.diffuse_transmission_factor = a;
+                if (a > 0.001F) m.flags2 |= 0x1000000;
+                break;
+            case gltf::PF_SPECULAR: m.specular_intensity = a; break;
+            case gltf::PF_IRIDESCENCE: m.iridescence = a; break;
+            case gltf::PF_ANISOTROPY: m.anisotropy = a; break;
+            case gltf::PF_DISPERSION: m.dispersion = a; break;
+            default: break;
+            }
+        };
+        for (size_t i = 0; i < n; ++i) {
+            const auto& nd = gm.nodes[i];
+            float* L = &st.node_local[i * 10];
+            for (int k = 0; k < 3; ++k) { L[k] = nd.t[k]; L[7 + k] = nd.s[k]; }
+            for (int k = 0; k < 4; ++k) L[k + 3] = nd.r[k];
+            st.node_animated[i] = 0;
+            st.node_weights[i].clear();
+        }
+        if (anim_on) {
+            const auto& anim = gm.anims[(size_t)st.clip];
+            std::vector<float> vals;
+            for (const auto& ch : anim.channels) {
+                if (ch.path == 4) {
+                    sample_gltf_channel(ch, st.time, vals);
+                    apply_pointer(gm, ch.pointer_material, ch.pointer_field, vals);
+                    continue;
+                }
+                if (ch.node < 0 || (size_t)ch.node >= n) continue;
+                float* L = &st.node_local[(size_t)ch.node * 10];
+                if (ch.path == 0 || ch.path == 1 || ch.path == 2) {
+                    sample_gltf_channel(ch, st.time, vals);
+                    if (ch.path == 0) {
+                        for (int k = 0; k < 3 && k < ch.comps; ++k) L[k] = vals[(size_t)k];
+                    } else if (ch.path == 1) {
+                        for (int k = 0; k < 4 && k < ch.comps; ++k) L[k + 3] = vals[(size_t)k];
+                        const float qx = L[3], qy = L[4], qz = L[5], qw = L[6];
+                        const float ql = std::sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+                        if (ql > 1.0e-8F) { L[3] /= ql; L[4] /= ql; L[5] /= ql; L[6] /= ql; }
+                    } else {
+                        for (int k = 0; k < 3 && k < ch.comps; ++k) L[7 + k] = vals[(size_t)k];
+                    }
+                    st.node_animated[(size_t)ch.node] = 1;
+                } else if (ch.path == 3) {
+                    sample_gltf_channel(ch, st.time, st.node_weights[(size_t)ch.node]);
+                }
+            }
+        }
+        for (int i : gm.order) {
+            if (i < 0 || (size_t)i >= n) continue;
+            const auto& nd = gm.nodes[(size_t)i];
+            float lm[16];
+            if (nd.has_matrix) std::memcpy(lm, nd.m, sizeof lm);
+            else m4_from_qtrs(&st.node_local[(size_t)i * 10], &st.node_local[(size_t)i * 10 + 3],
+                              &st.node_local[(size_t)i * 10 + 7], lm);
+            if (nd.parent >= 0)
+                m4_mul(&st.node_world[(size_t)nd.parent * 16], lm, &st.node_world[(size_t)i * 16]);
+            else
+                std::memcpy(&st.node_world[(size_t)i * 16], lm, sizeof lm);
+        }
+        if (skin_enabled) {
+            for (size_t si = 0; si < gm.skins.size(); ++si) {
+                const auto& sk = gm.skins[si];
+                auto& pal = st.palettes[si];
+                pal.assign(sk.joints.size() * 16, 0.0F);
+                for (size_t ji = 0; ji < sk.joints.size(); ++ji) {
+                    const int jn = sk.joints[ji];
+                    if (jn < 0 || (size_t)jn >= n) continue;
+                    m4_mul(&st.node_world[(size_t)jn * 16], sk.inverse_bind.data() + ji * 16,
+                           &pal[ji * 16]);
+                }
+            }
+        } else {
+            for (auto& pal : st.palettes) {
+                for (size_t ji = 0; ji + 16 <= pal.size(); ji += 16) {
+                    m4_identity(&pal[ji]);
+                }
+            }
+        }
+        if (morph_enabled) {
+            for (size_t pi = 0; pi < gm.prims.size(); ++pi) {
+                auto& pr = gm.prims[pi];
+                if (pr.morph_targets.empty()) continue;
+                const auto& nw = st.node_weights[(size_t)std::max(pr.node, 0)];
+                std::vector<float> w = nw.size() == pr.morph_targets.size() ? nw : pr.default_weights;
+                if (w == pr.applied_weights) {
+                    st.morph_weights[pi] = w;
+                    continue;
+                }
+                if (pr.morph_owner < 0) pr.morph_owner = entity;
+                if (pr.morph_owner != entity) {
+                    if (!pr.warned_shared) {
+                        pr.warned_shared = true;
+                        std::print(stderr, "runtime: glTF morph 网格被多实体共享，仅首实体 '{}' 驱动\n",
+                                   pr.morph_owner);
+                    }
+                    continue;
+                }
+                apply_gltf_morph(entity, gm, pi, w);
+                st.morph_weights[pi] = w;
+            }
+        }
+        if (render3d_info && !st.logged) {
+            st.logged = true;
+            std::print("runtime: gltf anim entity={} '{}' clip={} time={:.3f}/{:.3f} "
+                       "channels={} skins={} morph={}\n",
+                       entity, st.path, st.clip, (double)st.time, (double)st.duration,
+                       gm.anims.empty() ? 0 : (long long)gm.anims[(size_t)std::clamp(st.clip, 0, (int)gm.anims.size() - 1)].channels.size(),
+                       (long long)gm.skins.size(),
+                       (long long)std::count_if(gm.prims.begin(), gm.prims.end(),
+                                                [](const GltfGpuModel::Prim& p) { return !p.morph_targets.empty(); }));
+        }
+    }
+}
+
 }  // namespace maque::rt

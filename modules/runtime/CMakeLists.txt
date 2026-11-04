@@ -16,7 +16,10 @@ add_library(maque_runtime STATIC
     src/assets/texture.cpp src/assets/env.cpp src/assets/gltf.cpp src/assets/gltf_anim.cpp
     # 特性层（Spine / 引擎侧 ImGui 面板 / F4 选项）
     src/anim/spine.cpp
-    src/ui/debug_panel.cpp src/ui/engine_options.cpp)
+    src/ui/debug_panel.cpp src/ui/engine_options.cpp
+    # 渲染（3D 数学 / 渲染目标与相机 / 场景 shader / 3D 提取）
+    src/render/math3d.cpp src/render/targets.cpp src/render/shader_passes.cpp
+    src/render/extract3d.cpp)
 add_library(maque::runtime ALIAS maque_runtime)
 target_include_directories(maque_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
