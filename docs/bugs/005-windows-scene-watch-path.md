@@ -39,7 +39,7 @@ MAQUE_WATCH=1 MAQUE_PACE=1 ./build/samples/player/maque_player <scene.scn>
 脚本匹配没有这个问题：`local` 和 `p` 都由 `fs::path` 构造，两边都是反斜杠。
 所以表现为“脚本热更正常、场景热更静默失效”。
 
-代码：[runtime.cpp:6990](../../modules/runtime/src/runtime.cpp#L6990)（`ends_with(p, c->eng->scn_vfs_path)`）。
+代码：`Engine::poll_watcher`（`modules/runtime/src/script/reload.cpp`）的 `ends_with(p, c->eng->scn_vfs_path)`。
 
 ## 修复建议（未实现）
 

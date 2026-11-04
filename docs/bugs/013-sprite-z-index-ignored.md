@@ -4,7 +4,7 @@
 - **状态**：fixed
 - **影响面**：`modules/runtime` 的 2D sprite 提取；所有依赖节点 z 的 `.scn`（含嵌套场景实例）
 - **发现版本**：2026-11-04，重写 `samples/tank` 时用“树盖坦克 / 过场文字盖地形”的截图对照发现
-- **修复**：`modules/runtime/src/runtime.cpp`（`Scene::extract`）
+- **修复**：`modules/runtime/src/render/items2d.cpp`（`Scene::extract`）
 
 ## 症状
 

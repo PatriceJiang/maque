@@ -60,10 +60,7 @@ reload #2： ping ping ping（3 次）
     **不误删其它脚本的注册**。
 - `unload_global` / `unload_overlay` 也清理对应 owner，避免换脚本后残留。
 
-代码入口：[runtime.cpp:394](../../modules/runtime/src/runtime.cpp#L394)（`NodeHandler`）、
-[11309](../../modules/runtime/src/runtime.cpp#L11309)（判定槽位）、
-[11324](../../modules/runtime/src/runtime.cpp#L11324)（清理）、
-[11926](../../modules/runtime/src/runtime.cpp#L11926)（注册时写 slot）。
+代码入口：`NodeHandler`（`runtime_common.h`）、`Engine::script_slot_for_handler` / `Engine::purge_node_handlers`（`modules/runtime/src/script/reload.cpp`）、注册时写 slot（`modules/runtime/src/api/node.cpp`）。
 
 ## 回归与证据
 

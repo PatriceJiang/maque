@@ -12,7 +12,7 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
 - **脚本可用的控件 API**：`imgui_begin/end`、文本、按钮、复选框、单选、滑块、拖动、
   输入框、下拉、列表、树、折叠头、标签页、表格、菜单、进度条、颜色、tooltip、
   plot（引擎侧环形缓冲）、内建演示窗口（`imgui_show_demo`）等 **74 个函数**
-  （声明在 `schema/runtime/host.yaml`，实现见 `modules/runtime/src/runtime.cpp` 的
+  （声明在 `schema/runtime/host.yaml`，实现见 `modules/runtime/src/ui/debug_panel.cpp` 的
   `namespace host`）。
 - **中文**：复用 `scenes/fonts/` 的 TTF，图集一次烘两档字号（标题 + 正文，默认 20/15 逻辑像素）。
 - **F2 开关**：引擎级热键（沿检测，按住不会连续切换）；`MAQUE_IMGUI=1/0` 设定**初始**开关。

@@ -57,7 +57,7 @@ MAQUE_IMGUI_POINTER="2:20:18:1;3:20:130:0;4:20:238:0;5:20:238:2" \
 
 ## 修复
 
-`modules/runtime/src/runtime.cpp`：指针换算改为按 **ImGui 显示空间**算，与绘制同源：
+`modules/runtime/src/ui/debug_panel.cpp`：指针换算改为按 **ImGui 显示空间**算，与绘制同源：
 
 - 新增 `imgui_show_size()`：显示空间尺寸 —— 官方后端 = 绘制区设备像素（`drawable_size`），
   网格链 = 渲染目标像素 `TW×TH`（与 `mq_imgui_begin_frame(show_w, show_h, ...)` 同一份值，
@@ -90,6 +90,6 @@ MAQUE_IMGUI_POINTER="2:20:18:1;3:20:130:0;4:20:238:0;5:20:238:2" \
 
 - [006](006-imgui-present-clipping-font-glyph.md)（引入本问题的直呈渲染修复）
 - [28 · ImGui 调试面板](../28-ImGui调试面板.md)
-- `modules/runtime/src/runtime.cpp`（`imgui_show_size` / `imgui_show_scale` / `imgui_input_feed`）
+- `modules/runtime/src/ui/debug_panel.cpp`（`imgui_show_size` / `imgui_show_scale` / `imgui_input_feed`）
 - `modules/render/gfx/src/gfx.cpp`（`MQ_IMGUI_LAYER` 恒等视图分支）
 - `tests/imgui_present_e2e.sh`（第 ⑥/⑦ 段）

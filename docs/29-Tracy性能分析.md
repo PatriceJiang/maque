@@ -293,7 +293,7 @@ ctest --test-dir build-win -R 'tracy' --output-on-failure     # 单测 + 两个 
 | 域 | 写入者 | 口径 |
 |----|--------|------|
 | `script` | `modules/script/src/vm_mem.h` + `js_backend.cpp` / `lua_backend.cpp` | QuickJS `JS_NewRuntime2` 自定义 5 回调；Lua `lua_newstate` 自定义 alloc。账本 = `malloc_usable_size`/`_msize`（与 QuickJS 自己的 malloc_size 同口径），**不额外加分配头**；`MAQUE_TRACY_MEM=0` 时只多一个 bool 检查 |
-| `node` | `runtime.cpp` `Engine::memory_sample()` | 场景实体表 + 组件 blob + 名字/树/实例元数据（估算：`unordered_map` 桶按 3 指针/节点计）。**派生量，不参与校验和** |
+| `node` | `engine/tracy.cpp` 的 `Engine::memory_sample()` | 场景实体表 + 组件 blob + 名字/树/实例元数据（估算：`unordered_map` 桶按 3 指针/节点计）。**派生量，不参与校验和** |
 | `texture` | gfx `resource_bytes2` → runtime | 所有存活 `Texture`（含字形/ImGui 图集、RenderTexture、env cube）；`mip_texture_bytes` 按 mip/面/字节宽度累加 |
 | `gpu` | gfx `resource_bytes2` → runtime | 所有 `MeshGpu`（顶点 + 索引 + wire 索引）；旧插件无 `resource_bytes2` 时回退 `resource_bytes` 总量记到 gpu |
 | `font` | `mq_font_memory_bytes()`（text 模块）+ `mq_imgui_font_atlas_bytes()`（imgui 模块） | 字体对象 + 路径 + 内置位图 + 每字号图集 RGBA 容量 + 字形表容量 + hb 字体表；加上调试面板静态图集（2048² RGBA = 16 MiB，只在面板首次 Build 后计入；官方 SDL_Renderer 后端自管图集 → 0）。不含 FreeType 内部缓存 |

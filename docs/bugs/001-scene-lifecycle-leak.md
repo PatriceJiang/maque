@@ -12,7 +12,7 @@
 
   ```text
   ERROR: AddressSanitizer: attempting free on address which was not malloc()-ed
-    #1 Engine::reload_scene modules/runtime/src/runtime.cpp
+    #1 Engine::reload_scene modules/runtime/src/engine/setup.cpp
   SUMMARY: AddressSanitizer: bad-free ... Engine::reload_scene
   ```
 
@@ -53,14 +53,14 @@ MAQUE_WINDOW=0x0 MAQUE_PRESENT=off MAQUE_CONTROL=- \
 
 ## 修复
 
-- [runtime.cpp:6681](../../modules/runtime/src/runtime.cpp#L6681) 起：根场景是内嵌对象时只
+- `Engine::load_scene_into`（`modules/runtime/src/engine/setup.cpp`）起：根场景是内嵌对象时只
   `scene_store = Scene()`；堆场景交给 `scene_owned`（`unique_ptr`），替换时由它释放。
 - `load_scene_into()` 在换回 `scene_store` 前 `scene_owned.reset()`，切场景不泄漏旧堆场景。
 - `teardown()` 在 `mq_reflect_destroy` **之前**销毁根场景（`scene_store` 重置 / `scene_owned` 释放），
   保证组件动态成员正常析构。
 - 文档不变量：`docs/33-RenderTexture相机离屏纹理.md` §10。
 
-（仓库内路径：`modules/runtime/src/runtime.cpp` 的 `reload_scene` / `load_scene_into` / `teardown`。）
+（仓库内路径：`modules/runtime/src/script/reload.cpp` 的 `reload_scene` + `modules/runtime/src/engine/setup.cpp` 的 `load_scene_into` / `teardown`。）
 
 ## 回归与证据
 
