@@ -200,7 +200,37 @@ void Engine::step_frame(bool render_frame) {
 - [ ] 公开 ABI 零改动（`git diff` 不含 `include/` 与 `generated/`）
 - [ ] `Engine` ≤ 250 行（阶段 2）、`step_frame` 编排 ≤ 50 行（阶段 3）
 
-## 11. 风险
+## 11. 交接备忘（下一轮从这里开始）
+
+**已验证的搬运套路**（每刀都这么做，别省步骤）：
+
+1. `grep -rn "\b<字段>\b" modules/runtime/src` 列出**全部**引用点（名字撞车是主要失败源）；
+2. 一个脚本改完「头里的类型/字段 + 所有调用点」；
+3. `cmake --build build-win --target maque_player`；
+4. `tests/runtime_oracle.sh <player> <repo> <work> check <baseline>`（18 场景逐字段）；
+5. 相关 `ctest -R`；6. 提交（提交信息写清"只搬状态、方法签名不变"）。
+
+**名字撞车清单（已踩过的）**：`clips` vs `scn.AnimationPlayer.clips`、`Particle` vs 局部变量、
+`AgentPath`/`Tween`/`Scheduled` 是嵌套类型（要 `Engine::` 或 `maque::rt::` 限定）、
+`audio_clip` 是方法名而 `clip` 是局部变量、`particles` 有 `eng.particles`（点号）与
+`systems.particles`（已在子对象里）两种写法。
+
+**SystemsRuntime 只剩音频**：`audio`（`mq_audio*` 句柄）、`audio_clips`、`audio_cap`、
+`audio_cap_path`、`audio_cap_frames`、`audio_cap_rate`、`audio_cap_channels`、`audio_cap_frac`、
+`audio_cap_buf`。注意**不要**改 `audio_setup` / `audio_teardown` / `audio_step` / `audio_clip`
+（方法名）与 `mq_audio_*`（模块 ABI）。
+
+**之后**：`DebugUi`+`EngineOptions`（`imgui_*` / `opt_*` / `stat_*`，视图层无模拟依赖）→
+`TextRenderer`（`font*` / `pending_quads` / `retired_textures`）→ `AssetStore` / `GltfRuntime`。
+
+**阶段 3 起点**：`engine/frame.cpp` 的 `step_frame`（775 行）按 §8 的 10 个阶段切，
+每切一段就构建 + oracle；切完再按同样办法拆 `render/extract3d.cpp`（732 行）。
+
+**当前基线**：`maque-test-tmp/oracle/baseline.txt`（18 场景）。基线只在本机有效；
+换机器要重新 `record`（确定性是逐机器验证的，跨机器不承诺 PNG 一致）。
+
+
+## 12. 风险
 
 | 风险 | 处置 |
 |---|---|
