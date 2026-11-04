@@ -137,7 +137,7 @@ float ui_text_lines(void* ctx, float id) {
     return 0.0F;
 }
 
-/* ---- Tween ---- */
+/* ---- SystemsRuntime::Tween ---- */
 float tween_start(void* ctx, float id, const char* field, float to, float duration, float easing) {
     auto* eng = (Engine*)ctx;
     if (!eng->scene->at((int)id) || !field) return 0.0F;
@@ -146,30 +146,30 @@ float tween_start(void* ctx, float id, const char* field, float to, float durati
     void* base = nullptr;
     if (!resolve_field_path(*eng, (int)id, field, &td, &fd, &base) || !fd) return 0.0F;
     const float from = read_num(td, base, fd->name, 0.0F);
-    eng->tweens.push_back({ (int)id, field, from, to, 0.0F, duration > 0.0F ? duration : (1.0F / 60.0F),
+    eng->systems.tweens.push_back({ (int)id, field, from, to, 0.0F, duration > 0.0F ? duration : (1.0F / 60.0F),
                             (int)easing });
     return 1.0F;
 }
 
 float tween_stop(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
-    const size_t before = eng->tweens.size();
-    eng->tweens.erase(std::remove_if(eng->tweens.begin(), eng->tweens.end(),
-                                     [&](const Engine::Tween& t) { return t.entity == (int)id; }),
-                      eng->tweens.end());
-    return (float)(before - eng->tweens.size());
+    const size_t before = eng->systems.tweens.size();
+    eng->systems.tweens.erase(std::remove_if(eng->systems.tweens.begin(), eng->systems.tweens.end(),
+                                     [&](const SystemsRuntime::Tween& t) { return t.entity == (int)id; }),
+                      eng->systems.tweens.end());
+    return (float)(before - eng->systems.tweens.size());
 }
 
 float tween_count(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
     int n = 0;
-    for (const auto& t : eng->tweens) if (t.entity == (int)id) ++n;
+    for (const auto& t : eng->systems.tweens) if (t.entity == (int)id) ++n;
     return (float)n;
 }
 
 float tween_progress(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
-    for (const auto& t : eng->tweens)
+    for (const auto& t : eng->systems.tweens)
         if (t.entity == (int)id) return t.duration > 0.0F ? (t.elapsed / t.duration) : 1.0F;
     return 1.0F;
 }
@@ -178,14 +178,14 @@ float tween_progress(void* ctx, float id) {
 float schedule_once(void* ctx, const char* handler, float delay) {
     auto* eng = (Engine*)ctx;
     if (!handler || !*handler) return 0.0F;
-    eng->schedules.push_back({ handler, 0.0F, delay > 0.0F ? delay : 0.0F, false });
+    eng->systems.schedules.push_back({ handler, 0.0F, delay > 0.0F ? delay : 0.0F, false });
     return 1.0F;
 }
 
 float schedule(void* ctx, const char* handler, float interval) {
     auto* eng = (Engine*)ctx;
     if (!handler || !*handler || interval <= 0.0F) return 0.0F;
-    eng->schedules.push_back({ handler, interval, interval, true });
+    eng->systems.schedules.push_back({ handler, interval, interval, true });
     return 1.0F;
 }
 
@@ -193,14 +193,14 @@ float unschedule(void* ctx, const char* handler) {
     auto* eng = (Engine*)ctx;
     if (!handler) return 0.0F;
     const std::string h = handler;
-    const size_t before = eng->schedules.size();
-    eng->schedules.erase(std::remove_if(eng->schedules.begin(), eng->schedules.end(),
-                                        [&](const Engine::Scheduled& s) { return s.handler == h; }),
-                         eng->schedules.end());
-    return (float)(before - eng->schedules.size());
+    const size_t before = eng->systems.schedules.size();
+    eng->systems.schedules.erase(std::remove_if(eng->systems.schedules.begin(), eng->systems.schedules.end(),
+                                        [&](const SystemsRuntime::Scheduled& s) { return s.handler == h; }),
+                         eng->systems.schedules.end());
+    return (float)(before - eng->systems.schedules.size());
 }
 
-float schedule_count(void* ctx) { return (float)((Engine*)ctx)->schedules.size(); }
+float schedule_count(void* ctx) { return (float)((Engine*)ctx)->systems.schedules.size(); }
 
 float ui_hit_at(void* ctx, float x, float y) {
     auto* eng = (Engine*)ctx;

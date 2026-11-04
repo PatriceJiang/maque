@@ -44,6 +44,14 @@ struct SpineRuntime {
     std::vector<Instance> items;   // 实例表（push_back 后定型：回调 user 指向元素）
 };
 
+struct SystemsRuntime {
+    struct Tween { int entity; std::string path; float from, to, elapsed, duration; int easing; };
+    std::vector<Tween> tweens;
+    /* 定时器（定时器）：帧驱动，确定性 */
+    struct Scheduled { std::string handler; float interval, remaining; bool repeat; };
+    std::vector<Scheduled> schedules;
+    std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
+};
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
     const mq_renderer_v2* rapi = nullptr;                 // 渲染器插件接口
@@ -193,12 +201,7 @@ struct Engine {
     bool director_paused = false;                  // director.pause()：跳过模拟，仅保留采样/渲染
     uint64_t script_frames = 0;                    // 脚本 update 实际执行次数（对照暂停）
     /* Tween（补间）：确定性固定步长推进；写入反射字段路径（与动画同一机制） */
-    struct Tween { int entity; std::string path; float from, to, elapsed, duration; int easing; };
-    std::vector<Tween> tweens;
-    /* 定时器（定时器）：帧驱动，确定性 */
-    struct Scheduled { std::string handler; float interval, remaining; bool repeat; };
-    std::vector<Scheduled> schedules;
-    std::vector<int> pending_destroy;              // node_destroy：帧边界统一销毁
+    SystemsRuntime systems;
     std::string pending_scene;                     // director.loadScene()：帧边界切场景
     std::vector<std::pair<int, mq_physics_body>> physics_role_bodies;   // (entity, 世代句柄)
     /* 碰撞查询（docs/15 §3、docs/19）：把求解器本帧的接触对映射回实体 id，供脚本判玩法。

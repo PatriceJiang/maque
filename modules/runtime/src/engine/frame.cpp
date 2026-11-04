@@ -263,7 +263,7 @@ void Engine::step_frame(bool render_frame) {
         MQ_TRACY_ZONE_N(runtime, "sim");             // Tracy：逻辑阶段总 zone（脚本+动画+物理+提取）
         ++script_frames;
         {
-            MQ_TRACY_ZONE_N(anim, "tween");          // Tween（补间）
+            MQ_TRACY_ZONE_N(anim, "tween");          // SystemsRuntime::Tween（补间）
             step_tweens(dt);
             step_schedules(dt);                      // 定时器
         }

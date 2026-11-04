@@ -440,7 +440,7 @@ float node_emit_number(void* ctx, float id, const char* event, float value) {
 float node_destroy(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
     if (!eng->scene->at((int)id)) return 0.0F;
-    eng->pending_destroy.push_back((int)id);
+    eng->systems.pending_destroy.push_back((int)id);
     return 1.0F;
 }
 

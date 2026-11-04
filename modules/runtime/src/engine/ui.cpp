@@ -114,13 +114,13 @@ void Engine::ui_step() {
 }
 
 
-/* Tween（tween().to()）：在固定步长内把字段从 from 插值到 to；
+/* SystemsRuntime::Tween（tween().to()）：在固定步长内把字段从 from 插值到 to；
  * 缓动 0=linear 1=ease_in 2=ease_out 3=ease_in_out；完成派发 "tween_complete"。 */
 void Engine::step_tweens(float dt) {
-    if (tweens.empty()) return;
+    if (systems.tweens.empty()) return;
     std::vector<size_t> done;
-    for (size_t i = 0; i < tweens.size(); ++i) {
-        Tween& tw = tweens[i];
+    for (size_t i = 0; i < systems.tweens.size(); ++i) {
+        SystemsRuntime::Tween& tw = systems.tweens[i];
         tw.elapsed += dt;
         float t = tw.duration > 0.0F ? tw.elapsed / tw.duration : 1.0F;
         if (t > 1.0F) t = 1.0F;
@@ -142,30 +142,30 @@ void Engine::step_tweens(float dt) {
             done.push_back(i);
         }
     }
-    for (auto it = done.rbegin(); it != done.rend(); ++it) tweens.erase(tweens.begin() + (long)*it);
+    for (auto it = done.rbegin(); it != done.rend(); ++it) systems.tweens.erase(systems.tweens.begin() + (long)*it);
 }
 
 /* 定时器（定时器）：按固定步长累计，到点调用脚本函数（按名字）。 */
 void Engine::step_schedules(float dt) {
-    if (schedules.empty() || !bus) return;
+    if (systems.schedules.empty() || !bus) return;
     std::vector<size_t> drop;
-    for (size_t i = 0; i < schedules.size(); ++i) {
-        Scheduled& sc = schedules[i];
+    for (size_t i = 0; i < systems.schedules.size(); ++i) {
+        SystemsRuntime::Scheduled& sc = systems.schedules[i];
         sc.remaining -= dt;
         if (sc.remaining > 0.0F) continue;
         mq_script_bus_call(bus, sc.handler.c_str(), (double)dt, 0.0, nullptr);
         if (sc.repeat) sc.remaining += sc.interval > 0.0F ? sc.interval : (1.0F / 60.0F);
         else drop.push_back(i);
     }
-    for (auto it = drop.rbegin(); it != drop.rend(); ++it) schedules.erase(schedules.begin() + (long)*it);
+    for (auto it = drop.rbegin(); it != drop.rend(); ++it) systems.schedules.erase(systems.schedules.begin() + (long)*it);
 }
 
 /* node.destroy()：延迟到帧边界统一销毁（销毁在当前帧末生效）。 */
 void Engine::flush_pending_destroy() {
-    if (pending_destroy.empty()) return;
-    if (std::getenv("MAQUE_TRACE_UI")) std::print("[ui] destroy {} node(s)\n", pending_destroy.size());
-    std::vector<int> ids = pending_destroy;
-    pending_destroy.clear();
+    if (systems.pending_destroy.empty()) return;
+    if (std::getenv("MAQUE_TRACE_UI")) std::print("[ui] destroy {} node(s)\n", systems.pending_destroy.size());
+    std::vector<int> ids = systems.pending_destroy;
+    systems.pending_destroy.clear();
     std::sort(ids.begin(), ids.end());
     for (int id : ids) if (scene->at(id)) scene->remove(id);
 }
