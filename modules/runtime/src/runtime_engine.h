@@ -55,6 +55,12 @@ struct SystemsRuntime {
     std::vector<Particle> particles;
     std::vector<int> emitter_accum;                        // 每个发射器的发射累加器（按实体 id 排序使用）
     uint32_t max_particles = 2048;
+    struct Clip { std::string name; float length = 0; bool loop = true; std::vector<std::string> paths; std::vector<uint8_t> blob; };
+    std::vector<Clip> clips;
+    int find_clip(const std::string& name) const {
+        for (size_t i = 0; i < clips.size(); ++i) if (clips[i].name == name) return (int)i;
+        return -1;
+    }
 };
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
@@ -169,12 +175,6 @@ struct Engine {
     const mq_input_event* ev = nullptr;                     // 正在分发的语义事件（脚本可读）
     struct Ball { int id; float vx, vy, radius; mq_physics_body body{}; };
     /* 动画（docs/15 §2）：反射驱动关键帧采样 → 写回目标组件字段 */
-    struct Clip { std::string name; float length = 0; bool loop = true; std::vector<std::string> paths; std::vector<uint8_t> blob; };
-    std::vector<Clip> clips;
-    int find_clip(const std::string& name) const {
-        for (size_t i = 0; i < clips.size(); ++i) if (clips[i].name == name) return (int)i;
-        return -1;
-    }
     /* 粒子（docs/15 §4）：CPU、确定性（引擎 RNG）、池化（docs/07 §8） */
     std::vector<Ball> balls;                                // 与物理世界对应的实体集合（按 id 升序）
     mq_physics_world* physics = nullptr;                    // 确定性 2D 求解器（docs/15 §3）

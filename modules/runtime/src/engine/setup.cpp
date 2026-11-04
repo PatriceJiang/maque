@@ -475,10 +475,10 @@ void Engine::teardown() {
     if (obs) { mq_obs_destroy(obs); obs = nullptr; }
     if (reflect) {
         const mq_type_desc* ct = mq_reflect_type_by_name(reflect, "asset.AnimationClip");
-        if (ct) for (auto& c : clips) destroy_blob(*this, ct->type_id, c.blob);
-        clips.clear();
+        if (ct) for (auto& c : systems.clips) destroy_blob(*this, ct->type_id, c.blob);
+        systems.clips.clear();
     } else {
-        clips.clear();
+        systems.clips.clear();
     }
     agent_paths.clear();
     for (auto* s : checkpoints) mq_snapshot_destroy(s);

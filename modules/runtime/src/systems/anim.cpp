@@ -30,7 +30,7 @@ bool resolve_field_path(Engine& eng, int entity, const std::string& path,
 }
 
 bool Engine::load_clip(const std::string& ref) {
-    if (ref.empty() || find_clip(ref) >= 0) return find_clip(ref) >= 0;
+    if (ref.empty() || systems.find_clip(ref) >= 0) return systems.find_clip(ref) >= 0;
     void* d = nullptr; size_t n = 0;
     const std::string vpath = "/" + ref;
     if (mq_vfs_read(vfs, vpath.c_str(), &d, &n) != MQ_VFS_OK) {
@@ -39,7 +39,7 @@ bool Engine::load_clip(const std::string& ref) {
     }
     const mq_type_desc* ct = mq_reflect_type_by_name(reflect, "asset.AnimationClip");
     if (!ct) { mq_vfs_free(d); return false; }
-    Clip clip;
+    SystemsRuntime::Clip clip;
     clip.blob.assign((uint8_t*)d, (uint8_t*)d + ct->size);
     mq_vfs_free(d);
     std::string text;
@@ -59,7 +59,7 @@ bool Engine::load_clip(const std::string& ref) {
     if (ac->tracks.empty()) { std::print("runtime: clip '{}' has no tracks\n", ref); return false; }
     /* 校验每条轨道至少能解析（角色/实体在采样时确定） */
     for (auto& t : ac->tracks) clip.paths.push_back(t.field_path);
-    clips.push_back(std::move(clip));
+    systems.clips.push_back(std::move(clip));
     std::print("runtime: clip '{}' loaded ({} track(s), length={:.2f}s)\n",
                ref, (int)ac->tracks.size(), (double)ac->length);
     return true;
@@ -88,14 +88,14 @@ void Engine::anim_step(float dt) {
                 continue;
             }
             if (!ap->playing || ap->clip.empty()) continue;
-            if (find_clip(ap->clip) < 0 && !load_clip(ap->clip)) continue;
-            const int ci = find_clip(ap->clip);
+            if (systems.find_clip(ap->clip) < 0 && !load_clip(ap->clip)) continue;
+            const int ci = systems.find_clip(ap->clip);
             if (ci < 0) continue;
-            const asset::AnimationClip* ac = (const asset::AnimationClip*)clips[ci].blob.data();
+            const asset::AnimationClip* ac = (const asset::AnimationClip*)systems.clips[ci].blob.data();
             const float length = ac->length;
             /* 播放头推进（确定性：dt 来自固定步长，无墙钟，docs/10 D1/D3） */
             ap->time += dt * ap->speed;
-            const bool loop = clips[ci].loop;
+            const bool loop = systems.clips[ci].loop;
             if (length > 0.0F) {
                 if (loop) { while (ap->time >= length) ap->time -= length; }
                 else if (ap->time > length) ap->time = length;
