@@ -33,6 +33,7 @@
 | [010](010-imgui-direct-pointer-mapping.md) | WGPU 直呈下 ImGui 鼠标位置映射错误（点击/拖动偏移） | 正确性 | fixed | `imgui_present_e2e`（第 ⑦ 段） |
 | [011](011-pipeline-format-thrash.md) | RenderTexture/主目标格式交替导致 3D 管线每 pass 重建 | 性能 | fixed | `render_texture_e2e` |
 | [012](012-windows-checkout-e2e-false-fail.md) | Windows 检出（autocrlf）/窗口模式/反向探针让 e2e 门假失败与假跳过 | 测试基础设施 | fixed | `env_cubemap_e2e`、`gltf_import_e2e`、`render3d_scene_e2e`、`render3d_present_e2e`、`imgui_engine_options_e2e`、`spine_*` |
+| [013](013-sprite-z-index-ignored.md) | `scn.Sprite` 的 `node_set_z_index` 被静默忽略（按创建序绘制） | 正确性 | fixed | `tank_zorder`、`tank_smoke`/`tank_rules` 截图 |
 
 ## 模板
 

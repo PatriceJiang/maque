@@ -530,7 +530,7 @@ int module_call(mq_script_module* base, const char* fn, int nnum, const double* 
 int eval(mq_script_vm* vm, const char* src, const char* filename) {
     MQ_TRACY_ZONE_N(script, "js.eval");
     if (!vm || !src) return 1;
-    JSValue v = JS_Eval(S(vm)->ctx, src, __builtin_strlen(src), filename ? filename : "<script>",
+    JSValue v = JS_Eval(S(vm)->ctx, src, std::strlen(src), filename ? filename : "<script>",
                         JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(v)) { throw_and_print(S(vm)->ctx); return 2; }
     JS_FreeValue(S(vm)->ctx, v);

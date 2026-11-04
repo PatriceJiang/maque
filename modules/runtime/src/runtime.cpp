@@ -9705,6 +9705,10 @@ static void read_local_pos(Engine& eng, const Entity& e, float* lx, float* ly) {
 /* 展平（派生）：局部坐标在 Transform 组件里，世界坐标每帧重算到 Entity::world_x/y。
  * 顺序确定：根按 id 升序、子节点按 id 升序（栈序反转）→ 与快照/校验和的遍历顺序一致。 */
 void Scene::flatten_world(Engine& eng) {
+    static const bool tf_on = [] { const char* e = std::getenv("MAQUE_TRACE_FLATTEN"); return e && *e && *e != '0'; }();
+    auto tf_t0 = std::chrono::steady_clock::now();
+    size_t tf_nodes = 0, tf_scan = 0, tf_comps = 0;
+    double tf_local_ms = 0.0;
     std::vector<int> roots;
     for (auto& [idx, e] : ents) if (e.parent < 0 || !at(e.parent)) roots.push_back(idx);
     std::sort(roots.begin(), roots.end());
@@ -9715,14 +9719,23 @@ void Scene::flatten_world(Engine& eng) {
         stack.pop_back();
         Entity* e = at(idx);
         if (!e) continue;
+        ++tf_nodes;
         float lx = 0, ly = 0;
+        const auto tf_l0 = std::chrono::steady_clock::now();
         read_local_pos(eng, *e, &lx, &ly);
+        tf_comps += e->comps.size();
+        tf_local_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tf_l0).count();
         if (pidx >= 0) { if (Entity* pe = at(pidx)) { e->world_x = pe->world_x + lx; e->world_y = pe->world_y + ly; } }
         else { e->world_x = lx; e->world_y = ly; }
         std::vector<int> kids;
-        for (auto& [k, c] : ents) if (c.parent == idx) kids.push_back(k);
+        for (auto& [k, c] : ents) { ++tf_scan; if (c.parent == idx) kids.push_back(k); }
         std::sort(kids.begin(), kids.end(), std::greater<int>());   // 栈序 → 最小 id 先处理（稳定）
         for (int k : kids) stack.emplace_back(k, idx);
+    }
+    if (tf_on) {
+        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tf_t0).count();
+        std::print("[flatten] {:.3f}ms nodes={} scan={} comps={} local_reflect={:.3f}ms ents={} roots={}\n",
+                   ms, tf_nodes, tf_scan, tf_comps, tf_local_ms, ents.size(), roots.size());
     }
 }
 
@@ -9912,7 +9925,10 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                     if (rt.handle == tex) { it.filter = rt.filter == 0 ? 1 : 0; break; }
             }
             it.layer = 0;                                        // 世界层
-            it.z = (int)idx;                                     // 稳定序（按实体 id，禁指针序）
+            /* 节点 z_index 必须参与排序（docs/bugs/013）：此前只写实体 id，
+             * 于是 scn.Sprite 图层永远按创建顺序画、z_index 静默无效 —— 树无法盖住坦克。
+             * 与 UI/Spine 用同一套 "z_index*100000+id" 稳定键（同 z 时仍按 id，禁指针序）。 */
+            it.z = e.z_index * 100000 + (int)idx;
             out.push_back(it);
         }
     }

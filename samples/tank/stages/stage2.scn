@@ -1,0 +1,4408 @@
+{
+  "title": "Battle City - Stage 2",
+  "entities": [
+    {
+      "name": "stage_root",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "children": [
+        {
+          "name": "tile_c09_r03_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 408.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r03_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 408.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r03_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 408.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r03_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 408.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r03_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 408.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r03_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 408.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r03_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 408.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r03_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 408.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r04_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 392.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r04_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 392.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r04_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 392.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r04_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 392.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r04_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 392.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r04_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 392.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r04_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 392.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r04_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 392.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r05_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 376.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r06_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 360.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r07_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 344.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r07_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 344.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r07_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 344.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r07_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 344.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r07_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 344.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r07_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 344.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r07_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 344.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r07_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 344.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r08_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 328.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r08_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 328.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r08_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 328.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r08_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 328.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r08_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 328.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r08_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 328.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r08_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 328.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r08_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 328.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r09_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 312.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r09_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 312.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r09_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 312.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r09_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 312.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r09_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 312.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r09_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 312.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r09_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 312.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r09_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 312.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r10_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 296.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r10_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 296.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r10_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 296.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r10_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 296.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r10_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 296.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r10_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 296.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r10_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 296.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r10_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 296.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r11_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 280.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r11_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 280.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r11_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 280.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r11_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 280.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r11_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 280.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r11_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 280.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r11_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 280.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r11_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 280.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r12_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 264.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r12_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 264.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r12_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 264.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r12_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 264.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r12_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 264.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r12_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 264.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r12_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 264.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r12_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 264.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r13_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 248.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r14_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 232.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r17_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 184.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r17_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 184.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r17_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 184.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r17_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 184.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r17_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 184.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r17_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 184.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r17_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 184.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r17_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 184.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r18_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 168.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r18_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 168.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r18_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 168.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r18_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 168.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r18_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 168.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r18_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 168.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r18_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 168.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r18_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 168.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r19_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 152.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c03_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 56.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c04_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 72.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c05_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 88.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c06_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 104.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c21_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 344.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c22_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 360.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c23_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 376.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c24_r20_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 392.0,
+              "y": 136.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c13_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 216.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c14_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 232.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r21_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 120.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c09_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 152.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c10_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 168.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c13_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 216.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c14_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 232.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c17_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 280.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c18_r22_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 296.0,
+              "y": 104.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r23_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 88.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r23_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 88.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r23_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 88.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r23_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 88.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r24_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 72.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r24_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 72.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r24_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 72.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r24_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 72.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r25_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 56.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r25_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 56.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r25_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 56.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r25_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 56.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c11_r26_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 184.0,
+              "y": 40.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c12_r26_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 200.0,
+              "y": 40.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c15_r26_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 248.0,
+              "y": 40.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c16_r26_brick",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 264.0,
+              "y": 40.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_brick.png"
+            }
+          ]
+        },
+        {
+          "name": "base_eagle",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 224.0,
+              "y": 48.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 32,
+              "height": 32,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/base_eagle.png"
+            }
+          ]
+        },
+        {
+          "name": "player_start",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 160,
+              "y": 48
+            }
+          ]
+        },
+        {
+          "name": "spawn_1",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 32,
+              "y": 432
+            }
+          ]
+        },
+        {
+          "name": "spawn_2",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 224,
+              "y": 432
+            }
+          ]
+        },
+        {
+          "name": "spawn_3",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 416,
+              "y": 432
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

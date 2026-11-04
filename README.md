@@ -57,7 +57,11 @@ ctest --test-dir build --output-on-failure
 ./build/samples/player/maque_player scenes/sokoban/sokoban.scn   # 推箱子（WASD/箭头 · R 重开 · Z 撤销 · N 下一关）
 ./build/samples/player/maque_player scenes/td/menu.scn     # 小小塔防（场景组合：3 塔 / 4 敌人 / 3 关卡 + 全局脚本）
 ./build/samples/player/maque_player scenes/lua/lua.scn     # 同一份逻辑的 Lua 版弹跳球
+./build/samples/player/maque_player samples/tank/tank.scn  # FC 坦克大战（Lua + scn 嵌套/prefab 复用标杆）
 ```
+
+> **`samples/tank/`** 是场景组织/嵌套/复用的标杆：根场景 + `actors/` prefab 池 +
+> `ui/hud.scn` 独立 VM + 动态 `stages/stageN.scn`，详见 `samples/tank/README.md`。
 
 > **示例一览**（`scenes/`）：
 > | 场景 | 演示内容 |

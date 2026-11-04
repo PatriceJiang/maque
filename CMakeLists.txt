@@ -84,6 +84,7 @@ if(MSVC)
     add_compile_options(/permissive- /Zc:__cplusplus /Zc:preprocessor /utf-8 /W3)
     add_compile_options(/bigobj)     # 模块多、模板多，默认 obj 段数不够
     add_compile_options(/fp:precise) # 确定性 D8：不做 FMA 收缩
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
 # ---- ASan / UBSan（可选）------------------------------------------------------

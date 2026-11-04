@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <cstring>
 #include <unordered_map>
 
 struct mq_reflect_ctx {
@@ -33,8 +34,8 @@ size_t field_scalar_size(mq_reflect_ctx* ctx, const mq_field_desc* f) {
 }
 
 double load_as_double(const uint8_t* p, mq_type_kind kind, size_t width) {
-    if (kind == MQ_TK_F32) { float v; __builtin_memcpy(&v, p, 4); return v; }
-    if (kind == MQ_TK_F64) { double v; __builtin_memcpy(&v, p, 8); return v; }
+    if (kind == MQ_TK_F32) { float v; std::memcpy(&v, p, 4); return v; }
+    if (kind == MQ_TK_F64) { double v; std::memcpy(&v, p, 8); return v; }
     if (kind == MQ_TK_BOOL) return *p ? 1.0 : 0.0;
     const bool uns = (kind == MQ_TK_U8 || kind == MQ_TK_U16 || kind == MQ_TK_U32 || kind == MQ_TK_U64);
     switch (width) {
@@ -46,8 +47,8 @@ double load_as_double(const uint8_t* p, mq_type_kind kind, size_t width) {
     }
 }
 bool store_from_double(uint8_t* p, mq_type_kind kind, size_t width, double v) {
-    if (kind == MQ_TK_F32) { float f = (float)v; __builtin_memcpy(p, &f, 4); return true; }
-    if (kind == MQ_TK_F64) { __builtin_memcpy(p, &v, 8); return true; }
+    if (kind == MQ_TK_F32) { float f = (float)v; std::memcpy(p, &f, 4); return true; }
+    if (kind == MQ_TK_F64) { std::memcpy(p, &v, 8); return true; }
     if (kind == MQ_TK_BOOL) { *p = v != 0.0 ? 1 : 0; return true; }
     const bool uns = (kind == MQ_TK_U8 || kind == MQ_TK_U16 || kind == MQ_TK_U32 || kind == MQ_TK_U64);
     switch (width) {
@@ -104,7 +105,7 @@ const mq_type_desc* mq_reflect_type_at(mq_reflect_ctx* ctx, uint32_t index) {
 const mq_field_desc* mq_reflect_field(const mq_type_desc* type, const char* field_name) {
     if (!type || !field_name) return nullptr;
     for (uint32_t i = 0; i < type->field_count; ++i)
-        if (type->fields[i].name && __builtin_strcmp(type->fields[i].name, field_name) == 0)
+        if (type->fields[i].name && std::strcmp(type->fields[i].name, field_name) == 0)
             return &type->fields[i];
     return nullptr;
 }

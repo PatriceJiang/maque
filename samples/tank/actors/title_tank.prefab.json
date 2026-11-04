@@ -1,0 +1,13 @@
+{
+  "name": "title_tank",
+  "entities": [
+    {
+      "name": "body",
+      "components": [
+        { "type": "scn.Transform2D", "x": -9999, "y": -9999 },
+        { "type": "scn.Sprite", "width": 64, "height": 64,
+          "r": 1, "g": 1, "b": 1, "texture": "/art/title_player.png" }
+      ]
+    }
+  ]
+}

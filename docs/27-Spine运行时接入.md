@@ -146,7 +146,7 @@ Spine Editor 许可。**不要删** LICENSE 文件。
 
 ```bash
 ctest --test-dir build-win -R spine      # 4/4 通过
-ctest --test-dir build-win -R tank       # 3/3（gfx 改动未影响坦克）
+ctest --test-dir build-win -R tank       # 4/4（重写后的 FC 复刻：smoke/play/rules/zorder）
 ctest --test-dir build-win               # 62 项（唯一偶发是 text_e2e，单跑 3/3 通过）
 ```
 

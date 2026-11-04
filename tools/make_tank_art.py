@@ -1,248 +1,562 @@
-"""生成 tank 对战样例的位图素材（程序化、确定性；不需要外部素材库）。
+"""生成 samples/tank 的 FC《坦克大战》风格像素资源（确定性、可重跑）。
 
-设计意图（与 tools/make_flappy_art.py 同一套路）：
-  · 素材是**游戏的东西**，放在游戏工程自己的目录（samples/tank/art/）；
-    引擎侧不需要认识任何一张图 —— "引擎即浏览器、游戏即资源"。
-  · 全部程序化生成 → 仓库里不塞二进制美术资源，重跑即得同一批图（固定种子）。
-  · 尺寸按 640x480 设计分辨率的 1:1 像素画来定，避免缩放糊掉。
+设计：
+  * 场景 = 640x480；战场 = 26x26 个 16px 单元（= NES 的 26x26 个 8px 单元放大 2 倍）；
+    地图按 13x13 大格编写，每个大格铺成 2x2 单元 —— 与 1990 FC 版的数据结构一致。
+  * 坦克 32x32；每个朝向单独出一张图（不在运行时做 90° 纹理旋转），像素边界不糊。
+  * 砖块/钢块/水/树/冰都是 16x16 单元；树画在坦克之上（运行时用 node z-index）。
+  * 文字用自制 8x8 位图字体：HUD 1x，标题/结算 2x；不依赖系统 TTF 的形状。
+  * 只写 samples/tank/art 下的生成物；脚本本身是唯一真相，重跑逐字节确定。
 
-俯视坦克的素材拆分（**为什么车体/炮塔是两张图**）：
-  · 车体 `hull.png`：履带 + 车体 + 舱盖，左右**对称** → 不依赖朝向也能看出是坦克。
-  · 炮塔 `turret.png`：圆形炮塔（旋转对称）—— 引擎这一版 `node_set_angle` 不会旋转
-    精灵图元（实测，见 samples/tank/README.md「引擎现状」），所以炮管的**朝向**由脚本
-    用一串小方块沿瞄准方向摆位来表达；炮塔本体做成圆盘就没有"朝向错了"的观感问题。
-  · 敌我靠配色区分（盟军橄榄绿 / 敌军锈红）。
-
-用法： python tools/make_tank_art.py
+用法：python tools/make_tank_art.py
 """
+from __future__ import annotations
+
+import math
 import os
 import random
 
 from PIL import Image, ImageDraw
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "samples", "tank", "art")
-OUT = os.path.normpath(OUT)
+ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+OUT = os.path.join(ROOT, "samples", "tank", "art")
 
 
 def save(img: Image.Image, name: str) -> None:
     path = os.path.join(OUT, name)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     img.save(path)
-    print(f"  {name:22s} {img.size[0]}x{img.size[1]}  {os.path.getsize(path)} bytes")
+    print(f"  {name:28s} {img.size[0]}x{img.size[1]}  {os.path.getsize(path)} bytes")
 
 
-# ---------------------------------------------------------------- 地面 / 装饰
+# ---------------------------------------------------------------- 5x7 位图字体
+FONT = {
+    "A": ("01110", "10001", "10001", "11111", "10001", "10001", "10001"),
+    "B": ("11110", "10001", "10001", "11110", "10001", "10001", "11110"),
+    "C": ("01110", "10001", "10000", "10000", "10000", "10001", "01110"),
+    "D": ("11110", "10001", "10001", "10001", "10001", "10001", "11110"),
+    "E": ("11111", "10000", "10000", "11110", "10000", "10000", "11111"),
+    "F": ("11111", "10000", "10000", "11110", "10000", "10000", "10000"),
+    "G": ("01110", "10001", "10000", "10111", "10001", "10001", "01110"),
+    "H": ("10001", "10001", "10001", "11111", "10001", "10001", "10001"),
+    "I": ("11111", "00100", "00100", "00100", "00100", "00100", "11111"),
+    "J": ("00111", "00010", "00010", "00010", "00010", "10010", "01100"),
+    "K": ("10001", "10010", "10100", "11000", "10100", "10010", "10001"),
+    "L": ("10000", "10000", "10000", "10000", "10000", "10000", "11111"),
+    "M": ("10001", "11011", "10101", "10101", "10001", "10001", "10001"),
+    "N": ("10001", "11001", "10101", "10011", "10001", "10001", "10001"),
+    "O": ("01110", "10001", "10001", "10001", "10001", "10001", "01110"),
+    "P": ("11110", "10001", "10001", "11110", "10000", "10000", "10000"),
+    "Q": ("01110", "10001", "10001", "10001", "10101", "10010", "01101"),
+    "R": ("11110", "10001", "10001", "11110", "10100", "10010", "10001"),
+    "S": ("01111", "10000", "10000", "01110", "00001", "00001", "11110"),
+    "T": ("11111", "00100", "00100", "00100", "00100", "00100", "00100"),
+    "U": ("10001", "10001", "10001", "10001", "10001", "10001", "01110"),
+    "V": ("10001", "10001", "10001", "10001", "10001", "01010", "00100"),
+    "W": ("10001", "10001", "10001", "10101", "10101", "11011", "10001"),
+    "X": ("10001", "10001", "01010", "00100", "01010", "10001", "10001"),
+    "Y": ("10001", "10001", "01010", "00100", "00100", "00100", "00100"),
+    "Z": ("11111", "00001", "00010", "00100", "01000", "10000", "11111"),
+    "0": ("01110", "10001", "10011", "10101", "11001", "10001", "01110"),
+    "1": ("00100", "01100", "00100", "00100", "00100", "00100", "01110"),
+    "2": ("01110", "10001", "00001", "00010", "00100", "01000", "11111"),
+    "3": ("11110", "00001", "00001", "01110", "00001", "00001", "11110"),
+    "4": ("00010", "00110", "01010", "10010", "11111", "00010", "00010"),
+    "5": ("11111", "10000", "10000", "11110", "00001", "00001", "11110"),
+    "6": ("01110", "10000", "10000", "11110", "10001", "10001", "01110"),
+    "7": ("11111", "00001", "00010", "00100", "01000", "01000", "01000"),
+    "8": ("01110", "10001", "10001", "01110", "10001", "10001", "01110"),
+    "9": ("01110", "10001", "10001", "01111", "00001", "00001", "01110"),
+    " ": ("00000",) * 7,
+    ".": ("00000", "00000", "00000", "00000", "00000", "00110", "00110"),
+    ",": ("00000", "00000", "00000", "00000", "00110", "00110", "00100"),
+    ":": ("00000", "00110", "00110", "00000", "00110", "00110", "00000"),
+    "-": ("00000", "00000", "00000", "11111", "00000", "00000", "00000"),
+    "/": ("00001", "00010", "00010", "00100", "01000", "01000", "10000"),
+    "!": ("00100", "00100", "00100", "00100", "00100", "00000", "00100"),
+    "?": ("01110", "10001", "00001", "00010", "00100", "00000", "00100"),
+    "'": ("00100", "00100", "00000", "00000", "00000", "00000", "00000"),
+    "(": ("00010", "00100", "01000", "01000", "01000", "00100", "00010"),
+    ")": ("01000", "00100", "00010", "00010", "00010", "00100", "01000"),
+    "+": ("00000", "00100", "00100", "11111", "00100", "00100", "00000"),
+    "<": ("00010", "00100", "01000", "10000", "01000", "00100", "00010"),
+    ">": ("01000", "00100", "00010", "00001", "00010", "00100", "01000"),
+    "=": ("00000", "00000", "11111", "00000", "11111", "00000", "00000"),
+}
 
-def make_ground() -> Image.Image:
-    """整张草地（**整幅设计分辨率**）：底色 + 大格深浅斑块 + 细碎草点 + 几颗石子。
 
-    为什么画整幅而不是小块平铺：渲染器的 sampler 是 ClampToEdge（不能按 UV 平铺），
-    平铺会露边；整幅 640x480 一次画完最省事，也保证确定性。
-    """
-    w, h = 640, 480
-    rng = random.Random(20241016)
-    img = Image.new("RGB", (w, h), (84, 122, 62))
+def glyph_image(ch: str, scale: int = 1) -> Image.Image:
+    img = Image.new("RGBA", (8 * scale, 8 * scale), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    # 大格深浅（64px 格）：让空旷的草地有层次，不呆板
-    for cy in range(0, h, 64):
-        for cx in range(0, w, 64):
-            if (cx // 64 + cy // 64) % 2 == 0:
-                d.rectangle([cx, cy, cx + 63, cy + 63], fill=(88, 128, 66))
-    # 细碎草点：深浅各一批
-    for _ in range(2600):
-        x, y = rng.randrange(w), rng.randrange(h)
-        c = rng.choice([(72, 108, 54), (96, 138, 72), (78, 116, 58), (102, 142, 76)])
-        d.point((x, y), fill=c)
-    for _ in range(420):
-        x, y = rng.randrange(w), rng.randrange(h)
-        d.line([(x, y), (x + rng.randint(1, 3), y)], fill=(70, 104, 52))
-    # 石子/土块：少量即可，多了会脏
-    for _ in range(26):
-        x, y = rng.randrange(8, w - 8), rng.randrange(8, h - 8)
-        r = rng.randint(1, 2)
-        d.ellipse([x - r, y - r, x + r, y + r], fill=(118, 120, 106))
+    rows = FONT.get(ch, FONT["?"])
+    for y, row in enumerate(rows):
+        for x, bit in enumerate(row):
+            if bit == "1":
+                d.rectangle([x * scale + scale, y * scale,
+                             x * scale + 2 * scale - 1, y * scale + scale - 1],
+                            fill=(255, 255, 255, 255))
     return img
 
 
-def make_dirt() -> Image.Image:
-    """土斑（96x72，带 alpha）：平滑有机轮廓 + 深浅颗粒。
-
-    轮廓用"半径随角度做低频正弦扰动"的多边形 —— 自然但不长疙瘩。
-    （试过随机圆斑扰动：会鼓出一堆疙瘩，远看像被啃过，很脏。）
-    """
-    import math
-    w, h = 96, 72
-    rng = random.Random(77)
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    cx, cy = w * 0.5, h * 0.5
-    rx, ry = w * 0.5 - 2.0, h * 0.5 - 2.0
-    pts = []
-    for i in range(72):
-        t = i / 72.0 * math.pi * 2.0
-        k = 1.0 + 0.055 * math.sin(3.0 * t + 1.2) + 0.045 * math.sin(5.0 * t + 0.4) + 0.03 * math.sin(7.0 * t + 2.1)
-        pts.append((cx + math.cos(t) * rx * k, cy + math.sin(t) * ry * k))
-    d.polygon(pts, fill=(150, 124, 86, 255))
-    d.line(pts + [pts[0]], fill=(120, 96, 64, 255), width=2)          # 深色边，土斑有厚度
-    for _ in range(300):
-        x, y = rng.randrange(10, w - 10), rng.randrange(10, h - 10)
-        if not img.getpixel((x, y))[3]:
+def make_glyphs() -> None:
+    for ch in FONT:
+        if ch == " ":
             continue
-        d.point((x, y), fill=rng.choice([(128, 104, 70, 255), (166, 140, 98, 255), (138, 112, 76, 255)]))
-    d.ellipse([28, 20, 36, 28], fill=(168, 142, 100, 255))
-    d.ellipse([58, 42, 64, 48], fill=(126, 100, 68, 255))
-    return img
+        cp = ord(ch)
+        for scale, sub in ((1, "glyph8"), (2, "glyph16")):
+            img = glyph_image(ch, scale)
+            path = os.path.join(OUT, sub, f"{cp}.png")
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            img.save(path)
+    print(f"  glyph8/glyph16              {len(FONT) - 1} printable glyphs")
 
 
-def make_shadow() -> Image.Image:
-    """车底阴影（72x56 软椭圆）：让坦克从草地上"浮"起来，一眼能分辨。
-
-    为什么用独立实体而不是把阴影画进车体贴图：贴图矩形就是车身大小，
-    阴影必须比车身**大一圈**才有效；而引擎这一版不支持给单个精灵加缩放
-    （node_set_scale 对 sprite 无效），所以阴影是单独的场景实体、单独摆位。
-    """
-    w, h = 72, 56
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+# ---------------------------------------------------------------- 背景 / 战场
+def make_backgrounds() -> None:
+    w, h = 640, 480
+    img = Image.new("RGB", (w, h), (5, 7, 11))
     d = ImageDraw.Draw(img)
-    cx, cy, rx, ry = w * 0.5, h * 0.5, w * 0.5 - 1.0, h * 0.5 - 1.0
-    for i in range(14, 0, -1):                              # 由外向内叠 alpha → 软边
-        k = i / 14.0
-        a = int(8 + 74 * (1.0 - k) ** 1.4)
-        d.ellipse([cx - rx * k, cy - ry * k, cx + rx * k, cy + ry * k], fill=(10, 16, 8, a))
-    return img
+    # 极暗的纵向扫描线：全屏背景有一点 CRT 质感，不抢战场。
+    for y in range(0, h, 4):
+        d.line([(0, y), (w, y)], fill=(7, 9, 13))
+    for x in range(0, w, 64):
+        d.line([(x, 0), (x, h)], fill=(6, 8, 12))
+    save(img, "bg.png")
 
-
-def make_crate() -> Image.Image:
-    """木箱掩体（48x48）：木板 + 描边 + 对角加固条。"""
-    w = h = 48
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    img = Image.new("RGB", (416, 416), (17, 20, 25))
     d = ImageDraw.Draw(img)
-    d.rectangle([0, 0, w - 1, h - 1], fill=(146, 104, 58, 255), outline=(78, 52, 26, 255))
-    for y in range(6, h - 4, 10):
-        d.line([(2, y), (w - 3, y)], fill=(120, 84, 46, 255))
-    d.line([(3, 3), (w - 4, h - 4)], fill=(170, 126, 74, 255), width=3)
-    d.line([(w - 4, 3), (3, h - 4)], fill=(120, 84, 46, 255), width=3)
-    d.rectangle([0, 0, w - 1, h - 1], outline=(62, 40, 20, 255))
-    return img
+    for y in range(0, 416, 16):
+        d.line([(0, y), (415, y)], fill=(22, 26, 32))
+    for x in range(0, 416, 16):
+        d.line([(x, 0), (x, 415)], fill=(22, 26, 32))
+    rng = random.Random(1990)
+    for _ in range(260):
+        x, y = rng.randrange(416), rng.randrange(416)
+        d.point((x, y), fill=(27, 31, 38))
+    save(img, "field.png")
+
+    # 战场外框（432x432，中心透明），压在 field 之上。
+    img = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, 431, 431], outline=(116, 124, 138, 255), width=4)
+    d.rectangle([4, 4, 427, 427], outline=(44, 50, 60, 255), width=2)
+    d.rectangle([8, 8, 423, 423], outline=(8, 10, 14, 255), width=2)
+    save(img, "frame.png")
+
+    # 右侧 HUD 面板。
+    img = Image.new("RGB", (176, 416), (8, 10, 14))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, 2, 415], fill=(50, 56, 68))
+    d.rectangle([3, 0, 5, 415], fill=(20, 24, 31))
+    for y in range(0, 416, 64):
+        d.line([(8, y), (175, y)], fill=(12, 15, 20))
+    save(img, "hud_bg.png")
+
+
+# ---------------------------------------------------------------- 地块
+def make_tiles() -> None:
+    # 砖块：2 行砖，交错缝。每格 16x16 是一个可击碎的 8x8 源像素块放大 2 倍。
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, 15, 15], fill=(74, 35, 24, 255))
+    for row in range(2):
+        y = row * 8
+        off = 0 if row == 0 else 4
+        for i in range(-1, 3):
+            x = i * 8 + off
+            d.rectangle([x + 1, y + 1, x + 6, y + 6], fill=(178, 73, 40, 255))
+            d.line([(x + 1, y + 1), (x + 6, y + 1)], fill=(238, 128, 74, 255))
+            d.line([(x + 1, y + 1), (x + 1, y + 6)], fill=(212, 97, 54, 255))
+            d.line([(x + 2, y + 6), (x + 6, y + 6)], fill=(118, 43, 26, 255))
+    save(img, "tile_brick.png")
+
+    # 钢块：四块 7x7 的亮面钢砖，普通子弹打不穿。
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, 15, 15], fill=(42, 48, 58, 255))
+    for y in (1, 9):
+        for x in (1, 9):
+            d.rectangle([x, y, x + 6, y + 6], fill=(148, 158, 170, 255))
+            d.line([(x, y), (x + 6, y)], fill=(232, 238, 244, 255))
+            d.line([(x, y), (x, y + 6)], fill=(198, 208, 220, 255))
+            d.line([(x + 1, y + 6), (x + 6, y + 6)], fill=(88, 96, 108, 255))
+            d.line([(x + 6, y + 1), (x + 6, y + 6)], fill=(108, 116, 128, 255))
+            d.point((x + 3, y + 2), fill=(250, 252, 255, 255))
+    save(img, "tile_steel.png")
+
+    # 水：两帧，蓝底 + 高光波纹；坦克不能过，子弹可以。
+    for k in range(2):
+        img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        d.rectangle([0, 0, 15, 15], fill=(16, 42, 104, 255))
+        for y in range(1, 16, 4):
+            shift = 2 if (k + y // 4) % 2 else 0
+            d.line([(shift, y), (shift + 8, y)], fill=(42, 102, 196, 255))
+            d.line([(shift + 3, y + 1), (shift + 11, y + 1)], fill=(104, 180, 250, 255))
+            d.line([(shift + 6, y), (shift + 11, y)], fill=(166, 220, 255, 255))
+        save(img, f"tile_water{k}.png")
+
+    # 树：半透明覆盖层，坦克从下面穿过时还能隐约看到。
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    rng = random.Random(5150)
+    for cy in (3, 8, 12):
+        for cx in (3, 8, 13):
+            r = 3 + (cx + cy) % 2
+            d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(16, 58, 28, 255))
+            d.ellipse([cx - r + 1, cy - r + 1, cx + r - 1, cy + r - 1],
+                      fill=(30 + rng.randrange(20), 86 + rng.randrange(40), 38, 255))
+            d.point((cx - 1, cy - 1), fill=(96, 160, 66, 255))
+    # 打一些透明孔，避免树变成实心绿块。
+    for _ in range(18):
+        x, y = rng.randrange(16), rng.randrange(16)
+        img.putpixel((x, y), (0, 0, 0, 0))
+    save(img, "tile_tree.png")
+
+    # 冰：淡蓝反光 + 裂纹；坦克会打滑。
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, 15, 15], fill=(158, 196, 220, 255))
+    d.line([(0, 1), (15, 1)], fill=(214, 236, 248, 255))
+    d.line([(0, 14), (15, 14)], fill=(112, 154, 184, 255))
+    for pts, c in (
+        ([(2, 4), (6, 8), (5, 12)], (240, 250, 255, 255)),
+        ([(10, 2), (8, 7), (12, 11), (14, 9)], (96, 140, 176, 255)),
+        ([(3, 13), (7, 10)], (224, 242, 252, 255)),
+    ):
+        d.line(pts, fill=c)
+    save(img, "tile_ice.png")
 
 
 # ---------------------------------------------------------------- 坦克
+TANK_PALETTES = {
+    "player0": ((196, 148, 34), (248, 210, 74), (110, 78, 18)),
+    "player1": ((204, 156, 36), (255, 220, 88), (112, 80, 20)),
+    "player2": ((212, 164, 38), (255, 228, 112), (116, 82, 22)),
+    "player3": ((224, 178, 46), (255, 240, 150), (120, 86, 22)),
+    "basic": ((132, 136, 140), (196, 200, 204), (64, 68, 74)),
+    "fast": ((144, 166, 184), (218, 238, 252), (66, 84, 100)),
+    "power": ((84, 152, 68), (154, 224, 112), (40, 76, 34)),
+    "armor4": ((72, 140, 76), (132, 208, 116), (32, 72, 38)),
+    "armor3": ((164, 150, 44), (236, 216, 92), (78, 66, 24)),
+    "armor2": ((174, 100, 40), (242, 166, 74), (86, 44, 22)),
+    "armor1": ((164, 64, 56), (232, 122, 104), (76, 28, 26)),
+}
 
-def _treads(d: ImageDraw.ImageDraw, x0: int, x1: int, y0: int, y1: int, dark, light) -> None:
-    """画一条履带（纵向）：底色 + 每 5px 一格。"""
-    d.rectangle([x0, y0, x1, y1], fill=dark, outline=(28, 28, 32, 255))
-    for y in range(y0 + 2, y1 - 1, 5):
-        d.line([(x0 + 1, y), (x1 - 1, y)], fill=light)
 
-
-def make_hull() -> Image.Image:
-    """玩家车体（44x34，左右对称）：两条履带 + 浅橄榄绿车体 + 舱盖 + 前后装甲带。
-
-    配色刻意**比草地亮一档、描边更黑**：玩家车要在满地绿色里一眼可辨
-    （实测：第一版用深橄榄绿，截图里车和草地糊在一起）。"""
-    w, h = 44, 34
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+def tank_up(kind: str, level: int = 0) -> Image.Image:
+    body, light, dark = TANK_PALETTES[kind]
+    img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    _treads(d, 0, 10, 1, h - 2, (42, 44, 50, 255), (74, 76, 84, 255))
-    _treads(d, w - 11, w - 1, 1, h - 2, (42, 44, 50, 255), (74, 76, 84, 255))
-    d.rectangle([8, 1, w - 9, h - 2], fill=(24, 30, 18, 255))          # 黑色描边（车身整体外廓）
-    d.rectangle([9, 2, w - 10, h - 3], fill=(126, 148, 84, 255), outline=(58, 72, 40, 255))
-    d.rectangle([11, 4, w - 12, h - 5], fill=(142, 166, 96, 255))
-    d.rectangle([13, 2, w - 14, 5], fill=(112, 134, 74, 255))          # 前装甲带
-    d.rectangle([13, h - 6, w - 14, h - 3], fill=(112, 134, 74, 255))  # 后装甲带
-    d.ellipse([16, 11, 28, 23], fill=(168, 190, 116, 255), outline=(48, 60, 32, 255))
+
+    # 履带（左右各一条，带分段）
+    for x0 in (2, 24):
+        d.rectangle([x0, 5, x0 + 5, 28], fill=(38, 42, 48, 255))
+        d.rectangle([x0 + 1, 5, x0 + 5, 28], fill=(70, 76, 84, 255))
+        for y in range(6, 29, 4):
+            d.rectangle([x0 + 1, y, x0 + 5, y + 1], fill=(22, 24, 28, 255))
+            d.point((x0 + 2, y + 2), fill=(112, 118, 126, 255))
+
+    # 车体：前方收窄，后方宽，带明暗面。
+    d.polygon([(8, 8), (23, 8), (25, 26), (6, 26)], fill=dark)
+    d.rectangle([8, 8, 23, 25], fill=body)
+    d.polygon([(8, 8), (23, 8), (22, 12), (9, 12)], fill=light)
+    d.line([(8, 13), (8, 25)], fill=light)
+    d.line([(9, 25), (22, 25)], fill=dark)
+
+    # 炮塔：圆盘 + 中心高光。
+    d.ellipse([9, 9, 22, 22], fill=dark)
+    d.ellipse([10, 10, 21, 21], fill=body)
+    d.ellipse([12, 11, 19, 17], fill=light)
+    d.point((15, 13), fill=(255, 255, 230, 255))
+
+    # 炮管：等级越高越长/越多。
+    barrels = [(14, 1, 17, 15)] if level < 2 else [(12, 1, 14, 15), (17, 1, 19, 15)]
+    if level == 1:
+        barrels = [(14, 0, 17, 15)]
+    for x0, y0, x1, y1 in barrels:
+        d.rectangle([x0, y0, x1, 13], fill=dark)
+        d.rectangle([x0 + 1, y0, x1 - 1, 12], fill=light)
+        d.rectangle([x0, y0, x1, y0 + 1], fill=(242, 246, 250, 255))
+
+    # 等级标记（炮塔下方的小星点），玩家升级一眼可见。
+    for i in range(level):
+        x = 12 + i * 4
+        d.point((x, 23), fill=(255, 250, 190, 255))
+        d.point((x + 1, 23), fill=(140, 110, 30, 255))
+
+    # 兵种特征
+    if kind == "fast":
+        d.rectangle([3, 29, 8, 30], fill=(190, 210, 226, 255))
+        d.rectangle([23, 29, 28, 30], fill=(190, 210, 226, 255))
+    elif kind == "power":
+        d.rectangle([14, 15, 17, 17], fill=(250, 250, 180, 255))
+    elif kind.startswith("armor"):
+        d.rectangle([7, 9, 8, 24], fill=light)
+        d.rectangle([23, 9, 24, 24], fill=light)
+        d.rectangle([10, 7, 21, 8], fill=light)
     return img
 
 
-def make_turret() -> Image.Image:
-    """玩家炮塔（26x26，旋转对称的圆盘 + 舱盖）。朝向由脚本摆的炮管方块表达。"""
-    w = h = 26
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+def rotate_dir(img: Image.Image, direction: str) -> Image.Image:
+    if direction == "u":
+        return img
+    if direction == "r":
+        return img.rotate(-90, resample=Image.NEAREST)
+    if direction == "d":
+        return img.rotate(180, resample=Image.NEAREST)
+    return img.rotate(90, resample=Image.NEAREST)
+
+
+def make_tanks() -> None:
+    dirs = "urdl"
+    for level in range(4):
+        base = tank_up(f"player{level}", level)
+        for d in dirs:
+            save(rotate_dir(base, d), f"tank_player_l{level}_{d}.png")
+    for kind in ("basic", "fast", "power"):
+        base = tank_up(kind)
+        for d in dirs:
+            save(rotate_dir(base, d), f"tank_{kind}_{d}.png")
+    for hp in (4, 3, 2, 1):
+        base = tank_up(f"armor{hp}")
+        for d in dirs:
+            save(rotate_dir(base, d), f"tank_armor_hp{hp}_{d}.png")
+
+
+# ---------------------------------------------------------------- 基地 / 子弹 / 道具
+def make_title_tanks() -> None:
+    """标题画面的小坦克放大到 64x64（用最近邻，像素块保持锐利）。"""
+    for src, name in (("tank_player_l3_r.png", "title_player.png"),
+                      ("tank_armor_hp4_l.png", "title_armor.png")):
+        img = Image.open(os.path.join(OUT, src)).convert("RGBA")
+        img = img.resize((img.width * 2, img.height * 2), Image.NEAREST)
+        save(img, name)
+
+
+def make_base() -> None:
+    img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.ellipse([0, 0, w - 1, h - 1], fill=(24, 30, 18, 255))
-    d.ellipse([1, 1, w - 2, h - 2], fill=(134, 158, 90, 255), outline=(58, 72, 40, 255))
-    d.ellipse([4, 4, w - 5, h - 5], fill=(156, 180, 106, 255))
-    d.ellipse([9, 9, 16, 16], fill=(112, 134, 74, 255), outline=(48, 60, 32, 255))
-    return img
+    d.rectangle([0, 0, 31, 31], fill=(34, 36, 40, 255))
+    d.rectangle([1, 1, 30, 30], outline=(92, 98, 108, 255))
+    d.rectangle([3, 3, 28, 28], fill=(58, 62, 70, 255))
+    # 鹰徽：双翼 + 身体 + 金色底座
+    d.polygon([(4, 13), (12, 15), (15, 10), (19, 10), (23, 15), (28, 13),
+               (25, 20), (19, 18), (18, 24), (14, 24), (13, 18), (7, 20)],
+              fill=(226, 228, 232, 255))
+    d.polygon([(10, 15), (15, 12), (17, 12), (21, 15), (18, 17), (14, 17)],
+              fill=(156, 160, 168, 255))
+    d.rectangle([14, 16, 18, 23], fill=(232, 234, 238, 255))
+    d.rectangle([13, 23, 19, 25], fill=(220, 168, 40, 255))
+    d.point((16, 13), fill=(20, 20, 20, 255))
+    d.point((14, 12), fill=(20, 20, 20, 255))
+    d.point((18, 12), fill=(20, 20, 20, 255))
+    d.polygon([(15, 14), (17, 14), (16, 16)], fill=(242, 180, 40, 255))
+    save(img, "base_eagle.png")
 
-
-def make_enemy_hull() -> Image.Image:
-    """敌军车体（40x32）：同构型、锈红涂装 + 迷彩斑。"""
-    w, h = 40, 32
-    rng = random.Random(4242)
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    _treads(d, 0, 9, 1, h - 2, (46, 42, 44, 255), (72, 66, 70, 255))
-    _treads(d, w - 10, w - 1, 1, h - 2, (46, 42, 44, 255), (72, 66, 70, 255))
-    d.rectangle([8, 2, w - 9, h - 3], fill=(152, 86, 60, 255), outline=(84, 44, 30, 255))
-    d.rectangle([10, 4, w - 11, h - 5], fill=(168, 96, 66, 255))
-    for _ in range(14):                                     # 迷彩斑（确定性）
-        x = rng.randrange(11, w - 14)
-        y = rng.randrange(5, h - 7)
-        d.rectangle([x, y, x + rng.randint(2, 4), y + rng.randint(2, 3)], fill=(126, 72, 50, 255))
-    d.rectangle([12, 1, w - 13, 4], fill=(132, 74, 52, 255))
-    d.rectangle([12, h - 5, w - 13, h - 2], fill=(132, 74, 52, 255))
-    return img
+    d.rectangle([0, 0, 31, 31], fill=(26, 24, 22, 255))
+    for i in range(46):
+        rng = random.Random(900 + i)
+        x, y = rng.randrange(2, 30), rng.randrange(2, 30)
+        c = rng.choice([(70, 62, 54), (96, 80, 58), (54, 50, 46)])
+        d.rectangle([x, y, x + 2, y + 2], fill=(*c, 255))
+    d.line([(6, 26), (13, 15), (19, 21), (26, 9)], fill=(40, 36, 32, 255), width=2)
+    d.line([(14, 8), (20, 14), (24, 12)], fill=(210, 140, 52, 255), width=2)
+    save(img, "base_dead.png")
 
 
-def make_enemy_turret() -> Image.Image:
-    """敌军炮塔（24x24 圆盘）。"""
-    w = h = 24
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+def make_bullet() -> None:
+    img = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.ellipse([0, 0, w - 1, h - 1], fill=(168, 96, 66, 255), outline=(84, 44, 30, 255))
-    d.ellipse([3, 3, w - 4, h - 4], fill=(184, 108, 74, 255))
-    d.ellipse([8, 8, 15, 15], fill=(140, 78, 54, 255), outline=(84, 44, 30, 255))
-    return img
+    d.rectangle([3, 0, 5, 7], fill=(255, 246, 206, 255))
+    d.rectangle([2, 2, 6, 6], fill=(255, 210, 88, 255))
+    d.rectangle([3, 3, 5, 5], fill=(255, 255, 255, 255))
+    d.point((2, 1), fill=(232, 120, 40, 255))
+    d.point((5, 6), fill=(232, 120, 40, 255))
+    save(img, "bullet.png")
 
 
-def make_barrel() -> Image.Image:
-    """炮管（12x32，**朝向 = 贴图的"上"**）：深色管身 + 中段高光 + 炮口制退器 + 亮色管口。
+def make_powerups() -> None:
+    def frame() -> tuple[Image.Image, ImageDraw.ImageDraw]:
+        img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        d.rectangle([0, 0, 31, 31], fill=(8, 8, 10, 255))
+        d.rectangle([1, 1, 30, 30], outline=(238, 200, 62, 255), width=2)
+        d.rectangle([4, 4, 27, 27], outline=(96, 78, 24, 255))
+        return img, d
 
-    为什么把"朝向"做成贴图：引擎现在支持 `node_set_angle` 旋转精灵图元（见 README「引擎现状」），
-    所以炮管是一张**朝上**的长条贴图，脚本把它转到瞄准方向即可 —— 比"沿方向排一串方块"自然得多。
-    管口那一端画亮一档，就是给旋转做**方向参照**的（否则长条上下对称，转 180° 看不出来）。
-    """
-    w, h = 12, 32
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    img, d = frame()
+    star = []
+    for i in range(10):
+        ang = -math.pi / 2 + i * math.pi / 5
+        r = 12 if i % 2 == 0 else 5
+        star.append((16 + math.cos(ang) * r, 16 + math.sin(ang) * r))
+    d.polygon(star, fill=(255, 226, 76, 255), outline=(255, 250, 200, 255))
+    save(img, "power_star.png")
+
+    img, d = frame()
+    d.ellipse([9, 12, 23, 26], fill=(54, 60, 68, 255), outline=(180, 190, 200, 255))
+    d.rectangle([13, 8, 18, 13], fill=(96, 104, 112, 255))
+    d.line([(17, 8), (22, 4), (25, 6)], fill=(238, 200, 62, 255), width=2)
+    d.point((25, 5), fill=(255, 230, 120, 255))
+    save(img, "power_grenade.png")
+
+    img, d = frame()
+    d.pieslice([7, 7, 25, 25], 180, 360, fill=(214, 228, 240, 255))
+    d.rectangle([7, 16, 25, 22], fill=(214, 228, 240, 255))
+    d.rectangle([5, 21, 27, 24], fill=(160, 178, 196, 255))
+    d.line([(15, 10), (15, 21)], fill=(250, 252, 255, 255))
+    save(img, "power_helmet.png")
+
+    img, d = frame()
+    d.line([(11, 8), (20, 21)], fill=(170, 120, 72, 255), width=3)
+    d.polygon([(8, 26), (13, 17), (22, 17), (27, 26)], fill=(190, 198, 208, 255))
+    d.line([(12, 25), (21, 19)], fill=(240, 246, 252, 255))
+    save(img, "power_shovel.png")
+
+    img, d = frame()
+    d.rectangle([9, 15, 23, 25], fill=(86, 156, 72, 255))
+    d.rectangle([13, 9, 19, 17], fill=(132, 208, 116, 255))
+    d.rectangle([15, 5, 17, 11], fill=(200, 224, 190, 255))
+    d.rectangle([8, 24, 12, 27], fill=(44, 48, 54, 255))
+    d.rectangle([20, 24, 24, 27], fill=(44, 48, 54, 255))
+    save(img, "power_tank.png")
+
+    img, d = frame()
+    d.ellipse([7, 7, 25, 25], outline=(226, 234, 244, 255), width=2)
+    d.line([(16, 16), (16, 10)], fill=(255, 230, 90, 255), width=2)
+    d.line([(16, 16), (21, 18)], fill=(255, 230, 90, 255), width=2)
+    d.point((16, 16), fill=(255, 255, 255, 255))
+    d.rectangle([14, 4, 18, 6], fill=(226, 234, 244, 255))
+    save(img, "power_timer.png")
+
+
+# ---------------------------------------------------------------- 特效
+def make_fx() -> None:
+    # 爆炸 5 帧
+    for k in range(5):
+        img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        rng = random.Random(700 + k)
+        radius = (5, 10, 14, 12, 8)[k]
+        colors = [
+            [(255, 255, 226), (255, 218, 82)],
+            [(255, 230, 128), (246, 146, 36)],
+            [(255, 164, 40), (196, 68, 20)],
+            [(210, 84, 26), (98, 44, 22)],
+            [(118, 104, 92), (54, 50, 48)],
+        ][k]
+        for _ in range(20):
+            ang = rng.random() * math.pi * 2
+            r = rng.random() * 2
+            x = 16 + math.cos(ang) * radius * r
+            y = 16 + math.sin(ang) * radius * r
+            rr = max(1, int(5 - k) + rng.randrange(3))
+            d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=(*colors[rng.randrange(2)], 255))
+        if k < 2:
+            d.ellipse([16 - radius // 2, 16 - radius // 2,
+                       16 + radius // 2, 16 + radius // 2], fill=(255, 255, 238, 255))
+        save(img, f"explosion{k}.png")
+
+    # 出生/无敌出现：旋转四角星
+    for k in range(4):
+        img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        r = 6 + k * 4
+        ang = k * math.pi / 4
+        pts = []
+        for i in range(8):
+            a = ang + i * math.pi / 4
+            rr = r if i % 2 == 0 else r * 0.28
+            pts.append((16 + math.cos(a) * rr, 16 + math.sin(a) * rr))
+        d.polygon(pts, fill=(250, 252, 255, 255), outline=(130, 200, 255, 255))
+        d.point((16, 16), fill=(255, 236, 120, 255))
+        save(img, f"spawn{k}.png")
+
+    # 护盾：两帧旋转方括号
+    for k in range(2):
+        img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        r = 15
+        off = 1 if k == 0 else 2
+        for sx, sy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+            cx = 16 + sx * r
+            cy = 16 + sy * r
+            d.line([(cx - sx * 5, cy), (cx, cy)], fill=(116, 220, 255, 255), width=2)
+            d.line([(cx, cy), (cx, cy - sy * 5)], fill=(230, 250, 255, 255), width=1)
+        d.ellipse([2 + off, 2 + off, 29 - off, 29 - off], outline=(42, 118, 184, 255))
+        save(img, f"shield{k}.png")
+
+
+def make_hud_icons() -> None:
+    for name, color in (("hud_enemy", (156, 162, 170)), ("hud_life", (238, 200, 72))):
+        img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        d.rectangle([2, 3, 5, 13], fill=(46, 50, 56, 255))
+        d.rectangle([10, 3, 13, 13], fill=(46, 50, 56, 255))
+        d.rectangle([5, 5, 10, 12], fill=color)
+        d.rectangle([6, 6, 9, 9], fill=(230, 236, 240, 255))
+        d.rectangle([7, 1, 8, 6], fill=color)
+        save(img, f"{name}.png")
+
+
+# ---------------------------------------------------------------- 标题
+def draw_pattern_text(d: ImageDraw.ImageDraw, text: str, x: int, y: int, scale: int,
+                      fill, shadow=None) -> int:
+    if shadow:
+        for i, ch in enumerate(text):
+            rows = FONT[ch]
+            for ry, row in enumerate(rows):
+                for rx, bit in enumerate(row):
+                    if bit == "1":
+                        d.rectangle([x + i * 6 * scale + rx * scale + scale,
+                                     y + ry * scale + scale,
+                                     x + i * 6 * scale + rx * scale + 2 * scale - 1,
+                                     y + ry * scale + 2 * scale - 1], fill=shadow)
+    for i, ch in enumerate(text):
+        rows = FONT[ch]
+        for ry, row in enumerate(rows):
+            for rx, bit in enumerate(row):
+                if bit == "1":
+                    d.rectangle([x + i * 6 * scale + rx * scale, y + ry * scale,
+                                 x + i * 6 * scale + rx * scale + scale - 1,
+                                 y + ry * scale + scale - 1], fill=fill)
+    return x + len(text) * 6 * scale
+
+
+def make_logo() -> None:
+    img = Image.new("RGBA", (320, 96), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rectangle([2, 0, w - 3, h - 1], fill=(44, 46, 54, 255), outline=(20, 22, 26, 255))
-    d.rectangle([4, 3, 6, h - 4], fill=(74, 78, 90, 255))          # 高光
-    d.rectangle([1, 2, w - 2, 8], fill=(58, 60, 70, 255), outline=(20, 22, 26, 255))   # 炮口制退器
-    d.rectangle([3, 0, w - 4, 2], fill=(150, 156, 168, 255))       # 管口（亮）→ 方向参照
-    return img
+    # 粗黑描边 + 血影 + 金黄主色，模仿街机标题字。
+    for dx in (-3, 0, 3):
+        for dy in (-3, 0, 3):
+            draw_pattern_text(d, "BATTLE", 16 + dx, 5 + dy, 6,
+                              (72, 28, 16) if (dx or dy) else (0, 0, 0))
+    draw_pattern_text(d, "BATTLE", 16, 5, 6, (250, 206, 66), (142, 56, 20))
+    draw_pattern_text(d, "CITY", 64, 48, 6, (255, 230, 120), (142, 56, 20))
+    # 顶部小星条
+    for x in range(4, 316, 24):
+        d.rectangle([x, 0, x + 8, 1], fill=(70, 60, 40, 255))
+    save(img, "logo.png")
 
 
-def make_wreck() -> Image.Image:
-    """残骸（44x36）：焦黑车体 + 破口。击毁后铺在原地（复用一张贴图，不旋转）。"""
-    w, h = 44, 36
-    rng = random.Random(99)
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.rectangle([2, 2, w - 3, h - 3], fill=(52, 48, 46, 255), outline=(28, 26, 24, 255))
-    d.rectangle([8, 6, w - 9, h - 7], fill=(38, 35, 34, 255))
-    for _ in range(20):
-        x = rng.randrange(4, w - 6)
-        y = rng.randrange(4, h - 6)
-        d.rectangle([x, y, x + rng.randint(1, 3), y + rng.randint(1, 2)], fill=(70, 62, 58, 255))
-    d.ellipse([16, 12, 28, 24], fill=(24, 22, 22, 255))     # 破口
-    return img
-
-
-def main() -> int:
+def main() -> None:
     os.makedirs(OUT, exist_ok=True)
-    print(f"生成 tank 素材 → {OUT}")
-    save(make_ground(), "ground.png")
-    save(make_dirt(), "dirt.png")
-    save(make_crate(), "crate.png")
-    save(make_shadow(), "shadow.png")
-    save(make_barrel(), "barrel.png")
-    save(make_hull(), "hull.png")
-    save(make_turret(), "turret.png")
-    save(make_enemy_hull(), "enemy_hull.png")
-    save(make_enemy_turret(), "enemy_turret.png")
-    save(make_wreck(), "wreck.png")
-    return 0
+    make_backgrounds()
+    make_tiles()
+    make_tanks()
+    make_title_tanks()
+    make_base()
+    make_bullet()
+    make_powerups()
+    make_fx()
+    make_hud_icons()
+    make_logo()
+    make_glyphs()
+    print(f"tank art -> {OUT}")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
