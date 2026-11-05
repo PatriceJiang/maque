@@ -335,7 +335,8 @@ std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
     if (!want) {
         /* 通用短名：任意 namespace 的 "Ns.Type" 后缀匹配（audio.AudioSource 等），
          * 避免每加一个模块都要在这里补一个前缀。重名时取注册顺序第一个。
-         * 用 string_view 比较：原实现每个候选类型都构造 std::string（254 次分配）。 */
+         * 用 string_view 比较：原实现每个候选类型都构造 std::string（254 次分配）。
+         * 只在「非 fq 且不落在 scn/ui/physics 前缀」时走到这里（脚本的短名）。 */
         const std::string suffix = std::string(".") + type_name;
         const std::string_view sfx(suffix);
         const uint32_t n = mq_reflect_count(eng.reflect);

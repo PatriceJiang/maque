@@ -12,17 +12,10 @@ void Engine::audio_step(float dt) {
     scene->collect_preorder(ids);
 
     /* 听者：每 instance 取稳定排序后的第一个 active */
-    const mq_type_desc* listener_desc = nullptr;
     for (int id : ids) {
         SceneNode* e = scene->at(id);
         if (!e) continue;
-        auto* lb = comp_by_role(*this, id, MQ_ROLE_AUDIO_LISTENER);
-        if (!lb) continue;
-        for (auto& [tid, b] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-            if (d && (d->role & MQ_ROLE_AUDIO_LISTENER)) { listener_desc = d; break; }
-        }
-        const auto* lis = listener_desc ? as_component<audio::AudioListener>(listener_desc, lb->data()) : nullptr;
+        const auto* lis = component<audio::AudioListener>(*e);
         if (!lis || !lis->active) continue;
         const float rad = e->angle * 3.14159265358979F / 180.0F;
         mq_audio_listener l{};
@@ -45,14 +38,7 @@ void Engine::audio_step(float dt) {
     for (int id : ids) {
         SceneNode* e = scene->at(id);
         if (!e) continue;
-        auto* sb = comp_by_role(*this, id, MQ_ROLE_AUDIO_SOURCE);
-        if (!sb) continue;
-        const mq_type_desc* d = nullptr;
-        for (auto& [tid, b] : e->comps) {
-            const mq_type_desc* t = mq_reflect_type_by_id(reflect, tid);
-            if (t && (t->role & MQ_ROLE_AUDIO_SOURCE)) { d = t; break; }
-        }
-        auto* src = d ? as_component_mut<audio::AudioSource>(d, sb->data()) : nullptr;
+        auto* src = component<audio::AudioSource>(*e);
         if (!src) continue;
         uint64_t voice = src->voice;
         const std::string* clip_path = &src->clip;
@@ -76,7 +62,7 @@ void Engine::audio_step(float dt) {
         if (voice == 0) {
             if (!autoplay) continue;
             if (std::getenv("MAQUE_TRACE_AUDIO"))
-                std::print("[audio] start id={} type={} clip='{}'\n", id, d->name, *clip_path);
+                std::print("[audio] start id={} type={} clip='{}'\n", id, "audio.AudioSource", *clip_path);
             mq_audio_clip* clip = audio_clip(*clip_path);
             if (!clip) continue;
             mq_audio_voice_desc vd{};

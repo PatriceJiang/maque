@@ -15,6 +15,13 @@ static SpineRuntime::Instance* spine_at(Engine* eng, float id) {
     return eng ? eng->spine_of((int)id) : nullptr;
 }
 
+/* 组件字段 = 唯一真相：直接写组件。原实现在这些入口里绕道 node_set_number，
+ * 每次都做两次按名反射查找（type + field），纯开销。 */
+static anim::SpineSkeleton* spine_comp(Engine* eng, float id) {
+    SceneNode* e = (eng && eng->scene) ? eng->scene->at((int)id) : nullptr;
+    return e ? component<anim::SpineSkeleton>(*e) : nullptr;
+}
+
 float spine_animation_count(void* ctx, float id) {
     auto* sp = spine_at((Engine*)ctx, id);
     return sp ? (float)sp->anim_names.size() : 0.0F;
@@ -44,8 +51,10 @@ float spine_play(void* ctx, float id, const char* name, float loop) {
     if (mq_spine_instance_play(sp->inst, name, loop != 0.0F ? 1 : 0, 0) != MQ_SPINE_OK) return -1.0F;
     sp->last_anim = idx;
     /* 组件字段同步 = 唯一真相：否则下一帧 spine_step 会按组件里的旧 animation 又切回去 */
-    node_set_number(ctx, id, "anim.SpineSkeleton", "animation", (float)idx);
-    node_set_number(ctx, id, "anim.SpineSkeleton", "play_mode", loop != 0.0F ? 1.0F : 0.0F);
+    if (auto* sc = spine_comp((Engine*)ctx, id)) {
+        sc->animation = (uint32_t)idx;
+        sc->play_mode = (anim::PlayMode)(loop != 0.0F ? 1 : 0);
+    }
     return 0.0F;
 }
 
@@ -62,7 +71,7 @@ float spine_set_skin(void* ctx, float id, const char* name) {
     if (mq_spine_instance_set_skin(sp->inst, name) != MQ_SPINE_OK) return -1.0F;
     for (size_t i = 0; i < sp->skin_names.size(); ++i)
         if (sp->skin_names[i] == name) {
-            node_set_number(ctx, id, "anim.SpineSkeleton", "skin", (float)i);
+            if (auto* sc = spine_comp((Engine*)ctx, id)) sc->skin = (uint32_t)i;
             break;
         }
     return 0.0F;
@@ -123,8 +132,10 @@ float spine_set_animation(void* ctx, float id, float track, const char* name, fl
     /* track 0 与组件字段同步（组件=唯一真相；否则下一帧 spine_step 会按旧值又切回去） */
     if ((int)track == 0) {
         sp->last_anim = idx;
-        node_set_number(ctx, id, "anim.SpineSkeleton", "animation", (float)idx);
-        node_set_number(ctx, id, "anim.SpineSkeleton", "play_mode", loop != 0.0F ? 1.0F : 0.0F);
+        if (auto* sc = spine_comp((Engine*)ctx, id)) {
+            sc->animation = (uint32_t)idx;
+            sc->play_mode = (anim::PlayMode)(loop != 0.0F ? 1 : 0);
+        }
     }
     return 0.0F;
 }
@@ -196,7 +207,7 @@ float spine_set_time_scale(void* ctx, float id, float scale) {
     auto* sp = spine_at((Engine*)ctx, id);
     if (!sp) return -1.0F;
     mq_spine_instance_set_time_scale(sp->inst, scale);
-    node_set_number(ctx, id, "anim.SpineSkeleton", "time_scale", scale);   // 组件=唯一真相
+    if (auto* sc = spine_comp((Engine*)ctx, id)) sc->time_scale = scale;   // 组件=唯一真相
     return 0.0F;
 }
 
@@ -209,7 +220,7 @@ float spine_set_default_mix(void* ctx, float id, float duration) {
     auto* sp = spine_at((Engine*)ctx, id);
     if (!sp) return -1.0F;
     mq_spine_instance_set_default_mix(sp->inst, duration);
-    node_set_number(ctx, id, "anim.SpineSkeleton", "default_mix", duration);
+    if (auto* sc = spine_comp((Engine*)ctx, id)) sc->default_mix = duration;
     return 0.0F;
 }
 
@@ -358,8 +369,10 @@ float spine_set_slots_range(void* ctx, float id, float from, float to) {
     auto* sp = spine_at((Engine*)ctx, id);
     if (!sp) return -1.0F;
     if (mq_spine_instance_set_slots_range(sp->inst, (int)from, (int)to) != MQ_SPINE_OK) return -1.0F;
-    node_set_number(ctx, id, "anim.SpineSkeleton", "slots_from", from);
-    node_set_number(ctx, id, "anim.SpineSkeleton", "slots_to", to);
+    if (auto* sc = spine_comp((Engine*)ctx, id)) {
+        sc->slots_from = (int32_t)from;
+        sc->slots_to = (int32_t)to;
+    }
     return 0.0F;
 }
 
@@ -501,7 +514,7 @@ float spine_set_two_color(void* ctx, float id, float on) {
      * 本引擎的网格着色**恒定**走两色着色路径（暗色通道始终产出、顶点 stride 固定含它），
      * 素材没有 dark 时填 (0,0,0,1) → 与关闭逐字节等价（见 mesh shader 与 gfx_twocolor 测试）。
      * 所以这里没有可切换的东西：如实把开关记进组件字段（可自省/可回放），不假装改变输出。 */
-    node_set_number(ctx, id, "anim.SpineSkeleton", "two_color", on != 0.0F ? 1.0F : 0.0F);
+    if (auto* sc = spine_comp((Engine*)ctx, id)) sc->two_color = on != 0.0F;
     return 0.0F;
 }
 

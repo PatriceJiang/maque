@@ -137,12 +137,12 @@
 | `node_component_count` | id: float | float | ctx |
 | `node_component_at` | id: float, index: float | string | ctx |
 | `node_child_with_component` | id: float, type: string | float | ctx |
-| `node_get_number` | id: float, comp: string, field: string | float | ctx |
-| `node_set_number` | id: float, comp: string, field: string, value: float | float | ctx |
-| `node_get_bool` | id: float, comp: string, field: string | float | ctx |
-| `node_set_bool` | id: float, comp: string, field: string, value: float | float | ctx |
-| `node_get_string` | id: float, comp: string, field: string | string | ctx |
-| `node_set_string` | id: float, comp: string, field: string, value: string | float | ctx |
+| `node_get_number` | id: float, comp: string, field: string | float | ctx · 按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API） |
+| `node_set_number` | id: float, comp: string, field: string, value: float | float | ctx · 按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API） |
+| `node_get_bool` | id: float, comp: string, field: string | float | ctx · 按名反射读 bool（慢路径） |
+| `node_set_bool` | id: float, comp: string, field: string, value: float | float | ctx · 按名反射写 bool（慢路径） |
+| `node_get_string` | id: float, comp: string, field: string | string | ctx · 按名反射读字符串（慢路径） |
+| `node_set_string` | id: float, comp: string, field: string, value: string | float | ctx · 按名反射写字符串（慢路径；改 Sprite material/texture 会当场解析） |
 | `node_on` | id: float, event: string, handler: string | float | ctx |
 | `node_off` | id: float, event: string | float | ctx |
 | `node_emit` | id: float, event: string | float | ctx |

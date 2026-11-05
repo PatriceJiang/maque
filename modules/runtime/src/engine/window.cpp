@@ -98,26 +98,20 @@ void Engine::update_main_views() {
         v.zoom_y = design_zoom_y;
     }
     for (auto& [idx, e] : scene->nodes) {
-        if (comp_by_name(*this, idx, "render.RenderTexture", nullptr)) continue;
-        for (auto& [tid, blob] : e.comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-            if (!d || !(d->role & MQ_ROLE_CAMERA)) continue;
-            bool active = true;
-            if (const mq_field_desc* fa = mq_reflect_field(d, "active")) active = field_get_bool(fa, blob.data());
-            if (!active) continue;
-            float cx = W * 0.5F, cy = H * 0.5F, zoom = 1.0F, rot = 0.0F;
-            read_f32(d, blob.data(), "x", &cx);
-            read_f32(d, blob.data(), "y", &cy);
-            read_f32(d, blob.data(), "zoom", &zoom);
-            read_f32(d, blob.data(), "rotation", &rot);
-            for (auto& v : views) {
-                v.cx = cx;
-                v.cy = cy;
-                const float camera_zoom = std::max(zoom, 1.0e-5F);
-                v.zoom *= camera_zoom;
-                v.zoom_y = (v.zoom_y > 0.0F ? v.zoom_y : v.zoom) * camera_zoom;
-                v.rot = rot;
-            }
+        if (component<render::RenderTexture>(e)) continue;
+        const auto* cam = component<scn::Camera>(e);
+        if (!cam || !cam->active) continue;
+        const float cx = cam->x;
+        const float cy = cam->y;
+        const float zoom = cam->zoom;
+        const float rot = cam->rotation;
+        for (auto& v : views) {
+            v.cx = cx;
+            v.cy = cy;
+            const float camera_zoom = std::max(zoom, 1.0e-5F);
+            v.zoom *= camera_zoom;
+            v.zoom_y = (v.zoom_y > 0.0F ? v.zoom_y : v.zoom) * camera_zoom;
+            v.rot = rot;
         }
     }
 }

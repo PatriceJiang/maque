@@ -13,17 +13,13 @@ void Engine::canvas_setup() {
     canvas_design_warned = false;
     if (!scene) return;
     for (auto& [idx, e] : scene->nodes) {
-        for (auto& [tid, blob] : e.comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-            if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
-            canvas_entity = idx;                       /* 升序首个画布 */
-            canvas_active = true;
-            std::print("runtime: canvas on entity {} (design {}x{})\n", idx,
-                       read_num(d, blob.data(), "design_width", 0.0F),
-                       read_num(d, blob.data(), "design_height", 0.0F));
-            break;
-        }
-        if (canvas_entity >= 0) break;
+        auto* cv = component<ui::Canvas>(e);
+        if (!cv) continue;
+        canvas_entity = idx;                       /* 升序首个画布 */
+        canvas_active = true;
+        std::print("runtime: canvas on entity {} (design {}x{})\n", idx,
+                   cv->design_width, cv->design_height);
+        break;
     }
 }
 
@@ -42,30 +38,25 @@ void Engine::canvas_resolve() {
     desc.safe_right = canvas_safe[2]; desc.safe_bottom = canvas_safe[3];
     if (canvas_entity >= 0) {
         SceneNode* e = scene->at(canvas_entity);
-        if (e) {
-            for (auto& [tid, blob] : e->comps) {
-                const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-                if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
-                const float dw = read_num(d, blob.data(), "design_width", 0.0F);
-                const float dh = read_num(d, blob.data(), "design_height", 0.0F);
-                if (dw > 0.0F && dh > 0.0F &&
-                    (std::fabs(dw - (float)W) > 1.0e-4F || std::fabs(dh - (float)H) > 1.0e-4F) &&
-                    !canvas_design_warned) {
-                    canvas_design_warned = true;
-                    std::print(stderr, "runtime: ui.Canvas.design {}x{} 与 Scene 设计坐标 {}x{} 不一致，"
-                                       "已忽略 Canvas.design_*（Scene.width/height 是唯一坐标基准）\n",
-                               dw, dh, W, H);
-                }
-                desc.fit = (int32_t)read_num(d, blob.data(), "fit_mode", (float)MQ_CANVAS_FIT_SHOW_ALL);
-                desc.align = (int32_t)read_num(d, blob.data(), "align", (float)MQ_CANVAS_ALIGN_CENTER);
-                desc.min_scale = read_num(d, blob.data(), "min_scale", 0.0F);
-                desc.max_scale = read_num(d, blob.data(), "max_scale", 0.0F);
-                const bool dpi = read_num(d, blob.data(), "dpi_scale", 1.0F) != 0.0F;
-                canvas_use_dpi = dpi;
-                desc.dpi_scale = (dpi && platform && window) ? mq_platform_content_scale(platform) : 1.0F;
-                /* 写回解析结果（transient）：脚本/控制面可读 */
-                break;
+        const auto* cv = e ? component<ui::Canvas>(*e) : nullptr;
+        if (cv) {
+            const float dw = cv->design_width;
+            const float dh = cv->design_height;
+            if (dw > 0.0F && dh > 0.0F &&
+                (std::fabs(dw - (float)W) > 1.0e-4F || std::fabs(dh - (float)H) > 1.0e-4F) &&
+                !canvas_design_warned) {
+                canvas_design_warned = true;
+                std::print(stderr, "runtime: ui.Canvas.design {}x{} 与 Scene 设计坐标 {}x{} 不一致，"
+                                   "已忽略 Canvas.design_*（Scene.width/height 是唯一坐标基准）\n",
+                           dw, dh, W, H);
             }
+            desc.fit = (int32_t)cv->fit_mode;
+            desc.align = (int32_t)cv->align;
+            desc.min_scale = cv->min_scale;
+            desc.max_scale = cv->max_scale;
+            const bool dpi = cv->dpi_scale;
+            canvas_use_dpi = dpi;
+            desc.dpi_scale = (dpi && platform && window) ? mq_platform_content_scale(platform) : 1.0F;
         }
     } else if (platform && window) {
         desc.dpi_scale = mq_platform_content_scale(platform);
@@ -86,25 +77,17 @@ void Engine::canvas_resolve() {
     /* 回写 transient 字段 */
     if (canvas_entity >= 0) {
         SceneNode* e = scene->at(canvas_entity);
-        if (e) {
-            std::vector<uint8_t>* blob = nullptr;
-            const mq_type_desc* d = nullptr;
-            for (auto& [tid, b] : e->comps) {
-                const mq_type_desc* t = mq_reflect_type_by_id(reflect, tid);
-                if (t && (t->role & MQ_ROLE_UI_CANVAS)) { blob = &b; d = t; break; }
-            }
-            if (blob && d) {
-                write_num(d, blob->data(), "scale", canvas.scale);
-                write_num(d, blob->data(), "scale_x", canvas.scale_x);
-                write_num(d, blob->data(), "scale_y", canvas.scale_y);
-                write_num(d, blob->data(), "offset_x", canvas.offset_x);
-                write_num(d, blob->data(), "offset_y", canvas.offset_y);
-                write_num(d, blob->data(), "viewport_w", canvas.viewport_w);
-                write_num(d, blob->data(), "viewport_h", canvas.viewport_h);
-                write_num(d, blob->data(), "window_w", canvas.window_w);
-                write_num(d, blob->data(), "window_h", canvas.window_h);
-                write_num(d, blob->data(), "device_scale", canvas.device_scale);
-            }
+        if (auto* cv = e ? component<ui::Canvas>(*e) : nullptr) {
+            cv->scale = canvas.scale;
+            cv->scale_x = canvas.scale_x;
+            cv->scale_y = canvas.scale_y;
+            cv->offset_x = canvas.offset_x;
+            cv->offset_y = canvas.offset_y;
+            cv->viewport_w = canvas.viewport_w;
+            cv->viewport_h = canvas.viewport_h;
+            cv->window_w = canvas.window_w;
+            cv->window_h = canvas.window_h;
+            cv->device_scale = canvas.device_scale;
         }
     }
     if (std::getenv("MAQUE_TRACE_CANVAS"))

@@ -110,7 +110,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
                 /* plans/24 P6：KHR_materials_variants 选择（组件 variant 名称）。 */
                 int selected_variant = -1;
                 if (!gm->variants.empty()) {
-                    const std::string* vn = read_str(dmesh, mb->data(), "variant");
+                    const std::string* vn = &mesh->variant;
                     if (vn && !vn->empty()) {
                         for (size_t vi = 0; vi < gm->variants.size(); ++vi)
                             if (gm->variants[vi] == *vn) { selected_variant = (int)vi; break; }
@@ -207,7 +207,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             continue;
         }
         if (mb && dmesh && cube_mesh >= 0) {
-            if (read_num(dmesh, mb->data(), "visible", 1.0F) < 0.5F) continue;
+            if (mesh && !mesh->visible) continue;
             /* M3 材质：同节点的 asset.PbrMaterial 组件（M4 起由共享 .material.json 资产引用） */
             mq_renderer_pbr_material mat{};
             for (int ti = 0; ti < 5; ++ti) mat.textures[ti] = -1;   /* -1 = 未给贴图 → 渲染器用 1×1 白 */
@@ -506,7 +506,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             /* M4c：mesh_path 非空时用离线导入网格（glTF → .mesh.json），否则内建 cube */
             int32_t mesh_id = cube_mesh;
             std::string mesh_path_str;
-            if (const std::string* mp = read_str(dmesh, mb->data(), "mesh_path")) {
+            if (const std::string* mp = mesh ? &mesh->mesh_path : nullptr) {
                 if (!mp->empty()) {
                     mesh_path_str = *mp;
                     const int32_t loaded = load_mesh(*mp);
@@ -522,7 +522,7 @@ void Engine::extract_3d(int32_t tw, int32_t th,
             int32_t skin_index = -1;
             float model_m[16];
             std::memcpy(model_m, wm, sizeof model_m);
-            const std::string* skin_path = read_str(dmesh, mb->data(), "skin_path");
+            const std::string* skin_path = mesh ? &mesh->skin_path : nullptr;
             if (skin_path && !skin_path->empty()) {
                 auto lay_it = mesh_layout.find(mesh_path_str);
                 const bool skinned_ok = !mesh_path_str.empty() && lay_it != mesh_layout.end() &&

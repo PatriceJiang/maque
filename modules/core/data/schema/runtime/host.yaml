@@ -110,13 +110,13 @@
     - { fn: node_component_count, ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: node_component_at,   ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
     - { fn: node_child_with_component, ctx: true, args: [ { name: id, type: float }, { name: type, type: string } ], returns: float }
-    # 组件字段（反射读写：字段反射读写）
-    - { fn: node_get_number,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
-    - { fn: node_set_number,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
-    - { fn: node_get_bool,       ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
-    - { fn: node_set_bool,       ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
-    - { fn: node_get_string,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: string }
-    - { fn: node_set_string,     ctx: true, args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: string } ], returns: float }
+    # 组件字段（按名反射；**慢路径**：仅脚本/自定义组件使用，引擎内部一律类型化直读）
+    - { fn: node_get_number,     ctx: true, doc: "按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
+    - { fn: node_set_number,     ctx: true, doc: "按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
+    - { fn: node_get_bool,       ctx: true, doc: "按名反射读 bool（慢路径）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
+    - { fn: node_set_bool,       ctx: true, doc: "按名反射写 bool（慢路径）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
+    - { fn: node_get_string,     ctx: true, doc: "按名反射读字符串（慢路径）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: string }
+    - { fn: node_set_string,     ctx: true, doc: "按名反射写字符串（慢路径；改 Sprite material/texture 会当场解析）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: string } ], returns: float }
     # 事件（node.on / off / emit；emit 沿父链冒泡，沿父链冒泡）
     - { fn: node_on,             ctx: true, args: [ { name: id, type: float }, { name: event, type: string }, { name: handler, type: string } ], returns: float }
     - { fn: node_off,            ctx: true, args: [ { name: id, type: float }, { name: event, type: string } ], returns: float }
