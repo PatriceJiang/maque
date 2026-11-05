@@ -1,4 +1,4 @@
-/* F4 引擎选项面板（docs/28）：MSAA / 图层 / 太阳光 / 相机 near·far / 后处理
+/* F4 引擎选项面板（docs/28）：MSAA / 图层 / 太阳光 / 相机 near·far / 后处理 / perf 采样
  *
  * 从 runtime.cpp 拆出（plans/25 第 1 阶段 S5，纯搬运）：实现与顺序不变。 */
 #include "../runtime_engine.h"
@@ -7,7 +7,7 @@ namespace maque::rt {
 
 /* ---- F4 引擎选项（docs/28）----------------------------------------------------
  * 「引擎选项」面板：渲染模式 / 游戏 3D、2D/UI 图层 / MSAA / 默认太阳光 / 主相机 near·far /
- * 后处理 PostEffect。
+ * 后处理 PostEffect / Linux perf 采样（docs/35）。
  *   · 纯视图层：不写场景组件、不进快照/校验和、不参与模拟（docs/10 确定性不受影响）；
  *   · 值在 extract_3d / 成帧时读取（Engine 的 opt_* 字段），切场景后仍保留；
  *   · 启动初值可用 `MAQUE_ENGINE_OPTIONS`（CI/截图/演示不必依赖鼠标拖控件）。
@@ -200,6 +200,51 @@ void Engine::engine_options_panel(float show_w, float show_h) {
 
     mq_imgui_text("选项：只影响本机画面，不改场景");
     mq_imgui_text_disabled("F4 开关本面板 / F2 开关 stats");
+    /* Linux perf 采样剖析（docs/35）：与 F5 / 控制面共用同一套 start/stop。
+     * 放在面板顶部（折叠头默认收起）；录制中标题带状态，展开可看帧数/时长。 */
+    const maque::profile::Status ps = maque::profile::status();
+    char profile_hdr[192];
+    const char* profile_state = ps.state == maque::profile::State::recording ? "  ● 录制中"
+                              : ps.state == maque::profile::State::failed ? "  ● 失败"
+                              : ps.state == maque::profile::State::unsupported ? "（不可用）" : "";
+    std::snprintf(profile_hdr, sizeof profile_hdr, "性能分析（perf，Linux）%s###profile", profile_state);
+    if (mq_imgui_collapsing_header(profile_hdr)) {
+        char line[224];
+        if (ps.state == maque::profile::State::unsupported) {
+            mq_imgui_text_disabled("本构建 / 平台不支持 perf");
+            if (!ps.reason.empty()) mq_imgui_text_wrapped(ps.reason.c_str());
+        } else if (ps.state == maque::profile::State::recording) {
+            const unsigned long long frames = frame >= ps.start_frame
+                ? (unsigned long long)(frame - ps.start_frame) : 0ull;
+            std::snprintf(line, sizeof line, "状态：录制中  %llu 帧 / %.1f s  pid=%d",
+                          frames, ps.elapsed_ms / 1000.0, ps.pid);
+            mq_imgui_text(line);
+            if (!ps.output_dir.empty()) {
+                const std::string out = "产物目录：" + ps.output_dir;
+                mq_imgui_text_wrapped(out.c_str());
+            }
+            if (mq_imgui_button("停止并生成报告##profile")) profile_toggle();
+            mq_imgui_text_disabled("停止会同步跑 perf report，可能阻塞数秒；F5 同效");
+        } else if (ps.state == maque::profile::State::failed) {
+            mq_imgui_text("状态：失败");
+            if (!ps.reason.empty()) mq_imgui_text_wrapped(ps.reason.c_str());
+            if (mq_imgui_button("重试开始录制##profile")) profile_toggle();
+        } else {
+            mq_imgui_text("状态：空闲");
+            if (ps.samples > 0) {
+                std::snprintf(line, sizeof line, "最近一次：%llu samples / %llu hotspots",
+                              (unsigned long long)ps.samples,
+                              (unsigned long long)maque::profile::hotspots().size());
+                mq_imgui_text(line);
+            }
+            if (!ps.output_dir.empty()) {
+                const std::string out = "最近产物：" + ps.output_dir;
+                mq_imgui_text_wrapped(out.c_str());
+            }
+            if (mq_imgui_button("开始录制##profile")) profile_toggle();
+            mq_imgui_text_disabled("录制开始于当前帧；帧数/时长实时更新，F5 同效");
+        }
+    }
     mq_imgui_separator();
 
     /* ① 调试渲染与游戏图层：只改提交路径，不隐藏 F4 面板自身。 */

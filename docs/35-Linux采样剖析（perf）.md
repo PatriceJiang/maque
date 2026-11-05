@@ -35,6 +35,11 @@ MAQUE_PROFILE=1 MAQUE_PROFILE_FRAMES=600 MAQUE_PROFILE_DIR=.maque/perf/live \
   ./build-perf/samples/player/maque_player scenes/pbr/cube.scn
 ```
 
+**F4 面板**：游戏内按 F4 打开「引擎选项」，顶部「性能分析（perf，Linux）」折叠头可直接
+**开始录制 / 停止并生成报告**，标题显示「录制中 / 失败 / 不可用」，展开可见帧数、时长、pid、
+产物目录；与 F5（开关）和控制面 `Perf.profile_*` 共用同一套生命周期。停止会同步执行
+`perf report`，可能阻塞数秒；退出路径仍默认不生成报告（避免关窗口卡死）。
+
 ## 1. 决策：perf，不接 oprofile
 
 用户要求“Linux only，perf 或 oprofile”。本仓库**明确选择 perf**：

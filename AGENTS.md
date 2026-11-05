@@ -400,7 +400,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   perf 看“几百帧里 CPU 花在哪些函数/源码行”。Linux 默认 `MAQUE_PROFILE=ON`（只加 `-g -fno-omit-frame-pointer`，
   不改优化级别）；`-DMAQUE_PROFILE=OFF` → stub（控制面 `supported:false`），其它平台自动关闭。
   启用：`MAQUE_PROFILE=1 [MAQUE_PROFILE_FRAMES=N] [MAQUE_PROFILE_START=N] [MAQUE_PROFILE_DIR=…]`
-  （默认 `.maque/profile/run-<时间戳>`，不入库）；录制中 **F5** 开关（引擎热键，不下发给脚本）。
+  （默认 `.maque/profile/run-<时间戳>`，不入库）；录制中 **F5** 开关（引擎热键，不下发给脚本）；
+  **F4 → 性能分析（perf，Linux）** 也可开始/停止（停止同步生成报告，可能阻塞数秒）。
   控制面 `Perf.profile_status/start/stop/report/mark`；`start/stop/mark` 是变更类（启动外部进程/
   写产物）→ 只读会话被 `-32001` 拒绝，启动期 `MAQUE_PROFILE=1` 不需要写权限。
   产物：`perf.data` / `perf.log` / `perf-report.txt` / `hotspots.json` / `meta.json`（+ Python `report.md`）。

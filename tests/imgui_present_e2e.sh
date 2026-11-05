@@ -251,8 +251,10 @@ for y in range(y0, y1):
                 + abs(direct[i + 2] - reference[i + 2])) > 30:
             diff += 1
 ratio = diff / max(1, total)
+# 阈值 3%：面板现在包含「性能分析（perf）」折叠头；直呈网格与 SDL 官方后端的
+# 文本抗锯齿/滚动条有少量像素差，错误缩放会远超此值（旧实现是整块错位）。
 print(f'imgui_present_e2e: WGPU 直呈 F4 对照 region=({x0},{y0})-({x1},{y1}) diff={ratio:.4%}')
-sys.exit(0 if ratio < 0.02 else 1)
+sys.exit(0 if ratio < 0.03 else 1)
 PY
 
 # ---- ⑦ WGPU 直呈：合成指针拖动 stats（指针必须按 ImGui **显示空间**换算）----

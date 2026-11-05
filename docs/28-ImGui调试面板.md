@@ -18,6 +18,9 @@ ImGui 面板是视图层 —— 不进快照、不进校验和、不参与模拟
 - **F2 开关**：引擎级热键（沿检测，按住不会连续切换）；`MAQUE_IMGUI=1/0` 设定**初始**开关。
 - **F4 引擎选项面板**（默认收起，按 F4 弹出/收起；首次按 F4 会自动打开 ImGui）：运行期热调
   **视图层**渲染选项，**不写场景组件、不进快照/校验和**，只在成帧时生效（切场景后仍保留）：
+  - **性能分析（perf，Linux）**：面板顶部折叠头，标题实时显示「录制中 / 失败 / 不可用」；
+    展开后可**开始录制 / 停止并生成报告**（与 F5、控制面同一套 `maque::profile`），
+    录制中显示帧数、时长、pid 与产物目录；停止会同步跑 `perf report`，可能阻塞数秒；
   - **渲染模式**：`rendered`（完整材质）/ `textured`（base-color 贴图，无光照）/ `solid` / `wireframe`；
   - **游戏图层**：独立显示/隐藏 3D 与 2D/UI，F4 面板自身不受影响；
   - **MSAA（主输出）**：跟随场景 / 关闭 / 4x（优先级：面板 > `MAQUE_MSAA` > `scn.Scene.msaa_samples`）；
@@ -134,7 +137,7 @@ MAQUE_IMGUI_SCALE=1.5 ./build-win/samples/player/maque_player.exe <scene>
 # 呈现后端（默认 Windows accelerated / 其它平台 software；两者都支持面板）
 MAQUE_PRESENT=software ./build-win/samples/player/maque_player.exe <scene>
 
-# F4 弹出/收起「引擎选项」面板（渲染模式/图层/MSAA/默认太阳光/主相机 near·far/后处理；首次按 F4 会自动开 ImGui）
+# F4 弹出/收起「引擎选项」面板（渲染模式/图层/MSAA/默认太阳光/主相机 near·far/后处理/perf 采样；首次按 F4 会自动开 ImGui）
 ./build-win/samples/player/maque_player.exe <scene>
 
 # 引擎选项的启动初值（不必用鼠标；逗号分隔，向量分量用 ':'）
@@ -215,7 +218,7 @@ if (imgui_enabled()) {
 | 中文字体（TTF + 标题/正文两档字号，默认 20/15） | ✅ | `--shot` 截图里中文正常、stats 用正文字号 |
 | stats 面板（左上角，237x148；F2 / `MAQUE_IMGUI=1` 打开） | ✅ | FPS / logic / render / draws / tris / frame / target 七项 |
 | F2 开关（沿检测） | ✅ | `imgui_toggle_e2e` |
-| **F4 引擎选项面板**（rendered/textured/solid/wireframe、3D/2D 图层、MSAA（主输出）与 RenderTexture MSAA（相机离屏纹理）、默认太阳光、主相机 near·far、后处理 PostEffect，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（含 textured 纹理采样与无光照像素断言）；`post_effect_e2e`（后处理全效果 + 默认关闭零回归）；`MAQUE_ENGINE_OPTIONS` 初值 |
+| **F4 引擎选项面板**（rendered/textured/solid/wireframe、3D/2D 图层、MSAA（主输出）与 RenderTexture MSAA（相机离屏纹理）、默认太阳光、主相机 near·far、后处理 PostEffect、perf 采样开关，视图层覆盖不改场景） | ✅ | `imgui_engine_options_e2e`（含 textured 纹理采样与无光照像素断言）；`post_effect_e2e`（后处理全效果 + 默认关闭零回归）；`imgui_present_e2e`（F4 直呈/坐标）；`MAQUE_ENGINE_OPTIONS` 初值 |
 | **RenderTexture MSAA**（`rt_msaa`：只作用于 3D 相机离屏目标，逐目标解析，面板回显「N/M 张相机纹理 4x」） | ✅ | `render_texture_e2e`（组件字段只改一张、`rt_msaa=4` 全开、`rt_msaa=1` 压过组件字段、2D 目标明确忽略、主输出不受牵连）；见 docs/33 §11 |
 | `MAQUE_PRESENT=software/accelerated` 都能显示面板 | ✅ | `imgui_present_e2e`（software 抓帧） |
 | 输入隔离（面板吃输入时清空本帧设备事件） | ✅ | `imgui_present_e2e` 拖动用合成指针走 `imgui_input_feed` |
