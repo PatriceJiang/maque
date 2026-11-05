@@ -34,11 +34,8 @@ void Engine::ui_step() {
                     SceneNode* ke = scene->at(k);
                     if (!ke) continue;
                     float kw = 32.0F, kh = 32.0F;
-                    if (auto* ctrl = comp_by_role(*this, k, MQ_ROLE_UI_CONTROL)) {
-                        const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
-                        if (const auto* c = as_component<ui::Control>(cd, ctrl->data())) {
-                            kw = c->offset_max.x; kh = c->offset_max.y;   // 内容尺寸
-                        }
+                    if (const auto* c = component<ui::Control>(*ke)) {
+                        kw = c->offset_max.x; kh = c->offset_max.y;   // 内容尺寸
                     }
                     /* mode: 0=Free 1=Horizontal 2=Vertical 3=Grid */
                     /* 位置经 entity_set_pos 写回 Transform2D 组件（否则被 update_world 覆盖） */
@@ -68,15 +65,13 @@ void Engine::ui_step() {
                 pb->phase = v;
                 /* 填充子节点：第一个带 sprite/control 的子节点，宽度 = 父宽 × value */
                 for (int k : e->children) {
-                    if (auto* ctrl = comp_by_role(*this, k, MQ_ROLE_UI_CONTROL)) {
-                        const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
-                        auto* c = as_component_mut<ui::Control>(cd, ctrl->data());
-                        if (!c) continue;
-                        float full = host::node_width(this, (float)id);
-                        if (full <= 0.0F) full = c->offset_max.x > 0.0F ? c->offset_max.x : 100.0F;
-                        c->offset_max.x = full * v;
-                        break;
-                    }
+                    SceneNode* child = scene->at(k);
+                    auto* c = child ? component<ui::Control>(*child) : nullptr;
+                    if (!c) continue;
+                    float full = host::node_width(this, (float)id);
+                    if (full <= 0.0F) full = c->offset_max.x > 0.0F ? c->offset_max.x : 100.0F;
+                    c->offset_max.x = full * v;
+                    break;
                 }
             }
 
@@ -89,12 +84,10 @@ void Engine::ui_step() {
                 const int target = kids.empty() ? -1 : kids.front();
                 if (target >= 0) {
                     host::entity_set_pos(this, (float)target, e->world_x + il, e->world_y + it);
-                    if (auto* ctrl = comp_by_role(*this, target, MQ_ROLE_UI_CONTROL)) {
-                        const mq_type_desc* cd = mq_reflect_type_by_name(reflect, "ui.Control");
-                        if (auto* c = as_component_mut<ui::Control>(cd, ctrl->data())) {
-                            c->offset_max.x = (float)W - il - ir;
-                            c->offset_max.y = (float)H - it - ib;
-                        }
+                    SceneNode* te = scene->at(target);
+                    if (auto* c = te ? component<ui::Control>(*te) : nullptr) {
+                        c->offset_max.x = (float)W - il - ir;
+                        c->offset_max.y = (float)H - it - ib;
                     }
                 }
             }
