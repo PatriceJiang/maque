@@ -275,6 +275,7 @@ void attach_component(Engine& eng, int idx, const char* type_name) {
     SceneNode* e = eng.scene->at(idx);
     const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, type_name);
     if (!e || !d) return;
+    eng.note_component(d);
     ComponentSlot& slot = component_slot(*e, d);
     if (!slot.bytes.empty()) destroy_blob(eng, d->type_id, slot.bytes);
     construct_blob(eng, d, slot.bytes);   // 含动态成员（string/vector）的合法构造 + schema 默认值

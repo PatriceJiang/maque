@@ -67,6 +67,9 @@ bool Engine::load_clip(const std::string& ref) {
 
 void Engine::anim_step(float dt) {
     if (!scene) return;                                   // 片段首次使用时按需载入（见下）
+    /* 无 AnimationPlayer 且没有 glTF 模型：没有可采样的动画（glTF 片段/蒙皮/morph 由
+     * gltf_anim_step 处理），跳过全树遍历与派生表重建。 */
+    if (!has_anim_components && gltf_models.empty()) return;
     if (!gltf_env_read) read_gltf_env();
     gltf_anim_step(dt);                                   /* plans/24：直读 glTF 的实体级动画/蒙皮/morph */
     /* plans/22 §6.2：派生姿态表每帧重建（纯函数 = (time, clip)；MAQUE_ANIM=0 时保持空表 = bind pose）。 */

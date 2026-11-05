@@ -369,6 +369,14 @@ struct Engine {
     std::string frames_dir;                                 // 每帧 PPM 输出目录（""=不输出）
     std::string name;
     const mq_type_desc* scene_type = nullptr;
+    /* 组件存在性标志（装配/动态挂载时置位，切场景清零）：
+     * 场景里没有 UI/音频/动画组件时，跳过对应的每帧全树遍历（ui_step/audio_step/anim_step）。
+     * **只置位不清零**：多置位只多走一趟（正确性不变），漏置位才会漏更新 —— 所以三个写入点
+     * （loader / 快照 decode / attach_component）必须都调 note_component()。 */
+    bool has_ui_components = false;
+    bool has_anim_components = false;
+    bool has_audio_components = false;
+    void note_component(const mq_type_desc* d);
     Scene               scene_store;                        // 场景状态（移动后失效）
     std::unique_ptr<Scene> scene_owned;                     // 宿主模式：堆上场景
     Scene*              scene = &scene_store;

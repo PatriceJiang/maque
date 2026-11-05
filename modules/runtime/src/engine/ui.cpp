@@ -11,7 +11,7 @@ namespace maque::rt {
  *   · ui_safe_area：按内缩重排目标节点（SafeArea/Widget）
  *   · ui_scroll：内容偏移（ScrollView 的 scrollOffset） */
 void Engine::ui_step() {
-    if (!scene) return;
+    if (!scene || !has_ui_components) return;          // 无 ui.* 组件：跳过全树遍历
     std::vector<int> ids;
     scene->collect_preorder(ids);
     for (int id : ids) {

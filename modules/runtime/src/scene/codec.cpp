@@ -87,6 +87,7 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
             const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
             std::vector<uint8_t> blob;
             if (d) {
+                eng.note_component(d);
                 construct_blob(eng, d, blob);          // 先构造（析构由 destroy_blob 负责）
                 if (len && mq_persist_decode(eng.reflect, d, in + pos, len, blob.data()) < 0) {
                     destroy_blob(eng, tid, blob);

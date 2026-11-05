@@ -5,6 +5,16 @@
 
 namespace maque::rt {
 
+/* 组件存在性标志：装配（loader）、快照恢复（decode）、动态挂载（attach_component）三处调用。
+ * 只置位不清零 —— 多置位只多走一趟遍历（正确性不变），漏置位才会漏更新。 */
+void Engine::note_component(const mq_type_desc* d) {
+    if (!d || !d->name) return;
+    if (!has_ui_components && std::strncmp(d->name, "ui.", 3) == 0) has_ui_components = true;
+    if (!has_anim_components && (d->role & MQ_ROLE_ANIM_PLAYER)) has_anim_components = true;
+    if (!has_audio_components && (d->role & (MQ_ROLE_AUDIO_SOURCE | MQ_ROLE_AUDIO_LISTENER)))
+        has_audio_components = true;
+}
+
 bool mount_scene_source(mq_vfs* vfs, const std::string& scn_path, std::string& vfs_path, std::string& dir_out) {
     if (!vfs || scn_path.empty()) return false;
     const bool remote = scn_path.rfind("http://", 0) == 0 || scn_path.rfind("https://", 0) == 0;
@@ -279,6 +289,9 @@ bool Engine::load_scene_into(const std::string& scn_path) {
     scene_store = Scene();
     scene_store.next_id = preserved_entity_id;
     scene = &scene_store;
+    has_ui_components = false;
+    has_anim_components = false;
+    has_audio_components = false;
     scn_vfs_path = scn_vfs;              // 根实例 source（docs/32）
     scn_full_path = scn_path;
     /* 根场景 = 0 号实例：先建记录（实体归属/嵌套实例的父链都依赖它），再装配节点树。

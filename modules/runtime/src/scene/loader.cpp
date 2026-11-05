@@ -126,6 +126,7 @@ int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
         if (!tname) continue;
         const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, tname);
         if (!d) { std::print("runtime: unknown component '{}'\n", tname); continue; }
+        eng.note_component(d);
         ComponentSlot& slot = component_slot(*ent, d);
         std::vector<uint8_t>& blob = slot.bytes;
         if (!blob.empty()) destroy_blob(eng, d->type_id, blob);

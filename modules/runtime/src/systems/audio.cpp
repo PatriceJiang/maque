@@ -7,7 +7,7 @@ namespace maque::rt {
 
 void Engine::audio_step(float dt) {
     (void)dt;
-    if (!audio || !scene) return;
+    if (!audio || !scene || !has_audio_components) return;   // 无音源/听者：跳过两次全树遍历
     std::vector<int> ids;
     scene->collect_preorder(ids);
 
