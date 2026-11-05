@@ -160,6 +160,14 @@ F4 面板「RenderTexture MSAA」/ `MAQUE_ENGINE_OPTIONS="rt_msaa=4"` 一次性�
 | WASM | 浏览器原生 WebGPU | 与宿主同一 API |
 
 - **渲染不得影响模拟确定性**（ADR-0005）：渲染是模拟的**只读消费方**，绝不回写模拟状态。
+- **纹理装配并行（装配期，docs/bugs/015）**：PBR 文件贴图在
+  `preload_scene_assets()` 里按 `(ref, srgb)` 去重，CPU `decode + mip 链` 用
+  `MAQUE_TEX_THREADS`（默认 `min(8, hw)`，Android 最多 4；1=串行，`MAQUE_TEX_PRELOAD=0` 关闭）
+  分批并行，`create_texture2` 仍在主线程；glTF 内嵌/外链 image 也会批量并行 decode。
+  `.mesh.json` 同样由 `preload_mesh_refs()` 并行做 `mq_json_parse` + 顶点/索引/morph 转换，
+  `create_mesh`/默认 morph 权重回主线程（`MAQUE_MESH_PRELOAD=0` 关闭，`MAQUE_MESH_INFO=1` 打印统计）。
+  `MAQUE_TEX_INFO=1` 打印 `texture preload ...` 统计。mip 的行分片只改变计算顺序，
+  **与旧实现逐字节一致**（`texture_preload_e2e` 用串行/并行 PPM 比对）。
 
 ## 9. 遗留风险
 

@@ -288,6 +288,11 @@ tools\win\build.cmd -Sanitize address -RunTests
   迁移侧（`docs/31`）：官方 HDRI 环境映射在 `tools/khronos_env.json`，手调表（`MANUAL_CAMERA` /
   `MANUAL_ENV` / `MANUAL_LIGHT` / `MANUAL_REFERENCE`）也在 `tools/migrate_gltf_models.py`；渲染时
   `MAQUE_MOUNT="/khronos_env=<repo>/.deps/khronos-env"`（HDRI 不入库，缺失自动回退 analytic IBL）。
+  **纹理装配并行（docs/bugs/015）**：PBR 文件贴图在 setup 期按 `(ref,srgb)` 去重后并行
+  decode+mip（`MAQUE_TEX_THREADS` 默认 `min(8,hw)`；1=串行，`MAQUE_TEX_PRELOAD=0` 关闭，
+  `MAQUE_TEX_INFO=1` 打印统计）；`.mesh.json` 也由 `preload_mesh_refs()` 并行 parse
+  （`MAQUE_MESH_PRELOAD=0` / `MAQUE_MESH_INFO=1`）。GPU 上传仍在主线程，mip/网格与旧实现逐字节一致
+  （`texture_preload_e2e`）。
 - **输入（真实设备事件）**：`MAQUE_TRACE_INPUT=1` 打印 SDL 事件与平台队列；`MAQUE_HITS=1` 打印命中测试；
   `MAQUE_SIM_CLICK="frame:x:y[;...]"` 把指针事件压入 **SDL 事件队列**（与真实鼠标同一条翻译路径：
   SDL → 平台 → 输入模块 → 命中测试 → 脚本回调），用于 CI 验证输入通路。

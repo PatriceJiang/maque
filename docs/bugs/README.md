@@ -35,6 +35,7 @@
 | [012](012-windows-checkout-e2e-false-fail.md) | Windows 检出（autocrlf）/窗口模式/反向探针让 e2e 门假失败与假跳过 | 测试基础设施 | fixed | `env_cubemap_e2e`、`gltf_import_e2e`、`render3d_scene_e2e`、`render3d_present_e2e`、`imgui_engine_options_e2e`、`spine_*` |
 | [013](013-sprite-z-index-ignored.md) | `scn.Sprite` 的 `node_set_z_index` 被静默忽略（按创建序绘制） | 正确性 | fixed | `tank_zorder`、`tank_smoke`/`tank_rules` 截图 |
 | [014](014-reflection-component-hotpath.md) | 反射/组件访问热路径：每帧遍历的查表与分配开销（checksum/视觉哈希/逐帧系统） | 性能 | fixed | 19–20 场景回归 + `world_trail` 确定性；端到端 profile 待复测 |
+| [015](015-texture-load-parallel.md) | 纹理/网格装配期单线程：decode / mip / mesh JSON（ABeautifulGame 11.0s → 3.9s） | 性能 | fixed | `texture_preload_e2e`（串行/并行像素逐字节一致）+ PBR/glTF e2e |
 
 ## 模板
 

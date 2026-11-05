@@ -233,6 +233,17 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(env_cubemap_e2e PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
+# 纹理装配并行端到端（docs/13 §8）：ABeautifulGame PBR 贴图串行 vs 4 线程渲染逐字节一致，
+# 且 MAQUE_TEX_INFO=1 的 preload 统计 jobs>0/failed=0。场景不存在时脚本自身 SKIP 77。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx AND
+   EXISTS "${CMAKE_SOURCE_DIR}/scenes/khronos/ABeautifulGame/ABeautifulGame.scn")
+    add_test(NAME texture_preload_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/texture_preload_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/khronos/ABeautifulGame/ABeautifulGame.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/texture_preload_e2e")
+    set_tests_properties(texture_preload_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300)
+endif()
+
 # 材质模型端到端（plans/19-threejs-materials.md）：three.js 材质族 → asset.PbrMaterial.shading_model。
 # ① material_models_e2e：9 个对象（Standard/Physical/Basic/Lambert/Phong/Toon/Normal/Matcap/
 #    Depth；Shadow 无遮挡时透明，由 ② 的阴影地面覆盖）离屏截图 → 连通域聚类 + 场景 JSON 定位 →

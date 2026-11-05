@@ -7,6 +7,10 @@
 
 namespace maque::rt {
 
+/* 启动期资源加载并行度（0/未设 = auto，1 = 关闭；MAQUE_TEX_THREADS 覆盖）。
+ * 只用于 **装配期** decode/mip，模拟帧内仍单线程（确定性，docs/10）。 */
+int asset_worker_count();
+
 struct SpineRuntime {
     struct Instance {
         int entity = -1;                       // 实体 id
@@ -859,6 +863,11 @@ struct Engine {
          void step_frame(bool render_frame = true);                // 推进一个模拟帧（单一帧序，docs/10 D1）                                      // 推进一个模拟帧（单一帧序，docs/10 D1）
     bool run_frames(uint64_t n);                            // 推进 n 帧（控制面 Runtime.step）
     void preload_scene_assets();                            // 装配期预解析纹理/材质（extract 只读，docs/13 §8）
+    /* PBR 贴图预载（docs/13 §8）：按 (ref, srgb) 去重，CPU decode/mip 用有限线程并行，
+     * GPU 上传仍在主线程（wgpu 句柄不放 worker）。 */
+    void preload_texture_refs(std::vector<std::pair<std::string, bool>> refs, const char* label);
+    /* .mesh.json 预载（docs/bugs/015）：CPU parse 并行，GPU create_mesh 主线程；失败缓存 -1。 */
+    void preload_mesh_refs(std::vector<std::string> paths);
     void clear_asset_caches();                              // 切场景：释放按**相对路径**缓存的纹理/网格（挂载点已换）
     bool reload_script(std::string* err = nullptr, const std::string* only = nullptr);   // 重载脚本（多脚本：按路径）
     /* 常驻覆盖层脚本：激活/切换（同一路径复用已有 VM，状态保留）、卸载、热重载。 */

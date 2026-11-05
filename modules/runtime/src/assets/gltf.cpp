@@ -23,6 +23,7 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
         return read_vfs_file(p, out);
     };
     gltf::Model cpu = gltf::parse(path, bytes, readfn);
+    const auto t_parse = std::chrono::steady_clock::now();
     if (cpu.failed || (cpu.primitives.empty() && cpu.lights.empty() && cpu.cameras.empty()))
         return fail(cpu.error.empty() ? "没有可导入的三角网格/灯光/相机" : cpu.error.c_str());
 
@@ -33,6 +34,71 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
         bool ok = false;
     };
     std::vector<Decoded> decoded(cpu.images.size());
+    /* 装配期并行 decode：glTF 的 images 互相独立；GPU 上传/材质绑定仍在主线程。
+     * 只 decode **被材质引用** 的 image，避免为未使用图付 4K RGBA 内存。
+     * 失败仍由 lazy 路径的同一 Decoded 缓存记录（w=-1），错误在主线程按索引顺序打印。 */
+    {
+        const char* pv = std::getenv("MAQUE_TEX_PRELOAD");
+        const bool preload = !(pv && (std::strcmp(pv, "0") == 0 || std::strcmp(pv, "off") == 0));
+        const int threads = preload ? asset_worker_count() : 1;
+#if !defined(__EMSCRIPTEN__) && !defined(MQ_PLATFORM_WASM)
+        if (threads > 1 && !cpu.images.empty()) {
+            std::vector<char> need(cpu.images.size(), 0);
+            auto mark = [&](const gltf::TextureRef& ref) {
+                if (ref.present && ref.image >= 0 && (size_t)ref.image < need.size())
+                    need[(size_t)ref.image] = 1;
+            };
+            for (const gltf::Material& m : cpu.materials) {
+                mark(m.base_color_tex); mark(m.metallic_roughness_tex); mark(m.occlusion_tex);
+                mark(m.normal_tex); mark(m.emissive_tex);
+                mark(m.clearcoat_tex); mark(m.clearcoat_roughness_tex); mark(m.clearcoat_normal_tex);
+                mark(m.sheen_color_tex); mark(m.sheen_roughness_tex);
+                mark(m.iridescence_tex); mark(m.iridescence_thickness_tex); mark(m.anisotropy_tex);
+                mark(m.specular_tex); mark(m.specular_color_tex); mark(m.transmission_tex);
+                mark(m.volume_thickness_tex); mark(m.diffuse_transmission_tex);
+                mark(m.diffuse_transmission_color_tex);
+            }
+            std::vector<int> todo;
+            for (size_t i = 0; i < need.size(); ++i) if (need[i]) todo.push_back((int)i);
+            for (size_t i = 0; i < todo.size(); i += (size_t)threads) {
+                const size_t n = std::min((size_t)threads, todo.size() - i);
+                std::vector<std::string> errs(n);
+                std::vector<std::thread> workers;
+                workers.reserve(n);
+                for (size_t j = 0; j < n; ++j) {
+                    const int idx = todo[i + j];
+                    workers.emplace_back([&, j, idx] {
+                        Decoded& d = decoded[(size_t)idx];
+                        const gltf::Image& im = cpu.images[(size_t)idx];
+                        if (!im.valid || im.bytes.empty()) { d.w = -1; return; }
+                        uint8_t* rgba = nullptr;
+                        uint32_t w = 0, h = 0;
+                        char ebuf[128] = { 0 };
+                        if (mq_image_decode(im.bytes.data(), im.bytes.size(), &rgba, &w, &h,
+                                            ebuf, sizeof ebuf) != 0) {
+                            errs[j] = ebuf[0] ? ebuf : "decode failed";
+                            d.w = -1;
+                            return;
+                        }
+                        d.rgba.assign(rgba, rgba + (size_t)w * (size_t)h * 4u);
+                        d.w = (int)w;
+                        d.h = (int)h;
+                        d.ok = true;
+                        mq_image_free(rgba);
+                    });
+                }
+                for (auto& w : workers) w.join();
+                for (size_t j = 0; j < n; ++j)
+                    if (!errs[j].empty())
+                        std::print(stderr, "runtime: gltf '{}' image[{}] 解码失败（{}）\n",
+                                   path, todo[i + j], errs[j]);
+            }
+        }
+#else
+        (void)threads;
+#endif
+    }
+    const auto t_decode = std::chrono::steady_clock::now();
     auto decode_image = [&](int idx) -> Decoded* {
         if (idx < 0 || (size_t)idx >= cpu.images.size()) return nullptr;
         Decoded& d = decoded[(size_t)idx];
@@ -366,6 +432,7 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
     /* ---- 网格上传：无蒙皮 48/56B；蒙皮再追加 joints u16x4 + weights f32x4（stride 72/80）---- */
     struct PendingMorph { size_t prim = 0; };
     std::vector<PendingMorph> pending_morph;
+    const auto t_materials = std::chrono::steady_clock::now();
     gpu.prims.reserve(cpu.primitives.size());
     for (const gltf::Primitive& p : cpu.primitives) {
         if (!rapi || !rself || !rapi->create_mesh) break;
@@ -461,8 +528,8 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
         }
     }
 
-    const double ms = std::chrono::duration<double, std::milli>(
-                          std::chrono::steady_clock::now() - start).count();
+    const auto t_end = std::chrono::steady_clock::now();
+    const double ms = std::chrono::duration<double, std::milli>(t_end - start).count();
     if (render3d_info) {
         size_t n_morph = 0, n_targets = 0;
         for (const auto& pr : gpu.prims) {
@@ -474,6 +541,15 @@ Engine::GltfGpuModel* Engine::load_gltf_model(const std::string& path) {
                    (long long)gpu.textures.size(), (long long)gpu.nodes.size(),
                    (long long)gpu.skins.size(), (long long)gpu.anims.size(),
                    (long long)n_morph, (long long)n_targets, ms);
+        auto phase = [&](const char* n, std::chrono::steady_clock::time_point a,
+                         std::chrono::steady_clock::time_point b) {
+            return std::string(n) + "=" +
+                   std::to_string((long long)std::chrono::duration<double, std::milli>(b - a).count()) + "ms";
+        };
+        std::print("runtime: gltf phases '{}' {} {} {} {} total={:.1f} ms\n", path,
+                   phase("parse", start, t_parse), phase("decode", t_parse, t_decode),
+                   phase("materials", t_decode, t_materials),
+                   phase("meshes", t_materials, t_end), ms);
         if (n_morph > 0)
             std::print("runtime: gltf morph '{}' primitives={} targets={}\n",
                        path, (long long)n_morph, (long long)n_targets);

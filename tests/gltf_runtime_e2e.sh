@@ -192,7 +192,13 @@ run_shot "$SCN_GLTF" "$WORK/gltf.ppm" "$WORK/gltf.log" \
     || { cat "$WORK/gltf.log"; fail "① .gltf 渲染失败"; }
 check_model_log "$WORK/gltf.log" "① .gltf"
 CHECK structural "$WORK/gltf.ppm" "① .gltf" 1 || exit 1
-echo "gltf_runtime_e2e: ① .gltf（外部 bin + 外部贴图）加载/渲染 OK"
+# 并行 decode/mip（MAQUE_TEX_THREADS）不得改变像素：默认线程 vs 串行逐字节比较。
+MAQUE_RENDER3D_INFO=1 MAQUE_TEX_THREADS=1 timeout 120 "$PLAYER" --shot "$WORK/gltf-serial.ppm" --frames 2 "$SCN_GLTF" \
+    >"$WORK/gltf-serial.log" 2>&1 || { cat "$WORK/gltf-serial.log"; fail "① .gltf 串行线程渲染失败"; }
+if ! cmp -s "$WORK/gltf.ppm" "$WORK/gltf-serial.ppm"; then
+    fail "① .gltf 并行/串行贴图路径像素不一致"
+fi
+echo "gltf_runtime_e2e: ① .gltf（外部 bin + 外部贴图）加载/渲染 OK（串行/并行像素一致）"
 
 # ---- ② .glb（BIN chunk 内嵌 buffer + bufferView 贴图）----
 run_shot "$SCN_GLB" "$WORK/glb.ppm" "$WORK/glb.log" \

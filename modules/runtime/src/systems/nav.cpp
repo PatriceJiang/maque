@@ -127,20 +127,57 @@ void Engine::preload_scene_assets() {
     if (!scene) return;
     std::vector<int> ids;
     scene->collect_preorder(ids);
+    std::vector<std::pair<std::string, bool>> pbr_textures;
+    std::vector<std::string> mesh_paths;
     for (int id : ids) {
         SceneNode* e = scene->at(id);
         if (!e) continue;
-        auto* sp = component<scn::Sprite>(*e);
-        if (!sp) continue;
-        if (!sp->texture.empty()) load_texture_ref(scoped_texture_ref(id, sp->texture));
-        if (!sp->material.empty()) {
-            scn::SpriteMaterial m{};
-            if (load_material(sp->material, m)) {
-                material_cache[sp->material] = m;
-                if (!m.texture.empty()) load_texture_ref(scoped_texture_ref(id, m.texture));
+        if (const auto* mr = component<render::MeshRenderer>(*e)) {
+            if (!mr->mesh_path.empty() && !gltf::is_gltf_path(mr->mesh_path))
+                mesh_paths.push_back(mr->mesh_path);
+        }
+        if (auto* sp = component<scn::Sprite>(*e)) {
+            if (!sp->texture.empty()) load_texture_ref(scoped_texture_ref(id, sp->texture));
+            if (!sp->material.empty()) {
+                scn::SpriteMaterial m{};
+                if (load_material(sp->material, m)) {
+                    material_cache[sp->material] = m;
+                    if (!m.texture.empty()) load_texture_ref(scoped_texture_ref(id, m.texture));
+                }
             }
         }
+        /* 3D PBR：把材质里所有文件贴图收集起来，装配期并行 decode+mip（GPU 上传仍主线程）。
+         * 这些槽与 extract_3d 的读取一一对应；新增槽忘加只会退回 lazy，不影响正确性。 */
+        if (const auto* pm = component<asset::PbrMaterial>(*e)) {
+            auto add = [&](const std::string& ref, bool srgb) {
+                if (ref.empty()) return;
+                if (ref.rfind("builtin:", 0) == 0 || ref.rfind("rendertexture://", 0) == 0) return;
+                pbr_textures.emplace_back(scoped_texture_ref(id, ref), srgb);
+            };
+            add(pm->base_color_texture, true);
+            add(pm->metallic_roughness_texture, false);
+            add(pm->occlusion_texture, false);
+            add(pm->normal_texture, false);
+            add(pm->emissive_texture, true);
+            add(pm->matcap_texture, true);
+            add(pm->clearcoat_normal_texture, false);
+            add(pm->clearcoat_texture, false);
+            add(pm->clearcoat_roughness_texture, false);
+            add(pm->sheen_color_texture, true);
+            add(pm->sheen_roughness_texture, false);
+            add(pm->iridescence_texture, false);
+            add(pm->iridescence_thickness_texture, false);
+            add(pm->anisotropy_texture, false);
+            add(pm->specular_texture, false);
+            add(pm->specular_color_texture, true);
+            add(pm->transmission_texture, false);
+            add(pm->volume_thickness_texture, false);
+            add(pm->diffuse_transmission_texture, false);
+            add(pm->diffuse_transmission_color_texture, true);
+        }
     }
+    if (!mesh_paths.empty()) preload_mesh_refs(std::move(mesh_paths));
+    if (!pbr_textures.empty()) preload_texture_refs(std::move(pbr_textures), "pbr");
 }
 
 }  // namespace maque::rt
