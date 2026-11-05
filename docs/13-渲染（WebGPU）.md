@@ -158,9 +158,13 @@ UV 重映射后交给 `UiBatcher` 按状态合并 → 多张小图共享一次�
 - 回归：**每个特性一个独立 scene + 独立 CTest**：
   `nine_patch.scn`（9 块合批/像素）、`mask_normal.scn`（普通矩形裁剪）、
   `mask_reverse.scn`（reverse 四向条带）、`nine_patch_mask.scn`（9-patch + reverse 集成）、
-  `mask_hit.scn`（洞内不命中/洞外命中）。
+  `mask_hit.scn`（嵌套 Mask + `clip_children=false` 命中矩阵）。
+  用法对比场景：`nine_patch_gallery.scn`（80×80 / 20×20 / 120×40 / flip_h / flip_v / region /
+  无 Control；断言 63 块仍 3-4 draws）与 `mask_gallery.scn`（normal / reverse / nested /
+  clip_self / button / text；mask 子图统一用本目录的 **`girl.png`**，不再是合成 frame）。
   CTest：`nine_patch_scene_e2e` / `ui_mask_normal_scene_e2e` / `ui_mask_reverse_scene_e2e` /
-  `nine_patch_mask_scene_e2e` / `ui_mask_hit_scene_e2e`；聚合回归 `ui_mask_nine_e2e`（MODE=all）。
+  `nine_patch_mask_scene_e2e` / `ui_mask_hit_scene_e2e` / `nine_patch_gallery_scene_e2e` /
+  `ui_mask_gallery_scene_e2e`；聚合回归 `ui_mask_nine_e2e`（MODE=all）。
 
 ## 6. 离屏渲染与 AI 预览（关键）
 

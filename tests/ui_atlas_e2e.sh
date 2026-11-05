@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # UI 动态合图端到端（docs/13 §2D/UI；实现 modules/render/gfx/src/ui_atlas.{h,cpp}）。
 # 场景 scenes/ui_batch/ui_atlas.scn：7 个 ui.Image（4 张不同小图：原生尺寸 / 2× 放大 /
-# UV 子矩形+翻转 / 无 ui.Control 走贴图缺省尺寸）+ 1 个世界层 scn.Sprite（同一张小图）
-# + 文字（字体图集）+ 背景。精灵与 UI 图片共用同一张贴图缓存 → 同一图集区域。
-#   ① 图集开启：4 张不同小图并进同一张 1024² → drawcall 明显下降
+# UV 子矩形+翻转 / 无 ui.Control 走贴图缺省尺寸）+ 1 张 1024×1536 的 **girl.png**
+# （大图 → 不进图集，独立纹理）+ 1 个世界层 scn.Sprite（同一张小图）+ 文字（字体图集）+ 背景。
+# 精灵与 UI 小图共用同一张贴图缓存 → 同一图集区域。
+#   ① 图集开启：4 张小图并进同一张 1024² → drawcall 明显下降；girl 大图保持独立
 #   ② 对照组 MAQUE_UI_ATLAS=0：每张贴图各一次 draw
 #   ③ **字体图集不进 UI 图集**：atlas == 4（只有 4 张 UI 图片；若把字体图集也吸进去会是 5）
 #   ④ A/B 像素逐字节一致（图集只改纹理来源/UV，不改画面）

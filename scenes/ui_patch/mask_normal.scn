@@ -15,7 +15,7 @@
         { "name": "img", "components": [
           { "type": "scn.Transform2D", "x": -32.0, "y": -32.0 },
           { "type": "ui.Control", "offset_max": { "x": 96.0, "y": 96.0 } },
-          { "type": "ui.Image", "texture": "textures/frame.png" } ] }
+          { "type": "ui.Image", "texture": "textures/girl.png" } ] }
       ] }
   ]
 }

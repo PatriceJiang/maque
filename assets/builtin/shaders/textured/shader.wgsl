@@ -41,7 +41,8 @@ struct VOut { @builtin(position) p: vec4f, @location(0) uv: vec2f, @location(1) 
   o.p = vec4f(px.x / u.size.x * 2.0 - 1.0, 1.0 - px.y / u.size.y * 2.0, 0., 1.);
   // 图集子矩形：uv.x/y = 左上，uv.z/w = 右下；退化（0,0,0,0）→ 整张贴图
   let t = c[vi] * 0.5 + 0.5;
-  let full = inst.uv.z <= inst.uv.x || inst.uv.w <= inst.uv.y;
+  // 退化（未指定子矩形）= 全 0；**允许 uv.z < uv.x**（flip_h/v 用反向 UV 镜像采样）。
+  let full = inst.uv.z == inst.uv.x && inst.uv.w == inst.uv.y;
   o.uv = select(vec2f(mix(inst.uv.x, inst.uv.z, t.x), mix(inst.uv.y, inst.uv.w, t.y)), t, full);
   o.col = inst.color; o.shape = inst.shape; return o;
 }

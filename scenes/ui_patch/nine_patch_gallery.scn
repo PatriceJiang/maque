@@ -1,0 +1,363 @@
+{
+  "title": "9-patch usages gallery",
+  "width": 640,
+  "height": 360,
+  "seed": 11,
+  "entities": [
+    {
+      "name": "bg",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 320.0,
+          "y": 180.0
+        },
+        {
+          "type": "scn.Sprite",
+          "width": 640.0,
+          "height": 360.0,
+          "r": 0.05,
+          "g": 0.06,
+          "b": 0.08
+        }
+      ]
+    },
+    {
+      "name": "normal80",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 20.0,
+          "y": 260.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 80.0,
+            "y": 80.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/nine.png",
+          "nine_patch_margin": {
+            "x": 8,
+            "y": 8,
+            "z": 8,
+            "w": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "normal80_label",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 20.0,
+          "y": 256.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "text": "normal80",
+          "font_size": 10.0,
+          "r": 0.9,
+          "g": 0.9,
+          "b": 0.95,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "small20",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 140.0,
+          "y": 320.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 20.0,
+            "y": 20.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/nine.png",
+          "nine_patch_margin": {
+            "x": 8,
+            "y": 8,
+            "z": 8,
+            "w": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "small20_label",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 140.0,
+          "y": 316.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "text": "small20",
+          "font_size": 10.0,
+          "r": 0.9,
+          "g": 0.9,
+          "b": 0.95,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "wide",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 200.0,
+          "y": 300.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 120.0,
+            "y": 40.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/nine.png",
+          "nine_patch_margin": {
+            "x": 8,
+            "y": 8,
+            "z": 8,
+            "w": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "wide_label",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 200.0,
+          "y": 296.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "text": "wide",
+          "font_size": 10.0,
+          "r": 0.9,
+          "g": 0.9,
+          "b": 0.95,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "flip_h",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 360.0,
+          "y": 260.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 80.0,
+            "y": 80.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/nine.png",
+          "nine_patch_margin": {
+            "x": 8,
+            "y": 8,
+            "z": 8,
+            "w": 8
+          },
+          "flip_h": true
+        }
+      ]
+    },
+    {
+      "name": "flip_h_label",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 360.0,
+          "y": 256.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "text": "flip_h",
+          "font_size": 10.0,
+          "r": 0.9,
+          "g": 0.9,
+          "b": 0.95,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "flip_v",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 480.0,
+          "y": 260.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 80.0,
+            "y": 80.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/nine.png",
+          "nine_patch_margin": {
+            "x": 8,
+            "y": 8,
+            "z": 8,
+            "w": 8
+          },
+          "flip_v": true
+        }
+      ]
+    },
+    {
+      "name": "flip_v_label",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 480.0,
+          "y": 256.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "text": "flip_v",
+          "font_size": 10.0,
+          "r": 0.9,
+          "g": 0.9,
+          "b": 0.95,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "region",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 20.0,
+          "y": 120.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 80.0,
+            "y": 80.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/nine_region.png",
+          "nine_patch_margin": {
+            "x": 8,
+            "y": 8,
+            "z": 8,
+            "w": 8
+          },
+          "region": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.5,
+            "w": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "region_label",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 20.0,
+          "y": 116.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "text": "region",
+          "font_size": 10.0,
+          "r": 0.9,
+          "g": 0.9,
+          "b": 0.95,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "noctl",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 140.0,
+          "y": 176.0
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/nine.png",
+          "nine_patch_margin": {
+            "x": 8.0,
+            "y": 8.0,
+            "z": 8.0,
+            "w": 8.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "noctl_label",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 140.0,
+          "y": 172.0
+        },
+        {
+          "type": "scn.Label",
+          "x": 0.0,
+          "y": 0.0,
+          "text": "noctl 24",
+          "font_size": 10.0,
+          "r": 0.9,
+          "g": 0.9,
+          "b": 0.95,
+          "a": 1.0
+        }
+      ]
+    }
+  ]
+}

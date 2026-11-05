@@ -220,6 +220,27 @@
           "texture": "textures/icon_red.png"
         }
       ]
+    },
+    {
+      "name": "girl",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 450.0,
+          "y": 40.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 160.0,
+            "y": 240.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/girl.png"
+        }
+      ]
     }
   ]
 }

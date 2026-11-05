@@ -1,21 +1,57 @@
 {
-  "title": "UIMask reverse hit (isolated)",
+  "title": "UIMask hit (nested + clip_self)",
   "script": "mask_hit.js",
-  "width": 96,
-  "height": 96,
-  "seed": 3,
+  "width": 640,
+  "height": 360,
+  "seed": 13,
   "entities": [
-    { "name": "bg", "components": [
-      { "type": "scn.Transform2D", "x": 48.0, "y": 48.0 },
-      { "type": "scn.Sprite", "width": 96.0, "height": 96.0, "r": 0.05, "g": 0.06, "b": 0.08 } ] },
-    { "name": "mask", "components": [
-      { "type": "scn.Transform2D", "x": 32.0, "y": 32.0 },
-      { "type": "ui.Control", "offset_max": { "x": 32.0, "y": 32.0 } },
-      { "type": "ui.Mask", "invert": true, "clip_children": true } ],
+    {
+      "name": "outer",
+      "components": [
+        { "type": "scn.Transform2D", "x": 20.0, "y": 200.0 },
+        { "type": "ui.Control", "offset_max": { "x": 120.0, "y": 120.0 } },
+        { "type": "ui.Mask", "clip_children": true }
+      ],
       "children": [
-        { "name": "btn", "components": [
-          { "type": "scn.Transform2D", "x": -32.0, "y": -32.0 },
-          { "type": "scn.Button", "x": 0.0, "y": 0.0, "width": 96.0, "height": 96.0, "z": 0, "label": "B" } ] }
-      ] }
+        {
+          "name": "inner",
+          "components": [
+            { "type": "scn.Transform2D", "x": 40.0, "y": 40.0 },
+            { "type": "ui.Control", "offset_max": { "x": 40.0, "y": 40.0 } },
+            { "type": "ui.Mask", "invert": true, "clip_children": true }
+          ],
+          "children": [
+            {
+              "name": "hit_btn",
+              "components": [
+                { "type": "scn.Transform2D", "x": -40.0, "y": -40.0 },
+                { "type": "scn.Button", "x": 0.0, "y": 0.0, "width": 200.0, "height": 200.0,
+                  "z": 0, "label": "HIT", "r": 0.9, "g": 0.2, "b": 0.2 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "self_mask",
+      "components": [
+        { "type": "scn.Transform2D", "x": 300.0, "y": 200.0 },
+        { "type": "ui.Control", "offset_max": { "x": 80.0, "y": 80.0 } },
+        { "type": "ui.Mask", "clip_children": false },
+        { "type": "scn.Button", "x": -20.0, "y": -20.0, "width": 120.0, "height": 120.0,
+          "z": 0, "label": "SELF", "r": 0.2, "g": 0.9, "b": 0.2 }
+      ],
+      "children": [
+        {
+          "name": "child_btn",
+          "components": [
+            { "type": "scn.Transform2D", "x": 80.0, "y": 0.0 },
+            { "type": "scn.Button", "x": 0.0, "y": 0.0, "width": 80.0, "height": 80.0,
+              "z": 0, "label": "CHILD", "r": 0.2, "g": 0.2, "b": 0.9 }
+          ]
+        }
+      ]
+    }
   ]
 }

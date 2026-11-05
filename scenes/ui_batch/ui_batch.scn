@@ -5,6 +5,28 @@
   "seed": 23,
   "entities": [
     {
+      "name": "girl_bg",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 640.0,
+            "y": 360.0
+          },
+          "z_index": -100
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/girl.png"
+        }
+      ]
+    },
+    {
       "name": "btn_0_0",
       "components": [
         {

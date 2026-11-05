@@ -484,7 +484,9 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     # 每个特性一个独立 scene + 独立 CTest；MODE 只跑对应 scene。
     foreach(_ui_case nine_patch_scene_e2e:nine ui_mask_normal_scene_e2e:normal
                      ui_mask_reverse_scene_e2e:reverse nine_patch_mask_scene_e2e:nine_mask
-                     ui_mask_hit_scene_e2e:hit)
+                     ui_mask_hit_scene_e2e:hit
+                     nine_patch_gallery_scene_e2e:nine_gallery
+                     ui_mask_gallery_scene_e2e:mask_gallery)
         string(REPLACE ":" ";" _ui_pair "${_ui_case}")
         list(GET _ui_pair 0 _ui_name)
         list(GET _ui_pair 1 _ui_mode)

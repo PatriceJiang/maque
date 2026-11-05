@@ -4553,7 +4553,8 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                     const float A = (float)dv->uiAtlas.size();
                     const float sw = (float)src_tex->width, sh = (float)src_tex->height;
                     float u0 = s.uv0, v0 = s.uv1, u1 = s.uv2, v1 = s.uv3;
-                    if (!(u1 > u0 && v1 > v0)) { u0 = 0.0F; v0 = 0.0F; u1 = 1.0F; v1 = 1.0F; }
+                    /* 退化 = 零尺寸；反向 UV（u1<u0）是合法的 flip，不能当“整图”重置。 */
+                    if (u1 == u0 || v1 == v0) { u0 = 0.0F; v0 = 0.0F; u1 = 1.0F; v1 = 1.0F; }
                     GpuInst& in = item_insts[i];
                     in.uv[0] = ((float)reg->x + u0 * sw) / A;
                     in.uv[1] = ((float)reg->y + v0 * sh) / A;

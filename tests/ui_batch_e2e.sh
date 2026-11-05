@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # UI drawcall 合批端到端（docs/13 §2D/UI；实现 modules/render/gfx/src/ui_batch.{h,cpp}）。
 # 场景 scenes/ui_batch/ui_batch.scn：4×4 按钮 + 每个按钮上的文字 + 标题（另一字号图集）
-#   + 一组"面板压在文字上"的顺序反转用例。
+#   + 一组"面板压在文字上"的顺序反转用例 + 1024×1536 girl.png 全屏底层（大图不进图集）。
 #   ① 分组开启：items 很多、draws 很少（按渲染状态分组）
 #   ② 对照组 MAQUE_UI_BATCH=0（画家序）：draws 明显更多
 #   ③ **A/B 逐字节一致**：分组只改提交顺序，不改像素（顺序安全保证的最终判据）

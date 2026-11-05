@@ -404,7 +404,8 @@ tools\win\build.cmd -Sanitize address -RunTests
     （默认 0，在文字 z=100+ 之下）。**九宫格已实现**：`nine_patch_margin` `{左,上,右,下}` 按
     **源图像素**解释，提取期展开成最多 9 个同贴图/同裁剪图元 → 原子级合批（9 块仍是一次
     drawcall；进 UI 图集后也一样）。目标过小时边距按比例压缩，角不重叠；`flip_h/v` 镜像
-    中心与 UV。`KeepAspect* / Tile` 仍未实现（按 Scale）。
+    中心与 UV（textured shader 允许 `uv.z < uv.x` 表示反向采样，不再把 flip 当“整图”）。
+    `KeepAspect* / Tile` 仍未实现（按 Scale）。
   - **UIMask / ClippingNode（`ui.Mask`，与 `ui.Control` 同挂）**：P0 支持 `MaskMode::Rect` +
     `clip_children` + **`invert`（reverse）**。裁剪不是 stencil：提取期把可见区表示为**矩形集合**
     （普通 Mask 求交；reverse 把矩形差集切成上/下/左/右最多 4 块），每个图元只带一个裁剪矩形，
@@ -414,9 +415,14 @@ tools\win\build.cmd -Sanitize address -RunTests
     命中测试用同一矩形集合：洞内 `ui_hit_at=-1`。`mask_mode` 的圆角/纹理/stencil、`feather`
     尚未实现（当前按矩形处理）。图元 ABI 追加 `clip_x/y/w/h`（设计坐标，屏幕 y 向下），
     渲染器 v2 → **v3**（`maque.renderer.v3`）。测试场景**按特性独立**：
-    `scenes/ui_patch/{nine_patch,mask_normal,mask_reverse,nine_patch_mask,mask_hit}.scn`，
+    `scenes/ui_patch/{nine_patch,nine_patch_gallery,mask_normal,mask_reverse,mask_gallery,nine_patch_mask,mask_hit}.scn`，
+    mask 子图统一用本目录的 `girl.png`（1024×1536 大图，不进 UI 图集）；
     CTest 分别为 `nine_patch_scene_e2e` / `ui_mask_{normal,reverse}_scene_e2e` /
-    `nine_patch_mask_scene_e2e` / `ui_mask_hit_scene_e2e`；聚合回归 `ui_mask_nine_e2e`。
+    `nine_patch_mask_scene_e2e` / `ui_mask_hit_scene_e2e`；另有用法对比
+    `nine_patch_gallery_scene_e2e`（尺寸/翻转/region/无 Control/合批）与
+    `ui_mask_gallery_scene_e2e`（normal/reverse/nested/clip_self/button/text）；
+    `ui_batch.scn` / `ui_atlas.scn` 也各挂一张本目录的 `girl.png`（大图不进图集）。
+    聚合回归 `ui_mask_nine_e2e`。
 - **性能分析 Tracy（docs/29）**：默认**零开销**（客户端手动启动，普通运行不监听端口/不占线程）；
   游戏里 **F3** 启动客户端并拉起 profiler GUI，或 `MAQUE_TRACY=1` 启动即开（等外部连）。
   GUI/CLI 二进制不入库：Windows 跑 `tools/tracy/get-profiler.ps1` 下载官方包；

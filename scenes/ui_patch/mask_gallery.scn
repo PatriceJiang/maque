@@ -1,0 +1,333 @@
+{
+  "title": "UIMask usages gallery",
+  "width": 640,
+  "height": 360,
+  "seed": 12,
+  "entities": [
+    {
+      "name": "bg",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 320.0,
+          "y": 180.0
+        },
+        {
+          "type": "scn.Sprite",
+          "width": 640.0,
+          "height": 360.0,
+          "r": 0.05,
+          "g": 0.06,
+          "b": 0.08
+        }
+      ]
+    },
+    {
+      "name": "m_normal",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 20.0,
+          "y": 220.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        {
+          "type": "ui.Mask",
+          "invert": false,
+          "clip_children": true
+        }
+      ],
+      "children": [
+        {
+          "name": "normal_img",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": -30.0,
+              "y": -30.0
+            },
+            {
+              "type": "ui.Control",
+              "offset_max": {
+                "x": 160.0,
+                "y": 160.0
+              }
+            },
+            {
+              "type": "ui.Image",
+              "texture": "textures/girl.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "m_reverse",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 200.0,
+          "y": 220.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 100.0,
+            "y": 100.0
+          }
+        },
+        {
+          "type": "ui.Mask",
+          "invert": true,
+          "clip_children": true
+        }
+      ],
+      "children": [
+        {
+          "name": "reverse_img",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": -30.0,
+              "y": -30.0
+            },
+            {
+              "type": "ui.Control",
+              "offset_max": {
+                "x": 160.0,
+                "y": 160.0
+              }
+            },
+            {
+              "type": "ui.Image",
+              "texture": "textures/girl.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "m_outer",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 380.0,
+          "y": 200.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 120.0,
+            "y": 120.0
+          }
+        },
+        {
+          "type": "ui.Mask",
+          "invert": false,
+          "clip_children": true
+        }
+      ],
+      "children": [
+        {
+          "name": "m_inner",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 36.0,
+              "y": 36.0
+            },
+            {
+              "type": "ui.Control",
+              "offset_max": {
+                "x": 48.0,
+                "y": 48.0
+              }
+            },
+            {
+              "type": "ui.Mask",
+              "invert": true,
+              "clip_children": true
+            }
+          ],
+          "children": [
+            {
+              "name": "nested_img",
+              "components": [
+                {
+                  "type": "scn.Transform2D",
+                  "x": -40.0,
+                  "y": -96.0
+                },
+                {
+                  "type": "ui.Control",
+                  "offset_max": {
+                    "x": 200.0,
+                    "y": 200.0
+                  }
+                },
+                {
+                  "type": "ui.Image",
+                  "texture": "textures/girl.png"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "m_self",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 20.0,
+          "y": 60.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 80.0,
+            "y": 80.0
+          }
+        },
+        {
+          "type": "ui.Mask",
+          "invert": false,
+          "clip_children": false
+        },
+        {
+          "type": "scn.Button",
+          "x": -40.0,
+          "y": -40.0,
+          "width": 160.0,
+          "height": 160.0,
+          "z": 0,
+          "label": "S",
+          "r": 0.9,
+          "g": 0.25,
+          "b": 0.25
+        }
+      ],
+      "children": [
+        {
+          "name": "self_child",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 80.0,
+              "y": 0.0
+            },
+            {
+              "type": "ui.Control",
+              "offset_max": {
+                "x": 80.0,
+                "y": 80.0
+              }
+            },
+            {
+              "type": "ui.Image",
+              "texture": "textures/girl.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "m_button",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 200.0,
+          "y": 100.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 40.0,
+            "y": 40.0
+          }
+        },
+        {
+          "type": "ui.Mask",
+          "invert": false,
+          "clip_children": true
+        }
+      ],
+      "children": [
+        {
+          "name": "clip_btn",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": -20.0,
+              "y": -20.0
+            },
+            {
+              "type": "scn.Button",
+              "x": 0.0,
+              "y": 0.0,
+              "width": 160.0,
+              "height": 40.0,
+              "z": 0,
+              "label": "B",
+              "r": 0.9,
+              "g": 0.2,
+              "b": 0.2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "m_text",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 380.0,
+          "y": 116.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 100.0,
+            "y": 24.0
+          }
+        },
+        {
+          "type": "ui.Mask",
+          "invert": false,
+          "clip_children": true
+        }
+      ],
+      "children": [
+        {
+          "name": "clip_label",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 0.0,
+              "y": 24.0
+            },
+            {
+              "type": "scn.Label",
+              "x": 0.0,
+              "y": 0.0,
+              "text": "MASK",
+              "font_size": 32.0,
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
