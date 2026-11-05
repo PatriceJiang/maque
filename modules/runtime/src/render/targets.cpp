@@ -97,10 +97,9 @@ void Engine::sync_render_textures() {
         SceneNode* e = scene->at(id);
         if (!e) continue;
         std::vector<uint8_t>& blob = e->comps[rtd->type_id];
-        const mq_type_desc* dummy = nullptr;
-        const bool has3d_camera = comp_by_name(*this, id, "render.Camera3D", &dummy) != nullptr;
-        const bool has2d_camera = comp_by_name(*this, id, "render.Camera2D", &dummy) != nullptr ||
-                                  comp_by_name(*this, id, "scn.Camera", &dummy) != nullptr;
+        const bool has3d_camera = component<render::Camera3D>(*e) != nullptr;
+        const bool has2d_camera = component<render::Camera2D>(*e) != nullptr ||
+                                  component<scn::Camera>(*e) != nullptr;
         auto* rtc = as_component_mut<render::RenderTexture>(rtd, blob.data());
         if (!rtc) continue;
         std::string name = rtc->name.empty() ? e->name : rtc->name;
@@ -211,10 +210,10 @@ void Engine::setup_3d() {
     if (!scene) return;
     int n_cam = 0, n_mesh = 0, n_light = 0;
     for (auto& kv : scene->nodes) {
-        const mq_type_desc* d = nullptr;
-        if (comp_by_name(*this, kv.first, "render.Camera3D", &d)) ++n_cam;
-        if (comp_by_name(*this, kv.first, "render.MeshRenderer", &d)) ++n_mesh;
-        if (comp_by_name(*this, kv.first, "render.Light", &d)) ++n_light;
+        SceneNode& node = kv.second;
+        if (component<render::Camera3D>(node)) ++n_cam;
+        if (component<render::MeshRenderer>(node)) ++n_mesh;
+        if (component<render::Light>(node)) ++n_light;
     }
     if (!n_cam && !n_mesh) return;
     has_3d = true;
@@ -250,10 +249,8 @@ bool Engine::make_camera_view2d(int entity, int width, int height, mq_renderer_v
     if (layer_mask) *layer_mask = 0xFFFFFFFFu;
     view = mq_renderer_view{};
     view.vw = (float)width; view.vh = (float)height;
-    const mq_type_desc* d = nullptr;
-    if (auto* b = comp_by_name(*this, entity, "render.Camera2D", &d); b && d) {
-        const auto* cam = as_component<render::Camera2D>(d, b->data());
-        if (!cam || !cam->active) return false;
+    if (const auto* cam = component<render::Camera2D>(*e)) {
+        if (!cam->active) return false;
         const math::Vec2 zoom = cam->zoom;
         const math::Vec2 offset = cam->offset;
         const math::Rect viewport = cam->viewport;
@@ -281,15 +278,13 @@ bool Engine::make_camera_view2d(int entity, int width, int height, mq_renderer_v
         view.rot = angle * 3.14159265358979323846F / 180.0F;
         return true;
     }
-    if (auto* b = comp_by_name(*this, entity, "scn.Camera", &d); b && d) {
-        if (read_num(d, b->data(), "active", 1.0F) < 0.5F) return false;
-        const float x = read_num(d, b->data(), "x", e->world_x);
-        const float y = read_num(d, b->data(), "y", e->world_y);
-        view.cx = x;
-        view.cy = (float)H - y;
-        view.zoom = std::max(read_num(d, b->data(), "zoom", 1.0F), 1e-5F);
+    if (const auto* cam = component<scn::Camera>(*e)) {
+        if (!cam->active) return false;
+        view.cx = cam->x;
+        view.cy = (float)H - cam->y;
+        view.zoom = std::max(cam->zoom, 1e-5F);
         view.zoom_y = view.zoom;
-        view.rot = read_num(d, b->data(), "rotation", 0.0F);
+        view.rot = cam->rotation;
         return true;
     }
     return false;
@@ -422,20 +417,13 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
         std::unordered_set<size_t> deps;
         uint32_t dep_2d_mask = 0xFFFFFFFFu;
         uint32_t dep_3d_mask = 0xFFFFFFFFu;
+        SceneNode* te = scene->at(render_textures[i].entity);
         if (!render_textures[i].is_3d) {
-            const mq_type_desc* camera_desc = nullptr;
-            if (auto* camera = comp_by_name(*this, render_textures[i].entity, "render.Camera2D", &camera_desc);
-                camera && camera_desc) {
-                if (const auto* cam = as_component<render::Camera2D>(camera_desc, camera->data()))
-                    dep_2d_mask = cam->layer_mask;
-            }
+            if (const auto* cam = te ? component<render::Camera2D>(*te) : nullptr)
+                dep_2d_mask = cam->layer_mask;
         } else {
-            const mq_type_desc* camera_desc = nullptr;
-            if (auto* camera = comp_by_name(*this, render_textures[i].entity, "render.Camera3D", &camera_desc);
-                camera && camera_desc) {
-                if (const auto* cam = as_component<render::Camera3D>(camera_desc, camera->data()))
-                    dep_3d_mask = cam->culling_mask;
-            }
+            if (const auto* cam = te ? component<render::Camera3D>(*te) : nullptr)
+                dep_3d_mask = cam->culling_mask;
         }
         auto consider = [&](int32_t texture, int layer) {
             if (texture < 0 || layer < 0 || layer > (render_textures[i].include_ui ? 1 : 0)) return;
@@ -453,13 +441,10 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             }
             /* 3D 材质在 per-camera extract_3d 中生成；这里直接扫描 PBR 的字符串贴图槽，
              * 把 rendertexture:// 引用提前加入 pass 依赖。 */
-            for (const auto& [eid, ent] : scene->nodes) for (const auto& [tid, blob] : ent.comps) {
+            for (auto& [eid, ent] : scene->nodes) for (const auto& [tid, blob] : ent.comps) {
                 const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
                 if (!d || std::strcmp(d->name, "asset.PbrMaterial") != 0) continue;
-                const mq_type_desc* mesh_desc = nullptr;
-                auto* mesh_blob = comp_by_name(*this, eid, "render.MeshRenderer", &mesh_desc);
-                const auto* mesh = (mesh_blob && mesh_desc)
-                    ? as_component<render::MeshRenderer>(mesh_desc, mesh_blob->data()) : nullptr;
+                const auto* mesh = component<render::MeshRenderer>(ent);
                 if (!mesh || !node_active_effective(*this, eid) || !mesh->visible) continue;
                 const uint32_t mesh_mask = mesh->culling_mask;
                 if ((mesh_mask & dep_3d_mask) == 0) continue;
@@ -505,9 +490,9 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
                                              [&](const CameraCaptureRequest& r) { return r.entity == rt.entity; });
         if ((!rt.enabled && !capture_due) || !node_active_effective(*this, rt.entity)) continue;
         if (rt.update_mode != 0 && !rt.dirty) continue;
-        const mq_type_desc* rtd = nullptr;
-        auto* rtb = comp_by_name(*this, rt.entity, "render.RenderTexture", &rtd);
-        if (!rtb || !rtd) continue;
+        SceneNode* rt_node = scene->at(rt.entity);
+        const auto* rtc = rt_node ? component<render::RenderTexture>(*rt_node) : nullptr;
+        if (!rtc) continue;
         mq_renderer_frame3d fr{};
         fr.width = rt.width; fr.height = rt.height;
         fr.env.sky_texture = fr.env.env_texture = fr.env.env_irradiance_texture = -1;
@@ -517,8 +502,7 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
          * 2D 分支会退回 1x：多采样只作用于 3D pass，2D 图元层恒单采样（见下）。 */
         const int rt_msaa = resolve_msaa(rt.msaa_samples, true);
         fr.msaa_samples = rt_msaa;
-        math::Color cc{};
-        read_color(rtd, rtb->data(), "clear_color", &cc);
+        const math::Color& cc = rtc->clear_color;
         fr.bg[0] = cc.r; fr.bg[1] = cc.g; fr.bg[2] = cc.b; fr.bg[3] = cc.a;
 
         std::vector<mq_renderer_item> target_items;
@@ -536,11 +520,8 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
                 }
                 fr.msaa_samples = 1;
             }
-            const mq_type_desc* camera2d_desc = nullptr;
-            if (auto* camera2d = comp_by_name(*this, rt.entity, "render.Camera2D", &camera2d_desc);
-                camera2d && camera2d_desc) {
-                math::Color camera_clear{};
-                read_color(camera2d_desc, camera2d->data(), "clear_color", &camera_clear);
+            if (const auto* camera2d = rt_node ? component<render::Camera2D>(*rt_node) : nullptr) {
+                const math::Color& camera_clear = camera2d->clear_color;
                 fr.bg[0] = camera_clear.r; fr.bg[1] = camera_clear.g;
                 fr.bg[2] = camera_clear.b; fr.bg[3] = camera_clear.a;
             }
@@ -593,9 +574,9 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
         rt.ready = true;
         rt.dirty = false;
         rt.last_frame = frame;
-        if (auto* rtc = as_component_mut<render::RenderTexture>(rtd, rtb->data())) {
-            rtc->ready = true;
-            rtc->last_frame = (uint32_t)frame;
+        if (auto* mut = rt_node ? component<render::RenderTexture>(*rt_node) : nullptr) {
+            mut->ready = true;
+            mut->last_frame = (uint32_t)frame;
         }
     }
     for (const auto& req : camera_captures) {
