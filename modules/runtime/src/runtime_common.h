@@ -71,6 +71,12 @@ extern "C" void* mq_module_query(const char* name, uint32_t min_version);
 #include <chrono>
 #if __has_include(<zlib.h>)
 #include <zlib.h>
+/* zlib 的 zconf.h 在部分平台（Android NDK）**无条件** `#define far`（16 位时代遗留）。
+ * 生成类型 render::Camera3D 有字段 `far`（schema/render/render.yaml），宏会让
+ * `cam->far` 展开成 `cam->` 直接编译失败；这里用完即撤销，别把宏泄漏给引擎代码。 */
+#ifdef far
+#  undef far
+#endif
 #define MQ_RUNTIME_HAVE_ZLIB 1
 #endif
 #include <thread>
