@@ -98,6 +98,7 @@ void Engine::clear_asset_caches() {
         for (const auto& pr : gm.prims) mesh_stats.erase(pr.mesh);
     /* cube_mesh 跨场景保留，其 stats 也保留；其余句柄随缓存销毁同步失效。 */
     tex_cache.clear();
+    tex_size_cache.clear();
     material_cache.clear();
     mesh_cache.clear();
     env_tex_cache.clear();
@@ -144,6 +145,15 @@ void Engine::preload_scene_assets() {
                     material_cache[sp->material] = m;
                     if (!m.texture.empty()) load_texture_ref(scoped_texture_ref(id, m.texture));
                 }
+            }
+        }
+        /* UI 图片（ui.Image）：走独立通道（create_texture2 → 可进 UI 动态合图）；
+         * 装配期把贴图尺寸写回 transient 字段，没有 ui.Control 时用它当缺省大小。 */
+        if (auto* im = component<ui::Image>(*e)) {
+            if (!im->texture.empty()) {
+                int w = 0, h = 0;
+                if (load_ui_texture(scoped_texture_ref(id, im->texture), &w, &h) >= 0)
+                    im->texture_size = math::Vec2{ (float)w, (float)h };
             }
         }
         /* 3D PBR：把材质里所有文件贴图收集起来，装配期并行 decode+mip（GPU 上传仍主线程）。

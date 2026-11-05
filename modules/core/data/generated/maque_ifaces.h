@@ -39,6 +39,10 @@ typedef struct mq_renderer_item {
     float uv3;
     int32_t layer;
     int32_t z;
+    float clip_x;
+    float clip_y;
+    float clip_w;
+    float clip_h;
 } mq_renderer_item;
 
 typedef struct mq_renderer_mesh {
@@ -341,9 +345,9 @@ typedef struct mq_renderer_resource_usage {
     uint64_t other_bytes;
 } mq_renderer_resource_usage;
 
-#define MQ_RENDERER_API_NAME "maque.renderer.v2"
-#define MQ_RENDERER_API_VERSION 2u
-typedef struct mq_renderer_v2 {
+#define MQ_RENDERER_API_NAME "maque.renderer.v3"
+#define MQ_RENDERER_API_VERSION 3u
+typedef struct mq_renderer_v3 {
     mq_api_header header;
     void* (*create)(const char** out_backend);
     void (*destroy)(void* self);
@@ -372,4 +376,5 @@ typedef struct mq_renderer_v2 {
     int32_t (*create_shader_graph_pass)(void* self, const char* wgsl, int32_t* out_id);
     void (*destroy_shader_graph_pass)(void* self, int32_t id);
     int32_t (*create_shader_graph_target)(void* self, int32_t w, int32_t h, int32_t* out_id);
-} mq_renderer_v2;
+    uint32_t (*last_2d_batches)(void* self);
+} mq_renderer_v3;

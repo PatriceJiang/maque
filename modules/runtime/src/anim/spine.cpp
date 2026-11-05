@@ -27,7 +27,9 @@ static int spine_texture_cb(void* user, const char* page_name, const void* /*fil
     if (!cx || !cx->eng || !page_name || !*page_name || !out_texture) return MQ_SPINE_ERR_ARG;
     *out_texture = 0;
     const std::string path = cx->dir + page_name;
-    const int tex = cx->eng->load_texture(path);
+    /* spine 图集页**不参与自动合图**（骨骼用 mesh 图元，页纹理整页使用；
+     * 走 raw 通道 → gfx 不标记可打包）。 */
+    const int tex = cx->eng->load_texture_raw(path);
     if (tex < 0) {
         std::print(stderr, "runtime: spine atlas page read failed '{}'\n", path);
         return MQ_SPINE_ERR_PAGE;

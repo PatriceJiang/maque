@@ -83,3 +83,11 @@ if(MAQUE_ANDROID)
 endif()
 set_target_properties(maque_runtime PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
 target_include_directories(maque_runtime PUBLIC "${MAQUE_GEN_DIR}")
+
+# 9-patch 纯几何单测（不依赖 wgpu/窗口/Engine）。
+if(MAQUE_BUILD_TESTS)
+    add_executable(maque_nine_patch_test tests/nine_patch_test.cpp)
+    target_include_directories(maque_nine_patch_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    set_target_properties(maque_nine_patch_test PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+    add_test(NAME nine_patch COMMAND maque_nine_patch_test)
+endif()

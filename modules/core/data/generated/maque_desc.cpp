@@ -4889,6 +4889,8 @@ static const mq_field_desc mq_fields_ui_FlexItem[] = {
     { "max_main", (uint32_t)offsetof(ui::FlexItem, max_main), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_FlexItem[7] },
 };
 
+static const char* mq_acc_ui_Image_texture_gets(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return s.texture.c_str(); }
+static void mq_acc_ui_Image_texture_sets(void* p, const char* v) { auto& s = *static_cast<ui::Image*>(p); s.texture = v ? v : ""; }
 static const void* mq_acc_ui_Image_texture_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.texture; }
 static void* mq_acc_ui_Image_texture_getmp(void* p) { auto& s = *static_cast<ui::Image*>(p); return &s.texture; }
 static const void* mq_acc_ui_Image_region_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.region; }
@@ -4908,7 +4910,7 @@ static void* mq_acc_ui_Image_nine_patch_margin_getmp(void* p) { auto& s = *stati
 static const void* mq_acc_ui_Image_texture_size_getp(const void* p) { const auto& s = *static_cast<const ui::Image*>(p); return &s.texture_size; }
 static void* mq_acc_ui_Image_texture_size_getmp(void* p) { auto& s = *static_cast<ui::Image*>(p); return &s.texture_size; }
 static const mq_field_accessor mq_acc_ui_Image[] = {
-    { 0, 0, 0, 0, mq_acc_ui_Image_texture_getp, mq_acc_ui_Image_texture_getmp },
+    { 0, 0, mq_acc_ui_Image_texture_gets, mq_acc_ui_Image_texture_sets, mq_acc_ui_Image_texture_getp, mq_acc_ui_Image_texture_getmp },
     { 0, 0, 0, 0, mq_acc_ui_Image_region_getp, mq_acc_ui_Image_region_getmp },
     { 0, 0, 0, 0, mq_acc_ui_Image_modulate_getp, mq_acc_ui_Image_modulate_getmp },
     { mq_acc_ui_Image_stretch_mode_getf, mq_acc_ui_Image_stretch_mode_setf, 0, 0, 0, 0 },
@@ -4919,7 +4921,7 @@ static const mq_field_accessor mq_acc_ui_Image[] = {
     { 0, 0, 0, 0, mq_acc_ui_Image_texture_size_getp, mq_acc_ui_Image_texture_size_getmp },
 };
 static const mq_field_desc mq_fields_ui_Image[] = {
-    { "texture", (uint32_t)offsetof(ui::Image, texture), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[0] },
+    { "texture", (uint32_t)offsetof(ui::Image, texture), MQ_TK_STRING, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[0] },
     { "region", (uint32_t)offsetof(ui::Image, region), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[1] },
     { "modulate", (uint32_t)offsetof(ui::Image, modulate), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[2] },
     { "stretch_mode", (uint32_t)offsetof(ui::Image, stretch_mode), MQ_TK_ENUM, 2031275343u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_Image[3] },
@@ -9595,7 +9597,7 @@ extern const mq_type_desc mq_type_ui_Image = {
     (uint32_t)alignof(ui::Image),
     9u,
     mq_fields_ui_Image,
-    2u,
+    4u,
     0u,
     0,
     0u,
@@ -9638,7 +9640,7 @@ extern const mq_type_desc mq_type_ui_Mask = {
     10u,
     mq_fields_ui_Mask,
     2u,
-    0u,
+    MQ_ROLE_UI_MASK,
     0,
     0u,
     mq_defaults_ui_Mask,

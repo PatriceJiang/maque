@@ -460,6 +460,47 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_CURRENT_BINARY_DIR}/ui_e2e")
 endif()
 
+# UI drawcall 合批（docs/13 §2D/UI；modules/render/gfx/src/ui_batch.*）：
+# 分组将 items 拍到少数几批，且与画家序参考渲染**逐字节一致**（顺序安全），另含确定性。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME ui_batch_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_batch_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ui_batch/ui_batch.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/ui_batch_e2e")
+endif()
+
+# UI 动态合图（docs/13 §2D/UI；modules/render/gfx/src/ui_atlas.*）：
+# ui.Image 小图并进预分配 1024² → draw 下降；**字体图集不进 UI 图集**；A/B 像素逐字节一致。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    add_test(NAME ui_atlas_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_atlas_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ui_batch/ui_atlas.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/ui_atlas_e2e")
+endif()
+
+# 9-patch（ui.Image）+ UIMask（ui.Mask Rect/invert）+ 命中裁剪：
+# 9 块必须合成一次 draw；reverse 用“可见矩形差集”实现（不依赖 stencil），洞内不命中。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
+    # 每个特性一个独立 scene + 独立 CTest；MODE 只跑对应 scene。
+    foreach(_ui_case nine_patch_scene_e2e:nine ui_mask_normal_scene_e2e:normal
+                     ui_mask_reverse_scene_e2e:reverse nine_patch_mask_scene_e2e:nine_mask
+                     ui_mask_hit_scene_e2e:hit)
+        string(REPLACE ":" ";" _ui_pair "${_ui_case}")
+        list(GET _ui_pair 0 _ui_name)
+        list(GET _ui_pair 1 _ui_mode)
+        add_test(NAME ${_ui_name} COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_mask_nine_e2e.sh"
+                 $<TARGET_FILE:maque_player>
+                 "${CMAKE_SOURCE_DIR}/scenes/ui_patch"
+                 "${CMAKE_CURRENT_BINARY_DIR}/${_ui_name}"
+                 "${_ui_mode}")
+    endforeach()
+    add_test(NAME ui_mask_nine_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_mask_nine_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ui_patch"
+             "${CMAKE_CURRENT_BINARY_DIR}/ui_mask_nine_e2e"
+             all)
+endif()
+
 # 热重载端到端（docs/08/14）：运行中改脚本 → 帧边界重载 → 世界演化与基线逐帧一致
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     add_test(NAME hot_reload_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/hot_reload_e2e.sh"

@@ -1,0 +1,225 @@
+{
+  "title": "UI 动态合图（ui.Image → 1024² 图集，与字体图集分开）",
+  "width": 640,
+  "height": 360,
+  "seed": 31,
+  "entities": [
+    {
+      "name": "bg",
+      "components": [
+        {
+          "type": "scn.Sprite",
+          "width": 640.0,
+          "height": 360.0,
+          "r": 0.07,
+          "g": 0.08,
+          "b": 0.12
+        }
+      ]
+    },
+    {
+      "name": "icon_red",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 40.0,
+          "y": 290.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 24.0,
+            "y": 24.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/icon_red.png"
+        }
+      ]
+    },
+    {
+      "name": "icon_green",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 90.0,
+          "y": 290.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 24.0,
+            "y": 24.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/icon_green.png"
+        }
+      ]
+    },
+    {
+      "name": "icon_blue",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 140.0,
+          "y": 290.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 24.0,
+            "y": 24.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/icon_blue.png"
+        }
+      ]
+    },
+    {
+      "name": "panel",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 190.0,
+          "y": 290.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 48.0,
+            "y": 24.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/panel.png"
+        }
+      ]
+    },
+    {
+      "name": "icon_blue_big",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 60.0,
+          "y": 180.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 48.0,
+            "y": 48.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/icon_blue.png"
+        }
+      ]
+    },
+    {
+      "name": "panel_big",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 160.0,
+          "y": 180.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 96.0,
+            "y": 48.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/panel.png"
+        }
+      ]
+    },
+    {
+      "name": "panel_region",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 300.0,
+          "y": 180.0
+        },
+        {
+          "type": "ui.Control",
+          "offset_max": {
+            "x": 96.0,
+            "y": 48.0
+          }
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/panel.png",
+          "region": {
+            "x": 0.5,
+            "y": 0.0,
+            "z": 1.0,
+            "w": 1.0
+          },
+          "flip_h": true
+        }
+      ]
+    },
+    {
+      "name": "hint",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 40.0,
+          "y": 340.0,
+          "z": 0,
+          "text": "UI ATLAS 1024x1024",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "icon_no_control",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 400.0,
+          "y": 290.0
+        },
+        {
+          "type": "ui.Image",
+          "texture": "textures/icon_green.png"
+        }
+      ]
+    },
+    {
+      "name": "world_icon",
+      "components": [
+        {
+          "type": "scn.Transform2D",
+          "x": 520.0,
+          "y": 290.0
+        },
+        {
+          "type": "scn.Sprite",
+          "width": 24.0,
+          "height": 24.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "texture": "textures/icon_red.png"
+        }
+      ]
+    }
+  ]
+}

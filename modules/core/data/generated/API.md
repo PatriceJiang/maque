@@ -461,12 +461,12 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 
 跨 `.so` 的唯一函数表；宿主经 `maque::module`(dlopen) 加载并校验版本/结构大小。
 
-### renderer v2 — `maque.renderer.v2`
+### renderer v3 — `maque.renderer.v3`
 
 记录（POD）：
 
 - `view`：vx: float, vy: float, vw: float, vh: float, pan: float, eye: float, cx: float, cy: float, zoom: float, rot: float, zoom_y: float
-- `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t
+- `item`：x: float, y: float, size: float, r: float, g: float, b: float, a: float, texture: int32_t, rotation: float, half_w: float, half_h: float, filter: int32_t, snap: int32_t, uv0: float, uv1: float, uv2: float, uv3: float, layer: int32_t, z: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float
 - `mesh`：vertices: const float*, uvs: const float*, colors: const float*, dark_colors: const float*, indices: const uint32_t*, vertex_count: uint32_t, first_index: uint32_t, index_count: uint32_t, base_vertex: uint32_t, texture: int32_t, blend: int32_t, pma: int32_t, layer: int32_t, clip_x: float, clip_y: float, clip_w: float, clip_h: float, z: int32_t
 - `window`：kind: int32_t, display: void*, handle: void*, extra: void*, width: int32_t, height: int32_t
 - `caps`：max_texture_size: int32_t, max_lights: int32_t, max_samples: int32_t, target_format: int32_t, depth_format: int32_t, direct_present: int32_t, hdr: int32_t, reserved: int32_t
@@ -516,6 +516,7 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `create_shader_graph_pass` | self: self, wgsl: const char*, out_id: int32_t* | int32_t |
 | `destroy_shader_graph_pass` | self: self, id: int32_t | void |
 | `create_shader_graph_target` | self: self, w: int32_t, h: int32_t, out_id: int32_t* | int32_t |
+| `last_2d_batches` | self: self | uint32_t |
 
 ## 5. 模块 C ABI（module_abi）
 

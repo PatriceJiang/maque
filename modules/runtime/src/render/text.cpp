@@ -121,7 +121,8 @@ int Engine::glyph_texture(const mq_font* f, float size) {
 /* 文本提取（docs/13 §8：只读）：排版后逐字形提交 quad。
  * 支持 scn.Label（扁平字段）与 ui.TextLabel / ui.RichText（字段）。 */
 void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc* d,
-                          std::vector<mq_renderer_item>& out, float inherit_alpha) {
+                          std::vector<mq_renderer_item>& out, float inherit_alpha,
+                          const ClipSet& clip) {
     std::string text, font_path_comp;
     float size = 16.0F, r = 1, g = 1, b = 1, a = 1, max_w = 0, max_h = 0, line_spacing = 0;
     int align = 0, wrap = 0, overflow = 0;
@@ -284,7 +285,21 @@ void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc
         q.half_w = half_w; q.half_h = half_h;
         q.r = cr; q.g = cg; q.b = cb; q.a = ca;
         q.z = 100 + zi;
-        eng.pending_quads.push_back(q);
+        /* 裁剪：reverse Mask 可能给出多个互不重叠的可见矩形 → 同一字形按矩形各推一份。
+         * 字形是像素对齐的矩形，scissor 会裁出硬边（与 UI 其余图元一致）。 */
+        if (clip.active) {
+            if (clip.rects.empty()) return;
+            for (const ClipRect& r : clip.rects) {
+                PendingQuad qc = q;
+                qc.clip_x = r.x0;
+                qc.clip_y = (float)eng.H - r.y1;
+                qc.clip_w = r.x1 - r.x0;
+                qc.clip_h = r.y1 - r.y0;
+                eng.pending_quads.push_back(qc);
+            }
+        } else {
+            eng.pending_quads.push_back(q);
+        }
     };
     /* 描边：8 方向 × rings 环（ring 半径按 outline_size 均分；上限 8 环防止极端参数爆量）。
      * 用同一字形位图多次偏移绘制（描边色只取 alpha），确定性且与图集无关。 */
@@ -343,6 +358,8 @@ void Engine::text_flush(std::vector<mq_renderer_item>& out) {
         it.uv2 = (float)(q.ax + q.tw) / (float)aw;
         it.uv3 = (float)(q.ay + q.th) / (float)ah;
         it.layer = 1; it.z = q.z;
+        it.clip_x = q.clip_x; it.clip_y = q.clip_y;
+        it.clip_w = q.clip_w; it.clip_h = q.clip_h;
         out.push_back(it);
     }
     int traced = 0;

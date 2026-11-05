@@ -1287,7 +1287,7 @@ struct FlexItem {
 };
 
 struct Image {
-    maque::AssetRef texture;
+    std::string texture = "";
     math::Vec4 region;
     math::Vec4 modulate = {1.0F, 1.0F, 1.0F, 1.0F};
     ui::StretchMode stretch_mode = StretchMode::Scale;

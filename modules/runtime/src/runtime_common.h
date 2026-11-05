@@ -42,7 +42,7 @@
 #include "maque_api.h"                 // 生成：host:: 声明（api_list）
 #include "maque_ifaces.h"
 #include "maque_control.h"
-#include "maque_events.h"                 // 生成：mq_renderer_v2（插件接口 ABI）
+#include "maque_events.h"                 // 生成：mq_renderer_v3（插件接口 ABI）
 #include "core/module/mq_module.h"          // mq_host（dlopen 加载插件）
 #ifdef MQ_RENDERER_STATIC_NULL
 #include "render/null/mq_renderer_null.h"
@@ -93,7 +93,7 @@ namespace maque::rt {
 namespace fs = std::filesystem;
 
 #define MQ_RENDERER_HAS(api, member) \
-    ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v2, member) + sizeof((api)->member) && \
+    ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v3, member) + sizeof((api)->member) && \
      (api)->member)
 
 /* 组件槽：map key（type_id）+ **描述符缓存** + 字节存储。
@@ -114,6 +114,74 @@ struct ComponentSlot {
     auto begin() const { return bytes.begin(); }
     auto end()   const { return bytes.end(); }
 };
+
+/* ---- UI 裁剪（ui.Mask / ClippingNode）----
+ * 矩形裁剪统一用**设计坐标**（世界 y 向上；提取时翻成屏幕 y 向下）。
+ * ClipSet = **可见矩形集合**：普通 Mask 做交，invert（reverse）做差。
+ * 差集把矩形切成最多 4 块 → 每块仍是一个 scissor；因此 reverse 不依赖 stencil，
+ * 也能与合批共存（同一块内的图元仍共享一次 drawcall）。
+ * 这样嵌套 reverse 也能精确表达（最多 4^深度 块；超上限退化为包围盒，宁可多画不丢内容）。 */
+struct ClipRect {
+    float x0 = 0.0F, y0 = 0.0F, x1 = 0.0F, y1 = 0.0F;
+    bool valid() const { return x1 > x0 && y1 > y0; }
+};
+struct ClipSet {
+    bool active = false;                 // false = 不裁剪（继承链上没有任何 Mask）
+    std::vector<ClipRect> rects;         // active && empty = 全裁掉
+    bool empty() const { return active && rects.empty(); }
+    bool contains(float x, float y) const {
+        if (!active) return true;
+        for (const ClipRect& r : rects)
+            if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) return true;
+        return false;
+    }
+};
+
+inline bool clip_intersect(const ClipRect& a, const ClipRect& b, ClipRect& out) {
+    out.x0 = std::max(a.x0, b.x0); out.y0 = std::max(a.y0, b.y0);
+    out.x1 = std::min(a.x1, b.x1); out.y1 = std::min(a.y1, b.y1);
+    return out.valid();
+}
+
+/* r - m：不重叠保持 r；重叠切成上/下/左/右四块（互不重叠、并集 = r \ m）。 */
+inline void clip_subtract(const ClipRect& r, const ClipRect& m, std::vector<ClipRect>& out) {
+    ClipRect ix{};
+    if (!clip_intersect(r, m, ix)) { out.push_back(r); return; }
+    if (m.y1 < r.y1) out.push_back(ClipRect{ r.x0, m.y1, r.x1, r.y1 });   // 上
+    if (m.y0 > r.y0) out.push_back(ClipRect{ r.x0, r.y0, r.x1, m.y0 });   // 下
+    if (m.x0 > r.x0) out.push_back(ClipRect{ r.x0, ix.y0, m.x0, ix.y1 }); // 左
+    if (m.x1 < r.x1) out.push_back(ClipRect{ m.x1, ix.y0, r.x1, ix.y1 }); // 右
+}
+
+inline ClipSet clip_apply(const ClipSet& parent, const ClipRect& mask, bool invert, float W, float H) {
+    ClipSet out;
+    out.active = true;
+    if (!invert) {
+        if (!parent.active) { if (mask.valid()) out.rects.push_back(mask); return out; }
+        for (const ClipRect& r : parent.rects) {
+            ClipRect ix{};
+            if (clip_intersect(r, mask, ix)) out.rects.push_back(ix);
+        }
+        return out;
+    }
+    /* reverse：可见 = 父可见区 - mask。没有父裁剪时以设计画布为全集。 */
+    if (!parent.active) {
+        ClipRect full{ 0.0F, 0.0F, W, H };
+        if (full.valid()) clip_subtract(full, mask, out.rects);
+        return out;
+    }
+    for (const ClipRect& r : parent.rects) clip_subtract(r, mask, out.rects);
+    /* 防御：嵌套 reverse 的块数理论上是 4^深度；超过 64 块退化为包围盒（多画、不丢内容）。 */
+    if (out.rects.size() > 64) {
+        ClipRect b = out.rects.front();
+        for (const ClipRect& r : out.rects) {
+            if (r.x0 < b.x0) b.x0 = r.x0; if (r.y0 < b.y0) b.y0 = r.y0;
+            if (r.x1 > b.x1) b.x1 = r.x1; if (r.y1 > b.y1) b.y1 = r.y1;
+        }
+        out.rects.assign(1, b);
+    }
+    return out;
+}
 
 /* 场景树节点（Node + Components）——**不是 ECS 实体**。
  * 层级是显式的 parent + 有序 children（升序 id = 声明/创建序），组件是反射 blob。
@@ -184,6 +252,28 @@ inline auto* component_of(SceneNode& n) {
 }
 template <class T>
 inline T* component(SceneNode& n) { return component_of<::mq::schema::type_id_v<T>>(n); }
+
+/* 计算节点自身/子树的裁剪集合（ui.Mask = ClippingNode）。
+ * 矩形来自同节点 ui.Control 的 offset_max（与 ui.Image 的左上角语义一致）。
+ * P0 只支持 Rect（mask_mode 的其他值先按矩形处理；圆角/纹理/stencil 后续版本）。 */
+inline void compute_ui_clip(SceneNode& e, const ClipSet& parent, float W, float H,
+                            ClipSet& self, ClipSet& kids) {
+    self = parent;
+    kids = parent;
+    const ui::Mask* mask = component<ui::Mask>(e);
+    if (!mask) return;
+    const ui::Control* ctl = component<ui::Control>(e);
+    if (!ctl) return;
+    /* 节点缩放与 ui.Image 的几何保持一致（Image 用 world_scale 缩放目标尺寸）。
+     * 旋转仍不参与（ui.Image 目前也不旋转）；P1 做 UI transform pass 时统一。 */
+    const float s = e.world_scale > 0.0F ? e.world_scale : 1.0F;
+    const float w = ctl->offset_max.x * s, h = ctl->offset_max.y * s;
+    if (!(w > 0.0F) || !(h > 0.0F)) return;
+    const ClipRect r{ e.world_x, e.world_y, e.world_x + w, e.world_y + h };
+    if (!r.valid()) return;
+    if (mask->clip_children) kids = clip_apply(parent, r, mask->invert, W, H);
+    else self = clip_apply(parent, r, mask->invert, W, H);
+}
 
 /* ---- glTF 片段 / 蒙皮 / morph 运行时状态（plans/22 §6）----
  * 全部是**派生缓存**：真相仍是场景组件（Transform3D.local / AnimationPlayer 字段 / 资源文件），

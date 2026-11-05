@@ -704,6 +704,11 @@ void Engine::step_frame(bool render_frame) {
             std::print("[spine] render frame={} items={} meshes={}\n",
                        (long long)frame, draws.size(), spine_meshes.size());
     }
+    /* draw 统计口径 = 渲染器**实际发出的 2D 批次**（实例化批次 + 网格）。
+     * 合批/动态图集之后"图元数"不再等于 drawcall（tank: 119 图元 → 3 次绘制），
+     * 旧面板把图元数当 UI draw 会看不出任何收益。老插件没有该函数 → 回退图元计数。 */
+    if (MQ_RENDERER_HAS(rapi, last_2d_batches)) stat_ui_calls = (int)rapi->last_2d_batches(rself);
+    stat_calls = stat_ui_calls + stat_3d_calls;
     /* stats：渲染耗时（到 present 之前）+ 整帧耗时 → FPS；EMA 平滑避免数字乱跳。 */
     {
         const auto now = std::chrono::steady_clock::now();

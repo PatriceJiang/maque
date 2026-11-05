@@ -1,8 +1,10 @@
-/* WebGPU 渲染后端：作为插件 .so 实现 DSL 生成的 mq_renderer_v2（maque_ifaces.h）。
+/* WebGPU 渲染后端：作为插件 .so 实现 DSL 生成的 mq_renderer_v3（maque_ifaces.h）。
  * 仅导出 mq_module_query；运行时经 maque::module(dlopen) 加载。 */
 #include "maque_ifaces.h"
 #include "core/module/mq_module.h"
 #include "builtin_shaders.h"   // 内建 shader 注册表（配置期由流水线生成）
+#include "ui_batch.h"          // 2D/UI drawcall 合批（独立类；顺序安全规则见文件头）
+#include "ui_atlas.h"          // UI 动态合图（1024² 预分配；与字体图集分开）
 
 #include <webgpu/webgpu.h>
 #if defined(__ANDROID__)
@@ -18,6 +20,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdlib>
+#include <cmath>
 
 namespace maque::gfx {
 
@@ -57,8 +60,12 @@ struct Texture {
     WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm;
     uint64_t gpu_bytes = 0;                               /* 全 mip / 全 cube 面的资源字节估算 */
     int32_t width = 0, height = 0;
+    int32_t mips = 1;                                     /* mip 层数（UI 图集只收 mips==1） */
     bool cube = false;                                    /* kind=1：环境 cube（6 层 + Cube view，第 26 轮） */
     bool render_target = false;                           /* RenderAttachment + TextureBinding + CopySrc */
+    /* UI 动态合图的**唯一**准入标记：只有 create_texture2 的 2D RGBA8 路径置位。
+     * 字体图集走旧的 create_texture → 永远不进 UI 图集（用户要求两个图集分开）。 */
+    bool ui_atlas_src = false;
 };
 
 /* 3D 网格（plans/18-pbr-3d.md）：create_mesh 一次性上传，GPU 常驻。
@@ -129,6 +136,20 @@ struct Device {
     uint64_t texture_bytes = 0;
     uint64_t buffer_bytes = 0;
     std::vector<Texture*> textures;
+    /* ---- UI 动态合图（ui_atlas.h）：预分配 1024²，只收 UI 图片贴图（create_texture2）----
+     * 图集纹理本身也是 dv->textures 的一项（句柄 = uiAtlasTex），批次直接按普通带纹理图元绑定。
+     * uiAtlasEntries: 源贴图句柄 → 图集区域（含 1px 外扩边；UV 重映射用内容矩形）。
+     * uiAtlasPending: 本帧新打包所需的 GPU 拷贝，渲染命令缓冲**之前**单独提交（同一缓冲里
+     * 既写又采样同一纹理会触发 WebGPU usage 冲突）。 */
+    UiAtlas uiAtlas;
+    int32_t uiAtlasTex = -1;
+    std::unordered_map<int32_t, AtlasRegion> uiAtlasEntries;
+    struct AtlasCopy {
+        WGPUTexture src = nullptr;
+        int32_t sx = 0, sy = 0, dx = 0, dy = 0, w = 0, h = 0;
+    };
+    std::vector<AtlasCopy> uiAtlasPending;
+    uint32_t last2dBatches = 0;           /* 上次 2D 提交的批次总数（runtime 的 draw 统计口径） */
     /* shader 精灵（render.ShaderSprite）的离屏目标：每个精灵一张 RGBA8，尺寸跟随消费目标的像素。
      * 句柄是 dv->textures 的下标（2D 合成走既有「带纹理矩形」通路，纹理查找/绑定无需特判）。
      * 同一帧里精灵可能被画到尺寸不同的目标（主目标 zoom≠1 + 某张 RenderTexture），
@@ -1383,22 +1404,9 @@ static void destroy_device(Device* dv) {
     delete dv;
 }
 
-/* 实例数据：pos(8) + radius(4) + rot(4) + color(16) = 32B（16 字节对齐，WGSL 数组步长合法）。 */
-/* 与 WGSL `struct Inst` 严格对齐（vec2f/f32/f32/vec4f/vec4f/vec2f/f32/f32，数组 stride=64） */
-struct GpuInst {
-    float pos[2];      /* 0  */
-    float radius;      /* 8  */
-    float rot;         /* 12 */
-    float color[4];    /* 16 */
-    float uv[4];       /* 32 */
-    float half[2];     /* 48（<=0 → 用 radius） */
-    float shape;       /* 56（0=圆形，1=矩形） */
-    float snap;        /* 60（1=左上角吸附整数像素） */
-};
+/* 实例数据（64B）：与 WGSL `struct Inst` 严格对齐 —— 定义在 ui_batch.h（合批器同用一份）。 */
+using GpuInst = BatchInstance;
 static_assert(sizeof(GpuInst) == 64, "GpuInst 必须与 WGSL Inst 布局一致（stride 64）");
-
-/* 批处理（docs/13 §pass 层）：先按 (layer, z, 原始序) 稳定排序，再按"管线 + 贴图"分批。 */
-struct Batch { int texture; bool nearest; uint32_t first, count; };
 
 static WGPUBuffer make_ibuf(Device* dv, const std::vector<GpuInst>& v) {
     WGPUBufferDescriptor bd = WGPU_BUFFER_DESCRIPTOR_INIT;
@@ -1439,13 +1447,131 @@ using namespace maque::gfx;
 
 extern "C" {
 
+static void ui_atlas_configure(Device* dv);   /* 定义在下方（UI 动态合图一节） */
+
 static void* r_create(const char** out_backend) {
     std::string b;
     Device* d = create_device(&b);
+    if (d) ui_atlas_configure(d);
     if (out_backend) *out_backend = d ? d->backend.c_str() : nullptr;
     return d;
 }
 static void r_destroy(void* self) { destroy_device((Device*)self); }
+
+/* ============================================================================
+ * UI 动态合图（ui_atlas.h）：把"UI 图片"贴图并进一张**预分配**的 1024² 纹理，
+ * 让不同小图共享一次 drawcall。与**字体图集**完全分开（字体走 create_texture，
+ * 不进这里；README/docs/13 的「两个图集」）。
+ * ========================================================================== */
+
+/* MAQUE_UI_ATLAS=0|off 关闭；MAQUE_UI_ATLAS_SIZE=N 覆盖图集边长（默认 1024）。 */
+static void ui_atlas_configure(Device* dv) {
+    bool on = true;
+    int32_t size = 1024;
+    if (const char* v = std::getenv("MAQUE_UI_ATLAS"); v && *v &&
+        (v[0] == '0' || v[0] == 'o' || v[0] == 'O')) on = false;
+    if (const char* v = std::getenv("MAQUE_UI_ATLAS_SIZE"); v && *v) {
+        const int parsed = std::atoi(v);
+        if (parsed >= 64 && parsed <= 4096) size = parsed;
+    }
+    dv->uiAtlas.configure(size, on);
+}
+
+/* 懒创建图集纹理（预分配的固定尺寸；只在真的有 UI 图片时才占显存）。 */
+static int32_t ensure_ui_atlas(Device* dv) {
+    if (dv->uiAtlasTex >= 0) return dv->uiAtlasTex;
+    const int32_t n = dv->uiAtlas.size();
+    auto* t = new Texture();
+    t->width = t->height = n;
+    t->mips = 1;
+    t->format = WGPUTextureFormat_RGBA8Unorm;
+    WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+    td.dimension = WGPUTextureDimension_2D;
+    td.size = WGPUExtent3D{ (uint32_t)n, (uint32_t)n, 1 };
+    td.format = t->format;
+    td.mipLevelCount = 1;
+    td.sampleCount = 1;
+    t->tex = wgpuDeviceCreateTexture(dv->device, &td);
+    if (!t->tex) { delete t; return -1; }
+    t->view = wgpuTextureCreateView(t->tex, nullptr);
+    t->gpu_bytes = (uint64_t)n * (uint64_t)n * 4u;
+    dv->texture_bytes += t->gpu_bytes;
+    dv->textures.push_back(t);
+    dv->uiAtlasTex = (int32_t)dv->textures.size() - 1;
+    return dv->uiAtlasTex;
+}
+
+static void queue_atlas_copy(Device* dv, WGPUTexture src,
+                             int32_t sx, int32_t sy, int32_t dx, int32_t dy, int32_t w, int32_t h) {
+    if (!src || w <= 0 || h <= 0) return;
+    dv->uiAtlasPending.push_back(Device::AtlasCopy{ src, sx, sy, dx, dy, w, h });
+}
+
+/* 源贴图 → 图集区域（首次使用时打包并安排 GPU 拷贝；失败 → nullptr，调用方退回原贴图）。
+ * 只接受 UI 图片（create_texture2 2D / RGBA8 / 单 mip / 非 RT），大图不进图集。 */
+static const AtlasRegion* ui_atlas_region(Device* dv, int32_t id) {
+    if (!dv->uiAtlas.enabled() || id < 0 || id >= (int)dv->textures.size()) return nullptr;
+    auto it = dv->uiAtlasEntries.find(id);
+    if (it != dv->uiAtlasEntries.end()) return &it->second;
+    Texture* t = dv->textures[(size_t)id];
+    if (!t || !t->ui_atlas_src || t->cube || t->render_target || t->mips != 1) return nullptr;
+    if (t->format != WGPUTextureFormat_RGBA8Unorm) return nullptr;
+    const int32_t n = dv->uiAtlas.size();
+    if (t->width <= 0 || t->height <= 0) return nullptr;
+    /* 大图（背景/整屏底图）不进图集：它们本来就不与别的图共享状态，还会把空间吃光。
+     * 小图（图标/瓦片/角色/爆炸帧）才是合批收益来源。 */
+    if (t->width > n / 4 || t->height > n / 4) return nullptr;
+    if ((int64_t)t->width * t->height > (int64_t)(n / 4) * (n / 4)) return nullptr;
+    const AtlasRegion r = dv->uiAtlas.pack(t->width, t->height);
+    if (!r.valid()) return nullptr;
+    if (ensure_ui_atlas(dv) < 0) { dv->uiAtlas.release(r); return nullptr; }
+    const int32_t w = t->width, h = t->height;
+    /* 内容 1:1；四周外扩 1px 复制边像素（线性采样在边缘与 clamp-to-edge 等价，不会混到邻图）。 */
+    queue_atlas_copy(dv, t->tex, 0, 0, r.x, r.y, w, h);
+    queue_atlas_copy(dv, t->tex, 0, 0, r.x - 1, r.y, 1, h);              /* 左 */
+    queue_atlas_copy(dv, t->tex, w - 1, 0, r.x + w, r.y, 1, h);          /* 右 */
+    queue_atlas_copy(dv, t->tex, 0, 0, r.x, r.y - 1, w, 1);              /* 上 */
+    queue_atlas_copy(dv, t->tex, 0, h - 1, r.x, r.y + h, w, 1);          /* 下 */
+    queue_atlas_copy(dv, t->tex, 0, 0, r.x - 1, r.y - 1, 1, 1);          /* 四角 */
+    queue_atlas_copy(dv, t->tex, w - 1, 0, r.x + w, r.y - 1, 1, 1);
+    queue_atlas_copy(dv, t->tex, 0, h - 1, r.x - 1, r.y + h, 1, 1);
+    queue_atlas_copy(dv, t->tex, w - 1, h - 1, r.x + w, r.y + h, 1, 1);
+    return &dv->uiAtlasEntries.emplace(id, r).first->second;
+}
+
+/* 贴图销毁 → 归还图集空间（字体图集/无 mip 贴图的重建会走这里，避免碎片无界增长）。 */
+static void ui_atlas_forget(Device* dv, int32_t id) {
+    auto it = dv->uiAtlasEntries.find(id);
+    if (it == dv->uiAtlasEntries.end()) return;
+    dv->uiAtlas.release(it->second);
+    dv->uiAtlasEntries.erase(it);
+}
+
+/* 新打包的拷贝必须在渲染命令缓冲**之前**提交：同一缓冲里既写图集又采样它 = usage 冲突。 */
+static void flush_ui_atlas_copies(Device* dv) {
+    if (dv->uiAtlasPending.empty()) return;
+    if (dv->uiAtlasTex < 0) { dv->uiAtlasPending.clear(); return; }
+    WGPUTexture atlas = dv->textures[(size_t)dv->uiAtlasTex]->tex;
+    WGPUCommandEncoder enc = wgpuDeviceCreateCommandEncoder(dv->device, nullptr);
+    for (const Device::AtlasCopy& c : dv->uiAtlasPending) {
+        WGPUTexelCopyTextureInfo src = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+        src.texture = c.src;
+        src.origin = WGPUOrigin3D{ (uint32_t)c.sx, (uint32_t)c.sy, 0 };
+        src.aspect = WGPUTextureAspect_All;
+        WGPUTexelCopyTextureInfo dst = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+        dst.texture = atlas;
+        dst.origin = WGPUOrigin3D{ (uint32_t)c.dx, (uint32_t)c.dy, 0 };
+        dst.aspect = WGPUTextureAspect_All;
+        WGPUExtent3D ext = WGPUExtent3D{ (uint32_t)c.w, (uint32_t)c.h, 1 };
+        wgpuCommandEncoderCopyTextureToTexture(enc, &src, &dst, &ext);
+    }
+    WGPUCommandBuffer cb = wgpuCommandEncoderFinish(enc, nullptr);
+    wgpuQueueSubmit(dv->queue, 1, &cb);
+    wgpuCommandBufferRelease(cb);
+    wgpuCommandEncoderRelease(enc);
+    dv->uiAtlasPending.clear();
+}
 
 /* 只估算显式上传资源的实际数据量；驱动 padding / 对齐与临时目标不在此接口范围内。 */
 static uint64_t mip_texture_bytes(uint32_t w, uint32_t h, int32_t mips, uint32_t layers, uint32_t bpp) {
@@ -1485,6 +1611,7 @@ static int32_t r_create_texture(void* self, const uint8_t* rgba, int32_t w, int3
 static void r_destroy_texture(void* self, int32_t id) {
     auto* dv = (Device*)self;
     if (!dv || id < 0 || id >= (int)dv->textures.size()) return;
+    ui_atlas_forget(dv, id);                 /* 归还 UI 图集空间（句柄销毁后不会再被引用） */
     Texture* t = dv->textures[(size_t)id];
     if (t) {
         dv->texture_bytes -= t->gpu_bytes;
@@ -1654,8 +1781,14 @@ static int32_t r_create_texture2(void* self, const mq_renderer_texture_desc* d, 
     auto* t = new Texture();
     t->width = d->width; t->height = d->height;
     t->format = format_from_code(d->pixel_format);
+    t->mips = mips;
+    /* UI/2D 动态合图准入：只有 2D / RGBA8（线性）/ 单 mip / **clamp** 的贴图能进
+     * （UV 重映射以 clamped UV 为前提）。字体图集走旧的 create_texture（永不置位）→ 两个图集天然分开。 */
+    t->ui_atlas_src = (d->kind == 0 && t->format == WGPUTextureFormat_RGBA8Unorm && mips == 1 &&
+                       (wrap_from_code(d->wrap_u) == WGPUAddressMode_ClampToEdge) &&
+                       (wrap_from_code(d->wrap_v) == WGPUAddressMode_ClampToEdge));
     WGPUTextureDescriptor td = WGPU_TEXTURE_DESCRIPTOR_INIT;
-    td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst;
+    td.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc;
     td.dimension = WGPUTextureDimension_2D;
     td.size = WGPUExtent3D{ (uint32_t)d->width, (uint32_t)d->height, 1 };
     td.format = t->format;
@@ -3240,16 +3373,8 @@ static_assert(offsetof(MeshVertex, r) == 16, "col 必须在 offset 16（location
 static_assert(offsetof(MeshVertex, d0) == 32, "dark 必须在 offset 32（location 3）");
 
 /* 一条绘制命令：**图元批次**（实例化 6 顶点）或**网格批次**（索引绘制）。
- * 两者在同一序列里按 (layer, z, 原始序) 排序 → 网格与精灵可以正确互相遮挡。 */
-struct Cmd {
-    int layer = 0, z = 0;
-    uint32_t seq = 0;         /* 原始下标（同键时的稳定次序） */
-    int kind = 0;             /* 0 = 图元，1 = 网格 */
-    uint32_t first = 0;       /* 图元：insts 起点；网格：meshes 下标 */
-    uint32_t count = 0;       /* 图元：实例数；网格：恒 1 */
-    int texture = -1;
-    bool nearest = false;
-};
+ * 定义在 ui_batch.h 的 BatchDraw（合批器输出）；两者在同一序列里按 (layer, z, 原始序)
+ * 排序 → 网格与精灵可以正确互相遮挡。 */
 
 /* 列主序 4×4 乘法：o = a * b（与 WGSL/WebGPU 的列主序约定一致）。 */
 static void mat4_mul(const float* a, const float* b, float* o) {
@@ -4249,7 +4374,93 @@ static int32_t render_3d_only(Device* dv, WGPUTexture target, WGPUTextureFormat 
     return 0;
 }
 
+/* 引擎 UI 图层（runtime 的 scn.Button / scn.Label / ui.TextLabel 都写 layer=1；
+ * 世界层=0，ImGui=100 —— 见 ui/mq_imgui.h 的 MQ_IMGUI_LAYER）。 */
+constexpr int32_t kUiLayer = 1;
+
+/* UI 分组开关：`MAQUE_UI_BATCH=0|off` 关闭（退回画家序 = 旧行为，用于 A/B 像素对照）。 */
+static bool ui_batch_grouping_enabled() {
+    static const bool on = [] {
+        const char* v = std::getenv("MAQUE_UI_BATCH");
+        if (!v || !*v) return true;
+        return !(v[0] == '0' || v[0] == 'o' || v[0] == 'O');
+    }();
+    return on;
+}
+
+/* 重叠判定的外扩量（设计单位）：snap 把四边形吸附到整数**目标**像素，位移 < 1 目标像素，
+ * 换算回设计坐标是 1/zoom。zoom ≥ 1 时 1 就够；缩小显示时按最小 zoom 放大余量。 */
+static float ui_batch_bleed(const mq_renderer_view* views, uint32_t nviews) {
+    float min_zoom = 1.0F;
+    for (uint32_t i = 0; i < nviews && views; ++i) {
+        const float z = views[i].zoom > 0.0F ? views[i].zoom : 1.0F;
+        const float zy = views[i].zoom_y > 0.0F ? views[i].zoom_y : z;
+        min_zoom = std::min(min_zoom, std::min(z, zy));
+    }
+    return std::clamp(1.0F / std::max(0.05F, min_zoom), 1.0F, 32.0F);
+}
+
+/* `MAQUE_TRACE_BATCH=1`：打印本次 2D 提交的合批结果（drawcall 数 = 真实 GPU 批次）。
+ * `=2` 额外逐条打印批次（贴图/采样/实例数），用于排查"为什么没有并起来"。
+ * `atlas` = 已并进 UI 图集的贴图数；`atlas_items` = 本帧重映射到图集的图元数。 */
+static void trace_ui_batch(const UiBatcher& b, const Device* dv, uint32_t atlas_items) {
+    const char* env = std::getenv("MAQUE_TRACE_BATCH");
+    if (!env || !*env || *env == '0') return;
+    const UiBatchStats& st = b.stats();
+    std::print("[ui_batch] items={} meshes={} draws={} merges={} segments={} layers={} "
+               "atlas={} atlas_items={}\n",
+               st.items, st.meshes, st.draws, st.merges, st.segments, st.layers,
+               (uint32_t)dv->uiAtlasEntries.size(), atlas_items);
+    if (*env != '2') return;
+    for (const BatchDraw& d : b.draws()) {
+        if (d.kind == BatchDraw::Kind::Mesh)
+            std::print("[ui_batch]   mesh #{} tex={}\n", d.mesh, d.key.texture);
+        else
+            std::print("[ui_batch]   inst tex={} nearest={} clip=({:.0f},{:.0f},{:.0f},{:.0f}) first={} count={}\n",
+                       d.key.texture, d.key.nearest ? 1 : 0,
+                       d.key.clip[0], d.key.clip[1], d.key.clip[2], d.key.clip[3], d.first, d.count);
+    }
+}
+
 /* 成帧主路径：图元 + 网格 → 同一渲染目标（render_views 是其 meshes == nullptr 的特例）。 */
+/* item 的裁剪矩形是**设计坐标**（屏幕 y 向下），与顶点同空间；这里用与 shader 完全相同的
+ * view 变换把四角映射到目标像素，取 AABB 后与视图 scissor 求交。轴对齐视图精确；
+ * 旋转视图退化为保守 AABB（不会少裁）。w/h<=0 = 不裁剪。 */
+static bool scissor_for_item_clip(const float clip[4], const mq_renderer_view& v,
+                                  int32_t TW, int32_t TH,
+                                  int view_x0, int view_y0, int view_w, int view_h,
+                                  int& sx, int& sy, int& sw, int& sh) {
+    sx = view_x0; sy = view_y0; sw = view_w; sh = view_h;
+    if (!(clip[2] > 0.0F) || !(clip[3] > 0.0F)) return sw > 0 && sh > 0;
+    if (!std::isfinite(clip[0]) || !std::isfinite(clip[1]) ||
+        !std::isfinite(clip[2]) || !std::isfinite(clip[3])) return sw > 0 && sh > 0;
+    const float zoom = v.zoom > 0.0F ? v.zoom : 1.0F;
+    const float zoom_y = v.zoom_y > 0.0F ? v.zoom_y : zoom;
+    const float view_tx = v.vx + v.vw * 0.5F - (float)TW * 0.5F;
+    const float view_ty = v.vy + v.vh * 0.5F - (float)TH * 0.5F;
+    const float cs = std::cos(-v.rot), sn = std::sin(-v.rot);
+    const float xs[4] = { clip[0], clip[0] + clip[2], clip[0], clip[0] + clip[2] };
+    const float ys[4] = { clip[1], clip[1], clip[1] + clip[3], clip[1] + clip[3] };
+    float minx = 3.4e38F, miny = 3.4e38F, maxx = -3.4e38F, maxy = -3.4e38F;
+    for (int i = 0; i < 4; ++i) {
+        const float cx = xs[i] - v.cx, cy = ys[i] - v.cy;
+        const float rx = cx * cs - cy * sn, ry = cx * sn + cy * cs;
+        const float px = rx * zoom + (float)TW * 0.5F + v.pan + view_tx;
+        const float py = ry * zoom_y + (float)TH * 0.5F + v.eye + view_ty;
+        minx = std::min(minx, px); maxx = std::max(maxx, px);
+        miny = std::min(miny, py); maxy = std::max(maxy, py);
+    }
+    const int cx0 = (int)std::floor(minx), cy0 = (int)std::floor(miny);
+    const int cx1 = (int)std::ceil(maxx),  cy1 = (int)std::ceil(maxy);
+    sx = std::max(view_x0, cx0);
+    sy = std::max(view_y0, cy0);
+    const int ex = std::min(view_x0 + view_w, cx1);
+    const int ey = std::min(view_y0 + view_h, cy1);
+    sw = std::max(0, ex - sx);
+    sh = std::max(0, ey - sy);
+    return sw > 0 && sh > 0;
+}
+
 static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                            const mq_renderer_view* views, uint32_t nviews,
                            const mq_renderer_item* items, uint32_t count,
@@ -4294,12 +4505,82 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         return a < b;
     });
 
-    /* 合并两条有序序列 → 一条绘制命令序列。相邻的"同贴图 + 同采样"图元仍合并成一次实例化
-     * 绘制（保留原批处理收益），网格则插在它该在的位置上。 */
-    std::vector<GpuInst> insts;
-    insts.reserve(count);
-    std::vector<Cmd> cmds;
-    cmds.reserve((size_t)count + (size_t)mesh_count);
+    /* ---- 2D 图元 → 64B 实例，交给 UiBatcher 合批（ui_batch.h）----
+     * 旧实现只合并"相邻 + 同贴图 + 同采样"的图元；UI（layer=1）是"控件矩形(solid) + 字形(图集)"
+     * 交替出现 → 状态一切换就断批，一个 HUD 有多少控件就有多少次 drawcall。UiBatcher 在
+     * **不改变像素结果**的前提下把 UI 层按状态分组（顺序安全规则见 ui_batch.h 顶部）。 */
+    const float bleed = ui_batch_bleed(views, nviews);
+    std::vector<GpuInst> item_insts(count);
+    std::vector<BatchKey> item_keys(count);
+    float bb_x0 = 0.0F, bb_y0 = 0.0F, bb_x1 = 0.0F, bb_y1 = 0.0F;
+    bool bb_any = false;
+    uint32_t atlas_items = 0;                 /* 诊断：被并进 UI 图集的图元数 */
+    /* 网格图元（spine / ImGui / 任意 mesh）的页纹理**不参与自动合图**（明确约定）：
+     * mesh 命令直接绑源纹理；即便某个 2D 图元引用了同一张贴图也不打包，
+     * 避免把骨骼/UI 面板的整页大图吸进 2D 图集、挤掉真正的小图。 */
+    std::vector<int32_t> mesh_tex;
+    mesh_tex.reserve(mesh_count);
+    for (uint32_t i = 0; i < mesh_count; ++i)
+        if (meshes[i].texture >= 0) mesh_tex.push_back(meshes[i].texture);
+    std::sort(mesh_tex.begin(), mesh_tex.end());
+    mesh_tex.erase(std::unique(mesh_tex.begin(), mesh_tex.end()), mesh_tex.end());
+    auto mesh_uses_tex = [&](int32_t t) {
+        return std::binary_search(mesh_tex.begin(), mesh_tex.end(), t);
+    };
+    for (uint32_t i = 0; i < count; ++i) {
+        const mq_renderer_item& s = items[i];
+        const bool has_tex = s.texture >= 0 && s.texture < (int)dv->textures.size() &&
+                             dv->textures[s.texture] != nullptr &&          /* 槽位可能已释放（destroy_texture） */
+                             dv->textures[s.texture]->view != nullptr;
+        const bool rect = s.half_w > 0.0F && s.half_h > 0.0F;
+        item_insts[i] = GpuInst{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a },
+                                 { s.uv0, s.uv1, s.uv2, s.uv3 },
+                                 { rect ? s.half_w : 0.0F, rect ? s.half_h : 0.0F },
+                                 rect ? 1.0F : 0.0F, s.snap ? 1.0F : 0.0F };
+        /* 字形/像素画：1 纹素 = 1 像素（nearest）；其余 linear。裁剪矩形是状态键的一部分
+         * （不同 scissor 不能共享一次 drawcall）；w/h<=0 表示不裁剪。 */
+        BatchKey key{ has_tex ? s.texture : -1, s.filter == 1 };
+        key.clip[0] = s.clip_x; key.clip[1] = s.clip_y;
+        key.clip[2] = s.clip_w; key.clip[3] = s.clip_h;
+        item_keys[i] = key;
+        /* ---- UI 动态合图：UI 层里的"UI 图片"贴图并进预分配的 1024² 图集 ----
+         * 字体图集不满足 ui_atlas_src（走 create_texture）→ 文字仍用字体自己的图集，
+         * 两个图集完全分开。UV 是归一化的，映射到图集内容矩形（含 1px 外扩边）。 */
+        if (has_tex && dv->uiAtlas.enabled() && !mesh_uses_tex(s.texture)) {
+            const Texture* src_tex = dv->textures[(size_t)s.texture];
+            if (src_tex->ui_atlas_src && !src_tex->cube && !src_tex->render_target) {
+                if (const AtlasRegion* reg = ui_atlas_region(dv, s.texture)) {
+                    const float A = (float)dv->uiAtlas.size();
+                    const float sw = (float)src_tex->width, sh = (float)src_tex->height;
+                    float u0 = s.uv0, v0 = s.uv1, u1 = s.uv2, v1 = s.uv3;
+                    if (!(u1 > u0 && v1 > v0)) { u0 = 0.0F; v0 = 0.0F; u1 = 1.0F; v1 = 1.0F; }
+                    GpuInst& in = item_insts[i];
+                    in.uv[0] = ((float)reg->x + u0 * sw) / A;
+                    in.uv[1] = ((float)reg->y + v0 * sh) / A;
+                    in.uv[2] = ((float)reg->x + u1 * sw) / A;
+                    in.uv[3] = ((float)reg->y + v1 * sh) / A;
+                    item_keys[i].texture = dv->uiAtlasTex;
+                    ++atlas_items;
+                }
+            }
+        }
+        float x0, y0, x1, y1;
+        if (!UiBatcher::item_bounds(item_insts[i], x0, y0, x1, y1, bleed, item_keys[i].clip)) continue;
+        if (!bb_any) { bb_x0 = x0; bb_y0 = y0; bb_x1 = x1; bb_y1 = y1; bb_any = true; }
+        else {
+            if (x0 < bb_x0) bb_x0 = x0;
+            if (y0 < bb_y0) bb_y0 = y0;
+            if (x1 > bb_x1) bb_x1 = x1;
+            if (y1 > bb_y1) bb_y1 = y1;
+        }
+    }
+    flush_ui_atlas_copies(dv);                /* 新打包的拷贝先于渲染提交（usage 不冲突） */
+    UiBatcher batcher;
+    batcher.begin(bb_x0, bb_y0, bb_x1, bb_y1, bleed);
+
+    /* 合并两条有序序列 → 一条绘制命令序列（网格插在它该在的位置）。 */
+    int cur_layer = 0;
+    bool have_layer = false;
     size_t ii = 0, mi = 0;
     while (ii < count || mi < mesh_count) {
         bool take_item;
@@ -4314,34 +4595,30 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
         }
         if (take_item) {
             const mq_renderer_item& s = items[order[ii]];
-            const bool has_tex = s.texture >= 0 && s.texture < (int)dv->textures.size() &&
-                                 dv->textures[s.texture] != nullptr &&          /* 槽位可能已释放（destroy_texture） */
-                                 dv->textures[s.texture]->view != nullptr;
-            const int tex_id = has_tex ? s.texture : -1;
-            const bool rect = s.half_w > 0.0F && s.half_h > 0.0F;
-            const bool nearest = s.filter == 1;                 /* 字形/像素画：1 纹素 = 1 像素 */
-            GpuInst g{ { s.x, s.y }, s.size, s.rotation, { s.r, s.g, s.b, s.a },
-                       { s.uv0, s.uv1, s.uv2, s.uv3 },
-                       { rect ? s.half_w : 0.0F, rect ? s.half_h : 0.0F },
-                       rect ? 1.0F : 0.0F, s.snap ? 1.0F : 0.0F };
-            if (!cmds.empty() && cmds.back().kind == 0 && cmds.back().texture == tex_id &&
-                cmds.back().nearest == nearest) {
-                cmds.back().count++;
-            } else {
-                Cmd c; c.layer = s.layer; c.z = s.z; c.seq = order[ii]; c.kind = 0;
-                c.first = (uint32_t)insts.size(); c.count = 1; c.texture = tex_id; c.nearest = nearest;
-                cmds.push_back(c);
+            if (!have_layer || s.layer != cur_layer) {
+                /* UI 层（layer=1）按状态分组；其它图层保持画家序（与旧实现一致）。 */
+                batcher.begin_layer(s.layer, ui_batch_grouping_enabled());
+                cur_layer = s.layer;
+                have_layer = true;
             }
-            insts.push_back(g);
+            batcher.add_item(item_insts[order[ii]], item_keys[order[ii]]);
             ++ii;
         } else {
             const mq_renderer_mesh& m = meshes[morder[mi]];
-            Cmd c; c.layer = m.layer; c.z = m.z; c.seq = morder[mi]; c.kind = 1;
-            c.first = morder[mi]; c.count = 1; c.texture = m.texture;
-            cmds.push_back(c);
+            if (!have_layer || m.layer != cur_layer) {
+                batcher.begin_layer(m.layer, ui_batch_grouping_enabled());
+                cur_layer = m.layer;
+                have_layer = true;
+            }
+            batcher.add_mesh(morder[mi], m.texture);
             ++mi;
         }
     }
+    batcher.end();
+    const std::vector<GpuInst>& insts = batcher.instances();
+    const std::vector<BatchDraw>& cmds = batcher.draws();
+    dv->last2dBatches = (uint32_t)cmds.size();   /* 统计口径 = 真实 drawcall（不是图元数） */
+    trace_ui_batch(batcher, dv, atlas_items);
 
     /* ---- 网格几何：所有网格的顶点**交错**打进一个顶点缓冲 + 一个索引缓冲，
      *      每个批次用 (vbase, ibase, base_vertex) 定位 —— 避免逐批创建 GPU 缓冲。 ---- */
@@ -4482,11 +4759,11 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
             return nullptr;
         };
 
-        for (const Cmd& c : cmds) {
+        for (const BatchDraw& c : cmds) {
             /* ---- 网格批次 ---- */
-            if (c.kind == 1) {
-                if (!mvbuf || !mibuf || !mvalid[c.first]) continue;
-                const mq_renderer_mesh& m = meshes[c.first];
+            if (c.kind == BatchDraw::Kind::Mesh) {
+                if (!mvbuf || !mibuf || !mvalid[c.mesh]) continue;
+                const mq_renderer_mesh& m = meshes[c.mesh];
                 int blend = (m.blend >= 0 && m.blend < 4) ? m.blend : 0;
                 if (blend >= 2) {
                     /* multiply / screen 需要 dst-color 类 blend factor，本 wgpu-native 构建的
@@ -4501,8 +4778,8 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                     }
                     blend = 0;
                 }
-                const bool has_tex = c.texture >= 0 && c.texture < (int)dv->textures.size() &&
-                                     dv->textures[c.texture] != nullptr && dv->textures[c.texture]->view != nullptr;
+                const bool has_tex = c.key.texture >= 0 && c.key.texture < (int)dv->textures.size() &&
+                                     dv->textures[c.key.texture] != nullptr && dv->textures[c.key.texture]->view != nullptr;
                 const int pma = m.pma ? 1 : 0;
                 WGPURenderPipeline pipe = dv->meshPipeline[blend][pma];
                 if (!pipe) {
@@ -4527,15 +4804,15 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 }
                 /* key 必须包含坐标空间：同一纹理也可能同时用于世界网格与 ImGui。 */
                 const uint64_t bkey = (uint64_t{ 2 } << 32) |
-                                      ((uint64_t)(uint32_t)c.texture << 1) | (screen_space ? 1ull : 0ull);
+                                      ((uint64_t)(uint32_t)c.key.texture << 1) | (screen_space ? 1ull : 0ull);
                 WGPUBindGroup bgroup = find_bg(bkey);
                 if (!bgroup) {
                     WGPUBindGroupEntry be[3] = {};
                     be[0].binding = 0; be[0].buffer = screen_space ? screen_ubuf : ubuf; be[0].size = sizeof uni;
-                    be[1].binding = 1; be[1].textureView = dv->textures[c.texture]->view;
+                    be[1].binding = 1; be[1].textureView = dv->textures[c.key.texture]->view;
                     be[2].binding = 2;
-                    be[2].sampler = dv->textures[c.texture]->sampler
-                                        ? dv->textures[c.texture]->sampler : dv->sampler;
+                    be[2].sampler = dv->textures[c.key.texture]->sampler
+                                        ? dv->textures[c.key.texture]->sampler : dv->sampler;
                     WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
                     bgd.layout = dv->meshBgl; bgd.entryCount = 3; bgd.entries = be;
                     bgroup = wgpuDeviceCreateBindGroup(dv->device, &bgd);
@@ -4562,13 +4839,13 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 wgpuRenderPassEncoderSetVertexBuffer(pass, 0, mvbuf, 0, (uint64_t)mverts.size() * sizeof(MeshVertex));
                 wgpuRenderPassEncoderSetIndexBuffer(pass, mibuf, WGPUIndexFormat_Uint32, 0,
                                                     (uint64_t)midx.size() * sizeof(uint32_t));
-                wgpuRenderPassEncoderDrawIndexed(pass, m.index_count, 1, ibase[c.first],
-                                                 (int32_t)(vbase[c.first] + m.base_vertex), 0);
+                wgpuRenderPassEncoderDrawIndexed(pass, m.index_count, 1, ibase[c.mesh],
+                                                 (int32_t)(vbase[c.mesh] + m.base_vertex), 0);
                 continue;
             }
             /* ---- 图元批次（实例化矩形/圆） ---- */
             if (!ibuf) continue;
-            const bool textured = c.texture >= 0;
+            const bool textured = c.key.texture >= 0;
             /* 该批次的管线不可用（对应内建 shader 被剔除 / 解压失败）→ 跳过该批次。
              * 只提示一次，避免逐帧刷屏；不崩、不静默（初始化时已打印原因）。 */
             if (!(textured ? dv->texPipeline : dv->solidPipeline)) {
@@ -4582,7 +4859,7 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 continue;
             }
             const uint64_t bkey = textured
-                ? ((uint64_t{ 1 } << 32) | ((uint64_t)(uint32_t)c.texture << 1) | (c.nearest ? 1ull : 0ull))
+                ? ((uint64_t{ 1 } << 32) | ((uint64_t)(uint32_t)c.key.texture << 1) | (c.key.nearest ? 1ull : 0ull))
                 : 0ull;
             WGPUBindGroup bgroup = find_bg(bkey);
             if (!bgroup) {
@@ -4592,9 +4869,9 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 be[1].size = (uint64_t)insts.size() * sizeof(GpuInst);
                 WGPUBindGroupDescriptor bgd = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
                 if (textured) {
-                    be[2].binding = 2; be[2].textureView = dv->textures[c.texture]->view;
+                    be[2].binding = 2; be[2].textureView = dv->textures[c.key.texture]->view;
                     be[3].binding = 3;
-                    be[3].sampler = c.nearest && dv->samplerNearest ? dv->samplerNearest : dv->sampler;
+                    be[3].sampler = c.key.nearest && dv->samplerNearest ? dv->samplerNearest : dv->sampler;
                     bgd.layout = dv->texBgl; bgd.entryCount = 4; bgd.entries = be;
                 } else {
                     bgd.layout = dv->solidBgl; bgd.entryCount = 2; bgd.entries = be;
@@ -4603,8 +4880,11 @@ static int32_t render_impl(void* self, int32_t TW, int32_t TH,
                 bg_cache.push_back({ bkey, bgroup });
             }
             if (view_sw <= 0 || view_sh <= 0) continue;
-            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)view_x0, (uint32_t)view_y0,
-                                                (uint32_t)view_sw, (uint32_t)view_sh);
+            int dsx = view_x0, dsy = view_y0, dsw = view_sw, dsh = view_sh;
+            if (!scissor_for_item_clip(c.key.clip, v, TW, TH, view_x0, view_y0, view_sw, view_sh,
+                                       dsx, dsy, dsw, dsh)) continue;
+            wgpuRenderPassEncoderSetScissorRect(pass, (uint32_t)dsx, (uint32_t)dsy,
+                                                (uint32_t)dsw, (uint32_t)dsh);
             wgpuRenderPassEncoderSetPipeline(pass, textured ? dv->texPipeline : dv->solidPipeline);
             wgpuRenderPassEncoderSetBindGroup(pass, 0, bgroup, 0, nullptr);
             wgpuRenderPassEncoderDraw(pass, 6, c.count, 0, c.first);
@@ -4677,8 +4957,14 @@ static int32_t r_render_mesh_views(void* self, int32_t TW, int32_t TH,
 
 } // extern "C"
 
-static const mq_renderer_v2 g_api = {
-    { (uint32_t)sizeof(mq_renderer_v2), MQ_RENDERER_API_VERSION },
+/* 上次 2D 提交的真实批次总数（合批/图集后与图元数解耦；runtime 的 draw 统计用）。 */
+static uint32_t r_last_2d_batches(void* self) {
+    auto* dv = (Device*)self;
+    return dv ? dv->last2dBatches : 0;
+}
+
+static const mq_renderer_v3 g_api = {
+    { (uint32_t)sizeof(mq_renderer_v3), MQ_RENDERER_API_VERSION },
     r_create, r_destroy, r_destroy_texture, r_create_texture, r_has_texture, r_render_views, r_render_mesh_views,
     /* ---- 3D / 直接呈现（追加；plans/18-pbr-3d.md）---- */
     r_attach_window, r_resize_surface, r_caps, r_create_texture2, r_create_mesh, r_destroy_mesh,
@@ -4694,7 +4980,9 @@ static const mq_renderer_v2 g_api = {
     /* ---- GPU 资源按类拆分（追加；docs/29）---- */
     r_resource_bytes2,
     /* ---- 场景资源多通道 shader 图（追加）---- */
-    r_create_shader_graph_pass, r_destroy_shader_graph_pass, r_create_shader_graph_target
+    r_create_shader_graph_pass, r_destroy_shader_graph_pass, r_create_shader_graph_target,
+    /* ---- 2D drawcall 统计（追加；合批/图集后图元数 ≠ drawcall）---- */
+    r_last_2d_batches
 };
 
 extern "C" MQ_MODULE_EXPORT void* mq_module_query(const char* name, uint32_t min_version) {

@@ -14532,21 +14532,19 @@
       "kind": "struct",
       "type_id": 839566900,
       "size": null,
-      "align": 1,
-      "pod": true,
-      "has_dynamic": false,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
       "source": "ui/ui.yaml",
       "fields": [
         {
           "name": "texture",
-          "type": "asset_ref<Texture>",
-          "kind": "asset_ref",
+          "type": "string",
+          "kind": "string",
           "type_id": 0,
           "count": 0,
           "offset": null,
-          "attrs": {
-            "ref": "Texture"
-          }
+          "attrs": {}
         },
         {
           "name": "region",
@@ -14819,6 +14817,9 @@
       "pod": true,
       "has_dynamic": false,
       "source": "ui/ui.yaml",
+      "roles": [
+        "ui_mask"
+      ],
       "fields": [
         {
           "name": "mask_mode",

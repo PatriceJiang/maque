@@ -70,7 +70,7 @@ struct SystemsRuntime {
 };
 struct Engine {
     mq_host*            host = nullptr;                   // 模块宿主（加载渲染插件）
-    const mq_renderer_v2* rapi = nullptr;                 // 渲染器插件接口
+    const mq_renderer_v3* rapi = nullptr;                 // 渲染器插件接口
     void*               rself = nullptr;                  // 渲染器实例
     mq_vfs*             vfs = nullptr;
     /* 多脚本/多语言（docs/14 §多 VM）：**事件总线**持有全部 VM 并负责按声明顺序投递。
@@ -375,6 +375,7 @@ struct Engine {
         float x, y, half_w, half_h;                 // 设计空间位置与半尺寸
         float r, g, b, a; int z;
         float rotation; int snap;                   // 节点旋转（屏幕空间弧度）与像素吸附
+        float clip_x, clip_y, clip_w, clip_h;       // 裁剪矩形（设计坐标，屏幕 y 向下；w/h<=0=无）
     };
     std::vector<PendingQuad> pending_quads;
     void text_flush(std::vector<mq_renderer_item>& out);        // 阶段 2
@@ -472,6 +473,9 @@ struct Engine {
     uint64_t instance_checksum() const;
 
     std::unordered_map<std::string, int> tex_cache;              // 装配期填充；提取期只读
+    /* 2D 贴图像素尺寸：路径（与 tex_cache 同 key）→ {w,h}。
+     * ui.Image 没有 ui.Control 时用装配期缓存的尺寸当缺省大小（提取期只读，不能再解码）。 */
+    std::unordered_map<std::string, std::pair<int32_t, int32_t>> tex_size_cache;
     /* env PMREM 产物缓存：路径 → {specular(预过滤 mip 链), irradiance}；-1 = 加载失败 */
     std::unordered_map<std::string, std::pair<int32_t, int32_t>> env_tex_cache;
     /* 立方体 env（第 26 轮）：6 面基名 → {GGX cube, irradiance cube}；-1 = 加载失败 */
@@ -816,7 +820,17 @@ struct Engine {
     void engine_options_log_post();            // 变化时打印一行（CI 可断言）
 
     uint32_t next_rng() { rng = rng * 1664525u + 1013904223u; return rng; }
-    int load_texture(const std::string& path);                 // assets（VFS 编码文件）
+    /* 2D 贴图（精灵/材质/UI 图片）：VFS 编码文件 → create_texture2（单 mip / RGBA8 / 默认 clamp）。
+     * out_w/out_h 可选返回像素尺寸（缓存命中也会填）。 */
+    int load_texture(const std::string& path, int* out_w = nullptr, int* out_h = nullptr);
+    int load_texture_impl(const std::string& path, bool atlas_ok, int* out_w, int* out_h);
+    /* **不参与自动合图**的贴图（spine 图集页/骨骼页等）：走旧 create_texture，
+     * 不置 gfx 的 `ui_atlas_src`，因此永远不进 2D/UI 图集。 */
+    int load_texture_raw(const std::string& path);
+    /* UI 图片（ui.Image）：与精灵共用同一条 2D 贴图通道（load_texture）。
+     * gfx 侧只吸收 create_texture2 的 2D/RGBA8/单 mip/clamp 贴图；字体图集走 create_texture，
+     * 两个图集因此天然分开。 */
+    int load_ui_texture(const std::string& path, int* out_w = nullptr, int* out_h = nullptr);
     int load_texture_ref(const std::string& ref);              // builtin: 或 assets
     std::string scoped_texture_ref(int entity, const std::string& ref) const;
     /* envmap（PMREM）：.hdr(RGBE) / PNG/JPEG / builtin studio → GGX 粗糙度预过滤 mip 链 +
@@ -851,7 +865,8 @@ struct Engine {
     void nav_step();                                        // 导航代理推进（寻路 + 追踪）
     void ui_step();                                         // UI 组件语义（layout/progress/slider/check/safearea/scroll）
     void extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc* d,
-                      std::vector<mq_renderer_item>& out, float inherit_alpha);
+                      std::vector<mq_renderer_item>& out, float inherit_alpha,
+                      const ClipSet& clip);
     void step_tweens(float dt);                             // Tween 推进（补间）
     void step_schedules(float dt);                          // 定时器推进（定时器）
     void flush_pending_destroy();                           // 延迟销毁（帧末生效）

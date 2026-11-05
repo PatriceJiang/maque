@@ -366,7 +366,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   - `textured`：一个实例 = 一个矩形/圆，逐实例一次变换 —— 精灵/字形/UI 用。
   - `mesh`：**逐顶点** pos/uv/color + 索引缓冲 —— 骨骼动画（Spine）那种"一帧一变形的网格"用。
     顶点缓冲 stride 32B（pos.xy / uv.xy / col.rgba，见 `assets/builtin/shaders/mesh/shader.wgsl` 顶部），
-    提交走 `mq_renderer_v2::render_mesh_views(self, tw, th, views, nviews, items, count, meshes, mesh_count, bg, out, out_size)`。
+    提交走 `mq_renderer_v3::render_mesh_views(self, tw, th, views, nviews, items, count, meshes, mesh_count, bg, out, out_size)`。
   - 两者**共用同一份相机 uniform 布局**（48B：size/view/cam/zoom/rot/pan/eye），且顶点都已是
     "渲染目标像素空间、y 向下"→ 变换逐项一致（**不要再翻 y**）。
   - 剔除开关：`-DMAQUE_SHADER_MESH=OFF` 时不生成/不链接，gfx 取不到时打印原因并跳过网格图元。
@@ -377,6 +377,46 @@ tools\win\build.cmd -Sanitize address -RunTests
   - **帧预算诊断**：`MAQUE_TRACE_STATS=1` 每 30 帧打印 `logic/render/present/draws/tris/target`。
     主循环每个模拟步都渲染+present 一次 → **屏幕 FPS ≈ 1000 / (logic+render+present) ms**；
     单步 >16.7ms 就上不了 60fps（Debug+ASan 构建比 Release 慢 ~2 倍，属预期）。
+  - **2D/UI drawcall 合批（`modules/render/gfx/src/ui_batch.{h,cpp}`，类 `UiBatcher`）**：2D 图元按
+    渲染状态分组（solid 一批 + 每个贴图/字体图集一批），把 O(控件数) 的绘制降到 O(状态数)；
+    顺序安全用"8 设计单位粗网格占位 + 不安全就切段（段间保持画家序）"保证
+    → 分组/画家序两种模式的 PPM **逐字节一致**（`ui_batch_e2e`）。**所有 2D 图层**都参与分组
+    （layer 0 精灵 / layer 1 UI），网格图元（spine/ImGui）作屏障。
+    `MAQUE_UI_BATCH=0` 关分组（A/B 参考）、`MAQUE_TRACE_BATCH=1|2` 打印 `[ui_batch]` 批次数/逐批明细。
+    回归：`ctest -R 'ui_batch|ui_atlas'`（单测 + `scenes/ui_batch/*.scn` 端到端）。
+  - **2D/UI 动态图集（`modules/render/gfx/src/ui_atlas.{h,cpp}`，类 `UiAtlas`）**：2D **小图**
+    （`scn.Sprite` / `ui.Image`）并进**预分配 1024²** 纹理（shelf 打包 + 1px 外扩边 +
+    `copyTextureToTexture`），UV 重映射后交给 `UiBatcher` 合并（tank：119 图元 110 → 3 draws）。
+    准入 = `create_texture2` 的 2D / RGBA8 / 单 mip / clamp 且任一边 ≤ 图集/4（`Texture::ui_atlas_src`）。
+    **与字体图集分开**（字体走旧 `create_texture` → 永不进图集）；**spine / ImGui / 任意 mesh
+    图元不参与自动合图**（渲染器排除本帧 mesh 页纹理；spine 页另走 `load_texture_raw()`，
+    从源头不置可打包标记）。
+    `MAQUE_UI_ATLAS=0` 关闭（A/B 像素逐字节一致）、`MAQUE_UI_ATLAS_SIZE=N` 改边长（默认 1024）；
+    `MAQUE_TRACE_BATCH=1` 的 `atlas=<张数> atlas_items=<重映射图元数>` 是诊断口径。
+    改 `load_texture` 语义（2D 贴图统一 create_texture2，默认 clamp）时**必须**跑
+    `ctest -R 'ui_atlas|spine|label|twocolor|text_pixel'` + tank/ball 的 PPM A/B。
+  - **draw 统计口径**：F4 面板 / `[stats] ui_draws` / `mq_frame_stats.draws` 取渲染器的
+    `last_2d_batches()`（真实 2D 批次 = 实例化批次 + 网格），**不是图元数**；老插件没有该函数
+    （`MQ_RENDERER_HAS` 回退图元数）。
+  - **`ui.Image` 渲染**：`texture` 是**字符串路径**（与 `scn.Sprite.texture` 同一套约定，
+    支持 `#filter=nearest`），**不是** asset_ref；尺寸取 `ui.Control.offset_max`、缺省用装配期缓存的
+    贴图尺寸；`region` = 归一化 UV、`modulate`/`flip_h/flip_v` 生效；layer=1、z=`Control.z_index`
+    （默认 0，在文字 z=100+ 之下）。**九宫格已实现**：`nine_patch_margin` `{左,上,右,下}` 按
+    **源图像素**解释，提取期展开成最多 9 个同贴图/同裁剪图元 → 原子级合批（9 块仍是一次
+    drawcall；进 UI 图集后也一样）。目标过小时边距按比例压缩，角不重叠；`flip_h/v` 镜像
+    中心与 UV。`KeepAspect* / Tile` 仍未实现（按 Scale）。
+  - **UIMask / ClippingNode（`ui.Mask`，与 `ui.Control` 同挂）**：P0 支持 `MaskMode::Rect` +
+    `clip_children` + **`invert`（reverse）**。裁剪不是 stencil：提取期把可见区表示为**矩形集合**
+    （普通 Mask 求交；reverse 把矩形差集切成上/下/左/右最多 4 块），每个图元只带一个裁剪矩形，
+    gfx 用 scissor 绘制；只把与该带相交的 9-patch 块放进该带（按可见 AABB 求交），
+    因此同一裁剪区的 9-patch 块仍合批；reverse 的 4 条带各成一批（总 draw = 背景 + 4，
+    而不是图元数）。嵌套 reverse 也精确（块数上限 64，超出退化为包围盒）。
+    命中测试用同一矩形集合：洞内 `ui_hit_at=-1`。`mask_mode` 的圆角/纹理/stencil、`feather`
+    尚未实现（当前按矩形处理）。图元 ABI 追加 `clip_x/y/w/h`（设计坐标，屏幕 y 向下），
+    渲染器 v2 → **v3**（`maque.renderer.v3`）。测试场景**按特性独立**：
+    `scenes/ui_patch/{nine_patch,mask_normal,mask_reverse,nine_patch_mask,mask_hit}.scn`，
+    CTest 分别为 `nine_patch_scene_e2e` / `ui_mask_{normal,reverse}_scene_e2e` /
+    `nine_patch_mask_scene_e2e` / `ui_mask_hit_scene_e2e`；聚合回归 `ui_mask_nine_e2e`。
 - **性能分析 Tracy（docs/29）**：默认**零开销**（客户端手动启动，普通运行不监听端口/不占线程）；
   游戏里 **F3** 启动客户端并拉起 profiler GUI，或 `MAQUE_TRACY=1` 启动即开（等外部连）。
   GUI/CLI 二进制不入库：Windows 跑 `tools/tracy/get-profiler.ps1` 下载官方包；

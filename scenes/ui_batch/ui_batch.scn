@@ -1,0 +1,603 @@
+{
+  "title": "UI drawcall 合批（场景 UI 层 layer=1）",
+  "width": 640,
+  "height": 360,
+  "seed": 23,
+  "entities": [
+    {
+      "name": "btn_0_0",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 20.0,
+          "y": 20.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 0,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B0"
+        }
+      ]
+    },
+    {
+      "name": "txt_0_0",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 34.0,
+          "y": 34.0,
+          "z": 1,
+          "text": "BTN 00",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_0_1",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 180.0,
+          "y": 20.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 2,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B1"
+        }
+      ]
+    },
+    {
+      "name": "txt_0_1",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 194.0,
+          "y": 34.0,
+          "z": 3,
+          "text": "BTN 01",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_0_2",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 340.0,
+          "y": 20.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 4,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B2"
+        }
+      ]
+    },
+    {
+      "name": "txt_0_2",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 354.0,
+          "y": 34.0,
+          "z": 5,
+          "text": "BTN 02",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_0_3",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 500.0,
+          "y": 20.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 6,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B3"
+        }
+      ]
+    },
+    {
+      "name": "txt_0_3",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 514.0,
+          "y": 34.0,
+          "z": 7,
+          "text": "BTN 03",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_1_0",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 20.0,
+          "y": 100.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 8,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B4"
+        }
+      ]
+    },
+    {
+      "name": "txt_1_0",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 34.0,
+          "y": 114.0,
+          "z": 9,
+          "text": "BTN 04",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_1_1",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 180.0,
+          "y": 100.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 10,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B5"
+        }
+      ]
+    },
+    {
+      "name": "txt_1_1",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 194.0,
+          "y": 114.0,
+          "z": 11,
+          "text": "BTN 05",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_1_2",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 340.0,
+          "y": 100.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 12,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B6"
+        }
+      ]
+    },
+    {
+      "name": "txt_1_2",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 354.0,
+          "y": 114.0,
+          "z": 13,
+          "text": "BTN 06",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_1_3",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 500.0,
+          "y": 100.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 14,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B7"
+        }
+      ]
+    },
+    {
+      "name": "txt_1_3",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 514.0,
+          "y": 114.0,
+          "z": 15,
+          "text": "BTN 07",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_2_0",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 20.0,
+          "y": 180.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 16,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B8"
+        }
+      ]
+    },
+    {
+      "name": "txt_2_0",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 34.0,
+          "y": 194.0,
+          "z": 17,
+          "text": "BTN 08",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_2_1",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 180.0,
+          "y": 180.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 18,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B9"
+        }
+      ]
+    },
+    {
+      "name": "txt_2_1",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 194.0,
+          "y": 194.0,
+          "z": 19,
+          "text": "BTN 09",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_2_2",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 340.0,
+          "y": 180.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 20,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B10"
+        }
+      ]
+    },
+    {
+      "name": "txt_2_2",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 354.0,
+          "y": 194.0,
+          "z": 21,
+          "text": "BTN 10",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_2_3",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 500.0,
+          "y": 180.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 22,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B11"
+        }
+      ]
+    },
+    {
+      "name": "txt_2_3",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 514.0,
+          "y": 194.0,
+          "z": 23,
+          "text": "BTN 11",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_3_0",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 20.0,
+          "y": 260.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 24,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B12"
+        }
+      ]
+    },
+    {
+      "name": "txt_3_0",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 34.0,
+          "y": 274.0,
+          "z": 25,
+          "text": "BTN 12",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_3_1",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 180.0,
+          "y": 260.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 26,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B13"
+        }
+      ]
+    },
+    {
+      "name": "txt_3_1",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 194.0,
+          "y": 274.0,
+          "z": 27,
+          "text": "BTN 13",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_3_2",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 340.0,
+          "y": 260.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 28,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B14"
+        }
+      ]
+    },
+    {
+      "name": "txt_3_2",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 354.0,
+          "y": 274.0,
+          "z": 29,
+          "text": "BTN 14",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "btn_3_3",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 500.0,
+          "y": 260.0,
+          "width": 120.0,
+          "height": 48.0,
+          "z": 30,
+          "r": 0.18,
+          "g": 0.38,
+          "b": 0.62,
+          "label": "B15"
+        }
+      ]
+    },
+    {
+      "name": "txt_3_3",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 514.0,
+          "y": 274.0,
+          "z": 31,
+          "text": "BTN 15",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "title",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 20.0,
+          "y": 348.0,
+          "z": 90,
+          "text": "UI BATCH 4x4",
+          "font_size": 22.0,
+          "r": 1.0,
+          "g": 0.9,
+          "b": 0.4,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "covered_text",
+      "components": [
+        {
+          "type": "scn.Label",
+          "x": 200.0,
+          "y": 338.0,
+          "z": 100,
+          "text": "COVERED",
+          "font_size": 18.0,
+          "r": 1.0,
+          "g": 0.3,
+          "b": 0.3,
+          "a": 1.0
+        }
+      ]
+    },
+    {
+      "name": "cover_panel",
+      "components": [
+        {
+          "type": "scn.Button",
+          "x": 190.0,
+          "y": 330.0,
+          "width": 150.0,
+          "height": 30.0,
+          "z": 101,
+          "r": 0.05,
+          "g": 0.05,
+          "b": 0.05,
+          "label": ""
+        }
+      ]
+    }
+  ]
+}

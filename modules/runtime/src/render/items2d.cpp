@@ -1,9 +1,58 @@
 /* 2D 提取（docs/13 §8）：组件角色 → mq_renderer_item；只读，不回写模拟
  *
- * 从 runtime.cpp 拆出（plans/25 第 1 阶段，纯搬运）：实现与顺序不变。 */
+ * 从 runtime.cpp 拆出（plans/25 第 1 阶段，纯搬运）：实现与顺序不变。
+ * UI 裁剪（ui.Mask）与 9-patch 在提取期展开：一个逻辑矩形 → 1..N 个普通图元，
+ * 每块都有自己的裁剪矩形；gfx 按 BatchKey（贴图+采样+裁剪）合批。 */
 #include "../runtime_engine.h"
+#include "nine_patch.h"
 
 namespace maque::rt {
+namespace {
+
+/* 世界 y 向上 → 屏幕 y 向下；ClipRect 的 (x0,y0,x1,y1) 在这里翻成 item 的左上+宽高。 */
+void set_item_clip(mq_renderer_item& it, const ClipRect& r, float H) {
+    it.clip_x = r.x0;
+    it.clip_y = H - r.y1;
+    it.clip_w = r.x1 - r.x0;
+    it.clip_h = r.y1 - r.y0;
+}
+
+/* 图元 AABB（屏幕设计坐标）与裁剪矩形是否相交。reverse 会把可见区拆成多条带；
+ * 只把**与该带相交**的块放进该带，否则 9-patch 的 9 块会在每条带里各来一份：
+ * 图元数 = 9×条带、且不同带的块 AABB 相交 → 合批被顺序安全切碎（实测 29 draws）。
+ * 裁剪后每条带只保留真正可见的块 → 图元数≈可见块数，且同一带内仍是一次 drawcall。 */
+bool item_intersects_clip(const mq_renderer_item& it, const ClipRect& r, float H) {
+    const float hw = it.half_w > 0.0F ? it.half_w : it.size;
+    const float hh = it.half_h > 0.0F ? it.half_h : it.size;
+    if (!(hw > 0.0F) || !(hh > 0.0F)) return false;
+    const float c = std::abs(std::cos(it.rotation)), s = std::abs(std::sin(it.rotation));
+    const float ex = hw * c + hh * s, ey = hw * s + hh * c;
+    const float x0 = it.x - ex, x1 = it.x + ex;
+    const float y0 = it.y - ey, y1 = it.y + ey;
+    const float cx0 = r.x0, cy0 = H - r.y1, cx1 = r.x1, cy1 = H - r.y0;
+    return x0 < cx1 && x1 > cx0 && y0 < cy1 && y1 > cy0;
+}
+
+/* 一个逻辑图元 → 每个可见裁剪区一份（reverse Mask 的差集会给出多块）。
+ * 不裁剪时只推一份（零 clip = 不裁剪，旧调用方语义）。 */
+void emit_with_clip(std::vector<mq_renderer_item>& out, const mq_renderer_item& base,
+                    const ClipSet& clip, float H) {
+    if (!clip.active) { out.push_back(base); return; }
+    for (const ClipRect& r : clip.rects) {
+        if (!item_intersects_clip(base, r, H)) continue;
+        mq_renderer_item it = base;
+        set_item_clip(it, r, H);
+        out.push_back(it);
+    }
+}
+
+float item_extent(float half_w, float half_h, float size) {
+    const float hw = half_w > 0.0F ? half_w : size;
+    const float hh = half_h > 0.0F ? half_h : size;
+    return hw > hh ? hw : hh;
+}
+
+}  // namespace
 
 void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
     /* 粒子（docs/15 §4）：只读提取，alpha 随寿命衰减；在实体图元之后按稳定顺序输出 */
@@ -16,8 +65,20 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
         it.texture = -1; it.layer = 0; it.z = 100000;      // 粒子在世界层最上
         out.push_back(it);
     }
-    visit([&](int idx, SceneNode& e, int) {
+
+    /* 递归提取（不能再用扁平 visit）：裁剪是**子树继承**的，必须在进入子节点时带着
+     * 父节点的可见矩形集合。遍历顺序与 visit 完全一致（根升序、子升序）。 */
+    std::function<void(int, const ClipSet&)> walk = [&](int idx, const ClipSet& parent_clip) {
+        SceneNode* ep = at(idx);
+        if (!ep) return;
+        SceneNode& e = *ep;
         if (!e.visible) return;                       // 隐藏整棵子树（update_world 已沿树累积）
+
+        ClipSet self_clip, child_clip;
+        if (eng.has_ui_components)
+            compute_ui_clip(e, parent_clip, (float)eng.W, (float)eng.H, self_clip, child_clip);
+        else { self_clip = parent_clip; child_clip = parent_clip; }
+
         for (auto& [tid, blob] : e.comps) {
             const mq_type_desc* d = blob.desc;
             if (!d) continue;
@@ -36,11 +97,80 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 it.half_h = h * 0.5F;
                 it.r = r; it.g = g; it.b = b; it.a = 1.0F;
                 it.texture = -1; it.layer = 1; it.z = btn->z;
-                out.push_back(it);
+                emit_with_clip(out, it, self_clip, (float)eng.H);
                 continue;
             }
             if (d->role & (MQ_ROLE_UI_LABEL | MQ_ROLE_UI_TEXT)) {
-                eng.extract_text(eng, idx, e, d, out, e.world_opacity);   // 真实字形渲染（docs/13/17）
+                eng.extract_text(eng, idx, e, d, out, e.world_opacity, self_clip);
+                continue;
+            }
+            /* UI 图片（ui.Image，docs/17）：layer=1 的带纹理矩形。
+             * 贴图走 load_ui_texture（create_texture2 通道）→ gfx 的 **UI 动态合图**可以把多张
+             * 小图并进预分配的 1024² 图集 → 一次 drawcall（与字体图集分开，文字仍用字体图集）。
+             * 尺寸：ui.Control 的内容尺寸优先；没有 Control 时用装配期缓存的贴图尺寸。
+             * 九宫格：边距按**源图像素**，展开成最多 9 个同贴图/同裁剪的图元 → 仍然一次合批。 */
+            if (const auto* img = as_component<ui::Image>(d, blob.data())) {
+                if (img->texture.empty()) continue;
+                const auto* ctl = component<ui::Control>(e);
+                float w = ctl ? ctl->offset_max.x : 0.0F;
+                float h = ctl ? ctl->offset_max.y : 0.0F;
+                if (w <= 0.0F || h <= 0.0F) { w = img->texture_size.x; h = img->texture_size.y; }
+                if (w <= 0.0F || h <= 0.0F) continue;
+                const std::string resolved = eng.scoped_texture_ref(idx, img->texture);
+                auto ti = eng.tex_cache.find(resolved);   // 与精灵共用 2D 贴图缓存（含 rendertexture://）
+                if (ti == eng.tex_cache.end() || ti->second < 0) continue;
+                const float scale = e.world_scale > 0.0F ? e.world_scale : 1.0F;
+                /* UV 子矩形：region = (u0,v0,u1,v1) 归一化；退化 → 整张贴图。 */
+                float u0 = img->region.x, v0 = img->region.y;
+                float u1 = img->region.z, v1 = img->region.w;
+                if (!(u1 > u0 && v1 > v0)) { u0 = 0.0F; v0 = 0.0F; u1 = 1.0F; v1 = 1.0F; }
+                mq_renderer_item base{};
+                base.x = e.world_x + w * 0.5F * scale;
+                base.y = (float)eng.H - e.world_y - h * 0.5F * scale;
+                base.half_w = w * 0.5F * scale;
+                base.half_h = h * 0.5F * scale;
+                base.size = item_extent(base.half_w, base.half_h, 0.0F);
+                base.r = img->modulate.x; base.g = img->modulate.y;
+                base.b = img->modulate.z; base.a = img->modulate.w * e.world_opacity;
+                base.texture = ti->second;
+                base.filter = img->texture.find("filter=nearest") != std::string::npos ? 1 : 0;
+                base.snap = 0;
+                base.rotation = 0.0F;                       /* ui.Image 暂不支持旋转（轴心是节点左下角） */
+                base.layer = 1;
+                base.z = ctl ? ctl->z_index : e.z_index;    /* 默认 0 = 文字（z=100+）之下 */
+
+                const float tex_w = img->texture_size.x, tex_h = img->texture_size.y;
+                const bool nine = (img->nine_patch_margin.x > 0.0F || img->nine_patch_margin.y > 0.0F ||
+                                   img->nine_patch_margin.z > 0.0F || img->nine_patch_margin.w > 0.0F) &&
+                                  tex_w > 0.0F && tex_h > 0.0F;
+                if (nine) {
+                    NinePatchParams np{};
+                    np.dst_w = w; np.dst_h = h;
+                    np.tex_w = tex_w; np.tex_h = tex_h;
+                    np.src_x = u0 * tex_w; np.src_y = v0 * tex_h;
+                    np.src_w = (u1 - u0) * tex_w; np.src_h = (v1 - v0) * tex_h;
+                    np.margin_l = img->nine_patch_margin.x;   /* {左,上,右,下} 源图像素 */
+                    np.margin_t = img->nine_patch_margin.y;
+                    np.margin_r = img->nine_patch_margin.z;
+                    np.margin_b = img->nine_patch_margin.w;
+                    np.flip_h = img->flip_h; np.flip_v = img->flip_v;
+                    const std::vector<NinePatchQuad> quads = nine_patch_quads(np);
+                    for (const NinePatchQuad& q : quads) {
+                        mq_renderer_item it = base;
+                        it.x = e.world_x + (w * 0.5F + q.cx) * scale;
+                        it.y = (float)eng.H - e.world_y - h * 0.5F * scale + q.cy * scale;
+                        it.half_w = q.hw * scale;
+                        it.half_h = q.hh * scale;
+                        it.size = item_extent(it.half_w, it.half_h, 0.0F);
+                        it.uv0 = q.u0; it.uv1 = q.v0; it.uv2 = q.u1; it.uv3 = q.v1;
+                        emit_with_clip(out, it, self_clip, (float)eng.H);
+                    }
+                    continue;
+                }
+                if (img->flip_h) { const float t = u0; u0 = u1; u1 = t; }
+                if (img->flip_v) { const float t = v0; v0 = v1; v1 = t; }
+                base.uv0 = u0; base.uv1 = v0; base.uv2 = u1; base.uv3 = v1;
+                emit_with_clip(out, base, self_clip, (float)eng.H);
                 continue;
             }
             if (!(d->role & MQ_ROLE_SPRITE)) continue;
@@ -95,9 +225,13 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
              * 于是 scn.Sprite 图层永远按创建顺序画、z_index 静默无效 —— 树无法盖住坦克。
              * 与 UI/Spine 用同一套 "z_index*100000+id" 稳定键（同 z 时仍按 id，禁指针序）。 */
             it.z = e.z_index * 100000 + (int)idx;
-            out.push_back(it);
+            emit_with_clip(out, it, self_clip, (float)eng.H);
         }
-    });
+
+        for (int k : e.children) walk(k, child_clip);
+    };
+
+    for (int r : roots) walk(r, ClipSet{});
 }
 
 }  // namespace maque::rt

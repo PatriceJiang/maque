@@ -20,6 +20,7 @@ struct NullRenderer {
     std::vector<NullTexture> textures;
     std::vector<uint8_t> meshes;
     std::vector<uint8_t> shader_passes;
+    uint32_t last_2d_items = 0;     /* last_2d_batches 的哑实现：null 后端按图元数上报 */
 };
 
 uint8_t color_byte(float value) {
@@ -98,18 +99,20 @@ int32_t null_has_texture(void* self, int32_t id) {
     return valid_texture(static_cast<NullRenderer*>(self), id) ? 1 : 0;
 }
 
-int32_t null_render_views(void*, int32_t w, int32_t h,
+int32_t null_render_views(void* self, int32_t w, int32_t h,
                           const mq_renderer_view*, uint32_t,
-                          const mq_renderer_item*, uint32_t,
+                          const mq_renderer_item*, uint32_t count,
                           const float* bg, uint8_t* out, uint32_t out_size) {
+    if (auto* r = static_cast<NullRenderer*>(self)) r->last_2d_items = count;
     return fill(w, h, bg, out, out_size);
 }
 
-int32_t null_render_mesh_views(void*, int32_t w, int32_t h,
+int32_t null_render_mesh_views(void* self, int32_t w, int32_t h,
                                const mq_renderer_view*, uint32_t,
-                               const mq_renderer_item*, uint32_t,
-                               const mq_renderer_mesh*, uint32_t,
+                               const mq_renderer_item*, uint32_t count,
+                               const mq_renderer_mesh*, uint32_t mesh_count,
                                const float* bg, uint8_t* out, uint32_t out_size) {
+    if (auto* r = static_cast<NullRenderer*>(self)) r->last_2d_items = count + mesh_count;
     return fill(w, h, bg, out, out_size);
 }
 
@@ -146,8 +149,9 @@ void null_destroy_mesh(void* self, int32_t id) {
     if (r && valid_handle(r->meshes, id)) r->meshes[static_cast<size_t>(id)] = 0;
 }
 
-int32_t null_render_frame3d(void*, const mq_renderer_frame3d* frame) {
+int32_t null_render_frame3d(void* self, const mq_renderer_frame3d* frame) {
     if (!frame) return 1;
+    if (auto* r = static_cast<NullRenderer*>(self)) r->last_2d_items = frame->item_count + frame->mesh_count;
     return fill(frame->width, frame->height, frame->bg, frame->out, frame->out_size);
 }
 
@@ -191,6 +195,12 @@ int32_t null_create_shader_graph_target(void* self, int32_t w, int32_t h, int32_
 int32_t null_update_mesh(void* self, int32_t id, const void* vertices, uint64_t vertex_bytes) {
     auto* r = static_cast<NullRenderer*>(self);
     return r && valid_handle(r->meshes, id) && vertices && vertex_bytes > 0 ? 0 : 1;
+}
+
+/* 2D 批次统计：null 后端不真的分批，按"图元数"上报（调用方只用于展示/诊断）。 */
+uint32_t null_last_2d_batches(void* self) {
+    auto* r = static_cast<NullRenderer*>(self);
+    return r ? r->last_2d_items : 0;
 }
 
 uint64_t null_resource_bytes(void* self) {
@@ -259,8 +269,8 @@ int32_t null_read_texture(void* self, int32_t id, uint8_t* out, uint32_t out_siz
     return 0;
 }
 
-const mq_renderer_v2 kApi = {
-    { static_cast<uint32_t>(sizeof(mq_renderer_v2)), MQ_RENDERER_API_VERSION },
+const mq_renderer_v3 kApi = {
+    { static_cast<uint32_t>(sizeof(mq_renderer_v3)), MQ_RENDERER_API_VERSION },
     null_create,
     null_destroy,
     null_destroy_texture,
@@ -290,8 +300,9 @@ const mq_renderer_v2 kApi = {
     null_create_shader_graph_pass,
     null_destroy_shader_graph_pass,
     null_create_shader_graph_target,
+    null_last_2d_batches,
 };
 
 } // namespace
 
-extern "C" const mq_renderer_v2* mq_renderer_null_api(void) { return &kApi; }
+extern "C" const mq_renderer_v3* mq_renderer_null_api(void) { return &kApi; }

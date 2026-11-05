@@ -16,4 +16,5 @@ if [ -z "$PLAYER" ] || [ ! -x "$PLAYER" ]; then
     exit 1
 fi
 export MAQUE_AUDIO="${MAQUE_AUDIO:-sdl}"
-exec "$PLAYER" "$ROOT/samples/tank/tank.scn" "$@"
+export MAQUE_UI_ATLAS=1
+exec "$PLAYER" --frames 1000000 "$ROOT/samples/tank/tank.scn" "$@"

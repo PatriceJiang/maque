@@ -309,7 +309,10 @@
         - { name: text_size, type: math.Vec2, attrs: { transient: true } }
     - struct: Image
       fields:
-        - { name: texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
+        # 贴图路径：与 scn.Sprite.texture 同一套约定（VFS/场景相对路径 + `#filter=nearest` 等后缀）。
+        # 不用 asset_ref：引擎的资产引用一律以**路径字符串**声明（docs/20），运行期经 VFS 解析。
+        - { name: texture, type: string, default: "" }
+        # UV 子矩形（归一化）：x/y = 左上，z/w = 右下；全 0 或退化 → 整张贴图。
         - { name: region, type: math.Vec4 }
         - { name: modulate, type: math.Vec4, default: "{1.0F, 1.0F, 1.0F, 1.0F}" }
         - { name: stretch_mode, type: StretchMode, default: "StretchMode::Scale" }
@@ -399,13 +402,16 @@
         - { name: scroll, type: entity_ref, attrs: { ref: ScrollView } }
         - { name: pool_size, type: int32_t, default: 0, attrs: { transient: true, readonly: true } }
     - struct: Mask
+      roles: [ui_mask]
+      doc: "UI 裁剪（ClippingNode）：Rect 模式 + invert 反选；P0 用 scissor，非矩形模式后续 stencil"
       fields:
         - { name: mask_mode, type: MaskMode, default: "MaskMode::Rect" }
         - { name: clip_children, type: bool, default: true }
         - { name: corner_radius, type: math.Vec4, attrs: { unit: px } }
         - { name: mask_texture, type: "asset_ref<Texture>", attrs: { ref: Texture } }
         - { name: texture_channel, type: MaskChannel, default: "MaskChannel::Alpha" }
-        - { name: invert, type: bool, default: false }
+        # reverse 模式：可见区 = 父裁剪区 - 本矩形（差集拆成上/下/左/右；不需要 stencil）
+        - { name: invert, type: bool, default: false, doc: "reverse（反选）模式" }
         - { name: stencil_ref, type: int32_t, default: 0, attrs: { range: [0, 255] } }
         - { name: stencil_write, type: bool, default: true }
         - { name: stencil_compare, type: CompareFunc, default: "CompareFunc::Equal" }

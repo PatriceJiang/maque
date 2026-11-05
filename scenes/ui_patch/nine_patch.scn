@@ -1,0 +1,15 @@
+{
+  "title": "9-patch (isolated)",
+  "width": 96,
+  "height": 96,
+  "seed": 1,
+  "entities": [
+    { "name": "bg", "components": [
+      { "type": "scn.Transform2D", "x": 48.0, "y": 48.0 },
+      { "type": "scn.Sprite", "width": 96.0, "height": 96.0, "r": 0.05, "g": 0.06, "b": 0.08 } ] },
+    { "name": "img", "components": [
+      { "type": "scn.Transform2D", "x": 8.0, "y": 8.0 },
+      { "type": "ui.Control", "offset_max": { "x": 80.0, "y": 80.0 } },
+      { "type": "ui.Image", "texture": "textures/frame.png", "nine_patch_margin": { "x": 8.0, "y": 8.0, "z": 8.0, "w": 8.0 } } ] }
+  ]
+}

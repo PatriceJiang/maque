@@ -347,7 +347,14 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
      * 但**脚本运行时生成的**实体没有那次机会 —— 于是贴图缺失、图元退化成纯色方块
      *（实测：动态生成的水管全是 sprite 默认蓝色，而不是贴图的绿色）。
      * 所以"赋值即解析"是这条路径上唯一能补齐的时机。 */
-    if (d->role & MQ_ROLE_SPRITE) {
+    if (auto* ui_img = as_component_mut<ui::Image>(d, blob->data())) {
+        /* UI 图片：走独立贴图通道（create_texture2 → 可进 UI 动态合图），并刷新缺省尺寸。 */
+        if (f->name && std::strcmp(f->name, "texture") == 0 && !assigned.empty()) {
+            int w = 0, h = 0;
+            if (eng->load_ui_texture(eng->scoped_texture_ref((int)id, assigned), &w, &h) >= 0)
+                ui_img->texture_size = math::Vec2{ (float)w, (float)h };
+        }
+    } else if (d->role & MQ_ROLE_SPRITE) {
         const std::string& ref = assigned;
         if (!ref.empty()) {
             /* 直接比字段名：这里原实现又调用两次 mq_reflect_field 来"认"字段，

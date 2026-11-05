@@ -8,9 +8,15 @@ namespace maque::rt {
 /* ---- UI 命中测试（docs/19 §4）：z-order + 树深 稳定排序，命中最上层 ---- */
 struct HitBest { int entity = -1; int z = INT32_MIN; int depth = -1; float lx = 0, ly = 0; };
 
-void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& best) {
+void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& best,
+                  const ClipSet& parent_clip) {
     SceneNode* e = eng.scene->at(idx);
     if (!e) return;
+    if (!e->visible) return;                       // 隐藏子树不参与命中（active 已沿树累积）
+    ClipSet self_clip, child_clip;
+    if (eng.has_ui_components)
+        compute_ui_clip(*e, parent_clip, (float)eng.W, (float)eng.H, self_clip, child_clip);
+    else { self_clip = parent_clip; child_clip = parent_clip; }
     /* 有效 z = 自身 z + 祖先 z（层级叠加，稳定） */
     int zsum = 0;
     /* ui.Control 提供盒模型（anchor/offset/size），交互性由 role 决定 */
@@ -29,7 +35,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
                 if (d2 && (d2->role & (MQ_ROLE_UI_BUTTON | MQ_ROLE_UI_SLIDER | MQ_ROLE_UI_CHECK)))
                     interactive = true;
             }
-            if (interactive && w > 0 && h > 0) {
+            if (interactive && w > 0 && h > 0 && self_clip.contains(px, py)) {
                 /* 节点位置 = 控件中心（与精灵居中绘制一致）；输入已是世界坐标 → 直接比较 */
                 const float cx = e->world_x, cy = e->world_y;
                 const float bx = cx - w * 0.5F, by = cy - h * 0.5F;
@@ -57,6 +63,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
         }
         zsum += z;
         if (!(d->role & MQ_ROLE_UI_BUTTON)) continue;        // 仅可交互控件参与命中
+        if (!self_clip.contains(px, py)) continue;
         /* 本地 (x,y) = 世界坐标下的矩形左下角 → 矩形 = [x, x+w] × [y, y+h]（y 向上） */
         const float bw = w > 0 ? w : 64, bh = h > 0 ? h : 24;
         const float bx = e->world_x + x, by = e->world_y + y;
@@ -69,7 +76,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
             }
         }
     }
-    for (int k : e->children) collect_hits(eng, k, depth + 1, px, py, best);
+    for (int k : e->children) collect_hits(eng, k, depth + 1, px, py, best, child_clip);
 }
 
 /* 命中查询（事件与控制面/脚本共用一套）→ 行为一致（docs/19 §4）。 */
@@ -77,7 +84,7 @@ int ui_hit_entity(Engine& eng, float px, float py, mq_input_target* out) {
     if (out) { out->entity = -1; out->handle = (uint32_t)-1; out->depth = 0; out->z = 0; }
     if (!eng.scene || !eng.scene->count()) return -1;
     HitBest best;
-    for (int k : eng.scene->roots) collect_hits(eng, k, 0, px, py, best);
+    for (int k : eng.scene->roots) collect_hits(eng, k, 0, px, py, best, ClipSet{});
     if (best.entity < 0) return -1;
     if (out) {
         out->entity = best.entity; out->handle = (uint32_t)best.entity;

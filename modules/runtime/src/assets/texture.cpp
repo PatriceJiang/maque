@@ -60,23 +60,70 @@ std::string Engine::scoped_texture_ref(int entity, const std::string& ref) const
     return std::string(kRt) + std::to_string(owner) + "/" + tail;
 }
 
-int Engine::load_texture(const std::string& path) {
-    auto it = tex_cache.find(path);
-    if (it != tex_cache.end()) return it->second;
-    /* 旧 create_texture 没有 sampler 参数：这里只把 '#' 后缀剥掉再读文件（sampler 由 2D 全局采样器决定）；
-     * PBR 贴图走 load_texture_srgb/mips → create_texture2 才真正生效。 */
+int Engine::load_texture(const std::string& path, int* out_w, int* out_h) {
+    return load_texture_impl(path, true, out_w, out_h);
+}
+int Engine::load_texture_raw(const std::string& path) {
+    return load_texture_impl(path, false, nullptr, nullptr);
+}
+
+/* 2D 贴图通用实现。atlas_ok=false → 走旧 create_texture（gfx 不标记 ui_atlas_src，
+ * 自动合图永不吸收；spine 图集页用这条路径）。两种语义用不同缓存 key（同一文件可能两边都要）。 */
+int Engine::load_texture_impl(const std::string& path, bool atlas_ok, int* out_w, int* out_h) {
+    if (out_w) *out_w = 0;
+    if (out_h) *out_h = 0;
+    const std::string key = atlas_ok ? path : ("raw:" + path);
+    auto it = tex_cache.find(key);
+    if (it != tex_cache.end()) {
+        if (auto sz = tex_size_cache.find(key); sz != tex_size_cache.end()) {
+            if (out_w) *out_w = sz->second.first;
+            if (out_h) *out_h = sz->second.second;
+        }
+        return it->second;
+    }
     const TexPathParams tp = parse_tex_path(path);
     void* data = nullptr; size_t n = 0;
-    if (mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) { std::print("runtime: texture not found '{}'\n", path); return -1; }
+    if (mq_vfs_read(vfs, tp.vfs.c_str(), &data, &n) != 0) {
+        std::print("runtime: texture not found '{}'\n", path);
+        return -1;
+    }
     uint8_t* rgba = nullptr; uint32_t w = 0, h = 0;
     char err[128] = { 0 };
     int rc = mq_image_decode(data, n, &rgba, &w, &h, err, sizeof err);
     mq_vfs_free(data);
     if (rc != 0) { std::print("runtime: decode failed '{}': {}\n", path, err); return -1; }
-    int id = rapi->create_texture(rself, rgba, (int)w, (int)h);
+    int32_t id = -1;
+    /* 自动合图通道：create_texture2（单 mip / RGBA8 / 默认 clamp）→ gfx 标记可打包。
+     * 骨骼图集页等 atlas_ok=false 的贴图走旧 create_texture：永不进 2D/UI 图集。 */
+    if (atlas_ok && rapi && rself && rapi->create_texture2) {
+        mq_renderer_texture_desc td{};
+        td.width = (int32_t)w;
+        td.height = (int32_t)h;
+        td.pixel_format = 0;
+        td.kind = 0;
+        td.mip_levels = 1;
+        td.filter = tp.filter_set ? tp.filter : 1;
+        td.wrap_u = tp.wrap_set ? tp.wrap_u : 1;      /* 默认 clamp（与 2D 全局采样器一致） */
+        td.wrap_v = tp.wrap_set ? tp.wrap_v : 1;
+        td.data = rgba;
+        td.data_size = (uint64_t)w * (uint64_t)h * 4u;
+        if (rapi->create_texture2(rself, &td, &id) != 0) id = -1;
+    }
+    if (id < 0 && rapi && rself) id = rapi->create_texture(rself, rgba, (int)w, (int)h);
     mq_image_free(rgba);
-    tex_cache[path] = id;
+    tex_cache[key] = id;
+    tex_size_cache[key] = { (int32_t)w, (int32_t)h };
+    if (out_w) *out_w = (int)w;
+    if (out_h) *out_h = (int)h;
     return id;
+}
+
+/* UI 图片（ui.Image）：与精灵**共用**同一条 2D 贴图通道（load_texture）。
+ * 之前这里另用 "ui:" 缓存键会为同一张图产生第二个 GPU 纹理（图集里也占两份）；
+ * 现在统一走 create_texture2（单 mip / RGBA8 / 默认 clamp）→ 同一 key、同一贴图、同一图集区域。
+ * **字体图集**仍由 text 模块用 create_texture 创建 → 不进 2D/UI 图集（两个图集分开）。 */
+int Engine::load_ui_texture(const std::string& path, int* out_w, int* out_h) {
+    return load_texture(path, out_w, out_h);
 }
 
 /* plans/19：CPU box-filter mip 链（RGBA8，各层连续存放）。

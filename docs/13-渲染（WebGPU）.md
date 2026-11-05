@@ -74,6 +74,94 @@
   诊断：`MAQUE_TRACE_STATS=1` 每 30 帧打印
   `logic / render / present / draws / tris / target`，先定位是逻辑还是渲染/呈现。
 
+### 2D/UI drawcall 合批（`UiBatcher`：`modules/render/gfx/src/ui_batch.{h,cpp}`）
+
+`mq_renderer_item` 是"一个矩形/圆 = 一个实例"，提交顺序 = 排序键 `(layer, z, 原始序)`。
+合批决策从 `gfx.cpp` 拆成独立类（纯 CPU、不依赖 wgpu / ABI 头，可单测），它把图元流翻译成
+GPU 批次（`BatchDraw` + 扁平实例数组），`gfx` 只负责按批次建 bind group / 发 draw：
+
+- **画家序模式**（非 UI 图层，默认）：相邻且同键（贴图 + 采样器）的图元并成一次实例化绘制，
+  网格图元（spine / ImGui）作屏障 —— 与拆分前的实现逐字节等价。
+- **UI 分组模式**（`layer == 1`，runtime 的 `scn.Button` / `scn.Label` / `ui.TextLabel` 都在这一层）：
+  按渲染状态分组（solid 一批、每个字体图集/贴图一批）→ 典型 HUD 的 drawcall 从 O(控件数)
+  降到 O(状态数)（`scenes/ui_batch`：114 图元 17 → 6 次绘制）。
+- **顺序安全**（分组会改提交顺序，必须证明不可见）：入批前用 8 设计单位粗网格做占位检查 ——
+  若存在"更早绘制、分组排位更靠后"的图元与它的 AABB 相交，就**切段**（段内分组、段间保持画家序）。
+  AABB 外扩 `max(1, 1/zoom)` 设计单位（覆盖 `snap` 的整数像素吸附与光栅化边缘）。
+  于是任何被重排的图元对在屏幕上都不相交 → **像素输出与逐图元顺序逐字节一致**；
+  真正重叠且顺序敏感的场景自动退化为画家序（不会画错，只少合批）。
+- 网格屏障、`begin()` 预扫描 bbox 之外出现有面积图元 → 放弃本帧分组（退回画家序）。
+- 开关/诊断：`MAQUE_UI_BATCH=0` 关闭分组（A/B 参考）、`MAQUE_TRACE_BATCH=1` 打印
+  `[ui_batch] items=… draws=… segments=…`、`=2` 再逐批打印（贴图/采样/实例数）。
+- 回归：`ctest -R ui_batch`（纯逻辑单测：合并/切段/屏障/旋转 AABB/确定性）与
+  `ui_batch_e2e`（分组 vs 画家序 PPM **逐字节一致** + draw 数下降 + 切段发生）。
+
+### 2D/UI 动态图集（`UiAtlas`：1024² 预分配，**与字体图集分开**）
+
+2D 贴图不再"一张贴图一次 draw"：gfx 把**小图**（`scn.Sprite` / `ui.Image` / UI 图标的贴图）并进一张
+**预分配**的 **1024×1024** RGBA8 图集（`modules/render/gfx/src/ui_atlas.{h,cpp}` + `gfx.cpp` 的 GPU 侧），
+UV 重映射后交给 `UiBatcher` 按状态合并 → 多张小图共享一次实例化绘制。
+`tank` 样例：119 个 2D 图元 **110 → 3 次绘制**（43 张小图进图集）。
+
+- **两个图集是分开的**（明确约定）：字体字形仍由 text 模块的**字体图集**（512×H，按字体/字号）负责，
+  走旧 `create_texture` → `Texture::ui_atlas_src` 永不置位 → **不进 2D/UI 图集**。
+  2D 贴图（精灵/UI 图片）统一走 `create_texture2`（单 mip / RGBA8 / clamp）。
+- **spine / ImGui / 任意 mesh 图元不参与自动合图**（明确约定）：mesh 直接绑源纹理；即使某个 2D 图元
+  引用了同一张贴图也不打包（渲染器在本帧收集 mesh 页纹理并排除）。spine 图集页另走
+  `load_texture_raw()`（旧 `create_texture`）→ 从源头就不具备可打包标记。
+- **准入/回退**：只收 2D / RGBA8 / 单 mip / **clamp** 且任一边 ≤ 图集/4 的贴图
+  （大背景/整屏底图不进图集，避免挤掉小图）；RenderTexture、非 RGBA8、带 mip 的不进；
+  图集满 → 该贴图退回原样（不崩、不画错，只是少合批）。
+- **打包**：shelf（货架）+ first-fit 空闲表，每次分配留 **1px 外扩边**（边像素用 GPU copy 复制 →
+  线性采样在贴图边缘与 clamp-to-edge 等价，不会混到相邻小图）。贴图销毁时归还空间（`destroy_texture`）。
+- **拷贝时机**：新贴图用 `copyTextureToTexture` 在**渲染命令缓冲之前单独提交**（同一缓冲里
+  既写图集又采样它 = WebGPU usage 冲突）。
+- **像素等价**：`MAQUE_UI_ATLAS=0` 的对照组与开启组 PPM **逐字节一致**（`ui_atlas_e2e`；
+  tank/ball/anim/label/ui 场景也都做过 A/B）。
+- 开关/诊断：`MAQUE_UI_ATLAS=0` 关闭、`MAQUE_UI_ATLAS_SIZE=N` 覆盖边长（默认 1024）；
+  `MAQUE_TRACE_BATCH=1` 的 `atlas=<张数> atlas_items=<重映射图元数>`（`atlas` 不含字体图集与 mesh 页纹理）。
+- **draw 统计口径**：F4 面板 / `[stats] ui_draws` 现在取渲染器的 `last_2d_batches()`（真实批次），
+  不再用"图元数"冒充 drawcall（老插件无该函数时回退图元数）。
+- 限制：`ui.Image` 的 `KeepAspect*/Tile` 未实现（按 Scale）；九宫格已实现（见下）；图集不跨设备实例共享。
+
+### 2D/UI 九宫格（9-patch，`ui.Image.nine_patch_margin`）
+
+`ui.Image` 的九宫格**在提取期展开成最多 9 个普通图元**（`modules/runtime/src/render/nine_patch.h`，
+纯函数、可单测），不改 shader、不改图元语义：
+
+- `nine_patch_margin = {左,上,右,下}`，单位是**源图像素**；相对 `region` 的边缘。`{0,0,0,0}` = 普通单矩形。
+- 角块保持源尺寸；边块单轴拉伸；中心块双轴拉伸。目标小于边距和时**只压缩目标边距**（源 UV 不缩），
+  保证角不重叠；源边距和超过源尺寸时按比例压缩。
+- `flip_h/flip_v` 先按未翻转生成 9 块，再镜像**中心与 UV**（边距宽度和角内图案都正确镜像）。
+- 9 块共享同一贴图、采样器、裁剪矩形 → `UiBatcher` 合成**一次 drawcall**；进入 UI 动态图集后
+  仍然一次（每块 UV 单独重映射到图集区域）。
+- 相邻块共享同一浮点边界 → 无接缝；线性采样在切片边界会有 1px 混色（与整图缩放边缘一致），
+  需要像素级硬边时用 `#filter=nearest`。
+
+### UIMask / ClippingNode（`ui.Mask`）
+
+`ui.Mask` 与 `ui.Control` 同挂，P0 语义：
+
+- **矩形裁剪**：控件矩形（世界设计坐标，左上角 + `offset_max`）；`clip_children=true` 裁子树，
+  `false` 只裁自身绘制。
+- **reverse（`invert=true`）**：不是 stencil。提取期把"可见区"表示为**矩形集合**：
+  普通 Mask 做交；reverse 把每个矩形减去 mask 矩形，差集切成上/下/左/右最多 4 块。
+  每个图元只携带一个裁剪矩形；gfx 用 scissor 绘制。只把**与该带相交**的 9-patch 块放进该带
+  （否则 9 块会在每条带里各来一份，且不同带的 AABB 相交会把合批切碎）；于是 reverse 的
+  4 条带各成一批（总 draw = 背景 + 4），同一带内的图元仍合批。
+- **嵌套**：矩形集合递归求交/求差；块数上限 64，超出退化为包围盒（多画、不丢内容）。
+- **命中测试**：`collect_hits` 使用同一矩形集合 → 洞内 `ui_hit_at=-1`，洞外正常命中。
+- **图元 ABI**：`mq_renderer_item` 尾部追加 `clip_x/y/w/h`（**设计坐标**，屏幕 y 向下；
+  `w/h<=0` = 不裁剪）。渲染器接口 **v2 → v3**（`maque.renderer.v3`）；旧调用方零初始化即"无裁剪"。
+- **限制**：`MaskMode` 的圆角/纹理/stencil、`feather` 暂未实现（当前按矩形处理）；
+  裁剪是硬边 scissor；旋转视图下裁剪矩形按变换后的 AABB（保守）。
+- 回归：**每个特性一个独立 scene + 独立 CTest**：
+  `nine_patch.scn`（9 块合批/像素）、`mask_normal.scn`（普通矩形裁剪）、
+  `mask_reverse.scn`（reverse 四向条带）、`nine_patch_mask.scn`（9-patch + reverse 集成）、
+  `mask_hit.scn`（洞内不命中/洞外命中）。
+  CTest：`nine_patch_scene_e2e` / `ui_mask_normal_scene_e2e` / `ui_mask_reverse_scene_e2e` /
+  `nine_patch_mask_scene_e2e` / `ui_mask_hit_scene_e2e`；聚合回归 `ui_mask_nine_e2e`（MODE=all）。
+
 ## 6. 离屏渲染与 AI 预览（关键）
 
 - 支持**离屏目标**渲染 → `readback` → 图像。

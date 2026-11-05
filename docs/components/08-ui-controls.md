@@ -232,6 +232,11 @@
 - **生命周期 / 确定性**：只产出**绘制裁剪约束**（clip rect / stencil 状态），属渲染**只读消费方**，
   **不参与模拟校验和**（`13 §8`）；裁剪区域解算为纯函数（自身 `rect` + 模式参数），不引入墙钟 / 系统熵。
 - **序列化**：全部字段序列化；**无** `transient` 字段。
+- **落地状态（P0）**：`MaskMode::Rect` + `clip_children` + **`invert`（reverse）** 已实现；
+  裁剪矩形 = 同节点 `ui.Control` 的左上角 + `offset_max`。普通模式求交，reverse 把可见区拆成
+  上/下/左/右矩形集合，逐图元用 scissor 绘制（不依赖 stencil）→ 9-patch/同带图元仍可合批。
+  命中测试用同一集合（洞内不命中）。`RoundedRect / Texture / Stencil / feather / corner_radius`
+  暂未实现（当前按矩形处理）；旋转视图下按 AABB（保守）。回归 `ctest -R ui_mask_nine_e2e`。
 
 ---
 
@@ -263,4 +268,4 @@
 | Tabs | ✅ | ⬜ | ⬜ |
 | ScrollView | ✅ | ⬜ | ⬜ |
 | ListView | ✅ | ⬜ | ⬜ |
-| Mask | ✅ | ⬜ | ⬜ |
+| Mask | ✅ | ⬜ | ✅（Rect + reverse/命中；圆角/纹理/stencil 未做） |

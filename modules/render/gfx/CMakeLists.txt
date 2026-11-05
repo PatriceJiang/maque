@@ -16,10 +16,10 @@ if(WGPU_NATIVE_LIB)
                           BUILTIN_SHADER_SOURCES BUILTIN_SHADER_DIR)
 
     if(MAQUE_ANDROID)
-        add_library(maque_gfx STATIC src/gfx.cpp)
+        add_library(maque_gfx STATIC src/gfx.cpp src/ui_batch.cpp src/ui_atlas.cpp)
         add_library(maque::gfx ALIAS maque_gfx)
     else()
-        add_library(maque_gfx MODULE src/gfx.cpp)
+        add_library(maque_gfx MODULE src/gfx.cpp src/ui_batch.cpp src/ui_atlas.cpp)
     endif()
     target_include_directories(maque_gfx PRIVATE "${WGPU_NATIVE_ROOT}/include")
     if(MAQUE_ANDROID)
@@ -112,4 +112,15 @@ if(WGPU_NATIVE_LIB)
     endif()
 else()
     message(WARNING "maque: 未找到 wgpu-native；maque::gfx 关闭")
+endif()
+
+# UiBatcher 纯逻辑单测（合批决策 / 顺序安全 / 确定性）：只编译 ui_batch.cpp，
+# 不依赖 wgpu 与窗口 —— 没有 wgpu-native 的构建也能跑。
+if(MAQUE_BUILD_TESTS)
+    add_executable(maque_ui_batch_test tests/ui_batch_test.cpp src/ui_batch.cpp src/ui_atlas.cpp)
+    target_include_directories(maque_ui_batch_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    set_target_properties(maque_ui_batch_test PROPERTIES
+        CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+    maque_deploy_asan(maque_ui_batch_test)
+    add_test(NAME ui_batch COMMAND maque_ui_batch_test)
 endif()

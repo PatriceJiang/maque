@@ -2543,7 +2543,7 @@ role: `ui_control`
 
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
-| `texture` | asset_ref<Texture> | — | ref: Texture |
+| `texture` | string |  |  |
 | `region` | math.Vec4 | — |  |
 | `modulate` | math.Vec4 | {1.0F, 1.0F, 1.0F, 1.0F} |  |
 | `stretch_mode` | StretchMode | StretchMode::Scale |  |
@@ -2581,6 +2581,8 @@ role: `ui_control`
 | `pool_size` | int32_t | 0 | transient, readonly |
 
 ### ui.Mask — struct (变长（含动态成员）)
+
+role: `ui_mask`
 
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|

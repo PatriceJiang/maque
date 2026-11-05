@@ -2,11 +2,12 @@
 # 插件接口 ABI（由 DSL 生成 C vtable；docs/02/21）。opaque self = void*。
 #
 # 版本化（docs/02）：v2 因 `view` 数组元素 stride 与 `frame3d` 布局变化使用独立 ABI 名称；
-# v2 内后续能力仍只在表尾追加，记录数组元素字段不得再无版本地改变。
+# v3 因 `item` 记录追加裁剪矩形（数组元素 stride 变化）再次独立命名。
+# 版本内后续能力仍只在表尾追加，记录数组元素字段不得再无版本地改变。
 # 3D/PBR 扩展见 plans/18-pbr-3d.md §2（直接呈现 / 网格 GPU 资源 / PBR 帧描述）。
 - interface: renderer
-  version: 2
-  abi_name: "maque.renderer.v2"
+  version: 3
+  abi_name: "maque.renderer.v3"
   records:
     - record: view
       fields:
@@ -42,6 +43,14 @@
         - { name: uv3,      type: float }
         - { name: layer,    type: int32_t } # 分层（docs/13 §分层：先按 layer 排序）
         - { name: z,        type: int32_t } # 同层内 z-order（稳定排序）
+        # 裁剪矩形（**设计坐标**，屏幕 y 向下；与顶点同一空间）。w/h <= 0 = 不裁剪。
+        # 为什么不是目标像素：提取期不知道渲染目标缩放/letterbox；gfx 用与顶点相同的
+        # view 变换把四角映射到目标像素后取 AABB（轴对齐时精确，旋转视图保守）。
+        # 尾部追加（v3）：旧调用方零初始化即“无裁剪”，行为不变。
+        - { name: clip_x,   type: float }
+        - { name: clip_y,   type: float }
+        - { name: clip_w,   type: float }
+        - { name: clip_h,   type: float }
     # 网格图元（spine/骨骼网格/任意三角形网格）：顶点数组 + 索引 + 页纹理。
     # 为什么需要它：item 只能表达"矩形/圆 + 单张贴图 + 每实例一次变换"，
     # 而骨骼动画一帧是**任意四边形/三角形网格**（逐顶点 UV + 逐顶点颜色 + 索引）。
@@ -523,3 +532,10 @@
       returns: int32_t
       args: [ { name: self, type: self }, { name: w, type: int32_t }, { name: h, type: int32_t }, { name: out_id, type: "int32_t*" } ]
       doc: "创建 RGBA32F 的采样/渲染目标（shader 图中间缓冲；句柄可作普通纹理槽或阶段 target）；0=成功"
+    # 最近一次 2D 提交（render_views 或 frame3d 的 2D 覆盖层）真实产生的 drawcall 数
+    #（实例化批次 + 网格）。合批/图集之后"图元数"不再等于 drawcall，runtime 的统计要问渲染器。
+    # 表尾追加：老插件 struct_size 更小 → 调用方用 MQ_RENDERER_HAS 回退到旧的图元计数。
+    - fn: last_2d_batches
+      returns: uint32_t
+      args: [ { name: self, type: self } ]
+      doc: "上次 2D 提交的批次总数（0 = 未渲染过）"
