@@ -414,9 +414,17 @@
         - { name: clip_content, type: bool, default: true, doc: "把子树裁剪到 Control 视口" }
         - { name: scroll_pos, type: float, default: 0.0F, attrs: { range: [0, 1] }, doc: "归一化滚动位置（0=顶，1=底）" }
         - { name: wheel_step, type: float, default: 48.0F, attrs: { unit: px } }
+        - { name: show_scrollbar, type: bool, default: true }
+        - { name: scrollbar_width, type: float, default: 6.0F, attrs: { unit: px, range: [1, 32] } }
+        - { name: scrollbar_margin, type: float, default: 4.0F, attrs: { unit: px, range: [0, 64] } }
+        - { name: scrollbar_color, type: math.Vec4, default: "{0.62F, 0.74F, 0.92F, 0.9F}" }
+        - { name: scrollbar_track_color, type: math.Vec4, default: "{0.12F, 0.16F, 0.22F, 0.8F}" }
         - { name: scroll_offset, type: float, attrs: { unit: px, transient: true, readonly: true } }
         - { name: content_height, type: float, attrs: { unit: px, transient: true, readonly: true } }
         - { name: content, type: entity_ref, attrs: { ref: Label, transient: true, readonly: true } }
+        - { name: dragging, type: bool, attrs: { transient: true, readonly: true } }
+        - { name: drag_start_y, type: float, attrs: { unit: px, transient: true, readonly: true } }
+        - { name: drag_start_scroll, type: float, attrs: { range: [0, 1], transient: true, readonly: true } }
     - struct: Mask
       roles: [ui_mask]
       doc: "UI 裁剪（ClippingNode）：Rect 模式 + invert 反选；P0 用 scissor，非矩形模式后续 stencil"

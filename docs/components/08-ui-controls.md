@@ -205,8 +205,11 @@
 - 与 `ui.Control` 同挂；`Control.offset_max` 是**视口**。
 - `text` 为逐行文本（`\n` 分行）。运行时自动生成一个 `scn.Label` 子节点承载全文，
   字号/颜色/行距/`wrap` 取自 `font_size/text_color/line_spacing/wrap`。
-- `scroll_pos`（0..1）为归一化滚动位置；指针位于视口内时滚轮按 `wheel_step` 改它。
+- `scroll_pos`（0..1）为归一化滚动位置；指针位于视口内时滚轮按 `wheel_step` 改它，
+  在视口内按下并拖动也可直接滚（`dragging`/`drag_start_y`/`drag_start_scroll` 为运行期派生）。
   `scroll_offset`（像素）与 `content_height` 是运行期派生，可脚本读取。
+- `show_scrollbar`（默认 true）绘制右侧轨道+按内容比例缩放的滑块；`scrollbar_width/margin/color/track_color`
+  可调，滑块随滚动位置移动。
 - `clip_content=true` 时 `compute_ui_clip` 把子树裁剪到视口矩形（与 `ui.Mask` 的裁剪集合求交），
   因此内容不会越界；`clip_content=false` 可做溢出预览。
 - 字段 `item_template/data_source/item_count/...` 保留给后续虚拟化实现（当前未消费）。

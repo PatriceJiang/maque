@@ -4978,12 +4978,28 @@ static double mq_acc_ui_ListView_scroll_pos_getf(const void* p) { const auto& s 
 static void mq_acc_ui_ListView_scroll_pos_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scroll_pos = static_cast<decltype(s.scroll_pos)>(v); }
 static double mq_acc_ui_ListView_wheel_step_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.wheel_step); }
 static void mq_acc_ui_ListView_wheel_step_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.wheel_step = static_cast<decltype(s.wheel_step)>(v); }
+static double mq_acc_ui_ListView_show_scrollbar_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return s.show_scrollbar ? 1.0 : 0.0; }
+static void mq_acc_ui_ListView_show_scrollbar_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.show_scrollbar = v != 0.0; }
+static double mq_acc_ui_ListView_scrollbar_width_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.scrollbar_width); }
+static void mq_acc_ui_ListView_scrollbar_width_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scrollbar_width = static_cast<decltype(s.scrollbar_width)>(v); }
+static double mq_acc_ui_ListView_scrollbar_margin_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.scrollbar_margin); }
+static void mq_acc_ui_ListView_scrollbar_margin_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scrollbar_margin = static_cast<decltype(s.scrollbar_margin)>(v); }
+static const void* mq_acc_ui_ListView_scrollbar_color_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.scrollbar_color; }
+static void* mq_acc_ui_ListView_scrollbar_color_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.scrollbar_color; }
+static const void* mq_acc_ui_ListView_scrollbar_track_color_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.scrollbar_track_color; }
+static void* mq_acc_ui_ListView_scrollbar_track_color_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.scrollbar_track_color; }
 static double mq_acc_ui_ListView_scroll_offset_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.scroll_offset); }
 static void mq_acc_ui_ListView_scroll_offset_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scroll_offset = static_cast<decltype(s.scroll_offset)>(v); }
 static double mq_acc_ui_ListView_content_height_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.content_height); }
 static void mq_acc_ui_ListView_content_height_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.content_height = static_cast<decltype(s.content_height)>(v); }
 static const void* mq_acc_ui_ListView_content_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.content; }
 static void* mq_acc_ui_ListView_content_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.content; }
+static double mq_acc_ui_ListView_dragging_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return s.dragging ? 1.0 : 0.0; }
+static void mq_acc_ui_ListView_dragging_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.dragging = v != 0.0; }
+static double mq_acc_ui_ListView_drag_start_y_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.drag_start_y); }
+static void mq_acc_ui_ListView_drag_start_y_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.drag_start_y = static_cast<decltype(s.drag_start_y)>(v); }
+static double mq_acc_ui_ListView_drag_start_scroll_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.drag_start_scroll); }
+static void mq_acc_ui_ListView_drag_start_scroll_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.drag_start_scroll = static_cast<decltype(s.drag_start_scroll)>(v); }
 static const mq_field_accessor mq_acc_ui_ListView[] = {
     { 0, 0, 0, 0, mq_acc_ui_ListView_item_template_getp, mq_acc_ui_ListView_item_template_getmp },
     { 0, 0, 0, 0, mq_acc_ui_ListView_data_source_getp, mq_acc_ui_ListView_data_source_getmp },
@@ -5006,9 +5022,17 @@ static const mq_field_accessor mq_acc_ui_ListView[] = {
     { mq_acc_ui_ListView_clip_content_getf, mq_acc_ui_ListView_clip_content_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_scroll_pos_getf, mq_acc_ui_ListView_scroll_pos_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_wheel_step_getf, mq_acc_ui_ListView_wheel_step_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_show_scrollbar_getf, mq_acc_ui_ListView_show_scrollbar_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_scrollbar_width_getf, mq_acc_ui_ListView_scrollbar_width_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_scrollbar_margin_getf, mq_acc_ui_ListView_scrollbar_margin_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ListView_scrollbar_color_getp, mq_acc_ui_ListView_scrollbar_color_getmp },
+    { 0, 0, 0, 0, mq_acc_ui_ListView_scrollbar_track_color_getp, mq_acc_ui_ListView_scrollbar_track_color_getmp },
     { mq_acc_ui_ListView_scroll_offset_getf, mq_acc_ui_ListView_scroll_offset_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_content_height_getf, mq_acc_ui_ListView_content_height_setf, 0, 0, 0, 0 },
     { 0, 0, 0, 0, mq_acc_ui_ListView_content_getp, mq_acc_ui_ListView_content_getmp },
+    { mq_acc_ui_ListView_dragging_getf, mq_acc_ui_ListView_dragging_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_drag_start_y_getf, mq_acc_ui_ListView_drag_start_y_setf, 0, 0, 0, 0 },
+    { mq_acc_ui_ListView_drag_start_scroll_getf, mq_acc_ui_ListView_drag_start_scroll_setf, 0, 0, 0, 0 },
 };
 static const mq_field_desc mq_fields_ui_ListView[] = {
     { "item_template", (uint32_t)offsetof(ui::ListView, item_template), MQ_TK_ASSET_REF, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[0] },
@@ -5032,9 +5056,17 @@ static const mq_field_desc mq_fields_ui_ListView[] = {
     { "clip_content", (uint32_t)offsetof(ui::ListView, clip_content), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[18] },
     { "scroll_pos", (uint32_t)offsetof(ui::ListView, scroll_pos), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[19] },
     { "wheel_step", (uint32_t)offsetof(ui::ListView, wheel_step), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[20] },
-    { "scroll_offset", (uint32_t)offsetof(ui::ListView, scroll_offset), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[21] },
-    { "content_height", (uint32_t)offsetof(ui::ListView, content_height), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[22] },
-    { "content", (uint32_t)offsetof(ui::ListView, content), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[23] },
+    { "show_scrollbar", (uint32_t)offsetof(ui::ListView, show_scrollbar), MQ_TK_BOOL, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[21] },
+    { "scrollbar_width", (uint32_t)offsetof(ui::ListView, scrollbar_width), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[22] },
+    { "scrollbar_margin", (uint32_t)offsetof(ui::ListView, scrollbar_margin), MQ_TK_F32, 0u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[23] },
+    { "scrollbar_color", (uint32_t)offsetof(ui::ListView, scrollbar_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[24] },
+    { "scrollbar_track_color", (uint32_t)offsetof(ui::ListView, scrollbar_track_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[25] },
+    { "scroll_offset", (uint32_t)offsetof(ui::ListView, scroll_offset), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[26] },
+    { "content_height", (uint32_t)offsetof(ui::ListView, content_height), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[27] },
+    { "content", (uint32_t)offsetof(ui::ListView, content), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[28] },
+    { "dragging", (uint32_t)offsetof(ui::ListView, dragging), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[29] },
+    { "drag_start_y", (uint32_t)offsetof(ui::ListView, drag_start_y), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[30] },
+    { "drag_start_scroll", (uint32_t)offsetof(ui::ListView, drag_start_scroll), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[31] },
 };
 
 static double mq_acc_ui_Mask_mask_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(static_cast<int64_t>(s.mask_mode)); }
@@ -9679,7 +9711,7 @@ extern const mq_type_desc mq_type_ui_ListView = {
     2237314706u,
     (uint32_t)sizeof(ui::ListView),
     (uint32_t)alignof(ui::ListView),
-    24u,
+    32u,
     mq_fields_ui_ListView,
     4u,
     MQ_ROLE_UI_LIST,
@@ -13764,14 +13796,38 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
         case 2482037251u:
             if (std::strcmp(name, "wheel_step") == 0) return &type->fields[20];
             break;
+        case 33729277u:
+            if (std::strcmp(name, "show_scrollbar") == 0) return &type->fields[21];
+            break;
+        case 861994606u:
+            if (std::strcmp(name, "scrollbar_width") == 0) return &type->fields[22];
+            break;
+        case 2989134212u:
+            if (std::strcmp(name, "scrollbar_margin") == 0) return &type->fields[23];
+            break;
+        case 1718180005u:
+            if (std::strcmp(name, "scrollbar_color") == 0) return &type->fields[24];
+            break;
+        case 4075609837u:
+            if (std::strcmp(name, "scrollbar_track_color") == 0) return &type->fields[25];
+            break;
         case 2440652662u:
-            if (std::strcmp(name, "scroll_offset") == 0) return &type->fields[21];
+            if (std::strcmp(name, "scroll_offset") == 0) return &type->fields[26];
             break;
         case 2578945784u:
-            if (std::strcmp(name, "content_height") == 0) return &type->fields[22];
+            if (std::strcmp(name, "content_height") == 0) return &type->fields[27];
             break;
         case 2428421058u:
-            if (std::strcmp(name, "content") == 0) return &type->fields[23];
+            if (std::strcmp(name, "content") == 0) return &type->fields[28];
+            break;
+        case 755686860u:
+            if (std::strcmp(name, "dragging") == 0) return &type->fields[29];
+            break;
+        case 3142349204u:
+            if (std::strcmp(name, "drag_start_y") == 0) return &type->fields[30];
+            break;
+        case 2121294924u:
+            if (std::strcmp(name, "drag_start_scroll") == 0) return &type->fields[31];
             break;
         }
         break;

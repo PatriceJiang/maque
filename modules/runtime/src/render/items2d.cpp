@@ -173,6 +173,44 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
                 emit_with_clip(out, base, self_clip, (float)eng.H);
                 continue;
             }
+            /* ListView 滚动条：轨道 + 滑块（solid 图元，layer=1，z 高于文字）。
+             * 滑块高度按“视口/内容”比例，位置按 scroll_offset；只在内容超过视口时出现。 */
+            if (const auto* lv = as_component<ui::ListView>(d, blob.data())) {
+                const auto* ctl = component<ui::Control>(e);
+                if (ctl && lv->show_scrollbar) {
+                    const float s = e.world_scale > 0.0F ? e.world_scale : 1.0F;
+                    const float vw = ctl->offset_max.x * s, vh = ctl->offset_max.y * s;
+                    if (vw > 0.0F && vh > 0.0F && lv->content_height > vh + 0.5F) {
+                        const float sbw = std::clamp(lv->scrollbar_width, 1.0F, vw * 0.5F);
+                        const float margin = std::clamp(lv->scrollbar_margin, 0.0F, vw * 0.25F);
+                        const float cx = e.world_x + vw - margin - sbw * 0.5F;
+                        /* 视口内裁剪（再与父 Mask/ListView 裁剪求交）。 */
+                        ClipSet clip = self_clip;
+                        const ClipRect vr{ e.world_x, e.world_y, e.world_x + vw, e.world_y + vh };
+                        clip = clip_apply(clip, vr, false, (float)eng.W, (float)eng.H);
+                        auto solid = [&](float cx_, float cy_, float hw, float hh,
+                                         const math::Vec4& c, int z) {
+                            mq_renderer_item it{};
+                            it.x = cx_; it.y = cy_;
+                            it.half_w = hw; it.half_h = hh;
+                            it.size = item_extent(hw, hh, 0.0F);
+                            it.r = c.x; it.g = c.y; it.b = c.z;
+                            it.a = c.w * e.world_opacity;
+                            it.texture = -1; it.layer = 1; it.z = z;
+                            emit_with_clip(out, it, clip, (float)eng.H);
+                        };
+                        const float top = (float)eng.H - (e.world_y + vh);
+                        solid(cx, top + vh * 0.5F, sbw * 0.5F, vh * 0.5F,
+                              lv->scrollbar_track_color, 800);
+                        const float ratio = std::clamp(vh / lv->content_height, 0.02F, 1.0F);
+                        const float thumb_h = std::max(24.0F, vh * ratio);
+                        const float thumb_cy = top + lv->scroll_offset * s + thumb_h * 0.5F;
+                        solid(cx, thumb_cy, sbw * 0.5F, thumb_h * 0.5F,
+                              lv->scrollbar_color, 801);
+                    }
+                }
+                continue;
+            }
             if (!(d->role & MQ_ROLE_SPRITE)) continue;
             /* 节点属性（active/angle/scale/opacity）此前被**整个忽略** ——
              * 实测：node_set_angle 不旋转、node_set_active(0) 不隐藏、node_set_scale /

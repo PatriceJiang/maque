@@ -14916,6 +14916,63 @@
           }
         },
         {
+          "name": "show_scrollbar",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "scrollbar_width",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              1,
+              32
+            ],
+            "unit": "px"
+          }
+        },
+        {
+          "name": "scrollbar_margin",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              64
+            ],
+            "unit": "px"
+          }
+        },
+        {
+          "name": "scrollbar_color",
+          "type": "math.Vec4",
+          "kind": "struct",
+          "type_id": 1842732857,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "scrollbar_track_color",
+          "type": "math.Vec4",
+          "kind": "struct",
+          "type_id": 1842732857,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
           "name": "scroll_offset",
           "type": "float",
           "kind": "f32",
@@ -14951,6 +15008,47 @@
           "attrs": {
             "readonly": true,
             "ref": "Label",
+            "transient": true
+          }
+        },
+        {
+          "name": "dragging",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "drag_start_y",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true,
+            "unit": "px"
+          }
+        },
+        {
+          "name": "drag_start_scroll",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ],
+            "readonly": true,
             "transient": true
           }
         }

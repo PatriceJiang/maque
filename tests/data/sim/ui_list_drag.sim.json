@@ -1,0 +1,9 @@
+{
+  "name": "ui_list_drag",
+  "space": "world",
+  "events": [
+    { "frame": 3, "type": "pointer_down", "x": 320, "y": 180, "button": 0 },
+    { "frame": 5, "type": "pointer_move", "x": 320, "y": 230 },
+    { "frame": 7, "type": "pointer_up", "x": 320, "y": 230, "button": 0 }
+  ]
+}

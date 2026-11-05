@@ -1320,9 +1320,17 @@ struct ListView {
     bool clip_content = true;
     float scroll_pos = 0.0F;
     float wheel_step = 48.0F;
+    bool show_scrollbar = true;
+    float scrollbar_width = 6.0F;
+    float scrollbar_margin = 4.0F;
+    math::Vec4 scrollbar_color = {0.62F, 0.74F, 0.92F, 0.9F};
+    math::Vec4 scrollbar_track_color = {0.12F, 0.16F, 0.22F, 0.8F};
     float scroll_offset;
     float content_height;
     maque::EntityRef content;
+    bool dragging;
+    float drag_start_y;
+    float drag_start_scroll;
 };
 
 struct Mask {

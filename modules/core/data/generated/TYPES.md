@@ -2591,9 +2591,17 @@ role: `ui_list`
 | `clip_content` | bool | true |  |
 | `scroll_pos` | float | 0.0F | range: 0,1 |
 | `wheel_step` | float | 48.0F | unit: px |
+| `show_scrollbar` | bool | true |  |
+| `scrollbar_width` | float | 6.0F | unit: px, range: 1,32 |
+| `scrollbar_margin` | float | 4.0F | unit: px, range: 0,64 |
+| `scrollbar_color` | math.Vec4 | {0.62F, 0.74F, 0.92F, 0.9F} |  |
+| `scrollbar_track_color` | math.Vec4 | {0.12F, 0.16F, 0.22F, 0.8F} |  |
 | `scroll_offset` | float | — | unit: px, transient, readonly |
 | `content_height` | float | — | unit: px, transient, readonly |
 | `content` | entity_ref | — | ref: Label, transient, readonly |
+| `dragging` | bool | — | transient, readonly |
+| `drag_start_y` | float | — | unit: px, transient, readonly |
+| `drag_start_scroll` | float | — | range: 0,1, transient, readonly |
 
 ### ui.Mask — struct (变长（含动态成员）)
 

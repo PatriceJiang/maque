@@ -46,6 +46,12 @@ if diff_out != 0:
 if text_px < 500:
     print(f'ui_list_e2e: 视口内文字像素太少 {text_px}')
     sys.exit(1)
+# 滚轮后滚动条 thumb 必须存在（右侧 x≈590..604 应有亮色像素，不能只有 track/背景）
+bar_px = sum(1 for y in range(60, 320) for x in range(590, 605)
+             if sum(a[(y * w + x) * 3:(y * w + x) * 3 + 3]) > 300)
+if bar_px < 100:
+    print(f'ui_list_e2e: 滚动条 thumb 像素太少 {bar_px}')
+    sys.exit(1)
 # 视口下沿外的一小条必须是背景（防“只是整体平移、没裁剪”）
 for y in range(329, 335):
     for x in range(32, 608):
@@ -53,9 +59,30 @@ for y in range(329, 335):
         if tuple(a[i:i+3]) != (11, 14, 19):
             print(f'ui_list_e2e: 视口下沿泄漏 ({x},{y}) {tuple(a[i:i+3])}')
             sys.exit(1)
-print(f'ui_list_e2e: scroll in={diff_in} out={diff_out} text={text_px}')
+print(f'ui_list_e2e: scroll in={diff_in} out={diff_out} text={text_px} bar={bar_px}')
 PY
 run_seq "$ROOT/tests/data/sim/ui_list_scroll_outside.sim.json" "$WORK/ui_list_outside"
 cmp -s "${WORK}/ui_list_outside_1.ppm" "${WORK}/ui_list_outside_8.ppm" \
     || { echo "ui_list_e2e: 视口外滚轮仍滚动了内容"; exit 1; }
+
+# 拖拽滚动：在视口内按下并向上拖，内容变化仍必须全部落在视口内。
+run_seq "$ROOT/tests/data/sim/ui_list_drag.sim.json" "$WORK/ui_list_drag"
+"$PY" - "${WORK}/ui_list_drag_1.ppm" "${WORK}/ui_list_drag_8.ppm" <<'PY' || exit 1
+import sys
+def load(p):
+    d = open(p, 'rb').read(); parts = d.split(b'\n', 3)
+    w, h = map(int, parts[1].split()); return w, h, parts[3]
+w, h, a = load(sys.argv[1]); _, _, b = load(sys.argv[2])
+inside = outside = 0
+for y in range(h):
+    for x in range(w):
+        i = (y * w + x) * 3
+        if a[i:i+3] == b[i:i+3]: continue
+        if 32 <= x < 608 and 58 <= y < 328: inside += 1
+        else: outside += 1
+if inside < 1000 or outside:
+    print(f'ui_list_e2e: drag inside={inside} outside={outside}')
+    sys.exit(1)
+print(f'ui_list_e2e: drag in={inside} out={outside}')
+PY
 echo "ui_list_e2e: ok"

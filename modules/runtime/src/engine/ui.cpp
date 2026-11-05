@@ -158,14 +158,24 @@ void Engine::ui_step() {
                 if (max_off < 0.0F) max_off = 0.0F;
                 lv->content_height = content_h;
                 if (max_off <= 0.0F) lv->scroll_pos = 0.0F;
+                const bool inside = mouse_x >= e->world_x && mouse_x <= e->world_x + vw &&
+                                    mouse_y >= e->world_y && mouse_y <= e->world_y + vh;
                 /* 滚轮：仅指针在视口内生效。scroll_pos = 0 为顶部；wheel_dy 已按平台边界翻转，
                  * 向下滚为正 → scroll_pos 增加。 */
-                if (max_off > 0.0F) {
-                    const bool inside = mouse_x >= e->world_x && mouse_x <= e->world_x + vw &&
-                                        mouse_y >= e->world_y && mouse_y <= e->world_y + vh;
-                    if (inside && wheel_dy != 0.0F)
-                        lv->scroll_pos += wheel_dy * lv->wheel_step / max_off;
+                if (max_off > 0.0F && inside && wheel_dy != 0.0F)
+                    lv->scroll_pos += wheel_dy * lv->wheel_step / max_off;
+                /* 拖拽：在视口内按下后，指针世界 y 的变化直接换算成归一化滚动量。
+                 * 向上拖（world y 增大）= 看后面的内容 → scroll_pos 增加。 */
+                const bool down = input && mq_input_pointer_down(input, 0) != 0;
+                if (!down) {
+                    lv->dragging = false;
+                } else if (!lv->dragging && inside && max_off > 0.0F) {
+                    lv->dragging = true;
+                    lv->drag_start_y = mouse_y;
+                    lv->drag_start_scroll = lv->scroll_pos;
                 }
+                if (lv->dragging && down && max_off > 0.0F)
+                    lv->scroll_pos = lv->drag_start_scroll + (mouse_y - lv->drag_start_y) / max_off;
                 lv->scroll_pos = lv->scroll_pos < 0.0F ? 0.0F : (lv->scroll_pos > 1.0F ? 1.0F : lv->scroll_pos);
                 lv->scroll_offset = lv->scroll_pos * max_off;
                 /* 子节点局部坐标：视口顶 - padding.top + 滚动偏移（世界 y 向上，偏移增大=内容上移）。 */
