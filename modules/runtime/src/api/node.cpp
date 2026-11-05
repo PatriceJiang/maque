@@ -350,13 +350,15 @@ float node_set_string(void* ctx, float id, const char* comp, const char* field, 
     if (d->role & MQ_ROLE_SPRITE) {
         const std::string& ref = assigned;
         if (!ref.empty()) {
-            if (f == mq_reflect_field(d, "material")) {
+            /* 直接比字段名：这里原实现又调用两次 mq_reflect_field 来"认"字段，
+             * 每个 set_string 白付 ~50ns；字段描述符名就是唯一真相。 */
+            if (f->name && std::strcmp(f->name, "material") == 0) {
                 scn::SpriteMaterial m{};
                 if (eng->load_material(ref, m)) {
                     eng->material_cache[ref] = m;
                     if (!m.texture.empty()) eng->load_texture_ref(eng->scoped_texture_ref((int)id, m.texture));
                 }
-            } else if (f == mq_reflect_field(d, "texture")) {
+            } else if (f->name && std::strcmp(f->name, "texture") == 0) {
                 eng->load_texture_ref(eng->scoped_texture_ref((int)id, ref));
             }
         }
@@ -489,6 +491,8 @@ float entity_z(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
     SceneNode* e = eng->scene->at((int)id);
     if (!e) return 0.0F;
+    /* 快路径：内置按钮的 z 直接在编译期判型后读（schema 里只有 scn.Button 带该角色）。 */
+    if (auto* b = component_of<MQ_TID_SCN_BUTTON>(*e)) return (float)b->z;
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
@@ -502,6 +506,7 @@ void entity_set_z(void* ctx, float id, float z) {
     auto* eng = (Engine*)ctx;
     SceneNode* e = eng->scene->at((int)id);
     if (!e) return;
+    if (auto* b = component_of<MQ_TID_SCN_BUTTON>(*e)) { b->z = (int32_t)z; return; }
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;

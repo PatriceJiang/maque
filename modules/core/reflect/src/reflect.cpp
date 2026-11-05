@@ -2,13 +2,29 @@
 
 #include <vector>
 #include <string>
+#include <string_view>
 #include <cstring>
 #include <unordered_map>
+
+namespace {
+
+/* 透明哈希/比较：`mq_reflect_type_by_name(ctx, "render.MeshRenderer")` 这类调用
+ * 不再为每次查找构造临时 std::string（>15 字符必然堆分配）。 */
+struct StrHash {
+    using is_transparent = void;
+    size_t operator()(std::string_view s) const noexcept { return std::hash<std::string_view>{}(s); }
+};
+struct StrEq {
+    using is_transparent = void;
+    bool operator()(std::string_view a, std::string_view b) const noexcept { return a == b; }
+};
+
+} // namespace
 
 struct mq_reflect_ctx {
     std::vector<const mq_type_desc*> types;
     std::unordered_map<uint32_t, const mq_type_desc*> by_id;
-    std::unordered_map<std::string, const mq_type_desc*> by_name;
+    std::unordered_map<std::string, const mq_type_desc*, StrHash, StrEq> by_name;
 };
 
 namespace {
@@ -90,7 +106,7 @@ const mq_type_desc* mq_reflect_type_by_id(mq_reflect_ctx* ctx, uint32_t type_id)
 }
 const mq_type_desc* mq_reflect_type_by_name(mq_reflect_ctx* ctx, const char* fq_name) {
     if (!ctx || !fq_name) return nullptr;
-    auto it = ctx->by_name.find(fq_name);
+    auto it = ctx->by_name.find(std::string_view(fq_name));
     return it == ctx->by_name.end() ? nullptr : it->second;
 }
 

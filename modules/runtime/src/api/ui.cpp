@@ -1,4 +1,4 @@
-/* 宿主 API · UI 控件/tween/schedule（按 role 定位组件，不硬编码类型名）
+/* 宿主 API · UI 控件/tween/schedule（组件定位：内置热路径按 type_id 直读，其余按 role + 字段反射）
  *
  * 从 runtime.cpp 的 `namespace host` 按前缀拆出（plans/25 第 1 阶段 S2，纯搬运）：
  * 实现与顺序不变；声明仍由 schema 的 api_list 生成（maque_api.h）。 */
@@ -22,20 +22,23 @@ void set_label(void* ctx, float id, const char* text) {
     }
 }
 
-/* ---- UI 控件值（按 role 统一读写）---- */
+/* ---- UI 控件值 ----
+ * 类型在编译期已知（ProgressBar / Slider / CheckBox 是 schema 里的固定类型）：
+ * 直接 `component<T>` 取槽 + 成员读写，不再「短名查表 + read_num/write_num 反射」。 */
 float ui_set_value(void* ctx, float id, float v) {
     auto* eng = (Engine*)ctx;
-    const mq_type_desc* d = nullptr;
-    if (auto* b = comp_by_name(*eng, (int)id, "ProgressBar", &d)) {
-        write_num(d, b->data(), "value", v < 0 ? 0 : (v > 1 ? 1 : v));
+    SceneNode* e = eng->scene->at((int)id);
+    if (!e) return 0.0F;
+    if (auto* pb = component<ui::ProgressBar>(*e)) {
+        pb->value = v < 0 ? 0 : (v > 1 ? 1 : v);
         return 1.0F;
     }
-    if (auto* b = comp_by_name(*eng, (int)id, "Slider", &d)) {
-        const float lo = read_num(d, b->data(), "min_value", 0.0F);
-        const float hi = read_num(d, b->data(), "max_value", 1.0F);
+    if (auto* sl = component<ui::Slider>(*e)) {
+        const float lo = sl->min_value;
+        const float hi = sl->max_value;
         const float c = v < lo ? lo : (v > hi ? hi : v);
-        write_num(d, b->data(), "value", c);
-        write_num(d, b->data(), "ratio", hi > lo ? (c - lo) / (hi - lo) : 0.0F);
+        sl->value = c;
+        sl->ratio = hi > lo ? (c - lo) / (hi - lo) : 0.0F;
         node_emit_number(eng, id, "changed", c);
         return 1.0F;
     }
@@ -44,28 +47,30 @@ float ui_set_value(void* ctx, float id, float v) {
 
 float ui_get_value(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
-    const mq_type_desc* d = nullptr;
-    if (auto* b = comp_by_name(*eng, (int)id, "ProgressBar", &d)) return read_num(d, b->data(), "value", 0.0F);
-    if (auto* b = comp_by_name(*eng, (int)id, "Slider", &d)) return read_num(d, b->data(), "value", 0.0F);
+    SceneNode* e = eng->scene->at((int)id);
+    if (!e) return 0.0F;
+    if (auto* pb = component<ui::ProgressBar>(*e)) return pb->value;
+    if (auto* sl = component<ui::Slider>(*e)) return sl->value;
     return 0.0F;
 }
 
 float ui_set_checked(void* ctx, float id, float on) {
     auto* eng = (Engine*)ctx;
-    const mq_type_desc* d = nullptr;
-    auto* b = comp_by_name(*eng, (int)id, "CheckBox", &d);
-    if (!b) return 0.0F;
-    write_num(d, b->data(), "checked", on != 0.0F ? 1.0 : 0.0);
+    SceneNode* e = eng->scene->at((int)id);
+    if (!e) return 0.0F;
+    auto* cb = component<ui::CheckBox>(*e);
+    if (!cb) return 0.0F;
+    cb->checked = on != 0.0F;
     node_emit_number(eng, id, "toggled", on != 0.0F ? 1.0F : 0.0F);
     return 1.0F;
 }
 
 float ui_get_checked(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
-    const mq_type_desc* d = nullptr;
-    auto* b = comp_by_name(*eng, (int)id, "CheckBox", &d);
-    if (!b) return 0.0F;
-    return read_num(d, b->data(), "checked", 0.0F);
+    SceneNode* e = eng->scene->at((int)id);
+    if (!e) return 0.0F;
+    auto* cb = component<ui::CheckBox>(*e);
+    return cb && cb->checked ? 1.0F : 0.0F;
 }
 
 /* ---- 文本（Label/TextLabel/RichText 通用：按 role 定位组件）---- */
@@ -226,6 +231,10 @@ float ui_pressed(void* ctx, float id) {
     auto* eng = (Engine*)ctx;
     SceneNode* e = eng->scene->at((int)id);
     if (!e) return 0.0F;
+    /* 快路径：schema 里带 ui_button 角色的内置类型只有 scn.Button（生成期可验证），
+     * 类型在编译期已知 → 直接成员读（一次 comps.find + 一条 byte load），不走反射。 */
+    if (auto* b = component_of<MQ_TID_SCN_BUTTON>(*e)) return b->pressed ? 1.0F : 0.0F;
+    /* 慢路径：模块注册的自定义组件不在这张生成表里，仍按 role + 字段名反射。 */
     for (auto& [tid, blob] : e->comps) {
         const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;

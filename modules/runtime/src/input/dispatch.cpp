@@ -3,6 +3,8 @@
  * 从 runtime.cpp 拆出（plans/25 第 1 阶段，纯搬运）：实现与顺序不变。 */
 #include "../runtime_engine.h"
 
+#include <string_view>
+
 namespace maque::rt {
 
 /* ---- UI 命中测试（docs/19 §4）：z-order + 树深 稳定排序，命中最上层 ---- */
@@ -332,17 +334,17 @@ std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
     }
     if (!want) {
         /* 通用短名：任意 namespace 的 "Ns.Type" 后缀匹配（audio.AudioSource 等），
-         * 避免每加一个模块都要在这里补一个前缀。重名时取注册顺序第一个。 */
+         * 避免每加一个模块都要在这里补一个前缀。重名时取注册顺序第一个。
+         * 用 string_view 比较：原实现每个候选类型都构造 std::string（254 次分配）。 */
         const std::string suffix = std::string(".") + type_name;
+        const std::string_view sfx(suffix);
         const uint32_t n = mq_reflect_count(eng.reflect);
         for (uint32_t i = 0; i < n && !want; ++i) {
             const mq_type_desc* t = mq_reflect_type_at(eng.reflect, i);
             if (!t || !t->name) continue;
-            const std::string nm(t->name);
-            if (nm.size() > suffix.size() &&
-                nm.compare(nm.size() - suffix.size(), suffix.size(), suffix) == 0) {
+            const std::string_view nm(t->name);
+            if (nm.size() > sfx.size() && nm.compare(nm.size() - sfx.size(), sfx.size(), sfx) == 0)
                 want = t;
-            }
         }
     }
     if (!want) return nullptr;

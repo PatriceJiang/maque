@@ -182,9 +182,12 @@ extern const uint32_t            mq_schema_type_count;
 - 默认 schema：`schema/` 目录（入口 `schema/schema.yaml`）；默认输出：`generated/`（与 `schema/` 同级）。
 - 生成文件：
   - `generated/maque_types.h` —— C++ 类型（枚举 + 结构体 + 默认值 + static_assert）
+    + `mq::schema::type_id_v<T>`（类型 → id）与 `mq::schema::type_of<Id>`（id → 类型，供
+    `component_of<Id>` 这类编译期分派用）
   - `generated/maque_desc.h` / `generated/maque_desc.cpp` —— C ABI 描述符与注册表
     （`.cpp` 因需 `offsetof`/`sizeof` 而包含 `maque_types.h`，但所有导出符号保持
-    `extern "C"`，即 C ABI 不变）
+    `extern "C"`，即 C ABI 不变）；`.h` 里另有 `MQ_TID_<NS>_<NAME>` 类型 id 常量
+    （按 fully-qualified name 命名，C/C++ 均可作编译期常量；`MQ_TYPE_*` 已被类型标志占用）
   - `generated/maque_schema.json` —— JSON schema
 - CLI：`node parser.js [--schema <目录|文件>] [--out generated] [--check]`
   - `--schema`：目录（内含入口 `schema.yaml`）或单个 YAML 文件（旧式单文件）。
@@ -200,3 +203,5 @@ extern const uint32_t            mq_schema_type_count;
    打印 `类型名 | declared | computed` 清单）；非 POD 不得声明 `size`/`align`。
 5. `default` 存在时类型大致匹配（尽力）。
 6. 枚举值不重复。
+7. 类型 id 唯一：`type_id = FNV-1a(fqName)` 是 descriptor 分派键与编译期模板 key，
+   碰撞即报错（同时校验 `MQ_TID_*` 常量名 mangling 后不重复）。

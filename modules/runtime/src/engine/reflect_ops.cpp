@@ -8,41 +8,38 @@ namespace maque::rt {
 float read_num(const mq_type_desc* d, const void* base, const char* field, float def) {
     const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
     if (!f) return def;
-    if (f->accessor && f->accessor->get_f64) return (float)f->accessor->get_f64(base);
+    /* 标量走 offset 直读：accessor 是不可内联的间接调用（每字段约 4ns），逐帧/逐实体调用是纯开销。
+     * 枚举等特殊宽度语义仍回退 accessor / 原分支。 */
+    const uint8_t* p = (const uint8_t*)base + f->offset;
     switch (f->kind) {
-        case MQ_TK_F32:  return field_get_f32(f, (const uint8_t*)base);
-        case MQ_TK_F64:  return (float)*(const double*)((const uint8_t*)base + f->offset);
-        case MQ_TK_I8:   return (float)*(const int8_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_U8:   return (float)*(const uint8_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_I16:  return (float)*(const int16_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_U16:  return (float)*(const uint16_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_I32:  return (float)field_get_i32(f, (const uint8_t*)base);
-        case MQ_TK_U32:  return (float)field_get_u32(f, (const uint8_t*)base);
-        case MQ_TK_I64:  return (float)*(const int64_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_U64:  return (float)*(const uint64_t*)((const uint8_t*)base + f->offset);
-        case MQ_TK_BOOL: return field_get_bool(f, (const uint8_t*)base) ? 1.0F : 0.0F;
-        case MQ_TK_ENUM: {
-            /* 枚举：按底层整型宽度读（BodyType::Dynamic 等，docs/06） */
-            const uint8_t* p = (const uint8_t*)base + f->offset;
-            if (f->count == 1) return (float)*(const int8_t*)p;
-            if (f->count == 2) return (float)*(const int16_t*)p;
-            return (float)*(const int32_t*)p;
-        }
-        default: return def;
+        case MQ_TK_F32:  return *(const float*)p;
+        case MQ_TK_F64:  return (float)*(const double*)p;
+        case MQ_TK_I8:   return (float)*(const int8_t*)p;
+        case MQ_TK_U8:   return (float)*(const uint8_t*)p;
+        case MQ_TK_I16:  return (float)*(const int16_t*)p;
+        case MQ_TK_U16:  return (float)*(const uint16_t*)p;
+        case MQ_TK_I32:  return (float)*(const int32_t*)p;
+        case MQ_TK_U32:  return (float)*(const uint32_t*)p;
+        case MQ_TK_I64:  return (float)*(const int64_t*)p;
+        case MQ_TK_U64:  return (float)*(const uint64_t*)p;
+        case MQ_TK_BOOL: return *p ? 1.0F : 0.0F;
+        default: break;
     }
+    if (f->accessor && f->accessor->get_f64) return (float)f->accessor->get_f64(base);
+    if (f->kind == MQ_TK_ENUM) {
+        /* 枚举：按底层整型宽度读（BodyType::Dynamic 等，docs/06） */
+        if (f->count == 1) return (float)*(const int8_t*)p;
+        if (f->count == 2) return (float)*(const int16_t*)p;
+        return (float)*(const int32_t*)p;
+    }
+    return def;
 }
 
 bool write_num(const mq_type_desc* d, void* base, const char* field, double v) {
     const mq_field_desc* f = d ? mq_reflect_field(d, field) : nullptr;
     if (!f) return false;
-    if (f->accessor && f->accessor->set_f64) { f->accessor->set_f64(base, v); return true; }
     uint8_t* p = (uint8_t*)base + f->offset;
     switch (f->kind) {
-        case MQ_TK_ENUM: {
-            if (f->count == 1) { *(int8_t*)p = (int8_t)v; return true; }
-            if (f->count == 2) { *(int16_t*)p = (int16_t)v; return true; }
-            *(int32_t*)p = (int32_t)v; return true;
-        }
         case MQ_TK_F32:  *(float*)p = (float)v; return true;
         case MQ_TK_F64:  *(double*)p = v; return true;
         case MQ_TK_I8:   *(int8_t*)p = (int8_t)v; return true;
@@ -54,8 +51,15 @@ bool write_num(const mq_type_desc* d, void* base, const char* field, double v) {
         case MQ_TK_I64:  *(int64_t*)p = (int64_t)v; return true;
         case MQ_TK_U64:  *(uint64_t*)p = (uint64_t)v; return true;
         case MQ_TK_BOOL: *(bool*)p = v != 0.0; return true;
-        default: return false;
+        default: break;
     }
+    if (f->accessor && f->accessor->set_f64) { f->accessor->set_f64(base, v); return true; }
+    if (f->kind == MQ_TK_ENUM) {
+        if (f->count == 1) { *(int8_t*)p = (int8_t)v; return true; }
+        if (f->count == 2) { *(int16_t*)p = (int16_t)v; return true; }
+        *(int32_t*)p = (int32_t)v; return true;
+    }
+    return false;
 }
 
 /* Slider：把指针 x 映射为值（Slider 的 progress 语义）。 */
@@ -65,11 +69,7 @@ void slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base
     auto* sl = as_component_mut<ui::Slider>(d, base);
     if (!sl) return;
     float w = 100.0F;
-    if (auto* ctrl = comp_by_role(eng, id, MQ_ROLE_UI_CONTROL)) {
-        const mq_type_desc* cd = mq_reflect_type_by_name(eng.reflect, "ui.Control");
-        if (const auto* c = cd ? as_component<ui::Control>(cd, ctrl->data()) : nullptr)
-            w = c->offset_max.x;
-    }
+    if (auto* c = component<ui::Control>(*e)) w = c->offset_max.x;
     if (w <= 0.0F) w = 1.0F;
     float t = (px - (e->world_x - w * 0.5F)) / w;
     t = t < 0.0F ? 0.0F : (t > 1.0F ? 1.0F : t);
@@ -95,19 +95,14 @@ void slider_apply_pointer(Engine& eng, int id, const mq_type_desc* d, void* base
 
 /* ---- 反射读取辅助（不依赖具体类型，仅按字段名） ---- */
 bool read_f32(const mq_type_desc* d, const void* blob, const char* name, float* out) {
-    const mq_field_desc* f = mq_reflect_field(d, name);
+    const mq_field_desc* f = d ? mq_reflect_field(d, name) : nullptr;
     if (!f || f->kind != MQ_TK_F32) return false;
-    if (f->accessor && f->accessor->get_f64) {
-        *out = (float)f->accessor->get_f64(blob);
-        return true;
-    }
-    *out = field_get_f32(f, (const uint8_t*)blob);
+    *out = *(const float*)((const uint8_t*)blob + f->offset);
     return true;
 }
 const std::string* read_str(const mq_type_desc* d, const void* blob, const char* name) {
-    const mq_field_desc* f = mq_reflect_field(d, name);
+    const mq_field_desc* f = d ? mq_reflect_field(d, name) : nullptr;
     if (!f || f->kind != MQ_TK_STRING) return nullptr;
-    if (f->accessor && f->accessor->get_ptr) return (const std::string*)f->accessor->get_ptr(blob);
     return (const std::string*)((const uint8_t*)blob + f->offset);
 }
 

@@ -138,6 +138,20 @@ inline T* as_component_mut(const mq_type_desc* d, void* p) {
     return std::launder(reinterpret_cast<T*>(p));
 }
 
+/* 按**编译期类型 id** 直接取组件槽（免描述符查找、免字段反射）：
+ *   component_of<MQ_TID_SCN_BUTTON>(node)  ≡  component<scn::Button>(node)
+ * 槽长度必须等于该类型尺寸（construct_blob 保证）；不匹配视为缺失（空槽/陈旧数据）。
+ * 调用点因此不再需要「遍历 comps + mq_reflect_type_by_id + 比 role」。 */
+template <uint32_t Id>
+inline auto* component_of(SceneNode& n) {
+    using T = typename ::mq::schema::type_of<Id>::type;
+    auto it = n.comps.find(Id);
+    if (it == n.comps.end() || it->second.size() != sizeof(T)) return static_cast<T*>(nullptr);
+    return std::launder(reinterpret_cast<T*>(it->second.data()));
+}
+template <class T>
+inline T* component(SceneNode& n) { return component_of<::mq::schema::type_id_v<T>>(n); }
+
 /* ---- glTF 片段 / 蒙皮 / morph 运行时状态（plans/22 §6）----
  * 全部是**派生缓存**：真相仍是场景组件（Transform3D.local / AnimationPlayer 字段 / 资源文件），
  * 不进快照、不进校验和；切场景由 clear_asset_caches() 统一清空。 */
@@ -191,8 +205,11 @@ struct MorphMesh {
 /* 已解析字段的直读/直写（生成访问器优先；容器/未知类型回退 offset）。 */
 static inline bool field_get_bool(const mq_field_desc* f, const void* p, bool def = false) {
     if (!f) return def;
+    /* bool 先按 offset 直读：accessor 是不可内联的间接调用，实测比一次 byte load 贵约 4ns；
+     * 标量字段的 offset 由 codegen 用 offsetof 生成，永远准确。 */
+    if (f->kind == MQ_TK_BOOL) return *(const bool*)((const uint8_t*)p + f->offset);
     if (f->accessor && f->accessor->get_f64) return f->accessor->get_f64(p) != 0.0;
-    return f->kind == MQ_TK_BOOL ? *(const bool*)((const uint8_t*)p + f->offset) : def;
+    return def;
 }
 static inline void field_set_bool(const mq_field_desc* f, void* p, bool v) {
     if (!f) return;
