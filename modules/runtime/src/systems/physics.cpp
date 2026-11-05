@@ -19,7 +19,7 @@ void Engine::physics_components_setup() {
         if (!body_blob) continue;
         const mq_type_desc* bd = nullptr;
         for (auto& [tid, b] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            const mq_type_desc* d = b.desc;
             if (d && (d->role & MQ_ROLE_PHYSICS_BODY)) { bd = d; break; }
         }
         const auto* rb = bd ? as_component<physics::RigidBody>(bd, body_blob->data()) : nullptr;
@@ -32,7 +32,7 @@ void Engine::physics_components_setup() {
         if (auto* col = comp_by_role(*this, id, MQ_ROLE_PHYSICS_COLLIDER)) {
             const mq_type_desc* cd = nullptr;
             for (auto& [tid, b] : e->comps) {
-                const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+                const mq_type_desc* d = b.desc;
                 if (d && (d->role & MQ_ROLE_PHYSICS_COLLIDER)) { cd = d; break; }
             }
             if (const auto* collider = cd ? as_component<physics::Collider>(cd, col->data()) : nullptr) {

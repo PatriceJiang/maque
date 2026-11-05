@@ -17,7 +17,7 @@ void Engine::resolve_render_scale() {
     if (scene && canvas_entity >= 0) {
         if (SceneNode* ce = scene->at(canvas_entity)) {
             for (auto& [tid, blob] : ce->comps) {
-                const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+                const mq_type_desc* d = blob.desc;
                 if (!d || !(d->role & MQ_ROLE_UI_CANVAS)) continue;
                 float legacy = 0.0F;
                 read_f32(d, blob.data(), "render_scale", &legacy);

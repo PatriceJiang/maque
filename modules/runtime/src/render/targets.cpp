@@ -96,7 +96,8 @@ void Engine::sync_render_textures() {
     for (int id : ids) {
         SceneNode* e = scene->at(id);
         if (!e) continue;
-        std::vector<uint8_t>& blob = e->comps[rtd->type_id];
+        ComponentSlot& slot = component_slot(*e, rtd);
+        std::vector<uint8_t>& blob = slot.bytes;
         const bool has3d_camera = component<render::Camera3D>(*e) != nullptr;
         const bool has2d_camera = component<render::Camera2D>(*e) != nullptr ||
                                   component<scn::Camera>(*e) != nullptr;
@@ -442,7 +443,7 @@ void Engine::render_camera_textures(const std::vector<mq_renderer_item>& draws,
             /* 3D 材质在 per-camera extract_3d 中生成；这里直接扫描 PBR 的字符串贴图槽，
              * 把 rendertexture:// 引用提前加入 pass 依赖。 */
             for (auto& [eid, ent] : scene->nodes) for (const auto& [tid, blob] : ent.comps) {
-                const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+                const mq_type_desc* d = blob.desc;
                 if (!d || std::strcmp(d->name, "asset.PbrMaterial") != 0) continue;
                 const auto* mesh = component<render::MeshRenderer>(ent);
                 if (!mesh || !node_active_effective(*this, eid) || !mesh->visible) continue;

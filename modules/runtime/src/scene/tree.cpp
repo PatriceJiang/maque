@@ -126,7 +126,7 @@ void Scene::remove(int index) {
     for (int id : doomed) {
         auto it = nodes.find(id);
         if (it == nodes.end()) continue;
-        if (eng) for (auto& [t, b] : it->second.comps) destroy_blob(*eng, t, b);
+        if (eng) for (auto& [t, b] : it->second.comps) destroy_blob(*eng, t, b.bytes);
         nodes.erase(it);
         auto r = std::lower_bound(roots.begin(), roots.end(), id);
         if (r != roots.end() && *r == id) roots.erase(r);

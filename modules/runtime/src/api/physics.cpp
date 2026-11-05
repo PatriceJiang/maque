@@ -89,7 +89,7 @@ float spawn_ball(void* ctx, float x, float y, float vx, float vy, float radius) 
     SceneNode* be = eng->scene->at((int)id);
     if (be) {
         for (auto& [tid, blob] : be->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+            const mq_type_desc* d = blob.desc;
             auto* spr = d ? as_component_mut<scn::Sprite>(d, blob.data()) : nullptr;
             if (!spr) continue;
             spr->radius = radius > 0 ? radius : 8.0F;

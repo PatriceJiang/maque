@@ -27,7 +27,7 @@ void Engine::particles_step(float dt) {
         SceneNode* e = scene->at(id);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            const mq_type_desc* d = blob.desc;
             const auto* pe = (d && (d->role & MQ_ROLE_PARTICLE))
                                  ? as_component<scn::ParticleEmitter>(d, blob.data()) : nullptr;
             if (!pe || !pe->enabled) continue;

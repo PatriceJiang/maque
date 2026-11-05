@@ -120,8 +120,8 @@ void Engine::memory_sample() {
             (void)id;
             node += (uint64_t)e.name.capacity();
             node += (uint64_t)e.comps.size() *
-                    (sizeof(uint32_t) + sizeof(std::vector<uint8_t>) + sizeof(void*) * 2);
-            for (const auto& [tid, blob] : e.comps) { (void)tid; node += (uint64_t)blob.capacity(); }
+                    (sizeof(uint32_t) + sizeof(ComponentSlot) + sizeof(void*) * 2);
+            for (const auto& [tid, blob] : e.comps) { (void)tid; node += (uint64_t)blob.bytes.capacity(); }
         }
     }
     for (const auto& [iid, inst] : instances) {

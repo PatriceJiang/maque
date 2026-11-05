@@ -134,11 +134,10 @@ void Engine::spine_setup() {
         if (!e) continue;
         const mq_type_desc* d = nullptr;
         for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* dd = mq_reflect_type_by_id(reflect, tid);
-            if (dd && (dd->role & MQ_ROLE_SPINE)) { d = dd; break; }
+            if (blob.desc && (blob.desc->role & MQ_ROLE_SPINE)) { d = blob.desc; break; }
         }
         if (!d) continue;
-        auto& blob = e->comps[d->type_id];
+        auto& blob = component_slot(*e, d).bytes;
         const std::string* skelref = read_str(d, blob.data(), "skeleton");
         if (!skelref || skelref->empty()) {
             std::print(stderr, "runtime: spine entity {} missing 'skeleton' ref\n", id);

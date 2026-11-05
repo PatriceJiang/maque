@@ -34,7 +34,7 @@ float nav_goto(void* ctx, float id, float x, float y) {
     SceneNode* e = eng->scene->at((int)id);
     if (!e) return 0.0F;
     for (auto& [tid, blob] : e->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        const mq_type_desc* d = blob.desc;
         if (!d || !(d->role & MQ_ROLE_NAV_AGENT)) continue;
         if (const mq_field_desc* fx = mq_reflect_field(d, "tx")) field_set_f32(fx, blob.data(), x);
         if (const mq_field_desc* fy = mq_reflect_field(d, "ty")) field_set_f32(fy, blob.data(), y);

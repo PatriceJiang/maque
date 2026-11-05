@@ -30,8 +30,9 @@ void Scene::encode(Engine& eng, SnapshotWriter& w) {
         std::sort(tids.begin(), tids.end());
         w.pod((uint32_t)tids.size());
         for (uint32_t t : tids) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, t);
-            auto& blob = e.comps[t];
+            auto& slot = e.comps[t];
+            const mq_type_desc* d = slot.desc;
+            auto& blob = slot.bytes;
             std::vector<uint8_t> tmp(blob.size() + 64);
             size_t n = d ? mq_persist_encode(eng.reflect, d, blob.data(), tmp.data(), tmp.size()) : 0;
             w.pod(t);
@@ -54,7 +55,7 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
     uint32_t count = 0;
     if (!take(&count, 4) || count > (1u << 20)) return 0;
     for (auto& [k, ent] : nodes)
-        for (auto& [t, b] : ent.comps) destroy_blob(eng, t, b);
+        for (auto& [t, b] : ent.comps) destroy_blob(eng, t, b.bytes);
     nodes.clear();
     roots.clear();
     for (uint32_t i = 0; i < count; ++i) {
@@ -91,7 +92,8 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
                     destroy_blob(eng, tid, blob);
                     return 0;
                 }
-                e.comps[tid] = std::move(blob);
+                e.comps[tid].desc = d;
+                e.comps[tid].bytes = std::move(blob);
             }
             pos += len;
         }
@@ -99,7 +101,12 @@ size_t Scene::decode(Engine& eng, const uint8_t* in, size_t n) {
         if (k + 1 > next_id) next_id = k + 1;
     }
     if (id_floor > next_id) next_id = id_floor;
-    rebuild_tree();                 // children/roots 是派生结构：快照只存 parent，恢复后重建
+    /* 不变量校验：组件槽缓存的描述符必须与 key 一致（槽只在构造入口写 desc）。 */
+    for (auto& [k, ent] : nodes)
+        for (auto& [t, slot] : ent.comps)
+            if (!slot.desc || slot.desc->type_id != t)
+                std::print(stderr, "runtime: component slot mismatch after restore (entity={} type={})\n", k, t);
+    rebuild_tree();                 // children/roots 是派生结构：快照只存 parent、恢复后重建
     return pos;
 }
 
@@ -123,8 +130,9 @@ uint64_t Scene::checksum(Engine& eng) {
         for (auto& [t, b] : e.comps) tids.push_back(t);
         std::sort(tids.begin(), tids.end());
         for (uint32_t t : tids) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, t);
-            auto& blob = e.comps[t];
+            auto& slot = e.comps[t];
+            const mq_type_desc* d = slot.desc;
+            auto& blob = slot.bytes;
             mix(&t, sizeof t);
             if (!d) continue;
             for (uint32_t fi = 0; fi < d->field_count; ++fi) {

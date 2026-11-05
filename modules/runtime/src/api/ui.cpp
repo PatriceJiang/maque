@@ -14,7 +14,7 @@ void set_label(void* ctx, float id, const char* text) {
     SceneNode* e = eng->scene->at((int)id);
     if (!e || !text) return;
     for (auto& [tid, blob] : e->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        const mq_type_desc* d = blob.desc;
         if (!d || !(d->role & MQ_ROLE_UI_LABEL)) continue;
         if (auto* l = as_component_mut<scn::Label>(d, blob.data())) l->text = text;
         else if (auto* tl = as_component_mut<ui::TextLabel>(d, blob.data())) tl->text = text;
@@ -80,8 +80,8 @@ std::vector<uint8_t>* text_comp(Engine& eng, int id, const mq_type_desc** out_d)
     if (blob && out_d) {
         SceneNode* e = eng.scene->at(id);
         for (auto& [tid, b] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
-            if (d && (d->role & (MQ_ROLE_UI_LABEL | MQ_ROLE_UI_TEXT)) && &b == blob) { *out_d = d; break; }
+            const mq_type_desc* d = b.desc;
+            if (d && (d->role & (MQ_ROLE_UI_LABEL | MQ_ROLE_UI_TEXT)) && &b.bytes == blob) { *out_d = d; break; }
         }
     }
     return blob;
@@ -236,7 +236,7 @@ float ui_pressed(void* ctx, float id) {
     if (auto* b = component_of<MQ_TID_SCN_BUTTON>(*e)) return b->pressed ? 1.0F : 0.0F;
     /* 慢路径：模块注册的自定义组件不在这张生成表里，仍按 role + 字段名反射。 */
     for (auto& [tid, blob] : e->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        const mq_type_desc* d = blob.desc;
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
         if (const mq_field_desc* fp = mq_reflect_field(d, "pressed"))
             return field_get_bool(fp, blob.data()) ? 1.0F : 0.0F;

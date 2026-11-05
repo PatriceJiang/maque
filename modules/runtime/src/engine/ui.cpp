@@ -18,7 +18,7 @@ void Engine::ui_step() {
         SceneNode* e = scene->at(id);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            const mq_type_desc* d = blob.desc;
             if (!d) continue;
 
             if (const auto* lay = as_component<ui::Container>(d, blob.data())) {

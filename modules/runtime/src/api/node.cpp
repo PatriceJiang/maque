@@ -22,13 +22,13 @@ void  entity_set_pos(void* ctx, float id, float x, float y) {
          * world_x/y 同步赋值只为"本帧立即读回"；下一次 update_world 会按父世界重算。 */
         bool has_tf = false;
         for (auto& [tid, blob] : ent->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
+            const mq_type_desc* d = blob.desc;
             if (d && (d->role & MQ_ROLE_TRANSFORM2D)) { has_tf = true; break; }
         }
         if (!has_tf) { ent->local_x = x; ent->local_y = y; ent->world_x = x; ent->world_y = y; return; }
         // 写回 Transform2D 组件（直接访问生成的 struct；兼容三种声明形态）
         for (auto& [tid, blob] : ent->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
+            const mq_type_desc* d = blob.desc;
             void* p = blob.data();
             if (auto* t = as_component_mut<scn::Transform2D>(d, p)) { t->x = x; t->y = y; continue; }
             if (auto* t = as_component_mut<scene::Transform2D>(d, p)) {
@@ -494,7 +494,7 @@ float entity_z(void* ctx, float id) {
     /* 快路径：内置按钮的 z 直接在编译期判型后读（schema 里只有 scn.Button 带该角色）。 */
     if (auto* b = component_of<MQ_TID_SCN_BUTTON>(*e)) return (float)b->z;
     for (auto& [tid, blob] : e->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        const mq_type_desc* d = blob.desc;
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
         if (const mq_field_desc* fz = mq_reflect_field(d, "z"))
             return (float)field_get_i32(fz, blob.data());
@@ -508,7 +508,7 @@ void entity_set_z(void* ctx, float id, float z) {
     if (!e) return;
     if (auto* b = component_of<MQ_TID_SCN_BUTTON>(*e)) { b->z = (int32_t)z; return; }
     for (auto& [tid, blob] : e->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+        const mq_type_desc* d = blob.desc;
         if (!d || !(d->role & MQ_ROLE_UI_BUTTON)) continue;
         if (const mq_field_desc* fz = mq_reflect_field(d, "z")) field_set_i32(fz, blob.data(), (int32_t)z);
     }

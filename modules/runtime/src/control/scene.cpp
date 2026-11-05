@@ -61,7 +61,7 @@ extern "C" int mq_control_Scene_get(void* u, const mq_json* params, char* out, s
                                    id, ent->name.c_str());
         bool first_c = true;
         for (auto& [tid, blob] : ent->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
+            const mq_type_desc* d = blob.desc;
             if (!d) continue;
             n += (size_t)std::snprintf(out + n, n < cap ? cap - n : 0, "%s{\"type\":\"%s\",\"fields\":{",
                                        first_c ? "" : ",", d->name);
@@ -178,7 +178,7 @@ extern "C" int mq_control_Scene_expand_prefabs(void* u, const mq_json* params, c
     uint32_t expanded = 0;
     for (auto& [idx, ent] : e->scene->nodes) {
         for (auto& [tid, blob] : ent.comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(e->reflect, tid);
+            const mq_type_desc* d = blob.desc;
             if (!d || std::strcmp(d->name, "scn.PrefabInstance") != 0) continue;
             const std::string* src = read_str(d, blob.data(), "source");
             if (!src || src->empty()) continue;

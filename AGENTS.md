@@ -515,7 +515,7 @@ tools\win\build.cmd -Sanitize address -RunTests
   宿主 `samples/player` 仅一行；**游戏逻辑全在资源**（`scenes/*.scn`、`scenes/*.js`）。
 - **渲染**：`maque::gfx`（wgpu-native）。注意：该构建的 `wgpuInstanceWaitAny` **未实现**，异步统一用 `wgpuInstanceProcessEvents` 轮询。
 - **场景模型（Scene Tree · Node + Components）**：**节点树是唯一模型**，`SceneNode` 显式持有
-  `parent + children[]`（有序 = 声明/id 序）与**反射组件 blob**；`id` 只是脚本/快照/控制面的稳定句柄，
+  `parent + children[]`（有序 = 声明/id 序）与**组件槽表**（`type_id → {desc 缓存, 反射 blob}`）；`id` 只是脚本/快照/控制面的稳定句柄，
   **不是存储槽**。runtime 里**没有 ECS/archetype/系统调度**：全树遍历只有 `Scene::visit()`（前序 DFS），
   每帧一趟 `Scene::update_world()` 把局部 Transform 累积成世界坐标/矩阵，并把
   `active/angle/scale/opacity` 沿树累积成 `visible/world_*` 派生缓存。

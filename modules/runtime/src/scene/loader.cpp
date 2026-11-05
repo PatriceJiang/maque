@@ -126,7 +126,8 @@ int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
         if (!tname) continue;
         const mq_type_desc* d = mq_reflect_type_by_name(eng.reflect, tname);
         if (!d) { std::print("runtime: unknown component '{}'\n", tname); continue; }
-        std::vector<uint8_t>& blob = ent->comps[d->type_id];
+        ComponentSlot& slot = component_slot(*ent, d);
+        std::vector<uint8_t>& blob = slot.bytes;
         if (!blob.empty()) destroy_blob(eng, d->type_id, blob);
         construct_blob(eng, d, blob);
         mq_persist_apply_json(eng.reflect, d, c, blob.data());
@@ -136,7 +137,7 @@ int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
      * ⚠️ 只认 `scn.PrefabInstance`：`scn.SceneInstance` 也有 source/detached 字段，
      * 若按字段名盲扫会被当成 prefab 再展开一次（docs/32 §5 的两类实例必须分开）。 */
     for (auto& [tid, blob] : ent->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+        const mq_type_desc* d = blob.desc;
         if (!d || std::strcmp(d->name, "scn.PrefabInstance") != 0) continue;
         const std::string* src = read_str(d, blob.data(), "source");
         if (!src || src->empty()) continue;
@@ -153,7 +154,7 @@ int load_entity(Engine& eng, Scene& sc, const mq_json* e, int parent,
         if (sid) {
             auto it = ent->comps.find(sid->type_id);
             if (it != ent->comps.end()) {
-                std::vector<uint8_t>& blob = it->second;
+                std::vector<uint8_t>& blob = it->second.bytes;
                 const std::string* src = read_str(sid, blob.data(), "source");
                 const mq_field_desc* det = mq_reflect_field(sid, "detached");
                 const bool detached = det && field_get_bool(det, blob.data());

@@ -129,7 +129,7 @@ void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc
     float ox = 0.0F, oy = 0.0F;
     float outline_size = 0.0F, orr = 0.0F, ogg = 0.0F, obb = 0.0F, oaa = 1.0F;
     float shx = 0.0F, shy = 0.0F, shr = 0.0F, shg = 0.0F, shb = 0.0F, sha = 0.0F;
-    const uint8_t* tb = e.comps[d->type_id].data();
+    const uint8_t* tb = component_slot(e, d).data();
     if (const auto* l = as_component<scn::Label>(d, tb)) {
         text = l->text; font_path_comp = l->font;
         size = l->font_size; max_w = l->max_width; max_h = l->max_height;
@@ -236,13 +236,13 @@ void Engine::extract_text(Engine& eng, int idx, SceneNode& e, const mq_type_desc
     const float measured_w = m.width, measured_h = m.height;
     const float shown_w = max_w > 0.0F ? std::min(measured_w, max_w) : measured_w;
     const float shown_h = max_h > 0.0F ? std::min(measured_h, max_h) : measured_h;
-    if (auto* l = as_component_mut<scn::Label>(d, e.comps[d->type_id].data())) {
+    if (auto* l = as_component_mut<scn::Label>(d, component_slot(e, d).data())) {
         l->text_w = shown_w; l->text_h = shown_h;
         l->line_count = (int32_t)m.line_count;
         l->fit_font_size = shrink_mode ? st.font_size : 0.0F;
-    } else if (auto* tl = as_component_mut<ui::TextLabel>(d, e.comps[d->type_id].data())) {
+    } else if (auto* tl = as_component_mut<ui::TextLabel>(d, component_slot(e, d).data())) {
         tl->text_size = math::Vec2{ shown_w, shown_h };
-    } else if (auto* rt = as_component_mut<render::RichText>(d, e.comps[d->type_id].data())) {
+    } else if (auto* rt = as_component_mut<render::RichText>(d, component_slot(e, d).data())) {
         rt->content_size = math::Vec2{ shown_w, shown_h };
         rt->line_count = (int32_t)m.line_count;
     }

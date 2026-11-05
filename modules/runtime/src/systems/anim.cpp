@@ -18,7 +18,7 @@ bool resolve_field_path(Engine& eng, int entity, const std::string& path,
     const std::string field_part = dot == std::string::npos ? path : path.substr(dot + 1);
     /* 允许 "Type.field"（跨组件）或裸 "field"（本实体任一组件的字段） */
     for (auto& [tid, blob] : e->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+        const mq_type_desc* d = blob.desc;
         if (!d) continue;
         if (!type_part.empty() && type_part != d->name) continue;
         const mq_field_desc* f = mq_reflect_field(d, field_part.c_str());
@@ -78,13 +78,13 @@ void Engine::anim_step(float dt) {
         SceneNode* e = scene->at(id);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            const mq_type_desc* d = blob.desc;
             if (!d || !(d->role & MQ_ROLE_ANIM_PLAYER)) continue;
             auto* ap = as_component_mut<scn::AnimationPlayer>(d, blob.data());
             if (!ap) continue;
             /* glTF 片段通路：clips 非空 → 只走新逻辑（旧 clip 通路完全不变） */
             if (!ap->clips.empty()) {
-                anim_step_gclip(id, d, blob, dt);
+                anim_step_gclip(id, d, blob.bytes, dt);
                 continue;
             }
             if (!ap->playing || ap->clip.empty()) continue;

@@ -19,7 +19,7 @@ void Scene::extract(Engine& eng, std::vector<mq_renderer_item>& out) {
     visit([&](int idx, SceneNode& e, int) {
         if (!e.visible) return;                       // 隐藏整棵子树（update_world 已沿树累积）
         for (auto& [tid, blob] : e.comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            const mq_type_desc* d = blob.desc;
             if (!d) continue;
             /* UI 控件：overlay 层（layer=1）——屏幕空间绘制，不受相机影响（docs/13 §分层） */
             if (d->role & MQ_ROLE_UI_BUTTON) {

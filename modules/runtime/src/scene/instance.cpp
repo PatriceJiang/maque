@@ -541,7 +541,7 @@ void Engine::ensure_instance_component(int shell, int instance_id) {
         attach_component(*this, shell, "scn.SceneInstance");
     auto it = se->comps.find(sid->type_id);
     if (it == se->comps.end()) return;
-    std::vector<uint8_t>& blob = it->second;
+    std::vector<uint8_t>& blob = it->second.bytes;
     if (const mq_field_desc* f = mq_reflect_field(sid, "source"))
         field_set_str(f, blob.data(), serialized_instance_source(*inst).c_str());
     if (const mq_field_desc* f = mq_reflect_field(sid, "params"))
@@ -568,7 +568,7 @@ void Engine::rebase_instance_assets(int instance_id) {
         SceneNode* e = scene->at(eid);
         if (!e) continue;
         for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            const mq_type_desc* d = blob.desc;
             if (!d) continue;
             for (uint32_t i = 0; i < d->field_count; ++i) {
                 const mq_field_desc* f = &d->fields[i];

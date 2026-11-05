@@ -41,7 +41,7 @@ struct Scene {
     void destroy_all() {
         if (!eng) { nodes.clear(); roots.clear(); return; }
         for (auto& [k, ent] : nodes)
-            for (auto& [t, b] : ent.comps) destroy_blob(*eng, t, b);
+            for (auto& [t, b] : ent.comps) destroy_blob(*eng, t, b.bytes);
         nodes.clear();
         roots.clear();
     }

@@ -15,7 +15,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
     int zsum = 0;
     /* ui.Control 提供盒模型（anchor/offset/size），交互性由 role 决定 */
     for (auto& [tid, blob] : e->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+        const mq_type_desc* d = blob.desc;
         if (!d) continue;
         if (d->role & MQ_ROLE_UI_CONTROL) {
             const auto* ctrl = as_component<ui::Control>(d, blob.data());
@@ -25,7 +25,7 @@ void collect_hits(Engine& eng, int idx, int depth, float px, float py, HitBest& 
             zsum += ctrl->z_index;
             bool interactive = false;
             for (auto& [t2, b2] : e->comps) {
-                const mq_type_desc* d2 = mq_reflect_type_by_id(eng.reflect, t2);
+                const mq_type_desc* d2 = b2.desc;
                 if (d2 && (d2->role & (MQ_ROLE_UI_BUTTON | MQ_ROLE_UI_SLIDER | MQ_ROLE_UI_CHECK)))
                     interactive = true;
             }
@@ -233,14 +233,14 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
         SceneNode* e = eng->scene->at(target->entity);
         if (e && ev->type == MQ_INPUT_POINTER_DOWN)
             for (auto& [tid, blob] : e->comps) {
-                const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+                const mq_type_desc* d = blob.desc;
                 if (auto* btn = (d && (d->role & MQ_ROLE_UI_BUTTON))
                                     ? as_component_mut<scn::Button>(d, blob.data()) : nullptr)
                     btn->pressed = true;
             }
         if (e && ev->type == MQ_INPUT_POINTER_UP)
             for (auto& [tid, blob] : e->comps) {
-                const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+                const mq_type_desc* d = blob.desc;
                 if (auto* btn = (d && (d->role & MQ_ROLE_UI_BUTTON))
                                     ? as_component_mut<scn::Button>(d, blob.data()) : nullptr)
                     btn->pressed = false;
@@ -248,7 +248,7 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
         /* Slider：按下进入拖拽，拖动中按水平比例改值（滑块语义） */
         if (e) {
             for (auto& [tid, blob] : e->comps) {
-                const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+                const mq_type_desc* d = blob.desc;
                 auto* sl = (d && (d->role & MQ_ROLE_UI_SLIDER))
                                ? as_component_mut<ui::Slider>(d, blob.data()) : nullptr;
                 if (!sl) continue;
@@ -266,7 +266,7 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
             /* CheckBox：点击切换 + toggled 事件（开关语义） */
             if (ev->type == MQ_INPUT_CLICK) {
                 for (auto& [tid, blob] : e->comps) {
-                    const mq_type_desc* d = mq_reflect_type_by_id(eng->reflect, tid);
+                    const mq_type_desc* d = blob.desc;
                     auto* cb = (d && (d->role & MQ_ROLE_UI_CHECK))
                                    ? as_component_mut<ui::CheckBox>(d, blob.data()) : nullptr;
                     if (!cb || cb->disabled) continue;
@@ -309,8 +309,8 @@ std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role) {
     SceneNode* e = eng.scene->at(id);
     if (!e) return nullptr;
     for (auto& [tid, blob] : e->comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
-        if (d && (d->role & role)) return &blob;
+        const mq_type_desc* d = blob.desc;
+        if (d && (d->role & role)) return &blob.bytes;
     }
     return nullptr;
 }
@@ -335,7 +335,7 @@ std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
     auto it = e->comps.find(want->type_id);
     if (it == e->comps.end()) return nullptr;
     if (out_desc) *out_desc = want;
-    return &it->second;
+    return &it->second.bytes;
 }
 
 }  // namespace maque::rt

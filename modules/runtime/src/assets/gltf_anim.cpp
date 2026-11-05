@@ -305,7 +305,7 @@ void Engine::setup_gltf_assets() {
             }
         }
         for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
+            const mq_type_desc* d = blob.desc;
             const auto* ap = (d && (d->role & MQ_ROLE_ANIM_PLAYER))
                                  ? as_component<scn::AnimationPlayer>(d, blob.data()) : nullptr;
             if (!ap) continue;

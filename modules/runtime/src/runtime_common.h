@@ -89,6 +89,25 @@ namespace fs = std::filesystem;
     ((api) && (api)->header.struct_size >= offsetof(mq_renderer_v2, member) + sizeof((api)->member) && \
      (api)->member)
 
+/* 组件槽：map key（type_id）+ **描述符缓存** + 字节存储。
+ * 描述符是静态/模块生命周期，指针稳定；缓存它可以让所有遍历跳过
+ * `mq_reflect_type_by_id`（每组件一次 unordered_map 查找）。
+ * 不变量：desc->type_id == key。只经 component_slot() 写入 desc。
+ * data()/size()/empty()/begin()/end() 透传，调用点的 `blob.data()` 一行不用改。 */
+struct ComponentSlot {
+    const mq_type_desc* desc = nullptr;
+    std::vector<uint8_t> bytes;
+
+    uint8_t*       data()        { return bytes.data(); }
+    const uint8_t* data()  const { return bytes.data(); }
+    size_t         size()  const { return bytes.size(); }
+    bool           empty() const { return bytes.empty(); }
+    auto begin()       { return bytes.begin(); }
+    auto end()         { return bytes.end(); }
+    auto begin() const { return bytes.begin(); }
+    auto end()   const { return bytes.end(); }
+};
+
 /* 场景树节点（Node + Components）——**不是 ECS 实体**。
  * 层级是显式的 parent + 有序 children（升序 id = 声明/创建序），组件是反射 blob。
  * 没有 archetype/系统调度：每帧只做一次确定性的树访问（Scene::visit），
@@ -122,8 +141,15 @@ struct SceneNode {
     float world_scale = 1.0F;
     float world_opacity = 1.0F;
     int   depth = 0;
-    std::unordered_map<uint32_t, std::vector<uint8_t>> comps;   // type_id → blob
+    std::unordered_map<uint32_t, ComponentSlot> comps;   // type_id → 组件槽（含描述符缓存）
 };
+
+/* 组件槽工厂：**唯一**允许设置 desc 的入口（不变量：desc->type_id == key）。 */
+inline ComponentSlot& component_slot(SceneNode& n, const mq_type_desc* d) {
+    ComponentSlot& s = n.comps[d->type_id];
+    s.desc = d;
+    return s;
+}
 
 /* 已知内置组件：按 schema 生成的 type_id 判型后直接访问生成 struct。
  * 调用方应优先用它，而不是 mq_reflect_field + offset。 */

@@ -9,7 +9,7 @@ namespace maque::rt {
 static void read_local_pos(Engine& eng, const SceneNode& e, float* lx, float* ly) {
     *lx = e.local_x; *ly = e.local_y;                      /* 无 Transform2D：显式局部兜底（真值在节点上） */
     for (auto& [tid, blob] : e.comps) {
-        const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+        const mq_type_desc* d = blob.desc;
         const uint8_t* p = blob.data();
         if (const auto* t = as_component<scn::Transform2D>(d, p)) {
             *lx = t->x; *ly = t->y; return;
@@ -65,7 +65,7 @@ void Scene::update_world3d(Engine& eng) {
     visit([&](int idx, SceneNode& e, int) {
         math::Transform3D trs{};
         for (auto& [tid, blob] : e.comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(eng.reflect, tid);
+            const mq_type_desc* d = blob.desc;
             if (const auto* t3 = as_component<scene::Transform3D>(d, blob.data())) {
                 trs = t3->local;
                 break;
