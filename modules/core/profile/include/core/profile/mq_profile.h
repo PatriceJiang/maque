@@ -99,8 +99,10 @@ bool start(const Options& opts, std::string* error);
 
 /* 停止（SIGINT → 等待 → 超时 SIGKILL），generate_report=true 时同步跑 `perf report`
  * 并写 hotspots.json。返回 false 仅表示"没有在录制/停止失败"；报告失败会写 error 但
- * 录制已被停止（调用方可以继续跑游戏）。 */
-bool stop(bool generate_report, std::string* error);
+ * 录制已被停止（调用方可以继续跑游戏）。
+ * timeout_ms = 等 perf 正常退出的上限；窗口关闭路径应短（避免看起来"卡死"），
+ * 显式 stop 可以长一点（默认 5s）。 */
+bool stop(bool generate_report, std::string* error, int timeout_ms = 5000);
 
 /* 对最近一次 perf.data 重新生成报告（agent 可以在 stop 后换 top 重跑解析）。 */
 bool refresh_report(std::string* error);

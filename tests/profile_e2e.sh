@@ -116,6 +116,53 @@ env MAQUE_PROFILE=0 MAQUE_PROFILE_PERF="$FAKE" MAQUE_WINDOW=0x0 MAQUE_MAX_FRAMES
 grep -q 'runtime: \[profile\]' "$WORK/off.log" && fail "MAQUE_PROFILE=0 仍输出 profile 日志"
 echo "profile_e2e: ⑤ 关闭路径 OK"
 
+# ---- ⑤b 默认退出：只停 perf，不跑 report（修复"关窗口卡死"）----
+NOREPORT_DIR="$WORK/exit-noreport"
+env MAQUE_PROFILE=1 MAQUE_PROFILE_PERF="$FAKE" MAQUE_PROFILE_DIR="$NOREPORT_DIR" \
+    MAQUE_WINDOW=0x0 MAQUE_MAX_FRAMES=5 \
+    timeout 60 "$PLAYER" "$SCN" >"$WORK/exit-noreport.log" 2>&1 || fail "默认退出玩家退出码非 0"
+grep -q '退出：未生成报告' "$WORK/exit-noreport.log" || fail "默认退出没有说明 report 被跳过"
+[ -s "$NOREPORT_DIR/perf.data" ] || fail "默认退出没有保留 perf.data"
+[ -e "$NOREPORT_DIR/hotspots.json" ] && fail "默认退出不应生成 hotspots.json"
+echo "profile_e2e: ⑤b 默认退出跳过报告 OK"
+
+# ---- ⑤c 显式 MAQUE_PROFILE_REPORT_ON_EXIT=1：退出时仍出报告 ----
+REPORT_DIR="$WORK/exit-report"
+env MAQUE_PROFILE=1 MAQUE_PROFILE_REPORT_ON_EXIT=1 MAQUE_PROFILE_PERF="$FAKE" \
+    MAQUE_PROFILE_DIR="$REPORT_DIR" MAQUE_WINDOW=0x0 MAQUE_MAX_FRAMES=5 \
+    timeout 60 "$PLAYER" "$SCN" >"$WORK/exit-report.log" 2>&1 || fail "REPORT_ON_EXIT 退出码非 0"
+grep -q 'runtime: \[profile\] stopped:' "$WORK/exit-report.log" || fail "REPORT_ON_EXIT 未生成报告"
+[ -s "$REPORT_DIR/hotspots.json" ] || fail "REPORT_ON_EXIT 缺 hotspots.json"
+echo "profile_e2e: ⑤c 退出生成报告（opt-in）OK"
+
+# ---- ⑤d perf 不响应 SIGINT：关闭等待必须有上限（2s 后 SIGKILL）----
+cat > "$WORK/stubborn_perf.py" <<'PY'
+import signal, sys, time
+args = sys.argv[1:]
+if not args or args[0] == '--version':
+    print('perf version 0.0.stubborn'); sys.exit(0)
+if args[0] == 'record':
+    out = args[args.index('-o') + 1] if '-o' in args else '/tmp/stubborn.data'
+    open(out, 'wb').write(b'STUB\n' * 32)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    while True:
+        time.sleep(1)
+sys.exit(2)
+PY
+cat > "$WORK/stubborn-perf" <<WRAP
+#!/usr/bin/env bash
+exec $PY "$WORK/stubborn_perf.py" "\$@"
+WRAP
+chmod +x "$WORK/stubborn-perf"
+START=$(date +%s)
+env MAQUE_PROFILE=1 MAQUE_PROFILE_PERF="$WORK/stubborn-perf" \
+    MAQUE_PROFILE_DIR="$WORK/stubborn" MAQUE_WINDOW=0x0 MAQUE_MAX_FRAMES=2 \
+    timeout 20 "$PLAYER" "$SCN" >"$WORK/stubborn.log" 2>&1 || fail "stubborn perf 退出码非 0"
+ELAPSED=$(( $(date +%s) - START ))
+[ "$ELAPSED" -le 8 ] || fail "perf 不响应 SIGINT 时关闭耗时 ${ELAPSED}s（应 <=8s）"
+echo "profile_e2e: ⑤d 不响应 SIGINT 的 perf 关闭有界（${ELAPSED}s）OK"
+
 # ---- ⑥ 真实 perf（有权限时）：外部 record → report 解析；无权限则跳过该节 ----
 REAL_PERF="${MAQUE_PROFILE_REAL_PERF:-$(command -v perf 2>/dev/null || true)}"
 REAL_OK=0

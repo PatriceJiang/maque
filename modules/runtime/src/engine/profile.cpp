@@ -142,10 +142,10 @@ bool Engine::profile_start(const maque::profile::Options& in, std::string* error
     return true;
 }
 
-bool Engine::profile_stop(bool report, std::string* error) {
+bool Engine::profile_stop(bool report, std::string* error, int timeout_ms) {
     profile_stop_frame = 0;
     std::string err;
-    const bool ok = maque::profile::stop(report, &err);
+    const bool ok = maque::profile::stop(report, &err, timeout_ms);
     const auto st = maque::profile::status();
     mq_obs_gauge_set(obs, "profile.recording", 0.0);
     mq_obs_gauge_set(obs, "profile.samples", (double)st.samples);
@@ -221,9 +221,21 @@ void Engine::profile_tick() {
 }
 
 void Engine::profile_shutdown() {
-    if (maque::profile::status().state != maque::profile::State::recording) return;
+    if (!maque::profile::recording()) return;
+    /* 退出路径**默认不生成报告**：`perf report` 对长录制可能耗时几十秒，用户看到的就是
+     * "关窗口卡死"。perf.data 已落盘，agent 可以事后用
+     * `tools/perf/maque_perf.py report --data <dir>` 生成；需要旧行为时显式
+     * `MAQUE_PROFILE_REPORT_ON_EXIT=1`。停止等待也压到 2s（超时 SIGKILL）。 */
+    const char* rv = std::getenv("MAQUE_PROFILE_REPORT_ON_EXIT");
+    const bool report = rv && *rv && std::strcmp(rv, "0") != 0;
     std::string err;
-    profile_stop(true, &err);
+    profile_stop(report, &err, 2000);
+    if (!report) {
+        const auto st = maque::profile::status();
+        std::print("runtime: [profile] 退出：未生成报告（默认关闭，避免关闭卡顿）；"
+                   "perf.data → '{}'，需要时运行 tools/perf/maque_perf.py report --data '{}'\n",
+                   st.data_path, st.output_dir);
+    }
 }
 
 }  // namespace maque::rt

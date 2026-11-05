@@ -399,6 +399,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   控制面 `Perf.profile_status/start/stop/report/mark`；`start/stop/mark` 是变更类（启动外部进程/
   写产物）→ 只读会话被 `-32001` 拒绝，启动期 `MAQUE_PROFILE=1` 不需要写权限。
   产物：`perf.data` / `perf.log` / `perf-report.txt` / `hotspots.json` / `meta.json`（+ Python `report.md`）。
+  **退出默认只停 perf、不跑 `perf report`**（长录制会让关窗口看起来卡死；2s 后 SIGKILL）；
+  `MAQUE_PROFILE_REPORT_ON_EXIT=1` 才在退出时出报告，或事后 `maque_perf.py report --data <dir>`。
   **agent 自动优化闭环（唯一支持方式；引擎不自动改代码）**：
   ```bash
   python3 tools/perf/maque_perf.py check --binary <player>

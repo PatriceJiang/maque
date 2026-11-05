@@ -184,7 +184,7 @@ struct Engine {
     uint64_t            profile_stop_frame = 0;             // 0=手动/退出停；否则到帧自动停
     void profile_tick();                                    // 帧首：env 启动 / 到点自动停 / 指标
     bool profile_start(const maque::profile::Options& opts, std::string* error);
-    bool profile_stop(bool report, std::string* error);
+    bool profile_stop(bool report, std::string* error, int timeout_ms = 5000);
     void profile_shutdown();                                // teardown 兜底 stop（写报告）
     void profile_toggle();                                  // F5：start/stop 切换
     std::string profile_context_json() const;               // meta.json 的 context

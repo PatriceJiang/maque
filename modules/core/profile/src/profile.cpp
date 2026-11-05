@@ -600,7 +600,7 @@ bool start_impl(const Options& opts, std::string* error) {
     return attempt(false);
 }
 
-bool stop_impl(bool generate_report, std::string* error) {
+bool stop_impl(bool generate_report, std::string* error, int timeout_ms) {
     Global& g = global();
     if (g.state != State::recording) {
         if (error) *error = g.reason.empty() ? "not recording" : g.reason;
@@ -618,7 +618,7 @@ bool stop_impl(bool generate_report, std::string* error) {
         if (w < 0 && errno != EINTR) break;
         const double ms = std::chrono::duration<double, std::milli>(
             std::chrono::steady_clock::now() - t0).count();
-        if (ms > 5000.0) break;
+        if (ms > (double)std::max(100, timeout_ms)) break;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     if (!exited) {
@@ -701,7 +701,7 @@ bool mark_impl(uint64_t frame, const std::string& label, std::string* error) {
 }  // namespace
 
 bool start(const Options& opts, std::string* error) { return start_impl(opts, error); }
-bool stop(bool generate_report, std::string* error) { return stop_impl(generate_report, error); }
+bool stop(bool generate_report, std::string* error, int timeout_ms) { return stop_impl(generate_report, error, timeout_ms); }
 bool refresh_report(std::string* error) { return refresh_report_impl(error); }
 bool mark(uint64_t frame, const std::string& label, std::string* error) { return mark_impl(frame, label, error); }
 
@@ -741,7 +741,7 @@ bool start(const Options&, std::string* error) {
     if (error) *error = support_reason();
     return false;
 }
-bool stop(bool, std::string* error) {
+bool stop(bool, std::string* error, int) {
     if (error) *error = support_reason();
     return false;
 }

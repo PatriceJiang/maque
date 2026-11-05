@@ -47,6 +47,9 @@ MAQUE_PROFILE=1 MAQUE_PROFILE_FRAMES=600 MAQUE_PROFILE_DIR=.maque/perf/live \
 ```
 
 录制中 `F5` 开关；控制面 `Perf.profile_status/start/stop/report/mark` 见 docs/35 §6。
+**退出默认只停 perf、不跑 `perf report`**（长录制会让关窗口看起来卡死；2s 后 SIGKILL）；
+需要退出时出报告用 `MAQUE_PROFILE_REPORT_ON_EXIT=1`，否则事后：
+`python3 tools/perf/maque_perf.py report --data <dir>`。
 `profile_start/stop/mark` 是变更类：只读控制会话会被拒绝，启动期环境方式不需要写权限。
 
 ## 常见失败

@@ -113,6 +113,7 @@ Tracy 是显式埋点（能看到阶段划分，但看不到未埋点的函数�
 | `MAQUE_PROFILE_FREQ=N` | 999 | 采样频率 Hz（`perf -F`） |
 | `MAQUE_PROFILE_CALLGRAPH=fp\|dwarf\|none\|lbr` | `fp` | `none` = 不采调用栈（最轻） |
 | `MAQUE_PROFILE_KERNEL=0` | 1 | 不采内核侧样本（`--exclude-kernel`；内核符号需要额外 `kptr_restrict` 权限） |
+| `MAQUE_PROFILE_REPORT_ON_EXIT=1` | **0** | 进程退出时同步生成报告。默认 **关闭**：长录制的 `perf report` 可能耗时几十秒，会让“关窗口”看起来卡死；`perf.data` 已落盘，事后用 `maque_perf.py report --data <dir>` 即可 |
 
 语义：
 
@@ -120,7 +121,9 @@ Tracy 是显式埋点（能看到阶段划分，但看不到未埋点的函数�
   （渲染该帧之前）停止 → 正好覆盖 frame 0..N-1。**加载/装配期不在其中**（要覆盖启动期用外部
   `record`）；自附加启动会等 perf 存活（默认 600ms，失败则立刻报权限错误）。
 - `FRAMES=0` 时一直录到 F5 停止、控制面停止或进程退出；退出时 `teardown()` 会兜底
-  `SIGINT + perf report`（可能让退出慢几秒）。
+  `SIGINT`（最多等 2s 后 SIGKILL）并**默认跳过 `perf report`**，所以关窗口不会被长报告阻塞。
+  需要退出时自动出报告就用 `MAQUE_PROFILE_REPORT_ON_EXIT=1`；否则事后运行
+  `python3 tools/perf/maque_perf.py report --data <dir>`。
 - 录制期间 `F5` 是**引擎热键**（按下沿切换 start/stop），不会下发给游戏；
   未启用 profiling 时 F5 完全归游戏/脚本。
 - `Perf.get` 额外提供指标：`profile.recording`（0/1）、`profile.samples`、
@@ -353,7 +356,9 @@ ctest --test-dir build -R '^(profile|profile_e2e|perf_report_e2e)$' --output-on-
   Tracy zone 归因（未来可接 `perf inject --jit`/`/tmp/perf-<pid>.map`）。
 - **不做 GPU 采样**：WebGPU 时间戳/GPU 计数器不在 perf 的 CPU 采样范围；用渲染器的
   Tracy zone/后续 GPU timestamp。
-- **退出时报告可能慢**：`teardown()` 会同步 `perf report`；CI 里给足超时（e2e 240s）。
+- **退出时报告默认不做**：`teardown()` 只 `SIGINT` + 最多 2s 等待；`MAQUE_PROFILE_REPORT_ON_EXIT=1`
+  才同步跑 `perf report`（长录制会慢）。`MAQUE_PROFILE_FRAMES=N` 的自动停止仍会生成报告
+  （发生在游戏运行中，不在关窗路径）。
 
 ## 13. 已知坑（改实现前读）
 
