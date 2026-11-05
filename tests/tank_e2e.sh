@@ -117,6 +117,7 @@ rules)
     check_clean "$WORK/brick.log"
     grep -q 'tank: drill brick armed' "$WORK/brick.log" || { cat "$WORK/brick.log"; fail "brick 探针没有布场"; }
     grep -q 'tank: brick broke' "$WORK/brick.log" || { cat "$WORK/brick.log"; fail "真实子弹没有打碎砖块"; }
+    grep -q 'tank: brick broke.*cells=4' "$WORK/brick.log" || { cat "$WORK/brick.log"; fail "子弹只打掉半块墙（应整块 2x2 消掉）"; }
 
     # ② 真实弹道摧毁基地 → game over
     run "$WORK/base.log" 220 MAQUE_TANK_SKIP_TITLE=1 MAQUE_TANK_GOD=1 MAQUE_TANK_BASE_AT=130
@@ -157,7 +158,25 @@ rules)
     check_clean "$WORK/stage3.log"
     grep -q 'tank: stage scene ready stage=3' "$WORK/stage3.log" || { cat "$WORK/stage3.log"; fail "stage3 场景没有加载"; }
     grep -q 'tiles=[1-9][0-9]*' "$WORK/stage3.log" || { cat "$WORK/stage3.log"; fail "stage3 没有 tile 节点"; }
-    echo "tank_rules: ok（砖/基地/6 道具/清关→stage2/stage3）"
+    # ⑤ 音频路径：抓音必须非静音（证明 audio_on / WAV 资源 / 开火音效真的在播）
+    CAP="$WORK/tank_audio.wav"
+    run "$WORK/audio.log" 160 MAQUE_AUDIO=capture MAQUE_AUDIO_CAPTURE="$CAP" \
+        MAQUE_TANK_SKIP_TITLE=1 MAQUE_TANK_AUTOPLAY=1 MAQUE_TANK_STAGE=1 MAQUE_TANK_GOD=1
+    check_clean "$WORK/audio.log"
+    [ -s "$CAP" ] || { cat "$WORK/audio.log"; fail "音频抓取没有生成 WAV"; }
+    "$PY" - "$CAP" <<'PY' || { cat "$WORK/audio.log"; fail "坦克音频是静音"; }
+import struct, sys, wave
+w = wave.open(sys.argv[1], "rb")
+data = w.readframes(w.getnframes())
+assert w.getsampwidth() == 2 and len(data) > 0, (w.getsampwidth(), len(data))
+vals = struct.unpack("<%dh" % (len(data) // 2), data)
+rms = (sum(v * v for v in vals) / len(vals)) ** 0.5
+print(f"tank audio rms={rms:.0f}")
+raise SystemExit(0 if rms > 100 else 1)
+PY
+    echo "  audio capture ok"
+
+    echo "tank_rules: ok（砖/基地/6 道具/清关→stage2/stage3/音频）"
     ;;
 
 zorder)

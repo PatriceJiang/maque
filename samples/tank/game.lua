@@ -694,6 +694,36 @@ function bullet_hit_tank(b)
     return false
 end
 
+-- 生成器的 brick/steel 都以 2x2 大格为一块：子弹命中时整块消掉。
+-- 基地周围的 shovel 单格（四格不全是同种砖）仍只消命中格，避免一炮拆掉半个护城河。
+function break_cell_group(c, r, ch)
+    local gc = c - ((c - 1) % 2)
+    local gr = r - ((r - 1) % 2)
+    local full = true
+    for rr = gr, gr + 1 do
+        for cc = gc, gc + 1 do
+            if cc < 1 or cc > COLS or rr < 1 or rr > ROWS or map[rr][cc] ~= ch then
+                full = false
+            end
+        end
+    end
+    local n = 0
+    if full then
+        for rr = gr, gr + 1 do
+            for cc = gc, gc + 1 do
+                set_cell(cc, rr, ".")
+                n = n + 1
+            end
+        end
+    else
+        if map[r][c] == ch then
+            set_cell(c, r, ".")
+            n = 1
+        end
+    end
+    return n
+end
+
 function bullet_check_cell(b)
     if b.x < FX or b.x > FIELD_RIGHT or b.y < FY or b.y > FIELD_TOP then
         bullet_kill(b, true)
@@ -702,19 +732,19 @@ function bullet_check_cell(b)
     local c, r = cell_of_world(b.x, b.y)
     local ch = map[r][c]
     if ch == "#" then
-        set_cell(c, r, ".")
+        local n = break_cell_group(c, r, "#")
         sfx("brick", 0.45)
         spawn_explosion(b.x, b.y, 0.55)
         bullet_kill(b, false)
-        log("tank: brick broke c=" .. c .. " r=" .. r .. " frame=" .. frame)
+        log("tank: brick broke c=" .. c .. " r=" .. r .. " cells=" .. n .. " frame=" .. frame)
         return true
     elseif ch == "@" then
         if b.power then
-            set_cell(c, r, ".")
+            local n = break_cell_group(c, r, "@")
             sfx("brick", 0.55)
             spawn_explosion(b.x, b.y, 0.75)
             bullet_kill(b, false)
-            log("tank: steel broke c=" .. c .. " r=" .. r .. " frame=" .. frame)
+            log("tank: steel broke c=" .. c .. " r=" .. r .. " cells=" .. n .. " frame=" .. frame)
         else
             sfx("steel", 0.32)
             spawn_explosion(b.x, b.y, 0.35)
@@ -1683,13 +1713,17 @@ function hook_brick()
     if not player or not player.alive then return end
     player.x, player.y = FX + 9 * CELL, FY + 8 * CELL
     player.dir = "u"
-    for r = 10, 16 do
+    for r = 11, 16 do
         for c = 8, 11 do
             if map[r][c] == "#" or map[r][c] == "@" then set_cell(c, r, ".") end
         end
     end
-    set_cell(9, 5, "#")
-    set_cell(10, 5, "#")
+    -- 真实弹道从 y=160 向上会先打到 r=9；放一个完整的 2x2 砖块组。
+    for r = 9, 10 do
+        for c = 9, 10 do
+            set_cell(c, r, "#")
+        end
+    end
     player.level = math.max(player.level, 1)
     player.fire_cd = 0
     player.shield = 99
@@ -1956,6 +1990,9 @@ function on_start()
         env("MAQUE_AUDIO") ~= "" and env("MAQUE_AUDIO") ~= "off" and
         env("MAQUE_AUDIO") ~= "null"
     bgm_on = env("MAQUE_TANK_BGM") ~= "0"
+    if not audio_on then
+        log("tank: audio off (engine default null; use MAQUE_AUDIO=sdl/auto, or samples/tank/run.sh)")
+    end
 
     env_autoplay = env("MAQUE_TANK_AUTOPLAY") == "1"
     env_god = env("MAQUE_TANK_GOD") == "1"

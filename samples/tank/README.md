@@ -21,16 +21,27 @@
 
 ## 运行
 
+推荐用自带启动器（会自动 `MAQUE_AUDIO=sdl`，否则引擎默认 null 后端没有声音）：
+
 ```bash
 # 从仓库根目录
-./build/samples/player/maque_player samples/tank/tank.scn
+./samples/tank/run.sh
 ```
 
-Windows 下 `build-win`：
+Windows：
 
 ```powershell
-.\build-win\samples\player\maque_player.exe samples\tank\tank.scn
+.\samples\tank\run.cmd
 ```
+
+也可以手动启动并显式打开 SDL 音频：
+
+```bash
+MAQUE_AUDIO=sdl ./build/samples/player/maque_player samples/tank/tank.scn
+```
+
+> 引擎为了 CI/headless 默认使用 null 音频后端（逻辑照常推进、不出声）。
+> 想静音玩：`MAQUE_AUDIO=off ./build/samples/player/maque_player samples/tank/tank.scn`。
 
 操作（经典 FC 手感，方向键固定四向移动）：
 
@@ -181,6 +192,8 @@ MAQUE_HEADLESS=1 MAQUE_TANK_SKIP_TITLE=1 maque_player --shot play.png --shot-fra
    并将 HUD 拆到独立 VM。更规范的长期方案是脚本包/模块化，下一步。
 5. 只实现 1P；2P 合作、关卡编辑器、高分存档、attract demo 未做。
 6. 音效/BGM 是原创的 8-bit 合成，不是 FC 原曲/原素材；必须 `MAQUE_AUDIO=sdl`（或 `auto`）才出声。
+   推荐直接用 `./samples/tank/run.sh`（已默认设置）；引擎默认 null 后端，所以直接跑
+   `maque_player samples/tank/tank.scn` 会是静音。
 
 ## 资源生成
 

@@ -2482,6 +2482,44 @@
           ]
         },
         {
+          "name": "tile_c13_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 216.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c14_r15_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 232.0,
+              "y": 216.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
           "name": "tile_c21_r15_steel",
           "components": [
             {
@@ -2544,6 +2582,44 @@
             {
               "type": "scn.Transform2D",
               "x": 104.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c13_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 216.0,
+              "y": 200.0
+            },
+            {
+              "type": "scn.Sprite",
+              "width": 16,
+              "height": 16,
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "texture": "/art/tile_steel.png"
+            }
+          ]
+        },
+        {
+          "name": "tile_c14_r16_steel",
+          "components": [
+            {
+              "type": "scn.Transform2D",
+              "x": 232.0,
               "y": 200.0
             },
             {
