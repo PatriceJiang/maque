@@ -198,6 +198,21 @@
 - **序列化**：`item_template`(资产 ID)、`selected_index`、布局字段落盘；项实例节点与 `pool_size` 为运行期派生，
   **transient** 不落盘（重建时按当前区间重新实例化）。
 
+### P0 大文本模式（当前实现）
+
+`ListView` 先落地「大文本滚动 + 视口裁剪」这条最常用路径，不依赖 `item_template` 实例化：
+
+- 与 `ui.Control` 同挂；`Control.offset_max` 是**视口**。
+- `text` 为逐行文本（`\n` 分行）。运行时自动生成一个 `scn.Label` 子节点承载全文，
+  字号/颜色/行距/`wrap` 取自 `font_size/text_color/line_spacing/wrap`。
+- `scroll_pos`（0..1）为归一化滚动位置；指针位于视口内时滚轮按 `wheel_step` 改它。
+  `scroll_offset`（像素）与 `content_height` 是运行期派生，可脚本读取。
+- `clip_content=true` 时 `compute_ui_clip` 把子树裁剪到视口矩形（与 `ui.Mask` 的裁剪集合求交），
+  因此内容不会越界；`clip_content=false` 可做溢出预览。
+- 字段 `item_template/data_source/item_count/...` 保留给后续虚拟化实现（当前未消费）。
+- 脚本：`node_set_string(id,"ui.ListView","text",...)`、`node_set_number(id,"ui.ListView","scroll_pos",0.5)`。
+- 场景示例：`scenes/ui_list/list.scn`；回归：`tests/ui_list_e2e.sh`。
+
 ---
 
 ## Mask

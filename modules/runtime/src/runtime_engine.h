@@ -197,6 +197,10 @@ struct Engine {
     int                 hover = -1;                         // 悬停实体（上帧命中）
     int                 capture = -1;                       // 指针捕获（拖拽中）
     float               mouse_x = 0, mouse_y = 0;
+    /* 本模拟步累计的滚轮增量（世界方向，已按平台边界翻转）。
+     * 输入事件可能在 sim_feed / 平台轮询里到达，统一在 runtime_input_handler 累加；
+     * `ui_step` 消费后于下一步开头清零（同一帧多个滚轮事件取和）。 */
+    float               wheel_dx = 0, wheel_dy = 0;
     const mq_input_event* ev = nullptr;                     // 正在分发的语义事件（脚本可读）
     struct Ball { int id; float vx, vy, radius; mq_physics_body body{}; };
     /* 动画（docs/15 §2）：反射驱动关键帧采样 → 写回目标组件字段 */

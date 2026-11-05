@@ -124,6 +124,8 @@ void Engine::step_frame(bool render_frame) {
     }
 
     sim_feed(frame);
+    wheel_dx = 0.0F;
+    wheel_dy = 0.0F;
     /* 测试钩子：`MAQUE_SIM_KEY_AT="<帧>:<键码>[,<帧>:<键码>...]"` —— 向**本帧设备事件队列**
      * 注入一次"按下"事件（走与真实键盘完全相同的路径：iframe → imgui_input_feed → 热键判断）。
      * headless/CI 没有真实键盘，这是回归"按 F2 开关面板"这条路径的唯一手段。

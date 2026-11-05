@@ -229,8 +229,13 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
     if (ev->type == MQ_INPUT_KEY_DOWN || ev->type == MQ_INPUT_KEY_UP)
         eng->shift_down = (ev->modifiers & MQ_PLATFORM_MOD_SHIFT) != 0;
     if (ev->type == MQ_INPUT_POINTER_MOVE || ev->type == MQ_INPUT_POINTER_DOWN ||
-        ev->type == MQ_INPUT_POINTER_UP || ev->type == MQ_INPUT_CLICK) {
+        ev->type == MQ_INPUT_POINTER_UP || ev->type == MQ_INPUT_CLICK ||
+        ev->type == MQ_INPUT_POINTER_WHEEL) {
         eng->mouse_x = ev->x; eng->mouse_y = ev->y;
+    }
+    if (ev->type == MQ_INPUT_POINTER_WHEEL) {
+        eng->wheel_dx += ev->scroll_x;
+        eng->wheel_dy += ev->scroll_y;
     }
     if (ev->type == MQ_INPUT_POINTER_MOVE && target->entity != eng->hover) {
         eng->hover = target->entity;                    // 悬停态（脚本经 ui_hover 读）

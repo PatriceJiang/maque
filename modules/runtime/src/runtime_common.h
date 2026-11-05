@@ -261,7 +261,8 @@ inline void compute_ui_clip(SceneNode& e, const ClipSet& parent, float W, float 
     self = parent;
     kids = parent;
     const ui::Mask* mask = component<ui::Mask>(e);
-    if (!mask) return;
+    const ui::ListView* list = component<ui::ListView>(e);
+    if (!mask && !list) return;
     const ui::Control* ctl = component<ui::Control>(e);
     if (!ctl) return;
     /* 节点缩放与 ui.Image 的几何保持一致（Image 用 world_scale 缩放目标尺寸）。
@@ -271,8 +272,12 @@ inline void compute_ui_clip(SceneNode& e, const ClipSet& parent, float W, float 
     if (!(w > 0.0F) || !(h > 0.0F)) return;
     const ClipRect r{ e.world_x, e.world_y, e.world_x + w, e.world_y + h };
     if (!r.valid()) return;
-    if (mask->clip_children) kids = clip_apply(parent, r, mask->invert, W, H);
-    else self = clip_apply(parent, r, mask->invert, W, H);
+    if (mask) {
+        if (mask->clip_children) kids = clip_apply(parent, r, mask->invert, W, H);
+        else self = clip_apply(parent, r, mask->invert, W, H);
+    }
+    /* ListView 的视口裁剪只作用于子树（自身不绘制）；与 Mask 叠加时继续求交。 */
+    if (list && list->clip_content) kids = clip_apply(kids, r, false, W, H);
 }
 
 /* ---- glTF 片段 / 蒙皮 / morph 运行时状态（plans/22 §6）----

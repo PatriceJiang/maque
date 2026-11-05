@@ -1327,6 +1327,7 @@ typedef struct mq_field_desc {
 #define MQ_ROLE_AUDIO_SOURCE  (1u << 21)  /* 音频发射源（docs/30）：装配期/帧边界同步 voice */
 #define MQ_ROLE_AUDIO_LISTENER (1u << 22) /* 音频听者：每 instance 至多一个（取稳定首个） */
 #define MQ_ROLE_UI_MASK     (1u << 23)   /* UI 裁剪（ui.Mask / ClippingNode）：Rect + invert */
+#define MQ_ROLE_UI_LIST     (1u << 24)   /* 大文本列表（ui.ListView）：滚动 + 视口裁剪 */
 
 /* 类型 id 常量（唯一性由 codegen 的 validateTypeIds 校验）。
  * 注意：MQ_TYPE_* 已被"类型标志"占用（MQ_TYPE_ENUM/POD/DYNAMIC，见 abi/reflect.h），
@@ -1394,6 +1395,7 @@ const ROLE_BIT = {
   audio_source: 'MQ_ROLE_AUDIO_SOURCE',
   audio_listener: 'MQ_ROLE_AUDIO_LISTENER',
   ui_mask: 'MQ_ROLE_UI_MASK',
+  ui_list: 'MQ_ROLE_UI_LIST',
 }
 function roleBits(t) {
   const parts = (t.roles || []).map((r) => ROLE_BIT[r]).filter(Boolean)

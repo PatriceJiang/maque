@@ -1310,6 +1310,19 @@ struct ListView {
     int32_t selected_index = -1;
     maque::EntityRef scroll;
     int32_t pool_size = 0;
+    std::string text;
+    std::string font = "";
+    float font_size = 18.0F;
+    math::Vec4 text_color = {0.92F, 0.94F, 0.98F, 1.0F};
+    math::Vec4 padding = {12.0F, 12.0F, 12.0F, 12.0F};
+    float line_spacing = 0.0F;
+    ui::TextWrap wrap = TextWrap::Word;
+    bool clip_content = true;
+    float scroll_pos = 0.0F;
+    float wheel_step = 48.0F;
+    float scroll_offset;
+    float content_height;
+    maque::EntityRef content;
 };
 
 struct Mask {

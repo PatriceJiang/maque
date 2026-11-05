@@ -14669,10 +14669,13 @@
       "kind": "struct",
       "type_id": 2237314706,
       "size": null,
-      "align": 1,
-      "pod": true,
-      "has_dynamic": false,
+      "align": null,
+      "pod": false,
+      "has_dynamic": true,
       "source": "ui/ui.yaml",
+      "roles": [
+        "ui_list"
+      ],
       "fields": [
         {
           "name": "item_template",
@@ -14802,6 +14805,152 @@
           "offset": null,
           "attrs": {
             "readonly": true,
+            "transient": true
+          }
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "font",
+          "type": "string",
+          "kind": "string",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "font_size",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              1,
+              512
+            ],
+            "unit": "px"
+          }
+        },
+        {
+          "name": "text_color",
+          "type": "math.Vec4",
+          "kind": "struct",
+          "type_id": 1842732857,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "padding",
+          "type": "math.Vec4",
+          "kind": "struct",
+          "type_id": 1842732857,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "line_spacing",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "wrap",
+          "type": "TextWrap",
+          "kind": "enum",
+          "type_id": 1869600876,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "clip_content",
+          "type": "bool",
+          "kind": "bool",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {}
+        },
+        {
+          "name": "scroll_pos",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "range": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "name": "wheel_step",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "unit": "px"
+          }
+        },
+        {
+          "name": "scroll_offset",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true,
+            "unit": "px"
+          }
+        },
+        {
+          "name": "content_height",
+          "type": "float",
+          "kind": "f32",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "transient": true,
+            "unit": "px"
+          }
+        },
+        {
+          "name": "content",
+          "type": "entity_ref",
+          "kind": "entity_ref",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "ref": "Label",
             "transient": true
           }
         }

@@ -92,6 +92,93 @@ void Engine::ui_step() {
                 }
             }
 
+            /* ListView（大文本 P0）：Control 是视口；运行时生成一个 scn.Label 子节点承载
+             * 全部行。滚轮在指针位于视口内时改 scroll_pos（归一化），内容按像素偏移移动；
+             * 子树裁剪由 compute_ui_clip 对 ui.ListView.clip_content 统一处理（与 Mask 叠加）。 */
+            if (auto* lv = as_component_mut<ui::ListView>(d, blob.data())) {
+                const auto* ctl = component<ui::Control>(*e);
+                if (!ctl) continue;
+                const float vw = ctl->offset_max.x, vh = ctl->offset_max.y;
+                if (!(vw > 0.0F) || !(vh > 0.0F)) continue;
+                SceneNode* ce = lv->content.id > 0 ? scene->at((int)lv->content.id) : nullptr;
+                if (!ce || ce->parent != id) {
+                    /* 已保存/重载过的场景里，运行时内容子节点可能已经在树中（content 引用是
+                     * transient 不落盘）；按稳定名字认领，避免每次载入再生成一份重复文本。 */
+                    const std::string content_name = e->name + ".content";
+                    for (int k : e->children) {
+                        SceneNode* ke = scene->at(k);
+                        if (ke && ke->name == content_name && component<scn::Label>(*ke)) {
+                            ce = ke; lv->content.id = (uint32_t)k; lv->content.generation = 0; break;
+                        }
+                    }
+                    if (!ce) {
+                        const int cid = scene->spawn();
+                        scene->attach(cid, id);
+                        attach_component(*this, cid, "scn.Label");
+                        ce = scene->at(cid);
+                        if (ce) ce->name = content_name;
+                        lv->content.id = (uint32_t)cid;
+                        lv->content.generation = 0;
+                    }
+                }
+                auto* lbl = ce ? component<scn::Label>(*ce) : nullptr;
+                if (!lbl) continue;
+                if (lbl->text != lv->text) lbl->text = lv->text;
+                const float pad_l = lv->padding.x, pad_t = lv->padding.y;
+                const float pad_r = lv->padding.z, pad_b = lv->padding.w;
+                const float text_w = (vw - pad_l - pad_r > 1.0F) ? (vw - pad_l - pad_r) : vw;
+                lbl->x = pad_l;
+                lbl->y = 0.0F;
+                lbl->z = 0;
+                lbl->font = lv->font;
+                lbl->font_size = lv->font_size;
+                lbl->r = lv->text_color.x; lbl->g = lv->text_color.y;
+                lbl->b = lv->text_color.z; lbl->a = lv->text_color.w;
+                lbl->wrap = lv->wrap;
+                lbl->line_spacing = lv->line_spacing;
+                lbl->max_width = text_w;
+                lbl->max_height = 0.0F;
+                lbl->overflow = ui::TextOverflow::Clip;
+
+                mq_text_style st{};
+                st.struct_size = (uint32_t)sizeof st;
+                st.font_size = lv->font_size;
+                st.device_scale = ss > 0.0F ? ss : 1.0F;
+                st.line_spacing = lv->line_spacing;
+                st.wrap = (uint32_t)lv->wrap;
+                st.align = MQ_TEXT_ALIGN_BEGIN;
+                st.max_width = text_w;
+                st.r = lv->text_color.x; st.g = lv->text_color.y;
+                st.b = lv->text_color.z; st.a = lv->text_color.w;
+                mq_text_metrics m{};
+                mq_font* f = text_font_for(lv->font);
+                if (!lv->text.empty()) (void)mq_text_measure(f, &st, lv->text.c_str(), &m);
+                const float content_h = pad_t + m.height + pad_b;
+                float max_off = content_h - vh;
+                if (max_off < 0.0F) max_off = 0.0F;
+                lv->content_height = content_h;
+                if (max_off <= 0.0F) lv->scroll_pos = 0.0F;
+                /* 滚轮：仅指针在视口内生效。scroll_pos = 0 为顶部；wheel_dy 已按平台边界翻转，
+                 * 向下滚为正 → scroll_pos 增加。 */
+                if (max_off > 0.0F) {
+                    const bool inside = mouse_x >= e->world_x && mouse_x <= e->world_x + vw &&
+                                        mouse_y >= e->world_y && mouse_y <= e->world_y + vh;
+                    if (inside && wheel_dy != 0.0F)
+                        lv->scroll_pos += wheel_dy * lv->wheel_step / max_off;
+                }
+                lv->scroll_pos = lv->scroll_pos < 0.0F ? 0.0F : (lv->scroll_pos > 1.0F ? 1.0F : lv->scroll_pos);
+                lv->scroll_offset = lv->scroll_pos * max_off;
+                /* 子节点局部坐标：视口顶 - padding.top + 滚动偏移（世界 y 向上，偏移增大=内容上移）。 */
+                const float cy = vh - pad_t + lv->scroll_offset;
+                if (auto* tf = component<scn::Transform2D>(*ce)) {
+                    tf->x = 0.0F;
+                    tf->y = cy;
+                } else {
+                    ce->local_x = 0.0F;
+                    ce->local_y = cy;
+                }
+            }
+
             if (auto* sv = as_component_mut<ui::ScrollView>(d, blob.data())) {
                 const float v = sv->scroll_v;
                 sv->scroll_offset.y = v;

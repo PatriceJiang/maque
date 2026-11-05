@@ -1,0 +1,8 @@
+{
+  "name": "ui_list_scroll",
+  "space": "world",
+  "events": [
+    { "frame": 3, "type": "pointer_move", "x": 320, "y": 180 },
+    { "frame": 4, "type": "wheel", "x": 320, "y": 180, "dy": 1.0 }
+  ]
+}

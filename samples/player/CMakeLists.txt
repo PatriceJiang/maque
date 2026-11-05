@@ -501,6 +501,9 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
              "${CMAKE_SOURCE_DIR}/scenes/ui_patch"
              "${CMAKE_CURRENT_BINARY_DIR}/ui_mask_nine_e2e"
              all)
+    add_test(NAME ui_list_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/ui_list_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_CURRENT_BINARY_DIR}/ui_list_e2e")
 endif()
 
 # 热重载端到端（docs/08/14）：运行中改脚本 → 帧边界重载 → 世界演化与基线逐帧一致

@@ -389,6 +389,8 @@
         - { name: scroll_offset, type: math.Vec2, attrs: { unit: px, transient: true } }
         - { name: content_size, type: math.Vec2, attrs: { unit: px, transient: true } }
     - struct: ListView
+      roles: [ui_list]
+      doc: "大文本列表：Control 视口 + 自动内容 Label；滚轮/scroll_pos 滚动，clip_content 裁剪"
       fields:
         - { name: item_template, type: "asset_ref<asset.Scene>", attrs: { ref: asset.Scene } }
         - { name: data_source, type: entity_ref, attrs: { ref: Script } }
@@ -401,6 +403,20 @@
         - { name: selected_index, type: int32_t, default: -1, attrs: { range: [-1, 1000000] } }
         - { name: scroll, type: entity_ref, attrs: { ref: ScrollView } }
         - { name: pool_size, type: int32_t, default: 0, attrs: { transient: true, readonly: true } }
+        # ---- 大文本模式（P0）----
+        - { name: text, type: string, doc: "逐行文本；\n 分行。列表内容由运行时生成一个 Label 子节点承载" }
+        - { name: font, type: string, default: "", doc: "字体路径（空 = 默认字体）" }
+        - { name: font_size, type: float, default: 18.0F, attrs: { unit: px, range: [1, 512] } }
+        - { name: text_color, type: math.Vec4, default: "{0.92F, 0.94F, 0.98F, 1.0F}" }
+        - { name: padding, type: math.Vec4, default: "{12.0F, 12.0F, 12.0F, 12.0F}", attrs: { unit: px } }
+        - { name: line_spacing, type: float, default: 0.0F, attrs: { unit: px } }
+        - { name: wrap, type: TextWrap, default: "TextWrap::Word" }
+        - { name: clip_content, type: bool, default: true, doc: "把子树裁剪到 Control 视口" }
+        - { name: scroll_pos, type: float, default: 0.0F, attrs: { range: [0, 1] }, doc: "归一化滚动位置（0=顶，1=底）" }
+        - { name: wheel_step, type: float, default: 48.0F, attrs: { unit: px } }
+        - { name: scroll_offset, type: float, attrs: { unit: px, transient: true, readonly: true } }
+        - { name: content_height, type: float, attrs: { unit: px, transient: true, readonly: true } }
+        - { name: content, type: entity_ref, attrs: { ref: Label, transient: true, readonly: true } }
     - struct: Mask
       roles: [ui_mask]
       doc: "UI 裁剪（ClippingNode）：Rect 模式 + invert 反选；P0 用 scissor，非矩形模式后续 stencil"

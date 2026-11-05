@@ -166,6 +166,19 @@ UV 重映射后交给 `UiBatcher` 按状态合并 → 多张小图共享一次�
   `nine_patch_mask_scene_e2e` / `ui_mask_hit_scene_e2e` / `nine_patch_gallery_scene_e2e` /
   `ui_mask_gallery_scene_e2e`；聚合回归 `ui_mask_nine_e2e`（MODE=all）。
 
+### ui.ListView（大文本滚动 + 视口裁剪）
+
+`ui.ListView` 与 `ui.Control` 同挂：运行时创建一个 `scn.Label` 子节点承载 `text`，按
+`font_size`/`wrap`/`line_spacing` 排版；`Control.offset_max` 是视口。滚轮在指针位于视口内时
+按 `wheel_step` 修改 `scroll_pos`（归一化），`scroll_offset`/`content_height` 为派生像素值。
+`clip_content=true` 时 `compute_ui_clip` 把子树裁剪到视口矩形（与 `ui.Mask` 的可见矩形集合
+求交），所以文本溢出不会画到视口外；`clip_content=false` 只滚动不裁剪。裁剪仍走图元
+`clip_x/y/w/h` + scissor，不新增 render pass。
+
+- 场景：`scenes/ui_list/list.scn`（120 行，滚轮滚动；视口下沿可见裁剪）。
+- 回归：`ctest -R ui_list_e2e`（视口内像素变化、视口外零变化；视口外滚轮不滚动）。
+- 限制：`item_template` 虚拟化、滚动条/惯性/拖拽仍是后续项；P0 用单个 Label 承载全文。
+
 ## 6. 离屏渲染与 AI 预览（关键）
 
 - 支持**离屏目标**渲染 → `readback` → 图像。

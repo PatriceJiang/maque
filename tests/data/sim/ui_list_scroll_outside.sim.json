@@ -1,0 +1,8 @@
+{
+  "name": "ui_list_scroll_outside",
+  "space": "world",
+  "events": [
+    { "frame": 3, "type": "pointer_move", "x": 10, "y": 10 },
+    { "frame": 4, "type": "wheel", "x": 10, "y": 10, "dy": 1.0 }
+  ]
+}

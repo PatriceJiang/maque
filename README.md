@@ -70,6 +70,7 @@ ctest --test-dir build --output-on-failure
 > | `sokoban/sokoban.scn` | **推箱子**：网格关卡、键盘驱动、撤销、关卡推进（JS） |
 > | `td/menu.scn` | **小小塔防**：菜单 + 3 关卡 + 3 塔/4 敌人独立 `.scn` + 全局脚本/全局状态（scn 组合示例） |
 > | `ui.scn` | UI 控件（按钮/进度条/滑杆/复选）与命中测试 |
+| `ui_list/list.scn` | **ListView**：120 行大文本，滚轮滚动 + 视口裁剪 |
 > | `text/text.scn` | 文本：Label / TextLabel / RichText（富文本标记、换行、像素级精确） |
 > | `nodes/nodes.scn` | 节点/组件/事件/补间/定时器 API |
 > | `canvas/canvas.scn` | 画布与分辨率策略（同一 UI 适配不同窗口/显示器） |

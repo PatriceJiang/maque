@@ -2566,6 +2566,8 @@ role: `ui_control`
 
 ### ui.ListView — struct (变长（含动态成员）)
 
+role: `ui_list`
+
 | 字段 | 类型 | 默认值 | attrs |
 |------|------|--------|-------|
 | `item_template` | asset_ref<asset.Scene> | — | ref: asset.Scene |
@@ -2579,6 +2581,19 @@ role: `ui_control`
 | `selected_index` | int32_t | -1 | range: -1,1000000 |
 | `scroll` | entity_ref | — | ref: ScrollView |
 | `pool_size` | int32_t | 0 | transient, readonly |
+| `text` | string | — |  |
+| `font` | string |  |  |
+| `font_size` | float | 18.0F | unit: px, range: 1,512 |
+| `text_color` | math.Vec4 | {0.92F, 0.94F, 0.98F, 1.0F} |  |
+| `padding` | math.Vec4 | {12.0F, 12.0F, 12.0F, 12.0F} | unit: px |
+| `line_spacing` | float | 0.0F | unit: px |
+| `wrap` | TextWrap | TextWrap::Word |  |
+| `clip_content` | bool | true |  |
+| `scroll_pos` | float | 0.0F | range: 0,1 |
+| `wheel_step` | float | 48.0F | unit: px |
+| `scroll_offset` | float | — | unit: px, transient, readonly |
+| `content_height` | float | — | unit: px, transient, readonly |
+| `content` | entity_ref | — | ref: Label, transient, readonly |
 
 ### ui.Mask — struct (变长（含动态成员）)
 
