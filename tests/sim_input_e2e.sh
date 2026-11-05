@@ -51,8 +51,11 @@ run "$WORK/rec.log" MAQUE_SIM="$SIM" MAQUE_RECORD="$WORK/input.json" MAQUE_MAX_F
 grep -q 'recorded input log' "$WORK/rec.log" || fail "未记录输入日志"
 run "$WORK/rep.log" MAQUE_REPLAY="$WORK/input.json" MAQUE_MAX_FRAMES=120
 grep -q 'replay' "$WORK/rep.log" || fail "未进入回放模式"
+# 录制/回放都会自动打开逐帧 checksum（MAQUE_CHECKSUM 默认关闭，普通两跑只剩终局指纹）。
+# 因此回放要和**录制日志**的 world_trail 比，不能和普通跑的终局指纹比。
+T_REC=$(grep -o 'world_trail=0x[0-9a-f]*' "$WORK/rec.log" | head -1)
 T3=$(grep -o 'world_trail=0x[0-9a-f]*' "$WORK/rep.log" | head -1)
-[ -n "$T3" ] && [ "$T3" = "$T1" ] || fail "回放轨迹与录制不一致：$T3 != $T1"
+[ -n "$T_REC" ] && [ -n "$T3" ] && [ "$T3" = "$T_REC" ] || fail "回放轨迹与录制不一致：$T3 != $T_REC"
 
 # ---- ④ 控制面：Input.sim_*（无窗口亦可：注入走 pending_inject）----
 cat > "$WORK/req.txt" <<'EOF'

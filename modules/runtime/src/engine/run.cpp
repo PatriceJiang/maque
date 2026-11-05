@@ -127,6 +127,9 @@ void Engine::export_final_snapshot() {
 
 /* 终局导出：快照 + 录制日志（frames/trail 元数据 → 回放失步检测的基准）。 */
 void Engine::finalize_run() {
+    checksum_init();
+    /* 默认没有逐帧 checksum：退出前算一次终局指纹，保留 world_trail 日志/测试的可用性。 */
+    if (scene && !checksum_track) last_checksum = world_checksum();
     if (const char* td = std::getenv("MAQUE_TRAIL_OUT"); td && *td) {   // 失步定位：逐帧校验和（docs/10 §5）
         std::ofstream f(td, std::ios::binary);
         for (auto& [fr, sum] : trail) f << fr << " " << sum << "\n";

@@ -140,6 +140,35 @@ uint64_t Engine::global_checksum() {
     return h;
 }
 
+/* 逐帧校验和默认关闭：正常游玩/发布不需要每帧遍历全场景做“记账”。
+ * 只有需要失步定位/回放的路径才打开：
+ *   · MAQUE_REPLAY / MAQUE_RECORD / MAQUE_TRAIL_OUT / MAQUE_CRASH_REPORT（自动）
+ *   · MAQUE_CHECKSUM=1（显式；0/off 只影响普通运行，回放/录制仍强制打开）
+ * 关闭时 finalize_run 仍算一次“终局指纹”，用于退出日志/测试对比，开销 O(场景) 一次。
+ * MAQUE_CHECKSUM_INFO=1 打印实际状态。 */
+void Engine::checksum_init() {
+    if (checksum_checked) return;
+    checksum_checked = true;
+    auto env_on = [](const char* name) {
+        const char* v = std::getenv(name);
+        if (!v || !*v) return false;
+        return std::strcmp(v, "0") != 0 && std::strcmp(v, "off") != 0 &&
+               std::strcmp(v, "false") != 0;
+    };
+    const char* c = std::getenv("MAQUE_CHECKSUM");
+    if (c && *c)
+        checksum_track = std::strcmp(c, "0") != 0 && std::strcmp(c, "off") != 0 &&
+                         std::strcmp(c, "false") != 0;
+    /* 这些路径没有逐帧 checksum 就无法判断 replay 是否失步 / 崩溃现场是否可复现。 */
+    if (env_on("MAQUE_REPLAY") || env_on("MAQUE_RECORD") || env_on("MAQUE_TRAIL_OUT") ||
+        env_on("MAQUE_CRASH_REPORT"))
+        checksum_track = true;
+    if (env_on("MAQUE_CHECKSUM_INFO")) {
+        if (checksum_track) std::print("runtime: checksum per-frame=on\n");
+        else std::print("runtime: checksum per-frame=off (final fingerprint at exit)\n");
+    }
+}
+
 /* 世界校验和：场景（实体/组件标量）+ 物理求解器状态 + 粒子（都是模拟状态，docs/10 §5）。 */
 uint64_t Engine::world_checksum() {
     uint64_t h = scene ? scene->checksum(*this) : 1469598103934665603ull;
@@ -156,6 +185,8 @@ uint64_t Engine::world_checksum() {
 
 /* 校验和轨迹（逐帧；用于失步定位与回放对比，docs/10 §5/§7）。 */
 uint64_t Engine::world_trail() const {
+    /* 默认不逐帧记录：只有终局指纹（finalize_run 计算）或调用方显式要求 checksum 时才有 trail。 */
+    if (trail.empty()) return last_checksum;
     uint64_t h = 1469598103934665603ull;
     for (auto& [f, c] : trail) {
         h ^= f; h *= 1099511628211ull;

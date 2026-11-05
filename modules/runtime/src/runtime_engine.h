@@ -157,6 +157,8 @@ struct Engine {
     uint64_t            frame = 0;                          // 模拟帧号（= sim time / dt）
     uint64_t            last_checksum = 0;
     std::vector<std::pair<uint64_t, uint64_t>> trail;       // (frame, checksum) —— 失步定位
+    bool                checksum_checked = false;           // 是否已解析校验和开关
+    bool                checksum_track = false;             // 逐帧 checksum/trail（默认关闭）
     bool                window = false;                     // 是否真窗口（有显示环境）
     /* 墙钟限速（仅真窗口路径）：固定步长的缺省语义是"跑完一帧 = dt 秒游戏时间"，
      * 若完全不等待，游戏速度就变成"机器多快就多快"（实测窗口下 2.7 倍速）。
@@ -888,6 +890,7 @@ struct Engine {
     void finalize_run();                                    // 导出快照 + 录制日志（含 frames/trail 元数据）
     bool world_snapshot(mq_snapshot* snap);                 // 世界 → 快照（反射驱动，docs/10 §4）
     void world_restore(const mq_snapshot* snap);            // 快照 → 世界
+    void checksum_init();                                   // 解析 MAQUE_CHECKSUM / replay / record / trail-out
     uint64_t world_checksum();                              // 世界校验和：场景 + 物理 + 粒子（docs/10 §5）
     uint64_t global_checksum();                             // 全局状态校验和（空 → 中立值）
     void encode_globals(SnapshotWriter& w) const;           // 快照块：全局状态（docs/32 §16.3）

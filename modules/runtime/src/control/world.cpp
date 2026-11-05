@@ -44,6 +44,9 @@ extern "C" int mq_control_World_restore(void* u, const mq_json*, char* out, size
 
 extern "C" int mq_control_World_trail(void* u, const mq_json*, char* out, size_t cap) {
     auto* e = (Engine*)u;
+    e->checksum_init();
+    /* 默认不保留逐帧历史；控制面查询时至少给一个当前指纹，而不是 0。 */
+    if (e->trail.empty() && e->scene) e->last_checksum = e->world_checksum();
     std::string o = "{\"trail\":\"" + std::to_string(e->world_trail()) + "\",\"frames\":[";
     char item[64];
     for (size_t i = 0; i < e->trail.size(); ++i) {

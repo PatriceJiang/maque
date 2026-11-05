@@ -42,6 +42,11 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
        A=$($<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -oE 'world_trail=0x[0-9a-f]+'); \
        B=$($<TARGET_FILE:maque_player> ${CMAKE_SOURCE_DIR}/scenes/ball.scn 2>/dev/null | grep -oE 'world_trail=0x[0-9a-f]+'); \
        test -n \"$A\" && test \"$A\" = \"$B\"")
+    # 逐帧 checksum 默认关闭，MAQUE_CHECKSUM=1 才打开（docs/10 §5）
+    add_test(NAME checksum_mode_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/checksum_mode_e2e.sh"
+             $<TARGET_FILE:maque_player> "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/checksum_mode_e2e")
+    set_tests_properties(checksum_mode_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
 endif()
 
 # 控制平面（headless 驱动）：AI 可查询指标/场景/校验和

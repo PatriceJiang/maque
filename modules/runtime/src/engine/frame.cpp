@@ -373,9 +373,14 @@ void Engine::step_frame(bool render_frame) {
      *     天然画在最上层；且与其它图元一起进同一像素缓冲 → 截图里也有面板（可自证）。 */
     imgui_extract(spine_meshes);
     // ④ 世界校验和 + 周期快照（确定性验证 + 回滚点，docs/10 §4/§5）
+    /* 逐帧 checksum 默认关闭（正常游玩不付这份 O(场景) 开销）；replay/录制/MAQUE_CHECKSUM=1 才打开。
+     * 关闭时仍保留周期快照/检查点（它们有自己的 snapshot checksum）。 */
+    checksum_init();
     if (scene) {
-        last_checksum = world_checksum();
-        trail.emplace_back(frame, last_checksum);
+        if (checksum_track) {
+            last_checksum = world_checksum();
+            trail.emplace_back(frame, last_checksum);
+        }
         if (snaps && (frame % 60 == 0)) { snap_last = mq_snapshot_pool_acquire(snaps); world_snapshot(snap_last); }
         if (cp_active && (frame % cp_interval == 0)) checkpoint_push();
         if (frame % 30 == 0) refresh_crash_buffer();         // 预渲染崩溃上下文（docs/09 §5）
