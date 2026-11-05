@@ -423,13 +423,15 @@ tools\win\build.cmd -Sanitize address -RunTests
     `ui_mask_gallery_scene_e2e`（normal/reverse/nested/clip_self/button/text）；
     `ui_batch.scn` / `ui_atlas.scn` 也各挂一张本目录的 `girl.png`（大图不进图集）。
     聚合回归 `ui_mask_nine_e2e`。
-  - **ui.ListView（大文本 P0）**：与 `ui.Control` 同挂，`Control.offset_max` 为视口；运行时自动
-    创建 `scn.Label` 子节点承载 `text`（`font_size/wrap/line_spacing/text_color/padding`），
-    滚轮（指针在视口内）+ 视口内拖拽（`dragging`/`drag_start_*`）改 `scroll_pos`（归一化），
-    `scroll_offset/content_height` 为派生像素；`show_scrollbar` 绘制右侧轨道+滑块；
-    `clip_content=true` 时 `compute_ui_clip` 把子树裁到视口（与 `ui.Mask` 矩形集合求交）。
-    样例 `scenes/ui_list/list.scn`，回归 `ctest -R ui_list_e2e`（滚轮/拖拽、滚动条、视口外零像素变化）。
-    `item_template` 虚拟化仍是后续项。
+  - **ui.ListView（大文本 + 任意 UI 子节点）**：与 `ui.Control` 同挂，`Control.offset_max` 为视口；
+    运行时创建 **content_root**，把直接子节点（Button/Sprite/Label/Image/子树）收拢到其下，
+    滚动只移动 content_root；`text` 非空时自动生成 `scn.Label` 承载全文。纯子节点模式用
+    `item_count/item_extent/spacing` 定义内容高度。滚轮（指针在视口内）+ 视口内拖拽
+    （`dragging`/`drag_start_*`）改 `scroll_pos`（归一化），`scroll_offset/content_height` 为派生像素；
+    `show_scrollbar` 绘制右侧轨道+滑块；`clip_content=true` 时 `compute_ui_clip` 把子树裁到视口
+    （与 `ui.Mask` 矩形集合求交）。样例 `scenes/ui_list/{list,items}.scn`，回归
+    `ctest -R 'ui_list_e2e|ui_list_items_e2e'`（滚轮/拖拽、滚动条、视口外零像素变化）。
+    `item_template` 模板虚拟化仍是后续项。
 - **性能分析 Tracy（docs/29）**：默认**零开销**（客户端手动启动，普通运行不监听端口/不占线程）；
   游戏里 **F3** 启动客户端并拉起 profiler GUI，或 `MAQUE_TRACY=1` 启动即开（等外部连）。
   GUI/CLI 二进制不入库：Windows 跑 `tools/tracy/get-profiler.ps1` 下载官方包；

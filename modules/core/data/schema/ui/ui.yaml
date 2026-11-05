@@ -421,6 +421,7 @@
         - { name: scrollbar_track_color, type: math.Vec4, default: "{0.12F, 0.16F, 0.22F, 0.8F}" }
         - { name: scroll_offset, type: float, attrs: { unit: px, transient: true, readonly: true } }
         - { name: content_height, type: float, attrs: { unit: px, transient: true, readonly: true } }
+        - { name: content_root, type: entity_ref, attrs: { ref: Node, transient: true, readonly: true } }
         - { name: content, type: entity_ref, attrs: { ref: Label, transient: true, readonly: true } }
         - { name: dragging, type: bool, attrs: { transient: true, readonly: true } }
         - { name: drag_start_y, type: float, attrs: { unit: px, transient: true, readonly: true } }

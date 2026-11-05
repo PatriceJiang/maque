@@ -92,53 +92,88 @@ void Engine::ui_step() {
                 }
             }
 
-            /* ListView（大文本 P0）：Control 是视口；运行时生成一个 scn.Label 子节点承载
-             * 全部行。滚轮在指针位于视口内时改 scroll_pos（归一化），内容按像素偏移移动；
-             * 子树裁剪由 compute_ui_clip 对 ui.ListView.clip_content 统一处理（与 Mask 叠加）。 */
+            /* ListView：Control 是视口；运行时创建 content_root，把直接子节点（Button/Sprite/
+             * Label/Image 等）收拢到其下，滚动只移动 content_root。滚轮/拖拽在指针位于视口内时
+             * 改 scroll_pos（归一化）；子树裁剪由 compute_ui_clip 对 clip_content 统一处理。 */
             if (auto* lv = as_component_mut<ui::ListView>(d, blob.data())) {
                 const auto* ctl = component<ui::Control>(*e);
                 if (!ctl) continue;
                 const float vw = ctl->offset_max.x, vh = ctl->offset_max.y;
                 if (!(vw > 0.0F) || !(vh > 0.0F)) continue;
-                SceneNode* ce = lv->content.id > 0 ? scene->at((int)lv->content.id) : nullptr;
-                if (!ce || ce->parent != id) {
-                    /* 已保存/重载过的场景里，运行时内容子节点可能已经在树中（content 引用是
-                     * transient 不落盘）；按稳定名字认领，避免每次载入再生成一份重复文本。 */
-                    const std::string content_name = e->name + ".content";
+                /* 内容根：所有直接子节点（按钮/精灵/标签/手写内容）都挂到它下面；
+                 * 只移动内容根，子节点局部坐标保持作者声明值。这样按钮/精灵/9-patch 等
+                 * 任意子树都能随 ListView 一起滚动并继承视口裁剪。 */
+                const std::string root_name = e->name + ".content_root";
+                SceneNode* root = lv->content_root.id > 0 ? scene->at((int)lv->content_root.id) : nullptr;
+                if (!root || root->parent != id) {
                     for (int k : e->children) {
                         SceneNode* ke = scene->at(k);
-                        if (ke && ke->name == content_name && component<scn::Label>(*ke)) {
-                            ce = ke; lv->content.id = (uint32_t)k; lv->content.generation = 0; break;
-                        }
+                        if (ke && ke->name == root_name) { root = ke; break; }
                     }
-                    if (!ce) {
-                        const int cid = scene->spawn();
-                        scene->attach(cid, id);
-                        attach_component(*this, cid, "scn.Label");
-                        ce = scene->at(cid);
-                        if (ce) ce->name = content_name;
-                        lv->content.id = (uint32_t)cid;
-                        lv->content.generation = 0;
+                    if (!root) {
+                        const int rid = scene->spawn();
+                        scene->attach(rid, id);
+                        root = scene->at(rid);
+                        if (root) root->name = root_name;
                     }
                 }
-                auto* lbl = ce ? component<scn::Label>(*ce) : nullptr;
-                if (!lbl) continue;
-                if (lbl->text != lv->text) lbl->text = lv->text;
+                if (!root) continue;
+                /* 找 root 的稳定 id：SceneNode 不存 id，从父 children 反查 */
+                int root_id = -1;
+                for (int k : e->children) if (scene->at(k) == root) { root_id = k; break; }
+                if (root_id < 0) continue;
+                lv->content_root.id = (uint32_t)root_id;
+                lv->content_root.generation = 0;
+                /* 把 ListView 的其余直接子节点（包括旧版直接挂的 Label）移到内容根下。 */
+                const std::vector<int> kids = e->children;
+                for (int k : kids) if (k != root_id) scene->attach(k, root_id);
+
                 const float pad_l = lv->padding.x, pad_t = lv->padding.y;
                 const float pad_r = lv->padding.z, pad_b = lv->padding.w;
                 const float text_w = (vw - pad_l - pad_r > 1.0F) ? (vw - pad_l - pad_r) : vw;
-                lbl->x = pad_l;
-                lbl->y = 0.0F;
-                lbl->z = 0;
-                lbl->font = lv->font;
-                lbl->font_size = lv->font_size;
-                lbl->r = lv->text_color.x; lbl->g = lv->text_color.y;
-                lbl->b = lv->text_color.z; lbl->a = lv->text_color.w;
-                lbl->wrap = lv->wrap;
-                lbl->line_spacing = lv->line_spacing;
-                lbl->max_width = text_w;
-                lbl->max_height = 0.0F;
-                lbl->overflow = ui::TextOverflow::Clip;
+                SceneNode* ce = nullptr;
+                scn::Label* lbl = nullptr;
+                if (!lv->text.empty()) {
+                    if (lv->content.id > 0) ce = scene->at((int)lv->content.id);
+                    if (!ce || ce->parent != root_id) {
+                        const std::string content_name = e->name + ".content";
+                        for (int k : root->children) {
+                            SceneNode* ke = scene->at(k);
+                            if (ke && ke->name == content_name && component<scn::Label>(*ke)) {
+                                ce = ke; break;
+                            }
+                        }
+                        if (!ce) {
+                            const int cid = scene->spawn();
+                            scene->attach(cid, root_id);
+                            attach_component(*this, cid, "scn.Label");
+                            ce = scene->at(cid);
+                            if (ce) ce->name = content_name;
+                        }
+                    }
+                    if (ce) {
+                        int cid = -1;
+                        for (int k : root->children) if (scene->at(k) == ce) { cid = k; break; }
+                        if (cid < 0) ce = nullptr;
+                        else { lv->content.id = (uint32_t)cid; lv->content.generation = 0; }
+                    }
+                    lbl = ce ? component<scn::Label>(*ce) : nullptr;
+                }
+                if (lbl) {
+                    if (lbl->text != lv->text) lbl->text = lv->text;
+                    lbl->x = pad_l;
+                    lbl->y = 0.0F;
+                    lbl->z = 0;
+                    lbl->font = lv->font;
+                    lbl->font_size = lv->font_size;
+                    lbl->r = lv->text_color.x; lbl->g = lv->text_color.y;
+                    lbl->b = lv->text_color.z; lbl->a = lv->text_color.w;
+                    lbl->wrap = lv->wrap;
+                    lbl->line_spacing = lv->line_spacing;
+                    lbl->max_width = text_w;
+                    lbl->max_height = 0.0F;
+                    lbl->overflow = ui::TextOverflow::Clip;
+                }
 
                 mq_text_style st{};
                 st.struct_size = (uint32_t)sizeof st;
@@ -153,19 +188,41 @@ void Engine::ui_step() {
                 mq_text_metrics m{};
                 mq_font* f = text_font_for(lv->font);
                 if (!lv->text.empty()) (void)mq_text_measure(f, &st, lv->text.c_str(), &m);
-                const float content_h = pad_t + m.height + pad_b;
+                /* 内容高度：文本度量优先；纯子节点模式用 item_count/item_extent 定义虚拟长度，
+                 * 这样 Button/Sprite 列表不需要依赖文本排版。 */
+                float inner_h = m.height;
+                if (lv->item_count > 0 && lv->item_extent > 0.0F) {
+                    const float item_h = (float)lv->item_count * (lv->item_extent + lv->spacing);
+                    if (item_h > inner_h) inner_h = item_h;
+                } else if (lv->text.empty()) {
+                    /* 没有 item_count 时，按直接子节点的粗略范围兜底（负 y = 向下排列）。 */
+                    float max_down = 0.0F;
+                    for (int k : root->children) {
+                        SceneNode* ke = scene->at(k);
+                        if (!ke || ke == ce) continue;
+                        float top = ke->local_y, h = 0.0F;
+                        if (const auto* b = component<scn::Button>(*ke)) { h = b->height; top += b->y + h; }
+                        else if (const auto* sp = component<scn::Sprite>(*ke)) { h = sp->height; top += h * 0.5F; }
+                        else if (const auto* c = component<ui::Control>(*ke)) { h = c->offset_max.y; top += h; }
+                        else if (const auto* lb = component<scn::Label>(*ke)) {
+                            h = lb->text_h > 0.0F ? lb->text_h : lb->font_size;
+                            top += h;
+                        }
+                        if (h <= 0.0F) continue;
+                        const float down = -(top - h);
+                        if (down > max_down) max_down = down;
+                    }
+                    if (max_down > inner_h) inner_h = max_down;
+                }
+                const float content_h = pad_t + inner_h + pad_b;
                 float max_off = content_h - vh;
                 if (max_off < 0.0F) max_off = 0.0F;
                 lv->content_height = content_h;
                 if (max_off <= 0.0F) lv->scroll_pos = 0.0F;
                 const bool inside = mouse_x >= e->world_x && mouse_x <= e->world_x + vw &&
                                     mouse_y >= e->world_y && mouse_y <= e->world_y + vh;
-                /* 滚轮：仅指针在视口内生效。scroll_pos = 0 为顶部；wheel_dy 已按平台边界翻转，
-                 * 向下滚为正 → scroll_pos 增加。 */
                 if (max_off > 0.0F && inside && wheel_dy != 0.0F)
                     lv->scroll_pos += wheel_dy * lv->wheel_step / max_off;
-                /* 拖拽：在视口内按下后，指针世界 y 的变化直接换算成归一化滚动量。
-                 * 向上拖（world y 增大）= 看后面的内容 → scroll_pos 增加。 */
                 const bool down = input && mq_input_pointer_down(input, 0) != 0;
                 if (!down) {
                     lv->dragging = false;
@@ -178,14 +235,15 @@ void Engine::ui_step() {
                     lv->scroll_pos = lv->drag_start_scroll + (mouse_y - lv->drag_start_y) / max_off;
                 lv->scroll_pos = lv->scroll_pos < 0.0F ? 0.0F : (lv->scroll_pos > 1.0F ? 1.0F : lv->scroll_pos);
                 lv->scroll_offset = lv->scroll_pos * max_off;
-                /* 子节点局部坐标：视口顶 - padding.top + 滚动偏移（世界 y 向上，偏移增大=内容上移）。 */
+                /* 内容根局部坐标：内容顶部 = 视口顶 - padding.top + 滚动偏移。
+                 * 子节点局部坐标保持作者声明（向下排列用负 y），随内容根整体移动。 */
                 const float cy = vh - pad_t + lv->scroll_offset;
-                if (auto* tf = component<scn::Transform2D>(*ce)) {
+                if (auto* tf = component<scn::Transform2D>(*root)) {
                     tf->x = 0.0F;
                     tf->y = cy;
                 } else {
-                    ce->local_x = 0.0F;
-                    ce->local_y = cy;
+                    root->local_x = 0.0F;
+                    root->local_y = cy;
                 }
             }
 

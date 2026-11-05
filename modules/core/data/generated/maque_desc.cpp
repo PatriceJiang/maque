@@ -4992,6 +4992,8 @@ static double mq_acc_ui_ListView_scroll_offset_getf(const void* p) { const auto&
 static void mq_acc_ui_ListView_scroll_offset_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.scroll_offset = static_cast<decltype(s.scroll_offset)>(v); }
 static double mq_acc_ui_ListView_content_height_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return static_cast<double>(s.content_height); }
 static void mq_acc_ui_ListView_content_height_setf(void* p, double v) { auto& s = *static_cast<ui::ListView*>(p); s.content_height = static_cast<decltype(s.content_height)>(v); }
+static const void* mq_acc_ui_ListView_content_root_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.content_root; }
+static void* mq_acc_ui_ListView_content_root_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.content_root; }
 static const void* mq_acc_ui_ListView_content_getp(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return &s.content; }
 static void* mq_acc_ui_ListView_content_getmp(void* p) { auto& s = *static_cast<ui::ListView*>(p); return &s.content; }
 static double mq_acc_ui_ListView_dragging_getf(const void* p) { const auto& s = *static_cast<const ui::ListView*>(p); return s.dragging ? 1.0 : 0.0; }
@@ -5029,6 +5031,7 @@ static const mq_field_accessor mq_acc_ui_ListView[] = {
     { 0, 0, 0, 0, mq_acc_ui_ListView_scrollbar_track_color_getp, mq_acc_ui_ListView_scrollbar_track_color_getmp },
     { mq_acc_ui_ListView_scroll_offset_getf, mq_acc_ui_ListView_scroll_offset_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_content_height_getf, mq_acc_ui_ListView_content_height_setf, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, mq_acc_ui_ListView_content_root_getp, mq_acc_ui_ListView_content_root_getmp },
     { 0, 0, 0, 0, mq_acc_ui_ListView_content_getp, mq_acc_ui_ListView_content_getmp },
     { mq_acc_ui_ListView_dragging_getf, mq_acc_ui_ListView_dragging_setf, 0, 0, 0, 0 },
     { mq_acc_ui_ListView_drag_start_y_getf, mq_acc_ui_ListView_drag_start_y_setf, 0, 0, 0, 0 },
@@ -5063,10 +5066,11 @@ static const mq_field_desc mq_fields_ui_ListView[] = {
     { "scrollbar_track_color", (uint32_t)offsetof(ui::ListView, scrollbar_track_color), MQ_TK_STRUCT, 1842732857u, 0u, 0u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[25] },
     { "scroll_offset", (uint32_t)offsetof(ui::ListView, scroll_offset), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[26] },
     { "content_height", (uint32_t)offsetof(ui::ListView, content_height), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[27] },
-    { "content", (uint32_t)offsetof(ui::ListView, content), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[28] },
-    { "dragging", (uint32_t)offsetof(ui::ListView, dragging), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[29] },
-    { "drag_start_y", (uint32_t)offsetof(ui::ListView, drag_start_y), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[30] },
-    { "drag_start_scroll", (uint32_t)offsetof(ui::ListView, drag_start_scroll), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[31] },
+    { "content_root", (uint32_t)offsetof(ui::ListView, content_root), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[28] },
+    { "content", (uint32_t)offsetof(ui::ListView, content), MQ_TK_ENTITY_REF, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[29] },
+    { "dragging", (uint32_t)offsetof(ui::ListView, dragging), MQ_TK_BOOL, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[30] },
+    { "drag_start_y", (uint32_t)offsetof(ui::ListView, drag_start_y), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[31] },
+    { "drag_start_scroll", (uint32_t)offsetof(ui::ListView, drag_start_scroll), MQ_TK_F32, 0u, 0u, 3u, 0u, 0, 0, 0, 0, &mq_acc_ui_ListView[32] },
 };
 
 static double mq_acc_ui_Mask_mask_mode_getf(const void* p) { const auto& s = *static_cast<const ui::Mask*>(p); return static_cast<double>(static_cast<int64_t>(s.mask_mode)); }
@@ -9711,7 +9715,7 @@ extern const mq_type_desc mq_type_ui_ListView = {
     2237314706u,
     (uint32_t)sizeof(ui::ListView),
     (uint32_t)alignof(ui::ListView),
-    32u,
+    33u,
     mq_fields_ui_ListView,
     4u,
     MQ_ROLE_UI_LIST,
@@ -13817,17 +13821,20 @@ extern const mq_field_desc* mq_schema_field(const mq_type_desc* type, const char
         case 2578945784u:
             if (std::strcmp(name, "content_height") == 0) return &type->fields[27];
             break;
+        case 3553276491u:
+            if (std::strcmp(name, "content_root") == 0) return &type->fields[28];
+            break;
         case 2428421058u:
-            if (std::strcmp(name, "content") == 0) return &type->fields[28];
+            if (std::strcmp(name, "content") == 0) return &type->fields[29];
             break;
         case 755686860u:
-            if (std::strcmp(name, "dragging") == 0) return &type->fields[29];
+            if (std::strcmp(name, "dragging") == 0) return &type->fields[30];
             break;
         case 3142349204u:
-            if (std::strcmp(name, "drag_start_y") == 0) return &type->fields[30];
+            if (std::strcmp(name, "drag_start_y") == 0) return &type->fields[31];
             break;
         case 2121294924u:
-            if (std::strcmp(name, "drag_start_scroll") == 0) return &type->fields[31];
+            if (std::strcmp(name, "drag_start_scroll") == 0) return &type->fields[32];
             break;
         }
         break;

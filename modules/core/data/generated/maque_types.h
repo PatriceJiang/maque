@@ -1327,6 +1327,7 @@ struct ListView {
     math::Vec4 scrollbar_track_color = {0.12F, 0.16F, 0.22F, 0.8F};
     float scroll_offset;
     float content_height;
+    maque::EntityRef content_root;
     maque::EntityRef content;
     bool dragging;
     float drag_start_y;

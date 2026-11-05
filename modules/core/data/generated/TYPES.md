@@ -2598,6 +2598,7 @@ role: `ui_list`
 | `scrollbar_track_color` | math.Vec4 | {0.12F, 0.16F, 0.22F, 0.8F} |  |
 | `scroll_offset` | float | — | unit: px, transient, readonly |
 | `content_height` | float | — | unit: px, transient, readonly |
+| `content_root` | entity_ref | — | ref: Node, transient, readonly |
 | `content` | entity_ref | — | ref: Label, transient, readonly |
 | `dragging` | bool | — | transient, readonly |
 | `drag_start_y` | float | — | unit: px, transient, readonly |

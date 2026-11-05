@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# ui.ListView：大文本滚动 + 视口裁剪（headless PPM）。
+# ui.ListView：滚动 + 视口裁剪（headless PPM）。
+# 用法：ui_list_e2e.sh <player> <work> [scene]   （默认 scenes/ui_list/list.scn）
 #   ① 滚轮在视口内：帧 1 与帧 8 的差异全部落在 ListView 矩形内
 #   ② 视口外（含视口下沿）必须完全不变 → 内容没有泄漏
 #   ③ 指针在视口外滚轮：两帧逐字节一致
-#   ④ 视口内确实有文字（非背景像素足够多）
+#   ④ 视口内有文字/子控件像素，滚动条 thumb 存在
+#   ⑤ 拖拽滚动同样只改变视口内像素
 set -u
 . "$(dirname "$0")/maque_python.sh"
 PLAYER="$1"; WORK="$2"; mkdir -p "$WORK"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SCENE="$ROOT/scenes/ui_list/list.scn"
+SCENE="${3:-$ROOT/scenes/ui_list/list.scn}"
 PPM="$WORK/ui_list"
 
 run_seq() {

@@ -168,16 +168,20 @@ UV 重映射后交给 `UiBatcher` 按状态合并 → 多张小图共享一次�
 
 ### ui.ListView（大文本滚动 + 视口裁剪）
 
-`ui.ListView` 与 `ui.Control` 同挂：运行时创建一个 `scn.Label` 子节点承载 `text`，按
-`font_size`/`wrap`/`line_spacing` 排版；`Control.offset_max` 是视口。滚轮在指针位于视口内时
-按 `wheel_step` 修改 `scroll_pos`（归一化），在视口内按下拖动也可滚动；`scroll_offset`/
-`content_height` 为派生像素值。`show_scrollbar` 绘制右侧轨道 + 内容比例滑块。`clip_content=true`
-时 `compute_ui_clip` 把子树裁剪到视口矩形（与 `ui.Mask` 的可见矩形集合求交），所以文本溢出
-不会画到视口外；`clip_content=false` 只滚动不裁剪。裁剪仍走图元 `clip_x/y/w/h` + scissor，
-不新增 render pass。
+`ui.ListView` 与 `ui.Control` 同挂：运行时创建一个 **content_root**，把所有直接子节点
+（Button/Sprite/Label/Image 等）收进其下；滚动只移动 content_root，子节点局部坐标不变。
+`text` 非空时在 content_root 下自动生成 `scn.Label` 承载全文；纯子节点模式用
+`item_count/item_extent/spacing` 定义虚拟内容高度。`Control.offset_max` 是视口。滚轮在指针
+位于视口内时按 `wheel_step` 修改 `scroll_pos`（归一化），在视口内按下拖动也可滚动；
+`scroll_offset`/`content_height` 为派生像素值。`show_scrollbar` 绘制右侧轨道 + 内容比例滑块。
+`clip_content=true` 时 `compute_ui_clip` 把子树裁剪到视口矩形（与 `ui.Mask` 的可见矩形集合
+求交），所以按钮/精灵/文本溢出都不会画到视口外；`clip_content=false` 只滚动不裁剪。裁剪仍走
+图元 `clip_x/y/w/h` + scissor，不新增 render pass。
 
-- 场景：`scenes/ui_list/list.scn`（120 行，滚轮滚动；视口下沿可见裁剪）。
-- 回归：`ctest -R ui_list_e2e`（视口内像素变化、视口外零变化；视口外滚轮不滚动）。
+- 场景：`scenes/ui_list/list.scn`（120 行大文本）、`scenes/ui_list/items.scn`
+  （20 行 Button+Sprite+Label 子节点，`item_count/item_extent` 定义内容长度）。
+- 回归：`ctest -R 'ui_list_e2e|ui_list_items_e2e'`（视口内像素变化、视口外零变化；
+  滚轮/拖拽/滚动条；视口外滚轮不滚动）。
 - 限制：`item_template` 虚拟化、滚动条/惯性/拖拽仍是后续项；P0 用单个 Label 承载全文。
 
 ## 6. 离屏渲染与 AI 预览（关键）

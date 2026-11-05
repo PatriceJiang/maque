@@ -200,11 +200,16 @@
 
 ### P0 大文本模式（当前实现）
 
-`ListView` 先落地「大文本滚动 + 视口裁剪」这条最常用路径，不依赖 `item_template` 实例化：
+`ListView` 先落地「大文本 + 任意 UI 子节点」的滚动/裁剪路径，不依赖 `item_template` 实例化：
 
 - 与 `ui.Control` 同挂；`Control.offset_max` 是**视口**。
-- `text` 为逐行文本（`\n` 分行）。运行时自动生成一个 `scn.Label` 子节点承载全文，
-  字号/颜色/行距/`wrap` 取自 `font_size/text_color/line_spacing/wrap`。
+- 运行时创建一个 **content_root** 子节点，把 ListView 的其余直接子节点（Button/Sprite/Label/
+  Image/任意子树）收拢到它下面；滚动只移动 content_root，子节点局部坐标保持作者声明值。
+  因此按钮、精灵、九宫格、文字等都会一起滚动并继承视口裁剪。
+- `text` 非空时，在 content_root 下自动生成 `scn.Label` 承载全文；字号/颜色/行距/`wrap` 取自
+  `font_size/text_color/line_spacing/wrap`。
+- 纯子节点模式用 `item_count`/`item_extent`/`spacing` 定义虚拟内容高度；没有这些字段时按直接
+  子节点的粗略范围兜底（向下排列使用负局部 y）。
 - `scroll_pos`（0..1）为归一化滚动位置；指针位于视口内时滚轮按 `wheel_step` 改它，
   在视口内按下并拖动也可直接滚（`dragging`/`drag_start_y`/`drag_start_scroll` 为运行期派生）。
   `scroll_offset`（像素）与 `content_height` 是运行期派生，可脚本读取。
@@ -212,9 +217,10 @@
   可调，滑块随滚动位置移动。
 - `clip_content=true` 时 `compute_ui_clip` 把子树裁剪到视口矩形（与 `ui.Mask` 的裁剪集合求交），
   因此内容不会越界；`clip_content=false` 可做溢出预览。
-- 字段 `item_template/data_source/item_count/...` 保留给后续虚拟化实现（当前未消费）。
+- `item_template/data_source` 的模板虚拟化仍是后续项；当前 `item_count` 只用于长度，不实例化模板。
 - 脚本：`node_set_string(id,"ui.ListView","text",...)`、`node_set_number(id,"ui.ListView","scroll_pos",0.5)`。
-- 场景示例：`scenes/ui_list/list.scn`；回归：`tests/ui_list_e2e.sh`。
+- 场景示例：`scenes/ui_list/list.scn`（大文本）与 `scenes/ui_list/items.scn`（20 行
+  Button+Sprite+Label 子节点）；回归：`tests/ui_list_e2e.sh`。
 
 ---
 

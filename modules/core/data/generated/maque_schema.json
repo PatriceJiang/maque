@@ -14999,6 +14999,19 @@
           }
         },
         {
+          "name": "content_root",
+          "type": "entity_ref",
+          "kind": "entity_ref",
+          "type_id": 0,
+          "count": 0,
+          "offset": null,
+          "attrs": {
+            "readonly": true,
+            "ref": "Node",
+            "transient": true
+          }
+        },
+        {
           "name": "content",
           "type": "entity_ref",
           "kind": "entity_ref",

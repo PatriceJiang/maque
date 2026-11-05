@@ -233,7 +233,9 @@ int runtime_input_handler(void* user, const mq_input_event* ev, mq_input_target*
         ev->type == MQ_INPUT_POINTER_WHEEL) {
         eng->mouse_x = ev->x; eng->mouse_y = ev->y;
     }
-    if (ev->type == MQ_INPUT_POINTER_WHEEL) {
+    /* 处理器会被 capture/target/bubble 三个阶段各调一次；滚轮增量只取一次，
+     * 否则命中子树越深滚得越快（ListView 的 Button 子节点会命中多阶段）。 */
+    if (ev->type == MQ_INPUT_POINTER_WHEEL && ev->phase == MQ_INPUT_PHASE_TARGET) {
         eng->wheel_dx += ev->scroll_x;
         eng->wheel_dy += ev->scroll_y;
     }
