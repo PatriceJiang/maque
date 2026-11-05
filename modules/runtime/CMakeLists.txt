@@ -6,6 +6,7 @@ add_library(maque_runtime STATIC
     # 入口与引擎装配（原 runtime.cpp 的编排层；按关注点分文件，见 plans/25）
     src/entry.cpp src/engine/globals.cpp src/engine/frame.cpp src/engine/setup.cpp
     src/engine/window.cpp src/engine/run.cpp src/engine/crash.cpp src/engine/tracy.cpp
+    src/engine/profile.cpp
     src/engine/ui.cpp src/engine/sim.cpp src/engine/canvas.cpp src/engine/storage.cpp
     src/engine/reflect_ops.cpp
     # 输入分发
@@ -45,7 +46,7 @@ set(MAQUE_RUNTIME_DEPS
     maque::handle maque::vfs maque::storage maque::image maque::genbind maque::api
     maque::gencontrol maque::genevents maque::observability maque::control
     maque::platform maque::input maque::watcher maque::physics maque::nav
-    maque::spine2d maque::imgui maque::tracy maque::audio)
+    maque::spine2d maque::imgui maque::tracy maque::profile maque::audio)
 if(MAQUE_WASM OR EMSCRIPTEN OR MAQUE_HEADLESS_STUBS)
     list(APPEND MAQUE_RUNTIME_DEPS maque::renderer_null)
     target_compile_definitions(maque_runtime PRIVATE MQ_RENDERER_STATIC_NULL=1)

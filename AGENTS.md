@@ -391,6 +391,29 @@ tools\win\build.cmd -Sanitize address -RunTests
   `tracy-capture` 只能收到 3 帧/0 zone，关掉才正常）。
   无 GUI 抓 trace：`MAQUE_TRACY=1 MAQUE_WINDOW=0x0 ./maque_player <scene> &` +
   `.deps/tracy/tracy-capture.exe -o out.tracy -a 127.0.0.1 -p 8086 -s 2`；测试 `ctest -R tracy`。
+- **Linux 采样剖析 perf（docs/35，Linux only；不接 oprofile）**：Tracy 看“一帧内各段 zone”，
+  perf 看“几百帧里 CPU 花在哪些函数/源码行”。Linux 默认 `MAQUE_PROFILE=ON`（只加 `-g -fno-omit-frame-pointer`，
+  不改优化级别）；`-DMAQUE_PROFILE=OFF` → stub（控制面 `supported:false`），其它平台自动关闭。
+  启用：`MAQUE_PROFILE=1 [MAQUE_PROFILE_FRAMES=N] [MAQUE_PROFILE_START=N] [MAQUE_PROFILE_DIR=…]`
+  （默认 `.maque/profile/run-<时间戳>`，不入库）；录制中 **F5** 开关（引擎热键，不下发给脚本）。
+  控制面 `Perf.profile_status/start/stop/report/mark`；`start/stop/mark` 是变更类（启动外部进程/
+  写产物）→ 只读会话被 `-32001` 拒绝，启动期 `MAQUE_PROFILE=1` 不需要写权限。
+  产物：`perf.data` / `perf.log` / `perf-report.txt` / `hotspots.json` / `meta.json`（+ Python `report.md`）。
+  **agent 自动优化闭环（唯一支持方式；引擎不自动改代码）**：
+  ```bash
+  python3 tools/perf/maque_perf.py check --binary <player>
+  python3 tools/perf/maque_perf.py record --out .maque/perf/base --frames 600 -- <player> <scene>
+  # 读 report.md / hotspots.json 的 source+module+percent，一次只改一个热点
+  python3 tools/perf/maque_perf.py record --out .maque/perf/cand --frames 600 -- <player> <scene>
+  python3 tools/perf/maque_perf.py compare --baseline .maque/perf/base --candidate .maque/perf/cand --fail-on-regression
+  python3 tools/perf/maque_perf.py bench --out .maque/bench/base --frames 600 --reps 3 -- <player> <scene>
+  ctest --test-dir build --output-on-failure
+  ```
+  阈值：每侧 ≥2000 samples、热点变化 >3% 相对值且 >0.5pp、bench 用 3 次中位数；不要在 Debug/ASan
+  上比绝对毫秒。权限：`perf_event_paranoid<=1`（`sudo sysctl kernel.perf_event_paranoid=1`）或
+  `CAP_PERFMON`；容器 `--cap-add=PERFMON`。无权限的 CI 用 `tests/data/perf/fake_perf.py` 跑
+  `profile_e2e`（生命周期/控制面），固定文本跑 `perf_report_e2e`（解析/回归门）；测试
+  `ctest -R 'profile|perf_report'`。禁止把 `perf.data` 入库（大且不可复现）。
 - **节点属性对渲染生效（含层级累积）**：`node_set_angle`（度）/`node_set_scale`/`node_set_opacity`
   影响**自身与子树** —— 提取时沿父链累积（角度相加、缩放相乘、透明度相乘并夹 [0,1]），
   `node_set_active(id,0)` 隐藏整棵子树。所以"炮塔挂在车体下、各自转向"这类层级结构直接可用：

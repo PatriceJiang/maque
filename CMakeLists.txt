@@ -22,6 +22,10 @@ option(MAQUE_TRACY "Tracy performance profiler integration (docs/29)" ON)
 option(MAQUE_TRACY_MEMORY "Tracy per-domain memory accounting (docs/29)" ON)
 option(MAQUE_TRACY_ALLOC "Tracy global new/delete interception (docs/29; profiling builds only)" OFF)
 option(MAQUE_TRACY_LOCKS "Tracy lock tracking (docs/29)" ON)
+# Linux 采样剖析（docs/35）：perf 后端 + 符号化所需的 -g/-fno-omit-frame-pointer。
+# 只在 Linux 有效；WASM/Android/Windows 会自动关闭（见下方平台块），构建仍可直接调用
+# `maque::profile` 的 stub（supported()==false）。
+option(MAQUE_PROFILE "Linux perf sampling profiler support (docs/35; Linux only)" ON)
 
 # Emscripten 必须由 emcmake/SDK 官方 toolchain 选择；MAQUE_WASM 只控制项目目标图。
 if(EMSCRIPTEN)
@@ -33,6 +37,7 @@ if(MAQUE_WASM)
     endif()
     set(MAQUE_BUILD_TESTS OFF CACHE BOOL "WASM build does not build native tests" FORCE)
     set(MAQUE_TRACY OFF CACHE BOOL "Tracy is unavailable in the single-thread WASM P0 profile" FORCE)
+    set(MAQUE_PROFILE OFF CACHE BOOL "Linux perf profiling is unavailable in the WASM profile" FORCE)
     set(MAQUE_ENABLE_LUA OFF CACHE BOOL "WASM P0 builds only the QuickJS backend" FORCE)
     set(MAQUE_HARFBUZZ OFF CACHE BOOL "WASM P0 uses the built-in text fallback" FORCE)
     set(MAQUE_BUILTIN_SHADER_COMPRESS OFF CACHE BOOL "WASM P0 does not build native shader compression" FORCE)
@@ -55,6 +60,7 @@ if(MAQUE_ANDROID)
     endif()
     set(MAQUE_BUILD_TESTS OFF CACHE BOOL "Android build does not build host tests" FORCE)
     set(MAQUE_TRACY OFF CACHE BOOL "Tracy desktop launcher is unavailable on Android" FORCE)
+    set(MAQUE_PROFILE OFF CACHE BOOL "Linux perf profiling is unavailable on Android" FORCE)
     set(MAQUE_HARFBUZZ OFF CACHE BOOL "Android template uses the built-in text fallback" FORCE)
     set(MAQUE_BUILTIN_SHADER_COMPRESS OFF CACHE BOOL "Android embeds shader sources without host zstd" FORCE)
     set(CMAKE_DISABLE_FIND_PACKAGE_CURL ON CACHE BOOL "Android template omits curl" FORCE)
@@ -63,6 +69,18 @@ if(MAQUE_ANDROID)
     set(CMAKE_DISABLE_FIND_PACKAGE_Freetype ON CACHE BOOL "Android template uses packaged or built-in fonts" FORCE)
     add_compile_definitions(MQ_PLATFORM_ANDROID=1)
     message(STATUS "maque: Android profile (SDL2 + APK asset VFS + static gfx)")
+endif()
+
+# Linux 采样剖析（docs/35）：其它平台明确关闭（stub 仍可编译；控制面返回 unsupported）。
+if(MAQUE_PROFILE AND NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    message(STATUS "maque: MAQUE_PROFILE 仅支持 Linux（当前 ${CMAKE_SYSTEM_NAME}）→ 关闭")
+    set(MAQUE_PROFILE OFF CACHE BOOL "Linux perf sampling profiler support (docs/35; Linux only)" FORCE)
+endif()
+if(MAQUE_PROFILE)
+    # 优化级别不变，只补符号化信息：Release 也能把采样解析到函数/源码行。
+    # 帧指针让 `--call-graph fp` 比 DWARF 便宜；需要更准的栈可改用 dwarf（docs/35 §5）。
+    add_compile_options(-g -fno-omit-frame-pointer)
+    message(STATUS "maque: Linux perf profiling ON（-g -fno-omit-frame-pointer）")
 endif()
 
 # 确定性 D8（docs/10 §2）：关闭 FMA 收缩 —— 浮点结果不随编译器/优化级别变化。
@@ -290,6 +308,8 @@ endif()
 add_subdirectory(third_party/basisu)   # KTX2/Basis Universal 转码（image 模块用）
 add_subdirectory(third_party/libunibreak)   # UAX #14 换行 / UAX #29 字素边界（text 模块用）
 add_subdirectory(modules/core/tracy)
+# Linux 采样剖析（docs/35）：perf 子进程封装；OFF/非 Linux 时是 stub。
+add_subdirectory(modules/core/profile)
 
 # script 需先于 data（data 生成绑定 TU 依赖 script）
 add_subdirectory(modules/script)

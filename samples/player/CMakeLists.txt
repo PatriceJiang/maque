@@ -89,6 +89,24 @@ if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)
     set_tests_properties(tracy_mem_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 240)
 endif()
 
+# Linux perf 剖析端到端（docs/35）：用 tests/data/perf/fake_perf.py 覆盖
+# start → 帧推进 → stop → perf report → hotspots 的完整生命周期（真实 perf 无权限时也能跑）；
+# 另测 perf 缺失时玩家继续运行、MAQUE_PROFILE=0 零日志。MAQUE_PROFILE=OFF → SKIP 77。
+if(MAQUE_BUILD_TESTS AND TARGET maque_gfx AND "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    add_test(NAME profile_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/profile_e2e.sh"
+             $<TARGET_FILE:maque_player>
+             "${CMAKE_SOURCE_DIR}/scenes/ball.scn"
+             "${CMAKE_CURRENT_BINARY_DIR}/profile_e2e")
+    set_tests_properties(profile_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 240)
+
+    # 离线解析/对比（不需要 perf/权限）：百分比/样本/源码行/模块归类 + 回退门。
+    add_test(NAME perf_report_e2e COMMAND "${MAQUE_BASH}" "${CMAKE_SOURCE_DIR}/tests/perf_report_e2e.sh"
+             "${CMAKE_SOURCE_DIR}/tools/perf/maque_perf.py"
+             "${CMAKE_SOURCE_DIR}/tests/data/perf"
+             "${CMAKE_CURRENT_BINARY_DIR}/perf_report_e2e")
+    set_tests_properties(perf_report_e2e PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
+endif()
+
 # 音频端到端（docs/30）：脚本 audio_* → VFS 解码 → 混音器逻辑时钟/状态机；
 # null 后端确定性断言 + SDL dummy 驱动设备路径。
 if(MAQUE_BUILD_TESTS AND TARGET maque_gfx)

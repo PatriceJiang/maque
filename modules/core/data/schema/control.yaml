@@ -13,7 +13,9 @@
                       Replay.seek, Input.sim_load, Input.sim_stop, Input.inject,
                       Reload.script, Reload.scene, Reload.files,
                       Storage.put, Storage.remove,
-                      Audio.play, Audio.stop, Audio.set_master, Audio.set_bus, Capture.camera_save ]
+                      Audio.play, Audio.stop, Audio.set_master, Audio.set_bus, Capture.camera_save,
+                      # perf 剖析：启动外部 perf/写产物/追加标记 → 属于副作用，只读会话拒绝
+                      Perf.profile_start, Perf.profile_stop, Perf.profile_mark ]
   control_list:
     # ---- 自省（A1）----
     - { method: Control.info,  args: [] }
@@ -100,6 +102,19 @@
                                       { name: key, type: float } ] }
     # ---- 性能与日志（A2）----
     - { method: Perf.get, args: [] }
+    # ---- Linux 采样剖析（perf，docs/35）：非 Linux/未编入时 supported=false，方法仍存在 ----
+    - { method: Perf.profile_status, args: [],
+        summary: "perf 剖析状态（state/pid/samples/产物路径；非 Linux 返回 supported=false）" }
+    - { method: Perf.profile_start, args: [ { name: freq, type: float }, { name: callgraph, type: string },
+                                            { name: label, type: string }, { name: dir, type: string },
+                                            { name: frames, type: float } ],
+        summary: "启动 perf record 附加到本进程（frames>0 时到帧自动停；变更类：只读会话拒绝）" }
+    - { method: Perf.profile_stop, args: [ { name: report, type: bool } ],
+        summary: "停止录制并（默认）生成 perf report + hotspots.json" }
+    - { method: Perf.profile_report, args: [ { name: top, type: float }, { name: refresh, type: bool } ],
+        summary: "返回最近一次报告的前 top 个热点；refresh=true 时重跑 perf report" }
+    - { method: Perf.profile_mark, args: [ { name: label, type: string } ],
+        summary: "给当前录制追加 frame/时间戳标记（marks.jsonl）" }
     # ---- 热重载（docs/08/14）----
     - { method: Reload.script, args: [ { name: dry_run, type: bool  } ] }
     - { method: Reload.scene,  args: [ { name: dry_run, type: bool  } ] }

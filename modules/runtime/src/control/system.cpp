@@ -13,6 +13,13 @@ extern "C" int mq_control_Perf_get(void* u, const mq_json*, char* out, size_t ca
      * 永远拿到最新值，不受 MAQUE_TRACY_MEM_INTERVAL 的采样节流影响。 */
     if (e) {
         e->memory_sample();
+        /* perf 剖析状态（docs/35）：只在 agent 查询时刷新，不占每帧热路径。 */
+        const auto prof = maque::profile::status();
+        mq_obs_gauge_set(e->obs, "profile.recording",
+                         prof.state == maque::profile::State::recording ? 1.0 : 0.0);
+        mq_obs_gauge_set(e->obs, "profile.samples", (double)prof.samples);
+        mq_obs_gauge_set(e->obs, "profile.hotspots", (double)maque::profile::hotspots().size());
+        mq_obs_gauge_set(e->obs, "profile.elapsed_ms", prof.elapsed_ms);
         /* 进程常驻内存（WorkingSet/RSS）：覆盖"没有进任何域"的堆/映射增长。
          * 只在查询时取一次，避免与 Tracy 的 1Hz CPU 采样争用 ps_prev 时间戳。 */
         if (e->platform) {
@@ -53,6 +60,130 @@ extern "C" int mq_control_Types_describe(void* u, const mq_json*, char* out, siz
     }
     o += "]";
     std::snprintf(out, cap, "%s", o.c_str());
+    return 0;
+}
+
+
+
+/* ---- Linux 采样剖析（perf，docs/35）--------------------------------------------
+ * 控制面是 agent 的入口：start → Runtime.step → stop → report，全程不需要 shell。
+ * profile_start/stop/mark 是**变更类**（启动外部进程/写产物），默认只读会话会被 -32001 拒绝；
+ * profile_status/profile_report 只读（report 的 refresh 只写自己的产物）。
+ * 返回统一包一层 { ok, error?, profile: <maque::profile::hotspots_json> }。 */
+static std::string profile_json_escape(const std::string& s) {
+    std::string o;
+    o.reserve(s.size() + 8);
+    for (unsigned char c : s) {
+        switch (c) {
+            case '"':  o += "\\\""; break;
+            case '\\': o += "\\\\"; break;
+            case '\n': o += "\\n";  break;
+            case '\r': o += "\\r";  break;
+            case '\t': o += "\\t";  break;
+            default:
+                if (c < 0x20) { char b[8]; std::snprintf(b, sizeof b, "\\u%04x", (unsigned)c); o += b; }
+                else o += (char)c;
+        }
+    }
+    return o;
+}
+
+static std::string profile_wrap(bool ok, const std::string& error, size_t top,
+                                const char* extra_key = nullptr, const std::string& extra_val = {}) {
+    std::string o = "{\"ok\":";
+    o += ok ? "true" : "false";
+    if (!error.empty()) o += ",\"error\":\"" + profile_json_escape(error) + "\"";
+    if (extra_key) o += std::string(",\"") + extra_key + "\":" + extra_val;
+    o += ",\"profile\":" + maque::profile::hotspots_json(top) + "}";
+    return o;
+}
+
+static const char* env_or(const char* name, const char* def) {
+    const char* v = std::getenv(name);
+    return (v && *v) ? v : def;
+}
+
+extern "C" int mq_control_Perf_profile_status(void* u, const mq_json*, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    std::string o = profile_wrap(true, {}, 0, "frame", std::to_string((unsigned long long)e->frame));
+    std::snprintf(out, cap, "%s", o.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Perf_profile_start(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    maque::profile::Options o;
+    const double freq = mq_json_num(mq_json_get(params, "freq"), 0);
+    o.frequency = freq > 0 ? (int)freq : std::atoi(env_or("MAQUE_PROFILE_FREQ", "999"));
+    if (const char* cg = mq_json_str(mq_json_get(params, "callgraph"), nullptr); cg && *cg)
+        o.callgraph = cg;
+    else
+        o.callgraph = env_or("MAQUE_PROFILE_CALLGRAPH", "fp");
+    if (const char* label = mq_json_str(mq_json_get(params, "label"), nullptr); label && *label)
+        o.label = label;
+    if (const char* dir = mq_json_str(mq_json_get(params, "dir"), nullptr); dir && *dir)
+        o.output_dir = dir;
+    else
+        o.output_dir = env_or("MAQUE_PROFILE_DIR", "");
+    o.exclude_kernel = std::atoi(env_or("MAQUE_PROFILE_KERNEL", "1")) == 0;
+
+    std::string err;
+    if (!e->profile_start(o, &err)) {
+        const std::string js = profile_wrap(false, err, 0);
+        std::snprintf(out, cap, "%s", js.c_str());
+        return 0;
+    }
+    const double frames = mq_json_num(mq_json_get(params, "frames"), 0);
+    if (frames > 0) e->profile_stop_frame = e->frame + (uint64_t)frames;
+    const std::string js = profile_wrap(true, {}, 0, "frames_requested",
+                                        std::to_string(frames > 0 ? (long long)frames : 0));
+    std::snprintf(out, cap, "%s", js.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Perf_profile_stop(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const mq_json* rj = mq_json_get(params, "report");
+    const bool report = rj ? mq_json_num(rj, 1) != 0.0 : true;
+    std::string err;
+    const bool ok = e->profile_stop(report, &err);
+    const std::string js = profile_wrap(ok, err, 0, "report", report ? "true" : "false");
+    std::snprintf(out, cap, "%s", js.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Perf_profile_report(void* u, const mq_json* params, char* out, size_t cap) {
+    (void)u;
+    const int top = std::clamp((int)mq_json_num(mq_json_get(params, "top"), 20), 1, 200);
+    const bool refresh = mq_json_num(mq_json_get(params, "refresh"), 0) != 0.0;
+    std::string err;
+    if (refresh && !maque::profile::refresh_report(&err)) {
+        const std::string js = profile_wrap(false, err, (size_t)top);
+        std::snprintf(out, cap, "%s", js.c_str());
+        return 0;
+    }
+    const auto st = maque::profile::status();
+    if (!st.report_ok && err.empty()) err = st.reason;
+    const std::string js = profile_wrap(st.report_ok, st.report_ok ? "" : err, (size_t)top);
+    std::snprintf(out, cap, "%s", js.c_str());
+    return 0;
+}
+
+extern "C" int mq_control_Perf_profile_mark(void* u, const mq_json* params, char* out, size_t cap) {
+    auto* e = (Engine*)u;
+    const char* label = mq_json_str(mq_json_get(params, "label"), nullptr);
+    if (!label || !*label) {
+        std::snprintf(out, cap, "{\"ok\":false,\"error\":\"missing label\"}");
+        return 0;
+    }
+    std::string err;
+    const bool ok = maque::profile::mark(e->frame, label, &err);
+    std::string js = "{\"ok\":" + std::string(ok ? "true" : "false") +
+                     ",\"frame\":" + std::to_string((unsigned long long)e->frame) +
+                     ",\"label\":\"" + profile_json_escape(label) + "\"";
+    if (!err.empty()) js += ",\"error\":\"" + profile_json_escape(err) + "\"";
+    js += "}";
+    std::snprintf(out, cap, "%s", js.c_str());
     return 0;
 }
 

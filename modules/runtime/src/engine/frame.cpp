@@ -13,6 +13,7 @@ namespace maque::rt {
 void Engine::step_frame(bool render_frame) {
     MQ_TRACY_ZONE(runtime);                          // Tracy：一次模拟步（含渲染+present）总 zone
     tracy_tick();                                    // Tracy：MAQUE_TRACY 环境启动 + 1Hz CPU/内存采样
+    profile_tick();                                  // perf：MAQUE_PROFILE 启动/到帧自动停（docs/35；未启用时零开销）
     engine_options_parse_env();                      // F4 引擎选项的启动初值（MAQUE_ENGINE_OPTIONS；只解析一次）
     /* 输入帧缓冲：**必须预分配**（平台按 pointer_cap/key_cap 写入；容量 0 = 静默丢弃全部设备事件）。
      * 这是"真实鼠标/键盘事件永远到不了脚本"的根因（docs/19 §3：宿主预分配语义）。 */
@@ -195,6 +196,18 @@ void Engine::step_frame(bool render_frame) {
         }
         opt_f4_held = f4_down;
     }
+    /* **F5 引擎级热键**：perf 录制开关（docs/35）。只在 profiling 已启用（MAQUE_PROFILE=1
+     * 或控制面 start 过）时生效；沿检测（按住只触发一次）。默认不占用 F5，游戏可照常使用。 */
+    if (profile_armed) {
+        bool f5_down = false;
+        for (uint32_t i = 0; i < iframe.key_count; ++i) {
+            const mq_platform_key_event& k = iframe.keys[i];
+            if (k.key != MQ_KEY_F5 || k.repeat) continue;
+            if (k.down) f5_down = true;
+        }
+        if (f5_down && !profile_f5_held) profile_toggle();
+        profile_f5_held = f5_down;
+    }
     /* **F3 引擎级热键**：启动 Tracy（若未启动）+ 拉起 profiler GUI（docs/29）。
      * 沿检测同上（按住只触发一次）；已启动也允许再按 F3 —— 只补拉 GUI（不会重复弹窗）。 */
     {
@@ -217,7 +230,7 @@ void Engine::step_frame(bool render_frame) {
         uint32_t out = 0;
         for (uint32_t i = 0; i < iframe.key_count; ++i) {
             const uint32_t k = iframe.keys[i].key;
-            if (k == MQ_KEY_F2 || k == MQ_KEY_F4) continue;   // 引擎调试面板热键（不传给游戏）
+            if (k == MQ_KEY_F2 || k == MQ_KEY_F4 || (profile_armed && k == MQ_KEY_F5)) continue;   // 引擎热键（不传给游戏）
             if (out != i) iframe.keys[out] = iframe.keys[i];
             ++out;
         }

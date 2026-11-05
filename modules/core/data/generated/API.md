@@ -3,7 +3,7 @@
 > ⚠️ 本文件由 `modules/core/data/parser.js` 从 `schema/`（**唯一真相**）生成，**请勿手工编辑**。
 > 重新生成：`cmake --build build --target maque_codegen`，再运行 `tools/gen_api_docs.sh` 同步到 `docs/api/`。
 
-统计：脚本 API **325** 个 · 控制面方法 **57** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
+统计：脚本 API **325** 个 · 控制面方法 **62** 个 · 事件回调 **11** 个 · 模块 C ABI **26** 个 · 插件接口 **1** 个。
 
 ## 目录
 
@@ -429,6 +429,11 @@ JSON-RPC（`{"jsonrpc":"2.0","id":N,"method":"<方法>","params":{…}}`）；
 | `Input.sim_stop` | — | — |
 | `Input.inject` | type: float, x: float, y: float, button: float, key: float | number, number, number, number, number |
 | `Perf.get` | — | — |
+| `Perf.profile_status` | — | — |
+| `Perf.profile_start` | freq: float, callgraph: string, label: string, dir: string, frames: float | number, string, string, string, number |
+| `Perf.profile_stop` | report: bool | boolean |
+| `Perf.profile_report` | top: float, refresh: bool | number, boolean |
+| `Perf.profile_mark` | label: string | string |
 | `Reload.script` | dry_run: bool | boolean |
 | `Reload.scene` | dry_run: bool | boolean |
 | `Reload.files` | — | — |

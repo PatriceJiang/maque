@@ -37,7 +37,8 @@ static void usage() {
                "  --frames <n>         最多跑 n 帧后退出（等价 MAQUE_MAX_FRAMES；冒烟/回归用）\n"
                "  frames_dir           位置参数（可选）：逐帧 PPM 输出目录\n"
                "环境：MAQUE_WINDOW / MAQUE_WINDOW_MAXIMIZED / MAQUE_WINDOW_EVENT_AT / MAQUE_PRESENT /\n"
-               "      MAQUE_RENDER_SCALE / MAQUE_MAX_FRAMES / MAQUE_STORAGE …\n");
+               "      MAQUE_RENDER_SCALE / MAQUE_MAX_FRAMES / MAQUE_STORAGE /\n"
+               "      MAQUE_PROFILE（Linux perf；F5 开关，见 docs/35）…\n");
 }
 
 int main(int argc, char** argv) {

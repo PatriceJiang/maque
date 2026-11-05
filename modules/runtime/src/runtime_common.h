@@ -33,6 +33,7 @@
 #include "ui/mq_imgui.h"              // 引擎侧 ImGui 调试面板：帧管理/绘制数据导出
 #include "ui/mq_imgui_widgets.h"      // ImGui 控件 C ABI（runtime 不直接依赖 ImGui 头）
 #include "core/tracy/mq_tracy.h"      // Tracy 性能分析封装（docs/29；MAQUE_TRACY=OFF 时全部 no-op）
+#include "core/profile/mq_profile.h"   // Linux perf 采样剖析（docs/35；OFF/非 Linux 时是 stub）
 #include "gltf_model.h"                // 运行时 glTF/GLB 解析（plans/23/24，CPU 侧；无 GPU 依赖）
 
 #include <fstream>

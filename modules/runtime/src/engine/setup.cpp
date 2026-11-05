@@ -469,6 +469,8 @@ bool Engine::load_scene_into(const std::string& scn_path) {
 
 void Engine::teardown() {
     MQ_TRACY_ZONE_N(runtime, "engine.teardown");   // Tracy：退出清理
+    /* perf：先停录制并冲刷报告（在销毁控制面/场景之前；docs/35）。未启用时一次状态查询。 */
+    profile_shutdown();
     /* ImGui：先关官方后端再销毁上下文（否则退出时断言 "Forgot to shutdown Renderer backend?"）。 */
     if (imgui_inited) {
         mq_imgui_shutdown();

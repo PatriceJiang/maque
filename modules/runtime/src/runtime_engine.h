@@ -171,6 +171,23 @@ struct Engine {
     /* Tracy 内存域采样（docs/29 §10）：节点树 / GPU 纹理与缓冲 / 字图集。
      * 由 memory_due() 节流（默认 1s），delta 型域（script/heap）由分配器钩子维护。 */
     void memory_sample();
+    /* ---- Linux 采样剖析（perf，docs/35）----
+     * 与 Tracy 的分工：Tracy 看"一帧内各段耗时"（zone/内存域）；perf 看"几百帧里 CPU
+     * 花在哪些函数/源码行"（统计采样）。perf 是**外部子进程**，不改变模拟行为。
+     * 启用方式：MAQUE_PROFILE=1 自动录（可选 START/FRAMES），或控制面 Perf.profile_start；
+     * MAQUE_PROFILE=1 时 F5 手动开关（引擎热键，不再下发给脚本）。 */
+    bool                profile_env_checked = false;        // 是否已解析 MAQUE_PROFILE
+    bool                profile_armed = false;              // F5 可用 / 控制面已介入
+    bool                profile_auto_started = false;       // env 自动启动只尝试一次
+    bool                profile_f5_held = false;            // F5 沿检测
+    uint64_t            profile_auto_start_frame = 0;       // MAQUE_PROFILE_START
+    uint64_t            profile_stop_frame = 0;             // 0=手动/退出停；否则到帧自动停
+    void profile_tick();                                    // 帧首：env 启动 / 到点自动停 / 指标
+    bool profile_start(const maque::profile::Options& opts, std::string* error);
+    bool profile_stop(bool report, std::string* error);
+    void profile_shutdown();                                // teardown 兜底 stop（写报告）
+    void profile_toggle();                                  // F5：start/stop 切换
+    std::string profile_context_json() const;               // meta.json 的 context
     int                 hover = -1;                         // 悬停实体（上帧命中）
     int                 capture = -1;                       // 指针捕获（拖拽中）
     float               mouse_x = 0, mouse_y = 0;

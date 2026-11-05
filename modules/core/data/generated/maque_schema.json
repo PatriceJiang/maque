@@ -3,7 +3,7 @@
   "generated_by": "parser.js",
   "type_count": 254,
   "api_count": 325,
-  "control_count": 57,
+  "control_count": 62,
   "callback_count": 11,
   "module_count": 26,
   "types": [
@@ -23030,6 +23030,71 @@
       "method": "Perf.get",
       "namespace": "control",
       "args": []
+    },
+    {
+      "method": "Perf.profile_status",
+      "namespace": "control",
+      "args": []
+    },
+    {
+      "method": "Perf.profile_start",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "freq",
+          "type": "float"
+        },
+        {
+          "name": "callgraph",
+          "type": "string"
+        },
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "dir",
+          "type": "string"
+        },
+        {
+          "name": "frames",
+          "type": "float"
+        }
+      ]
+    },
+    {
+      "method": "Perf.profile_stop",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "report",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "method": "Perf.profile_report",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "top",
+          "type": "float"
+        },
+        {
+          "name": "refresh",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "method": "Perf.profile_mark",
+      "namespace": "control",
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ]
     },
     {
       "method": "Reload.script",

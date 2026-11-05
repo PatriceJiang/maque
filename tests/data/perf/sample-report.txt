@@ -1,0 +1,13 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+# Samples: 500  of event 'cpu-clock'
+#
+# Overhead  Samples  Command       Shared Object      Symbol
+# ........  .......  ............  .................  ................................
+#
+    40.00%      200  maque_player  maque_player  [.] maque::rt::Engine::step_frame()
+    20.00%      100  maque_player  maque_player  [.] maque::rt::Scene::visit()
+    20.00%      100  maque_player  libc.so.6     [.] memcpy
+    10.00%       50  maque_player  maque_player  [.] std::vector<maque::Foo, std::allocator<maque::Foo>>::push_back(maque::Foo const&)
+     5.00%       25  maque_player  maque_player  [.] 0x0000000000123456
+     5.00%       25  maque_player  maque_player  [.] maque::gfx::Device::render()

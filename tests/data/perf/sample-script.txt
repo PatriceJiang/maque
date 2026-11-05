@@ -1,0 +1,20 @@
+7f0000000000 maque::rt::Engine::step_frame() (maque_player) modules/runtime/src/engine/frame.cpp:42
+7f0000000001 maque::rt::Engine::step_frame() (maque_player) modules/runtime/src/engine/frame.cpp:42
+7f0000000002 maque::rt::Engine::step_frame() (maque_player) modules/runtime/src/engine/frame.cpp:42
+7f0000000003 maque::rt::Engine::step_frame() (maque_player) modules/runtime/src/engine/frame.cpp:42
+7f0000000004 maque::rt::Engine::step_frame() (maque_player) modules/runtime/src/engine/frame.cpp:42
+7f0000000005 maque::rt::Engine::step_frame() (maque_player) modules/runtime/src/engine/frame.cpp:42
+7f0000000006 maque::rt::Engine::step_frame() (maque_player) modules/runtime/src/engine/frame.cpp:42
+7f0000000007 maque::rt::Engine::step_frame() (maque_player) modules/runtime/src/engine/frame.cpp:42
+7f0000000000 maque::rt::Scene::visit() (maque_player) modules/runtime/src/scene/tree.cpp:120
+7f0000000001 maque::rt::Scene::visit() (maque_player) modules/runtime/src/scene/tree.cpp:120
+7f0000000002 maque::rt::Scene::visit() (maque_player) modules/runtime/src/scene/tree.cpp:120
+7f0000000003 maque::rt::Scene::visit() (maque_player) modules/runtime/src/scene/tree.cpp:120
+7f0000000000 memcpy (libc.so.6) /build/glibc/string/memcpy.c:30
+7f0000000001 memcpy (libc.so.6) /build/glibc/string/memcpy.c:30
+7f0000000002 memcpy (libc.so.6) /build/glibc/string/memcpy.c:30
+7f0000000003 memcpy (libc.so.6) /build/glibc/string/memcpy.c:30
+7f0000000000 std::vector<maque::Foo, std::allocator<maque::Foo>>::push_back(maque::Foo const&) (maque_player) third_party/stl/vector:88
+7f0000000001 std::vector<maque::Foo, std::allocator<maque::Foo>>::push_back(maque::Foo const&) (maque_player) third_party/stl/vector:88
+7f0000000000 0x0000000000123456 (maque_player)
+7f0000000000 maque::gfx::Device::render() (maque_player) modules/render/gfx/src/device.cpp:88

@@ -118,6 +118,16 @@ int mq_control_Input_sim_stop(void* user, const mq_json* params, char* out, size
 int mq_control_Input_inject(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Perf.get() */
 int mq_control_Perf_get(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Perf.profile_status() */
+int mq_control_Perf_profile_status(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Perf.profile_start(freq: float, callgraph: string, label: string, dir: string, frames: float) */
+int mq_control_Perf_profile_start(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Perf.profile_stop(report: bool) */
+int mq_control_Perf_profile_stop(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Perf.profile_report(top: float, refresh: bool) */
+int mq_control_Perf_profile_report(void* user, const mq_json* params, char* out, size_t out_cap);
+/* Perf.profile_mark(label: string) */
+int mq_control_Perf_profile_mark(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Reload.script(dry_run: bool) */
 int mq_control_Reload_script(void* user, const mq_json* params, char* out, size_t out_cap);
 /* Reload.scene(dry_run: bool) */

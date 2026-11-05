@@ -32,6 +32,9 @@ MAQUE_TRACY_MEM_REPORT=1 MAQUE_WINDOW=0x0 ./build/samples/player/maque_player sc
 - **默认零开销**：普通运行不启动客户端、不监听端口、不占线程（`TRACY_DELAYED_INIT` +
   `TRACY_MANUAL_LIFETIME` + `TRACY_ON_DEMAND`）；只有 F3 / `MAQUE_TRACY=1` 才启动。
 - 想从启动就开（等外部 GUI 连）：`MAQUE_TRACY=1 ./build/samples/player/maque_player <scene>`。
+- 需要**函数级采样/源码行热点**（Tracy 的 zone 没覆盖到的地方）：Linux 用
+  [`35 采样剖析（perf）`](35-Linux采样剖析（perf）.md) 的 `MAQUE_PROFILE` /
+  `tools/perf/maque_perf.py`；两者互补（Tracy 看帧内阶段，perf 看 CPU 热点）。
 
 ## 1. 架构与文件
 
