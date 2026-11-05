@@ -76,18 +76,18 @@ void Engine::shader_pass_step(float dt) {
     if (!scene) return;
     std::vector<int> ids;
     scene->collect_preorder(ids);
+    /* 三种时间驱动器共享 speed/paused/time；类型在编译期已知 → 直接成员推进。
+     * 原实现每实体做 3 次按名查组件 + 4 次按名查字段（每次 ~30ns）。 */
+    auto step = [dt](auto* c) {
+        if (!c || c->paused || c->speed == 0.0F) return;
+        c->time += dt * c->speed;
+    };
     for (int id : ids) {
-        for (const char* type : { "render.ShaderPass", "render.ShaderSprite", "render.ShaderGraph" }) {
-            const mq_type_desc* d = nullptr;
-            auto* blob = comp_by_name(*this, id, type, &d);
-            if (!blob || !d) continue;
-            if (read_num(d, blob->data(), "paused", 0.0F) >= 0.5F) continue;
-            const float speed = read_num(d, blob->data(), "speed", 1.0F);
-            if (speed == 0.0F) continue;
-            const float time = read_num(d, blob->data(), "time", 0.0F) + dt * speed;
-            if (const mq_field_desc* f = mq_reflect_field(d, "time"))
-                field_set_f32(f, blob->data(), time);
-        }
+        SceneNode* e = scene->at(id);
+        if (!e) continue;
+        step(component<render::ShaderPass>(*e));
+        step(component<render::ShaderSprite>(*e));
+        step(component<render::ShaderGraph>(*e));
     }
 }
 
@@ -101,13 +101,12 @@ void Engine::extract_shader_passes(std::vector<mq_renderer_shader_pass>& out) {
     const float my = (canvas.offset_y + ((float)H - mouse_y) * canvas.scale_y) * ry;
     for (const auto& p : loaded_shader_passes) {
         if (p.sprite) continue;                       /* 精灵走 extract_shader_sprites（2D 图层） */
-        const mq_type_desc* d = nullptr;
-        auto* blob = comp_by_name(*this, p.entity, "render.ShaderPass", &d);
-        if (!blob || !d) continue;
-        if (read_num(d, blob->data(), "enabled", 1.0F) < 0.5F) continue;
+        SceneNode* e = scene->at(p.entity);
+        const auto* comp = e ? component<render::ShaderPass>(*e) : nullptr;
+        if (!comp || !comp->enabled) continue;
         mq_renderer_shader_pass sp{};
         sp.shader = p.handle;
-        sp.time = read_num(d, blob->data(), "time", 0.0F);
+        sp.time = comp->time;
         sp.frame = (float)frame;
         sp.mouse[0] = mx;
         sp.mouse[1] = my;
