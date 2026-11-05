@@ -156,6 +156,9 @@ vfs（`read`）、asset（`import`/`cook`/`pack`）、platform（`pump`/`input.p
 原则：**只加在外层入口，不进热内循环**（zone 本身有成本；细粒度靠采样调用栈视图，不靠堆 zone）。
 内存记账的 delta 型调用（`memory_add/sub`）可以进分配器（每块一次原子操作，见 §10）。
 
+已跑过的热路径优化案例（查表/分配类开销）见 [bugs/014](bugs/014-reflection-component-hotpath.md)：
+组件槽描述符缓存、按名 API 限制、校验和/视觉哈希去分配、无组件时跳过 `ui/audio/anim` 步进。
+
 ## 5. 基础数据（Tracy 曲线）
 
 启动客户端后自动配置并每步/每秒上报：
