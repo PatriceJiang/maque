@@ -126,13 +126,37 @@ uint64_t Scene::checksum(Engine& eng) {
         mix(&k, sizeof k); mix(&e.parent, sizeof e.parent); mix(&e.world_x, sizeof e.world_x); mix(&e.world_y, sizeof e.world_y);
         mix(&e.active, sizeof e.active); mix(&e.scale, sizeof e.scale); mix(&e.angle, sizeof e.angle);
         mix(&e.opacity, sizeof e.opacity); mix(&e.z_index, sizeof e.z_index);
-        std::vector<uint32_t> tids;
-        for (auto& [t, b] : e.comps) tids.push_back(t);
-        std::sort(tids.begin(), tids.end());
-        for (uint32_t t : tids) {
-            auto& slot = e.comps[t];
-            const mq_type_desc* d = slot.desc;
-            auto& blob = slot.bytes;
+        std::vector<uint32_t> tids_spill;
+        constexpr size_t kInlineTids = 16;
+        uint32_t tids_inline[kInlineTids];
+        uint32_t* tids = tids_inline;
+        size_t nt = 0;
+        for (auto& [t, b] : e.comps) {
+            (void)b;
+            if (nt < kInlineTids) tids_inline[nt++] = t;
+            else {
+                if (tids_spill.empty()) tids_spill.assign(tids_inline, tids_inline + kInlineTids);
+                tids_spill.push_back(t);
+            }
+        }
+        if (!tids_spill.empty()) {
+            std::sort(tids_spill.begin(), tids_spill.end());
+            tids = tids_spill.data();
+            nt = tids_spill.size();
+        } else {                                   // 组件数通常个位数：插入排序，零分配
+            for (size_t i = 1; i < nt; ++i) {
+                const uint32_t v = tids[i];
+                size_t j = i;
+                while (j > 0 && tids[j - 1] > v) { tids[j] = tids[j - 1]; --j; }
+                tids[j] = v;
+            }
+        }
+        for (size_t ti = 0; ti < nt; ++ti) {
+            const uint32_t t = tids[ti];
+            auto it = e.comps.find(t);
+            if (it == e.comps.end()) continue;
+            const mq_type_desc* d = it->second.desc;
+            auto& blob = it->second.bytes;
             mix(&t, sizeof t);
             if (!d) continue;
             for (uint32_t fi = 0; fi < d->field_count; ++fi) {

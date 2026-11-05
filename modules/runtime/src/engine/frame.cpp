@@ -325,7 +325,11 @@ void Engine::step_frame(bool render_frame) {
         bool rt_dirty = false;
         for (const auto& rt : render_textures)
             if (rt.enabled && (rt.dirty || !rt.ready)) { rt_dirty = true; break; }
-        const uint64_t svh = visual_dynamic ? 0 : compute_scene_visual_hash();
+        /* 视觉哈希只服务于 RenderTexture 的“静态场景跳过 RT pass”（targets.cpp /
+         * render_camera_textures）。没有 RenderTexture 时它不参与任何判定，
+         * 而它要遍历整棵树 + 每个组件 —— profiler 上曾占 ~15%，这里直接跳过。 */
+        const bool need_visual_hash = !render_textures.empty();
+        const uint64_t svh = (visual_dynamic || !need_visual_hash) ? 0 : compute_scene_visual_hash();
         scene_visual_unchanged =
             !visual_dynamic && !rt_dirty && iframe.pointer_count == 0 &&
             iframe.key_count == 0 && !iframe.resized && svh == scene_visual_hash_value;

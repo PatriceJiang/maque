@@ -363,32 +363,23 @@ uint64_t Engine::compute_scene_visual_hash() const {
         const uint8_t* b = (const uint8_t*)p;
         for (size_t i = 0; i < n; ++i) { h ^= b[i]; h *= 1099511628211ull; }
     };
-    std::vector<int> ids;
-    scene->collect_preorder(ids);
-    for (int id : ids) {
-        const SceneNode* e = scene->at(id);
-        if (!e) continue;
+    /* 只做“本进程内前后帧比较”，不跨进程/跨版本 → 不需要树序：
+     * 直接按 nodes/comps 的 map 顺序混入（省掉 collect_preorder + 每节点排序 + 二次 find）。 */
+    for (const auto& [id, e] : scene->nodes) {
         mix(&id, sizeof id);
-        mix(&e->parent, sizeof e->parent);
-        mix(&e->active, sizeof e->active);
-        mix(&e->scale, sizeof e->scale);
-        mix(&e->angle, sizeof e->angle);
-        mix(&e->opacity, sizeof e->opacity);
-        mix(&e->z_index, sizeof e->z_index);
-        mix(&e->world_x, sizeof e->world_x);
-        mix(&e->world_y, sizeof e->world_y);
-        mix(e->world_m, sizeof e->world_m);
-        mix(e->name.data(), e->name.size());
-        std::vector<uint32_t> tids;
-        tids.reserve(e->comps.size());
-        for (const auto& [tid, blob] : e->comps) { (void)blob; tids.push_back(tid); }
-        std::sort(tids.begin(), tids.end());
-        for (uint32_t tid : tids) {
+        mix(&e.parent, sizeof e.parent);
+        mix(&e.active, sizeof e.active);
+        mix(&e.scale, sizeof e.scale);
+        mix(&e.angle, sizeof e.angle);
+        mix(&e.opacity, sizeof e.opacity);
+        mix(&e.z_index, sizeof e.z_index);
+        mix(&e.world_x, sizeof e.world_x);
+        mix(&e.world_y, sizeof e.world_y);
+        mix(e.world_m, sizeof e.world_m);
+        mix(e.name.data(), e.name.size());
+        for (const auto& [tid, slot] : e.comps) {
             mix(&tid, sizeof tid);
-            auto it = e->comps.find(tid);
-            if (it != e->comps.end()) {
-                mix(it->second.data(), it->second.size());
-            }
+            mix(slot.data(), slot.size());
         }
     }
     return h;
