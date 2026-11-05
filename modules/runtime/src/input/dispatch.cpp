@@ -3,8 +3,6 @@
  * 从 runtime.cpp 拆出（plans/25 第 1 阶段，纯搬运）：实现与顺序不变。 */
 #include "../runtime_engine.h"
 
-#include <string_view>
-
 namespace maque::rt {
 
 /* ---- UI 命中测试（docs/19 §4）：z-order + 树深 稳定排序，命中最上层 ---- */
@@ -317,38 +315,23 @@ std::vector<uint8_t>* comp_by_role(Engine& eng, int id, uint32_t role) {
     return nullptr;
 }
 
-/* 直接按类型名找组件（getComponent("Type") 语义；支持短名与 fq 名）。 */
+/* 按类型名找组件（getComponent("ns.Type") 语义）。
+ * **只接受全名**（ns.Type）：旧实现会猜 scn./ui./physics. 前缀、再扫全表做后缀匹配 ——
+ * 既贵（最坏 254 次字符串构造）又有歧义（scn.Button 与 ui.Button 并存）。
+ * 未知/短名按"没有该组件"处理（脚本侧安全），短名提示一次。 */
 std::vector<uint8_t>* comp_by_name(Engine& eng, int id, const char* type_name,
                                    const mq_type_desc** out_desc) {
     SceneNode* e = eng.scene->at(id);
     if (!e || !type_name) return nullptr;
     const mq_type_desc* want = mq_reflect_type_by_name(eng.reflect, type_name);
-    if (!want) {                                   // 允许短名（"Sprite" → "scn.Sprite"）
-        char fq[128];
-        std::snprintf(fq, sizeof fq, "scn.%s", type_name);
-        want = mq_reflect_type_by_name(eng.reflect, fq);
-        if (!want) { std::snprintf(fq, sizeof fq, "ui.%s", type_name);
-                     want = mq_reflect_type_by_name(eng.reflect, fq); }
-        if (!want) { std::snprintf(fq, sizeof fq, "physics.%s", type_name);
-                     want = mq_reflect_type_by_name(eng.reflect, fq); }
-    }
     if (!want) {
-        /* 通用短名：任意 namespace 的 "Ns.Type" 后缀匹配（audio.AudioSource 等），
-         * 避免每加一个模块都要在这里补一个前缀。重名时取注册顺序第一个。
-         * 用 string_view 比较：原实现每个候选类型都构造 std::string（254 次分配）。
-         * 只在「非 fq 且不落在 scn/ui/physics 前缀」时走到这里（脚本的短名）。 */
-        const std::string suffix = std::string(".") + type_name;
-        const std::string_view sfx(suffix);
-        const uint32_t n = mq_reflect_count(eng.reflect);
-        for (uint32_t i = 0; i < n && !want; ++i) {
-            const mq_type_desc* t = mq_reflect_type_at(eng.reflect, i);
-            if (!t || !t->name) continue;
-            const std::string_view nm(t->name);
-            if (nm.size() > sfx.size() && nm.compare(nm.size() - sfx.size(), sfx.size(), sfx) == 0)
-                want = t;
+        static bool warned = false;                  /* 诊断去重（同仓库其它 warned_* 的先例） */
+        if (!warned && type_name[0] && !std::strchr(type_name, '.')) {
+            warned = true;
+            std::print(stderr, "runtime: 组件类型 '{}' 必须是全名（ns.Type，如 scn.Sprite）\n", type_name);
         }
+        return nullptr;
     }
-    if (!want) return nullptr;
     auto it = e->comps.find(want->type_id);
     if (it == e->comps.end()) return nullptr;
     if (out_desc) *out_desc = want;

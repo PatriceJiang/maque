@@ -110,7 +110,8 @@
     - { fn: node_component_count, ctx: true, args: [ { name: id, type: float } ], returns: float }
     - { fn: node_component_at,   ctx: true, args: [ { name: id, type: float }, { name: index, type: float } ], returns: string }
     - { fn: node_child_with_component, ctx: true, args: [ { name: id, type: float }, { name: type, type: string } ], returns: float }
-    # 组件字段（按名反射；**慢路径**：仅脚本/自定义组件使用，引擎内部一律类型化直读）
+    # 组件字段（按名反射；**慢路径**：仅脚本/自定义组件使用，引擎内部一律类型化直读；
+    # comp 必须是全名 ns.Type —— 短名不再解析，避免歧义（scn.Button vs ui.Button）与全表扫描）
     - { fn: node_get_number,     ctx: true, doc: "按名反射读标量（慢路径：脚本/自定义组件；内置组件用类型化 API）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }
     - { fn: node_set_number,     ctx: true, doc: "按名反射写标量（慢路径：脚本/自定义组件；内置组件用类型化 API）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string }, { name: value, type: float } ], returns: float }
     - { fn: node_get_bool,       ctx: true, doc: "按名反射读 bool（慢路径）", args: [ { name: id, type: float }, { name: comp, type: string }, { name: field, type: string } ], returns: float }

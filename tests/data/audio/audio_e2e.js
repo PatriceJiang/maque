@@ -1,7 +1,7 @@
-// audio_e2e.js —— 脚本音频 API 端到端（docs/30）：
-//   ① audio_play 从 VFS 加载 wav（场景目录 = VFS 根，`beep.wav` 就在旁边）
-//   ② audio_state / audio_playhead 由**模拟 dt** 推进（CI 用 MAQUE_AUDIO=null，不依赖声卡）
-//   ③ 非 loop 播完 → 自动 Stopped；audio_stop 后状态为 0
+﻿// audio_e2e.js 鈥斺€?鑴氭湰闊抽 API 绔埌绔紙docs/30锛夛細
+//   鈶?audio_play 浠?VFS 鍔犺浇 wav锛堝満鏅洰褰?= VFS 鏍癸紝`beep.wav` 灏卞湪鏃佽竟锛?
+//   鈶?audio_state / audio_playhead 鐢?*妯℃嫙 dt** 鎺ㄨ繘锛圕I 鐢?MAQUE_AUDIO=null锛屼笉渚濊禆澹板崱锛?
+//   鈶?闈?loop 鎾畬 鈫?鑷姩 Stopped锛沘udio_stop 鍚庣姸鎬佷负 0
 let voice = 0;
 let frame = 0;
 
@@ -18,21 +18,21 @@ function update(dt) {
     if (frame === 3) {
         log('audio_e2e: head3=' + audio_playhead(voice));
         const id = entity_find('speaker');
-        log('audio_e2e: comp_state3=' + node_get_number(id, 'AudioSource', 'state'));
-        log('audio_e2e: comp_head3=' + node_get_number(id, 'AudioSource', 'playhead'));
+        log('audio_e2e: comp_state3=' + node_get_number(id, 'audio.AudioSource', 'state'));
+        log('audio_e2e: comp_head3=' + node_get_number(id, 'audio.AudioSource', 'playhead'));
         const id2 = entity_find('speaker_ogg');
-        log('audio_e2e: ogg_state3=' + node_get_number(id2, 'AudioSource', 'state'));
-        log('audio_e2e: ogg_head3=' + node_get_number(id2, 'AudioSource', 'playhead'));
+        log('audio_e2e: ogg_state3=' + node_get_number(id2, 'audio.AudioSource', 'state'));
+        log('audio_e2e: ogg_head3=' + node_get_number(id2, 'audio.AudioSource', 'playhead'));
     }
     if (frame === 30) {
         log('audio_e2e: state30=' + audio_state(voice));
         log('audio_e2e: head30=' + audio_playhead(voice));
         const id = entity_find('speaker');
-        log('audio_e2e: comp_state30=' + node_get_number(id, 'AudioSource', 'state'));
-        log('audio_e2e: comp_head30=' + node_get_number(id, 'AudioSource', 'playhead'));
+        log('audio_e2e: comp_state30=' + node_get_number(id, 'audio.AudioSource', 'state'));
+        log('audio_e2e: comp_head30=' + node_get_number(id, 'audio.AudioSource', 'playhead'));
         const id2 = entity_find('speaker_ogg');
-        log('audio_e2e: ogg_state30=' + node_get_number(id2, 'AudioSource', 'state'));
-        log('audio_e2e: ogg_head30=' + node_get_number(id2, 'AudioSource', 'playhead'));
+        log('audio_e2e: ogg_state30=' + node_get_number(id2, 'audio.AudioSource', 'state'));
+        log('audio_e2e: ogg_head30=' + node_get_number(id2, 'audio.AudioSource', 'playhead'));
     }
     if (frame === 40) {
         audio_stop(voice);

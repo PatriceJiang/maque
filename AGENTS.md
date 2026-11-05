@@ -568,8 +568,8 @@ tools\win\build.cmd -Sanitize address -RunTests
   `node_set_opacity/opacity`、`node_set_z_index/z_index`、`node_width/height/set_content_size/set_anchor`、
   `node_set_active/active`、`node_destroy`（帧末生效；**连带整棵子树**）、`node_valid`
 - **Component**：`node_has_component/add_component/remove_component/component_count/component_at/child_with_component`、
-  `node_get_number/set_number/get_bool/set_bool/get_string/set_string`（组件字段名可用 `Type.field` 或短名；
-  **慢路径**：每次按名反射，只给脚本/自定义组件用 —— 引擎内部与逐帧系统一律 `component<T>` 直读）
+  `node_get_number/set_number/get_bool/set_bool/get_string/set_string`（`comp` **必须是全名 `ns.Type`**，
+  短名不再解析；**慢路径**：每次按名反射，只给脚本/自定义组件用 —— 引擎内部与逐帧系统一律 `component<T>` 直读）
 - **事件**：`node_on(id, event, handler)` / `node_off` / `node_emit` / `node_emit_number`；emit 沿父链冒泡，
   处理器是脚本里的全局函数名（引擎按名字回调）
 - **UI 值**：`ui_set_value/ui_get_value`（ProgressBar/Slider）、`ui_set_checked/ui_get_checked`（CheckBox）

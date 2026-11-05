@@ -13,54 +13,50 @@ void Engine::nav_step() {
     for (int id : ids) {
         SceneNode* e = scene->at(id);
         if (!e) continue;
-        for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-            auto* na = (d && (d->role & MQ_ROLE_NAV_AGENT))
-                           ? as_component_mut<scn::NavAgent>(d, blob.data()) : nullptr;
-            if (!na) continue;
-            if (!na->has_target) { na->state = 0; continue; }
-            const float tx = na->tx, ty = na->ty, speed = na->speed, arrive = na->arrive_dist;
-            const bool repath = na->repath;
+        auto* na = component<scn::NavAgent>(*e);
+        if (!na) continue;
+        if (!na->has_target) { na->state = 0; continue; }
+        const float tx = na->tx, ty = na->ty, speed = na->speed, arrive = na->arrive_dist;
+        const bool repath = na->repath;
 
-            SystemsRuntime::AgentPath& ap = systems.agent_paths[id];
-            /* 路径缺失/目标变化 → 重新寻路（确定性：与实体 id 顺序无关的单点查询） */
-            const bool need_path = ap.path.empty() || ap.index >= ap.path.size() / 2;
-            if (need_path || (repath && !ap.path.empty())) {
-                const uint32_t idx_last = ap.path.empty() ? 0 : (uint32_t)(ap.path.size() / 2 - 1);
-                const float goal_x = ap.path.empty() ? tx : ap.path[idx_last * 2];
-                const float goal_y = ap.path.empty() ? ty : ap.path[idx_last * 2 + 1];
-                if (need_path || (repath && (goal_x != tx || goal_y != ty))) {
-                    std::vector<float> buf(2 * 4096);
-                    uint32_t n = 0, need = 0;
-                    const int rc = mq_nav_find_path(nav, e->world_x, e->world_y, tx, ty, buf.data(),
-                                                   (uint32_t)buf.size() / 2, &n, &need);
-                    if (rc == MQ_NAV_ERR_CAPACITY) {
-                        buf.resize(need);
-                        mq_nav_find_path(nav, e->world_x, e->world_y, tx, ty, buf.data(), need, &n, &need);
-                    }
-                    if (rc == MQ_NAV_OK) {
-                        n = mq_nav_smooth(nav, buf.data(), n);
-                        ap.path.assign(buf.begin(), buf.begin() + (size_t)n * 2);
-                        ap.index = 0;
-                        na->state = 1;   // Moving
-                    } else {
-                        ap.path.clear();
-                        ap.index = 0;
-                        na->state = 3;   // NoPath
-                        continue;
-                    }
+        SystemsRuntime::AgentPath& ap = systems.agent_paths[id];
+        /* 路径缺失/目标变化 → 重新寻路（确定性：与实体 id 顺序无关的单点查询） */
+        const bool need_path = ap.path.empty() || ap.index >= ap.path.size() / 2;
+        if (need_path || (repath && !ap.path.empty())) {
+            const uint32_t idx_last = ap.path.empty() ? 0 : (uint32_t)(ap.path.size() / 2 - 1);
+            const float goal_x = ap.path.empty() ? tx : ap.path[idx_last * 2];
+            const float goal_y = ap.path.empty() ? ty : ap.path[idx_last * 2 + 1];
+            if (need_path || (repath && (goal_x != tx || goal_y != ty))) {
+                std::vector<float> buf(2 * 4096);
+                uint32_t n = 0, need = 0;
+                const int rc = mq_nav_find_path(nav, e->world_x, e->world_y, tx, ty, buf.data(),
+                                               (uint32_t)buf.size() / 2, &n, &need);
+                if (rc == MQ_NAV_ERR_CAPACITY) {
+                    buf.resize(need);
+                    mq_nav_find_path(nav, e->world_x, e->world_y, tx, ty, buf.data(), need, &n, &need);
+                }
+                if (rc == MQ_NAV_OK) {
+                    n = mq_nav_smooth(nav, buf.data(), n);
+                    ap.path.assign(buf.begin(), buf.begin() + (size_t)n * 2);
+                    ap.index = 0;
+                    na->state = 1;   // Moving
+                } else {
+                    ap.path.clear();
+                    ap.index = 0;
+                    na->state = 3;   // NoPath
+                    continue;
                 }
             }
-            if (ap.path.empty()) continue;
-            float x = e->world_x, y = e->world_y;
-            const float dt = 1.0F / 60.0F;
-            const int rc = mq_nav_step_towards(nav, &x, &y, ap.path.data(),
-                                               (uint32_t)(ap.path.size() / 2), &ap.index,
-                                               speed, dt, arrive);
-            host::entity_set_pos(this, (float)id, x, y);
-            e->world_x = x; e->world_y = y;
-            if (rc == 1) na->state = 2;    // Arrived
         }
+        if (ap.path.empty()) continue;
+        float x = e->world_x, y = e->world_y;
+        const float dt = 1.0F / 60.0F;
+        const int rc = mq_nav_step_towards(nav, &x, &y, ap.path.data(),
+                                           (uint32_t)(ap.path.size() / 2), &ap.index,
+                                           speed, dt, arrive);
+        host::entity_set_pos(this, (float)id, x, y);
+        e->world_x = x; e->world_y = y;
+        if (rc == 1) na->state = 2;    // Arrived
     }
 }
 
@@ -134,19 +130,14 @@ void Engine::preload_scene_assets() {
     for (int id : ids) {
         SceneNode* e = scene->at(id);
         if (!e) continue;
-        for (auto& [tid, blob] : e->comps) {
-            const mq_type_desc* d = mq_reflect_type_by_id(reflect, tid);
-            if (!d) continue;
-            if (d->role & MQ_ROLE_SPRITE) {
-                if (const std::string* tp = read_str(d, blob.data(), "texture"); tp && !tp->empty())
-                    load_texture_ref(scoped_texture_ref(id, *tp));
-                if (const std::string* mp = read_str(d, blob.data(), "material"); mp && !mp->empty()) {
-                    scn::SpriteMaterial m{};
-                    if (load_material(*mp, m)) {
-                        material_cache[*mp] = m;
-                        if (!m.texture.empty()) load_texture_ref(scoped_texture_ref(id, m.texture));
-                    }
-                }
+        auto* sp = component<scn::Sprite>(*e);
+        if (!sp) continue;
+        if (!sp->texture.empty()) load_texture_ref(scoped_texture_ref(id, sp->texture));
+        if (!sp->material.empty()) {
+            scn::SpriteMaterial m{};
+            if (load_material(sp->material, m)) {
+                material_cache[sp->material] = m;
+                if (!m.texture.empty()) load_texture_ref(scoped_texture_ref(id, m.texture));
             }
         }
     }
