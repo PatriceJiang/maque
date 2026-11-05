@@ -261,17 +261,15 @@ void Engine::spine_step(float dt) {
     for (auto& sp : spine_rt.items) {
         if (!sp.inst || !sp.data) continue;
         SceneNode* e = scene->at(sp.entity);
-        const mq_type_desc* d = mq_reflect_type_by_id(reflect, sp.comp);
-        if (!e || !d) continue;
-        auto it = e->comps.find(sp.comp);
-        if (it == e->comps.end() || it->second.empty()) continue;
-        std::vector<uint8_t>& blob = it->second;
+        auto* sc = e ? component<anim::SpineSkeleton>(*e) : nullptr;
+        if (!sc) continue;
 
-        /* 组件字段 → 语义（脚本改这些字段即生效；无需额外 API 也能驱动动画） */
+        /* 组件字段 → 语义（脚本改这些字段即生效；无需额外 API 也能驱动动画）。
+         * 类型在编译期已知 → 直接成员读，不再每帧 12 次按名反射。 */
         const int n_anim = (int)sp.anim_names.size();
-        int want = (int)read_num(d, blob.data(), "animation", 0.0F);
+        int want = (int)sc->animation;
         if (want < 0 || want >= n_anim) want = sp.last_anim;
-        const bool loop = read_num(d, blob.data(), "play_mode", 1.0F) == 1.0F;
+        const bool loop = sc->play_mode == anim::PlayMode::Loop;
         if (want != sp.last_anim && want >= 0) {                 // 组件里换了动画 → 真的去播
             /* 但若该轨**已经在播**这个动画（例如 add_animation 排队到点自己切过去了），
              * 只同步 last_anim，不要重启（重启会白白打断播放头/触发一次 start+interrupt）。 */
@@ -282,29 +280,21 @@ void Engine::spine_step(float dt) {
                 sp.last_anim = want;
             }
         }
-        const float speed = read_num(d, blob.data(), "speed", 1.0F);
+        const float speed = sc->speed;
         /* 物理时间轴：SpinePhysTimestep::NoPhysics(2) → 只应用已有物理姿势（Physics_Pose），
          * 其余（Inherit/Fixed）→ 正常更新（Physics_Update）。忽略这个字段会让"冻结物理"失效。 */
-        const int phys_mode = (int)read_num(d, blob.data(), "phys_timestep", 0.0F);
-        const int physics = (phys_mode == 2) ? MQ_SPINE_PHYSICS_POSE : MQ_SPINE_PHYSICS_UPDATE;
+        const int physics = (sc->phys_timestep == anim::SpinePhysTimestep::NoPhysics)
+                                ? MQ_SPINE_PHYSICS_POSE : MQ_SPINE_PHYSICS_UPDATE;
         mq_spine_instance_step_ex(sp.inst, dt * speed, physics);  // 固定步长（确定性，docs/10 D1）
 
         /* 变换：模块负责 缩放/翻转（骨架单位 → 屏幕单位），旋转/平移留给提取期（见 spine_extract） */
         float angle = 0.0F, scale = 1.0F, opacity = 1.0F;
         accumulate_node_attrs(*this, sp.entity, angle, scale, opacity);
-        const int flip = (int)read_num(d, blob.data(), "flip", 0.0F);       // FlipMode：1=水平 2=垂直 3=两者
+        const int flip = (int)sc->flip;       // FlipMode：1=水平 2=垂直 3=两者
         mq_spine_instance_set_transform(sp.inst, 0.0F, 0.0F, scale,
                                         (flip & 1) ? 1 : 0, (flip & 2) ? 1 : 0);
-        float cr = 1, cg = 1, cb = 1, ca = 1;
-        if (const mq_field_desc* f = mq_reflect_field(d, "color"); f && f->kind == MQ_TK_STRUCT) {
-            const mq_type_desc* ct = mq_reflect_type_by_id(reflect, f->type_id);
-            const uint8_t* cp = blob.data() + f->offset;
-            if (ct) {
-                read_f32(ct, cp, "r", &cr); read_f32(ct, cp, "g", &cg);
-                read_f32(ct, cp, "b", &cb); read_f32(ct, cp, "a", &ca);
-            }
-        }
-        mq_spine_instance_set_color(sp.inst, cr, cg, cb, ca * opacity);
+        const math::Color& tint = sc->color;
+        mq_spine_instance_set_color(sp.inst, tint.r, tint.g, tint.b, tint.a * opacity);
 
         /* 绘制数据（CPU 侧；只读导出，不改模拟状态） */
         mq_spine_draw out{};
@@ -325,7 +315,7 @@ void Engine::spine_step(float dt) {
                                    " (this frame's geometry may be truncated)\n"); }
         }
         sp.draw = out;
-        sp.z = (int)read_num(d, blob.data(), "z_index", 0.0F) * 100000 + sp.entity;
+        sp.z = (int)sc->z_index * 100000 + sp.entity;
 
         /* 骨架空间 → 渲染目标像素空间：
          *   · spine 顶点 y **向上**（实测；见本节顶部注释），引擎渲染目标 y 向下 → 翻一次；
@@ -367,18 +357,9 @@ void Engine::spine_step(float dt) {
                        uv_zero, vc, u0, u1, v0, v1, sp.events_last);
         }
         /* transient 回写：自省/脚本能读到"正在播什么、播到哪"（不进快照/校验和） */
-        if (const mq_field_desc* f = mq_reflect_field(d, "state"); f && f->kind == MQ_TK_STRUCT) {
-            const mq_type_desc* st = mq_reflect_type_by_id(reflect, f->type_id);
-            uint8_t* base = blob.data() + f->offset;
-            if (st) {
-                if (const mq_field_desc* ft = mq_reflect_field(st, "time"))
-                    field_set_f32(ft, base, mq_spine_instance_time(sp.inst, 0));
-                if (const mq_field_desc* ft = mq_reflect_field(st, "track"))
-                    field_set_i32(ft, base, 0);
-                if (const mq_field_desc* ft = mq_reflect_field(st, "loop"))
-                    field_set_bool(ft, base, loop);
-            }
-        }
+        sc->state.time = mq_spine_instance_time(sp.inst, 0);
+        sc->state.track = 0;
+        sc->state.loop = loop;
     }
 }
 
