@@ -60,6 +60,18 @@ else()
 endif()
 target_link_libraries(maque_runtime PUBLIC ${MAQUE_RUNTIME_DEPS})
 
+# 静态库循环：生成绑定/控制面注册表要调用本库实现的 host::/storage::/mq_control_*，
+# 而本库又链接它们完成注册。必须把反向依赖显式声明出来，CMake 才会把这个强连通分量
+# 在链接行重复扫描两次；否则 GNU ld 单趟扫描时只按当时未决符号取 runtime 的归档成员，
+# 轮不到后面的生成库 → undefined reference。单 TU 时代 runtime.cpp.o 一次带出全部实现，
+# 拆成 65 个 TU 后才暴露（见 plans/25）。
+if(TARGET maque_genbind)
+    target_link_libraries(maque_genbind PUBLIC maque::runtime)
+endif()
+if(TARGET maque_gencontrol)
+    target_link_libraries(maque_gencontrol PUBLIC maque::runtime)
+endif()
+
 # 预编译头：拆分后每个 TU 都要解析同一套模块头 + 生成类型（实测占单 TU 的 ~70%，
 # 每个 TU 14–22 s）。PCH 后单文件增量约 3–5 s —— 否则拆分只换来"并行度变高"，
 # 增量编译并没有变快。
